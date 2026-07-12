@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-application-assistant"
+version = "0.1.0"
+description = "面向政府项目申报工程师的跨平台技能包与本地配置工具"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0"]
+
+[project.scripts]
+project-assistant = "project_assistant.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

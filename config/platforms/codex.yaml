@@ -1,0 +1,46 @@
+schema_version: 1
+platform: codex
+display_name: Codex
+
+discovery:
+  skills_install_dir: "${CODEX_HOME}/skills"
+  project_instructions_file: AGENTS.md
+  install_mode: copy_or_symlink
+
+capabilities:
+  task_history: native
+  memory: native_with_optional_project_memory
+  mcp: native
+  browser: native_or_plugin
+  documents: official_plugin_or_user_install
+  spreadsheets: official_plugin_or_user_install
+  presentations: official_plugin_or_user_install
+  pdf: official_plugin_or_user_install
+  automation: native
+  external_channels:
+    feishu: via_hermes_adapter
+
+skills:
+  source_dir: "${PROJECT_ASSISTANT_SKILLS_DIR}"
+  enabled_bundle: full
+  install_generic_document_skills: false
+
+providers:
+  inherit_common_config: true
+  use_user_mcp_config: true
+  write_native_mcp_config: false
+
+guardrails:
+  prefer_current_workspace_files: true
+  require_confirmation_before_archive: true
+  require_confirmation_before_external_send: true
+  evolution_default_mode: dry_run
+
+health_checks:
+  - skill_discovery
+  - mcp_connectivity
+  - browser_availability
+  - document_capabilities
+  - obsidian_path
+  - provider_connectivity
+
