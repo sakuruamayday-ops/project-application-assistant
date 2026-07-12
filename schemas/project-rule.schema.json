@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project Application Rule",
+  "type": "object",
+  "required": ["schema_version", "project_id", "project_name", "year", "region", "authority", "category", "status", "documents", "eligibility", "verification"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "project_id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "project_name": {"type": "string", "minLength": 1},
+    "year": {"type": "integer", "minimum": 2000},
+    "region": {"type": "object"},
+    "authority": {"type": "object"},
+    "category": {"type": "string"},
+    "status": {"enum": ["draft", "candidate", "verified", "stale", "superseded", "withdrawn"]},
+    "documents": {"type": "object"},
+    "eligibility": {"type": "object"},
+    "verification": {
+      "type": "object",
+      "required": ["status", "unresolved"],
+      "properties": {
+        "status": {"enum": ["draft", "candidate", "verified", "stale", "superseded", "withdrawn"]},
+        "unresolved": {"type": "array"}
+      }
+    }
+  }
+}
+

@@ -1,0 +1,76 @@
+schema_version: 1
+product:
+  name: 项目申报助手
+  locale: zh-CN
+  timezone: Asia/Shanghai
+
+onboarding:
+  first_run_guide_required: true
+  guide_detail_level: detailed
+  guide_output_format:
+    - markdown
+  guide_output_path: "${PROJECT_ASSISTANT_USER_GUIDE_PATH}"
+  open_guide_after_configuration: true
+  include_configuration_summary: true
+  include_next_steps: true
+  redact_secrets: true
+
+paths:
+  skills_dir: "${PROJECT_ASSISTANT_SKILLS_DIR}"
+  rules_dir: "${PROJECT_ASSISTANT_RULES_DIR}"
+  cache_dir: "${PROJECT_ASSISTANT_CACHE_DIR}"
+  logs_dir: "${PROJECT_ASSISTANT_LOGS_DIR}"
+
+security:
+  store_secrets_in_config: false
+  secret_source: environment_or_keychain
+  redact_logs: true
+  require_confirmation_for_external_send: true
+  require_confirmation_for_rule_publish: true
+  require_confirmation_for_skill_replace: true
+
+providers:
+  qcc:
+    enabled: false
+    transport: mcp
+    config_guide: docs/config/qcc.md
+    fallback: user_files_and_government_sources
+  paddle_ocr:
+    enabled: false
+    mode: local
+    config_guide: docs/config/paddle-ocr.md
+    fallback: host_ocr_or_user_text
+  aiqice:
+    enabled: false
+    mode: browser
+    config_guide: docs/config/aiqice.md
+    policy_role: index_only
+    fallback: government_sources
+  obsidian:
+    enabled: false
+    vault_path: null
+    require_archive_confirmation: true
+    config_guide: docs/config/obsidian.md
+  local_knowledge:
+    enabled: false
+    root_path: null
+    config_guide: docs/config/local-knowledge.md
+
+channels:
+  feishu:
+    enabled: false
+    adapter: hermes
+    require_target_confirmation: true
+    config_guide: docs/config/feishu.md
+
+evolution:
+  enabled: false
+  mode: dry_run
+  require_human_approval: true
+  snapshot_before_change: true
+  protected_rules:
+    - identity
+    - permissions
+    - credential_handling
+    - source_verification
+    - formal_material_quality_gates
