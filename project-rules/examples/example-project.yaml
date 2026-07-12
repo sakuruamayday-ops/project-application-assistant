@@ -1,0 +1,32 @@
+schema_version: 1
+project_id: example-project-2026
+project_name: 示例项目，仅用于展示结构
+year: 2026
+region:
+  country: CN
+  province: 示例省
+  city: null
+  district: null
+authority:
+  name: 示例主管部门
+  department_type: government
+category: regional-special-projects
+status: draft
+documents:
+  management_measures: []
+  current_notice: []
+eligibility:
+  mandatory: []
+  scoring: []
+  exclusions: []
+financial_rules: []
+ip_rules: []
+materials: []
+workflow: []
+verification:
+  status: draft
+  verified_at: null
+  verified_by: null
+  unresolved:
+    - 本文件不得用于真实项目判断
+
