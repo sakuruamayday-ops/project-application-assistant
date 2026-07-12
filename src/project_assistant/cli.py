@@ -35,6 +35,8 @@ def parser() -> argparse.ArgumentParser:
     install.add_argument("--mode", choices=("copy", "symlink"), default="copy")
     install.add_argument("--force", action="store_true")
     install.add_argument("--skip-guide", action="store_true")
+    install.add_argument("--target", type=Path, default=None, help="覆盖技能安装目录")
+    install.add_argument("--guide", type=Path, default=None, help="覆盖首次使用指南路径")
 
     guide = subcommands.add_parser("guide", help="生成详细使用指南")
     guide.add_argument("--platform", choices=SUPPORTED_PLATFORMS, required=True)
@@ -68,7 +70,7 @@ def main() -> int:
                     print(f"{item.status:8} {item.name:26} {item.detail}")
             return 1 if any(item.status == "error" for item in checks) else 0
 
-        output = getattr(args, "output", None)
+        output = getattr(args, "output", None) or getattr(args, "guide", None)
         if not output:
             configured = config.get("onboarding", {}).get("guide_output_path")
             if configured and "${" not in str(configured):
@@ -80,7 +82,7 @@ def main() -> int:
             print(write_guide(render_guide(args.platform, config, checks), output))
             return 0
 
-        destination = platform_home(args.platform, config)
+        destination = args.target.expanduser().resolve() if args.target else platform_home(args.platform, config)
         installed = install_skills(root / "skills", destination, args.mode, args.force)
         print(f"已安装 {len(installed)} 个技能到 {destination}")
         if installed:
@@ -95,4 +97,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
