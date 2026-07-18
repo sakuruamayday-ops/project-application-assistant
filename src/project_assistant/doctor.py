@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,15 +35,22 @@ def run_checks(platform: str, config: dict[str, Any], project_root: Path) -> lis
     unresolved = unresolved_environment(config)
     checks.append(Check("environment_placeholders", "warning" if unresolved else "ok", ", ".join(unresolved) or "全部已解析"))
 
-    for variable in ("QCC_MCP_TOKEN", "PADDLE_OCR_API_KEY", "AIQICE_USERNAME", "FEISHU_APP_ID"):
+    for variable in ("JIAOTANG_KB_ENDPOINT", "JIAOTANG_KB_TOKEN", "QCC_API_KEY"):
         checks.append(_env_check(variable))
 
-    obsidian = config.get("providers", {}).get("obsidian", {})
-    vault = obsidian.get("vault_path")
-    if obsidian.get("enabled"):
-        valid = bool(vault and Path(os.path.expanduser(str(vault))).is_dir())
-        checks.append(Check("obsidian", "ok" if valid else "error", str(vault or "未设置Vault路径")))
-    else:
-        checks.append(Check("obsidian", "optional", "未启用"))
+    config_dir = Path(os.environ.get("PROJECT_ASSISTANT_CONFIG_DIR", Path.home() / ".config" / "project-assistant"))
+    capability_path = config_dir / "capabilities.json"
+    if not capability_path.is_file():
+        checks.append(Check("unified_onboarding", "warning", "尚未运行 first-run-configuration"))
+        return checks
+    try:
+        report = json.loads(capability_path.read_text(encoding="utf-8"))
+        capabilities = report.get("capabilities", {})
+        for name, item in capabilities.items():
+            if isinstance(item, dict):
+                status = str(item.get("status") or "warning")
+                normalized = "ok" if status in {"ready", "configured"} else status
+                checks.append(Check(f"capability_{name}", normalized, str(item.get("detail") or "")))
+    except (OSError, json.JSONDecodeError, AttributeError):
+        checks.append(Check("unified_onboarding", "error", "能力报告损坏，请重新运行统一向导"))
     return checks
-

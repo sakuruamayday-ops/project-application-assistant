@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}团队门户｜项目申报助手{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="brand brand-on-dark" href="#overview"><span class="brand-mark">项</span><span><strong>项目申报助手</strong><small>共创团队知识服务</small></span></a>
+    <p class="nav-label">成员服务</p>
+    <nav class="side-nav">
+      <a href="#overview">工作台</a>
+      <a href="#cockpit">智能驾驶舱</a>
+      <a href="#api-access">API 与用户</a>
+      <a href="#skills">Skills 下载</a>
+      <a href="/guide">使用手册</a>
+      <a href="#account">账号安全</a>
+    </nav>
+    {% if user.is_admin %}
+    <p class="nav-label">管理员</p>
+    <nav class="side-nav"><a href="#health-admin">健康看板</a><a href="/admin/knowledge">知识库管理</a><a href="#knowledge-admin">知识库更新</a><a href="#skill-admin">版本发布</a><a href="#members">成员管理</a></nav>
+    {% endif %}
+    <div class="service-state"><span class="live-dot"></span><div><strong>{{ "知识服务在线" if knowledge_stats.connected else "索引未连接" }}</strong><small>{{ knowledge_stats.documents }} 份全文资料</small></div></div>
+  </aside>
+
+  <main class="app-main">
+    <header class="topbar"><div><span class="topbar-label">项目申报助手</span><strong>团队门户</strong></div><div class="account-actions"><div class="account-chip"><span class="avatar">{{ user.username[:1] }}</span><span><strong>{{ user.username }}</strong><small>{{ "管理员" if user.is_admin else "团队成员" }}</small></span></div><form class="topbar-logout" method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button type="submit" aria-label="退出当前账号并切换用户">退出登录</button></form></div></header>
+    <div class="content-wrap">
+      {% if message %}<div class="notice success">{{ message }}</div>{% endif %}
+      {% if error %}<div class="notice alert">{{ error }}</div>{% endif %}
+      {% if new_token %}<section class="token-reveal"><p class="eyebrow light">仅显示一次 · {{ user.username }}</p><h2>API 与 MCP 接入配置已生成</h2><code id="new-access-config">JIAOTANG_KB_ENDPOINT={{ public_endpoint }}
+JIAOTANG_KB_MCP_URL={{ public_endpoint }}/mcp/
+JIAOTANG_KB_TOKEN={{ new_token }}</code><div class="button-row"><button class="button white" type="button" data-copy-target="#new-access-config">复制 API + MCP 接入配置</button><button class="button outline-light" type="button" data-copy-value="{{ new_token }}">仅复制个人 Token</button></div><p>一次复制即可同时配置知识库API和MCP。</p></section>{% endif %}
+
+      <section id="overview" class="section-block">
+        <div class="page-heading"><div><p class="eyebrow">Team Portal</p><h1>下午好，{{ user.username }}</h1><p class="muted">从这里连接团队知识库，并获取最新版项目申报助手 Skills。</p></div><span class="status-pill">统一知识权限</span></div>
+        <div class="hero-banner"><div><p class="eyebrow light">Digital Policy Archive</p><h2>一座可信、可追溯的团队知识档案馆</h2><p>连接政策原文、申报资料与 Agent 能力。每位用户持有独立凭据，所有调用统一记录。</p><div class="button-row"><a class="button white" href="#api-access">获取用户凭据</a><a class="button outline-light" href="#skills">下载最新版</a></div></div><div class="archive-seal"><small>当前稳定版本</small><strong>{{ 'v' ~ latest_release.version if latest_release else '待发布' }}</strong><span>{{ latest_release.published_at if latest_release else '管理员尚未上传发布包' }}</span></div></div>
+        <div class="metrics"><article><span class="metric-index">01</span><strong>{{ knowledge_stats.documents }}</strong><span>全文资料</span></article><article><span class="metric-index">02</span><strong>{{ usage_total }}</strong><span>累计 API 调用</span></article><article><span class="metric-index">03</span><strong>{{ device_tokens|length }}</strong><span>个人凭据</span></article><article><span class="metric-index">04</span><strong>{{ releases|length if user.is_admin else ('1' if latest_release else '0') }}</strong><span>Skills 版本</span></article></div>
+      </section>
+
+      <section id="cockpit" class="section-block cockpit-section">
+        <div class="section-heading"><div><p class="eyebrow">Intelligence Cockpit</p><h2>驾驶舱智能看板</h2></div><span class="status-pill">{{ assistant_mode }}</span></div>
+        <div class="cockpit-grid">
+          <article class="cockpit-radar">
+            <div class="radar-head"><span>知识服务态势</span><strong>{{ 'READY' if knowledge_stats.connected else 'CHECK' }}</strong></div>
+            <div class="radar-orbit"><div class="radar-core"><strong>{{ knowledge_stats.documents }}</strong><small>全文资料</small></div></div>
+            <dl><div><dt>索引更新时间</dt><dd>{{ knowledge_stats.updated_at or '待同步' }}</dd></div><div><dt>当前版本</dt><dd>{{ 'v' ~ latest_release.version if latest_release else '待发布' }}</dd></div><div><dt>个人调用</dt><dd>{{ usage_total }}</dd></div></dl>
+          </article>
+          <article class="assistant-console">
+            <div class="assistant-title"><div><span class="assistant-pulse"></span><div><strong>知识库智能答疑</strong><small>默认免费检索；配置兼容模型后自动增强</small></div></div><em>{{ assistant_mode }}</em></div>
+            <form id="assistant-form" class="assistant-form"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><textarea name="question" required minlength="2" maxlength="500" rows="4" placeholder="例如：企业申报研究院通常需要核验哪些条件？"></textarea><div class="assistant-actions"><div class="quick-prompts"><button type="button" data-question="某家企业可以申报哪些项目？">项目匹配</button><button type="button" data-question="申报企业研究院通常需要核验哪些条件？">研究院条件</button><button type="button" data-question="如何核验同行是否入选专精特新小巨人名单？">同行核验</button></div><button class="button" type="submit">开始答疑</button></div></form>
+            <div id="assistant-result" class="assistant-result" hidden><div class="assistant-result-head"><strong>答疑结果</strong><span id="assistant-result-mode"></span></div><div id="assistant-answer"></div><div id="assistant-sources" class="assistant-sources"></div></div>
+          </article>
+        </div>
+      </section>
+
+      {% if user.is_admin %}
+      <section id="health-admin" class="section-block admin-section">
+        <div class="section-heading"><div><p class="eyebrow">System Ledger</p><h2>管理员健康看板</h2></div><span class="status-stamp {{ 'is-good' if knowledge_stats.connected else 'is-alert' }}">{{ '运行正常' if knowledge_stats.connected else '需要检查' }}</span></div>
+        <div class="health-grid">
+          <a href="/admin/health/runtime"><span>应用服务</span><strong>{{ admin_health.runtime.status or '待采集' }}</strong><small>{{ admin_health.runtime.checked_at or '等待健康探测' }}</small><em>查看详情 →</em></a>
+          <a href="/admin/health/index"><span>全文索引</span><strong>{{ '已连接' if knowledge_stats.connected else '未连接' }}</strong><small>{{ knowledge_stats.documents }} 份全文资料</small><em>查看详情 →</em></a>
+          <a href="/admin/health/backup"><span>最近备份</span><strong>{{ admin_health.backup.status or '待采集' }}</strong><small>{{ admin_health.backup.completed_at or '等待备份任务' }}</small><em>查看详情 →</em></a>
+          <a href="/admin/health/certificate"><span>HTTPS 证书</span><strong>{{ admin_health.runtime.certificate_status or '待采集' }}</strong><small>{{ admin_health.runtime.certificate_expires or '等待证书检查' }}</small><em>查看详情 →</em></a>
+          <a href="/admin/health/disk"><span>磁盘使用</span><strong>{{ admin_health.runtime.disk_percent or '待采集' }}</strong><small>生产数据卷</small><em>查看详情 →</em></a>
+          <a href="/admin/health/access"><span>用户与凭据</span><strong>{{ admin_health.active_users }} / {{ admin_health.active_tokens }}</strong><small>有效用户 / 未吊销 Token</small><em>查看详情 →</em></a>
+          <a href="/admin/health/calls"><span>24 小时调用</span><strong>{{ admin_health.calls_24h }}</strong><small>REST API 与 MCP</small><em>查看详情 →</em></a>
+          <a href="/admin/health/updates"><span>失败更新</span><strong>{{ admin_health.failed_updates }}</strong><small>{{ '无需处理' if admin_health.failed_updates == 0 else '请检查任务记录' }}</small><em>查看详情 →</em></a>
+        </div>
+      </section>
+      {% endif %}
+
+      <section id="api-access" class="section-block">
+        <div class="section-heading"><div><p class="eyebrow">Access Center</p><h2>API 与用户凭据</h2></div><p>登录账号使用英文；生成凭据时填写中文真实姓名，便于审计。</p></div>
+        <div class="two-column">
+          <article class="panel credential-card"><span class="file-tab">USER ACCESS</span><h3>生成用户凭据</h3><p class="muted">当前登录账号为 <strong>{{ user.username }}</strong>。请填写使用人的中文真实姓名并验证公司全称。</p><form method="post" action="/device-tokens" class="form-stack"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><label>用户中文真实姓名<input name="real_name" required minlength="2" maxlength="20" autocomplete="name" placeholder="请输入中文真实姓名"></label><label>所属公司全称<input name="company_name" required maxlength="100" placeholder="请输入完整公司名称"></label><button class="button" type="submit">验证并生成</button></form></article>
+          <article class="panel instruction-card"><span class="file-tab">ONE-CLICK SETUP</span><h3>一键 API / MCP 接入</h3><p>同一份个人 Token 同时用于 REST API 和 MCP，写入 Agent 平台的安全凭据或环境变量。</p><pre id="access-config">JIAOTANG_KB_ENDPOINT={{ public_endpoint }}
+JIAOTANG_KB_MCP_URL={{ public_endpoint }}/mcp/
+JIAOTANG_KB_TOKEN=生成后仅显示一次</pre><button class="button secondary" type="button" data-copy-target="#access-config">复制配置模板</button><ol class="setup-steps"><li>下载并安装项目申报助手 Skills</li><li>运行 <code>first-run-configuration</code> 统一向导</li><li>配置 API 或 Streamable HTTP MCP</li><li>调用 <code>/v1/me</code> 或 <code>knowledge_service_status</code> 验证</li></ol><small>MCP 请求头使用 <code>Authorization: Bearer 个人Token</code>。</small></article>
+        </div>
+        <article class="panel external-access"><div class="panel-head"><h3>外部服务注册入口</h3><span>按需注册后在首次配置向导中接入</span></div><div class="external-link-grid"><a href="https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY" target="_blank" rel="noopener"><strong>企查查智能体数据平台</strong><small>通过邀请入口注册并申请企业数据能力</small></a><a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" target="_blank" rel="noopener"><strong>Google BigQuery MCP</strong><small>连接官方托管MCP并查询公开专利数据集</small></a></div></article>
+        <article class="panel table-panel"><div class="panel-head"><h3>已授权用户</h3><span>{{ device_tokens|length }} 个凭据</span></div><div class="table-wrap"><table><thead><tr><th>用户</th><th>凭据标识</th><th>调用次数</th><th>最近调用</th><th>状态</th><th></th></tr></thead><tbody>{% for token in device_tokens %}<tr><td>{{ token.label }}</td><td><code>{{ token.token_prefix }}…</code></td><td>{{ token.call_count }}</td><td>{{ token.last_used_at or "尚未使用" }}</td><td><span class="table-status {{ 'off' if token.revoked_at else '' }}">{{ "已吊销" if token.revoked_at else "有效" }}</span></td><td>{% if not token.revoked_at %}<form method="post" action="/device-tokens/{{ token.id }}/revoke"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-danger" type="submit">吊销</button></form>{% endif %}</td></tr>{% else %}<tr><td colspan="6" class="empty">尚未创建用户凭据</td></tr>{% endfor %}</tbody></table></div></article>
+        <article class="panel table-panel"><div class="panel-head"><h3>最近调用记录</h3><span>最近12条</span></div><div class="table-wrap"><table><thead><tr><th>用户</th><th>方法</th><th>接口</th><th>时间</th></tr></thead><tbody>{% for call in recent_calls %}<tr><td>{{ call.label }}</td><td><code>{{ call.method }}</code></td><td><code>{{ call.endpoint }}</code></td><td>{{ call.called_at }}</td></tr>{% else %}<tr><td colspan="4" class="empty">暂无调用记录</td></tr>{% endfor %}</tbody></table></div></article>
+      </section>
+
+      <section id="skills" class="section-block"><div class="section-heading"><div><p class="eyebrow">Skills Center</p><h2>最新版 Skills</h2></div><p>始终推荐使用当前稳定版本。</p></div><article class="download-card"><div><span class="download-icon">ZIP</span><div><h3>{{ '项目申报助手 v' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3><p>{{ latest_release.release_notes if latest_release else '管理员发布后，团队成员可在这里直接下载。' }}</p>{% if latest_release %}<small>发布时间 {{ latest_release.published_at }} · SHA-256 {{ latest_release.sha256[:16] }}…</small>{% endif %}</div></div>{% if latest_release %}<a class="button" href="/skills/latest/download">下载最新版</a>{% else %}<span class="button disabled">等待发布</span>{% endif %}</article></section>
+
+      <section id="account" class="section-block"><div class="section-heading"><div><p class="eyebrow">Account Security</p><h2>账号安全</h2></div></div><div class="two-column"><article class="panel"><h3>修改密码</h3><form method="post" action="/password" class="form-stack"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><label>当前密码<input name="current_password" type="password" required autocomplete="current-password"></label><label>新密码<input name="new_password" type="password" required minlength="9" maxlength="256" autocomplete="new-password"></label><button class="button" type="submit">修改并重新登录</button></form></article><article class="panel"><h3>当前身份</h3><dl class="identity-list"><div><dt>账号</dt><dd>{{ user.username }}</dd></div><div><dt>公司</dt><dd>{{ user.company_name }}</dd></div><div><dt>权限</dt><dd>全部知识与Skills能力</dd></div></dl><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button secondary" type="submit">退出登录</button></form></article></div></section>
+
+      {% if user.is_admin %}
+      <section id="knowledge-admin" class="section-block admin-section"><div class="section-heading"><div><p class="eyebrow">Owner Console</p><h2>知识库增量更新</h2></div><div class="button-row compact"><a class="button secondary" href="/admin/knowledge">浏览与修改知识库</a><span class="status-pill">OCR 由本地 Agent 完成</span></div></div><div class="two-column"><article class="panel"><h3>上传新增或修订资料</h3><p class="muted">系统执行哈希查重、文本提取、临时索引、完整性检查和原子切换。扫描件请先由本地 Agent 完成 OCR。</p><form method="post" action="/admin/knowledge-updates" enctype="multipart/form-data" class="form-stack"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><label>资料类别<select name="document_role" required><option>10_政策与通知</option><option>20_项目规则与指南</option><option>30_空白模板</option><option>40_内部培训与方法</option><option>50_名单与对标</option><option selected>60_申报案例与建设方案</option><option>70_知识产权方法</option></select></label><label class="upload-field">选择资料<input name="knowledge_file" type="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.wps,.txt,.md,.html"></label><button class="button" type="submit">上传并更新索引</button></form></article><article class="panel"><h3>更新安全机制</h3><ul class="check-list"><li>相同SHA-256直接标记重复</li><li>提取失败不修改主索引</li><li>扫描件返回本地 OCR 提示</li><li>新库完整性通过后原子替换</li><li>每次成功更新保留回滚快照</li></ul></article></div><article class="panel table-panel"><div class="panel-head"><h3>最近更新任务</h3><span>{{ update_jobs|length }} 条</span></div><div class="table-wrap"><table><thead><tr><th>资料</th><th>状态</th><th>提取</th><th>文本量</th><th>时间</th><th></th></tr></thead><tbody>{% for job in update_jobs %}<tr><td><strong>{{ job.original_name }}</strong>{% if job.error_message %}<small class="row-error">{{ job.error_message }}</small>{% endif %}</td><td><span class="job-status status-{{ job.status }}">{{ job.status }}</span></td><td>{{ '需本地 OCR' if job.extraction_status == 'local_ocr_required' else (job.extraction_status or '处理中') }}</td><td>{{ job.text_characters }}</td><td>{{ job.completed_at or job.created_at }}</td><td>{% if job.status == 'indexed' and not job.rolled_back_at %}<form method="post" action="/admin/knowledge-updates/{{ job.id }}/rollback"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-danger" type="submit">回滚</button></form>{% endif %}</td></tr>{% else %}<tr><td colspan="6" class="empty">尚无更新任务</td></tr>{% endfor %}</tbody></table></div></article></section>
+
+      <section id="skill-admin" class="section-block admin-section"><div class="section-heading"><div><p class="eyebrow">Release Center</p><h2>Skills 版本发布</h2></div></div><div class="two-column"><article class="panel"><h3>创建新版本</h3><form method="post" action="/admin/skill-releases" enctype="multipart/form-data" class="form-stack"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><label>版本号<input name="version" required placeholder="例如：1.2.0"></label><label>更新说明<textarea name="release_notes" required maxlength="4000" rows="5" placeholder="说明新增、修复和兼容性变化"></textarea></label><label class="upload-field">Skills ZIP<input name="skill_package" type="file" required accept=".zip"></label><button class="button" type="submit">校验并发布</button></form></article><article class="panel"><h3>发布门禁</h3><ul class="check-list"><li>版本号不可重复</li><li>ZIP内必须包含SKILL.md</li><li>拒绝路径穿越和损坏压缩包</li><li>自动计算SHA-256</li><li>成员端立即切换到最新版本</li></ul></article></div><article class="panel table-panel"><div class="panel-head"><h3>版本历史</h3><span>{{ releases|length }} 个版本</span></div><div class="table-wrap"><table><thead><tr><th>版本</th><th>文件</th><th>更新说明</th><th>哈希</th><th>发布时间</th></tr></thead><tbody>{% for release in releases %}<tr><td><strong>v{{ release.version }}</strong></td><td>{{ release.file_name }}</td><td>{{ release.release_notes }}</td><td><code>{{ release.sha256[:12] }}…</code></td><td>{{ release.published_at }}</td></tr>{% else %}<tr><td colspan="5" class="empty">尚未发布版本</td></tr>{% endfor %}</tbody></table></div></article></section>
+
+      <section id="members" class="section-block admin-section"><div class="section-heading"><div><p class="eyebrow">Member Control</p><h2>成员管理</h2></div></div><article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>英文登录账号</th><th>公司</th><th>身份</th><th>创建时间</th><th>状态</th><th></th></tr></thead><tbody>{% for member in users %}<tr><td><strong>{{ member.username }}</strong></td><td>{{ member.company_name }}</td><td>{{ "管理员" if member.is_admin else "成员" }}</td><td>{{ member.created_at }}</td><td><span class="table-status {{ 'off' if not member.active else '' }}">{{ "有效" if member.active else "已停用" }}</span></td><td>{% if member.id != user.id %}<form method="post" action="/users/{{ member.id }}/toggle"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="{{ 'text-danger' if member.active else 'text-action' }}" type="submit">{{ "停用" if member.active else "启用" }}</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div></article></section>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

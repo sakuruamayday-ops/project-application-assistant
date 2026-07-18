@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 from .config import ConfigError, load_config
@@ -41,6 +43,11 @@ def parser() -> argparse.ArgumentParser:
     guide = subcommands.add_parser("guide", help="生成详细使用指南")
     guide.add_argument("--platform", choices=SUPPORTED_PLATFORMS, required=True)
     guide.add_argument("--output", type=Path, default=None)
+
+    setup = subcommands.add_parser("setup", help="运行统一首次配置向导")
+    setup.add_argument("--config-dir", type=Path, default=None)
+    setup.add_argument("--non-interactive", action="store_true")
+    setup.add_argument("--skip-network", action="store_true")
     return root
 
 
@@ -56,6 +63,17 @@ def main() -> int:
     args = parser().parse_args()
     root = (args.root or project_root()).expanduser().resolve()
     try:
+        if args.command == "setup":
+            script = root / "skills" / "first-run-configuration" / "scripts" / "configure.py"
+            command = [sys.executable, str(script)]
+            if args.config_dir:
+                command.extend(["--config-dir", str(args.config_dir.expanduser().resolve())])
+            if args.non_interactive:
+                command.append("--non-interactive")
+            if args.skip_network:
+                command.append("--skip-network")
+            return subprocess.run(command, check=False).returncode
+
         config = load_config(root, args.platform)
         if args.command == "config":
             print(json.dumps(redact(config), ensure_ascii=False, indent=2))

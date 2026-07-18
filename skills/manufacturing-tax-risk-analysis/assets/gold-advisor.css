@@ -1,0 +1,41 @@
+:root{
+  --ink:#2d281f;--muted:#776e60;--gold-dark:#7b4c12;--gold:#d49134;
+  --gold-light:#e8c982;--gold-pale:#f6ead9;--espresso:#211d17;
+  --line:#dfcfb7;--soft:#f8f2e8;--red:#913e35;--rose:#f7ebe6;
+}
+@page{size:A4;margin:13mm 14mm 15mm}
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+html,body{margin:0;background:#ded8ce;color:var(--ink);font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;font-size:10.3pt;line-height:1.58}
+.page{position:relative;background:linear-gradient(180deg,#fffefb,#fffdf8);width:182mm;min-height:269mm;margin:8mm auto;page-break-after:always;overflow:hidden}
+.page:not(.cover):before{content:"";position:absolute;left:0;right:0;top:0;height:2.2mm;background:linear-gradient(90deg,var(--espresso) 0 12%,var(--gold-dark) 12% 45%,var(--gold-light) 72%,transparent)}
+.page:not(.cover):after{content:"";position:absolute;right:-24mm;top:5mm;width:62mm;height:62mm;border:1px solid rgba(212,145,52,.12);border-radius:50%;box-shadow:0 0 0 6mm rgba(212,145,52,.025),0 0 0 14mm rgba(212,145,52,.018)}
+.eyebrow{display:inline-flex;align-items:center;gap:2.2mm;color:var(--gold-dark);font-size:8.2pt;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.eyebrow:before{content:"";width:6mm;height:2.2mm;background:linear-gradient(90deg,var(--gold-dark),var(--gold-light))}
+h2{position:relative;font-size:19pt;color:#3a2c1b;border-bottom:1px solid var(--line);padding:0 0 3mm 4mm}
+h2:before{content:"";position:absolute;left:0;top:.5mm;bottom:3.4mm;width:1.4mm;background:linear-gradient(var(--gold-light),var(--gold-dark))}
+h2:after{content:"";position:absolute;left:0;bottom:-1px;width:37mm;height:1.2mm;background:linear-gradient(90deg,var(--gold-dark),var(--gold),transparent)}
+h3{padding-left:3mm;border-left:1.2mm solid var(--gold);color:#3a2c1b}
+.cover{background:radial-gradient(circle at 82% 18%,rgba(233,202,130,.22),transparent 27%),radial-gradient(circle at 10% 96%,rgba(166,109,34,.22),transparent 32%),linear-gradient(145deg,#171512,#28231b 48%,#674a20);color:#f5ead0;padding:22mm 16mm}
+.cover:before{content:"";position:absolute;inset:7mm;border:1px solid rgba(232,201,130,.42)}
+.cover:after{content:"";position:absolute;left:7mm;top:7mm;bottom:7mm;width:2mm;background:linear-gradient(#8b5b1e,#e8c982 48%,#8b5b1e)}
+.cover h1{color:#fff8e8;font-size:27pt;line-height:1.25;margin-top:24mm}
+.cover .rule{width:38mm;height:1.6mm;background:linear-gradient(90deg,#8b5b1e,#f0d68f,#8b5b1e);margin:10mm 0}
+.cover .meta{position:absolute;left:16mm;right:16mm;bottom:16mm;display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(228,196,119,.42);background:rgba(15,13,10,.22);color:#f3e7ca}
+.cover .meta>div{padding:3.7mm 4mm;border-bottom:1px solid rgba(228,196,119,.2)}
+.cover .meta>div:nth-child(odd){border-right:1px solid rgba(228,196,119,.2)}
+.card{position:relative;border:1px solid #e4cfb1;border-radius:1.4mm;padding:4mm;background:linear-gradient(155deg,#fffefb,#fbf5ea);break-inside:avoid;box-shadow:0 1.2mm 3mm rgba(58,44,27,.1)}
+.card:before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:1.3mm;background:linear-gradient(90deg,var(--gold-dark),var(--gold-light),rgba(232,201,130,.18))}
+.card.warn{background:linear-gradient(145deg,#fff9ed,#f5dfbb)}
+.card.risk{background:linear-gradient(145deg,#fff9f5,#f3e0d8);border-color:#d7aaa0}
+.kpi .num{color:var(--gold-dark);font-size:20pt;font-weight:780}
+.callout{border:1px solid var(--line);border-left:4px solid var(--gold);padding:3.2mm 4mm;background:linear-gradient(90deg,#f7ead5,#fcf8f0 75%);margin:4mm 0}
+.callout.risk{border-left-color:var(--red);background:linear-gradient(90deg,#f5e4de,#fcf7f3)}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:8.4pt;line-height:1.45;break-inside:avoid;border:1px solid var(--line);border-top:1.2mm solid var(--gold-dark)}
+thead{display:table-header-group}
+th{background:linear-gradient(180deg,#30291f,#211d17);color:#f9ecd0;text-align:left;padding:2.3mm 2.4mm}
+td{border-bottom:1px solid #eadfce;border-right:1px solid #efe5d6;padding:2mm 2.4mm;vertical-align:top}
+tr:nth-child(even) td{background:#f8f1e5}
+.bar{background:#eee6d9;border:1px solid #ded0bc}
+.bar span{background:linear-gradient(90deg,var(--gold-dark),var(--gold),#edcf88)}
+.page-no{color:var(--gold-dark);font-weight:700;letter-spacing:.11em}
+@media print{html,body{background:#fff}.page{margin:0;width:auto;min-height:269mm}}

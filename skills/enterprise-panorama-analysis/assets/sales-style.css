@@ -1,0 +1,165 @@
+@page {
+  size: A4;
+  margin: 20mm;
+
+  @bottom-left {
+    content: "共创知识产权｜企业全景调研报告";
+    color: #667085;
+    font-size: 8.5pt;
+    border-top: 1.4pt solid #173b78;
+    padding-top: 4pt;
+  }
+
+  @bottom-right {
+    content: counter(page) "/" counter(pages);
+    color: #344054;
+    font-size: 8.5pt;
+    border-top: 1.4pt solid #173b78;
+    padding-top: 4pt;
+  }
+}
+
+:root {
+  --blue: #173b78;
+  --blue-soft: #edf3fe;
+  --blue-border: #d5e1f5;
+  --divider: #e5e7eb;
+  --text: #252b35;
+  --muted: #667085;
+  --risk-high: #f06464;
+  --risk-medium: #f6c344;
+  --risk-low: #78b43d;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: var(--text);
+  font-family: "FZLTHProGBK", "Noto Sans CJK SC", "Source Han Sans SC",
+               "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.65;
+}
+
+.report-title {
+  margin: 0 0 5pt;
+  padding-bottom: 7pt;
+  border-bottom: 0.7pt solid var(--divider);
+  font-size: 17pt;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.report-meta,
+.report-byline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9.5pt;
+}
+
+.report-byline {
+  margin-top: 3pt;
+  font-weight: 600;
+  color: #344054;
+}
+
+.title-divider,
+.section-divider {
+  border: 0;
+  border-top: 3pt solid var(--divider);
+  margin: 15pt 0;
+}
+
+h1.section-title {
+  margin: 0 0 13pt;
+  font-size: 15pt;
+  line-height: 1.4;
+  font-weight: 700;
+  break-after: avoid;
+}
+
+h2 {
+  margin: 14pt 0 8pt;
+  font-size: 12pt;
+  line-height: 1.45;
+  font-weight: 700;
+  break-after: avoid;
+}
+
+h3 {
+  margin: 10pt 0 6pt;
+  font-size: 10.5pt;
+  font-weight: 700;
+  break-after: avoid;
+}
+
+p { margin: 0 0 8pt; }
+ul, ol { margin: 5pt 0 10pt 18pt; padding: 0; }
+li { margin: 3pt 0; }
+
+table {
+  width: 100%;
+  margin: 8pt 0 12pt;
+  border-collapse: collapse;
+  table-layout: fixed;
+  break-inside: auto;
+}
+
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+
+th, td {
+  padding: 7.5pt 10pt;
+  border: 0.6pt solid var(--blue-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: var(--blue-soft);
+  color: #293448;
+  font-weight: 700;
+  text-align: left;
+}
+
+tbody.striped tr:nth-child(even) td { background: #fafcff; }
+
+.note,
+.scope-note {
+  margin: 10pt 0;
+  padding: 8pt 10pt;
+  border-left: 3pt solid var(--blue);
+  background: #f8faff;
+}
+
+.risk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5pt;
+  font-weight: 700;
+}
+
+.risk::before {
+  content: "";
+  width: 9pt;
+  height: 9pt;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.risk.high::before { background: var(--risk-high); }
+.risk.medium::before { background: var(--risk-medium); }
+.risk.low::before { background: var(--risk-low); }
+
+.page-break { break-before: page; }
+.avoid-break { break-inside: avoid; }
+.muted { color: var(--muted); }
+.strong { font-weight: 700; }

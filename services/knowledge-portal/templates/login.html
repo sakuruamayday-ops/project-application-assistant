@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}登录｜项目申报助手知识库{% endblock %}
+{% block content %}
+<main class="auth-shell">
+  <section class="auth-story">
+    <a class="brand brand-on-dark" href="/login"><span class="brand-mark">项</span><span><strong>项目申报助手</strong><small>共创团队知识服务</small></span></a>
+    <div class="archive-number">ARCHIVE · 001</div>
+    <div class="story-copy"><p class="eyebrow light">Team Knowledge Archive</p><h1>可信知识<br>有据可循</h1><p>统一连接政策原文、申报资料与最新版 Skills。每次调用保留来源，每项更新由管理员维护。</p></div>
+    <div class="story-foot"><span class="live-dot"></span>知识服务与用户凭据分离，支持独立吊销与重新生成</div>
+  </section>
+  <section class="auth-panel">
+    <div class="auth-form-wrap">
+      <p class="eyebrow">Member Login</p><h2>登录知识档案馆</h2><p class="muted">使用英文登录账号和团队密码继续。</p>
+      {% if initialized %}<div class="notice success">管理员初始化完成，请登录。</div>{% endif %}
+      {% if registered %}<div class="notice success">注册成功，请使用新账号登录。</div>{% endif %}
+      {% if error %}<div class="notice alert">{{ error }}</div>{% endif %}
+      <form method="post" action="/login" class="form-stack">
+        <label>英文登录账号<input name="username" required autocomplete="username" placeholder="例如 shichen"></label>
+        <label>密码<input name="password" type="password" required autocomplete="current-password" placeholder="请输入密码"></label>
+        <label class="remember-option"><input name="remember_me" type="checkbox" value="7_days"><span><strong>七天自动登录</strong><small>仅在个人可信电脑上勾选</small></span></label>
+        <button class="button full" type="submit">登录</button>
+      </form>
+      <p class="auth-switch">还没有账号？<a href="/register">验证公司并注册</a></p>
+      <p class="auth-guide-link"><a href="/guide">查看用户使用手册 →</a></p>
+    </div>
+  </section>
+</main>
+{% endblock %}

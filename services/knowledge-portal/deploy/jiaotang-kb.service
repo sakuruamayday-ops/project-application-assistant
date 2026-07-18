@@ -1,0 +1,21 @@
+[Unit]
+Description=Jiaotang Knowledge Portal
+After=network.target
+
+[Service]
+Type=simple
+User=jiaotang
+Group=jiaotang
+WorkingDirectory=/opt/jiaotang-kb
+EnvironmentFile=/etc/jiaotang-kb.env
+ExecStart=/opt/jiaotang-kb/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100 --workers 1
+Restart=always
+RestartSec=3
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /srv/jiaotang/knowledge-files /srv/jiaotang/skill-releases /srv/jiaotang/index-snapshots
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

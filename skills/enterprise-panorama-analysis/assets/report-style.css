@@ -1,0 +1,171 @@
+@page {
+  size: A4;
+  margin: 16mm 18mm 17mm 18mm;
+
+  @bottom-left {
+    content: "企业全景调研报告";
+    color: #6a737d;
+    font-size: 9pt;
+    border-top: 1.4pt solid #d49134;
+    padding-top: 4pt;
+  }
+
+  @bottom-right {
+    content: counter(page) "/" counter(pages);
+    color: #171717;
+    font-size: 9pt;
+    border-top: 1.4pt solid #d49134;
+    padding-top: 4pt;
+  }
+}
+
+:root {
+  --gold-dark: #7b4c12;
+  --gold: #d49134;
+  --gold-pale: #f6ead9;
+  --gold-border: #e4cfb1;
+  --divider: #e5e7eb;
+  --text: #171717;
+  --muted: #6a737d;
+  --risk-high: #ef4444;
+  --risk-medium: #f6c344;
+  --risk-low: #78b43d;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  font-family: "FZLTHProGBK", "Noto Sans CJK SC", "Source Han Sans SC",
+               "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.65;
+}
+
+.report-title {
+  margin: 0 0 7pt;
+  padding-bottom: 7pt;
+  border-bottom: 0.6pt solid var(--divider);
+  font-size: 16.5pt;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.report-meta {
+  margin: 0 0 16pt;
+  padding: 4pt 0 4pt 10pt;
+  border-left: 3pt solid var(--divider);
+  color: var(--muted);
+}
+
+.title-divider,
+.section-divider {
+  border: 0;
+  border-top: 3pt solid var(--divider);
+  margin: 15pt 0 15pt;
+}
+
+h1.section-title {
+  margin: 0 0 14pt;
+  font-size: 15pt;
+  line-height: 1.4;
+  font-weight: 700;
+  break-after: avoid;
+}
+
+h2 {
+  margin: 14pt 0 8pt;
+  font-size: 12pt;
+  line-height: 1.45;
+  font-weight: 700;
+  break-after: avoid;
+}
+
+h3 {
+  margin: 10pt 0 6pt;
+  font-size: 10.5pt;
+  font-weight: 700;
+  break-after: avoid;
+}
+
+p { margin: 0 0 8pt; }
+ul, ol { margin: 5pt 0 10pt 18pt; padding: 0; }
+li { margin: 3pt 0; }
+
+table {
+  width: 100%;
+  margin: 8pt 0 12pt;
+  border-collapse: collapse;
+  table-layout: fixed;
+  break-inside: auto;
+}
+
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+
+th, td {
+  padding: 7pt 8pt;
+  border: 0.6pt solid var(--gold-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: var(--gold-pale);
+  color: #292325;
+  font-weight: 700;
+  text-align: left;
+}
+
+tbody.striped tr:nth-child(even) td { background: #fbf7f0; }
+
+.note,
+.scope-note {
+  margin: 10pt 0;
+  padding: 8pt 10pt;
+  border-left: 3pt solid var(--gold);
+  background: #fbf7f0;
+}
+
+.risk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5pt;
+  font-weight: 700;
+}
+
+.risk::before {
+  content: "";
+  width: 9pt;
+  height: 9pt;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.risk.high::before { background: var(--risk-high); }
+.risk.medium::before { background: var(--risk-medium); }
+.risk.low::before { background: var(--risk-low); }
+
+.score-chart { margin: 9pt 0 13pt; }
+.score-row {
+  display: grid;
+  grid-template-columns: 31% 1fr 30pt;
+  align-items: center;
+  gap: 8pt;
+  margin: 6pt 0;
+}
+.score-track { height: 8pt; background: #f6ead9; }
+.score-fill { height: 100%; background: var(--gold); }
+.score-value { color: var(--gold-dark); font-weight: 700; }
+
+.page-break { break-before: page; }
+.avoid-break { break-inside: avoid; }
+.muted { color: var(--muted); }
+.strong { font-weight: 700; }

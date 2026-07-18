@@ -8,5 +8,5 @@ build/
 dist/
 cache/
 logs/
+.project-assistant/
 用户使用指南.md
-

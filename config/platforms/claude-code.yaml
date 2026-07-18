@@ -31,7 +31,6 @@ providers:
 
 guardrails:
   do_not_copy_restricted_anthropic_skills: true
-  require_confirmation_before_archive: true
   require_confirmation_before_external_send: true
   evolution_default_mode: dry_run
 
@@ -40,6 +39,4 @@ health_checks:
   - mcp_connectivity
   - browser_availability
   - document_capabilities
-  - obsidian_path
   - provider_connectivity
-

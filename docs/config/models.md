@@ -9,7 +9,12 @@ OPENAI_API_KEY
 ANTHROPIC_API_KEY
 OPENAI_BASE_URL
 ANTHROPIC_BASE_URL
+MODEL_API_KEY
+MODEL_BASE_URL
+MODEL_NAME
 ```
+
+`MODEL_*` 用于自进化等供应商无关场景。宿主平台能够直接调用模型时无需额外配置；使用外部模型时可选择任意兼容供应商。
 
 不要把真实值写入 `config/*.yaml`、技能、日志或Git仓库。优先使用系统钥匙串、平台原生密钥管理或仅对当前进程生效的环境变量。
 
@@ -26,4 +31,3 @@ ANTHROPIC_BASE_URL
 ## 撤销
 
 删除环境变量或钥匙串条目，并在供应商控制台轮换或撤销密钥。
-

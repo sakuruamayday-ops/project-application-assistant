@@ -40,7 +40,6 @@ providers:
 
 guardrails:
   never_modify_hermes_bundled_skills: true
-  require_confirmation_before_archive: true
   require_confirmation_before_external_send: true
 
 health_checks:
@@ -50,6 +49,4 @@ health_checks:
   - feishu_status
   - mcp_connectivity
   - curator_status
-  - obsidian_path
   - provider_connectivity
-

@@ -1,9 +1,36 @@
 ---
 name: skill-curator
-description: 检查项目申报技能的重复、触发冲突、过期规则、使用情况和质量问题，提出合并、拆分、归档或保留建议。
+description: 安装项目申报助手后自动启用。根据任务使用记录、用户纠正和四问复盘检查技能重复、触发冲突、过期规则、使用情况和质量问题，提出合并、拆分、归档或保留建议。
 ---
 
 # 技能策展
 
 默认只生成报告。任何合并、删除、归档和覆盖操作必须先创建快照并取得用户批准。平台无关核心规则不得因使用频率低而删除。
 
+首次配置后无需用户再次开启。定期读取 `experience-recorder` 的脱敏记录；只有发现可复现问题时才提出调整，避免为追求变化而变化。
+
+## 高频纠正聚合
+
+不要因单次纠正立即启动技能进化。先运行：
+
+```bash
+python3 scripts/aggregate_corrections.py \
+  --input ~/.config/project-assistant/evolution/corrections.jsonl
+```
+
+默认只有同一技能、同一规则键累计至少3条已核验纠正，且来自至少2个不同任务时，才进入批量候选。每批最多选择2个技能，同一技能进入候选后冷却7天。缺少字段、未经核验、含敏感信息或处于冷却期的信号不参与计数。阈值从 `config/common.yaml` 读取。
+
+输出 `correction-summary.json` 和 `evolution-batch.json`。只有批次清单的 `ready=true` 时才交给 `skill-evolution`；这一步仍不运行GEPA、不修改正式Skill。
+
+主人批准开始处理该批次后，使用同一输入追加 `--mark-planned` 写入冷却状态，防止下次巡检重复生成同一批候选。未批准或仅查看报告时不要写状态。
+
+## 技能变更影响图
+
+修改任何规则、技能、模板、脚本或交付门禁前运行：
+
+```bash
+python3 scripts/build_impact_graph.py --changed <变更文件>
+python3 scripts/build_impact_graph.py --query <规则关键词>
+```
+
+脚本输出可查询的 `skill-impact-graph.json` 和人类可审查的 `skill-impact-report.md`，按下游关系列出受影响技能、模板、脚本和门禁。关系方向、节点类型和发布要求见 [impact-graph-schema.md](references/impact-graph-schema.md)。影响图没有覆盖到的隐式业务关系必须在报告中人工补充，不得把关键词共现当成确定依赖。

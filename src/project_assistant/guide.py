@@ -33,7 +33,11 @@ def render_guide(platform: str, config: dict[str, Any], checks: Iterable[Check])
 4. 补齐财务、知识产权和证明材料。
 5. 前期分析完成后再撰写正式申报文本。
 6. 提交前执行一致性检查和版本对比。
-7. 经确认后归档到Obsidian或用户指定目录。
+7. 任务完成后自动整理到用户工作区的项目归档目录。
+
+## API与MCP
+
+首次使用先运行 `project-assistant setup`，或执行 `skills/first-run-configuration/scripts/configure.py`。向导统一检测团队云端、企查查、专利数据、浏览器MCP、本地OCR和文档能力，并生成不含密钥的能力报告。其他Skill读取该报告，不再重复索要凭据。完整说明见 `docs/user-guide/api-mcp-configuration.md`。
 
 ## 常用说法
 
@@ -46,14 +50,14 @@ def render_guide(platform: str, config: dict[str, Any], checks: Iterable[Check])
 
 ## 安全边界
 
-- 模型API、MCP、企查查、OCR、企策顾问和飞书均由用户自行配置。
-- 任何外部发送、规则发布、技能替换和归档动作均需用户确认。
+- 模型API、MCP、企查查、OCR和企策顾问均由用户自行配置。
+- 任何外部发送、云端上传和技能替换均需用户确认；本地归档不得覆盖原文件。
 - 未配置外部能力时自动降级，不补造企业数据或政策事实。
 - 本指南不包含密钥、密码、Cookie、Token或客户敏感原文。
 
 ## 排查
 
-运行 `project-assistant doctor --platform {platform}` 查看当前能力状态。
+先运行 `project-assistant setup`，再运行 `project-assistant doctor --platform {platform}` 查看统一能力状态。
 """
 
 
@@ -61,4 +65,3 @@ def write_guide(content: str, output: Path) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(content, encoding="utf-8")
     return output
-

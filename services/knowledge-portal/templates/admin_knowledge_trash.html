@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}知识库回收站｜项目申报助手{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin">
+  <header class="admin-page-head"><div><p class="eyebrow">Recovery Archive</p><h1>知识库回收站</h1><p>这里保存从生产索引移除的资料。恢复后沿用原文档编号，不提供永久删除。</p></div><a class="button secondary" href="/admin/knowledge">返回档案目录</a></header>
+  <section class="panel table-panel">
+    <div class="panel-head"><h3>回收记录</h3><span>{{ trash_items|length }} 条</span></div>
+    <div class="table-wrap"><table class="archive-table"><thead><tr><th>记录</th><th>原编号</th><th>标题</th><th>管理员</th><th>移入时间</th><th>状态</th><th>操作</th></tr></thead><tbody>
+      {% for item in trash_items %}<tr>
+        <td data-label="记录">#{{ item.id }}</td>
+        <td data-label="原编号"><span class="document-number">{{ '%04d'|format(item.document_id) }}</span></td>
+        <td data-label="标题" class="wrap-cell"><strong>{{ item.title }}</strong>{% if item.error_message %}<small class="row-error">{{ item.error_message }}</small>{% endif %}</td>
+        <td data-label="管理员">{{ item.username }}</td>
+        <td data-label="移入时间">{{ item.deleted_at }}</td>
+        <td data-label="状态"><span class="job-status status-{{ item.status }}">{{ '已恢复' if item.restored_at else item.status }}</span></td>
+        <td data-label="操作">{% if item.status == 'trashed' and not item.restored_at %}<form method="post" action="/admin/knowledge-trash/{{ item.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-action" type="submit">恢复到生产库</button></form>{% else %}<span class="muted">—</span>{% endif %}</td>
+      </tr>{% else %}<tr class="empty-row"><td colspan="7" class="empty">回收站为空</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+</main>
+{% endblock %}
