@@ -338,6 +338,8 @@ class UsageEndpoint(BaseModel):
 class UsageCall(BaseModel):
     endpoint: str
     method: str
+    activity_type: str = "rest_api"
+    activity_name: str = ""
     called_at: str
 
 
@@ -3563,6 +3565,9 @@ def init_database() -> None:
                 device_token_id INTEGER NOT NULL REFERENCES device_tokens(id) ON DELETE CASCADE,
                 endpoint TEXT NOT NULL,
                 method TEXT NOT NULL,
+                activity_type TEXT NOT NULL DEFAULT 'rest_api',
+                activity_name TEXT NOT NULL DEFAULT '',
+                counts_toward_usage INTEGER NOT NULL DEFAULT 1,
                 called_at TEXT NOT NULL
             );
 
@@ -3873,6 +3878,19 @@ def init_database() -> None:
             "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_per_user "
             "ON device_tokens(user_id) WHERE revoked_at IS NULL"
         )
+        api_usage_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(api_usage)").fetchall()
+        }
+        api_usage_migrations = {
+            "activity_type": "TEXT NOT NULL DEFAULT 'rest_api'",
+            "activity_name": "TEXT NOT NULL DEFAULT ''",
+            "counts_toward_usage": "INTEGER NOT NULL DEFAULT 1",
+        }
+        for column_name, declaration in api_usage_migrations.items():
+            if column_name not in api_usage_columns:
+                connection.execute(
+                    f"ALTER TABLE api_usage ADD COLUMN {column_name} {declaration}"
+                )
         assistant_columns = {
             row["name"] for row in connection.execute("PRAGMA table_info(assistant_usage)").fetchall()
         }
@@ -3952,7 +3970,16 @@ def require_web_user(
     return result[0]
 
 
-def authenticate_api_token(authorization: str | None, endpoint: str, method: str) -> sqlite3.Row:
+def authenticate_api_token(
+    authorization: str | None,
+    endpoint: str,
+    method: str,
+    *,
+    record_usage: bool = True,
+    activity_type: str = "rest_api",
+    activity_name: str = "",
+    counts_toward_usage: bool = True,
+) -> sqlite3.Row:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="缺少用户访问凭据")
     raw_token = authorization.removeprefix("Bearer ").strip()
@@ -3982,21 +4009,113 @@ def authenticate_api_token(authorization: str | None, endpoint: str, method: str
             "UPDATE device_tokens SET last_used_at = ? WHERE id = ?",
             (isoformat(utc_now()), row["device_token_id"]),
         )
+        if record_usage:
+            connection.execute(
+                """
+                INSERT INTO api_usage(
+                    user_id, device_token_id, endpoint, method,
+                    activity_type, activity_name, counts_toward_usage, called_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    row["id"],
+                    row["device_token_id"],
+                    endpoint,
+                    method,
+                    activity_type,
+                    activity_name,
+                    int(counts_toward_usage),
+                    isoformat(utc_now()),
+                ),
+            )
+        connection.commit()
+        return row
+
+
+def record_api_usage(
+    user: sqlite3.Row,
+    endpoint: str,
+    method: str,
+    activity_type: str,
+    activity_name: str,
+    counts_toward_usage: bool,
+) -> None:
+    with closing(database()) as connection:
         connection.execute(
             """
-            INSERT INTO api_usage(user_id, device_token_id, endpoint, method, called_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO api_usage(
+                user_id, device_token_id, endpoint, method,
+                activity_type, activity_name, counts_toward_usage, called_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                row["id"],
-                row["device_token_id"],
+                user["id"],
+                user["device_token_id"],
                 endpoint,
                 method,
+                activity_type,
+                activity_name,
+                int(counts_toward_usage),
                 isoformat(utc_now()),
             ),
         )
         connection.commit()
-        return row
+
+
+MCP_SEARCH_TOOLS = {
+    "knowledge_search",
+    "policy_search",
+    "public_list_search",
+    "project_catalog_match",
+}
+
+
+def classify_mcp_request(body: bytes) -> tuple[str, str, bool]:
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return "mcp_other", "未识别MCP请求", True
+    if isinstance(payload, list):
+        messages = [item for item in payload if isinstance(item, dict)]
+    elif isinstance(payload, dict):
+        messages = [payload]
+    else:
+        messages = []
+    classifications: list[tuple[str, str, bool]] = []
+    for message in messages:
+        rpc_method = str(message.get("method") or "")
+        if rpc_method in {"ping", "initialize", "notifications/initialized"}:
+            classifications.append(("mcp_connection", "MCP连接检测", False))
+            continue
+        if rpc_method == "tools/list":
+            classifications.append(("mcp_tools_list", "工具列表", True))
+            continue
+        if rpc_method == "tools/call":
+            params = message.get("params")
+            tool_name = str(params.get("name") or "") if isinstance(params, dict) else ""
+            if tool_name == "knowledge_document":
+                classifications.append(("mcp_document", "文档读取", True))
+            elif tool_name in MCP_SEARCH_TOOLS:
+                classifications.append(("mcp_search", "实际检索", True))
+            elif tool_name == "knowledge_service_status":
+                classifications.append(("mcp_connection", "MCP连接检测", False))
+            else:
+                classifications.append(("mcp_tool", tool_name or "MCP工具调用", True))
+            continue
+        classifications.append(("mcp_other", rpc_method or "MCP请求", True))
+    if not classifications:
+        return "mcp_other", "未识别MCP请求", True
+    priority = {
+        "mcp_document": 5,
+        "mcp_search": 4,
+        "mcp_tool": 3,
+        "mcp_tools_list": 2,
+        "mcp_other": 1,
+        "mcp_connection": 0,
+    }
+    return max(classifications, key=lambda item: priority[item[0]])
 
 
 def require_api_user(
@@ -4019,16 +4138,38 @@ class MCPBearerMiddleware:
             for key, value in scope.get("headers", [])
         }
         try:
-            authenticate_api_token(
+            user = authenticate_api_token(
                 headers.get("authorization"),
                 "/mcp",
                 scope.get("method", "POST"),
+                record_usage=False,
             )
         except HTTPException as error:
             response = JSONResponse({"detail": error.detail}, status_code=error.status_code)
             await response(scope, receive, send)
             return
-        await self.application(scope, receive, send)
+        body_parts: list[bytes] = []
+
+        async def capture_receive():
+            message = await receive()
+            if message.get("type") == "http.request" and message.get("body"):
+                body_parts.append(message["body"])
+            return message
+
+        try:
+            await self.application(scope, capture_receive, send)
+        finally:
+            activity_type, activity_name, counts_toward_usage = classify_mcp_request(
+                b"".join(body_parts)
+            )
+            record_api_usage(
+                user,
+                "/mcp",
+                scope.get("method", "POST"),
+                activity_type,
+                activity_name,
+                counts_toward_usage,
+            )
 
 
 def validate_csrf(user: sqlite3.Row, supplied: str) -> None:
@@ -4235,7 +4376,8 @@ def portal_payload(
             SELECT device_tokens.id, device_tokens.label, device_tokens.token_prefix,
                    device_tokens.token_seed,
                    device_tokens.created_at, device_tokens.last_used_at,
-                   device_tokens.revoked_at, COUNT(api_usage.id) AS call_count
+                   device_tokens.revoked_at,
+                   COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
             FROM device_tokens
             LEFT JOIN api_usage ON api_usage.device_token_id = device_tokens.id
             WHERE device_tokens.user_id = ? AND device_tokens.revoked_at IS NULL
@@ -4255,6 +4397,8 @@ def portal_payload(
         recent_calls = format_row_datetimes(connection.execute(
             """
             SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
+                   api_usage.activity_type, api_usage.activity_name,
+                   COALESCE(NULLIF(api_usage.activity_name,''), api_usage.endpoint) AS activity_display,
                    device_tokens.label
             FROM api_usage
             JOIN device_tokens ON device_tokens.id = api_usage.device_token_id
@@ -4266,7 +4410,8 @@ def portal_payload(
         ).fetchall(), "called_at")
         usage_total = int(
             connection.execute(
-                "SELECT COUNT(*) FROM api_usage WHERE user_id = ?", (user["id"],)
+                "SELECT COUNT(*) FROM api_usage WHERE user_id = ? AND counts_toward_usage = 1",
+                (user["id"],)
             ).fetchone()[0]
         )
         assistant_used_today = int(
@@ -4374,7 +4519,8 @@ def portal_payload(
                 ),
                 "calls_24h": int(
                     connection.execute(
-                        "SELECT COUNT(*) FROM api_usage WHERE called_at >= ?", (since_24_hours,)
+                        "SELECT COUNT(*) FROM api_usage WHERE called_at >= ? AND counts_toward_usage = 1",
+                        (since_24_hours,)
                     ).fetchone()[0]
                 ),
                 "failed_updates": int(
@@ -5408,7 +5554,7 @@ def admin_user_detail(
             """
             SELECT users.*,
                    COUNT(DISTINCT CASE WHEN device_tokens.revoked_at IS NULL THEN device_tokens.id END) AS active_tokens,
-                   COUNT(DISTINCT api_usage.id) AS call_count,
+                   COUNT(DISTINCT CASE WHEN api_usage.counts_toward_usage = 1 THEN api_usage.id END) AS call_count,
                    MAX(api_usage.called_at) AS last_called_at
             FROM users
             LEFT JOIN device_tokens ON device_tokens.user_id=users.id
@@ -5831,6 +5977,8 @@ def admin_health_detail(
         recent_calls = format_row_datetimes(connection.execute(
             """
             SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
+                   api_usage.activity_type, api_usage.activity_name,
+                   COALESCE(NULLIF(api_usage.activity_name,''), api_usage.endpoint) AS activity_display,
                    users.username, device_tokens.label
             FROM api_usage
             JOIN users ON users.id = api_usage.user_id
@@ -5838,6 +5986,25 @@ def admin_health_detail(
             ORDER BY api_usage.id DESC LIMIT 30
             """
         ).fetchall(), "called_at")
+        calls_since_24_hours = isoformat(utc_now() - timedelta(hours=24))
+        business_calls_24h = int(
+            connection.execute(
+                "SELECT COUNT(*) FROM api_usage WHERE called_at >= ? AND counts_toward_usage = 1",
+                (calls_since_24_hours,),
+            ).fetchone()[0]
+        )
+        mcp_activity_counts = {
+            str(row["activity_type"]): int(row["calls"])
+            for row in connection.execute(
+                """
+                SELECT activity_type, COUNT(*) AS calls
+                FROM api_usage
+                WHERE called_at >= ? AND activity_type LIKE 'mcp_%'
+                GROUP BY activity_type
+                """,
+                (calls_since_24_hours,),
+            ).fetchall()
+        }
         failed_updates = format_row_datetimes(connection.execute(
             """
             SELECT id, original_name, status, error_message, created_at, completed_at
@@ -5852,7 +6019,7 @@ def admin_health_detail(
                    COUNT(DISTINCT device_tokens.id) AS token_count,
                    COUNT(DISTINCT CASE WHEN device_tokens.revoked_at IS NULL THEN device_tokens.id END) AS active_token_count,
                    COUNT(DISTINCT CASE WHEN device_tokens.revoked_at IS NOT NULL THEN device_tokens.id END) AS revoked_token_count,
-                   COUNT(api_usage.id) AS call_count,
+                   COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count,
                    MAX(device_tokens.last_used_at) AS last_used_at
             FROM users
             LEFT JOIN device_tokens ON device_tokens.user_id = users.id
@@ -5866,7 +6033,7 @@ def admin_health_detail(
             SELECT device_tokens.id, users.username, device_tokens.label,
                    device_tokens.token_prefix, device_tokens.created_at,
                    device_tokens.last_used_at, device_tokens.revoked_at,
-                   COUNT(api_usage.id) AS call_count
+                   COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
             LEFT JOIN api_usage ON api_usage.device_token_id = device_tokens.id
@@ -6118,7 +6285,16 @@ def admin_health_detail(
         "certificate": ("HTTPS 证书", [("证书状态", runtime.get("certificate_status", "待采集")), ("到期时间", runtime.get("certificate_expires", "待采集")), ("域名", os.environ.get("JIAOTANG_PUBLIC_HOST", "未配置"))]),
         "disk": ("磁盘使用", [("使用率", runtime.get("disk_percent", "待采集")), ("检查时间", runtime.get("checked_at", "待采集")), ("数据目录", str(DATA_DIR))]),
         "access": ("用户与凭据", [("有效用户", active_users), ("有效 API 访问凭据", active_tokens), ("权限模式", "统一知识权限")]),
-        "calls": ("调用记录", [("最近记录", len(recent_calls)), ("接口范围", "REST API 与 MCP")]),
+        "calls": (
+            "调用记录",
+            [
+                ("24小时业务调用", business_calls_24h),
+                ("MCP连接检测", mcp_activity_counts.get("mcp_connection", 0)),
+                ("工具列表", mcp_activity_counts.get("mcp_tools_list", 0)),
+                ("实际检索", mcp_activity_counts.get("mcp_search", 0)),
+                ("文档读取", mcp_activity_counts.get("mcp_document", 0)),
+            ],
+        ),
         "updates": ("失败更新", [("待处理失败", len(failed_updates)), ("回滚机制", "成功更新均保留快照")]),
         "assistant": (
             "问答分析",
@@ -7375,13 +7551,13 @@ def usage(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
     with closing(database()) as connection:
         total_calls = int(
             connection.execute(
-                "SELECT COUNT(*) FROM api_usage WHERE user_id = ?",
+                "SELECT COUNT(*) FROM api_usage WHERE user_id = ? AND counts_toward_usage = 1",
                 (user["id"],),
             ).fetchone()[0]
         )
         calls_last_30_days = int(
             connection.execute(
-                "SELECT COUNT(*) FROM api_usage WHERE user_id = ? AND called_at >= ?",
+                "SELECT COUNT(*) FROM api_usage WHERE user_id = ? AND called_at >= ? AND counts_toward_usage = 1",
                 (user["id"], thirty_days_ago),
             ).fetchone()[0]
         )
@@ -7389,7 +7565,7 @@ def usage(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
             """
             SELECT endpoint, COUNT(*) AS calls
             FROM api_usage
-            WHERE user_id = ?
+            WHERE user_id = ? AND counts_toward_usage = 1
             GROUP BY endpoint
             ORDER BY calls DESC, endpoint
             """,
@@ -7397,9 +7573,9 @@ def usage(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
         ).fetchall()
         recent_rows = connection.execute(
             """
-            SELECT endpoint, method, called_at
+            SELECT endpoint, method, activity_type, activity_name, called_at
             FROM api_usage
-            WHERE user_id = ?
+            WHERE user_id = ? AND counts_toward_usage = 1
             ORDER BY id DESC
             LIMIT 20
             """,
@@ -7410,7 +7586,13 @@ def usage(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
         calls_last_30_days=calls_last_30_days,
         by_endpoint=[UsageEndpoint(endpoint=row["endpoint"], calls=row["calls"]) for row in endpoint_rows],
         recent_calls=[
-            UsageCall(endpoint=row["endpoint"], method=row["method"], called_at=row["called_at"])
+            UsageCall(
+                endpoint=row["endpoint"],
+                method=row["method"],
+                activity_type=row["activity_type"],
+                activity_name=row["activity_name"],
+                called_at=row["called_at"],
+            )
             for row in recent_rows
         ],
     )
