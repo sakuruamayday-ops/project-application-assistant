@@ -8,6 +8,7 @@ import getpass
 import importlib.util
 import json
 import os
+import re
 import shlex
 import shutil
 import stat
@@ -35,6 +36,7 @@ BOOLEAN_NAMES = {
     "PROJECT_ASSISTANT_DOCUMENT_TOOLS_READY",
     "PROJECT_ASSISTANT_OCR_READY",
 }
+REGION_PROFILE_PATH = Path.home() / ".project-application-assistant" / "profile.json"
 
 
 def truthy(value: str | None) -> bool:
@@ -68,13 +70,40 @@ def effective_values(credentials_file: Path, environment: dict[str, str] | None 
 
 def write_credentials(path: Path, values: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    lines = ["# 项目申报助手统一凭据；禁止提交到Git或发送到对话。"]
+    lines = ["# 企业全生命周期助手统一凭据；禁止提交到Git或发送到对话。"]
     for key in sorted(values):
         value = values[key].strip()
         if value:
             lines.append(f"{key}={shlex.quote(value)}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     path.chmod(stat.S_IRUSR | stat.S_IWUSR)
+
+
+def write_region_profile(region: str, path: Path = REGION_PROFILE_PATH) -> None:
+    normalized = "".join(region.split())
+    if not normalized:
+        return
+    parts = list(
+        dict.fromkeys(
+            re.findall(r"[^省市区县]{2,12}(?:自治区|省|市|区|县)", normalized)
+        )
+    )
+    province = next((part for part in parts if part.endswith(("省", "自治区"))), None)
+    city = next((part for part in parts if part.endswith("市")), None)
+    selected = [part for part in (province, city) if part]
+    normalized = "".join(selected) or normalized
+    scope = list(reversed(selected or parts))
+    if "全国" not in scope:
+        scope.append("全国")
+    payload = {
+        "default_region": normalized,
+        "scope": scope,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(path)
 
 
 def probe_cloud(endpoint: str, token: str, timeout: float = 10.0) -> tuple[str, str]:
@@ -148,6 +177,10 @@ def capability_report(
             "stored_values_are_redacted": True,
             "detected_names": sorted(key for key in SECRET_NAMES if values.get(key)),
         },
+        "project_region": {
+            "default_region": values.get("PROJECT_ASSISTANT_DEFAULT_REGION", "").strip(),
+            "configured": bool(values.get("PROJECT_ASSISTANT_DEFAULT_REGION", "").strip()),
+        },
         "capabilities": {
             "team_knowledge": {
                 "status": cloud_status,
@@ -192,7 +225,7 @@ def render_markdown(report: dict[str, object], credentials_file: Path) -> str:
         assert isinstance(item, dict)
         rows.append(f"| {name} | {item['status']} | {item['detail']} |")
     lines = [
-            "# 项目申报助手首次配置检测报告",
+            "# 企业全生命周期助手首次配置检测报告",
             "",
             f"检测时间：{report['checked_at']}",
             "",
@@ -222,7 +255,7 @@ def render_markdown(report: dict[str, object], credentials_file: Path) -> str:
                 "",
                 f"`{HOST_SKILL_INSTALL_PROMPT}`",
                 "",
-                "这些通用能力由当前宿主平台安装，项目申报助手不重复打包。若已经具备这些能力，可忽略本提示。",
+                "这些通用能力由当前Agent安装，企业全生命周期助手不重复打包。若已经具备这些能力，可忽略本提示。",
                 "",
             ]
         )
@@ -258,6 +291,10 @@ def ask_yes_no(prompt: str, default: bool = False) -> bool:
 
 def configure_interactively(values: dict[str, str]) -> dict[str, str]:
     configured = dict(values)
+    configured["PROJECT_ASSISTANT_DEFAULT_REGION"] = ask(
+        "默认政策地区，请填写到省、市",
+        configured.get("PROJECT_ASSISTANT_DEFAULT_REGION", ""),
+    )
     configured["JIAOTANG_KB_ENDPOINT"] = ask(
         "团队云端知识API地址",
         configured.get("JIAOTANG_KB_ENDPOINT", DEFAULT_ENDPOINT),
@@ -320,11 +357,17 @@ def run(
                 for key, value in values.items()
                 if key in SECRET_NAMES
                 or key in BOOLEAN_NAMES
-                or key in {"JIAOTANG_KB_ENDPOINT", "PATENT_DATA_PROVIDER", "PATENT_API_ENDPOINT"}
+                or key in {
+                    "JIAOTANG_KB_ENDPOINT",
+                    "PATENT_DATA_PROVIDER",
+                    "PATENT_API_ENDPOINT",
+                    "PROJECT_ASSISTANT_DEFAULT_REGION",
+                }
             }
             write_credentials(credentials_file, allowed)
 
     report = capability_report(values, network=network, startup_required=needs_startup)
+    write_region_profile(values.get("PROJECT_ASSISTANT_DEFAULT_REGION", ""))
     config_dir.mkdir(parents=True, exist_ok=True)
     profile_file.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     report_file.write_text(render_markdown(report, credentials_file), encoding="utf-8")

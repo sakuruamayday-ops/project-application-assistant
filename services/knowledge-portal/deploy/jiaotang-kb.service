@@ -8,13 +8,15 @@ User=jiaotang
 Group=jiaotang
 WorkingDirectory=/opt/jiaotang-kb
 EnvironmentFile=/etc/jiaotang-kb.env
+ExecStartPre=/usr/local/sbin/jiaotang-kb-refresh-index
 ExecStart=/opt/jiaotang-kb/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100 --workers 1
 Restart=always
 RestartSec=3
+TimeoutStartSec=10min
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /srv/jiaotang/knowledge-files /srv/jiaotang/skill-releases /srv/jiaotang/index-snapshots
+ReadWritePaths=/var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /srv/jiaotang/knowledge-files /srv/jiaotang/skill-releases /srv/jiaotang/index-snapshots /var/backups/jiaotang-kb
 NoNewPrivileges=true
 
 [Install]

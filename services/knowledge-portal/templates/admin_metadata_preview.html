@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}｜企业全生命周期助手{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin metadata-preview-shell">
+  <header class="admin-page-head">
+    <div><p class="eyebrow">Review Before Commit</p><h1>{{ title }}</h1><p>{{ summary }}</p></div>
+    <a class="button secondary" href="/admin/metadata-review?view={{ 'aliases' if preview_kind == 'alias' else 'policies' }}">返回修改</a>
+  </header>
+  <section class="preview-summary-grid">
+    <article><span>预计影响</span><strong>{{ preview.total }}</strong><small>份知识库文档</small></article>
+    <article><span>执行状态</span><strong>未写入</strong><small>当前仅为预览</small></article>
+    {% if preview.cluster_id %}<article><span>政策簇</span><strong>#{{ preview.cluster_id }}</strong><small>同源传播范围</small></article>{% endif %}
+  </section>
+  <section class="panel table-panel">
+    <div class="panel-head"><h2>变更明细</h2><span>最多展示 200 条</span></div>
+    <div class="table-wrap"><table class="archive-table"><thead><tr><th>文档</th><th>变更前</th><th>变更后</th><th>补充信息</th></tr></thead><tbody>
+      {% for item in preview.results %}<tr><td class="wrap-cell"><strong>#{{ item.document_id }} {{ item.title }}</strong><small class="source-cell">{{ item.source }}</small></td><td>{{ item.before }}</td><td><mark class="preview-change">{{ item.after }}</mark></td><td class="wrap-cell">{{ item.detail }}</td></tr>
+      {% else %}<tr class="empty-row"><td colspan="4">没有文档会被修改，请返回调整条件。</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <form method="post" action="{{ action }}" class="preview-commit-bar">
+    <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
+    {% if preview_kind == 'alias' %}
+      <input type="hidden" name="raw_project_name" value="{{ payload.raw_project_name }}"><input type="hidden" name="canonical_project_name" value="{{ payload.canonical_project_name }}"><input type="hidden" name="region" value="{{ payload.region }}"><input type="hidden" name="start_year" value="{{ payload.start_year or '' }}"><input type="hidden" name="end_year" value="{{ payload.end_year or '' }}"><input type="hidden" name="note" value="{{ payload.note }}">
+    {% else %}
+      <input type="hidden" name="queue_id" value="{{ payload.queue_id }}"><input type="hidden" name="review_status" value="{{ payload.status }}"><input type="hidden" name="official_source_url" value="{{ payload.official_source_url }}"><input type="hidden" name="official_document_title" value="{{ payload.official_document_title }}"><input type="hidden" name="official_published_at" value="{{ payload.official_published_at or '' }}"><input type="hidden" name="validity_status" value="{{ payload.validity_status or '' }}"><input type="hidden" name="verification_note" value="{{ payload.verification_note }}">
+    {% endif %}
+    <div><strong>请确认影响范围与字段变化</strong><span>提交后会创建索引快照，可通过对应撤销或回滚能力恢复。</span></div>
+    <button class="button" type="submit" {% if preview.total == 0 %}disabled{% endif %}>确认并正式写入</button>
+  </form>
+</main>
+{% endblock %}

@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}项目申报助手知识库{% endblock %}</title>
+  <script>document.documentElement.dataset.pageDirection=sessionStorage.getItem("jiaotang-page-direction")||"next";sessionStorage.removeItem("jiaotang-page-direction");</script>
+  <title>{% block title %}知识产权大脑{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/style.css">
-  <link rel="stylesheet" href="/static/archive.css">
-  <script src="/static/portal.js" defer></script>
+  {% include "_static_assets.html" %}
 </head>
 <body class="{% block body_class %}auth-body{% endblock %}">
   {% block content %}{% endblock %}

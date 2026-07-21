@@ -79,7 +79,8 @@ class ProjectMapTest(unittest.TestCase):
             subprocess.run([sys.executable, str(PROFILE_SCRIPT), "set", "浙江省杭州市余杭区"], check=True, capture_output=True, text=True, env=environment)
             result = subprocess.run([sys.executable, str(PROFILE_SCRIPT), "get"], check=True, capture_output=True, text=True, env=environment)
             profile = json.loads(result.stdout)
-            self.assertEqual(profile["scope"], ["余杭区", "杭州市", "浙江省", "全国"])
+            self.assertEqual(profile["default_region"], "浙江省杭州市")
+            self.assertEqual(profile["scope"], ["杭州市", "浙江省", "全国"])
 
     def test_region_filter_excludes_other_localities(self):
         result = subprocess.run(

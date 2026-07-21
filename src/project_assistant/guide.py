@@ -6,16 +6,15 @@ from typing import Any, Iterable
 from .doctor import Check
 
 
-def render_guide(platform: str, config: dict[str, Any], checks: Iterable[Check]) -> str:
+def render_guide(config: dict[str, Any], checks: Iterable[Check]) -> str:
     status_rows = "\n".join(f"| {item.name} | {item.status} | {item.detail} |" for item in checks)
     providers = config.get("providers", {})
     enabled = [name for name, value in providers.items() if isinstance(value, dict) and value.get("enabled")]
     disabled = [name for name, value in providers.items() if isinstance(value, dict) and not value.get("enabled")]
-    return f"""# 项目申报助手首次使用指南
+    return f"""# 企业全生命周期助手首次使用指南
 
 ## 当前环境
 
-- 平台：{platform}
 - 已启用能力：{', '.join(enabled) or '暂无外部能力'}
 - 未启用能力：{', '.join(disabled) or '无'}
 
@@ -57,7 +56,7 @@ def render_guide(platform: str, config: dict[str, Any], checks: Iterable[Check])
 
 ## 排查
 
-先运行 `project-assistant setup`，再运行 `project-assistant doctor --platform {platform}` 查看统一能力状态。
+先运行 `project-assistant setup`，再运行 `project-assistant doctor` 查看统一能力状态。
 """
 
 

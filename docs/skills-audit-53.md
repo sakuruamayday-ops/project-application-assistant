@@ -75,7 +75,7 @@
 |---|---|---|---|
 | project-rule-manager | 地区规则录入、版本、替代、核验状态 | 官方原文、用户本地工作区 | 全体成员可维护本地规则；不得写团队云端知识库 |
 | third-party-data-indexing | 企策顾问等授权增量采集 | web-task-operator、服务端采集器 | 实验性可选；不得绕过访问控制 |
-| web-task-operator | 登录后网页任务、翻页、上传 | 宿主浏览器能力 | 平台无关；不内置浏览器品牌与账号 |
+| web-task-operator | 登录后网页任务、翻页、上传 | Agent浏览器能力 | 不内置浏览器品牌与账号 |
 | project-memory | 继续、上次、既有决定 | 宿主持久记忆 | 不保存密钥与无关客户原文 |
 | project-deliverable-archive | 正式成果或复杂任务自动归档 | 宿主可写工作区 | 不依赖笔记软件；不覆盖原文件、不自动上传云端 |
 
@@ -118,10 +118,10 @@
 - 将 `local-knowledge-retrieval` 改为团队云端API优先、本地RAG降级，消除最终架构仍依赖本地磁盘的问题。
 - 在总入口中显式加入团队知识检索前置步骤。
 - 将成员政策写入限定在本地 `project-rules/`，普通成员不能修改团队云端知识。
-- 用平台无关自动归档替换Obsidian，并加入平台无关企业全景报告Skill。
+- 用自动归档替换Obsidian，并加入企业全景报告Skill。
 - 增加 `first-run-configuration`，统一生成当前用户凭据文件、脱敏能力报告和首次配置说明。
 - 增加 `jiaotang-legal-regulations` 与 `manufacturing-tax-risk-analysis`，并与政策检索、申报财务核验划清触发边界。
-- 发布门禁扫描本机绝对路径、旧依赖名、平台 `agents` 元数据、macOS `._` 文件和Python缓存。
+- 发布门禁扫描本机绝对路径、旧依赖名、`agents` 元数据、macOS `._` 文件和Python缓存。
 
 ## 十一、仍需人工验收
 
@@ -135,4 +135,4 @@
 - **企查查**：`enterprise-profile`、`enterprise-panorama-analysis`、`peer-benchmarking` 可选增强；未配置时回到公开工商、企业材料和政府来源。
 - **BigQuery或其他专利源**：`patent-data-foundation`、`patent-search-core`、相似、FTO、权利要求和专利对标任务需要；单件核验仍回官方专利来源。
 - **MCP**：云端知识库支持网站生成的MCP地址与个人凭据；企查查和专利MCP由用户在首次配置向导中选择，不在各Skill重复配置。
-- **OCR与PDF、Word、Excel、PPT**：由宿主平台提供，发布包只做能力检测和调用提示，不重复打包通用文档Skill。
+- **OCR与PDF、Word、Excel、PPT**：由Agent提供，发布包只做能力检测和调用提示，不重复打包通用文档Skill。

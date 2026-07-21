@@ -1,39 +1,7 @@
 from __future__ import annotations
 
-import os
 import shutil
 from pathlib import Path
-from typing import Any
-
-
-SUPPORTED_PLATFORMS = ("codex", "claude-code", "hermes")
-
-
-def platform_home(platform: str, config: dict[str, Any]) -> Path:
-    discovery = config.get("discovery", {})
-    key = "user_skills_install_dir" if platform == "hermes" else "skills_install_dir"
-    raw = discovery.get(key)
-    defaults = {
-        "codex": Path.home() / ".codex" / "skills",
-        "claude-code": Path.home() / ".claude" / "skills",
-        "hermes": Path.home() / ".hermes" / "skills",
-    }
-    if not raw:
-        return defaults[platform]
-    expanded = os.path.expandvars(os.path.expanduser(str(raw)))
-    if "${" in expanded:
-        return defaults[platform]
-    return Path(expanded)
-
-
-def command_status(platform: str) -> tuple[bool, str]:
-    command = {
-        "codex": "codex",
-        "claude-code": "claude",
-        "hermes": "hermes",
-    }[platform]
-    path = shutil.which(command)
-    return (bool(path), path or "未发现")
 
 
 def install_skills(source: Path, destination: Path, mode: str, force: bool) -> list[str]:

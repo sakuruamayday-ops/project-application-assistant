@@ -16,7 +16,7 @@
 - `enterprise-panorama-analysis`
 - 使用团队云端知识、包内企业画像和专利技能组
 - 所有模板、品牌资源和检查脚本均使用Skill内相对路径
-- PDF、Word和Excel通用能力由宿主平台提供，不重复打包
+- PDF、Word和Excel通用能力由Agent提供，不重复打包
 
 ### 本地政策规则与自动归档
 
@@ -60,7 +60,7 @@
 - 企策顾问浏览器操作规则
 - 浏览器本地重放降级方案
 
-### 项目申报助手总入口
+### 企业全生命周期助手总入口
 
 - 更新后的 `project-application-assistant`
 - 默认地区读取和本地后备配置
@@ -92,7 +92,7 @@
 - `docs/config/qcc.md`
 - 更新后的 `enterprise-profile`
 
-配置说明必须保持平台无关：凭据只进入宿主平台安全凭据存储、环境变量或密钥管理服务，不在对话、Skill、日志、交付文件或公共仓库中保存。
+配置说明统一要求：凭据只进入Agent安全凭据存储、环境变量或密钥管理服务，不在对话、Skill、日志、交付文件或公共仓库中保存。
 
 ## 依赖关系
 
@@ -139,7 +139,7 @@ enterprise-profile
 
 ## 本轮暂不纳入
 
-- 平台专属 `agents/` 元数据和转换适配包。
+- `agents/` 元数据和转换适配包。
 - `scripts/build_standard_package.py` 和已生成的 ZIP 包。
 - 独立 `project-handoff` Skill。
 - 部门技能权限分级和复杂协作流转。

@@ -70,6 +70,7 @@ def parse_args() -> argparse.Namespace:
         default=Path(os.environ.get("JIAOTANG_LOCAL_OCR_WORK", Path.cwd() / "knowledge-migration/local-ocr-work")),
     )
     parser.add_argument("--path-prefix", default="")
+    parser.add_argument("--queue", type=Path)
     parser.add_argument("--start-at", type=int, default=1)
     parser.add_argument("--limit", type=int)
     return parser.parse_args()
@@ -143,21 +144,38 @@ def main() -> None:
                 if row["decision"] == "object_only_pending_extraction"
             }
 
-    with report_path.open(encoding="utf-8-sig") as source:
-        all_targets = [
-            row
-            for row in csv.DictReader(source)
-            if (
-                row["status"] == "ocr_required"
-                or (
-                    row["status"] == "manual_review"
-                    and is_pdf_target(knowledge_root, row["relative_path"])
+    if args.queue:
+        with args.queue.expanduser().resolve().open(encoding="utf-8-sig") as source:
+            candidates = [
+                {"relative_path": row["相对路径"], "sha256": row["SHA256"]}
+                for row in csv.DictReader(source)
+                if row["相对路径"].startswith(args.path_prefix)
+                and row["SHA256"] not in completed
+                and (pending_digests is None or row["SHA256"] in pending_digests)
+            ]
+    else:
+        with report_path.open(encoding="utf-8-sig") as source:
+            candidates = [
+                row
+                for row in csv.DictReader(source)
+                if (
+                    row["status"] == "ocr_required"
+                    or (
+                        row["status"] == "manual_review"
+                        and is_pdf_target(knowledge_root, row["relative_path"])
+                    )
                 )
-            )
-            and row["relative_path"].startswith(args.path_prefix)
-            and row["sha256"] not in completed
-            and (pending_digests is None or row["sha256"] in pending_digests)
-        ]
+                and row["relative_path"].startswith(args.path_prefix)
+                and row["sha256"] not in completed
+                and (pending_digests is None or row["sha256"] in pending_digests)
+            ]
+    all_targets = []
+    queued_digests = set()
+    for row in candidates:
+        if row["sha256"] in queued_digests:
+            continue
+        queued_digests.add(row["sha256"])
+        all_targets.append(row)
     start = max(args.start_at - 1, 0)
     targets = all_targets[start:]
     if args.limit is not None:

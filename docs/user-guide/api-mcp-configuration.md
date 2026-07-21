@@ -1,6 +1,6 @@
 # API与MCP配置指南
 
-本指南供首次安装“项目申报助手”的团队成员使用。模型、企业数据、专利数据、浏览器、OCR和文档工具均使用用户自己的账号与宿主平台能力，并按相应平台要求完成配置。
+本指南供首次安装“企业全生命周期助手”的团队成员使用。模型、企业数据、专利数据、浏览器、OCR和文档工具均使用用户自己的账号与宿主平台能力，并按相应平台要求完成配置。
 
 ## 零、先运行统一首次配置向导
 
@@ -48,11 +48,14 @@ set +a
 
 1. 打开团队管理员提供的知识服务网站，使用英文账号注册或登录。
 2. 在API页面填写中文真实姓名，并按页面要求完成团队验证。
-3. 生成个人Token。明文Token只显示一次，每位用户使用自己的Token，不共享。
+3. 生成个人访问凭据。每位用户只有一个有效凭据，可在本人页面反复显示和复制；吊销后原凭据立即失效，需要重新生成。
 4. 运行统一首次配置向导并填写以下两个值；不要再逐个Skill配置：
 
 ```text
+JIAOTANG_KB_BASE_URL=https://knowledge.example.com
+JIAOTANG_KB_API_BASE_URL=https://knowledge.example.com/v1
 JIAOTANG_KB_ENDPOINT=https://knowledge.example.com
+JIAOTANG_KB_MCP_URL=https://knowledge.example.com/mcp/
 JIAOTANG_KB_TOKEN=<个人Token>
 ```
 
@@ -73,6 +76,14 @@ curl -sS \
   -d '{"query":"专精特新","limit":3}' \
   "$JIAOTANG_KB_ENDPOINT/v1/search"
 ```
+
+知识服务还提供三个结构化只读接口：
+
+- `/v1/lists/search`：查询公示名单中的企业、项目、年度、批次和地区。
+- `/v1/policies/search`：按标准项目名称、地区、文件阶段和有效性查询政策。
+- `/v1/projects/match`：从项目地图召回理论候选项目，不表示项目当前开放或企业已经符合。
+
+管理员还可以通过 `/v1/admin/project-aliases` 维护人工确认别名，通过 `/v1/admin/metadata-evidence` 查看命中证据，并通过 `/v1/admin/policy-verification` 完成官方网站核验。人工确认操作会先生成索引快照，再原子更新结构化索引。
 
 ### 权限边界
 
@@ -236,4 +247,4 @@ PATENT_API_KEY=<个人或团队合法凭据>
 7. 本地OCR完成一页扫描件抽样。
 8. 宿主PDF能力能够生成并重新打开测试报告。
 
-任一可选能力未配置时，Skill必须说明降级范围，不得要求用户把密钥粘贴到对话中。
+任一可选能力未配置时，Skill必须说明降级范围。团队知识凭据建议使用网站自助连接测试或宿主安全凭据配置；供应商密钥不得写入Skill包、共享文档或Git。

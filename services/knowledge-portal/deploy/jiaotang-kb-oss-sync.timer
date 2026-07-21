@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly incremental OSS sync for Jiaotang knowledge
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=5m
+
+[Install]
+WantedBy=timers.target

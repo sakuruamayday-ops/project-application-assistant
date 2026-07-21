@@ -1,0 +1,9 @@
+[Unit]
+Description=Trigger Jiaotang OSS sync after knowledge updates
+
+[Path]
+PathChanged=/var/lib/jiaotang-kb/oss-sync-request.json
+Unit=jiaotang-kb-oss-sync.service
+
+[Install]
+WantedBy=multi-user.target

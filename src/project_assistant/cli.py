@@ -10,7 +10,7 @@ from pathlib import Path
 from .config import ConfigError, load_config
 from .doctor import run_checks
 from .guide import render_guide, write_guide
-from .platforms import SUPPORTED_PLATFORMS, install_skills, platform_home
+from .installer import install_skills
 
 
 def project_root() -> Path:
@@ -26,22 +26,19 @@ def parser() -> argparse.ArgumentParser:
     subcommands = root.add_subparsers(dest="command", required=True)
 
     show = subcommands.add_parser("config", help="加载并显示脱敏配置")
-    show.add_argument("--platform", choices=SUPPORTED_PLATFORMS, required=True)
 
     doctor = subcommands.add_parser("doctor", help="执行只读健康检查")
-    doctor.add_argument("--platform", choices=SUPPORTED_PLATFORMS, required=True)
+    doctor.add_argument("--target", type=Path, default=None, help="可选的Skills安装目录")
     doctor.add_argument("--json", action="store_true")
 
-    install = subcommands.add_parser("install", help="安装技能到指定平台")
-    install.add_argument("--platform", choices=SUPPORTED_PLATFORMS, required=True)
+    install = subcommands.add_parser("install", help="安装技能到指定Agent目录")
     install.add_argument("--mode", choices=("copy", "symlink"), default="copy")
     install.add_argument("--force", action="store_true")
     install.add_argument("--skip-guide", action="store_true")
-    install.add_argument("--target", type=Path, default=None, help="覆盖技能安装目录")
+    install.add_argument("--target", type=Path, required=True, help="Agent的Skills安装目录")
     install.add_argument("--guide", type=Path, default=None, help="覆盖首次使用指南路径")
 
     guide = subcommands.add_parser("guide", help="生成详细使用指南")
-    guide.add_argument("--platform", choices=SUPPORTED_PLATFORMS, required=True)
     guide.add_argument("--output", type=Path, default=None)
 
     setup = subcommands.add_parser("setup", help="运行统一首次配置向导")
@@ -74,12 +71,14 @@ def main() -> int:
                 command.append("--skip-network")
             return subprocess.run(command, check=False).returncode
 
-        config = load_config(root, args.platform)
+        config = load_config(root)
         if args.command == "config":
             print(json.dumps(redact(config), ensure_ascii=False, indent=2))
             return 0
 
-        checks = run_checks(args.platform, config, root)
+        target = getattr(args, "target", None)
+        destination = target.expanduser().resolve() if target else None
+        checks = run_checks(config, root, destination)
         if args.command == "doctor":
             if args.json:
                 print(json.dumps([item.__dict__ for item in checks], ensure_ascii=False, indent=2))
@@ -97,16 +96,15 @@ def main() -> int:
                 output = root / "用户使用指南.md"
 
         if args.command == "guide":
-            print(write_guide(render_guide(args.platform, config, checks), output))
+            print(write_guide(render_guide(config, checks), output))
             return 0
 
-        destination = args.target.expanduser().resolve() if args.target else platform_home(args.platform, config)
         installed = install_skills(root / "skills", destination, args.mode, args.force)
         print(f"已安装 {len(installed)} 个技能到 {destination}")
         if installed:
             print("\n".join(installed))
         if not args.skip_guide:
-            print(write_guide(render_guide(args.platform, config, checks), output))
+            print(write_guide(render_guide(config, checks), output))
         return 0
     except (ConfigError, FileNotFoundError, ValueError) as exc:
         print(f"错误：{exc}")

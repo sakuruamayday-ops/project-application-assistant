@@ -24,7 +24,7 @@ backup_database() {
 }
 
 backup_database "${data_dir}/knowledge.db" "portal"
-if [[ "${JIAOTANG_BACKUP_INDEX:-false}" == "true" || "$(date +%u)" == "7" ]]; then
+if [[ "${JIAOTANG_BACKUP_INDEX:-false}" == "true" ]]; then
     backup_database "${index_dir}/knowledge_content.sqlite3" "content-index"
 fi
 

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}政策簇对比｜企业全生命周期助手{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin cluster-compare-shell">
+  <header class="admin-page-head">
+    <div><p class="eyebrow">Policy Cluster Diff</p><h1>政策簇 #{{ cluster.id }} 条款对比</h1><p>{{ document_count }} 份文档，以 #{{ baseline.id }} 为基准，高亮关键条款增删变化。</p></div>
+    <a class="button secondary" href="/admin/metadata-review?view=policies">返回政策核验</a>
+  </header>
+  <aside class="diff-legend"><span><mark class="diff-add">新增或替换内容</mark></span><span><del class="diff-remove">删除或被替换内容</del></span><small>系统仅提取申报条件、期限、资助、有效性等关键条款，最终结论仍以官方原文为准。</small></aside>
+  <section class="baseline-document">
+    <div class="compare-document-head"><div><span>对比基准</span><h2>#{{ baseline.id }} {{ baseline.title }}</h2></div><code>{{ baseline.document_number or '无文号' }}</code></div>
+    <p class="compare-meta">{{ baseline.document_stage }} · {{ baseline.validity_status }} · {{ baseline.policy_year or '年度未识别' }}</p>
+    <pre class="clause-text">{{ baseline.clauses|join('\n') }}</pre>
+  </section>
+  <section class="comparison-stack">
+    {% for item in comparisons %}<article class="comparison-document">
+      <div class="compare-document-head"><div><span>对比文档 {{ loop.index }}</span><h2>#{{ item.id }} {{ item.title }}</h2></div><code>{{ item.document_number or '无文号' }}</code></div>
+      <p class="compare-meta">{{ item.document_stage }} · {{ item.validity_status }} · {{ item.policy_year or '年度未识别' }} · 提取 {{ item.clause_count }} 条</p>
+      <div class="clause-diff">{{ item.diff_html }}</div>
+      <small class="source-cell">{{ item.source }}</small>
+    </article>{% else %}<div class="calibration-empty"><strong>该簇只有一份文档</strong><p>暂无可对比对象。</p></div>{% endfor %}
+  </section>
+</main>
+{% endblock %}

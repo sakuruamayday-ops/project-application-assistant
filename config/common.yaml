@@ -1,6 +1,6 @@
 schema_version: 1
 product:
-  name: 项目申报助手
+  name: 企业全生命周期助手
   locale: zh-CN
   timezone: Asia/Shanghai
 
@@ -53,13 +53,6 @@ providers:
     enabled: false
     root_path: null
     config_guide: docs/config/local-knowledge.md
-
-channels:
-  feishu:
-    enabled: false
-    adapter: hermes
-    require_target_confirmation: true
-    config_guide: docs/config/feishu.md
 
 evolution:
   enabled: false

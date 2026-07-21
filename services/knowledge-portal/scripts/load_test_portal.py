@@ -100,7 +100,7 @@ def percentile(values: list[float], fraction: float) -> float:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="项目申报助手 50 用户端到端并发测试")
+    parser = argparse.ArgumentParser(description="企业全生命周期助手 50 用户端到端并发测试")
     parser.add_argument("--base-url", default="http://127.0.0.1:8100")
     parser.add_argument("--users", type=int, default=50)
     parser.add_argument("--requests-per-user", type=int, default=2)

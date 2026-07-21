@@ -16,7 +16,7 @@ DEFAULT_DATABASE = Path(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="查询项目申报助手知识库索引")
+    parser = argparse.ArgumentParser(description="查询企业全生命周期助手知识库索引")
     parser.add_argument("query")
     parser.add_argument(
         "--mode", choices=("passage", "enterprise"), default="passage"

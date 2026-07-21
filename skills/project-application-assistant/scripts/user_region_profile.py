@@ -33,9 +33,25 @@ def normalize_region(value):
     return re.sub(r"\s+", "", value.strip())
 
 
+def region_parts(value):
+    return list(
+        dict.fromkeys(
+            re.findall(r"[^省市区县]{2,12}(?:自治区|省|市|区|县)", normalize_region(value))
+        )
+    )
+
+
+def default_region(value):
+    parts = region_parts(value)
+    province = next((part for part in parts if part.endswith(("省", "自治区"))), None)
+    city = next((part for part in parts if part.endswith("市")), None)
+    selected = [part for part in (province, city) if part]
+    return "".join(selected) or normalize_region(value)
+
+
 def region_scope(value):
     value = normalize_region(value)
-    parts = re.findall(r"[一-鿿]{2,12}?(?:省|自治区|市|区|县)", value)
+    parts = region_parts(value)
     scope = []
     for part in reversed(parts):
         if part not in scope:
@@ -61,9 +77,10 @@ def load_profile(path):
 
 
 def save_profile(path, region):
+    normalized = default_region(region)
     profile = {
-        "default_region": normalize_region(region),
-        "scope": region_scope(region),
+        "default_region": normalized,
+        "scope": region_scope(normalized),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     path.parent.mkdir(parents=True, exist_ok=True)

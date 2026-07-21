@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}版本公告预览｜企业全生命周期助手{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin announcement-preview-page">
+  <header class="admin-page-head"><div><p class="eyebrow">Release Announcement Draft</p><h1>V{{ announcement.version }} 公告预览</h1><p>当前状态：{{ '已发布' if announcement.status == 'published' else '草稿，尚不会向成员弹出' }}</p></div><a class="button secondary" href="/portal#skill-admin">返回版本中心</a></header>
+  <article class="release-modal-card is-preview">
+    <div class="release-modal-kicker">企业全生命周期助手 · V{{ announcement.version }}</div>
+    <h2>{{ announcement.title }}</h2>
+    <div class="release-modal-body manual-content">{{ announcement.body_html }}</div>
+    <section class="release-phrases"><span>可以直接这样问</span><div>{% for phrase in announcement.quick_phrases %}<button type="button">{{ phrase }}</button>{% endfor %}</div></section>
+    <p class="draft-note">请主人确认标题、正文和快捷短语；确认前保持草稿状态。</p>
+    {% if announcement.status != 'published' %}<form method="post" action="/admin/releases/{{ announcement.release_id }}/announcement/publish" onsubmit="return confirm('确认发布公告？所有尚未确认本版本的用户下次登录都会看到弹窗。')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">确认文案并发布弹窗</button></form>{% endif %}
+  </article>
+</main>
+{% endblock %}

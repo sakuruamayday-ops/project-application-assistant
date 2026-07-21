@@ -93,7 +93,7 @@ def main():
         print(json.dumps({
             "status": "region_configuration_required",
             "db": str(db),
-            "message": "请先在项目申报助手中设置默认政策地区",
+            "message": "请先在企业全生命周期助手中设置默认政策地区",
             "ingested": [],
             "pending": [],
         }, ensure_ascii=False, sort_keys=True))

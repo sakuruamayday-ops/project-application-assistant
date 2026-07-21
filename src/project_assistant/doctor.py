@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 from .config import unresolved_environment
-from .platforms import command_status, platform_home
 
 
 @dataclass
@@ -21,16 +20,13 @@ def _env_check(name: str) -> Check:
     return Check(name, "ok" if os.environ.get(name) else "optional", "已配置" if os.environ.get(name) else "未配置")
 
 
-def run_checks(platform: str, config: dict[str, Any], project_root: Path) -> list[Check]:
+def run_checks(config: dict[str, Any], project_root: Path, destination: Path | None = None) -> list[Check]:
     checks: list[Check] = []
-    installed, command = command_status(platform)
-    checks.append(Check("platform_command", "ok" if installed else "warning", command))
-
     skills_source = project_root / "skills"
     checks.append(Check("skills_source", "ok" if skills_source.is_dir() else "error", str(skills_source)))
 
-    destination = platform_home(platform, config)
-    checks.append(Check("skills_destination", "ok" if destination.parent.exists() else "warning", str(destination)))
+    if destination is not None:
+        checks.append(Check("skills_destination", "ok" if destination.parent.exists() else "warning", str(destination)))
 
     unresolved = unresolved_environment(config)
     checks.append(Check("environment_placeholders", "warning" if unresolved else "ok", ", ".join(unresolved) or "全部已解析"))

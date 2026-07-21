@@ -52,6 +52,14 @@ def test_credentials_file_is_current_user_only(tmp_path):
     assert values["JIAOTANG_KB_TOKEN"] == "token with spaces"
 
 
+def test_first_run_can_persist_default_policy_region(tmp_path):
+    target = tmp_path / "profile.json"
+    MODULE.write_region_profile("浙江省杭州市", target)
+    profile = json.loads(target.read_text(encoding="utf-8"))
+    assert profile["default_region"] == "浙江省杭州市"
+    assert profile["scope"] == ["杭州市", "浙江省", "全国"]
+
+
 def test_capability_profile_contains_names_not_secret_values(tmp_path):
     report, profile_file, _ = MODULE.run(
         tmp_path,

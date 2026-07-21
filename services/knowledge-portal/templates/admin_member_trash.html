@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}成员回收站｜知识产权大脑{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin">
+  <header class="admin-page-head"><div><p class="eyebrow">Member Recovery</p><h1>成员回收站</h1><p>已删除的邀请和账号保留在此，可随时恢复，不提供永久删除。</p></div><a class="button secondary" href="/portal#members">返回成员管理</a></header>
+  <section class="panel table-panel"><div class="panel-head"><h3>已删除账号</h3><span>{{ deleted_users|length }} 个</span></div><div class="table-wrap"><table><thead><tr><th>中文真实姓名</th><th>英文账号</th><th>移入时间</th><th>动作</th></tr></thead><tbody>{% for member in deleted_users %}<tr><td><a class="record-link" href="/admin/users/{{ member.id }}"><strong>{{ member.real_name or '待补充' }}</strong><small>查看详情</small></a></td><td>{{ member.username }}</td><td>{{ member.deleted_at }}</td><td><form method="post" action="/admin/users/{{ member.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-action" type="submit">恢复账号</button></form></td></tr>{% else %}<tr><td colspan="4" class="empty">没有已删除账号</td></tr>{% endfor %}</tbody></table></div></section>
+  <section class="panel table-panel"><div class="panel-head"><h3>已删除邀请</h3><span>{{ deleted_authorizations|length }} 条</span></div><div class="table-wrap"><table><thead><tr><th>中文真实姓名</th><th>企微手机后四位</th><th>移入时间</th><th>动作</th></tr></thead><tbody>{% for authorization in deleted_authorizations %}<tr><td><a class="record-link" href="/admin/registration-authorizations/{{ authorization.id }}"><strong>{{ authorization.real_name }}</strong><small>查看详情</small></a></td><td>{{ authorization.identity_code }}</td><td>{{ authorization.deleted_at }}</td><td><form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-action" type="submit">恢复邀请</button></form></td></tr>{% else %}<tr><td colspan="4" class="empty">没有已删除邀请</td></tr>{% endfor %}</tbody></table></div></section>
+</main>
+{% endblock %}

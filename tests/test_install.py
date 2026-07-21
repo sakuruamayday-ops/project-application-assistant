@@ -6,7 +6,7 @@ import subprocess
 import zipfile
 from pathlib import Path
 
-from project_assistant.platforms import install_skills
+from project_assistant.installer import install_skills
 from scripts.build_standard_package import (
     HOST_SKILL_INSTALL_PROMPT,
     included,
@@ -16,7 +16,7 @@ from scripts.build_standard_package import (
 
 
 class InstallTests(unittest.TestCase):
-    def test_release_package_excludes_platform_and_cache_artifacts(self):
+    def test_release_package_excludes_agent_metadata_and_cache_artifacts(self):
         self.assertFalse(included(Path("skills/example/agents/openai.yaml")))
         self.assertFalse(included(Path("skills/example/__pycache__/helper.pyc")))
         self.assertFalse(included(Path("skills/example/._SKILL.md")))
@@ -91,15 +91,15 @@ class InstallTests(unittest.TestCase):
             install_skills(source, destination, "copy", True)
             self.assertEqual((destination / "sample-skill" / "SKILL.md").read_text(encoding="utf-8"), "second")
 
-    def test_release_is_platform_neutral(self):
+    def test_release_contains_only_standard_skills(self):
         repository = Path(__file__).resolve().parents[1]
         self.assertEqual(len(list((repository / "skills").glob("*/SKILL.md"))), 53)
         self.assertFalse(any((repository / "skills").glob("*/agents/openai.yaml")))
         protocol = (
             repository
-            / "skills/first-run-configuration/references/cross-platform-startup-protocol.md"
+            / "skills/first-run-configuration/references/first-startup-protocol.md"
         ).read_text(encoding="utf-8")
-        self.assertIn("任意Agent", protocol)
+        self.assertIn("Agent", protocol)
         self.assertIn(HOST_SKILL_INSTALL_PROMPT, protocol)
 
 

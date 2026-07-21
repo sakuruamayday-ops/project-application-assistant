@@ -54,7 +54,7 @@ def import_file(path: Path) -> tuple[int, int]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="导入项目申报助手知识库 JSONL 文件")
+    parser = argparse.ArgumentParser(description="导入企业全生命周期助手知识库 JSONL 文件")
     parser.add_argument("path", type=Path)
     args = parser.parse_args()
     imported, rejected = import_file(args.path)
@@ -63,4 +63,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

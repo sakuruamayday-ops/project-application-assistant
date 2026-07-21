@@ -15,7 +15,7 @@ REQUIRED = [
     "skills/jiaotang-legal-regulations/scripts/search_legal_base.py",
     "skills/first-run-configuration/SKILL.md",
     "skills/first-run-configuration/scripts/configure.py",
-    "skills/first-run-configuration/references/cross-platform-startup-protocol.md",
+    "skills/first-run-configuration/references/first-startup-protocol.md",
     "skills/graphify/SKILL.md",
     "skills/skill-curator/SKILL.md",
     "skills/skill-curator/scripts/build_impact_graph.py",
@@ -30,6 +30,8 @@ REQUIRED = [
     "skills/project-deliverable-archive/SKILL.md",
     "skills/project-matching/references/canonical-project-index.jsonl",
     "skills/project-matching/references/high-frequency-project-rules.jsonl",
+    "skills/project-matching/references/high-frequency-project-retrieval-rules.json",
+    "skills/project-matching/references/high-frequency-project-gold-standard.jsonl",
     "skills/project-application-assistant/scripts/user_region_profile.py",
     "skills/project-application-assistant/references/region-loading-rules.md",
     "skills/third-party-data-indexing/SKILL.md",
@@ -44,7 +46,7 @@ REQUIRED = [
     "skills/industry-chain-foundation-matcher/references/source-documents/产业链架构(2).pdf",
     "skills/industry-chain-foundation-matcher/references/source-documents/工业六基领域目录(2).pdf",
     "docs/user-guide/api-mcp-configuration.md",
-    "docs/user-guide/项目申报助手用户使用手册.md",
+    "docs/user-guide/企业全生命周期助手用户使用手册.md",
 ]
 
 HOST_SKILL_INSTALL_PROMPT = "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
@@ -59,7 +61,6 @@ FORBIDDEN_TEXT_SNIPPETS = (
     "/Users/",
     "/Volumes/",
     ".agents/skills",
-    ".codex/skills",
     "jiaotang-rag-query",
     "patent-lawyer-agent",
     "qcc-quick-scan",
@@ -68,7 +69,7 @@ RELEASE_GATE_SNIPPETS = {
     "skills/first-run-configuration/SKILL.md": (
         "自动启用受控自进化",
         HOST_SKILL_INSTALL_PROMPT,
-        "cross-platform-startup-protocol.md",
+        "first-startup-protocol.md",
     ),
     "skills/project-application-assistant/SKILL.md": (
         "必须调用 `experience-recorder`",
@@ -81,7 +82,7 @@ RELEASE_GATE_SNIPPETS = {
 
 PACKAGE_DOCS = [
     "docs/user-guide/api-mcp-configuration.md",
-    "docs/user-guide/项目申报助手用户使用手册.md",
+    "docs/user-guide/企业全生命周期助手用户使用手册.md",
     "docs/config/aiqice.md",
     "docs/config/document-tools.md",
     "docs/config/government-browser.md",
@@ -114,6 +115,19 @@ def validate_release_source(root: Path) -> None:
         for snippet in snippets:
             if snippet not in content:
                 failures.append(f"{relative_path} 缺少门禁内容：{snippet}")
+    retrieval_rules_path = root / "skills/project-matching/references/high-frequency-project-retrieval-rules.json"
+    gold_path = root / "skills/project-matching/references/high-frequency-project-gold-standard.jsonl"
+    if retrieval_rules_path.is_file() and gold_path.is_file():
+        retrieval_rules = json.loads(retrieval_rules_path.read_text(encoding="utf-8"))["rules"]
+        aliases = {str(alias) for rule in retrieval_rules for alias in rule.get("aliases", [])}
+        gold_cases = [json.loads(line) for line in gold_path.read_text(encoding="utf-8").splitlines() if line]
+        case_keys = {(str(case["alias"]), str(case["kind"])) for case in gold_cases}
+        for alias in aliases:
+            for kind in ("positive", "cross-project", "stale"):
+                if (alias, kind) not in case_keys:
+                    failures.append(f"高频简称缺少{kind}金标准：{alias}")
+        if len(gold_cases) != len(aliases) * 3:
+            failures.append("高频简称金标准数量与三类门禁不一致")
     if failures:
         raise SystemExit("发布门禁失败：\n- " + "\n- ".join(failures))
 
@@ -133,8 +147,8 @@ def validate_release_archive(output: Path) -> None:
         for skill_name in ("manufacturing-tax-risk-analysis", "jiaotang-legal-regulations"):
             if f"skills/{skill_name}/SKILL.md" not in names:
                 raise SystemExit(f"发布门禁失败：ZIP缺少正式团队Skill {skill_name}")
-        if "skills/first-run-configuration/references/cross-platform-startup-protocol.md" not in names:
-            raise SystemExit("发布门禁失败：ZIP缺少跨平台首次启动协议")
+        if "skills/first-run-configuration/references/first-startup-protocol.md" not in names:
+            raise SystemExit("发布门禁失败：ZIP缺少首次启动协议")
         includes = manifest.get("includes", {})
         for name, expected in required_flags.items():
             if includes.get(name) != expected:
@@ -166,9 +180,9 @@ def main():
     parser.add_argument("--version", default="2.0.0")
     parser.add_argument("--status", default="release-candidate")
     args = parser.parse_args()
-    if not re.fullmatch(r"\d+\.\d+\.\d+", args.version):
-        raise SystemExit("版本号必须使用 MAJOR.MINOR.PATCH")
-    output = args.output or args.root / "dist" / f"项目申报助手-{args.version}.zip"
+    if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", args.version):
+        raise SystemExit("版本号必须使用 MAJOR.MINOR 或 MAJOR.MINOR.PATCH")
+    output = args.output or args.root / "dist" / f"企业全生命周期助手-{args.version}.zip"
     missing = [path for path in REQUIRED if not (args.root / path).is_file()]
     if missing:
         raise SystemExit(f"缺少必需资源: {missing}")
@@ -176,7 +190,7 @@ def main():
     files = sorted(path for path in (args.root / "skills").rglob("*") if path.is_file() and included(path.relative_to(args.root)))
     documentation = [args.root / path for path in PACKAGE_DOCS]
     manifest = {
-        "name": "项目申报助手",
+        "name": "企业全生命周期助手",
         "version": args.version,
         "status": args.status,
         "built_at": datetime.now(timezone.utc).isoformat(),
@@ -204,7 +218,7 @@ def main():
             "automatic_evolution_activation": True,
             "four_question_review": True,
             "host_skill_install_prompt": HOST_SKILL_INSTALL_PROMPT,
-            "platform_agent_metadata": False,
+            "agent_metadata": False,
             "manufacturing_tax_risk_analysis": True,
             "legal_regulations_dynamic_routing": True,
         },
