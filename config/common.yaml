@@ -1,11 +1,14 @@
 schema_version: 1
 product:
-  name: 项目申报助手
+  name: 企业全生命周期助手
   locale: zh-CN
   timezone: Asia/Shanghai
 
 onboarding:
   first_run_guide_required: true
+  unified_configuration_skill: first-run-configuration
+  capability_report_name: capabilities.json
+  credential_file_name: credentials.env
   guide_detail_level: detailed
   guide_output_format:
     - markdown
@@ -23,7 +26,7 @@ paths:
 
 security:
   store_secrets_in_config: false
-  secret_source: environment_or_keychain
+  secret_source: secure_env_file_environment_or_keychain
   redact_logs: true
   require_confirmation_for_external_send: true
   require_confirmation_for_rule_publish: true
@@ -46,28 +49,27 @@ providers:
     config_guide: docs/config/aiqice.md
     policy_role: index_only
     fallback: government_sources
-  obsidian:
-    enabled: false
-    vault_path: null
-    require_archive_confirmation: true
-    config_guide: docs/config/obsidian.md
   local_knowledge:
     enabled: false
     root_path: null
     config_guide: docs/config/local-knowledge.md
-
-channels:
-  feishu:
-    enabled: false
-    adapter: hermes
-    require_target_confirmation: true
-    config_guide: docs/config/feishu.md
 
 evolution:
   enabled: false
   mode: dry_run
   require_human_approval: true
   snapshot_before_change: true
+  impact_graph:
+    enabled: true
+    output_dir: .project-assistant/evolution
+    max_depth: 4
+    require_before_candidate: true
+  correction_batch:
+    min_signal_count: 3
+    min_distinct_tasks: 2
+    max_batch_skills: 2
+    cooldown_days: 7
+    require_verified: true
   protected_rules:
     - identity
     - permissions

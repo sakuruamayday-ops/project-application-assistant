@@ -1,0 +1,43 @@
+{
+  "industry_chain": {
+    "source_file": "产业链架构(2).pdf",
+    "sha256": "0235e6eef74f76aa94e81e6d85294345f8b979ce3cbadef024bd684056f4bd56",
+    "pages": 40,
+    "top_level_chains": 26,
+    "unique_paths": 2128
+  },
+  "industry_foundation": {
+    "source_file": "工业六基领域目录(2).pdf",
+    "document_title": "产业基础创新发展目录（2021年版）",
+    "compiler": "国家产业基础专家委员会",
+    "sha256": "6fdb5a0e12f2a23b22f1a31644f6e05c754420fb6aa90a87490dc5bd641857c2",
+    "pages": 114,
+    "fields": 21,
+    "items": 1047,
+    "category_counts": {
+      "基础零部件和元器件": 289,
+      "基础材料": 269,
+      "工业基础软件": 100,
+      "基础制造工艺及装备": 260,
+      "产业技术基础": 129
+    }
+  },
+  "distribution": {
+    "raw_pdfs_included": true,
+    "source_documents": [
+      "references/source-documents/产业链架构(2).pdf",
+      "references/source-documents/工业六基领域目录(2).pdf"
+    ],
+    "index_scope": "保存原始 PDF，并提供分类名称、层级路径、产品技术名称和来源页码的结构化索引",
+    "authorization_basis": "资料提供者确认两份文件均为网络公开信息，可以自由对外分发",
+    "redistribution_status": "free-to-redistribute-by-user-confirmation",
+    "notice": "两份原始 PDF 和结构化索引可随技能包共同分发。"
+  },
+  "validity_policy": {
+    "status": "default-valid-until-user-revokes-or-replaces",
+    "bundle_rule": "两份文件属于同一套分类资料，必须共同生效、共同更新，不单独替换其中一份",
+    "rule": "在用户明确告知整套资料过期、失效或被新版替代前，默认继续使用",
+    "output_requirement": "每次匹配结果标注两份来源文件、对应页码、《产业基础创新发展目录（2021年版）》的版本年份和默认有效状态；产业链架构不单独标注机构和日期",
+    "latest_version_claim": "不得仅凭默认有效规则声称文件是官方最新版本"
+  }
+}

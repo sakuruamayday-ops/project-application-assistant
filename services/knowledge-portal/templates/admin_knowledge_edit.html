@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}修改知识库资料｜企业全生命周期助手{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin narrow-admin">
+  <header class="admin-page-head"><div><p class="eyebrow">Document Editor</p><h1>修改知识库资料 #{{ document.document_id }}</h1><p>保存前自动创建完整索引快照，并同步重建全文、分块和企业名称索引。</p></div><a class="button secondary" href="/admin/knowledge">返回知识库管理</a></header>
+  <div class="notice alert">这里修改的是生产索引内容，不会改写原始上传文件。后续重新全量建库时，应同步修订原文件。</div>
+  <form class="panel form-stack document-editor" method="post"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><label>标题<input name="title" required maxlength="500" value="{{ document.title }}"></label><label>资料类别<input name="document_role" required maxlength="200" value="{{ document.document_role }}"></label><label>来源路径或来源说明<textarea name="source" rows="3" maxlength="2000">{{ document.source }}</textarea></label><label>正文<textarea name="content" rows="28" required>{{ document.content }}</textarea></label><div class="button-row split-actions"><div><button class="button" type="submit">创建快照并保存</button><a class="button secondary" href="/admin/knowledge">取消</a></div><a class="button danger-outline" href="/admin/knowledge/{{ document.document_id }}/trash">移入回收站</a></div></form>
+</main>
+{% endblock %}

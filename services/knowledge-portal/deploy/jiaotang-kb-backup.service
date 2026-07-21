@@ -1,0 +1,15 @@
+[Unit]
+Description=Back up Jiaotang knowledge database
+After=jiaotang-kb.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/jiaotang-kb.env
+ExecStart=/usr/local/sbin/jiaotang-kb-backup
+User=root
+Group=root
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jiaotang-kb /var/backups/jiaotang-kb
+NoNewPrivileges=true

@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+endpoint="${JIAOTANG_KB_ENDPOINT:?请设置 JIAOTANG_KB_ENDPOINT}"
+token="${JIAOTANG_KB_TOKEN:?请设置 JIAOTANG_KB_TOKEN}"
+query="${JIAOTANG_SMOKE_QUERY:-小巨人}"
+endpoint="${endpoint%/}"
+curl_args=(--fail-with-body --silent --show-error --max-time 30)
+
+if [[ -n "${JIAOTANG_RESOLVE_IP:-}" ]]; then
+    host="${endpoint#*://}"
+    host="${host%%/*}"
+    curl_args+=(--resolve "${host}:443:${JIAOTANG_RESOLVE_IP}")
+fi
+
+auth=(-H "Authorization: Bearer ${token}")
+me="$(curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/me")"
+search_payload="$(JIAOTANG_SMOKE_QUERY_VALUE="${query}" python3 -c 'import json,os; print(json.dumps({"query": os.environ["JIAOTANG_SMOKE_QUERY_VALUE"], "limit": 3}, ensure_ascii=False))')"
+search="$(curl "${curl_args[@]}" "${auth[@]}" -H 'Content-Type: application/json' -X POST \
+    -d "${search_payload}" \
+    "${endpoint}/v1/search")"
+document_id="$(printf '%s' "${search}" | python3 -c 'import json,sys; rows=json.load(sys.stdin)["results"]; print(rows[0]["document_id"] if rows else "")')"
+[[ -n "${document_id}" ]] || { echo "检索未命中文档" >&2; exit 1; }
+document="$(curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/documents/${document_id}")"
+usage="$(curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/usage")"
+skills="$(curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/skills/latest")"
+
+ME="${me}" SEARCH="${search}" DOCUMENT="${document}" USAGE="${usage}" SKILLS="${skills}" python3 - <<'PY'
+import json
+import os
+
+me = json.loads(os.environ["ME"])
+search = json.loads(os.environ["SEARCH"])
+document = json.loads(os.environ["DOCUMENT"])
+usage = json.loads(os.environ["USAGE"])
+skills = json.loads(os.environ["SKILLS"])
+print("生产冒烟测试通过")
+print("用户：" + me["username"])
+print("检索命中：" + str(len(search["results"])))
+print("文档：" + document["title"])
+print("累计调用：" + str(usage["total_calls"]))
+print("Skills：" + (skills.get("version") or "尚未发布"))
+PY

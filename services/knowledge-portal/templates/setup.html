@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}初始化｜知识产权大脑{% endblock %}
+{% block content %}
+<main class="auth-shell single-auth">
+  <section class="auth-story"><a class="brand brand-on-dark"><span class="brand-mark brand-mark-wide">GCIP</span><span><strong>知识产权大脑</strong><small>首次部署</small></span></a><div class="story-copy"><p class="eyebrow light">Owner Setup</p><h1>创建唯一管理员</h1><p>管理员负责知识库更新、Skills 发布和团队账号维护。</p></div></section>
+  <section class="auth-panel"><div class="auth-form-wrap"><p class="eyebrow">First Setup</p><h2>初始化服务</h2><p class="muted">初始化完成后，本入口自动关闭。管理员使用英文登录账号，密码至少9位。</p>{% if error %}<div class="notice alert">{{ error }}</div>{% endif %}<form method="post" action="/setup" class="form-stack"><label>初始化密钥<input name="setup_key" type="password" required autocomplete="one-time-code"></label><label>管理员英文账号<input name="username" required minlength="3" maxlength="32" autocomplete="username" placeholder="例如 admin"></label><label>登录密码<input name="password" type="password" required minlength="9" maxlength="256" autocomplete="new-password"></label><button class="button full" type="submit">完成初始化</button></form></div></section>
+</main>
+{% endblock %}

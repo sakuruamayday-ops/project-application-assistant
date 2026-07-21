@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}注册｜知识产权大脑{% endblock %}
+{% block content %}
+<main class="auth-shell">
+  <section class="auth-story">
+    <a class="brand brand-on-dark" href="/login"><span class="brand-mark brand-mark-wide">GCIP</span><span><strong>知识产权大脑</strong><small>共创团队知识服务</small></span></a>
+    <div class="archive-number">TEAM ONBOARDING</div>
+    <div class="story-copy"><p class="eyebrow light">Join The Workspace</p><h1>一次验证<br>连接团队能力</h1><p>注册后即可使用知识问答、获取个人接入配置并下载最新版企业全生命周期助手 Skills。</p></div>
+    <div class="story-foot"><span class="live-dot"></span>公司名称仅用于成员身份验证</div>
+  </section>
+  <section class="auth-panel">
+    <div class="auth-form-wrap">
+      <p class="eyebrow">Create Account</p><h2>注册团队账号</h2><p class="muted">仅限管理员预先授权的内部成员注册。</p>
+      {% if error %}<div class="notice alert">{{ error }}</div>{% endif %}
+      {% if invited_member %}<div class="invite-confirmation"><span>专属邀请已识别</span><strong>{{ invited_member.real_name }}</strong><small>请核对企业微信绑定手机号后四位后完成注册。</small></div>{% endif %}
+      <form method="post" action="/register" class="form-stack">
+        <input type="hidden" name="invite_token" value="{{ invite_token or '' }}">
+        <label>英文登录账号<input name="username" required minlength="3" maxlength="32" autocomplete="username" placeholder="例如 zhangsan"></label>
+        <label>中文真实姓名<input name="real_name" required minlength="2" maxlength="20" autocomplete="name" value="{{ invited_member.real_name if invited_member else '' }}" {% if invited_member %}readonly{% endif %} placeholder="必须与管理员授权名单一致"></label>
+        <label>企业微信绑定手机号或后四位<input name="identity_code" required minlength="4" maxlength="24" inputmode="tel" autocomplete="off" value="{{ invited_member.identity_code if invited_member else '' }}" {% if invited_member %}readonly{% endif %} placeholder="例如 13800000826 或 0826"></label>
+        <label>所属公司全称<input name="company_name" required maxlength="100" autocomplete="organization" placeholder="请输入完整公司名称"></label>
+        <label>密码<input name="password" type="password" required minlength="9" maxlength="256" autocomplete="new-password" placeholder="至少9位"></label>
+        <label>确认密码<input name="confirm_password" type="password" required minlength="9" maxlength="256" autocomplete="new-password"></label>
+        <button class="button full" type="submit">核验名单并注册</button>
+      </form>
+      <p class="form-help">已在管理员导入名单中的成员无需邀请链接，直接填写真实姓名和企业微信绑定手机号后四位即可自助注册。核验失败时请联系管理员确认名单。</p>
+      <p class="auth-switch">已有账号？<a href="/login">返回登录</a></p>
+      <p class="auth-guide-link"><a href="/guide">查看用户使用手册 →</a></p>
+    </div>
+  </section>
+</main>
+{% endblock %}

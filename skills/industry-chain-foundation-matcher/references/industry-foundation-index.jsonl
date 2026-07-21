@@ -1,0 +1,1047 @@
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 1, "item": "高性能以太网交换芯片", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 2, "item": "四口千兆/万兆网卡芯片", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 3, "item": "射频滤波器", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 4, "item": "射频功率放大器", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 5, "item": "射频低噪声放大器", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 6, "item": "射频开关", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 7, "item": "5G 终端基带芯片", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 8, "item": "小型化高电容 MLCC", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 9, "item": "高端手机 SoC AP", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 10, "item": "手机高性能电源管理芯片 PMIC", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 11, "item": "手机 NFC 芯片", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 12, "item": "手机内存芯片", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 13, "item": "MEMS 加速度计和陀螺仪", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 14, "item": "ADC/DAC/Tranceiver", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 15, "item": "基站 LNA", "page": 14}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 16, "item": "基站功放管", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 17, "item": "高速连接器", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 18, "item": "高性能 FPGA 芯片", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 19, "item": "25/50 GBaud 通信用半导体激光器芯片", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 20, "item": "高速直调直模光模块", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 21, "item": "高速相干光模块", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 22, "item": "50G 以上 PAM4 芯片", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 23, "item": "WSS 波长选择开关", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 24, "item": "AM 玻璃基小间距显示屏", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 25, "item": "显示驱动芯片", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 26, "item": "高端通用 CPU 芯片", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 27, "item": "RAID 卡/HBA 卡", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 28, "item": "5G 工业网关", "page": 15}
+{"field": "信息通信设备", "category": "基础零部件和元器件", "number": 29, "item": "微型半导体制冷片", "page": 15}
+{"field": "信息通信设备", "category": "基础材料", "number": 1, "item": "液晶高分子（LCP）薄膜材料", "page": 15}
+{"field": "信息通信设备", "category": "基础制造工艺及装备", "number": 1, "item": "硅光集成工艺", "page": 16}
+{"field": "信息通信设备", "category": "基础制造工艺及装备", "number": 2, "item": "28nm 及以上光刻机", "page": 16}
+{"field": "信息通信设备", "category": "基础制造工艺及装备", "number": 3, "item": "7nm 及以上硅刻蚀机", "page": 16}
+{"field": "信息通信设备", "category": "基础制造工艺及装备", "number": 4, "item": "玻璃基板清洗设备", "page": 16}
+{"field": "信息通信设备", "category": "基础制造工艺及装备", "number": 5, "item": "OLED 蒸镀机", "page": 16}
+{"field": "信息通信设备", "category": "基础制造工艺及装备", "number": 6, "item": "OLED 封装设备", "page": 16}
+{"field": "信息通信设备", "category": "基础制造工艺及装备", "number": 7, "item": "Mini/Micro LED 设备", "page": 16}
+{"field": "信息通信设备", "category": "产业技术基础", "number": 1, "item": "量子通信与 ICT 融合技术验证实验床", "page": 16}
+{"field": "信息通信设备", "category": "产业技术基础", "number": 2, "item": "5G 融合应用创新公共服务平台", "page": 16}
+{"field": "信息通信设备", "category": "产业技术基础", "number": 3, "item": "卫星互联网试验验证平台", "page": 16}
+{"field": "信息通信设备", "category": "产业技术基础", "number": 4, "item": "量子计算综合接入平台与测评能力", "page": 16}
+{"field": "信息通信设备", "category": "产业技术基础", "number": 5, "item": "未来网络试验设施", "page": 16}
+{"field": "信息通信设备", "category": "产业技术基础", "number": 6, "item": "北斗网络辅助技术", "page": 16}
+{"field": "信息通信设备", "category": "产业技术基础", "number": 7, "item": "工业互联网网络体系综合公共服务平台", "page": 16}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 1, "item": "服务器操作系统", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 2, "item": "桌面操作系统", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 3, "item": "嵌入式操作系统", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 4, "item": "移动操作系统", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 5, "item": "程序语言与编译器", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 6, "item": "软件开发环境与生态环境", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 7, "item": "软件安全检测工具", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 8, "item": "联机事务处理型（OLTP）关系数据库", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 9, "item": "联机分析处理型（OLAP）关系数据库", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 10, "item": "混合事务和分析处理型（HTAP）数据库", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 11, "item": "非关系型数据库（NoSQL）—图数据库", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 12, "item": "应用服务器中间件", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 13, "item": "消息中间件", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 14, "item": "分布式文件系统", "page": 17}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 15, "item": "通用边缘容器", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 16, "item": "无服务器云计算管理系统", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 17, "item": "数学规划求解器", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 18, "item": "深度学习平台", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 19, "item": "批流融合的分布式计算框架", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 20, "item": "三维计算机辅助设计软件（三维 CAD）", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 21, "item": "二维计算机辅助设计软件（二维 CAD）", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 22, "item": "工厂三维设计", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 23, "item": "工厂工艺仿真软件", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 24, "item": "计算机辅助工程软件（CAE）—结构（含热）", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 25, "item": "计算机辅助工程软件（CAE）—流体", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 26, "item": "计算机辅助工程软件（CAE）—冲击动力学", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 27, "item": "计算机辅助工程软件（CAE）—多体动力学仿真", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 28, "item": "计算机辅助工程软件（CAE）—电磁场仿真", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 29, "item": "计算机辅助工程软件（CAE）—声学", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 30, "item": "计算机辅助工程软件（CAE）—光学", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 31, "item": "计算机辅助工程软件（CAE）—多学科设计集成与优化", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 32, "item": "科学计算软件", "page": 18}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 33, "item": "工程建模软件", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 34, "item": "基于失效物理的可靠性仿真评价软件", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 35, "item": "六性协同应用平台", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 36, "item": "基于模型的系统工程综合设计平台", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 37, "item": "试验数据管理软件（TDM）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 38, "item": "多轴联动数控加工设计仿真软件（CAM）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 39, "item": "计算机辅助工艺设计软件（CAPP）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 40, "item": "生产管理软件（MES/MOM）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 41, "item": "工业产品全生命周期虚拟现实仿真平台", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 42, "item": "先进控制软件（APC）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 43, "item": "实时优化平台软件（RTO）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 44, "item": "工业实时控制软件（DCS、PLC）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 45, "item": "工业监控调度软件（SCADA）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 46, "item": "高级计划排产软件（APS）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 47, "item": "仓储物流管理软件（WMS）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 48, "item": "工业控制组态软件", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 49, "item": "工业网络协议软件", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 50, "item": "维护、维修、运行软件（MRO）", "page": 19}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 51, "item": "故障预测与健康管理软件（PHM）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 52, "item": "产品设计与工艺过程故障模式影响分析软件（FMEA）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 53, "item": "设备资产绩效管理平台（EAM）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 54, "item": "复杂产品全生命周期数据管理系统（PLM）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 55, "item": "工厂生命周期管理软件（FLM）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 56, "item": "高端企业资源计划软件（ERP）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 57, "item": "产业级供应链网络平台（SCM）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 58, "item": "基于主动服务的客户关系管理（离散型 CRM）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 59, "item": "企业级项目管理系统（PMS）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 60, "item": "工业控制安全软件", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 61, "item": "工业软件全生命周期标准化管理工具", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 62, "item": "工业协议类测试工具", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 63, "item": "质量管理系统（QMS）", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 64, "item": "工业物联网时序数据库", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 65, "item": "工业大数据管理与建模工具", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 66, "item": "工业 APP 集成开发环境", "page": 20}
+{"field": "基础软件及工业软件", "category": "工业基础软件", "number": 67, "item": "工业互联网平台", "page": 20}
+{"field": "机床与基础制造装备及机器人", "category": "基础零部件和元器件", "number": 1, "item": "45MPa 级高压大流量插装阀及盖板", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础零部件和元器件", "number": 2, "item": "200MPa 级超高压卸荷阀、充液阀和单向阀", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础零部件和元器件", "number": 3, "item": "1800MPa 级静液挤压密封及介质", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础零部件和元器件", "number": 4, "item": "超硬刀具", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础零部件和元器件", "number": 5, "item": "通用智能高速机器视觉平台", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础零部件和元器件", "number": 6, "item": "汽车用自动换刀无级变速电主轴", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础材料", "number": 1, "item": "高性能滑动轴承用改性巴氏合金", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础材料", "number": 2, "item": "高质量活性膏状钎料", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础材料", "number": 3, "item": "高精度丝杠导轨用优质合金钢", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础材料", "number": 4, "item": "超细晶硬质合金", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础材料", "number": 5, "item": "工业机器人专用润滑油/脂", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "基础材料", "number": 6, "item": "洁净（真空）机器人用润滑脂", "page": 21}
+{"field": "机床与基础制造装备及机器人", "category": "工业基础软件", "number": 1, "item": "热处理工业互联数据执行系统", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "工业基础软件", "number": 2, "item": "高档数控机床 CAM 软件", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "工业基础软件", "number": 3, "item": "数控机床性能监测系统", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "工业基础软件", "number": 4, "item": "数字孪生系统", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "工业基础软件", "number": 5, "item": "铸件缺陷智能识别软件", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "基础制造工艺及装备", "number": 1, "item": "内螺伞齿轮条形刀条刃磨工艺", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "基础制造工艺及装备", "number": 2, "item": "高性能轻量化低能耗汽车零部件近净成形制造工艺", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "基础制造工艺及装备", "number": 3, "item": "多材质砂型 3D 打印关键设备与工艺", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "产业技术基础", "number": 1, "item": "数控机床装备互联通讯及应用平台", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "产业技术基础", "number": 2, "item": "基础制造装备工业互联网及测试验证平台", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "产业技术基础", "number": 3, "item": "数控机床可靠性提升及关键共性技术创新平台", "page": 22}
+{"field": "机床与基础制造装备及机器人", "category": "产业技术基础", "number": 4, "item": "机器人安全性与可靠性试验验证平台", "page": 22}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 1, "item": "轨道交通牵引电机绝缘轴承", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 2, "item": "CR450 动车组转向架轴承", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 3, "item": "电机械制动系统", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 4, "item": "高速列车轻量化高耐热基础制动装置", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 5, "item": "高功率密度 IGBT 器件", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 6, "item": "轨道车辆用自适应液体橡胶复合节点", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 7, "item": "轨道交通车辆用长寿命高可靠性联轴节", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 8, "item": "铁路货车自供电装置", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 9, "item": "高性能智能化高速列车齿轮传动装置", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 10, "item": "智能转向架", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 11, "item": "新型低动力作用弹性车轮", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 12, "item": "电动悬浮列车车载超导磁体", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 13, "item": "轨道交通车辆用油压减振器", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 14, "item": "高耐久性燃料电池电堆", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 15, "item": "高铁列车用紧固件", "page": 23}
+{"field": "先进轨道交通", "category": "基础零部件和元器件", "number": 16, "item": "轨道交通装备用继电器", "page": 23}
+{"field": "先进轨道交通", "category": "基础材料", "number": 1, "item": "轨道车辆核心受力部件用高强度铝合金材料", "page": 24}
+{"field": "先进轨道交通", "category": "基础材料", "number": 2, "item": "增材制造高强铝合金材料", "page": 24}
+{"field": "先进轨道交通", "category": "基础材料", "number": 3, "item": "轨道交通车辆用碳纤维复合材料", "page": 24}
+{"field": "先进轨道交通", "category": "基础材料", "number": 4, "item": "高速受电弓浸金属碳滑板材料", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 1, "item": "轨道交通装备复合材料高效低成本成型工艺与装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 2, "item": "金属型压力铸造工艺与装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 3, "item": "双频感应淬火工艺与装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 4, "item": "铝合金车体免涂装工艺与装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 5, "item": "轨道交通装备绿色弧焊接工艺与装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 6, "item": "高速列车异型复杂曲面蒙皮无模成形工艺与装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 7, "item": "轨道交通用超薄壁高致密铸件真空吸铸工艺", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 8, "item": "高导电铜基复合材料卷对卷 CVD—轧压连续成型工艺与 装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 9, "item": "轨道交通高效修复工艺与装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 10, "item": "轨道交通激光—电弧复合焊技术与装备", "page": 24}
+{"field": "先进轨道交通", "category": "基础制造工艺及装备", "number": 11, "item": "轨道交通激光焊接工艺与成套装备", "page": 24}
+{"field": "先进轨道交通", "category": "产业技术基础", "number": 1, "item": "轨道交通列车综合试验平台", "page": 25}
+{"field": "先进轨道交通", "category": "产业技术基础", "number": 2, "item": "轨道交通产品全寿命周期状态监测及健康管理平台", "page": 25}
+{"field": "先进轨道交通", "category": "产业技术基础", "number": 3, "item": "轴承综合模拟试验平台", "page": 25}
+{"field": "智能网联汽车", "category": "基础零部件和元器件", "number": 1, "item": "高性能毫米波雷达", "page": 26}
+{"field": "智能网联汽车", "category": "基础零部件和元器件", "number": 2, "item": "衍射光学元件（DOE）", "page": 26}
+{"field": "智能网联汽车", "category": "基础零部件和元器件", "number": 3, "item": "线控转向系统", "page": 26}
+{"field": "智能网联汽车", "category": "基础零部件和元器件", "number": 4, "item": "线控制动系统", "page": 26}
+{"field": "智能网联汽车", "category": "基础零部件和元器件", "number": 5, "item": "电磁阀", "page": 26}
+{"field": "智能网联汽车", "category": "基础零部件和元器件", "number": 6, "item": "C-V2X 模组", "page": 26}
+{"field": "智能网联汽车", "category": "工业基础软件", "number": 1, "item": "自动驾驶仿真测试评价软件平台", "page": 26}
+{"field": "智能网联汽车", "category": "产业技术基础", "number": 1, "item": "智能网联汽车信息安全基础平台", "page": 26}
+{"field": "智能网联汽车", "category": "产业技术基础", "number": 2, "item": "智能网联汽车场景库及其基础数据平台", "page": 26}
+{"field": "智能网联汽车", "category": "产业技术基础", "number": 3, "item": "智能网联汽车测试验证公共服务平台", "page": 26}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 1, "item": "中重卡纯电动/电液助力转向器", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 2, "item": "大扭矩双离合器", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 3, "item": "零碳燃料发动机燃料管理系统", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 4, "item": "零碳燃料发动机专用后处理系统", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 5, "item": "商用车/乘用车高效混合动力系统", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 6, "item": "重型商用车电驱动桥", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 7, "item": "高速、高效、静音轴承", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 8, "item": "电驱动产品高速油封", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 9, "item": "高精密、高频响、低泄漏电磁阀", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 10, "item": "乘用车混合动力专用发动机", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 11, "item": "商用车混合动力专用柴油机", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 12, "item": "高效高功率轮毂/轮边电机总成", "page": 27}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 13, "item": "深度集成电驱动总成", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 14, "item": "高能量型动力电池", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 15, "item": "高功率型动力电池", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 16, "item": "能量功率兼顾型动力电池（兼顾快充）", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 17, "item": "高性能动力电池系统", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 18, "item": "固态动力电池", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 19, "item": "钠离子电池", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 20, "item": "自动充电（ACD）机器辅助装置", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 21, "item": "质子交换膜燃料电池电堆（膜电极组件、气体扩散层、极 板）", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 22, "item": "燃料电池系统关键部件（空压机、增湿器、氢气循环泵、 空气流量计）", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 23, "item": "车载氢系统关键部件（IV 型瓶、瓶阀、减压阀、加氢口、 氢气浓度传感器）", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 24, "item": "商用车燃料电池系统", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 25, "item": "宽电压大功率传导充电装置", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础零部件和元器件", "number": 26, "item": "车桩协同无线电能耦合充放电系统", "page": 28}
+{"field": "节能与新能源汽车", "category": "基础材料", "number": 1, "item": "免热处理压铸铝合金材料", "page": 29}
+{"field": "节能与新能源汽车", "category": "基础材料", "number": 2, "item": "超级铜线（石墨烯铜）", "page": 29}
+{"field": "节能与新能源汽车", "category": "基础材料", "number": 3, "item": "高温膜材料", "page": 29}
+{"field": "节能与新能源汽车", "category": "基础材料", "number": 4, "item": "动力电池关键材料", "page": 29}
+{"field": "节能与新能源汽车", "category": "基础材料", "number": 5, "item": "燃料电池铂族催化剂", "page": 29}
+{"field": "节能与新能源汽车", "category": "基础材料", "number": 6, "item": "电解质膜", "page": 29}
+{"field": "节能与新能源汽车", "category": "基础材料", "number": 7, "item": "汽车尾气处理用电子浆料材料", "page": 29}
+{"field": "节能与新能源汽车", "category": "工业基础软件", "number": 1, "item": "汽车人机工学仿真与评价软件", "page": 29}
+{"field": "节能与新能源汽车", "category": "工业基础软件", "number": 2, "item": "汽车 NVH 性能仿真与评价软件", "page": 29}
+{"field": "节能与新能源汽车", "category": "工业基础软件", "number": 3, "item": "汽车开发数据集成管理平台软件", "page": 29}
+{"field": "节能与新能源汽车", "category": "工业基础软件", "number": 4, "item": "汽车场地试验测试与评价系统", "page": 29}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 1, "item": "Ⅳ型储氢瓶纤维缠绕成型工艺及装备", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 2, "item": "轻质高强结构无预制孔铆接工艺", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 3, "item": "新一代高效电池生产工艺", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 4, "item": "扁线电机核心工艺", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 5, "item": "燃料电池不锈钢双极板成形工艺与装备", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 6, "item": "超薄钛合金双极板激光精密组对焊接工艺与装备", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 7, "item": "燃料电池双极板快速检测及评价技术", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 8, "item": "燃料电池电堆智能装配技术", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 9, "item": "燃料电池双极板连续式镀膜工艺及装备", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 10, "item": "燃料电池高精度膜电极制造技术及装备", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 11, "item": "短流程高性能高强铝合金热冲压成形工艺", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 12, "item": "高强铝合金薄壁构件高效超低温成形工艺", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 13, "item": "VOCs 原位处理技术", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 14, "item": "汽车铝板塑性成形工艺及模具技术", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 15, "item": "铝及镁合金液压、冷弯等紧密塑性成形工艺与模具技术", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 16, "item": "基于碳纤增强的多材料体系复杂结构件成型与装备", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 17, "item": "电阻点焊智能监控技术", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 18, "item": "薄膜前处理及配套设备", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 19, "item": "涂胶系统", "page": 30}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 20, "item": "输调漆系统", "page": 31}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 21, "item": "高性能轻量化低能耗汽车件近净成形制造工艺技术", "page": 31}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 22, "item": "面向多品种变批量生成的白车身装配过程动态建模与质 量控制技术", "page": 31}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 23, "item": "新能源汽车超大型一体化高强韧车身结构件成套技术及 装备", "page": 31}
+{"field": "节能与新能源汽车", "category": "基础制造工艺及装备", "number": 24, "item": "混动发动机气缸孔喷涂工艺", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 1, "item": "动力电池全生命周期安全性动态评价技术", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 2, "item": "动力电池电－热－力多场耦合仿真分析平台", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 3, "item": "车用燃料电池耐久及整车安全性测试与评价技术", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 4, "item": "充电设施车桩网协同可信认证（C-PKI）", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 5, "item": "充电系统产品认证及运营管理标准体系", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 6, "item": "全新一代超高速车用电机测功机系统", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 7, "item": "转向系统动态实验台", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 8, "item": "汽车驱动与制动动态性能实验台", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 9, "item": "悬架力学性能综合实验台", "page": 31}
+{"field": "节能与新能源汽车", "category": "产业技术基础", "number": 10, "item": "汽车动力学性能模拟器", "page": 31}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 1, "item": "核电机组常规岛关键阀门", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 2, "item": "大型变速抽蓄机组交流励磁单元", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 3, "item": "50MWe 超临界 CO 锅炉", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 4, "item": "适应油/水—水/水液动阀", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 5, "item": "储能用大容量长寿命磷酸铁锂电池", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 6, "item": "湿绕组电机主泵用绕组电缆", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 7, "item": "核设备用高性能双卡密封接头及三向接头", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 8, "item": "光伏追踪支架", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 9, "item": "氢燃气轮机燃烧器", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 10, "item": "高压氢气隔膜式压缩机膜片", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 11, "item": "高精度氢气质量流量计", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 12, "item": "华龙二号堆内构件整体堆芯围筒锻件", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 13, "item": "H/J 型燃气轮机透平末级叶片铸件", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 14, "item": "柔性输电系统用干式直流支撑电容器", "page": 32}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 15, "item": "换流变压器±800kV 阀侧出线装置", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 16, "item": "特高压直流输电用阀侧和穿墙套管", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 17, "item": "大容量发电机断路器", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 18, "item": "直流 GIS", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 19, "item": "换流变压器有载调压分接开关技术及装备", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 20, "item": "IGCT 器件", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 21, "item": "特高压交流输电用套管", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 22, "item": "开关设备合闸电阻", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 23, "item": "避雷器高性能电阻片", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 24, "item": "直流断路器控制保护系统", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 25, "item": "开关设备大功率快速操动机构", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 26, "item": "高速斥力操动机构", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 27, "item": "高压触发间隙", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 28, "item": "高温、高场强电力电容器", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 29, "item": "高压大电流导流机构", "page": 33}
+{"field": "电力装备", "category": "基础零部件和元器件", "number": 30, "item": "新型模块化多电平矩阵式（M3C）换流器", "page": 33}
+{"field": "电力装备", "category": "基础材料", "number": 1, "item": "铜钨合金 CUW70\\CUW80", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 2, "item": "直流 GIS 用环氧绝缘材料", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 3, "item": "高压设备用增强型环氧树脂材料", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 4, "item": "特高压电气设备绝缘拉杆用芳纶、玻璃纤维等纤维复合材 料", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 5, "item": "光伏异质结电池 ITO 靶材", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 6, "item": "绿电制氢设备质子交换膜", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 7, "item": "石墨自润滑免维护轴承材料", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 8, "item": "发电设备用大中型护环锻件", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 9, "item": "双孔和单孔转子含银铜排", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 10, "item": "核级 Canopy 密封焊用异形曲面熔化填充环自主化研制", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 11, "item": "核安全设备用耐高温耐辐照有机硅浸渍漆", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 12, "item": "650℃超超临界机组关键材料开发", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 13, "item": "高效光伏电极用银粉及异质结低温银浆技术开发", "page": 34}
+{"field": "电力装备", "category": "基础材料", "number": 14, "item": "核级部件用焊材（低合金/镍基/不锈钢）", "page": 34}
+{"field": "电力装备", "category": "工业基础软件", "number": 1, "item": "载荷仿真", "page": 35}
+{"field": "电力装备", "category": "工业基础软件", "number": 2, "item": "漂浮式风机一体化仿真", "page": 35}
+{"field": "电力装备", "category": "工业基础软件", "number": 3, "item": "轴承校核软件", "page": 35}
+{"field": "电力装备", "category": "基础制造工艺及装备", "number": 1, "item": "狭小空间遥控焊接机器人", "page": 35}
+{"field": "电力装备", "category": "基础制造工艺及装备", "number": 2, "item": "聚变堆 4.2K 超厚材料焊接技术", "page": 35}
+{"field": "电力装备", "category": "基础制造工艺及装备", "number": 3, "item": "水冷壁激光增材防腐技术", "page": 35}
+{"field": "电力装备", "category": "基础制造工艺及装备", "number": 4, "item": "大型冲击式转轮高质量焊接技术", "page": 35}
+{"field": "电力装备", "category": "基础制造工艺及装备", "number": 5, "item": "电力装配增材制造技术", "page": 35}
+{"field": "电力装备", "category": "产业技术基础", "number": 1, "item": "高效清洁燃煤电站锅炉技术服务平台", "page": 35}
+{"field": "电力装备", "category": "产业技术基础", "number": 2, "item": "大型海上风电机组传动链全尺寸地面测试平台", "page": 35}
+{"field": "电力装备", "category": "产业技术基础", "number": 3, "item": "发电机智能监测与诊断平台", "page": 35}
+{"field": "电力装备", "category": "产业技术基础", "number": 4, "item": "新型电力系统相关产品标准", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 5, "item": "发电机膛内机器人检测", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 6, "item": "输变配电设备智能化通信试验平台", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 7, "item": "绿色低碳产品检验检测平台", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 8, "item": "新型电力系统产品认证体系", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 9, "item": "大口径电磁流量计", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 10, "item": "压缩气体储能技术与设备", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 11, "item": "高电压、大电流量值溯源体系", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 12, "item": "材料检测国家标准", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 13, "item": "特高频电磁波法局部放电测量系统", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 14, "item": "极快速阶跃波电压发生器", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 15, "item": "避雷器污秽试验电荷量测量装置", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 16, "item": "冲击式水力模型试验台", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 17, "item": "大泵水力机械试验台", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 18, "item": "高压氢环境材料性能检测系统实验室", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 19, "item": "压缩气体储能关键设备研发用试验平台", "page": 36}
+{"field": "电力装备", "category": "产业技术基础", "number": 20, "item": "输变电装备碳达峰、碳中和公共服务平台", "page": 36}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 1, "item": "国六机动车后处理催化器", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 2, "item": "磁动力系统", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 3, "item": "氮化镓功率器件", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 4, "item": "高性能钙钛矿太阳能电池碳电极", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 5, "item": "氮化镓射频电子器件", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 6, "item": "毫米波同轴射频用微型绝缘子", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 7, "item": "高速自动铺带头", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 8, "item": "弹性体导电连接器（电子器件）", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 9, "item": "高精度薄膜温度传感器芯片（传感器）", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 10, "item": "基于纳米线阵列的垂直腔面发射激光器（激光器）", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 11, "item": "高分辨率感光性导电银墨水（电子电路）", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 12, "item": "光阳极薄膜（光伏电池）", "page": 37}
+{"field": "新材料", "category": "基础零部件和元器件", "number": 13, "item": "增材制造用大功率光纤激光器", "page": 37}
+{"field": "新材料", "category": "基础材料", "number": 1, "item": "锂同位素分离用高性能有机萃取材料", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 2, "item": "高性能固体润滑薄膜（核能）", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 3, "item": "胶体超级电容电池材料（超级电容器）", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 4, "item": "高水氧阻隔高导高透柔性透明导电薄膜（加热膜、柔性光 电子器件）", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 5, "item": "氮化镓（GaN）单晶衬底（4 英寸）", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 6, "item": "碳化硅单晶衬底材料", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 7, "item": "氮化铝（AlN）单晶衬底（2 英寸）", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 8, "item": "氧化镓单晶衬底（3 英寸）", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 9, "item": "硅基氮化镓外延片", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 10, "item": "碳化硅外延晶片", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 11, "item": "医用聚丙烯", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 12, "item": "生物基耐高温聚酰胺聚对苯二甲酰癸二胺（PA10T））", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 13, "item": "生物基新材料：生物基 1，4—丁二醇（Bi—BDO）", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 14, "item": "聚羟基脂肪酸酯（PHAs）", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 15, "item": "3—羟基丙酸", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 16, "item": "戊二胺", "page": 38}
+{"field": "新材料", "category": "基础材料", "number": 17, "item": "石墨炔材料（纳米材料）", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 18, "item": "高均匀性低缺陷 GaAs/InP 基外延材料（太阳能电池、激 光器）（纳米材料）", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 19, "item": "石墨烯薄膜（纳米材料）", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 20, "item": "高性能全色无镉量子点", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 21, "item": "二硝基甲苯加氢，亚纳米尺度原子级分散金属催化材料 （纳米材料）", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 22, "item": "纳米药物 CB-PLG-NPs", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 23, "item": "膀胱灌注治疗纳米材料", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 24, "item": "纳米药物控释载体用ε—己内酯单体（纳米材料）", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 25, "item": "石墨烯固态均温板", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 26, "item": "石墨烯吸波蜂窝材料", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 27, "item": "高导电石墨烯铜复合材料", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 28, "item": "石墨烯基导电油墨", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 29, "item": "高场医疗磁共振成像仪用 NbTi 超导材料", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 30, "item": "高临界电流密度内锡法 Nb3Sn 线材", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 31, "item": "高稳定青铜法 Nb3Sn 线材", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 32, "item": "低成本二硼化镁超导线带材", "page": 39}
+{"field": "新材料", "category": "基础材料", "number": 33, "item": "Bi2223 高温超导带材", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 34, "item": "Bi2212 高温超导线材", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 35, "item": "少层石墨烯微片", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 36, "item": "单臂碳纳米管", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 37, "item": "石墨烯量子点", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 38, "item": "超高综合性能烧结钕铁硼磁体", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 39, "item": "新型铈磁体", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 40, "item": "高磁能积钐钴磁体", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 41, "item": "热压磁环", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 42, "item": "粘结磁体", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 43, "item": "高纯稀土化合物", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 44, "item": "高纯稀土金属及大尺寸稀土金属靶材", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 45, "item": "高性能稀土光功能材料", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 46, "item": "溴化镧闪烁晶体", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 47, "item": "核用稀土功能及功能结构一体化材料", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 48, "item": "高能量密度新型稀土储氢材料", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 49, "item": "稀土耐蚀普碳钢", "page": 40}
+{"field": "新材料", "category": "基础材料", "number": 50, "item": "稀土汽车催化关键材料", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 51, "item": "国六机动车后处理催化剂", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 52, "item": "低成本杂环芳纶", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 53, "item": "激光选择性烧结用高性能聚醚醚酮粉", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 54, "item": "高性能 PET 轻量化发泡材料", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 55, "item": "高性能热塑性聚芳硫醚基复合材料", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 56, "item": "聚芳醚酮（复合材料级）", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 57, "item": "高性能电池封装胶黏剂用窄分子量分布聚己内酯二醇（燃 料电池、太阳能电池）", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 58, "item": "高性能钙钛矿光伏电池材料", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 59, "item": "高质量纳米导电炭黑（太阳能电池）", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 60, "item": "高性能氢气纯化钯膜材料（氢能，燃料电池）", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 61, "item": "高性能滑动轴承材料及涂层", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 62, "item": "4N 高纯铁", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 63, "item": "干喷湿纺 T800 级碳纤维、碳布、环氧树脂预浸料及其复 合材料", "page": 41}
+{"field": "新材料", "category": "基础材料", "number": 64, "item": "高取向度聚酰亚胺薄膜及高导热石墨化薄膜材料", "page": 41}
+{"field": "新材料", "category": "工业基础软件", "number": 1, "item": "多相流介尺度模拟分析软件", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 1, "item": "半导体精密加工工艺与装备", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 2, "item": "8 英寸 SiC 单晶生长设备", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 3, "item": "8 英寸碳化硅高温化学气相外延生长设备", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 4, "item": "多芯片立体贴装工艺技术", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 5, "item": "芯片凸点倒装互连工艺设备", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 6, "item": "立体引线键合工艺技术", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 7, "item": "自动共晶贴片机", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 8, "item": "气密封焊", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 9, "item": "4-6 英寸 SiC 晶圆表面/亚表面微缺陷检测设备", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 10, "item": "氮化镓外延缺陷检测设备", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 11, "item": "SiC 晶锭激光复合剥离设备", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 12, "item": "激光扫描图案晶圆缺陷检测系统", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 13, "item": "TaC 涂层石墨构件", "page": 42}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 14, "item": "高质量速凝铸片制备工艺", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 15, "item": "晶界扩散技术工艺及装备", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 16, "item": "第三代半导体晶圆自动倒角机", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 17, "item": "8 英寸 3D—IC 晶圆键合系统", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 18, "item": "高温纯化装备及工艺", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 19, "item": "SiC 涂层石墨基座/盘", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 20, "item": "导电纳米炭黑气相生产工艺及石墨化工艺（储能电池）", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 21, "item": "硝化菌扩培技术", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 22, "item": "聚羟基脂肪酸值的发酵提取工艺", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 23, "item": "PET 轻量化发泡材料超临界二氧化碳绿色连续挤出制备 关键技术", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 24, "item": "直接氟化表面处理技术", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 25, "item": "高温超导材料的喷雾热分解制备工艺", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 26, "item": "超导材料的高压热处理设备", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 27, "item": "纳米硫酸钡制备工艺及装备", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 28, "item": "纳米氢氧化镁制备工艺及装备", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 29, "item": "厚膜浆料溶剂体系及分散工艺（环保涂料）", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 30, "item": "激光增材制造过程形性控制机制与方法", "page": 43}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 31, "item": "环氧树脂基复合材料自动铺放技术", "page": 44}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 32, "item": "大面积立方相甲脒基铅卤杂化钙钛矿薄膜制备工艺（太阳 能电池）", "page": 44}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 33, "item": "新一代高精度的印刷工艺（太阳能电池，OLED）", "page": 44}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 34, "item": "共喷纺制备高性能有机/无机复合固态电解质膜工艺（固 态电池）", "page": 44}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 35, "item": "锂同位素萃取分离工艺（核能）", "page": 44}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 36, "item": "超高温选择性激光烧结设备", "page": 44}
+{"field": "新材料", "category": "基础制造工艺及装备", "number": 37, "item": "新型石墨烯铝导线连续化成型工艺", "page": 44}
+{"field": "新材料", "category": "产业技术基础", "number": 1, "item": "与材料产业链供应链融合的标准体系", "page": 44}
+{"field": "新材料", "category": "产业技术基础", "number": 2, "item": "质量基础支撑新材料成果转化的机制", "page": 44}
+{"field": "新材料", "category": "产业技术基础", "number": 3, "item": "材料试验表征能力提升", "page": 44}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 1, "item": "CT 探测器专用读出芯片、PET 探测器专用 SiPM 芯片", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 2, "item": "医用高热容量 X 线球管", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 3, "item": "SPECT 室温半导体探测器、高精度准直器", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 4, "item": "CT 高速滑环、大功率高性能 CT 高压发生器、CT 主旋转 轴承", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 5, "item": "超 声 前 端 发 射 和 接 收 集 成 电 路 芯 片 、 面 阵 探 头 、 基 于 MEMS 的超声探头", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 6, "item": "医用直线加速器用栅控电子枪、多注速调管", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 7, "item": "血管造影系统用高帧速动态 X 射线平板探测器", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 8, "item": "介入式心脏超声导管、经颅聚焦超声治疗头", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 9, "item": "医疗可穿戴设备专用芯片", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 10, "item": "柔性、轻量级通用协作医疗手术机械臂", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 11, "item": "腔镜、介入手术机器人主操作器、显示器", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 12, "item": "磁共振系统钻石 NV 色心磁场传感器", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 13, "item": "医疗机器人光学、电磁定位跟踪系统、空间力觉操纵杆", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 14, "item": "体外诊断用精密加样、移液组件", "page": 45}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 15, "item": "高通量基因测序芯片", "page": 46}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 16, "item": "呼吸机涡轮、音圈电机、比例阀、流量传感器", "page": 46}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 17, "item": "高性能内窥镜光学元件", "page": 46}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 18, "item": "光学成像设备高性能激光光源", "page": 46}
+{"field": "高性能医疗器械", "category": "基础零部件和元器件", "number": 19, "item": "光学成像扫描组件", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 1, "item": "X 射线管用弥散铜（Glidcop）", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 2, "item": "微细编组钨丝绳", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 3, "item": "抗原、抗体、酶等", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 4, "item": "荧光序号微球", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 5, "item": "聚 4—甲基—1—戊烯（PMP）中空纤维膜", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 6, "item": "血液透析膜", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 7, "item": "新型生物医用材料及植入器械", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 8, "item": "医用植入级镍钛合金", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 9, "item": "医用超高分子量聚乙烯", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 10, "item": "生物活性玻璃纤维增强可吸收聚乳酸植入材料", "page": 46}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 11, "item": "丝素蛋白类创面修复材料", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 12, "item": "超薄壁聚对苯二甲酸乙二酯热缩套管", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 13, "item": "医用光纤，医用导管、导丝", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 14, "item": "导电水凝胶", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 15, "item": "高性能方形截面超导线材（Nb3Sn）", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 16, "item": "高端 CT 用 GOS 闪烁陶瓷", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 17, "item": "CZT 光子计数晶体材料", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 18, "item": "新型弛豫铁电单晶材料与压电元件", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 19, "item": "大尺寸发光均匀碘化钠闪烁晶体", "page": 47}
+{"field": "高性能医疗器械", "category": "基础材料", "number": 20, "item": "高端医用聚乙醇酸（PGA）", "page": 47}
+{"field": "高性能医疗器械", "category": "工业基础软件", "number": 1, "item": "医学影像渲染引擎", "page": 47}
+{"field": "高性能医疗器械", "category": "工业基础软件", "number": 2, "item": "矫形类产品设计软件", "page": 47}
+{"field": "高性能医疗器械", "category": "工业基础软件", "number": 3, "item": "生物影像处理软件", "page": 47}
+{"field": "高性能医疗器械", "category": "基础制造工艺及装备", "number": 1, "item": "光子计数探测器封装工艺", "page": 48}
+{"field": "高性能医疗器械", "category": "基础制造工艺及装备", "number": 2, "item": "陶瓷电路材料及加工工艺", "page": 48}
+{"field": "高性能医疗器械", "category": "基础制造工艺及装备", "number": 3, "item": "微创外科能量平台系统及器械装置", "page": 48}
+{"field": "高性能医疗器械", "category": "基础制造工艺及装备", "number": 4, "item": "智能超声机器人装备", "page": 48}
+{"field": "高性能医疗器械", "category": "基础制造工艺及装备", "number": 5, "item": "内窥镜特殊材料成型与封装工艺", "page": 48}
+{"field": "高性能医疗器械", "category": "基础制造工艺及装备", "number": 6, "item": "全自动一体化核酸检测装置", "page": 48}
+{"field": "高性能医疗器械", "category": "基础制造工艺及装备", "number": 7, "item": "全实验室自动化流水线系统", "page": 48}
+{"field": "高性能医疗器械", "category": "基础制造工艺及装备", "number": 8, "item": "微流控芯片大规模制造和模块化封装工艺", "page": 48}
+{"field": "高性能医疗器械", "category": "产业技术基础", "number": 1, "item": "医疗器械可靠性测试方法及标准", "page": 48}
+{"field": "高性能医疗器械", "category": "产业技术基础", "number": 2, "item": "医疗设备软件安全检测系统", "page": 48}
+{"field": "高性能医疗器械", "category": "产业技术基础", "number": 3, "item": "人工智能医疗器械标准", "page": 48}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 1, "item": "高精度低噪声模数转换器", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 2, "item": "智能电流与功率测量传感芯片", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 3, "item": "低温漂低噪声电压基准源", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 4, "item": "长寿命电解电容", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 5, "item": "低压大位移压电陶瓷及驱动器", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 6, "item": "高精度压力传感元件", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 7, "item": "超低功耗微控制单元", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 8, "item": "单片微波集成电路（MMIC）", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 9, "item": "耐磨气动密封件", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 10, "item": "高精度宽波段可调谐半导体激光器", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 11, "item": "激光谐振腔分析气室", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 12, "item": "高可靠涡轮分子泵", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 13, "item": "高可靠高真空规", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 14, "item": "离散型打拿极级双模式电子倍增器", "page": 49}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 15, "item": "单向阀", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 16, "item": "高亮度热场发射电子源", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 17, "item": "大功率 X 射线管", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 18, "item": "高精度超声传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 19, "item": "液态镓离子源", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 20, "item": "太赫兹功率计", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 21, "item": "高精度倾角传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 22, "item": "宽温区振动传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 23, "item": "宽温区压力传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 24, "item": "医用免维护电化学氧气传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 25, "item": "催化燃烧式气体传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 26, "item": "高端位移传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 27, "item": "机器人用力传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 28, "item": "工业 3D 视觉传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 29, "item": "单片多轴集成式加速度传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 30, "item": "小型化低功耗智能无线传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 31, "item": "高性能图像传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 32, "item": "体外诊断高性能传感器", "page": 50}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 33, "item": "播种作业质量传感器", "page": 51}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 34, "item": "收获作业质量传感器", "page": 51}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 35, "item": "植物信息传感器", "page": 51}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 36, "item": "土壤信息传感器", "page": 51}
+{"field": "仪器仪表", "category": "基础零部件和元器件", "number": 37, "item": "新型 MEMS 多通道智能气体传感器", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 1, "item": "无线综合测试仪", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 2, "item": "高频段频谱分析仪", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 3, "item": "超高分辨率光矢量分析仪", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 4, "item": "数据通信（IP）网络测试仪", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 5, "item": "多轴激光干涉仪", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 6, "item": "在线成分分析仪", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 7, "item": "高端电子清纱器", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 8, "item": "大型回转装备超精密装配测量仪器", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 9, "item": "高性能光谱仪", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 10, "item": "高速、超精密激光测量仪器的校准技术平台", "page": 51}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 11, "item": "高性能光纤激光器及其测试装置", "page": 52}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 12, "item": "工业气相色谱仪", "page": 52}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 13, "item": "在线氧分析仪", "page": 52}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 14, "item": "高温高压差工业在线 pH 计", "page": 52}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 15, "item": "燃烧质量分析仪", "page": 52}
+{"field": "仪器仪表", "category": "产业技术基础", "number": 16, "item": "宏微跨尺度坐标测量机性能与指标评估平台", "page": 52}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 1, "item": "高性能液压冲击器", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 2, "item": "大功率掘锚机截割齿轮箱", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 3, "item": "超大吨位履带起重机和挖掘机用大型高扭矩密度行走驱 动系统", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 4, "item": "超大型旋挖钻机多马达驱动功率合流卷扬驱动单元", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 5, "item": "高效率旋挖钻机动力头驱动单元", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 6, "item": "高效率隧道掘进机刀盘双速比驱动单元", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 7, "item": "70 吨（载重）及以上矿山宽体自卸车重型 AT 变速器", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 8, "item": "工程机械用安全型控制器", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 9, "item": "涡轮闭锁液力变矩器", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 10, "item": "工程机械高频响数字多路阀", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 11, "item": "高频伺服作动器", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 12, "item": "电动直线作动器", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 13, "item": "外置传感器数字挖掘机油缸", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 14, "item": "阀口独立控制型大流量液压阀", "page": 53}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 15, "item": "高性能电液插装阀", "page": 54}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 16, "item": "闭环控制数字阀", "page": 54}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 17, "item": "大型盾构机主轴及刀盘密封", "page": 54}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 18, "item": "电动工程机械用电控", "page": 54}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 19, "item": "电动工程机械用电驱", "page": 54}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 20, "item": "电动工程机械换电系统", "page": 54}
+{"field": "工程机械", "category": "基础零部件和元器件", "number": 21, "item": "电动工程机械用电池", "page": 54}
+{"field": "工程机械", "category": "基础材料", "number": 1, "item": "工程机械耐磨用高强韧钢板（卷）", "page": 54}
+{"field": "工程机械", "category": "基础材料", "number": 2, "item": "碳纤维增强高性能湿式摩擦材料", "page": 54}
+{"field": "工程机械", "category": "基础材料", "number": 3, "item": "连续纤维增强尼龙热塑性复合材料", "page": 54}
+{"field": "工程机械", "category": "基础材料", "number": 4, "item": "高耐热热塑性聚酰亚胺工程塑料", "page": 54}
+{"field": "工程机械", "category": "基础材料", "number": 5, "item": "液压传动高端密封", "page": 54}
+{"field": "工程机械", "category": "基础材料", "number": 6, "item": "碳化钨金属陶瓷耐磨涂层", "page": 54}
+{"field": "工程机械", "category": "基础材料", "number": 7, "item": "特种合金钢不镀铜实心气保焊丝", "page": 54}
+{"field": "工程机械", "category": "基础材料", "number": 8, "item": "电动工程机械用电池材料", "page": 54}
+{"field": "工程机械", "category": "工业基础软件", "number": 1, "item": "工程机械自主作业操作系统", "page": 55}
+{"field": "工程机械", "category": "基础制造工艺及装备", "number": 1, "item": "2000 吨惯性摩擦焊装备及工艺", "page": 55}
+{"field": "工程机械", "category": "基础制造工艺及装备", "number": 2, "item": "超高速激光熔覆工艺及装备", "page": 55}
+{"field": "工程机械", "category": "基础制造工艺及装备", "number": 3, "item": "工程机械高效高可靠性连接技术", "page": 55}
+{"field": "工程机械", "category": "基础制造工艺及装备", "number": 4, "item": "工程机械关键承载构件高效高质绿色焊接工艺及装备", "page": 55}
+{"field": "工程机械", "category": "基础制造工艺及装备", "number": 5, "item": "工程机械核心零部件超精密抛光技术及装备", "page": 55}
+{"field": "工程机械", "category": "基础制造工艺及装备", "number": 6, "item": "工程机械作业装置高效减粘脱附工艺", "page": 55}
+{"field": "工程机械", "category": "基础制造工艺及装备", "number": 7, "item": "新能源工程机械整机与核心零部件制造工艺技术及装备", "page": 55}
+{"field": "工程机械", "category": "产业技术基础", "number": 1, "item": "工程机械整机与关键部件的能效、可靠性及安全性等核心 指标试验检测技术", "page": 55}
+{"field": "工程机械", "category": "产业技术基础", "number": 2, "item": "高端液压件检测技术与装备", "page": 55}
+{"field": "工程机械", "category": "产业技术基础", "number": 3, "item": "自润滑轴承摇摆摩擦磨损试验方法", "page": 55}
+{"field": "工程机械", "category": "产业技术基础", "number": 4, "item": "工程机械标准验证与评价体系", "page": 56}
+{"field": "工程机械", "category": "产业技术基础", "number": 5, "item": "工程机械大型构件制造过程质量检测、分析、调控一体化 应用平台", "page": 56}
+{"field": "工程机械", "category": "产业技术基础", "number": 6, "item": "紧固件交变载荷振动试验方法及设备", "page": 56}
+{"field": "工程机械", "category": "产业技术基础", "number": 7, "item": "工程机械产品评价体系", "page": 56}
+{"field": "工程机械", "category": "产业技术基础", "number": 8, "item": "工程机械智能化仿真试验平台", "page": 56}
+{"field": "工程机械", "category": "产业技术基础", "number": 9, "item": "工程机械智能化试验检测和系统分析平台", "page": 56}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 1, "item": "湿式离合器", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 2, "item": "液压机械无级变速器", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 3, "item": "动力换挡变速箱", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 4, "item": "电液悬挂系统", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 5, "item": "非道路国四排放标准发动机后处理系统", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 6, "item": "大载重量静液压行走系统", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 7, "item": "高速取苗装置", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 8, "item": "高速栽植装置", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 9, "item": "精密排种器", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 10, "item": "大喂入量脱粒滚筒部件", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 11, "item": "大喂入量清选部件", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 12, "item": "高效采棉头", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 13, "item": "全地貌仿形割台", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 14, "item": "高效切碎与籽粒破碎部件", "page": 57}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 15, "item": "高性能打结器", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 16, "item": "农机总线控制系统", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 17, "item": "变量施药控制系统", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 18, "item": "无人驾驶作业系统", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 19, "item": "农业机器人柔性机械臂", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 20, "item": "农业机器人视觉识别系统", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 21, "item": "高压大排量轴向柱塞液压泵", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 22, "item": "换档离合器电磁比例阀", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 23, "item": "低速大扭矩轮边马达", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 24, "item": "低速大扭矩轮边电机", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 25, "item": "农用大排量隔膜泵", "page": 58}
+{"field": "农业装备", "category": "基础零部件和元器件", "number": 26, "item": "地膜捡拾及成卷装置", "page": 58}
+{"field": "农业装备", "category": "基础材料", "number": 1, "item": "高性能农业机械用钢材", "page": 58}
+{"field": "农业装备", "category": "基础材料", "number": 2, "item": "植保和喷灌喷头材料", "page": 58}
+{"field": "农业装备", "category": "工业基础软件", "number": 1, "item": "农机智能设计及仿真软件", "page": 59}
+{"field": "农业装备", "category": "工业基础软件", "number": 2, "item": "农业机器人操作软件", "page": 59}
+{"field": "农业装备", "category": "基础制造工艺及装备", "number": 1, "item": "入土部件成型与热处理工艺及装备", "page": 59}
+{"field": "农业装备", "category": "基础制造工艺及装备", "number": 2, "item": "变速箱、传动箱等复杂箱体类部件制造工艺及装备", "page": 59}
+{"field": "农业装备", "category": "基础制造工艺及装备", "number": 3, "item": "农机底盘、机架等重载构件自动焊接工艺装备", "page": 59}
+{"field": "农业装备", "category": "基础制造工艺及装备", "number": 4, "item": "脱粒滚筒等复杂功能部件自动焊接工艺装备", "page": 59}
+{"field": "农业装备", "category": "基础制造工艺及装备", "number": 5, "item": "作业部件表面强化制造工艺及装备", "page": 59}
+{"field": "农业装备", "category": "产业技术基础", "number": 1, "item": "联合收割机整机质量在线检测系统", "page": 59}
+{"field": "农业装备", "category": "产业技术基础", "number": 2, "item": "农机专用传感器测试平台", "page": 59}
+{"field": "农业装备", "category": "产业技术基础", "number": 3, "item": "农机试验验证平台", "page": 59}
+{"field": "农业装备", "category": "产业技术基础", "number": 4, "item": "采棉机关键零部件及整机质量检测系统", "page": 59}
+{"field": "农业装备", "category": "产业技术基础", "number": 5, "item": "拖拉机整机出厂质量在线检测系统", "page": 59}
+{"field": "农业装备", "category": "产业技术基础", "number": 6, "item": "农机智能测控系统质量检测技术", "page": 59}
+{"field": "钢铁", "category": "基础零部件和元器件", "number": 1, "item": "高炉用高导热高强度大尺寸铜钢复合冷却器", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 1, "item": "大功率风电装备关键零部件用高性能特殊钢", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 2, "item": "光伏行业用高性能耐蚀合金厚板", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 3, "item": "核废料容器用高性能耐蚀合金板带材", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 4, "item": "油气（海洋）装备用高强韧耐蚀合金", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 5, "item": "高性能耐氢合金结构材料及制品系列", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 6, "item": "LNG 储罐用钢", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 7, "item": "新能源汽车驱动电机用薄规格高端无取向硅钢", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 8, "item": "汽车用第三代先进热镀层耐蚀超高强度钢", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 9, "item": "汽车底盘零件用超高强度超高扩孔率热镀锌及酸洗钢板", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 10, "item": "高性能长寿命模具钢", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 11, "item": "抗冲击高耐磨盾构滚刀及材料", "page": 60}
+{"field": "钢铁", "category": "基础材料", "number": 12, "item": "高品质紧固件用高温合金材料", "page": 61}
+{"field": "钢铁", "category": "基础材料", "number": 13, "item": "大型高炉用高性能碳质耐火材料", "page": 61}
+{"field": "钢铁", "category": "工业基础软件", "number": 1, "item": "冶金流程仿真平台", "page": 61}
+{"field": "钢铁", "category": "工业基础软件", "number": 2, "item": "全流程质量预测与控制系统软件", "page": 61}
+{"field": "钢铁", "category": "工业基础软件", "number": 3, "item": "特种熔炼 ESR 和 VAR 过程数值模拟仿真软件", "page": 61}
+{"field": "钢铁", "category": "工业基础软件", "number": 4, "item": "轧钢系统在线动态自修正模型系统", "page": 61}
+{"field": "钢铁", "category": "基础制造工艺及装备", "number": 1, "item": "富氢碳循环高炉低碳冶金技术", "page": 61}
+{"field": "钢铁", "category": "基础制造工艺及装备", "number": 2, "item": "富氢煤气重整及氢基直接还原铁技术", "page": 61}
+{"field": "钢铁", "category": "基础制造工艺及装备", "number": 3, "item": "二氧化碳资源化利用技术", "page": 61}
+{"field": "钢铁", "category": "基础制造工艺及装备", "number": 4, "item": "废钢料场智能化成套技术", "page": 61}
+{"field": "钢铁", "category": "基础制造工艺及装备", "number": 5, "item": "全废钢预热电炉工艺及成套技术", "page": 61}
+{"field": "钢铁", "category": "基础制造工艺及装备", "number": 6, "item": "钢铁固废高效资源化处理利用技术及装备", "page": 61}
+{"field": "钢铁", "category": "产业技术基础", "number": 1, "item": "薄板钢内部缺陷检测仪（内欠仪）及成套系统", "page": 62}
+{"field": "钢铁", "category": "产业技术基础", "number": 2, "item": "钢铁全流程在线监控、检测及性能预报技术（表面质量、 内部质量、组织性能、工艺控制）", "page": 62}
+{"field": "钢铁", "category": "产业技术基础", "number": 3, "item": "连铸检测技术—板坯辊间在线监控及调控系统", "page": 62}
+{"field": "钢铁", "category": "产业技术基础", "number": 4, "item": "薄带钢质量磁无损检测仪", "page": 62}
+{"field": "钢铁", "category": "产业技术基础", "number": 5, "item": "轧线各类特殊仪表", "page": 62}
+{"field": "有色", "category": "基础零部件和元器件", "number": 1, "item": "钛合金薄壁复杂结构精密铸件", "page": 63}
+{"field": "有色", "category": "基础零部件和元器件", "number": 2, "item": "燃气轮机燃烧室高温合金零件", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 1, "item": "航空级钒铝合金", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 2, "item": "高性能铝锂合金", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 3, "item": "高性能铝合金板材", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 4, "item": "新能源动力电池用铝箔", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 5, "item": "高耐蚀钛合金板带箔材", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 6, "item": "高强高韧损伤容限型钛合金", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 7, "item": "大规格低成本钛合金锻件", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 8, "item": "核电燃料元件用镍基合金", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 9, "item": "超高纯钴锭材", "page": 63}
+{"field": "有色", "category": "基础材料", "number": 10, "item": "高纯稀土化合物、金属及靶材", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 11, "item": "短流程制备低成本高性能有色金属", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 12, "item": "高性能铜及铜合金板、带、箔材", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 13, "item": "高性能镁合金", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 14, "item": "生物医用有色金属", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 15, "item": "金属基复合材料", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 16, "item": "高性能稀土光功能材料", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 17, "item": "形状记忆及智能结构有色金属", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 18, "item": "高强高导铝合金", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 19, "item": "微通道换热器用高耐蚀铝合金扁管", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 20, "item": "溴化镧闪烁晶体", "page": 64}
+{"field": "有色", "category": "基础材料", "number": 21, "item": "核用稀土功能及功能结构一体化材料", "page": 64}
+{"field": "有色", "category": "工业基础软件", "number": 1, "item": "有色金属 3D 打印专用软件", "page": 64}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 1, "item": "有色金属层状复合材料制造工艺", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 2, "item": "铝板带坯哈兹列特连铸连轧技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 3, "item": "镁合金板材热成形技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 4, "item": "压延铜箔全流程制造装备", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 5, "item": "有色金属智能化激光焊接工艺", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 6, "item": "氢冶金技术与装备", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 7, "item": "搭配城市有色金属矿产资源清洁协同冶炼技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 8, "item": "航空航天用高性能有色金属返回利用技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 9, "item": "有色金属绿色高效真空热处理技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 10, "item": "高纯金属及半导体化合物制备技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 11, "item": "表面防腐蚀涂层技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 12, "item": "钛合金和铝合金的精密成形制造工艺", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 13, "item": "有色金属绿色低碳冶金技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 14, "item": "重金属污染防治与资源循环技术", "page": 65}
+{"field": "有色", "category": "基础制造工艺及装备", "number": 15, "item": "高性能有色金属零部件轻量化增材制造工艺", "page": 65}
+{"field": "石化", "category": "基础零部件和元器件", "number": 1, "item": "高参数高压干气密封", "page": 66}
+{"field": "石化", "category": "基础零部件和元器件", "number": 2, "item": "高参数往复式动密封", "page": 66}
+{"field": "石化", "category": "基础材料", "number": 1, "item": "生 物 基 丁 二 酸 及 其 生 物 可 降 解 系 列 聚 酯 材 料 （ PBS 、 PBST/PBAT 等）", "page": 66}
+{"field": "石化", "category": "基础材料", "number": 2, "item": "喷墨印花技术用染料/涂料", "page": 66}
+{"field": "石化", "category": "基础材料", "number": 3, "item": "纺织品低温漂白催化剂", "page": 66}
+{"field": "石化", "category": "基础材料", "number": 4, "item": "生物基聚乳酸材料", "page": 66}
+{"field": "石化", "category": "基础材料", "number": 5, "item": "茂金属烯烃催化剂及关键助剂", "page": 66}
+{"field": "石化", "category": "基础材料", "number": 6, "item": "高性能油品分离膜", "page": 66}
+{"field": "石化", "category": "基础材料", "number": 7, "item": "高性能反渗透和纳滤膜", "page": 66}
+{"field": "石化", "category": "基础材料", "number": 8, "item": "高韧性碳纤维复合材料树脂基体", "page": 66}
+{"field": "石化", "category": "工业基础软件", "number": 1, "item": "典型化工过程流程模拟", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 1, "item": "物性在线分析仪表", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 2, "item": "二氧化碳和甲烷干重整制合成气关键技术", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 3, "item": "电加热裂解炉", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 4, "item": "乙烯原位自增强聚合成套技术", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 5, "item": "合成气一步法制低碳烯烃工艺", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 6, "item": "原油催化裂解成套技术", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 7, "item": "超纯电子级碳酸乙烯酯生产工艺", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 8, "item": "绿氢提效降本—电解水制氢耦合氧化", "page": 67}
+{"field": "石化", "category": "基础制造工艺及装备", "number": 9, "item": "高性能和功能高分子复合材料层叠定构工艺", "page": 67}
+{"field": "石化", "category": "产业技术基础", "number": 1, "item": "石油化工技术低碳评价体系及低碳产品认证", "page": 67}
+{"field": "建材", "category": "基础零部件和元器件", "number": 1, "item": "高容量多层片式陶瓷电容器", "page": 68}
+{"field": "建材", "category": "基础零部件和元器件", "number": 2, "item": "芯片封装用陶瓷劈刀及陶瓷基座", "page": 68}
+{"field": "建材", "category": "基础零部件和元器件", "number": 3, "item": "汽车尾气催化净化用蜂窝陶瓷载体", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 1, "item": "碳纤维复合材料锚杆、拉索", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 2, "item": "高导热碳纤维界面材料", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 3, "item": "高抗折道路硅酸盐水泥", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 4, "item": "高抗蚀硫铝酸盐水泥基材料", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 5, "item": "固废协同制备固碳胶凝材料及其制品", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 6, "item": "3D 打印混凝土建筑用高性能粉体材料", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 7, "item": "生物质纳米纤维改性水泥基材料", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 8, "item": "高世代 TFT-LCD 玻璃基板", "page": 68}
+{"field": "建材", "category": "基础材料", "number": 9, "item": "OLED 玻璃基板/载板", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 10, "item": "高强耐冲击玻璃材料", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 11, "item": "一次成形超薄柔性玻璃", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 12, "item": "高性能 FTO 透明导电玻璃", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 13, "item": "高放废液玻璃固化体", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 14, "item": "高性能低介电玻璃粉体", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 15, "item": "高性能微波介质陶瓷/PTFE 基高频高速基板", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 16, "item": "高分散、高结晶度纳米氧化物陶瓷粉体", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 17, "item": "高性能氮化物陶瓷纤维", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 18, "item": "高导热氮化硅陶瓷基板", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 19, "item": "氧化铝基纤维增强氧化铝陶瓷基复合材料", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 20, "item": "装配式建筑用轻质绿色墙体部品材料", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 21, "item": "海绵城市用全固废透水路面材料", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 22, "item": "高性能环保无机矿物凝胶材料", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 23, "item": "氢燃料电池双极板专用柔性石墨材料", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 24, "item": "人工合成云母", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 25, "item": "超细化增白高粘度浓度高岭土", "page": 69}
+{"field": "建材", "category": "基础材料", "number": 26, "item": "高纯超细球形硅微粉", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 27, "item": "超细电子玻璃纤维及超薄电子布", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 28, "item": "高性能滤纸", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 29, "item": "水下设施玻纤复合材料保护结构", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 30, "item": "低成本耐碱玻璃纤维", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 31, "item": "信息产业用低介电/低膨胀玻璃纤维", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 32, "item": "高硅氧改性纤维及制品", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 33, "item": "玄武岩纤维", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 34, "item": "大尺寸高均匀性 CVDZnSe", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 35, "item": "高端稀土抛光液", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 36, "item": "宇航级高导热碳纤维树脂基复合材料", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 37, "item": "高性能气凝胶纤维复合材料", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 38, "item": "航空级预浸料", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 39, "item": "超低温气凝胶材料", "page": 70}
+{"field": "建材", "category": "基础材料", "number": 40, "item": "氢燃料电池用高扩散性碳纸", "page": 70}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 1, "item": "碳玻纤维复合土工格栅制备工艺", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 2, "item": "一窑多线中性硼硅玻璃生产关键技术及预灌封装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 3, "item": "高转换效率碲化镉发电玻璃工艺装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 4, "item": "水泥窑协同利用多源固废技术与装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 5, "item": "砂石智能工厂建设综合利用技术与成套装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 6, "item": "高转换效率铜铟镓硒（CIGS）发电玻璃工艺及核心装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 7, "item": "新一代高性能节能真空玻璃关键技术与装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 8, "item": "碳捕集与利用工艺及装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 9, "item": "大吨位电助熔玻璃熔窑、低碳燃料替代、大吨位低温熔制 等低碳节能技术", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 10, "item": "高效节能防水卷材生产工艺及装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 11, "item": "高性能竹质建材成套装备", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 12, "item": "树脂基复合材料回收装备与技术", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 13, "item": "氢能煅烧水泥熟料技术", "page": 71}
+{"field": "建材", "category": "基础制造工艺及装备", "number": 14, "item": "工业窑炉烟气深度净化技术工艺系统与装备", "page": 71}
+{"field": "食品", "category": "基础零部件和元器件", "number": 1, "item": "高温露点检测器", "page": 72}
+{"field": "食品", "category": "基础材料", "number": 1, "item": "民用高端马氏体不锈钢带材", "page": 72}
+{"field": "食品", "category": "基础材料", "number": 2, "item": "超高分子合金轴承", "page": 72}
+{"field": "食品", "category": "基础材料", "number": 3, "item": "抗粘附耐磨蚀抑菌食品装备表面纳米复合功能涂层材料", "page": 72}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 1, "item": "家禽分割胸肉分离工艺及装备", "page": 72}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 2, "item": "家禽家畜二氧化碳混合气致昏工艺及装备", "page": 72}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 3, "item": "易拉罐高速封罐机", "page": 72}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 4, "item": "高速 PET 瓶吹贴灌旋一体化装备", "page": 72}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 5, "item": "家禽自动掏膛工艺及装备", "page": 72}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 6, "item": "智能高速泡罩包装工艺及成套装备", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 7, "item": "高效节能 PET 瓶吹瓶机", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 8, "item": "生鲜类食品保鲜包装工艺及全自动包装生产线", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 9, "item": "自熟式直条米粉挤出机", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 10, "item": "高湿法植物蛋白肉（人造肉）加工工艺与设备", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 11, "item": "家禽胴体及内脏在线机器视觉检验工艺", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 12, "item": "直条干米粉称量机", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 13, "item": "PET 瓶胚激光加热模组", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 14, "item": "天然产物活性物质的超声强化提取技术与装备", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 15, "item": "干制食品的物理杀菌技术与装备", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 16, "item": "蔬菜和茶叶的红外干法钝酶杀青技术与装备", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 17, "item": "食品包装材料电子束杀菌技术与装备", "page": 73}
+{"field": "食品", "category": "基础制造工艺及装备", "number": 18, "item": "高效脉冲强光杀菌工艺与装备", "page": 73}
+{"field": "食品", "category": "产业技术基础", "number": 1, "item": "灌装机用小口径电磁流量计和质量流量计", "page": 73}
+{"field": "食品", "category": "产业技术基础", "number": 2, "item": "农产品智能仓储物流保鲜关键技术", "page": 73}
+{"field": "食品", "category": "产业技术基础", "number": 3, "item": "拉曼光谱金标快检技术", "page": 74}
+{"field": "食品", "category": "产业技术基础", "number": 4, "item": "气相液相色谱、质谱检测平台", "page": 74}
+{"field": "食品", "category": "产业技术基础", "number": 5, "item": "连续式震荡计量技术", "page": 74}
+{"field": "食品", "category": "产业技术基础", "number": 6, "item": "食品智能化原位信息无损感知技术", "page": 74}
+{"field": "食品", "category": "产业技术基础", "number": 7, "item": "果蔬益生菌发酵关键技术平台", "page": 74}
+{"field": "食品", "category": "产业技术基础", "number": 8, "item": "农产品多维品质评价技术", "page": 74}
+{"field": "食品", "category": "产业技术基础", "number": 9, "item": "食品热加工体系标准", "page": 74}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 1, "item": "化纤长丝高速卷绕头", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 2, "item": "高精度喷丝板及纺丝组件", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 3, "item": "槽筒、电子清纱器、捻接器", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 4, "item": "新型高速锭子", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 5, "item": "高速转杯纺纱机磁悬浮电机", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 6, "item": "织机电子开口装置", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 7, "item": "高速喷水织机引纬部件", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 8, "item": "织针", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 9, "item": "新型恒张力卷绕电机", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 10, "item": "喷墨印花打印头", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 11, "item": "铺网机用输网碳帘", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 12, "item": "水刺头水针板", "page": 75}
+{"field": "纺织", "category": "基础零部件和元器件", "number": 13, "item": "斜齿非圆齿轮", "page": 75}
+{"field": "纺织", "category": "基础材料", "number": 1, "item": "生物基聚酯", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 2, "item": "生物基戊二胺及其聚酰胺", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 3, "item": "碳纤维", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 4, "item": "对位芳纶", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 5, "item": "差别化间位芳纶", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 6, "item": "超高分子量聚乙烯纤维", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 7, "item": "聚酰亚胺纤维", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 8, "item": "聚乳酸纤维", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 9, "item": "连续玄武岩纤维", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 10, "item": "纺织基高性能柔性膜材及制品", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 11, "item": "聚四氟乙烯中空纤维膜材料", "page": 76}
+{"field": "纺织", "category": "基础材料", "number": 12, "item": "高性能/差别化涤纶纺丝油剂", "page": 76}
+{"field": "纺织", "category": "工业基础软件", "number": 1, "item": "纺织车间仿真软件", "page": 76}
+{"field": "纺织", "category": "工业基础软件", "number": 2, "item": "服装 3D 虚拟设计", "page": 76}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 1, "item": "废旧聚酯纺织品及聚酯瓶片循环再利用涤纶制备工艺与 装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 2, "item": "化学法循环再利用锦纶长丝生产工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 3, "item": "莱赛尔纤维生产工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 4, "item": "高性能碳纤维产业化工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 5, "item": "新型羊绒、牦牛绒分梳工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 6, "item": "跨尺度纤维混纺功能纱制备工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 7, "item": "高性能纤维大尺寸异形结构件三维编织装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 8, "item": "大丝束碳纤维展纤技术及装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 9, "item": "高厚异形纤维预制体全自动织造工艺", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 10, "item": "碳纤维预浸料工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 11, "item": "碳纤维非织造布成型工艺及装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 12, "item": "碳纤维复合材料模压成型工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 13, "item": "编织/绞编无结网工艺技术与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 14, "item": "可降解的高性能聚酯非织造布工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 15, "item": "高强粗旦聚丙烯长丝纺粘针刺非织造布工艺与装备", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 16, "item": "静电纺非织造材料制备工艺", "page": 77}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 17, "item": "闪蒸法高密度聚乙烯纤维非织造布工艺及装备", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 18, "item": "针织物连续加工与低耗染色技术", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 19, "item": "聚氨酯超纤革无溶剂法涂层加工工艺", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 20, "item": "聚酯纤维超临界 CO 无水染色工艺与装备", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 21, "item": "自动落筒假捻变形机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 22, "item": "高速自调匀整并条机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 23, "item": "全自动转杯纺纱机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 24, "item": "喷气涡流纺纱机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 25, "item": "纤维智能梳棉分析机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 26, "item": "特种剑杆织机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 27, "item": "自动穿经机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 28, "item": "全成型电脑横机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 29, "item": "高速多轴向经编机", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 30, "item": "纺织数字化分色测色配色系统", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 31, "item": "纺织品疵点高速智能检测识别系统", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 32, "item": "精密卷绕控制系统", "page": 78}
+{"field": "纺织", "category": "基础制造工艺及装备", "number": 33, "item": "高端产业用全伺服织机控制系统", "page": 78}
+{"field": "纺织", "category": "产业技术基础", "number": 1, "item": "化纤长丝卷装外观质量检测标准", "page": 79}
+{"field": "纺织", "category": "产业技术基础", "number": 2, "item": "纺织机械质量检测公共服务平台", "page": 79}
+{"field": "纺织", "category": "产业技术基础", "number": 3, "item": "核生化防护检测评价系统", "page": 79}
+{"field": "纺织", "category": "产业技术基础", "number": 4, "item": "高性能纤维复合材料检测公共服务平台", "page": 79}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 1, "item": "采用环保制冷剂的高效变频压缩机", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 2, "item": "高效长寿命全铝微通道换热器", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 3, "item": "压缩机用超高速低噪声直流电机", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 4, "item": "电机高精度、高效率变频控制器", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 5, "item": "低成本、高可靠性的 MCU 控制芯片", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 6, "item": "智能服务机器人的专用芯片及软硬件模组", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 7, "item": "高集成度功率半导体器件及模块", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 8, "item": "高精度高分辨率的红外热成像阵列", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 9, "item": "高效小体积直流水泵", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 10, "item": "照明用高功率 LED 灯珠", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 11, "item": "防燃爆功率电池", "page": 80}
+{"field": "家用电器", "category": "基础零部件和元器件", "number": 12, "item": "高温高湿高海拔防燃爆功率电池", "page": 80}
+{"field": "家用电器", "category": "基础材料", "number": 1, "item": "高性能制冷压缩机用冷冻油", "page": 81}
+{"field": "家用电器", "category": "基础材料", "number": 2, "item": "低/无重稀土压缩机用烧结钕铁硼", "page": 81}
+{"field": "家用电器", "category": "基础材料", "number": 3, "item": "高储热密度的相变蓄热材料", "page": 81}
+{"field": "家用电器", "category": "基础材料", "number": 4, "item": "新型高效固体吸附除湿材料", "page": 81}
+{"field": "家用电器", "category": "工业基础软件", "number": 1, "item": "带相变过程的家电产品性能仿真软件", "page": 81}
+{"field": "家用电器", "category": "工业基础软件", "number": 2, "item": "换热器设计软件", "page": 81}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 1, "item": "洗衣机紧配合轴承压装设备", "page": 81}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 2, "item": "冰箱保温材料高压发泡机", "page": 81}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 3, "item": "家电专用焊接工艺及装备", "page": 81}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 4, "item": "高速冲压一体化伺服压力机", "page": 81}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 5, "item": "材料轻量化（高强钢）加工工艺", "page": 81}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 6, "item": "细管径翅片管式换热器胀管工艺与设备", "page": 81}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 7, "item": "基于石墨烯导电涂层的石英光波加热管制造工艺", "page": 81}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 8, "item": "低成本高性能新型喷涂工艺及装备", "page": 82}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 9, "item": "无废液亲水/耐腐双效后处理涂层工艺", "page": 82}
+{"field": "家用电器", "category": "基础制造工艺及装备", "number": 10, "item": "竖插翅片微通道换热器翅片冲压及装配工艺", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 1, "item": "家电产品高耐候性标准", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 2, "item": "智能健康家居标准及试验验证平台", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 3, "item": "高可靠性零部件标准", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 4, "item": "智能组件检验检测", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 5, "item": "家电行业绿色低碳产品认证平台", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 6, "item": "智能家电信息安全和隐私保护技术要求", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 7, "item": "家电系统集成及数字化计量系统平台", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 8, "item": "家电专用测试设备计量保障体系", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 9, "item": "家电产品及场景的用户体验研究工具和方法研究", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 10, "item": "家电行业制冷系统气密性检漏仪", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 11, "item": "家用电器电磁辐射检测设备", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 12, "item": "家用电器运转产生振动及噪音分析仪器", "page": 82}
+{"field": "家用电器", "category": "产业技术基础", "number": 13, "item": "高精度流量计", "page": 82}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 1, "item": "除尘器专用金属间化合物过滤元件", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 2, "item": "烟气治理设备用电磁脉冲阀专用控制器", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 3, "item": "除尘器专用折叠滤筒", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 4, "item": "水处理用微纳米气泡发生器", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 5, "item": "水处理工程高复氧关键零部件", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 6, "item": "水处理用反冲洗布水布气器", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 7, "item": "惰硅镀层处理挥发性有机物（VOCs）监测采样罐", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 8, "item": "超低排放烟尘测量仪专用微控器", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 9, "item": "超低排放烟尘测量仪专用电流环输出芯片", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础零部件和元器件", "number": 10, "item": "超低排放烟尘测量仪专用高灵敏激光模组", "page": 83}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 1, "item": "超低温 SCR 脱硝专用催化剂", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 2, "item": "高效低能耗 CO 捕集吸附剂", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 3, "item": "挥发性有机物（VOCs）低温燃烧催化剂", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 4, "item": "挥发性有机物（VOCs）吸附浓缩分子筛", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 5, "item": "汽车尾气三效催化剂专用高性能铈基储氧材料", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 6, "item": "高炉煤气有机硫（COS）水解催化剂", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 7, "item": "烧结烟气一氧化碳（CO）氧化催化剂", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 8, "item": "柴油车尾气净化专用高性能脱硝小孔分子筛催化材料", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 9, "item": "除尘用高温金属柔性膜材料", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 10, "item": "煤气净化吸附用微晶材料", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 11, "item": "水处理用基于聚乙烯隔膜的高效选择性纳滤膜（PENF）", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 12, "item": "水处理用纳米平板陶瓷膜", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 13, "item": "水处理菌剂", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 14, "item": "水处理用悬浮填料", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 15, "item": "适用于高浓度双氧水制取的阴极催化材料", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 16, "item": "水处理高级氧化高性能长寿命催化剂", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 17, "item": "水处理用高性能絮凝剂", "page": 84}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 18, "item": "靶向重金属吸附土壤调理剂", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础材料", "number": 19, "item": "城市轨道交通减振用聚氨酯材料", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 1, "item": "水泥、玻璃行业除尘脱硝一箱化工艺", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 2, "item": "高压损强制风冷结构炉排片制备工艺", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 3, "item": "半导体制程专用超纯高浓度臭氧装置", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 4, "item": "锅炉烟气治理用超高速化学吸收除臭技术", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 5, "item": "高浓度难降解含盐废水深度处理装备", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 6, "item": "水处理用深度脱氮生物过滤装备", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 7, "item": "高热值水冷炉排片加工制造工艺", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 8, "item": "生活垃圾智能分选工艺装备", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 9, "item": "含油污泥热水解+闪蒸处理工艺", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 10, "item": "冶金行业固废综合利用回转窑工艺与装备", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 11, "item": "污泥深度干化与资源化技术与装备", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 12, "item": "钢渣、铬渣、钒钛渣粉磨处理工艺与装备", "page": 85}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 13, "item": "黄磷炉气高温干法膜过滤工艺", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 14, "item": "水处理装备模块化标准化智能化制造工艺", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 15, "item": "高盐有机废水电化学调控高级氧化强化处理工艺", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 16, "item": "有机固废好氧发酵智能装备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 17, "item": "污泥、粪渣一体化干化焚烧设备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 18, "item": "生活垃圾焚烧飞灰等离子体熔融资源化技术与装备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 19, "item": "医疗废物等离子体气化熔融无害化处置技术与装备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 20, "item": "有机污染污染场地电阻加热强化微生物绿色耦合原位修 复工艺及装备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 21, "item": "有机污染污染场地高通量模块化直接热解吸异位修复工 艺及装备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 22, "item": "大宗固废制备功能性材料的关键工艺技术", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 23, "item": "有机涂层铜基废材高效热解再生与保级利用技术及装备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 24, "item": "废铅酸蓄电池湿法短流程回收处理技术及装备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 25, "item": "中低温失活 SCR 脱硝催化剂的再生技术及装备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 26, "item": "有机固体废弃物资源化处置及能源化处理技术及设备", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "基础制造工艺及装备", "number": 27, "item": "基于臭氧法的晶体乙醛酸一水合物制备基础制造工艺", "page": 86}
+{"field": "环保、低碳及资源综合利用装备", "category": "产业技术基础", "number": 1, "item": "国家技术标准创新基地（水环境技术与装备）标准试验验 证平台", "page": 87}
+{"field": "环保、低碳及资源综合利用装备", "category": "产业技术基础", "number": 2, "item": "复杂相态固废多组分高精度原位在线检测分析仪器与装 备", "page": 87}
+{"field": "环保、低碳及资源综合利用装备", "category": "产业技术基础", "number": 3, "item": "环境监测现场质控云平台", "page": 87}
+{"field": "环保、低碳及资源综合利用装备", "category": "产业技术基础", "number": 4, "item": "环保机械装备研发及测试服务平台", "page": 87}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 1, "item": "异质结高效电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 2, "item": "交叉背接触 N 型高效 IBC 太阳能电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 3, "item": "高效 N 型钝化接触（TOPCon）电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 4, "item": "钙钛矿/硅异质结叠层太阳能电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 5, "item": "硫基储能电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 6, "item": "无钴电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 7, "item": "高安全储能用固态电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 8, "item": "高比能高安全性锂金属固态电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 9, "item": "储能用高安全长寿命磷酸铁锂电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 10, "item": "锂电池前端采集芯片（AFE）", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 11, "item": "电池保护系统主芯片", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 12, "item": "直线电机", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 13, "item": "高安全、低衰减储能电池系统", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 14, "item": "高性能超级电容器", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 15, "item": "支撑大规模储能的先进铅碳电池", "page": 88}
+{"field": "能源电子", "category": "基础零部件和元器件", "number": 16, "item": "红外亚纳秒激光器", "page": 88}
+{"field": "能源电子", "category": "基础材料", "number": 1, "item": "粘胶精炼联合机用超级不锈钢", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 2, "item": "单晶高镍正极材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 3, "item": "磷酸铁锰锂材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 4, "item": "高电压钴酸锂正极材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 5, "item": "尖晶石镍锰正极材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 6, "item": "硅碳复合负极材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 7, "item": "人造石墨负极材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 8, "item": "天然石墨负极材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 9, "item": "低能耗负极碳材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 10, "item": "硬碳负极材料", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 11, "item": "锂复合负极", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 12, "item": "高破膜高粘结性功能隔膜", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 13, "item": "锂离子电池电解液用高纯双氟代磺酰亚胺锂溶质", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 14, "item": "高安全高比能锂离子电池电解液", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 15, "item": "固态电池用氧化物固态电解质", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 16, "item": "隔膜涂胶用 PVDF", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 17, "item": "锂离子电池电解液用高纯碳酸酯溶剂", "page": 89}
+{"field": "能源电子", "category": "基础材料", "number": 18, "item": "锂离子电池电解液用高纯六氟磷酸锂溶质", "page": 90}
+{"field": "能源电子", "category": "基础材料", "number": 19, "item": "锂电用 4.5um 超薄铜箔", "page": 90}
+{"field": "能源电子", "category": "基础材料", "number": 20, "item": "软包锂电池铝塑膜", "page": 90}
+{"field": "能源电子", "category": "基础材料", "number": 21, "item": "电子级多晶硅", "page": 90}
+{"field": "能源电子", "category": "基础材料", "number": 22, "item": "N 型高质量硅片", "page": 90}
+{"field": "能源电子", "category": "基础材料", "number": 23, "item": "高效 N 型晶硅太阳电池用光伏浆料", "page": 90}
+{"field": "能源电子", "category": "工业基础软件", "number": 1, "item": "锂电池溯源信息管理系统", "page": 90}
+{"field": "能源电子", "category": "工业基础软件", "number": 2, "item": "储能集群控制和分布式微网协调系统", "page": 90}
+{"field": "能源电子", "category": "工业基础软件", "number": 3, "item": "锂电池电化学分析工具", "page": 90}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 1, "item": "储能电池生产关键工序高精度在线检测系统", "page": 90}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 2, "item": "物流仓储系统", "page": 90}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 3, "item": "锂离子电池制造用辊压机", "page": 90}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 4, "item": "锂离子电池检测柜", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 5, "item": "锂电池正极材料前驱体大规模自动化产线", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 6, "item": "储能电池组智能化高精度集成产线技术", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 7, "item": "高速大尺寸圆柱电池组装线", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 8, "item": "高安全高比能电池锂离子电池电解液生产线", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 9, "item": "高效异质结太阳能电池装备和生产工艺（太阳能电池）", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 10, "item": "硅异质结（HIT）太阳电池用清洗制绒设备", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 11, "item": "硅异质结（HIT）太阳电池用非晶硅钝化层镀膜设备", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 12, "item": "硅异质结（HIT）太阳电池用低损伤透明导电金属氧化物 （TCO）沉积设备", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 13, "item": "TOPCon 太阳电池用 LPCVD 设备", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 14, "item": "高速复合叠片机", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 15, "item": "大规模工程化负极预锂设备", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 16, "item": "锂电池正负极浆料配料系统", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 17, "item": "高速高精度涂布机", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 18, "item": "接触式隧道烤箱", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 19, "item": "高产能储能电池正极材料智能化产线技术", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 20, "item": "储能用本质安全固态电池核心工艺技术", "page": 91}
+{"field": "能源电子", "category": "基础制造工艺及装备", "number": 21, "item": "高可靠储能电池材料大规模产线技术", "page": 91}
+{"field": "能源电子", "category": "产业技术基础", "number": 1, "item": "低碳光伏产品认证", "page": 92}
+{"field": "能源电子", "category": "产业技术基础", "number": 2, "item": "动力电池体检标准", "page": 92}
+{"field": "能源电子", "category": "产业技术基础", "number": 3, "item": "锂离子电池材料检测科技公共服务平台", "page": 92}
+{"field": "能源电子", "category": "产业技术基础", "number": 4, "item": "电解液原材料及成品检测服务平台", "page": 92}
+{"field": "能源电子", "category": "产业技术基础", "number": 5, "item": "能源电子信息技术科技服务平台", "page": 92}
+{"field": "能源电子", "category": "产业技术基础", "number": 6, "item": "光伏产品第三方检测科技公共服务平台", "page": 92}
+{"field": "能源电子", "category": "产业技术基础", "number": 7, "item": "电池及系统安全预警技术", "page": 92}
+{"field": "能源电子", "category": "产业技术基础", "number": 8, "item": "储能电池安全管理与技术基础公共服务平台", "page": 92}
+{"field": "能源电子", "category": "产业技术基础", "number": 9, "item": "基于多功能传感器的电池消防安全技术", "page": 92}

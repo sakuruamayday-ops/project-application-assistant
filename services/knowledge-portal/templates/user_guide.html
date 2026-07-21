@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}用户使用手册｜知识产权大脑{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="manual-shell">
+  <header class="manual-header">
+    <a class="brand" href="/login"><span class="brand-mark brand-mark-wide">GCIP</span><span><strong>知识产权大脑</strong><small>共创团队知识服务</small></span></a>
+    <div class="button-row compact"><a class="button secondary" href="/login">登录网站</a><a class="button" href="/register">注册账号</a></div>
+  </header>
+  <section class="manual-hero"><p class="eyebrow light">User Handbook</p><h1>用户使用手册</h1><p>从安装、首次配置到项目分析、专利、法规和财税任务，按实际工作顺序说明。</p></section>
+  <article class="manual-content">{{ guide_html }}</article>
+  <footer class="manual-footer"><span>企业全生命周期助手 · 共创团队知识服务</span><a href="/login">返回登录</a></footer>
+</main>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}MCP 接入说明｜企业全生命周期助手{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin narrow-admin">
+  <header class="admin-page-head"><div><p class="eyebrow">MCP Access</p><h1>知识库 MCP 接入说明</h1><p>这是供人阅读的配置页面；真正的 MCP 服务运行在带斜杠的协议地址。</p></div><a class="button secondary" href="/portal#api-access">返回工作台</a></header>
+  <section class="mcp-hero panel"><span class="file-tab">STREAMABLE HTTP</span><h2>{{ mcp_url }}</h2><p>认证方式为个人 Bearer Token，与 REST API 共用同一份凭据。</p><pre id="mcp-config">{
+  "url": "{{ mcp_url }}",
+  "headers": {
+    "Authorization": "Bearer 你的个人Token"
+  }
+}</pre><button class="button" type="button" data-copy-target="#mcp-config">复制MCP配置模板</button></section>
+  <section class="detail-grid mcp-tools"><article><span>工具一</span><strong>knowledge_search</strong><small>输入关键词和数量，返回文档编号、标题、摘要、类别和来源。</small></article><article><span>工具二</span><strong>knowledge_document</strong><small>输入文档编号，读取完整正文和来源信息。</small></article><article><span>工具三</span><strong>knowledge_service_status</strong><small>检查知识库连接状态、文档总量和索引时间。</small></article></section>
+  <section class="panel external-access"><div class="panel-head"><h3>外部服务注册入口</h3><span>按需注册</span></div><div class="external-link-grid"><a href="https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY" target="_blank" rel="noopener"><strong>企查查智能体数据平台</strong><small>通过邀请入口注册并申请企业数据能力</small></a><a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" target="_blank" rel="noopener"><strong>Google BigQuery MCP</strong><small>连接官方托管MCP并查询公开专利数据集</small></a></div></section>
+  <section class="panel"><h3>接入步骤</h3><ol class="setup-steps light-list"><li>在工作台使用中文真实姓名生成个人 Token</li><li>在 Agent 平台新增远程 Streamable HTTP MCP</li><li>填写上方地址和 Authorization 请求头</li><li>先调用 knowledge_service_status 验证连接</li><li>使用 knowledge_search 检索，再用 knowledge_document 读取原文</li></ol><div class="notice alert">浏览器直接访问协议地址 <code>/mcp/</code> 会提示缺少凭据，这是正常的安全行为；请在 Agent 的 MCP 配置中调用。</div></section>
+</main>
+{% endblock %}

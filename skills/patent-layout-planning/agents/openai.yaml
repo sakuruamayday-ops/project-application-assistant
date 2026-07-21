@@ -1,4 +1,0 @@
-interface:
-  display_name: "专利布局规划"
-  short_description: "用于政府项目申报场景的专业分析、核验与流程执行技能"
-  default_prompt: "使用 $patent-layout-planning 处理当前政府项目申报任务。"

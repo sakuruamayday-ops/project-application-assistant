@@ -1,0 +1,2360 @@
+import importlib
+import io
+import json
+import os
+import re
+import sqlite3
+import zipfile
+from contextlib import closing
+from datetime import datetime, timedelta
+
+import pytest
+from fastapi.testclient import TestClient
+
+from scripts.build_knowledge_content_index import cache_status_reusable
+
+
+def create_test_content_index(path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with closing(sqlite3.connect(path)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE documents (
+                id INTEGER PRIMARY KEY,
+                source_key TEXT NOT NULL UNIQUE,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                source TEXT NOT NULL,
+                cloud_path TEXT NOT NULL,
+                document_role TEXT NOT NULL,
+                sensitivity TEXT NOT NULL,
+                sha256 TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                canonical_project_name TEXT NOT NULL DEFAULT '',
+                region TEXT NOT NULL DEFAULT '',
+                document_stage TEXT NOT NULL DEFAULT '其他',
+                validity_status TEXT NOT NULL DEFAULT 'active_candidate',
+                policy_year INTEGER,
+                batch TEXT NOT NULL DEFAULT '',
+                replacement_title TEXT NOT NULL DEFAULT '',
+                replacement_basis TEXT NOT NULL DEFAULT '',
+                replacement_url TEXT NOT NULL DEFAULT ''
+            );
+            CREATE VIRTUAL TABLE documents_fts_trigram USING fts5(
+                title,
+                content,
+                source,
+                document_role,
+                content='documents',
+                content_rowid='id',
+                tokenize='trigram'
+            );
+            CREATE VIRTUAL TABLE documents_fts USING fts5(
+                title,
+                content,
+                source,
+                document_role,
+                content='documents',
+                content_rowid='id',
+                tokenize='unicode61'
+            );
+            CREATE TABLE document_chunks (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL REFERENCES documents(id),
+                chunk_number INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                UNIQUE(document_id, chunk_number)
+            );
+            CREATE VIRTUAL TABLE document_chunks_fts USING fts5(
+                document_id UNINDEXED,
+                chunk_number UNINDEXED,
+                title,
+                content,
+                source,
+                tokenize='trigram'
+            );
+            CREATE TABLE enterprise_mentions (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL REFERENCES documents(id),
+                enterprise_name TEXT NOT NULL,
+                sequence_no TEXT NOT NULL,
+                context TEXT NOT NULL,
+                UNIQUE(document_id, enterprise_name, sequence_no)
+            );
+            CREATE INDEX enterprise_mentions_name_idx ON enterprise_mentions(enterprise_name);
+            CREATE TABLE public_list_entities (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL REFERENCES documents(id),
+                enterprise_name TEXT NOT NULL,
+                sequence_no TEXT NOT NULL,
+                canonical_project_name TEXT NOT NULL,
+                policy_year INTEGER,
+                batch TEXT NOT NULL,
+                region TEXT NOT NULL,
+                list_status TEXT NOT NULL,
+                context TEXT NOT NULL,
+                confidence TEXT NOT NULL,
+                UNIQUE(document_id, enterprise_name, sequence_no)
+            );
+            CREATE TABLE project_alias_corrections (
+                id INTEGER PRIMARY KEY,
+                raw_project_name TEXT NOT NULL,
+                canonical_project_name TEXT NOT NULL,
+                region TEXT NOT NULL DEFAULT '',
+                start_year INTEGER,
+                end_year INTEGER,
+                status TEXT NOT NULL DEFAULT 'pending',
+                confirmed_by TEXT NOT NULL DEFAULT '',
+                confirmed_at TEXT,
+                note TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(raw_project_name,canonical_project_name,region,start_year,end_year)
+            );
+            CREATE TABLE metadata_match_evidence (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL REFERENCES documents(id),
+                field_name TEXT NOT NULL,
+                inferred_value TEXT NOT NULL,
+                matched_term TEXT NOT NULL,
+                match_method TEXT NOT NULL,
+                source_scope TEXT NOT NULL,
+                source_excerpt TEXT NOT NULL,
+                rule_version TEXT NOT NULL,
+                confidence TEXT NOT NULL,
+                review_status TEXT NOT NULL DEFAULT 'unreviewed',
+                correction_id INTEGER REFERENCES project_alias_corrections(id),
+                created_at TEXT NOT NULL,
+                UNIQUE(document_id,field_name,rule_version)
+            );
+            CREATE TABLE policy_verification_queue (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL REFERENCES documents(id),
+                reason TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                official_source_url TEXT NOT NULL DEFAULT '',
+                official_document_title TEXT NOT NULL DEFAULT '',
+                official_published_at TEXT,
+                verification_note TEXT NOT NULL DEFAULT '',
+                verified_by TEXT NOT NULL DEFAULT '',
+                verified_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(document_id,reason)
+            );
+            CREATE TABLE policy_document_clusters (
+                id INTEGER PRIMARY KEY,
+                cluster_key TEXT NOT NULL UNIQUE,
+                normalized_title TEXT NOT NULL,
+                document_number TEXT NOT NULL DEFAULT '',
+                canonical_project_name TEXT NOT NULL DEFAULT '',
+                region TEXT NOT NULL DEFAULT '',
+                policy_year INTEGER,
+                representative_document_id INTEGER NOT NULL REFERENCES documents(id),
+                match_method TEXT NOT NULL,
+                confidence TEXT NOT NULL,
+                rule_version TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE TABLE policy_document_cluster_members (
+                id INTEGER PRIMARY KEY,
+                cluster_id INTEGER NOT NULL REFERENCES policy_document_clusters(id),
+                document_id INTEGER NOT NULL UNIQUE REFERENCES documents(id),
+                membership_basis TEXT NOT NULL,
+                confidence TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE TABLE policy_verification_propagations (
+                id INTEGER PRIMARY KEY,
+                source_queue_id INTEGER NOT NULL REFERENCES policy_verification_queue(id),
+                cluster_id INTEGER NOT NULL REFERENCES policy_document_clusters(id),
+                source_document_id INTEGER NOT NULL REFERENCES documents(id),
+                target_document_id INTEGER NOT NULL REFERENCES documents(id),
+                field_name TEXT NOT NULL,
+                propagated_value TEXT NOT NULL,
+                official_source_url TEXT NOT NULL DEFAULT '',
+                evidence_excerpt TEXT NOT NULL,
+                rule_version TEXT NOT NULL,
+                propagated_by TEXT NOT NULL,
+                propagated_at TEXT NOT NULL,
+                UNIQUE(source_queue_id,target_document_id,field_name)
+            );
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO documents(
+                source_key, title, content, source, cloud_path, document_role,
+                sensitivity, sha256, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "doc-one",
+                "小巨人测试资料",
+                "产业链关键环节与工业六基匹配",
+                "测试来源/小巨人测试资料.md",
+                "60_申报案例与建设方案/小巨人测试资料.md",
+                "60_申报案例与建设方案",
+                "internal",
+                "test-sha256",
+                "2026-07-18T00:00:00+00:00",
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO documents(
+                source_key, title, content, source, cloud_path, document_role,
+                sensitivity, sha256, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "doc-two",
+                "后添加测试资料",
+                "用于验证生产知识库按编号升序排列",
+                "测试来源/后添加测试资料.md",
+                "40_内部培训与方法/后添加测试资料.md",
+                "40_内部培训与方法",
+                "internal",
+                "test-sha256-two",
+                "2026-07-19T00:00:00+00:00",
+            ),
+        )
+        list_document_id = connection.execute(
+            """
+            INSERT INTO documents(
+                source_key,title,content,source,cloud_path,document_role,
+                sensitivity,sha256,updated_at,canonical_project_name,region,
+                document_stage,validity_status,policy_year,batch
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                "doc-list",
+                "2025年浙江省第六批专精特新小巨人认定名单",
+                "1 | 杭州测试装备有限公司",
+                "50_名单与对标/2025年浙江省第六批小巨人名单.md",
+                "50_名单与对标/2025年浙江省第六批小巨人名单.md",
+                "50_名单与对标",
+                "public",
+                "test-list-sha256",
+                "2025-10-01T00:00:00+00:00",
+                "国家专精特新“小巨人”企业",
+                "浙江省",
+                "认定名单",
+                "active_candidate",
+                2025,
+                "第六批",
+            ),
+        ).lastrowid
+        connection.execute(
+            """
+            INSERT INTO public_list_entities(
+                document_id,enterprise_name,sequence_no,canonical_project_name,
+                policy_year,batch,region,list_status,context,confidence
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                list_document_id,
+                "杭州测试装备有限公司",
+                "1",
+                "国家专精特新“小巨人”企业",
+                2025,
+                "第六批",
+                "浙江省",
+                "认定名单",
+                "1 | 杭州测试装备有限公司",
+                "high",
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO documents(
+                source_key,title,content,source,cloud_path,document_role,
+                sensitivity,sha256,updated_at,canonical_project_name,region,
+                document_stage,validity_status,policy_year,batch
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                "doc-policy",
+                "2025年浙江省专精特新小巨人申报通知",
+                "申报企业应当符合专精特新发展方向。",
+                "10_政策与通知/2025年浙江省小巨人申报通知.md",
+                "10_政策与通知/2025年浙江省小巨人申报通知.md",
+                "10_政策与通知",
+                "public",
+                "test-policy-sha256",
+                "2025-06-01T00:00:00+00:00",
+                "国家专精特新“小巨人”企业",
+                "浙江省",
+                "申报通知",
+                "active_candidate",
+                2025,
+                "",
+            ),
+        )
+        connection.execute("INSERT INTO documents_fts(documents_fts) VALUES ('rebuild')")
+        connection.execute("INSERT INTO documents_fts_trigram(documents_fts_trigram) VALUES ('rebuild')")
+        connection.commit()
+
+
+def load_app(tmp_path):
+    os.environ["JIAOTANG_DATA_DIR"] = str(tmp_path)
+    os.environ["JIAOTANG_INDEX_DIR"] = str(tmp_path / "knowledge-index")
+    os.environ["JIAOTANG_SETUP_KEY"] = "setup-secret"
+    os.environ["JIAOTANG_TOKEN_DERIVATION_SECRET"] = "test-token-derivation-secret"
+    os.environ["JIAOTANG_SECURE_COOKIES"] = "false"
+    os.environ.pop("JIAOTANG_AI_API_BASE", None)
+    os.environ.pop("JIAOTANG_AI_API_KEY", None)
+    os.environ.pop("JIAOTANG_AI_MODEL", None)
+    create_test_content_index(tmp_path / "knowledge-index" / "knowledge_content.sqlite3")
+    import app.main
+
+    module = importlib.reload(app.main)
+    module.init_database()
+    return module
+
+
+def test_public_user_guide(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        guide = client.get("/guide")
+        assert guide.status_code == 200
+        assert "企业全生命周期助手用户使用手册" in guide.text
+        assert "下载与安装" in guide.text
+        assert "53项 Skills 能力导航" not in guide.text
+        assert "2.1.5版本" not in guide.text
+
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        login = client.get("/login")
+        assert login.status_code == 200
+        assert 'href="/guide"' in login.text
+
+
+def test_directory_storage_size_ignores_inaccessible_path(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+
+    def inaccessible(*args, **kwargs):
+        raise PermissionError("not readable")
+
+    monkeypatch.setattr(module.Path, "exists", inaccessible)
+    assert module.directory_storage_size(module.Path("/restricted")) == 0
+
+
+def test_setup_login_and_device_token(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        home = client.get("/", follow_redirects=False)
+        assert home.status_code == 303
+        assert home.headers["location"] == "/login"
+
+        response = client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+
+        response = client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert module.SESSION_COOKIE in response.cookies
+
+        client.cookies.update(response.cookies)
+        portal = client.get("/portal")
+        assert portal.status_code == 200
+        assert "退出当前账号" in portal.text
+        assert "page-overview" in portal.text
+        assert re.search(r'/static/app\.css\?v=[0-9a-f]{16}', portal.text)
+        assert re.search(r'/static/portal\.js\?v=[0-9a-f]{16}', portal.text)
+        assert 'class="app-layout portal-page single-page' in portal.text
+        assert 'id="cockpit"' in portal.text
+        assert 'id="api-access"' in portal.text
+        assert 'id="skills"' in portal.text
+        assert 'class="page-continuation"' not in portal.text
+        access_page = client.get("/access")
+        assert "MCP 接入你的 AI 工具" in access_page.text
+        assert "first-run-configuration" not in access_page.text
+        cockpit_page = client.get("/cockpit")
+        assert "驾驶舱智能看板" in cockpit_page.text
+        assert "免费知识检索" in cockpit_page.text
+        assert "管理员不限次数" in cockpit_page.text
+        assert "实时推导轨迹" in cockpit_page.text
+        assert ">如何使用<" in cockpit_page.text
+        assert ">导入 API / MCP<" in cockpit_page.text
+        assert ">导入企查查 MCP<" in cockpit_page.text
+        user = module.session_user(response.cookies[module.SESSION_COOKIE])[0]
+
+        feedback = client.post(
+            "/feedback",
+            data={
+                "category": "bug",
+                "subject": "省研究院检索未命中",
+                "content": "使用简称检索时错误进入联网搜索。",
+                "page_url": "/cockpit",
+                "csrf_token": user["csrf_token"],
+            },
+            follow_redirects=False,
+        )
+        assert feedback.status_code == 303
+        assert feedback.headers["location"] == "/feedback?submitted=1#feedback"
+        feedback_page = client.get("/feedback")
+        assert "省研究院检索未命中" in feedback_page.text
+        assert "故障与 Bug" in feedback_page.text
+        with closing(module.database()) as connection:
+            feedback_id = int(
+                connection.execute("SELECT id FROM feedback_messages").fetchone()["id"]
+            )
+        update_feedback = client.post(
+            f"/admin/feedback/{feedback_id}",
+            data={
+                "feedback_status": "resolved",
+                "admin_note": "已加入项目简称召回。",
+                "csrf_token": user["csrf_token"],
+            },
+            follow_redirects=False,
+        )
+        assert update_feedback.status_code == 303
+        assert "已加入项目简称召回" in client.get("/feedback").text
+
+        assistant = client.post(
+            "/assistant/answer",
+            data={"question": "小巨人", "csrf_token": user["csrf_token"]},
+        )
+        assert assistant.status_code == 200
+        assert assistant.json()["mode"] == "policy-guardrail"
+        assert "2026" in assistant.json()["answer"]
+        assert "小巨人" in assistant.json()["sources"][0]["title"]
+        assert "project-matching" in assistant.json()["skills"]
+        assert assistant.json()["quota"] == {
+            "remaining": None,
+            "limit": None,
+            "counted": False,
+            "unlimited": True,
+        }
+
+        usage_guide = client.post(
+            "/assistant/answer",
+            data={
+                "question": "企业全生命周期助手如何导入我的Agent？",
+                "csrf_token": user["csrf_token"],
+            },
+        )
+        assert usage_guide.status_code == 200
+        assert usage_guide.json()["mode"] == "usage-guide"
+        assert "当前 Agent" in usage_guide.json()["answer"]
+        assert usage_guide.json()["sources"] == []
+
+        api_guide = client.post(
+            "/assistant/answer",
+            data={
+                "question": "企业全生命周期助手自带的API和MCP如何导入Agent？",
+                "csrf_token": user["csrf_token"],
+            },
+        )
+        assert api_guide.status_code == 200
+        assert "JIAOTANG_KB_BASE_URL=http://testserver" in api_guide.json()["answer"]
+        assert "JIAOTANG_KB_API_BASE_URL=http://testserver/v1" in api_guide.json()["answer"]
+        assert "JIAOTANG_KB_ENDPOINT=http://testserver" in api_guide.json()["answer"]
+        assert "http://testserver/mcp/" in api_guide.json()["answer"]
+
+        qcc_guide = client.post(
+            "/assistant/answer",
+            data={
+                "question": "企查查MCP如何导入Agent？",
+                "csrf_token": user["csrf_token"],
+            },
+        )
+        assert qcc_guide.status_code == 200
+        assert "agent.qcc.com/invitation" in qcc_guide.json()["answer"]
+        assert "QCC_API_KEY" in qcc_guide.json()["answer"]
+
+        token_page = client.post(
+            "/device-tokens",
+            data={
+                "real_name": "王小明",
+                "company_name": "共创集团",
+                "csrf_token": user["csrf_token"],
+            },
+        )
+        assert token_page.status_code == 200
+        assert "复制通用接入配置" in token_page.text
+        assert "JIAOTANG_KB_BASE_URL=http://testserver" in token_page.text
+        assert "JIAOTANG_KB_API_BASE_URL=http://testserver/v1" in token_page.text
+        assert "JIAOTANG_KB_MCP_URL=http://testserver/mcp/" in token_page.text
+        assert "复制访问凭据" in token_page.text
+        assert 'data-toggle-secret="personal-access"' in token_page.text
+        assert "••••••••••••••••••••" in token_page.text
+        with closing(module.database()) as connection:
+            assert connection.execute("SELECT label FROM device_tokens").fetchone()["label"] == "王小明"
+        token_match = re.search(r"jtk_[A-Za-z0-9_-]+", token_page.text)
+        assert token_match is not None
+        token = token_match.group(0)
+
+        access_page = client.get("/access")
+        assert access_page.status_code == 200
+        assert "page-access" in access_page.text
+        assert 'class="page-continuation"' not in access_page.text
+        assert 'class="page-step' not in access_page.text
+        assert token in access_page.text
+        assert "REST Base URL、MCP URL 与个人访问凭据缺一不可" not in access_page.text
+        assert "当前唯一访问凭据" not in access_page.text
+        repeat_page = client.post(
+            "/device-tokens",
+            data={
+                "real_name": "王小明",
+                "company_name": "共创集团",
+                "csrf_token": user["csrf_token"],
+            },
+        )
+        assert repeat_page.status_code == 200
+        assert token in repeat_page.text
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT COUNT(*) FROM device_tokens WHERE user_id=? AND revoked_at IS NULL",
+                (user["id"],),
+            ).fetchone()[0] == 1
+
+        cockpit = client.get("/cockpit")
+        assert cockpit.status_code == 200
+        assert "page-cockpit" in cockpit.text
+
+        me = client.get("/v1/me", headers={"Authorization": f"Bearer {token}"})
+        assert me.status_code == 200
+        assert me.json() == {"username": "owner", "access": "unified"}
+
+        search = client.post(
+            "/v1/search",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"query": "小巨人", "limit": 5},
+        )
+        assert search.status_code == 200
+        assert "小巨人" in search.json()["results"][0]["title"]
+        assert "source_layer" not in search.json()["results"][0]
+        assert "source_labels" not in search.json()["results"][0]
+        assert "verification_status" not in search.json()["results"][0]
+        document_id = search.json()["results"][0]["document_id"]
+        document = client.get(
+            f"/v1/documents/{document_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert document.status_code == 200
+        assert document.json()["content"]
+        assert "小巨人" in document.json()["title"]
+
+        list_search = client.post(
+            "/v1/lists/search",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"project_name": "小巨人", "year": 2025, "region": "浙江省"},
+        )
+        assert list_search.status_code == 200
+        assert list_search.json()["results"][0]["enterprise_name"] == "杭州测试装备有限公司"
+
+        policy_search = client.post(
+            "/v1/policies/search",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"project_name": "小巨人", "document_stage": "申报通知", "year": 2025},
+        )
+        assert policy_search.status_code == 200
+        assert policy_search.json()["results"][0]["validity_status"] == "active_candidate"
+
+        project_match = client.post(
+            "/v1/projects/match",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"regions": ["全国"], "keywords": ["小巨人"]},
+        )
+        assert project_match.status_code == 200
+        assert project_match.json()["status"] == "candidate_only"
+
+        usage = client.get("/v1/usage", headers={"Authorization": f"Bearer {token}"})
+        assert usage.status_code == 200
+        assert usage.json()["total_calls"] >= 4
+        assert any(item["endpoint"] == "/v1/search" for item in usage.json()["by_endpoint"])
+
+        latest = client.get("/v1/skills/latest", headers={"Authorization": f"Bearer {token}"})
+        assert latest.status_code == 200
+        assert latest.json() == {
+            "available": False,
+            "version": None,
+            "file_name": None,
+            "sha256": None,
+            "file_size": None,
+            "release_notes": None,
+            "published_at": None,
+            "download_url": None,
+        }
+
+        created = client.post(
+            "/users",
+            data={
+                "username": "member-one",
+                "initial_password": "initial-password-123",
+                "csrf_token": user["csrf_token"],
+            },
+            follow_redirects=False,
+        )
+        assert created.status_code == 303
+
+        failed_reset = client.post(
+            "/password/reset",
+            data={
+                "username": "owner",
+                "real_name": "王小明",
+                "company_name": "错误公司",
+                "password": "new-owner-password-123",
+                "confirm_password": "new-owner-password-123",
+            },
+        )
+        assert failed_reset.status_code == 403
+        reset = client.post(
+            "/password/reset",
+            data={
+                "username": "owner",
+                "real_name": "王小明",
+                "company_name": "共创集团",
+                "password": "new-owner-password-123",
+                "confirm_password": "new-owner-password-123",
+            },
+            follow_redirects=False,
+        )
+        assert reset.status_code == 303
+        assert reset.headers["location"] == "/login?password_reset=1"
+        assert client.get("/portal", follow_redirects=False).status_code == 303
+        assert client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+        ).status_code == 401
+        assert client.post(
+            "/login",
+            data={"username": "owner", "password": "new-owner-password-123"},
+            follow_redirects=False,
+        ).status_code == 303
+
+
+def test_password_reset_rate_limit(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,real_name,company_name,password_hash,created_at)
+            VALUES (?,?,?,?,?)
+            """,
+            (
+                "member",
+                "王小明",
+                "共创集团",
+                module.password_hasher.hash("member-password-123"),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+    payload = {
+        "username": "member",
+        "real_name": "王小明",
+        "company_name": "错误公司",
+        "password": "new-member-password-123",
+        "confirm_password": "new-member-password-123",
+    }
+    with TestClient(module.app) as client:
+        for _ in range(5):
+            assert client.post("/password/reset", data=payload).status_code == 403
+        assert client.post("/password/reset", data=payload).status_code == 429
+
+
+def test_assistant_skill_router_and_read_only_tool_loop(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    monkeypatch.setattr(module, "AI_API_BASE", "https://model.example.com")
+    monkeypatch.setattr(module, "AI_API_KEY", "test-key")
+    monkeypatch.setattr(module, "AI_MODEL", "test-model")
+    replies = iter(
+        [
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call-search",
+                        "type": "function",
+                        "function": {"name": "knowledge_search", "arguments": '{"query":"小巨人","limit":3}'},
+                    }
+                ],
+            },
+            {"role": "assistant", "content": "已依据项目匹配Skill和知识库资料形成答复。"},
+        ]
+    )
+    monkeypatch.setattr(
+        module, "request_assistant_model", lambda messages, model_config=None: next(replies)
+    )
+
+    answer, mode, sources, skills = module.answer_with_knowledge("这家企业能报什么小巨人项目？", [])
+
+    assert mode == "language-model"
+    assert "知识库资料" in answer
+    assert "小巨人" in sources[0]["title"]
+    assert "project-matching" in skills
+    assert set(module.route_assistant_skills("分析专利侵权和法律状态")) >= {"patent-search-core"}
+
+    monkeypatch.setattr(
+        module,
+        "request_assistant_model",
+        lambda messages, model_config=None: {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": "call-repeat-search",
+                    "type": "function",
+                    "function": {"name": "knowledge_search", "arguments": '{"query":"小巨人","limit":3}'},
+                }
+            ],
+        },
+    )
+    fallback_answer, fallback_mode, fallback_sources, _ = module.answer_with_knowledge("继续检索小巨人", [])
+    assert fallback_mode == "policy-guardrail"
+    assert "现行版本" in fallback_answer
+    assert "小巨人" in fallback_sources[0]["title"]
+
+
+def test_assistant_searches_web_only_after_knowledge_miss(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    calls = []
+
+    def fake_web_search(query, limit=5):
+        calls.append((query, limit))
+        return [
+            {
+                "title": "官方公开结果",
+                "excerpt": "公开网页摘要",
+                "source": "https://www.gov.cn/example",
+                "url": "https://www.gov.cn/example",
+            }
+        ]
+
+    monkeypatch.setattr(module, "search_public_web", fake_web_search)
+    answer, mode, sources, _ = module.answer_with_knowledge_then_web("未收录的新政策", [])
+    assert mode == "web-search"
+    assert "团队知识库未命中" in answer
+    assert sources[0]["url"] == "https://www.gov.cn/example"
+    assert calls == [("未收录的新政策", 5)]
+
+    calls.clear()
+    knowledge_result = {
+        "document_id": 1,
+        "title": "知识库文件",
+        "excerpt": "知识库正文",
+        "source": "内部索引",
+    }
+    _, mode, sources, _ = module.answer_with_knowledge_then_web(
+        "已有知识", [knowledge_result]
+    )
+    assert mode == "knowledge-search"
+    assert sources[0]["document_id"] == 1
+    assert calls == []
+
+
+def test_structured_list_policy_and_project_tools(tmp_path):
+    module = load_app(tmp_path)
+
+    list_result = module.search_public_list_entities(
+        project_name="小巨人", year=2025, batch="第六批", region="浙江省"
+    )
+    assert list_result["results"][0]["enterprise_name"] == "杭州测试装备有限公司"
+    assert list_result["results"][0]["list_status"] == "认定名单"
+
+    policy_result = module.search_policy_documents(
+        project_name="小巨人",
+        region="浙江省",
+        document_stage="申报通知",
+        validity_status="active_candidate",
+        year=2025,
+    )
+    assert policy_result["results"][0]["title"] == "2025年浙江省专精特新小巨人申报通知"
+
+    project_result = module.match_project_catalog(
+        regions=["全国"], keywords=["小巨人"], limit=10
+    )
+    assert project_result["status"] == "candidate_only"
+    assert any("小巨人" in item["canonical_project_name"] for item in project_result["results"])
+
+    ranked_result = module.match_project_catalog(
+        regions=["浙江省"], keywords=["专精特新", "研发"], limit=5
+    )
+    assert any(
+        item["canonical_project_name"] == "国家专精特新“小巨人”企业"
+        for item in ranked_result["results"][:3]
+    )
+
+    tool_names = {
+        item["function"]["name"] for item in module.assistant_tool_schemas()
+    }
+    assert {
+        "public_list_search",
+        "policy_search",
+        "project_catalog_match",
+    }.issubset(tool_names)
+
+
+def test_alias_correction_evidence_and_policy_verification_workflow(tmp_path):
+    module = load_app(tmp_path)
+    assert module._active_learning_project_phrase("2026年度未来工厂申报通知") == "未来工厂"
+    assert (
+        module._active_learning_project_phrase("某协会关于开展2026年度职称评审工作的")
+        == "职称评审"
+    )
+
+    correction = module.create_project_alias_correction(
+        module.ProjectAliasCorrectionRequest(
+            raw_project_name="小巨人测试资料",
+            canonical_project_name="人工确认测试项目",
+            note="金标准人工确认",
+        ),
+        "admin",
+    )
+    assert correction["matched_documents"] == 1
+    assert correction["correction"]["status"] == "confirmed"
+    evidence = module.list_metadata_evidence(review_status="confirmed")
+    assert any(
+        item["inferred_value"] == "人工确认测试项目"
+        and item["match_method"] == "manual_alias"
+        for item in evidence["results"]
+    )
+
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        document_id = connection.execute(
+            "SELECT id FROM documents WHERE source_key='doc-policy'"
+        ).fetchone()[0]
+        now = "2026-07-19T00:00:00+00:00"
+        cursor = connection.execute(
+            """
+            INSERT INTO policy_verification_queue(
+                document_id,reason,priority,status,created_at,updated_at
+            ) VALUES (?,'有效性需要官方网站复核','high','pending',?,?)
+            """,
+            (document_id, now, now),
+        )
+        queue_id = int(cursor.lastrowid)
+        duplicate_document_id = int(
+            connection.execute(
+                """
+                INSERT INTO documents(
+                    source_key,title,content,source,cloud_path,document_role,
+                    sensitivity,sha256,updated_at,canonical_project_name,region,
+                    document_stage,validity_status,policy_year,batch
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    "doc-policy-pdf", "2025年浙江省专精特新小巨人申报通知",
+                    "申报企业应当符合专精特新发展方向。",
+                    "10_政策与通知/2025年浙江省小巨人申报通知.pdf",
+                    "10_政策与通知/2025年浙江省小巨人申报通知.pdf",
+                    "10_政策与通知", "public", "test-policy-pdf-sha", now,
+                    "国家专精特新“小巨人”企业", "浙江省", "申报通知",
+                    "active_candidate", 2025, "",
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO policy_verification_queue(
+                document_id,reason,priority,status,created_at,updated_at
+            ) VALUES (?,'有效性需要官方网站复核','high','pending',?,?)
+            """,
+            (duplicate_document_id, now, now),
+        )
+        connection.executemany(
+            """
+            INSERT INTO documents(
+                source_key,title,content,source,cloud_path,document_role,
+                sensitivity,sha256,updated_at,document_stage,validity_status,policy_year
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            [
+                (
+                    "alias-risk-one", "2026年未来工厂申报通知", "申报条件", "10_政策与通知/未来工厂.md",
+                    "10_政策与通知/未来工厂.md", "10_政策与通知", "public", "alias-risk-1", now,
+                    "申报通知", "active_candidate", 2026,
+                ),
+                (
+                    "alias-risk-two", "2025年未来工厂管理办法", "认定规则", "20_项目规则与指南/未来工厂.md",
+                    "20_项目规则与指南/未来工厂.md", "20_项目规则与指南", "public", "alias-risk-2", now,
+                    "管理办法", "active_candidate", 2025,
+                ),
+                (
+                    "alias-low", "2020年冷门项目名单", "公示内容", "50_名单与对标/冷门项目.md",
+                    "50_名单与对标/冷门项目.md", "50_名单与对标", "public", "alias-low", now,
+                    "认定名单", "historical_reference", 2020,
+                ),
+            ],
+        )
+        connection.commit()
+    from scripts.build_knowledge_content_index import rebuild_policy_document_clusters
+
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        rebuild_policy_document_clusters(connection)
+        connection.commit()
+
+    candidates = module.list_active_learning_alias_candidates()
+    assert candidates["results"][0]["raw_project_name"] == "未来工厂"
+    assert candidates["results"][0]["impacted_documents"] == 2
+    assert candidates["results"][0]["learning_score"] > candidates["results"][-1]["learning_score"]
+    assert "score_breakdown" in candidates["results"][0]
+
+    queue = module.list_policy_verification_queue()
+    assert queue["results"][0]["id"] == queue_id
+    assert queue["results"][0]["learning_score"] > 0
+    assert queue["results"][0]["learning_reasons"]
+    assert queue["results"][0]["cluster_document_count"] == 2
+    assert queue["results"][0]["cluster_pending_tasks"] == 2
+
+    reviewed = module.review_policy_verification(
+        module.PolicyVerificationReviewRequest(
+            queue_id=queue_id,
+            status="verified",
+            official_source_url="https://example.gov.cn/policy/1",
+            official_document_title="官方网站现行政策",
+            validity_status="active_candidate",
+        ),
+        "admin",
+    )
+    assert reviewed["review"]["status"] == "verified"
+    assert reviewed["review"]["official_source_url"].startswith("https://")
+    assert reviewed["propagated_documents"] == 1
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        assert connection.execute(
+            "SELECT validity_status FROM documents WHERE id=?", (duplicate_document_id,)
+        ).fetchone()[0] == "active_candidate"
+        assert connection.execute(
+            "SELECT status FROM policy_verification_queue WHERE document_id=?",
+            (duplicate_document_id,),
+        ).fetchone()[0] == "verified"
+        propagation = connection.execute(
+            """
+            SELECT source_document_id,target_document_id,field_name,rule_version
+            FROM policy_verification_propagations WHERE target_document_id=?
+            """,
+            (duplicate_document_id,),
+        ).fetchone()
+        assert propagation == (
+            document_id, duplicate_document_id, "validity_status", "policy-cluster-v1.0.0"
+        )
+        evidence = connection.execute(
+            """
+            SELECT match_method,review_status FROM metadata_match_evidence
+            WHERE document_id=? AND field_name='validity_status'
+              AND match_method='official_cluster_propagation'
+            """,
+            (duplicate_document_id,),
+        ).fetchone()
+        assert evidence == ("official_cluster_propagation", "confirmed")
+    propagation_history = module.list_policy_verification_propagations()
+    assert propagation_history["total"] == 1
+    assert propagation_history["results"][0]["target_document_id"] == duplicate_document_id
+
+
+def test_admin_metadata_review_page_is_visual_and_admin_only(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        setup = client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        assert setup.status_code == 303
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        page = client.get("/admin/metadata-review")
+        assert page.status_code == 200
+        assert "知识校准台" in page.text
+        assert "别名确认" in page.text
+        assert "排序依据" in page.text
+        policy_page = client.get("/admin/metadata-review?view=policies")
+        assert policy_page.status_code == 200
+        assert "政策核验队列" in policy_page.text
+        assert "人工拆分与合并记录" in policy_page.text
+        assert "别名候选队列" in page.text
+        alias_payload = {
+                "raw_project_name": "小巨人测试资料",
+                "canonical_project_name": "管理页面确认项目",
+                "region": "",
+                "start_year": "",
+                "end_year": "",
+                "note": "表单链路测试",
+                "csrf_token": user["csrf_token"],
+            }
+        alias_preview = client.post("/admin/metadata-review/aliases/preview", data=alias_payload)
+        assert alias_preview.status_code == 200
+        assert "别名确认预览" in alias_preview.text
+        alias_submit = client.post(
+            "/admin/metadata-review/aliases",
+            data=alias_payload,
+            follow_redirects=False,
+        )
+        assert alias_submit.status_code == 303
+        assert "view=aliases" in alias_submit.headers["location"]
+
+        with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+            document_id = connection.execute(
+                "SELECT id FROM documents WHERE source_key='doc-policy'"
+            ).fetchone()[0]
+            now = "2026-07-19T00:00:00+00:00"
+            queue_id = connection.execute(
+                """
+                INSERT INTO policy_verification_queue(
+                    document_id,reason,priority,status,created_at,updated_at
+                ) VALUES (?,'表单核验测试','high','pending',?,?)
+                """,
+                (document_id, now, now),
+            ).lastrowid
+            connection.commit()
+        policy_payload = {
+                "queue_id": queue_id,
+                "review_status": "verified",
+                "official_source_url": "https://example.gov.cn/policy/form-test",
+                "official_document_title": "官方政策原文",
+                "official_published_at": "2026-07-19",
+                "validity_status": "active_candidate",
+                "verification_note": "已核对官方页面",
+                "csrf_token": user["csrf_token"],
+            }
+        policy_preview = client.post("/admin/metadata-review/policies/preview", data=policy_payload)
+        assert policy_preview.status_code == 200
+        assert "政策核验预览" in policy_preview.text
+        policy_submit = client.post(
+            "/admin/metadata-review/policies",
+            data=policy_payload,
+            follow_redirects=False,
+        )
+        assert policy_submit.status_code == 303
+        assert "view=policies" in policy_submit.headers["location"]
+        client.cookies.clear()
+        response = client.get("/admin/metadata-review", follow_redirects=False)
+        assert response.status_code == 303
+
+
+def test_manual_policy_cluster_split_merge_survives_rebuild(tmp_path):
+    module = load_app(tmp_path)
+    from scripts.build_knowledge_content_index import rebuild_policy_document_clusters
+
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        now = "2026-07-19T00:00:00+00:00"
+        connection.executemany(
+            """
+            INSERT INTO documents(
+                source_key,title,content,source,cloud_path,document_role,
+                sensitivity,sha256,updated_at,canonical_project_name,region,
+                document_stage,validity_status,policy_year
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            [
+                (
+                    "cluster-a-2", "2025年浙江省专精特新小巨人申报通知", "第二份",
+                    "10_政策与通知/副本通知.md", "10_政策与通知/副本通知.md",
+                    "10_政策与通知", "public", "cluster-a-2", now,
+                    "国家专精特新“小巨人”企业", "浙江省", "申报通知",
+                    "active_candidate", 2025,
+                ),
+                (
+                    "cluster-b-1", "2026年浙江省制造精品申报通知", "另一政策",
+                    "10_政策与通知/制造精品.md", "10_政策与通知/制造精品.md",
+                    "10_政策与通知", "public", "cluster-b-1", now,
+                    "浙江制造精品", "浙江省", "申报通知", "active_candidate", 2026,
+                ),
+            ],
+        )
+        rebuild_policy_document_clusters(connection)
+        source_cluster_id = connection.execute(
+            """
+            SELECT m.cluster_id FROM policy_document_cluster_members m
+            JOIN documents d ON d.id=m.document_id WHERE d.source_key='doc-policy'
+            """
+        ).fetchone()[0]
+        split_document_id = connection.execute(
+            "SELECT id FROM documents WHERE source_key='cluster-a-2'"
+        ).fetchone()[0]
+        target_cluster_id = connection.execute(
+            """
+            SELECT m.cluster_id FROM policy_document_cluster_members m
+            JOIN documents d ON d.id=m.document_id WHERE d.source_key='cluster-b-1'
+            """
+        ).fetchone()[0]
+        connection.commit()
+
+    split_result = module.split_policy_document_cluster(
+        source_cluster_id, [split_document_id], "标题相同但官方文号不同", "owner"
+    )
+    assert split_result["moved_documents"] == 1
+    split_cluster_id = split_result["target_cluster_id"]
+
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        rebuild_policy_document_clusters(connection)
+        persisted_cluster_id = connection.execute(
+            "SELECT cluster_id FROM policy_document_cluster_members WHERE document_id=?",
+            (split_document_id,),
+        ).fetchone()[0]
+        assignment = connection.execute(
+            "SELECT operation_type FROM policy_cluster_manual_assignments WHERE document_id=?",
+            (split_document_id,),
+        ).fetchone()[0]
+        connection.commit()
+    assert persisted_cluster_id == split_cluster_id
+    assert assignment == "split"
+
+    merge_result = module.merge_policy_document_clusters(
+        split_cluster_id, target_cluster_id, "经官方来源确认属于同一政策", "owner"
+    )
+    assert merge_result["merged_documents"] == 2
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        merged_cluster_ids = {
+            row[0]
+            for row in connection.execute(
+                """
+                SELECT cluster_id FROM policy_document_cluster_members
+                WHERE document_id IN (?,?)
+                """,
+                (
+                    split_document_id,
+                    connection.execute(
+                        "SELECT id FROM documents WHERE source_key='cluster-b-1'"
+                    ).fetchone()[0],
+                ),
+            ).fetchall()
+        }
+        operations = connection.execute(
+            "SELECT operation_type FROM policy_cluster_manual_operations ORDER BY id"
+        ).fetchall()
+    assert merged_cluster_ids == {merge_result["target_cluster_id"]}
+    assert operations == [("split",), ("merge",)]
+
+    operations = module.list_policy_cluster_manual_operations()["results"]
+    merge_operation_id = operations[0]["id"]
+    split_operation_id = operations[1]["id"]
+    undo_merge = module.undo_policy_cluster_operation(merge_operation_id, "owner")
+    assert undo_merge["restored_documents"] == 2
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        restored_assignment = connection.execute(
+            "SELECT operation_type FROM policy_cluster_manual_assignments WHERE document_id=?",
+            (split_document_id,),
+        ).fetchone()[0]
+    assert restored_assignment == "split"
+
+    undo_split = module.undo_policy_cluster_operation(split_operation_id, "owner")
+    assert undo_split["restored_documents"] == 1
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        assignment_count = connection.execute(
+            "SELECT COUNT(*) FROM policy_cluster_manual_assignments WHERE document_id=?",
+            (split_document_id,),
+        ).fetchone()[0]
+        undone_count = connection.execute(
+            "SELECT COUNT(*) FROM policy_cluster_manual_operations WHERE undone_at IS NOT NULL"
+        ).fetchone()[0]
+    assert assignment_count == 0
+    assert undone_count == 2
+
+
+def test_document_metadata_derivation_uses_project_region_stage_and_validity():
+    from scripts.build_knowledge_content_index import infer_document_metadata
+
+    metadata = infer_document_metadata(
+        "2025年浙江省第六批专精特新小巨人认定名单",
+        "50_名单与对标/浙江省小巨人名单.pdf",
+        "1 | 杭州测试装备有限公司",
+        "50_名单与对标",
+    )
+
+    assert metadata["canonical_project_name"] == "国家专精特新“小巨人”企业"
+    assert metadata["policy_year"] == 2025
+    assert metadata["batch"] == "第六批"
+    assert "浙江省" in metadata["region"]
+    assert metadata["document_stage"] == "认定名单"
+    assert metadata["validity_status"] == "active_candidate"
+
+def test_assistant_daily_limit_and_stream_progress(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        setup = client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        assert setup.status_code == 303
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        guide = client.post(
+            "/assistant/answer",
+            data={
+                "question": "企业全生命周期助手如何导入我的Agent？",
+                "csrf_token": user["csrf_token"],
+                "stream": "true",
+            },
+        )
+        assert guide.status_code == 200
+        assert "event: progress" in guide.text
+        assert '"counted": false' in guide.text
+        assert '"unlimited": true' in guide.text
+        assert module.assistant_usage_today(user["id"]) == 0
+
+        stale_usage_id, _, _ = module.reserve_assistant_usage(user["id"], "模拟服务重启中的问答")
+        assert module.assistant_usage_today(user["id"]) == 1
+        module.init_database()
+        assert module.assistant_usage_today(user["id"]) == 0
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT status FROM assistant_usage WHERE id = ?", (stale_usage_id,)
+            ).fetchone()["status"] == "failed"
+
+        for used in range(1, 7):
+            response = client.post(
+                "/assistant/answer",
+                data={
+                    "question": f"小巨人项目条件第{used}次查询",
+                    "csrf_token": user["csrf_token"],
+                    "stream": "true",
+                },
+            )
+            assert response.status_code == 200
+            assert response.headers["content-type"].startswith("text/event-stream")
+            assert "event: progress" in response.text
+            assert "event: result" in response.text
+            assert "正在检索团队知识库" in response.text
+            assert '"unlimited": true' in response.text
+            assert '"counted": false' in response.text
+
+        assert module.assistant_usage_today(user["id"]) == 0
+
+        assistant_health = client.get("/admin/health/assistant")
+        assert assistant_health.status_code == 200
+        assert "用户每日额度" in assistant_health.text
+        assert "近7日真实问题样本" in assistant_health.text
+        assert "小巨人项目条件第1次查询" in assistant_health.text
+
+        raised_limit = client.post(
+            f"/admin/users/{user['id']}/assistant-limit",
+            data={"daily_limit": "8", "csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert raised_limit.status_code == 303
+        assert module.assistant_limit_for_user(user["id"]) == 8
+        sixth = client.post(
+            "/assistant/answer",
+            data={"question": "额度调整后的第六次问答", "csrf_token": user["csrf_token"], "stream": "true"},
+        )
+        assert sixth.status_code == 200
+        assert '"unlimited": true' in sixth.text
+        assert '"counted": false' in sixth.text
+
+        reset_limit = client.post(
+            f"/admin/users/{user['id']}/assistant-limit",
+            data={"daily_limit": "", "csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert reset_limit.status_code == 303
+        assert module.assistant_limit_for_user(user["id"]) == 5
+        with closing(module.database()) as connection:
+            rows = connection.execute(
+                "SELECT status, COUNT(*) AS total FROM assistant_usage GROUP BY status"
+            ).fetchall()
+            latest = connection.execute(
+                "SELECT answer_mode, routed_skills, source_count, duration_ms, fallback_reason FROM assistant_usage ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        assert {row["status"]: row["total"] for row in rows} == {"completed": 7, "failed": 1}
+        assert latest["answer_mode"] == "knowledge-search"
+        assert json.loads(latest["routed_skills"])
+        assert latest["duration_ms"] is not None
+        assert latest["fallback_reason"] == "model_unconfigured"
+
+
+def test_user_supplied_model_api_is_unmetered_and_not_persisted(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    monkeypatch.setattr(
+        module,
+        "request_assistant_model",
+        lambda messages, model_config=None: {"content": "自带API回答", "tool_calls": []},
+    )
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        for index in range(5):
+            usage_id, _, _ = module.reserve_assistant_usage(user["id"], f"计费问题{index}")
+            module.complete_assistant_usage(usage_id, "completed")
+        assert module.assistant_usage_today(user["id"]) == 5
+
+        response = client.post(
+            "/assistant/answer",
+            data={
+                "question": "使用自带API继续问答",
+                "csrf_token": user["csrf_token"],
+                "user_api_base": "https://model.example.com",
+                "user_api_key": "user-secret-key",
+                "user_api_model": "example-chat",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["answer"] == "自带API回答"
+        assert response.json()["quota"]["counted"] is False
+        assert module.assistant_usage_today(user["id"]) == 5
+        with closing(module.database()) as connection:
+            latest = connection.execute(
+                "SELECT provider_mode,quota_counted,error_message FROM assistant_usage ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+            serialized_database = " ".join(
+                str(value)
+                for row in connection.execute("SELECT * FROM assistant_usage").fetchall()
+                for value in row
+                if value is not None
+            )
+        assert latest["provider_mode"] == "user-api"
+        assert latest["quota_counted"] == 0
+        assert "user-secret-key" not in serialized_database
+
+        cockpit = client.get("/cockpit")
+        assert "使用我自己的大模型 API" in cockpit.text
+        assert "服务端不保存 API Key" in cockpit.text
+
+
+def test_setup_password_requires_nine_characters(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        too_short = client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "12345678"},
+            follow_redirects=False,
+        )
+        assert too_short.status_code == 422
+
+        accepted = client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "123456789"},
+            follow_redirects=False,
+        )
+        assert accepted.status_code == 303
+
+
+def test_login_can_remember_user_for_seven_days(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        setup = client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "wangxiaoming", "password": "123456789"},
+            follow_redirects=False,
+        )
+        assert setup.status_code == 303
+
+        login = client.post(
+            "/login",
+            data={"username": "wangxiaoming", "password": "123456789", "remember_me": "7_days"},
+            follow_redirects=False,
+        )
+        assert login.status_code == 303
+        assert "Max-Age=604800" in login.headers["set-cookie"]
+        with closing(module.database()) as connection:
+            session = connection.execute(
+                "SELECT created_at, expires_at FROM sessions ORDER BY created_at DESC LIMIT 1"
+            ).fetchone()
+        duration = datetime.fromisoformat(session["expires_at"]) - datetime.fromisoformat(
+            session["created_at"]
+        )
+        assert duration == timedelta(days=7)
+
+
+def test_topbar_logout_clears_session(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        setup = client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "123456789"},
+            follow_redirects=False,
+        )
+        assert setup.status_code == 303
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "123456789"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        logout = client.post(
+            "/logout",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+
+        assert logout.status_code == 303
+        assert logout.headers["location"] == "/login"
+        assert client.get("/portal", follow_redirects=False).status_code == 303
+
+
+def test_registration_requires_english_account_name(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), module.isoformat(module.utc_now())),
+        )
+        connection.commit()
+    with TestClient(module.app) as client:
+        response = client.post(
+            "/register",
+            data={
+                "username": "王小明",
+                "real_name": "王小明",
+                "identity_code": "0001",
+                "company_name": "共创集团",
+                "password": "member-password-123",
+                "confirm_password": "member-password-123",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
+        assert "登录账号须使用" in response.text
+
+
+def test_member_cannot_create_users(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, created_at) VALUES (?, ?, ?)",
+            ("member", module.password_hasher.hash("member-password-123"), module.isoformat(module.utc_now())),
+        )
+        member_id = connection.execute(
+            "SELECT id FROM users WHERE username='member'"
+        ).fetchone()["id"]
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?, 'registered', ?, ?, ?)
+            """,
+            (
+                "王小明",
+                "0826",
+                member_id,
+                module.isoformat(module.utc_now()),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        response = client.post(
+            "/users",
+            data={
+                "username": "forbidden",
+                "initial_password": "forbidden-password-123",
+                "csrf_token": user["csrf_token"],
+            },
+        )
+        assert response.status_code == 403
+
+
+def test_registration_requires_company_verification(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), module.isoformat(module.utc_now())),
+        )
+        connection.execute(
+            "INSERT INTO registration_authorizations(real_name, identity_code, status, created_at) VALUES (?, ?, 'pending', ?)",
+            ("王小明", "0001", module.isoformat(module.utc_now())),
+        )
+        connection.commit()
+    with TestClient(module.app) as client:
+        rejected = client.post(
+            "/register",
+            data={
+                "username": "member-one",
+                "real_name": "王小明",
+                "identity_code": "0001",
+                "company_name": "错误公司",
+                "password": "member-password-123",
+                "confirm_password": "member-password-123",
+            },
+        )
+        assert rejected.status_code == 403
+        created = client.post(
+            "/register",
+            data={
+                "username": "member-one",
+                "real_name": "王小明",
+                "identity_code": "0001",
+                "company_name": "共创集团",
+                "password": "member-password-123",
+                "confirm_password": "member-password-123",
+            },
+            follow_redirects=False,
+        )
+        assert created.status_code == 303
+        login = client.post(
+            "/login",
+            data={"username": "member-one", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        assert login.status_code == 303
+
+        with closing(module.database()) as connection:
+            registered_user = connection.execute(
+                "SELECT real_name FROM users WHERE username='member-one'"
+            ).fetchone()
+            authorization = connection.execute(
+                "SELECT status FROM registration_authorizations WHERE real_name='王小明'"
+            ).fetchone()
+        assert registered_user["real_name"] == "王小明"
+        assert authorization["status"] == "registered"
+
+
+def test_member_import_template_overwrite_and_authorization_controls_access(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), module.isoformat(module.utc_now())),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        owner_login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(owner_login.cookies)
+        owner = module.session_user(owner_login.cookies[module.SESSION_COOKIE])[0]
+
+        template = client.get("/admin/registration-authorizations/template.csv")
+        assert template.status_code == 200
+        assert template.content.startswith(b"\xef\xbb\xbf")
+        assert "中文真实姓名" in template.content.decode("utf-8-sig")
+
+        member_csv = "中文真实姓名,企业微信绑定手机号或后四位\n王小明,13800000826\n".encode("utf-8-sig")
+        imported = client.post(
+            "/admin/registration-authorizations/import",
+            files={"member_file": ("members.csv", member_csv, "text/csv")},
+            data={"csrf_token": owner["csrf_token"]},
+        )
+        overwritten = client.post(
+            "/admin/registration-authorizations/import",
+            files={"member_file": ("members.csv", member_csv, "text/csv")},
+            data={"csrf_token": owner["csrf_token"]},
+        )
+        assert imported.status_code == 200
+        assert "新增1人" in imported.text
+        assert "覆盖重复1人" in overwritten.text
+        assert "王小明" in overwritten.text
+
+        registered = client.post(
+            "/register",
+            data={
+                "username": "member-one",
+                "real_name": "王小明",
+                "identity_code": "0826",
+                "company_name": "共创集团",
+                "password": "member-password-123",
+                "confirm_password": "member-password-123",
+            },
+            follow_redirects=False,
+        )
+        assert registered.status_code == 303
+        with closing(module.database()) as connection:
+            authorization_id = connection.execute(
+                "SELECT id FROM registration_authorizations WHERE real_name='王小明' AND identity_code='0826'"
+            ).fetchone()["id"]
+            assert connection.execute(
+                "SELECT COUNT(*) FROM registration_authorizations WHERE real_name='王小明' AND identity_code='0826'"
+            ).fetchone()[0] == 1
+
+        owner_login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(owner_login.cookies)
+        owner = module.session_user(owner_login.cookies[module.SESSION_COOKIE])[0]
+        removed = client.post(
+            f"/admin/registration-authorizations/{authorization_id}/trash",
+            data={"csrf_token": owner["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert removed.status_code == 303
+        denied = client.post(
+            "/login",
+            data={"username": "member-one", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        assert denied.status_code == 401
+
+        owner_login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(owner_login.cookies)
+        owner = module.session_user(owner_login.cookies[module.SESSION_COOKIE])[0]
+        readded = client.post(
+            "/admin/registration-authorizations",
+            data={
+                "real_name": "王小明",
+                "identity_code": "0826",
+                "csrf_token": owner["csrf_token"],
+            },
+            follow_redirects=False,
+        )
+        assert readded.status_code == 303
+        restored_login = client.post(
+            "/login",
+            data={"username": "member-one", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        assert restored_login.status_code == 303
+
+        duplicate_account = client.post(
+            "/register",
+            data={
+                "username": "member-two",
+                "real_name": "王小明",
+                "identity_code": "0826",
+                "company_name": "共创集团",
+                "password": "member-password-456",
+                "confirm_password": "member-password-456",
+            },
+        )
+        assert duplicate_account.status_code == 409
+
+
+def test_signed_invitation_link_prefills_and_registers_authorized_member(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), module.isoformat(module.utc_now())),
+        )
+        connection.execute(
+            "INSERT INTO registration_authorizations(real_name, identity_code, status, created_at) VALUES (?, ?, 'pending', ?)",
+            ("王小明", "0826", module.isoformat(module.utc_now())),
+        )
+        authorization = connection.execute(
+            "SELECT * FROM registration_authorizations WHERE real_name='王小明'"
+        ).fetchone()
+        connection.commit()
+    invite_token = module.registration_invite_token(authorization)
+
+    with TestClient(module.app) as client:
+        invitation_page = client.get(f"/register?invite={invite_token}")
+        assert invitation_page.status_code == 200
+        assert "专属邀请已识别" in invitation_page.text
+        assert 'value="王小明"' in invitation_page.text
+        assert 'value="0826"' in invitation_page.text
+
+        created = client.post(
+            "/register",
+            data={
+                "invite_token": invite_token,
+                "username": "member-invited",
+                "real_name": "伪造姓名",
+                "identity_code": "9999",
+                "company_name": "共创集团",
+                "password": "member-password-123",
+                "confirm_password": "member-password-123",
+            },
+            follow_redirects=False,
+        )
+        assert created.status_code == 303
+
+    with closing(module.database()) as connection:
+        registered_user = connection.execute(
+            "SELECT real_name FROM users WHERE username='member-invited'"
+        ).fetchone()
+        status_row = connection.execute(
+            "SELECT status FROM registration_authorizations WHERE id=?",
+            (authorization["id"],),
+        ).fetchone()
+    assert registered_user["real_name"] == "王小明"
+    assert status_row["status"] == "registered"
+
+
+def test_identity_code_requires_wecom_phone_last_four_digits(tmp_path):
+    module = load_app(tmp_path)
+    assert module.normalize_identity_code("0826") == "0826"
+    assert module.normalize_identity_code("13800000826") == "0826"
+    assert module.normalize_identity_code("+86 138-0000-0826") == "0826"
+    with pytest.raises(ValueError, match="完整11位手机号或手机号后四位"):
+        module.normalize_identity_code("A826")
+
+
+def test_policy_queries_choose_expected_source_layer(tmp_path):
+    module = load_app(tmp_path)
+    assert module.policy_source_layer("高新申报条件") == "curated"
+    assert module.policy_source_layer("杭州市2026年高新公示名单") == "dynamic"
+    assert module.policy_source_layer("高新") == "mixed"
+    assert module.knowledge_search_query("高新申报条件") == "高新技术企业"
+    assert module.knowledge_search_query("杭州市2026年高新公示名单") == "杭州市 高新技术企业"
+    assert module.knowledge_search_query("公司法注册资本五年") == "公司法 注册资本"
+    assert module.project_query_variants("省研究院的申报要求") == [
+        "浙江省企业研究院",
+        "浙江省重点企业研究院",
+    ]
+    assert module.knowledge_search_query("未来工厂怎么申报") == "浙江省未来工厂"
+    assert module.project_query_variants("浙江省重点企业研究院申报要求") == [
+        "浙江省重点企业研究院"
+    ]
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        connection.execute(
+            """
+            INSERT INTO documents(
+                source_key,title,content,source,cloud_path,document_role,sensitivity,
+                sha256,updated_at,canonical_project_name,region,document_stage,
+                validity_status,policy_year,batch
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                "research-institute-current",
+                "浙江省企业研究院建设与管理办法",
+                "浙江省企业研究院申报要求和认定条件。",
+                "10_政策与目录/研究院/现行办法.md",
+                "10_政策与目录/研究院/现行办法.md",
+                "10_政策与目录",
+                "public",
+                "research-institute-sha",
+                "2026-01-01T00:00:00+00:00",
+                "浙江省企业研究院",
+                "浙江省",
+                "管理办法",
+                "active_candidate",
+                2026,
+                "",
+            ),
+        )
+        connection.execute("INSERT INTO documents_fts_trigram(documents_fts_trigram) VALUES ('rebuild')")
+        connection.commit()
+    research_results = module.search_knowledge("省研究院的申报要求")["results"]
+    assert research_results
+    assert research_results[0]["title"] == "浙江省企业研究院建设与管理办法"
+
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        for source_key, title, content in (
+            (
+                "high-tech-misleading",
+                "台州市级高新技术企业研究开发中心认定管理办法",
+                "正文提到高新技术企业可以参与研究院建设。",
+            ),
+            (
+                "high-tech-current",
+                "高新技术企业认定管理办法",
+                "高新技术企业申报条件、认定要求和材料清单。",
+            ),
+            (
+                "high-tech-list",
+                "2020年国家高新技术企业补助资金拟兑现名单",
+                "高新技术企业补助资金拟兑现企业名单。",
+            ),
+        ):
+            connection.execute(
+                """
+                INSERT INTO documents(
+                    source_key,title,content,source,cloud_path,document_role,sensitivity,
+                    sha256,updated_at,canonical_project_name,region,document_stage,
+                    validity_status,policy_year,batch
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    source_key,
+                    title,
+                    content,
+                    f"10_政策与目录/高新技术企业/{title}.md",
+                    f"10_政策与目录/高新技术企业/{title}.md",
+                    "10_政策与目录",
+                    "public",
+                    f"{source_key}-sha",
+                    "2026-01-01T00:00:00+00:00",
+                    "高新技术企业",
+                    "全国",
+                    "管理办法" if source_key == "high-tech-current" else "申报通知",
+                    "active_candidate",
+                    2026,
+                    "",
+                ),
+            )
+        connection.execute("INSERT INTO documents_fts_trigram(documents_fts_trigram) VALUES ('rebuild')")
+        connection.commit()
+    high_tech_results = module.search_knowledge("高新申报条件")["results"]
+    assert high_tech_results
+    assert high_tech_results[0]["title"] == "高新技术企业认定管理办法"
+    assert all("研究开发中心" not in item["title"] for item in high_tech_results)
+    assert all("名单" not in item["title"] for item in high_tech_results)
+    assert all("2020年" not in item["title"] for item in high_tech_results)
+
+
+def test_every_high_frequency_alias_has_positive_cross_project_and_stale_gates(tmp_path):
+    module = load_app(tmp_path)
+    gold_path = (
+        module.PROJECT_INDEX_PATH.parent / "high-frequency-project-gold-standard.jsonl"
+    )
+    cases = [json.loads(line) for line in gold_path.read_text(encoding="utf-8").splitlines() if line]
+    aliases = {case["alias"] for case in cases}
+    assert len(aliases) == 39
+    assert len(cases) == len(aliases) * 3
+    assert {
+        (case["alias"], case["kind"]) for case in cases
+    } == {
+        (alias, kind)
+        for alias in aliases
+        for kind in ("positive", "cross-project", "stale")
+    }
+    for case in cases:
+        query = case["query"]
+        if case["kind"] == "positive":
+            clarification = module.project_selection_prompt(query)
+            if case["expected_clarification"]:
+                assert clarification
+            else:
+                assert clarification is None
+                assert module.project_query_variants(query) == case["expected_targets"]
+        elif case["kind"] == "cross-project":
+            rows = [
+                {"document_id": 1, "title": case["allowed_title"], "source": case["allowed_title"]},
+                {"document_id": 2, "title": case["excluded_title"], "source": case["excluded_title"]},
+            ]
+            filtered = module.filter_project_results(query, rows)
+            assert [row["document_id"] for row in filtered] == [1]
+        else:
+            rows = [
+                {"document_id": 1, "title": case["current_title"], "source": case["current_title"]},
+                {"document_id": 2, "title": case["stale_title"], "source": case["stale_title"]},
+            ]
+            filtered = module.filter_project_results(query, rows)
+            assert [row["document_id"] for row in filtered] == [1]
+
+
+def test_municipal_projects_require_city_and_accept_explicit_city(tmp_path):
+    module = load_app(tmp_path)
+    assert "所在城市" in module.project_selection_prompt("市企业技术中心申报条件")
+    assert module.project_selection_prompt("宁波市企业技术中心申报条件") is None
+    assert module.project_query_variants("宁波市企业技术中心申报条件") == [
+        "宁波市 市级企业技术中心"
+    ]
+
+
+def test_local_green_factory_requires_matching_region_level(tmp_path):
+    module = load_app(tmp_path)
+    assert "所在区县和城市" in module.project_selection_prompt("市级绿色工厂申报条件")
+    assert module.project_selection_prompt("绍兴市市级绿色工厂申报条件") is None
+    assert module.project_selection_prompt("区级绿色工厂申报条件")
+    assert module.project_selection_prompt("余杭区区级绿色工厂申报条件") is None
+
+
+def test_admin_can_open_member_details_and_restore_soft_deleted_records(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)",
+            ("owner", "管理员", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, created_at) VALUES (?, ?, ?, ?)",
+            ("member-one", "王小明", module.password_hasher.hash("member-password-123"), now),
+        )
+        member_id = connection.execute(
+            "SELECT id FROM users WHERE username='member-one'"
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO registration_authorizations(real_name, identity_code, status, created_at) VALUES (?, ?, 'pending', ?)",
+            ("李小红", "0826", now),
+        )
+        authorization_id = connection.execute(
+            "SELECT id FROM registration_authorizations WHERE real_name='李小红'"
+        ).fetchone()["id"]
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        members = client.get("/admin/members")
+        assert f'/admin/users/{member_id}' in members.text
+        assert f'/admin/registration-authorizations/{authorization_id}' in members.text
+        assert "/admin/members/trash" in members.text
+
+        assert client.get(f"/admin/users/{member_id}").status_code == 200
+        assert client.get(
+            f"/admin/registration-authorizations/{authorization_id}"
+        ).status_code == 200
+
+        removed_member = client.post(
+            f"/admin/users/{member_id}/trash",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        removed_invitation = client.post(
+            f"/admin/registration-authorizations/{authorization_id}/trash",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert removed_member.status_code == 303
+        assert removed_invitation.status_code == 303
+
+        trash_page = client.get("/admin/members/trash")
+        assert "王小明" in trash_page.text
+        assert "李小红" in trash_page.text
+
+        restored_member = client.post(
+            f"/admin/users/{member_id}/restore",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        restored_invitation = client.post(
+            f"/admin/registration-authorizations/{authorization_id}/restore",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert restored_member.status_code == 303
+        assert restored_invitation.status_code == 303
+        with closing(module.database()) as connection:
+            restored_user = connection.execute(
+                "SELECT active,deleted_at FROM users WHERE id=?", (member_id,)
+            ).fetchone()
+            restored_authorization = connection.execute(
+                "SELECT status,deleted_at FROM registration_authorizations WHERE id=?",
+                (authorization_id,),
+            ).fetchone()
+        assert restored_user["active"] == 1
+        assert restored_user["deleted_at"] is None
+        assert restored_authorization["status"] == "pending"
+        assert restored_authorization["deleted_at"] is None
+
+
+def test_registration_rejects_name_outside_authorized_list(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), module.isoformat(module.utc_now())),
+        )
+        connection.commit()
+    with TestClient(module.app) as client:
+        response = client.post(
+            "/register",
+            data={
+                "username": "member-two",
+                "real_name": "李小红",
+                "identity_code": "0002",
+                "company_name": "共创集团",
+                "password": "member-password-123",
+                "confirm_password": "member-password-123",
+            },
+        )
+        assert response.status_code == 403
+        assert "请联系管理员添加" in response.text
+
+
+def test_api_rejects_missing_token(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        response = client.get("/v1/me")
+        assert response.status_code == 401
+
+
+def test_latest_skill_release_metadata_and_download(tmp_path):
+    module = load_app(tmp_path)
+    package = tmp_path / "project-assistant-skills.zip"
+    package.write_bytes(b"test-skill-package")
+    digest = module.hashlib.sha256(package.read_bytes()).hexdigest()
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, created_at) VALUES (?, ?, ?)",
+            ("member", module.password_hasher.hash("member-password-123"), module.isoformat(module.utc_now())),
+        )
+        user_id = connection.execute("SELECT id FROM users WHERE username = 'member'").fetchone()[0]
+        token_seed = "test-release-token-seed"
+        raw_token = module.user_access_token(user_id, token_seed)
+        connection.execute(
+            """
+            INSERT INTO device_tokens(user_id, label, token_prefix, token_hash, token_seed, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id, "test", raw_token[:12], module.token_hash(raw_token), token_seed,
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_releases(version, file_name, file_path, sha256, release_notes, published_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "1.1.0",
+                package.name,
+                str(package),
+                digest,
+                "测试版本",
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+    headers = {"Authorization": f"Bearer {raw_token}"}
+    with TestClient(module.app) as client:
+        latest = client.get("/v1/skills/latest", headers=headers)
+        assert latest.status_code == 200
+        assert latest.json()["version"] == "1.1.0"
+        assert latest.json()["sha256"] == digest
+        download = client.get("/v1/skills/latest/download", headers=headers)
+        assert download.status_code == 200
+        assert download.content == b"test-skill-package"
+
+
+def test_release_announcement_appears_once_after_publish(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        with closing(module.database()) as connection:
+            release_id = connection.execute(
+                """
+                INSERT INTO skill_releases(version,file_name,file_path,sha256,release_notes,published_at)
+                VALUES ('1.0','skills-v1.0.zip','/tmp/skills-v1.0.zip','digest','首版',?)
+                """,
+                (module.isoformat(module.utc_now()),),
+            ).lastrowid
+            connection.execute(
+                """
+                INSERT INTO release_announcements(release_id,title,body,quick_phrases,status,updated_at,published_at)
+                VALUES (?,?,?,?,'published',?,?)
+                """,
+                (
+                    release_id,
+                    "欢迎使用企业全生命周期助手 V1.0",
+                    "## 首次使用",
+                    json.dumps(["帮我分析企业"], ensure_ascii=False),
+                    module.isoformat(module.utc_now()),
+                    module.isoformat(module.utc_now()),
+                ),
+            )
+            connection.commit()
+        portal = client.get("/portal")
+        assert "欢迎使用企业全生命周期助手 V1.0" in portal.text
+        assert "data-release-dialog" in portal.text
+        assert '<dialog class="release-dialog" open' not in portal.text
+        acknowledged = client.post(
+            f"/releases/{release_id}/acknowledge",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert acknowledged.status_code == 303
+        assert "欢迎使用企业全生命周期助手 V1.0" not in client.get("/portal").text
+
+
+def test_admin_incremental_index_release_and_rollback(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), module.isoformat(module.utc_now())),
+        )
+        user_id = connection.execute("SELECT id FROM users WHERE username = 'owner'").fetchone()[0]
+        token_seed = "test-admin-token-seed"
+        raw_token = module.user_access_token(user_id, token_seed)
+        connection.execute(
+            """
+            INSERT INTO device_tokens(user_id, label, token_prefix, token_hash, token_seed, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id, "admin-test", raw_token[:12], module.token_hash(raw_token), token_seed,
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+    headers = {"Authorization": f"Bearer {raw_token}"}
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        update = client.post(
+            "/admin/knowledge-updates",
+            data={
+                "document_role": "10_政策与通知",
+                "csrf_token": user["csrf_token"],
+            },
+            files={
+                "knowledge_file": (
+                    "新增政策.md",
+                    (
+                        "增量测试政策要求企业建立独立研发机构并持续保持研发投入，"
+                        "配备稳定研发人员、研发场地和成果转化机制，形成完整技术创新体系。"
+                    ).encode(),
+                    "text/markdown",
+                )
+            },
+            follow_redirects=False,
+        )
+        assert update.status_code == 303
+        with closing(module.database()) as connection:
+            job = connection.execute(
+                "SELECT id, status, snapshot_path FROM knowledge_update_jobs ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        assert job["status"] == "indexed"
+        assert module.Path(job["snapshot_path"]).is_file()
+        sync_request = json.loads(module.OSS_SYNC_REQUEST_PATH.read_text(encoding="utf-8"))
+        assert sync_request["reason"] == f"knowledge-upload-indexed:{job['id']}"
+        search = client.post(
+            "/v1/search",
+            headers=headers,
+            json={"query": "增量测试政策", "limit": 5},
+        )
+        assert search.status_code == 200
+        assert any(item["title"] == "新增政策.md" for item in search.json()["results"])
+
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w") as package:
+            package.writestr("skills/sample-skill/SKILL.md", "---\nname: sample-skill\n---\n")
+        release = client.post(
+            "/admin/skill-releases",
+            data={
+                "version": "1.2.0",
+                "release_notes": "新增测试技能",
+                "csrf_token": user["csrf_token"],
+            },
+            files={"skill_package": ("skills-1.2.0.zip", archive.getvalue(), "application/zip")},
+            follow_redirects=False,
+        )
+        assert release.status_code == 303
+        latest = client.get("/v1/skills/latest", headers=headers)
+        assert latest.json()["version"] == "1.2.0"
+        web_download = client.get("/skills/latest/download")
+        assert web_download.status_code == 200
+
+        rollback = client.post(
+            f"/admin/knowledge-updates/{job['id']}/rollback",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert rollback.status_code == 303
+        sync_request = json.loads(module.OSS_SYNC_REQUEST_PATH.read_text(encoding="utf-8"))
+        assert sync_request["reason"] == f"knowledge-upload-rollback:{job['id']}"
+        after_rollback = client.post(
+            "/v1/search",
+            headers=headers,
+            json={"query": "增量测试政策", "limit": 5},
+        )
+        assert after_rollback.status_code == 200
+        assert after_rollback.json()["results"] == []
+
+
+def test_extraction_cache_retries_non_success_statuses():
+    assert cache_status_reusable("indexed")
+    assert not cache_status_reusable("ocr_required")
+    assert not cache_status_reusable("convert_required")
+    assert not cache_status_reusable("error:ModuleNotFoundError")
+
+
+def test_mcp_search_uses_personal_bearer_token(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, created_at) VALUES (?, ?, ?)",
+            ("member", module.password_hasher.hash("member-password-123"), module.isoformat(module.utc_now())),
+        )
+        user_id = connection.execute("SELECT id FROM users WHERE username = 'member'").fetchone()[0]
+        token_seed = "test-mcp-token-seed"
+        raw_token = module.user_access_token(user_id, token_seed)
+        connection.execute(
+            """
+            INSERT INTO device_tokens(user_id, label, token_prefix, token_hash, token_seed, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id, "王小明", raw_token[:12], module.token_hash(raw_token), token_seed,
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+    headers = {
+        "Authorization": f"Bearer {raw_token}",
+        "Accept": "application/json, text/event-stream",
+        "Content-Type": "application/json",
+    }
+    with TestClient(module.app) as client:
+        assert client.post(
+            "/mcp/",
+            headers={"Accept": "application/json, text/event-stream"},
+            json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
+        ).status_code == 401
+        response = client.post(
+            "/mcp/",
+            headers=headers,
+            json={
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {
+                    "name": "knowledge_search",
+                    "arguments": {"query": "小巨人", "limit": 3},
+                },
+            },
+        )
+        assert response.status_code == 200
+        first_result = response.json()["result"]["structuredContent"]["results"][0]
+        assert "小巨人" in first_result["title"]
+        assert "source_layer" not in first_result
+    with closing(module.database()) as connection:
+        usage = connection.execute(
+            "SELECT endpoint FROM api_usage ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+    assert usage["endpoint"] == "/mcp"
+
+
+def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), module.isoformat(module.utc_now())),
+        )
+        connection.commit()
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        portal = client.get("/portal")
+        health_portal = client.get("/admin/operations")
+        assert "/admin/health/index" in health_portal.text
+        assert "/admin/health/oss" in health_portal.text
+        assert "/admin/health/snapshot" in health_portal.text
+        assert "/admin/knowledge" in portal.text
+        health = client.get("/admin/health/index")
+        assert health.status_code == 200
+        assert "全文资料" in health.text
+        access_health = client.get("/admin/health/access")
+        assert access_health.status_code == 200
+        assert "具体用户" in access_health.text
+        assert "owner" in access_health.text
+        knowledge = client.get("/admin/knowledge?query=小巨人")
+        assert knowledge.status_code == 200
+        assert "小巨人测试资料" in knowledge.text
+        assert "第 1/1 页 · 每页30份" in knowledge.text
+        assert 'aria-current="page">1</a>' in knowledge.text
+        ordered_knowledge = client.get("/admin/knowledge")
+        assert ordered_knowledge.text.index("0001") < ordered_knowledge.text.index("0002")
+        assert "编号升序" in ordered_knowledge.text
+        assert "移入回收站" in ordered_knowledge.text
+        access_portal = client.get("/access")
+        assert "agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4" in access_portal.text
+        assert "docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" in access_portal.text
+        assert "aiqice.cn" not in access_portal.text
+        assert "pss-system.cponline.cnipa.gov.cn" not in access_portal.text
+        assert "epo.org/en/searching-for-patents" not in portal.text
+        assert "DeepSeek开放平台" not in portal.text
+        assert client.get("/mcp").status_code == 401
+        edit = client.post(
+            "/admin/knowledge/1",
+            data={
+                "title": "小巨人修订资料",
+                "content": "修订后的研究院申报条件和研发机构要求",
+                "source": "管理员修订测试",
+                "document_role": "20_项目规则与指南",
+                "csrf_token": user["csrf_token"],
+            },
+            follow_redirects=False,
+        )
+        assert edit.status_code == 303
+        assert module.get_knowledge_document(1)["title"] == "小巨人修订资料"
+        assert module.search_knowledge("研究院")["results"][0]["document_id"] == 1
+        with closing(module.database()) as connection:
+            revision = connection.execute(
+                "SELECT id, snapshot_path FROM knowledge_document_revisions ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        assert module.Path(revision["snapshot_path"]).is_file()
+        rollback = client.post(
+            f"/admin/knowledge-revisions/{revision['id']}/rollback",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert rollback.status_code == 303
+        assert module.get_knowledge_document(1)["title"] == "小巨人测试资料"
+        trash_confirm = client.get("/admin/knowledge/1/trash")
+        assert trash_confirm.status_code == 200
+        assert "不会永久删除原文件" in trash_confirm.text
+        move_to_trash = client.post(
+            "/admin/knowledge/1/trash",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert move_to_trash.status_code == 303
+        assert move_to_trash.headers["location"] == "/admin/knowledge-trash"
+        assert module.search_knowledge("产业链关键环节")["results"] == []
+        trash_page = client.get("/admin/knowledge-trash")
+        assert trash_page.status_code == 200
+        assert "小巨人测试资料" in trash_page.text
+        with closing(module.database()) as connection:
+            trash_id = connection.execute(
+                "SELECT id FROM knowledge_document_trash WHERE document_id = 1"
+            ).fetchone()["id"]
+        restore = client.post(
+            f"/admin/knowledge-trash/{trash_id}/restore",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert restore.status_code == 303
+        restored = module.search_knowledge("产业链关键环节")["results"]
+        assert restored[0]["document_id"] == 1
+
+
+def test_pagination_window_has_numbers_and_ellipses(tmp_path):
+    module = load_app(tmp_path)
+    assert module.pagination_window(1, 1) == [1]
+    assert module.pagination_window(6, 12) == [1, None, 4, 5, 6, 7, 8, None, 12]

@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "rules": [
+    {
+      "id": "zhejiang-key-enterprise-institute",
+      "aliases": ["省重点研究院", "省重点企业研究院", "省级重点研究院"],
+      "targets": ["浙江省重点企业研究院"],
+      "allowed_title_terms": ["浙江省重点企业研究院", "省重点企业研究院"],
+      "excluded_title_terms": ["浙江省企业研究院", "杭州市企业研究院", "企业技术中心", "研究开发中心"]
+    },
+    {
+      "id": "zhejiang-enterprise-institute",
+      "aliases": ["省企业研究院", "省级企业研究院", "省研发中心", "省级研发中心", "省高企研发中心"],
+      "targets": ["浙江省企业研究院"],
+      "allowed_title_terms": ["浙江省企业研究院", "浙江省重点企业研究院"],
+      "excluded_title_terms": ["杭州市企业研究院", "企业技术中心", "研究开发中心", "重点实验室"]
+    },
+    {
+      "id": "zhejiang-enterprise-institute-ambiguous",
+      "aliases": ["省研究院", "省级研究院"],
+      "targets": ["浙江省企业研究院", "浙江省重点企业研究院"],
+      "allowed_title_terms": ["浙江省企业研究院", "浙江省重点企业研究院"],
+      "excluded_title_terms": ["杭州市企业研究院", "企业技术中心", "研究开发中心", "重点实验室"]
+    },
+    {
+      "id": "hangzhou-enterprise-institute",
+      "aliases": ["杭州研发中心", "杭州市研发中心", "市高企研发中心"],
+      "targets": ["杭州市企业研究院"],
+      "allowed_title_terms": ["杭州市企业研究院", "杭州市重点企业研究院", "杭州市重点企业研究院、企业研究院"],
+      "excluded_title_terms": ["浙江省企业研究院", "浙江省重点企业研究院", "企业技术中心", "重点实验室"]
+    },
+    {
+      "id": "national-high-tech-enterprise",
+      "aliases": ["国高", "国家高企"],
+      "targets": ["高新技术企业"],
+      "allowed_title_terms": ["高新技术企业"],
+      "excluded_title_terms": ["研究开发中心", "企业研究院", "高新技术产品", "高新技术产业园"]
+    },
+    {
+      "id": "technology-sme",
+      "aliases": ["科小"],
+      "targets": ["浙江省科技型中小企业", "国家科技型中小企业"],
+      "selection_required": true,
+      "selection_prompt": "请选择浙江省科技型中小企业，还是国家科技型中小企业。",
+      "selectors": {
+        "浙江": "浙江省科技型中小企业",
+        "省级": "浙江省科技型中小企业",
+        "国家": "国家科技型中小企业"
+      },
+      "allowed_title_terms": ["浙江省科技型中小企业", "国家科技型中小企业"],
+      "excluded_title_terms": ["高新技术企业", "创新型中小企业", "专精特新", "小微企业"]
+    },
+    {
+      "id": "national-technology-sme",
+      "aliases": ["国科小"],
+      "targets": ["国家科技型中小企业"],
+      "allowed_title_terms": ["国家科技型中小企业", "科技型中小企业评价"],
+      "excluded_title_terms": ["浙江省科技型中小企业", "高新技术企业", "创新型中小企业"]
+    },
+    {
+      "id": "zhejiang-specialized-sme",
+      "aliases": ["省专精特新", "省级专精特新"],
+      "targets": ["专精特新中小企业"],
+      "allowed_title_terms": ["专精特新中小企业", "优质中小企业梯度培育"],
+      "excluded_title_terms": ["专精特新小巨人", "重点专精特新", "创新型中小企业"]
+    },
+    {
+      "id": "little-giant",
+      "aliases": ["小巨人"],
+      "targets": ["专精特新小巨人"],
+      "allowed_title_terms": ["专精特新小巨人", "专精特新“小巨人”"],
+      "excluded_title_terms": ["专精特新中小企业", "重点专精特新", "重点小巨人"]
+    },
+    {
+      "id": "key-little-giant-support",
+      "aliases": ["重点小巨人"],
+      "targets": ["重点小巨人企业高质量发展奖补项目"],
+      "allowed_title_terms": ["重点小巨人", "重点“小巨人”", "高质量发展奖补"],
+      "excluded_title_terms": ["重点专精特新", "专精特新中小企业认定", "专精特新小巨人认定"]
+    },
+    {
+      "id": "zhejiang-key-specialized-sme",
+      "aliases": ["重点省专", "重专"],
+      "targets": ["浙江省重点专精特新中小企业"],
+      "allowed_title_terms": ["浙江省重点专精特新中小企业", "重点专精特新"],
+      "excluded_title_terms": ["重点小巨人", "专精特新小巨人", "专精特新中小企业认定"]
+    },
+    {
+      "id": "zhejiang-enterprise-technology-center",
+      "aliases": ["省技中心", "省企业技术中心"],
+      "targets": ["浙江省企业技术中心"],
+      "allowed_title_terms": ["浙江省企业技术中心", "省级企业技术中心"],
+      "excluded_title_terms": ["杭州市企业技术中心", "企业研究院", "研究开发中心"]
+    },
+    {
+      "id": "hangzhou-enterprise-technology-center",
+      "aliases": ["杭州企业技术中心"],
+      "targets": ["杭州市企业技术中心"],
+      "allowed_title_terms": ["杭州市企业技术中心", "市级企业技术中心"],
+      "excluded_title_terms": ["浙江省企业技术中心", "企业研究院", "研究开发中心"]
+    },
+    {
+      "id": "municipal-enterprise-technology-center",
+      "aliases": ["市企业技术中心"],
+      "targets": ["市级企业技术中心"],
+      "required_region_level": "city",
+      "region_prompt": "请先说明企业所在城市，例如杭州市、宁波市、绍兴市或金华市；市级项目默认检索该市政策。",
+      "allowed_title_terms": ["企业技术中心", "市级企业技术中心"],
+      "excluded_title_terms": ["省级企业技术中心", "浙江省企业技术中心", "国家企业技术中心", "企业研究院", "研究开发中心"]
+    },
+    {
+      "id": "zhejiang-manufacturing-quality",
+      "aliases": ["制造精品"],
+      "targets": ["浙江制造精品"],
+      "allowed_title_terms": ["浙江制造精品"],
+      "excluded_title_terms": ["品字标浙江制造", "首台套", "工业新产品"]
+    },
+    {
+      "id": "zhejiang-manufacturing",
+      "aliases": ["浙江制造"],
+      "targets": ["浙江制造精品", "品字标浙江制造"],
+      "selection_required": true,
+      "selection_prompt": "请选择浙江制造精品，还是品字标浙江制造。",
+      "selectors": {
+        "精品": "浙江制造精品",
+        "品字标": "品字标浙江制造"
+      },
+      "allowed_title_terms": ["浙江制造精品", "品字标浙江制造"],
+      "excluded_title_terms": ["浙江省工业新产品", "首台套", "质量奖"]
+    },
+    {
+      "id": "future-factory",
+      "aliases": ["未来工厂"],
+      "targets": ["浙江省未来工厂"],
+      "allowed_title_terms": ["未来工厂"],
+      "excluded_title_terms": ["智能工厂", "数字化车间", "技术改造"]
+    },
+    {
+      "id": "intelligent-factory",
+      "aliases": ["智能工厂"],
+      "targets": ["浙江省智能工厂"],
+      "allowed_title_terms": ["智能工厂"],
+      "excluded_title_terms": ["未来工厂", "数字化车间", "绿色工厂"]
+    },
+    {
+      "id": "digital-workshop",
+      "aliases": ["数字化车间"],
+      "targets": ["浙江省数字化车间"],
+      "allowed_title_terms": ["数字化车间"],
+      "excluded_title_terms": ["未来工厂", "智能工厂", "数字化改造"]
+    },
+    {
+      "id": "first-equipment",
+      "aliases": ["首台套"],
+      "targets": ["首台（套）装备"],
+      "allowed_title_terms": ["首台套", "首台（套）装备"],
+      "excluded_title_terms": ["首批次", "首版次", "工业新产品"]
+    },
+    {
+      "id": "first-material-batch",
+      "aliases": ["首批次"],
+      "targets": ["重点新材料首批次"],
+      "allowed_title_terms": ["首批次", "重点新材料"],
+      "excluded_title_terms": ["首台套", "首版次", "工业新产品"]
+    },
+    {
+      "id": "first-software-version",
+      "aliases": ["首版次"],
+      "targets": ["首版次软件"],
+      "allowed_title_terms": ["首版次", "首版次软件"],
+      "excluded_title_terms": ["首台套", "首批次", "工业新产品"]
+    },
+    {
+      "id": "manufacturing-single-champion",
+      "aliases": ["单项冠军"],
+      "targets": ["浙江省制造业单项冠军企业", "国家制造业单项冠军企业"],
+      "selection_required": true,
+      "selection_prompt": "请选择浙江省制造业单项冠军企业，还是国家制造业单项冠军企业。",
+      "selectors": {
+        "浙江": "浙江省制造业单项冠军企业",
+        "省级": "浙江省制造业单项冠军企业",
+        "国家": "国家制造业单项冠军企业"
+      },
+      "allowed_title_terms": ["浙江省制造业单项冠军", "国家制造业单项冠军", "制造业单项冠军企业"],
+      "excluded_title_terms": ["隐形冠军", "专精特新", "企业技术中心"]
+    },
+    {
+      "id": "green-factory",
+      "aliases": ["绿色工厂"],
+      "targets": ["区级绿色工厂", "市级绿色工厂", "浙江省绿色低碳工厂", "国家绿色工厂"],
+      "selection_required": true,
+      "selection_prompt": "请选择区级、市级、浙江省级或国家级绿色工厂，并补充所在地区。",
+      "region_required_targets": ["区级绿色工厂", "市级绿色工厂"],
+      "region_prompt": "区级或市级绿色工厂必须说明企业所在区县和城市；已设置默认地区时使用默认地区。",
+      "selectors": {
+        "区级": "区级绿色工厂",
+        "市级": "市级绿色工厂",
+        "浙江": "浙江省绿色低碳工厂",
+        "省级": "浙江省绿色低碳工厂",
+        "国家": "国家绿色工厂"
+      },
+      "allowed_title_terms": ["绿色工厂", "绿色低碳工厂", "星级绿色工厂"],
+      "excluded_title_terms": ["绿色供应链", "绿色设计产品", "节水型企业", "清洁生产"]
+    },
+    {
+      "id": "zhejiang-hidden-champion",
+      "aliases": ["隐形冠军"],
+      "targets": ["浙江省隐形冠军企业"],
+      "allowed_title_terms": ["隐形冠军"],
+      "excluded_title_terms": ["单项冠军", "专精特新", "小巨人"]
+    },
+    {
+      "id": "zhejiang-industrial-new-product",
+      "aliases": ["工业新产品"],
+      "targets": ["浙江省工业新产品"],
+      "allowed_title_terms": ["浙江省工业新产品", "工业新产品"],
+      "excluded_title_terms": ["浙江制造精品", "首台套", "新产品试制计划"]
+    }
+  ]
+}

@@ -12,7 +12,7 @@ python3 -m pip install paddleocr
 
 将 `providers.paddle_ocr.enabled` 改为 `true`，`mode` 保持 `local`。
 
-## 云端模式
+## 用户自选云端模式
 
 只有用户明确选择云端OCR时才配置：
 
@@ -20,7 +20,7 @@ python3 -m pip install paddleocr
 PADDLE_OCR_API_KEY=用户自己的云端凭据
 ```
 
-界面必须提示文件将上传到第三方服务。
+界面必须提示文件将上传到第三方服务。该凭据只配置在用户本地Agent，不配置到企业全生命周期助手网站。
 
 ## 验证
 
@@ -31,9 +31,8 @@ PADDLE_OCR_API_KEY=用户自己的云端凭据
 
 ## 降级
 
-PaddleOCR不可用时使用宿主平台OCR；仍不可用时要求用户提供可复制文本。
+PaddleOCR不可用时使用宿主平台OCR；仍不可用时要求用户提供可复制文本。网站检测到纯扫描件时只标记“需本地OCR”。
 
 ## 清理
 
 云端模式删除密钥；本地模式可卸载Python包和模型缓存。客户输入与OCR输出不得放进技能目录。
-

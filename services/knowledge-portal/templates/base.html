@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>document.documentElement.dataset.pageDirection=sessionStorage.getItem("jiaotang-page-direction")||"next";sessionStorage.removeItem("jiaotang-page-direction");</script>
+  <title>{% block title %}知识产权大脑{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  {% include "_static_assets.html" %}
+</head>
+<body class="{% block body_class %}auth-body{% endblock %}">
+  {% block content %}{% endblock %}
+</body>
+</html>

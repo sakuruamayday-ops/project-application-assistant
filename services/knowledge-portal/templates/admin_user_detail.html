@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}成员账号详情｜知识产权大脑{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin">
+  <header class="admin-page-head"><div><p class="eyebrow">Member Detail</p><h1>{{ member.real_name or member.username }}</h1><p>成员身份、账号状态、凭据与调用概况。</p></div><a class="button secondary" href="/portal#members">返回成员管理</a></header>
+  <section class="detail-grid">
+    <article><span>英文登录账号</span><strong>{{ member.username }}</strong></article>
+    <article><span>中文真实姓名</span><strong>{{ member.real_name or '待补充' }}</strong></article>
+    <article><span>所属公司</span><strong>{{ member.company_name }}</strong></article>
+    <article><span>身份</span><strong>{{ '管理员' if member.is_admin else '团队成员' }}</strong></article>
+    <article><span>账号状态</span><strong>{{ '回收站' if member.deleted_at else ('有效' if member.active else '已停用') }}</strong></article>
+    <article><span>有效凭据</span><strong>{{ member.active_tokens }}</strong></article>
+    <article><span>累计调用</span><strong>{{ member.call_count }}</strong></article>
+    <article><span>最近调用</span><strong>{{ member.last_called_at_display or '尚未调用' }}</strong></article>
+    <article><span>注册时间</span><strong>{{ member.created_at_display }}</strong></article>
+  </section>
+  <section class="panel danger-zone"><div><h3>{{ '恢复成员账号' if member.deleted_at else '账号管理' }}</h3><p class="muted">删除将立即停用账号并移入回收站，不会永久清除账号和审计记录。</p></div><div class="button-row">{% if member.deleted_at %}<form method="post" action="/admin/users/{{ member.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">恢复并启用账号</button></form>{% elif member.id != user.id %}<form method="post" action="/users/{{ member.id }}/toggle"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button secondary" type="submit">{{ '停用账号' if member.active else '启用账号' }}</button></form><form method="post" action="/admin/users/{{ member.id }}/trash" onsubmit="return confirm('确认将该成员账号移入回收站？该用户将立即退出登录。')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button danger" type="submit">删除到回收站</button></form>{% else %}<span class="muted">当前管理员不能删除或停用自己。</span>{% endif %}</div></section>
+</main>
+{% endblock %}

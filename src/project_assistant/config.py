@@ -52,16 +52,12 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
-def load_config(project_root: Path, platform: str) -> dict[str, Any]:
+def load_config(project_root: Path) -> dict[str, Any]:
     common_path = project_root / "config" / "common.yaml"
-    platform_path = project_root / "config" / "platforms" / f"{platform}.yaml"
-    common = load_yaml(common_path)
-    platform_config = load_yaml(platform_path)
-    config = expand_environment(deep_merge(common, platform_config))
+    config = expand_environment(load_yaml(common_path))
     config["_meta"] = {
         "project_root": str(project_root.resolve()),
         "common_config": str(common_path.resolve()),
-        "platform_config": str(platform_path.resolve()),
     }
     return config
 
@@ -81,4 +77,3 @@ def unresolved_environment(config: Any) -> list[str]:
 
     visit(config)
     return sorted(unresolved)
-

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}知识校准｜企业全生命周期助手{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<main class="standalone-admin calibration-console">
+  <header class="admin-page-head">
+    <div><p class="eyebrow">Knowledge Calibration</p><h1>知识校准台</h1><p>先处理影响范围大、申报风险高的项目别名和政策有效性问题。</p></div>
+    <div class="button-row compact"><a class="button secondary" href="/admin/knowledge">知识库目录</a><a class="button secondary" href="/portal#health-admin">返回工作台</a></div>
+  </header>
+
+  {% if saved %}<div class="notice success" role="status">{{ saved }}</div>{% endif %}
+
+  <section class="calibration-metrics" aria-label="待办概览">
+    <article><span>01 别名候选</span><strong>{{ alias_candidate_total }}</strong><small>尚未映射标准项目</small></article>
+    <article><span>02 政策待核验</span><strong>{{ policy_queue_total }}</strong><small>需要官方来源确认</small></article>
+    <article class="is-risk"><span>03 高优先级</span><strong>{{ high_priority_total }}</strong><small>可能改变申报判断</small></article>
+    <article><span>04 已确认别名</span><strong>{{ alias_history|length }}</strong><small>当前显示最近30条</small></article>
+  </section>
+
+  <nav class="calibration-tabs" aria-label="知识校准类型">
+    <a href="?view=aliases" class="{{ 'active' if selected_view == 'aliases' else '' }}" {% if selected_view == 'aliases' %}aria-current="page"{% endif %}><span>别名确认</span><strong>{{ alias_candidate_total }}</strong></a>
+    <a href="?view=policies" class="{{ 'active' if selected_view == 'policies' else '' }}" {% if selected_view == 'policies' %}aria-current="page"{% endif %}><span>政策核验</span><strong>{{ policy_queue_total }}</strong></a>
+  </nav>
+
+  {% if selected_view == 'aliases' %}
+  <section class="calibration-workspace" aria-labelledby="alias-heading">
+    <div class="calibration-section-head"><div><p class="eyebrow">Active Learning Queue</p><h2 id="alias-heading">别名候选队列</h2></div><p>排序依据：受影响文档、名单实体、高风险政策文档与近两年资料。目录相似度只是建议，需要人工确认。</p></div>
+    <div class="calibration-list">
+      {% for item in alias_candidates %}
+      <article class="calibration-card">
+        <div class="learning-score" style="--score: {{ item.learning_score }}" aria-label="主动学习优先分 {{ item.learning_score }} 分">
+          <span>优先分</span><strong>{{ item.learning_score }}</strong><small>/ 100</small><i aria-hidden="true"><b></b></i>
+        </div>
+        <div class="calibration-card-main">
+          <div class="candidate-title"><div><span class="risk-label {{ 'risk-alert' if item.learning_score >= 60 else 'risk-normal' }}">{{ '优先处理' if item.learning_score >= 60 else '常规确认' }}</span><h3>{{ item.raw_project_name }}</h3></div><span class="impact-count">影响 {{ item.impacted_documents }} 份</span></div>
+          <div class="evidence-strip">{% for reason in item.learning_reasons %}<span>{{ reason }}</span>{% endfor %}</div>
+          <div class="candidate-comparison">
+            <div><small>系统建议标准项目</small><strong>{{ item.suggested_canonical_project_name or '暂无高可信建议' }}</strong>{% if item.suggested_canonical_project_name %}<em>相似度 {{ (item.suggestion_similarity * 100)|round|int }}%</em>{% endif %}</div>
+            <div><small>样本文档</small>{% for document in item.sample_documents %}<a class="sample-document-link" href="/admin/knowledge/{{ document.document_id }}">#{{ document.document_id }} {{ document.title }}</a>{% endfor %}</div>
+          </div>
+          <details class="review-drawer">
+            <summary>展开人工确认 <span>确认后才会重新映射相关文档</span></summary>
+            <form method="post" action="/admin/metadata-review/aliases" class="calibration-form">
+              <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
+              <label>待确认别名<input name="raw_project_name" required minlength="2" maxlength="200" value="{{ item.raw_project_name }}"></label>
+              <label>标准项目名称<input name="canonical_project_name" list="canonical-projects" required minlength="2" maxlength="200" value="{{ item.suggested_canonical_project_name }}" placeholder="请选择或输入标准名称"></label>
+              <label>适用地区<input name="region" maxlength="100" value="{{ item.regions|join('、') }}" placeholder="留空表示不限地区"></label>
+              <div class="year-range"><label>起始年度<input name="start_year" inputmode="numeric" pattern="20[0-9]{2}" placeholder="2024"></label><label>结束年度<input name="end_year" inputmode="numeric" pattern="20[0-9]{2}" placeholder="2026"></label></div>
+              <label class="form-wide">确认依据<textarea name="note" maxlength="1000" rows="3" placeholder="记录官方项目名、适用范围或人工判断依据"></textarea></label>
+              <div class="form-wide form-submit"><p>本次确认会创建索引快照，并为命中文档重建匹配证据链。</p><div class="button-row compact"><button class="button secondary" type="submit" formaction="/admin/metadata-review/aliases/preview">预览影响范围</button><button class="button" type="submit">确认别名并重新映射</button></div></div>
+            </form>
+          </details>
+        </div>
+      </article>
+      {% else %}<div class="calibration-empty"><strong>暂无待确认别名</strong><p>当前检索层未发现未映射的政策、规则或名单资料。</p></div>{% endfor %}
+    </div>
+  </section>
+  <section class="panel table-panel calibration-history">
+    <div class="panel-head"><h3>最近已确认别名</h3><span>{{ alias_history|length }} 条</span></div>
+    <div class="table-wrap"><table class="archive-table"><thead><tr><th>原别名</th><th>标准项目</th><th>地区</th><th>适用年度</th><th>确认人</th><th>时间</th></tr></thead><tbody>{% for item in alias_history %}<tr><td data-label="原别名">{{ item.raw_project_name }}</td><td data-label="标准项目"><strong>{{ item.canonical_project_name }}</strong></td><td data-label="地区">{{ item.region or '全部' }}</td><td data-label="适用年度">{{ item.start_year or '不限' }} — {{ item.end_year or '不限' }}</td><td data-label="确认人">{{ item.confirmed_by }}</td><td data-label="时间">{{ item.confirmed_at }}</td></tr>{% else %}<tr class="empty-row"><td colspan="6">尚无确认记录</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+  {% else %}
+  <section class="calibration-workspace" aria-labelledby="policy-heading">
+    <div class="calibration-section-head"><div><p class="eyebrow">Official Source Review</p><h2 id="policy-heading">政策核验队列</h2></div><p>高分项通常处于申报通知、管理办法等关键阶段，且会影响多份文档或名单实体。确认为现行时必须填写官网来源。</p></div>
+    <div class="calibration-list">
+      {% for item in policy_queue %}
+      <article class="calibration-card policy-review-card">
+        <div class="learning-score" style="--score: {{ item.learning_score / 1.4 }}" aria-label="政策核验优先分 {{ item.learning_score }} 分">
+          <span>风险分</span><strong>{{ item.learning_score }}</strong><small>/ 140</small><i aria-hidden="true"><b></b></i>
+        </div>
+        <div class="calibration-card-main">
+          <div class="candidate-title"><div><span class="risk-label {{ 'risk-alert' if item.priority == 'high' else 'risk-normal' }}">{{ item.priority|upper }} 优先级</span><h3>{{ item.title }}</h3></div><span class="impact-count">{{ item.cluster_document_count }} 份同源文档</span></div>
+          <div class="policy-facts"><span><small>标准项目</small>{{ item.canonical_project_name or '未映射' }}</span><span><small>地区</small>{{ item.region or '待确认' }}</span><span><small>文件阶段</small>{{ item.document_stage }}</span><span><small>同源识别</small>{{ item.document_number or ('人工合并' if item.cluster_match_method == 'manual_merge' else ('人工拆分' if item.cluster_match_method == 'manual_split' else ('标题精确匹配' if item.cluster_match_method == 'exact_normalized_title_scope' else '单文档'))) }} · {{ item.cluster_confidence or 'low' }}</span></div>
+          <div class="evidence-strip">{% for reason in item.learning_reasons %}<span>{{ reason }}</span>{% endfor %}</div>
+          <p class="verification-reason"><strong>入队原因</strong>{{ item.reason }}</p>
+          {% if item.cluster_members|length > 1 %}
+          <details class="cluster-members">
+            <summary>管理 {{ item.cluster_members|length }} 份同源文档</summary>
+            <a class="cluster-compare-link" href="/admin/metadata-review/policy-clusters/{{ item.cluster_id }}/compare">可视化对比关键条款差异 →</a>
+            <form method="post" action="/admin/metadata-review/policy-clusters/split" class="cluster-split-form">
+              <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><input type="hidden" name="cluster_id" value="{{ item.cluster_id }}">
+              <ol>{% for member in item.cluster_members %}<li><label class="cluster-member-check"><input type="checkbox" name="document_ids" value="{{ member.document_id }}"><span>#{{ member.document_id }}</span><strong>{{ member.title }}</strong><small>{{ member.source }}</small></label></li>{% endfor %}</ol>
+              <div class="cluster-action-row"><label>拆分依据<input name="note" maxlength="1000" placeholder="说明为什么不是同一政策文件"></label><button class="button secondary" type="submit">拆出所选文档</button></div>
+            </form>
+            <form method="post" action="/admin/metadata-review/policy-clusters/merge" class="cluster-merge-form">
+              <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><input type="hidden" name="source_cluster_id" value="{{ item.cluster_id }}">
+              <label>目标簇 ID<input name="target_cluster_id" type="number" min="1" required placeholder="例如 128"></label><label>合并依据<input name="note" maxlength="1000" placeholder="说明文号、标题或官方来源关系"></label><button class="button secondary" type="submit">合并政策簇</button>
+            </form>
+          </details>
+          {% endif %}
+          <details class="review-drawer">
+            <summary>展开官方核验 <span>{% if item.cluster_members|length > 1 %}一次确认将同步 {{ item.cluster_members|length }} 份同源文档{% else %}填写官方链接和有效性结论{% endif %}</span></summary>
+            <form method="post" action="/admin/metadata-review/policies" class="calibration-form policy-form">
+              <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><input type="hidden" name="queue_id" value="{{ item.id }}">
+              <label>核验结论<select name="review_status"><option value="verified">确认，写入官方证据</option><option value="rejected">驳回，暂不采用</option></select></label>
+              <label>有效性<select name="validity_status"><option value="">仅记录核验，不修改</option><option value="active_candidate">候选现行有效</option><option value="revised">已修订</option><option value="trial">试行</option><option value="draft">征求意见稿</option><option value="invalid">已失效</option><option value="superseded">已被替代</option><option value="historical_reference">仅供历史参考</option></select></label>
+              <label class="form-wide">官方来源链接<input name="official_source_url" type="url" maxlength="1000" placeholder="https://政府官网原文地址"></label>
+              <label>官方文件标题<input name="official_document_title" maxlength="500" placeholder="与官网页面一致"></label>
+              <label>官方发布日期<input name="official_published_at" type="date"></label>
+              <label class="form-wide">核验说明<textarea name="verification_note" maxlength="2000" rows="3" placeholder="记录文号、替代关系、施行期限或驳回理由"></textarea></label>
+              <div class="form-wide form-submit"><p>确认后保存官方来源、核验人、时间和有效性证据；同源文档将分别生成传播证据，同时创建索引快照。</p><div class="button-row compact"><button class="button secondary" type="submit" formaction="/admin/metadata-review/policies/preview">预览核验影响</button><button class="button" type="submit">提交并同步同源文档</button></div></div>
+            </form>
+          </details>
+        </div>
+      </article>
+      {% else %}<div class="calibration-empty"><strong>当前队列已清空</strong><p>没有待处理的政策官方核验任务。</p></div>{% endfor %}
+    </div>
+  </section>
+  <section class="panel table-panel calibration-history">
+    <div class="panel-head"><h3>最近同源传播证据</h3><span>共 {{ policy_propagation_total }} 条 · 显示最近30条</span></div>
+    <div class="table-wrap"><table class="archive-table"><thead><tr><th>簇</th><th>源文档</th><th>目标文档</th><th>传播字段</th><th>值</th><th>操作人</th><th>时间</th></tr></thead><tbody>
+      {% for item in policy_propagations %}<tr><td data-label="簇">#{{ item.cluster_id }}{% if item.document_number %}<small class="source-cell">{{ item.document_number }}</small>{% endif %}</td><td data-label="源文档" class="wrap-cell">#{{ item.source_document_id }} {{ item.source_title }}</td><td data-label="目标文档" class="wrap-cell">#{{ item.target_document_id }} {{ item.target_title }}</td><td data-label="传播字段"><code>{{ item.field_name }}</code></td><td data-label="值">{{ item.propagated_value }}</td><td data-label="操作人">{{ item.propagated_by }}</td><td data-label="时间">{{ item.propagated_at }}</td></tr>
+      {% else %}<tr class="empty-row"><td colspan="7">尚无同源传播记录</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <section class="panel table-panel calibration-history">
+    <div class="panel-head"><h3>人工拆分与合并记录</h3><span>共 {{ cluster_operation_total }} 条 · 显示最近30条</span></div>
+    <div class="table-wrap"><table class="archive-table"><thead><tr><th>操作</th><th>原簇</th><th>文档</th><th>依据</th><th>状态</th><th>操作人</th><th>时间</th><th>动作</th></tr></thead><tbody>
+      {% for item in cluster_operations %}<tr><td data-label="操作"><strong>{{ '拆分' if item.operation_type == 'split' else '合并' }}</strong></td><td data-label="原簇">#{{ item.source_cluster_ids|join('、#') }}</td><td data-label="文档">{{ item.document_ids|length }} 份</td><td data-label="依据" class="wrap-cell">{{ item.note or '未填写' }}</td><td data-label="状态"><span class="table-status {{ 'failed' if item.undone_at else 'ready' }}">{{ '已撤销' if item.undone_at else '已生效' }}</span>{% if item.undone_at %}<small class="source-cell">{{ item.undone_by }} · {{ item.undone_at }}</small>{% endif %}</td><td data-label="操作人">{{ item.operated_by }}</td><td data-label="时间">{{ item.operated_at }}</td><td data-label="动作">{% if not item.undone_at %}<form method="post" action="/admin/metadata-review/policy-clusters/{{ item.id }}/undo" onsubmit="return confirm('确认撤销这次政策簇操作？')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-button danger" type="submit">撤销</button></form>{% else %}—{% endif %}</td></tr>
+      {% else %}<tr class="empty-row"><td colspan="8">尚无人工拆分或合并记录</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  {% endif %}
+  <datalist id="canonical-projects">{% for project in project_options %}<option value="{{ project }}">{% endfor %}</datalist>
+</main>
+{% endblock %}

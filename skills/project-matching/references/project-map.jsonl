@@ -1,0 +1,959 @@
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "5G+医疗健康应用试点项目"}
+{"authority": "文化和旅游部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "“中国杂技艺术创新工程”重点扶持作品"}
+{"authority": "工业和信息化部网络安全产业发展中心", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "“创客中国”中小企业创新创业大赛"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "“后摩尔时代新器件基础研究”重大研究计划"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "“数字三品”应用场景典型案例"}
+{"authority": "国家数据局", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "“数据要素x”典型案例"}
+{"authority": "浙江省市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "“浙江制造”标准"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "“浙江好项目”中小企业创新创业大赛"}
+{"authority": "国务院", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "世界一流示范企业和专精特新示范企业"}
+{"authority": "浙江省人民政府、中共浙江省委", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "世界浙商大会浙商新星典型样本"}
+{"authority": "中共浙江省委、浙江省人民政府", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "世界浙商大会高质量发展领军企业典型样本"}
+{"authority": "劳动和社会保障部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中华技能大奖"}
+{"authority": "商务部", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中华老字号"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国专利奖"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国人工智能赋能城市治理优秀实践案例"}
+{"authority": "中国企业联合会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国企业500强"}
+{"authority": "中国质量协会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国企业品牌创新成果"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国优秀工业设计奖"}
+{"authority": "工业和信息化部火炬高技术产业开发中心", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国创新创业大赛"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国创新方法大赛"}
+{"authority": "中华全国工商业联合会", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国制造业民营企业500强"}
+{"authority": "中国土木工程学会、北京詹天佑土木工程科学技术发展基金会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国土木工程詹天佑奖"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国工业互联网大赛"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国工艺美术大师"}
+{"authority": "中国建筑业协会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国建设工程鲁班奖（国家优质工程）"}
+{"authority": "", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国机械工业科学技术奖"}
+{"authority": "杭州市人民政府", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "中国杭州大学生创业大赛"}
+{"authority": "国家市场监督管理总局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国标准创新贡献奖"}
+{"authority": "中华全国工商业联合会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国民营企业500强"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国消费名品"}
+{"authority": "中国质量协会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国质量协会质量技术奖（项目奖）"}
+{"authority": "国家市场监督管理总局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国质量奖"}
+{"authority": "国家市场监督管理总局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国质量奖提名奖"}
+{"authority": "中国轻工业联合会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国轻工业工程技术研究中心"}
+{"authority": "中国轻工业联合会", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "中国轻工业重点实验室"}
+{"authority": "", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "交通运输行业重点实验室"}
+{"authority": "工业和信息化部、教育部、文化和旅游部、中央广播电视总台", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "元宇宙典型案例"}
+{"authority": "", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国中小企业融资促进典型案例"}
+{"authority": "商务部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国供应链创新与应用示范企业"}
+{"authority": "农业农村部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国农业农村信息化示范基地"}
+{"authority": "人力资源和社会保障部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国创业孵化示范基地"}
+{"authority": "商务部", "category": "trade", "category_label": "商务外贸与开放经济", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国商贸物流重点联系企业"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国工业APP和信息消费大赛"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国工业领域电力需求侧管理典型案例"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国工业领域电力需求侧管理示范企业（园区）"}
+{"authority": "劳动和社会保障部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国技术能手"}
+{"authority": "文化和旅游部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国智慧旅游解决方案"}
+{"authority": "商务部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国诚信兴商典型案例"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "全国颠覆性技术创新大赛"}
+{"authority": "农业农村部、国家发展和改革委员会、财政部、商务部", "category": "agriculture", "category_label": "农业农村", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "农业产业化国家重点龙头企业"}
+{"authority": "农业农村部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "农业农村部重点实验室"}
+{"authority": "中国质量协会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "刘源张质量技术个人奖"}
+{"authority": "华夏建设科学技术奖励委员会", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "华夏建设科学技术奖"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "印染行业规范企业"}
+{"authority": "浙江省市场监督管理局、浙江省农业农村厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "品字标浙江农产"}
+{"authority": "浙江省市场监督管理局、浙江省文化和旅游厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "品字标浙江服务"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家5G工厂"}
+{"authority": "国家发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家“城市矿产”示范基地"}
+{"authority": "科学技术部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家专业化众创空间"}
+{"authority": "", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家专利产业化优秀案例"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家专利密集型产品"}
+{"authority": "工业和信息化部", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家专精特新“小巨人”企业"}
+{"authority": "财政部、工业和信息化部", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家专精特新重点“小巨人”企业"}
+{"authority": "", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家中小企业“揭榜”"}
+{"authority": "工业和信息化部", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家中小企业公共服务示范平台"}
+{"authority": "工业和信息化部、财政部", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家中小企业数字化转型公共服务平台"}
+{"authority": "科学技术部、军委后勤保障部、国家卫生计生委、食品药品监管总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家临床医学研究中心"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家产业技术基础公共服务平台"}
+{"authority": "国家发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家产业技术工程化中心"}
+{"authority": "科学技术部火炬高技术产业开发中心", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家众创空间"}
+{"authority": "国家体育总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家体育产业示范单位"}
+{"authority": "国家体育总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家体育总局决策咨询研究项目"}
+{"authority": "", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家先进制造业企业增值税加计抵减"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家先进安全应急装备推广目录"}
+{"authority": "工业和信息化部、国家国防科技工业局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家先进技术产品转化应用目录技术产品"}
+{"authority": "国家机关事务管理局", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家公共机构绿色低碳技术"}
+{"authority": "农业农村部办公厅、财政部办公厅", "category": "agriculture", "category_label": "农业农村", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家农业产业融合发展项目"}
+{"authority": "农业农村部", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家农业国际贸易高质量发展基地"}
+{"authority": "国家发展改革委办公厅", "category": "agriculture", "category_label": "农业农村", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家农村产业融合发展示范园"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家制造业“双创”平台试点示范项目"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家制造业与互联网融合发展试点示范项目"}
+{"authority": "工业和信息化部办公厅", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家制造业创新中心"}
+{"authority": "工业和信息化部", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家制造业单项冠军企业"}
+{"authority": "工业和信息化部、国家发展和改革委员会、财政部、国务院国有资产监督管理委员会、国家市场监督管理总局、国家数据局", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家卓越级智能工厂"}
+{"authority": "国家发展和改革委员会", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家发展改革委企业技术中心"}
+{"authority": "国家发展和改革委员会、财政部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家园区循环化改造示范试点"}
+{"authority": "国家发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家地方联合工程研究中心"}
+{"authority": "工业和信息化部办公厅", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家增材制造典型应用场景"}
+{"authority": "教育部、科学技术部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家大学科技园"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家大数据产业发展示范项目"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家安全产业示范园区"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家实数融合典型案例"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家小型微型企业创业创新示范基地"}
+{"authority": "工业和信息化部办公厅", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业互联网试点示范项目"}
+{"authority": "工业和信息化部", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业产品绿色设计示范企业"}
+{"authority": "工业和信息化部、国家密码管理局", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业和信息化领域商用密码典型应用方案"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业和信息化领域节能降碳技术装备"}
+{"authority": "", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业和通信业节能技术装备产品"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业节水工艺、技术和装备"}
+{"authority": "工业和信息化部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业设计研究院"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业资源综合利用先进适用工艺技术设备目录"}
+{"authority": "工业和信息化部办公厅", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业软件优秀产品"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工业遗产"}
+{"authority": "国家发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家工程研究中心"}
+{"authority": "国家市场监督管理总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家市场监管技术创新中心"}
+{"authority": "国家市场监督管理总局", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家市场监管重点实验室"}
+{"authority": "国家标准化管理委员会", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家循环经济标准化试点示范项目"}
+{"authority": "国家知识产权局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家技术与创新支持中心（TISC）"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家技术创新示范企业"}
+{"authority": "科学技术部", "category": "talent", "category_label": "人才与团队", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家技术转移人才培养基地"}
+{"authority": "人力资源和社会保障部", "category": "talent", "category_label": "人才与团队", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家技能人才培育突出贡献个人"}
+{"authority": "商务部、文化和旅游部、广电总局、中央宣传部", "category": "trade", "category_label": "商务外贸与开放经济", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家文化出口重点企业"}
+{"authority": "商务部、中央宣传部、文化和旅游部、广电总局", "category": "trade", "category_label": "商务外贸与开放经济", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家文化出口重点项目"}
+{"authority": "文化和旅游部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家文化和旅游科技创新工程项目"}
+{"authority": "文化和旅游部科技教育司", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家文化和旅游科技创新研发项目"}
+{"authority": "科学技术部、中宣部、中央网信办、文化和旅游部、国家广播电视总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家文化和科技融合示范基地"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家新一代信息技术与制造业融合发展试点示范"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家新型信息消费示范项目"}
+{"authority": "国家能源局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家新型储能试点示范项目"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家新型工业化产业示范基地"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家新型数据中心典型案例"}
+{"authority": "工业和信息化部、民政部、国家卫生健康委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家智慧健康养老产品及服务推广目录"}
+{"authority": "工业和信息化部、民政部、国家卫生健康委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家智慧健康养老应用试点示范"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家智能光伏试点示范企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家智能制造典型场景"}
+{"authority": "工业和信息化部、国家市场监督管理总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家智能制造系统解决方案“揭榜挂帅”项目"}
+{"authority": "工业和信息化部、国家发展改革委、财政部、国务院国资委、市场监管总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家智能制造试点示范专项"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家服务型制造示范企业"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家服务型制造示范平台"}
+{"authority": "国家标准化管理委员会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家标准验证点"}
+{"authority": "国家发展和改革委员会、住房和城乡建设部", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家污水处理绿色低碳标杆厂"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家物联网示范项目"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家物联网赋能行业发展典型案例"}
+{"authority": "生态环境部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家环境保护重点实验室"}
+{"authority": "财政部、农业农村部", "category": "agriculture", "category_label": "农业农村", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家现代农业产业园"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家生物制造中试能力建设平台"}
+{"authority": "工业和信息化部办公厅、国家药监局综合司", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家生物医用材料创新任务揭榜挂帅"}
+{"authority": "水利部、国家发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家用水产品水效领跑者"}
+{"authority": "商务部", "category": "trade", "category_label": "商务外贸与开放经济", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家电子商务示范基地"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家知识产权优势企业"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家知识产权信息公共服务网点"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家知识产权局专利专项研究项目"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家知识产权局软科学研究项目"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家知识产权示范企业"}
+{"authority": "国家矿山安全监察局", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家矿山安全监察局重点实验室"}
+{"authority": "", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家研发费用加计扣除"}
+{"authority": "国家标准化管理委员会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家社会管理和公共服务综合标准化试点项目"}
+{"authority": "国务院、国家科学技术奖励委员会", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家科学技术奖"}
+{"authority": "工业和信息化部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家科技企业孵化器"}
+{"authority": "工业和信息化部", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家科技型中小企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家科技重大专项"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级5G应用安全创新推广中心"}
+{"authority": "工业和信息化部、生态环境部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级“无废企业”典型案例"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级专利导航服务基地"}
+{"authority": "工业和信息化部", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级中小企业数字化转型典型产品和解决方案"}
+{"authority": "", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级中小企业数字化转型典型案例"}
+{"authority": "文化和旅游部办公厅、交通运输部办公厅、国家铁路局综合司、中国民用航空局综合司、国家邮政局办公室、国铁集团办公厅", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级交通运输与旅游融合发展典型案例"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级享受增值税加计抵减政策的工业母机企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级享受增值税加计抵减政策的集成电路企业"}
+{"authority": "工业和信息化部、国家药品监督管理局", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级人工智能医疗器械创新任务揭榜挂帅"}
+{"authority": "工业和信息化部办公厅", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级人工智能赋能新型工业化典型应用案例"}
+{"authority": "中国标准化研究院", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级企业标准“领跑者”"}
+{"authority": "住房和城乡建设部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级住房城乡建设部科技创新平台"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级先进计算典型应用案例"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级先进适用技术"}
+{"authority": "工业和信息化部", "category": "agriculture", "category_label": "农业农村", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级农业机器人典型应用场景"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级制造业中试平台"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级制造业数字化转型典型案例"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级区块链典型应用案例"}
+{"authority": "国家卫生健康委员会、工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级医疗领域机器人典型应用场景"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级可再生能源发展试点示范项目"}
+{"authority": "国务院办公厅", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级大众创业万众创新示范基地"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级安全应急装备应用推广典型案例"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业互联网APP优秀解决方案"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业互联网平台创新领航应用案例"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业和信息化质量提升与品牌建设典型案例"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业和信息化领域数据安全典型案例"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业废水循环利用典型案例"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业机器人行业规范企业"}
+{"authority": "中国工业节能与清洁生产协会", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业绿色微电网典型应用场景与案例"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业设计中心"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工业领域数据要素应用场景"}
+{"authority": "中国施工企业管理协会工程物资设备工作委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工程建设行业供应链创新应用优秀成果"}
+{"authority": "中国施工企业管理协会信用评价工作委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级工程建设行业信用专家"}
+{"authority": "中国质量协会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级市场质量信用等级评价"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级平台经济发展优秀案例"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级建筑机器人典型应用场景"}
+{"authority": "财政部、人力资源和社会保障部", "category": "talent", "category_label": "人才与团队", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级技能大师工作室"}
+{"authority": "人力资源社会保障部办公厅", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级技能根基工程培训基地"}
+{"authority": "文化和旅游部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级文化和旅游数字化创新示范案例"}
+{"authority": "文化和旅游部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级文化和旅游装备技术提升优秀案例"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级新一代信息技术典型产品、应用和服务案例"}
+{"authority": "工业和信息化部办公厅", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级无线电发射设备型号核准自检自证试点企业"}
+{"authority": "科学技术部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级星创天地"}
+{"authority": "工业和信息化部、国家体育总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级智能体育典型案例"}
+{"authority": "国家市场监督管理总局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级智能制造标准应用试点"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级智能电网国家科技重大专项"}
+{"authority": "国家标准化管理委员会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级服务业标准化示范项目"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级服务机构促进专利产业化优秀案例"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级未来产业创新任务揭榜挂帅"}
+{"authority": "中国物流与采购联合会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级物流企业信用评价"}
+{"authority": "农业农村部", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级现代农业全产业链标准化示范基地认定"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级电信基础设施共建共享典型案例"}
+{"authority": "国家知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级知识产权信息服务优秀案例"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级矿山机器人典型应用场景"}
+{"authority": "工业和信息化部办公厅", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级移动物联网应用典型案例"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级符合再生资源综合利用行业规范条件的企业"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级符合新能源汽车废旧动力蓄电池综合利用行业规范条件企业"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级符合环保装备制造业规范条件企业"}
+{"authority": "国家发展和改革委员会", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级绿色产业示范基地"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级老年用品产品推广目录"}
+{"authority": "国家能源局", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级能源绿色低碳转型典型案例"}
+{"authority": "工业和信息化部办公厅、教育部办公厅、文化和旅游部办公厅、国家广播电视总局办公厅、国家体育总局办公厅", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级虚拟现实先锋应用案例"}
+{"authority": "国家知识产权局、工业和信息化部、国家广播电视总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级视听系统典型案例"}
+{"authority": "工业和信息化部、国家广播电视总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级超高清视频典型应用案例"}
+{"authority": "工业和信息化部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级跨行业跨领域工业互联网平台"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级钢铁行业重点场景数字化转型典型案例"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级零碳园区"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级非物质文化遗产代表性项目"}
+{"authority": "文化和旅游部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级非物质文化遗产生产性保护示范基地"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级高品质建材应用典型案例"}
+{"authority": "人力资源和社会保障部、财政部", "category": "talent", "category_label": "人才与团队", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家级高技能人才培训基地"}
+{"authority": "国家发展和改革委员会", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家绿色低碳先进技术示范项目"}
+{"authority": "工业和信息化部", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家绿色供应链管理企业"}
+{"authority": "工业和信息化部", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家绿色工业园区"}
+{"authority": "工业和信息化部", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家绿色工厂"}
+{"authority": "工业和信息化部办公厅、国家发展改革委办公厅、商务部办公厅、国管局办公室、金融监管总局办公厅、国家能源局综合司", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家绿色数据中心"}
+{"authority": "工业和信息化部", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家绿色设计产品"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家网络安全技术应用试点示范"}
+{"authority": "国家能源局", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家能源领域首台（套）重大技术装备"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家自然科学基金"}
+{"authority": "国家艺术基金", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家艺术基金（一般项目）资助项目"}
+{"authority": "国家发展和改革委员会", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家节能降碳专项"}
+{"authority": "国家药监局", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家药监局重点实验室"}
+{"authority": "国家发展改革委高技术司", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家西部地区创新能力建设项目"}
+{"authority": "国家发展和改革委员会、工业和信息化部、财政部、商务部、国家税务总局", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家规划布局内重点软件企业"}
+{"authority": "国家发展和改革委员会、工业和信息化部、财政部、商务部、国家税务总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家规划布局内集成电路设计企业"}
+{"authority": "中国质量协会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家质量标杆典型经验"}
+{"authority": "工业和信息化部", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家质量管理能力高等级企业"}
+{"authority": "工业和信息化部、财政部、海关总署、国家税务总局、国家能源局", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家重大技术装备进口税收政策免税资格"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家重点新材料首批次应用保险补偿补助项目"}
+{"authority": "国家发展和改革委员会、工业和信息化部、水利部、国家市场监督管理总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家重点用水企业水效领跑者"}
+{"authority": "工业和信息化部、水利部、国家发展和改革委员会、国家市场监督管理总局", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家重点用水园区水效领跑者"}
+{"authority": "科学技术部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家重点研发计划项目"}
+{"authority": "工业和信息化部、国家发展和改革委员会、国家市场监督管理总局", "category": "green", "category_label": "绿色发展与节能", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家重点行业能效“领跑者”企业"}
+{"authority": "工业和信息化部、国家发展和改革委员会、财政部、国务院国有资产监督管理委员会、国家市场监督管理总局、国家数据局", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家领航级智能工厂"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家首台（套）重大技术装备保险补偿项目"}
+{"authority": "工业和信息化部", "category": "industrialization", "category_label": "工业化与产品", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家首版次软件产品"}
+{"authority": "国家标准化管理委员会", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家高新技术产业标准化试点示范项目"}
+{"authority": "科学技术部、财政部、国家税务总局", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家高新技术企业"}
+{"authority": "工业和信息化部、国家卫生健康委员会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家高端医疗装备推广应用项目"}
+{"authority": "中国软件行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家鼓励的软件企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "国家鼓励的集成电路企业"}
+{"authority": "工业和信息化部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "工业和信息化部重点实验室"}
+{"authority": "应急管理部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "应急管理部重点实验室"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "成长型浙江数商"}
+{"authority": "中国电子信息行业联合会", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "数据管理能力成熟度模型DCMM"}
+{"authority": "文化和旅游部", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "文化和旅游信息化发展典型案例"}
+{"authority": "文化和旅游部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "文化和旅游部技术创新中心"}
+{"authority": "文化和旅游部办公厅", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "文化和旅游部部级社科研究项目"}
+{"authority": "文化和旅游部", "category": "technology", "category_label": "科技创新与研发", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "文化和旅游部重点实验室"}
+{"authority": "杭州市商务局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州出口名牌"}
+{"authority": "景区市场监管分局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州名牌产品"}
+{"authority": "杭州市人力资源和社会保障局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州工匠"}
+{"authority": "杭州市经济和信息化局", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市5G产业项目"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“115”引进国（境）外智力计划"}
+{"authority": "杭州市建设国家小微企业创业创新基地、城市示范工作领导小组办公室", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“两创示范”小微企业创业创新基地"}
+{"authority": "杭州市市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“品字标浙江制造”品牌建设资助"}
+{"authority": "杭州市人民政府办公厅", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“好苗子”企业"}
+{"authority": "杭州市粮食和物资储备局、杭州市市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“放心粮油”示范企业（门店）"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“新势力”企业"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“新雏鹰”企业"}
+{"authority": "杭州市文化广电旅游局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“智慧旅游”示范企业"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“机器换人”示范应用企业"}
+{"authority": "", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“百千万”高技能领军人才（优秀技能人才）"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“种子”企业"}
+{"authority": "杭州市财政局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“科技创新”企业高端会计人才"}
+{"authority": "杭州市农业农村局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“菜篮子”基地"}
+{"authority": "杭州市商务局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“菜篮子”经营大户（企业）"}
+{"authority": "杭州市商务局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“菜篮子”重点商品保供稳价骨干企业（大户）"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“雏鹰计划”企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“鲲鹏”企业"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“鼓励产业链供应链协同”政策奖励"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市“鼓励链主型企业推进产业链上下游协同”政策奖励"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市上云标杆企业"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市专利示范企业"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市专利试点企业"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市专利转化专项计划项目资助"}
+{"authority": "杭州市经济和信息化局", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市专精特新产业园"}
+{"authority": "杭州市中小企业服务中心", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市中小企业公共服务平台优秀服务机构"}
+{"authority": "杭州市中小企业服务中心", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市中小企业公共服务平台十佳服务机构"}
+{"authority": "杭州市经济和信息化局", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市中小企业数字化转型城市试点专项服务专家库"}
+{"authority": "杭州市经济和信息化局", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市中小企业数字化转型城市试点项目"}
+{"authority": "杭州市经济和信息化局（杭州市数字经济局）", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市中小企业数字化转型细分行业服务平台"}
+{"authority": "杭州市经济和信息化局", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市中小微企业服务券"}
+{"authority": "杭州市科学技术委员会、杭州市财政局、杭州市统计局、杭州市税务局", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市中小微企业研发费用投入补助"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市中试基地"}
+{"authority": "杭州市农业农村局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市乡村产业技能大师"}
+{"authority": "杭州市农业农村局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市乡村产业技能大师工作室"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市云端工厂"}
+{"authority": "杭州市交通运输局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市交通工程西湖杯奖（优质工程）"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市产业创新服务综合体"}
+{"authority": "", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市产业知识产权联盟"}
+{"authority": "", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市产业规划类专利导航项目"}
+{"authority": "杭州市人力资源和社会保障局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市人力资源服务和产品创新创优项目"}
+{"authority": "杭州市经济和信息化局", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市人工智能产业项目"}
+{"authority": "杭州市科技局", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市人工智能重大科研攻关项目"}
+{"authority": "杭州市政府质量奖评审委员会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市人民政府质量奖"}
+{"authority": "杭州市政府质量奖评审委员会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市人民政府质量管理优胜奖"}
+{"authority": "杭州市政府质量奖评审委员会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市人民政府质量管理创新奖"}
+{"authority": "杭州市科学技术局", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市企业创新联合体"}
+{"authority": "杭州市经济和信息化局", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市企业技术中心"}
+{"authority": "杭州市科学技术局", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市企业研发费用投入补助"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市企业研究开发项目"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市企业科技成果转化项目"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市企业运营类专利导航项目"}
+{"authority": "杭州市科学技术局", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市企业高新技术研究开发中心"}
+{"authority": "杭州市科学技术局", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市众创空间"}
+{"authority": "杭州市市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市优秀首席质量官"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市优质产品推荐目录"}
+{"authority": "杭州市经济和信息化局", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市优质数字工程服务商"}
+{"authority": "杭州市财政局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市会展业发展扶持资金项目"}
+{"authority": "杭州市交通运输局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市低空经济十大应用场景典型案例"}
+{"authority": "杭州市交通运输局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市低空经济应用场景优秀案例"}
+{"authority": "杭州市商务委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市供应链创新与应用试点"}
+{"authority": "杭州市市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市信用管理示范企业"}
+{"authority": "杭州市发展和改革委员会", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市光伏发电项目补贴"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市入境旅游包机补助"}
+{"authority": "杭州市数据资源局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市公共数据授权运营"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市公共自行车文旅咨询点补助"}
+{"authority": "商务局（自贸片区委员会、粮食和物资储备局）", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市再生资源回收龙头骨干企业"}
+{"authority": "", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农业“机器换人”促进工程项目"}
+{"authority": "杭州市科学技术局", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农业与社会发展科研一般项目"}
+{"authority": "杭州市科学技术局", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农业与社会发展科研主动设计项目"}
+{"authority": "杭州市科学技术局", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农业与社会发展领域公益性科研引导项目"}
+{"authority": "杭州市科学技术局", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农业与社会发展领域重点科研计划项目"}
+{"authority": "杭州市科学技术委员会", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农业科技企业"}
+{"authority": "杭州市科学技术局", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农业科研自主申报项目"}
+{"authority": "杭州市农业农村局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农技首席专家工作室"}
+{"authority": "", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市农村电子商务项目扶持资金"}
+{"authority": "杭州市创业投资协会", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市准独角兽企业"}
+{"authority": "杭州市人力资源和社会保障局、杭州市财政局、中国人民银行杭州中心支行、杭州市地方金融监督管理局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市创业担保贷款受托担保机构"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市创新产品目录"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市创新优质杭产药械推荐目录"}
+{"authority": "杭州市科学技术委员会", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市创新创业品牌活动"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市创新型示范企业"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市创新型试点企业"}
+{"authority": "杭州市经济和信息化局", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市制造业“云上企业”培育库入库企业"}
+{"authority": "杭州市经济和信息化局", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市制造业企业技术改造资金补助"}
+{"authority": "杭州市经济和信息化局", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市制造业创新中心"}
+{"authority": "杭州市经济和信息化局", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市制造业数字化改造攻关项目"}
+{"authority": "杭州市人民政府", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市十大突出贡献工业企业"}
+{"authority": "杭州市科学技术协会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市博士创新站"}
+{"authority": "杭州市卫生健康委员会", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市卫生科技计划项目"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市历史经典产业项目"}
+{"authority": "杭州市商务局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市可推广“互联网+再生资源回收”企业"}
+{"authority": "", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市合成生物产业高质量发展专项"}
+{"authority": "杭州市市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市商业秘密保护基地"}
+{"authority": "杭州市市场监督管理局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市商业秘密领域专家人才"}
+{"authority": "杭州市商务局", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市商贸服务业职业技术标兵（能手）"}
+{"authority": "杭州市园林文物局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市园林工程西湖杯奖（优质工程）"}
+{"authority": "杭州城西科创大走廊管委会", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市城西科创大走廊创新发展专项资金支持项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市外国专家工作站"}
+{"authority": "杭州市人力资源和社会保障局、杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市大学生创业园"}
+{"authority": "杭州市人力资源和社会保障局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市大学生创业项目资助"}
+{"authority": "杭州市人力资源和社会保障局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市大学生杰出创业人才培育计划"}
+{"authority": "杭州市应急管理局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市安全文化建设示范企业"}
+{"authority": "杭州市建设国家小微企业创业创新基地、城市示范工作领导小组办公室", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市小微企业创业创新基地城市示范“活动券”服务机构"}
+{"authority": "杭州市人力资源和社会保障局、杭州市发展和改革委员会、杭州市发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市就业帮扶爱心企业"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市工业与信息化专项资金项目"}
+{"authority": "杭州市经济和信息化委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市工信经济企业百强榜"}
+{"authority": "杭州市经济和信息化委员会", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市工厂物联网和工业互联网示范"}
+{"authority": "杭州市经济和信息化委员会", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市工厂物联网和工业互联网试点"}
+{"authority": "杭州市发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市工程研究中心"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市工艺美术大师"}
+{"authority": "", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市市级农业龙头企业"}
+{"authority": "杭州市经济和信息化局", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市市级工业设计中心"}
+{"authority": "杭州市城乡建设委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市建筑产业现代化示范企业"}
+{"authority": "杭州市城乡建设委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市建设工程西湖杯奖（优质工程）"}
+{"authority": "杭州市城乡建设委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市建设科研项目"}
+{"authority": "杭州市人民政府办公厅、杭州市发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市总部企业"}
+{"authority": "杭州市科技创新特别贡献奖评审委员会、杭州市人民政府", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市成绩突出科技工作者"}
+{"authority": "", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市成长型品牌"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市战略性新兴产业企业"}
+{"authority": "杭州市科学技术委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市技术先进型服务企业"}
+{"authority": "杭州市人力资源和社会保障局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市技能大师工作室"}
+{"authority": "杭州市经济和信息化局", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市推进软件和信息技术服务业高质量发展若干政策拟补助项目"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市政策性融资担保业务保费补贴"}
+{"authority": "杭州市经济和信息化局", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市数字化车间"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市文旅专项资金“微改造、精提升”项目补助"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市文旅专项资金重大旅游项目补助"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市文旅融合新业态、新产品（夜间休闲消费）项目"}
+{"authority": "杭州市文化广电旅游局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市文旅行业“能工巧匠”"}
+{"authority": "杭州市住房和城乡建设局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新型建筑工业化示范产业基地"}
+{"authority": "杭州市住房和城乡建设局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新型建筑工业化示范项目"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新型研发机构"}
+{"authority": "杭州市经济和信息化局", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新材料首批次项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新电商发展专项"}
+{"authority": "杭州市经济和信息化局", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新能源汽车推广应用市级财政补助"}
+{"authority": "杭州市商务局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新零售企业"}
+{"authority": "杭州市萧山区商务局", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "萧山区", "regions": ["萧山区", "杭州市", "浙江省"], "title": "杭州市新零售发展专项资金"}
+{"authority": "杭州市商务局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新零售服务企业"}
+{"authority": "杭州市商务局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市新零售示范企业"}
+{"authority": "", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市旅游企业参加市本级组织的境外促销活动补助"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市旅游集散中心换乘服务补助"}
+{"authority": "", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市旅行社招徕接待境外来杭过夜游客补助"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市智能交互沉浸式旅游体验项目"}
+{"authority": "杭州市工业和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市智能制造示范项目"}
+{"authority": "杭州市经济和信息化局", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市智能工厂"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市智能网联汽车“揭榜挂帅”"}
+{"authority": "杭州市商务局、杭州市财政局", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市服务贸易公共服务平台"}
+{"authority": "杭州市商务局", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市服务贸易成长型企业"}
+{"authority": "杭州市商务局", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市服务贸易示范企业"}
+{"authority": "杭州市商务局", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市服务贸易示范园区"}
+{"authority": "杭州市人民政府", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市标准创新贡献奖"}
+{"authority": "杭州市市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市标准化建设项目"}
+{"authority": "杭州市市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市标准化资助项目"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市概念验证中心"}
+{"authority": "杭州市人民政府", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市民营企业百强系列"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市水利工程西湖杯奖（优质工程）"}
+{"authority": "杭州市商务局、杭州市财政局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市流通领域现代供应链体系建设试点项目"}
+{"authority": "", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市海内外高层次人才项目补助"}
+{"authority": "", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市海外知识产权保护和维权项目"}
+{"authority": "杭州市海外高层次人才创新创业大赛组委会", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市海外高层次人才创新创业大赛"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市海洋经济发展引导资金奖励项目"}
+{"authority": "杭州市经济和信息化局", "category": "green", "category_label": "绿色发展与节能", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市清洁生产审核"}
+{"authority": "杭州市财政局、杭州市商务委、杭州市质监局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市物流标准化试点项目"}
+{"authority": "杭州市发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市物流标杆企业"}
+{"authority": "杭州市创业投资协会", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市独角兽企业"}
+{"authority": "杭州市科学技术局", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市现代农业科技型龙头企业"}
+{"authority": "", "category": "trade", "category_label": "商务外贸与开放经济", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市现代商贸流通体系试点城市建设项目"}
+{"authority": "杭州市旅游委员会、杭州市财政局", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市现代服务业旅游专项资金"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市现代物流发展专项资金"}
+{"authority": "杭州市经济和信息化局、杭州市科学技术局、杭州市市卫生健康委员会、杭州市市场监管局、杭州市统计局、杭州市医保局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市生物医药及合成生物产业高质量发展项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市生物医药特色产业园区"}
+{"authority": "杭州市人力资源和社会保障局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市留学人员创业园"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市知识产权强企"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市知识产权管理规范认证企业资助"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市知识产权项目"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市社会发展科研自主申报项目"}
+{"authority": "杭州市地方金融监督管理局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科创金融专营机构（组织）"}
+{"authority": "", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科学技术进步奖"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科技中介服务机构奖励"}
+{"authority": "杭州市科学技术局", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科技企业孵化器"}
+{"authority": "杭州市科学技术委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科技创新服务平台"}
+{"authority": "杭州市科技创新特别贡献奖评审委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科技创新特别贡献奖"}
+{"authority": "杭州市科技信息研究院", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科技创新示范服务站"}
+{"authority": "杭州市财政局、杭州市科学技术局", "category": "investment", "category_label": "投资技改与资金补助", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科技发展专项资金"}
+{"authority": "杭州市科学技术局、杭州市投资促进局", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市科技型初创企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市算力券"}
+{"authority": "杭州市粮食和物资储备局", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市粮食优秀经营大户（企业）"}
+{"authority": "杭州市商务局", "category": "agriculture", "category_label": "农业农村", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市粮食应急保障企业"}
+{"authority": "杭州市统计局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市统计诚信单位"}
+{"authority": "杭州市经济和信息化局", "category": "green", "category_label": "绿色发展与节能", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市绿色低碳工业园区"}
+{"authority": "杭州市经济和信息化局", "category": "green", "category_label": "绿色发展与节能", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市绿色低碳工厂"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市聚能工厂"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市自然科学基金项目"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市节水型企业"}
+{"authority": "", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市装备制造业重点领域首台（套）产品推广应用奖励"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市软科学研究项目"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市重点商标保护名录"}
+{"authority": "杭州市经济和信息化局", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市重点建设人工智能应用场景"}
+{"authority": "杭州市市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市重点拟上市企业"}
+{"authority": "杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市重点科研计划项目"}
+{"authority": "杭州市人力资源和社会保障局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市钱江特聘专家"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市链主工厂"}
+{"authority": "杭州市院士专家服务工作协调小组", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市院士专家工作站"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市集成电路产业发展项目"}
+{"authority": "杭州市科学技术局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市领军型创业团队"}
+{"authority": "杭州市科学技术局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市领军型创新团队"}
+{"authority": "杭州市科学技术局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市领军型青年创新创业团队"}
+{"authority": "杭州市经济和信息化局", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市首台（套）装备"}
+{"authority": "杭州市首席技师评选委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市首席技师"}
+{"authority": "", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市首批次新材料应用奖励项目"}
+{"authority": "杭州市经济和信息化局", "category": "industrialization", "category_label": "工业化与产品", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市首版次软件产品"}
+{"authority": "杭州市经济和信息化委员会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市骨干企业带动产业链或配套体系发展项目"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高价值专利组合项目"}
+{"authority": "杭州市市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高价值知识产权智能产品创新创意大赛"}
+{"authority": "杭州市商业联会", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高品质消费企业"}
+{"authority": "杭州市人力资源和社会保障局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高层次人才A类（国内外顶尖人才）认定"}
+{"authority": "杭州市人力资源和社会保障局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高层次人才B类（国家级领军人才）认定"}
+{"authority": "杭州市人力资源和社会保障局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高层次人才C类（省级领军人才）认定"}
+{"authority": "杭州市人力资源和社会保障局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高层次人才D类（市级领军人才）认定"}
+{"authority": "杭州市人力资源和社会保障局", "category": "talent", "category_label": "人才与团队", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高层次人才E类（高级人才）认定"}
+{"authority": "杭州市人力资源和社会保障局；杭州市科学技术局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高层次留学回国人员在杭创新创业项目资助"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高技术产业化项目"}
+{"authority": "杭州市高新技术产业领导小组办公室、杭州市人民政府", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高新技术产业园"}
+{"authority": "杭州市人民政府", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高新技术企业"}
+{"authority": "", "category": "technology", "category_label": "科技创新与研发", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高新技术孵化成果转化园"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高端装备揭榜挂帅项目"}
+{"authority": "", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市高端装备高质量发展专项资金奖补"}
+{"authority": "杭州市经济和信息化局", "category": "other", "category_label": "其他政府项目", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州市鲲鹏计划企业奖励"}
+{"authority": "杭州市总工会", "category": "digitalization", "category_label": "数字化与软件", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州数字工匠"}
+{"authority": "杭州市商务局、杭州市文化广电旅游局、杭州市市场监督管理局、杭州市园林文物局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "市级", "primary_region": "杭州市", "regions": ["杭州市", "浙江省"], "title": "杭州老字号"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙商浙企“两新深度融合”优秀经验案例"}
+{"authority": "中共浙江省委人才工作领导小组办公室、浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江“万人计划”高技能领军人才"}
+{"authority": "浙江省商务厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江出口名牌"}
+{"authority": "浙江省商务厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江出口名牌（跨境电商）"}
+{"authority": "浙江省经济和信息化厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江制造精品"}
+{"authority": "", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江千名乡村CEO培养计划"}
+{"authority": "浙江名牌战略推进委员会办公室", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江名牌产品"}
+{"authority": "浙江省农业农村厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江名牌农产品"}
+{"authority": "省委人才工作领导小组办公室、省人力社保厅、省总工会、团省委", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江工匠"}
+{"authority": "浙江省住房和城乡建设厅、浙江省建设建材工会", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江建设工匠"}
+{"authority": "浙江省机械工业联合会", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江机械工业科学技术奖"}
+{"authority": "浙江省市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江标准"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江消费名品"}
+{"authority": "浙江省151人才工程联席会议办公室", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省151人才工程"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省5G+医疗健康应用试点项目"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省5G全连接工厂"}
+{"authority": "浙江省市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省AAA级“守合同重信用”企业"}
+{"authority": "浙江省市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省AA级“守合同重信用”企业"}
+{"authority": "浙江省市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省A级“守合同重信用”企业"}
+{"authority": "浙江省自然资源厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省A级信用测绘资质单位"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省DT奖"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“一带一路”国际科技合作项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“万亩千亿”新产业平台"}
+{"authority": "浙江省经济和信息化厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“万人计划”传统工艺领军人才"}
+{"authority": "浙江省科学技术厅、中共浙江省委人才工作领导小组办公室", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“万人计划”杰出人才"}
+{"authority": "浙江省科学技术厅、中共浙江省委人才工作领导小组办公室", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“万人计划”科技创业领军人才"}
+{"authority": "浙江省科学技术厅、中共浙江省委人才工作领导小组办公室", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“万人计划”科技创新领军人才"}
+{"authority": "浙江省人力资源和社会保障厅、中共浙江省委人才工作领导小组办公室", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“万人计划”青年拔尖人才"}
+{"authority": "浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“三名”培育试点企业"}
+{"authority": "浙江省经济和信息化厅", "category": "investment", "category_label": "投资技改与资金补助", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“五个一批”重点技术改造示范项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“双尖双领”重大科技项目"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“尖兵领雁+X”科技计划项目"}
+{"authority": "浙江省建筑业行业协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“建工杯”BIM技术应用大赛"}
+{"authority": "浙江省粮食行业协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“放心粮油”示范企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“新优器械”产品清单"}
+{"authority": "浙江省农业农村厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“新农匠”"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“智算云企”及应用场景"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“机器人+”应用标杆企业"}
+{"authority": "浙江省经济和信息化厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“浙产中药”产业品牌"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“火炬杯”创新创业大赛"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“百千万”高技能领军人才培养工程"}
+{"authority": "浙江省外国专家局、浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省“百村引智示范项目”"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省上云标杆企业"}
+{"authority": "", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专业商标品牌基地"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专利奖"}
+{"authority": "浙江省知识产权局、浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专利导航工程支撑服务机构"}
+{"authority": "浙江省市场监督管理局、浙江省知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专利导航服务基地"}
+{"authority": "浙江省知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专利战略推进项目"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专利示范企业"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专利转化专项计划重点项目"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专精特新中小企业"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省专精特新产业园"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省两化深度融合计划项目"}
+{"authority": "浙江省经济和信息化委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省两化融合示范试点企业"}
+{"authority": "浙江省经济和信息化委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省个性化定制示范试点企业"}
+{"authority": "浙江省中医药管理局", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省中医药科学技术奖"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省中小企业专业化服务机构"}
+{"authority": "工信部中小企业司", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省中小企业信用担保机构"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省中小企业公共服务示范平台"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省中小企业创业辅导中心"}
+{"authority": "浙江省财政厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省中小企业发展（省级）专项资金"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省中试平台"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省交通运输科技示范工程"}
+{"authority": "浙江省科学技术厅、浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产业创新服务综合体"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产业数字化服务商"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产业规划类专利导航项目"}
+{"authority": "浙江省制造业高质量发展（数字经济发展）", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产业链“链主”企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产业链上下游企业共同体"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产业链协同创新项目"}
+{"authority": "", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产品主数据标准（CPMS）"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产品保险补偿项目"}
+{"authority": "浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省产教融合型试点企业"}
+{"authority": "浙江省深化“亩均论英雄”改革工作领导小组办公室", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省亩均效益领跑者"}
+{"authority": "", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省享受增值税加计抵减政策的先进制造业企业"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人力资源服务产业园"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人工智能“数智优品”"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人工智能优秀解决方案（产品）"}
+{"authority": "浙江省发展和改革委员会", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人工智能券（算力券）"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人工智能应用场景"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人工智能应用标杆企业"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人工智能服务商"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人工智能赋能制造业典型案例"}
+{"authority": "浙江省人民政府办公厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省人民政府质量奖"}
+{"authority": "浙江省经济和信息化厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业技术中心"}
+{"authority": "浙江省经济和信息化厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业数据管理国家标准贯标试点企业"}
+{"authority": "浙江省企业联合会、浙江省企业家协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业文化示范基地"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业海外研发机构"}
+{"authority": "浙江省知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业知识产权卓越管理第三方评价机构"}
+{"authority": "浙江省经济和信息化厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业研究院"}
+{"authority": "浙江省企业联合会、浙江省企业家协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业管理现代化创新优秀工作者"}
+{"authority": "浙江省企业联合会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业管理现代化创新成果"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业管理现代化对标提升专家"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业经营类专利导航项目"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省企业首席数据官试点企业"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省众创空间"}
+{"authority": "浙江省企业联合会、浙江省企业家协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省优秀企业家"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省优秀众创空间"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省优秀工业新产品（新技术）"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省传统产业内生裂变培育发展新质生产力典型案例"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省低空经济重大科技专项"}
+{"authority": "浙江省体育产业联合会", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省体育用品制造业示范企业"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省供应链创新与应用试点示范企业"}
+{"authority": "浙江省经济和信息化委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省信息经济重点企业"}
+{"authority": "浙江省市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省信用管理示范企业"}
+{"authority": "浙江省卫生健康委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省健康企业建设优秀案例"}
+{"authority": "浙江省发展和改革委员会", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省先进制造业和现代服务业融合发展"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省先进级智能工厂"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省先进（未来）技术创新成果"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省公益技术应用研究计划项目"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省内外贸一体化“领跑者”企业"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省内外贸一体化典型案例征集"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省内外贸一体化改革试点产业基地"}
+{"authority": "浙江省商务厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省内外贸一体化高质量发展项目"}
+{"authority": "浙江省经济和信息化委员会、浙江省发展和改革委员会、中国人民解放军浙江省军区办公室", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省军民融合示范企业"}
+{"authority": "浙江省农业农村厅、浙江省财政厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业“双强”项目"}
+{"authority": "", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业丰收奖"}
+{"authority": "浙江省发展和改革委员会、浙江省财政厅、浙江省国土资源厅、中国人民银行杭州中心支行、浙江省国家税务局、浙江省地方税务局、浙江省农业农村厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业产业化联合体"}
+{"authority": "", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业农村厅技术进步奖"}
+{"authority": "浙江省农业农村厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业品牌目录"}
+{"authority": "", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业技术推广贡献奖"}
+{"authority": "浙江省科学技术厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业新品种选育重大科技专项"}
+{"authority": "浙江省科学技术厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业科技企业"}
+{"authority": "浙江省科学技术厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业科技园区"}
+{"authority": "浙江省政府", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业科技成果转化推广奖励"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业科技研发中心"}
+{"authority": "浙江省农业农村厅、浙江省人力资源和社会保障厅、浙江省总工会、 共青团浙江省委员会", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农业行业职业技能竞赛获奖"}
+{"authority": "", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农产品标准化生产绩效评价"}
+{"authority": "浙江省商务厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农商互联农产品供应链"}
+{"authority": "浙江省农业农村厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省农机购置与应用补贴产品"}
+{"authority": "浙江省发展改革委", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省冷链物流园区"}
+{"authority": "浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省冷链物流骨干基地"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省创业孵化示范基地"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省创新型中小企业"}
+{"authority": "浙江省高新技术企业协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省创造力百强企业"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业“云上企业”"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业“双创”平台试点示范企业"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业与互联网融合发展试点示范企业"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业创新中心"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业单项冠军企业"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业单项冠军培育企业"}
+{"authority": "浙江省企业联合会、浙江省企业家协会、浙江省工业经济联合会", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业百强企业"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业质量标杆"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业首台（套）产品工程化攻关项目"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业首台（套）清单引导标准认定"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业首台（套）装备"}
+{"authority": "浙江省财政厅、浙江省经济和信息化厅、中国银行保险监督管理委员会浙江监管局", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业首台（套）装备保险补偿"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省制造业首台（套）装备应用奖励"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省加工贸易创新发展示范企业"}
+{"authority": "浙江省卫生厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省医药卫生科技计划项目"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省卓越工程师实践基地"}
+{"authority": "浙江省科学技术协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省博士创新站"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省博士后工作站"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省博士后科研项目"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省历史经典产业传承创新发展优秀案例"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅、浙江省农业农村厅、浙江省文化广电和旅游厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省历史经典产业传承创新工作室"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省历史经典产业生产制造方式转型示范项目"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省县域商业体系商贸流通龙头企业"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省县域商业体系建设项目"}
+{"authority": "浙江省市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省商业秘密保护基地"}
+{"authority": "浙江省市场监督管理局", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省商业秘密领域专家人才"}
+{"authority": "浙江省工商行政管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省商标品牌示范企业"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省园区精准服务中小微企业财政专项激励试点"}
+{"authority": "浙江省制造业高质量发展（数字经济发展）领导小组办公室", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省国家数字经济创新发展试验区优秀案例"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省国际产业联合研发计划项目"}
+{"authority": "浙江省财政厅、中共浙江省委人才办、浙江省人力资源和社会保障厅、浙江省经济和信息化厅、浙江省工商业联合会", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省国际化高端会计人才（民营企业类）"}
+{"authority": "浙江省人民政府", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省国际科学技术合作奖"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省国际科技合作基地"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省国际联合实验室"}
+{"authority": "浙江省土木建筑学会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省土木建筑学会工程创新奖"}
+{"authority": "浙江省土木建筑学会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省土木建筑学会科技进步奖"}
+{"authority": "浙江省土木建筑学会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省土木建筑学会青年工程师奖"}
+{"authority": "浙江省信息技术标准化秘书处", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省地方标准制修订计划"}
+{"authority": "浙江省财政厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省地方特色产业中小企业发展资金"}
+{"authority": "浙江省自然资源厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省地质科学技术奖"}
+{"authority": "浙江省供销合作社联合社", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省城乡商贸综合服务中心"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省外国专家工作站"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省外贸综合服务企业"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省外资政策支持项目"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省外资研发中心"}
+{"authority": "浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省大众创业万众创新示范基地"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省大数据应用示范企业"}
+{"authority": "浙江省市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省孵化级“金种子”"}
+{"authority": "浙江省安全生产监督管理局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省安全生产专家"}
+{"authority": "浙江省应急管理厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省安全生产标准化二级达标企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省小升规企业创业之星"}
+{"authority": "浙江省市场监督管理局", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省小微企业“成长之星”"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省小微企业园"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省山海协作工程重点支持项目"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业与信息化专项资金"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业互联网平台"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业信息安全服务支撑单位"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业信息工程服务机构"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业和信息化领域数字卓越工程师"}
+{"authority": "浙江省工业经济联合会、浙江省企业联合会、浙江省企业家协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业大奖企业奖"}
+{"authority": "浙江省工业经济联合会、浙江省企业联合会、浙江省企业家协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业大奖项目奖"}
+{"authority": "浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业循环经济示范企业"}
+{"authority": "浙江省经济和信息化厅、浙江省文化广电和旅游厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业旅游示范基地"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业机器人技术应用技能大赛"}
+{"authority": "浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业节能降碳工程解决方案服务商"}
+{"authority": "浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业节能降碳工艺、技术、装备"}
+{"authority": "浙江省人民政府办公厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业行业龙头骨干企业"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业设计中心"}
+{"authority": "浙江省经济和信息化厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业设计研究院"}
+{"authority": "", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业设计领跑企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工业遗产"}
+{"authority": "浙江省住房和城乡建设厅、浙江省人力资源和社会保障厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工程勘察设计大师"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工程技术研究中心"}
+{"authority": "浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工程研究中心"}
+{"authority": "浙江省人民政府办公厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省工艺美术大师"}
+{"authority": "浙江省应急管理厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省应急管理专家库"}
+{"authority": "浙江省应急管理厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省应急管理研发攻关科技项目"}
+{"authority": "浙江省民政厅、浙江省发展和改革委员会、浙江省经济和信息化厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省康养行业领军企业（机构）"}
+{"authority": "浙江省建筑业行业协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建筑业优秀企业文化建设示范单位"}
+{"authority": "浙江省建筑业行业协会", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建筑业绿色施工示范工程"}
+{"authority": "浙江省建筑业行业协会", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建筑业行业协会科学技术创新成果奖"}
+{"authority": "浙江省住房和城乡建设厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建筑产业现代化示范企业"}
+{"authority": "浙江省水利厅办公室", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建筑安全文明标准化工地"}
+{"authority": "浙江省住房和城乡建设厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建筑工业化示范企业"}
+{"authority": "浙江省住房和城乡建设厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建筑工业化示范基地"}
+{"authority": "浙江省住房和城乡建设厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建筑工业化示范项目"}
+{"authority": "浙江省住房和城乡建设厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建设工程钱江杯（优质工程）"}
+{"authority": "浙江省建设科学技术奖奖励工作办公室", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建设科学技术奖"}
+{"authority": "", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建设科学技术奖重大贡献奖"}
+{"authority": "浙江省住房和城乡建设厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建设科研项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省建设领域“十四五”推广应用技术"}
+{"authority": "浙江省外国专家局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省引进外国专家项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省引进海外工程师"}
+{"authority": "浙江省经济和信息化委员会", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省成长型中小企业"}
+{"authority": "浙江省委宣传部", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省成长型文化企业"}
+{"authority": "浙江省企业联合会、浙江省企业家协会、浙江省工业经济联合会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省成长性最快百强企业"}
+{"authority": "浙江省市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省成长级“金种子”"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省技术先进型服务企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省技术创新中心"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省技术创新示范企业"}
+{"authority": "浙江省人民政府", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省技术发明奖"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省技术需求“张榜招贤”大赛"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省技术需求“揭榜挂帅”大赛"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省技能人才自主评价省级引领企业"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省技能大师工作室"}
+{"authority": "浙江省发展和改革委员会、浙江省哲学社会科学工作办公室", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省推进长三角一体化发展专项课题"}
+{"authority": "浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省政府和社会资本合作示范项目"}
+{"authority": "浙江省农业农村厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字农业工厂（基地）"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字化小微企业园"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字化服务商"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字化车间"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字化车间培育项目"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字工厂标杆企业"}
+{"authority": "浙江省建筑业行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字建造创新应用大赛"}
+{"authority": "浙江省文化广电和旅游厅、浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字文化梯度培育企业"}
+{"authority": "浙江省文化广电和旅游厅、中共浙江省委网络安全和信息化委员会、浙江省农业农村厅、浙江省文物局", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字文旅优秀示范案例"}
+{"authority": "浙江省商务厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字消费创新案例"}
+{"authority": "浙江省商务厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字生活新服务高质量发展项目"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字经济创新发展十大标志性成果"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字经济发展优秀案例"}
+{"authority": "浙江省商务厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字贸易标准化试点基地"}
+{"authority": "浙江省商务厅、浙江省财政厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字贸易高质量发展重点项目"}
+{"authority": "浙江省发展和改革委员会", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数字赋能促进新业态新模式典型企业和平台"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省数据知识产权专业服务机构"}
+{"authority": "浙江省文化和旅游厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省文化产业示范基地"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省文化出口重点企业"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省文化出口重点项目"}
+{"authority": "浙江省文化广电和旅游厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省文化广电和旅游科技创新示范项目"}
+{"authority": "浙江省文物局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省文物保护科技项目"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省新产品试制计划"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省新兴产业集群强链补链（“415X”集群新质生产力）项目"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省新型研发机构"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省新时代浙派工匠培育突出贡献单位"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省新时代突出贡献浙派工匠"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省新能源汽车推广应用补助资金"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省新零售示范企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省旅游业“微改造，精提升”项目"}
+{"authority": "", "category": "investment", "category_label": "投资技改与资金补助", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省旅游发展专项资金"}
+{"authority": "浙江省生态环境厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省无废工厂"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省星创天地"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省星级小微企业园"}
+{"authority": "浙江省农业农村厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省智慧农业“百千”工程"}
+{"authority": "浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省智能化仓储物流示范基地"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省智能工厂"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省智能工厂培育项目"}
+{"authority": "浙江省住房和城乡建设厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省智能建造试点企业"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务“专精特新”中小企业公共服务示范平台"}
+{"authority": "浙江省企业家协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务业百强企业"}
+{"authority": "浙江省现代服务业发展工作领导小组办公室", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务业重点企业"}
+{"authority": "浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务业重点行业规上企业“亩产效益”领跑者"}
+{"authority": "浙江省发展和改革委员会", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务业领军企业"}
+{"authority": "浙江省中小企业公共服务平台", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务中小企业十佳机构"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务型制造示范企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务型制造示范平台"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省服务型制造示范项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省未来产业“四库”培育对象"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省未来产业先导区财政专项激励"}
+{"authority": "浙江省农业农村厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省未来农场"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省未来工厂"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省未来工厂试点企业"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省本土民营跨国公司“领航企业”"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省机器人典型应用场景"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省机器人应用场景工程化攻关项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省机器人应用新场景"}
+{"authority": "浙江省林业局", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省林业科技推广项目"}
+{"authority": "浙江省林业局", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省林业重点龙头企业"}
+{"authority": "浙江省人民政府", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省标准创新贡献奖"}
+{"authority": "浙江省应急管理厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省标准化企业"}
+{"authority": "", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省标准化战略专项资金补助"}
+{"authority": "浙江省经济和信息化厅、浙江省质量技术监督局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省标准化示范企业创建单位"}
+{"authority": "浙江省市场监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省标准化试点项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省样板级“金种子”"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省民营经济总部企业"}
+{"authority": "浙江省经济和信息化厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省民营经济总部领军企业"}
+{"authority": "浙江省水利厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省水利先进适用技术推广指导目录"}
+{"authority": "浙江省财政厅、浙江省水利厅", "category": "investment", "category_label": "投资技改与资金补助", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省水利建设与发展专项资金"}
+{"authority": "浙江省水利厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省水利科技创新奖"}
+{"authority": "浙江省水利厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省水利科技计划"}
+{"authority": "浙江省水利学会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省水文化专家库"}
+{"authority": "浙江省知识产权局、浙江省商务厅", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省流通领域知识产权保护试点单位"}
+{"authority": "浙江省自然资源厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省测绘与地理信息科技进步奖"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省海外创新孵化中心"}
+{"authority": "", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省潜在独角兽型数创企业"}
+{"authority": "", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省潜在瞪羚型数创企业"}
+{"authority": "浙江省安全生产监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省烟花爆竹安全生产标准化二级达标企业"}
+{"authority": "浙江省安全生产监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省烟花爆竹经营安全标准化达标企业"}
+{"authority": "浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省物流创新发展试点"}
+{"authority": "浙江省物联网产业协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省物联网奖项"}
+{"authority": "浙江省生态环境厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省环保“领跑”企业"}
+{"authority": "浙江省生态环境厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省环境保护科学技术奖"}
+{"authority": "浙江省教育厅、浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省现代产业学院"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省现代商贸流通体系建设重点项目"}
+{"authority": "浙江省经济和信息化委员会、浙江省财政厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省现代装备制造业协同创新、协同制造试点示范"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省生产制造方式转型示范项目"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省生产制造方式转型示范项目（工业领域设备更新）"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省生产制造方式转型示范项目（绿色化方向）"}
+{"authority": "浙江省经济和信息化厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省生物医药产业领军型企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省生物医药产业高成长型企业"}
+{"authority": "国家发展和改革委员会、科学技术部、中国人民银行、中国国务院国有资产监督管理委员会、中国国家质量监督检验检疫总局、国家统计局、中国中国证券监督管理委员会、浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省用能预算管理企业"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省电子信息产业百家重点企业"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省电子商务产业示范基地"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省电子商务示范企业"}
+{"authority": "浙江省企业联合会、浙江省企业家协会、浙江省工业经济联合会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省百强企业"}
+{"authority": "浙江省市场监督管理局、浙江省工商业联合会、浙江省民营企业发展联合会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省百强民营企业"}
+{"authority": "浙江省工商行政管理局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省知名商号"}
+{"authority": "浙江省财政厅、浙江省科学技术厅", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省知识产权保护与管理专项资金"}
+{"authority": "浙江省人民政府", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省知识产权奖"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省知识产权服务业集聚发展示范区"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省知识产权示范企业"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省知识产权软科学研究项目"}
+{"authority": "浙江省知识产权局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省知识产权（电梯产业）创新创业大赛"}
+{"authority": "浙江省国土资源厅", "category": "investment", "category_label": "投资技改与资金补助", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省矿产资源节约与综合利用专项资金"}
+{"authority": "浙江省安全生产监督管理局", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省矿山安全标准化达标企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省种子型数创企业"}
+{"authority": "浙江省人民政府", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科学技术奖"}
+{"authority": "浙江省财政厅、浙江省科学技术协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科学普及和学术智力专项扶持资金"}
+{"authority": "浙江省统计局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科学研究基地课题"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技专家库"}
+{"authority": "浙江省经济和信息化厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技企业孵化器"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技兴林奖"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技创新服务平台"}
+{"authority": "浙江省教育厅、浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技副总"}
+{"authority": "浙江省财政厅、浙江省科学技术厅", "category": "investment", "category_label": "投资技改与资金补助", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技发展专项资金"}
+{"authority": "浙江省科学技术厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技型中小企业"}
+{"authority": "浙江省科学技术协会、浙江省工商业联合会", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技型企业家"}
+{"authority": "浙江省科学技术厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技小巨人企业"}
+{"authority": "浙江省科学技术厅、浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技惠民计划项目"}
+{"authority": "浙江省高新技术企业协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技新小龙企业"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技研发和成果转化项目"}
+{"authority": "浙江省科学技术厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科技领军企业"}
+{"authority": "浙江省文化广电和旅游厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省科研与创作项目"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省竞价（拍卖）产业化项目"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省算力设施典型案例"}
+{"authority": "浙江省经济和信息化委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省管理创新示范企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省管理创新试点企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省管理对标提升成绩突出个人"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省管理对标提升标杆企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省管理现代化企业"}
+{"authority": "浙江省粮食和物资储备局", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省粮食主渠道企业"}
+{"authority": "浙江省企业联合会、浙江省企业家协会、浙江省管理咨询与培训协会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省精细化管理示范企业"}
+{"authority": "浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省绿色(低碳)工业园区"}
+{"authority": "浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省绿色(低碳)工厂"}
+{"authority": "浙江省市场监督管理局", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省绿色产品（服务）认证“领跑者”"}
+{"authority": "浙江省环境保护厅、浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省绿色企业"}
+{"authority": "浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省绿色低碳领域专家"}
+{"authority": "浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省绿色供应链管理企业"}
+{"authority": "浙江省住房和城乡建设厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省绿色建筑评价标识"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省网上技术市场成交产业化项目"}
+{"authority": "浙江省经济和信息化厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省自愿性清洁生产审核企业"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省自然科学基金项目"}
+{"authority": "浙江省人民政府", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省自然科学奖"}
+{"authority": "浙江省文化和旅游厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省舞台艺术“1111”人才计划"}
+{"authority": "浙江省经济和信息化厅、浙江省住房和城乡建设厅、浙江省水利厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省节水型企业"}
+{"authority": "浙江省水利厅、浙江省发展和改革委员会、浙江省市场监督管理局、浙江省工业和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省节水标杆企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省节水标杆园区"}
+{"authority": "", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省节能与工业循环经济重点项目计划"}
+{"authority": "", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省节能技术（产品）推广导向目录"}
+{"authority": "浙江省发展和改革委员会、浙江省能源局", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省节能新技术新产品推荐目录"}
+{"authority": "浙江省药品监督管理局", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省药品监管系统科技计划项目"}
+{"authority": "浙江省工商行政管理部门", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省著名商标"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省行业云应用平台"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省行业云应用示范平台"}
+{"authority": "浙江省商务厅、浙江省财政厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省跨境电商综试区重点项目"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省跨境电子商务产业园"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软件产业高质量发展重点项目"}
+{"authority": "浙江省软件行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软件企业核心竞争力评价"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软件和信息服务业领跑企业"}
+{"authority": "浙江省经济和信息化厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软件和集成电路企业税收优惠"}
+{"authority": "浙江省软件行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软件明星企业"}
+{"authority": "浙江省软件行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软件行业优秀企业家"}
+{"authority": "浙江省软件行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软件行业优秀项目单项奖"}
+{"authority": "", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软件行业优秀项目管理案例"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软科学实验室"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省软科学研究计划项目"}
+{"authority": "浙江省发展和改革委员会、浙江省自然资源厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重大产业项目"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点专精特新中小企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点产业技术联盟"}
+{"authority": "浙江省经济和信息化厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点企业研究院"}
+{"authority": "浙江省经济和信息化委员会、浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点企业设计院"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点农业企业研究院"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点培育电商平台企业"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点实验室"}
+{"authority": "浙江省经济和信息化厅、浙江省财政厅", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点工业互联网平台"}
+{"authority": "浙江省发展和改革委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点建设项目"}
+{"authority": "浙江省经济和信息化委员会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点技术创新专项"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点新材料首批次应用保险补偿项目"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点流通企业"}
+{"authority": "浙江省科学技术厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点研发计划项目"}
+{"authority": "浙江省科学技术厅、浙江省财政厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点科技中介服务机构"}
+{"authority": "浙江省商务厅", "category": "trade", "category_label": "商务外贸与开放经济", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点进口平台"}
+{"authority": "浙江省经济和信息化厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省重点高新技术产品开发项目"}
+{"authority": "浙江省人力资源和社会保障厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省钱江人才计划"}
+{"authority": "浙江省企业联合会、浙江省企业家协会、浙江省工业经济联合会", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省长三角企业百强"}
+{"authority": "长三角建筑学会联盟", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省长三角建筑学会联盟青年建筑师奖"}
+{"authority": "浙江省院士专家工作站建设协调小组办公室", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省院士专家工作站"}
+{"authority": "浙江省经济和信息化厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省隐形冠军企业"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省雄鹰企业"}
+{"authority": "浙江省商务厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省零售模式创新工程"}
+{"authority": "浙江省青年文明号、青年岗位能手活动组委会办公室", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省青年岗位能手"}
+{"authority": "浙江省青年文明号、青年岗位能手活动组委会办公室", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省青年文明号"}
+{"authority": "浙江省科学技术厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省领军型创业团队"}
+{"authority": "中共浙江省委组织部；浙江省科学技术厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省领军型创新团队"}
+{"authority": "浙江省构建和谐劳动关系工作领导小组办公室", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省首席技师"}
+{"authority": "浙江省经济和信息化厅", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省首席数据官试点企业优秀案例"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省首批次新材料"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省首版次软件产品"}
+{"authority": "浙江省经济和信息化厅", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省首版次软件产品保险补偿"}
+{"authority": "浙江省农业农村厅", "category": "agriculture", "category_label": "农业农村", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省骨干农业龙头企业"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高价值专利培育基地"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高价值专利培育平台"}
+{"authority": "浙江省市场监督管理局", "category": "intellectual-property", "category_label": "知识产权", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高价值专利培育项目"}
+{"authority": "浙江省农业农村厅", "category": "green", "category_label": "绿色发展与节能", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高品质绿色科技示范基地"}
+{"authority": "浙江省科学技术厅", "category": "small-business", "category_label": "中小企业与梯度培育", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高成长科技型中小企业"}
+{"authority": "", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高技能人才公共实训基地"}
+{"authority": "浙江省人民政府", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高新技术产业园区"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高新技术企业创新能力百强"}
+{"authority": "浙江省科学技术厅", "category": "technology", "category_label": "科技创新与研发", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高新技术企业研究开发中心"}
+{"authority": "浙江省经济和信息化委员会", "category": "industrialization", "category_label": "工业化与产品", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江省高端装备制造业特色基地"}
+{"authority": "浙江省人民政府", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江科技大奖"}
+{"authority": "浙江省市场监督管理局", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江精品"}
+{"authority": "浙江省商务厅", "category": "quality-brand", "category_label": "质量品牌与标准", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "浙江老字号"}
+{"authority": "", "category": "agriculture", "category_label": "农业农村", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "神农中华农业科技奖"}
+{"authority": "工业和信息化部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "符合《光伏制造行业规范条件》企业"}
+{"authority": "自然资源部", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "自然资源部工程技术创新中心"}
+{"authority": "", "category": "other", "category_label": "其他政府项目", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "规上企业"}
+{"authority": "中国软件行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "软件产品评估"}
+{"authority": "中国软件行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "软件企业评估"}
+{"authority": "国家标准化管理委员会", "category": "digitalization", "category_label": "数字化与软件", "level": "国家级", "primary_region": "全国", "regions": ["全国"], "title": "软件能力成熟度集成模型CMMI"}
+{"authority": "长三角土木建筑学会联盟", "category": "other", "category_label": "其他政府项目", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "长三角杰出青年工程师奖"}
+{"authority": "浙江省软件行业协会", "category": "digitalization", "category_label": "数字化与软件", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "长三角百家品牌软件企业"}
+{"authority": "浙江省经济和信息化厅", "category": "talent", "category_label": "人才与团队", "level": "省级", "primary_region": "浙江省", "regions": ["浙江省"], "title": "领军型浙江数商"}
