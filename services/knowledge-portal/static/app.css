@@ -2173,6 +2173,37 @@ tbody tr:hover { background: rgba(216,183,111,.025); }
 .single-page .page-continuation { display: none; }
 .page-continuation .auto-page-orb { transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease; }
 .page-continuation.is-armed .auto-page-orb { border-color: var(--atelier-gold); box-shadow: 0 0 0 18px rgba(216,187,134,.045), 0 0 42px rgba(216,187,134,.16); transform: scale(1.08); }
+
+.pagination .page-link,
+.pagination .page-ellipsis {
+  display: grid;
+  min-width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  color: #fff;
+  border: 1px solid var(--atelier-gold);
+  border-radius: 8px;
+  background: var(--atelier-gold-dark);
+  box-shadow: inset 0 -2px 0 rgba(49, 34, 12, .42);
+  font-size: 12px;
+  font-weight: 800;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .32);
+}
+.pagination .page-link.wide { padding: 0 14px; }
+.pagination .page-link:hover,
+.pagination .page-link:focus-visible {
+  color: #fff;
+  border-color: var(--atelier-gold-light);
+  background: #ad8846;
+}
+.pagination .page-link.current {
+  color: #fff;
+  border-color: var(--atelier-gold-light);
+  background: var(--atelier-gold);
+  box-shadow: inset 0 -3px 0 #7e5529;
+}
+.pagination .page-ellipsis { cursor: default; }
 .page-continuation.is-armed .auto-page-orb span { animation: archive-orbit .72s linear infinite; opacity: 1; }
 .portal-page { animation: atelier-enter .56s cubic-bezier(.2,.72,.2,1) both; }
 .single-page.portal-page {
