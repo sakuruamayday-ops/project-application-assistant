@@ -2230,12 +2230,24 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             headers={"Accept": "application/json, text/event-stream"},
             json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
         ).status_code == 401
+        ping = client.post(
+            "/mcp/",
+            headers=headers,
+            json={"jsonrpc": "2.0", "id": 2, "method": "ping", "params": {}},
+        )
+        assert ping.status_code == 200
+        tool_list = client.post(
+            "/mcp/",
+            headers=headers,
+            json={"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": {}},
+        )
+        assert tool_list.status_code == 200
         response = client.post(
             "/mcp/",
             headers=headers,
             json={
                 "jsonrpc": "2.0",
-                "id": 2,
+                "id": 4,
                 "method": "tools/call",
                 "params": {
                     "name": "knowledge_search",
@@ -2247,11 +2259,40 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         first_result = response.json()["result"]["structuredContent"]["results"][0]
         assert "小巨人" in first_result["title"]
         assert "source_layer" not in first_result
+        document = client.post(
+            "/mcp/",
+            headers=headers,
+            json={
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "tools/call",
+                "params": {
+                    "name": "knowledge_document",
+                    "arguments": {"document_id": first_result["document_id"]},
+                },
+            },
+        )
+        assert document.status_code == 200
     with closing(module.database()) as connection:
-        usage = connection.execute(
-            "SELECT endpoint FROM api_usage ORDER BY id DESC LIMIT 1"
-        ).fetchone()
-    assert usage["endpoint"] == "/mcp"
+        usage_rows = connection.execute(
+            """
+            SELECT endpoint,activity_type,activity_name,counts_toward_usage
+            FROM api_usage ORDER BY id
+            """
+        ).fetchall()
+    assert [row["activity_type"] for row in usage_rows] == [
+        "mcp_connection",
+        "mcp_tools_list",
+        "mcp_search",
+        "mcp_document",
+    ]
+    assert [row["activity_name"] for row in usage_rows] == [
+        "MCP连接检测",
+        "工具列表",
+        "实际检索",
+        "文档读取",
+    ]
+    assert [row["counts_toward_usage"] for row in usage_rows] == [0, 1, 1, 1]
 
 
 def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
