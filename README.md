@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-当前稳定版本为 2.2.0。规则和技能采用原创重构，不包含受限制的第三方文档技能、客户密钥、账号登录态或付费平台原始数据库。
+当前稳定版本为 V1.0。规则和技能采用原创重构，不包含受限制的第三方文档技能、客户密钥、账号登录态或付费平台原始数据库。
 
 ## 安装
 
@@ -20,7 +20,7 @@
 
 ```bash
 PYTHONPATH=src:. uv run --with pytest --with pyyaml pytest -q tests
-python3 scripts/build_standard_package.py --version 2.2.0 --status stable
+python3 scripts/build_standard_package.py --version 1.0 --status stable
 ```
 
 ## 配置
