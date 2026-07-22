@@ -6409,6 +6409,11 @@ def admin_health_detail(
     snapshot_retention = read_status_file(SNAPSHOT_RETENTION_STATUS_PATH)
     index = knowledge_index_stats()
     requested_activity = request.query_params.get("activity", "").strip()
+    try:
+        calls_page = max(1, int(request.query_params.get("page", "1")))
+    except ValueError:
+        calls_page = 1
+    calls_page_size = 50
     activity_filters = {
         "business": ("业务调用", "api_usage.counts_toward_usage = 1"),
         "mcp_connection": ("MCP连接检测", "api_usage.activity_type = 'mcp_connection'"),
@@ -6435,23 +6440,36 @@ def admin_health_detail(
             connection.execute("SELECT COUNT(*) FROM device_tokens WHERE revoked_at IS NULL").fetchone()[0]
         )
         calls_since_24_hours = isoformat(utc_now() - timedelta(hours=24))
+        recent_calls_from = """
+            FROM api_usage
+            JOIN users ON users.id = api_usage.user_id
+            LEFT JOIN device_tokens ON device_tokens.id = api_usage.device_token_id
+        """
+        recent_calls_where = ""
+        recent_calls_parameters: tuple[object, ...] = ()
+        if selected_activity:
+            recent_calls_where = (
+                f" WHERE api_usage.called_at >= ? AND {activity_filters[selected_activity][1]}"
+            )
+            recent_calls_parameters = (calls_since_24_hours,)
+        calls_total = int(
+            connection.execute(
+                "SELECT COUNT(*) " + recent_calls_from + recent_calls_where,
+                recent_calls_parameters,
+            ).fetchone()[0]
+        )
+        all_calls_total = int(connection.execute("SELECT COUNT(*) FROM api_usage").fetchone()[0])
+        calls_pages = max(1, (calls_total + calls_page_size - 1) // calls_page_size)
+        calls_page = min(calls_page, calls_pages)
         recent_calls_query = """
             SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
                    api_usage.activity_type, api_usage.activity_name,
                    COALESCE(NULLIF(api_usage.activity_name,''), api_usage.endpoint) AS activity_display,
-                   users.username, device_tokens.label
-            FROM api_usage
-            JOIN users ON users.id = api_usage.user_id
-            JOIN device_tokens ON device_tokens.id = api_usage.device_token_id
-        """
-        recent_calls_parameters: tuple[object, ...] = ()
-        if selected_activity:
-            recent_calls_query += (
-                f" WHERE api_usage.called_at >= ? AND {activity_filters[selected_activity][1]}"
-            )
-            recent_calls_parameters = (calls_since_24_hours,)
-        recent_calls_query += " ORDER BY api_usage.id DESC LIMIT ?"
-        recent_calls_parameters += (100 if selected_activity else 30,)
+                   users.username,
+                   COALESCE(NULLIF(device_tokens.label,''), NULLIF(users.real_name,''), users.username) AS label
+        """ + recent_calls_from + recent_calls_where
+        recent_calls_query += " ORDER BY api_usage.id DESC LIMIT ? OFFSET ?"
+        recent_calls_parameters += (calls_page_size, (calls_page - 1) * calls_page_size)
         recent_calls = format_row_datetimes(
             connection.execute(recent_calls_query, recent_calls_parameters).fetchall(),
             "called_at",
@@ -6757,6 +6775,7 @@ def admin_health_detail(
         "calls": (
             "调用记录",
             [
+                ("全部调用", all_calls_total, "/admin/health/calls"),
                 ("24小时业务调用", business_calls_24h, "/admin/health/calls?activity=business"),
                 ("MCP连接检测", mcp_activity_counts.get("mcp_connection", 0), "/admin/health/calls?activity=mcp_connection"),
                 ("工具列表", mcp_activity_counts.get("mcp_tools_list", 0), "/admin/health/calls?activity=mcp_tools_list"),
@@ -6793,6 +6812,10 @@ def admin_health_detail(
             "activity_filter_label": activity_filter_label,
             "activity_description": activity_description,
             "selected_activity": selected_activity,
+            "calls_total": calls_total,
+            "calls_page": calls_page,
+            "calls_pages": calls_pages,
+            "calls_page_links": pagination_window(calls_page, calls_pages),
             "failed_updates": failed_updates if section == "updates" else [],
             "access_users": access_users if section == "access" else [],
             "access_tokens": access_tokens if section == "access" else [],
