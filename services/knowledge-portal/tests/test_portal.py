@@ -2230,6 +2230,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             headers={"Accept": "application/json, text/event-stream"},
             json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
         ).status_code == 401
+        assert client.head("/mcp/", headers=headers).status_code == 405
         ping = client.post(
             "/mcp/",
             headers=headers,
@@ -2282,17 +2283,19 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         ).fetchall()
     assert [row["activity_type"] for row in usage_rows] == [
         "mcp_connection",
+        "mcp_connection",
         "mcp_tools_list",
         "mcp_search",
         "mcp_document",
     ]
     assert [row["activity_name"] for row in usage_rows] == [
         "MCP连接检测",
+        "MCP连接检测",
         "工具列表",
         "实际检索",
         "文档读取",
     ]
-    assert [row["counts_toward_usage"] for row in usage_rows] == [0, 1, 1, 1]
+    assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1]
 
 
 def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
@@ -2324,6 +2327,13 @@ def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
         assert access_health.status_code == 200
         assert "具体用户" in access_health.text
         assert "owner" in access_health.text
+        calls_health = client.get("/admin/health/calls")
+        assert calls_health.status_code == 200
+        assert "/admin/health/calls?activity=mcp_tools_list" in calls_health.text
+        tool_list_health = client.get("/admin/health/calls?activity=mcp_tools_list")
+        assert tool_list_health.status_code == 200
+        assert "客户端读取当前MCP提供的工具清单" in tool_list_health.text
+        assert "查看全部调用" in tool_list_health.text
         knowledge = client.get("/admin/knowledge?query=小巨人")
         assert knowledge.status_code == 200
         assert "小巨人测试资料" in knowledge.text
