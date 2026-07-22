@@ -17,6 +17,7 @@ REQUIRED = [
     "skills/first-run-configuration/SKILL.md",
     "skills/first-run-configuration/scripts/configure.py",
     "skills/first-run-configuration/scripts/manage_preferences.py",
+    "skills/first-run-configuration/scripts/migrate_skill_preferences.py",
     "skills/first-run-configuration/scripts/upgrade_inheritance.py",
     "skills/first-run-configuration/references/first-startup-protocol.md",
     "skills/first-run-configuration/references/preference-inheritance.md",
@@ -149,6 +150,8 @@ def validate_release_archive(output: Path) -> None:
             "personal_preference_overlay": True,
             "cross_device_preference_sync": True,
             "three_way_upgrade_inheritance": True,
+            "direct_skill_edit_detection": True,
+            "legacy_skill_preference_migration": True,
         }
         for skill_name in EVOLUTION_SKILLS:
             if f"skills/{skill_name}/SKILL.md" not in names:
@@ -250,6 +253,8 @@ def main():
             "personal_preference_overlay": True,
             "cross_device_preference_sync": True,
             "three_way_upgrade_inheritance": True,
+            "direct_skill_edit_detection": True,
+            "legacy_skill_preference_migration": True,
         },
     }
     output.parent.mkdir(parents=True, exist_ok=True)

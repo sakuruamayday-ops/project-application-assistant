@@ -53,6 +53,8 @@ class InstallTests(unittest.TestCase):
             self.assertTrue(manifest["includes"]["personal_preference_overlay"])
             self.assertTrue(manifest["includes"]["cross_device_preference_sync"])
             self.assertTrue(manifest["includes"]["three_way_upgrade_inheritance"])
+            self.assertTrue(manifest["includes"]["direct_skill_edit_detection"])
+            self.assertTrue(manifest["includes"]["legacy_skill_preference_migration"])
             self.assertEqual(len(manifest["official_skill_hashes"]), 53)
             self.assertIn("skills/manufacturing-tax-risk-analysis/SKILL.md", names)
             self.assertIn("skills/jiaotang-legal-regulations/SKILL.md", names)
@@ -67,6 +69,7 @@ class InstallTests(unittest.TestCase):
                 self.assertTrue((installed / "skills/local-knowledge-retrieval/SKILL.md").is_file())
                 self.assertTrue((installed / "skills/skill-evolution/SKILL.md").is_file())
                 self.assertTrue((installed / "skills/experience-recorder/SKILL.md").is_file())
+                self.assertTrue((installed / "skills/first-run-configuration/scripts/migrate_skill_preferences.py").is_file())
                 self.assertFalse(any((installed / "skills").glob("*/agents")))
 
     def test_copy_install(self):

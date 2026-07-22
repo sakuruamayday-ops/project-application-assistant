@@ -77,6 +77,7 @@ def install_skills(
         incoming_hash = file_hash(skill_dir / "SKILL.md")
         previous = skill_state.get(skill_dir.name, {})
         old_official_hash = previous.get("official_hash") if isinstance(previous, dict) else None
+        old_baseline = previous.get("baseline") if isinstance(previous, dict) else None
         installed_hash = file_hash(target / "SKILL.md")
         change = classify_skill_change(old_official_hash, installed_hash, incoming_hash or "")
         if target.exists() or target.is_symlink():
@@ -102,6 +103,7 @@ def install_skills(
                 "skill": skill_dir.name,
                 "status": change,
                 "old_official_hash": old_official_hash,
+                "old_baseline": old_baseline,
                 "installed_hash": installed_hash,
                 "incoming_hash": incoming_hash,
                 "backup": str(backup_root / skill_dir.name) if installed_hash else None,

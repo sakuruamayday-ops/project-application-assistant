@@ -34,6 +34,7 @@ python3 scripts/configure.py
 9. 首次配置结束时只提示一次通用能力安装指令；用户已经确认这些能力可用时不重复提醒。
 10. 用户表达“以后都这样”“默认按这个格式”“记住我的习惯”时，先确认这是个人习惯还是通用质量规则。个人习惯写入偏好文件并同步，绝不直接修改正式 `SKILL.md`。
 11. 升级前运行 `scripts/upgrade_inheritance.py`。它以旧官方哈希、当前文件哈希和新官方哈希识别直接修改，保存旧目录、安装新版核心并生成升级继承报告。
+12. 用户说“迁移我的旧版Skills个人习惯”时，运行 `scripts/migrate_skill_preferences.py --sync`。只自动迁移地区、格式、语气、归档方式和安全的个人写作习惯；涉及凭据、权限、来源核验或获批承诺的内容不得自动接收，必须写入迁移报告等待确认。
 
 ## 常用命令
 
@@ -74,6 +75,12 @@ python3 scripts/manage_preferences.py reset
 
 ```bash
 python3 scripts/upgrade_inheritance.py --source <新版解压目录> --target <Agent的Skills目录> --version <版本号>
+```
+
+旧版Skill已经被手工修改时，一键转为个人偏好并同步：
+
+```bash
+python3 scripts/migrate_skill_preferences.py --sync
 ```
 
 完整供应商配置和MCP示例见随包分发的 `docs/user-guide/api-mcp-configuration.md`。

@@ -2180,6 +2180,7 @@ tbody tr:hover { background: rgba(216,183,111,.025); }
 .preference-status-grid article { min-height: 118px; padding: 20px; display: flex; flex-direction: column; color: var(--atelier-ink); border: 1px solid var(--atelier-line); border-radius: var(--atelier-radius); background: var(--atelier-panel); }
 .preference-status-grid span { color: var(--atelier-muted); font-size: 11px; }
 .preference-status-grid strong { margin-top: auto; color: var(--atelier-gold-light); font-size: 18px; }
+.preference-status-grid small { display: block; margin-top: 8px; color: var(--atelier-muted); font-size: 12px; }
 .preference-form { display: grid; gap: 18px; }
 .preference-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
 .preference-checks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
@@ -2189,6 +2190,11 @@ tbody tr:hover { background: rgba(216,183,111,.025); }
 .preference-save label { flex: 1; }
 .preference-actions { margin: 18px 0; }
 .preference-actions p { margin: 6px 0 0; color: var(--atelier-muted); }
+.preference-simple-guide > p { margin: 18px 0 0; color: var(--atelier-muted); }
+.preference-simple-guide code { display: inline-block; margin-left: 6px; color: var(--atelier-gold-light); }
+.preference-advanced summary { cursor: pointer; color: var(--atelier-gold-light); font-weight: 700; }
+.preference-advanced[open] summary { margin-bottom: 18px; }
+.preference-advanced label { display: grid; gap: 8px; }
 
 .page-continuation { min-height: 28vh; display: grid; place-items: center; border-top: 1px solid rgba(216,187,134,.08); }
 .single-page .page-continuation { display: none; }
