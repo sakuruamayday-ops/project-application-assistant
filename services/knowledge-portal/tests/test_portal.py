@@ -2389,6 +2389,52 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
     assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1]
 
 
+def test_admin_all_calls_shows_records_first_and_supports_pagination(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        user_id = connection.execute(
+            "INSERT INTO users(username, password_hash, real_name, is_admin, created_at) VALUES (?, ?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), "管理员", now),
+        ).lastrowid
+        token_id = connection.execute(
+            """
+            INSERT INTO device_tokens(user_id,label,token_prefix,token_hash,token_seed,created_at)
+            VALUES (?,?,?,?,?,?)
+            """,
+            (user_id, "管理员", "jtk_test", "test-token-hash", "test-seed", now),
+        ).lastrowid
+        connection.executemany(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,?,?)
+            """,
+            [
+                (user_id, token_id, f"/v1/search/{index}", "POST", "rest_api", "REST检索", 1, now)
+                for index in range(55)
+            ],
+        )
+        connection.commit()
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        first_page = client.get("/admin/health/calls")
+        assert first_page.status_code == 200
+        assert first_page.text.index("全部调用明细") < first_page.text.index("24小时业务调用")
+        assert "第 1/2 页 · 共 55 条" in first_page.text
+        assert "/v1/search/54" in first_page.text
+        assert 'aria-current="page">1</a>' in first_page.text
+        second_page = client.get("/admin/health/calls?page=2")
+        assert "第 2/2 页 · 共 55 条" in second_page.text
+        assert "/v1/search/0" in second_page.text
+
+
 def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
     module = load_app(tmp_path)
     with closing(module.database()) as connection:
