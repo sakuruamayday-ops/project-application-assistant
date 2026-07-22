@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import shutil
 from datetime import datetime, timezone
@@ -72,6 +73,10 @@ def markdown_report(report: dict[str, object]) -> str:
             "> 升级不会把用户直接修改的SKILL.md自动混入官方核心，避免旧规则覆盖新版质量门禁。",
         ]
     )
+    if report.get("preference_migration_report"):
+        lines.extend(["", f"- 个人习惯迁移报告：`{report['preference_migration_report']}`"])
+    if report.get("preference_migration_error"):
+        lines.extend(["", f"- 个人习惯迁移待处理：{report['preference_migration_error']}"])
     return "\n".join(lines) + "\n"
 
 
@@ -95,6 +100,7 @@ def upgrade(source: Path, destination: Path, config_dir: Path, version: str) -> 
         incoming_hash = digest(skill_dir / "SKILL.md") or ""
         previous = previous_skills.get(skill_dir.name, {})
         old_hash = previous.get("official_hash") if isinstance(previous, dict) else None
+        old_baseline = previous.get("baseline") if isinstance(previous, dict) else None
         installed_hash = digest(target / "SKILL.md")
         status = classify(old_hash, installed_hash, incoming_hash)
         backup = None
@@ -116,6 +122,7 @@ def upgrade(source: Path, destination: Path, config_dir: Path, version: str) -> 
                 "skill": skill_dir.name,
                 "status": status,
                 "old_official_hash": old_hash,
+                "old_baseline": old_baseline,
                 "installed_hash": installed_hash,
                 "incoming_hash": incoming_hash,
                 "backup": str(backup) if backup else None,
@@ -142,6 +149,22 @@ def upgrade(source: Path, destination: Path, config_dir: Path, version: str) -> 
     json_path = report_dir / f"{run_id}.json"
     markdown_path = report_dir / f"{run_id}.md"
     write_json(json_path, report)
+    migration_script = Path(__file__).with_name("migrate_skill_preferences.py")
+    if migration_script.is_file():
+        spec = importlib.util.spec_from_file_location("skill_preference_migration", migration_script)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            try:
+                migration_report = module.migrate_report(
+                    json_path,
+                    config_dir / "preferences.json",
+                    config_dir / "preference-migration-reports",
+                )
+                report["preference_migration_report"] = str(migration_report)
+            except (FileNotFoundError, OSError, ValueError, json.JSONDecodeError) as error:
+                report["preference_migration_error"] = str(error)
+            write_json(json_path, report)
     markdown_path.write_text(markdown_report(report), encoding="utf-8")
     return markdown_path
 

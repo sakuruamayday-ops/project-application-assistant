@@ -420,7 +420,8 @@ def test_personal_preferences_api_sync_history_undo_and_reset(tmp_path):
 
         page = client.get("/preferences")
         assert page.status_code == 200
-        assert "个人偏好与跨设备同步" in page.text
+        assert "我的使用习惯" in page.text
+        assert "请迁移我的旧版Skills个人习惯，并同步到云端" in page.text
         assert "撤销上一版" in page.text
         assert "恢复官方默认" in page.text
 

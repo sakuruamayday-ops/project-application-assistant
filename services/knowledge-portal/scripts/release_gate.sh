@@ -32,6 +32,14 @@ echo "[2/6] 高频项目检索金标准"
 echo "[3/6] REST API"
 JIAOTANG_KB_ENDPOINT="${endpoint}" JIAOTANG_KB_TOKEN="${token}" \
   "${script_dir}/smoke_test_production.sh"
+curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/preferences" | python3 -c '
+import json,sys
+payload=json.load(sys.stdin)
+assert payload.get("schema_version") == 1, "偏好API结构版本异常"
+workflow=payload.get("preferences",{}).get("workflow",{})
+assert workflow.get("knowledge_first") is True, "知识库优先核心规则异常"
+assert workflow.get("four_question_review") is True, "四问复盘核心规则异常"
+'
 
 echo "[4/6] Streamable HTTP MCP"
 curl "${curl_args[@]}" "${auth[@]}" \
@@ -41,14 +49,55 @@ curl "${curl_args[@]}" "${auth[@]}" \
   "${endpoint}/mcp/" | python3 -c 'import json,sys; payload=json.load(sys.stdin); assert payload.get("result",{}).get("structuredContent",{}).get("results"), "MCP检索未命中"'
 
 echo "[5/6] 最新下载包"
-curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/skills/latest/download" | python3 -c '
-import io,sys,zipfile
-payload=sys.stdin.buffer.read()
+JIAOTANG_KB_ENDPOINT="${endpoint}" JIAOTANG_KB_TOKEN="${token}" python3 - <<'PY'
+import io
+import json
+import os
+import urllib.request
+import zipfile
+
+request = urllib.request.Request(
+    os.environ["JIAOTANG_KB_ENDPOINT"].rstrip("/") + "/v1/skills/latest/download",
+    headers={"Authorization": "Bearer " + os.environ["JIAOTANG_KB_TOKEN"]},
+)
+with urllib.request.urlopen(request, timeout=45) as response:
+    payload = response.read()
 assert payload, "下载包为空"
 with zipfile.ZipFile(io.BytesIO(payload)) as archive:
     assert archive.testzip() is None, "ZIP完整性失败"
-    assert "manifest.json" in archive.namelist(), "ZIP缺少manifest.json"
-'
+    names = set(archive.namelist())
+    manifest = json.loads(archive.read("manifest.json"))
+    required = {
+        "skills/first-run-configuration/scripts/manage_preferences.py",
+        "skills/first-run-configuration/scripts/migrate_skill_preferences.py",
+        "skills/first-run-configuration/scripts/upgrade_inheritance.py",
+    }
+    assert required <= names, "下载包缺少偏好继承脚本"
+    includes = manifest.get("includes", {})
+    for flag in (
+        "personal_preference_overlay",
+        "cross_device_preference_sync",
+        "three_way_upgrade_inheritance",
+        "direct_skill_edit_detection",
+        "legacy_skill_preference_migration",
+    ):
+        assert includes.get(flag) is True, "发布包偏好门禁缺失：" + flag
+    merge_scope = {"__name__": "release_gate_merge"}
+    exec(archive.read("skills/first-run-configuration/scripts/manage_preferences.py"), merge_scope)
+    merged, conflicts = merge_scope["merge_three_way"](
+        {"output": {"tone": "professional"}, "region": {"city": "杭州"}},
+        {"output": {"tone": "direct"}, "region": {"city": "杭州"}},
+        {"output": {"tone": "professional"}, "region": {"city": "宁波"}},
+    )
+    assert not conflicts and merged["output"]["tone"] == "direct" and merged["region"]["city"] == "宁波", "三方合并门禁失败"
+    upgrade_scope = {"__name__": "release_gate_upgrade"}
+    exec(archive.read("skills/first-run-configuration/scripts/upgrade_inheritance.py"), upgrade_scope)
+    assert upgrade_scope["classify"]("old", "local", "new") == "用户直改与官方更新冲突", "直改检测门禁失败"
+    migration_scope = {"__name__": "release_gate_migration"}
+    exec(archive.read("skills/first-run-configuration/scripts/migrate_skill_preferences.py"), migration_scope)
+    inferred = migration_scope["infer_global_preferences"]("默认政策地区为浙江省杭州市，输出使用详细版")
+    assert inferred["region"]["city"] == "杭州市" and inferred["output"]["detail_level"] == "detailed", "旧Skill偏好迁移门禁失败"
+PY
 
 echo "[6/6] 最近备份"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
