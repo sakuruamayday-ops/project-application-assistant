@@ -3891,6 +3891,23 @@ def init_database() -> None:
                 connection.execute(
                     f"ALTER TABLE api_usage ADD COLUMN {column_name} {declaration}"
                 )
+        connection.execute(
+            """
+            UPDATE api_usage
+            SET activity_type='mcp_legacy', activity_name='历史MCP未分类', counts_toward_usage=0
+            WHERE endpoint='/mcp' AND activity_type='rest_api' AND activity_name=''
+            """
+        )
+        connection.execute(
+            """
+            UPDATE api_usage
+            SET activity_type='mcp_connection', activity_name='MCP连接检测', counts_toward_usage=0
+            WHERE endpoint='/mcp' AND method IN ('GET','HEAD')
+            """
+        )
+        connection.execute(
+            "UPDATE api_usage SET counts_toward_usage=0 WHERE activity_type IN ('mcp_connection','mcp_tools_list')"
+        )
         assistant_columns = {
             row["name"] for row in connection.execute("PRAGMA table_info(assistant_usage)").fetchall()
         }
@@ -4072,7 +4089,9 @@ MCP_SEARCH_TOOLS = {
 }
 
 
-def classify_mcp_request(body: bytes) -> tuple[str, str, bool]:
+def classify_mcp_request(body: bytes, http_method: str = "POST") -> tuple[str, str, bool]:
+    if http_method.upper() in {"GET", "HEAD", "OPTIONS"}:
+        return "mcp_connection", "MCP连接检测", False
     try:
         payload = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError):
@@ -4090,7 +4109,7 @@ def classify_mcp_request(body: bytes) -> tuple[str, str, bool]:
             classifications.append(("mcp_connection", "MCP连接检测", False))
             continue
         if rpc_method == "tools/list":
-            classifications.append(("mcp_tools_list", "工具列表", True))
+            classifications.append(("mcp_tools_list", "工具列表", False))
             continue
         if rpc_method == "tools/call":
             params = message.get("params")
@@ -4160,7 +4179,7 @@ class MCPBearerMiddleware:
             await self.application(scope, capture_receive, send)
         finally:
             activity_type, activity_name, counts_toward_usage = classify_mcp_request(
-                b"".join(body_parts)
+                b"".join(body_parts), scope.get("method", "POST")
             )
             record_api_usage(
                 user,
@@ -5969,13 +5988,34 @@ def admin_health_detail(
     oss_cache = read_status_file(OSS_INDEX_CACHE_STATUS_PATH)
     snapshot_retention = read_status_file(SNAPSHOT_RETENTION_STATUS_PATH)
     index = knowledge_index_stats()
+    requested_activity = request.query_params.get("activity", "").strip()
+    activity_filters = {
+        "business": ("业务调用", "api_usage.counts_toward_usage = 1"),
+        "mcp_connection": ("MCP连接检测", "api_usage.activity_type = 'mcp_connection'"),
+        "mcp_tools_list": ("工具列表", "api_usage.activity_type = 'mcp_tools_list'"),
+        "mcp_search": ("实际检索", "api_usage.activity_type = 'mcp_search'"),
+        "mcp_document": ("文档读取", "api_usage.activity_type = 'mcp_document'"),
+    }
+    selected_activity = requested_activity if requested_activity in activity_filters else ""
+    activity_filter_label = activity_filters.get(selected_activity, ("全部调用", ""))[0]
+    activity_descriptions = {
+        "business": "计入用户累计调用的REST请求和实际MCP工具调用。连接检测与工具发现不计入。",
+        "mcp_connection": "扣子或其他客户端用于初始化、状态确认和保持连接，不读取知识库正文。",
+        "mcp_tools_list": (
+            "客户端读取当前MCP提供的工具清单，包括知识检索、文档读取、公示名单查询、"
+            "政策检索、项目目录匹配和服务状态检查；不读取具体知识内容。"
+        ),
+        "mcp_search": "客户端已经执行知识库、公示名单、政策或项目目录检索。",
+        "mcp_document": "客户端根据检索结果中的文档编号读取完整正文和来源信息。",
+    }
+    activity_description = activity_descriptions.get(selected_activity, "显示最近的REST与MCP调用记录。")
     with closing(database()) as connection:
         active_users = int(connection.execute("SELECT COUNT(*) FROM users WHERE active = 1").fetchone()[0])
         active_tokens = int(
             connection.execute("SELECT COUNT(*) FROM device_tokens WHERE revoked_at IS NULL").fetchone()[0]
         )
-        recent_calls = format_row_datetimes(connection.execute(
-            """
+        calls_since_24_hours = isoformat(utc_now() - timedelta(hours=24))
+        recent_calls_query = """
             SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
                    api_usage.activity_type, api_usage.activity_name,
                    COALESCE(NULLIF(api_usage.activity_name,''), api_usage.endpoint) AS activity_display,
@@ -5983,10 +6023,19 @@ def admin_health_detail(
             FROM api_usage
             JOIN users ON users.id = api_usage.user_id
             JOIN device_tokens ON device_tokens.id = api_usage.device_token_id
-            ORDER BY api_usage.id DESC LIMIT 30
-            """
-        ).fetchall(), "called_at")
-        calls_since_24_hours = isoformat(utc_now() - timedelta(hours=24))
+        """
+        recent_calls_parameters: tuple[object, ...] = ()
+        if selected_activity:
+            recent_calls_query += (
+                f" WHERE api_usage.called_at >= ? AND {activity_filters[selected_activity][1]}"
+            )
+            recent_calls_parameters = (calls_since_24_hours,)
+        recent_calls_query += " ORDER BY api_usage.id DESC LIMIT ?"
+        recent_calls_parameters += (100 if selected_activity else 30,)
+        recent_calls = format_row_datetimes(
+            connection.execute(recent_calls_query, recent_calls_parameters).fetchall(),
+            "called_at",
+        )
         business_calls_24h = int(
             connection.execute(
                 "SELECT COUNT(*) FROM api_usage WHERE called_at >= ? AND counts_toward_usage = 1",
@@ -6288,11 +6337,11 @@ def admin_health_detail(
         "calls": (
             "调用记录",
             [
-                ("24小时业务调用", business_calls_24h),
-                ("MCP连接检测", mcp_activity_counts.get("mcp_connection", 0)),
-                ("工具列表", mcp_activity_counts.get("mcp_tools_list", 0)),
-                ("实际检索", mcp_activity_counts.get("mcp_search", 0)),
-                ("文档读取", mcp_activity_counts.get("mcp_document", 0)),
+                ("24小时业务调用", business_calls_24h, "/admin/health/calls?activity=business"),
+                ("MCP连接检测", mcp_activity_counts.get("mcp_connection", 0), "/admin/health/calls?activity=mcp_connection"),
+                ("工具列表", mcp_activity_counts.get("mcp_tools_list", 0), "/admin/health/calls?activity=mcp_tools_list"),
+                ("实际检索", mcp_activity_counts.get("mcp_search", 0), "/admin/health/calls?activity=mcp_search"),
+                ("文档读取", mcp_activity_counts.get("mcp_document", 0), "/admin/health/calls?activity=mcp_document"),
             ],
         ),
         "updates": ("失败更新", [("待处理失败", len(failed_updates)), ("回滚机制", "成功更新均保留快照")]),
@@ -6321,6 +6370,9 @@ def admin_health_detail(
             "title": title,
             "details": details,
             "recent_calls": recent_calls if section == "calls" else [],
+            "activity_filter_label": activity_filter_label,
+            "activity_description": activity_description,
+            "selected_activity": selected_activity,
             "failed_updates": failed_updates if section == "updates" else [],
             "access_users": access_users if section == "access" else [],
             "access_tokens": access_tokens if section == "access" else [],

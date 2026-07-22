@@ -305,7 +305,7 @@ textarea:focus-visible, select:focus-visible {
 .metrics > a > span:not(.metric-index) { color: var(--atelier-muted); font-size: 12px; }
 .metrics em { margin-top: 8px; color: var(--atelier-gold); font-size: 10px; font-style: normal; }
 
-.panel, .download-card, .cockpit-radar, .assistant-console, .health-grid > a, .detail-grid article {
+.panel, .download-card, .cockpit-radar, .assistant-console, .health-grid > a, .detail-grid article, .detail-card-link {
   color: var(--atelier-ink);
   background: var(--atelier-panel);
   border: 1px solid var(--atelier-line);
@@ -400,9 +400,14 @@ tbody tr:hover { background: rgba(216,183,111,.025); }
 .admin-page-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
 .admin-page-head h1 { margin: 5px 0; font-size: clamp(30px, 4vw, 54px); letter-spacing: -.04em; }
 .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 20px; }
-.detail-grid article { min-height: 130px; padding: 20px; display: flex; flex-direction: column; }
+.detail-grid article, .detail-card-link { min-height: 130px; padding: 20px; display: flex; flex-direction: column; }
+.detail-card-link { color: inherit; text-decoration: none; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+.detail-card-link:hover, .detail-card-link.is-active { border-color: var(--atelier-gold); background: #18191b; transform: translateY(-2px); }
+.detail-card-link em { margin-top: 10px; color: var(--atelier-gold); font-size: 10px; font-style: normal; }
 .detail-grid span { color: var(--atelier-muted); font-size: 11px; }
 .detail-grid strong { margin-top: auto; color: var(--atelier-ink); font-size: 18px; overflow-wrap: anywhere; }
+.activity-explanation { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+.activity-explanation p { margin: 8px 0 0; color: var(--atelier-muted); }
 
 .page-continuation { min-height: 28vh; display: grid; place-items: center; border-top: 1px solid rgba(216,187,134,.08); }
 .single-page .page-continuation { display: none; }
