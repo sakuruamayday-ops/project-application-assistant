@@ -87,6 +87,10 @@ def test_first_run_enables_evolution_and_prompts_host_skills(tmp_path):
     report_text = report_file.read_text(encoding="utf-8")
     assert "受控自进化已启用" in report_text
     assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in report_text
+    preferences = json.loads((tmp_path / "preferences.json").read_text(encoding="utf-8"))
+    assert preferences["schema_version"] == 1
+    assert preferences["_meta"]["dirty"] is False
+    assert report["personal_preferences"]["status"] == "local"
 
 
 def test_startup_prompt_only_appears_once_per_protocol_version(tmp_path):

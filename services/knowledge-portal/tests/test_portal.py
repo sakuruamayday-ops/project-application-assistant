@@ -334,6 +334,97 @@ def test_public_user_guide(tmp_path):
         assert 'href="/guide"' in login.text
 
 
+def test_personal_preferences_api_sync_history_undo_and_reset(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        token_page = client.post(
+            "/device-tokens",
+            data={
+                "real_name": "王小明",
+                "company_name": "共创集团",
+                "csrf_token": user["csrf_token"],
+            },
+        )
+        token = re.search(r"jtk_[A-Za-z0-9_-]+", token_page.text).group(0)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        initial = client.get("/v1/preferences", headers=headers)
+        assert initial.status_code == 200
+        assert initial.json()["revision"] == 0
+        assert initial.json()["preferences"]["output"]["detail_level"] == "detailed"
+
+        first = client.put(
+            "/v1/preferences",
+            headers=headers,
+            json={
+                "base_revision": 0,
+                "change_summary": "设置默认城市",
+                "preferences": {"region": {"province": "浙江省", "city": "杭州市"}},
+            },
+        )
+        assert first.status_code == 200
+        assert first.json()["revision"] == 1
+        assert first.json()["preferences"]["region"]["city"] == "杭州市"
+
+        stale = client.put(
+            "/v1/preferences",
+            headers=headers,
+            json={"base_revision": 0, "preferences": {"output": {"tone": "formal"}}},
+        )
+        assert stale.status_code == 409
+
+        second = client.put(
+            "/v1/preferences",
+            headers=headers,
+            json={
+                "base_revision": 1,
+                "change_summary": "调整语气",
+                "preferences": {"output": {"tone": "formal"}},
+            },
+        )
+        assert second.status_code == 200
+        assert second.json()["revision"] == 2
+        assert second.json()["preferences"]["output"]["tone"] == "formal"
+
+        undo = client.post("/v1/preferences/undo", headers=headers)
+        assert undo.status_code == 200
+        assert undo.json()["revision"] == 3
+        assert undo.json()["preferences"]["region"]["city"] == "杭州市"
+
+        history = client.get("/v1/preferences/history", headers=headers)
+        assert history.status_code == 200
+        assert [item["revision"] for item in history.json()][:3] == [3, 2, 1]
+
+        reset = client.post("/v1/preferences/reset", headers=headers)
+        assert reset.status_code == 200
+        assert reset.json()["revision"] == 4
+        assert reset.json()["preferences"]["region"]["city"] == ""
+
+        protected = client.put(
+            "/v1/preferences",
+            headers=headers,
+            json={"base_revision": 4, "preferences": {"skill_preferences": {"token": "no"}}},
+        )
+        assert protected.status_code == 422
+
+        page = client.get("/preferences")
+        assert page.status_code == 200
+        assert "个人偏好与跨设备同步" in page.text
+        assert "撤销上一版" in page.text
+        assert "恢复官方默认" in page.text
+
+
 def test_directory_storage_size_ignores_inaccessible_path(tmp_path, monkeypatch):
     module = load_app(tmp_path)
 

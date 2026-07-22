@@ -21,6 +21,7 @@ import urllib.request
 import zipfile
 import xml.etree.ElementTree as ET
 from base64 import urlsafe_b64encode
+from copy import deepcopy
 from contextlib import closing
 from contextlib import asynccontextmanager
 from collections import Counter
@@ -82,6 +83,36 @@ OSS_SYNC_STATUS_PATH = DATA_DIR / "oss-sync-status.json"
 OSS_INDEX_CACHE_STATUS_PATH = DATA_DIR / "oss-index-cache-status.json"
 OSS_SYNC_REQUEST_PATH = DATA_DIR / "oss-sync-request.json"
 SNAPSHOT_RETENTION_STATUS_PATH = DATA_DIR / "snapshot-retention-status.json"
+PREFERENCE_SCHEMA_VERSION = 1
+DEFAULT_USER_PREFERENCES: dict[str, object] = {
+    "region": {"province": "", "city": ""},
+    "output": {
+        "format": "markdown",
+        "detail_level": "detailed",
+        "tone": "professional",
+        "conclusion_first": True,
+        "include_sources": True,
+    },
+    "workflow": {
+        "four_question_review": True,
+        "auto_archive": False,
+        "knowledge_first": True,
+    },
+    "terminology": {},
+    "skill_preferences": {},
+}
+PROTECTED_PREFERENCE_KEYS = {
+    "token",
+    "secret",
+    "password",
+    "api_key",
+    "credential",
+    "source_verification",
+    "policy_validity",
+    "financial_truthfulness",
+    "approval_guarantee",
+    "safety",
+}
 DEPLOYED_USER_GUIDE_PATH = BASE_DIR / "docs" / "user-guide" / "企业全生命周期助手用户使用手册.md"
 SOURCE_USER_GUIDE_PATH = BASE_DIR.parents[1] / "docs" / "user-guide" / "企业全生命周期助手用户使用手册.md"
 USER_GUIDE_PATH = Path(
@@ -350,6 +381,26 @@ class UsageResponse(BaseModel):
     recent_calls: list[UsageCall]
 
 
+class PreferenceUpdateRequest(BaseModel):
+    preferences: dict[str, object]
+    base_revision: int | None = Field(default=None, ge=0)
+    change_summary: str = Field(default="跨设备同步", max_length=200)
+
+
+class PreferenceResponse(BaseModel):
+    schema_version: int
+    revision: int
+    preferences: dict[str, object]
+    updated_at: str | None = None
+
+
+class PreferenceRevisionResponse(BaseModel):
+    revision: int
+    action: str
+    change_summary: str
+    created_at: str
+
+
 class SkillLatestResponse(BaseModel):
     available: bool
     version: str | None = None
@@ -432,6 +483,73 @@ def normalize_account_name(value: str) -> str:
     if not ACCOUNT_NAME_PATTERN.fullmatch(normalized):
         raise ValueError("登录账号须使用3至32位英文字母，可包含数字、点、下划线或连字符。")
     return normalized
+
+
+def validate_preference_value(value: object, *, path: tuple[str, ...] = ()) -> object:
+    if len(path) > 6:
+        raise ValueError("个人偏好嵌套层级不能超过6层")
+    if isinstance(value, dict):
+        if len(value) > 100:
+            raise ValueError("单个偏好对象最多包含100项")
+        normalized: dict[str, object] = {}
+        for raw_key, item in value.items():
+            key = str(raw_key).strip()
+            if not key or len(key) > 64 or not re.fullmatch(r"[A-Za-z0-9_.\-\u4e00-\u9fff]+", key):
+                raise ValueError(f"偏好字段名称无效：{key or '空字段'}")
+            if key.lower() in PROTECTED_PREFERENCE_KEYS:
+                raise ValueError(f"个人偏好不得覆盖受保护字段：{key}")
+            normalized[key] = validate_preference_value(item, path=(*path, key))
+        return normalized
+    if isinstance(value, list):
+        if len(value) > 100:
+            raise ValueError("单个偏好列表最多包含100项")
+        return [validate_preference_value(item, path=(*path, str(index))) for index, item in enumerate(value)]
+    if isinstance(value, str):
+        normalized = value.strip()
+        if len(normalized) > 2000:
+            raise ValueError("单个偏好文本不能超过2000字")
+        return normalized
+    if isinstance(value, (bool, int, float)) or value is None:
+        return value
+    raise ValueError(f"不支持的偏好值类型：{'.'.join(path) or '根对象'}")
+
+
+def normalize_preferences(preferences: dict[str, object]) -> dict[str, object]:
+    allowed_sections = {"region", "output", "workflow", "terminology", "skill_preferences"}
+    unknown = sorted(set(preferences) - allowed_sections)
+    if unknown:
+        raise ValueError("不支持的个人偏好分区：" + "、".join(unknown))
+    normalized = validate_preference_value(preferences)
+    assert isinstance(normalized, dict)
+    merged = deepcopy(DEFAULT_USER_PREFERENCES)
+    for section, value in normalized.items():
+        if isinstance(value, dict) and isinstance(merged.get(section), dict):
+            merged[section] = {**merged[section], **value}
+        else:
+            merged[section] = value
+    output = merged["output"]
+    workflow = merged["workflow"]
+    if not isinstance(output, dict) or not isinstance(workflow, dict):
+        raise ValueError("output和workflow必须是对象")
+    if output.get("format") not in {"markdown", "word", "pdf", "html"}:
+        raise ValueError("输出格式仅支持Markdown、Word、PDF或HTML")
+    if output.get("detail_level") not in {"concise", "standard", "detailed"}:
+        raise ValueError("详细程度仅支持精简、标准或详细")
+    if output.get("tone") not in {"professional", "consultative", "formal", "direct"}:
+        raise ValueError("表达风格不在允许范围内")
+    for key in ("conclusion_first", "include_sources"):
+        if not isinstance(output.get(key), bool):
+            raise ValueError(f"output.{key}必须是布尔值")
+    for key in ("four_question_review", "auto_archive", "knowledge_first"):
+        if not isinstance(workflow.get(key), bool):
+            raise ValueError(f"workflow.{key}必须是布尔值")
+    for key in ("four_question_review", "knowledge_first"):
+        if workflow.get(key) is not True:
+            raise ValueError(f"workflow.{key}属于官方核心规则，不允许关闭")
+    encoded = json.dumps(merged, ensure_ascii=False, separators=(",", ":"))
+    if len(encoded.encode("utf-8")) > 32768:
+        raise ValueError("个人偏好总大小不能超过32KB")
+    return merged
 
 
 def normalize_real_name(value: str) -> str:
@@ -3574,6 +3692,29 @@ def init_database() -> None:
             CREATE INDEX IF NOT EXISTS api_usage_user_time_idx
             ON api_usage(user_id, called_at DESC);
 
+            CREATE TABLE IF NOT EXISTS user_preferences (
+                user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                schema_version INTEGER NOT NULL DEFAULT 1,
+                revision INTEGER NOT NULL DEFAULT 0,
+                preferences_json TEXT NOT NULL DEFAULT '{}',
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS user_preference_revisions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                schema_version INTEGER NOT NULL,
+                revision INTEGER NOT NULL,
+                action TEXT NOT NULL,
+                change_summary TEXT NOT NULL DEFAULT '',
+                preferences_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                UNIQUE(user_id, revision)
+            );
+
+            CREATE INDEX IF NOT EXISTS user_preference_revisions_user_idx
+            ON user_preference_revisions(user_id, revision DESC);
+
             CREATE TABLE IF NOT EXISTS assistant_usage (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -4079,6 +4220,119 @@ def record_api_usage(
             ),
         )
         connection.commit()
+
+
+def preference_payload(user_id: int, connection: sqlite3.Connection | None = None) -> dict[str, object]:
+    owned_connection = connection is None
+    active_connection = connection or database()
+    try:
+        row = active_connection.execute(
+            "SELECT schema_version,revision,preferences_json,updated_at FROM user_preferences WHERE user_id=?",
+            (user_id,),
+        ).fetchone()
+        if row is None:
+            return {
+                "schema_version": PREFERENCE_SCHEMA_VERSION,
+                "revision": 0,
+                "preferences": deepcopy(DEFAULT_USER_PREFERENCES),
+                "updated_at": None,
+            }
+        try:
+            stored = json.loads(str(row["preferences_json"]))
+        except json.JSONDecodeError:
+            stored = {}
+        return {
+            "schema_version": int(row["schema_version"]),
+            "revision": int(row["revision"]),
+            "preferences": normalize_preferences(stored if isinstance(stored, dict) else {}),
+            "updated_at": row["updated_at"],
+        }
+    finally:
+        if owned_connection:
+            active_connection.close()
+
+
+def save_user_preferences(
+    user_id: int,
+    preferences: dict[str, object],
+    *,
+    action: str,
+    change_summary: str,
+    base_revision: int | None = None,
+) -> dict[str, object]:
+    normalized = normalize_preferences(preferences)
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        current = preference_payload(user_id, connection)
+        current_revision = int(current["revision"])
+        if base_revision is not None and base_revision != current_revision:
+            raise HTTPException(
+                status_code=409,
+                detail=f"个人偏好已在其他设备更新；当前版本为{current_revision}，请先同步后再保存",
+            )
+        next_revision = current_revision + 1
+        serialized = json.dumps(normalized, ensure_ascii=False, separators=(",", ":"))
+        connection.execute(
+            """
+            INSERT INTO user_preferences(user_id,schema_version,revision,preferences_json,updated_at)
+            VALUES (?,?,?,?,?)
+            ON CONFLICT(user_id) DO UPDATE SET
+              schema_version=excluded.schema_version,
+              revision=excluded.revision,
+              preferences_json=excluded.preferences_json,
+              updated_at=excluded.updated_at
+            """,
+            (user_id, PREFERENCE_SCHEMA_VERSION, next_revision, serialized, now),
+        )
+        connection.execute(
+            """
+            INSERT INTO user_preference_revisions(
+                user_id,schema_version,revision,action,change_summary,preferences_json,created_at
+            ) VALUES (?,?,?,?,?,?,?)
+            """,
+            (
+                user_id,
+                PREFERENCE_SCHEMA_VERSION,
+                next_revision,
+                action,
+                change_summary.strip()[:200],
+                serialized,
+                now,
+            ),
+        )
+        connection.commit()
+    return {
+        "schema_version": PREFERENCE_SCHEMA_VERSION,
+        "revision": next_revision,
+        "preferences": normalized,
+        "updated_at": now,
+    }
+
+
+def undo_user_preferences(user_id: int) -> dict[str, object]:
+    with closing(database()) as connection:
+        current = preference_payload(user_id, connection)
+        current_revision = int(current["revision"])
+        target = connection.execute(
+            """
+            SELECT revision,preferences_json FROM user_preference_revisions
+            WHERE user_id=? AND revision<? ORDER BY revision DESC LIMIT 1
+            """,
+            (user_id, current_revision),
+        ).fetchone()
+    if target is None:
+        target_preferences = deepcopy(DEFAULT_USER_PREFERENCES)
+        target_revision = 0
+    else:
+        target_preferences = json.loads(str(target["preferences_json"]))
+        target_revision = int(target["revision"])
+    return save_user_preferences(
+        user_id,
+        target_preferences,
+        action="undo",
+        change_summary=f"撤销到修订{target_revision}",
+        base_revision=current_revision,
+    )
 
 
 MCP_SEARCH_TOOLS = {
@@ -5067,6 +5321,172 @@ def portal(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_us
     return templates.TemplateResponse(
         request, "portal.html", portal_payload(request, user, active_page="overview")
     )
+
+
+def preference_page_context(
+    request: Request,
+    user: sqlite3.Row,
+    *,
+    message: str | None = None,
+    error: str | None = None,
+) -> dict[str, object]:
+    current = preference_payload(int(user["id"]))
+    preferences = current["preferences"]
+    assert isinstance(preferences, dict)
+    terminology = preferences.get("terminology", {})
+    skill_preferences = preferences.get("skill_preferences", {})
+    with closing(database()) as connection:
+        history = format_row_datetimes(
+            connection.execute(
+                """
+                SELECT revision,action,change_summary,created_at
+                FROM user_preference_revisions
+                WHERE user_id=? ORDER BY revision DESC LIMIT 20
+                """,
+                (int(user["id"]),),
+            ).fetchall(),
+            "created_at",
+        )
+    return {
+        "request": request,
+        "user": user,
+        "preference_state": current,
+        "preferences": preferences,
+        "terminology_text": "\n".join(
+            f"{key}={value}" for key, value in terminology.items()
+        ) if isinstance(terminology, dict) else "",
+        "skill_preferences_text": json.dumps(
+            skill_preferences if isinstance(skill_preferences, dict) else {},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        "history": history,
+        "message": message,
+        "error": error,
+    }
+
+
+@app.get("/preferences", response_class=HTMLResponse)
+def preferences_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    saved: int = 0,
+    undone: int = 0,
+    reset: int = 0,
+):
+    message = None
+    if saved:
+        message = "个人偏好已保存并可供其他设备同步。"
+    elif undone:
+        message = "已撤销上一版个人偏好。"
+    elif reset:
+        message = "已恢复官方默认偏好。"
+    return templates.TemplateResponse(
+        request,
+        "preferences.html",
+        preference_page_context(request, user, message=message),
+    )
+
+
+@app.post("/preferences", response_class=HTMLResponse)
+def preferences_submit(
+    request: Request,
+    base_revision: Annotated[int, Form(ge=0)],
+    province: Annotated[str, Form(max_length=40)],
+    city: Annotated[str, Form(max_length=40)],
+    output_format: Annotated[str, Form()],
+    detail_level: Annotated[str, Form()],
+    tone: Annotated[str, Form()],
+    terminology_text: Annotated[str, Form(max_length=10000)],
+    skill_preferences_text: Annotated[str, Form(max_length=20000)],
+    change_summary: Annotated[str, Form(max_length=200)],
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    conclusion_first: Annotated[str | None, Form()] = None,
+    include_sources: Annotated[str | None, Form()] = None,
+    four_question_review: Annotated[str | None, Form()] = None,
+    auto_archive: Annotated[str | None, Form()] = None,
+    knowledge_first: Annotated[str | None, Form()] = None,
+):
+    validate_csrf(user, csrf_token)
+    terminology: dict[str, str] = {}
+    for line_number, raw_line in enumerate(terminology_text.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        if "=" not in line:
+            return templates.TemplateResponse(
+                request,
+                "preferences.html",
+                preference_page_context(request, user, error=f"术语第{line_number}行缺少等号"),
+                status_code=422,
+            )
+        key, value = line.split("=", 1)
+        terminology[key.strip()] = value.strip()
+    try:
+        skill_preferences = json.loads(skill_preferences_text or "{}")
+        if not isinstance(skill_preferences, dict):
+            raise ValueError("Skill偏好必须是JSON对象")
+        save_user_preferences(
+            int(user["id"]),
+            {
+                "region": {"province": province, "city": city},
+                "output": {
+                    "format": output_format,
+                    "detail_level": detail_level,
+                    "tone": tone,
+                    "conclusion_first": conclusion_first == "on",
+                    "include_sources": include_sources == "on",
+                },
+                "workflow": {
+                    "four_question_review": four_question_review == "on",
+                    "auto_archive": auto_archive == "on",
+                    "knowledge_first": knowledge_first == "on",
+                },
+                "terminology": terminology,
+                "skill_preferences": skill_preferences,
+            },
+            action="update",
+            change_summary=change_summary or "网站更新个人偏好",
+            base_revision=base_revision,
+        )
+    except (ValueError, json.JSONDecodeError, HTTPException) as error:
+        detail = error.detail if isinstance(error, HTTPException) else str(error)
+        status_code = error.status_code if isinstance(error, HTTPException) else 422
+        return templates.TemplateResponse(
+            request,
+            "preferences.html",
+            preference_page_context(request, user, error=detail),
+            status_code=status_code,
+        )
+    return RedirectResponse("/preferences?saved=1", status_code=303)
+
+
+@app.post("/preferences/undo")
+def preferences_undo(
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    undo_user_preferences(int(user["id"]))
+    return RedirectResponse("/preferences?undone=1", status_code=303)
+
+
+@app.post("/preferences/reset")
+def preferences_reset(
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    current = preference_payload(int(user["id"]))
+    save_user_preferences(
+        int(user["id"]),
+        deepcopy(DEFAULT_USER_PREFERENCES),
+        action="reset",
+        change_summary="恢复官方默认偏好",
+        base_revision=int(current["revision"]),
+    )
+    return RedirectResponse("/preferences?reset=1", status_code=303)
 
 
 def portal_page_response(request: Request, user: sqlite3.Row, active_page: str) -> HTMLResponse:
@@ -7485,6 +7905,62 @@ def web_download_latest_skills(user: Annotated[sqlite3.Row, Depends(require_web_
 @app.get("/v1/me")
 def api_me(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
     return {"username": user["username"], "access": "unified"}
+
+
+@app.get("/v1/preferences", response_model=PreferenceResponse)
+def get_preferences_api(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
+    return PreferenceResponse.model_validate(preference_payload(int(user["id"])))
+
+
+@app.put("/v1/preferences", response_model=PreferenceResponse)
+def update_preferences_api(
+    payload: PreferenceUpdateRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    try:
+        result = save_user_preferences(
+            int(user["id"]),
+            payload.preferences,
+            action="update",
+            change_summary=payload.change_summary,
+            base_revision=payload.base_revision,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return PreferenceResponse.model_validate(result)
+
+
+@app.post("/v1/preferences/undo", response_model=PreferenceResponse)
+def undo_preferences_api(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
+    return PreferenceResponse.model_validate(undo_user_preferences(int(user["id"])))
+
+
+@app.post("/v1/preferences/reset", response_model=PreferenceResponse)
+def reset_preferences_api(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
+    current = preference_payload(int(user["id"]))
+    return PreferenceResponse.model_validate(
+        save_user_preferences(
+            int(user["id"]),
+            deepcopy(DEFAULT_USER_PREFERENCES),
+            action="reset",
+            change_summary="恢复官方默认偏好",
+            base_revision=int(current["revision"]),
+        )
+    )
+
+
+@app.get("/v1/preferences/history", response_model=list[PreferenceRevisionResponse])
+def preference_history_api(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
+    with closing(database()) as connection:
+        rows = connection.execute(
+            """
+            SELECT revision,action,change_summary,created_at
+            FROM user_preference_revisions
+            WHERE user_id=? ORDER BY revision DESC LIMIT 50
+            """,
+            (int(user["id"]),),
+        ).fetchall()
+    return [PreferenceRevisionResponse.model_validate(dict(row)) for row in rows]
 
 
 @app.post("/v1/search", response_model=SearchResponse)

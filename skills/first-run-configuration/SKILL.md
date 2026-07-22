@@ -13,12 +13,13 @@ python3 scripts/configure.py
 
 向导统一处理团队云端知识API、企查查、专利数据、浏览器MCP、本地OCR和Agent文档能力。凭据写入Agent的安全配置位置，能力报告只记录连接状态和配置项名称。
 
-首次配置完成后立即执行两项初始化：
+首次配置完成后立即执行三项初始化：
 
 1. 将 `experience-recorder`、`skill-curator`、`skill-evolution` 和 `evolution-governance` 标记为已启用。日常任务自动记录脱敏经验并执行四问复盘；只生成改进候选，不自动改写或发布正式Skill。
 2. 在对话框中明确提醒用户输入：`帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills`。这些通用能力由当前Agent安装，本技能包不重复打包。
+3. 创建统一个人覆盖层 `~/.config/project-assistant/preferences.json`。已有云端凭据时先运行 `scripts/manage_preferences.py sync`，没有凭据时创建本地空覆盖层。正式Skill保持只读，后续用户调校只写结构化偏好。
 
-具体检测顺序、一次性提示和协议升级规则见 `references/first-startup-protocol.md`，首次安装时必须读取并执行。
+具体检测顺序、一次性提示和协议升级规则见 `references/first-startup-protocol.md`；三层继承、直接修改识别和升级报告见 `references/preference-inheritance.md`，首次安装时必须读取并执行。
 
 ## 执行规则
 
@@ -31,6 +32,8 @@ python3 scripts/configure.py
 7. 供应商不可用时执行各Skill的降级路径，不补造企业、政策或专利数据。
 8. 首次配置报告不存在时视为首次安装，自动启用受控自进化；不得等待用户再次说“开启自进化”。
 9. 首次配置结束时只提示一次通用能力安装指令；用户已经确认这些能力可用时不重复提醒。
+10. 用户表达“以后都这样”“默认按这个格式”“记住我的习惯”时，先确认这是个人习惯还是通用质量规则。个人习惯写入偏好文件并同步，绝不直接修改正式 `SKILL.md`。
+11. 升级前运行 `scripts/upgrade_inheritance.py`。它以旧官方哈希、当前文件哈希和新官方哈希识别直接修改，保存旧目录、安装新版核心并生成升级继承报告。
 
 ## 常用命令
 
@@ -50,6 +53,27 @@ python3 scripts/configure.py --skip-network
 
 ```bash
 python3 scripts/configure.py --config-dir <用户配置目录>
+```
+
+同步、查看和修改个人偏好：
+
+```bash
+python3 scripts/manage_preferences.py sync
+python3 scripts/manage_preferences.py show
+python3 scripts/manage_preferences.py set output.detail_level concise --sync
+```
+
+撤销上一版或恢复官方默认：
+
+```bash
+python3 scripts/manage_preferences.py undo
+python3 scripts/manage_preferences.py reset
+```
+
+升级并生成继承报告：
+
+```bash
+python3 scripts/upgrade_inheritance.py --source <新版解压目录> --target <Agent的Skills目录> --version <版本号>
 ```
 
 完整供应商配置和MCP示例见随包分发的 `docs/user-guide/api-mcp-configuration.md`。
