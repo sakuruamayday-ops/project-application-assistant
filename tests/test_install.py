@@ -6,7 +6,7 @@ import subprocess
 import zipfile
 from pathlib import Path
 
-from project_assistant.installer import install_skills
+from project_assistant.installer import classify_skill_change, install_skills
 from scripts.build_standard_package import (
     HOST_SKILL_INSTALL_PROMPT,
     included,
@@ -50,6 +50,10 @@ class InstallTests(unittest.TestCase):
             self.assertEqual(manifest["includes"]["host_skill_install_prompt"], HOST_SKILL_INSTALL_PROMPT)
             self.assertTrue(manifest["includes"]["manufacturing_tax_risk_analysis"])
             self.assertTrue(manifest["includes"]["legal_regulations_dynamic_routing"])
+            self.assertTrue(manifest["includes"]["personal_preference_overlay"])
+            self.assertTrue(manifest["includes"]["cross_device_preference_sync"])
+            self.assertTrue(manifest["includes"]["three_way_upgrade_inheritance"])
+            self.assertEqual(len(manifest["official_skill_hashes"]), 53)
             self.assertIn("skills/manufacturing-tax-risk-analysis/SKILL.md", names)
             self.assertIn("skills/jiaotang-legal-regulations/SKILL.md", names)
             self.assertNotIn("skills/manufacturing-tax-risk-analysis/agents/openai.yaml", names)
@@ -88,8 +92,37 @@ class InstallTests(unittest.TestCase):
             install_skills(source, destination, "copy", False)
             (skill / "SKILL.md").write_text("second", encoding="utf-8")
             self.assertEqual(install_skills(source, destination, "copy", False), [])
-            install_skills(source, destination, "copy", True)
+            config_dir = root / "config"
+            install_skills(source, destination, "copy", True, config_dir, "1.1")
             self.assertEqual((destination / "sample-skill" / "SKILL.md").read_text(encoding="utf-8"), "second")
+            self.assertTrue(any((config_dir / "install-backups").glob("*/sample-skill/SKILL.md")))
+            self.assertTrue(any((config_dir / "upgrade-reports").glob("*.json")))
+
+    def test_direct_skill_edit_is_detected_and_backed_up(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            skill = source / "sample-skill"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("official-v1", encoding="utf-8")
+            destination = root / "destination"
+            config_dir = root / "config"
+            install_skills(source, destination, "copy", True, config_dir, "1.0")
+            (destination / "sample-skill/SKILL.md").write_text("personal-direct-edit", encoding="utf-8")
+            (skill / "SKILL.md").write_text("official-v2", encoding="utf-8")
+            install_skills(source, destination, "copy", True, config_dir, "2.0")
+            report_path = sorted((config_dir / "upgrade-reports").glob("*.json"))[-1]
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            item = report["items"][0]
+            self.assertEqual(item["status"], "both-changed-conflict")
+            self.assertEqual((destination / "sample-skill/SKILL.md").read_text(encoding="utf-8"), "official-v2")
+            backup = Path(item["backup"])
+            self.assertEqual((backup / "SKILL.md").read_text(encoding="utf-8"), "personal-direct-edit")
+
+    def test_skill_change_classification(self):
+        self.assertEqual(classify_skill_change("a", "a", "b"), "upstream-only")
+        self.assertEqual(classify_skill_change("a", "c", "a"), "local-only")
+        self.assertEqual(classify_skill_change("a", "c", "b"), "both-changed-conflict")
 
     def test_release_contains_only_standard_skills(self):
         repository = Path(__file__).resolve().parents[1]

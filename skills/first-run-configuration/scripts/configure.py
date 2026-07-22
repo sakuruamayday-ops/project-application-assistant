@@ -22,6 +22,7 @@ from typing import Callable
 DEFAULT_ENDPOINT = ""
 DEFAULT_CONFIG_DIR = Path.home() / ".config" / "project-assistant"
 STARTUP_PROTOCOL_VERSION = 1
+PREFERENCE_PROTOCOL_VERSION = 1
 HOST_SKILL_INSTALL_PROMPT = "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
 SECRET_NAMES = {
     "JIAOTANG_KB_TOKEN",
@@ -37,6 +38,44 @@ BOOLEAN_NAMES = {
     "PROJECT_ASSISTANT_OCR_READY",
 }
 REGION_PROFILE_PATH = Path.home() / ".project-application-assistant" / "profile.json"
+
+
+def initialize_preferences(
+    config_dir: Path,
+    values: dict[str, str],
+    *,
+    network: bool,
+) -> tuple[str, str]:
+    preference_file = config_dir / "preferences.json"
+    if preference_file.is_file():
+        return "ready", f"保留现有个人覆盖层：{preference_file}"
+    script = Path(__file__).with_name("manage_preferences.py")
+    spec = importlib.util.spec_from_file_location("project_assistant_preferences", script)
+    if spec is None or spec.loader is None:
+        return "warning", "未能加载个人偏好管理器"
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    endpoint = values.get("JIAOTANG_KB_ENDPOINT", "").strip()
+    token = values.get("JIAOTANG_KB_TOKEN", "").strip()
+    if network and endpoint and token:
+        try:
+            remote = module.request_json("GET", endpoint, token, "/v1/preferences")
+            module.write_local(preference_file, module.local_from_remote(remote))
+            return "synced", f"已从云端同步个人偏好R{remote.get('revision', 0)}"
+        except (RuntimeError, OSError, ValueError, json.JSONDecodeError) as error:
+            detail = f"云端偏好暂未同步：{type(error).__name__}"
+    else:
+        detail = "未配置云端凭据，已创建本地覆盖层"
+    module.write_local(
+        preference_file,
+        {
+            "schema_version": 1,
+            "revision": 0,
+            "preferences": {},
+            "_meta": {"dirty": False, "base_revision": 0, "base_preferences": {}},
+        },
+    )
+    return "local", detail
 
 
 def truthy(value: str | None) -> bool:
@@ -167,6 +206,7 @@ def capability_report(
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "onboarding": {
             "startup_protocol_version": STARTUP_PROTOCOL_VERSION,
+            "preference_protocol_version": PREFERENCE_PROTOCOL_VERSION,
             "startup_protocol_executed": True,
             "startup_prompt_required": startup_required,
             "controlled_evolution_enabled": True,
@@ -369,6 +409,14 @@ def run(
     report = capability_report(values, network=network, startup_required=needs_startup)
     write_region_profile(values.get("PROJECT_ASSISTANT_DEFAULT_REGION", ""))
     config_dir.mkdir(parents=True, exist_ok=True)
+    preference_status, preference_detail = initialize_preferences(
+        config_dir, values, network=network
+    )
+    report["personal_preferences"] = {
+        "status": preference_status,
+        "detail": preference_detail,
+        "file": str(config_dir / "preferences.json"),
+    }
     profile_file.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     report_file.write_text(render_markdown(report, credentials_file), encoding="utf-8")
     return report, profile_file, report_file
@@ -396,6 +444,9 @@ def main() -> int:
     print(f"检测报告：{report_file}")
     print("凭据内容未写入报告。")
     print("受控自进化和四问复盘已启用。")
+    preferences = report.get("personal_preferences", {})
+    if isinstance(preferences, dict):
+        print(f"个人偏好：{preferences.get('detail', '已初始化')}")
     onboarding = report.get("onboarding", {})
     if isinstance(onboarding, dict) and onboarding.get("startup_prompt_required"):
         print(f"请在当前Agent对话框输入：{HOST_SKILL_INSTALL_PROMPT}")

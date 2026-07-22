@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import hashlib
 import json
 import re
 import zipfile
@@ -15,7 +16,10 @@ REQUIRED = [
     "skills/jiaotang-legal-regulations/scripts/search_legal_base.py",
     "skills/first-run-configuration/SKILL.md",
     "skills/first-run-configuration/scripts/configure.py",
+    "skills/first-run-configuration/scripts/manage_preferences.py",
+    "skills/first-run-configuration/scripts/upgrade_inheritance.py",
     "skills/first-run-configuration/references/first-startup-protocol.md",
+    "skills/first-run-configuration/references/preference-inheritance.md",
     "skills/graphify/SKILL.md",
     "skills/skill-curator/SKILL.md",
     "skills/skill-curator/scripts/build_impact_graph.py",
@@ -70,6 +74,8 @@ RELEASE_GATE_SNIPPETS = {
         "自动启用受控自进化",
         HOST_SKILL_INSTALL_PROMPT,
         "first-startup-protocol.md",
+        "preferences.json",
+        "upgrade_inheritance.py",
     ),
     "skills/project-application-assistant/SKILL.md": (
         "必须调用 `experience-recorder`",
@@ -140,6 +146,9 @@ def validate_release_archive(output: Path) -> None:
             "automatic_evolution_activation": True,
             "four_question_review": True,
             "host_skill_install_prompt": HOST_SKILL_INSTALL_PROMPT,
+            "personal_preference_overlay": True,
+            "cross_device_preference_sync": True,
+            "three_way_upgrade_inheritance": True,
         }
         for skill_name in EVOLUTION_SKILLS:
             if f"skills/{skill_name}/SKILL.md" not in names:
@@ -153,6 +162,16 @@ def validate_release_archive(output: Path) -> None:
         for name, expected in required_flags.items():
             if includes.get(name) != expected:
                 raise SystemExit(f"发布门禁失败：manifest {name} 不符合要求")
+        official_hashes = manifest.get("official_skill_hashes", {})
+        if len(official_hashes) != manifest.get("skill_count"):
+            raise SystemExit("发布门禁失败：官方Skill哈希数量不完整")
+        for skill_name, expected_hash in official_hashes.items():
+            archive_path = f"skills/{skill_name}/SKILL.md"
+            if archive_path not in names:
+                raise SystemExit(f"发布门禁失败：哈希对应Skill不存在：{skill_name}")
+            actual_hash = hashlib.sha256(archive.read(archive_path)).hexdigest()
+            if actual_hash != expected_hash:
+                raise SystemExit(f"发布门禁失败：Skill哈希不一致：{skill_name}")
         invalid_paths = [
             name
             for name in names
@@ -189,12 +208,19 @@ def main():
     validate_release_source(args.root)
     files = sorted(path for path in (args.root / "skills").rglob("*") if path.is_file() and included(path.relative_to(args.root)))
     documentation = [args.root / path for path in PACKAGE_DOCS]
+    official_skill_hashes = {
+        path.parent.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in files
+        if path.name == "SKILL.md"
+    }
     manifest = {
         "name": "企业全生命周期助手",
         "version": args.version,
         "status": args.status,
         "built_at": datetime.now(timezone.utc).isoformat(),
         "skill_count": sum(1 for path in files if path.name == "SKILL.md"),
+        "preference_schema_version": 1,
+        "official_skill_hashes": official_skill_hashes,
         "includes": {
             "default_project_map": True,
             "high_frequency_rules": True,
@@ -221,6 +247,9 @@ def main():
             "agent_metadata": False,
             "manufacturing_tax_risk_analysis": True,
             "legal_regulations_dynamic_routing": True,
+            "personal_preference_overlay": True,
+            "cross_device_preference_sync": True,
+            "three_way_upgrade_inheritance": True,
         },
     }
     output.parent.mkdir(parents=True, exist_ok=True)

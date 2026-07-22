@@ -197,6 +197,8 @@ textarea:focus-visible, select:focus-visible {
 .account-chip strong { font-size: 12px; }
 .account-chip small { margin-top: 1px; color: var(--atelier-muted); font-size: 9px; }
 .account-chip i { color: var(--atelier-gold); font-style: normal; }
+.account-menu-link { display: flex; min-height: 42px; align-items: center; padding: 0 12px; color: var(--atelier-gold-light); border: 1px solid var(--atelier-line); border-radius: 8px; text-decoration: none; font-size: 12px; }
+.account-menu-link:hover { border-color: var(--atelier-gold); background: rgba(216,183,111,.06); }
 .account-menu-panel {
   position: absolute;
   top: calc(100% + 10px);
@@ -408,6 +410,20 @@ tbody tr:hover { background: rgba(216,183,111,.025); }
 .detail-grid strong { margin-top: auto; color: var(--atelier-ink); font-size: 18px; overflow-wrap: anywhere; }
 .activity-explanation { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
 .activity-explanation p { margin: 8px 0 0; color: var(--atelier-muted); }
+.preference-page { max-width: 1280px; }
+.preference-status-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin: 20px 0; }
+.preference-status-grid article { min-height: 118px; padding: 20px; display: flex; flex-direction: column; color: var(--atelier-ink); border: 1px solid var(--atelier-line); border-radius: var(--atelier-radius); background: var(--atelier-panel); }
+.preference-status-grid span { color: var(--atelier-muted); font-size: 11px; }
+.preference-status-grid strong { margin-top: auto; color: var(--atelier-gold-light); font-size: 18px; }
+.preference-form { display: grid; gap: 18px; }
+.preference-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+.preference-checks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.preference-checks label { display: inline-flex; min-height: 38px; align-items: center; gap: 8px; padding: 0 12px; color: var(--atelier-muted); border: 1px solid var(--atelier-line); border-radius: 999px; }
+.preference-checks input { width: auto; min-height: auto; accent-color: var(--atelier-gold); }
+.preference-save, .preference-actions { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.preference-save label { flex: 1; }
+.preference-actions { margin: 18px 0; }
+.preference-actions p { margin: 6px 0 0; color: var(--atelier-muted); }
 
 .page-continuation { min-height: 28vh; display: grid; place-items: center; border-top: 1px solid rgba(216,187,134,.08); }
 .single-page .page-continuation { display: none; }
@@ -496,6 +512,8 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .hero-banner { min-height: auto; padding: 30px 22px; border-radius: 22px 22px 22px 6px; }
   .hero-copy h2 { font-size: 38px; }
   .two-column, .health-grid, .metrics, .metrics.is-member, .external-link-grid { grid-template-columns: 1fr; }
+  .preference-status-grid, .preference-fields { grid-template-columns: 1fr; }
+  .preference-save, .preference-actions { align-items: stretch; flex-direction: column; }
   .metrics > a { min-height: 130px; }
   .assistant-actions, .download-card { align-items: stretch; flex-direction: column; }
   .danger-zone { align-items: stretch; flex-direction: column; }

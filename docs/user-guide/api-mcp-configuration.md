@@ -92,6 +92,18 @@ curl -sS \
 - 云端资料上传、索引更新和Skills发布仍由网站管理员执行。
 - 云端知识服务是REST API，不是MCP地址，不要直接填入 `mcpServers`。
 
+### 个人偏好接口
+
+个人偏好与知识库使用同一个个人访问凭据：
+
+- `GET /v1/preferences`：读取当前结构化偏好和修订号。
+- `PUT /v1/preferences`：提交完整偏好，并通过 `base_revision` 防止跨设备静默覆盖。
+- `GET /v1/preferences/history`：查看个人历史版本。
+- `POST /v1/preferences/undo`：撤销上一版并生成新修订。
+- `POST /v1/preferences/reset`：恢复官方默认并保留审计历史。
+
+本地优先运行 `first-run-configuration/scripts/manage_preferences.py sync`，不要手工拼接请求。偏好文件不保存Token、密码、客户资料，也不能关闭来源核验、政策有效性和财务真实性等保护规则。
+
 ## 二、MCP通用配置
 
 优先使用宿主平台已经提供的原生工具。只有确实缺少企业查询、专利检索或浏览器能力时再增加MCP服务器。

@@ -37,6 +37,8 @@ def parser() -> argparse.ArgumentParser:
     install.add_argument("--skip-guide", action="store_true")
     install.add_argument("--target", type=Path, required=True, help="Agent的Skills安装目录")
     install.add_argument("--guide", type=Path, default=None, help="覆盖首次使用指南路径")
+    install.add_argument("--config-dir", type=Path, default=None, help="个人偏好、备份和升级报告目录")
+    install.add_argument("--version", default="unknown", help="当前官方Skills版本")
 
     guide = subcommands.add_parser("guide", help="生成详细使用指南")
     guide.add_argument("--output", type=Path, default=None)
@@ -99,7 +101,14 @@ def main() -> int:
             print(write_guide(render_guide(config, checks), output))
             return 0
 
-        installed = install_skills(root / "skills", destination, args.mode, args.force)
+        installed = install_skills(
+            root / "skills",
+            destination,
+            args.mode,
+            args.force,
+            args.config_dir,
+            args.version,
+        )
         print(f"已安装 {len(installed)} 个技能到 {destination}")
         if installed:
             print("\n".join(installed))
