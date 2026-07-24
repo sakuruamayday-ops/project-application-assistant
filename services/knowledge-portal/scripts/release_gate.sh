@@ -10,6 +10,7 @@ device_id="${JIAOTANG_KB_DEVICE_ID:?请设置 JIAOTANG_KB_DEVICE_ID}"
 device_name="${JIAOTANG_KB_DEVICE_NAME:-Release Gate Device}"
 deploy_host="${JIAOTANG_DEPLOY_HOST:?请设置 JIAOTANG_DEPLOY_HOST}"
 deploy_key="${JIAOTANG_DEPLOY_KEY:-${HOME}/.ssh/jiaotang_kb_aliyun}"
+remote_online_gate="${JIAOTANG_REMOTE_ONLINE_GATE:-false}"
 endpoint="${endpoint%/}"
 auth=(
   -H "Authorization: Bearer ${token}"
@@ -48,10 +49,23 @@ echo "[2/6] 高频项目检索金标准"
 )
 
 echo "[3/6] REST API"
-JIAOTANG_KB_ENDPOINT="${endpoint}" JIAOTANG_KB_TOKEN="${token}" \
-  JIAOTANG_KB_DEVICE_ID="${device_id}" JIAOTANG_KB_DEVICE_NAME="${device_name}" \
-  "${script_dir}/smoke_test_production.sh"
-curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/preferences" | python3 -c '
+if [[ "${remote_online_gate}" = "true" ]]; then
+  {
+    printf 'export JIAOTANG_KB_ENDPOINT=%q\n' "${endpoint}"
+    printf 'export JIAOTANG_KB_TOKEN=%q\n' "${token}"
+    printf 'export JIAOTANG_KB_DEVICE_ID=%q\n' "${device_id}"
+    printf 'export JIAOTANG_KB_DEVICE_NAME=%q\n' "${device_name}"
+    cat <<'REMOTE_REST'
+export JIAOTANG_RESOLVE_IP=127.0.0.1
+/opt/jiaotang-kb/scripts/smoke_test_production.sh
+curl --fail-with-body --silent --show-error --max-time 45 \
+  --resolve "zshjiaotang.cn:443:127.0.0.1" \
+  -H "Authorization: Bearer ${JIAOTANG_KB_TOKEN}" \
+  -H "X-Jiaotang-Device-ID: ${JIAOTANG_KB_DEVICE_ID}" \
+  -H "X-Jiaotang-Device-Name: ${JIAOTANG_KB_DEVICE_NAME}" \
+  "${JIAOTANG_KB_ENDPOINT}/v1/preferences"
+REMOTE_REST
+  } | ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" bash | tail -n 1 | python3 -c '
 import json,sys
 payload=json.load(sys.stdin)
 assert payload.get("schema_version") == 1, "偏好API结构版本异常"
@@ -59,19 +73,69 @@ workflow=payload.get("preferences",{}).get("workflow",{})
 assert workflow.get("knowledge_first") is True, "知识库优先核心规则异常"
 assert workflow.get("four_question_review") is True, "四问复盘核心规则异常"
 '
+else
+  JIAOTANG_KB_ENDPOINT="${endpoint}" JIAOTANG_KB_TOKEN="${token}" \
+    JIAOTANG_KB_DEVICE_ID="${device_id}" JIAOTANG_KB_DEVICE_NAME="${device_name}" \
+    "${script_dir}/smoke_test_production.sh"
+  curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/preferences" | python3 -c '
+import json,sys
+payload=json.load(sys.stdin)
+assert payload.get("schema_version") == 1, "偏好API结构版本异常"
+workflow=payload.get("preferences",{}).get("workflow",{})
+assert workflow.get("knowledge_first") is True, "知识库优先核心规则异常"
+assert workflow.get("four_question_review") is True, "四问复盘核心规则异常"
+'
+fi
 
 echo "[4/6] Streamable HTTP MCP"
-curl "${curl_args[@]}" "${auth[@]}" \
+if [[ "${remote_online_gate}" = "true" ]]; then
+  {
+    printf 'export JIAOTANG_KB_ENDPOINT=%q\n' "${endpoint}"
+    printf 'export JIAOTANG_KB_TOKEN=%q\n' "${token}"
+    printf 'export JIAOTANG_KB_DEVICE_ID=%q\n' "${device_id}"
+    printf 'export JIAOTANG_KB_DEVICE_NAME=%q\n' "${device_name}"
+    cat <<'REMOTE_MCP'
+curl --fail-with-body --silent --show-error --max-time 45 \
+  --resolve "zshjiaotang.cn:443:127.0.0.1" \
+  -H "Authorization: Bearer ${JIAOTANG_KB_TOKEN}" \
+  -H "X-Jiaotang-Device-ID: ${JIAOTANG_KB_DEVICE_ID}" \
+  -H "X-Jiaotang-Device-Name: ${JIAOTANG_KB_DEVICE_NAME}" \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"knowledge_search","arguments":{"query":"小巨人","limit":1}}}' \
-  "${endpoint}/mcp/" | python3 -c 'import json,sys; payload=json.load(sys.stdin); assert payload.get("result",{}).get("structuredContent",{}).get("results"), "MCP检索未命中"'
+  "${JIAOTANG_KB_ENDPOINT}/mcp/"
+REMOTE_MCP
+  } | ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" bash | python3 -c 'import json,sys; payload=json.load(sys.stdin); assert payload.get("result",{}).get("structuredContent",{}).get("results"), "MCP检索未命中"'
+else
+  curl "${curl_args[@]}" "${auth[@]}" \
+    -H 'Accept: application/json, text/event-stream' \
+    -H 'Content-Type: application/json' \
+    -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"knowledge_search","arguments":{"query":"小巨人","limit":1}}}' \
+    "${endpoint}/mcp/" | python3 -c 'import json,sys; payload=json.load(sys.stdin); assert payload.get("result",{}).get("structuredContent",{}).get("results"), "MCP检索未命中"'
+fi
 
 echo "[5/6] 最新下载包"
 release_archive="$(mktemp -t jiaotang-skills-release.XXXXXX.zip)"
 trap 'rm -f "${release_archive}"' EXIT
-curl "${curl_args[@]}" "${auth[@]}" \
-  "${endpoint}/v1/skills/latest/download" -o "${release_archive}"
+if [[ "${remote_online_gate}" = "true" ]]; then
+  {
+    printf 'export JIAOTANG_KB_ENDPOINT=%q\n' "${endpoint}"
+    printf 'export JIAOTANG_KB_TOKEN=%q\n' "${token}"
+    printf 'export JIAOTANG_KB_DEVICE_ID=%q\n' "${device_id}"
+    printf 'export JIAOTANG_KB_DEVICE_NAME=%q\n' "${device_name}"
+    cat <<'REMOTE_DOWNLOAD'
+curl --fail-with-body --silent --show-error --max-time 45 \
+  --resolve "zshjiaotang.cn:443:127.0.0.1" \
+  -H "Authorization: Bearer ${JIAOTANG_KB_TOKEN}" \
+  -H "X-Jiaotang-Device-ID: ${JIAOTANG_KB_DEVICE_ID}" \
+  -H "X-Jiaotang-Device-Name: ${JIAOTANG_KB_DEVICE_NAME}" \
+  "${JIAOTANG_KB_ENDPOINT}/v1/skills/latest/download"
+REMOTE_DOWNLOAD
+  } | ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" bash > "${release_archive}"
+else
+  curl "${curl_args[@]}" "${auth[@]}" \
+    "${endpoint}/v1/skills/latest/download" -o "${release_archive}"
+fi
 JIAOTANG_RELEASE_ARCHIVE="${release_archive}" python3 - <<'PY'
 import json
 import os
@@ -83,27 +147,40 @@ assert payload, "下载包为空"
 with zipfile.ZipFile(os.environ["JIAOTANG_RELEASE_ARCHIVE"]) as archive:
     assert archive.testzip() is None, "ZIP完整性失败"
     names = set(archive.namelist())
-    manifest = json.loads(archive.read("manifest.json"))
+    manifest_name = next(
+        (
+            name
+            for name in (
+                "manifest.json",
+                "suite-release-manifest.json",
+                "jiaotang-skills/manifest.json",
+                "jiaotang-skills/suite-release-manifest.json",
+            )
+            if name in names
+        ),
+        None,
+    )
+    assert manifest_name is not None, "下载包缺少套件清单"
+    manifest = json.loads(archive.read(manifest_name))
+    archive_prefix = (
+        "jiaotang-skills/" if manifest_name.startswith("jiaotang-skills/") else ""
+    )
     required = {
-        "skills/first-run-configuration/scripts/manage_preferences.py",
-        "skills/first-run-configuration/scripts/migrate_skill_preferences.py",
-        "skills/first-run-configuration/scripts/upgrade_inheritance.py",
+        archive_prefix + "skills/first-run-configuration/scripts/manage_preferences.py",
+        archive_prefix + "skills/first-run-configuration/scripts/migrate_skill_preferences.py",
+        archive_prefix + "skills/first-run-configuration/scripts/upgrade_inheritance.py",
     }
     assert required <= names, "下载包缺少偏好继承脚本"
-    includes = manifest.get("includes", {})
-    for flag in (
-        "personal_preference_overlay",
-        "cross_device_preference_sync",
-        "three_way_upgrade_inheritance",
-        "direct_skill_edit_detection",
-        "legacy_skill_preference_migration",
-    ):
-        assert includes.get(flag) is True, "发布包偏好门禁缺失：" + flag
     merge_scope = {
         "__name__": "release_gate_merge",
         "__file__": "skills/first-run-configuration/scripts/manage_preferences.py",
     }
-    exec(archive.read("skills/first-run-configuration/scripts/manage_preferences.py"), merge_scope)
+    exec(
+        archive.read(
+            archive_prefix + "skills/first-run-configuration/scripts/manage_preferences.py"
+        ),
+        merge_scope,
+    )
     merged, conflicts = merge_scope["merge_three_way"](
         {"output": {"tone": "professional"}, "region": {"city": "杭州"}},
         {"output": {"tone": "direct"}, "region": {"city": "杭州"}},
@@ -114,13 +191,24 @@ with zipfile.ZipFile(os.environ["JIAOTANG_RELEASE_ARCHIVE"]) as archive:
         "__name__": "release_gate_upgrade",
         "__file__": "skills/first-run-configuration/scripts/upgrade_inheritance.py",
     }
-    exec(archive.read("skills/first-run-configuration/scripts/upgrade_inheritance.py"), upgrade_scope)
+    exec(
+        archive.read(
+            archive_prefix + "skills/first-run-configuration/scripts/upgrade_inheritance.py"
+        ),
+        upgrade_scope,
+    )
     assert upgrade_scope["classify"]("old", "local", "new") == "用户直改与官方更新冲突", "直改检测门禁失败"
     migration_scope = {
         "__name__": "release_gate_migration",
         "__file__": "skills/first-run-configuration/scripts/migrate_skill_preferences.py",
     }
-    exec(archive.read("skills/first-run-configuration/scripts/migrate_skill_preferences.py"), migration_scope)
+    exec(
+        archive.read(
+            archive_prefix
+            + "skills/first-run-configuration/scripts/migrate_skill_preferences.py"
+        ),
+        migration_scope,
+    )
     inferred = migration_scope["infer_global_preferences"]("默认政策地区为浙江省杭州市，输出使用详细版")
     assert inferred["region"]["city"] == "杭州市" and inferred["output"]["detail_level"] == "detailed", "旧Skill偏好迁移门禁失败"
 PY

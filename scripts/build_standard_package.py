@@ -336,14 +336,28 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--version", default="2.0.0")
+    parser.add_argument(
+        "--version",
+        help="兼容性断言；实际版本始终读取skills/suite-manifest.json",
+    )
     parser.add_argument("--status", default="release-candidate")
     args = parser.parse_args()
-    if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", args.version):
-        raise SystemExit("版本号必须使用 MAJOR.MINOR 或 MAJOR.MINOR.PATCH")
+    suite_manifest = json.loads(
+        (args.root / "skills/suite-manifest.json").read_text(encoding="utf-8")
+    )
+    release = suite_manifest["release"]
+    version = release["version"]
+    if args.version and args.version != version:
+        raise SystemExit(
+            "命令行版本与suite-manifest.json不一致："
+            f"{args.version} / {version}"
+        )
     if args.status not in {"release-candidate", "stable"}:
         raise SystemExit("status只允许release-candidate或stable")
-    output = args.output or args.root / "dist" / f"企业全生命周期助手-{args.version}.zip"
+    output = (
+        args.output
+        or args.root / "dist" / f"企业全生命周期助手-{release['tag']}.zip"
+    )
     staging_output = output.with_name(f".{output.name}.staging")
     missing = [path for path in REQUIRED if not (args.root / path).is_file()]
     if missing:
@@ -356,16 +370,20 @@ def main():
         for path in files
         if path.name == "SKILL.md"
     }
+    declared_skills = suite_manifest["skills"]
+    if sorted(official_skill_hashes) != declared_skills:
+        raise SystemExit("技能目录与suite-manifest.json中的skills不一致")
     portable_runtime_hashes = {
         relative_path: hashlib.sha256((args.root / relative_path).read_bytes()).hexdigest()
         for relative_path in PORTABLE_REPORT_REQUIRED
     }
     manifest = {
         "name": "企业全生命周期助手",
-        "version": args.version,
+        "version": version,
+        "release_tag": release["tag"],
         "status": args.status,
         "built_at": datetime.now(timezone.utc).isoformat(),
-        "skill_count": sum(1 for path in files if path.name == "SKILL.md"),
+        "skill_count": len(declared_skills),
         "preference_schema_version": 1,
         "official_skill_hashes": official_skill_hashes,
         "portable_runtime_hashes": portable_runtime_hashes,

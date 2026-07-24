@@ -1,0 +1,522 @@
+{
+  "schema_version": 1,
+  "product": "企业全生命周期助手",
+  "relation_types": {
+    "route": "只负责选择目标技能，不代表每次任务都会执行目标技能。",
+    "requires": "缺少目标技能会破坏当前技能的核心流程或证据口径。",
+    "handoff": "当前技能完成后，将结构化结果交给目标技能继续处理。",
+    "quality_gate": "目标技能负责对当前技能的交付结果执行强制质量检查。",
+    "governance": "受控自进化中的记录、聚合、候选生成、审批或回滚关系。",
+    "optional": "仅在用户任务需要或外部能力可用时调用，不构成硬依赖。"
+  },
+  "groups": {
+    "orchestration": [
+      "project-application-assistant",
+      "project-task-router",
+      "first-run-configuration"
+    ],
+    "knowledge_and_evidence": [
+      "local-knowledge-retrieval",
+      "policy-retrieval",
+      "enterprise-profile",
+      "financial-verification",
+      "ip-assessment",
+      "evidence-ledger",
+      "project-memory",
+      "project-rule-manager",
+      "third-party-data-indexing",
+      "web-task-operator",
+      "peer-benchmarking",
+      "graphify"
+    ],
+    "business_and_project": [
+      "project-matching",
+      "project-feasibility",
+      "industry-chain-foundation-matcher",
+      "industry-positioning",
+      "enterprise-panorama-analysis",
+      "manufacturing-tax-risk-analysis",
+      "jiaotang-legal-regulations",
+      "high-tech-enterprise-preassessment",
+      "sme-score-preassessment",
+      "sme-development-projects",
+      "standard-drafting",
+      "agriculture-and-rural-projects",
+      "digitalization-projects",
+      "green-development-projects",
+      "industrialization-projects",
+      "intellectual-property-projects",
+      "investment-subsidy-projects",
+      "quality-brand-projects",
+      "regional-special-projects",
+      "talent-projects",
+      "technology-innovation-projects",
+      "trade-and-open-economy-projects"
+    ],
+    "patent": [
+      "patent-data-foundation",
+      "patent-search-core",
+      "patent-claim-analysis",
+      "patent-similarity-search",
+      "patent-fto-analysis",
+      "patent-drafting-coach",
+      "patent-draft-auditor",
+      "patent-direction-planner",
+      "patent-benchmark-landscape",
+      "patent-layout-planning"
+    ],
+    "delivery": [
+      "application-writing",
+      "application-version-diff",
+      "consistency-check",
+      "project-deliverable-archive"
+    ],
+    "evolution": [
+      "experience-recorder",
+      "skill-curator",
+      "skill-evolution",
+      "evolution-governance",
+      "skill-authoring"
+    ]
+  },
+  "relations": [
+    {
+      "from": "project-application-assistant",
+      "to": "first-run-configuration",
+      "type": "requires",
+      "reason": "首次运行或能力报告缺失时，先统一检测知识库、企业数据、专利、浏览器、OCR和文档能力。"
+    },
+    {
+      "from": "project-application-assistant",
+      "to": "project-task-router",
+      "type": "route",
+      "reason": "复杂任务由内部路由器拆分阶段；单一明确任务直接进入专业技能。"
+    },
+    {
+      "from": "project-application-assistant",
+      "to": "local-knowledge-retrieval",
+      "type": "requires",
+      "reason": "政策、名单、案例和内部方法默认先查团队知识库。"
+    },
+    {
+      "from": "project-application-assistant",
+      "to": "project-matching",
+      "type": "handoff",
+      "reason": "企业与地区信息确认后进入候选项目匹配。"
+    },
+    {
+      "from": "project-matching",
+      "to": "project-feasibility",
+      "type": "handoff",
+      "reason": "候选项目不直接等于可申报结论，必须继续核验门槛、证据和差距。"
+    },
+    {
+      "from": "project-feasibility",
+      "to": "application-writing",
+      "type": "handoff",
+      "reason": "只有已确认项目版本且结论允许进入材料阶段时才写作。"
+    },
+    {
+      "from": "application-writing",
+      "to": "consistency-check",
+      "type": "quality_gate",
+      "reason": "正式材料提交前检查数字、事实、产品、知识产权和章节联动。"
+    },
+    {
+      "from": "consistency-check",
+      "to": "project-deliverable-archive",
+      "type": "handoff",
+      "reason": "通过交付检查后归档终版、证据台账和必要附件。"
+    },
+    {
+      "from": "application-version-diff",
+      "to": "consistency-check",
+      "type": "quality_gate",
+      "reason": "版本差异识别后，对拟采用终稿执行单份材料一致性检查。"
+    },
+    {
+      "from": "application-writing",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "正式材料中的事实、计算、推断和待补证项必须可追溯。"
+    },
+    {
+      "from": "project-feasibility",
+      "to": "policy-retrieval",
+      "type": "requires",
+      "reason": "可行性必须基于现行管理办法、当期通知和适用地区。"
+    },
+    {
+      "from": "project-feasibility",
+      "to": "financial-verification",
+      "type": "optional",
+      "reason": "涉及营收、利润、研发投入、资产或负债门槛时调用。"
+    },
+    {
+      "from": "project-feasibility",
+      "to": "ip-assessment",
+      "type": "optional",
+      "reason": "项目存在知识产权门槛或产品关联要求时调用。"
+    },
+    {
+      "from": "project-feasibility",
+      "to": "industry-positioning",
+      "type": "optional",
+      "reason": "项目要求产业链、工业六基、补短板或重点领域定位时调用。"
+    },
+    {
+      "from": "project-matching",
+      "to": "policy-retrieval",
+      "type": "requires",
+      "reason": "项目名称、别名、层级、地区和年度以政策证据为准。"
+    },
+    {
+      "from": "project-matching",
+      "to": "third-party-data-indexing",
+      "type": "optional",
+      "reason": "第三方项目库只提供动态发现线索，不能替代官方核验。"
+    },
+    {
+      "from": "policy-retrieval",
+      "to": "local-knowledge-retrieval",
+      "type": "requires",
+      "reason": "先查团队已有原文和版本记录，未命中再联网核验。"
+    },
+    {
+      "from": "policy-retrieval",
+      "to": "web-task-operator",
+      "type": "optional",
+      "reason": "政府网页需要动态筛选、翻页或附件下载时调用。"
+    },
+    {
+      "from": "third-party-data-indexing",
+      "to": "web-task-operator",
+      "type": "requires",
+      "reason": "合法登录后的列表、详情、附件和增量采集由网页任务技能执行。"
+    },
+    {
+      "from": "peer-benchmarking",
+      "to": "local-knowledge-retrieval",
+      "type": "requires",
+      "reason": "优先从公示、认定和复核名单中提取可追溯同行样本。"
+    },
+    {
+      "from": "peer-benchmarking",
+      "to": "enterprise-profile",
+      "type": "optional",
+      "reason": "名单缺少城市、曾用名或主体状态时补做企业身份核验。"
+    },
+    {
+      "from": "industry-positioning",
+      "to": "industry-chain-foundation-matcher",
+      "type": "requires",
+      "reason": "产业定位必须复用包内产业链和工业六基目录匹配结果。"
+    },
+    {
+      "from": "intellectual-property-projects",
+      "to": "ip-assessment",
+      "type": "requires",
+      "reason": "知识产权类项目必须先统一有效授权、审中、失效和转让取得口径。"
+    },
+    {
+      "from": "regional-special-projects",
+      "to": "policy-retrieval",
+      "type": "requires",
+      "reason": "临时专项先取得完整官方政策链。"
+    },
+    {
+      "from": "regional-special-projects",
+      "to": "project-feasibility",
+      "type": "handoff",
+      "reason": "将已核验的临时规则交给通用可行性流程。"
+    },
+    {
+      "from": "high-tech-enterprise-preassessment",
+      "to": "policy-retrieval",
+      "type": "requires",
+      "reason": "先锁定高企现行政策、申报年度和地区口径。"
+    },
+    {
+      "from": "high-tech-enterprise-preassessment",
+      "to": "enterprise-profile",
+      "type": "requires",
+      "reason": "主体、成立时间、行业和知识产权归属必须先核验。"
+    },
+    {
+      "from": "high-tech-enterprise-preassessment",
+      "to": "financial-verification",
+      "type": "optional",
+      "reason": "成长性、研发费用和高新收入测算复用可靠财务事实。"
+    },
+    {
+      "from": "sme-score-preassessment",
+      "to": "sme-development-projects",
+      "type": "requires",
+      "reason": "复用专精特新和小巨人的现行项目版本、指标口径和材料阶段边界。"
+    },
+    {
+      "from": "sme-score-preassessment",
+      "to": "enterprise-profile",
+      "type": "requires",
+      "reason": "评分前核验企业身份、资质、知识产权和基础经营事实。"
+    },
+    {
+      "from": "sme-score-preassessment",
+      "to": "financial-verification",
+      "type": "optional",
+      "reason": "评分底表回传后校验三年财务口径与勾稽关系。"
+    },
+    {
+      "from": "sme-development-projects",
+      "to": "industry-chain-foundation-matcher",
+      "type": "requires",
+      "reason": "主导产品产业链和工业六基定位使用统一目录依据。"
+    },
+    {
+      "from": "sme-development-projects",
+      "to": "financial-verification",
+      "type": "optional",
+      "reason": "申请书财务指标和市场占有率底稿需要可靠数据时调用。"
+    },
+    {
+      "from": "sme-development-projects",
+      "to": "ip-assessment",
+      "type": "optional",
+      "reason": "核验知识产权法律状态及其对主导产品的直接支撑关系。"
+    },
+    {
+      "from": "manufacturing-tax-risk-analysis",
+      "to": "financial-verification",
+      "type": "requires",
+      "reason": "三表复算和税务风险信号统一写入可复用财务事实。"
+    },
+    {
+      "from": "manufacturing-tax-risk-analysis",
+      "to": "project-feasibility",
+      "type": "handoff",
+      "reason": "经校验的 enterprise-financial-facts/v1 可供后续项目门槛复用。"
+    },
+    {
+      "from": "jiaotang-legal-regulations",
+      "to": "local-knowledge-retrieval",
+      "type": "requires",
+      "reason": "法规、废止替代依据和内部合规方法优先从团队知识库检索。"
+    },
+    {
+      "from": "standard-drafting",
+      "to": "policy-retrieval",
+      "type": "optional",
+      "reason": "核验现行起草规则、强制性标准、法规和专项依据。"
+    },
+    {
+      "from": "standard-drafting",
+      "to": "jiaotang-legal-regulations",
+      "type": "optional",
+      "reason": "涉及合规边界、强制要求或专利声明时补充法规核验。"
+    },
+    {
+      "from": "enterprise-panorama-analysis",
+      "to": "enterprise-profile",
+      "type": "requires",
+      "reason": "全景报告先建立统一企业主体与工商事实底稿。"
+    },
+    {
+      "from": "enterprise-panorama-analysis",
+      "to": "local-knowledge-retrieval",
+      "type": "requires",
+      "reason": "内部资料、政策名单和历史项目记录优先走团队知识库。"
+    },
+    {
+      "from": "enterprise-panorama-analysis",
+      "to": "financial-verification",
+      "type": "optional",
+      "reason": "用户提供可靠财务资料时才进入财务分析。"
+    },
+    {
+      "from": "enterprise-panorama-analysis",
+      "to": "manufacturing-tax-risk-analysis",
+      "type": "optional",
+      "reason": "制造企业且用户明确要求金税或税务分析时调用。"
+    },
+    {
+      "from": "enterprise-panorama-analysis",
+      "to": "patent-layout-planning",
+      "type": "optional",
+      "reason": "用户需要未来知识产权规划时进入专利布局链。"
+    },
+    {
+      "from": "graphify",
+      "to": "evidence-ledger",
+      "type": "optional",
+      "reason": "复杂项目可将证据台账转为关系图，但图谱不替代原始证据。"
+    },
+    {
+      "from": "project-memory",
+      "to": "project-deliverable-archive",
+      "type": "handoff",
+      "reason": "项目状态与终版交付分别保存，避免把过程记忆当正式档案。"
+    },
+    {
+      "from": "patent-search-core",
+      "to": "patent-data-foundation",
+      "type": "requires",
+      "reason": "检索结果统一使用专利号、文本版本、法律状态、同族和申请人数据口径。"
+    },
+    {
+      "from": "patent-claim-analysis",
+      "to": "patent-data-foundation",
+      "type": "requires",
+      "reason": "权利要求分析必须锁定公开版、授权版和当前法律状态。"
+    },
+    {
+      "from": "patent-claim-analysis",
+      "to": "patent-search-core",
+      "type": "requires",
+      "reason": "需要通过检索计划定位对比文件和相关权利要求。"
+    },
+    {
+      "from": "patent-similarity-search",
+      "to": "patent-data-foundation",
+      "type": "requires",
+      "reason": "相似专利必须使用统一身份和文本版本。"
+    },
+    {
+      "from": "patent-similarity-search",
+      "to": "patent-search-core",
+      "type": "requires",
+      "reason": "关键词、分类号、申请人和引证扩展由检索核心生成。"
+    },
+    {
+      "from": "patent-fto-analysis",
+      "to": "patent-data-foundation",
+      "type": "requires",
+      "reason": "FTO必须核验目标国家、权利状态和有效权利要求版本。"
+    },
+    {
+      "from": "patent-fto-analysis",
+      "to": "patent-search-core",
+      "type": "requires",
+      "reason": "产品特征检索和竞争专利发现使用统一检索计划。"
+    },
+    {
+      "from": "patent-fto-analysis",
+      "to": "patent-claim-analysis",
+      "type": "requires",
+      "reason": "风险判断基于逐项权利要求特征比对，不以摘要相似替代。"
+    },
+    {
+      "from": "patent-draft-auditor",
+      "to": "patent-data-foundation",
+      "type": "requires",
+      "reason": "申请文件审查需要统一现有技术和已知专利事实。"
+    },
+    {
+      "from": "patent-draft-auditor",
+      "to": "patent-search-core",
+      "type": "requires",
+      "reason": "提交前检查需要确认检索范围和已发现对比文件。"
+    },
+    {
+      "from": "patent-direction-planner",
+      "to": "patent-data-foundation",
+      "type": "requires",
+      "reason": "方向规划先核验企业现有专利、法律状态和产品关联。"
+    },
+    {
+      "from": "patent-direction-planner",
+      "to": "patent-search-core",
+      "type": "requires",
+      "reason": "通过检索识别空白、拥挤方向和竞争主体。"
+    },
+    {
+      "from": "patent-benchmark-landscape",
+      "to": "patent-data-foundation",
+      "type": "requires",
+      "reason": "标杆企业专利按同族、权利状态和申请人归一化。"
+    },
+    {
+      "from": "patent-benchmark-landscape",
+      "to": "patent-search-core",
+      "type": "requires",
+      "reason": "标杆检索采用统一关键词、分类号和申请人扩展。"
+    },
+    {
+      "from": "patent-layout-planning",
+      "to": "patent-data-foundation",
+      "type": "requires",
+      "reason": "布局前先建立现有专利资产和产品映射底稿。"
+    },
+    {
+      "from": "patent-layout-planning",
+      "to": "patent-search-core",
+      "type": "requires",
+      "reason": "布局缺口和方向优先级必须有检索证据。"
+    },
+    {
+      "from": "patent-layout-planning",
+      "to": "patent-drafting-coach",
+      "type": "handoff",
+      "reason": "确认后的布局方向进入交底书和申请文件辅导。"
+    },
+    {
+      "from": "first-run-configuration",
+      "to": "experience-recorder",
+      "type": "governance",
+      "reason": "首次安装后启用脱敏经验和纠正信号记录。"
+    },
+    {
+      "from": "first-run-configuration",
+      "to": "skill-curator",
+      "type": "governance",
+      "reason": "首次安装后启用重复、冲突、过期和质量问题策展。"
+    },
+    {
+      "from": "first-run-configuration",
+      "to": "skill-evolution",
+      "type": "governance",
+      "reason": "首次安装后允许生成候选优化，但不自动发布。"
+    },
+    {
+      "from": "first-run-configuration",
+      "to": "evolution-governance",
+      "type": "governance",
+      "reason": "首次安装后建立审批、快照、签名和回滚治理。"
+    },
+    {
+      "from": "project-application-assistant",
+      "to": "experience-recorder",
+      "type": "governance",
+      "reason": "复杂任务完成后记录可泛化经验并执行四问复盘。"
+    },
+    {
+      "from": "experience-recorder",
+      "to": "skill-curator",
+      "type": "governance",
+      "reason": "将已脱敏且已核验的纠正和复盘交给策展聚合。"
+    },
+    {
+      "from": "skill-curator",
+      "to": "skill-evolution",
+      "type": "governance",
+      "reason": "达到跨任务阈值后生成批量候选，不因单次纠正立即进化。"
+    },
+    {
+      "from": "skill-evolution",
+      "to": "evolution-governance",
+      "type": "governance",
+      "reason": "候选版本必须经过影响审查、测试、审批、签名和回滚门禁。"
+    },
+    {
+      "from": "skill-authoring",
+      "to": "skill-curator",
+      "type": "governance",
+      "reason": "创建新技能前先检查是否应合并到现有技能。"
+    },
+    {
+      "from": "skill-authoring",
+      "to": "evolution-governance",
+      "type": "governance",
+      "reason": "新技能属于正式能力变更，必须进入统一发布治理。"
+    }
+  ]
+}

@@ -17,6 +17,14 @@ from scripts.build_standard_package import (
 
 
 class InstallTests(unittest.TestCase):
+    @staticmethod
+    def suite_manifest(repository: Path) -> dict:
+        return json.loads(
+            (repository / "skills/suite-manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
     def test_release_package_excludes_agent_metadata_and_cache_artifacts(self):
         self.assertFalse(included(Path("skills/example/agents/openai.yaml")))
         self.assertFalse(included(Path("skills/example/__pycache__/helper.pyc")))
@@ -50,8 +58,6 @@ class InstallTests(unittest.TestCase):
                     str(repository),
                     "--output",
                     str(package),
-                    "--version",
-                    "9.9.9",
                 ],
                 cwd=repository,
                 check=True,
@@ -62,6 +68,12 @@ class InstallTests(unittest.TestCase):
             with zipfile.ZipFile(package) as archive:
                 manifest = json.loads(archive.read("manifest.json"))
                 names = set(archive.namelist())
+            suite_manifest = self.suite_manifest(repository)
+            expected_skill_count = len(suite_manifest["skills"])
+            self.assertEqual(
+                manifest["version"],
+                suite_manifest["release"]["version"],
+            )
             self.assertEqual(manifest["includes"]["host_skill_install_prompt"], HOST_SKILL_INSTALL_PROMPT)
             self.assertTrue(manifest["includes"]["manufacturing_tax_risk_analysis"])
             self.assertTrue(manifest["includes"]["legal_regulations_dynamic_routing"])
@@ -77,7 +89,10 @@ class InstallTests(unittest.TestCase):
             self.assertTrue(manifest["includes"]["portable_path_gate"])
             self.assertTrue(manifest["includes"]["tax_report_e2e_gate"])
             self.assertFalse(manifest["includes"]["clean_container_gate"])
-            self.assertEqual(len(manifest["official_skill_hashes"]), 56)
+            self.assertEqual(
+                len(manifest["official_skill_hashes"]),
+                expected_skill_count,
+            )
             self.assertEqual(
                 set(manifest["portable_runtime_hashes"]),
                 set(PORTABLE_REPORT_REQUIRED),
@@ -96,12 +111,15 @@ class InstallTests(unittest.TestCase):
                 names,
             )
             self.assertNotIn("skills/manufacturing-tax-risk-analysis/agents/openai.yaml", names)
-            self.assertEqual(manifest["skill_count"], 56)
+            self.assertEqual(manifest["skill_count"], expected_skill_count)
             with tempfile.TemporaryDirectory() as install_directory:
                 with zipfile.ZipFile(package) as install_archive:
                     install_archive.extractall(install_directory)
                 installed = Path(install_directory)
-                self.assertEqual(len(list((installed / "skills").glob("*/SKILL.md"))), 56)
+                self.assertEqual(
+                    len(list((installed / "skills").glob("*/SKILL.md"))),
+                    expected_skill_count,
+                )
                 self.assertTrue((installed / "skills/first-run-configuration/SKILL.md").is_file())
                 self.assertTrue((installed / "skills/local-knowledge-retrieval/SKILL.md").is_file())
                 self.assertTrue((installed / "skills/skill-evolution/SKILL.md").is_file())
@@ -166,7 +184,14 @@ class InstallTests(unittest.TestCase):
 
     def test_release_contains_standard_skills_and_valid_agent_metadata(self):
         repository = Path(__file__).resolve().parents[1]
-        self.assertEqual(len(list((repository / "skills").glob("*/SKILL.md"))), 56)
+        suite_manifest = self.suite_manifest(repository)
+        self.assertEqual(
+            sorted(
+                path.parent.name
+                for path in (repository / "skills").glob("*/SKILL.md")
+            ),
+            suite_manifest["skills"],
+        )
         agent_metadata = list((repository / "skills").glob("*/agents/openai.yaml"))
         for metadata in agent_metadata:
             self.assertTrue((metadata.parent.parent / "SKILL.md").is_file())

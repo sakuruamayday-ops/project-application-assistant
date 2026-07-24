@@ -6118,15 +6118,16 @@ def portal_payload(
                 """
             ).fetchall(), "created_at", "completed_at", "rolled_back_at")
         if user["is_admin"]:
+            public_version_pattern = f"{FIRST_PUBLIC_SKILL_VERSION.split('.', 1)[0]}.%"
             release_rows = connection.execute(
                 """
                 SELECT id, version, file_name, sha256, release_notes, published_at
                 FROM skill_releases
-                WHERE version = ?
+                WHERE version = ? OR version LIKE ?
                 ORDER BY published_at DESC, id DESC
                 LIMIT 20
                 """,
-                (FIRST_PUBLIC_SKILL_VERSION,),
+                (FIRST_PUBLIC_SKILL_VERSION, public_version_pattern),
             ).fetchall()
             releases = [
                 {
@@ -6206,6 +6207,30 @@ def portal_payload(
             if latest_release
             else None
         )
+        public_version_pattern = f"{FIRST_PUBLIC_SKILL_VERSION.split('.', 1)[0]}.%"
+        historical_release_rows = connection.execute(
+            """
+            SELECT id, version, file_name, sha256, release_notes, published_at
+            FROM skill_releases
+            WHERE id != COALESCE(?, -1)
+              AND (version = ? OR version LIKE ?)
+            ORDER BY published_at DESC, id DESC
+            """,
+            (
+                latest_release["id"] if latest_release else None,
+                FIRST_PUBLIC_SKILL_VERSION,
+                public_version_pattern,
+            ),
+        ).fetchall()
+        historical_releases = [
+            {
+                **dict(row),
+                "published_at_display": format_chinese_datetime(row["published_at"]),
+                "release_notes_html": render_guide_markdown(str(row["release_notes"])),
+                "workbuddy_available": workbuddy_skill_package(str(row["version"])).is_file(),
+            }
+            for row in historical_release_rows
+        ]
         release_announcement = None
         if latest_release:
             release_announcement = connection.execute(
@@ -6250,6 +6275,7 @@ def portal_payload(
         "update_jobs": update_jobs,
         "releases": releases,
         "latest_release": latest_release_payload,
+        "historical_releases": historical_releases,
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_announcement": announcement_payload,
         "knowledge_stats": knowledge_index_stats(),
@@ -10613,6 +10639,48 @@ def web_download_latest_workbuddy_skills(
         filename=package_path.name,
         media_type="application/zip",
     )
+
+
+@app.get("/skills/releases/{release_id}/download")
+def web_download_historical_skills(
+    release_id: int,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    with closing(database()) as connection:
+        release = connection.execute(
+            """
+            SELECT id, version, file_name, file_path
+            FROM skill_releases
+            WHERE id=?
+            """,
+            (release_id,),
+        ).fetchone()
+    if release is None:
+        raise HTTPException(status_code=404, detail="历史 Skills 版本不存在")
+    package_path = Path(release["file_path"])
+    if not package_path.is_file():
+        raise HTTPException(status_code=503, detail="历史 Skills 文件暂不可用")
+    return FileResponse(package_path, filename=release["file_name"], media_type="application/zip")
+
+
+@app.get("/skills/releases/{release_id}/workbuddy/download")
+def web_download_historical_workbuddy_skills(
+    release_id: int,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    with closing(database()) as connection:
+        release = connection.execute(
+            "SELECT version FROM skill_releases WHERE id=?",
+            (release_id,),
+        ).fetchone()
+    if release is None:
+        raise HTTPException(status_code=404, detail="历史 Skills 版本不存在")
+    package_path = workbuddy_skill_package(str(release["version"]))
+    if not package_path.is_file():
+        raise HTTPException(status_code=404, detail="该历史版本未发布 WorkBuddy 插件包")
+    return FileResponse(package_path, filename=package_path.name, media_type="application/zip")
 
 
 @app.get("/v1/me")

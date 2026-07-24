@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import re
 from pathlib import Path
 
 
@@ -15,6 +16,7 @@ SPEC = importlib.util.spec_from_file_location("suite_validation", VALIDATOR_PATH
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
+RELEASE_SCRIPT = VALIDATOR_PATH.with_name("package_skill_release.py")
 
 
 def write_skill(root: Path, name: str, body: str) -> None:
@@ -34,7 +36,8 @@ def write_manifest(root: Path, external_services: list[str]) -> None:
                 "product_name": "test",
                 "product_slug": "test-suite",
                 "install_mode": "bundle-only",
-                "expected_skill_count": 1,
+                "release": {"tag": "V1.0", "version": "1.0.0"},
+                "skills": ["example-skill"],
                 "shared_paths": [],
                 "dependencies": {},
                 "allowed_external_skills": [],
@@ -60,3 +63,17 @@ def test_undeclared_external_service_is_still_blocked(tmp_path):
     result = MODULE.validate_suite(tmp_path)
     assert result["status"] == "fail"
     assert "jiaotang-kb" in result["unresolved_references"]
+
+
+def test_managed_portable_runtime_template_stays_compact():
+    text = RELEASE_SCRIPT.read_text(encoding="utf-8")
+    match = re.search(
+        r'block = f"""([\s\S]*?)"""',
+        text,
+    )
+    assert match is not None
+    template = match.group(1)
+    assert len(template) < 850
+    assert "portable_skill_runtime.py" in template
+    assert "workbuddy_preference_bridge.py" in template
+    assert "真实性、安全、验签和质量门禁" in template

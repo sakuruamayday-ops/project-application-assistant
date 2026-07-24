@@ -3199,7 +3199,10 @@ def test_latest_skill_release_metadata_and_download(tmp_path):
     module = load_app(tmp_path)
     package = tmp_path / "project-assistant-skills.zip"
     package.write_bytes(b"test-skill-package")
+    historical_package = tmp_path / "project-assistant-skills-v1.0.zip"
+    historical_package.write_bytes(b"historical-skill-package")
     digest = module.hashlib.sha256(package.read_bytes()).hexdigest()
+    historical_digest = module.hashlib.sha256(historical_package.read_bytes()).hexdigest()
     with closing(module.database()) as connection:
         connection.execute(
             "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
@@ -3216,6 +3219,20 @@ def test_latest_skill_release_metadata_and_download(tmp_path):
             (
                 user_id, "test", raw_token[:12], module.token_hash(raw_token), token_seed,
                 module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_releases(version, file_name, file_path, sha256, release_notes, published_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "1.0",
+                historical_package.name,
+                str(historical_package),
+                historical_digest,
+                "历史版本",
+                module.isoformat(module.utc_now() - timedelta(days=1)),
             ),
         )
         connection.execute(
@@ -3242,6 +3259,23 @@ def test_latest_skill_release_metadata_and_download(tmp_path):
         download = client.get("/v1/skills/latest/download", headers=headers)
         assert download.status_code == 200
         assert download.content == b"test-skill-package"
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        skills_page = client.get("/skills")
+        assert skills_page.status_code == 200
+        assert "企业全生命周期助手 V1.0" in skills_page.text
+        assert "下载 V1.0 通用包" in skills_page.text
+        with closing(module.database()) as connection:
+            historical_id = connection.execute(
+                "SELECT id FROM skill_releases WHERE version='1.0'"
+            ).fetchone()[0]
+        historical_download = client.get(f"/skills/releases/{historical_id}/download")
+        assert historical_download.status_code == 200
+        assert historical_download.content == b"historical-skill-package"
 
 
 def test_release_announcement_appears_once_after_publish(tmp_path):
