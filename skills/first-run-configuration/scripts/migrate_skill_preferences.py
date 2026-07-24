@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
@@ -231,11 +232,18 @@ def sync_preferences(script_dir: Path, preference_file: Path) -> int:
     ):
         print("未检测到云端凭据，偏好已保存在本机；首次配置后再同步。")
         return 0
-    namespace: dict[str, object] = {"__name__": "preference_sync"}
-    exec((script_dir / "manage_preferences.py").read_text(encoding="utf-8"), namespace)
-    parser = namespace["parser"]()
+    module_path = script_dir / "manage_preferences.py"
+    specification = importlib.util.spec_from_file_location(
+        "jiaotang_manage_preferences",
+        module_path,
+    )
+    if specification is None or specification.loader is None:
+        raise RuntimeError("无法加载偏好同步模块")
+    module = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(module)
+    parser = module.parser()
     args = parser.parse_args(["--file", str(preference_file), "push", "--summary", "旧Skill个人习惯迁移"])
-    return namespace["command_push"](args)
+    return module.command_push(args)
 
 
 def main() -> int:

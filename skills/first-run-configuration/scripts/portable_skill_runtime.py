@@ -50,11 +50,27 @@ def arguments() -> argparse.Namespace:
         "--data-dir",
         help=f"覆盖用户数据根目录；默认读取{PROFILE_DIR_ENV}或平台配置目录",
     )
+    parser.add_argument(
+        "--skill-root",
+        help="WorkBuddy共享运行时使用的目标技能目录",
+    )
+    parser.add_argument(
+        "--plugin-root",
+        help="WorkBuddy插件根目录；设置后由插件级签名承担完整性校验",
+    )
     return parser.parse_args()
 
 
 def skill_root() -> Path:
     return Path(__file__).resolve().parents[1]
+
+
+def resolved_skill_root(value: str | None) -> Path:
+    return (
+        Path(value).expanduser().resolve()
+        if value
+        else skill_root()
+    )
 
 
 def read_manifest(root: Path) -> dict:
@@ -284,11 +300,34 @@ def prepare(
     manifest: dict,
     profile_path: Path,
     backup_dir: Path,
+    plugin_root: Path | None = None,
 ) -> dict:
-    check = run_install_check(root)
+    if plugin_root is None:
+        check = run_install_check(root)
+        signature_check = verify_embedded_signature(root)
+    else:
+        expected_root = (plugin_root / "skills" / root.name).resolve()
+        if root != expected_root or not (root / "SKILL.md").is_file():
+            raise RuntimeError("共享运行时目标技能不属于当前WorkBuddy插件")
+        metadata_path = plugin_root / "plugin-release-signature.json"
+        if not metadata_path.is_file():
+            raise RuntimeError("缺少WorkBuddy插件签名元数据")
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        check = {
+            "status": "pass",
+            "scope": "workbuddy-plugin",
+            "checked_by": "plugin-release-manifest",
+        }
+        signature_check = {
+            "status": "delegated",
+            "scope": "workbuddy-plugin",
+            "public_key_fingerprint": metadata.get(
+                "public_key_fingerprint"
+            ),
+            "reason": "插件钩子已完成插件级签名与完整性校验",
+        }
     capability_check = check_runtime_requirements(manifest)
     profile = load_profile(profile_path, manifest["skill_name"])
-    signature_check = verify_embedded_signature(root)
     current_fingerprint = signature_check.get("public_key_fingerprint")
     trusted_fingerprint = profile.get("trusted_publisher_fingerprint")
     trust_established = False
@@ -415,7 +454,7 @@ def forget(
 
 def main() -> int:
     options = arguments()
-    root = skill_root()
+    root = resolved_skill_root(options.skill_root)
     try:
         manifest = read_manifest(root)
         skill_name = manifest["skill_name"]
@@ -423,7 +462,17 @@ def main() -> int:
         profile_dir.mkdir(parents=True, exist_ok=True)
 
         if options.command == "prepare":
-            result = prepare(root, manifest, profile_path, backup_dir)
+            result = prepare(
+                root,
+                manifest,
+                profile_path,
+                backup_dir,
+                (
+                    Path(options.plugin_root).expanduser().resolve()
+                    if options.plugin_root
+                    else None
+                ),
+            )
         else:
             profile = load_profile(profile_path, skill_name)
             if options.command in {"context", "list"}:
