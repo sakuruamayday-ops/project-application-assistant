@@ -17,6 +17,15 @@ COMPANY_LAW_PATH = (
 )
 LAYER_GUIDE_PATH = KNOWLEDGE_ROOT / "10_政策与目录/政策检索分层说明.md"
 HANGZHOU_INSTITUTE_ROOT = KNOWLEDGE_ROOT / "10_政策与目录/研究院/杭州市企业研究院"
+SUPPLEMENTARY_ROOTS = (
+    KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/_省级专精特新",
+    KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/_覆盖矩阵",
+    KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/_全国小巨人批次主表",
+    KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/企策顾问动态索引",
+    KNOWLEDGE_ROOT / "50_名单与对标/三首项目/_结构化数据",
+    KNOWLEDGE_ROOT / "50_名单与对标/企业身份时间轴",
+    KNOWLEDGE_ROOT / "90_方法与复盘",
+)
 MANIFEST_PATH = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/manifest.jsonl")
 MANIFEST_CSV_PATH = MANIFEST_PATH.with_suffix(".csv")
 CONTROL_FILES = {"README.md", "整理摘要.json", "网站上传索引.csv", "网站上传索引.json"}
@@ -27,6 +36,7 @@ EXTRACT_EXTENSIONS = {
     ".htm",
     ".html",
     ".json",
+    ".jsonl",
     ".md",
     ".pdf",
     ".pptx",
@@ -81,10 +91,13 @@ def manifest_row(path: Path, previous: dict[str, object] | None = None) -> dict[
     content_prefix = ""
     if path.is_relative_to(REGIONAL_ROOT):
         title, content_prefix = metadata_for(path)
+    is_team_list_data = relative.startswith("50_名单与对标/")
+    document_role = "50_名单与对标" if is_team_list_data else "10_政策与通知"
+    cloud_path = relative if is_team_list_data else f"10_政策与通知/{relative}"
     return {
         "source_path": str(path),
         "relative_path": relative,
-        "cloud_path": f"10_政策与通知/{relative}",
+        "cloud_path": cloud_path,
         "name": path.name,
         "title": title,
         "content_prefix": content_prefix,
@@ -93,9 +106,9 @@ def manifest_row(path: Path, previous: dict[str, object] | None = None) -> dict[
         "modified_at": modified_at,
         "sha256": digest,
         "source_key": hashlib.sha256(f"cloud-path:{relative}".encode()).hexdigest(),
-        "top_category": "10_政策与目录",
-        "document_role": "10_政策与通知",
-        "sensitivity": "public_reference",
+        "top_category": "50_名单与对标" if is_team_list_data else "10_政策与目录",
+        "document_role": document_role,
+        "sensitivity": "internal" if is_team_list_data else "public_reference",
         "index_mode": "extract_text" if extension in EXTRACT_EXTENSIONS else "archive_only",
         "upload_priority": 1,
         "upload_action": "upload",
@@ -122,6 +135,21 @@ def hangzhou_institute_files() -> list[Path]:
             path
             for path in HANGZHOU_INSTITUTE_ROOT.rglob("*")
             if path.is_file() and not path.name.startswith("._")
+        ),
+        key=lambda path: path.as_posix(),
+    )
+
+
+def supplementary_files() -> list[Path]:
+    return sorted(
+        (
+            path
+            for root in SUPPLEMENTARY_ROOTS
+            if root.exists()
+            for path in root.rglob("*")
+            if path.is_file()
+            and not path.name.startswith("._")
+            and path.name not in CONTROL_FILES
         ),
         key=lambda path: path.as_posix(),
     )
@@ -159,12 +187,16 @@ def main() -> None:
     existing_by_path = {str(row.get("relative_path") or ""): row for row in existing}
     replacement_prefix = "10_政策与目录/政策数据库/企策顾问/"
     institute_prefix = "10_政策与目录/研究院/杭州市企业研究院/"
+    supplementary_prefixes = tuple(
+        f"{root.relative_to(KNOWLEDGE_ROOT).as_posix()}/" for root in SUPPLEMENTARY_ROOTS
+    )
     replaced_paths = {str(COMPANY_LAW_PATH.relative_to(KNOWLEDGE_ROOT)), str(LAYER_GUIDE_PATH.relative_to(KNOWLEDGE_ROOT))}
     retained = [
         row
         for row in existing
         if not str(row.get("relative_path", "")).startswith(replacement_prefix)
         and not str(row.get("relative_path", "")).startswith(institute_prefix)
+        and not str(row.get("relative_path", "")).startswith(supplementary_prefixes)
         and str(row.get("relative_path", "")) not in replaced_paths
     ]
     additions = [
@@ -189,6 +221,14 @@ def main() -> None:
         for path in hangzhou_institute_files()
     ]
     additions.extend(institute_additions)
+    supplementary_additions = [
+        manifest_row(
+            path,
+            existing_by_path.get(path.relative_to(KNOWLEDGE_ROOT).as_posix()),
+        )
+        for path in supplementary_files()
+    ]
+    additions.extend(supplementary_additions)
     rows = sorted(retained + additions, key=lambda row: str(row["relative_path"]))
     reconciled_companions = reconcile_ocr_companions(rows)
 
@@ -214,6 +254,7 @@ def main() -> None:
                 "regional_added": len(additions) - 2 - len(institute_additions),
                 "guides_added": 2,
                 "hangzhou_institute_added": len(institute_additions),
+                "supplementary_added": len(supplementary_additions),
                 "manifest_total": len(rows),
                 "ocr_companions_reconciled": reconciled_companions,
                 "backup": str(backup),

@@ -5,6 +5,25 @@ description: 基于制造企业近三年审计报告、财务报表及税务资�
 
 # 制造企业金税财务体检
 
+
+<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
+## 跨平台首次运行与个人习惯
+
+支持CodeBuddy/WorkBuddy内联命令的宿主会在技能触发时自动执行下面的确定性门禁，并把JSON结果注入当前上下文：
+
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+
+作为WorkBuddy插件加载时，还会把本轮实际触发的技能与当前会话和轮次绑定：
+
+!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "manufacturing-tax-risk-analysis" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
+
+每次触发本技能时，第一步必须定位当前`SKILL.md`所在的技能目录，并以该目录为工作目录运行`python3 scripts/portable_skill_runtime.py prepare`。不得因为当前任务看似简单而跳过。将返回的`active_preferences`作为用户个人习惯应用于当前任务；结果为`fail`时停止执行，不得声称安装、自检或升级成功。`capability_check`为`limited`时，只使用宿主已具备的能力，并明确未通过的依赖项，不得声称依赖完整。
+
+用户以“以后、默认、记住、每次、别再”等措辞明确表达长期习惯时：若上下文已出现“偏好桥接轮次已建立”的WorkBuddy钩子提示，不要手动调用`remember`，由停止钩子只向本轮实际触发且已经按会话、轮次绑定的技能写入；其他宿主则在最终答复前调用`python3 scripts/portable_skill_runtime.py remember --instruction '用户原意' --scope default --source agent-confirmed`，再调用`context`确认。未取得`status: pass`和对应偏好记录时，严禁声称“已记住”或“以后会默认采用”。无法执行保存时，只能说明本次会话已理解、尚未形成跨会话偏好。“这次、本次、当前文件、临时”等要求只影响当前任务，禁止写入长期偏好。无需让用户了解或输入存储命令。发生歧义、偏好冲突或可能削弱强制质量门禁时才询问。
+
+个人配置保存在技能目录外并自动备份。不得用个人偏好覆盖真实性、安全、验签、安装自检或本技能的强制质量门禁。完整规则见[跨平台技能运行协议](references/portable-runtime-protocol.md)。
+<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
 ## 目标
 
 把审计报告中的三年财务事实转换为可复算、可追溯的财务与税务风险报告。先判断数据一致性，再讨论税务风险；风险提示不等于违法认定。
@@ -46,6 +65,8 @@ description: 基于制造企业近三年审计报告、财务报表及税务资�
 python3 scripts/calculate_metrics.py input.json output.json
 ```
 
+`output.json` 必须使用 `enterprise-financial-facts/v1` 共享事实契约，保留企业身份、年度、单位、合并口径、原始数值、计算指标、证据页和质量状态。默认同时保存为任务工作区的 `artifacts/enterprise-financial-facts.v1.json`，供 `financial-verification`、`project-feasibility`、专精特新体检和其他申报技能复用。共享文件只传递数据与可复算指标，不把税务风险判断自动传递为项目资格结论。
+
 禁止把现金流量表“支付的税费 ÷ 收入”称为增值税税负率；统一称“现金税费支付率”。制造业经验基准只作提示，不能代替企业订单周期和行业对标。
 
 ### 4. 执行风险闸门
@@ -83,11 +104,21 @@ python3 scripts/calculate_metrics.py input.json output.json
 
 关键数字必须给来源页码和计算公式。报告封面固定列示“完成人：共创知识产权”。
 
+按 [自动报告输入规范](references/report-input-schema.md) 准备 `report-data.json`，可参考
+[完整示例](references/report-data.example.json)，然后运行：
+
+```bash
+python3 scripts/generate_report_html.py report-data.json report.html
+```
+
+生成器必须输出17个固定页面区块并完成必填字段、字段长度和未解析占位符检查。
+不得用模型临时拼接的普通HTML替代该生成器。
+
 ### 7. 生成金色顾问版 PDF
 
-1. 复用 `assets/gold-advisor.css` 或按同一视觉规范构建 HTML。正文必须贯彻深棕黑、香槟金、米金三层体系，不得只制作金色封面后沿用蓝绿正文。
-2. 确认宿主环境已提供 Node.js 与 Playwright。
-3. 以内存管道生成无水印 PDF，再调用包内相对脚本进行金色品牌双遍处理：
+1. 固定使用 `assets/gold-advisor.css` 与包内17页生成器。正文必须贯彻深棕黑、香槟金、米金三层体系，不得只制作金色封面后沿用蓝绿正文。
+2. 确认宿主环境已提供 Node.js、Playwright、Chromium和PyMuPDF；依赖版本见 `package.json` 与共享品牌运行时的 `requirements.txt`。
+3. 以内存管道生成无水印 PDF，再调用同一技能包内 `skills/_runtime/jiaotang-branding` 共享运行时进行金色品牌双遍处理：
 
 ```bash
 node scripts/render_pdf_stdout.js /abs/report.html \
@@ -98,18 +129,22 @@ node scripts/render_pdf_stdout.js /abs/report.html \
 
 ### 8. 交付闸门
 
-从当前 Skill 目录执行：
+从当前 Skill 目录执行共享交付闸门：
 
 ```bash
-python3 ../enterprise-panorama-analysis/scripts/validate_report_pdf.py \
-  /abs/report.pdf --require-watermark
+python3 ../_runtime/jiaotang-branding/scripts/delivery_gate.py \
+  /abs/report.pdf \
+  --expected-pages 17 \
+  --expected-author 共创知识产权 \
+  --expected-title-contains 金税四期
 ```
 
-渲染全部页面为图片，检查封面、普通正文、风险矩阵、最长表格和来源页。确认无裁切、重叠、空白页、乱码和表格断裂；金色水印每页居中且全文尺寸一致。
+闸门必须确认恰有17页、作者元数据正确、每页恰有一个居中金色水印且全文尺寸一致。
+随后渲染全部页面为图片，抽查封面、普通正文、风险矩阵、最长表格和来源页，确认无裁切、重叠、空白页、乱码和表格断裂。
 
 ## 交付要求
 
-- 交付 PDF、可编辑 HTML 和指标 JSON。
+- 交付 PDF、可编辑 HTML、指标 JSON 和 `enterprise-financial-facts/v1` 共享事实文件。
 - 说明数据缺口和 OCR 不确定性。
 - 不承诺不存在其他税务风险，不替代税务鉴证或法律意见。
 - 任务结束询问是否归档报告，并询问是否把本次结构继续沉淀为行业模板。

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-07-23",
+  "verified_by": "owner_manual_review",
+  "rules": [
+    "仅记录经主人逐项核对并明确确认为零企业的地区批次。",
+    "零企业不等于缺失；后续企策或官方来源出现企业记录时必须重新进入冲突核验。",
+    "本文件记录核验结论，不伪造不存在的地方名单附件或官方链接。"
+  ],
+  "cells": [
+    {"batch": "第四批", "recognition_year": 2022, "region": "新疆生产建设兵团"},
+    {"batch": "第五批", "recognition_year": 2023, "region": "新疆生产建设兵团"},
+    {"batch": "第五批", "recognition_year": 2023, "region": "西藏自治区"},
+    {"batch": "第六批", "recognition_year": 2024, "region": "新疆生产建设兵团"},
+    {"batch": "第六批", "recognition_year": 2024, "region": "西藏自治区"},
+    {"batch": "第六批", "recognition_year": 2024, "region": "青海省"},
+    {"batch": "第七批", "recognition_year": 2025, "region": "青海省"}
+  ]
+}

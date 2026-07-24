@@ -39,6 +39,10 @@ ENTERPRISE_PATTERN = re.compile(
     r"[\u4e00-\u9fffA-Za-z0-9（）()·—\-]{2,80}?"
     r"(?:股份有限公司|有限责任公司|集团有限公司|有限公司)"
 )
+LIST_ENTITY_LINE_PATTERN = re.compile(
+    r"[\u4e00-\u9fffA-Za-z0-9（）()·—\-]{2,100}"
+    r"(?:公司|厂|研究院|中心|合作社|集团|事务所)$"
+)
 HTML_ROW_PATTERN = re.compile(r"<tr\b[^>]*>(.*?)</tr>", re.IGNORECASE | re.DOTALL)
 HTML_CELL_PATTERN = re.compile(r"<t[dh]\b[^>]*>(.*?)</t[dh]>", re.IGNORECASE | re.DOTALL)
 HTML_TAG_PATTERN = re.compile(r"<[^>]+>")
@@ -95,7 +99,7 @@ ZHEJIANG_CITY_ALIASES = {
     "台州": "台州市",
     "丽水": "丽水市",
 }
-METADATA_RULE_VERSION = "structured-metadata-v2.0.0"
+METADATA_RULE_VERSION = "structured-metadata-v2.1.0"
 POLICY_CLUSTER_RULE_VERSION = "policy-cluster-v1.0.0"
 OFFICIAL_VALIDITY_STAGES = {
     "申报通知",
@@ -203,6 +207,37 @@ def infer_canonical_project(
     return best[1], {**best[2], "matched_alias": best[3]}
 
 
+def correct_local_small_giant_scope(
+    title: str,
+    source: str,
+    canonical_project_name: str,
+) -> str:
+    value = normalize_match_text(f"{title} {metadata_source_name(source)}")
+    if any(term in value for term in ("科技小巨人", "创新小巨人", "成长小巨人", "农业科技小巨人")):
+        return "地方科技小巨人企业"
+    if canonical_project_name != "国家专精特新“小巨人”企业":
+        return canonical_project_name
+    has_national_anchor = any(term in value for term in ("国家级", "国家专精特新", "工业和信息化部", "工信部"))
+    has_local_anchor = any(
+        term in value
+        for term in (
+            "市级专精特新小巨人",
+            "省级专精特新小巨人",
+            "自治区级专精特新小巨人",
+            "省级第三批专精特新小巨人",
+            "地方专精特新小巨人",
+        )
+    )
+    has_local_anchor = has_local_anchor or (
+        any(term in value for term in ("省级", "市级", "自治区级"))
+        and "专精特新" in value
+        and "小巨人" in value
+    )
+    if has_local_anchor and not has_national_anchor:
+        return "地方专精特新小巨人企业"
+    return canonical_project_name
+
+
 def infer_policy_year(title: str, source: str) -> int | None:
     for value in (title, metadata_source_name(source)):
         years = [int(year) for year in YEAR_PATTERN.findall(value)]
@@ -214,6 +249,47 @@ def infer_policy_year(title: str, source: str) -> int | None:
 def infer_batch(title: str, source: str) -> str:
     match = BATCH_PATTERN.search(f"{title} {metadata_source_name(source)}")
     return match.group(0) if match else ""
+
+
+NATIONAL_SMALL_GIANT_BATCH_YEARS = {
+    "第一批": 2019,
+    "第二批": 2020,
+    "第三批": 2021,
+    "第四批": 2022,
+    "第五批": 2023,
+    "第六批": 2024,
+    "第七批": 2025,
+    "第八批": 2026,
+}
+
+
+def infer_small_giant_batch_year(
+    title: str,
+    source: str,
+    canonical_project_name: str,
+    batch: str,
+) -> int | None:
+    value = f"{title} {metadata_source_name(source)}"
+    if canonical_project_name != "国家专精特新“小巨人”企业":
+        return None
+    if "复核" in value or "重点" in value:
+        return None
+    if "专精特新" not in value or "小巨人" not in value or "名单" not in value:
+        return None
+    return NATIONAL_SMALL_GIANT_BATCH_YEARS.get(batch)
+
+
+def infer_single_province_list_region(
+    content: str,
+    canonical_project_name: str,
+    document_role: str,
+) -> str:
+    if canonical_project_name != "国家专精特新“小巨人”企业":
+        return ""
+    if document_role != "50_名单与对标":
+        return ""
+    regions = [region for region in PROVINCE_LEVEL_REGIONS if region in content]
+    return regions[0] if len(regions) == 1 else ""
 
 
 def infer_document_stage(title: str, source: str, document_role: str) -> str:
@@ -303,7 +379,7 @@ def infer_policy_replacement(
             {
                 "validity_status": "superseded",
                 "replacement_title": "《优质中小企业梯度培育管理办法》（工信部企业〔2026〕2号）",
-                "replacement_basis": "2026年新办法已发布；新申请按新办法执行。2026年度小巨人复核按工信厅企业函〔2026〕117号保留过渡适用。",
+                "replacement_basis": "2026年新办法已发布，旧办法只保留为历史档案。2026年度小巨人复核曾按工信厅企业函〔2026〕117号使用旧标准，但该批复核已经结束；旧办法不得用于当前或未来的新申报、复核、评分和材料写作，也不得补充现行标准没有规定的条件。",
                 "replacement_url": "https://www.miit.gov.cn/zwgk/zcwj/wjfb/tz/art/2026/art_5546b1a622ea4d73bd2ca395b73bd4eb.html",
             }
         )
@@ -472,14 +548,34 @@ def infer_document_metadata(
     canonical_project_name, project_record = infer_canonical_project(
         title, source, project_catalog
     )
+    canonical_project_name = correct_local_small_giant_scope(
+        title, source, canonical_project_name
+    )
     replacement = infer_policy_replacement(title, source, content, document_role)
+    batch = infer_batch(title, source)
+    policy_year = infer_policy_year(title, source)
+    if policy_year is None:
+        policy_year = infer_small_giant_batch_year(
+            title,
+            source,
+            canonical_project_name,
+            batch,
+        )
+    region = infer_region(title, source, project_record, project_catalog)
+    list_region = infer_single_province_list_region(
+        content,
+        canonical_project_name,
+        document_role,
+    )
+    if list_region:
+        region = list_region
     metadata: dict[str, object] = {
         "canonical_project_name": canonical_project_name,
-        "region": infer_region(title, source, project_record, project_catalog),
+        "region": region,
         "document_stage": infer_document_stage(title, source, document_role),
         "validity_status": replacement["validity_status"],
-        "policy_year": infer_policy_year(title, source),
-        "batch": infer_batch(title, source),
+        "policy_year": policy_year,
+        "batch": batch,
         "replacement_title": replacement["replacement_title"],
         "replacement_basis": replacement["replacement_basis"],
         "replacement_url": replacement["replacement_url"],
@@ -1120,6 +1216,7 @@ def enterprise_mentions(text: str) -> list[tuple[str, str, str]]:
             continue
         cells = [cell.strip() for cell in stripped.split("|")]
         sequence = cells[0] if cells and cells[0].isdigit() else previous_sequence
+        matched_enterprise = False
         for match in ENTERPRISE_PATTERN.finditer(stripped):
             name = match.group(0).strip(" ：:，,、；;。")
             name = re.sub(r"^\d+[.、\s]*", "", name)
@@ -1128,9 +1225,69 @@ def enterprise_mentions(text: str) -> list[tuple[str, str, str]]:
                 continue
             seen.add(key)
             mentions.append((name, sequence, stripped[:500]))
+            matched_enterprise = True
+        if sequence and not matched_enterprise:
+            candidate = re.sub(r"^\d+[.、\s]*", "", stripped).strip(" ：:，,、；;。")
+            key = (candidate, sequence)
+            if LIST_ENTITY_LINE_PATTERN.fullmatch(candidate) and key not in seen:
+                seen.add(key)
+                mentions.append((candidate, sequence, stripped[:500]))
         if stripped and not stripped.isdigit():
             previous_sequence = ""
     return mentions
+
+
+def structured_small_giant_entities(text: str) -> list[tuple[object, ...]]:
+    try:
+        payload = json.loads(text)
+    except (TypeError, json.JSONDecodeError):
+        return []
+    if not isinstance(payload, dict) or payload.get("projectId") != 98:
+        return []
+    if "国家专精特新小巨人" not in str(payload.get("dataset") or ""):
+        return []
+    records = payload.get("records")
+    if not isinstance(records, list):
+        return []
+    rows: list[tuple[object, ...]] = []
+    for sequence, record in enumerate(records, start=1):
+        if not isinstance(record, dict):
+            continue
+        enterprise_name = str(record.get("entName") or "").strip()
+        if not enterprise_name:
+            continue
+        years = sorted({int(year) for year in YEAR_PATTERN.findall(str(record.get("subsidyYear") or ""))})
+        earliest_platform_year = years[0] if years else None
+        region = "".join(
+            str(record.get(field) or "").strip()
+            for field in ("province", "city", "county")
+        )
+        context = json.dumps(
+            {
+                "平台企业ID": str(record.get("eid") or "").strip(),
+                "登记地区": region,
+                "行业": str(record.get("industryName") or "").strip(),
+                "平台年份": str(record.get("subsidyYear") or "").strip(),
+                "最早平台年份": earliest_platform_year,
+                "数据状态": "企策顾问动态索引，待逐批官方名单核验",
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        rows.append(
+            (
+                enterprise_name,
+                str(sequence),
+                "国家专精特新“小巨人”企业",
+                None,
+                "",
+                region,
+                "平台历史获批记录待官方名单核验",
+                context,
+                "medium",
+            )
+        )
+    return rows
 
 
 def create_database(path: Path, rows: list[dict[str, object]]) -> None:
@@ -1233,6 +1390,15 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
                     ON public_list_entities(enterprise_name);
                 CREATE INDEX public_list_entities_project_idx
                     ON public_list_entities(canonical_project_name, policy_year, region);
+                CREATE TABLE public_list_entity_years (
+                    id INTEGER PRIMARY KEY,
+                    entity_id INTEGER NOT NULL REFERENCES public_list_entities(id) ON DELETE CASCADE,
+                    year INTEGER NOT NULL,
+                    year_role TEXT NOT NULL,
+                    UNIQUE(entity_id, year)
+                );
+                CREATE INDEX public_list_entity_years_year_idx
+                    ON public_list_entity_years(year, entity_id);
                 CREATE INDEX documents_policy_metadata_idx
                     ON documents(canonical_project_name, region, document_stage, validity_status);
                 CREATE TABLE project_alias_corrections (
@@ -1382,16 +1548,22 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
             )
             documents = connection.execute(
                 """
-                SELECT id,title,content,source,document_role,canonical_project_name,
+                SELECT id,source_key,title,content,source,document_role,canonical_project_name,
                        region,document_stage,policy_year,batch
                 FROM documents
                 """
             ).fetchall()
+            structured_by_source_key = {
+                str(row["source_key"]): list(row.get("_structured_entities") or [])
+                for row in enriched_rows
+                if row.get("_structured_entities")
+            }
             chunk_rows: list[tuple[int, int, str, str, str]] = []
             mention_rows: list[tuple[int, str, str, str]] = []
             list_entity_rows: list[tuple[object, ...]] = []
             for (
                 document_id,
+                source_key,
                 title,
                 content,
                 source,
@@ -1406,6 +1578,16 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
                     chunk_rows.append(
                         (int(document_id), chunk_number, str(title), chunk, str(source))
                     )
+                structured_entities = structured_by_source_key.get(str(source_key), [])
+                if not structured_entities:
+                    structured_entities = structured_small_giant_entities(str(content))
+                if structured_entities:
+                    for entity in structured_entities:
+                        mention_rows.append(
+                            (int(document_id), str(entity[0]), str(entity[1]), str(entity[7]))
+                        )
+                        list_entity_rows.append((int(document_id), *entity))
+                    continue
                 for name, sequence, context in enterprise_mentions(str(content)):
                     mention_rows.append((int(document_id), name, sequence, context))
                     if document_role == "50_名单与对标":
@@ -1447,6 +1629,21 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
                 """,
                 list_entity_rows,
             )
+            entity_year_rows: list[tuple[int, int, str]] = []
+            for entity_id, policy_year, context, confidence in connection.execute(
+                "SELECT id,policy_year,context,confidence FROM public_list_entities"
+            ):
+                years = {int(year) for year in YEAR_PATTERN.findall(str(context or ""))}
+                if policy_year:
+                    years.add(int(policy_year))
+                year_role = "platform_record" if confidence == "medium" else "official_document_year"
+                entity_year_rows.extend(
+                    (int(entity_id), year, year_role) for year in sorted(years)
+                )
+            connection.executemany(
+                "INSERT OR IGNORE INTO public_list_entity_years(entity_id,year,year_role) VALUES (?,?,?)",
+                entity_year_rows,
+            )
             enriched_by_source_key = {
                 str(row["source_key"]): row for row in enriched_rows
             }
@@ -1460,6 +1657,12 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
                     enriched_by_source_key[str(source_key)],
                 )
             rebuild_policy_document_clusters(connection)
+            try:
+                from scripts.build_document_scopes import rebuild_document_scopes
+            except ModuleNotFoundError:
+                from build_document_scopes import rebuild_document_scopes
+
+            rebuild_document_scopes(connection)
             connection.commit()
         finally:
             connection.close()
@@ -1521,6 +1724,14 @@ def main() -> None:
                     + "\n"
                 )
         status_counts[status] += 1
+        structured_entities: list[tuple[object, ...]] = []
+        if status == "indexed" and item.get("extension") == ".json":
+            try:
+                structured_entities = structured_small_giant_entities(
+                    Path(item["source_path"]).read_text(encoding="utf-8", errors="ignore")
+                )
+            except OSError:
+                structured_entities = []
         content_prefix = str(item.get("content_prefix") or "").strip()
         if status == "indexed" and content_prefix:
             text = f"{content_prefix}\n\n{text}".strip()
@@ -1533,8 +1744,7 @@ def main() -> None:
             }
         )
         if status == "indexed":
-            rows.append(
-                {
+            row = {
                     "source_key": item.get("source_key") or item["sha256"] or item["relative_path"],
                     "title": item.get("title") or item["name"],
                     "content": text,
@@ -1545,13 +1755,21 @@ def main() -> None:
                     "sha256": item["sha256"],
                     "updated_at": item["modified_at"],
                 }
-            )
+            if structured_entities:
+                row["_structured_entities"] = structured_entities
+            rows.append(row)
         if position % 250 == 0:
             print(f"processed={position}/{len(manifest)} indexed={len(rows)}", flush=True)
 
     with (output / "documents.jsonl").open("w", encoding="utf-8") as target:
         for row in rows:
-            target.write(json.dumps(row, ensure_ascii=False) + "\n")
+            target.write(
+                json.dumps(
+                    {key: value for key, value in row.items() if not key.startswith("_")},
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
     with (output / "extraction_report.csv").open("w", encoding="utf-8-sig", newline="") as target:
         writer = csv.DictWriter(
             target, fieldnames=["relative_path", "status", "text_chars", "sha256"]

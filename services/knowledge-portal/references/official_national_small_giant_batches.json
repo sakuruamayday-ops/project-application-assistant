@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "batches": [
+    {
+      "batch": "第一批",
+      "year": 2019,
+      "expected_count": 248,
+      "central_complete_attachment": true,
+      "official_url": "https://www.ncsti.gov.cn/kjdt/tzgg/201906/t20190613_3307.html",
+      "official_url_role": "official_complete_list_page"
+    },
+    {
+      "batch": "第二批",
+      "year": 2020,
+      "expected_count": 1744,
+      "central_complete_attachment": true,
+      "official_url": "https://www.miit.gov.cn/api-gateway/jpaas-web-server/front/document/file-download?fileName=%E7%AC%AC%E4%BA%8C%E6%89%B9%E4%B8%93%E7%B2%BE%E7%89%B9%E6%96%B0%E2%80%9C%E5%B0%8F%E5%B7%A8%E4%BA%BA%E2%80%9D%E4%BC%81%E4%B8%9A%E5%85%AC%E7%A4%BA%E5%90%8D%E5%8D%95.pdf&fileUrl=%2Fcms_files%2Ffilemanager%2F1226211233%2Fattach%2F202011%2Ff590f2c39b454a1da80f7e66972e6251.pdf",
+      "official_url_role": "official_complete_list_attachment"
+    },
+    {
+      "batch": "第三批",
+      "year": 2021,
+      "expected_count": 2930,
+      "central_complete_attachment": true,
+      "official_url": "https://www.miit.gov.cn/cms_files/filemanager/1226211233/attach/20217/71bd4daebeb44632b672b7747a36b65f.pdf",
+      "official_url_role": "official_complete_list_attachment"
+    },
+    {
+      "batch": "第四批",
+      "year": 2022,
+      "expected_count": 4357,
+      "central_complete_attachment": false,
+      "official_url": "https://www.miit.gov.cn/zwgk/zcwj/wjfb/tz/art/2022/art_945d372ec6244196aa23e5c987e83a58.html",
+      "official_url_role": "official_batch_notice"
+    },
+    {
+      "batch": "第五批",
+      "year": 2023,
+      "expected_count": 3671,
+      "central_complete_attachment": false,
+      "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2023/art_de9210c10d314345b4ba306d05958854.html",
+      "official_url_role": "official_batch_notice"
+    },
+    {
+      "batch": "第六批",
+      "year": 2024,
+      "expected_count": 3012,
+      "central_complete_attachment": false,
+      "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2024/art_a59798179a2246568cb53e68dff4f6c2.html",
+      "official_url_role": "official_batch_notice"
+    },
+    {
+      "batch": "第七批",
+      "year": 2025,
+      "expected_count": 3482,
+      "central_complete_attachment": false,
+      "official_url": "https://www.miit.gov.cn/zwgk/zcwj/wjfb/tz/art/2025/art_fdbc5f469b1e45f589963af5b7955d76.html",
+      "official_url_role": "official_batch_notice"
+    }
+  ]
+}

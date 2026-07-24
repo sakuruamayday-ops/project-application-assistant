@@ -14,7 +14,22 @@
     <article><span>累计调用</span><strong>{{ member.call_count }}</strong></article>
     <article><span>最近调用</span><strong>{{ member.last_called_at_display or '尚未调用' }}</strong></article>
     <article><span>注册时间</span><strong>{{ member.created_at_display }}</strong></article>
+    <article><span>密码安全状态</span><strong>已设置 · 原文不可查看</strong></article>
   </section>
-  <section class="panel danger-zone"><div><h3>{{ '恢复成员账号' if member.deleted_at else '账号管理' }}</h3><p class="muted">删除将立即停用账号并移入回收站，不会永久清除账号和审计记录。</p></div><div class="button-row">{% if member.deleted_at %}<form method="post" action="/admin/users/{{ member.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">恢复并启用账号</button></form>{% elif member.id != user.id %}<form method="post" action="/users/{{ member.id }}/toggle"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button secondary" type="submit">{{ '停用账号' if member.active else '启用账号' }}</button></form><form method="post" action="/admin/users/{{ member.id }}/trash" onsubmit="return confirm('确认将该成员账号移入回收站？该用户将立即退出登录。')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button danger" type="submit">删除到回收站</button></form>{% else %}<span class="muted">当前管理员不能删除或停用自己。</span>{% endif %}</div></section>
+  <section class="panel">
+    <div class="panel-head"><div><p class="eyebrow">Agent Installation</p><h3>最后一次结构化安装结果</h3></div>{% if latest_install_result %}<span class="table-status {{ 'off' if not latest_install_result.result_ok else '' }}">{{ '成功' if latest_install_result.result_ok else '失败' }}</span>{% endif %}</div>
+    {% if latest_install_result %}
+    <div class="detail-grid">
+      <article><span>上报时间</span><strong>{{ latest_install_result.result_reported_at_display }}</strong></article>
+      <article><span>失败阶段</span><strong>{{ latest_install_result.result_error_stage or '无' }}</strong></article>
+      <article><span>Agent 宿主</span><strong>{{ latest_install_result.result_host or '未返回' }}</strong></article>
+      <article><span>运行平台</span><strong>{{ latest_install_result.result_platform or '未返回' }}</strong></article>
+    </div>
+    <div class="form-stack"><p><strong>用户提示</strong><br>{{ latest_install_result.result_user_message }}</p><p><strong>下一步</strong><br>{{ latest_install_result.result_next_action or '无需后续操作' }}</p></div>
+    {% else %}
+    <p class="muted">尚未收到结构化安装结果。若 Agent 连安装协议入口都无法读取，服务器不会收到结果，应结合用户反馈的网络错误判断。</p>
+    {% endif %}
+  </section>
+  <section class="panel danger-zone"><div><h3>{{ '恢复成员账号' if member.deleted_at else '账号管理' }}</h3><p class="muted">密码长期有效且采用不可逆哈希保存。成员忘记密码时，可在登录页使用“验证身份并重置”。删除到回收站后可恢复，也可在回收站彻底删除。</p></div><div class="button-row">{% if member.deleted_at %}<form method="post" action="/admin/users/{{ member.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">恢复并启用账号</button></form>{% elif member.id != user.id %}{% if not member.active %}<form method="post" action="/admin/users/{{ member.id }}/reinvite"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">重新邀请注册</button></form>{% endif %}<form method="post" action="/users/{{ member.id }}/toggle"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button secondary" type="submit">{{ '停用账号' if member.active else '直接启用账号' }}</button></form><form method="post" action="/admin/users/{{ member.id }}/trash" onsubmit="return confirm('确认将该成员账号移入回收站？该用户将立即退出登录。')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button danger" type="submit">删除到回收站</button></form>{% else %}<span class="muted">当前管理员不能删除或停用自己。</span>{% endif %}</div></section>
 </main>
 {% endblock %}

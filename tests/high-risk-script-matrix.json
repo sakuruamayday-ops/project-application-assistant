@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "scripts": [
+    {
+      "path": "skills/sme-score-preassessment/scripts/score_core.mjs",
+      "risk": "high",
+      "reason": "决定专精特新与小巨人前期评分的输入有效性和行业映射。",
+      "test": "tests/test_high_risk_scripts.py::test_sme_score_core_validation_and_industry_mapping"
+    },
+    {
+      "path": "skills/financial-verification/scripts/validate_financial_assessment.py",
+      "risk": "high",
+      "reason": "决定财务事实、计算结果和来源能否进入后续项目判断。",
+      "test": "tests/test_high_risk_scripts.py::test_financial_assessment_validator"
+    },
+    {
+      "path": "skills/project-matching/scripts/build_retrieval_gold_standard.py",
+      "risk": "high",
+      "reason": "生成高频项目正向、串项和过期检索回归样例。",
+      "test": "tests/test_high_risk_scripts.py::test_retrieval_gold_standard_has_three_cases_per_alias"
+    },
+    {
+      "path": "skills/standard-drafting/scripts/audit_standard_draft.py",
+      "risk": "high",
+      "reason": "决定标准草案的必要章节、规范措辞和验证方法是否合格。",
+      "test": "tests/test_high_risk_scripts.py::test_standard_draft_audit"
+    },
+    {
+      "path": "skills/manufacturing-tax-risk-analysis/scripts/calculate_metrics.py",
+      "risk": "high",
+      "reason": "生成可跨Skill复用的企业财务事实和关键指标。",
+      "test": "tests/test_financial_facts.py::test_calculator_emits_reusable_financial_facts"
+    },
+    {
+      "path": "skills/project-matching/scripts/filter_project_map.py",
+      "risk": "high",
+      "reason": "决定国家、省、市项目的地域边界与串项排除。",
+      "test": "tests/test_project_map.py::ProjectMapTest::test_region_filter_excludes_other_localities"
+    }
+  ]
+}

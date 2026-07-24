@@ -1,0 +1,20 @@
+{
+  "reconciled_at": "2026-07-23T09:20:00+08:00",
+  "scope": "11个疑似缺口地区的省级专精特新中小企业官方来源",
+  "initial_sources": 41,
+  "initial_direct_success": 32,
+  "recovered_sources": 9,
+  "unresolved_sources": 0,
+  "recovered": [
+    {"region": "江苏省", "year": 2022, "method": "官方PDF替代失效页面"},
+    {"region": "江苏省", "year": 2025, "method": "官方PDF替代失效页面"},
+    {"region": "山东省", "year": 2023, "method": "官方页面正文补录"},
+    {"region": "山东省", "year": 2024, "method": "官方页面正文补录"},
+    {"region": "陕西省", "year": 2023, "method": "官方页面正文补录"},
+    {"region": "宁夏回族自治区", "year": 2022, "method": "官方页面正文补录"},
+    {"region": "宁夏回族自治区", "year": 2023, "method": "官方页面正文补录"},
+    {"region": "宁夏回族自治区", "year": 2024, "method": "官方页面正文补录"},
+    {"region": "重庆市", "year": 2022, "method": "以渝经信中小〔2022〕11号正式公布页替代失效区级链接"}
+  ],
+  "boundary": "来源补齐不等于所有年度均有最终认定名单；公示、复核、通知和正式公布仍按证据类型分别标记。"
+}

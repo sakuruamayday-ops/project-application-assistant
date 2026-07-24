@@ -59,17 +59,17 @@
     },
     {
       "id": "zhejiang-specialized-sme",
-      "aliases": ["省专精特新", "省级专精特新"],
+      "aliases": ["专精特新中小企业", "省专", "省专精特新", "省级专精特新"],
       "targets": ["专精特新中小企业"],
       "allowed_title_terms": ["专精特新中小企业", "优质中小企业梯度培育"],
-      "excluded_title_terms": ["专精特新小巨人", "重点专精特新", "创新型中小企业"]
+      "excluded_title_terms": ["专精特新小巨人", "重点专精特新", "创新型中小企业", "专精特新产业园", "科技小巨人", "地方专精特新小巨人", "专精特新服务机构", "小微企业园"]
     },
     {
       "id": "little-giant",
       "aliases": ["小巨人"],
       "targets": ["专精特新小巨人"],
       "allowed_title_terms": ["专精特新小巨人", "专精特新“小巨人”"],
-      "excluded_title_terms": ["专精特新中小企业", "重点专精特新", "重点小巨人"]
+      "excluded_title_terms": ["专精特新中小企业", "重点专精特新", "重点小巨人", "科技小巨人", "专精特新产业园", "地方专精特新小巨人"]
     },
     {
       "id": "key-little-giant-support",

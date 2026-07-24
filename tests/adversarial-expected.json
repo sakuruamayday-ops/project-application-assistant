@@ -1,0 +1,1618 @@
+{
+  "schema_version": 1,
+  "case_count": 108,
+  "answers": [
+    {
+      "case_id": "ADV-01-BASE",
+      "category": "base",
+      "expected_primary_skill": "agriculture-and-rural-projects",
+      "required_skills": [
+        "agriculture-and-rural-projects"
+      ],
+      "forbidden_skills": [
+        "industrialization-projects",
+        "investment-subsidy-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-01-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "agriculture-and-rural-projects",
+      "required_skills": [
+        "agriculture-and-rural-projects"
+      ],
+      "forbidden_skills": [
+        "industrialization-projects",
+        "investment-subsidy-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-01-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "agriculture-and-rural-projects",
+      "required_skills": [
+        "agriculture-and-rural-projects"
+      ],
+      "forbidden_skills": [
+        "industrialization-projects",
+        "investment-subsidy-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-01-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "agriculture-and-rural-projects",
+      "required_skills": [
+        "agriculture-and-rural-projects"
+      ],
+      "forbidden_skills": [
+        "industrialization-projects",
+        "investment-subsidy-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-01-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "industrialization-projects",
+        "investment-subsidy-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-01-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "industrialization-projects",
+        "investment-subsidy-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-02-BASE",
+      "category": "base",
+      "expected_primary_skill": "application-version-diff",
+      "required_skills": [
+        "application-version-diff"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-02-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "application-version-diff",
+      "required_skills": [
+        "application-version-diff"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-02-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "application-version-diff",
+      "required_skills": [
+        "application-version-diff"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-02-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "application-version-diff",
+      "required_skills": [
+        "application-version-diff"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-03-BASE",
+      "category": "base",
+      "expected_primary_skill": "application-writing",
+      "required_skills": [
+        "application-writing"
+      ],
+      "forbidden_skills": [
+        "project-matching"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-03-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "application-writing",
+      "required_skills": [
+        "application-writing"
+      ],
+      "forbidden_skills": [
+        "project-matching"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-03-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "application-writing",
+      "required_skills": [
+        "application-writing"
+      ],
+      "forbidden_skills": [
+        "project-matching"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-03-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "application-writing",
+      "required_skills": [
+        "application-writing"
+      ],
+      "forbidden_skills": [
+        "project-matching"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-04-BASE",
+      "category": "base",
+      "expected_primary_skill": "consistency-check",
+      "required_skills": [
+        "consistency-check"
+      ],
+      "forbidden_skills": [
+        "application-version-diff",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-04-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "consistency-check",
+      "required_skills": [
+        "consistency-check"
+      ],
+      "forbidden_skills": [
+        "application-version-diff",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-04-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "consistency-check",
+      "required_skills": [
+        "consistency-check"
+      ],
+      "forbidden_skills": [
+        "application-version-diff",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-04-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "consistency-check",
+      "required_skills": [
+        "consistency-check"
+      ],
+      "forbidden_skills": [
+        "application-version-diff",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-05-BASE",
+      "category": "base",
+      "expected_primary_skill": "digitalization-projects",
+      "required_skills": [
+        "digitalization-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects",
+        "investment-subsidy-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-05-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "digitalization-projects",
+      "required_skills": [
+        "digitalization-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects",
+        "investment-subsidy-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-05-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "digitalization-projects",
+      "required_skills": [
+        "digitalization-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects",
+        "investment-subsidy-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-05-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "digitalization-projects",
+      "required_skills": [
+        "digitalization-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects",
+        "investment-subsidy-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-05-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "investment-subsidy-projects",
+        "project-feasibility",
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-05-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "investment-subsidy-projects",
+        "project-feasibility",
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-06-BASE",
+      "category": "base",
+      "expected_primary_skill": "evidence-ledger",
+      "required_skills": [
+        "evidence-ledger"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-06-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "evidence-ledger",
+      "required_skills": [
+        "evidence-ledger"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-06-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "evidence-ledger",
+      "required_skills": [
+        "evidence-ledger"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-06-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "evidence-ledger",
+      "required_skills": [
+        "evidence-ledger"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-07-BASE",
+      "category": "base",
+      "expected_primary_skill": "green-development-projects",
+      "required_skills": [
+        "green-development-projects"
+      ],
+      "forbidden_skills": [
+        "investment-subsidy-projects",
+        "digitalization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-07-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "green-development-projects",
+      "required_skills": [
+        "green-development-projects"
+      ],
+      "forbidden_skills": [
+        "investment-subsidy-projects",
+        "digitalization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-07-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "green-development-projects",
+      "required_skills": [
+        "green-development-projects"
+      ],
+      "forbidden_skills": [
+        "investment-subsidy-projects",
+        "digitalization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-07-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "green-development-projects",
+      "required_skills": [
+        "green-development-projects"
+      ],
+      "forbidden_skills": [
+        "investment-subsidy-projects",
+        "digitalization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-07-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "digitalization-projects",
+        "investment-subsidy-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-07-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "digitalization-projects",
+        "investment-subsidy-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-08-BASE",
+      "category": "base",
+      "expected_primary_skill": "industry-positioning",
+      "required_skills": [
+        "industry-positioning"
+      ],
+      "forbidden_skills": [
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-08-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "industry-positioning",
+      "required_skills": [
+        "industry-positioning"
+      ],
+      "forbidden_skills": [
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-08-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "industry-positioning",
+      "required_skills": [
+        "industry-positioning"
+      ],
+      "forbidden_skills": [
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-08-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "industry-positioning",
+      "required_skills": [
+        "industry-positioning"
+      ],
+      "forbidden_skills": [
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-09-BASE",
+      "category": "base",
+      "expected_primary_skill": "intellectual-property-projects",
+      "required_skills": [
+        "intellectual-property-projects"
+      ],
+      "forbidden_skills": [
+        "patent-fto-analysis",
+        "patent-claim-analysis"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-09-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "intellectual-property-projects",
+      "required_skills": [
+        "intellectual-property-projects"
+      ],
+      "forbidden_skills": [
+        "patent-fto-analysis",
+        "patent-claim-analysis"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-09-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "intellectual-property-projects",
+      "required_skills": [
+        "intellectual-property-projects"
+      ],
+      "forbidden_skills": [
+        "patent-fto-analysis",
+        "patent-claim-analysis"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-09-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "intellectual-property-projects",
+      "required_skills": [
+        "intellectual-property-projects"
+      ],
+      "forbidden_skills": [
+        "patent-fto-analysis",
+        "patent-claim-analysis"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-09-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "patent-claim-analysis",
+        "patent-fto-analysis",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-09-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "patent-claim-analysis",
+        "patent-fto-analysis",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-10-BASE",
+      "category": "base",
+      "expected_primary_skill": "investment-subsidy-projects",
+      "required_skills": [
+        "investment-subsidy-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-10-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "investment-subsidy-projects",
+      "required_skills": [
+        "investment-subsidy-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-10-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "investment-subsidy-projects",
+      "required_skills": [
+        "investment-subsidy-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-10-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "investment-subsidy-projects",
+      "required_skills": [
+        "investment-subsidy-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-10-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "project-feasibility",
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-10-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "project-feasibility",
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-11-BASE",
+      "category": "base",
+      "expected_primary_skill": "ip-assessment",
+      "required_skills": [
+        "ip-assessment"
+      ],
+      "forbidden_skills": [
+        "patent-fto-analysis"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-11-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "ip-assessment",
+      "required_skills": [
+        "ip-assessment"
+      ],
+      "forbidden_skills": [
+        "patent-fto-analysis"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-11-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "ip-assessment",
+      "required_skills": [
+        "ip-assessment"
+      ],
+      "forbidden_skills": [
+        "patent-fto-analysis"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-11-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "ip-assessment",
+      "required_skills": [
+        "ip-assessment"
+      ],
+      "forbidden_skills": [
+        "patent-fto-analysis"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-12-BASE",
+      "category": "base",
+      "expected_primary_skill": "patent-layout-planning",
+      "required_skills": [
+        "patent-layout-planning"
+      ],
+      "forbidden_skills": [
+        "patent-drafting-coach"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-12-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "patent-layout-planning",
+      "required_skills": [
+        "patent-layout-planning"
+      ],
+      "forbidden_skills": [
+        "patent-drafting-coach"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-12-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "patent-layout-planning",
+      "required_skills": [
+        "patent-layout-planning"
+      ],
+      "forbidden_skills": [
+        "patent-drafting-coach"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-12-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "patent-layout-planning",
+      "required_skills": [
+        "patent-layout-planning"
+      ],
+      "forbidden_skills": [
+        "patent-drafting-coach"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-13-BASE",
+      "category": "base",
+      "expected_primary_skill": "peer-benchmarking",
+      "required_skills": [
+        "peer-benchmarking"
+      ],
+      "forbidden_skills": [
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-13-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "peer-benchmarking",
+      "required_skills": [
+        "peer-benchmarking"
+      ],
+      "forbidden_skills": [
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-13-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "peer-benchmarking",
+      "required_skills": [
+        "peer-benchmarking"
+      ],
+      "forbidden_skills": [
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-13-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "peer-benchmarking",
+      "required_skills": [
+        "peer-benchmarking"
+      ],
+      "forbidden_skills": [
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-13-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-13-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-14-BASE",
+      "category": "base",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-14-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-14-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-14-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-14-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-14-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-15-BASE",
+      "category": "base",
+      "expected_primary_skill": "project-memory",
+      "required_skills": [
+        "project-memory"
+      ],
+      "forbidden_skills": [
+        "experience-recorder"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-15-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "project-memory",
+      "required_skills": [
+        "project-memory"
+      ],
+      "forbidden_skills": [
+        "experience-recorder"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-15-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "project-memory",
+      "required_skills": [
+        "project-memory"
+      ],
+      "forbidden_skills": [
+        "experience-recorder"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-15-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "project-memory",
+      "required_skills": [
+        "project-memory"
+      ],
+      "forbidden_skills": [
+        "experience-recorder"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-16-BASE",
+      "category": "base",
+      "expected_primary_skill": "quality-brand-projects",
+      "required_skills": [
+        "quality-brand-projects"
+      ],
+      "forbidden_skills": [
+        "intellectual-property-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-16-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "quality-brand-projects",
+      "required_skills": [
+        "quality-brand-projects"
+      ],
+      "forbidden_skills": [
+        "intellectual-property-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-16-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "quality-brand-projects",
+      "required_skills": [
+        "quality-brand-projects"
+      ],
+      "forbidden_skills": [
+        "intellectual-property-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-16-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "quality-brand-projects",
+      "required_skills": [
+        "quality-brand-projects"
+      ],
+      "forbidden_skills": [
+        "intellectual-property-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-16-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "intellectual-property-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-16-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "intellectual-property-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-17-BASE",
+      "category": "base",
+      "expected_primary_skill": "regional-special-projects",
+      "required_skills": [
+        "regional-special-projects"
+      ],
+      "forbidden_skills": [
+        "digitalization-projects",
+        "green-development-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-17-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "regional-special-projects",
+      "required_skills": [
+        "regional-special-projects"
+      ],
+      "forbidden_skills": [
+        "digitalization-projects",
+        "green-development-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-17-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "regional-special-projects",
+      "required_skills": [
+        "regional-special-projects"
+      ],
+      "forbidden_skills": [
+        "digitalization-projects",
+        "green-development-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-17-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "regional-special-projects",
+      "required_skills": [
+        "regional-special-projects"
+      ],
+      "forbidden_skills": [
+        "digitalization-projects",
+        "green-development-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-17-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "digitalization-projects",
+        "green-development-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-17-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "digitalization-projects",
+        "green-development-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-18-BASE",
+      "category": "base",
+      "expected_primary_skill": "skill-authoring",
+      "required_skills": [
+        "skill-authoring"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-18-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "skill-authoring",
+      "required_skills": [
+        "skill-authoring"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-18-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "skill-authoring",
+      "required_skills": [
+        "skill-authoring"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-18-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "skill-authoring",
+      "required_skills": [
+        "skill-authoring"
+      ],
+      "forbidden_skills": [
+        "project-feasibility",
+        "application-writing"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-19-BASE",
+      "category": "base",
+      "expected_primary_skill": "talent-projects",
+      "required_skills": [
+        "talent-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-19-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "talent-projects",
+      "required_skills": [
+        "talent-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-19-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "talent-projects",
+      "required_skills": [
+        "talent-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-19-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "talent-projects",
+      "required_skills": [
+        "talent-projects"
+      ],
+      "forbidden_skills": [
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-19-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "project-feasibility",
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-19-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "project-feasibility",
+        "technology-innovation-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-20-BASE",
+      "category": "base",
+      "expected_primary_skill": "technology-innovation-projects",
+      "required_skills": [
+        "technology-innovation-projects"
+      ],
+      "forbidden_skills": [
+        "investment-subsidy-projects",
+        "industrialization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-20-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "technology-innovation-projects",
+      "required_skills": [
+        "technology-innovation-projects"
+      ],
+      "forbidden_skills": [
+        "investment-subsidy-projects",
+        "industrialization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-20-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "technology-innovation-projects",
+      "required_skills": [
+        "technology-innovation-projects"
+      ],
+      "forbidden_skills": [
+        "investment-subsidy-projects",
+        "industrialization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-20-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "technology-innovation-projects",
+      "required_skills": [
+        "technology-innovation-projects"
+      ],
+      "forbidden_skills": [
+        "investment-subsidy-projects",
+        "industrialization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-20-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "industrialization-projects",
+        "investment-subsidy-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-20-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "industrialization-projects",
+        "investment-subsidy-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-21-BASE",
+      "category": "base",
+      "expected_primary_skill": "trade-and-open-economy-projects",
+      "required_skills": [
+        "trade-and-open-economy-projects"
+      ],
+      "forbidden_skills": [
+        "digitalization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-21-TYPO",
+      "category": "typo",
+      "expected_primary_skill": "trade-and-open-economy-projects",
+      "required_skills": [
+        "trade-and-open-economy-projects"
+      ],
+      "forbidden_skills": [
+        "digitalization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-21-NEGATION",
+      "category": "negation",
+      "expected_primary_skill": "trade-and-open-economy-projects",
+      "required_skills": [
+        "trade-and-open-economy-projects"
+      ],
+      "forbidden_skills": [
+        "digitalization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-21-MULTI-DOMAIN",
+      "category": "multi-domain",
+      "expected_primary_skill": "trade-and-open-economy-projects",
+      "required_skills": [
+        "trade-and-open-economy-projects"
+      ],
+      "forbidden_skills": [
+        "digitalization-projects"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "not-applicable",
+      "claims_must_be_limited": false
+    },
+    {
+      "case_id": "ADV-21-STALE-1",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "digitalization-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    },
+    {
+      "case_id": "ADV-21-STALE-2",
+      "category": "stale-policy",
+      "expected_primary_skill": "policy-retrieval",
+      "required_skills": [
+        "policy-retrieval"
+      ],
+      "forbidden_skills": [
+        "application-writing",
+        "digitalization-projects",
+        "project-feasibility"
+      ],
+      "clarification_required": false,
+      "expected_policy_status": "stale",
+      "claims_must_be_limited": true
+    }
+  ]
+}

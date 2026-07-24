@@ -115,3 +115,9 @@
 {"alias": "工业新产品", "expected_clarification": false, "expected_targets": ["浙江省工业新产品"], "id": "zhejiang-industrial-new-product:工业新产品:positive", "kind": "positive", "query": "工业新产品申报条件"}
 {"alias": "工业新产品", "allowed_title": "浙江省工业新产品申报通知", "excluded_title": "浙江制造精品申报通知", "id": "zhejiang-industrial-new-product:工业新产品:cross-project", "kind": "cross-project", "query": "工业新产品申报条件"}
 {"alias": "工业新产品", "current_title": "浙江省工业新产品管理办法", "id": "zhejiang-industrial-new-product:工业新产品:stale", "kind": "stale", "query": "工业新产品申报条件", "stale_title": "2022年浙江省工业新产品申报指南"}
+{"alias": "专精特新中小企业", "expected_clarification": false, "expected_targets": ["专精特新中小企业"], "id": "zhejiang-specialized-sme:专精特新中小企业:positive", "kind": "positive", "query": "专精特新中小企业申报条件"}
+{"alias": "专精特新中小企业", "allowed_title": "专精特新中小企业申报通知", "excluded_title": "专精特新小巨人申报通知", "id": "zhejiang-specialized-sme:专精特新中小企业:cross-project", "kind": "cross-project", "query": "专精特新中小企业申报条件"}
+{"alias": "专精特新中小企业", "current_title": "专精特新中小企业管理办法", "id": "zhejiang-specialized-sme:专精特新中小企业:stale", "kind": "stale", "query": "专精特新中小企业申报条件", "stale_title": "2022年专精特新中小企业申报指南"}
+{"alias": "省专", "expected_clarification": false, "expected_targets": ["专精特新中小企业"], "id": "zhejiang-specialized-sme:省专:positive", "kind": "positive", "query": "省专申报条件"}
+{"alias": "省专", "allowed_title": "专精特新中小企业申报通知", "excluded_title": "专精特新小巨人申报通知", "id": "zhejiang-specialized-sme:省专:cross-project", "kind": "cross-project", "query": "省专申报条件"}
+{"alias": "省专", "current_title": "专精特新中小企业管理办法", "id": "zhejiang-specialized-sme:省专:stale", "kind": "stale", "query": "省专申报条件", "stale_title": "2022年专精特新中小企业申报指南"}

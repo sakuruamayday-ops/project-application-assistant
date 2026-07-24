@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "scope": ["pdf", "pptx", "docx", "xlsx"],
+  "excluded_formats": ["xls", "csv"],
+  "policy": {
+    "default_required": true,
+    "position": [0.50, 0.50],
+    "size_scope": "document",
+    "size_multiplier": 1.3333333333333333,
+    "page_level_size_adjustment": false,
+    "owner_only_opt_out_phrase": "不许加水印",
+    "generated_skills_may_disable": false
+  },
+  "dark_background_luminance_threshold": 0.42,
+  "density_thresholds": {
+    "low_max": 0.30,
+    "medium_max": 0.62
+  },
+  "styles": {
+    "low": {
+      "light_asset": "brand-red-12.png",
+      "dark_asset": "brand-white-16.png",
+      "pdf_scale": 0.58,
+      "pptx_scale": 0.48,
+      "docx_scale": 0.50,
+      "xlsx_scale": 0.42,
+      "position": [0.50, 0.50]
+    },
+    "medium": {
+      "light_asset": "brand-red-10.png",
+      "dark_asset": "brand-white-10.png",
+      "pdf_scale": 0.48,
+      "pptx_scale": 0.38,
+      "docx_scale": 0.42,
+      "xlsx_scale": 0.36,
+      "position": [0.50, 0.50]
+    },
+    "high": {
+      "light_asset": "brand-red-07.png",
+      "dark_asset": "brand-white-10.png",
+      "pdf_scale": 0.36,
+      "pptx_scale": 0.30,
+      "docx_scale": 0.34,
+      "xlsx_scale": 0.30,
+      "position": [0.50, 0.50]
+    }
+  },
+  "variants": {
+    "gold": {
+      "low": {
+        "light_asset": "brand-gold-12.png",
+        "dark_asset": "brand-white-16.png",
+        "pdf_scale": 0.58,
+        "pptx_scale": 0.48,
+        "docx_scale": 0.50,
+        "xlsx_scale": 0.42,
+        "position": [0.50, 0.50]
+      },
+      "medium": {
+        "light_asset": "brand-gold-10.png",
+        "dark_asset": "brand-white-10.png",
+        "pdf_scale": 0.48,
+        "pptx_scale": 0.38,
+        "docx_scale": 0.42,
+        "xlsx_scale": 0.36,
+        "position": [0.50, 0.50]
+      },
+      "high": {
+        "light_asset": "brand-gold-07.png",
+        "dark_asset": "brand-white-10.png",
+        "pdf_scale": 0.36,
+        "pptx_scale": 0.30,
+        "docx_scale": 0.34,
+        "xlsx_scale": 0.30,
+        "position": [0.50, 0.50]
+      }
+    }
+  }
+}

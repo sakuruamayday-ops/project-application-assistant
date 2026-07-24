@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "algorithm": "OpenSSH-Ed25519",
+  "signature_namespace": "codex-skill-manifest",
+  "signed_file": "release-manifest.json",
+  "signature": "release-manifest.json.sig",
+  "public_key": "publisher-ed25519.pub",
+  "public_key_fingerprint": "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI",
+  "trust_model": "trust-on-first-use-with-pinned-updates"
+}

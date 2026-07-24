@@ -31,7 +31,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Callable, Iterator
 from zoneinfo import ZoneInfo
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urlencode, urlparse
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
@@ -52,6 +52,17 @@ from app.assistant_runtime import (
     route_assistant_skills,
     skill_context,
     skill_guidance,
+)
+from app.device_security import (
+    DeviceSignature,
+    DeviceSignatureError,
+    KEY_ID_PATTERN,
+    NONCE_PATTERN,
+    device_key_id,
+    enrollment_canonical_value,
+    request_body_hash,
+    request_canonical_value,
+    verify_ed25519_signature,
 )
 
 
@@ -131,6 +142,10 @@ WEB_SEARCH_RSS_URL = os.environ.get(
 ).strip()
 ASSISTANT_DAILY_LIMIT = int(os.environ.get("JIAOTANG_ASSISTANT_DAILY_LIMIT", "5"))
 ASSISTANT_TIMEZONE = ZoneInfo("Asia/Shanghai")
+OAUTH_ACCESS_TOKEN_MINUTES = int(os.environ.get("JIAOTANG_OAUTH_ACCESS_TOKEN_MINUTES", "60"))
+OAUTH_REFRESH_TOKEN_DAYS = int(os.environ.get("JIAOTANG_OAUTH_REFRESH_TOKEN_DAYS", "30"))
+OAUTH_CODE_MINUTES = 10
+OAUTH_SCOPES = ("knowledge:read", "mcp:tools")
 DEPLOYED_SKILL_SOURCE_DIR = BASE_DIR / "skills"
 SOURCE_SKILL_SOURCE_DIR = BASE_DIR.parents[1] / "skills"
 SKILL_SOURCE_DIR = Path(
@@ -254,6 +269,15 @@ ACCOUNT_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9._-]{2,31}$")
 REAL_NAME_PATTERN = re.compile(r"^[\u3400-\u4dbf\u4e00-\u9fff·]{2,20}$")
 IDENTITY_CODE_PATTERN = re.compile(r"^\d{4}$")
 MOBILE_PHONE_PATTERN = re.compile(r"^1\d{10}$")
+DEVICE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$")
+DEVICE_ID_HEADER = "X-Jiaotang-Device-ID"
+DEVICE_NAME_HEADER = "X-Jiaotang-Device-Name"
+DEVICE_KEY_ID_HEADER = "X-Jiaotang-Key-ID"
+DEVICE_TIMESTAMP_HEADER = "X-Jiaotang-Timestamp"
+DEVICE_NONCE_HEADER = "X-Jiaotang-Nonce"
+DEVICE_SIGNATURE_HEADER = "X-Jiaotang-Signature"
+DEVICE_SIGNATURE_MAX_CLOCK_SKEW_SECONDS = 90
+AGENT_BOOTSTRAP_MINUTES = 60
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 public_host = os.environ.get("JIAOTANG_PUBLIC_HOST", "localhost").strip()
 knowledge_mcp = FastMCP(
@@ -302,6 +326,25 @@ class SearchResponse(BaseModel):
     query: str
     clarification: str | None = None
     results: list[SearchResult]
+
+
+class OAuthClientRegistrationRequest(BaseModel):
+    redirect_uris: list[str] = Field(min_length=1, max_length=20)
+    client_name: str = Field(default="MCP Client", max_length=200)
+    grant_types: list[str] = Field(
+        default_factory=lambda: ["authorization_code", "refresh_token"], max_length=5
+    )
+    response_types: list[str] = Field(default_factory=lambda: ["code"], max_length=5)
+    token_endpoint_auth_method: str = Field(default="none", max_length=50)
+
+
+class AgentDeviceRegistrationRequest(BaseModel):
+    public_key: str = Field(min_length=40, max_length=512)
+    proof: str = Field(min_length=40, max_length=512)
+    device_id: str = Field(min_length=16, max_length=128)
+    device_name: str = Field(min_length=1, max_length=100)
+    platform: str = Field(min_length=2, max_length=40)
+    agent_host: str = Field(min_length=2, max_length=60)
 
 
 class PublicListSearchRequest(BaseModel):
@@ -449,7 +492,20 @@ def format_chinese_datetime(value: str | None) -> str:
         return str(value)
 
 
+def format_standard_datetime(value: str | None) -> str:
+    if not value:
+        return "—"
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(ASSISTANT_TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return str(value)
+
+
 templates.env.filters["cn_datetime"] = format_chinese_datetime
+templates.env.filters["standard_datetime"] = format_standard_datetime
 
 
 def format_row_datetimes(
@@ -597,7 +653,12 @@ def registration_authorization_from_invite(invite_token: str) -> sqlite3.Row | N
         return None
     with closing(database()) as connection:
         authorization = connection.execute(
-            "SELECT * FROM registration_authorizations WHERE id=? AND deleted_at IS NULL",
+            """
+            SELECT registration_authorizations.*,users.username AS existing_username
+            FROM registration_authorizations
+            LEFT JOIN users ON users.id=registration_authorizations.user_id
+            WHERE registration_authorizations.id=? AND registration_authorizations.deleted_at IS NULL
+            """,
             (authorization_id,),
         ).fetchone()
     if authorization is None:
@@ -716,6 +777,29 @@ def content_database() -> sqlite3.Connection:
     return read_only_database(CONTENT_DATABASE_PATH)
 
 
+def sqlite_table_exists(connection: sqlite3.Connection, table_name: str) -> bool:
+    return bool(
+        connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+            (table_name,),
+        ).fetchone()
+    )
+
+
+def canonical_document_clause(
+    connection: sqlite3.Connection,
+    alias: str = "documents",
+) -> str:
+    if not sqlite_table_exists(connection, "document_duplicates"):
+        return ""
+    return (
+        " AND NOT EXISTS ("
+        "SELECT 1 FROM document_duplicates canonical_filter "
+        f"WHERE canonical_filter.document_id={alias}.id "
+        f"AND canonical_filter.canonical_document_id<>{alias}.id)"
+    )
+
+
 def fts_expression(query: str) -> str:
     terms = [term for term in re.split(r"\s+", query.strip()) if term]
     return " AND ".join(f'"{term.replace(chr(34), chr(34) * 2)}"' for term in terms)
@@ -732,18 +816,192 @@ def query_terms(query: str) -> list[str]:
     return [term for term in re.split(r"\s+", query.strip()) if term]
 
 
-def project_result_priority(row: sqlite3.Row, retrieval_queries: list[str]) -> int:
-    title = re.sub(r"\s+", "", str(row["title"] or ""))
-    source = re.sub(r"\s+", "", str(row["source"] or ""))
-    phrases = [re.sub(r"\s+", "", query) for query in retrieval_queries if query.strip()]
+def normalize_search_text(value: object) -> str:
+    return re.sub(r"[^0-9A-Za-z\u4e00-\u9fff]+", "", str(value or ""))
+
+
+def fuzzy_retrieval_terms(query: str, retrieval_queries: list[str]) -> list[str]:
+    candidates = [*retrieval_queries]
+    reduced = re.sub(r"(?<!\d)20\d{2}(?:年|年度)?", " ", query)
+    for term in sorted(POLICY_INTENT_TERMS, key=len, reverse=True):
+        reduced = reduced.replace(term, " ")
+    reduced = re.sub(
+        r"(?:帮我|请问|查询|检索|查找|搜索|一下|相关|对应|有哪些|是什么|怎么报|如何报|怎么申请|如何申请)",
+        " ",
+        reduced,
+    )
+    reduced = re.sub(r"[^0-9A-Za-z\u4e00-\u9fff]+", " ", reduced)
+    candidates.extend(query_terms(reduced))
+    candidates.extend(term for variant in retrieval_queries for term in query_terms(variant))
+    terms: list[str] = []
+    for candidate in candidates:
+        normalized = re.sub(r"\s+", "", candidate).strip()
+        if len(normalized) < 2 or normalized.isdigit():
+            continue
+        terms.append(normalized)
+        if len(normalized) >= 5:
+            terms.extend(
+                normalized[index : index + 3]
+                for index in range(len(normalized) - 2)
+                if normalized[index : index + 3]
+                not in {"申报通", "报通知", "公示名", "示名单", "管理办", "理办法"}
+            )
+    return list(dict.fromkeys(terms))[:40]
+
+
+def fuzzy_result_priority(
+    row: sqlite3.Row | dict[str, object],
+    retrieval_queries: list[str],
+    fuzzy_terms: list[str],
+    question: str,
+) -> tuple[int, int, int, int, int, int, int, int, int]:
+    title = normalize_search_text(row["title"])
+    source = normalize_search_text(row["source"])
+    stage = str(row.get("document_stage", "") if isinstance(row, dict) else row["document_stage"])
+    validity = str(row.get("validity_status", "") if isinstance(row, dict) else row["validity_status"])
+    policy_year = int(row.get("policy_year") or 0) if isinstance(row, dict) else int(row["policy_year"] or 0)
+    canonical_project = str(row.get("canonical_project_name", "") if isinstance(row, dict) else row["canonical_project_name"])
+    region = str(row.get("region", "") if isinstance(row, dict) else row["region"])
+    batch = str(row.get("batch", "") if isinstance(row, dict) else row["batch"])
+    title_hits = sum(1 for term in fuzzy_terms if term in title)
+    source_hits = sum(1 for term in fuzzy_terms if term in source)
+    metadata = normalize_search_text(
+        f"{canonical_project} {region} {policy_year or ''} {batch}"
+    )
+    metadata_hits = sum(1 for term in fuzzy_terms if term in metadata)
+    if any(term in question for term in ("名单", "公示", "认定企业")):
+        stage_priority = {"公示名单": 0, "认定名单": 0, "名单": 0, "申报通知": 2, "通知": 3}.get(stage, 4)
+    else:
+        stage_priority = {
+            "申报通知": 0,
+            "管理办法": 1,
+            "实施办法": 1,
+            "认定办法": 1,
+            "通知": 2,
+            "公示名单": 3,
+            "认定名单": 3,
+        }.get(stage, 4)
+    validity_priority = {
+        "active_candidate": 0,
+        "revised": 1,
+        "trial": 2,
+        "draft": 3,
+        "historical_reference": 4,
+        "superseded": 5,
+        "invalid": 6,
+    }.get(validity, 3)
+    requested_year_match = re.search(r"(?<!\d)(20\d{2})(?:年|年度)?", question)
+    requested_batch = small_giant_recognition_batch(question)
+    result_batches = set(
+        re.findall(r"第[一二三四五六七八九十0-9]+批", f"{title} {source} {batch}")
+    )
+    if requested_year_match or not requested_batch:
+        batch_priority = 0
+    elif requested_batch in result_batches:
+        batch_priority = 0
+    elif result_batches:
+        batch_priority = 2
+    else:
+        batch_priority = 1
+    if not requested_year_match:
+        year_priority = 0
+    elif policy_year == int(requested_year_match.group(1)):
+        year_priority = 0
+    elif requested_batch and requested_batch in batch:
+        year_priority = 1
+    else:
+        year_priority = 2
+    requested_regions = explicit_project_regions(question)
+    region_priority = 0 if requested_regions and any(item in region for item in requested_regions) else 1
+    return (
+        project_result_priority(row, retrieval_queries),
+        batch_priority,
+        year_priority,
+        region_priority,
+        validity_priority,
+        stage_priority,
+        -metadata_hits,
+        -title_hits,
+        -source_hits,
+    )
+
+
+def diversify_year_results(
+    question: str,
+    rows: list[sqlite3.Row] | list[dict[str, object]],
+    limit: int,
+) -> list[sqlite3.Row] | list[dict[str, object]]:
+    if not re.search(r"(?<!\d)20\d{2}(?:年|年度)?", question) or any(
+        term in question for term in POLICY_INTENT_TERMS
+    ):
+        return rows[:limit]
+    notice_stages = {"申报通知", "通知"}
+    list_stages = {"公示名单", "认定名单"}
+
+    def stage_of(row: sqlite3.Row | dict[str, object]) -> str:
+        return str(row.get("document_stage", "") if isinstance(row, dict) else row["document_stage"])
+
+    selected: list[sqlite3.Row] | list[dict[str, object]] = []
+    for stages in (notice_stages, list_stages):
+        match = next((row for row in rows if stage_of(row) in stages), None)
+        if match is not None and match not in selected:
+            selected.append(match)
+    selected.extend(row for row in rows if row not in selected)
+    return selected[:limit]
+
+
+def deduplicate_search_results(
+    rows: list[sqlite3.Row] | list[dict[str, object]],
+) -> list[sqlite3.Row] | list[dict[str, object]]:
+    deduplicated: list[sqlite3.Row] | list[dict[str, object]] = []
+    seen: set[tuple[str, str, int, str]] = set()
+    for row in rows:
+        title = normalize_search_text(row["title"])
+        if isinstance(row, dict):
+            project = normalize_search_text(row.get("canonical_project_name", ""))
+            year = int(row.get("policy_year") or 0)
+            stage = normalize_search_text(row.get("document_stage", ""))
+        else:
+            project = normalize_search_text(row["canonical_project_name"])
+            year = int(row["policy_year"] or 0)
+            stage = normalize_search_text(row["document_stage"])
+        key = (title, project, year, stage)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduplicated.append(row)
+    return deduplicated
+
+
+def project_result_priority(
+    row: sqlite3.Row | dict[str, object],
+    retrieval_queries: list[str],
+) -> int:
+    title = normalize_search_text(row["title"])
+    source = normalize_search_text(row["source"])
+    if isinstance(row, dict):
+        canonical_project_value = row.get("canonical_project_name", "")
+    else:
+        canonical_project_value = (
+            row["canonical_project_name"] if "canonical_project_name" in row.keys() else ""
+        )
+    canonical_project = normalize_search_text(canonical_project_value)
+    phrases = [
+        normalize_search_text(term)
+        for query in retrieval_queries
+        for term in (query, *query_terms(query))
+        if len(normalize_search_text(term)) >= 4
+    ]
     collision_suffixes = {
         "高新技术企业": ("研究开发中心", "研究院", "产业园", "产品"),
     }
+    collision_detected = False
     for phrase in phrases:
         if not phrase or phrase not in title:
             continue
         suffix = title.split(phrase, 1)[1]
         if any(suffix.startswith(term) for term in collision_suffixes.get(phrase, ())):
+            collision_detected = True
             continue
         return 0
     for phrase in phrases:
@@ -751,9 +1009,35 @@ def project_result_priority(row: sqlite3.Row, retrieval_queries: list[str]) -> i
             continue
         suffix = source.rsplit(phrase, 1)[1]
         if any(suffix.startswith(term) for term in collision_suffixes.get(phrase, ())):
+            collision_detected = True
             continue
         return 1
+    if collision_detected:
+        return 2
+    if any(phrase and phrase in canonical_project for phrase in phrases):
+        return 0
     return 2
+
+
+def resolved_canonical_projects(query: str) -> list[str]:
+    variants = {
+        normalize_search_text(term)
+        for value in project_query_variants(query)
+        for term in (value, *query_terms(value))
+        if len(normalize_search_text(term)) >= 4
+    }
+    matches: list[str] = []
+    for record in load_project_index_records():
+        canonical = str(record.get("canonical_project_name") or "").strip()
+        names = [canonical, *(str(alias).strip() for alias in record.get("aliases", []))]
+        normalized_names = {normalize_search_text(name) for name in names if name}
+        if any(
+            variant == name or variant in name or name in variant
+            for variant in variants
+            for name in normalized_names
+        ):
+            matches.append(canonical)
+    return list(dict.fromkeys(matches))
 
 
 def filter_project_results(
@@ -765,13 +1049,17 @@ def filter_project_results(
     retrieval_queries = project_query_variants(question)
     retrieval_rule = matched_project_retrieval_rule(question)
     if retrieval_rule:
-        allowed_terms = [str(term) for term in retrieval_rule.get("allowed_title_terms", [])]
-        excluded_terms = [str(term) for term in retrieval_rule.get("excluded_title_terms", [])]
+        allowed_terms = [
+            normalize_search_text(term) for term in retrieval_rule.get("allowed_title_terms", [])
+        ]
+        excluded_terms = [
+            normalize_search_text(term) for term in retrieval_rule.get("excluded_title_terms", [])
+        ]
         allowed_rows = [
             row
             for row in rows
             if any(
-                term in f"{str(row['title'] or '')} {str(row['source'] or '')}"
+                term in normalize_search_text(f"{row['title']} {row['source']}")
                 for term in allowed_terms
             )
         ]
@@ -780,7 +1068,7 @@ def filter_project_results(
         rows = [
             row
             for row in rows
-            if not any(term in str(row["title"] or "") for term in excluded_terms)
+            if not any(term in normalize_search_text(row["title"]) for term in excluded_terms)
         ]
     strict_rows = [row for row in rows if project_result_priority(row, retrieval_queries) < 2]
     selected = strict_rows or rows
@@ -1121,6 +1409,30 @@ def requires_current_sme_policy_sources(query: str) -> bool:
     return requires_current_policy_sources(query) and any(term in query for term in project_terms)
 
 
+SMALL_GIANT_RECOGNITION_BATCH_BY_YEAR = {
+    2019: "第一批",
+    2020: "第二批",
+    2021: "第三批",
+    2022: "第四批",
+    2023: "第五批",
+    2024: "第六批",
+    2025: "第七批",
+    2026: "第八批",
+}
+
+
+def small_giant_recognition_batch(query: str) -> str:
+    if "小巨人" not in query or any(term in query for term in ("复核", "重点小巨人", "重点专精特新")):
+        return ""
+    explicit = re.search(r"第[一二三四五六七八九十0-9]+批", query)
+    if explicit:
+        return explicit.group(0)
+    match = re.search(r"(?<!\d)(20\d{2})(?:年|年度)?", query)
+    if not match:
+        return ""
+    return SMALL_GIANT_RECOGNITION_BATCH_BY_YEAR.get(int(match.group(1)), "")
+
+
 def base_knowledge_search_query(query: str) -> str:
     normalized = query.replace("高企", "高新技术企业")
     if "高新技术企业" not in normalized and "高新" in normalized:
@@ -1193,7 +1505,15 @@ def load_project_retrieval_rules() -> list[dict[str, object]]:
 
 def matched_project_retrieval_rule(query: str) -> dict[str, object] | None:
     matches: list[tuple[int, dict[str, object]]] = []
+    normalized_query = normalize_search_text(query)
     for rule in load_project_retrieval_rules():
+        excluded_terms = [
+            normalize_search_text(term)
+            for term in rule.get("excluded_title_terms", [])
+            if str(term).strip()
+        ]
+        if any(term and term in normalized_query for term in excluded_terms):
+            continue
         for alias in rule.get("aliases", []):
             normalized_alias = str(alias).strip()
             if normalized_alias and normalized_alias in query:
@@ -1329,6 +1649,8 @@ def project_query_variants(query: str) -> list[str]:
 
 
 def project_query_is_resolved(query: str) -> bool:
+    if matched_project_retrieval_rule(query):
+        return True
     normalized = query.strip().replace("高企", "高新技术企业")
     if "高新技术企业" not in normalized and "高新" in normalized:
         normalized = normalized.replace("高新", "高新技术企业")
@@ -1395,11 +1717,16 @@ def knowledge_source_metadata(row: sqlite3.Row) -> dict[str, object]:
     }
 
 
-def search_knowledge(query: str, limit: int = 8) -> dict[str, object]:
+def search_knowledge(
+    query: str,
+    limit: int = 8,
+    *,
+    limit_cap: int = 20,
+) -> dict[str, object]:
     normalized_query = query.strip()
     if not normalized_query:
         raise HTTPException(status_code=422, detail="检索词不能为空")
-    bounded_limit = max(1, min(int(limit), 20))
+    bounded_limit = max(1, min(int(limit), max(1, int(limit_cap))))
     clarification = project_selection_prompt(normalized_query)
     if clarification:
         return {
@@ -1408,15 +1735,34 @@ def search_knowledge(query: str, limit: int = 8) -> dict[str, object]:
             "clarification": clarification,
             "results": [],
         }
-    retrieval_queries = project_query_variants(normalized_query)
-    project_query_resolved = project_query_is_resolved(normalized_query)
-    current_policy_only = requires_current_policy_sources(normalized_query) or (
-        project_query_resolved and any(term in normalized_query for term in POLICY_INTENT_TERMS)
-    )
-    current_sme_policy_only = requires_current_sme_policy_sources(normalized_query)
     year_match = re.search(r"(?<!\d)(20\d{2})(?:年|年度)?", normalized_query)
     requested_year = int(year_match.group(1)) if year_match else None
-    retrieval_query = retrieval_queries[0]
+    requested_batch = small_giant_recognition_batch(normalized_query)
+    retrieval_queries = project_query_variants(normalized_query)
+    if requested_batch:
+        expanded_queries: list[str] = []
+        for retrieval_query in retrieval_queries:
+            expanded_queries.extend((retrieval_query, f"{retrieval_query} {requested_batch}"))
+            if requested_year is not None:
+                expanded_queries.append(f"{retrieval_query} {requested_year}")
+            expanded_queries.extend(
+                (
+                    f"{requested_batch} 专精特新 小巨人",
+                    f"{requested_batch} 专精特新 小巨人 公示名单",
+                )
+            )
+        retrieval_queries = list(dict.fromkeys(expanded_queries))
+    project_query_resolved = project_query_is_resolved(normalized_query)
+    current_policy_only = requested_year is None and not requested_batch and (
+        requires_current_policy_sources(normalized_query)
+        or (project_query_resolved and any(term in normalized_query for term in POLICY_INTENT_TERMS))
+    )
+    current_sme_policy_only = (
+        requested_year is None
+        and not requested_batch
+        and requires_current_sme_policy_sources(normalized_query)
+    )
+    fuzzy_terms = fuzzy_retrieval_terms(normalized_query, retrieval_queries)
     candidate_limit = min(max(bounded_limit * 8, 40), 160)
     source_order = policy_source_order(normalized_query)
     validity_clause = (
@@ -1428,8 +1774,22 @@ def search_knowledge(query: str, limit: int = 8) -> dict[str, object]:
     if current_sme_policy_only:
         validity_clause += " AND COALESCE(documents.policy_year, 0) >= 2026"
     if requested_year is not None:
-        validity_clause += f" AND COALESCE(documents.policy_year, 0) = {requested_year}"
+        batch_clause = (
+            f" OR documents.batch LIKE '%{requested_batch}%' "
+            f"OR documents.title LIKE '%{requested_batch}%' "
+            f"OR documents.source LIKE '%{requested_batch}%'"
+            if requested_batch
+            else ""
+        )
+        validity_clause += (
+            f" AND (COALESCE(documents.policy_year, 0) = {requested_year} "
+            f"OR documents.title LIKE '%{requested_year}%' "
+            f"OR documents.source LIKE '%{requested_year}%'"
+            f"{batch_clause})"
+        )
     with closing(content_database()) as connection:
+        canonical_clause = canonical_document_clause(connection)
+        effective_validity_clause = f"{validity_clause}{canonical_clause}"
         rows = []
         try:
             rows = connection.execute(
@@ -1437,14 +1797,15 @@ def search_knowledge(query: str, limit: int = 8) -> dict[str, object]:
                 SELECT documents.id, documents.title,
                        snippet(documents_fts_trigram, 1, '<mark>', '</mark>', '…', 36) AS excerpt,
                        documents.source, documents.document_role, documents.updated_at,
-                       documents.validity_status,
+                       documents.validity_status,documents.document_stage,
+                       documents.policy_year,documents.canonical_project_name,documents.region,documents.batch,
                        CASE WHEN lower(COALESCE(documents.replacement_url, '') || ' ' ||
                                                 COALESCE(documents.content, '')) LIKE '%gov.cn%'
                             THEN 1 ELSE 0 END AS official_source_detected
                 FROM documents_fts_trigram
                 JOIN documents ON documents.id = documents_fts_trigram.rowid
                 WHERE documents_fts_trigram MATCH ?
-                {validity_clause}
+                {effective_validity_clause}
                 ORDER BY {source_order}
                          CASE documents.document_stage
                              WHEN '申报通知' THEN 0
@@ -1464,72 +1825,185 @@ def search_knowledge(query: str, limit: int = 8) -> dict[str, object]:
                          COALESCE(documents.policy_year, 0) DESC,
                          bm25(documents_fts_trigram)
                 LIMIT ?
-                """.format(validity_clause=validity_clause, source_order=source_order),
+                """.format(
+                    effective_validity_clause=effective_validity_clause,
+                    source_order=source_order,
+                ),
                 (fts_expression_variants(retrieval_queries), candidate_limit),
             ).fetchall()
         except sqlite3.OperationalError:
             pass
-        if not rows:
-            conditions = []
-            parameters: list[object] = []
-            variant_conditions: list[str] = []
-            for variant in retrieval_queries:
-                term_conditions: list[str] = []
-                for term in query_terms(variant):
+        exact_rows = [dict(row) for row in rows]
+        if len(exact_rows) < candidate_limit and fuzzy_terms:
+            indexed_fuzzy_terms = [term for term in fuzzy_terms if len(term) >= 3]
+            fuzzy_rows = []
+            if indexed_fuzzy_terms:
+                try:
+                    fuzzy_rows = connection.execute(
+                        """
+                        SELECT documents.id, documents.title,
+                               snippet(documents_fts_trigram, 1, '<mark>', '</mark>', '…', 36) AS excerpt,
+                               documents.source, documents.document_role, documents.updated_at,
+                               documents.validity_status,documents.document_stage,
+                               documents.policy_year,documents.canonical_project_name,documents.region,documents.batch,
+                               CASE WHEN lower(COALESCE(documents.replacement_url, '') || ' ' ||
+                                                        COALESCE(documents.content, '')) LIKE '%gov.cn%'
+                                    THEN 1 ELSE 0 END AS official_source_detected
+                        FROM documents_fts_trigram
+                        JOIN documents ON documents.id = documents_fts_trigram.rowid
+                        WHERE documents_fts_trigram MATCH ?
+                        {effective_validity_clause}
+                        ORDER BY {source_order}
+                                 bm25(documents_fts_trigram),
+                                 CASE documents.document_stage
+                                     WHEN '申报通知' THEN 0
+                                     WHEN '管理办法' THEN 1
+                                     WHEN '实施办法' THEN 1
+                                     WHEN '认定办法' THEN 1
+                                     WHEN '通知' THEN 2
+                                     WHEN '公示名单' THEN 3
+                                     WHEN '认定名单' THEN 3
+                                     ELSE 4 END,
+                                 COALESCE(documents.policy_year, 0) DESC
+                        LIMIT ?
+                        """.format(
+                            effective_validity_clause=effective_validity_clause,
+                            source_order=source_order,
+                        ),
+                        (fts_expression_variants(indexed_fuzzy_terms), candidate_limit),
+                    ).fetchall()
+                except sqlite3.OperationalError:
+                    fuzzy_rows = []
+            if not indexed_fuzzy_terms:
+                short_terms = fuzzy_terms[:4]
+                short_term_conditions: list[str] = []
+                short_parameters: list[object] = []
+                for term in short_terms:
                     escaped = term.replace("%", "\\%").replace("_", "\\_")
                     value = f"%{escaped}%"
-                    term_conditions.append(
+                    short_term_conditions.append(
                         "(title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\' OR source LIKE ? ESCAPE '\\')"
                     )
-                    parameters.extend((value, value, value))
-                if term_conditions:
-                    variant_conditions.append(f"({' AND '.join(term_conditions)})")
-            if variant_conditions:
-                conditions.append(f"({' OR '.join(variant_conditions)})")
-            if current_policy_only:
-                conditions.append(
-                    "COALESCE(validity_status, 'active_candidate') "
-                    "NOT IN ('historical_reference','superseded','invalid')"
-                )
-            if current_sme_policy_only:
-                conditions.append("COALESCE(policy_year, 0) >= 2026")
-            if requested_year is not None:
-                conditions.append("COALESCE(policy_year, 0) = ?")
-                parameters.append(requested_year)
-            parameters.append(candidate_limit)
-            rows = connection.execute(
+                    short_parameters.extend((value, value, value))
+                short_conditions = [f"({' OR '.join(short_term_conditions)})"]
+                if current_policy_only:
+                    short_conditions.append(
+                        "COALESCE(validity_status, 'active_candidate') "
+                        "NOT IN ('historical_reference','superseded','invalid')"
+                    )
+                if current_sme_policy_only:
+                    short_conditions.append("COALESCE(policy_year, 0) >= 2026")
+                if requested_year is not None:
+                    year_conditions = [
+                        "COALESCE(policy_year, 0) = ?",
+                        "title LIKE ?",
+                        "source LIKE ?",
+                    ]
+                    short_parameters.extend(
+                        (requested_year, f"%{requested_year}%", f"%{requested_year}%")
+                    )
+                    if requested_batch:
+                        year_conditions.extend(("batch LIKE ?", "title LIKE ?", "source LIKE ?"))
+                        short_parameters.extend((f"%{requested_batch}%",) * 3)
+                    short_conditions.append(f"({' OR '.join(year_conditions)})")
+                if canonical_clause:
+                    short_conditions.append(
+                        "NOT EXISTS (SELECT 1 FROM document_duplicates canonical_filter "
+                        "WHERE canonical_filter.document_id=documents.id "
+                        "AND canonical_filter.canonical_document_id<>documents.id)"
+                    )
+                short_parameters.append(candidate_limit)
+                fuzzy_rows = connection.execute(
+                    f"""
+                    SELECT id,title,substr(content,1,600) AS excerpt,source,document_role,
+                           updated_at,validity_status,document_stage,policy_year,
+                           canonical_project_name,region,batch,
+                           CASE WHEN lower(COALESCE(replacement_url, '') || ' ' || COALESCE(content, ''))
+                                          LIKE '%gov.cn%'
+                                THEN 1 ELSE 0 END AS official_source_detected
+                    FROM documents
+                    WHERE {' AND '.join(short_conditions)}
+                    ORDER BY updated_at DESC
+                    LIMIT ?
+                    """,
+                    short_parameters,
+                ).fetchall()
+            seen = {int(row["id"]) for row in exact_rows}
+            exact_rows.extend(dict(row) for row in fuzzy_rows if int(row["id"]) not in seen)
+        canonical_projects = resolved_canonical_projects(normalized_query)
+        if canonical_projects:
+            placeholders = ",".join("?" for _ in canonical_projects)
+            project_rows = connection.execute(
                 f"""
-                SELECT id, title, substr(content, 1, 600) AS excerpt, source,
-                       document_role, updated_at, validity_status,
-                       CASE WHEN lower(COALESCE(replacement_url, '') || ' ' || COALESCE(content, ''))
-                                      LIKE '%gov.cn%'
+                SELECT documents.id,documents.title,substr(documents.content,1,600) AS excerpt,
+                       documents.source,documents.document_role,documents.updated_at,
+                       documents.validity_status,documents.document_stage,documents.policy_year,
+                       documents.canonical_project_name,documents.region,documents.batch,
+                       CASE WHEN lower(COALESCE(documents.replacement_url, '') || ' ' ||
+                                                COALESCE(documents.content, '')) LIKE '%gov.cn%'
                             THEN 1 ELSE 0 END AS official_source_detected
                 FROM documents
-                WHERE {' AND '.join(conditions)}
-                ORDER BY {source_order}
-                         CASE document_stage
-                             WHEN '申报通知' THEN 0
-                             WHEN '管理办法' THEN 1
-                             WHEN '实施办法' THEN 1
-                             WHEN '认定办法' THEN 1
-                             WHEN '通知' THEN 2
-                             WHEN '公示名单' THEN 3
-                             WHEN '认定名单' THEN 3
-                             ELSE 4 END,
-                         CASE validity_status
-                             WHEN 'active_candidate' THEN 0
-                             WHEN 'revised' THEN 1
-                             WHEN 'trial' THEN 2
-                             WHEN 'draft' THEN 3
-                             ELSE 4 END,
-                         COALESCE(policy_year, 0) DESC,
-                         updated_at DESC
+                WHERE documents.canonical_project_name IN ({placeholders})
+                {effective_validity_clause}
+                ORDER BY COALESCE(documents.policy_year,0) DESC,documents.updated_at DESC
                 LIMIT ?
-                """.format(source_order=source_order.replace("documents.", "")),
-                parameters,
+                """,
+                (*canonical_projects, candidate_limit),
             ).fetchall()
-    rows = sorted(rows, key=lambda row: project_result_priority(row, retrieval_queries))
-    rows = filter_project_results(normalized_query, rows)[:bounded_limit]
+            seen = {int(row["id"]) for row in exact_rows}
+            exact_rows.extend(dict(row) for row in project_rows if int(row["id"]) not in seen)
+        if requested_batch:
+            batch_value = f"%{requested_batch}%"
+            batch_rows = connection.execute(
+                """
+                SELECT documents.id,documents.title,substr(documents.content,1,600) AS excerpt,
+                       documents.source,documents.document_role,documents.updated_at,
+                       documents.validity_status,documents.document_stage,documents.policy_year,
+                       documents.canonical_project_name,documents.region,documents.batch,
+                       CASE WHEN lower(COALESCE(documents.replacement_url, '') || ' ' ||
+                                                COALESCE(documents.content, '')) LIKE '%gov.cn%'
+                            THEN 1 ELSE 0 END AS official_source_detected
+                FROM documents
+                WHERE (documents.batch LIKE ? OR documents.title LIKE ? OR documents.source LIKE ?)
+                  AND (documents.canonical_project_name LIKE '%小巨人%'
+                       OR documents.title LIKE '%小巨人%'
+                       OR documents.source LIKE '%小巨人%')
+                  {canonical_clause}
+                ORDER BY CASE documents.document_stage
+                             WHEN '公示名单' THEN 0
+                             WHEN '认定名单' THEN 0
+                             WHEN '申报通知' THEN 1
+                             ELSE 2 END,
+                         COALESCE(documents.policy_year,0) DESC,
+                         documents.updated_at DESC
+                LIMIT ?
+                """.format(canonical_clause=canonical_clause),
+                (batch_value, batch_value, batch_value, candidate_limit),
+            ).fetchall()
+            seen = {int(row["id"]) for row in exact_rows}
+            exact_rows.extend(dict(row) for row in batch_rows if int(row["id"]) not in seen)
+        rows = exact_rows
+    rows = sorted(
+        rows,
+        key=lambda row: fuzzy_result_priority(
+            row,
+            retrieval_queries,
+            fuzzy_terms,
+            normalized_query,
+        ),
+    )
+    if requested_batch and requested_year is None:
+        matching_batch_rows = [
+            row
+            for row in rows
+            if requested_batch
+            in f"{row.get('title', '')} {row.get('source', '')} {row.get('batch', '')}"
+        ]
+        if matching_batch_rows:
+            rows = matching_batch_rows
+    rows = filter_project_results(normalized_query, rows)
+    rows = deduplicate_search_results(rows)
+    rows = diversify_year_results(normalized_query, rows, bounded_limit)
     return {
         "query": normalized_query,
         "retrieval_queries": retrieval_queries,
@@ -1587,25 +2061,50 @@ def search_public_list_entities(
     _like_filter("e.canonical_project_name", project_name, conditions, parameters)
     _like_filter("e.batch", batch, conditions, parameters)
     _like_filter("e.region", region, conditions, parameters)
-    if year is not None:
-        conditions.append("e.policy_year = ?")
-        parameters.append(int(year))
     bounded_limit = max(1, min(int(limit), 50))
     with closing(content_database()) as connection:
+        canonical_clause = canonical_document_clause(connection, "d")
+        has_entity_years = bool(
+            connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='public_list_entity_years'"
+            ).fetchone()
+        )
+        if year is not None:
+            if has_entity_years:
+                conditions.append(
+                    "(e.policy_year = ? OR EXISTS(SELECT 1 FROM public_list_entity_years ey "
+                    "WHERE ey.entity_id=e.id AND ey.year=?))"
+                )
+                parameters.extend((int(year), int(year)))
+            else:
+                conditions.append("e.policy_year = ?")
+                parameters.append(int(year))
+        matched_years_select = (
+            "(SELECT group_concat(ey.year, ',') FROM public_list_entity_years ey "
+            "WHERE ey.entity_id=e.id ORDER BY ey.year) AS matched_years,"
+            if has_entity_years
+            else "'' AS matched_years,"
+        )
         try:
             rows = connection.execute(
                 f"""
                 SELECT e.enterprise_name,e.sequence_no,e.canonical_project_name,
                        e.policy_year,e.batch,e.region,e.list_status,e.context,e.confidence,
+                       {matched_years_select}
                        d.id AS document_id,d.title,d.source,d.updated_at
                 FROM public_list_entities e
                 JOIN documents d ON d.id = e.document_id
                 WHERE {' AND '.join(conditions)}
+                {canonical_clause}
                 ORDER BY COALESCE(e.policy_year, 0) DESC,
                          CASE e.confidence WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
                          e.enterprise_name
                 LIMIT ?
-                """,
+                """.format(
+                    conditions=" AND ".join(conditions),
+                    matched_years_select=matched_years_select,
+                    canonical_clause=canonical_clause,
+                ),
                 [*parameters, bounded_limit],
             ).fetchall()
         except sqlite3.OperationalError as error:
@@ -1659,7 +2158,6 @@ def search_policy_documents(
     if current_sme_policy_only and year is None:
         conditions.append("COALESCE(policy_year, 0) >= 2026")
     _like_filter("canonical_project_name", project_name, conditions, parameters)
-    _like_filter("region", region, conditions, parameters)
     _like_filter("document_stage", document_stage, conditions, parameters)
     _like_filter("validity_status", validity_status, conditions, parameters)
     if query.strip():
@@ -1674,6 +2172,22 @@ def search_policy_documents(
         parameters.append(int(year))
     bounded_limit = max(1, min(int(limit), 20))
     with closing(content_database()) as connection:
+        canonical_clause = canonical_document_clause(connection)
+        if region.strip():
+            escaped_region = region.strip().replace("%", "\\%").replace("_", "\\_")
+            region_value = f"%{escaped_region}%"
+            if sqlite_table_exists(connection, "document_scopes"):
+                conditions.append(
+                    "(region LIKE ? ESCAPE '\\' OR EXISTS("
+                    "SELECT 1 FROM document_scopes scope_filter "
+                    "WHERE scope_filter.document_id=documents.id "
+                    "AND scope_filter.scope_type IN ('administrative','applicable_city') "
+                    "AND scope_filter.scope_value LIKE ? ESCAPE '\\'))"
+                )
+                parameters.extend((region_value, region_value))
+            else:
+                conditions.append("region LIKE ? ESCAPE '\\'")
+                parameters.append(region_value)
         try:
             rows = connection.execute(
                 f"""
@@ -1683,6 +2197,7 @@ def search_policy_documents(
                        replacement_basis,replacement_url,updated_at
                 FROM documents
                 WHERE {' AND '.join(conditions)}
+                {canonical_clause}
                 ORDER BY CASE validity_status
                              WHEN 'active_candidate' THEN 0
                              WHEN 'revised' THEN 1
@@ -1694,7 +2209,10 @@ def search_policy_documents(
                              ELSE 7 END,
                          COALESCE(policy_year, 0) DESC, updated_at DESC
                 LIMIT ?
-                """,
+                """.format(
+                    conditions=" AND ".join(conditions),
+                    canonical_clause=canonical_clause,
+                ),
                 [*parameters, bounded_limit],
             ).fetchall()
         except sqlite3.OperationalError as error:
@@ -2978,8 +3496,9 @@ def current_policy_guardrail(question: str) -> str:
     notices: list[str] = []
     if any(term in question for term in ("专精特新", "小巨人", "梯度培育")):
         notices.append(
-            "专精特新现行门禁：新申请使用工信部企业〔2026〕2号。工信部企业〔2022〕63号已被替代，"
-            "不得用于新申请；仅当期通知明确规定的复核过渡情形可按旧标准。回答必须先说明版本，再列条件。"
+            "专精特新现行门禁：当前任务使用工信部企业〔2026〕2号及对应年度官方通知。"
+            "工信部企业〔2022〕63号及其评分表只保留为历史档案，不得用于当前或未来的新申报、复核、评分和材料写作，"
+            "也不得补充现行标准没有规定的条件。回答必须先说明版本，再列条件。"
         )
     if "杭州市" in question and "研发中心" in question:
         notices.append(
@@ -3007,9 +3526,10 @@ def current_policy_fallback(question: str) -> str:
     priority_support_program = any(term in question for term in ("重点专精特新", "重点小巨人"))
     if any(term in question for term in ("专精特新", "小巨人", "梯度培育")):
         sections.append(
-            "现行版本：新申请统一执行《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号；"
-            "工信部企业〔2022〕63号及其旧评分表、培训材料不得用于新申请判断。"
-            "2026年度小巨人复核仅在当期通知明确的过渡范围内继续使用旧标准。"
+            "现行版本：当前任务执行《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号及对应年度官方通知；"
+            "工信部企业〔2022〕63号及其旧评分表、培训材料只保留为历史档案，不得用于当前或未来的新申报、复核、"
+            "评分和材料写作，也不得补充现行标准没有规定的条件。2026年度小巨人复核曾按工信厅企业函〔2026〕117号"
+            "使用旧标准，但该批复核已经结束，这一历史事实不构成当前或以后年度的适用依据。"
         )
     if priority_support_program:
         sections.append(
@@ -3677,6 +4197,89 @@ def init_database() -> None:
                 revoked_at TEXT
             );
 
+            CREATE TABLE IF NOT EXISTS device_bindings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                device_id_hash TEXT NOT NULL,
+                device_id_prefix TEXT NOT NULL,
+                device_name TEXT NOT NULL,
+                auth_method TEXT NOT NULL,
+                first_bound_at TEXT NOT NULL,
+                last_seen_at TEXT NOT NULL,
+                last_ip TEXT NOT NULL DEFAULT '',
+                user_agent TEXT NOT NULL DEFAULT '',
+                revoked_at TEXT,
+                revoked_reason TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS device_bindings_one_active_per_user
+            ON device_bindings(user_id) WHERE revoked_at IS NULL;
+
+            CREATE INDEX IF NOT EXISTS device_bindings_user_history_idx
+            ON device_bindings(user_id, id DESC);
+
+            CREATE TABLE IF NOT EXISTS agent_enrollment_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                code_hash TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                registered_at TEXT,
+                registered_key_id TEXT,
+                registered_ip TEXT NOT NULL DEFAULT '',
+                consumed_at TEXT,
+                consumed_ip TEXT NOT NULL DEFAULT '',
+                result_schema TEXT,
+                result_ok INTEGER,
+                result_status TEXT,
+                result_error_stage TEXT,
+                result_user_message TEXT,
+                result_next_action TEXT,
+                result_host TEXT,
+                result_platform TEXT,
+                result_activation_required INTEGER,
+                result_reported_at TEXT,
+                result_ip TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE INDEX IF NOT EXISTS agent_enrollment_codes_user_idx
+            ON agent_enrollment_codes(user_id, id DESC);
+
+            CREATE TABLE IF NOT EXISTS device_keys (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                binding_id INTEGER NOT NULL REFERENCES device_bindings(id) ON DELETE CASCADE,
+                key_id TEXT NOT NULL UNIQUE,
+                algorithm TEXT NOT NULL DEFAULT 'Ed25519',
+                public_key TEXT NOT NULL,
+                platform TEXT NOT NULL,
+                agent_host TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                credential_saved_at TEXT,
+                first_verified_at TEXT,
+                mcp_connected_at TEXT,
+                last_verified_at TEXT,
+                revoked_at TEXT,
+                revoked_reason TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS device_keys_one_active_per_user
+            ON device_keys(user_id) WHERE revoked_at IS NULL;
+
+            CREATE INDEX IF NOT EXISTS device_keys_user_history_idx
+            ON device_keys(user_id, id DESC);
+
+            CREATE TABLE IF NOT EXISTS device_request_nonces (
+                key_id TEXT NOT NULL REFERENCES device_keys(key_id) ON DELETE CASCADE,
+                nonce_hash TEXT NOT NULL,
+                seen_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                PRIMARY KEY(key_id, nonce_hash)
+            );
+
+            CREATE INDEX IF NOT EXISTS device_request_nonces_expiry_idx
+            ON device_request_nonces(expires_at);
+
             CREATE TABLE IF NOT EXISTS api_usage (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -3686,11 +4289,63 @@ def init_database() -> None:
                 activity_type TEXT NOT NULL DEFAULT 'rest_api',
                 activity_name TEXT NOT NULL DEFAULT '',
                 counts_toward_usage INTEGER NOT NULL DEFAULT 1,
+                auth_method TEXT NOT NULL DEFAULT 'api_key',
+                oauth_client_id TEXT NOT NULL DEFAULT '',
                 called_at TEXT NOT NULL
             );
 
             CREATE INDEX IF NOT EXISTS api_usage_user_time_idx
             ON api_usage(user_id, called_at DESC);
+
+            CREATE TABLE IF NOT EXISTS oauth_clients (
+                client_id TEXT PRIMARY KEY,
+                client_name TEXT NOT NULL,
+                redirect_uris_json TEXT NOT NULL,
+                grant_types_json TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS oauth_authorization_codes (
+                code_hash TEXT PRIMARY KEY,
+                client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                redirect_uri TEXT NOT NULL,
+                scope TEXT NOT NULL,
+                code_challenge TEXT NOT NULL,
+                resource TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                consumed_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS oauth_access_tokens (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
+                scope TEXT NOT NULL,
+                resource TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                revoked_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS oauth_refresh_tokens (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
+                scope TEXT NOT NULL,
+                resource TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                revoked_at TEXT,
+                replaced_by_hash TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS oauth_access_tokens_user_idx
+            ON oauth_access_tokens(user_id, expires_at);
+
+            CREATE INDEX IF NOT EXISTS oauth_refresh_tokens_user_idx
+            ON oauth_refresh_tokens(user_id, expires_at);
 
             CREATE TABLE IF NOT EXISTS user_preferences (
                 user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -4019,6 +4674,75 @@ def init_database() -> None:
             "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_per_user "
             "ON device_tokens(user_id) WHERE revoked_at IS NULL"
         )
+        enrollment_columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(agent_enrollment_codes)"
+            ).fetchall()
+        }
+        enrollment_migrations = {
+            "registered_at": "TEXT",
+            "registered_key_id": "TEXT",
+            "registered_ip": "TEXT NOT NULL DEFAULT ''",
+            "result_schema": "TEXT",
+            "result_ok": "INTEGER",
+            "result_status": "TEXT",
+            "result_error_stage": "TEXT",
+            "result_user_message": "TEXT",
+            "result_next_action": "TEXT",
+            "result_host": "TEXT",
+            "result_platform": "TEXT",
+            "result_activation_required": "INTEGER",
+            "result_reported_at": "TEXT",
+            "result_ip": "TEXT NOT NULL DEFAULT ''",
+        }
+        for column_name, declaration in enrollment_migrations.items():
+            if column_name not in enrollment_columns:
+                connection.execute(
+                    f"ALTER TABLE agent_enrollment_codes ADD COLUMN {column_name} {declaration}"
+                )
+        device_key_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(device_keys)").fetchall()
+        }
+        device_key_migrations = {
+            "credential_saved_at": "TEXT",
+            "first_verified_at": "TEXT",
+            "mcp_connected_at": "TEXT",
+        }
+        for column_name, declaration in device_key_migrations.items():
+            if column_name not in device_key_columns:
+                connection.execute(
+                    f"ALTER TABLE device_keys ADD COLUMN {column_name} {declaration}"
+                )
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET registered_at=consumed_at,
+                registered_key_id=(
+                    SELECT device_keys.key_id
+                    FROM device_keys
+                    WHERE device_keys.user_id=agent_enrollment_codes.user_id
+                      AND device_keys.revoked_at IS NULL
+                      AND device_keys.mcp_connected_at IS NULL
+                    ORDER BY device_keys.id DESC LIMIT 1
+                ),
+                registered_ip=consumed_ip,
+                consumed_at=NULL,
+                consumed_ip=''
+            WHERE id IN (
+                SELECT MAX(codes.id)
+                FROM agent_enrollment_codes codes
+                JOIN device_keys
+                  ON device_keys.user_id=codes.user_id
+                 AND device_keys.revoked_at IS NULL
+                 AND device_keys.mcp_connected_at IS NULL
+                WHERE codes.consumed_at IS NOT NULL
+                  AND codes.expires_at>?
+                GROUP BY codes.user_id
+            )
+            """,
+            (now,),
+        )
         api_usage_columns = {
             row["name"] for row in connection.execute("PRAGMA table_info(api_usage)").fetchall()
         }
@@ -4026,6 +4750,8 @@ def init_database() -> None:
             "activity_type": "TEXT NOT NULL DEFAULT 'rest_api'",
             "activity_name": "TEXT NOT NULL DEFAULT ''",
             "counts_toward_usage": "INTEGER NOT NULL DEFAULT 1",
+            "auth_method": "TEXT NOT NULL DEFAULT 'api_key'",
+            "oauth_client_id": "TEXT NOT NULL DEFAULT ''",
         }
         for column_name, declaration in api_usage_migrations.items():
             if column_name not in api_usage_columns:
@@ -4093,6 +4819,98 @@ def user_count() -> int:
         return int(connection.execute("SELECT COUNT(*) FROM users").fetchone()[0])
 
 
+def safe_login_redirect(value: str) -> str:
+    candidate = value.strip()
+    if candidate.startswith("/authorize?") and "\r" not in candidate and "\n" not in candidate:
+        return candidate
+    return "/portal"
+
+
+def validate_oauth_redirect_uri(value: str) -> str:
+    parsed = urlparse(value.strip())
+    if parsed.fragment or parsed.username or parsed.password or not parsed.hostname:
+        raise ValueError("redirect_uri格式无效")
+    localhost = parsed.hostname == "localhost"
+    try:
+        loopback = ipaddress.ip_address(parsed.hostname).is_loopback
+    except ValueError:
+        loopback = False
+    if parsed.scheme != "https" and not (parsed.scheme == "http" and (localhost or loopback)):
+        raise ValueError("redirect_uri必须使用HTTPS，或使用本机回调地址")
+    return value.strip()
+
+
+def normalize_oauth_scope(value: str) -> str:
+    requested = [item for item in value.split() if item] or list(OAUTH_SCOPES)
+    if any(item not in OAUTH_SCOPES for item in requested):
+        raise ValueError("包含不支持的OAuth权限范围")
+    return " ".join(dict.fromkeys(requested))
+
+
+def normalize_oauth_resource(value: str | None) -> str:
+    candidate = str(value or oauth_resource_url()).rstrip("/") + "/"
+    if candidate != oauth_resource_url():
+        raise ValueError("OAuth资源地址与知识库MCP地址不一致")
+    return candidate
+
+
+def oauth_client(client_id: str) -> sqlite3.Row | None:
+    with closing(database()) as connection:
+        return connection.execute(
+            "SELECT * FROM oauth_clients WHERE client_id=?", (client_id,)
+        ).fetchone()
+
+
+def append_query_parameters(url: str, values: dict[str, str]) -> str:
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}{urlencode(values)}"
+
+
+def issue_oauth_tokens(
+    connection: sqlite3.Connection,
+    *,
+    user_id: int,
+    client_id: str,
+    scope: str,
+    resource: str,
+) -> dict[str, object]:
+    now = utc_now()
+    access_token = "jto_" + secrets.token_urlsafe(36)
+    refresh_token = "jtr_" + secrets.token_urlsafe(48)
+    access_expires = now + timedelta(minutes=OAUTH_ACCESS_TOKEN_MINUTES)
+    refresh_expires = now + timedelta(days=OAUTH_REFRESH_TOKEN_DAYS)
+    connection.execute(
+        """
+        INSERT INTO oauth_access_tokens(
+            token_hash,user_id,client_id,scope,resource,expires_at,created_at
+        ) VALUES (?,?,?,?,?,?,?)
+        """,
+        (
+            token_hash(access_token), user_id, client_id, scope, resource,
+            isoformat(access_expires), isoformat(now),
+        ),
+    )
+    connection.execute(
+        """
+        INSERT INTO oauth_refresh_tokens(
+            token_hash,user_id,client_id,scope,resource,expires_at,created_at
+        ) VALUES (?,?,?,?,?,?,?)
+        """,
+        (
+            token_hash(refresh_token), user_id, client_id, scope, resource,
+            isoformat(refresh_expires), isoformat(now),
+        ),
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": OAUTH_ACCESS_TOKEN_MINUTES * 60,
+        "refresh_token": refresh_token,
+        "scope": scope,
+        "resource": resource,
+    }
+
+
 def session_user(session_token: str | None) -> tuple[sqlite3.Row, sqlite3.Row] | None:
     if not session_token:
         return None
@@ -4128,23 +4946,253 @@ def require_web_user(
     return result[0]
 
 
+def oauth_base_url() -> str:
+    return f"https://{public_host}" if public_host != "localhost" else "http://localhost"
+
+
+def oauth_resource_url() -> str:
+    return f"{oauth_base_url()}/mcp/"
+
+
+def oauth_authenticate_header(scope: str | None = None) -> str:
+    value = (
+        f'Bearer resource_metadata="{oauth_base_url()}/.well-known/oauth-protected-resource"'
+    )
+    if scope:
+        value += f', scope="{scope}"'
+    return value
+
+
+def oauth_error(status_code: int, detail: str, scope: str | None = None) -> HTTPException:
+    return HTTPException(
+        status_code=status_code,
+        detail=detail,
+        headers={"WWW-Authenticate": oauth_authenticate_header(scope)},
+    )
+
+
+def ensure_active_device_token(connection: sqlite3.Connection, user: sqlite3.Row) -> int:
+    token = connection.execute(
+        "SELECT id FROM device_tokens WHERE user_id=? AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
+        (int(user["id"]),),
+    ).fetchone()
+    if token:
+        return int(token["id"])
+    seed = secrets.token_urlsafe(24)
+    raw_token = user_access_token(int(user["id"]), seed)
+    cursor = connection.execute(
+        """
+        INSERT INTO device_tokens(user_id,label,token_prefix,token_hash,token_seed,created_at)
+        VALUES (?,?,?,?,?,?)
+        """,
+        (
+            int(user["id"]),
+            str(user["real_name"] or user["username"]),
+            raw_token[:12],
+            token_hash(raw_token),
+            seed,
+            isoformat(utc_now()),
+        ),
+    )
+    return int(cursor.lastrowid)
+
+
+def required_oauth_scope(endpoint: str) -> str:
+    return "mcp:tools" if endpoint.startswith("/mcp") else "knowledge:read"
+
+
+def normalize_device_name(value: str | None, fallback: str) -> str:
+    candidate = re.sub(r"[\x00-\x1f\x7f]+", " ", str(value or "")).strip()
+    return (candidate or fallback)[:100]
+
+
+def authentication_value(
+    user: sqlite3.Row | dict[str, object], key: str, default: object = ""
+) -> object:
+    if isinstance(user, dict):
+        return user.get(key, default)
+    return user[key] if key in user.keys() else default
+
+
+def enforce_device_binding(
+    connection: sqlite3.Connection,
+    user: sqlite3.Row | dict[str, object],
+    *,
+    device_id: str | None,
+    device_name: str | None,
+    device_signature: DeviceSignature | None,
+    method: str,
+    request_target: str,
+    body: bytes,
+    token_fingerprint: str,
+    client_ip: str,
+    user_agent: str,
+) -> sqlite3.Row | None:
+    if bool(authentication_value(user, "is_admin", 0)):
+        return None
+    auth_method = str(user["auth_method"])
+    normalized_device_id = str(device_id or "").strip()
+    if not normalized_device_id:
+        raise oauth_error(
+            428,
+            "该账号必须通过门户“复制给 Agent”完成设备绑定。",
+            required_oauth_scope("/mcp" if auth_method == "oauth" else "/v1"),
+        )
+    if not DEVICE_ID_PATTERN.fullmatch(normalized_device_id):
+        raise oauth_error(
+            400,
+            f"{DEVICE_ID_HEADER} 格式无效，应为16至128位设备安装标识",
+            required_oauth_scope("/mcp" if auth_method == "oauth" else "/v1"),
+        )
+    if device_signature is None:
+        raise oauth_error(
+            428,
+            "缺少设备签名。请登录门户，将“一键配置”发送给当前本地 Agent。",
+            required_oauth_scope("/mcp" if auth_method == "oauth" else "/v1"),
+        )
+    if not KEY_ID_PATTERN.fullmatch(device_signature.key_id):
+        raise oauth_error(400, f"{DEVICE_KEY_ID_HEADER} 格式无效")
+    if not NONCE_PATTERN.fullmatch(device_signature.nonce):
+        raise oauth_error(400, f"{DEVICE_NONCE_HEADER} 格式无效")
+    try:
+        signed_at = datetime.fromtimestamp(int(device_signature.timestamp), timezone.utc)
+    except (ValueError, OverflowError):
+        raise oauth_error(400, f"{DEVICE_TIMESTAMP_HEADER} 格式无效") from None
+    now_value = utc_now()
+    if abs((now_value - signed_at).total_seconds()) > DEVICE_SIGNATURE_MAX_CLOCK_SKEW_SECONDS:
+        raise oauth_error(401, "设备签名时间已过期，请检查本机系统时间。")
+
+    fallback_name = (
+        str(authentication_value(user, "oauth_client_name") or "OAuth MCP 客户端")
+        if auth_method == "oauth"
+        else "API Key 客户端"
+    )
+    normalized_device_name = normalize_device_name(device_name, fallback_name)
+    digest = hashlib.sha256(normalized_device_id.encode("utf-8")).hexdigest()
+    key_row = connection.execute(
+        """
+        SELECT device_keys.*,device_bindings.device_id_hash,
+               device_bindings.id AS active_binding_id
+        FROM device_keys
+        JOIN device_bindings ON device_bindings.id=device_keys.binding_id
+        WHERE device_keys.user_id=? AND device_keys.key_id=?
+          AND device_keys.revoked_at IS NULL
+          AND device_bindings.revoked_at IS NULL
+        """,
+        (int(user["id"]), device_signature.key_id),
+    ).fetchone()
+    if key_row is None:
+        raise oauth_error(
+            403,
+            "设备公钥未登记或已撤销，请从门户重新复制一键配置。",
+        )
+    if not secrets.compare_digest(str(key_row["device_id_hash"]), digest):
+        raise oauth_error(
+            403,
+            "设备标识与登记公钥不一致，请从门户重新配置。",
+        )
+
+    canonical = request_canonical_value(
+        method=method,
+        request_target=request_target,
+        timestamp=device_signature.timestamp,
+        nonce=device_signature.nonce,
+        body_hash=request_body_hash(body),
+        token_fingerprint=token_fingerprint,
+    )
+    try:
+        verify_ed25519_signature(
+            str(key_row["public_key"]),
+            device_signature.signature,
+            canonical,
+        )
+    except DeviceSignatureError as exc:
+        raise oauth_error(403, str(exc)) from None
+
+    now = isoformat(now_value)
+    if not connection.in_transaction:
+        connection.execute("BEGIN IMMEDIATE")
+    connection.execute(
+        "DELETE FROM device_request_nonces WHERE expires_at<=?",
+        (now,),
+    )
+    nonce_hash = hashlib.sha256(device_signature.nonce.encode("ascii")).hexdigest()
+    try:
+        connection.execute(
+            """
+            INSERT INTO device_request_nonces(key_id,nonce_hash,seen_at,expires_at)
+            VALUES (?,?,?,?)
+            """,
+            (
+                device_signature.key_id,
+                nonce_hash,
+                now,
+                isoformat(
+                    now_value
+                    + timedelta(seconds=DEVICE_SIGNATURE_MAX_CLOCK_SKEW_SECONDS * 2)
+                ),
+            ),
+        )
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        raise oauth_error(409, "检测到重复设备签名，请重新发起请求。") from None
+    connection.execute(
+        """
+        UPDATE device_bindings
+        SET device_name=?,last_seen_at=?,last_ip=?,user_agent=?
+        WHERE id=?
+        """,
+        (
+            normalized_device_name,
+            now,
+            client_ip[:100],
+            user_agent[:300],
+            int(key_row["active_binding_id"]),
+        ),
+    )
+    connection.execute(
+        """
+        UPDATE device_keys
+        SET first_verified_at=COALESCE(first_verified_at,?),last_verified_at=?
+        WHERE id=?
+        """,
+        (now, now, int(key_row["id"])),
+    )
+    return connection.execute(
+        "SELECT * FROM device_bindings WHERE id=?",
+        (int(key_row["active_binding_id"]),),
+    ).fetchone()
+
+
 def authenticate_api_token(
     authorization: str | None,
     endpoint: str,
     method: str,
     *,
+    device_id: str | None = None,
+    device_name: str | None = None,
+    device_key_id: str | None = None,
+    device_timestamp: str | None = None,
+    device_nonce: str | None = None,
+    device_signature_value: str | None = None,
+    request_target: str | None = None,
+    body: bytes = b"",
+    client_ip: str = "",
+    user_agent: str = "",
     record_usage: bool = True,
     activity_type: str = "rest_api",
     activity_name: str = "",
     counts_toward_usage: bool = True,
 ) -> sqlite3.Row:
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="缺少用户访问凭据")
+        raise oauth_error(401, "缺少用户访问凭据", required_oauth_scope(endpoint))
     raw_token = authorization.removeprefix("Bearer ").strip()
     with closing(database()) as connection:
         row = connection.execute(
             """
-            SELECT users.id, users.username, device_tokens.id AS device_token_id
+            SELECT users.id, users.username, device_tokens.id AS device_token_id,
+                   users.is_admin,
+                   'api_key' AS auth_method,'' AS oauth_client_id
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
             WHERE device_tokens.token_hash = ?
@@ -4161,8 +5209,77 @@ def authenticate_api_token(
             """,
             (token_hash(raw_token),),
         ).fetchone()
+        oauth_token = None
         if row is None:
-            raise HTTPException(status_code=401, detail="用户访问凭据无效或已吊销")
+            oauth_token = connection.execute(
+                """
+                SELECT users.*,oauth_access_tokens.scope,oauth_access_tokens.expires_at,
+                       oauth_access_tokens.token_hash AS oauth_token_hash,
+                       oauth_access_tokens.client_id AS oauth_client_id,
+                       oauth_clients.client_name AS oauth_client_name
+                FROM oauth_access_tokens
+                JOIN users ON users.id=oauth_access_tokens.user_id
+                JOIN oauth_clients ON oauth_clients.client_id=oauth_access_tokens.client_id
+                WHERE oauth_access_tokens.token_hash=?
+                  AND oauth_access_tokens.revoked_at IS NULL
+                  AND users.active=1
+                  AND (
+                      users.is_admin=1 OR EXISTS(
+                          SELECT 1 FROM registration_authorizations authorization
+                          WHERE authorization.user_id=users.id
+                            AND authorization.status='registered'
+                            AND authorization.deleted_at IS NULL
+                      )
+                  )
+                """,
+                (token_hash(raw_token),),
+            ).fetchone()
+            if oauth_token and datetime.fromisoformat(str(oauth_token["expires_at"])) > utc_now():
+                scope = set(str(oauth_token["scope"]).split())
+                required_scope = required_oauth_scope(endpoint)
+                if required_scope not in scope:
+                    raise oauth_error(403, "OAuth令牌权限不足", required_scope)
+                device_token_id = ensure_active_device_token(connection, oauth_token)
+                row = {
+                    "id": int(oauth_token["id"]),
+                    "username": str(oauth_token["username"]),
+                    "device_token_id": device_token_id,
+                    "auth_method": "oauth",
+                    "oauth_client_id": str(oauth_token["oauth_client_id"]),
+                    "oauth_client_name": str(oauth_token["oauth_client_name"]),
+                    "is_admin": int(oauth_token["is_admin"]),
+                }
+        if row is None:
+            raise oauth_error(401, "用户访问凭据无效、过期或已吊销", required_oauth_scope(endpoint))
+        signature_parts = (
+            str(device_key_id or "").strip(),
+            str(device_timestamp or "").strip(),
+            str(device_nonce or "").strip(),
+            str(device_signature_value or "").strip(),
+        )
+        device_signature = (
+            DeviceSignature(
+                key_id=signature_parts[0],
+                timestamp=signature_parts[1],
+                nonce=signature_parts[2],
+                signature=signature_parts[3],
+            )
+            if all(signature_parts)
+            else None
+        )
+        enforce_device_binding(
+            connection,
+            row,
+            device_id=device_id,
+            device_name=device_name,
+            device_signature=device_signature,
+            method=method,
+            request_target=request_target or endpoint,
+            body=body,
+            token_fingerprint=token_hash(raw_token),
+            client_ip=client_ip,
+            user_agent=user_agent,
+        )
         connection.execute(
             "UPDATE device_tokens SET last_used_at = ? WHERE id = ?",
             (isoformat(utc_now()), row["device_token_id"]),
@@ -4172,9 +5289,10 @@ def authenticate_api_token(
                 """
                 INSERT INTO api_usage(
                     user_id, device_token_id, endpoint, method,
-                    activity_type, activity_name, counts_toward_usage, called_at
+                    activity_type, activity_name, counts_toward_usage,
+                    auth_method,oauth_client_id,called_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     row["id"],
@@ -4184,6 +5302,8 @@ def authenticate_api_token(
                     activity_type,
                     activity_name,
                     int(counts_toward_usage),
+                    str(row["auth_method"]),
+                    str(row["oauth_client_id"]),
                     isoformat(utc_now()),
                 ),
             )
@@ -4204,9 +5324,10 @@ def record_api_usage(
             """
             INSERT INTO api_usage(
                 user_id, device_token_id, endpoint, method,
-                activity_type, activity_name, counts_toward_usage, called_at
+                activity_type, activity_name, counts_toward_usage,
+                auth_method,oauth_client_id,called_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user["id"],
@@ -4216,8 +5337,34 @@ def record_api_usage(
                 activity_type,
                 activity_name,
                 int(counts_toward_usage),
+                str(user["auth_method"]),
+                str(user["oauth_client_id"]),
                 isoformat(utc_now()),
             ),
+        )
+        connection.commit()
+
+
+def mark_mcp_connected(user_id: int, key_id: str) -> None:
+    if not key_id:
+        return
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute(
+            """
+            UPDATE device_keys
+            SET mcp_connected_at=COALESCE(mcp_connected_at,?)
+            WHERE user_id=? AND key_id=? AND revoked_at IS NULL
+            """,
+            (now, user_id, key_id),
+        )
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET consumed_at=COALESCE(consumed_at,?)
+            WHERE user_id=? AND registered_key_id=? AND consumed_at IS NULL
+            """,
+            (now, user_id, key_id),
         )
         connection.commit()
 
@@ -4391,11 +5538,49 @@ def classify_mcp_request(body: bytes, http_method: str = "POST") -> tuple[str, s
     return max(classifications, key=lambda item: priority[item[0]])
 
 
-def require_api_user(
+async def require_api_user(
     request: Request,
     authorization: Annotated[str | None, Header()] = None,
+    x_jiaotang_device_id: Annotated[
+        str | None, Header(alias=DEVICE_ID_HEADER)
+    ] = None,
+    x_jiaotang_device_name: Annotated[
+        str | None, Header(alias=DEVICE_NAME_HEADER)
+    ] = None,
+    x_jiaotang_key_id: Annotated[
+        str | None, Header(alias=DEVICE_KEY_ID_HEADER)
+    ] = None,
+    x_jiaotang_timestamp: Annotated[
+        str | None, Header(alias=DEVICE_TIMESTAMP_HEADER)
+    ] = None,
+    x_jiaotang_nonce: Annotated[
+        str | None, Header(alias=DEVICE_NONCE_HEADER)
+    ] = None,
+    x_jiaotang_signature: Annotated[
+        str | None, Header(alias=DEVICE_SIGNATURE_HEADER)
+    ] = None,
 ) -> sqlite3.Row:
-    return authenticate_api_token(authorization, request.url.path, request.method)
+    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
+    if not client_ip and request.client:
+        client_ip = request.client.host
+    return authenticate_api_token(
+        authorization,
+        request.url.path,
+        request.method,
+        device_id=x_jiaotang_device_id,
+        device_name=x_jiaotang_device_name,
+        device_key_id=x_jiaotang_key_id,
+        device_timestamp=x_jiaotang_timestamp,
+        device_nonce=x_jiaotang_nonce,
+        device_signature_value=x_jiaotang_signature,
+        request_target=(
+            request.url.path
+            + (f"?{request.url.query}" if request.url.query else "")
+        ),
+        body=await request.body(),
+        client_ip=client_ip or "unknown",
+        user_agent=request.headers.get("user-agent", ""),
+    )
 
 
 class MCPBearerMiddleware:
@@ -4406,35 +5591,104 @@ class MCPBearerMiddleware:
         if scope["type"] != "http":
             await self.application(scope, receive, send)
             return
+        body_parts: list[bytes] = []
+        more_body = True
+        while more_body:
+            message = await receive()
+            if message.get("type") == "http.disconnect":
+                return
+            if message.get("type") != "http.request":
+                continue
+            body_parts.append(message.get("body", b""))
+            more_body = bool(message.get("more_body"))
+        request_body = b"".join(body_parts)
+        replayed = False
+
+        async def replay_receive():
+            nonlocal replayed
+            if replayed:
+                return {"type": "http.request", "body": b"", "more_body": False}
+            replayed = True
+            return {
+                "type": "http.request",
+                "body": request_body,
+                "more_body": False,
+            }
+
         headers = {
             key.decode("latin-1").lower(): value.decode("latin-1")
             for key, value in scope.get("headers", [])
         }
+        query_string = scope.get("query_string", b"").decode("latin-1")
+        request_target = str(scope.get("path", "/mcp"))
+        if query_string:
+            request_target += f"?{query_string}"
         try:
             user = authenticate_api_token(
                 headers.get("authorization"),
                 "/mcp",
                 scope.get("method", "POST"),
+                device_id=headers.get(DEVICE_ID_HEADER.lower()),
+                device_name=headers.get(DEVICE_NAME_HEADER.lower()),
+                device_key_id=headers.get(DEVICE_KEY_ID_HEADER.lower()),
+                device_timestamp=headers.get(DEVICE_TIMESTAMP_HEADER.lower()),
+                device_nonce=headers.get(DEVICE_NONCE_HEADER.lower()),
+                device_signature_value=headers.get(DEVICE_SIGNATURE_HEADER.lower()),
+                request_target=request_target,
+                body=request_body,
+                client_ip=(
+                    headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+                    or str((scope.get("client") or ("unknown", 0))[0])
+                ),
+                user_agent=headers.get("user-agent", ""),
                 record_usage=False,
             )
         except HTTPException as error:
-            response = JSONResponse({"detail": error.detail}, status_code=error.status_code)
+            response = JSONResponse(
+                {"detail": error.detail},
+                status_code=error.status_code,
+                headers=error.headers,
+            )
             await response(scope, receive, send)
             return
-        body_parts: list[bytes] = []
 
-        async def capture_receive():
-            message = await receive()
-            if message.get("type") == "http.request" and message.get("body"):
-                body_parts.append(message["body"])
-            return message
+        activity_type, activity_name, counts_toward_usage = classify_mcp_request(
+            request_body, scope.get("method", "POST")
+        )
+        response_status = 500
+        mcp_connection_recorded = False
+
+        async def tracked_send(message):
+            nonlocal response_status, mcp_connection_recorded
+            if message.get("type") == "http.response.start":
+                response_status = int(message.get("status", 500))
+            if (
+                message.get("type") == "http.response.body"
+                and not message.get("more_body", False)
+                and response_status < 400
+                and activity_type == "mcp_connection"
+                and not bool(authentication_value(user, "is_admin", 0))
+            ):
+                mark_mcp_connected(
+                    int(user["id"]),
+                    headers.get(DEVICE_KEY_ID_HEADER.lower(), ""),
+                )
+                mcp_connection_recorded = True
+            await send(message)
 
         try:
-            await self.application(scope, capture_receive, send)
+            await self.application(scope, replay_receive, tracked_send)
         finally:
-            activity_type, activity_name, counts_toward_usage = classify_mcp_request(
-                b"".join(body_parts), scope.get("method", "POST")
-            )
+            if (
+                not mcp_connection_recorded
+                and response_status < 400
+                and activity_type == "mcp_connection"
+                and not bool(authentication_value(user, "is_admin", 0))
+            ):
+                mark_mcp_connected(
+                    int(user["id"]),
+                    headers.get(DEVICE_KEY_ID_HEADER.lower(), ""),
+                )
             record_api_usage(
                 user,
                 "/mcp",
@@ -4664,8 +5918,94 @@ def portal_payload(
         )
         reusable_token = (
             user_access_token(int(user["id"]), str(active_device_token["token_seed"]))
-            if active_device_token and active_device_token["token_seed"]
+            if user["is_admin"] and active_device_token and active_device_token["token_seed"]
             else None
+        )
+        active_device_binding = connection.execute(
+            """
+            SELECT device_bindings.*,device_keys.key_id,
+                   device_keys.platform,device_keys.agent_host,
+                   device_keys.credential_saved_at,
+                   device_keys.first_verified_at,
+                   device_keys.mcp_connected_at,
+                   device_keys.last_verified_at
+            FROM device_bindings
+            LEFT JOIN device_keys
+              ON device_keys.binding_id=device_bindings.id
+             AND device_keys.revoked_at IS NULL
+            WHERE device_bindings.user_id=? AND device_bindings.revoked_at IS NULL
+            ORDER BY device_bindings.id DESC LIMIT 1
+            """,
+            (int(user["id"]),),
+        ).fetchone()
+        active_device_binding_payload = (
+            {
+                **dict(active_device_binding),
+                "first_bound_at_display": format_chinese_datetime(
+                    active_device_binding["first_bound_at"]
+                ),
+                "last_seen_at_display": format_chinese_datetime(
+                    active_device_binding["last_seen_at"]
+                ),
+                "auth_method_display": (
+                    "设备签名"
+                    if active_device_binding["auth_method"] == "device_signature"
+                    else (
+                        "OAuth"
+                        if active_device_binding["auth_method"] == "oauth"
+                        else "API Key"
+                    )
+                ),
+                "last_verified_at_display": format_chinese_datetime(
+                    active_device_binding["last_verified_at"]
+                ),
+                "credential_saved_at_display": format_chinese_datetime(
+                    active_device_binding["credential_saved_at"]
+                ),
+                "first_verified_at_display": format_chinese_datetime(
+                    active_device_binding["first_verified_at"]
+                ),
+                "mcp_connected_at_display": format_chinese_datetime(
+                    active_device_binding["mcp_connected_at"]
+                ),
+            }
+            if active_device_binding
+            else None
+        )
+        device_binding_history = [
+            {
+                **dict(binding),
+                "first_bound_at_display": format_chinese_datetime(binding["first_bound_at"]),
+                "last_seen_at_display": format_chinese_datetime(binding["last_seen_at"]),
+                "revoked_at_display": format_chinese_datetime(binding["revoked_at"]),
+            }
+            for binding in connection.execute(
+                """
+                SELECT * FROM device_bindings
+                WHERE user_id=? AND revoked_at IS NOT NULL
+                ORDER BY id DESC LIMIT 5
+                """,
+                (int(user["id"]),),
+            ).fetchall()
+        ]
+        oauth_connections = format_row_datetimes(
+            connection.execute(
+                """
+                SELECT oauth_clients.client_id,oauth_clients.client_name,
+                       MAX(oauth_refresh_tokens.created_at) AS authorized_at,
+                       MAX(oauth_refresh_tokens.expires_at) AS expires_at
+                FROM oauth_refresh_tokens
+                JOIN oauth_clients ON oauth_clients.client_id=oauth_refresh_tokens.client_id
+                WHERE oauth_refresh_tokens.user_id=?
+                  AND oauth_refresh_tokens.revoked_at IS NULL
+                  AND oauth_refresh_tokens.expires_at>?
+                GROUP BY oauth_clients.client_id,oauth_clients.client_name
+                ORDER BY authorized_at DESC
+                """,
+                (int(user["id"]), isoformat(utc_now())),
+            ).fetchall(),
+            "authorized_at",
+            "expires_at",
         )
         recent_calls = format_row_datetimes(connection.execute(
             """
@@ -4704,8 +6044,26 @@ def portal_payload(
         admin_health: dict[str, object] = {}
         if user["is_admin"]:
             users = format_row_datetimes(connection.execute(
-                "SELECT id, username, real_name, company_name, is_admin, active, created_at FROM users WHERE deleted_at IS NULL ORDER BY id"
-            ).fetchall(), "created_at")
+                """
+                SELECT users.id,users.username,users.real_name,users.company_name,
+                       users.is_admin,users.active,users.created_at,
+                       latest_result.result_status AS install_result_status,
+                       latest_result.result_error_stage AS install_error_stage,
+                       latest_result.result_reported_at AS install_reported_at
+                FROM users
+                LEFT JOIN agent_enrollment_codes latest_result
+                  ON latest_result.id=(
+                    SELECT result_codes.id
+                    FROM agent_enrollment_codes result_codes
+                    WHERE result_codes.user_id=users.id
+                      AND result_codes.result_reported_at IS NOT NULL
+                    ORDER BY result_codes.result_reported_at DESC,result_codes.id DESC
+                    LIMIT 1
+                  )
+                WHERE users.deleted_at IS NULL
+                ORDER BY users.id
+                """
+            ).fetchall(), "created_at", "install_reported_at")
             registration_authorization_rows = connection.execute(
                 """
                 SELECT registration_authorizations.*,users.username
@@ -4760,15 +6118,16 @@ def portal_payload(
                 """
             ).fetchall(), "created_at", "completed_at", "rolled_back_at")
         if user["is_admin"]:
+            public_version_pattern = f"{FIRST_PUBLIC_SKILL_VERSION.split('.', 1)[0]}.%"
             release_rows = connection.execute(
                 """
                 SELECT id, version, file_name, sha256, release_notes, published_at
                 FROM skill_releases
-                WHERE version = ?
+                WHERE version = ? OR version LIKE ?
                 ORDER BY published_at DESC, id DESC
                 LIMIT 20
                 """,
-                (FIRST_PUBLIC_SKILL_VERSION,),
+                (FIRST_PUBLIC_SKILL_VERSION, public_version_pattern),
             ).fetchall()
             releases = [
                 {
@@ -4841,10 +6200,37 @@ def portal_payload(
                 **dict(latest_release),
                 "published_at_display": format_chinese_datetime(latest_release["published_at"]),
                 "release_notes_html": render_guide_markdown(str(latest_release["release_notes"])),
+                "workbuddy_available": workbuddy_skill_package(
+                    str(latest_release["version"])
+                ).is_file(),
             }
             if latest_release
             else None
         )
+        public_version_pattern = f"{FIRST_PUBLIC_SKILL_VERSION.split('.', 1)[0]}.%"
+        historical_release_rows = connection.execute(
+            """
+            SELECT id, version, file_name, sha256, release_notes, published_at
+            FROM skill_releases
+            WHERE id != COALESCE(?, -1)
+              AND (version = ? OR version LIKE ?)
+            ORDER BY published_at DESC, id DESC
+            """,
+            (
+                latest_release["id"] if latest_release else None,
+                FIRST_PUBLIC_SKILL_VERSION,
+                public_version_pattern,
+            ),
+        ).fetchall()
+        historical_releases = [
+            {
+                **dict(row),
+                "published_at_display": format_chinese_datetime(row["published_at"]),
+                "release_notes_html": render_guide_markdown(str(row["release_notes"])),
+                "workbuddy_available": workbuddy_skill_package(str(row["version"])).is_file(),
+            }
+            for row in historical_release_rows
+        ]
         release_announcement = None
         if latest_release:
             release_announcement = connection.execute(
@@ -4871,6 +6257,9 @@ def portal_payload(
         "device_tokens": device_tokens,
         "active_device_token": active_device_token,
         "reusable_token": reusable_token,
+        "active_device_binding": active_device_binding_payload,
+        "device_binding_history": device_binding_history,
+        "oauth_connections": oauth_connections,
         "recent_calls": recent_calls,
         "usage_total": usage_total,
         "assistant_daily_limit": assistant_daily_limit,
@@ -4886,6 +6275,7 @@ def portal_payload(
         "update_jobs": update_jobs,
         "releases": releases,
         "latest_release": latest_release_payload,
+        "historical_releases": historical_releases,
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_announcement": announcement_payload,
         "knowledge_stats": knowledge_index_stats(),
@@ -4987,6 +6377,7 @@ def login_page(
             "initialized": initialized == 1,
             "registered": registered == 1,
             "password_reset": password_reset == 1,
+            "next_url": safe_login_redirect(str(request.query_params.get("next") or "")),
         },
     )
 
@@ -5193,27 +6584,65 @@ def register_submit(
                     },
                     status_code=403,
                 )
-            if authorization["status"] == "registered" or authorization["user_id"]:
+            if authorization["status"] == "registered":
                 return templates.TemplateResponse(
                     request,
                     "register.html",
                     {"error": "该邀请已完成注册，如需处理请联系管理员。", **template_context},
                     status_code=409,
                 )
-            connection.execute(
-                """
-                INSERT INTO users(username, real_name, password_hash, company_name, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    normalized_username,
-                    normalized_real_name,
-                    password_hasher.hash(password),
-                    MEMBER_COMPANY,
-                    isoformat(utc_now()),
-                ),
-            )
-            new_user_id = int(connection.execute("SELECT last_insert_rowid()").fetchone()[0])
+            if authorization["user_id"]:
+                existing_user = connection.execute(
+                    "SELECT * FROM users WHERE id=?", (authorization["user_id"],)
+                ).fetchone()
+                if existing_user is None or existing_user["deleted_at"]:
+                    return templates.TemplateResponse(
+                        request,
+                        "register.html",
+                        {"error": "原账号已进入回收站，请管理员先恢复或彻底清除。", **template_context},
+                        status_code=409,
+                    )
+                if normalized_username != existing_user["username"]:
+                    return templates.TemplateResponse(
+                        request,
+                        "register.html",
+                        {"error": "重新邀请必须使用原英文登录账号。", **template_context},
+                        status_code=409,
+                    )
+                new_user_id = int(existing_user["id"])
+                connection.execute(
+                    """
+                    UPDATE users
+                    SET password_hash=?,real_name=?,company_name=?,active=1,deleted_at=NULL
+                    WHERE id=?
+                    """,
+                    (
+                        password_hasher.hash(password),
+                        normalized_real_name,
+                        MEMBER_COMPANY,
+                        new_user_id,
+                    ),
+                )
+                connection.execute(
+                    "UPDATE device_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE user_id=?",
+                    (isoformat(utc_now()), new_user_id),
+                )
+                connection.execute("DELETE FROM sessions WHERE user_id=?", (new_user_id,))
+            else:
+                connection.execute(
+                    """
+                    INSERT INTO users(username, real_name, password_hash, company_name, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        normalized_username,
+                        normalized_real_name,
+                        password_hasher.hash(password),
+                        MEMBER_COMPANY,
+                        isoformat(utc_now()),
+                    ),
+                )
+                new_user_id = int(connection.execute("SELECT last_insert_rowid()").fetchone()[0])
             connection.execute(
                 """
                 UPDATE registration_authorizations
@@ -5239,6 +6668,7 @@ def login_submit(
     username: Annotated[str, Form()],
     password: Annotated[str, Form()],
     remember_me: Annotated[str | None, Form()] = None,
+    next_url: Annotated[str, Form(alias="next", max_length=2000)] = "",
 ):
     with closing(database()) as connection:
         user = connection.execute(
@@ -5266,7 +6696,13 @@ def login_submit(
             return templates.TemplateResponse(
                 request,
                 "login.html",
-                {"error": "用户名称或密码错误", "initialized": False, "registered": False},
+                {
+                    "error": "用户名称或密码错误",
+                    "initialized": False,
+                    "registered": False,
+                    "password_reset": False,
+                    "next_url": safe_login_redirect(next_url),
+                },
                 status_code=401,
             )
         raw_session = secrets.token_urlsafe(48)
@@ -5288,7 +6724,7 @@ def login_submit(
             ),
         )
         connection.commit()
-    response = RedirectResponse("/portal", status_code=303)
+    response = RedirectResponse(safe_login_redirect(next_url), status_code=303)
     response.set_cookie(
         SESSION_COOKIE,
         raw_session,
@@ -5314,6 +6750,299 @@ def logout(
     response = RedirectResponse("/login", status_code=303)
     response.delete_cookie(SESSION_COOKIE)
     return response
+
+
+@app.get("/.well-known/oauth-protected-resource")
+@app.get("/.well-known/oauth-protected-resource/mcp")
+@app.get("/.well-known/oauth-protected-resource/mcp/")
+def oauth_protected_resource_metadata():
+    return {
+        "resource": oauth_resource_url(),
+        "authorization_servers": [oauth_base_url()],
+        "scopes_supported": list(OAUTH_SCOPES),
+        "bearer_methods_supported": ["header"],
+        "resource_documentation": f"{oauth_base_url()}/guide",
+    }
+
+
+@app.get("/.well-known/oauth-authorization-server")
+def oauth_authorization_server_metadata():
+    base = oauth_base_url()
+    return {
+        "issuer": base,
+        "authorization_endpoint": f"{base}/authorize",
+        "token_endpoint": f"{base}/oauth/token",
+        "registration_endpoint": f"{base}/oauth/register",
+        "revocation_endpoint": f"{base}/oauth/revoke",
+        "scopes_supported": list(OAUTH_SCOPES),
+        "response_types_supported": ["code"],
+        "grant_types_supported": ["authorization_code", "refresh_token"],
+        "token_endpoint_auth_methods_supported": ["none"],
+        "code_challenge_methods_supported": ["S256"],
+    }
+
+
+@app.post("/oauth/register")
+def oauth_dynamic_client_registration(payload: OAuthClientRegistrationRequest):
+    if payload.token_endpoint_auth_method != "none":
+        raise HTTPException(status_code=400, detail="仅支持无客户端密钥的PKCE公共客户端")
+    if payload.response_types != ["code"]:
+        raise HTTPException(status_code=400, detail="仅支持authorization_code响应类型")
+    allowed_grants = {"authorization_code", "refresh_token"}
+    if "authorization_code" not in payload.grant_types or any(
+        item not in allowed_grants for item in payload.grant_types
+    ):
+        raise HTTPException(status_code=400, detail="OAuth grant_types不受支持")
+    try:
+        redirect_uris = [validate_oauth_redirect_uri(item) for item in payload.redirect_uris]
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    client_id = "jtc_" + secrets.token_urlsafe(24)
+    now = utc_now()
+    with closing(database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO oauth_clients(
+                client_id,client_name,redirect_uris_json,grant_types_json,created_at
+            ) VALUES (?,?,?,?,?)
+            """,
+            (
+                client_id,
+                payload.client_name.strip() or "MCP Client",
+                json.dumps(redirect_uris, ensure_ascii=False),
+                json.dumps(payload.grant_types),
+                isoformat(now),
+            ),
+        )
+        connection.commit()
+    return JSONResponse(
+        {
+            "client_id": client_id,
+            "client_id_issued_at": int(now.timestamp()),
+            "client_name": payload.client_name.strip() or "MCP Client",
+            "redirect_uris": redirect_uris,
+            "grant_types": payload.grant_types,
+            "response_types": ["code"],
+            "token_endpoint_auth_method": "none",
+        },
+        status_code=201,
+    )
+
+
+@app.get("/authorize", response_class=HTMLResponse)
+def oauth_authorize_page(
+    request: Request,
+    response_type: str,
+    client_id: str,
+    redirect_uri: str,
+    code_challenge: str,
+    code_challenge_method: str = "S256",
+    scope: str = "",
+    state: str = "",
+    resource: str | None = None,
+    jiaotang_session: Annotated[str | None, Cookie()] = None,
+):
+    client = oauth_client(client_id)
+    if client is None:
+        raise HTTPException(status_code=400, detail="OAuth客户端不存在")
+    try:
+        registered_redirects = json.loads(str(client["redirect_uris_json"]))
+        normalized_scope = normalize_oauth_scope(scope)
+        normalized_resource = normalize_oauth_resource(resource)
+    except (ValueError, json.JSONDecodeError) as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    if response_type != "code" or redirect_uri not in registered_redirects:
+        raise HTTPException(status_code=400, detail="OAuth回调地址或响应类型无效")
+    if code_challenge_method != "S256" or not re.fullmatch(r"[A-Za-z0-9_-]{43,128}", code_challenge):
+        raise HTTPException(status_code=400, detail="OAuth客户端必须使用有效的PKCE S256")
+    active_session = session_user(jiaotang_session)
+    if active_session is None:
+        next_url = request.url.path + (f"?{request.url.query}" if request.url.query else "")
+        return RedirectResponse(f"/login?{urlencode({'next': next_url})}", status_code=303)
+    user = active_session[0]
+    return templates.TemplateResponse(
+        request,
+        "oauth_authorize.html",
+        {
+            "user": user,
+            "client_name": client["client_name"],
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": normalized_scope,
+            "scope_labels": [
+                "读取团队知识库" if item == "knowledge:read" else "调用知识库MCP工具"
+                for item in normalized_scope.split()
+            ],
+            "state": state,
+            "code_challenge": code_challenge,
+            "resource": normalized_resource,
+        },
+    )
+
+
+@app.post("/oauth/authorize")
+def oauth_authorize_submit(
+    client_id: Annotated[str, Form()],
+    redirect_uri: Annotated[str, Form()],
+    scope: Annotated[str, Form()],
+    state: Annotated[str, Form()],
+    code_challenge: Annotated[str, Form()],
+    resource: Annotated[str, Form()],
+    decision: Annotated[str, Form()],
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    client = oauth_client(client_id)
+    if client is None:
+        raise HTTPException(status_code=400, detail="OAuth客户端不存在")
+    registered_redirects = json.loads(str(client["redirect_uris_json"]))
+    if redirect_uri not in registered_redirects:
+        raise HTTPException(status_code=400, detail="OAuth回调地址无效")
+    if decision != "approve":
+        values = {"error": "access_denied"}
+        if state:
+            values["state"] = state
+        return RedirectResponse(append_query_parameters(redirect_uri, values), status_code=303)
+    try:
+        normalized_scope = normalize_oauth_scope(scope)
+        normalized_resource = normalize_oauth_resource(resource)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    raw_code = "joc_" + secrets.token_urlsafe(36)
+    now = utc_now()
+    with closing(database()) as connection:
+        ensure_active_device_token(connection, user)
+        connection.execute(
+            """
+            INSERT INTO oauth_authorization_codes(
+                code_hash,client_id,user_id,redirect_uri,scope,code_challenge,
+                resource,expires_at,created_at
+            ) VALUES (?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                token_hash(raw_code), client_id, int(user["id"]), redirect_uri,
+                normalized_scope, code_challenge, normalized_resource,
+                isoformat(now + timedelta(minutes=OAUTH_CODE_MINUTES)), isoformat(now),
+            ),
+        )
+        connection.commit()
+    values = {"code": raw_code}
+    if state:
+        values["state"] = state
+    return RedirectResponse(append_query_parameters(redirect_uri, values), status_code=303)
+
+
+@app.post("/oauth/token")
+def oauth_token_exchange(
+    grant_type: Annotated[str, Form()],
+    client_id: Annotated[str, Form()],
+    code: Annotated[str | None, Form()] = None,
+    redirect_uri: Annotated[str | None, Form()] = None,
+    code_verifier: Annotated[str | None, Form()] = None,
+    refresh_token: Annotated[str | None, Form()] = None,
+    resource: Annotated[str | None, Form()] = None,
+):
+    if oauth_client(client_id) is None:
+        return JSONResponse({"error": "invalid_client"}, status_code=401)
+    now = utc_now()
+    if grant_type == "authorization_code":
+        if not code or not redirect_uri or not code_verifier:
+            return JSONResponse({"error": "invalid_request"}, status_code=400)
+        if not re.fullmatch(r"[A-Za-z0-9._~-]{43,128}", code_verifier):
+            return JSONResponse({"error": "invalid_grant"}, status_code=400)
+        verifier_digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
+        challenge = urlsafe_b64encode(verifier_digest).decode("ascii").rstrip("=")
+        with closing(database()) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT * FROM oauth_authorization_codes
+                WHERE code_hash=? AND client_id=? AND consumed_at IS NULL
+                """,
+                (token_hash(code), client_id),
+            ).fetchone()
+            if (
+                row is None
+                or datetime.fromisoformat(str(row["expires_at"])) <= now
+                or row["redirect_uri"] != redirect_uri
+                or not secrets.compare_digest(str(row["code_challenge"]), challenge)
+            ):
+                connection.rollback()
+                return JSONResponse({"error": "invalid_grant"}, status_code=400)
+            try:
+                normalized_resource = normalize_oauth_resource(resource or str(row["resource"]))
+            except ValueError:
+                connection.rollback()
+                return JSONResponse({"error": "invalid_target"}, status_code=400)
+            connection.execute(
+                "UPDATE oauth_authorization_codes SET consumed_at=? WHERE code_hash=?",
+                (isoformat(now), token_hash(code)),
+            )
+            response = issue_oauth_tokens(
+                connection,
+                user_id=int(row["user_id"]),
+                client_id=client_id,
+                scope=str(row["scope"]),
+                resource=normalized_resource,
+            )
+            connection.commit()
+        return response
+    if grant_type == "refresh_token":
+        if not refresh_token:
+            return JSONResponse({"error": "invalid_request"}, status_code=400)
+        with closing(database()) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT * FROM oauth_refresh_tokens
+                WHERE token_hash=? AND client_id=? AND revoked_at IS NULL
+                """,
+                (token_hash(refresh_token), client_id),
+            ).fetchone()
+            if row is None or datetime.fromisoformat(str(row["expires_at"])) <= now:
+                connection.rollback()
+                return JSONResponse({"error": "invalid_grant"}, status_code=400)
+            try:
+                normalized_resource = normalize_oauth_resource(resource or str(row["resource"]))
+            except ValueError:
+                connection.rollback()
+                return JSONResponse({"error": "invalid_target"}, status_code=400)
+            response = issue_oauth_tokens(
+                connection,
+                user_id=int(row["user_id"]),
+                client_id=client_id,
+                scope=str(row["scope"]),
+                resource=normalized_resource,
+            )
+            replacement_hash = token_hash(str(response["refresh_token"]))
+            connection.execute(
+                "UPDATE oauth_refresh_tokens SET revoked_at=?,replaced_by_hash=? WHERE token_hash=?",
+                (isoformat(now), replacement_hash, token_hash(refresh_token)),
+            )
+            connection.commit()
+        return response
+    return JSONResponse({"error": "unsupported_grant_type"}, status_code=400)
+
+
+@app.post("/oauth/revoke", status_code=200)
+def oauth_revoke_token(
+    token: Annotated[str, Form()],
+    client_id: Annotated[str, Form()],
+):
+    digest = token_hash(token)
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute(
+            "UPDATE oauth_access_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE token_hash=? AND client_id=?",
+            (now, digest, client_id),
+        )
+        connection.execute(
+            "UPDATE oauth_refresh_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE token_hash=? AND client_id=?",
+            (now, digest, client_id),
+        )
+        connection.commit()
+    return Response(status_code=200)
 
 
 @app.get("/portal", response_class=HTMLResponse)
@@ -6003,8 +7732,36 @@ def admin_user_detail(
             """,
             (member_id,),
         ).fetchone()
+        latest_install_result = connection.execute(
+            """
+            SELECT result_schema,result_ok,result_status,result_error_stage,
+                   result_user_message,result_next_action,result_host,result_platform,
+                   result_activation_required,result_reported_at
+            FROM agent_enrollment_codes
+            WHERE user_id=? AND result_reported_at IS NOT NULL
+            ORDER BY result_reported_at DESC,id DESC
+            LIMIT 1
+            """,
+            (member_id,),
+        ).fetchone()
     if member is None:
         raise HTTPException(status_code=404, detail="成员不存在")
+    latest_install_result_payload = (
+        {
+            **dict(latest_install_result),
+            "result_ok": bool(latest_install_result["result_ok"]),
+            "result_activation_required": (
+                None
+                if latest_install_result["result_activation_required"] is None
+                else bool(latest_install_result["result_activation_required"])
+            ),
+            "result_reported_at_display": format_chinese_datetime(
+                latest_install_result["result_reported_at"]
+            ),
+        }
+        if latest_install_result
+        else None
+    )
     return templates.TemplateResponse(
         request,
         "admin_user_detail.html",
@@ -6016,7 +7773,50 @@ def admin_user_detail(
                 "last_called_at_display": format_chinese_datetime(member["last_called_at"]),
                 "deleted_at_display": format_chinese_datetime(member["deleted_at"]),
             },
+            "latest_install_result": latest_install_result_payload,
         },
+    )
+
+
+@app.post("/admin/users/{member_id}/reinvite")
+def reinvite_disabled_user(
+    member_id: int,
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    require_admin(user)
+    if member_id == user["id"]:
+        raise HTTPException(status_code=400, detail="不能重新邀请当前管理员账号")
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        member = connection.execute(
+            "SELECT * FROM users WHERE id=? AND active=0 AND deleted_at IS NULL", (member_id,)
+        ).fetchone()
+        if member is None:
+            raise HTTPException(status_code=409, detail="只有已停用账号可以重新邀请")
+        authorization = connection.execute(
+            "SELECT * FROM registration_authorizations WHERE user_id=?", (member_id,)
+        ).fetchone()
+        if authorization is None:
+            raise HTTPException(status_code=409, detail="该账号缺少成员识别信息，无法生成邀请")
+        connection.execute(
+            """
+            UPDATE registration_authorizations
+            SET status='pending',created_by=?,created_at=?,registered_at=NULL,
+                revoked_at=NULL,deleted_at=NULL
+            WHERE id=?
+            """,
+            (user["id"], now, authorization["id"]),
+        )
+        connection.execute("DELETE FROM sessions WHERE user_id=?", (member_id,))
+        connection.execute(
+            "UPDATE device_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE user_id=?",
+            (now, member_id),
+        )
+        connection.commit()
+    return RedirectResponse(
+        f"/admin/registration-authorizations/{authorization['id']}", status_code=303
     )
 
 
@@ -6066,9 +7866,50 @@ def restore_user(
     return RedirectResponse(f"/admin/users/{member_id}", status_code=303)
 
 
+@app.post("/admin/users/{member_id}/purge")
+def purge_user_account(
+    member_id: int,
+    confirmation: Annotated[str, Form(max_length=64)],
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    require_admin(user)
+    if member_id == user["id"]:
+        raise HTTPException(status_code=400, detail="不能彻底删除当前管理员账号")
+    with closing(database()) as connection:
+        member = connection.execute(
+            "SELECT * FROM users WHERE id=? AND deleted_at IS NOT NULL", (member_id,)
+        ).fetchone()
+        if member is None:
+            raise HTTPException(status_code=404, detail="回收站账号不存在")
+        if member["is_admin"]:
+            raise HTTPException(status_code=400, detail="管理员账号不能在此彻底删除")
+        if confirmation.strip().lower() != str(member["username"]).lower():
+            raise HTTPException(status_code=400, detail="请输入完整英文账号确认彻底删除")
+        try:
+            connection.execute(
+                "DELETE FROM password_reset_attempts WHERE username=?", (member["username"],)
+            )
+            connection.execute(
+                "DELETE FROM registration_authorizations WHERE user_id=?", (member_id,)
+            )
+            connection.execute("DELETE FROM users WHERE id=?", (member_id,))
+            connection.commit()
+        except sqlite3.IntegrityError as error:
+            connection.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="该账号仍关联必须保留的管理员审计记录，暂不能彻底删除",
+            ) from error
+    return RedirectResponse("/admin/members/trash?purged=1", status_code=303)
+
+
 @app.get("/admin/members/trash", response_class=HTMLResponse)
 def member_trash_page(
-    request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    purged: int = 0,
 ):
     require_admin(user)
     with closing(database()) as connection:
@@ -6095,6 +7936,7 @@ def member_trash_page(
             "user": user,
             "deleted_users": deleted_users,
             "deleted_authorizations": deleted_authorizations,
+            "purged": purged == 1,
         },
     )
 
@@ -6416,6 +8258,8 @@ def admin_health_detail(
     calls_page_size = 50
     activity_filters = {
         "business": ("业务调用", "api_usage.counts_toward_usage = 1"),
+        "oauth": ("OAuth调用", "api_usage.auth_method = 'oauth'"),
+        "api_key": ("API Key调用", "api_usage.auth_method = 'api_key'"),
         "mcp_connection": ("MCP连接检测", "api_usage.activity_type = 'mcp_connection'"),
         "mcp_tools_list": ("工具列表", "api_usage.activity_type = 'mcp_tools_list'"),
         "mcp_search": ("实际检索", "api_usage.activity_type = 'mcp_search'"),
@@ -6425,6 +8269,8 @@ def admin_health_detail(
     activity_filter_label = activity_filters.get(selected_activity, ("全部调用", ""))[0]
     activity_descriptions = {
         "business": "计入用户累计调用的REST请求和实际MCP工具调用。连接检测与工具发现不计入。",
+        "oauth": "通过OAuth短期访问令牌发起的REST或MCP请求。",
+        "api_key": "通过网站生成的长期个人API Key发起的REST或MCP请求。",
         "mcp_connection": "扣子或其他客户端用于初始化、状态确认和保持连接，不读取知识库正文。",
         "mcp_tools_list": (
             "客户端读取当前MCP提供的工具清单，包括知识检索、文档读取、公示名单查询、"
@@ -6444,6 +8290,7 @@ def admin_health_detail(
             FROM api_usage
             JOIN users ON users.id = api_usage.user_id
             LEFT JOIN device_tokens ON device_tokens.id = api_usage.device_token_id
+            LEFT JOIN oauth_clients ON oauth_clients.client_id=api_usage.oauth_client_id
         """
         recent_calls_where = ""
         recent_calls_parameters: tuple[object, ...] = ()
@@ -6459,11 +8306,19 @@ def admin_health_detail(
             ).fetchone()[0]
         )
         all_calls_total = int(connection.execute("SELECT COUNT(*) FROM api_usage").fetchone()[0])
+        all_calls_24h = int(
+            connection.execute(
+                "SELECT COUNT(*) FROM api_usage WHERE called_at >= ?",
+                (calls_since_24_hours,),
+            ).fetchone()[0]
+        )
         calls_pages = max(1, (calls_total + calls_page_size - 1) // calls_page_size)
         calls_page = min(calls_page, calls_pages)
         recent_calls_query = """
             SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
                    api_usage.activity_type, api_usage.activity_name,
+                   api_usage.auth_method,api_usage.oauth_client_id,
+                   COALESCE(oauth_clients.client_name,'') AS oauth_client_name,
                    COALESCE(NULLIF(api_usage.activity_name,''), api_usage.endpoint) AS activity_display,
                    users.username,
                    COALESCE(NULLIF(device_tokens.label,''), NULLIF(users.real_name,''), users.username) AS label
@@ -6529,6 +8384,54 @@ def admin_health_detail(
             LIMIT 100
             """
         ).fetchall(), "created_at", "last_used_at", "revoked_at")
+        oauth_summary = connection.execute(
+            """
+            SELECT
+              (SELECT COUNT(*) FROM oauth_clients) AS clients_total,
+              (SELECT COUNT(DISTINCT user_id || ':' || client_id)
+                 FROM oauth_refresh_tokens WHERE revoked_at IS NULL AND expires_at>?) AS active_connections,
+              (SELECT COUNT(DISTINCT user_id)
+                 FROM oauth_refresh_tokens WHERE revoked_at IS NULL AND expires_at>?) AS active_users,
+              (SELECT COUNT(*) FROM oauth_authorization_codes
+                 WHERE consumed_at>=?) AS authorizations_24h,
+              (SELECT COUNT(*) FROM api_usage WHERE auth_method='oauth') AS calls_total,
+              (SELECT COUNT(*) FROM api_usage
+                 WHERE auth_method='oauth' AND called_at>=?) AS calls_24h
+            """,
+            (isoformat(utc_now()), isoformat(utc_now()), calls_since_24_hours, calls_since_24_hours),
+        ).fetchone()
+        oauth_connections_admin = format_row_datetimes(
+            connection.execute(
+                """
+                SELECT oauth_clients.client_id,oauth_clients.client_name,
+                       users.username,users.real_name,
+                       MIN(oauth_refresh_tokens.created_at) AS authorized_at,
+                       MAX(oauth_refresh_tokens.expires_at) AS expires_at,
+                       SUM(CASE WHEN oauth_refresh_tokens.revoked_at IS NULL
+                                    AND oauth_refresh_tokens.expires_at>? THEN 1 ELSE 0 END) AS active_refresh_tokens,
+                       (SELECT COUNT(*) FROM oauth_access_tokens access
+                         WHERE access.user_id=users.id
+                           AND access.client_id=oauth_clients.client_id
+                           AND access.revoked_at IS NULL AND access.expires_at>?) AS active_access_tokens,
+                       (SELECT COUNT(*) FROM api_usage usage
+                         WHERE usage.user_id=users.id
+                           AND usage.oauth_client_id=oauth_clients.client_id) AS call_count,
+                       (SELECT MAX(called_at) FROM api_usage usage
+                         WHERE usage.user_id=users.id
+                           AND usage.oauth_client_id=oauth_clients.client_id) AS last_called_at
+                FROM oauth_refresh_tokens
+                JOIN oauth_clients ON oauth_clients.client_id=oauth_refresh_tokens.client_id
+                JOIN users ON users.id=oauth_refresh_tokens.user_id
+                GROUP BY oauth_clients.client_id,oauth_clients.client_name,users.id
+                ORDER BY authorized_at DESC
+                LIMIT 200
+                """,
+                (isoformat(utc_now()), isoformat(utc_now())),
+            ).fetchall(),
+            "authorized_at",
+            "expires_at",
+            "last_called_at",
+        )
         assistant_since_7_days = isoformat(utc_now() - timedelta(days=7))
         assistant_day_start, assistant_day_end = assistant_day_bounds()
         assistant_summary = connection.execute(
@@ -6771,12 +8674,27 @@ def admin_health_detail(
         ),
         "certificate": ("HTTPS 证书", [("证书状态", runtime.get("certificate_status", "待采集")), ("到期时间", runtime.get("certificate_expires", "待采集")), ("域名", os.environ.get("JIAOTANG_PUBLIC_HOST", "未配置"))]),
         "disk": ("磁盘使用", [("使用率", runtime.get("disk_percent", "待采集")), ("检查时间", runtime.get("checked_at", "待采集")), ("数据目录", str(DATA_DIR))]),
-        "access": ("用户与凭据", [("有效用户", active_users), ("有效 API 访问凭据", active_tokens), ("权限模式", "统一知识权限")]),
+        "access": (
+            "用户与凭据",
+            [
+                ("有效用户", active_users),
+                ("有效 API Key", active_tokens),
+                ("OAuth活跃连接", int(oauth_summary["active_connections"] or 0)),
+                ("OAuth授权用户", int(oauth_summary["active_users"] or 0)),
+                ("24小时新授权", int(oauth_summary["authorizations_24h"] or 0)),
+                ("24小时OAuth调用", int(oauth_summary["calls_24h"] or 0), "/admin/health/calls?activity=oauth"),
+                ("累计OAuth调用", int(oauth_summary["calls_total"] or 0), "/admin/health/calls?activity=oauth"),
+                ("注册OAuth客户端", int(oauth_summary["clients_total"] or 0)),
+                ("权限模式", "统一知识只读权限"),
+            ],
+        ),
         "calls": (
             "调用记录",
             [
                 ("全部调用", all_calls_total, "/admin/health/calls"),
                 ("24小时业务调用", business_calls_24h, "/admin/health/calls?activity=business"),
+                ("24小时OAuth调用", int(oauth_summary["calls_24h"] or 0), "/admin/health/calls?activity=oauth"),
+                ("24小时API Key调用", all_calls_24h - int(oauth_summary["calls_24h"] or 0), "/admin/health/calls?activity=api_key"),
                 ("MCP连接检测", mcp_activity_counts.get("mcp_connection", 0), "/admin/health/calls?activity=mcp_connection"),
                 ("工具列表", mcp_activity_counts.get("mcp_tools_list", 0), "/admin/health/calls?activity=mcp_tools_list"),
                 ("实际检索", mcp_activity_counts.get("mcp_search", 0), "/admin/health/calls?activity=mcp_search"),
@@ -6819,6 +8737,7 @@ def admin_health_detail(
             "failed_updates": failed_updates if section == "updates" else [],
             "access_users": access_users if section == "access" else [],
             "access_tokens": access_tokens if section == "access" else [],
+            "oauth_connections_admin": oauth_connections_admin if section == "access" else [],
             "assistant_users": assistant_users if section == "assistant" else [],
             "assistant_recent": assistant_recent if section == "assistant" else [],
             "assistant_anomalies": assistant_anomalies if section == "assistant" else [],
@@ -6874,27 +8793,73 @@ def admin_knowledge(
     require_admin(user)
     page = max(1, page)
     page_size = 30
-    conditions = ["1 = 1"]
-    parameters: list[object] = []
-    if query.strip():
-        escaped_query = query.strip().replace("%", "\\%").replace("_", "\\_")
-        value = f"%{escaped_query}%"
-        conditions.append("(title LIKE ? ESCAPE '\\' OR source LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\')")
-        parameters.extend((value, value, value))
-    if document_role.strip():
-        conditions.append("document_role = ?")
-        parameters.append(document_role.strip())
-    where = " AND ".join(conditions)
+    normalized_query = query.strip()
+    selected_role = document_role.strip()
+    search_note = ""
     with closing(content_database()) as connection:
-        total = int(connection.execute(f"SELECT COUNT(*) FROM documents WHERE {where}", parameters).fetchone()[0])
-        rows = connection.execute(
-            f"""
-            SELECT id, title, source, document_role, updated_at, length(content) AS characters
-            FROM documents WHERE {where}
-            ORDER BY id ASC LIMIT ? OFFSET ?
-            """,
-            [*parameters, page_size, (page - 1) * page_size],
-        ).fetchall()
+        if normalized_query:
+            fuzzy_result = search_knowledge(normalized_query, 160, limit_cap=160)
+            search_note = str(fuzzy_result.get("clarification") or "")
+            ranked_ids = [int(item["document_id"]) for item in fuzzy_result.get("results", [])]
+            escaped_query = normalized_query.replace("%", "\\%").replace("_", "\\_")
+            literal_value = f"%{escaped_query}%"
+            literal_ids = [
+                int(row["id"])
+                for row in connection.execute(
+                    """
+                    SELECT id FROM documents
+                    WHERE title LIKE ? ESCAPE '\\'
+                       OR source LIKE ? ESCAPE '\\'
+                       OR content LIKE ? ESCAPE '\\'
+                    ORDER BY id ASC LIMIT 160
+                    """,
+                    (literal_value, literal_value, literal_value),
+                ).fetchall()
+            ]
+            ranked_ids.extend(document_id for document_id in literal_ids if document_id not in ranked_ids)
+            if ranked_ids:
+                placeholders = ",".join("?" for _ in ranked_ids)
+                role_clause = " AND document_role = ?" if selected_role else ""
+                role_parameters: list[object] = [selected_role] if selected_role else []
+                matched_rows = connection.execute(
+                    f"""
+                    SELECT id,title,source,document_role,updated_at,length(content) AS characters
+                    FROM documents
+                    WHERE id IN ({placeholders}){role_clause}
+                    """,
+                    [*ranked_ids, *role_parameters],
+                ).fetchall()
+                rank = {document_id: position for position, document_id in enumerate(ranked_ids)}
+                ordered_rows = sorted(matched_rows, key=lambda row: rank[int(row["id"])])
+            else:
+                ordered_rows = []
+            total = len(ordered_rows)
+            total_pages = max(1, (total + page_size - 1) // page_size)
+            page = min(page, total_pages)
+            start = (page - 1) * page_size
+            rows = ordered_rows[start : start + page_size]
+        else:
+            conditions = ["1 = 1"]
+            parameters: list[object] = []
+            if selected_role:
+                conditions.append("document_role = ?")
+                parameters.append(selected_role)
+            where = " AND ".join(conditions)
+            total = int(
+                connection.execute(
+                    f"SELECT COUNT(*) FROM documents WHERE {where}", parameters
+                ).fetchone()[0]
+            )
+            total_pages = max(1, (total + page_size - 1) // page_size)
+            page = min(page, total_pages)
+            rows = connection.execute(
+                f"""
+                SELECT id,title,source,document_role,updated_at,length(content) AS characters
+                FROM documents WHERE {where}
+                ORDER BY id ASC LIMIT ? OFFSET ?
+                """,
+                [*parameters, page_size, (page - 1) * page_size],
+            ).fetchall()
         roles = connection.execute(
             "SELECT document_role, COUNT(*) AS count FROM documents GROUP BY document_role ORDER BY document_role"
         ).fetchall()
@@ -6914,8 +8879,6 @@ def admin_knowledge(
                 "SELECT COUNT(*) FROM knowledge_document_trash WHERE status = 'trashed' AND restored_at IS NULL"
             ).fetchone()[0]
         )
-    total_pages = max(1, (total + page_size - 1) // page_size)
-    page = min(page, total_pages)
     if rows == [] and total and page > 1:
         return RedirectResponse(
             f"/admin/knowledge?query={query}&document_role={document_role}&page={total_pages}",
@@ -6930,7 +8893,8 @@ def admin_knowledge(
             "roles": roles,
             "revisions": revisions,
             "query": query,
-            "selected_role": document_role,
+            "selected_role": selected_role,
+            "search_note": search_note,
             "page": page,
             "pages": total_pages,
             "page_links": pagination_window(page, total_pages),
@@ -7407,6 +9371,613 @@ def rollback_knowledge_revision(
     return RedirectResponse("/admin/knowledge", status_code=303)
 
 
+def build_agent_install_command(
+    installer_url: str,
+    bootstrap_url: str,
+    result_url: str,
+) -> str:
+    node_script = (
+        "const fs=require('node:fs'),os=require('node:os'),"
+        "path=require('node:path'),cp=require('node:child_process');"
+        "const fail=e=>({schema:'jiaotang-agent-result/v1',ok:false,status:'failed',"
+        "error_stage:'installer_download',"
+        "user_message:'安装失败：'+String(e.message||e),"
+        "next_action:'请检查网络后回到门户重新复制安装配置。',"
+        "host:'auto',platform:process.platform+'-'+process.arch});"
+        "const report=async v=>{try{await fetch(process.argv[3],{method:'POST',"
+        "headers:{'Content-Type':'application/json'},body:JSON.stringify(v)})}catch{}};"
+        "(async()=>{"
+        "const p=path.join(os.tmpdir(),'jiaotang-agent.mjs');"
+        "const r=await fetch(process.argv[1],{redirect:'follow'});"
+        "if(!r.ok)throw new Error('安装器下载失败：HTTP '+r.status);"
+        "fs.writeFileSync(p,Buffer.from(await r.arrayBuffer()),{mode:0o700});"
+        "const x=cp.spawnSync(process.execPath,"
+        "[p,'install','--bootstrap-url',process.argv[2],"
+        "'--result-url',process.argv[3],'--host','auto'],"
+        "{stdio:'inherit'});"
+        "if(x.error)throw x.error;"
+        "process.exit(x.status??1)"
+        "})().catch(async e=>{const v=fail(e);await report(v);"
+        "console.log(JSON.stringify(v));process.exit(1)})"
+    )
+    return (
+        f'node -e "{node_script}" "{installer_url}" '
+        f'"{bootstrap_url}" "{result_url}"'
+    )
+
+
+def build_agent_bootstrap_prompt(install_protocol_url: str) -> str:
+    return (
+        "请直接在当前本地 Agent 中完成焦糖知识库配置，不要让我打开终端、"
+        "手工修改配置或保存任何密钥。\n\n"
+        "请把下面的 HTTPS 地址视为不透明的一次性安装协议入口，只读取一次；"
+        "校验返回的 schema 为 jiaotang-agent-install/v1 后，原样执行 "
+        "execution.command，不解释、不改写、不拆分，也不要提前访问其中的其他地址：\n\n"
+        f"{install_protocol_url}\n\n"
+        "协议会连续完成安装器下载、完整性校验、设备密钥登记、系统凭据保存、"
+        "MCP 配置和服务器连接确认。若 node 不在 PATH，使用当前 Agent 自带的 "
+        "Node.js 运行时执行同一 command。"
+        "不要在回复中显示安装码、API Token、私钥或完整配置；"
+        "命令最终会输出一个结构化 JSON 结果。必须向用户原样显示 user_message；"
+        "next_action 非空时紧接着原样显示 next_action。"
+        "不要解释、推断或改写其他结果字段。"
+        "如果这个安装协议地址本身无法读取、因而尚未获得结构化结果，"
+        "请原样告诉用户“安装协议读取失败。”，然后告诉用户"
+        "“请检查网络后回到门户重新复制安装配置。”"
+    )
+
+
+@app.post("/agent-bootstrap-codes")
+def create_agent_bootstrap_code(
+    request: Request,
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    if user["is_admin"]:
+        return JSONResponse(
+            {
+                "detail": "管理员账号已豁免设备限制，可继续使用管理员 API Key。",
+                "exempt": True,
+            },
+            headers={"Cache-Control": "no-store"},
+        )
+    now_value = utc_now()
+    now = isoformat(now_value)
+    raw_code = "jbe_" + secrets.token_urlsafe(32)
+    with closing(database()) as connection:
+        active_binding = connection.execute(
+            """
+            SELECT device_bindings.id,device_keys.mcp_connected_at
+            FROM device_bindings
+            LEFT JOIN device_keys
+              ON device_keys.binding_id=device_bindings.id
+             AND device_keys.revoked_at IS NULL
+            WHERE device_bindings.user_id=? AND device_bindings.revoked_at IS NULL
+            LIMIT 1
+            """,
+            (int(user["id"]),),
+        ).fetchone()
+        if active_binding:
+            if active_binding["mcp_connected_at"]:
+                return JSONResponse(
+                    {
+                        "detail": "当前账号已有绑定设备。更换电脑时请先点击“更换绑定设备”。"
+                    },
+                    status_code=409,
+                    headers={"Cache-Control": "no-store"},
+                )
+            connection.execute(
+                """
+                UPDATE device_bindings
+                SET revoked_at=?,revoked_reason='incomplete_installation_recovery'
+                WHERE id=? AND revoked_at IS NULL
+                """,
+                (now, int(active_binding["id"])),
+            )
+            connection.execute(
+                """
+                UPDATE device_keys
+                SET revoked_at=?,revoked_reason='incomplete_installation_recovery'
+                WHERE binding_id=? AND revoked_at IS NULL
+                """,
+                (now, int(active_binding["id"])),
+            )
+            connection.execute(
+                """
+                UPDATE device_tokens
+                SET revoked_at=COALESCE(revoked_at,?)
+                WHERE user_id=? AND revoked_at IS NULL
+                """,
+                (now, int(user["id"])),
+            )
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET consumed_at=COALESCE(consumed_at,?)
+            WHERE user_id=? AND consumed_at IS NULL
+            """,
+            (now, int(user["id"])),
+        )
+        connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                user_id,code_hash,created_at,expires_at
+            ) VALUES (?,?,?,?)
+            """,
+            (
+                int(user["id"]),
+                token_hash(raw_code),
+                now,
+                isoformat(now_value + timedelta(minutes=AGENT_BOOTSTRAP_MINUTES)),
+            ),
+        )
+        connection.commit()
+    public_endpoint = str(request.base_url).rstrip("/")
+    install_protocol_url = f"{public_endpoint}/v1/agent-install/{quote(raw_code)}"
+    return JSONResponse(
+        {
+            "prompt": build_agent_bootstrap_prompt(install_protocol_url),
+            "expires_in_seconds": AGENT_BOOTSTRAP_MINUTES * 60,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/v1/agent-install/{enrollment_code}")
+def agent_install_protocol(enrollment_code: str, request: Request):
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        enrollment = connection.execute(
+            """
+            SELECT expires_at,consumed_at
+            FROM agent_enrollment_codes
+            WHERE code_hash=?
+            """,
+            (token_hash(enrollment_code),),
+        ).fetchone()
+    if enrollment is None:
+        raise HTTPException(status_code=410, detail="一次性安装协议不存在或已清理，请回到门户重新复制。")
+    if enrollment["consumed_at"]:
+        raise HTTPException(status_code=410, detail="一次性安装协议已经使用，请回到门户重新复制。")
+    if str(enrollment["expires_at"]) <= now:
+        raise HTTPException(status_code=410, detail="一次性安装协议已经过期，请回到门户重新复制。")
+    public_endpoint = str(request.base_url).rstrip("/")
+    installer_path = BASE_DIR / "installers" / "jiaotang-agent.mjs"
+    if not installer_path.is_file():
+        raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
+    installer_url = f"{public_endpoint}/install/jiaotang-agent.mjs"
+    bootstrap_url = f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
+    result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
+    return JSONResponse(
+        {
+            "schema": "jiaotang-agent-install/v1",
+            "protocol_version": 1,
+            "action": "execute_once",
+            "opaque": True,
+            "expires_at": enrollment["expires_at"],
+            "compatibility": {
+                "platforms": ["darwin", "win32"],
+                "agent_hosts": [
+                    "workbuddy",
+                    "codex",
+                    "claude-code",
+                    "cursor",
+                    "windsurf",
+                    "generic-local-agent",
+                ],
+                "requirements": [
+                    "https_fetch",
+                    "local_command_execution",
+                    "local_configuration_write",
+                    "nodejs_18_or_newer",
+                ],
+            },
+            "execution": {
+                "type": "local_command",
+                "runtime": "nodejs",
+                "command": build_agent_install_command(
+                    installer_url,
+                    bootstrap_url,
+                    result_url,
+                ),
+                "rules": [
+                    "execute_command_exactly_once",
+                    "do_not_rewrite_or_split",
+                    "do_not_prefetch_nested_urls",
+                    "use_host_bundled_node_when_needed",
+                ],
+            },
+            "integrity": {
+                "algorithm": "sha256",
+                "installer_sha256": sha256_file(installer_path),
+                "verified_by": "installer",
+            },
+            "completion": {
+                "required_server_stages": [
+                    "registration",
+                    "credential_saved",
+                    "first_signature",
+                    "mcp_connection",
+                ],
+                "success_condition": "server_confirmed_signed_mcp_connection",
+                "result_handling": {
+                    "contract": "jiaotang-agent-result/v1",
+                    "required_display_fields": ["user_message", "next_action"],
+                    "display_rules": [
+                        "display_user_message_verbatim",
+                        "display_next_action_verbatim_when_nonempty",
+                        "do_not_interpret_other_fields",
+                    ],
+                    "workbuddy_instruction": (
+                        "连接成功。请在 WorkBuddy 左侧「连接器」中找到 "
+                        "`jiaotang-kb`，然后点击「启用」。"
+                    ),
+                },
+            },
+        },
+        media_type="application/vnd.jiaotang.agent-install+json",
+        headers={
+            "Cache-Control": "no-store",
+            "X-Jiaotang-Install-Protocol": "1",
+        },
+    )
+
+
+@app.get("/v1/agent-bootstrap/{enrollment_code}")
+def agent_bootstrap_manifest(enrollment_code: str, request: Request):
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        enrollment = connection.execute(
+            """
+            SELECT id,expires_at,consumed_at
+            FROM agent_enrollment_codes
+            WHERE code_hash=?
+            """,
+            (token_hash(enrollment_code),),
+        ).fetchone()
+    if enrollment is None:
+        raise HTTPException(status_code=410, detail="一次性配置不存在或已清理，请回到门户重新复制。")
+    if enrollment["consumed_at"]:
+        raise HTTPException(status_code=410, detail="一次性配置已经使用，请回到门户重新复制。")
+    if str(enrollment["expires_at"]) <= now:
+        raise HTTPException(status_code=410, detail="一次性配置已经过期，请回到门户重新复制。")
+    public_endpoint = str(request.base_url).rstrip("/")
+    installer_path = BASE_DIR / "installers" / "jiaotang-agent.mjs"
+    if not installer_path.is_file():
+        raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
+    installer_url = f"{public_endpoint}/install/jiaotang-agent.mjs"
+    bootstrap_url = f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
+    result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
+    install_command = build_agent_install_command(
+        installer_url,
+        bootstrap_url,
+        result_url,
+    )
+    return JSONResponse(
+        {
+            "schema": "jiaotang-agent-bootstrap/v1",
+            "scope": "local-agent-only",
+            "expires_at": enrollment["expires_at"],
+            "installer_url": installer_url,
+            "installer_sha256": sha256_file(installer_path),
+            "bootstrap_url": bootstrap_url,
+            "result_url": result_url,
+            "supported_platforms": ["darwin", "win32"],
+            "supported_hosts": ["workbuddy", "codex", "claude-code", "generic-mcp"],
+            "instructions": [
+                "Do not ask the user to open a terminal or edit a configuration file.",
+                "Do not prefetch or debug bootstrap_url before installation.",
+                "Do not split download and installation into separate commands.",
+                "Execute commands.universal exactly once.",
+                "Use the host-bundled Node.js runtime when node is not available on PATH.",
+                "If the host requires permission, request only the host-native execution approval.",
+                "Never print or return enrollment codes, API tokens, private keys, or credential files.",
+                "Report success only after the server confirms the signed MCP connection.",
+            ],
+            "commands": {
+                "universal": install_command,
+                "darwin": install_command,
+                "win32": install_command,
+            },
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/install/jiaotang-agent.mjs")
+def download_jiaotang_agent():
+    installer_path = BASE_DIR / "installers" / "jiaotang-agent.mjs"
+    if not installer_path.is_file():
+        raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
+    return FileResponse(
+        installer_path,
+        media_type="text/javascript; charset=utf-8",
+        filename="jiaotang-agent.mjs",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.post("/v1/agent-install-result/{enrollment_code}")
+def report_agent_install_result(
+    enrollment_code: str,
+    payload: dict[str, object],
+    request: Request,
+):
+    def optional_text(name: str, maximum: int) -> str | None:
+        value = payload.get(name)
+        if value is None:
+            return None
+        if not isinstance(value, str) or len(value) > maximum:
+            raise HTTPException(status_code=422, detail=f"{name} 字段无效")
+        return value
+
+    result_schema = optional_text("schema", 80)
+    result_status = optional_text("status", 40)
+    error_stage = optional_text("error_stage", 80)
+    user_message = optional_text("user_message", 500)
+    next_action = optional_text("next_action", 500)
+    result_host = optional_text("host", 60)
+    result_platform = optional_text("platform", 60)
+    result_ok = payload.get("ok")
+    activation_required = payload.get("activation_required")
+    if result_schema != "jiaotang-agent-result/v1":
+        raise HTTPException(status_code=422, detail="安装结果版本不受支持")
+    if result_status not in {"configured", "failed"}:
+        raise HTTPException(status_code=422, detail="安装结果状态无效")
+    if not isinstance(result_ok, bool) or result_ok != (result_status == "configured"):
+        raise HTTPException(status_code=422, detail="安装结果状态与 ok 字段不一致")
+    if not user_message:
+        raise HTTPException(status_code=422, detail="安装结果必须包含 user_message")
+    if not result_ok and not error_stage:
+        raise HTTPException(status_code=422, detail="失败结果必须包含 error_stage")
+    if activation_required is not None and not isinstance(activation_required, bool):
+        raise HTTPException(status_code=422, detail="activation_required 字段无效")
+    now_value = utc_now()
+    now = isoformat(now_value)
+    recent_cutoff = isoformat(now_value - timedelta(hours=24))
+    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
+    if not client_ip and request.client:
+        client_ip = request.client.host
+    with closing(database()) as connection:
+        enrollment = connection.execute(
+            """
+            SELECT id FROM agent_enrollment_codes
+            WHERE code_hash=? AND created_at>=?
+            """,
+            (token_hash(enrollment_code), recent_cutoff),
+        ).fetchone()
+        if enrollment is None:
+            raise HTTPException(
+                status_code=410,
+                detail="安装结果对应的一次性配置不存在或已超过上报期限",
+            )
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET result_schema=?,result_ok=?,result_status=?,
+                result_error_stage=?,result_user_message=?,result_next_action=?,
+                result_host=?,result_platform=?,result_activation_required=?,
+                result_reported_at=?,result_ip=?
+            WHERE id=?
+            """,
+            (
+                result_schema,
+                1 if result_ok else 0,
+                result_status,
+                error_stage,
+                user_message,
+                next_action,
+                result_host,
+                result_platform,
+                (
+                    None
+                    if activation_required is None
+                    else (1 if activation_required else 0)
+                ),
+                now,
+                (client_ip or "unknown")[:100],
+                int(enrollment["id"]),
+            ),
+        )
+        connection.commit()
+    return JSONResponse(
+        {"status": "recorded", "reported_at": now},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.post("/v1/agent-bootstrap/{enrollment_code}/register")
+def register_agent_device(
+    enrollment_code: str,
+    payload: AgentDeviceRegistrationRequest,
+    request: Request,
+):
+    if not DEVICE_ID_PATTERN.fullmatch(payload.device_id):
+        raise HTTPException(status_code=400, detail="设备安装标识格式无效")
+    platform_name = re.sub(r"[^A-Za-z0-9._-]+", "-", payload.platform.strip())[:40]
+    agent_host = re.sub(r"[^A-Za-z0-9._-]+", "-", payload.agent_host.strip())[:60]
+    device_name = normalize_device_name(payload.device_name, f"{platform_name} Agent")
+    try:
+        verify_ed25519_signature(
+            payload.public_key,
+            payload.proof,
+            enrollment_canonical_value(
+                enrollment_code=enrollment_code,
+                device_id=payload.device_id,
+                device_name=device_name,
+                platform=platform_name,
+                agent_host=agent_host,
+                public_key=payload.public_key,
+            ),
+        )
+        key_id = device_key_id(payload.public_key)
+    except DeviceSignatureError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+
+    now_value = utc_now()
+    now = isoformat(now_value)
+    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
+    if not client_ip and request.client:
+        client_ip = request.client.host
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        enrollment = connection.execute(
+            """
+            SELECT * FROM agent_enrollment_codes
+            WHERE code_hash=?
+            """,
+            (token_hash(enrollment_code),),
+        ).fetchone()
+        if enrollment is None:
+            connection.rollback()
+            raise HTTPException(
+                status_code=410,
+                detail="一次性配置不存在或已清理，请回到门户重新复制。",
+            )
+        if enrollment["consumed_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=410,
+                detail="一次性配置已经使用，请回到门户重新复制。",
+            )
+        if str(enrollment["expires_at"]) <= now:
+            connection.rollback()
+            raise HTTPException(
+                status_code=410,
+                detail="一次性配置已经过期，请回到门户重新复制。",
+            )
+        user = connection.execute(
+            "SELECT * FROM users WHERE id=? AND active=1",
+            (int(enrollment["user_id"]),),
+        ).fetchone()
+        if user is None or user["is_admin"]:
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="该账号不需要设备注册")
+        active_binding = connection.execute(
+            """
+            SELECT device_bindings.id,device_keys.mcp_connected_at
+            FROM device_bindings
+            LEFT JOIN device_keys
+              ON device_keys.binding_id=device_bindings.id
+             AND device_keys.revoked_at IS NULL
+            WHERE device_bindings.user_id=? AND device_bindings.revoked_at IS NULL
+            LIMIT 1
+            """,
+            (int(user["id"]),),
+        ).fetchone()
+        if active_binding and active_binding["mcp_connected_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="账号已绑定其他设备，请先在门户执行更换绑定设备。",
+            )
+        if active_binding:
+            connection.execute(
+                """
+                UPDATE device_bindings
+                SET revoked_at=?,revoked_reason='incomplete_installation_retry'
+                WHERE id=? AND revoked_at IS NULL
+                """,
+                (now, int(active_binding["id"])),
+            )
+            connection.execute(
+                """
+                UPDATE device_keys
+                SET revoked_at=?,revoked_reason='incomplete_installation_retry'
+                WHERE binding_id=? AND revoked_at IS NULL
+                """,
+                (now, int(active_binding["id"])),
+            )
+
+        seed = secrets.token_urlsafe(24)
+        raw_token = user_access_token(int(user["id"]), seed)
+        connection.execute(
+            """
+            UPDATE device_tokens
+            SET revoked_at=COALESCE(revoked_at,?)
+            WHERE user_id=? AND revoked_at IS NULL
+            """,
+            (now, int(user["id"])),
+        )
+        token_cursor = connection.execute(
+            """
+            INSERT INTO device_tokens(
+                user_id,label,token_prefix,token_hash,token_seed,created_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                int(user["id"]),
+                device_name,
+                raw_token[:12],
+                token_hash(raw_token),
+                seed,
+                now,
+            ),
+        )
+        binding_cursor = connection.execute(
+            """
+            INSERT INTO device_bindings(
+                user_id,device_id_hash,device_id_prefix,device_name,auth_method,
+                first_bound_at,last_seen_at,last_ip,user_agent
+            ) VALUES (?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                int(user["id"]),
+                hashlib.sha256(payload.device_id.encode("utf-8")).hexdigest(),
+                payload.device_id[:12],
+                device_name,
+                "device_signature",
+                now,
+                now,
+                (client_ip or "unknown")[:100],
+                request.headers.get("user-agent", "")[:300],
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO device_keys(
+                user_id,binding_id,key_id,public_key,platform,agent_host,created_at
+            ) VALUES (?,?,?,?,?,?,?)
+            """,
+            (
+                int(user["id"]),
+                int(binding_cursor.lastrowid),
+                key_id,
+                payload.public_key,
+                platform_name,
+                agent_host,
+                now,
+            ),
+        )
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET registered_at=?,registered_key_id=?,registered_ip=?,
+                consumed_at=NULL,consumed_ip=''
+            WHERE id=?
+            """,
+            (
+                now,
+                key_id,
+                (client_ip or "unknown")[:100],
+                int(enrollment["id"]),
+            ),
+        )
+        connection.commit()
+    return JSONResponse(
+        {
+            "status": "registered",
+            "key_id": key_id,
+            "token": raw_token,
+            "token_id": int(token_cursor.lastrowid),
+            "api_base_url": f"{str(request.base_url).rstrip('/')}/v1",
+            "mcp_url": f"{str(request.base_url).rstrip('/')}/mcp/",
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 @app.post("/device-tokens", response_class=HTMLResponse)
 def create_device_token(
     request: Request,
@@ -7416,6 +9987,18 @@ def create_device_token(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
+    if not user["is_admin"]:
+        return templates.TemplateResponse(
+            request,
+            "portal.html",
+            portal_payload(
+                request,
+                user,
+                error="团队成员请使用“复制给 Agent”完成安全配置。",
+                active_page="access",
+            ),
+            status_code=403,
+        )
     try:
         normalized_real_name = normalize_real_name(real_name)
     except ValueError as exc:
@@ -7478,7 +10061,7 @@ def create_device_token(
     return templates.TemplateResponse(
         request,
         "portal.html",
-        portal_payload(request, updated_user, message="唯一用户 Token 已启用，可随时查看和复制。", active_page="access"),
+        portal_payload(request, updated_user, message="个人 API Key 已启用，可随时查看和复制。", active_page="access"),
     )
 
 
@@ -7496,6 +10079,121 @@ def revoke_device_token(
             WHERE id = ? AND user_id = ? AND revoked_at IS NULL
             """,
             (isoformat(utc_now()), device_token_id, user["id"]),
+        )
+        connection.commit()
+    return RedirectResponse("/access", status_code=303)
+
+
+@app.post("/device-binding/replace", response_class=HTMLResponse)
+def replace_device_binding(
+    request: Request,
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    if user["is_admin"]:
+        return templates.TemplateResponse(
+            request,
+            "portal.html",
+            portal_payload(
+                request,
+                user,
+                message="管理员账号已豁免设备限制，无需更换绑定设备。",
+                active_page="access",
+            ),
+        )
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            """
+            UPDATE device_tokens
+            SET revoked_at=COALESCE(revoked_at,?)
+            WHERE user_id=? AND revoked_at IS NULL
+            """,
+            (now, int(user["id"])),
+        )
+        connection.execute(
+            """
+            UPDATE device_keys
+            SET revoked_at=?,revoked_reason='user_replaced'
+            WHERE user_id=? AND revoked_at IS NULL
+            """,
+            (now, int(user["id"])),
+        )
+        connection.execute(
+            """
+            UPDATE device_bindings
+            SET revoked_at=?,revoked_reason='user_replaced'
+            WHERE user_id=? AND revoked_at IS NULL
+            """,
+            (now, int(user["id"])),
+        )
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET consumed_at=COALESCE(consumed_at,?)
+            WHERE user_id=? AND consumed_at IS NULL
+            """,
+            (now, int(user["id"])),
+        )
+        connection.execute(
+            """
+            UPDATE oauth_access_tokens
+            SET revoked_at=COALESCE(revoked_at,?)
+            WHERE user_id=?
+            """,
+            (now, int(user["id"])),
+        )
+        connection.execute(
+            """
+            UPDATE oauth_refresh_tokens
+            SET revoked_at=COALESCE(revoked_at,?)
+            WHERE user_id=?
+            """,
+            (now, int(user["id"])),
+        )
+        connection.execute(
+            """
+            UPDATE oauth_authorization_codes
+            SET consumed_at=COALESCE(consumed_at,?)
+            WHERE user_id=?
+            """,
+            (now, int(user["id"])),
+        )
+        connection.commit()
+        updated_user = connection.execute(
+            "SELECT * FROM users WHERE id=?",
+            (int(user["id"]),),
+        ).fetchone()
+    return templates.TemplateResponse(
+        request,
+        "portal.html",
+        portal_payload(
+            request,
+            updated_user,
+            message="旧设备、公钥和访问凭据已失效。请点击“复制给 Agent”配置新设备。",
+            active_page="access",
+        ),
+    )
+
+
+@app.post("/oauth/connections/{client_id}/revoke")
+def revoke_oauth_connection(
+    client_id: str,
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute(
+            "UPDATE oauth_access_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE user_id=? AND client_id=?",
+            (now, int(user["id"]), client_id),
+        )
+        connection.execute(
+            "UPDATE oauth_refresh_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE user_id=? AND client_id=?",
+            (now, int(user["id"]), client_id),
         )
         connection.commit()
     return RedirectResponse("/access", status_code=303)
@@ -7925,9 +10623,143 @@ def web_download_latest_skills(user: Annotated[sqlite3.Row, Depends(require_web_
     return FileResponse(package_path, filename=release["file_name"], media_type="application/zip")
 
 
+@app.get("/skills/latest/workbuddy/download")
+def web_download_latest_workbuddy_skills(
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    release = latest_skill_release()
+    if release is None:
+        raise HTTPException(status_code=404, detail="尚未发布 Skills 版本")
+    package_path = workbuddy_skill_package(str(release["version"]))
+    if not package_path.is_file():
+        raise HTTPException(status_code=404, detail="当前版本尚未发布 WorkBuddy 插件包")
+    return FileResponse(
+        package_path,
+        filename=package_path.name,
+        media_type="application/zip",
+    )
+
+
+@app.get("/skills/releases/{release_id}/download")
+def web_download_historical_skills(
+    release_id: int,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    with closing(database()) as connection:
+        release = connection.execute(
+            """
+            SELECT id, version, file_name, file_path
+            FROM skill_releases
+            WHERE id=?
+            """,
+            (release_id,),
+        ).fetchone()
+    if release is None:
+        raise HTTPException(status_code=404, detail="历史 Skills 版本不存在")
+    package_path = Path(release["file_path"])
+    if not package_path.is_file():
+        raise HTTPException(status_code=503, detail="历史 Skills 文件暂不可用")
+    return FileResponse(package_path, filename=release["file_name"], media_type="application/zip")
+
+
+@app.get("/skills/releases/{release_id}/workbuddy/download")
+def web_download_historical_workbuddy_skills(
+    release_id: int,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    with closing(database()) as connection:
+        release = connection.execute(
+            "SELECT version FROM skill_releases WHERE id=?",
+            (release_id,),
+        ).fetchone()
+    if release is None:
+        raise HTTPException(status_code=404, detail="历史 Skills 版本不存在")
+    package_path = workbuddy_skill_package(str(release["version"]))
+    if not package_path.is_file():
+        raise HTTPException(status_code=404, detail="该历史版本未发布 WorkBuddy 插件包")
+    return FileResponse(package_path, filename=package_path.name, media_type="application/zip")
+
+
 @app.get("/v1/me")
 def api_me(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
     return {"username": user["username"], "access": "unified"}
+
+
+def device_installation_status(user_id: int, key_id: str) -> dict[str, object]:
+    with closing(database()) as connection:
+        key = connection.execute(
+            """
+            SELECT created_at,credential_saved_at,first_verified_at,mcp_connected_at
+            FROM device_keys
+            WHERE user_id=? AND key_id=? AND revoked_at IS NULL
+            """,
+            (user_id, key_id),
+        ).fetchone()
+    if key is None:
+        raise HTTPException(status_code=404, detail="当前设备登记不存在或已撤销")
+    stages = {
+        "registration": {
+            "completed": bool(key["created_at"]),
+            "at": key["created_at"],
+        },
+        "credential_saved": {
+            "completed": bool(key["credential_saved_at"]),
+            "at": key["credential_saved_at"],
+        },
+        "first_signature": {
+            "completed": bool(key["first_verified_at"]),
+            "at": key["first_verified_at"],
+        },
+        "mcp_connection": {
+            "completed": bool(key["mcp_connected_at"]),
+            "at": key["mcp_connected_at"],
+        },
+    }
+    return {
+        "status": "configured" if stages["mcp_connection"]["completed"] else "installing",
+        "configured": bool(stages["mcp_connection"]["completed"]),
+        "stages": stages,
+    }
+
+
+@app.post("/v1/device-installation/credential-saved")
+def report_device_credential_saved(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    if user["is_admin"]:
+        return {"status": "exempt", "configured": True, "stages": {}}
+    key_id = str(request.headers.get(DEVICE_KEY_ID_HEADER, "")).strip()
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        updated = connection.execute(
+            """
+            UPDATE device_keys
+            SET credential_saved_at=COALESCE(credential_saved_at,?)
+            WHERE user_id=? AND key_id=? AND revoked_at IS NULL
+            """,
+            (now, int(user["id"]), key_id),
+        )
+        connection.commit()
+    if updated.rowcount != 1:
+        raise HTTPException(status_code=404, detail="当前设备登记不存在或已撤销")
+    return device_installation_status(int(user["id"]), key_id)
+
+
+@app.get("/v1/device-installation/status")
+def get_device_installation_status(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    if user["is_admin"]:
+        return {"status": "exempt", "configured": True, "stages": {}}
+    return device_installation_status(
+        int(user["id"]),
+        str(request.headers.get(DEVICE_KEY_ID_HEADER, "")).strip(),
+    )
 
 
 @app.get("/v1/preferences", response_model=PreferenceResponse)
@@ -8078,6 +10910,65 @@ def policy_verification_propagations_api(
     return list_policy_verification_propagations(limit)
 
 
+@app.get("/v1/admin/virtual-catalog")
+def virtual_catalog_api(
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+    query: str = "",
+    region: str = "",
+    project_name: str = "",
+    limit: int = 100,
+):
+    require_admin(user)
+    bounded_limit = max(1, min(int(limit), 500))
+    conditions = ["1 = 1"]
+    parameters: list[object] = []
+    for column, value in (
+        ("virtual_catalog_entries.virtual_path", query),
+        ("documents.canonical_project_name", project_name),
+    ):
+        normalized = value.strip()
+        if not normalized:
+            continue
+        escaped = normalized.replace("%", "\\%").replace("_", "\\_")
+        conditions.append(f"{column} LIKE ? ESCAPE '\\'")
+        parameters.append(f"%{escaped}%")
+    if region.strip():
+        escaped_region = region.strip().replace("%", "\\%").replace("_", "\\_")
+        conditions.append(
+            """
+            EXISTS (
+                SELECT 1 FROM document_scopes
+                WHERE document_scopes.document_id=virtual_catalog_entries.document_id
+                  AND document_scopes.scope_type IN ('administrative','applicable_city')
+                  AND document_scopes.scope_value LIKE ? ESCAPE '\\'
+            )
+            """
+        )
+        parameters.append(f"%{escaped_region}%")
+    with closing(content_database()) as connection:
+        if not sqlite_table_exists(connection, "virtual_catalog_entries"):
+            raise HTTPException(status_code=503, detail="虚拟目录尚未构建")
+        rows = connection.execute(
+            f"""
+            SELECT virtual_catalog_entries.virtual_path,
+                   virtual_catalog_entries.catalog_role,
+                   virtual_catalog_entries.document_id,
+                   documents.title,
+                   documents.source,
+                   documents.canonical_project_name,
+                   documents.policy_year,
+                   documents.document_stage
+            FROM virtual_catalog_entries
+            JOIN documents ON documents.id=virtual_catalog_entries.document_id
+            WHERE {' AND '.join(conditions)}
+            ORDER BY virtual_catalog_entries.sort_key,virtual_catalog_entries.virtual_path
+            LIMIT ?
+            """,
+            [*parameters, bounded_limit],
+        ).fetchall()
+    return {"count": len(rows), "results": [dict(row) for row in rows]}
+
+
 @app.post("/v1/admin/policy-verification")
 def review_policy_verification_api(
     payload: PolicyVerificationReviewRequest,
@@ -8161,6 +11052,10 @@ def latest_skill_release() -> sqlite3.Row | None:
         ).fetchone()
 
 
+def workbuddy_skill_package(version: str) -> Path:
+    return SKILL_RELEASE_DIR / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
+
+
 @app.get("/v1/skills/latest", response_model=SkillLatestResponse)
 def latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
     del user
@@ -8192,6 +11087,24 @@ def download_latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user
     if not package_path.is_file():
         raise HTTPException(status_code=503, detail="最新版 Skills 文件暂不可用")
     return FileResponse(package_path, filename=release["file_name"], media_type="application/zip")
+
+
+@app.get("/v1/skills/latest/workbuddy/download")
+def download_latest_workbuddy_skills(
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    release = latest_skill_release()
+    if release is None:
+        raise HTTPException(status_code=404, detail="尚未发布 Skills 版本")
+    package_path = workbuddy_skill_package(str(release["version"]))
+    if not package_path.is_file():
+        raise HTTPException(status_code=404, detail="当前版本尚未发布 WorkBuddy 插件包")
+    return FileResponse(
+        package_path,
+        filename=package_path.name,
+        media_type="application/zip",
+    )
 
 
 @knowledge_mcp.tool()

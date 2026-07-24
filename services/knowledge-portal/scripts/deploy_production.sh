@@ -72,12 +72,18 @@ PY"
 
 echo "[2/6] 创建不可覆盖的部署备份"
 ssh "${ssh_args[@]}" "${deploy_host}" \
-    "install -d '${remote_backup_dir}' && cp -a '${remote_app_dir}/app' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/requirements.txt' '${remote_backup_dir}/' && if [ -d '${remote_app_dir}/docs' ]; then cp -a '${remote_app_dir}/docs' '${remote_backup_dir}/'; fi && if [ -d '${remote_app_dir}/skills' ]; then cp -a '${remote_app_dir}/skills' '${remote_backup_dir}/'; fi"
+    "set -e
+    /usr/local/sbin/jiaotang-kb-backup
+    install -d '${remote_backup_dir}'
+    cp -a '${remote_app_dir}/app' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/requirements.txt' '${remote_backup_dir}/'
+    if [ -d '${remote_app_dir}/installers' ]; then cp -a '${remote_app_dir}/installers' '${remote_backup_dir}/'; fi
+    if [ -d '${remote_app_dir}/docs' ]; then cp -a '${remote_app_dir}/docs' '${remote_backup_dir}/'; fi
+    if [ -d '${remote_app_dir}/skills' ]; then cp -a '${remote_app_dir}/skills' '${remote_backup_dir}/'; fi"
 
 echo "[3/6] 上传应用与运维文件"
 deployment_failed=0
 COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
-    app templates static deploy scripts/build_knowledge_content_index.py \
+    app templates static installers deploy scripts/build_knowledge_content_index.py \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py scripts/refresh_index_from_oss.py \
     scripts/verify_oss_mirror.py \
     scripts/build_policy_version_links.py \
@@ -118,7 +124,7 @@ PY
         mv '/usr/local/sbin/jiaotang-kb-refresh-index.${timestamp}' /usr/local/sbin/jiaotang-kb-refresh-index
         mv '/usr/local/sbin/jiaotang-kb-smoke-test.${timestamp}' /usr/local/sbin/jiaotang-kb-smoke-test
         cp '${remote_app_dir}/deploy/jiaotang-kb.service' '${remote_app_dir}/deploy/jiaotang-kb-health.service' '${remote_app_dir}/deploy/jiaotang-kb-backup.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.timer' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.path' /etc/systemd/system/
-        chown -R jiaotang:jiaotang '${remote_app_dir}/app' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/docs' '${remote_app_dir}/skills'
+        chown -R jiaotang:jiaotang '${remote_app_dir}/app' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/installers' '${remote_app_dir}/docs' '${remote_app_dir}/skills'
         SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt '${remote_app_dir}/.venv/bin/pip' install -r '${remote_app_dir}/requirements.txt'
         '${remote_app_dir}/.venv/bin/python' -m py_compile '${remote_app_dir}/app/main.py'
         source /etc/jiaotang-kb.env
@@ -158,7 +164,23 @@ fi
 if [[ "${deployment_failed}" -ne 0 ]]; then
     echo "部署失败，正在恢复 ${remote_backup_dir}" >&2
     ssh "${ssh_args[@]}" "${deploy_host}" \
-        "cp -a '${remote_backup_dir}/app/.' '${remote_app_dir}/app/' && cp -a '${remote_backup_dir}/templates/.' '${remote_app_dir}/templates/' && cp -a '${remote_backup_dir}/static/.' '${remote_app_dir}/static/' && cp -a '${remote_backup_dir}/requirements.txt' '${remote_app_dir}/requirements.txt' && if [ -d '${remote_backup_dir}/docs' ]; then install -d '${remote_app_dir}/docs' && cp -a '${remote_backup_dir}/docs/.' '${remote_app_dir}/docs/'; fi && if [ -d '${remote_backup_dir}/skills' ]; then install -d '${remote_app_dir}/skills' && cp -a '${remote_backup_dir}/skills/.' '${remote_app_dir}/skills/'; fi && if [ -f '${remote_index_snapshot}' ]; then cp --reflink=auto '${remote_index_snapshot}' /srv/jiaotang/knowledge-index/knowledge_content.sqlite3; chown jiaotang:jiaotang /srv/jiaotang/knowledge-index/knowledge_content.sqlite3; fi && SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt '${remote_app_dir}/.venv/bin/pip' install -r '${remote_app_dir}/requirements.txt' && systemctl restart jiaotang-kb"
+        "set -e
+        cp -a '${remote_backup_dir}/app/.' '${remote_app_dir}/app/'
+        cp -a '${remote_backup_dir}/templates/.' '${remote_app_dir}/templates/'
+        cp -a '${remote_backup_dir}/static/.' '${remote_app_dir}/static/'
+        cp -a '${remote_backup_dir}/requirements.txt' '${remote_app_dir}/requirements.txt'
+        if [ -d '${remote_backup_dir}/installers' ]; then
+            install -d '${remote_app_dir}/installers'
+            cp -a '${remote_backup_dir}/installers/.' '${remote_app_dir}/installers/'
+        elif [ -d '${remote_app_dir}/installers' ]; then
+            install -d '/opt/jiaotang-kb-quarantine/rollback-${timestamp}'
+            mv '${remote_app_dir}/installers' '/opt/jiaotang-kb-quarantine/rollback-${timestamp}/installers'
+        fi
+        if [ -d '${remote_backup_dir}/docs' ]; then install -d '${remote_app_dir}/docs' && cp -a '${remote_backup_dir}/docs/.' '${remote_app_dir}/docs/'; fi
+        if [ -d '${remote_backup_dir}/skills' ]; then install -d '${remote_app_dir}/skills' && cp -a '${remote_backup_dir}/skills/.' '${remote_app_dir}/skills/'; fi
+        if [ -f '${remote_index_snapshot}' ]; then cp --reflink=auto '${remote_index_snapshot}' /srv/jiaotang/knowledge-index/knowledge_content.sqlite3; chown jiaotang:jiaotang /srv/jiaotang/knowledge-index/knowledge_content.sqlite3; fi
+        SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt '${remote_app_dir}/.venv/bin/pip' install -r '${remote_app_dir}/requirements.txt'
+        systemctl restart jiaotang-kb"
     exit 1
 fi
 

@@ -13,6 +13,17 @@ from pathlib import Path
 import oss2
 
 
+REQUIRED_STRUCTURED_TABLES = {
+    "list_coverage_matrix": 384,
+    "list_entity_reconciliation": 1,
+    "national_small_giant_master": 1,
+    "three_first_project_awards": 1,
+    "three_first_status_timeline": 1,
+    "enterprise_product_graph_nodes": 1,
+    "enterprise_product_graph_edges": 1,
+}
+
+
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -25,13 +36,30 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def valid_index(path: Path) -> bool:
+def structured_tables_valid(connection: sqlite3.Connection) -> bool:
+    existing = {
+        row[0]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()
+    }
+    if not set(REQUIRED_STRUCTURED_TABLES) <= existing:
+        return False
+    return all(
+        connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0] >= minimum
+        for table, minimum in REQUIRED_STRUCTURED_TABLES.items()
+    )
+
+
+def valid_index(path: Path, *, quick_check: bool = True) -> bool:
     if not path.is_file():
         return False
     try:
         connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         try:
-            return connection.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+            if quick_check and connection.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+                return False
+            return structured_tables_valid(connection)
         finally:
             connection.close()
     except sqlite3.Error:
@@ -86,7 +114,7 @@ def main() -> int:
                 sha256_file(local_index), remote_sha256
             )
         unchanged = local_size_matches and remote_identity_matches
-        if unchanged:
+        if unchanged and valid_index(local_index, quick_check=False):
             cache_updated_at = datetime.fromtimestamp(
                 local_index.stat().st_mtime, timezone.utc
             ).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -110,7 +138,7 @@ def main() -> int:
         if remote_sha256 and sha256_file(temporary) != remote_sha256:
             raise RuntimeError("OSS 索引 SHA-256 校验失败")
         if not valid_index(temporary):
-            raise RuntimeError("OSS 索引 SQLite 完整性校验失败")
+            raise RuntimeError("OSS 索引完整性或结构化专表校验失败")
         os.chmod(temporary, 0o640)
         os.chown(temporary, service_account.pw_uid, service_account.pw_gid)
         os.replace(temporary, local_index)

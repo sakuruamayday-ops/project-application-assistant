@@ -8,12 +8,14 @@ import getpass
 import importlib.util
 import json
 import os
+import platform
 import re
 import shlex
 import shutil
 import stat
 import urllib.error
 import urllib.request
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -31,6 +33,7 @@ SECRET_NAMES = {
     "PADDLE_OCR_API_KEY",
 }
 BOOLEAN_NAMES = {
+    "TYC_MCP_READY",
     "QCC_MCP_READY",
     "PATENT_MCP_READY",
     "PROJECT_ASSISTANT_BROWSER_READY",
@@ -57,9 +60,18 @@ def initialize_preferences(
     spec.loader.exec_module(module)
     endpoint = values.get("JIAOTANG_KB_ENDPOINT", "").strip()
     token = values.get("JIAOTANG_KB_TOKEN", "").strip()
+    device_id = values.get("JIAOTANG_KB_DEVICE_ID", "").strip()
+    device_name = values.get("JIAOTANG_KB_DEVICE_NAME", "").strip()
     if network and endpoint and token:
         try:
-            remote = module.request_json("GET", endpoint, token, "/v1/preferences")
+            remote = module.request_json(
+                "GET",
+                endpoint,
+                token,
+                "/v1/preferences",
+                device_id=device_id,
+                device_name=device_name,
+            )
             module.write_local(preference_file, module.local_from_remote(remote))
             return "synced", f"已从云端同步个人偏好R{remote.get('revision', 0)}"
         except (RuntimeError, OSError, ValueError, json.JSONDecodeError) as error:
@@ -80,6 +92,11 @@ def initialize_preferences(
 
 def truthy(value: str | None) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on", "ready", "enabled"}
+
+
+def ascii_header_value(value: str, fallback: str) -> str:
+    normalized = value.encode("ascii", errors="ignore").decode("ascii").strip()
+    return normalized or fallback
 
 
 def read_env_file(path: Path) -> dict[str, str]:
@@ -145,12 +162,23 @@ def write_region_profile(region: str, path: Path = REGION_PROFILE_PATH) -> None:
     temporary.replace(path)
 
 
-def probe_cloud(endpoint: str, token: str, timeout: float = 10.0) -> tuple[str, str]:
-    if not endpoint or not token:
-        return "missing", "缺少地址或个人Token"
+def probe_cloud(
+    endpoint: str,
+    token: str,
+    device_id: str,
+    device_name: str,
+    timeout: float = 10.0,
+) -> tuple[str, str]:
+    if not endpoint or not token or not device_id:
+        return "missing", "缺少地址、个人Token或设备标识"
     request = urllib.request.Request(
         endpoint.rstrip("/") + "/v1/me",
-        headers={"Authorization": f"Bearer {token}", "User-Agent": "project-assistant-onboarding/1"},
+        headers={
+            "Authorization": f"Bearer {token}",
+            "X-Jiaotang-Device-ID": device_id,
+            "X-Jiaotang-Device-Name": ascii_header_value(device_name, "Project Assistant"),
+            "User-Agent": "project-assistant-onboarding/1",
+        },
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -177,8 +205,10 @@ def capability_report(
 ) -> dict[str, object]:
     endpoint = values.get("JIAOTANG_KB_ENDPOINT", DEFAULT_ENDPOINT).strip()
     token = values.get("JIAOTANG_KB_TOKEN", "").strip()
+    device_id = values.get("JIAOTANG_KB_DEVICE_ID", "").strip()
+    device_name = values.get("JIAOTANG_KB_DEVICE_NAME", "").strip()
     if network and token:
-        cloud_status, cloud_detail = probe_cloud(endpoint, token)
+        cloud_status, cloud_detail = probe_cloud(endpoint, token, device_id, device_name)
     elif token:
         cloud_status, cloud_detail = "configured", "已配置，尚未联网验证"
     else:
@@ -186,6 +216,7 @@ def capability_report(
 
     qcc_mcp = truthy(values.get("QCC_MCP_READY"))
     qcc_key = bool(values.get("QCC_API_KEY"))
+    tyc_mcp = truthy(values.get("TYC_MCP_READY"))
     patent_mcp = truthy(values.get("PATENT_MCP_READY"))
     patent_provider = bool(values.get("PATENT_DATA_PROVIDER"))
     patent_key = bool(values.get("PATENT_API_KEY"))
@@ -227,6 +258,11 @@ def capability_report(
                 "detail": cloud_detail,
                 "endpoint": endpoint,
                 "required": True,
+            },
+            "tyc": {
+                "status": "ready" if tyc_mcp else "optional",
+                "detail": "MCP已标记连接" if tyc_mcp else "未配置，使用企查查或公开来源降级",
+                "required": False,
             },
             "qcc": {
                 "status": "ready" if qcc_mcp or qcc_key else "optional",
@@ -344,6 +380,9 @@ def configure_interactively(values: dict[str, str]) -> dict[str, str]:
         if token:
             configured["JIAOTANG_KB_TOKEN"] = token
 
+    if ask_yes_no("天眼查是否已经通过MCP连接", truthy(configured.get("TYC_MCP_READY"))):
+        configured["TYC_MCP_READY"] = "true"
+
     if ask_yes_no("是否配置企查查API或确认企查查MCP", bool(configured.get("QCC_API_KEY") or truthy(configured.get("QCC_MCP_READY")))):
         if ask_yes_no("企查查是否已经通过MCP连接", truthy(configured.get("QCC_MCP_READY"))):
             configured["QCC_MCP_READY"] = "true"
@@ -389,6 +428,12 @@ def run(
     report_file = config_dir / "首次配置检测报告.md"
     needs_startup = startup_protocol_required(profile_file)
     values = effective_values(credentials_file, environment)
+    if not values.get("JIAOTANG_KB_DEVICE_ID", "").strip():
+        values["JIAOTANG_KB_DEVICE_ID"] = f"device:{uuid.uuid4()}"
+    if not values.get("JIAOTANG_KB_DEVICE_NAME", "").strip():
+        values["JIAOTANG_KB_DEVICE_NAME"] = (
+            f"{platform.system()} {platform.machine()}".strip()
+        )
     if not non_interactive:
         values = configure_interactively(values)
         if ask_yes_no("是否保存到仅当前用户可读的统一凭据文件", True):
@@ -399,6 +444,8 @@ def run(
                 or key in BOOLEAN_NAMES
                 or key in {
                     "JIAOTANG_KB_ENDPOINT",
+                    "JIAOTANG_KB_DEVICE_ID",
+                    "JIAOTANG_KB_DEVICE_NAME",
                     "PATENT_DATA_PROVIDER",
                     "PATENT_API_ENDPOINT",
                     "PROJECT_ASSISTANT_DEFAULT_REGION",

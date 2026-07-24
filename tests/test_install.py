@@ -9,6 +9,7 @@ from pathlib import Path
 from project_assistant.installer import classify_skill_change, install_skills
 from scripts.build_standard_package import (
     HOST_SKILL_INSTALL_PROMPT,
+    PORTABLE_REPORT_REQUIRED,
     included,
     validate_release_archive,
     validate_release_source,
@@ -16,10 +17,32 @@ from scripts.build_standard_package import (
 
 
 class InstallTests(unittest.TestCase):
+    @staticmethod
+    def suite_manifest(repository: Path) -> dict:
+        return json.loads(
+            (repository / "skills/suite-manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
     def test_release_package_excludes_agent_metadata_and_cache_artifacts(self):
         self.assertFalse(included(Path("skills/example/agents/openai.yaml")))
         self.assertFalse(included(Path("skills/example/__pycache__/helper.pyc")))
         self.assertFalse(included(Path("skills/example/._SKILL.md")))
+        self.assertFalse(
+            included(
+                Path(
+                    "skills/enterprise-panorama-analysis/scripts/pdf_two_pass.py"
+                )
+            )
+        )
+        self.assertFalse(
+            included(
+                Path(
+                    "skills/enterprise-panorama-analysis/assets/brand-gold-10.png"
+                )
+            )
+        )
         self.assertTrue(included(Path("skills/example/SKILL.md")))
 
     def test_release_gates_cover_startup_evolution_and_four_questions(self):
@@ -35,8 +58,6 @@ class InstallTests(unittest.TestCase):
                     str(repository),
                     "--output",
                     str(package),
-                    "--version",
-                    "9.9.9",
                 ],
                 cwd=repository,
                 check=True,
@@ -47,6 +68,12 @@ class InstallTests(unittest.TestCase):
             with zipfile.ZipFile(package) as archive:
                 manifest = json.loads(archive.read("manifest.json"))
                 names = set(archive.namelist())
+            suite_manifest = self.suite_manifest(repository)
+            expected_skill_count = len(suite_manifest["skills"])
+            self.assertEqual(
+                manifest["version"],
+                suite_manifest["release"]["version"],
+            )
             self.assertEqual(manifest["includes"]["host_skill_install_prompt"], HOST_SKILL_INSTALL_PROMPT)
             self.assertTrue(manifest["includes"]["manufacturing_tax_risk_analysis"])
             self.assertTrue(manifest["includes"]["legal_regulations_dynamic_routing"])
@@ -55,16 +82,44 @@ class InstallTests(unittest.TestCase):
             self.assertTrue(manifest["includes"]["three_way_upgrade_inheritance"])
             self.assertTrue(manifest["includes"]["direct_skill_edit_detection"])
             self.assertTrue(manifest["includes"]["legacy_skill_preference_migration"])
-            self.assertEqual(len(manifest["official_skill_hashes"]), 53)
+            self.assertTrue(
+                manifest["includes"]["manufacturing_tax_17_page_generator"]
+            )
+            self.assertTrue(manifest["includes"]["unified_branding_runtime"])
+            self.assertTrue(manifest["includes"]["portable_path_gate"])
+            self.assertTrue(manifest["includes"]["tax_report_e2e_gate"])
+            self.assertFalse(manifest["includes"]["clean_container_gate"])
+            self.assertEqual(
+                len(manifest["official_skill_hashes"]),
+                expected_skill_count,
+            )
+            self.assertEqual(
+                set(manifest["portable_runtime_hashes"]),
+                set(PORTABLE_REPORT_REQUIRED),
+            )
             self.assertIn("skills/manufacturing-tax-risk-analysis/SKILL.md", names)
             self.assertIn("skills/jiaotang-legal-regulations/SKILL.md", names)
+            self.assertIn("skills/standard-drafting/SKILL.md", names)
+            for required_path in PORTABLE_REPORT_REQUIRED:
+                self.assertIn(required_path, names)
+            self.assertNotIn(
+                "skills/enterprise-panorama-analysis/scripts/pdf_two_pass.py",
+                names,
+            )
+            self.assertNotIn(
+                "skills/enterprise-panorama-analysis/assets/brand-gold-10.png",
+                names,
+            )
             self.assertNotIn("skills/manufacturing-tax-risk-analysis/agents/openai.yaml", names)
-            self.assertEqual(manifest["skill_count"], 53)
+            self.assertEqual(manifest["skill_count"], expected_skill_count)
             with tempfile.TemporaryDirectory() as install_directory:
                 with zipfile.ZipFile(package) as install_archive:
                     install_archive.extractall(install_directory)
                 installed = Path(install_directory)
-                self.assertEqual(len(list((installed / "skills").glob("*/SKILL.md"))), 53)
+                self.assertEqual(
+                    len(list((installed / "skills").glob("*/SKILL.md"))),
+                    expected_skill_count,
+                )
                 self.assertTrue((installed / "skills/first-run-configuration/SKILL.md").is_file())
                 self.assertTrue((installed / "skills/local-knowledge-retrieval/SKILL.md").is_file())
                 self.assertTrue((installed / "skills/skill-evolution/SKILL.md").is_file())
@@ -127,16 +182,71 @@ class InstallTests(unittest.TestCase):
         self.assertEqual(classify_skill_change("a", "c", "a"), "local-only")
         self.assertEqual(classify_skill_change("a", "c", "b"), "both-changed-conflict")
 
-    def test_release_contains_only_standard_skills(self):
+    def test_release_contains_standard_skills_and_valid_agent_metadata(self):
         repository = Path(__file__).resolve().parents[1]
-        self.assertEqual(len(list((repository / "skills").glob("*/SKILL.md"))), 53)
-        self.assertFalse(any((repository / "skills").glob("*/agents/openai.yaml")))
+        suite_manifest = self.suite_manifest(repository)
+        self.assertEqual(
+            sorted(
+                path.parent.name
+                for path in (repository / "skills").glob("*/SKILL.md")
+            ),
+            suite_manifest["skills"],
+        )
+        agent_metadata = list((repository / "skills").glob("*/agents/openai.yaml"))
+        for metadata in agent_metadata:
+            self.assertTrue((metadata.parent.parent / "SKILL.md").is_file())
+            self.assertTrue(metadata.read_text(encoding="utf-8").strip())
         protocol = (
             repository
             / "skills/first-run-configuration/references/first-startup-protocol.md"
         ).read_text(encoding="utf-8")
         self.assertIn("Agent", protocol)
         self.assertIn(HOST_SKILL_INSTALL_PROMPT, protocol)
+
+    def test_standard_drafting_skill_has_rules_templates_and_audit(self):
+        repository = Path(__file__).resolve().parents[1]
+        skill = (repository / "skills/standard-drafting/SKILL.md").read_text(encoding="utf-8")
+        rules = (
+            repository / "skills/standard-drafting/references/gbt-1-1-drafting-rules.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("GB/T 1.1", skill)
+        self.assertIn("要求—试验方法—判定规则对应矩阵", skill)
+        self.assertIn("2026-01-08复审结论：继续有效", rules)
+        self.assertTrue(
+            (repository / "skills/standard-drafting/assets/standard-draft-template.md").is_file()
+        )
+        self.assertTrue(
+            (repository / "skills/standard-drafting/scripts/audit_standard_draft.py").is_file()
+        )
+        router = (repository / "skills/project-task-router/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("路由 `standard-drafting`", router)
+
+    def test_local_knowledge_retrieval_has_multi_path_gates(self):
+        repository = Path(__file__).resolve().parents[1]
+        skill = (repository / "skills/local-knowledge-retrieval/SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        protocol = (
+            repository
+            / "skills/local-knowledge-retrieval/references/search-orchestration.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("POST /v1/lists/search", skill)
+        self.assertIn("public_list_search", skill)
+        self.assertIn("knowledge_search", skill)
+        self.assertIn("年份替换为认定批次", protocol)
+        self.assertIn("不得通过企业名称判断登记城市", protocol)
+        self.assertIn("不能据此判断资料不存在", protocol)
+        self.assertIn(
+            "未见复核通过，原称号需按当期通知作失效核验。还可能是更名、迁址或合并。",
+            protocol,
+        )
+        self.assertIn("专精特新产业园", protocol)
+        three_first = (
+            repository
+            / "skills/local-knowledge-retrieval/references/three-first-project-list-schema.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("同一企业同年多个产品必须保留多行", three_first)
+        self.assertIn("首版次必须区分省级与市级", three_first)
 
 
 if __name__ == "__main__":
