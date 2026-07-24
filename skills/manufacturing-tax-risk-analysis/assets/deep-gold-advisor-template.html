@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{企业名称}}｜金税四期财务分析报告</title>
+  <link rel="stylesheet" href="gold-advisor.css">
+</head>
+<body>
+  <!-- 使用时复制本文件与 gold-advisor.css 到同一目录。每个 section.page 对应一页。 -->
+  <section class="page cover">
+    <div class="cover-frame">
+      <p class="eyebrow">GOLDEN TAX RISK ADVISORY</p>
+      <h1>金税四期<br>财务分析报告</h1>
+      <div class="gold-rule"></div>
+      <h2>{{企业名称}}</h2>
+      <div class="cover-meta">
+        <span>分析期间：{{起始年度}}—{{终止年度}}</span>
+        <span>报告日期：{{YYYY年MM月DD日}}</span>
+        <span>完成人：共创知识产权</span>
+      </div>
+      <p class="internal-only">{{资料为初稿时：仅供内部自查}}</p>
+    </div>
+  </section>
+
+  <section class="page">
+    <header><span>01</span><b>执行摘要</b></header>
+    <h2>先给判断，再给证据与动作</h2>
+    <div class="hero-card"><strong>{{总体风险等级}}</strong><p>{{一句话结论}}</p></div>
+    <div class="grid-2">
+      <article class="card"><h3>经营与盈利</h3><p>{{结论}}</p></article>
+      <article class="card"><h3>现金与偿债</h3><p>{{结论}}</p></article>
+      <article class="card"><h3>税会一致性</h3><p>{{结论}}</p></article>
+      <article class="card"><h3>优先整改</h3><p>{{结论}}</p></article>
+    </div>
+  </section>
+
+  <section class="page">
+    <header><span>02</span><b>口径与证据</b></header>
+    <h2>资料边界决定结论强度</h2>
+    <table><thead><tr><th>资料</th><th>期间</th><th>状态</th><th>用途限制</th></tr></thead>
+      <tbody><tr><td>{{审计报告}}</td><td>{{年度}}</td><td>{{初稿/正式}}</td><td>{{限制}}</td></tr></tbody></table>
+    <div class="notice">风险提示不等于违法认定；缺少申报表和交易级资料时统一写“需核验”。</div>
+  </section>
+
+  <section class="page">
+    <header><span>03</span><b>三年财务总览</b></header>
+    <h2>规模、利润、现金与负债同屏观察</h2>
+    <div class="kpi-grid">{{营业收入｜净利润｜经营现金流｜资产负债率}}</div>
+    <table><thead><tr><th>指标</th><th>{{年度1}}</th><th>{{年度2}}</th><th>{{年度3}}</th><th>趋势判断</th></tr></thead>
+      <tbody>{{财务指标行}}</tbody></table>
+  </section>
+
+  <section class="page"><header><span>04</span><b>盈利能力</b></header><h2>{{盈利判断}}</h2>{{收入成本费用与利润桥}}</section>
+  <section class="page"><header><span>05</span><b>现金流</b></header><h2>{{现金流判断}}</h2>{{收现付现与经营现金流}}</section>
+  <section class="page"><header><span>06</span><b>偿债能力</b></header><h2>{{偿债判断}}</h2>{{资产负债率与流动性}}</section>
+  <section class="page"><header><span>07</span><b>资产质量</b></header><h2>{{资产质量判断}}</h2>{{应收账龄、客户集中度、预付款和其他应收款}}</section>
+  <section class="page"><header><span>08</span><b>票据与保证金</b></header><h2>{{票据判断}}</h2>{{承兑—保证金—采购—发票—解付闭环}}</section>
+  <section class="page"><header><span>09</span><b>往来与关联方</b></header><h2>{{往来判断}}</h2>{{对象、金额、占比、用途、期后回款}}</section>
+  <section class="page"><header><span>10</span><b>对外担保</b></header><h2>{{担保判断}}</h2>{{担保额/净资产、关联关系、反担保与预计负债}}</section>
+  <section class="page"><header><span>11</span><b>所得税与研发</b></header><h2>{{税会差异判断}}</h2>{{利润总额至应纳税所得额桥接、三套研发口径}}</section>
+  <section class="page"><header><span>12</span><b>暂估预提与收入</b></header><h2>{{跨期判断}}</h2>{{材料暂估、费用预提、收入开票收现履约链}}</section>
+
+  <section class="page">
+    <header><span>13</span><b>金税风险地图</b></header>
+    <h2>以证据强度管理优先级</h2>
+    <table><thead><tr><th>风险链</th><th>事实与计算</th><th>替代解释</th><th>缺失证据</th><th>等级</th></tr></thead>
+      <tbody>{{风险矩阵}}</tbody></table>
+  </section>
+
+  <section class="page">
+    <header><span>14</span><b>90天整改路线</b></header>
+    <h2>先封存证据，再复算，再形成常态机制</h2>
+    <div class="timeline">{{0—30天｜31—60天｜61—90天}}</div>
+    <h3>P0资料</h3><p>{{纳税申报表、发票台账、银行流水、承兑保证金合同、担保合同、关联往来合同}}</p>
+  </section>
+
+  <section class="page">
+    <header><span>15</span><b>计算与来源</b></header>
+    <h2>每个金额可回到原页，每个比例可复算</h2>
+    <table><thead><tr><th>指标</th><th>公式</th><th>结果</th><th>来源页</th></tr></thead><tbody>{{复算明细}}</tbody></table>
+    <div class="sources">{{官方政策链接与资料页码}}</div>
+  </section>
+
+  <section class="page final-page">
+    <header><span>16</span><b>最终判断</b></header>
+    <h2>{{最终判断标题}}</h2>
+    <div class="hero-card"><p>{{最终判断正文}}</p></div>
+    <h3>月度监控指标</h3><p>{{票据保证金率、关联往来余额、担保敞口、暂估预提冲回率、现金税费支付率等}}</p>
+    <div class="notice">本报告不替代税务鉴证或法律意见。{{初稿资料对外使用限制}}</div>
+  </section>
+</body>
+</html>

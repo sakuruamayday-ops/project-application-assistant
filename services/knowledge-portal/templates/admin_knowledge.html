@@ -5,6 +5,7 @@
 <main class="standalone-admin">
   <header class="admin-page-head"><div><p class="eyebrow">Knowledge Console</p><h1>知识库档案目录</h1><p>生产资料固定按文档编号升序排列；修改、移入回收站和恢复均保留快照。</p></div><div class="button-row compact"><a class="button secondary" href="/admin/knowledge-trash">回收站 · {{ trash_count }}</a><a class="button secondary" href="/portal#knowledge-admin">返回工作台</a></div></header>
   <form class="knowledge-filter panel" method="get"><label>关键词<input name="query" value="{{ query }}" placeholder="标题、来源或正文"></label><label>资料类别<select name="document_role"><option value="">全部类别</option>{% for role in roles %}<option value="{{ role.document_role }}" {% if selected_role == role.document_role %}selected{% endif %}>{{ role.document_role }} · {{ role.count }}</option>{% endfor %}</select></label><button class="button" type="submit">筛选</button></form>
+  {% if search_note %}<section class="panel notice"><strong>需要进一步选择</strong><p>{{ search_note }}</p></section>{% endif %}
   <section class="panel table-panel">
     <div class="panel-head"><h3>生产知识库</h3><span>编号升序 · 共 {{ total }} 份 · 第 {{ page }}/{{ pages }} 页 · 每页30份</span></div>
     <div class="table-wrap"><table class="archive-table"><thead><tr><th>编号</th><th>标题</th><th>类别</th><th>字符</th><th>来源</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
@@ -14,7 +15,7 @@
         <td data-label="类别"><span class="category-tag">{{ document.document_role }}</span></td>
         <td data-label="字符">{{ document.characters }}</td>
         <td data-label="来源" class="wrap-cell source-cell">{{ document.source }}</td>
-        <td data-label="更新时间">{{ document.updated_at }}</td>
+        <td data-label="更新时间">{{ document.updated_at|standard_datetime }}</td>
         <td data-label="操作"><div class="row-actions"><a class="text-action" href="/admin/knowledge/{{ document.id }}">查看修改</a><a class="text-danger" href="/admin/knowledge/{{ document.id }}/trash">移入回收站</a></div></td>
       </tr>{% else %}<tr class="empty-row"><td colspan="7" class="empty">没有命中资料</td></tr>{% endfor %}
     </tbody></table></div>
@@ -24,7 +25,7 @@
     <div class="panel-head"><h3>最近修订</h3><span>{{ revisions|length }} 条</span></div>
     <div class="table-wrap"><table class="archive-table"><thead><tr><th>修订</th><th>文档</th><th>管理员</th><th>时间</th><th>状态</th><th>操作</th></tr></thead><tbody>
       {% for revision in revisions %}<tr>
-        <td data-label="修订">#{{ revision.id }}</td><td data-label="文档">#{{ revision.document_id }}</td><td data-label="管理员">{{ revision.username }}</td><td data-label="时间">{{ revision.changed_at }}</td><td data-label="状态">{{ '已回滚' if revision.rolled_back_at else '生效中' }}</td><td data-label="操作">{% if not revision.rolled_back_at %}<form method="post" action="/admin/knowledge-revisions/{{ revision.id }}/rollback"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-danger" type="submit">回滚至修改前</button></form>{% endif %}</td>
+        <td data-label="修订">#{{ revision.id }}</td><td data-label="文档">#{{ revision.document_id }}</td><td data-label="管理员">{{ revision.username }}</td><td data-label="时间">{{ revision.changed_at|standard_datetime }}</td><td data-label="状态">{{ '已回滚' if revision.rolled_back_at else '生效中' }}</td><td data-label="操作">{% if not revision.rolled_back_at %}<form method="post" action="/admin/knowledge-revisions/{{ revision.id }}/rollback"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-danger" type="submit">回滚至修改前</button></form>{% endif %}</td>
       </tr>{% else %}<tr class="empty-row"><td colspan="6" class="empty">尚无人工修订</td></tr>{% endfor %}
     </tbody></table></div>
   </section>

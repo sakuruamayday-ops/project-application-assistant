@@ -4,7 +4,19 @@
 
 ```json
 {
-  "company": "示例制造企业有限公司",
+  "company": {
+    "name": "示例制造企业有限公司",
+    "unified_social_credit_code": ""
+  },
+  "basis": {
+    "currency": "CNY",
+    "unit": "yuan",
+    "consolidation_scope": "standalone",
+    "accounting_standard": ""
+  },
+  "source_artifacts": [],
+  "evidence": {},
+  "quality": {},
   "years": {
     "2023": {
       "revenue": 0,
@@ -39,6 +51,8 @@
 ```
 
 金额统一用元。至少提供两个连续年度才能计算周转天数；缺失值使用 `null`，不要用零代替未知。
+
+输出固定使用 `enterprise-financial-facts/v1`，年度数据位于 `periods.<年度>.facts`，指标位于 `periods.<年度>.metrics`，并保留 `evidence` 和 `quality`供其他 Skill 校验复用。
 
 ## 公式
 

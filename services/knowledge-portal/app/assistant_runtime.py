@@ -74,19 +74,11 @@ def quick_guide_answer(question: str, public_endpoint: str) -> tuple[str, str] |
 
     if matched == "api_mcp_import":
         return (
-            "一、先在网站生成个人接入配置\n"
-            "进入“API 与用户凭据”，填写中文真实姓名和公司全称，复制一次生成的三项配置：\n"
-            f"JIAOTANG_KB_BASE_URL={endpoint}\n"
-            f"JIAOTANG_KB_API_BASE_URL={endpoint}/v1\n"
-            f"JIAOTANG_KB_ENDPOINT={endpoint}\n"
-            f"JIAOTANG_KB_MCP_URL={endpoint}/mcp/\n"
-            "JIAOTANG_KB_TOKEN=你的个人调用凭据\n\n"
-            "二、导入 API\n"
-            "在Agent的环境变量、安全凭据或项目配置中写入以上配置。API用于知识检索、文档读取、调用统计和Skills版本查询。\n\n"
-            "三、导入 MCP\n"
-            f"在Agent的MCP管理页面新增远程 Streamable HTTP 服务，地址填写 {endpoint}/mcp/，请求头填写 Authorization: Bearer 个人调用凭据。保存后完全重启Agent。\n\n"
-            "四、验证\n"
-            "API先调用 /v1/me；MCP先调用 knowledge_service_status，再用 knowledge_search 检索“小巨人”。每位用户必须使用自己生成的凭据。",
+            "普通成员无需填写 API、Token 或 MCP 请求头。\n\n"
+            "一、打开网站的“连接我的 Agent”页面，点击“复制给 Agent”。\n"
+            "二、把复制的整段文字粘贴到当前本地 Agent 对话框。\n"
+            "三、Agent 会自动识别 macOS 或 Windows，以及 WorkBuddy、Codex、Claude Code 或通用 MCP 宿主，完成设备公钥登记、系统安全存储、MCP 配置和连接验证。\n\n"
+            "配置成功后直接使用 jiaotang-kb 工具。普通成员同一时间只能绑定一台设备；换机时先在门户点击“更换绑定设备”，再把新的配置发送给新设备 Agent。管理员账号不执行单设备限制，可继续使用管理员接入配置。",
             "first-run-configuration",
         )
 

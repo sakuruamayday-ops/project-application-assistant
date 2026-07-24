@@ -1,0 +1,8 @@
+{
+  "name": "jiaotang-manufacturing-tax-risk-renderer",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "playwright": "1.61.1"
+  }
+}

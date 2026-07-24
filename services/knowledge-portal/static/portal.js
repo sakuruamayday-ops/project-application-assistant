@@ -15,6 +15,23 @@ function renderAssistantAnswer(container, value) {
   });
 }
 
+async function copyToClipboard(value) {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  const temporary = document.createElement("textarea");
+  temporary.value = value;
+  temporary.setAttribute("readonly", "");
+  temporary.style.position = "fixed";
+  temporary.style.opacity = "0";
+  document.body.appendChild(temporary);
+  temporary.select();
+  const copied = document.execCommand("copy");
+  temporary.remove();
+  if (!copied) throw new Error("浏览器未允许复制，请刷新页面后重试。");
+}
+
 function appendAssistantProgress(list, payload) {
   list.querySelector("li.is-active")?.classList.replace("is-active", "is-complete");
   const item = document.createElement("li");
@@ -98,7 +115,74 @@ if (releaseDialog) {
   releaseDialogForm?.addEventListener("submit", dismissReleaseDialog);
 }
 
+const knowledgeDeviceStorageKey = "jiaotang-kb-device-id";
+const createKnowledgeDeviceId = () => {
+  if (window.crypto?.randomUUID) return `device:${window.crypto.randomUUID()}`;
+  const random = new Uint8Array(18);
+  window.crypto?.getRandomValues?.(random);
+  const suffix = Array.from(random, (value) => value.toString(16).padStart(2, "0")).join("");
+  return `device:${suffix || `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
+};
+const knowledgeDeviceId = (() => {
+  try {
+    const existing = window.localStorage.getItem(knowledgeDeviceStorageKey);
+    if (existing) return existing;
+    const generated = createKnowledgeDeviceId();
+    window.localStorage.setItem(knowledgeDeviceStorageKey, generated);
+    return generated;
+  } catch {
+    return createKnowledgeDeviceId();
+  }
+})();
+const knowledgeDeviceName =
+  navigator.userAgentData?.platform || navigator.platform || "浏览器配置设备";
+document.querySelectorAll("[data-device-id-display]").forEach((element) => {
+  element.textContent = knowledgeDeviceId;
+});
+
 document.addEventListener("click", async (event) => {
+  const agentBootstrapButton = event.target.closest("[data-copy-agent-bootstrap]");
+  if (agentBootstrapButton) {
+    const card = agentBootstrapButton.closest("[data-agent-bootstrap]");
+    const status = card?.querySelector("[data-agent-copy-status]");
+    const originalMarkup = agentBootstrapButton.innerHTML;
+    agentBootstrapButton.disabled = true;
+    agentBootstrapButton.classList.add("is-loading");
+    status?.classList.remove("is-error");
+    agentBootstrapButton.innerHTML = "<span>正在生成安全配置…</span><small>请稍候</small>";
+    try {
+      const form = new URLSearchParams();
+      form.set("csrf_token", card?.dataset.csrfToken || "");
+      const response = await fetch("/agent-bootstrap-codes", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
+        body: form,
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.prompt) {
+        throw new Error(payload.detail || "无法生成一键配置");
+      }
+      await copyToClipboard(payload.prompt);
+      agentBootstrapButton.classList.remove("is-loading");
+      agentBootstrapButton.innerHTML = "<span>已复制，发送给 Agent</span><small>60分钟内有效</small>";
+      agentBootstrapButton.classList.add("copy-success");
+      if (status) status.textContent = "现在只需粘贴到当前本地 Agent 的对话框。";
+      window.setTimeout(() => {
+        agentBootstrapButton.innerHTML = originalMarkup;
+        agentBootstrapButton.classList.remove("copy-success");
+        agentBootstrapButton.disabled = false;
+      }, 4000);
+    } catch (error) {
+      agentBootstrapButton.innerHTML = originalMarkup;
+      agentBootstrapButton.disabled = false;
+      agentBootstrapButton.classList.remove("is-loading");
+      if (status) {
+        status.classList.add("is-error");
+        status.textContent = error.message || "生成失败，请稍后重试。";
+      }
+    }
+    return;
+  }
   const secretToggle = event.target.closest("[data-toggle-secret]");
   if (secretToggle) {
     const group = secretToggle.dataset.toggleSecret;
@@ -134,14 +218,18 @@ document.addEventListener("click", async (event) => {
     }
     return;
   }
-  const button = event.target.closest("[data-copy-target], [data-copy-config], [data-copy-value]");
+  const button = event.target.closest(
+    "[data-copy-target], [data-copy-config], [data-copy-value], [data-copy-device-id]"
+  );
   if (!button) return;
 
   let value = "";
-  if (button.dataset.copyValue !== undefined) {
+  if (button.dataset.copyDeviceId !== undefined) {
+    value = knowledgeDeviceId;
+  } else if (button.dataset.copyValue !== undefined) {
     value = button.dataset.copyValue;
   } else if (button.dataset.copyConfig !== undefined) {
-    value = `JIAOTANG_KB_BASE_URL=${window.location.origin}\nJIAOTANG_KB_API_BASE_URL=${window.location.origin}/v1\nJIAOTANG_KB_ENDPOINT=${window.location.origin}\nJIAOTANG_KB_MCP_URL=${window.location.origin}/mcp/\nJIAOTANG_KB_TOKEN=${button.dataset.token}`;
+    value = `JIAOTANG_KB_BASE_URL=${window.location.origin}\nJIAOTANG_KB_API_BASE_URL=${window.location.origin}/v1\nJIAOTANG_KB_ENDPOINT=${window.location.origin}\nJIAOTANG_KB_MCP_URL=${window.location.origin}/mcp/\nJIAOTANG_KB_DEVICE_ID=${knowledgeDeviceId}\nJIAOTANG_KB_DEVICE_NAME=${knowledgeDeviceName}\nJIAOTANG_KB_TOKEN=${button.dataset.token}`;
   } else {
     const target = document.querySelector(button.dataset.copyTarget);
     value = target?.textContent?.trim() || "";
@@ -149,7 +237,7 @@ document.addEventListener("click", async (event) => {
   if (!value) return;
 
   try {
-    await navigator.clipboard.writeText(value);
+    await copyToClipboard(value);
     const original = button.textContent;
     button.textContent = "已复制";
     button.classList.add("copy-success");
@@ -274,23 +362,24 @@ if (userApiForm) {
   });
 }
 
+const ROUTE_SECTIONS = {
+  "/portal": "overview",
+  "/cockpit": "cockpit",
+  "/access": "api-access",
+  "/skills": "skills",
+  "/feedback": "feedback",
+  "/admin/operations": "health-admin",
+  "/admin/knowledge-update": "knowledge-admin",
+  "/admin/releases": "skill-admin",
+  "/admin/members": "members",
+};
+
 document.querySelectorAll("a.page-transition-link").forEach((link) => {
   link.addEventListener("click", (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const singlePage = document.querySelector(".single-page");
-    const routeSections = {
-      "/portal": "overview",
-      "/cockpit": "cockpit",
-      "/access": "api-access",
-      "/skills": "skills",
-      "/feedback": "feedback",
-      "/admin/operations": "health-admin",
-      "/admin/knowledge-update": "knowledge-admin",
-      "/admin/releases": "skill-admin",
-      "/admin/members": "members",
-    };
     const targetUrl = new URL(link.href, window.location.origin);
-    const sectionId = targetUrl.hash.slice(1) || routeSections[targetUrl.pathname];
+    const sectionId = targetUrl.hash.slice(1) || ROUTE_SECTIONS[targetUrl.pathname];
     const section = sectionId ? document.getElementById(sectionId) : null;
     if (singlePage && section) {
       event.preventDefault();
@@ -312,18 +401,7 @@ document.querySelector(".single-page")?.addEventListener("click", (event) => {
   if (!link || link.classList.contains("page-transition-link")) return;
   const targetUrl = new URL(link.href, window.location.origin);
   if (targetUrl.origin !== window.location.origin) return;
-  const routeSections = {
-    "/portal": "overview",
-    "/cockpit": "cockpit",
-    "/access": "api-access",
-    "/skills": "skills",
-    "/feedback": "feedback",
-    "/admin/operations": "health-admin",
-    "/admin/knowledge-update": "knowledge-admin",
-    "/admin/releases": "skill-admin",
-    "/admin/members": "members",
-  };
-  const sectionId = targetUrl.hash.slice(1) || routeSections[targetUrl.pathname];
+  const sectionId = targetUrl.hash.slice(1) || ROUTE_SECTIONS[targetUrl.pathname];
   const section = sectionId ? document.getElementById(sectionId) : null;
   if (!section) return;
   event.preventDefault();

@@ -16,6 +16,7 @@ def test_unified_report_redacts_all_secret_values(tmp_path):
     secrets = {
         "JIAOTANG_KB_ENDPOINT": "https://knowledge.example.com",
         "JIAOTANG_KB_TOKEN": "jtk-test-secret",
+        "TYC_MCP_READY": "true",
         "QCC_API_KEY": "qcc-test-secret",
         "PATENT_DATA_PROVIDER": "test-provider",
         "PATENT_API_KEY": "patent-test-secret",
@@ -33,6 +34,7 @@ def test_unified_report_redacts_all_secret_values(tmp_path):
         assert secret not in profile_text
         assert secret not in report_text
     assert report["capabilities"]["team_knowledge"]["status"] == "configured"
+    assert report["capabilities"]["tyc"]["status"] == "ready"
     assert report["capabilities"]["qcc"]["status"] == "ready"
     assert report["capabilities"]["patent_data"]["status"] == "ready"
 

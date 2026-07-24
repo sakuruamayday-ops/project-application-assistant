@@ -224,7 +224,11 @@ def migrate_report(report_path: Path, preference_file: Path, output_dir: Path) -
 
 
 def sync_preferences(script_dir: Path, preference_file: Path) -> int:
-    if not os.environ.get("JIAOTANG_KB_ENDPOINT") or not os.environ.get("JIAOTANG_KB_TOKEN"):
+    if (
+        not os.environ.get("JIAOTANG_KB_ENDPOINT")
+        or not os.environ.get("JIAOTANG_KB_TOKEN")
+        or not os.environ.get("JIAOTANG_KB_DEVICE_ID")
+    ):
         print("未检测到云端凭据，偏好已保存在本机；首次配置后再同步。")
         return 0
     namespace: dict[str, object] = {"__name__": "preference_sync"}

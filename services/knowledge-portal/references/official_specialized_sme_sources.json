@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-07-23",
+  "description": "省级专精特新中小企业官方证据入口。公示、认定、复核和取消名单分开记录；正式认定与复核通过名单优先，不把地市名单或公示名单冒充省级最终认定名单。",
+  "sources": [
+    {"region":"吉林省","year":2022,"evidence_type":"historical_final_attachment","url":"https://xxgk.jl.gov.cn/zcbm/fgw_97953/xxgkmlqy/202507/t20250702_9270373.html","expected_title":"2022年省级专精特新中小企业名单","note":"2025年复核通知附件9回载2022年正式名单"},
+    {"region":"吉林省","year":2023,"evidence_type":"final","url":"https://xxgk.jl.gov.cn/zcbm/fgw_97953/xxgkmlqy/202305/t20230517_8710441.html","expected_title":"2023年吉林省省级专精特新中小企业名单"},
+    {"region":"吉林省","year":2024,"evidence_type":"public","url":"https://xxgk.jl.gov.cn/zcbm/fgw_97953/xxgkmlqy/202406/t20240627_8926900.html","expected_title":"2024年省级专精特新中小企业公示名单"},
+    {"region":"吉林省","year":2025,"evidence_type":"final","url":"https://gxt.jl.gov.cn/xxgk/tzgg/202511/P020251231397233984551.pdf","expected_title":"2025年省级专精特新中小企业和2022年复核通过名单"},
+
+    {"region":"江苏省","year":2022,"evidence_type":"public","url":"http://gxj.wuxi.gov.cn/doc/2022/12/01/3814749.shtml","expected_title":"江苏省2022年专精特新中小企业名单公示第二批"},
+    {"region":"江苏省","year":2023,"evidence_type":"public","url":"https://gxj.suzhou.gov.cn/szeic/ggl/202312/af940f770ff04b689fa13e4f73f98938.shtml","expected_title":"江苏省2023年专精特新中小企业和2020年复核通过名单"},
+    {"region":"江苏省","year":2024,"evidence_type":"public","url":"https://sst.suzhou.gov.cn/ndaservplat/Apps/sme/index.php?s=/Notice/noticeDetail/id/537","expected_title":"江苏省2024年度专精特新中小企业第一批名单"},
+    {"region":"江苏省","year":2025,"evidence_type":"public","url":"https://gxt.jiangsu.gov.cn/art/2025/4/30/art_6281_11557215.html","expected_title":"江苏省2025年度省级专精特新中小企业第一批名单"},
+
+    {"region":"安徽省","year":2023,"evidence_type":"final_partial_sector","url":"https://www.xuancheng.gov.cn/OpennessContent/show/3042190.html","expected_title":"2023年度安徽省专精特新中小企业名单服务业农林住建领域"},
+    {"region":"安徽省","year":2024,"evidence_type":"final","url":"https://gxj.fy.gov.cn/OpennessContent/show/2515030.html","expected_title":"2024年度安徽省专精特新中小企业名单工业和信息化领域"},
+    {"region":"安徽省","year":2025,"evidence_type":"final","url":"https://www.chizhou.gov.cn/News/show/765542.html","expected_title":"2025年度安徽省专精特新中小企业名单"},
+
+    {"region":"福建省","year":2022,"evidence_type":"final","url":"https://gxt.fujian.gov.cn/zwgk/zfxxgk/fdzdgknr/gzdt/202208/t20220824_5981284.htm","expected_title":"2022年福建省专精特新中小企业名单第二批"},
+    {"region":"福建省","year":2022,"evidence_type":"final","url":"https://gxt.fujian.gov.cn/zwgk/zfxxgk/fdzdgknr/gzdt/202301/t20230105_6087334.htm","expected_title":"2022年福建省专精特新中小企业名单第三批"},
+    {"region":"福建省","year":2023,"evidence_type":"final","url":"https://gxt.fujian.gov.cn/zwgk/zfxxgk/fdzdgknr/gzdt/202305/t20230510_6166059.htm","expected_title":"2023年福建省专精特新中小企业名单第一批"},
+    {"region":"福建省","year":2024,"evidence_type":"final","url":"https://gxt.fujian.gov.cn/zwgk/zfxxgk/fdzdgknr/gzdt/202411/t20241108_6563596.htm","expected_title":"2024年福建省专精特新中小企业名单"},
+    {"region":"福建省","year":2025,"evidence_type":"final_review","url":"https://gxt.fujian.gov.cn/zwgk/zfxxgk/fdzdgknr/gzdt/202507/t20250729_6972167.htm","expected_title":"福建省省级专精特新中小企业复核结果"},
+
+    {"region":"山东省","year":2022,"evidence_type":"official_summary","url":"http://www.boshan.gov.cn/art/2022/9/2/art_15539_2320717.html","expected_title":"2022年度山东省专精特新中小企业认定情况"},
+    {"region":"山东省","year":2023,"evidence_type":"final","url":"https://gxt.shandong.gov.cn/module/download/downfile.jsp?classid=0&filename=11b3db25fb7c43b993ba21840a9ff86b.pdf","expected_title":"山东省2023年度专精特新中小企业名单"},
+    {"region":"山东省","year":2024,"evidence_type":"final","url":"https://gxt.shandong.gov.cn/module/download/downfile.jsp?classid=0&filename=d63d4d85d2764436a35ba9955d148b56.pdf","expected_title":"2024年度山东省专精特新中小企业名单"},
+
+    {"region":"广西壮族自治区","year":2022,"evidence_type":"public","url":"http://gxt.gxzf.gov.cn/wzsy/tzgg_6719901/tzgg/t13372896.shtml","expected_title":"2022年度自治区专精特新中小企业入库培育名单"},
+    {"region":"广西壮族自治区","year":2023,"evidence_type":"final","url":"http://gxt.gxzf.gov.cn/wzsy/tzgg_6719901/tzgg/t16865149.shtml","expected_title":"2023年第一批专精特新中小企业认定名单"},
+    {"region":"广西壮族自治区","year":2024,"evidence_type":"final","url":"http://gxt.gxzf.gov.cn/ztgz/ywzt/zxqyfw/rdgzjjg/t18967716.shtml","expected_title":"2024年第一批专精特新中小企业认定名单"},
+    {"region":"广西壮族自治区","year":2024,"evidence_type":"final_review","url":"http://gxt.gxzf.gov.cn/ztgz/ywzt/zxqyfw/rdgzjjg/t19461962.shtml","expected_title":"2024年第二批认定及2021年复核通过名单"},
+    {"region":"广西壮族自治区","year":2025,"evidence_type":"final","url":"http://gxt.gxzf.gov.cn/wzsy/tzgg_6719901/tzgg/t23385703.shtml","expected_title":"2025年第一批专精特新中小企业认定名单"},
+
+    {"region":"重庆市","year":2022,"evidence_type":"final","url":"https://jjxxw.cq.gov.cn/zwgk_213/zcwj/qtwj/202206/t20220601_10771488.html","expected_title":"2022年重庆市专精特新中小企业名单","note":"渝经信中小〔2022〕11号正式公布"},
+    {"region":"重庆市","year":2023,"evidence_type":"public","url":"https://www.hc.gov.cn/ztzl/nxgyy/qyfwzn/glsbxx/202306/t20230608_12045392.html","expected_title":"2023年重庆市专精特新中小企业拟认定名单"},
+    {"region":"重庆市","year":2024,"evidence_type":"final_review","url":"https://jjxxw.cq.gov.cn/zwgk_213/zcwj/qtwj/202406/t20240617_13300012.html","expected_title":"2024年重庆市专精特新中小企业申报和复核通过名单"},
+    {"region":"重庆市","year":2025,"evidence_type":"final_review","url":"https://jjxxw.cq.gov.cn/zwgk_213/zcwj/qtwj/202506/t20250620_14730222.html","expected_title":"2025年重庆市专精特新中小企业申报和复核通过名单"},
+
+    {"region":"陕西省","year":2023,"evidence_type":"public","url":"https://gxw.hanzhong.gov.cn/hzgxw/zwyw/202311/436a63e430c1434197b63707e837ab9b.shtml","expected_title":"2023年陕西省专精特新中小企业公示名单"},
+    {"region":"陕西省","year":2025,"evidence_type":"application_notice","url":"https://gxt.shaanxi.gov.cn/xw/tzgg/202508/t20250801_3550405.html","expected_title":"2025年第七批陕西省专精特新中小企业申报和复核通知"},
+
+    {"region":"甘肃省","year":2022,"evidence_type":"public","url":"https://www.baiyin.gov.cn/zwgk/zfxxgk/xqbmptlj/sgxj/fdzdgknr/zdly/ZXQY/art/2022/art_1099f37c47844ef6b6e5d872b043b77c.html","expected_title":"2022年度甘肃省专精特新中小企业拟认定名单"},
+    {"region":"甘肃省","year":2023,"evidence_type":"official_summary","url":"https://gxj.zgqingyang.gov.cn/xwzx/gzdt/content_251523","expected_title":"2023年度甘肃省专精特新中小企业认定情况"},
+    {"region":"甘肃省","year":2024,"evidence_type":"official_summary","url":"https://www.baiyin.gov.cn/gxj/gzdt/art/2024/art_d94a40afc7454f62b3ab0220d52984ec.html","expected_title":"2024年度甘肃省专精特新中小企业认定情况"},
+    {"region":"甘肃省","year":2025,"evidence_type":"official_summary","url":"https://www.baiyin.gov.cn/gxj/gzdt/art/2025/art_f5af0cb6e6274754943e82cfaa9dead2.html","expected_title":"2025年度甘肃省专精特新中小企业认定情况"},
+
+    {"region":"宁夏回族自治区","year":2022,"evidence_type":"final_review","url":"https://gxt.nx.gov.cn/zwgk/fdzdgknr/glfw/gsgg/202209/t20220920_3786775.html","expected_title":"自治区专精特新中小企业复核结果"},
+    {"region":"宁夏回族自治区","year":2023,"evidence_type":"final","url":"https://gxt.nx.gov.cn/zwgk/fdzdgknr/glfw/gsgg/202307/t20230727_4196910.html","expected_title":"2023年度自治区专精特新中小企业名单"},
+    {"region":"宁夏回族自治区","year":2024,"evidence_type":"final","url":"https://gxt.nx.gov.cn/zwgk/fdzdgknr/glfw/gsgg/202409/t20240910_4652307.html","expected_title":"2024年度自治区专精特新中小企业名单"},
+
+    {"region":"新疆维吾尔自治区","year":2022,"evidence_type":"final_review","url":"http://gxt.xinjiang.gov.cn/gxt/tzgg/202302/f4d89822aa90430a934b19a7f5ccf0cb.shtml","expected_title":"2022年度自治区专精特新中小企业和2019年度复核通过名单"},
+    {"region":"新疆维吾尔自治区","year":2023,"evidence_type":"official_summary","url":"https://www.xinjiang.gov.cn/xinjiang/bmdt/202310/2e8d6813962c4c36856f3fd16339004e.shtml","expected_title":"2023年度自治区专精特新中小企业认定情况"},
+    {"region":"新疆维吾尔自治区","year":2024,"evidence_type":"final_review","url":"https://gxt.xinjiang.gov.cn/gxt/tzgg/202408/10753b7d81374a1fa4caff7ab76fb74a.shtml","expected_title":"2024年度自治区专精特新中小企业和2021年度复核通过名单"},
+    {"region":"新疆维吾尔自治区","year":2025,"evidence_type":"final_review","url":"https://gxt.xinjiang.gov.cn/gxt/tzgg/202509/f82ef8b6a40e4b61a82db4e777f0ffe4.shtml","expected_title":"2025年度自治区专精特新中小企业和2022年度复核通过名单"},
+
+    {"region":"云南省","year":2024,"evidence_type":"final","url":"https://www.ynnh.gov.cn/info/20283/127976.htm","expected_title":"2024年云南省专精特新中小企业认定名单"},
+    {"region":"山西省","year":2023,"evidence_type":"final","url":"https://www.dt.gov.cn/dtszf/gxjbmdt/202307/e195297d188446558678f860853e97de.shtml","expected_title":"2023年山西省专精特新中小企业认定名单"},
+    {"region":"广东省","year":2023,"evidence_type":"final","url":"https://gdii.gd.gov.cn/zwgk/tzgg1011/content/post_4328450.html","expected_title":"2023年广东省专精特新中小企业名单"},
+    {"region":"广东省","year":2024,"evidence_type":"final","url":"http://gdii.gd.gov.cn/zwgk/tzgg1011/content/post_4687098.html","expected_title":"2024年广东省专精特新中小企业名单"},
+    {"region":"广东省","year":2025,"evidence_type":"final","url":"https://gdii.gd.gov.cn/zwgk/tzgg1011/content/post_4856034.html","expected_title":"2025年广东省专精特新中小企业名单"},
+    {"region":"广东省","year":2022,"evidence_type":"final","url":"https://gdii.gd.gov.cn/attachment/0/515/515720/4084455.pdf","expected_title":"2022年广东省专精特新中小企业名单"},
+    {"region":"新疆生产建设兵团","year":2023,"evidence_type":"official_summary","url":"http://www.xjbt.gov.cn/c/2023-11-30/8312822.shtml","expected_title":"2023年兵团专精特新中小企业认定情况"},
+    {"region":"新疆生产建设兵团","year":2025,"evidence_type":"final","url":"http://btgxj.xjbt.gov.cn/c/2025-07-08/8421364.shtml","expected_title":"2025年兵团专精特新中小企业认定名单"},
+    {"region":"河北省","year":2024,"evidence_type":"final","url":"https://gxt.hebei.gov.cn/hbgyhxxht/xwzx32/tzgg83/2025042121420786343/index.html","expected_title":"2024年河北省专精特新中小企业认定名单"},
+    {"region":"湖南省","year":2023,"evidence_type":"final","url":"http://gxt.hunan.gov.cn/gxt/xxgk_71033/tzgg/202304/t20230413_29312837.html","expected_title":"2023年湖南省专精特新中小企业认定名单"},
+    {"region":"西藏自治区","year":2025,"evidence_type":"final","url":"http://jxt.xizang.gov.cn/xzweb/detail?categoryId=69&channelId=9&id=3556","expected_title":"2025年西藏自治区专精特新中小企业认定名单"},
+    {"region":"辽宁省","year":2023,"evidence_type":"final","url":"https://gxt.ln.gov.cn/gxt/tztg/2023053108323087447/index.shtml","expected_title":"2023年辽宁省第一批专精特新中小企业认定名单"},
+    {"region":"辽宁省","year":2023,"evidence_type":"final","url":"https://gxt.ln.gov.cn/gxt/tztg/2024011711334767510/index.shtml","expected_title":"2023年辽宁省第二批专精特新中小企业认定名单"},
+    {"region":"山东省","year":2025,"evidence_type":"official_nonpublic_final_notice","url":"http://tyjspt.shandong.gov.cn/jact/front/mailpubdetail.do?sysid=90&transactId=708760","expected_title":"山东省2025年专精特新中小企业名单已下发但省级未公开完整附件","note":"只证明正式名单已下发，不作为完整企业名单"},
+
+    {"region":"天津市","year":2022,"evidence_type":"final","url":"https://gyxxh.tj.gov.cn/ZWGK4147/ZCWJ6355/wjwj/202207/t20220715_5935371.html","expected_title":"2022年度第一批天津市专精特新中小企业认定名单"},
+    {"region":"四川省","year":2022,"evidence_type":"final_review","url":"https://jxt.sc.gov.cn/scjxt/wjfb/2022/11/9/eaa5ae3b44c74f4c91ff7a72272c94ac/files/648152d0041242c09fb4609cf6d93025.pdf","expected_title":"2022年度四川省专精特新中小企业及期满复核通过企业名单"},
+    {"region":"河北省","year":2022,"evidence_type":"final_review","url":"https://gxt.hebei.gov.cn/sme/tzgg45/2025042122155926316/2022121915554310690.pdf","expected_title":"2022年第二批河北省专精特新中小企业及复核通过企业名单"},
+    {"region":"贵州省","year":2023,"evidence_type":"final","url":"https://www.longli.gov.cn/zwgk/xxgkml/zdlyxx/zyyfz/myjj/202305/W020230818460793737511.pdf","expected_title":"2023年贵州省专精特新中小企业第一批认定名单"},
+    {"region":"贵州省","year":2023,"evidence_type":"final","url":"https://gxt.guizhou.gov.cn/zwgk/xxgkml/zcwj/qtwj/202311/t20231124_83141880.html","expected_title":"2023年贵州省专精特新中小企业第二批认定名单"},
+
+    {"region":"山西省","year":2024,"evidence_type":"final_review","url":"https://www.lvliang.gov.cn/llxxgk/zfxxgk/xxgkml/gbmwj/jxw/fdzdgknr_55676/gsgg_55685/202409/t20240923_1898348.html","expected_title":"2024年山西省专精特新中小企业申报及复核通过名单"},
+    {"region":"山西省","year":2025,"evidence_type":"final_review","url":"https://www.lvliang.gov.cn/llxxgk/zfxxgk/xxgkml/gbmwj/jxw/fdzdgknr_55676/gsgg_55685/202509/t20250922_1982956.html","expected_title":"2025年山西省专精特新中小企业申报及复核通过名单"},
+
+    {"region":"黑龙江省","year":2022,"evidence_type":"final","url":"https://gxt.hlj.gov.cn/gxt/c106958/202204/30352204/files/%E9%99%84%E4%BB%B61%EF%BC%9A2022%E5%B9%B4%E5%BA%A6%E7%AC%AC%E4%B8%80%E6%89%B9%E9%BB%91%E9%BE%99%E6%B1%9F%E7%9C%81%E2%80%9C%E4%B8%93%E7%B2%BE%E7%89%B9%E6%96%B0%E2%80%9D%E4%B8%AD%E5%B0%8F%E4%BC%81%E4%B8%9A%E5%90%8D%E5%8D%95.pdf","expected_title":"2022年第一批黑龙江省专精特新中小企业名单"},
+    {"region":"黑龙江省","year":2022,"evidence_type":"final","url":"https://gxt.hlj.gov.cn/gxt/c106958/202207/c00_31272145.shtml","expected_title":"2022年第二批黑龙江省专精特新中小企业名单"},
+
+    {"region":"湖北省","year":2023,"evidence_type":"final","url":"https://jxt.hubei.gov.cn/fbjd/zc/qtzdgkwj/gsgg/202303/t20230328_4604459.shtml","expected_title":"湖北省第五批专精特新中小企业名单"},
+
+    {"region":"上海市","year":2022,"evidence_type":"final","url":"https://www.shanghai.gov.cn/gwk/search/content/efea8dfe660a4e1f9e32bce440d45e29","expected_title":"2022年上海市专精特新企业第一批名单"},
+    {"region":"上海市","year":2022,"evidence_type":"final_review","url":"https://www.shanghai.gov.cn/gwk/search/content/847aeaf1db924a2d8e46b7f2d33e99dc","expected_title":"2022年上海市专精特新中小企业第二批及复核通过名单"},
+    {"region":"上海市","year":2023,"evidence_type":"final","url":"https://www.shanghai.gov.cn/gwk/search/content/0b4058c5d0384205868caf30fe291d0c","expected_title":"2023年上海市专精特新中小企业第一批名单"},
+    {"region":"上海市","year":2023,"evidence_type":"final","url":"https://www.shanghai.gov.cn/gwk/search/content/96a4dccdb4894d40a927f379a0558870","expected_title":"2023年上海市专精特新中小企业第二批名单"},
+    {"region":"上海市","year":2023,"evidence_type":"final","url":"https://www.shanghai.gov.cn/qtsj/20250610/b9289f82dbc746eaaf19da5c6e06c19a.html","expected_title":"2023年上海市专精特新中小企业第三批名单"},
+    {"region":"上海市","year":2024,"evidence_type":"final","url":"https://www.shanghai.gov.cn/qtsj/20250610/db2f10a3211e4bf4ba50b34dbdbd4527.html","expected_title":"2024年上海市专精特新中小企业第一批名单"},
+    {"region":"上海市","year":2024,"evidence_type":"final","url":"https://www.shanghai.gov.cn/qtsj/20250610/fab5669933aa496cb8ab7a0a9580d3c9.html","expected_title":"2024年上海市专精特新中小企业第二批名单"},
+    {"region":"上海市","year":2024,"evidence_type":"final","url":"https://www.shanghai.gov.cn/gwk/search/content/c45686a33ee641ae9f8f6b245a326ab0","expected_title":"2024年上海市专精特新中小企业第三批名单"},
+    {"region":"上海市","year":2024,"evidence_type":"final","url":"https://www.shanghai.gov.cn/qtsj/20250610/eb568f58becf409393a4cb0fbe3877ab.html","expected_title":"2024年上海市专精特新中小企业第四批名单"},
+    {"region":"上海市","year":2025,"evidence_type":"final","url":"https://www.shanghai.gov.cn/qtsj/20250701/5424442256fd49f19653238d9cbdb312.html","expected_title":"2025年上海市专精特新中小企业第一批名单"},
+    {"region":"上海市","year":2025,"evidence_type":"final","url":"https://www.shanghai.gov.cn/gwk/affairs/content/0020%40aa8e6a58003a4e4f922fa17d2504dd04","expected_title":"2025年上海市专精特新中小企业第二批名单"},
+    {"region":"上海市","year":2025,"evidence_type":"final","url":"https://www.shanghai.gov.cn/gwk/search/content/6e855b5a697e4f8faa9c569cfd5e2a0f","expected_title":"2025年上海市专精特新中小企业第三批名单"},
+    {"region":"上海市","year":2025,"evidence_type":"final","url":"https://www.shanghai.gov.cn/gwk/search/content/d03138b7ab2a4a168aa263955ec28326","expected_title":"2025年上海市专精特新中小企业第四批名单"}
+  ]
+}

@@ -1,17 +1,112 @@
+import base64
+import hashlib
 import importlib
 import io
 import json
 import os
 import re
 import sqlite3
+import subprocess
+import time
+import urllib.parse
+import uuid
 import zipfile
 from contextlib import closing
 from datetime import datetime, timedelta
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from fastapi.testclient import TestClient
 
+from app.device_security import (
+    base64url_encode,
+    device_key_id,
+    enrollment_canonical_value,
+    request_canonical_value,
+)
 from scripts.build_knowledge_content_index import cache_status_reusable
+
+
+TEST_DEVICE_ID = "device:test-installation-0001"
+TEST_DEVICE_NAME = "Test Device"
+
+
+def api_headers(token: str, device_id: str = TEST_DEVICE_ID) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}",
+        "X-Jiaotang-Device-ID": device_id,
+        "X-Jiaotang-Device-Name": TEST_DEVICE_NAME,
+    }
+
+
+def provision_signed_device(module, user_id: int, *, agent_host: str = "pytest"):
+    private_key = Ed25519PrivateKey.generate()
+    public_key = base64url_encode(
+        private_key.public_key().public_bytes(Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
+    )
+    key_id = device_key_id(public_key)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        binding = connection.execute(
+            """
+            INSERT INTO device_bindings(
+                user_id,device_id_hash,device_id_prefix,device_name,auth_method,
+                first_bound_at,last_seen_at,last_ip,user_agent
+            ) VALUES (?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                user_id,
+                hashlib.sha256(TEST_DEVICE_ID.encode("utf-8")).hexdigest(),
+                TEST_DEVICE_ID[:12],
+                TEST_DEVICE_NAME,
+                "device_signature",
+                now,
+                now,
+                "testclient",
+                "pytest",
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO device_keys(
+                user_id,binding_id,key_id,public_key,platform,agent_host,created_at
+            ) VALUES (?,?,?,?,?,?,?)
+            """,
+            (user_id, binding.lastrowid, key_id, public_key, "test", agent_host, now),
+        )
+        connection.commit()
+    return private_key, key_id
+
+
+def signed_api_headers(
+    module,
+    token: str,
+    private_key: Ed25519PrivateKey,
+    key_id: str,
+    *,
+    method: str,
+    request_target: str,
+    body: bytes = b"",
+    nonce: str | None = None,
+) -> dict[str, str]:
+    timestamp = str(int(time.time()))
+    nonce_value = nonce or base64url_encode(uuid.uuid4().bytes)
+    canonical = request_canonical_value(
+        method=method,
+        request_target=request_target,
+        timestamp=timestamp,
+        nonce=nonce_value,
+        body_hash=hashlib.sha256(body).hexdigest(),
+        token_fingerprint=module.token_hash(token),
+    )
+    return {
+        **api_headers(token),
+        "X-Jiaotang-Key-ID": key_id,
+        "X-Jiaotang-Timestamp": timestamp,
+        "X-Jiaotang-Nonce": nonce_value,
+        "X-Jiaotang-Signature": base64url_encode(private_key.sign(canonical)),
+    }
 
 
 def create_test_content_index(path):
@@ -304,6 +399,7 @@ def load_app(tmp_path):
     os.environ["JIAOTANG_SETUP_KEY"] = "setup-secret"
     os.environ["JIAOTANG_TOKEN_DERIVATION_SECRET"] = "test-token-derivation-secret"
     os.environ["JIAOTANG_SECURE_COOKIES"] = "false"
+    os.environ["JIAOTANG_PUBLIC_HOST"] = "testserver"
     os.environ.pop("JIAOTANG_AI_API_BASE", None)
     os.environ.pop("JIAOTANG_AI_API_KEY", None)
     os.environ.pop("JIAOTANG_AI_MODEL", None)
@@ -357,7 +453,7 @@ def test_personal_preferences_api_sync_history_undo_and_reset(tmp_path):
             },
         )
         token = re.search(r"jtk_[A-Za-z0-9_-]+", token_page.text).group(0)
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = api_headers(token)
 
         initial = client.get("/v1/preferences", headers=headers)
         assert initial.status_code == 200
@@ -426,6 +522,171 @@ def test_personal_preferences_api_sync_history_undo_and_reset(tmp_path):
         assert "恢复官方默认" in page.text
 
 
+def test_oauth_discovery_pkce_refresh_and_revoke(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        protected = client.get("/.well-known/oauth-protected-resource")
+        assert protected.status_code == 200
+        assert protected.json()["resource"] == "https://testserver/mcp/"
+        assert protected.json()["authorization_servers"] == ["https://testserver"]
+        metadata = client.get("/.well-known/oauth-authorization-server")
+        assert metadata.status_code == 200
+        assert metadata.json()["registration_endpoint"] == "https://testserver/oauth/register"
+        assert metadata.json()["code_challenge_methods_supported"] == ["S256"]
+
+        registration = client.post(
+            "/oauth/register",
+            json={
+                "client_name": "测试MCP客户端",
+                "redirect_uris": ["https://client.example/callback"],
+                "grant_types": ["authorization_code", "refresh_token"],
+                "response_types": ["code"],
+                "token_endpoint_auth_method": "none",
+            },
+        )
+        assert registration.status_code == 201
+        client_id = registration.json()["client_id"]
+        verifier = "oauth-test-verifier-abcdefghijklmnopqrstuvwxyz0123456789"
+        challenge = base64.urlsafe_b64encode(
+            hashlib.sha256(verifier.encode()).digest()
+        ).decode().rstrip("=")
+        authorize_params = {
+            "response_type": "code",
+            "client_id": client_id,
+            "redirect_uri": "https://client.example/callback",
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+            "scope": "knowledge:read mcp:tools",
+            "state": "test-state",
+            "resource": "https://testserver/mcp/",
+        }
+        consent = client.get("/authorize", params=authorize_params)
+        assert consent.status_code == 200
+        assert "测试MCP客户端" in consent.text
+        assert "读取团队知识库" in consent.text
+
+        approval = client.post(
+            "/oauth/authorize",
+            data={
+                **authorize_params,
+                "csrf_token": user["csrf_token"],
+                "decision": "approve",
+            },
+            follow_redirects=False,
+        )
+        assert approval.status_code == 303
+        approval_query = urllib.parse.parse_qs(urllib.parse.urlparse(approval.headers["location"]).query)
+        assert approval_query["state"] == ["test-state"]
+        code = approval_query["code"][0]
+
+        exchange = client.post(
+            "/oauth/token",
+            data={
+                "grant_type": "authorization_code",
+                "client_id": client_id,
+                "code": code,
+                "redirect_uri": "https://client.example/callback",
+                "code_verifier": verifier,
+                "resource": "https://testserver/mcp/",
+            },
+        )
+        assert exchange.status_code == 200
+        access_token = exchange.json()["access_token"]
+        refresh_token = exchange.json()["refresh_token"]
+        oauth_headers = {"Authorization": f"Bearer {access_token}"}
+        me = client.get("/v1/me", headers=oauth_headers)
+        assert me.status_code == 200
+        assert me.json()["username"] == "owner"
+        search = client.post(
+            "/v1/search",
+            headers=oauth_headers,
+            json={"query": "小巨人", "limit": 3},
+        )
+        assert search.status_code == 200
+        assert search.json()["results"]
+
+        refreshed = client.post(
+            "/oauth/token",
+            data={
+                "grant_type": "refresh_token",
+                "client_id": client_id,
+                "refresh_token": refresh_token,
+                "resource": "https://testserver/mcp/",
+            },
+        )
+        assert refreshed.status_code == 200
+        assert refreshed.json()["refresh_token"] != refresh_token
+        reused = client.post(
+            "/oauth/token",
+            data={
+                "grant_type": "refresh_token",
+                "client_id": client_id,
+                "refresh_token": refresh_token,
+            },
+        )
+        assert reused.status_code == 400
+        assert reused.json()["error"] == "invalid_grant"
+
+        revoked_access = refreshed.json()["access_token"]
+        assert client.get(
+            "/v1/me", headers={"Authorization": f"Bearer {revoked_access}"}
+        ).status_code == 200
+        with closing(module.database()) as connection:
+            oauth_usage = connection.execute(
+                """
+                SELECT endpoint,auth_method,oauth_client_id
+                FROM api_usage
+                WHERE auth_method='oauth'
+                ORDER BY id
+                """
+            ).fetchall()
+        assert [row["endpoint"] for row in oauth_usage] == ["/v1/me", "/v1/search", "/v1/me"]
+        assert all(row["oauth_client_id"] == client_id for row in oauth_usage)
+        access_health = client.get("/admin/health/access")
+        assert access_health.status_code == 200
+        assert "OAuth授权与调用" in access_health.text
+        assert "测试MCP客户端" in access_health.text
+        assert "累计OAuth调用" in access_health.text
+        oauth_calls = client.get("/admin/health/calls?activity=oauth")
+        assert oauth_calls.status_code == 200
+        assert "OAuth调用明细" in oauth_calls.text
+        assert "认证方式" in oauth_calls.text
+        assert "测试MCP客户端" in oauth_calls.text
+        revoke = client.post(
+            "/oauth/revoke", data={"token": access_token, "client_id": client_id}
+        )
+        assert revoke.status_code == 200
+        denied = client.get(
+            "/v1/me", headers={"Authorization": f"Bearer {access_token}"}
+        )
+        assert denied.status_code == 401
+        assert "resource_metadata" in denied.headers["www-authenticate"]
+        connections = client.get("/access")
+        assert "测试MCP客户端" in connections.text
+        assert "撤销授权" in connections.text
+        web_revoke = client.post(
+            f"/oauth/connections/{client_id}/revoke",
+            data={"csrf_token": user["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert web_revoke.status_code == 303
+        assert client.get(
+            "/v1/me", headers={"Authorization": f"Bearer {revoked_access}"}
+        ).status_code == 401
+
+
 def test_directory_storage_size_ignores_inaccessible_path(tmp_path, monkeypatch):
     module = load_app(tmp_path)
 
@@ -471,7 +732,8 @@ def test_setup_login_and_device_token(tmp_path):
         assert 'id="skills"' in portal.text
         assert 'class="page-continuation"' not in portal.text
         access_page = client.get("/access")
-        assert "MCP 接入你的 AI 工具" in access_page.text
+        assert "管理员 API Key" in access_page.text
+        assert "管理员豁免" in access_page.text
         assert "first-run-configuration" not in access_page.text
         cockpit_page = client.get("/cockpit")
         assert "驾驶舱智能看板" in cockpit_page.text
@@ -551,10 +813,9 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert api_guide.status_code == 200
-        assert "JIAOTANG_KB_BASE_URL=http://testserver" in api_guide.json()["answer"]
-        assert "JIAOTANG_KB_API_BASE_URL=http://testserver/v1" in api_guide.json()["answer"]
-        assert "JIAOTANG_KB_ENDPOINT=http://testserver" in api_guide.json()["answer"]
-        assert "http://testserver/mcp/" in api_guide.json()["answer"]
+        assert "复制给 Agent" in api_guide.json()["answer"]
+        assert "无需填写 API、Token 或 MCP 请求头" in api_guide.json()["answer"]
+        assert "macOS 或 Windows" in api_guide.json()["answer"]
 
         qcc_guide = client.post(
             "/assistant/answer",
@@ -576,11 +837,12 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert token_page.status_code == 200
-        assert "复制通用接入配置" in token_page.text
-        assert "JIAOTANG_KB_BASE_URL=http://testserver" in token_page.text
-        assert "JIAOTANG_KB_API_BASE_URL=http://testserver/v1" in token_page.text
-        assert "JIAOTANG_KB_MCP_URL=http://testserver/mcp/" in token_page.text
-        assert "复制访问凭据" in token_page.text
+        assert "复制完整手工配置" in token_page.text
+        assert "高级配置与手工接入" in token_page.text
+        assert "知识库 API URL" in token_page.text
+        assert "http://testserver/v1" in token_page.text
+        assert "http://testserver/mcp/" in token_page.text
+        assert "管理员凭据" in token_page.text
         assert 'data-toggle-secret="personal-access"' in token_page.text
         assert "••••••••••••••••••••" in token_page.text
         with closing(module.database()) as connection:
@@ -617,13 +879,20 @@ def test_setup_login_and_device_token(tmp_path):
         assert cockpit.status_code == 200
         assert "page-cockpit" in cockpit.text
 
-        me = client.get("/v1/me", headers={"Authorization": f"Bearer {token}"})
+        missing_device = client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert missing_device.status_code == 200
+        assert missing_device.json() == {"username": "owner", "access": "unified"}
+
+        me = client.get("/v1/me", headers=api_headers(token))
         assert me.status_code == 200
         assert me.json() == {"username": "owner", "access": "unified"}
 
         search = client.post(
             "/v1/search",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=api_headers(token),
             json={"query": "小巨人", "limit": 5},
         )
         assert search.status_code == 200
@@ -634,7 +903,7 @@ def test_setup_login_and_device_token(tmp_path):
         document_id = search.json()["results"][0]["document_id"]
         document = client.get(
             f"/v1/documents/{document_id}",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=api_headers(token),
         )
         assert document.status_code == 200
         assert document.json()["content"]
@@ -642,7 +911,7 @@ def test_setup_login_and_device_token(tmp_path):
 
         list_search = client.post(
             "/v1/lists/search",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=api_headers(token),
             json={"project_name": "小巨人", "year": 2025, "region": "浙江省"},
         )
         assert list_search.status_code == 200
@@ -650,7 +919,7 @@ def test_setup_login_and_device_token(tmp_path):
 
         policy_search = client.post(
             "/v1/policies/search",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=api_headers(token),
             json={"project_name": "小巨人", "document_stage": "申报通知", "year": 2025},
         )
         assert policy_search.status_code == 200
@@ -658,18 +927,18 @@ def test_setup_login_and_device_token(tmp_path):
 
         project_match = client.post(
             "/v1/projects/match",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=api_headers(token),
             json={"regions": ["全国"], "keywords": ["小巨人"]},
         )
         assert project_match.status_code == 200
         assert project_match.json()["status"] == "candidate_only"
 
-        usage = client.get("/v1/usage", headers={"Authorization": f"Bearer {token}"})
+        usage = client.get("/v1/usage", headers=api_headers(token))
         assert usage.status_code == 200
         assert usage.json()["total_calls"] >= 4
         assert any(item["endpoint"] == "/v1/search" for item in usage.json()["by_endpoint"])
 
-        latest = client.get("/v1/skills/latest", headers={"Authorization": f"Bearer {token}"})
+        latest = client.get("/v1/skills/latest", headers=api_headers(token))
         assert latest.status_code == 200
         assert latest.json() == {
             "available": False,
@@ -681,6 +950,32 @@ def test_setup_login_and_device_token(tmp_path):
             "published_at": None,
             "download_url": None,
         }
+
+        bound_page = client.get("/access")
+        assert "管理员豁免" in bound_page.text
+        assert "当前账号不执行单设备公钥绑定" in bound_page.text
+        second_device = client.get(
+            "/v1/me",
+            headers=api_headers(token, "device:test-installation-0002"),
+        )
+        assert second_device.status_code == 200
+
+        replaced = client.post(
+            "/device-binding/replace",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        assert replaced.status_code == 200
+        assert "管理员账号已豁免设备限制" in replaced.text
+        assert client.get("/v1/me", headers=api_headers(token)).status_code == 200
+        with closing(module.database()) as connection:
+            bindings = connection.execute(
+                """
+                SELECT device_id_prefix,revoked_at,revoked_reason
+                FROM device_bindings WHERE user_id=? ORDER BY id
+                """,
+                (int(user["id"]),),
+            ).fetchall()
+        assert bindings == []
 
         created = client.post(
             "/users",
@@ -1796,6 +2091,111 @@ def test_signed_invitation_link_prefills_and_registers_authorized_member(tmp_pat
     assert status_row["status"] == "registered"
 
 
+def test_disabled_member_can_be_reinvited_and_set_new_password(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,real_name,password_hash,is_admin,created_at) VALUES (?,?,?,?,?)",
+            ("owner", "管理员", module.password_hasher.hash("owner-password-123"), 1, now),
+        )
+        connection.execute(
+            "INSERT INTO users(username,real_name,password_hash,active,created_at) VALUES (?,?,?,?,?)",
+            ("member-one", "王小明", module.password_hasher.hash("old-password-123"), 0, now),
+        )
+        member_id = connection.execute("SELECT id FROM users WHERE username='member-one'").fetchone()["id"]
+        connection.execute(
+            "INSERT INTO registration_authorizations(real_name,identity_code,status,user_id,created_at,registered_at) VALUES (?,?,'registered',?,?,?)",
+            ("王小明", "0826", member_id, now, now),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        owner = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        reinvite = client.post(
+            f"/admin/users/{member_id}/reinvite",
+            data={"csrf_token": owner["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert reinvite.status_code == 303
+        invitation_detail = client.get(reinvite.headers["location"])
+        invite_token = re.search(r"invite=([^\"&]+)", invitation_detail.text).group(1)
+        invitation_page = client.get(f"/register?invite={invite_token}")
+        assert 'value="member-one"' in invitation_page.text
+        assert "设置新密码并重新启用" in invitation_page.text
+        activated = client.post(
+            "/register",
+            data={
+                "invite_token": invite_token,
+                "username": "member-one",
+                "real_name": "王小明",
+                "identity_code": "0826",
+                "company_name": "共创集团",
+                "password": "new-password-456",
+                "confirm_password": "new-password-456",
+            },
+            follow_redirects=False,
+        )
+        assert activated.status_code == 303
+        member_login = client.post(
+            "/login",
+            data={"username": "member-one", "password": "new-password-456"},
+            follow_redirects=False,
+        )
+        assert member_login.status_code == 303
+
+
+def test_trashed_account_can_be_purged_and_same_identity_registered_again(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,real_name,password_hash,is_admin,created_at) VALUES (?,?,?,?,?)",
+            ("owner", "管理员", module.password_hasher.hash("owner-password-123"), 1, now),
+        )
+        connection.execute(
+            "INSERT INTO users(username,real_name,password_hash,active,created_at,deleted_at) VALUES (?,?,?,?,?,?)",
+            ("member-one", "王小明", module.password_hasher.hash("old-password-123"), 0, now, now),
+        )
+        member_id = connection.execute("SELECT id FROM users WHERE username='member-one'").fetchone()["id"]
+        connection.execute(
+            "INSERT INTO registration_authorizations(real_name,identity_code,status,user_id,created_at,deleted_at) VALUES (?,?,'revoked',?,?,?)",
+            ("王小明", "0826", member_id, now, now),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        owner = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        wrong = client.post(
+            f"/admin/users/{member_id}/purge",
+            data={"confirmation": "wrong", "csrf_token": owner["csrf_token"]},
+        )
+        assert wrong.status_code == 400
+        purged = client.post(
+            f"/admin/users/{member_id}/purge",
+            data={"confirmation": "member-one", "csrf_token": owner["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert purged.status_code == 303
+    with closing(module.database()) as connection:
+        assert connection.execute("SELECT 1 FROM users WHERE id=?", (member_id,)).fetchone() is None
+        assert connection.execute(
+            "SELECT 1 FROM registration_authorizations WHERE real_name='王小明' AND identity_code='0826'"
+        ).fetchone() is None
+
+
 def test_identity_code_requires_wecom_phone_last_four_digits(tmp_path):
     module = load_app(tmp_path)
     assert module.normalize_identity_code("0826") == "0826"
@@ -1908,14 +2308,169 @@ def test_policy_queries_choose_expected_source_layer(tmp_path):
     assert all("2020年" not in item["title"] for item in high_tech_results)
 
 
+def test_fuzzy_search_recalls_year_notice_list_and_similar_general_content(tmp_path):
+    module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        documents = [
+            (
+                "little-giant-2024-notice",
+                "2024年专精特新“小巨人”企业申报通知",
+                "组织开展第六批专精特新小巨人申报工作。",
+                "10_政策与目录/优质中小企业梯度培育/2024年小巨人申报通知.pdf",
+                "国家专精特新“小巨人”企业",
+                "申报通知",
+                None,
+            ),
+            (
+                "little-giant-2024-list",
+                "2024年专精特新“小巨人”企业公示名单",
+                "附件为拟认定企业名单。",
+                "10_政策与目录/优质中小企业梯度培育/2024年小巨人公示名单.pdf",
+                "国家专精特新“小巨人”企业",
+                "公示名单",
+                2024,
+            ),
+            (
+                "specialized-sme-2024-notice",
+                "2024年专精特新中小企业申报通知",
+                "省级专精特新中小企业申报。",
+                "10_政策与目录/优质中小企业梯度培育/2024年省专通知.pdf",
+                "专精特新中小企业",
+                "申报通知",
+                2024,
+            ),
+            (
+                "company-law-compliance",
+                "新公司法下企业合规自查与风险防范",
+                "覆盖注册资本、股东出资和公司治理风险排查。",
+                "30_法律法规与合规/新公司法合规指南.md",
+                "",
+                "其他",
+                2024,
+            ),
+        ]
+        for source_key, title, content, source, project_name, stage, policy_year in documents:
+            connection.execute(
+                """
+                INSERT INTO documents(
+                    source_key,title,content,source,cloud_path,document_role,sensitivity,
+                    sha256,updated_at,canonical_project_name,region,document_stage,
+                    validity_status,policy_year,batch
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    source_key,
+                    title,
+                    content,
+                    source,
+                    source,
+                    "10_政策与目录",
+                    "public",
+                    f"{source_key}-sha",
+                    "2026-07-22T00:00:00+00:00",
+                    project_name,
+                    "全国",
+                    stage,
+                    "active_candidate",
+                    policy_year,
+                    "",
+                ),
+            )
+        connection.execute(
+            """
+            INSERT INTO documents(
+                source_key,title,content,source,cloud_path,document_role,sensitivity,
+                sha256,updated_at,canonical_project_name,region,document_stage,
+                validity_status,policy_year,batch
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                "little-giant-fourth-batch",
+                "附件1：第四批专精特新“小巨人”企业公示名单.xls",
+                "第四批专精特新小巨人企业名单。",
+                "50_名单与对标/第四批小巨人名单.xls",
+                "50_名单与对标/第四批小巨人名单.xls",
+                "50_名单与对标",
+                "public",
+                "little-giant-fourth-batch-sha",
+                "2026-07-22T00:00:00+00:00",
+                "国家专精特新“小巨人”企业",
+                "全国",
+                "公示名单",
+                "historical_reference",
+                None,
+                "第四批",
+            ),
+        )
+        connection.execute("INSERT INTO documents_fts_trigram(documents_fts_trigram) VALUES ('rebuild')")
+        connection.commit()
+
+    year_results = module.search_knowledge("2024小巨人", limit=8)["results"]
+    year_titles = [item["title"] for item in year_results]
+    assert year_titles[:2] == [
+        "2024年专精特新“小巨人”企业申报通知",
+        "2024年专精特新“小巨人”企业公示名单",
+    ]
+    assert "2024年专精特新中小企业申报通知" not in year_titles
+    notice_results = module.search_knowledge("2024小巨人申报通知", limit=8)["results"]
+    assert notice_results[0]["title"] == "2024年专精特新“小巨人”企业申报通知"
+    assert all("公示名单" not in item["title"] for item in notice_results)
+    explicit_list_results = module.search_knowledge(
+        "2024年第六批浙江省专精特新小巨人公示名单",
+        limit=8,
+    )["results"]
+    assert explicit_list_results[0]["title"] == "2024年专精特新“小巨人”企业公示名单"
+    fourth_batch_results = module.search_knowledge("2022小巨人名单", limit=8)["results"]
+    assert fourth_batch_results[0]["title"] == "附件1：第四批专精特新“小巨人”企业公示名单.xls"
+    explicit_fourth_batch_results = module.search_knowledge(
+        "第四批专精特新小巨人公示名单",
+        limit=8,
+    )["results"]
+    assert explicit_fourth_batch_results[0]["title"] == "附件1：第四批专精特新“小巨人”企业公示名单.xls"
+
+    general_results = module.search_knowledge("公司合规风险排查", limit=5)["results"]
+    assert general_results[0]["title"] == "新公司法下企业合规自查与风险防范"
+
+
+def test_search_result_deduplication_collapses_same_title_project_year_and_stage(tmp_path):
+    module = load_app(tmp_path)
+    rows = [
+        {
+            "id": 1,
+            "title": "2025年浙江省首版次软件产品申报通知",
+            "canonical_project_name": "浙江省首版次软件产品",
+            "policy_year": 2025,
+            "document_stage": "申报通知",
+        },
+        {
+            "id": 2,
+            "title": "2025年浙江省首版次软件产品申报通知",
+            "canonical_project_name": "浙江省首版次软件产品",
+            "policy_year": 2025,
+            "document_stage": "申报通知",
+        },
+        {
+            "id": 3,
+            "title": "2025年浙江省首版次软件产品认定名单",
+            "canonical_project_name": "浙江省首版次软件产品",
+            "policy_year": 2025,
+            "document_stage": "认定名单",
+        },
+    ]
+    assert [row["id"] for row in module.deduplicate_search_results(rows)] == [1, 3]
+
+
 def test_every_high_frequency_alias_has_positive_cross_project_and_stale_gates(tmp_path):
     module = load_app(tmp_path)
     gold_path = (
         module.PROJECT_INDEX_PATH.parent / "high-frequency-project-gold-standard.jsonl"
     )
+    rules_path = module.PROJECT_INDEX_PATH.parent / "high-frequency-project-retrieval-rules.json"
     cases = [json.loads(line) for line in gold_path.read_text(encoding="utf-8").splitlines() if line]
     aliases = {case["alias"] for case in cases}
-    assert len(aliases) == 39
+    rules = json.loads(rules_path.read_text(encoding="utf-8"))["rules"]
+    expected_aliases = {alias for rule in rules for alias in rule["aliases"]}
+    assert aliases == expected_aliases
     assert len(cases) == len(aliases) * 3
     assert {
         (case["alias"], case["kind"]) for case in cases
@@ -1939,7 +2494,7 @@ def test_every_high_frequency_alias_has_positive_cross_project_and_stale_gates(t
                 {"document_id": 2, "title": case["excluded_title"], "source": case["excluded_title"]},
             ]
             filtered = module.filter_project_results(query, rows)
-            assert [row["document_id"] for row in filtered] == [1]
+            assert [row["document_id"] for row in filtered] == [1], case
         else:
             rows = [
                 {"document_id": 1, "title": case["current_title"], "source": case["current_title"]},
@@ -1982,6 +2537,28 @@ def test_admin_can_open_member_details_and_restore_soft_deleted_records(tmp_path
             "SELECT id FROM users WHERE username='member-one'"
         ).fetchone()["id"]
         connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                user_id,code_hash,created_at,expires_at,result_schema,result_ok,
+                result_status,result_error_stage,result_user_message,
+                result_next_action,result_reported_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                member_id,
+                module.token_hash("jbe_admin-detail-test"),
+                now,
+                module.isoformat(module.utc_now() + timedelta(hours=1)),
+                "jiaotang-agent-result/v1",
+                0,
+                "failed",
+                "mcp_connection",
+                "安装失败：MCP 初始化超时",
+                "请重新执行安装。",
+                now,
+            ),
+        )
+        connection.execute(
             "INSERT INTO registration_authorizations(real_name, identity_code, status, created_at) VALUES (?, ?, 'pending', ?)",
             ("李小红", "0826", now),
         )
@@ -2004,7 +2581,11 @@ def test_admin_can_open_member_details_and_restore_soft_deleted_records(tmp_path
         assert f'/admin/registration-authorizations/{authorization_id}' in members.text
         assert "/admin/members/trash" in members.text
 
-        assert client.get(f"/admin/users/{member_id}").status_code == 200
+        member_detail = client.get(f"/admin/users/{member_id}")
+        assert member_detail.status_code == 200
+        assert "最后一次结构化安装结果" in member_detail.text
+        assert "mcp_connection" in member_detail.text
+        assert "安装失败：MCP 初始化超时" in member_detail.text
         assert client.get(
             f"/admin/registration-authorizations/{authorization_id}"
         ).status_code == 200
@@ -2083,6 +2664,537 @@ def test_api_rejects_missing_token(tmp_path):
         assert response.status_code == 401
 
 
+def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
+    module = load_app(tmp_path)
+    password = "member-password-123"
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,real_name,password_hash,created_at)
+            VALUES (?,?,?,?)
+            """,
+            (
+                "member",
+                "王小明",
+                module.password_hasher.hash(password),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        user_id = int(
+            connection.execute(
+                "SELECT id FROM users WHERE username='member'"
+            ).fetchone()[0]
+        )
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?,'registered',?,?,?)
+            """,
+            (
+                "王小明",
+                "0826",
+                user_id,
+                module.isoformat(module.utc_now()),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": password},
+            follow_redirects=False,
+        )
+        assert login.status_code == 303
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        access = client.get("/access")
+        assert "复制给 Agent" in access.text
+        assert "等待配置" in access.text
+
+        bootstrap = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        assert bootstrap.status_code == 200
+        assert bootstrap.json()["expires_in_seconds"] == 60 * 60
+        prompt = bootstrap.json()["prompt"]
+        assert "不透明的一次性安装协议入口" in prompt
+        assert "execution.command" in prompt
+        assert "安装协议读取失败" in prompt
+        assert "node -e" not in prompt
+        protocol_url = re.search(
+            r"http://testserver/v1/agent-install/(jbe_[A-Za-z0-9_-]+)",
+            prompt,
+        )
+        assert protocol_url is not None
+        enrollment_code = protocol_url.group(1)
+
+        protocol = client.get(f"/v1/agent-install/{enrollment_code}")
+        assert protocol.status_code == 200
+        assert protocol.headers["content-type"].startswith(
+            "application/vnd.jiaotang.agent-install+json"
+        )
+        assert protocol.headers["x-jiaotang-install-protocol"] == "1"
+        assert protocol.json()["schema"] == "jiaotang-agent-install/v1"
+        assert protocol.json()["action"] == "execute_once"
+        assert protocol.json()["opaque"] is True
+        assert protocol.json()["execution"]["command"].startswith('node -e "')
+        assert "jiaotang-agent-result/v1" in protocol.json()["execution"]["command"]
+        assert f"/v1/agent-install-result/{enrollment_code}" in (
+            protocol.json()["execution"]["command"]
+        )
+        assert protocol.json()["completion"]["success_condition"] == (
+            "server_confirmed_signed_mcp_connection"
+        )
+        result_handling = protocol.json()["completion"]["result_handling"]
+        assert result_handling["contract"] == "jiaotang-agent-result/v1"
+        assert result_handling["required_display_fields"] == [
+            "user_message",
+            "next_action",
+        ]
+        assert "display_user_message_verbatim" in result_handling["display_rules"]
+        assert "do_not_interpret_other_fields" in result_handling["display_rules"]
+        workbuddy_instruction = result_handling[
+            "workbuddy_instruction"
+        ]
+        assert "WorkBuddy 左侧「连接器」" in workbuddy_instruction
+        assert "`jiaotang-kb`" in workbuddy_instruction
+        assert {"workbuddy", "codex", "claude-code", "cursor", "windsurf"} <= set(
+            protocol.json()["compatibility"]["agent_hosts"]
+        )
+        installer = client.get("/install/jiaotang-agent.mjs")
+        assert installer.status_code == 200
+        assert "activation_required" in installer.text
+        assert "WorkBuddy 左侧「连接器」" in installer.text
+        installer_path = tmp_path / "jiaotang-agent.mjs"
+        installer_path.write_text(installer.text, encoding="utf-8")
+        failed_install = subprocess.run(
+            ["node", str(installer_path), "install"],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        assert failed_install.returncode == 1
+        failed_result = json.loads(failed_install.stdout)
+        assert failed_result["schema"] == "jiaotang-agent-result/v1"
+        assert failed_result["ok"] is False
+        assert failed_result["status"] == "failed"
+        assert failed_result["error_stage"] == "validation"
+        assert failed_result["user_message"].startswith("安装失败：")
+        assert failed_result["next_action"]
+        manifest = client.get(f"/v1/agent-bootstrap/{enrollment_code}")
+        assert manifest.status_code == 200
+        assert manifest.json()["result_url"].endswith(
+            f"/v1/agent-install-result/{enrollment_code}"
+        )
+        assert manifest.json()["supported_platforms"] == ["darwin", "win32"]
+        assert re.fullmatch(r"[a-f0-9]{64}", manifest.json()["installer_sha256"])
+        assert {"workbuddy", "codex", "claude-code", "generic-mcp"} <= set(
+            manifest.json()["supported_hosts"]
+        )
+        commands = manifest.json()["commands"]
+        assert commands["universal"] == commands["darwin"] == commands["win32"]
+        assert commands["universal"].startswith('node -e "')
+        assert "bootstrap-url" in commands["universal"]
+        assert "result-url" in commands["universal"]
+
+        failed_report = client.post(
+            f"/v1/agent-install-result/{enrollment_code}",
+            json={
+                "schema": "jiaotang-agent-result/v1",
+                "ok": False,
+                "status": "failed",
+                "error_stage": "installer_download",
+                "user_message": "安装失败：下载超时",
+                "next_action": "请检查网络后重试。",
+            },
+        )
+        assert failed_report.status_code == 200
+        with closing(module.database()) as connection:
+            stored_failure = connection.execute(
+                """
+                SELECT result_status,result_error_stage,result_user_message
+                FROM agent_enrollment_codes WHERE code_hash=?
+                """,
+                (module.token_hash(enrollment_code),),
+            ).fetchone()
+        assert stored_failure["result_status"] == "failed"
+        assert stored_failure["result_error_stage"] == "installer_download"
+        assert stored_failure["result_user_message"] == "安装失败：下载超时"
+
+        private_key = Ed25519PrivateKey.generate()
+        public_key = base64url_encode(
+            private_key.public_key().public_bytes(
+                Encoding.DER, PublicFormat.SubjectPublicKeyInfo
+            )
+        )
+        registration = {
+            "device_id": TEST_DEVICE_ID,
+            "device_name": TEST_DEVICE_NAME,
+            "platform": "darwin",
+            "agent_host": "codex",
+            "public_key": public_key,
+        }
+        proof = private_key.sign(
+            enrollment_canonical_value(
+                enrollment_code=enrollment_code,
+                **registration,
+            )
+        )
+        registration["proof"] = base64url_encode(proof)
+        enrolled = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/register",
+            json=registration,
+        )
+        assert enrolled.status_code == 200
+        old_token = enrolled.json()["token"]
+
+        assert client.get(f"/v1/agent-bootstrap/{enrollment_code}").status_code == 200
+        assert client.get(f"/v1/agent-install/{enrollment_code}").status_code == 200
+
+        retry_private_key = Ed25519PrivateKey.generate()
+        retry_public_key = base64url_encode(
+            retry_private_key.public_key().public_bytes(
+                Encoding.DER, PublicFormat.SubjectPublicKeyInfo
+            )
+        )
+        retry_registration = {
+            **{key: value for key, value in registration.items() if key not in {"public_key", "proof"}},
+            "public_key": retry_public_key,
+        }
+        retry_registration["proof"] = base64url_encode(
+            retry_private_key.sign(
+                enrollment_canonical_value(
+                    enrollment_code=enrollment_code,
+                    **{key: value for key, value in retry_registration.items() if key != "proof"},
+                )
+            )
+        )
+        retried = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/register",
+            json=retry_registration,
+        )
+        assert retried.status_code == 200
+        assert client.get("/v1/me", headers=api_headers(old_token)).status_code == 401
+        registration = retry_registration
+        private_key = retry_private_key
+        token = retried.json()["token"]
+        key_id = retried.json()["key_id"]
+
+        unsigned = client.get("/v1/me", headers=api_headers(token))
+        assert unsigned.status_code == 428
+
+        credential_saved = client.post(
+            "/v1/device-installation/credential-saved",
+            headers=signed_api_headers(
+                module,
+                token,
+                private_key,
+                key_id,
+                method="POST",
+                request_target="/v1/device-installation/credential-saved",
+            ),
+        )
+        assert credential_saved.status_code == 200
+        assert credential_saved.json()["stages"]["registration"]["completed"]
+        assert credential_saved.json()["stages"]["credential_saved"]["completed"]
+        assert credential_saved.json()["stages"]["first_signature"]["completed"]
+        assert not credential_saved.json()["stages"]["mcp_connection"]["completed"]
+
+        installation_status = client.get(
+            "/v1/device-installation/status",
+            headers=signed_api_headers(
+                module,
+                token,
+                private_key,
+                key_id,
+                method="GET",
+                request_target="/v1/device-installation/status",
+            ),
+        )
+        assert installation_status.status_code == 200
+        assert not installation_status.json()["configured"]
+
+        nonce = base64url_encode(uuid.uuid4().bytes)
+        signed_headers = signed_api_headers(
+            module,
+            token,
+            private_key,
+            key_id,
+            method="GET",
+            request_target="/v1/me",
+            nonce=nonce,
+        )
+        signed = client.get("/v1/me", headers=signed_headers)
+        assert signed.status_code == 200
+        assert signed.json()["username"] == "member"
+        replay = client.get("/v1/me", headers=signed_headers)
+        assert replay.status_code == 409
+
+        wrong_key = Ed25519PrivateKey.generate()
+        wrong_signature = signed_api_headers(
+            module,
+            token,
+            wrong_key,
+            key_id,
+            method="GET",
+            request_target="/v1/me",
+        )
+        assert client.get("/v1/me", headers=wrong_signature).status_code == 403
+
+        access = client.get("/access")
+        assert "安装未完成" in access.text
+        assert "登记成功" in access.text
+        assert "凭据保存" in access.text
+        assert "首次验签" in access.text
+        assert "MCP连接" in access.text
+        assert "codex" in access.text
+
+        mcp_body = json.dumps(
+            {"jsonrpc": "2.0", "id": 7, "method": "ping", "params": {}},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        mcp_connected = client.post(
+            "/mcp/",
+            headers={
+                **signed_api_headers(
+                    module,
+                    token,
+                    private_key,
+                    key_id,
+                    method="POST",
+                    request_target="/mcp/",
+                    body=mcp_body,
+                ),
+                "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+            },
+            content=mcp_body,
+        )
+        assert mcp_connected.status_code == 200
+        completed_report = client.post(
+            f"/v1/agent-install-result/{enrollment_code}",
+            json={
+                "schema": "jiaotang-agent-result/v1",
+                "ok": True,
+                "status": "configured",
+                "user_message": "配置成功",
+                "next_action": None,
+                "host": "codex",
+                "platform": "darwin-arm64",
+                "activation_required": False,
+            },
+        )
+        assert completed_report.status_code == 200
+        with closing(module.database()) as connection:
+            stored_success = connection.execute(
+                """
+                SELECT result_ok,result_status,result_error_stage,result_host
+                FROM agent_enrollment_codes WHERE code_hash=?
+                """,
+                (module.token_hash(enrollment_code),),
+            ).fetchone()
+        assert stored_success["result_ok"] == 1
+        assert stored_success["result_status"] == "configured"
+        assert stored_success["result_error_stage"] is None
+        assert stored_success["result_host"] == "codex"
+        completed_access = client.get("/access")
+        assert "安装成功" in completed_access.text
+        consumed_manifest = client.get(f"/v1/agent-bootstrap/{enrollment_code}")
+        assert consumed_manifest.status_code == 410
+        assert "已经使用" in consumed_manifest.json()["detail"]
+        consumed_protocol = client.get(f"/v1/agent-install/{enrollment_code}")
+        assert consumed_protocol.status_code == 410
+        assert "已经使用" in consumed_protocol.json()["detail"]
+        consumed_registration = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/register",
+            json=registration,
+        )
+        assert consumed_registration.status_code == 410
+        assert "已经使用" in consumed_registration.json()["detail"]
+
+        replaced = client.post(
+            "/device-binding/replace",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        assert replaced.status_code == 200
+        assert "旧设备、公钥和访问凭据已失效" in replaced.text
+        assert client.get("/v1/me", headers=signed_api_headers(
+            module,
+            token,
+            private_key,
+            key_id,
+            method="GET",
+            request_target="/v1/me",
+        )).status_code == 401
+
+        renewed = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        assert renewed.status_code == 200
+        assert "一次性安装协议入口" in renewed.json()["prompt"]
+        renewed_code = re.search(
+            r"http://testserver/v1/agent-install/(jbe_[A-Za-z0-9_-]+)",
+            renewed.json()["prompt"],
+        ).group(1)
+        with closing(module.database()) as connection:
+            connection.execute(
+                "UPDATE agent_enrollment_codes SET expires_at=? WHERE code_hash=?",
+                (
+                    module.isoformat(module.utc_now() - timedelta(seconds=1)),
+                    module.token_hash(renewed_code),
+                ),
+            )
+            connection.commit()
+        expired_manifest = client.get(f"/v1/agent-bootstrap/{renewed_code}")
+        assert expired_manifest.status_code == 410
+        assert "已经过期" in expired_manifest.json()["detail"]
+        expired_protocol = client.get(f"/v1/agent-install/{renewed_code}")
+        assert expired_protocol.status_code == 410
+        assert "已经过期" in expired_protocol.json()["detail"]
+        expired_registration_payload = {
+            key: value for key, value in registration.items() if key != "proof"
+        }
+        expired_registration_payload["proof"] = base64url_encode(
+            private_key.sign(
+                enrollment_canonical_value(
+                    enrollment_code=renewed_code,
+                    **expired_registration_payload,
+                )
+            )
+        )
+        expired_registration = client.post(
+            f"/v1/agent-bootstrap/{renewed_code}/register",
+            json=expired_registration_payload,
+        )
+        assert expired_registration.status_code == 410
+        assert "已经过期" in expired_registration.json()["detail"]
+
+
+def test_bootstrap_recovers_unverified_partial_installation(tmp_path):
+    module = load_app(tmp_path)
+    password = "member-password-123"
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,real_name,password_hash,created_at)
+            VALUES (?,?,?,?)
+            """,
+            (
+                "member",
+                "王小明",
+                module.password_hasher.hash(password),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        user_id = int(
+            connection.execute(
+                "SELECT id FROM users WHERE username='member'"
+            ).fetchone()[0]
+        )
+        connection.commit()
+    provision_signed_device(module, user_id, agent_host="workbuddy")
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": password},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        partial_access = client.get("/access")
+        assert "安装未完成" in partial_access.text
+        assert "登记成功" in partial_access.text
+        assert "等待凭据库确认" in partial_access.text
+        assert "等待签名请求" in partial_access.text
+        assert "等待服务器确认" in partial_access.text
+        assert "自动清理本次半成品绑定" in partial_access.text
+        recovered = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+
+    assert recovered.status_code == 200
+    assert recovered.json()["expires_in_seconds"] == 60 * 60
+    with closing(module.database()) as connection:
+        binding = connection.execute(
+            "SELECT revoked_at,revoked_reason FROM device_bindings WHERE user_id=?",
+            (user_id,),
+        ).fetchone()
+        key = connection.execute(
+            "SELECT revoked_at,revoked_reason FROM device_keys WHERE user_id=?",
+            (user_id,),
+        ).fetchone()
+        active_codes = connection.execute(
+            """
+            SELECT COUNT(*) FROM agent_enrollment_codes
+            WHERE user_id=? AND consumed_at IS NULL
+            """,
+            (user_id,),
+        ).fetchone()[0]
+    assert binding["revoked_at"]
+    assert binding["revoked_reason"] == "incomplete_installation_recovery"
+    assert key["revoked_at"]
+    assert key["revoked_reason"] == "incomplete_installation_recovery"
+    assert active_codes == 1
+
+
+def test_init_database_reopens_latest_incomplete_enrollment(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    expires_at = module.isoformat(module.utc_now() + timedelta(minutes=30))
+    with closing(module.database()) as connection:
+        user_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(username,password_hash,created_at)
+                VALUES (?,?,?)
+                """,
+                ("member", module.password_hasher.hash("member-password-123"), now),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                user_id,code_hash,created_at,expires_at,consumed_at,consumed_ip
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                user_id,
+                module.token_hash("jbe_legacy-incomplete"),
+                now,
+                expires_at,
+                now,
+                "test",
+            ),
+        )
+        connection.commit()
+    _, key_id = provision_signed_device(module, user_id)
+
+    module.init_database()
+
+    with closing(module.database()) as connection:
+        enrollment = connection.execute(
+            """
+            SELECT registered_at,registered_key_id,registered_ip,consumed_at,consumed_ip
+            FROM agent_enrollment_codes WHERE user_id=?
+            """,
+            (user_id,),
+        ).fetchone()
+    assert enrollment["registered_at"] == now
+    assert enrollment["registered_key_id"] == key_id
+    assert enrollment["registered_ip"] == "test"
+    assert enrollment["consumed_at"] is None
+    assert enrollment["consumed_ip"] == ""
+
+
 def test_latest_skill_release_metadata_and_download(tmp_path):
     module = load_app(tmp_path)
     package = tmp_path / "project-assistant-skills.zip"
@@ -2090,7 +3202,7 @@ def test_latest_skill_release_metadata_and_download(tmp_path):
     digest = module.hashlib.sha256(package.read_bytes()).hexdigest()
     with closing(module.database()) as connection:
         connection.execute(
-            "INSERT INTO users(username, password_hash, created_at) VALUES (?, ?, ?)",
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
             ("member", module.password_hasher.hash("member-password-123"), module.isoformat(module.utc_now())),
         )
         user_id = connection.execute("SELECT id FROM users WHERE username = 'member'").fetchone()[0]
@@ -2121,7 +3233,7 @@ def test_latest_skill_release_metadata_and_download(tmp_path):
             ),
         )
         connection.commit()
-    headers = {"Authorization": f"Bearer {raw_token}"}
+    headers = api_headers(raw_token)
     with TestClient(module.app) as client:
         latest = client.get("/v1/skills/latest", headers=headers)
         assert latest.status_code == 200
@@ -2203,7 +3315,7 @@ def test_admin_incremental_index_release_and_rollback(tmp_path):
             ),
         )
         connection.commit()
-    headers = {"Authorization": f"Bearer {raw_token}"}
+    headers = api_headers(raw_token)
     with TestClient(module.app) as client:
         login = client.post(
             "/login",
@@ -2310,35 +3422,71 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
                 module.isoformat(module.utc_now()),
             ),
         )
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?, 'registered', ?, ?, ?)
+            """,
+            (
+                "王小明",
+                "0826",
+                user_id,
+                module.isoformat(module.utc_now()),
+                module.isoformat(module.utc_now()),
+            ),
+        )
         connection.commit()
-    headers = {
-        "Authorization": f"Bearer {raw_token}",
-        "Accept": "application/json, text/event-stream",
-        "Content-Type": "application/json",
-    }
+    private_key, key_id = provision_signed_device(module, user_id)
+
+    def mcp_request(client, payload):
+        body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        headers = {
+            **signed_api_headers(
+                module,
+                raw_token,
+                private_key,
+                key_id,
+                method="POST",
+                request_target="/mcp/",
+                body=body,
+            ),
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+        }
+        return client.post("/mcp/", headers=headers, content=body)
+
     with TestClient(module.app) as client:
         assert client.post(
             "/mcp/",
             headers={"Accept": "application/json, text/event-stream"},
             json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
         ).status_code == 401
-        assert client.head("/mcp/", headers=headers).status_code == 405
-        ping = client.post(
-            "/mcp/",
-            headers=headers,
-            json={"jsonrpc": "2.0", "id": 2, "method": "ping", "params": {}},
+        head_headers = {
+            **signed_api_headers(
+                module,
+                raw_token,
+                private_key,
+                key_id,
+                method="HEAD",
+                request_target="/mcp/",
+            ),
+            "Accept": "application/json, text/event-stream",
+        }
+        assert client.head("/mcp/", headers=head_headers).status_code == 405
+        ping = mcp_request(
+            client,
+            {"jsonrpc": "2.0", "id": 2, "method": "ping", "params": {}},
         )
         assert ping.status_code == 200
-        tool_list = client.post(
-            "/mcp/",
-            headers=headers,
-            json={"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": {}},
+        tool_list = mcp_request(
+            client,
+            {"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": {}},
         )
         assert tool_list.status_code == 200
-        response = client.post(
-            "/mcp/",
-            headers=headers,
-            json={
+        response = mcp_request(
+            client,
+            {
                 "jsonrpc": "2.0",
                 "id": 4,
                 "method": "tools/call",
@@ -2352,10 +3500,9 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         first_result = response.json()["result"]["structuredContent"]["results"][0]
         assert "小巨人" in first_result["title"]
         assert "source_layer" not in first_result
-        document = client.post(
-            "/mcp/",
-            headers=headers,
-            json={
+        document = mcp_request(
+            client,
+            {
                 "jsonrpc": "2.0",
                 "id": 5,
                 "method": "tools/call",
@@ -2373,6 +3520,15 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             FROM api_usage ORDER BY id
             """
         ).fetchall()
+        installation = connection.execute(
+            """
+            SELECT first_verified_at,mcp_connected_at
+            FROM device_keys WHERE user_id=? AND key_id=?
+            """,
+            (user_id, key_id),
+        ).fetchone()
+    assert installation["first_verified_at"]
+    assert installation["mcp_connected_at"]
     assert [row["activity_type"] for row in usage_rows] == [
         "mcp_connection",
         "mcp_connection",
@@ -2475,12 +3631,18 @@ def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
         knowledge = client.get("/admin/knowledge?query=小巨人")
         assert knowledge.status_code == 200
         assert "小巨人测试资料" in knowledge.text
+        fuzzy_knowledge = client.get("/admin/knowledge?query=2025小巨人")
+        assert fuzzy_knowledge.status_code == 200
+        assert "2025年浙江省专精特新小巨人申报通知" in fuzzy_knowledge.text
+        assert "2025年浙江省第六批专精特新小巨人认定名单" in fuzzy_knowledge.text
         assert "第 1/1 页 · 每页30份" in knowledge.text
         assert 'aria-current="page">1</a>' in knowledge.text
         ordered_knowledge = client.get("/admin/knowledge")
         assert ordered_knowledge.text.index("0001") < ordered_knowledge.text.index("0002")
         assert "编号升序" in ordered_knowledge.text
         assert "移入回收站" in ordered_knowledge.text
+        assert "2026-07-18T00:00:00+00:00" not in ordered_knowledge.text
+        assert "2026-07-18 08:00:00" in ordered_knowledge.text
         access_portal = client.get("/access")
         assert "agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4" in access_portal.text
         assert "docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" in access_portal.text

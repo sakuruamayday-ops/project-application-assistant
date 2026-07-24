@@ -5,6 +5,25 @@ description: 企业合作前公开信息全景调研与双版本 PDF 或网页�
 
 # 企业全景双版本调研
 
+
+<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
+## 跨平台首次运行与个人习惯
+
+支持CodeBuddy/WorkBuddy内联命令的宿主会在技能触发时自动执行下面的确定性门禁，并把JSON结果注入当前上下文：
+
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+
+作为WorkBuddy插件加载时，还会把本轮实际触发的技能与当前会话和轮次绑定：
+
+!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "enterprise-panorama-analysis" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
+
+每次触发本技能时，第一步必须定位当前`SKILL.md`所在的技能目录，并以该目录为工作目录运行`python3 scripts/portable_skill_runtime.py prepare`。不得因为当前任务看似简单而跳过。将返回的`active_preferences`作为用户个人习惯应用于当前任务；结果为`fail`时停止执行，不得声称安装、自检或升级成功。`capability_check`为`limited`时，只使用宿主已具备的能力，并明确未通过的依赖项，不得声称依赖完整。
+
+用户以“以后、默认、记住、每次、别再”等措辞明确表达长期习惯时：若上下文已出现“偏好桥接轮次已建立”的WorkBuddy钩子提示，不要手动调用`remember`，由停止钩子只向本轮实际触发且已经按会话、轮次绑定的技能写入；其他宿主则在最终答复前调用`python3 scripts/portable_skill_runtime.py remember --instruction '用户原意' --scope default --source agent-confirmed`，再调用`context`确认。未取得`status: pass`和对应偏好记录时，严禁声称“已记住”或“以后会默认采用”。无法执行保存时，只能说明本次会话已理解、尚未形成跨会话偏好。“这次、本次、当前文件、临时”等要求只影响当前任务，禁止写入长期偏好。无需让用户了解或输入存储命令。发生歧义、偏好冲突或可能削弱强制质量门禁时才询问。
+
+个人配置保存在技能目录外并自动备份。不得用个人偏好覆盖真实性、安全、验签、安装自检或本技能的强制质量门禁。完整规则见[跨平台技能运行协议](references/portable-runtime-protocol.md)。
+<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
 ## 强制版本选择
 
 - 生成报告前必须取得用户对版本的明确选择，选择项固定为：`A 第一版｜标准销售版`、`B 第二版｜GCIP深度顾问版`、`C 全生成｜同时生成A和B`。
@@ -22,7 +41,7 @@ description: 企业合作前公开信息全景调研与双版本 PDF 或网页�
 ## 共同事实底稿
 
 1. 锚定完整企业名称或统一社会信用代码。
-2. 读取 [enterprise-info-verification.md](references/enterprise-info-verification.md)，先以统一社会信用代码锁定主体，再按 [public-source-map.md](references/public-source-map.md) 一次性采集工商股权、司法信用、经营合规、知识产权、战略布局、经营销售、同行竞争和项目政策八个维度。
+2. 读取 [enterprise-info-verification.md](references/enterprise-info-verification.md)，先由天眼查完成主体和全维度分诊，以统一社会信用代码锁定主体；企查查补齐未覆盖、缺失、状态不明和高影响字段，再按 [public-source-map.md](references/public-source-map.md) 采集工商股权、司法信用、经营合规、知识产权、战略布局、经营销售、同行竞争和项目政策八个维度。冲突和权威终值回到官方来源裁决。
 3. 将每项内容区分为公开事实、合理判断、待核事项和建议动作；精确数字、日期、编号和名称保留来源。
 4. 关键事实尽量两源交叉验证；官方来源优先，冲突时保留差异。
 5. 企查查、企策顾问等不可访问时按公开替代链继续完成，不得把“当前检索层未命中”写成“不存在”。
@@ -36,6 +55,7 @@ description: 企业合作前公开信息全景调研与双版本 PDF 或网页�
 - 风险固定采用“事实或信号—实际影响—核验或解决动作”，不能只罗列平台数量。
 - 核心工商、执行失信、处罚异常和知识产权字段标注已验证、单源待核、冲突待裁决或当前未命中。
 - 关联企业的风险不得直接归因于目标企业；必须说明控制、担保、资金、业务或人员传导路径是否已取得证据。
+- 需要股权、任职和风险传导可视化时读取 [relationship-graph-spec.md](references/relationship-graph-spec.md)，使用企业状态、风险标签和证据等级三层标识。
 - 融资租赁、抵押或诉讼数量本身不能证明资金不足、资不抵债或回款困难。
 - 项目分为“公开信息已支持、具备培育可能、请企业提供资料后判断”；正式申报前重新核验当期政策。
 - 专利区分有效授权、审中、终止、驳回、转让取得和转出；历史成果不得冒充当前有效权利。
@@ -83,9 +103,9 @@ python3 scripts/validate_report_pdf.py <PDF路径> --require-watermark
 
 ## 专项技能路由
 
-- 用户提供财务报表或未分配利润数据：叠加 `financial-statement-analysis-zh` 与 `china-tax-compliance`，计算必须展示来源和公式。
-- 用户要求正式项目资格测算：叠加 `enterprise-checkup` 或 `multi-project-matrix`。
-- 用户要求专利布局：叠加 `patent-layout-planner`。
+- 用户提供财务报表或未分配利润数据：叠加包内 `financial-verification`；涉及制造企业税务风险时再叠加 `manufacturing-tax-risk-analysis`，计算必须展示来源和公式。
+- 用户要求正式项目资格测算：叠加包内 `project-matching` 与 `project-feasibility`。
+- 用户要求专利布局：叠加包内 `patent-layout-planning`。
 - 用户要求专利查新、权利要求、FTO、侵权或规避设计：叠加包内 `patent-data-foundation`、`patent-search-core`、`patent-claim-analysis`、`patent-similarity-search` 或 `patent-fto-analysis`。
 - 用户只要求快速初筛：调用包内 `enterprise-profile` 采集，但报告仍按本技能重组。
 - 用户要求网页式看板：使用宿主平台已有前端能力生成，但未经授权不得发布或托管；页面数据必须来自共同事实底稿，缺失项明确显示待核，不得生成示例事实。
@@ -93,7 +113,7 @@ python3 scripts/validate_report_pdf.py <PDF路径> --require-watermark
 ## 平台与配置边界
 
 - 先读取 `first-run-configuration` 生成的能力报告；缺少团队知识、企查查、专利或PDF能力时只回到统一向导一次，再按报告执行降级。
-- 团队知识服务只读取宿主安全凭据中的 `JIAOTANG_KB_ENDPOINT` 和 `JIAOTANG_KB_TOKEN`，不得把真实值写入Skill、报告或日志。
+- 团队知识服务只读取宿主安全凭据中的 `JIAOTANG_KB_ENDPOINT`、`JIAOTANG_KB_TOKEN`、`JIAOTANG_KB_DEVICE_ID` 和 `JIAOTANG_KB_DEVICE_NAME`，不得把真实值写入Skill、报告或日志。
 - 企查查、政府网页、专利数据源和浏览器能力均按 `docs/user-guide/api-mcp-configuration.md` 由用户自行配置；任一外部能力缺失时执行对应降级，不得补造结果。
 - PDF、Word、Excel和网页渲染由宿主平台提供。包内脚本只是确定性PDF渲染后备，不复制通用文档Skill。
 - 所有资源路径必须相对本Skill目录解析，禁止写入用户主目录或开发者机器绝对路径。

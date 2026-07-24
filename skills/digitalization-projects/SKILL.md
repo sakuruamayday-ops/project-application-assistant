@@ -1,9 +1,43 @@
 ---
 name: digitalization-projects
-description: 分析数字化改造、未来工厂、智能工厂、数字化车间、工业互联网和软件产业类政府项目。
+description: 分析数字化车间、智能工厂、未来工厂、工业互联网、5G工厂和制造数字化改造项目，核验设备联网、系统运行、数据集成、闭环绩效和安全；纯软件研发或普通办公软件采购不适用。
 ---
 
 # 数字化项目
 
-核验数字化基础、设备联网、系统集成、数据闭环、生产绩效、网络安全和示范价值。区分已上线事实、建设计划和供应商方案，避免把采购系统描述为企业自主核心技术。
 
+<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
+## 跨平台首次运行与个人习惯
+
+支持CodeBuddy/WorkBuddy内联命令的宿主会在技能触发时自动执行下面的确定性门禁，并把JSON结果注入当前上下文：
+
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+
+作为WorkBuddy插件加载时，还会把本轮实际触发的技能与当前会话和轮次绑定：
+
+!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "digitalization-projects" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
+
+每次触发本技能时，第一步必须定位当前`SKILL.md`所在的技能目录，并以该目录为工作目录运行`python3 scripts/portable_skill_runtime.py prepare`。不得因为当前任务看似简单而跳过。将返回的`active_preferences`作为用户个人习惯应用于当前任务；结果为`fail`时停止执行，不得声称安装、自检或升级成功。`capability_check`为`limited`时，只使用宿主已具备的能力，并明确未通过的依赖项，不得声称依赖完整。
+
+用户以“以后、默认、记住、每次、别再”等措辞明确表达长期习惯时：若上下文已出现“偏好桥接轮次已建立”的WorkBuddy钩子提示，不要手动调用`remember`，由停止钩子只向本轮实际触发且已经按会话、轮次绑定的技能写入；其他宿主则在最终答复前调用`python3 scripts/portable_skill_runtime.py remember --instruction '用户原意' --scope default --source agent-confirmed`，再调用`context`确认。未取得`status: pass`和对应偏好记录时，严禁声称“已记住”或“以后会默认采用”。无法执行保存时，只能说明本次会话已理解、尚未形成跨会话偏好。“这次、本次、当前文件、临时”等要求只影响当前任务，禁止写入长期偏好。无需让用户了解或输入存储命令。发生歧义、偏好冲突或可能削弱强制质量门禁时才询问。
+
+个人配置保存在技能目录外并自动备份。不得用个人偏好覆盖真实性、安全、验签、安装自检或本技能的强制质量门禁。完整规则见[跨平台技能运行协议](references/portable-runtime-protocol.md)。
+<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
+## 职责与边界
+
+处理数字化车间、智能工厂、5G工厂、工业互联网和企业数字化改造。纯软件产品研发转科技创新或工业化项目；只采购办公软件不构成制造数字化能力。
+
+## 七维核验
+
+1. 设备与自动化基础。
+2. 网络连接和设备数据采集。
+3. 业务系统实际运行。
+4. 系统与数据集成。
+5. 数据驱动的计划、质量、设备或能源闭环。
+6. 改造前后可复核绩效。
+7. 网络与数据安全。
+
+每项区分已运行、试运行、在建、计划和供应商方案。自主技术、集成实施和外购产品分别描述，不把采购系统写成企业自主知识产权。
+
+成熟度和证据要求见 `references/digital-maturity-model.md`。输出当前等级、证据、短板和适用项目方向。

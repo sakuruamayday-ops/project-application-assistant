@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import hashlib
 import http.cookiejar
 import json
 import re
@@ -81,6 +82,10 @@ def search_once(base_url: str, token: str, query: str) -> tuple[float, int, str]
         data=body,
         headers={
             "Authorization": f"Bearer {token}",
+            "X-Jiaotang-Device-ID": (
+                "loadtest:" + hashlib.sha256(token.encode("utf-8")).hexdigest()[:24]
+            ),
+            "X-Jiaotang-Device-Name": "Portal Load Test",
             "Content-Type": "application/json",
         },
     )

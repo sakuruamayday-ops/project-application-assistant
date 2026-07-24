@@ -1,0 +1,74 @@
+{
+  "company": "示例制造有限公司",
+  "period": {"start": "2023年度", "end": "2025年度"},
+  "report_date": "2026年7月19日",
+  "preparer": "共创知识产权",
+  "source_status": "审计报告初稿",
+  "internal_only": true,
+  "use_restriction": "仅供内部自查，取得正式签字盖章报告前不得对外依赖。",
+  "risk_level": "高关注",
+  "one_line_conclusion": "收入增长但盈利、偿债和资金闭环承压，应优先核验票据保证金、关联往来及所得税桥接。",
+  "sources": [
+    {"name": "2023—2025年度审计报告", "period": "2023—2025", "status": "初稿", "pages": "资产负债表、利润表、现金流量表及附注", "limitation": "未见最终签章"}
+  ],
+  "missing_documents": ["三年纳税申报表", "发票明细", "银行承兑与保证金合同", "关联方往来合同"],
+  "executive_findings": [
+    {"title": "偿债能力", "conclusion": "资产负债率处于高位，净资产缓冲较薄。", "level": "高", "source": "审计报告资产负债表"},
+    {"title": "票据闭环", "conclusion": "其他货币资金与应付票据同步放大，需核验底层采购。", "level": "高", "source": "审计报告附注"},
+    {"title": "关联往来", "conclusion": "大额往来集中于少数对象，需核验商业实质。", "level": "高", "source": "往来附注"},
+    {"title": "税会差异", "conclusion": "会计利润与所得税费用方向不一致，需形成纳税调整桥。", "level": "中", "source": "利润表"},
+    {"title": "研发口径", "conclusion": "研发强度稳定，但三套研发口径尚需勾稽。", "level": "中", "source": "利润表及研发辅助账"}
+  ],
+  "financial_overview": {
+    "years": ["2023", "2024", "2025"],
+    "kpis": [
+      {"label": "2025营业收入", "value": "13,500万元", "note": "同比小幅增长"},
+      {"label": "2025净利润", "value": "-140万元", "note": "连续亏损"},
+      {"label": "经营现金流", "value": "3,100万元", "note": "与利润背离"},
+      {"label": "资产负债率", "value": "99.20%", "note": "偿债缓冲较薄"}
+    ],
+    "rows": [
+      {"name": "营业收入", "values": ["10,400万元", "13,300万元", "13,500万元"], "trend": "增长放缓", "source": "利润表"},
+      {"name": "净利润", "values": ["-20万元", "-60万元", "-140万元"], "trend": "亏损扩大", "source": "利润表"},
+      {"name": "经营现金流", "values": ["-270万元", "1,600万元", "3,100万元"], "trend": "明显改善", "source": "现金流量表"},
+      {"name": "资产负债率", "values": ["98.10%", "98.70%", "99.20%"], "trend": "持续上升", "source": "资产负债表"}
+    ],
+    "conclusion": "规模扩张未转化为利润，现金改善需要结合票据、保证金及往来变化解释。"
+  },
+  "sections": {
+    "profitability": {"title": "收入增长未转化为盈利", "conclusion": "连续亏损且毛利承压。", "facts": [{"title": "收入", "text": "三年收入持续增长。", "source": "利润表"}, {"title": "利润", "text": "净利润连续为负。", "source": "利润表"}], "actions": ["建立收入至毛利变动桥", "核验主要产品、客户和订单毛利"]},
+    "cash_flow": {"title": "现金改善需穿透来源", "conclusion": "经营现金流转正，但与利润差距扩大。", "facts": [{"title": "经营现金流", "text": "2025年经营现金流显著为正。", "source": "现金流量表"}], "actions": ["按客户核验销售收现", "剔除票据保证金变化后重算经营现金"]},
+    "solvency": {"title": "净资产缓冲较薄", "conclusion": "高负债率放大或有事项影响。", "facts": [{"title": "资产负债率", "text": "2025年接近100%。", "source": "资产负债表"}], "actions": ["制定月度流动性压力测试", "核验短期债务到期安排"]},
+    "asset_quality": {"title": "资产集中度需要核验", "conclusion": "应收、预付及其他应收集中于少数对象。", "facts": [{"title": "应收账款", "text": "前五名客户占比较高。", "source": "应收账款附注"}], "actions": ["补充期后回款", "核验预付对象与履约进度"]},
+    "bills_deposits": {"title": "票据与保证金同步放大", "conclusion": "需建立票据底层采购闭环。", "facts": [{"title": "保证金", "text": "其他货币资金占比较高。", "source": "货币资金附注"}], "actions": ["取得承兑协议与保证金流水", "勾稽供应商、合同、发票和解付"]},
+    "related_parties": {"title": "往来资金集中", "conclusion": "需确认关联关系、用途与定价。", "facts": [{"title": "其他应付款", "text": "余额集中于少数往来对象。", "source": "其他应付款附注"}], "actions": ["逐笔建立往来台账", "补齐合同、审批、利息和期后结算"]},
+    "guarantees": {"title": "担保敞口超过净资产承受能力", "conclusion": "需核验被担保方履约和反担保。", "facts": [{"title": "担保倍数", "text": "担保额为净资产的较高倍数。", "source": "担保附注"}], "actions": ["取得全部担保合同", "评估预计负债确认条件"]},
+    "income_tax_rd": {"title": "形成所得税完整桥接", "conclusion": "亏损年度仍有所得税费用，当前无法确认申报口径。", "facts": [{"title": "所得税费用", "text": "与利润总额方向不一致。", "source": "利润表"}], "actions": ["取得年度纳税申报表", "建立会计、高企、加计扣除三套研发台账"]},
+    "accrual_revenue": {"title": "暂估预提需追踪期后结算", "conclusion": "材料暂估和费用预提可能影响成本期间。", "facts": [{"title": "暂估材料", "text": "应付账款中存在材料估价。", "source": "应付账款附注"}], "actions": ["逐笔核验期后发票和冲回", "勾稽收入、开票、收现和履约"]}
+  },
+  "risks": [
+    {"chain": "票据—保证金", "fact": "票据与保证金同步增长。", "alternative": "订单增长或银行授信安排。", "missing_evidence": "承兑协议、采购合同、发票、解付流水。", "action": "逐票建立闭环台账。", "level": "高"},
+    {"chain": "关联往来", "fact": "余额集中于少数对象。", "alternative": "经营周转或临时拆借。", "missing_evidence": "合同、用途、审批、期后结算。", "action": "按对象穿透复核。", "level": "高"},
+    {"chain": "所得税", "fact": "亏损同时确认所得税费用。", "alternative": "递延所得税或不可抵扣调整。", "missing_evidence": "纳税申报表和所得税桥接。", "action": "完成税会差异复算。", "level": "中"}
+  ],
+  "roadmap": [
+    {"period": "0—30天", "goal": "封存证据", "actions": ["取得P0资料", "冻结关键往来和票据清单"], "owner": "财务负责人"},
+    {"period": "31—60天", "goal": "完成复算", "actions": ["三表与申报表勾稽", "形成所得税和研发桥接"], "owner": "财税专项组"},
+    {"period": "61—90天", "goal": "固化机制", "actions": ["建立月度预警看板", "完成历史差异整改"], "owner": "管理层"}
+  ],
+  "p0_documents": ["三年增值税及企业所得税申报表", "销项进项发票明细", "银行承兑与保证金合同", "担保及反担保合同", "关联往来合同和流水"],
+  "calculations": [
+    {"indicator": "资产负债率", "formula": "负债总额÷资产总额", "result": "99.20%", "source": "资产负债表"},
+    {"indicator": "现金税费支付率", "formula": "支付税费÷营业收入", "result": "0.56%", "source": "现金流量表、利润表"}
+  ],
+  "policies": [
+    {"name": "关于进一步深化税收征管改革的意见", "issuer": "中共中央办公厅、国务院办公厅", "date": "2021-03-24", "url": "https://www.gov.cn/zhengce/2021-03/24/content_5595384.htm"}
+  ],
+  "final_judgment": {"title": "高关注、应尽快专项核验", "text": "当前风险来自多条资金与税务数据链同时聚集。建议先补齐证据并完成复算，再判断是否需要更正申报。"},
+  "monthly_indicators": [
+    {"name": "票据保证金率", "rule": "其他货币资金÷应付票据", "owner": "资金会计", "frequency": "每月"},
+    {"name": "关联往来余额", "rule": "按对象及账龄跟踪", "owner": "总账会计", "frequency": "每月"},
+    {"name": "暂估预提冲回率", "rule": "期后冲回额÷期初暂估预提", "owner": "成本会计", "frequency": "每月"}
+  ],
+  "limitations": ["本报告基于审计初稿及有限附注，不能替代税务鉴证或法律意见。", "未取得纳税申报表和交易级资料前，风险结论均为核验提示。"]
+}

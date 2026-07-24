@@ -1,73 +1,31 @@
 #!/usr/bin/env python3
-"""Validate enterprise panorama PDF output using bundled relative assets."""
+"""Validate enterprise panorama PDF output with the shared portable runtime."""
 
 from __future__ import annotations
 
 import argparse
-import hashlib
+import sys
 from pathlib import Path
 from typing import Any
 
-import fitz
+SKILLS_ROOT = Path(__file__).resolve().parents[2]
+BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "jiaotang-branding" / "scripts"
+if not BRANDING_SCRIPTS.is_dir():
+    raise RuntimeError(f"shared branding runtime missing: {BRANDING_SCRIPTS}")
+sys.path.insert(0, str(BRANDING_SCRIPTS))
+from delivery_gate import GateFailure, validate_pdf as validate_branded_pdf  # noqa: E402
 
 
-SKILL_ROOT = Path(__file__).resolve().parent.parent
-ASSET_DIR = SKILL_ROOT / "assets"
-
-
-class ValidationError(RuntimeError):
+class ValidationError(GateFailure):
     pass
 
 
-def watermark_alpha_hashes() -> set[str]:
-    hashes: set[str] = set()
-    for path in ASSET_DIR.glob("brand-*.png"):
-        pixmap = fitz.Pixmap(str(path))
-        if pixmap.alpha:
-            hashes.add(hashlib.sha256(bytes(pixmap.samples[pixmap.n - 1 :: pixmap.n])).hexdigest())
-    return hashes
-
-
 def validate_pdf(path: str | Path, *, require_watermark: bool = False) -> dict[str, Any]:
-    pdf_path = Path(path)
-    if not pdf_path.is_file():
-        raise FileNotFoundError(pdf_path)
-    document = fitz.open(pdf_path)
-    if document.page_count == 0:
-        document.close()
-        raise ValidationError("PDF没有页面")
-
-    alpha_hashes = watermark_alpha_hashes()
-    watermark_count = 0
-    for page_number, page in enumerate(document, start=1):
-        page_marks = []
-        for image in page.get_images(full=True):
-            xref, soft_mask = image[0], image[1]
-            if not soft_mask:
-                continue
-            alpha = fitz.Pixmap(document, soft_mask)
-            if hashlib.sha256(alpha.samples).hexdigest() in alpha_hashes:
-                page_marks.extend(page.get_image_rects(xref))
-        if require_watermark and len(page_marks) != 1:
-            document.close()
-            raise ValidationError(f"PDF第{page_number}页品牌水印数量为{len(page_marks)}，要求为1")
-        for mark in page_marks:
-            if abs((mark.x0 + mark.x1) / 2 - page.rect.width / 2) > 0.75:
-                document.close()
-                raise ValidationError(f"PDF第{page_number}页水印未水平居中")
-            if abs((mark.y0 + mark.y1) / 2 - page.rect.height / 2) > 0.75:
-                document.close()
-                raise ValidationError(f"PDF第{page_number}页水印未垂直居中")
-        watermark_count += len(page_marks)
-
-    result = {
-        "status": "passed",
-        "path": str(pdf_path),
-        "pages": document.page_count,
-        "watermarks": watermark_count,
-    }
-    document.close()
-    return result
+    if not require_watermark:
+        raise ValidationError(
+            "B版验证必须显式使用--require-watermark；A版由销售版生成器单独校验"
+        )
+    return validate_branded_pdf(path)
 
 
 def main() -> None:

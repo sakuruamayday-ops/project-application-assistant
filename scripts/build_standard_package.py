@@ -3,15 +3,50 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
+import sys
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 
+PORTABLE_REPORT_REQUIRED = [
+    "skills/manufacturing-tax-risk-analysis/assets/deep-gold-advisor-template.html",
+    "skills/manufacturing-tax-risk-analysis/assets/gold-advisor.css",
+    "skills/manufacturing-tax-risk-analysis/references/report-data.example.json",
+    "skills/manufacturing-tax-risk-analysis/references/report-input-schema.md",
+    "skills/manufacturing-tax-risk-analysis/references/report-spec.md",
+    "skills/manufacturing-tax-risk-analysis/references/risk-gates.md",
+    "skills/manufacturing-tax-risk-analysis/scripts/brand_gold_pdf.py",
+    "skills/manufacturing-tax-risk-analysis/scripts/calculate_metrics.py",
+    "skills/manufacturing-tax-risk-analysis/scripts/generate_report_html.py",
+    "skills/manufacturing-tax-risk-analysis/scripts/render_pdf_stdout.js",
+    "skills/manufacturing-tax-risk-analysis/scripts/verify_e2e.py",
+    "skills/manufacturing-tax-risk-analysis/package.json",
+    "skills/_runtime/jiaotang-branding/runtime-manifest.json",
+    "skills/_runtime/jiaotang-branding/requirements.txt",
+    "skills/_runtime/jiaotang-branding/references/brand_config.json",
+    "skills/_runtime/jiaotang-branding/scripts/brand_config.py",
+    "skills/_runtime/jiaotang-branding/scripts/delivery_gate.py",
+    "skills/_runtime/jiaotang-branding/scripts/pdf_two_pass.py",
+    "skills/_runtime/jiaotang-branding/assets/brand-mark.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-gold-07.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-gold-10.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-gold-12.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-gold-16.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-red-07.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-red-10.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-red-12.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-red-16.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-white-10.png",
+    "skills/_runtime/jiaotang-branding/assets/brand-white-16.png",
+]
+
 REQUIRED = [
     "skills/manufacturing-tax-risk-analysis/SKILL.md",
-    "skills/manufacturing-tax-risk-analysis/scripts/calculate_metrics.py",
-    "skills/manufacturing-tax-risk-analysis/references/risk-gates.md",
+    *PORTABLE_REPORT_REQUIRED,
+    "containers/portable-report-test.Dockerfile",
+    "scripts/run_clean_container_gate.py",
     "skills/jiaotang-legal-regulations/SKILL.md",
     "skills/jiaotang-legal-regulations/scripts/search_legal_base.py",
     "skills/first-run-configuration/SKILL.md",
@@ -21,6 +56,9 @@ REQUIRED = [
     "skills/first-run-configuration/scripts/upgrade_inheritance.py",
     "skills/first-run-configuration/references/first-startup-protocol.md",
     "skills/first-run-configuration/references/preference-inheritance.md",
+    "skills/first-run-configuration/references/capability-delegation-protocol.md",
+    "skills/financial-verification/references/financial-facts-contract.md",
+    "skills/financial-verification/scripts/validate_financial_facts.py",
     "skills/graphify/SKILL.md",
     "skills/skill-curator/SKILL.md",
     "skills/skill-curator/scripts/build_impact_graph.py",
@@ -31,6 +69,7 @@ REQUIRED = [
     "skills/experience-recorder/SKILL.md",
     "skills/experience-recorder/scripts/record_correction.py",
     "skills/enterprise-panorama-analysis/SKILL.md",
+    "skills/enterprise-panorama-analysis/references/relationship-graph-spec.md",
     "skills/enterprise-panorama-analysis/scripts/validate_report_pdf.py",
     "skills/project-deliverable-archive/SKILL.md",
     "skills/project-matching/references/canonical-project-index.jsonl",
@@ -50,8 +89,15 @@ REQUIRED = [
     "skills/industry-chain-foundation-matcher/references/industry-foundation-index.jsonl",
     "skills/industry-chain-foundation-matcher/references/source-documents/产业链架构(2).pdf",
     "skills/industry-chain-foundation-matcher/references/source-documents/工业六基领域目录(2).pdf",
+    "skills/standard-drafting/SKILL.md",
+    "skills/standard-drafting/references/gbt-1-1-drafting-rules.md",
+    "skills/standard-drafting/references/standard-type-structures.md",
+    "skills/standard-drafting/assets/standard-draft-template.md",
+    "skills/standard-drafting/assets/compilation-note-template.md",
+    "skills/standard-drafting/scripts/audit_standard_draft.py",
     "docs/user-guide/api-mcp-configuration.md",
     "docs/user-guide/企业全生命周期助手用户使用手册.md",
+    "docs/user-guide/企业全生命周期助手用户使用手册.docx",
 ]
 
 HOST_SKILL_INSTALL_PROMPT = "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
@@ -70,6 +116,11 @@ FORBIDDEN_TEXT_SNIPPETS = (
     "patent-lawyer-agent",
     "qcc-quick-scan",
 )
+LEGACY_BRAND_DUPLICATES = {
+    "skills/enterprise-panorama-analysis/references/brand_config.json",
+    "skills/enterprise-panorama-analysis/scripts/brand_config.py",
+    "skills/enterprise-panorama-analysis/scripts/pdf_two_pass.py",
+}
 RELEASE_GATE_SNIPPETS = {
     "skills/first-run-configuration/SKILL.md": (
         "自动启用受控自进化",
@@ -77,19 +128,31 @@ RELEASE_GATE_SNIPPETS = {
         "first-startup-protocol.md",
         "preferences.json",
         "upgrade_inheritance.py",
+        "capability-delegation-protocol.md",
+        "天眼查",
     ),
+    "skills/local-knowledge-retrieval/SKILL.md": ("企业身份时间轴", "天眼查"),
+    "skills/enterprise-profile/SKILL.md": ("天眼查", "企查查", "官方来源"),
+    "skills/manufacturing-tax-risk-analysis/SKILL.md": ("enterprise-financial-facts/v1",),
+    "skills/project-feasibility/SKILL.md": ("enterprise-financial-facts.v1.json",),
     "skills/project-application-assistant/SKILL.md": (
         "必须调用 `experience-recorder`",
         "眼下最没有把握的事情是什么",
         "最大的遗漏是什么",
     ),
     "skills/experience-recorder/SKILL.md": ("强制四问", "不得只把问题抛给用户"),
+    "skills/standard-drafting/SKILL.md": (
+        "GB/T 1.1",
+        "要求—试验方法—判定规则对应矩阵",
+        "audit_standard_draft.py",
+    ),
 }
 
 
 PACKAGE_DOCS = [
     "docs/user-guide/api-mcp-configuration.md",
     "docs/user-guide/企业全生命周期助手用户使用手册.md",
+    "docs/user-guide/企业全生命周期助手用户使用手册.docx",
     "docs/config/aiqice.md",
     "docs/config/document-tools.md",
     "docs/config/government-browser.md",
@@ -105,11 +168,20 @@ def included(path):
     return (
         not any(part in FORBIDDEN_ARCHIVE_PATH_PARTS or part.startswith("._") for part in path.parts)
         and path.suffix not in {".pyc", ".pyo"}
+        and path.as_posix() not in LEGACY_BRAND_DUPLICATES
+        and not (
+            path.parts[:3] == ("skills", "enterprise-panorama-analysis", "assets")
+            and path.name.startswith("brand-")
+            and path.suffix.lower() == ".png"
+        )
     )
 
 
 def validate_release_source(root: Path) -> None:
     failures = []
+    for relative_path in PORTABLE_REPORT_REQUIRED:
+        if not (root / relative_path).is_file():
+            failures.append(f"缺少便携报告运行文件：{relative_path}")
     for skill_name in EVOLUTION_SKILLS:
         if not (root / "skills" / skill_name / "SKILL.md").is_file():
             failures.append(f"缺少自进化Skill：{skill_name}")
@@ -152,19 +224,47 @@ def validate_release_archive(output: Path) -> None:
             "three_way_upgrade_inheritance": True,
             "direct_skill_edit_detection": True,
             "legacy_skill_preference_migration": True,
+            "manufacturing_tax_17_page_generator": True,
+            "unified_branding_runtime": True,
+            "portable_path_gate": True,
+            "tax_report_e2e_gate": True,
         }
         for skill_name in EVOLUTION_SKILLS:
             if f"skills/{skill_name}/SKILL.md" not in names:
                 raise SystemExit(f"发布门禁失败：ZIP缺少自进化Skill {skill_name}")
-        for skill_name in ("manufacturing-tax-risk-analysis", "jiaotang-legal-regulations"):
+        for skill_name in (
+            "manufacturing-tax-risk-analysis",
+            "jiaotang-legal-regulations",
+            "standard-drafting",
+        ):
             if f"skills/{skill_name}/SKILL.md" not in names:
                 raise SystemExit(f"发布门禁失败：ZIP缺少正式团队Skill {skill_name}")
         if "skills/first-run-configuration/references/first-startup-protocol.md" not in names:
             raise SystemExit("发布门禁失败：ZIP缺少首次启动协议")
+        missing_report_files = [
+            path for path in PORTABLE_REPORT_REQUIRED if path not in names
+        ]
+        if missing_report_files:
+            raise SystemExit(
+                f"发布门禁失败：ZIP缺少便携报告运行文件：{missing_report_files}"
+            )
+        legacy_duplicates = sorted(LEGACY_BRAND_DUPLICATES & names)
+        legacy_duplicates.extend(
+            name
+            for name in names
+            if name.startswith("skills/enterprise-panorama-analysis/assets/brand-")
+        )
+        if legacy_duplicates:
+            raise SystemExit(
+                f"发布门禁失败：ZIP仍包含分散品牌运行时副本：{legacy_duplicates}"
+            )
         includes = manifest.get("includes", {})
         for name, expected in required_flags.items():
             if includes.get(name) != expected:
                 raise SystemExit(f"发布门禁失败：manifest {name} 不符合要求")
+        stable = manifest.get("status") == "stable"
+        if includes.get("clean_container_gate") is not stable:
+            raise SystemExit("发布门禁失败：clean_container_gate与发布状态不一致")
         official_hashes = manifest.get("official_skill_hashes", {})
         if len(official_hashes) != manifest.get("skill_count"):
             raise SystemExit("发布门禁失败：官方Skill哈希数量不完整")
@@ -182,7 +282,19 @@ def validate_release_archive(output: Path) -> None:
         ]
         if invalid_paths:
             raise SystemExit(f"发布门禁失败：ZIP包含平台元数据或缓存：{invalid_paths[:5]}")
-        text_suffixes = {".md", ".py", ".json", ".jsonl", ".yaml", ".yml", ".sh", ".txt"}
+        text_suffixes = {
+            ".md",
+            ".py",
+            ".js",
+            ".json",
+            ".jsonl",
+            ".yaml",
+            ".yml",
+            ".sh",
+            ".txt",
+            ".html",
+            ".css",
+        }
         forbidden_hits = []
         for name in sorted(names):
             if Path(name).suffix.lower() not in text_suffixes:
@@ -194,6 +306,31 @@ def validate_release_archive(output: Path) -> None:
         if forbidden_hits:
             raise SystemExit("发布门禁失败：ZIP包含本机路径或旧依赖：\n- " + "\n- ".join(forbidden_hits[:20]))
 
+        runtime_hashes = manifest.get("portable_runtime_hashes", {})
+        if set(runtime_hashes) != set(PORTABLE_REPORT_REQUIRED):
+            raise SystemExit("发布门禁失败：便携报告运行时哈希清单不完整")
+        for name, expected_hash in runtime_hashes.items():
+            actual_hash = hashlib.sha256(archive.read(name)).hexdigest()
+            if actual_hash != expected_hash:
+                raise SystemExit(f"发布门禁失败：便携运行文件哈希不一致：{name}")
+
+
+def run_stable_container_gate(root: Path, package: Path) -> Path:
+    audit_path = package.with_suffix(".container-audit.json")
+    command = [
+        sys.executable,
+        str(root / "scripts" / "run_clean_container_gate.py"),
+        "--package",
+        str(package),
+        "--audit-json",
+        str(audit_path),
+    ]
+    completed = subprocess.run(command, cwd=root, text=True, capture_output=True)
+    if completed.returncode:
+        detail = completed.stdout.strip() or completed.stderr.strip()
+        raise SystemExit(f"stable发布容器门禁失败：{detail}")
+    return audit_path
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -204,7 +341,10 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", args.version):
         raise SystemExit("版本号必须使用 MAJOR.MINOR 或 MAJOR.MINOR.PATCH")
+    if args.status not in {"release-candidate", "stable"}:
+        raise SystemExit("status只允许release-candidate或stable")
     output = args.output or args.root / "dist" / f"企业全生命周期助手-{args.version}.zip"
+    staging_output = output.with_name(f".{output.name}.staging")
     missing = [path for path in REQUIRED if not (args.root / path).is_file()]
     if missing:
         raise SystemExit(f"缺少必需资源: {missing}")
@@ -216,6 +356,10 @@ def main():
         for path in files
         if path.name == "SKILL.md"
     }
+    portable_runtime_hashes = {
+        relative_path: hashlib.sha256((args.root / relative_path).read_bytes()).hexdigest()
+        for relative_path in PORTABLE_REPORT_REQUIRED
+    }
     manifest = {
         "name": "企业全生命周期助手",
         "version": args.version,
@@ -224,6 +368,7 @@ def main():
         "skill_count": sum(1 for path in files if path.name == "SKILL.md"),
         "preference_schema_version": 1,
         "official_skill_hashes": official_skill_hashes,
+        "portable_runtime_hashes": portable_runtime_hashes,
         "includes": {
             "default_project_map": True,
             "high_frequency_rules": True,
@@ -249,6 +394,11 @@ def main():
             "host_skill_install_prompt": HOST_SKILL_INSTALL_PROMPT,
             "agent_metadata": False,
             "manufacturing_tax_risk_analysis": True,
+            "manufacturing_tax_17_page_generator": True,
+            "unified_branding_runtime": True,
+            "portable_path_gate": True,
+            "tax_report_e2e_gate": True,
+            "clean_container_gate": args.status == "stable",
             "legal_regulations_dynamic_routing": True,
             "personal_preference_overlay": True,
             "cross_device_preference_sync": True,
@@ -258,14 +408,32 @@ def main():
         },
     }
     output.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+    with zipfile.ZipFile(staging_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for path in files:
             archive.write(path, path.relative_to(args.root).as_posix())
         for path in documentation:
             archive.write(path, path.relative_to(args.root).as_posix())
         archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
-    validate_release_archive(output)
-    print(json.dumps({"output": str(output), "files": len(files), **manifest}, ensure_ascii=False, sort_keys=True))
+    validate_release_archive(staging_output)
+    container_audit = None
+    if args.status == "stable":
+        staging_audit = run_stable_container_gate(args.root, staging_output)
+        final_audit = output.with_suffix(".container-audit.json")
+        staging_audit.replace(final_audit)
+        container_audit = str(final_audit)
+    staging_output.replace(output)
+    print(
+        json.dumps(
+            {
+                "output": str(output),
+                "files": len(files),
+                "container_audit": container_audit,
+                **manifest,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":

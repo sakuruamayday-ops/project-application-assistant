@@ -2,41 +2,19 @@
 
 本指南供首次安装“企业全生命周期助手”的团队成员使用。模型、企业数据、专利数据、浏览器、OCR和文档工具均使用用户自己的账号与宿主平台能力，并按相应平台要求完成配置。
 
-## 零、先运行统一首次配置向导
+## 零、普通成员只做一次复制
 
-所有外部能力只配置和检测一次。安装Skills后运行：
+普通成员无需运行命令、填写 Token 或修改 MCP 配置：
 
-```bash
-python3 skills/first-run-configuration/scripts/configure.py
-```
+1. 登录团队门户，进入“连接我的 Agent”。
+2. 点击“复制给 Agent”。
+3. 将复制的整段文字粘贴到当前本地 Agent 对话框。
 
-安装了项目本地CLI时也可以运行：
+Agent 会读取十分钟有效的一次性引导清单，识别 macOS 或 Windows 以及当前宿主，生成本机 Ed25519 设备密钥，完成 MCP 配置并验证连接。私钥不会上传；macOS 保存到系统钥匙串，Windows 使用当前用户 DPAPI 加密保存。
 
-```bash
-project-assistant setup
-```
+当前内置适配 WorkBuddy、Codex、Claude Code 和通用 MCP 配置。其他 Agent 只要具备本地命令执行、用户配置文件写入和 stdio MCP 能力，也可按引导清单自动完成。纯云端 Agent 不属于此接入范围。
 
-向导默认生成：
-
-```text
-~/.config/project-assistant/
-├── credentials.env
-├── capabilities.json
-└── 首次配置检测报告.md
-```
-
-- `credentials.env` 用于集中保存首次配置向导采集的连接参数。
-- `capabilities.json` 与检测报告不包含真实Token或API Key，其他Skill优先读取该报告。
-- 向导不会修改宿主平台MCP配置；完成MCP安装后，在向导中确认“MCP已连接”即可。
-- 启动Agent前，将统一凭据文件导入宿主安全环境。支持环境文件的宿主可直接选择该文件；使用Shell启动时可以在当前终端执行：
-
-```bash
-set -a
-source ~/.config/project-assistant/credentials.env
-set +a
-```
-
-环境导入只对当前终端及其启动的Agent进程生效。不要在共享电脑或不可信脚本中执行。
+管理员账号不执行单设备限制，仍可在门户使用管理员 API Key。
 
 ## 一、团队云端知识API
 
@@ -46,36 +24,10 @@ set +a
 
 ### 配置步骤
 
-1. 打开团队管理员提供的知识服务网站，使用英文账号注册或登录。
-2. 在API页面填写中文真实姓名，并按页面要求完成团队验证。
-3. 生成个人访问凭据。每位用户只有一个有效凭据，可在本人页面反复显示和复制；吊销后原凭据立即失效，需要重新生成。
-4. 运行统一首次配置向导并填写以下两个值；不要再逐个Skill配置：
-
-```text
-JIAOTANG_KB_BASE_URL=https://knowledge.example.com
-JIAOTANG_KB_API_BASE_URL=https://knowledge.example.com/v1
-JIAOTANG_KB_ENDPOINT=https://knowledge.example.com
-JIAOTANG_KB_MCP_URL=https://knowledge.example.com/mcp/
-JIAOTANG_KB_TOKEN=<个人Token>
-```
-
-5. 验证身份：
-
-```bash
-curl -sS \
-  -H "Authorization: Bearer $JIAOTANG_KB_TOKEN" \
-  "$JIAOTANG_KB_ENDPOINT/v1/me"
-```
-
-6. 进行一次非敏感关键词检索：
-
-```bash
-curl -sS \
-  -H "Authorization: Bearer $JIAOTANG_KB_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"专精特新","limit":3}' \
-  "$JIAOTANG_KB_ENDPOINT/v1/search"
-```
+1. 登录团队门户并完成团队成员身份验证。
+2. 点击“复制给 Agent”，把文字发送给需要使用知识库的本地 Agent。
+3. Agent 自动登记本机公钥、保存本机私钥、配置 `jiaotang-kb` MCP，并调用 `/v1/me` 验证。
+4. Agent 报告“配置成功”后即可直接检索；成员不应接触或保存 Token、私钥和签名请求头。
 
 知识服务还提供三个结构化只读接口：
 
@@ -88,6 +40,9 @@ curl -sS \
 ### 权限边界
 
 - 普通成员只能读取团队云端知识、查询自己的调用记录和下载最新版Skills。
+- 普通成员账号同一时间只能存在一组有效设备公钥。仅复制 Token 或静态设备 ID 无法调用。
+- 每个请求都必须包含短时设备签名和一次性 nonce；签名过期、伪造或重放会被拒绝。
+- 换机时先在门户执行“更换绑定设备”，旧 Token、旧 OAuth 授权、旧设备公钥和未使用安装码立即失效，再把新的“一键配置”发送给新设备 Agent。
 - 成员自行维护的地区政策保存在本地工作区 `project-rules/`，不会写入或覆盖团队云端知识库。
 - 云端资料上传、索引更新和Skills发布仍由网站管理员执行。
 - 云端知识服务是REST API，不是MCP地址，不要直接填入 `mcpServers`。
@@ -140,15 +95,13 @@ curl -sS \
     "provider-name": {
       "type": "http",
       "url": "https://供应商提供的MCP地址",
-      "headers": {
-        "Authorization": "Bearer ${PROVIDER_MCP_TOKEN}"
-      }
+      "headers": {"Authorization": "Bearer ${PROVIDER_MCP_TOKEN}"}
     }
   }
 }
 ```
 
-不要把普通REST API地址误填成MCP地址。REST接口需要由Skill、连接器或自建MCP适配器调用。
+不要把普通REST API地址误填成MCP地址。焦糖知识库普通成员也不要手工采用此静态 Header 示例；设备签名由门户安装的本地 `jiaotang-kb` 代理逐请求生成。
 
 ### MCP验证步骤
 
@@ -159,7 +112,22 @@ curl -sS \
 5. 检查调用额度、超时和错误信息后再处理客户任务。
 6. 连接失败时禁用该MCP并执行Skill降级路径，不得补造返回结果。
 
-## 三、企查查API或MCP
+## 三、天眼查MCP
+
+### 适用Skill
+
+`enterprise-profile`、`enterprise-panorama-analysis`、`local-knowledge-retrieval`，用于企业主体分诊、现名与曾用名、工商变更、当前登记地区和关联主体发现。
+
+### 操作步骤
+
+1. 通过天眼查官方提供的合法MCP入口完成授权，凭据只保存在宿主安全配置中。
+2. MCP连接成功后，在统一向导中确认 `TYC_MCP_READY=true`，不把Cookie、Token或授权Header写入Skill。
+3. 使用一家非敏感企业串行验证主体搜索、基本工商、登记信息、工商变更和历史登记。
+4. 记录实际可用工具和返回字段；不得把一次成功描述为永久免费或无限调用。
+5. 批量身份补全采用串行、缓存、指数退避和断点续传。出现429、418或其他限流时停止并记录实际响应。
+6. 天眼查用于当前企业身份和变更分诊，不覆盖主管部门名单中的认定年度、批次、状态和认定时地区。
+
+## 四、企查查API或MCP
 
 ### 适用Skill
 
@@ -174,7 +142,7 @@ curl -sS \
 5. 使用一家非敏感企业验证名称、统一社会信用代码、登记状态和授权字段。
 6. 企查查不可用时，回退到用户材料和政府公开来源；不得用过期缓存补造企业现状。
 
-## 四、专利数据API或MCP
+## 五、专利数据API或MCP
 
 ### 适用Skill
 
@@ -196,7 +164,7 @@ PATENT_API_KEY=<个人或团队合法凭据>
 5. 只有摘要时不得输出权利要求保护范围、FTO或稳定性结论。
 6. 供应商不可用时可以根据用户提供的专利文件分析，但必须明确当前检索层缺失。
 
-## 五、浏览器与Playwright MCP
+## 六、浏览器与Playwright MCP
 
 ### 适用Skill
 
@@ -212,7 +180,7 @@ PATENT_API_KEY=<个人或团队合法凭据>
 6. 用一次搜索、筛选和单页读取验证能力；批量任务再逐步增加页数和间隔。
 7. 遇到验证码、付费限制、限频或访问拒绝立即停止，不绕过访问控制。
 
-## 六、企策顾问
+## 七、企策顾问
 
 `third-party-data-indexing` 为实验性能力，默认关闭。
 

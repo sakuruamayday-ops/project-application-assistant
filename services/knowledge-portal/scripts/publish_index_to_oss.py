@@ -51,6 +51,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="增量发布生产索引文件到OSS")
     parser.add_argument("--index-dir", type=Path, required=True)
     parser.add_argument("--snapshot-current", action="store_true")
+    parser.add_argument(
+        "--prevalidated",
+        action="store_true",
+        help="调用方已在同一流水线完成SQLite完整性校验时跳过重复校验",
+    )
     args = parser.parse_args()
     prefix = os.environ.get("JIAOTANG_OSS_PREFIX", "production").strip("/")
     auth = oss2.Auth(
@@ -68,7 +73,8 @@ def main() -> None:
         path = args.index_dir / name
         if not path.is_file():
             continue
-        verify_sqlite(path)
+        if not args.prevalidated:
+            verify_sqlite(path)
         digest = sha256_file(path)
         object_key = f"{prefix}/index/current/{name}"
         try:
@@ -87,10 +93,15 @@ def main() -> None:
             pass
         headers = {"x-oss-meta-sha256": digest, "x-oss-meta-source-size": str(path.stat().st_size)}
         if path.stat().st_size >= 64 * 1024 * 1024:
+            checkpoint_store = oss2.ResumableStore(
+                root=os.environ.get("JIAOTANG_OSS_CHECKPOINT_DIR", "/tmp/jiaotang-oss-checkpoints"),
+                dir=digest,
+            )
             oss2.resumable_upload(
                 bucket,
                 object_key,
                 str(path),
+                store=checkpoint_store,
                 multipart_threshold=64 * 1024 * 1024,
                 part_size=16 * 1024 * 1024,
                 headers=headers,

@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "as_of_timezone": "Asia/Shanghai",
+  "records": [
+    {
+      "id": "sme-current-policy-2026",
+      "path": "sme-development-projects/references/current-policy-baseline-2026.md",
+      "verified_at": "2026-07-24",
+      "effective_from": "2026-01-01",
+      "effective_until": null,
+      "next_review_at": "2026-09-30",
+      "source_locator": "工信部企业〔2026〕2号现行基线；工信厅企业函〔2026〕117号仅作已结束复核的历史事实记录",
+      "source_sha256": "b9b49b3bf59c14a3bbe01cba390cd70f6e450f8d23777089357b9e0f75747d9c",
+      "block_after_next_review": true
+    },
+    {
+      "id": "hangzhou-zhejiang-rd-platform-2026",
+      "path": "technology-innovation-projects/references/current-rd-platform-baseline-2026.md",
+      "verified_at": "2026-07-24",
+      "effective_from": "2026-05-29",
+      "effective_until": null,
+      "next_review_at": "2026-08-31",
+      "source_locator": "杭州市与浙江省研发机构政策本地核验基线，含征求意见稿状态",
+      "source_sha256": "7d696b927b399c884f232043168dd35a9b857ead5c3238e718ed0971a435b067",
+      "block_after_next_review": true
+    },
+    {
+      "id": "manufacturing-tax-policy-baseline",
+      "path": "manufacturing-tax-risk-analysis/references/policy-baseline.md",
+      "verified_at": "2026-07-24",
+      "effective_from": "2026-01-01",
+      "effective_until": null,
+      "next_review_at": "2026-10-31",
+      "source_locator": "国家税务总局、财政部及现行税收法规本地来源清单",
+      "source_sha256": "d720040d94048479f7e4d9b9b75b1598ca5231cfe8f03e0beb1575809602104f",
+      "block_after_next_review": true
+    },
+    {
+      "id": "company-law-compliance-2026",
+      "path": "jiaotang-legal-regulations/references/company-law-compliance-2026.md",
+      "verified_at": "2026-07-21",
+      "effective_from": "2024-07-01",
+      "effective_until": null,
+      "next_review_at": "2026-10-21",
+      "source_locator": "现行公司法及配套规定本地核验清单",
+      "source_sha256": "7a93fec392790216b444a6e2d583b518eef346c54c58c5b7636275917afd0342",
+      "block_after_next_review": true
+    },
+    {
+      "id": "canonical-project-index",
+      "path": "project-matching/references/canonical-project-index.jsonl",
+      "verified_at": "2026-07-24",
+      "effective_from": "2026-07-24",
+      "effective_until": null,
+      "next_review_at": "2026-10-31",
+      "source_locator": "项目地图与高频项目规则合并生成的规范项目索引",
+      "source_sha256": "6200830d5b0a3218ea0757f9321e6a08778d8bd4eb3360a1e869c59d482399b6",
+      "block_after_next_review": true
+    },
+    {
+      "id": "high-frequency-retrieval-rules",
+      "path": "project-matching/references/high-frequency-project-retrieval-rules.json",
+      "verified_at": "2026-07-24",
+      "effective_from": "2026-07-24",
+      "effective_until": null,
+      "next_review_at": "2026-08-31",
+      "source_locator": "高频项目简称召回与排除规则本地快照",
+      "source_sha256": "943aa7794390f9a459ea1b62c1ff49da618466aa20f157742817b38dd5303764",
+      "block_after_next_review": true
+    },
+    {
+      "id": "high-frequency-policy-rules",
+      "path": "project-matching/references/high-frequency-project-rules.jsonl",
+      "verified_at": "2026-07-24",
+      "effective_from": "2026-07-24",
+      "effective_until": null,
+      "next_review_at": "2026-08-31",
+      "source_locator": "高频项目政策条件、来源地址与历史状态本地快照",
+      "source_sha256": "6c881ff2911e171d9e7d3ec56bf0f1204bc0160048bfb7dfc54f9bcad9427f45",
+      "block_after_next_review": true
+    },
+    {
+      "id": "project-map",
+      "path": "project-matching/references/project-map.jsonl",
+      "verified_at": "2026-07-24",
+      "effective_from": "2026-07-24",
+      "effective_until": null,
+      "next_review_at": "2026-10-31",
+      "source_locator": "政府项目分类地图本地快照",
+      "source_sha256": "f912bd0ef840a67f31b88cde0288e1c5d5863e28a069a969f078b9ef9c42b909",
+      "block_after_next_review": true
+    }
+  ]
+}

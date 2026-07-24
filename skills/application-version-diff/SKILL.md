@@ -1,8 +1,46 @@
 ---
 name: application-version-diff
-description: 对比两版政府项目申报材料，识别结构、数字、政策依据、知识产权、主导产品和关键表述变化。
+description: 对比政府项目申报材料的两个或多个版本，识别章节移动、新增删除、数字与来源、知识产权状态、政策依据和合规风险变化；单份材料质量检查使用consistency-check。
 ---
 
 # 材料版本对比
 
-按章节和字段对齐，区分新增、删除、修改和位置移动。数字变化必须显示前值、后值和来源变化；知识产权数量增长时检查新申请、转让和授权状态。
+
+<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
+## 跨平台首次运行与个人习惯
+
+支持CodeBuddy/WorkBuddy内联命令的宿主会在技能触发时自动执行下面的确定性门禁，并把JSON结果注入当前上下文：
+
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+
+作为WorkBuddy插件加载时，还会把本轮实际触发的技能与当前会话和轮次绑定：
+
+!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "application-version-diff" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
+
+每次触发本技能时，第一步必须定位当前`SKILL.md`所在的技能目录，并以该目录为工作目录运行`python3 scripts/portable_skill_runtime.py prepare`。不得因为当前任务看似简单而跳过。将返回的`active_preferences`作为用户个人习惯应用于当前任务；结果为`fail`时停止执行，不得声称安装、自检或升级成功。`capability_check`为`limited`时，只使用宿主已具备的能力，并明确未通过的依赖项，不得声称依赖完整。
+
+用户以“以后、默认、记住、每次、别再”等措辞明确表达长期习惯时：若上下文已出现“偏好桥接轮次已建立”的WorkBuddy钩子提示，不要手动调用`remember`，由停止钩子只向本轮实际触发且已经按会话、轮次绑定的技能写入；其他宿主则在最终答复前调用`python3 scripts/portable_skill_runtime.py remember --instruction '用户原意' --scope default --source agent-confirmed`，再调用`context`确认。未取得`status: pass`和对应偏好记录时，严禁声称“已记住”或“以后会默认采用”。无法执行保存时，只能说明本次会话已理解、尚未形成跨会话偏好。“这次、本次、当前文件、临时”等要求只影响当前任务，禁止写入长期偏好。无需让用户了解或输入存储命令。发生歧义、偏好冲突或可能削弱强制质量门禁时才询问。
+
+个人配置保存在技能目录外并自动备份。不得用个人偏好覆盖真实性、安全、验签、安装自检或本技能的强制质量门禁。完整规则见[跨平台技能运行协议](references/portable-runtime-protocol.md)。
+<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
+## 职责
+
+比较两版申报材料的结构、数据、表述和合规风险。单份材料检查使用 `consistency-check`。
+
+## 流程
+
+1. 确认旧版、新版、文件日期和比较范围，提取标题、段落、表格和附件清单。
+2. 先按章节标题和字段键对齐，再做内容相似度匹配，避免把位置移动误判为删除和新增。
+3. 将变化分为新增、删除、修改、移动和仅格式变化。
+4. 数字变化同时显示前值、后值、单位、期间、差额和来源变化；不得只报告差额。
+5. 单独检查企业名称、主导产品、知识产权法律状态、政策依据、申报年度和结论等级。
+6. 将每项变化评为阻断、重大、一般或编辑性，并说明是否需要联动修改其他章节。
+7. PDF、扫描件或复杂表格无法可靠解析时，先调用宿主 OCR 或文档解析能力；仍无法提取的，按页建立人工核对清单，标出“未解析区域”、页码和对象类型。输出比较完整度和未覆盖范围，禁止把解析失败写成“无变化”。
+
+## 输出
+
+先给变更概览，再给结构、数字、表述、合规风险和联动修改表。结构化差异格式见
+`references/version-diff-rules.md`；已有结构化文本时可运行
+`scripts/compare_material_json.py`，文件解析仍使用宿主的文档能力。存在未解析区域时，
+结论必须限定为“已解析范围内的比较结果”，并附待人工核对清单。

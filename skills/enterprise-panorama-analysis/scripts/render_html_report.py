@@ -10,6 +10,8 @@ import subprocess
 
 
 HERE = Path(__file__).resolve().parent
+SKILLS_ROOT = Path(__file__).resolve().parents[2]
+BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "jiaotang-branding" / "scripts"
 
 
 def npm_root() -> str:
@@ -46,6 +48,11 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
 
     raw_pdf = render_pdf_bytes(args.html)
+    if not BRANDING_SCRIPTS.is_dir():
+        raise RuntimeError(f"shared branding runtime missing: {BRANDING_SCRIPTS}")
+    import sys
+
+    sys.path.insert(0, str(BRANDING_SCRIPTS))
     from pdf_two_pass import brand_pdf_bytes
 
     audit = brand_pdf_bytes(raw_pdf, args.out)

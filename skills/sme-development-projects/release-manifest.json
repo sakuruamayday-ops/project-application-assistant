@@ -1,0 +1,43 @@
+{
+  "schema_version": 2,
+  "skill_name": "sme-development-projects",
+  "release_tag": "20260724-batch8-core-gates-rc2",
+  "required_paths": [
+    "SKILL.md",
+    "references/current-policy-baseline-2026.md",
+    "references/enterprise-introduction-method.md",
+    "references/portable-runtime-protocol.md",
+    "scripts/portable_skill_runtime.py",
+    "scripts/verify_skill_installation.py"
+  ],
+  "mutable_paths": [
+    "local-overrides"
+  ],
+  "portable_runtime": {
+    "profile_schema_version": 1,
+    "profile_storage": "external-user-config",
+    "prepare_command": "python3 scripts/portable_skill_runtime.py prepare"
+  },
+  "runtime_requirements": {
+    "python_modules": [],
+    "executables": []
+  },
+  "files": {
+    "SKILL.md": "32c9183769cc1fc6928d9cd600359b6c08e2793a82036d44a5efeb61a76dd78c",
+    "references/application-version-gate.md": "43d651b1c2c61f28746b74266d2f7280507e471a35436be2b9d48f4656408d9a",
+    "references/current-policy-baseline-2026.md": "5cfbb754f327389e1b696c390b919d388bbf7329a1e43f23233861722b67ff91",
+    "references/enterprise-introduction-method.md": "8f49aa5ad5066e183824d70ef5ebfb725678f1995a25d604d11760331073e512",
+    "references/evaluation-workflow.md": "9c3a6a70ad4a699219ea501f10a27fdb40a126130e8c4030de262b159bd2ccde",
+    "references/four-judgment-decision-table.md": "8e77bf633f07c1b95f2afaab5e050580907599b8d4594e6887cdf9270e96baec",
+    "references/portable-runtime-protocol.md": "69474087d3c12c950b704f378a05ad41a361468eb37cb335b9bfd2691336fb72",
+    "scripts/portable_skill_runtime.py": "920a5434860a03453a265c26ba4b57635bd9dc3770031e91724fb1adde18edc7",
+    "scripts/validate_sme_assessment.py": "32614a1ef0277929fb7c62f7e8d97b4853cac253a083783bac60a2d8d9c32769",
+    "scripts/verify_skill_installation.py": "a1d7f859a1753eb720be6a5543cd1d0b77588fea7250d8b17790c38cb199fc39"
+  },
+  "integrity_excludes": [
+    "publisher-ed25519.pub",
+    "release-manifest.json",
+    "release-manifest.json.sig",
+    "release-signature.json"
+  ]
+}

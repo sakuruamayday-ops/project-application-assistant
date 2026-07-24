@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "rules": [
+    "仅收录政府主管部门或政府门户网站链接。",
+    "申报通知不能替代公示名单链接。",
+    "附件链接缺失时允许先保留公示页面链接，后续继续恢复附件。",
+    "链接变更必须保留旧链接、校验时间和替代关系。"
+  ],
+  "sources": [
+    {
+      "batch": "第四批",
+      "region": "北京市",
+      "official_page_url": "https://jxj.beijing.gov.cn/jxdt/tzgg/202209/t20220928_2825729.html",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第四批",
+      "region": "广西壮族自治区",
+      "official_page_url": "http://gxt.gxzf.gov.cn/wzsy/tzgg_6719901/tzgg/t12934619.shtml",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第四批",
+      "region": "宁夏回族自治区",
+      "official_page_url": "https://gxt.nx.gov.cn/zwgk/fdzdgknr/glfw/gsgg/202209/t20220920_3786775.html",
+      "official_attachment_url": "",
+      "verification": "official_page_recovered"
+    },
+    {
+      "batch": "第五批",
+      "region": "上海市",
+      "official_page_url": "https://app.sheitc.sh.gov.cn/gg/695357.htm",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第五批",
+      "region": "北京市",
+      "official_page_url": "https://www.ncsti.gov.cn/kjdt/tzgg/202307/t20230714_127951.html",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第五批",
+      "region": "宁夏回族自治区",
+      "official_page_url": "https://gxt.nx.gov.cn/zwgk/fdzdgknr/glfw/gsgg/202307/t20230727_4196910.html",
+      "official_attachment_url": "",
+      "verification": "official_page_recovered"
+    },
+    {
+      "batch": "第六批",
+      "region": "上海市",
+      "official_page_url": "https://sheitc.sh.gov.cn/gg/20240902/93f85648aa13446680107b5c892741ff.html",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第六批",
+      "region": "广西壮族自治区",
+      "official_page_url": "http://gxt.gxzf.gov.cn/wzsy/tzgg_6719901/tzgg/t18931094.shtml",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第六批",
+      "region": "河北省",
+      "official_page_url": "https://gxt.hebei.gov.cn/main/policy/gsggdetail?id=81f93821-e607-4769-8421-8fd43fa547d7",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第六批",
+      "region": "宁夏回族自治区",
+      "official_page_url": "https://gxt.nx.gov.cn/zwgk/fdzdgknr/glfw/gsgg/202409/t20240910_4652307.html",
+      "official_attachment_url": "",
+      "verification": "official_page_recovered"
+    },
+    {
+      "batch": "第七批",
+      "region": "上海市",
+      "official_page_url": "https://sheitc.sh.gov.cn/gg/20251020/9576f35feade421ab1f9eb6f5f81635a.html",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第七批",
+      "region": "北京市",
+      "official_page_url": "https://www.ncsti.gov.cn/kjdt/tzgg/202510/t20251021_222652.html",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第七批",
+      "region": "西藏自治区",
+      "official_page_url": "http://jxt.xizang.gov.cn/xzweb/detail?categoryId=69&channelId=9&id=3553",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第七批",
+      "region": "贵州省",
+      "official_page_url": "https://gxt.guizhou.gov.cn/gxdt/tzgg/202510/t20251020_88711605.html",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第七批",
+      "region": "辽宁省",
+      "official_page_url": "https://gxt.ln.gov.cn/gxt/zqhd/yjzj/2025102709343186079/index.shtml",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第七批",
+      "region": "广西壮族自治区",
+      "official_page_url": "http://gxt.gxzf.gov.cn/wzsy/tzgg_6719901/tzgg/t26069126.shtml",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第七批",
+      "region": "海南省",
+      "official_page_url": "https://iitb.hainan.gov.cn/iitb/zxqy/202510/7659d64e50b147a8a054142de6146b86.shtml?ddtab=true",
+      "official_attachment_url": "",
+      "verification": "official_page_title_matched"
+    },
+    {
+      "batch": "第七批",
+      "region": "陕西省",
+      "official_page_url": "https://gxt.shaanxi.gov.cn/xw/tzgg/202508/t20250801_3550405.html",
+      "official_attachment_url": "",
+      "verification": "official_page_recovered"
+    }
+  ]
+}

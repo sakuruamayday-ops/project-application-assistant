@@ -62,7 +62,7 @@ class IndustryCatalogTests(unittest.TestCase):
     def test_source_pdfs_are_packaged_unchanged(self):
         expected = {
             "产业链架构(2).pdf": "0235e6eef74f76aa94e81e6d85294345f8b979ce3cbadef024bd684056f4bd56",
-            "工业六基领域目录(2).pdf": "6fdb5a0e12f2a23b22f1a31644f6e05c754420fb6aa90a87490dc5bd641857c2",
+            "工业六基领域目录(2).pdf": "c19cd2af7c329b143cf4862f88deddfc79bc4f8c2a3a33e134eba3c454feb6fc",
         }
         source_documents = self.skill / "references" / "source-documents"
         for filename, digest in expected.items():

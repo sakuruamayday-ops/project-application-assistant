@@ -12,7 +12,7 @@
         <td data-label="原编号"><span class="document-number">{{ '%04d'|format(item.document_id) }}</span></td>
         <td data-label="标题" class="wrap-cell"><strong>{{ item.title }}</strong>{% if item.error_message %}<small class="row-error">{{ item.error_message }}</small>{% endif %}</td>
         <td data-label="管理员">{{ item.username }}</td>
-        <td data-label="移入时间">{{ item.deleted_at }}</td>
+        <td data-label="移入时间">{{ item.deleted_at|standard_datetime }}</td>
         <td data-label="状态"><span class="job-status status-{{ item.status }}">{{ '已恢复' if item.restored_at else item.status }}</span></td>
         <td data-label="操作">{% if item.status == 'trashed' and not item.restored_at %}<form method="post" action="/admin/knowledge-trash/{{ item.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-action" type="submit">恢复到生产库</button></form>{% else %}<span class="muted">—</span>{% endif %}</td>
       </tr>{% else %}<tr class="empty-row"><td colspan="7" class="empty">回收站为空</td></tr>{% endfor %}

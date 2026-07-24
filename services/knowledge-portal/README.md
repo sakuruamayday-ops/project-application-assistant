@@ -1,14 +1,16 @@
 # 企业全生命周期助手知识库服务
 
-面向团队的统一权限知识库入口。网站使用英文账号和密码登录；Agent使用用户在网站创建的个人凭据访问API和MCP。
+面向团队的统一权限知识库入口。网站使用英文账号和密码登录；普通成员通过本地 Agent 的设备公钥签名访问 API 和 MCP，管理员账号保留多设备 API Key 豁免。
 
 ## 安全边界
 
 - 不设置部门或技能等级，所有有效用户拥有相同知识检索能力。
 - 普通成员使用团队大模型时默认每天5次，管理员问答不限次数；用户自带API不计团队额度。
-- 管理员只负责创建和停用账号，不拥有额外的知识内容权限。
+- 管理员不执行单设备限制；普通成员同一时间只允许一组有效设备公钥。
 - 登录密码使用 Argon2 哈希保存。
-- Session 和用户凭据仅保存 SHA-256 哈希，明文 Token 只显示一次。
+- Session 和用户凭据仅保存 SHA-256 哈希；普通成员的明文 Token 只返回给本地安装代理，不在门户显示。
+- 普通成员使用 Ed25519 逐请求签名，云端保存公钥和 nonce；私钥在 macOS 系统钥匙串或 Windows 当前用户 DPAPI 中保存。
+- OAuth使用Authorization Code、PKCE S256、1小时访问令牌和轮换刷新令牌。
 - 登录账号使用英文；生成 API Token 时填写中文真实姓名，公司全称用于团队成员身份验证。
 - 登录时可选择七天自动登录，未选择时沿用短会话时长。
 - OSS、SSH、数据库密码和阿里云 AccessKey 不进入 Skills。
@@ -28,13 +30,36 @@ export JIAOTANG_SECURE_COOKIES=false
 首次打开 `/setup`，输入初始化密钥并创建管理员账号。
 管理员可在控制台创建团队账号；成员首次登录后应立即修改初始密码。
 
-## Skills 调用
+## Agent 接入
 
-用户登录网站后，填写中文真实姓名创建个人访问凭据：
+普通成员：
+
+1. 在门户点击“复制给 Agent”。
+2. 把复制的文字粘贴到本地 Agent。
+3. 门户只向 Agent 提供一个 `jiaotang-agent-install/v1` HTTPS 安装协议入口。具备联网读取、本地命令执行和配置写入能力的 Agent 读取该入口一次后，原样执行协议中的不透明 `execution.command`，无需理解、改写或拆分命令。
+4. 协议命令在同一进程链中下载安装器，并依次完成完整性校验、设备登记、系统凭据库保存、首次签名验签和 `jiaotang-kb` stdio MCP 连接。
+5. 只有服务器记录到首次成功的签名 MCP 连接，门户和安装器才会报告“安装成功”；此前统一显示“安装未完成”。
+6. 设备登记只把引导码标记为“安装中”。在 MCP 最终确认前，同一引导码可安全替换未完成的临时绑定并重试；服务器确认签名 MCP 连接后才最终消费引导码。
+7. 所有安装结局统一输出结构化的 `jiaotang-agent-result/v1` 结果。成功、待启用和失败均包含可直接展示的 `user_message` 与 `next_action`；专用安装协议要求 Agent 原样显示，不再自行理解错误字段。
+8. WorkBuddy 写入新连接器后仍需用户在左侧“连接器”中找到 `jiaotang-kb` 并点击“启用”。安装器会返回 `activation_required=true`，并通过统一结果中的 `next_action` 给出操作提示。
+9. 安装器会把最后一次结构化结果回传门户。管理员可在“成员管理”查看成功或失败状态，并进入成员详情查看失败阶段、用户提示和下一步。若 Agent 连安装协议入口都未读到，门户显示“未收到结果”，Agent 使用复制提示中预置的网络失败兜底文案。
+
+内置宿主适配：WorkBuddy、Codex、Claude Code、通用 MCP。支持 macOS 与 Windows；Agent 必须具备本地命令执行和用户配置写入权限。纯云端 Agent 不在此范围。
+
+OAuth 发现端点仍保留给管理员和兼容客户端：
+
+- `/.well-known/oauth-protected-resource`
+- `/.well-known/oauth-authorization-server`
+- `/oauth/register`
+- `/authorize`
+- `/oauth/token`
+- `/oauth/revoke`
+
+管理员可在门户生成管理员 API Key：
 
 ```text
 JIAOTANG_KB_ENDPOINT=https://kb.example.com
-JIAOTANG_KB_TOKEN=jtk_xxx
+JIAOTANG_KB_TOKEN=<管理员凭据>
 ```
 
 验证凭据：
@@ -96,7 +121,7 @@ curl -L -H "Authorization: Bearer $JIAOTANG_KB_TOKEN" \
 | `/v1/usage` | `GET` | 查询当前账号的调用总量、接口分布和最近记录 |
 | `/v1/skills/latest` | `GET` | 获取最新版 Skills 的版本、哈希、说明和下载地址 |
 
-所有 `/v1` 接口统一使用 `Authorization: Bearer jtk_xxx`。原始资料与运行索引的上传边界见项目根目录 `docs/cloud-upload-scope.md`。
+所有 `/v1` 接口接受 OAuth 短期访问令牌或 `Authorization: Bearer jtk_xxx` API Key。普通成员还必须通过已登记的 Ed25519 公钥逐请求签名；管理员豁免设备签名。原始资料与运行索引的上传边界见项目根目录 `docs/cloud-upload-scope.md`。
 
 ## 知识库索引
 
