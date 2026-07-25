@@ -988,6 +988,10 @@ def test_setup_login_and_device_token(tmp_path):
         )
         assert created.status_code == 303
 
+        reset_page = client.get("/password/reset")
+        assert reset_page.status_code == 200
+        assert "自助密码重置已经停用" in reset_page.text
+        assert '<form method="post" action="/password/reset"' not in reset_page.text
         failed_reset = client.post(
             "/password/reset",
             data={
@@ -998,7 +1002,7 @@ def test_setup_login_and_device_token(tmp_path):
                 "confirm_password": "new-owner-password-123",
             },
         )
-        assert failed_reset.status_code == 403
+        assert failed_reset.status_code == 410
         reset = client.post(
             "/password/reset",
             data={
@@ -1010,21 +1014,22 @@ def test_setup_login_and_device_token(tmp_path):
             },
             follow_redirects=False,
         )
-        assert reset.status_code == 303
-        assert reset.headers["location"] == "/login?password_reset=1"
-        assert client.get("/portal", follow_redirects=False).status_code == 303
+        assert reset.status_code == 410
+        assert "自助找回已停用" in reset.text
+        assert client.get("/portal", follow_redirects=False).status_code == 200
         assert client.post(
             "/login",
             data={"username": "owner", "password": "correct-horse-battery"},
-        ).status_code == 401
+            follow_redirects=False,
+        ).status_code == 303
         assert client.post(
             "/login",
             data={"username": "owner", "password": "new-owner-password-123"},
             follow_redirects=False,
-        ).status_code == 303
+        ).status_code == 401
 
 
-def test_password_reset_rate_limit(tmp_path):
+def test_self_service_password_reset_is_disabled(tmp_path):
     module = load_app(tmp_path)
     with closing(module.database()) as connection:
         connection.execute(
@@ -1040,6 +1045,23 @@ def test_password_reset_rate_limit(tmp_path):
                 module.isoformat(module.utc_now()),
             ),
         )
+        member_id = connection.execute(
+            "SELECT id FROM users WHERE username='member'"
+        ).fetchone()["id"]
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?,'registered',?,?,?)
+            """,
+            (
+                "王小明",
+                "0826",
+                member_id,
+                module.isoformat(module.utc_now()),
+                module.isoformat(module.utc_now()),
+            ),
+        )
         connection.commit()
     payload = {
         "username": "member",
@@ -1049,9 +1071,111 @@ def test_password_reset_rate_limit(tmp_path):
         "confirm_password": "new-member-password-123",
     }
     with TestClient(module.app) as client:
-        for _ in range(5):
-            assert client.post("/password/reset", data=payload).status_code == 403
-        assert client.post("/password/reset", data=payload).status_code == 429
+        for _ in range(6):
+            response = client.post("/password/reset", data=payload)
+            assert response.status_code == 410
+            assert "自助找回已停用" in response.text
+        assert client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        ).status_code == 303
+        assert client.post(
+            "/login",
+            data={"username": "member", "password": "new-member-password-123"},
+            follow_redirects=False,
+        ).status_code == 401
+
+
+def test_admin_can_reset_member_password_and_revoke_sessions(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.execute(
+            "INSERT INTO users(username,password_hash,created_at) VALUES (?,?,?)",
+            ("member", module.password_hasher.hash("member-password-123"), now),
+        )
+        member_id = connection.execute(
+            "SELECT id FROM users WHERE username='member'"
+        ).fetchone()["id"]
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?,'registered',?,?,?)
+            """,
+            ("成员", "0826", member_id, now, now),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        member_login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        member_session_token = member_login.cookies[module.SESSION_COOKIE]
+        client.cookies.update(member_login.cookies)
+        assert client.get("/portal").status_code == 200
+        client.cookies.clear()
+
+        admin_login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(admin_login.cookies)
+        admin = module.session_user(admin_login.cookies[module.SESSION_COOKIE])[0]
+        detail = client.get(f"/admin/users/{member_id}")
+        assert f'action="/admin/users/{member_id}/password-reset"' in detail.text
+
+        mismatch = client.post(
+            f"/admin/users/{member_id}/password-reset",
+            data={
+                "new_password": "new-member-password-456",
+                "confirm_password": "different-password-456",
+                "csrf_token": admin["csrf_token"],
+            },
+        )
+        assert mismatch.status_code == 400
+
+        reset = client.post(
+            f"/admin/users/{member_id}/password-reset",
+            data={
+                "new_password": "new-member-password-456",
+                "confirm_password": "new-member-password-456",
+                "csrf_token": admin["csrf_token"],
+            },
+            follow_redirects=False,
+        )
+        assert reset.status_code == 303
+        assert reset.headers["location"] == f"/admin/users/{member_id}?password_reset=1"
+        assert module.session_user(member_session_token) is None
+
+        self_reset = client.post(
+            f"/admin/users/{admin['id']}/password-reset",
+            data={
+                "new_password": "new-owner-password-456",
+                "confirm_password": "new-owner-password-456",
+                "csrf_token": admin["csrf_token"],
+            },
+        )
+        assert self_reset.status_code == 400
+
+        assert client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        ).status_code == 401
+        assert client.post(
+            "/login",
+            data={"username": "member", "password": "new-member-password-456"},
+            follow_redirects=False,
+        ).status_code == 303
 
 
 def test_assistant_skill_router_and_read_only_tool_loop(tmp_path, monkeypatch):

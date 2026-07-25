@@ -79,15 +79,20 @@ CONTENT_DATABASE_PATH = INDEX_DIR / "knowledge_content.sqlite3"
 KNOWLEDGE_FILES_DIR = Path(os.environ.get("JIAOTANG_KNOWLEDGE_FILES_DIR", DATA_DIR / "knowledge-files"))
 SKILL_RELEASE_DIR = Path(os.environ.get("JIAOTANG_SKILL_RELEASE_DIR", DATA_DIR / "skill-releases"))
 FIRST_PUBLIC_SKILL_VERSION = os.environ.get("JIAOTANG_FIRST_PUBLIC_SKILL_VERSION", "1.0").strip()
-TOKEN_DERIVATION_SECRET = os.environ.get(
-    "JIAOTANG_TOKEN_DERIVATION_SECRET", "development-only-token-secret"
-).encode("utf-8")
+SECURE_COOKIES = os.environ.get("JIAOTANG_SECURE_COOKIES", "true").lower() == "true"
+TOKEN_DERIVATION_SECRET = os.environ.get("JIAOTANG_TOKEN_DERIVATION_SECRET", "").encode("utf-8")
+if not TOKEN_DERIVATION_SECRET:
+    if SECURE_COOKIES:
+        raise RuntimeError(
+            "未设置 JIAOTANG_TOKEN_DERIVATION_SECRET。生产环境必须配置独立的签名密钥；"
+            "本地开发请设置 JIAOTANG_SECURE_COOKIES=false 使用内置开发密钥。"
+        )
+    TOKEN_DERIVATION_SECRET = b"development-only-token-secret"
 INDEX_SNAPSHOT_DIR = Path(os.environ.get("JIAOTANG_INDEX_SNAPSHOT_DIR", DATA_DIR / "index-snapshots"))
 MEMBER_COMPANY = os.environ.get("JIAOTANG_MEMBER_COMPANY", "共创集团").strip()
 SESSION_COOKIE = "jiaotang_session"
 SESSION_HOURS = int(os.environ.get("JIAOTANG_SESSION_HOURS", "12"))
 REMEMBER_SESSION_DAYS = 7
-SECURE_COOKIES = os.environ.get("JIAOTANG_SECURE_COOKIES", "true").lower() == "true"
 HEALTH_STATUS_PATH = DATA_DIR / "health-status.json"
 BACKUP_STATUS_PATH = DATA_DIR / "backup-status.json"
 OSS_SYNC_STATUS_PATH = DATA_DIR / "oss-sync-status.json"
@@ -326,6 +331,8 @@ class SearchResponse(BaseModel):
     query: str
     clarification: str | None = None
     results: list[SearchResult]
+    structured_results: list[dict[str, object]] = Field(default_factory=list)
+    deadline_reminders: list[dict[str, object]] = Field(default_factory=list)
 
 
 class OAuthClientRegistrationRequest(BaseModel):
@@ -1548,10 +1555,14 @@ def selected_project_targets(query: str, rule: dict[str, object]) -> list[str]:
 
 
 def explicit_project_regions(query: str) -> list[str]:
+    normalized_query = re.sub(r"(?<!\d)20\d{2}(?:年|年度)?", " ", query)
     return list(
         dict.fromkeys(
             region
-            for region in re.findall(r"[\u4e00-\u9fff]{2,8}(?:省|自治区|市|区|县)", query)
+            for region in re.findall(
+                r"[\u4e00-\u9fff]{2,8}(?:省|自治区|市|区|县)",
+                normalized_query,
+            )
             if not region.startswith(("重点", "省级", "市级", "区级", "国家"))
         )
     )
@@ -1648,6 +1659,84 @@ def project_query_variants(query: str) -> list[str]:
     return [reduced or normalized]
 
 
+def project_search_plan(query: str) -> dict[str, object]:
+    normalized_query = query.strip()
+    year_match = re.search(r"(?<!\d)(20\d{2})(?:年|年度)?", normalized_query)
+    requested_year = int(year_match.group(1)) if year_match else None
+    requested_batch = small_giant_recognition_batch(normalized_query)
+    retrieval_rule = matched_project_retrieval_rule(normalized_query)
+    if retrieval_rule:
+        targets = selected_project_targets(normalized_query, retrieval_rule)
+    else:
+        targets = resolved_canonical_projects(normalized_query)
+    if not targets and project_query_is_resolved(normalized_query):
+        targets = [
+            variant
+            for variant in project_query_variants(normalized_query)
+            if variant.strip()
+        ]
+    regions = explicit_project_regions(normalized_query)
+    list_intent = any(
+        term in normalized_query
+        for term in ("名单", "公示", "认定企业", "入选企业", "通过企业", "同行")
+    )
+    condition_intent = any(
+        term in normalized_query
+        for term in ("条件", "要求", "标准", "门槛", "办法", "材料", "流程", "怎么报", "如何报")
+    )
+    current_intent = any(
+        term in normalized_query
+        for term in ("最新", "当前", "通知", "截止", "开放", "申报期", "正在申报")
+    )
+    planning_intent = any(
+        term in normalized_query
+        for term in ("成长路径", "项目规划", "申报规划", "未来规划", "五年规划", "可报项目", "能报什么")
+    )
+    stages: list[str] = []
+    if condition_intent:
+        stages.extend(("申报通知", "管理办法"))
+    if list_intent:
+        stages.extend(("认定名单", "公示名单"))
+    if current_intent or planning_intent:
+        stages.append("申报通知")
+    base_variants = project_query_variants(normalized_query)
+    variants: list[str] = []
+    for base_variant in base_variants:
+        variants.append(base_variant)
+        if requested_year is not None:
+            variants.append(f"{base_variant} {requested_year}")
+        if requested_batch:
+            variants.append(f"{base_variant} {requested_batch}")
+        for stage in stages:
+            variants.append(f"{base_variant} {stage}")
+            if requested_year is not None:
+                variants.append(f"{base_variant} {requested_year} {stage}")
+            if requested_batch:
+                variants.append(f"{base_variant} {requested_batch} {stage}")
+    if requested_batch and "小巨人" in normalized_query:
+        variants.extend(
+            (
+                f"{requested_batch} 专精特新 小巨人",
+                f"{requested_batch} 专精特新 小巨人 申报通知",
+                f"{requested_batch} 专精特新 小巨人 公示名单",
+                f"{requested_batch} 专精特新 小巨人 认定名单",
+            )
+        )
+    return {
+        "query": normalized_query,
+        "targets": list(dict.fromkeys(str(target).strip() for target in targets if str(target).strip())),
+        "regions": regions,
+        "year": requested_year,
+        "batch": requested_batch,
+        "list_intent": list_intent,
+        "condition_intent": condition_intent,
+        "current_intent": current_intent,
+        "planning_intent": planning_intent,
+        "stages": list(dict.fromkeys(stages)),
+        "variants": list(dict.fromkeys(variant.strip() for variant in variants if variant.strip()))[:30],
+    }
+
+
 def project_query_is_resolved(query: str) -> bool:
     if matched_project_retrieval_rule(query):
         return True
@@ -1732,26 +1821,16 @@ def search_knowledge(
         return {
             "query": normalized_query,
             "retrieval_queries": [],
+            "query_plan": project_search_plan(normalized_query),
             "clarification": clarification,
+            "structured_results": [],
+            "deadline_reminders": [],
             "results": [],
         }
-    year_match = re.search(r"(?<!\d)(20\d{2})(?:年|年度)?", normalized_query)
-    requested_year = int(year_match.group(1)) if year_match else None
-    requested_batch = small_giant_recognition_batch(normalized_query)
-    retrieval_queries = project_query_variants(normalized_query)
-    if requested_batch:
-        expanded_queries: list[str] = []
-        for retrieval_query in retrieval_queries:
-            expanded_queries.extend((retrieval_query, f"{retrieval_query} {requested_batch}"))
-            if requested_year is not None:
-                expanded_queries.append(f"{retrieval_query} {requested_year}")
-            expanded_queries.extend(
-                (
-                    f"{requested_batch} 专精特新 小巨人",
-                    f"{requested_batch} 专精特新 小巨人 公示名单",
-                )
-            )
-        retrieval_queries = list(dict.fromkeys(expanded_queries))
+    query_plan = project_search_plan(normalized_query)
+    requested_year = query_plan["year"]
+    requested_batch = str(query_plan["batch"] or "")
+    retrieval_queries = list(query_plan["variants"])
     project_query_resolved = project_query_is_resolved(normalized_query)
     current_policy_only = requested_year is None and not requested_batch and (
         requires_current_policy_sources(normalized_query)
@@ -2004,9 +2083,21 @@ def search_knowledge(
     rows = filter_project_results(normalized_query, rows)
     rows = deduplicate_search_results(rows)
     rows = diversify_year_results(normalized_query, rows, bounded_limit)
+    structured_results = structured_project_search(query_plan, bounded_limit)
+    deadline_documents: list[dict[str, object] | sqlite3.Row] = list(rows)
+    deadline_documents.extend(
+        row for row in structured_results if row.get("result_type") == "policy_document"
+    )
+    deadline_reminders = deadline_reminders_for_documents(
+        normalized_query,
+        deadline_documents,
+    )
     return {
         "query": normalized_query,
         "retrieval_queries": retrieval_queries,
+        "query_plan": query_plan,
+        "structured_results": structured_results,
+        "deadline_reminders": deadline_reminders,
         "results": [
             {
                 "document_id": int(row["id"]),
@@ -2016,6 +2107,11 @@ def search_knowledge(
                 "document_role": row["document_role"],
                 "index_layer": "content",
                 **knowledge_source_metadata(row),
+                "document_stage": row["document_stage"],
+                "canonical_project_name": row["canonical_project_name"],
+                "policy_year": row["policy_year"],
+                "region": row["region"],
+                "batch": row["batch"],
                 "updated_at": row["updated_at"],
             }
             for row in rows
@@ -2025,10 +2121,21 @@ def search_knowledge(
 
 def public_search_knowledge(query: str, limit: int = 8) -> dict[str, object]:
     result = search_knowledge(query, limit)
-    hidden_fields = {"source_layer", "source_labels", "verification_status"}
+    hidden_fields = {
+        "source_layer",
+        "source_labels",
+        "verification_status",
+        "document_stage",
+        "canonical_project_name",
+        "policy_year",
+        "region",
+        "batch",
+    }
     return {
         "query": result["query"],
         "clarification": result.get("clarification"),
+        "structured_results": result.get("structured_results", []),
+        "deadline_reminders": result.get("deadline_reminders", []),
         "results": [
             {key: value for key, value in item.items() if key not in hidden_fields}
             for item in result["results"]
@@ -2045,6 +2152,27 @@ def _like_filter(column: str, value: str, conditions: list[str], parameters: lis
     parameters.append(f"%{escaped}%")
 
 
+def _normalized_project_filter(
+    column: str,
+    value: str,
+    conditions: list[str],
+    parameters: list[object],
+) -> None:
+    normalized = normalize_search_text(value)
+    if not normalized:
+        return
+    compact = re.sub(r"[\s\"'“”‘’《》〈〉（）()·•]+", "", normalized)
+    escaped = compact.replace("%", "\\%").replace("_", "\\_")
+    normalized_column = (
+        f"REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE("
+        f"REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({column}, '“', ''), '”', ''), "
+        f"'\"', ''), '''', ''), '《', ''), '》', ''), '（', ''), '）', ''), "
+        f"'(', ''), ')', ''), ' ', ''), '·', '')"
+    )
+    conditions.append(f"{normalized_column} LIKE ? ESCAPE '\\'")
+    parameters.append(f"%{escaped}%")
+
+
 def search_public_list_entities(
     enterprise_name: str = "",
     project_name: str = "",
@@ -2058,7 +2186,12 @@ def search_public_list_entities(
     conditions = ["1 = 1"]
     parameters: list[object] = []
     _like_filter("e.enterprise_name", enterprise_name, conditions, parameters)
-    _like_filter("e.canonical_project_name", project_name, conditions, parameters)
+    _normalized_project_filter(
+        "e.canonical_project_name",
+        project_name,
+        conditions,
+        parameters,
+    )
     _like_filter("e.batch", batch, conditions, parameters)
     _like_filter("e.region", region, conditions, parameters)
     bounded_limit = max(1, min(int(limit), 50))
@@ -2157,7 +2290,12 @@ def search_policy_documents(
         )
     if current_sme_policy_only and year is None:
         conditions.append("COALESCE(policy_year, 0) >= 2026")
-    _like_filter("canonical_project_name", project_name, conditions, parameters)
+    _normalized_project_filter(
+        "canonical_project_name",
+        project_name,
+        conditions,
+        parameters,
+    )
     _like_filter("document_stage", document_stage, conditions, parameters)
     _like_filter("validity_status", validity_status, conditions, parameters)
     if query.strip():
@@ -2228,6 +2366,271 @@ def search_policy_documents(
         },
         "results": [dict(row) for row in rows],
     }
+
+
+DEADLINE_DATE_PATTERN = re.compile(
+    r"(?:(?P<year>20\d{2})年)?"
+    r"(?P<month>\d{1,2})月(?P<day>\d{1,2})日"
+    r"(?:\s*(?P<meridiem>上午|下午|中午)?\s*"
+    r"(?P<hour>\d{1,2})(?:[:：时](?P<minute>\d{1,2}))?(?:分)?)?"
+)
+DEADLINE_CONTEXT_PATTERN = re.compile(
+    r"(?:申报|申请|提交|填报|受理|报名|材料|系统|网上|企业)?"
+    r"(?:截止|截至|截止时间|申报期限|受理期限|报名期限)"
+)
+
+
+def deadline_query_relevant(query: str) -> bool:
+    return project_query_is_resolved(query) or any(
+        term in query
+        for term in (
+            "成长路径",
+            "项目规划",
+            "申报规划",
+            "未来规划",
+            "五年规划",
+            "可报项目",
+            "能报什么",
+        )
+    )
+
+
+def parse_deadline_candidates(
+    text: str,
+    *,
+    policy_year: int | None,
+    now: datetime,
+) -> list[tuple[datetime, str, int]]:
+    normalized = re.sub(r"\s+", " ", text)
+    candidates: list[tuple[datetime, str, int]] = []
+    for match in DEADLINE_DATE_PATTERN.finditer(normalized):
+        context_start = max(0, match.start() - 90)
+        context_end = min(len(normalized), match.end() + 100)
+        context = normalized[context_start:context_end]
+        if not DEADLINE_CONTEXT_PATTERN.search(context):
+            continue
+        year = int(match.group("year") or policy_year or now.year)
+        month = int(match.group("month"))
+        day = int(match.group("day"))
+        hour_value = match.group("hour")
+        minute_value = match.group("minute")
+        meridiem = match.group("meridiem") or ""
+        hour = int(hour_value) if hour_value else 23
+        minute = int(minute_value) if minute_value else (0 if hour_value else 59)
+        if meridiem == "下午" and hour < 12:
+            hour += 12
+        elif meridiem == "中午" and hour < 11:
+            hour += 12
+        try:
+            deadline = datetime(year, month, day, hour, minute, 59, tzinfo=ASSISTANT_TIMEZONE)
+        except ValueError:
+            continue
+        remaining_seconds = (deadline - now).total_seconds()
+        if remaining_seconds < 0 or remaining_seconds > 370 * 24 * 60 * 60:
+            continue
+        administrative_context = any(
+            term in context
+            for term in ("推荐单位", "主管部门", "区县", "审核截止", "报送截止", "经信部门", "科技部门")
+        )
+        enterprise_context = any(
+            term in context
+            for term in ("企业申报", "申报人", "网上申报", "申请人", "报名", "材料提交")
+        )
+        priority = 0 if enterprise_context else (2 if administrative_context else 1)
+        candidates.append((deadline, context.strip(), priority))
+    return candidates
+
+
+def deadline_reminders_for_documents(
+    query: str,
+    rows: list[sqlite3.Row] | list[dict[str, object]],
+    limit: int = 5,
+) -> list[dict[str, object]]:
+    if not rows or not deadline_query_relevant(query):
+        return []
+    document_ids: list[int] = []
+    for row in rows:
+        value = row.get("document_id") or row.get("id") if isinstance(row, dict) else row["id"]
+        if value:
+            document_ids.append(int(value))
+    document_ids = list(dict.fromkeys(document_ids))
+    if not document_ids:
+        return []
+    placeholders = ",".join("?" for _ in document_ids)
+    with closing(content_database()) as connection:
+        documents = connection.execute(
+            f"""
+            SELECT id,title,content,source,document_stage,validity_status,
+                   policy_year,canonical_project_name,region
+            FROM documents
+            WHERE id IN ({placeholders})
+            """,
+            document_ids,
+        ).fetchall()
+    now = datetime.now(ASSISTANT_TIMEZONE)
+    reminders: list[dict[str, object]] = []
+    seen: set[tuple[str, str]] = set()
+    for document in documents:
+        if str(document["validity_status"] or "") in {
+            "historical_reference",
+            "superseded",
+            "invalid",
+            "draft",
+        }:
+            continue
+        if str(document["document_stage"] or "") not in {"申报通知", "通知", "申报指南"}:
+            continue
+        candidates = parse_deadline_candidates(
+            f"{document['title']}\n{document['content']}",
+            policy_year=int(document["policy_year"]) if document["policy_year"] else None,
+            now=now,
+        )
+        if not candidates:
+            continue
+        deadline, context, _ = min(candidates, key=lambda item: (item[2], item[0]))
+        remaining_seconds = max(0, int((deadline - now).total_seconds()))
+        days_remaining = (remaining_seconds + 86399) // 86400
+        project_name = str(document["canonical_project_name"] or document["title"])
+        key = (normalize_search_text(project_name), deadline.isoformat())
+        if key in seen:
+            continue
+        seen.add(key)
+        remaining_text = "不足1天" if remaining_seconds < 86400 else f"{days_remaining}天"
+        reminders.append(
+            {
+                "document_id": int(document["id"]),
+                "project_name": project_name,
+                "title": str(document["title"]),
+                "region": str(document["region"] or ""),
+                "deadline": deadline.isoformat(),
+                "deadline_display": deadline.strftime("%Y年%m月%d日 %H:%M"),
+                "days_remaining": days_remaining,
+                "message": (
+                    f"申报提醒：{project_name}当前仍在申报期，"
+                    f"截止时间为{deadline.strftime('%Y年%m月%d日 %H:%M')}，距离截止还有{remaining_text}。"
+                ),
+                "source": str(document["source"] or ""),
+                "evidence_excerpt": context[:240],
+            }
+        )
+    reminders.sort(key=lambda item: str(item["deadline"]))
+    return reminders[: max(1, min(limit, 10))]
+
+
+def structured_project_search(plan: dict[str, object], limit: int = 8) -> list[dict[str, object]]:
+    targets = [str(target) for target in plan.get("targets", []) if str(target).strip()]
+    if not targets:
+        return []
+    query = str(plan.get("query") or "")
+    region = next(iter(plan.get("regions", [])), "")
+    year = plan.get("year")
+    batch = str(plan.get("batch") or "")
+    bounded_limit = max(1, min(int(limit), 20))
+    results: list[dict[str, object]] = []
+    seen: set[tuple[str, int, str]] = set()
+    for target in targets[:4]:
+        try:
+            policy_rows = search_policy_documents(
+                project_name=target,
+                region=str(region),
+                year=int(year) if year is not None else None,
+                limit=bounded_limit,
+            )["results"]
+        except HTTPException:
+            policy_rows = []
+        for row in filter_project_results(query, policy_rows):
+            key = ("policy_document", int(row["document_id"]), "")
+            if key in seen:
+                continue
+            seen.add(key)
+            results.append({"result_type": "policy_document", **row})
+        if not bool(plan.get("list_intent")):
+            continue
+        try:
+            list_rows = search_public_list_entities(
+                project_name=target,
+                year=int(year) if year is not None else None,
+                batch=batch,
+                region=str(region),
+                limit=bounded_limit,
+            )["results"]
+        except HTTPException:
+            list_rows = []
+        for row in list_rows:
+            key = (
+                "list_entity",
+                int(row["document_id"]),
+                normalize_search_text(row["enterprise_name"]),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            results.append({"result_type": "list_entity", **row})
+    return results[: bounded_limit * 2]
+
+
+def append_deadline_reminders(
+    query: str,
+    answer: str,
+    sources: list[dict[str, object]],
+) -> tuple[str, list[dict[str, object]]]:
+    reminders = deadline_reminders_for_documents(query, sources)
+    if not reminders:
+        return answer, []
+    reminder_text = "\n".join(str(item["message"]) for item in reminders)
+    return f"{answer.rstrip()}\n\n{reminder_text}", reminders
+
+
+def assistant_search_results(search_result: dict[str, object]) -> list[dict[str, object]]:
+    results = [dict(item) for item in search_result.get("results", [])]
+    seen_documents = {
+        int(item["document_id"])
+        for item in results
+        if item.get("document_id") is not None
+    }
+    for item in search_result.get("structured_results", []):
+        result_type = str(item.get("result_type") or "")
+        document_id = int(item["document_id"])
+        if result_type == "policy_document":
+            if document_id in seen_documents:
+                continue
+            seen_documents.add(document_id)
+            results.append(
+                {
+                    "document_id": document_id,
+                    "title": item.get("title") or "政策文件",
+                    "excerpt": item.get("excerpt") or "",
+                    "source": item.get("source") or "",
+                    "document_role": item.get("document_role") or "政策文件",
+                    "index_layer": "structured",
+                    "updated_at": item.get("updated_at"),
+                }
+            )
+        elif result_type == "list_entity":
+            results.append(
+                {
+                    "document_id": document_id,
+                    "title": (
+                        f"{item.get('enterprise_name') or '名单企业'}｜"
+                        f"{item.get('canonical_project_name') or '项目名单'}"
+                    ),
+                    "excerpt": "；".join(
+                        part
+                        for part in (
+                            f"地区：{item.get('region')}" if item.get("region") else "",
+                            f"年度：{item.get('year')}" if item.get("year") else "",
+                            f"批次：{item.get('batch')}" if item.get("batch") else "",
+                            f"状态：{item.get('status')}" if item.get("status") else "",
+                        )
+                        if part
+                    ),
+                    "source": item.get("source") or "",
+                    "document_role": "企业名单",
+                    "index_layer": "structured",
+                    "updated_at": item.get("updated_at"),
+                }
+            )
+    return results
 
 
 @lru_cache(maxsize=1)
@@ -4184,6 +4587,18 @@ def init_database() -> None:
 
             CREATE INDEX IF NOT EXISTS password_reset_attempts_lookup_idx
             ON password_reset_attempts(client_ip, username, attempted_at DESC);
+
+            CREATE TABLE IF NOT EXISTS auth_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                action TEXT NOT NULL,
+                username TEXT NOT NULL,
+                client_ip TEXT NOT NULL,
+                succeeded INTEGER NOT NULL DEFAULT 0,
+                attempted_at TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS auth_attempts_lookup_idx
+            ON auth_attempts(action, client_ip, username, attempted_at DESC);
 
             CREATE TABLE IF NOT EXISTS device_tokens (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -6312,6 +6727,18 @@ def home():
     return RedirectResponse("/login", status_code=303)
 
 
+@app.get("/demo", response_class=HTMLResponse)
+def public_demo(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "demo.html",
+        headers={
+            "Cache-Control": "public, max-age=300",
+            "X-Robots-Tag": "index, follow",
+        },
+    )
+
+
 @app.get("/guide", response_class=HTMLResponse)
 def user_guide(request: Request):
     if not USER_GUIDE_PATH.is_file():
@@ -6382,6 +6809,49 @@ def login_page(
     )
 
 
+def client_ip_from(request: Request) -> str:
+    forwarded = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
+    if forwarded:
+        return forwarded
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
+def auth_attempts_blocked(
+    connection: sqlite3.Connection, action: str, username: str, client_ip: str, limit: int
+) -> bool:
+    window_start = isoformat(utc_now() - timedelta(minutes=30))
+    failures = connection.execute(
+        """
+        SELECT COUNT(*) FROM auth_attempts
+        WHERE action=? AND succeeded=0 AND attempted_at>=?
+          AND (client_ip=? OR username=?)
+        """,
+        (action, window_start, client_ip, username),
+    ).fetchone()[0]
+    return int(failures) >= limit
+
+
+def record_auth_attempt(
+    connection: sqlite3.Connection, action: str, username: str, client_ip: str, succeeded: bool
+) -> None:
+    connection.execute(
+        "DELETE FROM auth_attempts WHERE attempted_at < ?",
+        (isoformat(utc_now() - timedelta(days=1)),),
+    )
+    if succeeded:
+        connection.execute(
+            "DELETE FROM auth_attempts WHERE action=? AND (client_ip=? OR username=?)",
+            (action, client_ip, username),
+        )
+    else:
+        connection.execute(
+            "INSERT INTO auth_attempts(action, username, client_ip, succeeded, attempted_at) VALUES (?,?,?,0,?)",
+            (action, username, client_ip, isoformat(utc_now())),
+        )
+
+
 @app.get("/password/reset", response_class=HTMLResponse)
 def password_reset_page(request: Request):
     if user_count() == 0:
@@ -6390,95 +6860,15 @@ def password_reset_page(request: Request):
 
 
 @app.post("/password/reset", response_class=HTMLResponse)
-def password_reset_submit(
-    request: Request,
-    username: Annotated[str, Form(min_length=3, max_length=64)],
-    real_name: Annotated[str, Form(min_length=2, max_length=20)],
-    company_name: Annotated[str, Form(min_length=2, max_length=100)],
-    password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
-    confirm_password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
-):
-    try:
-        normalized_username = normalize_account_name(username)
-        normalized_real_name = normalize_real_name(real_name)
-    except ValueError:
-        normalized_username = ""
-        normalized_real_name = ""
-    if password != confirm_password:
-        return templates.TemplateResponse(
-            request,
-            "password_reset.html",
-            {"error": "两次输入的新密码不一致。"},
-            status_code=400,
-        )
-    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
-    if not client_ip and request.client:
-        client_ip = request.client.host
-    client_ip = client_ip or "unknown"
-    reset_window_start = isoformat(utc_now() - timedelta(minutes=30))
-    with closing(database()) as connection:
-        connection.execute(
-            "DELETE FROM password_reset_attempts WHERE attempted_at < ?",
-            (isoformat(utc_now() - timedelta(days=1)),),
-        )
-        recent_failures = connection.execute(
-            """
-            SELECT COUNT(*) FROM password_reset_attempts
-            WHERE succeeded=0 AND attempted_at>=?
-              AND (client_ip=? OR username=?)
-            """,
-            (reset_window_start, client_ip, normalized_username),
-        ).fetchone()[0]
-        if int(recent_failures) >= 5:
-            connection.commit()
-            return templates.TemplateResponse(
-                request,
-                "password_reset.html",
-                {"error": "密码找回尝试次数过多，请30分钟后重试。"},
-                status_code=429,
-            )
-        user = connection.execute(
-            """
-            SELECT * FROM users
-            WHERE username=? AND real_name=? AND company_name=?
-              AND active=1 AND deleted_at IS NULL
-              AND (
-                  is_admin=1 OR EXISTS(
-                      SELECT 1 FROM registration_authorizations authorization
-                      WHERE authorization.user_id=users.id
-                        AND authorization.status='registered'
-                        AND authorization.deleted_at IS NULL
-                  )
-              )
-            """,
-            (normalized_username, normalized_real_name, company_name.strip()),
-        ).fetchone()
-        if user is None:
-            connection.execute(
-                """
-                INSERT INTO password_reset_attempts(username,client_ip,succeeded,attempted_at)
-                VALUES (?,?,0,?)
-                """,
-                (normalized_username, client_ip, isoformat(utc_now())),
-            )
-            connection.commit()
-            return templates.TemplateResponse(
-                request,
-                "password_reset.html",
-                {"error": "身份验证未通过，请核对登录账号、真实姓名和所属公司全称。"},
-                status_code=403,
-            )
-        connection.execute(
-            "UPDATE users SET password_hash=? WHERE id=?",
-            (password_hasher.hash(password), int(user["id"])),
-        )
-        connection.execute("DELETE FROM sessions WHERE user_id=?", (int(user["id"]),))
-        connection.execute(
-            "DELETE FROM password_reset_attempts WHERE client_ip=? OR username=?",
-            (client_ip, normalized_username),
-        )
-        connection.commit()
-    return RedirectResponse("/login?password_reset=1", status_code=303)
+def password_reset_submit(request: Request):
+    # 自助密码重置已停用：仅凭姓名与公司全称即可重置任意账号（含管理员），
+    # 构成账号接管风险。重置一律由管理员在成员详情页发起。
+    return templates.TemplateResponse(
+        request,
+        "password_reset.html",
+        {"error": "自助找回已停用。请联系团队管理员，在「成员管理 → 账号详情」中为你重置密码。"},
+        status_code=410,
+    )
 
 
 @app.get("/register", response_class=HTMLResponse)
@@ -6670,7 +7060,22 @@ def login_submit(
     remember_me: Annotated[str | None, Form()] = None,
     next_url: Annotated[str, Form(alias="next", max_length=2000)] = "",
 ):
+    normalized_login = username.strip().lower()
+    client_ip = client_ip_from(request)
     with closing(database()) as connection:
+        if auth_attempts_blocked(connection, "login", normalized_login, client_ip, 10):
+            return templates.TemplateResponse(
+                request,
+                "login.html",
+                {
+                    "error": "登录尝试次数过多，请30分钟后重试。",
+                    "initialized": False,
+                    "registered": False,
+                    "password_reset": False,
+                    "next_url": safe_login_redirect(next_url),
+                },
+                status_code=429,
+            )
         user = connection.execute(
             """
             SELECT * FROM users
@@ -6684,7 +7089,7 @@ def login_submit(
                   )
               )
             """,
-            (username.strip().lower(),),
+            (normalized_login,),
         ).fetchone()
         valid = False
         if user is not None:
@@ -6693,6 +7098,8 @@ def login_submit(
             except (VerifyMismatchError, InvalidHashError):
                 valid = False
         if not valid:
+            record_auth_attempt(connection, "login", normalized_login, client_ip, False)
+            connection.commit()
             return templates.TemplateResponse(
                 request,
                 "login.html",
@@ -6705,6 +7112,7 @@ def login_submit(
                 },
                 status_code=401,
             )
+        record_auth_attempt(connection, "login", normalized_login, client_ip, True)
         raw_session = secrets.token_urlsafe(48)
         csrf_token = secrets.token_urlsafe(32)
         created_at = utc_now()
@@ -7715,6 +8123,7 @@ def admin_user_detail(
     request: Request,
     member_id: int,
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    password_reset: int = 0,
 ):
     require_admin(user)
     with closing(database()) as connection:
@@ -7774,7 +8183,45 @@ def admin_user_detail(
                 "deleted_at_display": format_chinese_datetime(member["deleted_at"]),
             },
             "latest_install_result": latest_install_result_payload,
+            "password_reset": password_reset == 1,
         },
+    )
+
+
+@app.post("/admin/users/{member_id}/password-reset")
+def admin_reset_user_password(
+    member_id: int,
+    new_password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
+    confirm_password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    require_admin(user)
+    if member_id == user["id"]:
+        raise HTTPException(status_code=400, detail="当前管理员请在账户设置中修改自己的密码")
+    if new_password != confirm_password:
+        raise HTTPException(status_code=400, detail="两次输入的密码不一致")
+    with closing(database()) as connection:
+        member = connection.execute(
+            "SELECT id,username FROM users WHERE id=? AND deleted_at IS NULL",
+            (member_id,),
+        ).fetchone()
+        if member is None:
+            raise HTTPException(status_code=404, detail="成员不存在")
+        connection.execute(
+            "UPDATE users SET password_hash=? WHERE id=?",
+            (password_hasher.hash(new_password), member_id),
+        )
+        connection.execute("DELETE FROM sessions WHERE user_id=?", (member_id,))
+        connection.execute(
+            "DELETE FROM password_reset_attempts WHERE username=?",
+            (member["username"],),
+        )
+        connection.commit()
+    return RedirectResponse(
+        f"/admin/users/{member_id}?password_reset=1",
+        status_code=303,
     )
 
 
@@ -8032,17 +8479,23 @@ def assistant_answer_stream(
                     )
                 )
                 return
+            knowledge_results = assistant_search_results(search_result)
             publish(
                 "search-result",
-                f"知识库初步命中{len(search_result['results'])}份资料",
-                {"sources": len(search_result["results"])},
+                f"知识库双路径命中{len(knowledge_results)}条资料",
+                {
+                    "sources": len(knowledge_results),
+                    "fulltext_sources": len(search_result["results"]),
+                    "structured_sources": len(search_result.get("structured_results", [])),
+                },
             )
             answer, mode, sources, skills = answer_with_knowledge_then_web(
                 question,
-                search_result["results"],
+                knowledge_results,
                 progress=publish,
                 model_config=model_config,
             )
+            answer, deadline_reminders = append_deadline_reminders(question, answer, sources)
             complete_assistant_usage(
                 usage_id,
                 "completed",
@@ -8061,6 +8514,7 @@ def assistant_answer_stream(
                         "mode": mode,
                         "sources": sources,
                         "skills": skills,
+                        "deadline_reminders": deadline_reminders,
                         "quota": assistant_quota_payload(
                             remaining, daily_limit, quota_counted, unlimited=unlimited
                         ),
@@ -8193,12 +8647,14 @@ def assistant_answer(
                     ),
                 }
             )
+        knowledge_results = assistant_search_results(search_result)
         answer, mode, sources, skills = answer_with_knowledge_then_web(
             question,
-            search_result["results"],
+            knowledge_results,
             progress=capture_progress,
             model_config=model_config,
         )
+        answer, deadline_reminders = append_deadline_reminders(question, answer, sources)
         complete_assistant_usage(
             usage_id,
             "completed",
@@ -8215,6 +8671,7 @@ def assistant_answer(
                 "mode": mode,
                 "sources": sources,
                 "skills": skills,
+                "deadline_reminders": deadline_reminders,
                 "quota": assistant_quota_payload(
                     remaining,
                     daily_limit,
