@@ -3678,6 +3678,7 @@ def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
         assert "2026-07-18T00:00:00+00:00" not in ordered_knowledge.text
         assert "2026-07-18 08:00:00" in ordered_knowledge.text
         access_portal = client.get("/access")
+        assert "www.tianyancha.com/ai" in access_portal.text
         assert "agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4" in access_portal.text
         assert "docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" in access_portal.text
         assert "aiqice.cn" not in access_portal.text
