@@ -30,6 +30,19 @@
     <p class="muted">尚未收到结构化安装结果。若 Agent 连安装协议入口都无法读取，服务器不会收到结果，应结合用户反馈的网络错误判断。</p>
     {% endif %}
   </section>
-  <section class="panel danger-zone"><div><h3>{{ '恢复成员账号' if member.deleted_at else '账号管理' }}</h3><p class="muted">密码长期有效且采用不可逆哈希保存。成员忘记密码时，可在登录页使用“验证身份并重置”。删除到回收站后可恢复，也可在回收站彻底删除。</p></div><div class="button-row">{% if member.deleted_at %}<form method="post" action="/admin/users/{{ member.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">恢复并启用账号</button></form>{% elif member.id != user.id %}{% if not member.active %}<form method="post" action="/admin/users/{{ member.id }}/reinvite"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">重新邀请注册</button></form>{% endif %}<form method="post" action="/users/{{ member.id }}/toggle"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button secondary" type="submit">{{ '停用账号' if member.active else '直接启用账号' }}</button></form><form method="post" action="/admin/users/{{ member.id }}/trash" onsubmit="return confirm('确认将该成员账号移入回收站？该用户将立即退出登录。')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button danger" type="submit">删除到回收站</button></form>{% else %}<span class="muted">当前管理员不能删除或停用自己。</span>{% endif %}</div></section>
+  {% if password_reset %}<div class="notice success">成员密码已重置，该成员原有网页登录会话已全部失效。</div>{% endif %}
+  {% if not member.deleted_at and member.id != user.id %}
+  <section class="panel">
+    <div class="panel-head"><div><p class="eyebrow">Credential Reset</p><h3>管理员重置密码</h3></div></div>
+    <p class="muted">请通过可信渠道将临时密码单独告知成员。提交后，该成员当前所有网页登录会话会立即失效。</p>
+    <form method="post" action="/admin/users/{{ member.id }}/password-reset" class="form-stack" onsubmit="return confirm('确认重置该成员密码并注销其全部网页登录会话？')">
+      <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
+      <label>新密码<input name="new_password" type="password" required minlength="9" maxlength="256" autocomplete="new-password" placeholder="至少9位"></label>
+      <label>确认新密码<input name="confirm_password" type="password" required minlength="9" maxlength="256" autocomplete="new-password"></label>
+      <button class="button" type="submit">重置成员密码</button>
+    </form>
+  </section>
+  {% endif %}
+  <section class="panel danger-zone"><div><h3>{{ '恢复成员账号' if member.deleted_at else '账号管理' }}</h3><p class="muted">密码采用不可逆哈希保存。成员忘记密码时，由管理员在本页重置；删除到回收站后可恢复，也可在回收站彻底删除。</p></div><div class="button-row">{% if member.deleted_at %}<form method="post" action="/admin/users/{{ member.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">恢复并启用账号</button></form>{% elif member.id != user.id %}{% if not member.active %}<form method="post" action="/admin/users/{{ member.id }}/reinvite"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">重新邀请注册</button></form>{% endif %}<form method="post" action="/users/{{ member.id }}/toggle"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button secondary" type="submit">{{ '停用账号' if member.active else '直接启用账号' }}</button></form><form method="post" action="/admin/users/{{ member.id }}/trash" onsubmit="return confirm('确认将该成员账号移入回收站？该用户将立即退出登录。')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button danger" type="submit">删除到回收站</button></form>{% else %}<span class="muted">当前管理员不能删除、停用或从此处重置自己。</span>{% endif %}</div></section>
 </main>
 {% endblock %}

@@ -10,14 +10,13 @@ STATIC = ROOT / "static"
 TEMPLATES = ROOT / "templates"
 SOURCES = (
     ("base", "style.css"),
-    ("components", "archive.css"),
     ("console", "console.css"),
     ("theme", "atelier.css"),
 )
 
 
 def main() -> int:
-    sections = ["@layer base, components, console, theme;\n"]
+    sections = ["@layer base, console, theme;\n"]
     for layer, name in SOURCES:
         content = (STATIC / name).read_text(encoding="utf-8").strip()
         sections.append(f"@layer {layer} {{\n{content}\n}}\n")

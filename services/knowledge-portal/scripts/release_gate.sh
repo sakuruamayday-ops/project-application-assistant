@@ -30,8 +30,58 @@ if [[ -n "${JIAOTANG_RESOLVE_IP:-}" ]]; then
 fi
 
 echo "[1/6] 自动测试"
-python3 "${script_dir}/verify_structured_knowledge_tables.py" \
-  --database "${JIAOTANG_INDEX_DATABASE:-/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3}"
+index_database="${JIAOTANG_INDEX_DATABASE:-/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3}"
+if [[ -f "${index_database}" ]]; then
+  python3 "${script_dir}/verify_structured_knowledge_tables.py" --database "${index_database}"
+else
+  echo "本地生产索引未挂载，改为校验服务器当前生产索引"
+  {
+    cat <<'REMOTE_INDEX_VERIFY'
+set -e
+set -a
+source /etc/jiaotang-kb.env
+set +a
+python3 - "$JIAOTANG_INDEX_DIR/knowledge_content.sqlite3" <<'PY'
+import json
+import sqlite3
+import sys
+
+database = sys.argv[1]
+required = {
+    "list_coverage_matrix": 384,
+    "list_entity_reconciliation": 1,
+    "national_small_giant_master": 1,
+    "three_first_project_awards": 1,
+    "three_first_status_timeline": 1,
+    "enterprise_product_graph_nodes": 1,
+    "enterprise_product_graph_edges": 1,
+}
+with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as connection:
+    existing = {
+        row[0]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )
+    }
+    missing = sorted(set(required) - existing)
+    if missing:
+        raise SystemExit("缺少结构化专表：" + "、".join(missing))
+    counts = {
+        table: int(connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0])
+        for table in required
+    }
+insufficient = {
+    table: {"actual": counts[table], "minimum": minimum}
+    for table, minimum in required.items()
+    if counts[table] < minimum
+}
+if insufficient:
+    raise SystemExit("结构化专表记录不足：" + json.dumps(insufficient, ensure_ascii=False))
+print(json.dumps({"database": database, "tables": counts}, ensure_ascii=False))
+PY
+REMOTE_INDEX_VERIFY
+  } | ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" bash
+fi
 (
   cd "${root_dir}"
   PYTHONPATH=src:. uv run --with pytest --with pyyaml pytest -q tests

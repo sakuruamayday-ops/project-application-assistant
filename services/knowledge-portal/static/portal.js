@@ -374,16 +374,40 @@ const ROUTE_SECTIONS = {
   "/admin/members": "members",
 };
 
+const singlePage = document.querySelector(".single-page");
+const sectionLinks = [...document.querySelectorAll("[data-section-link]")];
+const activateSectionLink = (sectionId) => {
+  sectionLinks.forEach((link) => {
+    link.classList.toggle("active", link.dataset.sectionLink === sectionId);
+  });
+};
+const initialSectionId = window.location.hash.slice(1) || ROUTE_SECTIONS[window.location.pathname];
+const initialSection = initialSectionId ? document.getElementById(initialSectionId) : null;
+let initialRouteAnchorLocked = Boolean(singlePage && initialSection);
+if (singlePage && initialSection) {
+  window.requestAnimationFrame(() => {
+    initialSection.scrollIntoView({behavior: "auto", block: "start"});
+    activateSectionLink(initialSectionId);
+    if (!window.location.hash) {
+      history.replaceState(null, "", `/portal#${initialSectionId}`);
+    }
+    window.setTimeout(() => {
+      activateSectionLink(initialSectionId);
+      initialRouteAnchorLocked = false;
+    }, 750);
+  });
+}
+
 document.querySelectorAll("a.page-transition-link").forEach((link) => {
   link.addEventListener("click", (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const singlePage = document.querySelector(".single-page");
     const targetUrl = new URL(link.href, window.location.origin);
     const sectionId = targetUrl.hash.slice(1) || ROUTE_SECTIONS[targetUrl.pathname];
     const section = sectionId ? document.getElementById(sectionId) : null;
     if (singlePage && section) {
       event.preventDefault();
       section.scrollIntoView({behavior: "smooth", block: "start"});
+      activateSectionLink(sectionId);
       history.replaceState(null, "", `/portal#${sectionId}`);
       return;
     }
@@ -406,22 +430,21 @@ document.querySelector(".single-page")?.addEventListener("click", (event) => {
   if (!section) return;
   event.preventDefault();
   section.scrollIntoView({behavior: "smooth", block: "start"});
+  activateSectionLink(sectionId);
   history.replaceState(null, "", `/portal#${sectionId}`);
 });
 
-const sectionLinks = [...document.querySelectorAll("[data-section-link]")];
 const observedSections = sectionLinks
   .map((link) => document.getElementById(link.dataset.sectionLink))
   .filter(Boolean);
 if (sectionLinks.length && observedSections.length && "IntersectionObserver" in window) {
   const sectionObserver = new IntersectionObserver((entries) => {
+    if (initialRouteAnchorLocked) return;
     const visible = entries
       .filter((entry) => entry.isIntersecting)
       .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
     if (!visible) return;
-    sectionLinks.forEach((link) => {
-      link.classList.toggle("active", link.dataset.sectionLink === visible.target.id);
-    });
+    activateSectionLink(visible.target.id);
   }, {rootMargin: "-28% 0px -58%", threshold: [0.05, 0.2, 0.45]});
   observedSections.forEach((section) => sectionObserver.observe(section));
 }
