@@ -9830,27 +9830,31 @@ def rollback_knowledge_revision(
 
 def build_agent_install_command(
     installer_url: str,
+    installer_sha256: str,
     bootstrap_url: str,
     result_url: str,
 ) -> str:
     node_script = (
-        "const fs=require('node:fs'),os=require('node:os'),"
+        "const fs=require('node:fs'),os=require('node:os'),crypto=require('node:crypto'),"
         "path=require('node:path'),cp=require('node:child_process');"
         "const fail=e=>({schema:'jiaotang-agent-result/v1',ok:false,status:'failed',"
         "error_stage:'installer_download',"
         "user_message:'安装失败：'+String(e.message||e),"
         "next_action:'请检查网络后回到门户重新复制安装配置。',"
         "host:'auto',platform:process.platform+'-'+process.arch});"
-        "const report=async v=>{try{await fetch(process.argv[3],{method:'POST',"
+        "const report=async v=>{try{await fetch(process.argv[4],{method:'POST',"
         "headers:{'Content-Type':'application/json'},body:JSON.stringify(v)})}catch{}};"
         "(async()=>{"
         "const p=path.join(os.tmpdir(),'jiaotang-agent.mjs');"
         "const r=await fetch(process.argv[1],{redirect:'follow'});"
         "if(!r.ok)throw new Error('安装器下载失败：HTTP '+r.status);"
-        "fs.writeFileSync(p,Buffer.from(await r.arrayBuffer()),{mode:0o700});"
+        "const b=Buffer.from(await r.arrayBuffer());"
+        "const h=crypto.createHash('sha256').update(b).digest('hex');"
+        "if(h!==process.argv[2])throw new Error('安装器SHA-256校验失败');"
+        "fs.writeFileSync(p,b,{mode:0o700});"
         "const x=cp.spawnSync(process.execPath,"
-        "[p,'install','--bootstrap-url',process.argv[2],"
-        "'--result-url',process.argv[3],'--host','auto'],"
+        "[p,'install','--bootstrap-url',process.argv[3],"
+        "'--result-url',process.argv[4],'--host','auto'],"
         "{stdio:'inherit'});"
         "if(x.error)throw x.error;"
         "process.exit(x.status??1)"
@@ -9858,29 +9862,25 @@ def build_agent_install_command(
         "console.log(JSON.stringify(v));process.exit(1)})"
     )
     return (
-        f'node -e "{node_script}" "{installer_url}" '
+        f'node -e "{node_script}" "{installer_url}" "{installer_sha256}" '
         f'"{bootstrap_url}" "{result_url}"'
     )
 
 
 def build_agent_bootstrap_prompt(install_protocol_url: str) -> str:
     return (
-        "请直接在当前本地 Agent 中完成焦糖知识库配置，不要让我打开终端、"
-        "手工修改配置或保存任何密钥。\n\n"
-        "请把下面的 HTTPS 地址视为不透明的一次性安装协议入口，只读取一次；"
-        "校验返回的 schema 为 jiaotang-agent-install/v1 后，原样执行 "
-        "execution.command，不解释、不改写、不拆分，也不要提前访问其中的其他地址：\n\n"
+        "请协助我在当前本地 Agent 中配置焦糖知识库。先读取下面的 HTTPS 安装说明，"
+        "校验 schema 为 jiaotang-agent-install/v1，并审查其中公开列出的安装器源码地址、"
+        "SHA-256、联网地址、本地改动、凭据保存方式和回滚方法：\n\n"
         f"{install_protocol_url}\n\n"
-        "协议会连续完成安装器下载、完整性校验、设备密钥登记、系统凭据保存、"
-        "MCP 配置和服务器连接确认。若 node 不在 PATH，使用当前 Agent 自带的 "
-        "Node.js 运行时执行同一 command。"
-        "不要在回复中显示安装码、API Token、私钥或完整配置；"
-        "命令最终会输出一个结构化 JSON 结果。必须向用户原样显示 user_message；"
-        "next_action 非空时紧接着原样显示 next_action。"
-        "不要解释、推断或改写其他结果字段。"
-        "如果这个安装协议地址本身无法读取、因而尚未获得结构化结果，"
-        "请原样告诉用户“安装协议读取失败。”，然后告诉用户"
-        "“请检查网络后回到门户重新复制安装配置。”"
+        "请先用简洁中文告诉我：将访问哪些域名、下载什么文件、写入哪些本机位置、"
+        "保存什么类型的凭据，以及怎样撤销；同时明确展示待执行命令并说明风险。"
+        "只有在我明确回复同意后，才执行协议中的 execution.command。"
+        "执行前应读取 installer_url 的源码并核对 SHA-256；若内容、哈希、域名或本地改动"
+        "与协议不一致，立即停止。若 node 不在 PATH，可使用当前 Agent 自带的 Node.js。"
+        "安装码、API Token 和私钥属于敏感信息，不要在普通回复中复述。"
+        "执行完成后，根据结构化结果说明成功或失败、已完成阶段及下一步。"
+        "若安装说明无法读取，请告诉我“安装说明读取失败，请检查网络后重新生成配置”。"
     )
 
 
@@ -10004,23 +10004,27 @@ def agent_install_protocol(enrollment_code: str, request: Request):
     if not installer_path.is_file():
         raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
     installer_url = f"{public_endpoint}/install/jiaotang-agent.mjs"
+    installer_sha256 = sha256_file(installer_path)
     bootstrap_url = f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
     return JSONResponse(
         {
             "schema": "jiaotang-agent-install/v1",
-            "protocol_version": 1,
-            "action": "execute_once",
-            "opaque": True,
+            "protocol_version": 2,
+            "action": "review_then_execute",
+            "opaque": False,
+            "review_required": True,
+            "user_confirmation_required": True,
             "expires_at": enrollment["expires_at"],
+            "publisher": {
+                "name": "知识产权大脑",
+                "service_origin": public_endpoint,
+                "purpose": "为当前本地 Agent 安装焦糖知识库签名 MCP 连接器",
+            },
             "compatibility": {
                 "platforms": ["darwin", "win32"],
                 "agent_hosts": [
                     "workbuddy",
-                    "codex",
-                    "claude-code",
-                    "cursor",
-                    "windsurf",
                     "generic-local-agent",
                 ],
                 "requirements": [
@@ -10030,24 +10034,70 @@ def agent_install_protocol(enrollment_code: str, request: Request):
                     "nodejs_18_or_newer",
                 ],
             },
+            "review": {
+                "installer": {
+                    "url": installer_url,
+                    "media_type": "text/javascript; charset=utf-8",
+                    "sha256": sha256_file(installer_path),
+                    "inspection_required": True,
+                },
+                "network_access": [
+                    {
+                        "origin": public_endpoint,
+                        "purpose": "下载安装器、登记设备公钥、连接知识库 MCP、回传安装状态",
+                    }
+                ],
+                "local_changes": [
+                    {
+                        "scope": "user_home",
+                        "path": "~/.jiaotang/bin/jiaotang-kb-mcp.mjs",
+                        "purpose": "保存已核验的本地 MCP 代理程序",
+                    },
+                    {
+                        "scope": "system_credential_store",
+                        "path": "macOS 登录钥匙串或 Windows DPAPI 用户凭据文件",
+                        "purpose": "保存个人访问凭据与设备私钥，普通配置文件不保存明文",
+                    },
+                    {
+                        "scope": "agent_user_config",
+                        "path": "当前 Agent 的用户级 MCP 配置",
+                        "purpose": "增加名为 jiaotang-kb 的 stdio MCP 连接器",
+                    },
+                ],
+                "credential_handling": {
+                    "creates_device_key_pair_locally": True,
+                    "private_key_uploaded": False,
+                    "stores": ["个人访问凭据", "设备私钥", "设备标识"],
+                    "never_display_secret_values": True,
+                },
+                "rollback": [
+                    "在门户点击“更换绑定设备”或由管理员停用账号，使服务器端凭据与设备公钥立即失效。",
+                    "在 Agent 的连接器设置中删除或停用 jiaotang-kb。",
+                    "将 ~/.jiaotang 移入系统回收站；macOS 可同时删除登录钥匙串中的 cn.zshjiaotang.knowledge-device 项，Windows 可删除对应 DPAPI 用户凭据文件。",
+                ],
+            },
             "execution": {
                 "type": "local_command",
                 "runtime": "nodejs",
                 "command": build_agent_install_command(
                     installer_url,
+                    installer_sha256,
                     bootstrap_url,
                     result_url,
                 ),
                 "rules": [
-                    "execute_command_exactly_once",
-                    "do_not_rewrite_or_split",
-                    "do_not_prefetch_nested_urls",
+                    "inspect_installer_source_before_execution",
+                    "verify_installer_sha256_before_execution",
+                    "explain_network_and_local_changes",
+                    "require_explicit_user_confirmation",
+                    "execute_command_only_after_confirmation",
                     "use_host_bundled_node_when_needed",
+                    "never_display_secret_values",
                 ],
             },
             "integrity": {
                 "algorithm": "sha256",
-                "installer_sha256": sha256_file(installer_path),
+                "installer_sha256": installer_sha256,
                 "verified_by": "installer",
             },
             "completion": {
@@ -10062,9 +10112,10 @@ def agent_install_protocol(enrollment_code: str, request: Request):
                     "contract": "jiaotang-agent-result/v1",
                     "required_display_fields": ["user_message", "next_action"],
                     "display_rules": [
-                        "display_user_message_verbatim",
-                        "display_next_action_verbatim_when_nonempty",
-                        "do_not_interpret_other_fields",
+                        "summarize_completed_stages",
+                        "display_user_message",
+                        "display_next_action_when_nonempty",
+                        "explain_failure_stage_without_exposing_secrets",
                     ],
                     "workbuddy_instruction": (
                         "连接成功。请在 WorkBuddy 左侧「连接器」中找到 "
@@ -10076,7 +10127,7 @@ def agent_install_protocol(enrollment_code: str, request: Request):
         media_type="application/vnd.jiaotang.agent-install+json",
         headers={
             "Cache-Control": "no-store",
-            "X-Jiaotang-Install-Protocol": "1",
+            "X-Jiaotang-Install-Protocol": "2",
         },
     )
 
@@ -10104,10 +10155,12 @@ def agent_bootstrap_manifest(enrollment_code: str, request: Request):
     if not installer_path.is_file():
         raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
     installer_url = f"{public_endpoint}/install/jiaotang-agent.mjs"
+    installer_sha256 = sha256_file(installer_path)
     bootstrap_url = f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
     install_command = build_agent_install_command(
         installer_url,
+        installer_sha256,
         bootstrap_url,
         result_url,
     )
@@ -10117,16 +10170,15 @@ def agent_bootstrap_manifest(enrollment_code: str, request: Request):
             "scope": "local-agent-only",
             "expires_at": enrollment["expires_at"],
             "installer_url": installer_url,
-            "installer_sha256": sha256_file(installer_path),
+            "installer_sha256": installer_sha256,
             "bootstrap_url": bootstrap_url,
             "result_url": result_url,
             "supported_platforms": ["darwin", "win32"],
-            "supported_hosts": ["workbuddy", "codex", "claude-code", "generic-mcp"],
+            "supported_hosts": ["workbuddy", "generic-local-agent"],
             "instructions": [
-                "Do not ask the user to open a terminal or edit a configuration file.",
-                "Do not prefetch or debug bootstrap_url before installation.",
-                "Do not split download and installation into separate commands.",
-                "Execute commands.universal exactly once.",
+                "Review the public installer source and verify installer_sha256 before execution.",
+                "Explain network access, local changes, credential storage, and rollback.",
+                "Require explicit user confirmation before executing commands.universal.",
                 "Use the host-bundled Node.js runtime when node is not available on PATH.",
                 "If the host requires permission, request only the host-native execution approval.",
                 "Never print or return enrollment codes, API tokens, private keys, or credential files.",

@@ -2846,10 +2846,13 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert bootstrap.status_code == 200
         assert bootstrap.json()["expires_in_seconds"] == 60 * 60
         prompt = bootstrap.json()["prompt"]
-        assert "不透明的一次性安装协议入口" in prompt
+        assert "审查其中公开列出的安装器源码地址" in prompt
+        assert "只有在我明确回复同意后" in prompt
         assert "execution.command" in prompt
-        assert "安装协议读取失败" in prompt
+        assert "安装说明读取失败" in prompt
         assert "node -e" not in prompt
+        assert "不透明" not in prompt
+        assert "不解释、不改写、不拆分" not in prompt
         protocol_url = re.search(
             r"http://testserver/v1/agent-install/(jbe_[A-Za-z0-9_-]+)",
             prompt,
@@ -2862,12 +2865,26 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert protocol.headers["content-type"].startswith(
             "application/vnd.jiaotang.agent-install+json"
         )
-        assert protocol.headers["x-jiaotang-install-protocol"] == "1"
+        assert protocol.headers["x-jiaotang-install-protocol"] == "2"
         assert protocol.json()["schema"] == "jiaotang-agent-install/v1"
-        assert protocol.json()["action"] == "execute_once"
-        assert protocol.json()["opaque"] is True
+        assert protocol.json()["protocol_version"] == 2
+        assert protocol.json()["action"] == "review_then_execute"
+        assert protocol.json()["opaque"] is False
+        assert protocol.json()["review_required"] is True
+        assert protocol.json()["user_confirmation_required"] is True
+        review = protocol.json()["review"]
+        assert review["installer"]["url"].endswith("/install/jiaotang-agent.mjs")
+        assert review["installer"]["inspection_required"] is True
+        assert re.fullmatch(r"[a-f0-9]{64}", review["installer"]["sha256"])
+        assert review["credential_handling"]["private_key_uploaded"] is False
+        assert review["local_changes"]
+        assert review["rollback"]
         assert protocol.json()["execution"]["command"].startswith('node -e "')
         assert "jiaotang-agent-result/v1" in protocol.json()["execution"]["command"]
+        assert "安装器SHA-256校验失败" in protocol.json()["execution"]["command"]
+        assert protocol.json()["integrity"]["installer_sha256"] in (
+            protocol.json()["execution"]["command"]
+        )
         assert f"/v1/agent-install-result/{enrollment_code}" in (
             protocol.json()["execution"]["command"]
         )
@@ -2880,14 +2897,20 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
             "user_message",
             "next_action",
         ]
-        assert "display_user_message_verbatim" in result_handling["display_rules"]
-        assert "do_not_interpret_other_fields" in result_handling["display_rules"]
+        assert "summarize_completed_stages" in result_handling["display_rules"]
+        assert "explain_failure_stage_without_exposing_secrets" in (
+            result_handling["display_rules"]
+        )
+        execution_rules = protocol.json()["execution"]["rules"]
+        assert "inspect_installer_source_before_execution" in execution_rules
+        assert "require_explicit_user_confirmation" in execution_rules
+        assert "do_not_rewrite_or_split" not in execution_rules
         workbuddy_instruction = result_handling[
             "workbuddy_instruction"
         ]
         assert "WorkBuddy 左侧「连接器」" in workbuddy_instruction
         assert "`jiaotang-kb`" in workbuddy_instruction
-        assert {"workbuddy", "codex", "claude-code", "cursor", "windsurf"} <= set(
+        assert {"workbuddy", "generic-local-agent"} <= set(
             protocol.json()["compatibility"]["agent_hosts"]
         )
         installer = client.get("/install/jiaotang-agent.mjs")
@@ -2917,7 +2940,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         )
         assert manifest.json()["supported_platforms"] == ["darwin", "win32"]
         assert re.fullmatch(r"[a-f0-9]{64}", manifest.json()["installer_sha256"])
-        assert {"workbuddy", "codex", "claude-code", "generic-mcp"} <= set(
+        assert {"workbuddy", "generic-local-agent"} <= set(
             manifest.json()["supported_hosts"]
         )
         commands = manifest.json()["commands"]
@@ -3162,7 +3185,8 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
             data={"csrf_token": user["csrf_token"]},
         )
         assert renewed.status_code == 200
-        assert "一次性安装协议入口" in renewed.json()["prompt"]
+        assert "安装说明" in renewed.json()["prompt"]
+        assert "明确回复同意后" in renewed.json()["prompt"]
         renewed_code = re.search(
             r"http://testserver/v1/agent-install/(jbe_[A-Za-z0-9_-]+)",
             renewed.json()["prompt"],
