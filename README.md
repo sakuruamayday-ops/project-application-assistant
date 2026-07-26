@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.2"><img src="https://img.shields.io/badge/Release-V1.2-C9A760?style=for-the-badge" alt="Release V1.2"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.3"><img src="https://img.shields.io/badge/Release-V1.3-C9A760?style=for-the-badge" alt="Release V1.3"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-48-17181A?style=for-the-badge" alt="48 Skills"></a>
-  <a href="docs/releases/V1.2.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
+  <a href="docs/releases/V1.3.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -48,8 +48,8 @@
 
 | 使用环境 | 下载 | 安装入口 |
 |---|---|---|
-| 支持完整 Skills 目录的 Agent | [通用 Skills V1.2](https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/V1.2/jiaotang-skills-V1.2.zip) | 按宿主的 Skill 导入流程加载完整目录 |
-| WorkBuddy 5 或更高版本 | [WorkBuddy V1.2 跨平台签名包](https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/V1.2/jiaotang-skills-V1.2-WorkBuddy.zip) | macOS 运行 `.command`；Windows 运行 `.cmd`，再由固定 `.ps1` 安装 |
+| 支持完整 Skills 目录的 Agent | [通用 Skills V1.3](https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/V1.3/jiaotang-skills-V1.3.zip) | 按宿主的 Skill 导入流程加载完整目录 |
+| WorkBuddy 5 或更高版本 | [WorkBuddy V1.3 跨平台签名包](https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/V1.3/jiaotang-skills-V1.3-WorkBuddy.zip) | macOS 运行 `.command`；Windows 运行 `.cmd`，再由固定 `.ps1` 安装 |
 
 > **为什么 WorkBuddy 只有一个 ZIP？**
 > macOS 与 Windows 使用同一份已签名插件内容、市场清单和 SHA-256。ZIP 内同时包含两个系统的固定安装器，拆成两份只会制造重复签名包和版本漂移。网站提供两个平台入口，但下载字节保持一致。
@@ -67,7 +67,7 @@ WorkBuddy 包内同时提供 macOS 与 Windows 固定安装器，不再维护平
 - 安装后执行真实 `marketplace add → install → enable → Skill 触发`，不把“已启用”冒充成功。
 - 客户密钥、账号登录态、签名私钥和付费数据库不进入仓库或发布包。
 
-## 56 项 Skills
+## 48 项 Skills
 
 正式技能、依赖关系、外部服务和发布门禁以 [`skills/suite-manifest.json`](skills/suite-manifest.json) 为唯一机器可读基线。
 
@@ -87,7 +87,7 @@ WorkBuddy 包内同时提供 macOS 与 Windows 固定安装器，不再维护平
 |---|---|
 | [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.md) | 下载、安装、首次配置和日常使用 |
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
-| [V1.2 发布说明](docs/releases/V1.2.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.3 发布说明](docs/releases/V1.3.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -127,8 +127,8 @@ GitHub 预发布
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.2` | 网站、GitHub Release 和用户可见版本 |
-| 语义版本 | `1.2.0` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.3` | 网站、GitHub Release 和用户可见版本 |
+| 语义版本 | `1.3.0` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 | 历史版本 | `V1.0`、`V1.1` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
 
