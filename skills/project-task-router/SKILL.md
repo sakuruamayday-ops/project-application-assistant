@@ -41,7 +41,7 @@ description: 识别政府项目申报、企业分析、知识产权、财税法�
 - 专精特新或小巨人只有企业基础资料、财务底表并要求“评分、测分、差多少分”时使用 `sme-score-preassessment`；已形成申请书的体检和跨章节核验使用 `sme-development-projects`。
 - 写正文使用 `application-writing`，检查单份终稿使用 `consistency-check`，比较多版本使用 `application-version-diff`。
 - 查产业目录使用 `industry-chain-foundation-matcher`，判断企业定位证据使用 `industry-positioning`。
-- 判断知识产权申报证据使用 `ip-assessment`，规划未来申请使用 `patent-layout-planning`。
+- 判断知识产权申报证据使用 `ip-assessment`；公司级专利查新、布局、FTO、挖掘交底和预审推荐统一使用 `jiaotang-patent-router`；单独核稿使用 `checking-patdocx-cn-single-agent`。
 
 涉及登录网站、动态页面筛选、翻页、表单、上传或结构化网页提取时，调用 `web-task-operator`；政策和企业专业判断仍由对应业务Skill完成。
 

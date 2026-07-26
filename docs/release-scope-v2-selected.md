@@ -24,23 +24,12 @@
 - 成员规则不写团队云端知识库，云端上传和索引仍由管理员执行
 - `project-deliverable-archive` 自动整理工作区成果，不依赖Obsidian
 
-### 专利数据底座与检索核心
+### 专利总路由与独立核稿
 
-- `patent-data-foundation`
-- `patent-search-core`
-- 配套的数据规范、来源许可规则、检索协议和确定性脚本
-
-### 专利业务技能组
-
-- `patent-claim-analysis`
-- `patent-similarity-search`
-- `patent-fto-analysis`
-- `patent-drafting-coach`
-- `patent-draft-auditor`
-- `patent-direction-planner`
-- `patent-benchmark-landscape`
-- 更新后的 `patent-layout-planning`
-- 更新后的 `ip-assessment`
+- `jiaotang-patent-router` 是公司级专利工作的唯一综合入口，内部完成检索分析、FTO、布局、挖掘交底和浙江省／杭州市双中心预审推荐
+- `checking-patdocx-cn-single-agent` 只负责中国专利申请 Word 核稿、批注、修订和完整性验证
+- 原 10 个顶层专利技能的自主方法、数据规范和确定性脚本保留在总路由内部，不再参与顶层触发
+- `ip-assessment` 继续负责政府项目中的知识产权证据价值，不替代专利工程分析
 
 ### 原创与来源记录
 
@@ -99,16 +88,18 @@
 ### 专利能力
 
 ```text
-patent-data-foundation
-        ↓
-patent-search-core
-        ↓
-权利要求分析 / 相似检索 / FTO / 方向规划 / 对标布局 / 申请质检
+jiaotang-patent-router
+        ├─ P1 检索、权利要求、相似、FTO、对标与布局
+        ├─ P2 挖掘与交底
+        └─ P3 双中心预审推荐
+
+checking-patdocx-cn-single-agent
+        └─ 申请文件核稿、批注、修订与结构验证
 ```
 
-- `patent-data-foundation` 是所有批量专利业务的前置依赖。
-- 需要现有技术、稳定性、FTO或竞争对手检索时依赖 `patent-search-core`。
-- `patent-drafting-coach` 可以整理真实技术材料，但不得虚构技术事实。
+- 公司级任务强制记录法域、基准日和证据来源，并由总路由生成唯一主意图。
+- 申请文件核稿与公司级综合审查互斥；同一任务同时要求二者时建立双轨记录。
+- 挖掘交底只能整理真实技术材料，不得虚构技术事实。
 - FTO与创造性、稳定性检索必须分开。
 
 ### 项目匹配能力

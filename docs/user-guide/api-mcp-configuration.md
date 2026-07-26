@@ -146,7 +146,7 @@ Agent 会读取十分钟有效的一次性引导清单，识别 macOS 或 Window
 
 ### 适用Skill
 
-`patent-data-foundation`、`patent-search-core`、`patent-claim-analysis`、`patent-similarity-search`、`patent-fto-analysis`、`patent-direction-planner`、`patent-layout-planning`和`patent-benchmark-landscape`。
+`jiaotang-patent-router`与`checking-patdocx-cn-single-agent`。前者统一承接公司级查新、权利要求分析、FTO、布局、挖掘交底和双中心预审推荐，后者只承接中国专利申请 Word 核稿。
 
 ### 操作步骤
 

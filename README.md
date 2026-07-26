@@ -2,12 +2,13 @@
 
 <p align="center">
   面向政府项目申报工程师与知识产权顾问的专业 Agent 工作系统。<br>
-  把政策、企业、财务、知识产权与申报材料组织成可追溯、可复核的完整工作流。
+  把政策、企业、财务、知识产权与申报材料组织成可追溯、可复核的完整工作流。<br>
+  当前包含 48 项顶层 Skills，专利能力收敛为 2 个顶层入口和 3 个总路由内部组件。
 </p>
 
 <p align="center">
   <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.2"><img src="https://img.shields.io/badge/Release-V1.2-C9A760?style=for-the-badge" alt="Release V1.2"></a>
-  <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-56-17181A?style=for-the-badge" alt="56 Skills"></a>
+  <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-48-17181A?style=for-the-badge" alt="48 Skills"></a>
   <a href="docs/releases/V1.2.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
@@ -16,7 +17,7 @@
 
 ## 它解决什么问题
 
-申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。企业全生命周期助手把这些要求编排成 56 项可复用 Skills，并通过统一入口自动路由。
+申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。企业全生命周期助手把这些要求编排成 48 项可复用 Skills，并通过统一入口自动路由。
 
 | 核心能力 | 能做什么 |
 |---|---|
@@ -24,7 +25,7 @@
 | 政策与证据 | 检索政策原文、记录来源与时效，区分事实、计算、推断和待核验项 |
 | 材料写作与体检 | 撰写、复核和对比申报材料，检查数据、产品、知识产权与叙事一致性 |
 | 企业与财税 | 形成企业画像、公开信息全景分析、财务复算与制造企业税务风险筛查 |
-| 专利全流程 | 覆盖检索、相似性、权利要求、FTO、挖掘布局、撰写辅导和提交前审查 |
+| 专利全流程 | 总路由统筹查新、挖掘、交底、双中心预审与审查意见分析；申请文件核稿由独立入口执行 |
 | 交付与治理 | 执行版本门禁、证据台账、四问复盘、受控进化和可回滚发布 |
 
 ```text

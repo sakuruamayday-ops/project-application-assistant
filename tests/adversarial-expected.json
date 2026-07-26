@@ -584,8 +584,7 @@
         "intellectual-property-projects"
       ],
       "forbidden_skills": [
-        "patent-fto-analysis",
-        "patent-claim-analysis"
+        "jiaotang-patent-router"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -599,8 +598,7 @@
         "intellectual-property-projects"
       ],
       "forbidden_skills": [
-        "patent-fto-analysis",
-        "patent-claim-analysis"
+        "jiaotang-patent-router"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -614,8 +612,7 @@
         "intellectual-property-projects"
       ],
       "forbidden_skills": [
-        "patent-fto-analysis",
-        "patent-claim-analysis"
+        "jiaotang-patent-router"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -629,8 +626,7 @@
         "intellectual-property-projects"
       ],
       "forbidden_skills": [
-        "patent-fto-analysis",
-        "patent-claim-analysis"
+        "jiaotang-patent-router"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -645,8 +641,7 @@
       ],
       "forbidden_skills": [
         "application-writing",
-        "patent-claim-analysis",
-        "patent-fto-analysis",
+        "jiaotang-patent-router",
         "project-feasibility"
       ],
       "clarification_required": false,
@@ -662,8 +657,7 @@
       ],
       "forbidden_skills": [
         "application-writing",
-        "patent-claim-analysis",
-        "patent-fto-analysis",
+        "jiaotang-patent-router",
         "project-feasibility"
       ],
       "clarification_required": false,
@@ -766,7 +760,7 @@
         "ip-assessment"
       ],
       "forbidden_skills": [
-        "patent-fto-analysis"
+        "jiaotang-patent-router"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -780,7 +774,7 @@
         "ip-assessment"
       ],
       "forbidden_skills": [
-        "patent-fto-analysis"
+        "jiaotang-patent-router"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -794,7 +788,7 @@
         "ip-assessment"
       ],
       "forbidden_skills": [
-        "patent-fto-analysis"
+        "jiaotang-patent-router"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -808,7 +802,7 @@
         "ip-assessment"
       ],
       "forbidden_skills": [
-        "patent-fto-analysis"
+        "jiaotang-patent-router"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -817,12 +811,12 @@
     {
       "case_id": "ADV-12-BASE",
       "category": "base",
-      "expected_primary_skill": "patent-layout-planning",
+      "expected_primary_skill": "jiaotang-patent-router",
       "required_skills": [
-        "patent-layout-planning"
+        "jiaotang-patent-router"
       ],
       "forbidden_skills": [
-        "patent-drafting-coach"
+        "checking-patdocx-cn-single-agent"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -831,12 +825,12 @@
     {
       "case_id": "ADV-12-TYPO",
       "category": "typo",
-      "expected_primary_skill": "patent-layout-planning",
+      "expected_primary_skill": "jiaotang-patent-router",
       "required_skills": [
-        "patent-layout-planning"
+        "jiaotang-patent-router"
       ],
       "forbidden_skills": [
-        "patent-drafting-coach"
+        "checking-patdocx-cn-single-agent"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -845,12 +839,12 @@
     {
       "case_id": "ADV-12-NEGATION",
       "category": "negation",
-      "expected_primary_skill": "patent-layout-planning",
+      "expected_primary_skill": "jiaotang-patent-router",
       "required_skills": [
-        "patent-layout-planning"
+        "jiaotang-patent-router"
       ],
       "forbidden_skills": [
-        "patent-drafting-coach"
+        "checking-patdocx-cn-single-agent"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",
@@ -859,12 +853,12 @@
     {
       "case_id": "ADV-12-MULTI-DOMAIN",
       "category": "multi-domain",
-      "expected_primary_skill": "patent-layout-planning",
+      "expected_primary_skill": "jiaotang-patent-router",
       "required_skills": [
-        "patent-layout-planning"
+        "jiaotang-patent-router"
       ],
       "forbidden_skills": [
-        "patent-drafting-coach"
+        "checking-patdocx-cn-single-agent"
       ],
       "clarification_required": false,
       "expected_policy_status": "not-applicable",

@@ -11,6 +11,7 @@
     "agriculture-and-rural-projects",
     "application-version-diff",
     "application-writing",
+    "checking-patdocx-cn-single-agent",
     "consistency-check",
     "digitalization-projects",
     "enterprise-panorama-analysis",
@@ -30,18 +31,9 @@
     "investment-subsidy-projects",
     "ip-assessment",
     "jiaotang-legal-regulations",
+    "jiaotang-patent-router",
     "local-knowledge-retrieval",
     "manufacturing-tax-risk-analysis",
-    "patent-benchmark-landscape",
-    "patent-claim-analysis",
-    "patent-data-foundation",
-    "patent-direction-planner",
-    "patent-draft-auditor",
-    "patent-drafting-coach",
-    "patent-fto-analysis",
-    "patent-layout-planning",
-    "patent-search-core",
-    "patent-similarity-search",
     "peer-benchmarking",
     "policy-retrieval",
     "project-application-assistant",
@@ -170,14 +162,14 @@
       ],
       "reason": "制造企业财税风险报告使用套件共享品牌运行时完成PDF品牌处理和交付闸门。"
     },
-    "patent-layout-planning": {
-      "required_skills": [
-        "patent-data-foundation",
-        "patent-search-core",
-        "patent-drafting-coach"
+    "jiaotang-patent-router": {
+      "required_skills": [],
+      "required_paths": [
+        "jiaotang-patent-router/components/patent-lawyer-agent/METHOD.md",
+        "jiaotang-patent-router/components/patent-mining-disclosure-skill/METHOD.md",
+        "jiaotang-patent-router/components/patent-preliminary-examination-check/METHOD.md"
       ],
-      "required_paths": [],
-      "reason": "专利布局依次复用专利事实底稿、检索计划，并将确认方向交给申请文件撰写链。"
+      "reason": "公司级专利查新、挖掘交底、双中心预审、FTO和布局统一由总路由内部组件完成，避免多个全流程入口竞争。"
     },
     "regional-special-projects": {
       "required_skills": [

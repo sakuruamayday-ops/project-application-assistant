@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-07-26",
+  "files": {
+    "zhejiang-ipc-2024-07-11-official.pdf": {
+      "sha256": "bd2ee9d3a0371e51b0f1170b4debb7a4fa2613efc049f1f86787df9b0002b071",
+      "status": "official_original"
+    },
+    "hangzhou-preexam-management-2025-revised-official.docx": {
+      "sha256": "bcabe4dab56c42b98be934ffd1e1cb292f7d1359b46e2c6306d046e7808e3469",
+      "status": "official_original"
+    },
+    "hangzhou-ipc-2024-wechat-archive-2026-07-26.pdf": {
+      "sha256": "4b02175669f9de918f5fa3c0e63a58a60ba4c30e134b0c95ca01dcbe0b7ad880",
+      "status": "current_primary_working_source_user_supplied_wechat_pdf",
+      "pages": 14,
+      "ipc_item_check": "123_of_123_match"
+    },
+    "hangzhou-ipc-row-123-h10n-20260726.png": {
+      "sha256": "b406503b1928965920c0120a01f099c86a3da0ee5198f3a5d3d41abdebca5110",
+      "status": "user_supplied_visual_evidence",
+      "evidence": "序号123为H10N，释义为其它不包括的电固态器件，备注新增"
+    },
+    "dual-center-ipc-index.json": {
+      "sha256": "aeb04bb01d698acd68039c9798358f9be80af89db1a9379d9c51aa92a1c3299f",
+      "status": "canonical_structured_index"
+    },
+    "dual-center-ipc-comparison.csv": {
+      "sha256": "7801fabe595710bedda4624dbea72e61f7de17a7a4872e7451e8450421dff364",
+      "status": "generated_comparison"
+    }
+  },
+  "hangzhou_official_pdf": {
+    "url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3246/site/attach/0/2407221736322339.pdf",
+    "sha256": null,
+    "retrieval_status": "HTTP 403 on 2026-07-26",
+    "follow_up": "官方附件恢复下载时归档原件并与微信存档、123项结构化索引复核；不影响当前按微信存档运行"
+  },
+  "hangzhou_corroborating_sources": [
+    {
+      "type": "user_supplied_wechat_pdf_primary_working_source",
+      "url": "https://mp.weixin.qq.com/s/6DH_QIiaz9qYcpf_UYRbhw",
+      "checked_at": "2026-07-26",
+      "retrieval_status": "主人以Safari打印为14页PDF；已归档、计算SHA-256并逐项核对123个IPC小类",
+      "evidence_weight": "杭州市官方附件不可下载期间的当前主工作依据"
+    },
+    {
+      "type": "official_search_index",
+      "url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3246/site/attach/0/2407221736322339.pdf",
+      "checked_at": "2026-07-26",
+      "retrieval_status": "公开搜索索引可识别标题及123项IPC、74项外观设计分类信息",
+      "evidence_weight": "官方域名索引佐证；待取得原件后补哈希与逐项复核"
+    }
+  ]
+}
