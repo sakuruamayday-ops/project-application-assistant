@@ -59,7 +59,7 @@ description: 企业合作前公开信息全景调研与双版本 PDF 或网页�
 - 融资租赁、抵押或诉讼数量本身不能证明资金不足、资不抵债或回款困难。
 - 项目分为“公开信息已支持、具备培育可能、请企业提供资料后判断”；正式申报前重新核验当期政策。
 - 专利区分有效授权、审中、终止、驳回、转让取得和转出；历史成果不得冒充当前有效权利。
-- 企业级专利统计只用于画像。用户要求专利性、权利要求、FTO、规避设计或技术壁垒结论时，依次调用包内 `patent-data-foundation`、`patent-search-core` 和对应的权利要求、相似检索或FTO Skill，不得从企查查摘要直接推导不侵权或稳定性。
+- 企业级专利统计只用于画像。用户要求专利性、权利要求、FTO、规避设计、技术壁垒、挖掘交底或预审推荐时，统一调用包内 `jiaotang-patent-router`，不得从企查查摘要直接推导不侵权、稳定性或预审准入。
 - 报告结尾必须让非专业客户看懂：按优先级列问题、影响、解决动作和对应服务。
 - 战略维度至少回答产品、区域、主体、资产投资、技术绿色和五年发展布局。报告不再单设“经营与销售视角”、客户渠道表或核心字段验证摘要；产品、人员、质量和经营控制信息分别放入主营业务、风险和项目章节。只有用户提供客户、渠道、报价、账期或回款资料并明确要求专项分析时，才增加经营销售模块。
 - 同行必须读取并执行 [peer-selection-rules.md](references/peer-selection-rules.md)：先核验分析企业是否已经取得省级专精特新，再动态选择一家近身同行、两家短期可追对象和两家行业标杆。选择方法只用于内部筛选，报告正文不得写出选择数量、层级或方法；企业风控形成风险地图、传导路径、控制措施和90天整改清单。
@@ -105,8 +105,8 @@ python3 scripts/validate_report_pdf.py <PDF路径> --require-watermark
 
 - 用户提供财务报表或未分配利润数据：叠加包内 `financial-verification`；涉及制造企业税务风险时再叠加 `manufacturing-tax-risk-analysis`，计算必须展示来源和公式。
 - 用户要求正式项目资格测算：叠加包内 `project-matching` 与 `project-feasibility`。
-- 用户要求专利布局：叠加包内 `patent-layout-planning`。
-- 用户要求专利查新、权利要求、FTO、侵权或规避设计：叠加包内 `patent-data-foundation`、`patent-search-core`、`patent-claim-analysis`、`patent-similarity-search` 或 `patent-fto-analysis`。
+- 用户要求专利布局：叠加包内 `jiaotang-patent-router`。
+- 用户要求专利查新、权利要求、FTO、侵权、规避设计、挖掘交底或预审推荐：叠加包内 `jiaotang-patent-router`；用户只要求检查中国专利申请 Word 时改用 `checking-patdocx-cn-single-agent`。
 - 用户只要求快速初筛：调用包内 `enterprise-profile` 采集，但报告仍按本技能重组。
 - 用户要求网页式看板：使用宿主平台已有前端能力生成，但未经授权不得发布或托管；页面数据必须来自共同事实底稿，缺失项明确显示待核，不得生成示例事实。
 

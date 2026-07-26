@@ -54,16 +54,8 @@
       "trade-and-open-economy-projects"
     ],
     "patent": [
-      "patent-data-foundation",
-      "patent-search-core",
-      "patent-claim-analysis",
-      "patent-similarity-search",
-      "patent-fto-analysis",
-      "patent-drafting-coach",
-      "patent-draft-auditor",
-      "patent-direction-planner",
-      "patent-benchmark-landscape",
-      "patent-layout-planning"
+      "jiaotang-patent-router",
+      "checking-patdocx-cn-single-agent"
     ],
     "delivery": [
       "application-writing",
@@ -340,9 +332,9 @@
     },
     {
       "from": "enterprise-panorama-analysis",
-      "to": "patent-layout-planning",
+      "to": "jiaotang-patent-router",
       "type": "optional",
-      "reason": "用户需要未来知识产权规划时进入专利布局链。"
+      "reason": "用户需要公司级专利查新、布局、FTO、挖掘交底或预审推荐时进入唯一专利总路由。"
     },
     {
       "from": "graphify",
@@ -355,108 +347,6 @@
       "to": "project-deliverable-archive",
       "type": "handoff",
       "reason": "项目状态与终版交付分别保存，避免把过程记忆当正式档案。"
-    },
-    {
-      "from": "patent-search-core",
-      "to": "patent-data-foundation",
-      "type": "requires",
-      "reason": "检索结果统一使用专利号、文本版本、法律状态、同族和申请人数据口径。"
-    },
-    {
-      "from": "patent-claim-analysis",
-      "to": "patent-data-foundation",
-      "type": "requires",
-      "reason": "权利要求分析必须锁定公开版、授权版和当前法律状态。"
-    },
-    {
-      "from": "patent-claim-analysis",
-      "to": "patent-search-core",
-      "type": "requires",
-      "reason": "需要通过检索计划定位对比文件和相关权利要求。"
-    },
-    {
-      "from": "patent-similarity-search",
-      "to": "patent-data-foundation",
-      "type": "requires",
-      "reason": "相似专利必须使用统一身份和文本版本。"
-    },
-    {
-      "from": "patent-similarity-search",
-      "to": "patent-search-core",
-      "type": "requires",
-      "reason": "关键词、分类号、申请人和引证扩展由检索核心生成。"
-    },
-    {
-      "from": "patent-fto-analysis",
-      "to": "patent-data-foundation",
-      "type": "requires",
-      "reason": "FTO必须核验目标国家、权利状态和有效权利要求版本。"
-    },
-    {
-      "from": "patent-fto-analysis",
-      "to": "patent-search-core",
-      "type": "requires",
-      "reason": "产品特征检索和竞争专利发现使用统一检索计划。"
-    },
-    {
-      "from": "patent-fto-analysis",
-      "to": "patent-claim-analysis",
-      "type": "requires",
-      "reason": "风险判断基于逐项权利要求特征比对，不以摘要相似替代。"
-    },
-    {
-      "from": "patent-draft-auditor",
-      "to": "patent-data-foundation",
-      "type": "requires",
-      "reason": "申请文件审查需要统一现有技术和已知专利事实。"
-    },
-    {
-      "from": "patent-draft-auditor",
-      "to": "patent-search-core",
-      "type": "requires",
-      "reason": "提交前检查需要确认检索范围和已发现对比文件。"
-    },
-    {
-      "from": "patent-direction-planner",
-      "to": "patent-data-foundation",
-      "type": "requires",
-      "reason": "方向规划先核验企业现有专利、法律状态和产品关联。"
-    },
-    {
-      "from": "patent-direction-planner",
-      "to": "patent-search-core",
-      "type": "requires",
-      "reason": "通过检索识别空白、拥挤方向和竞争主体。"
-    },
-    {
-      "from": "patent-benchmark-landscape",
-      "to": "patent-data-foundation",
-      "type": "requires",
-      "reason": "标杆企业专利按同族、权利状态和申请人归一化。"
-    },
-    {
-      "from": "patent-benchmark-landscape",
-      "to": "patent-search-core",
-      "type": "requires",
-      "reason": "标杆检索采用统一关键词、分类号和申请人扩展。"
-    },
-    {
-      "from": "patent-layout-planning",
-      "to": "patent-data-foundation",
-      "type": "requires",
-      "reason": "布局前先建立现有专利资产和产品映射底稿。"
-    },
-    {
-      "from": "patent-layout-planning",
-      "to": "patent-search-core",
-      "type": "requires",
-      "reason": "布局缺口和方向优先级必须有检索证据。"
-    },
-    {
-      "from": "patent-layout-planning",
-      "to": "patent-drafting-coach",
-      "type": "handoff",
-      "reason": "确认后的布局方向进入交底书和申请文件辅导。"
     },
     {
       "from": "first-run-configuration",

@@ -30,6 +30,36 @@ TEST_DEVICE_ID = "device:test-installation-0001"
 TEST_DEVICE_NAME = "Test Device"
 
 
+def complete_skill_release_fixture(skill_source_dir) -> bytes:
+    """Build a structurally complete archive for portal upload-flow tests."""
+    suite = json.loads(
+        (skill_source_dir / "suite-manifest.json").read_text(encoding="utf-8")
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "fixture/skills/suite-manifest.json",
+            json.dumps(suite, ensure_ascii=False, sort_keys=True),
+        )
+        for skill_name in suite["skills"]:
+            skill_body = f"# {skill_name}\n".encode()
+            skill_root = f"fixture/skills/{skill_name}/"
+            manifest = {
+                "skill_name": skill_name,
+                "required_paths": ["SKILL.md"],
+                "files": {"SKILL.md": hashlib.sha256(skill_body).hexdigest()},
+            }
+            archive.writestr(f"{skill_root}SKILL.md", skill_body)
+            archive.writestr(
+                f"{skill_root}release-manifest.json",
+                json.dumps(manifest, ensure_ascii=False, sort_keys=True),
+            )
+            archive.writestr(f"{skill_root}release-manifest.json.sig", "fixture")
+            archive.writestr(f"{skill_root}release-signature.json", "{}")
+            archive.writestr(f"{skill_root}publisher-ed25519.pub", "fixture")
+    return buffer.getvalue()
+
+
 def api_headers(token: str, device_id: str = TEST_DEVICE_ID) -> dict[str, str]:
     return {
         "Authorization": f"Bearer {token}",
@@ -625,7 +655,7 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
         assert "生成安全安装计划" in catalog.text
         assert 'data-skill-open="project-application-assistant"' in catalog.text
         assert 'data-skill-row' in catalog.text
-        assert "56 / 56" in catalog.text
+        assert "48 / 48" in catalog.text
 
         installation_status = client.get("/agent-installation-status")
         assert installation_status.status_code == 200
@@ -1164,7 +1194,7 @@ def test_assistant_skill_router_and_read_only_tool_loop(tmp_path, monkeypatch):
     assert "知识库资料" in answer
     assert "小巨人" in sources[0]["title"]
     assert "project-matching" in skills
-    assert set(module.route_assistant_skills("分析专利侵权和法律状态")) >= {"patent-search-core"}
+    assert set(module.route_assistant_skills("分析专利侵权和法律状态")) >= {"jiaotang-patent-router"}
 
     monkeypatch.setattr(
         module,
@@ -3659,10 +3689,7 @@ def test_admin_incremental_index_release_and_rollback(tmp_path):
         assert search.status_code == 200
         assert any(item["title"] == "新增政策.md" for item in search.json()["results"])
 
-        archive = (
-            module.SKILL_SOURCE_DIR.parent
-            / "dist/release-artifacts/jiaotang-skills-V1.1.zip"
-        ).read_bytes()
+        archive = complete_skill_release_fixture(module.SKILL_SOURCE_DIR)
         release = client.post(
             "/admin/skill-releases",
             data={
