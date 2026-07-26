@@ -7,6 +7,8 @@ import hashlib
 import json
 import os
 import platform
+import plistlib
+import re
 import shutil
 import subprocess
 import tempfile
@@ -116,6 +118,52 @@ def host_name() -> str:
     raise RuntimeError(f"真实宿主门禁仅支持 macOS/Windows，当前为 {platform.system()}")
 
 
+def system_details(host: str) -> dict[str, str]:
+    if host == "macos":
+        version = platform.mac_ver()[0] or platform.release()
+        return {"system_name": "macOS", "system_version": version}
+    version = platform.win32_ver()[1] or platform.version()
+    return {"system_name": "Windows", "system_version": version}
+
+
+def workbuddy_version(host: str, powershell: str | None = None) -> str:
+    if host == "macos":
+        plist = Path("/Applications/WorkBuddy.app/Contents/Info.plist")
+        if plist.is_file():
+            with plist.open("rb") as source:
+                return str(plistlib.load(source).get("CFBundleShortVersionString") or "")
+        return ""
+    if not powershell:
+        return ""
+    script = r"""
+$roots = @(
+  "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*",
+  "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*",
+  "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+)
+$item = Get-ItemProperty $roots -ErrorAction SilentlyContinue |
+  Where-Object { $_.DisplayName -like "WorkBuddy*" } |
+  Select-Object -First 1
+if ($item) { [Console]::Write([string]$item.DisplayVersion) }
+"""
+    completed = subprocess.run(
+        [powershell, "-NoProfile", "-Command", script],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else ""
+
+
+def codebuddy_version(transcript: str) -> str:
+    matches = re.findall(
+        r"(?m)^(?:codebuddy\s+)?v?(\d+\.\d+\.\d+(?:[-+][^\s]+)?)\s*$",
+        transcript,
+        flags=re.IGNORECASE,
+    )
+    return matches[0] if matches else ""
+
+
 def run_gate(archive: Path, output_dir: Path, expected_host: str) -> dict[str, object]:
     actual_host = host_name()
     if actual_host != expected_host:
@@ -137,6 +185,7 @@ def run_gate(archive: Path, output_dir: Path, expected_host: str) -> dict[str, o
             "DISABLE_AUTOUPDATER": "1",
         }
     )
+    powershell = None
     if actual_host == "macos":
         installer = marketplace / "install-jiaotang-workbuddy.command"
         command = ["/bin/zsh", str(installer)]
@@ -171,15 +220,27 @@ def run_gate(archive: Path, output_dir: Path, expected_host: str) -> dict[str, o
         if completed.returncode == 0 and "安装成功，且已真实触发技能" in transcript
         else "fail"
     )
+    versions = system_details(actual_host)
+    detected_workbuddy = workbuddy_version(actual_host, powershell)
+    detected_codebuddy = codebuddy_version(transcript)
+    if status == "pass" and (not detected_workbuddy or not detected_codebuddy):
+        status = "fail"
+        transcript += "\n安装失败：无法记录 WorkBuddy 或 CodeBuddy CLI 版本\n"
+        (output_dir / "installer.log").write_text(transcript, encoding="utf-8")
     evidence = {
         "schema": "jiaotang-workbuddy-host-evidence/v1",
         "status": status,
         "host": actual_host,
         "runner": os.environ.get("RUNNER_NAME", ""),
         "os": os.environ.get("RUNNER_OS", platform.system()),
+        **versions,
         "arch": os.environ.get("RUNNER_ARCH", platform.machine()),
+        "workbuddy_version": detected_workbuddy,
+        "codebuddy_version": detected_codebuddy,
         "release_tag": os.environ.get("JIAOTANG_RELEASE_TAG", ""),
         "commit": os.environ.get("GITHUB_SHA", ""),
+        "run_id": os.environ.get("GITHUB_RUN_ID", ""),
+        "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT", ""),
         "archive_sha256": sha256(archive),
         "installer": installer.name,
         "returncode": completed.returncode,

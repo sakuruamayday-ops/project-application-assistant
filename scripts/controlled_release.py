@@ -136,7 +136,10 @@ def validate_runners(payload: dict[str, object]) -> dict[str, dict[str, object]]
     for host, required in REQUIRED_HOST_LABELS.items():
         matches = []
         for runner in runners:
-            labels = {str(item.get("name")) for item in runner.get("labels", [])}
+            labels = {
+                str(item.get("name")).casefold()
+                for item in runner.get("labels", [])
+            }
             if required <= labels:
                 matches.append(runner)
         online = [
@@ -277,15 +280,137 @@ def wait_for_host_gate(repository: str, run_id: int, timeout_seconds: int) -> di
     raise RuntimeError("双宿主门禁等待超时；GitHub 预发布保持未提升状态")
 
 
-def host_evidence(gate: dict[str, object], tag: str, run_id: int) -> dict[str, object]:
+def validate_attested_host_payload(
+    host: str,
+    payload: dict[str, object],
+    locator: dict[str, object],
+    verification: object,
+    tag: str,
+) -> dict[str, object]:
+    if (
+        payload.get("schema") != "jiaotang-workbuddy-host-evidence/v1"
+        or payload.get("status") != "pass"
+        or payload.get("host") != host
+        or payload.get("release_tag") != tag
+    ):
+        raise RuntimeError(f"{host} 实机证据内容或版本无效")
+    required = (
+        "runner",
+        "system_name",
+        "system_version",
+        "arch",
+        "workbuddy_version",
+        "codebuddy_version",
+        "archive_sha256",
+    )
+    if any(not str(payload.get(field) or "").strip() for field in required):
+        raise RuntimeError(f"{host} 实机证据缺少系统、WorkBuddy、CLI 或包摘要")
+    if (
+        locator.get("schema") != "jiaotang-github-attestation-locator/v1"
+        or not str(locator.get("attestation_id") or "")
+        or not str(locator.get("attestation_url") or "").startswith(
+            "https://github.com/"
+        )
+    ):
+        raise RuntimeError(f"{host} 缺少 GitHub 证据签名定位信息")
+    if not isinstance(verification, list) or not verification:
+        raise RuntimeError(f"{host} GitHub Artifact Attestation 未验证通过")
+    return {
+        **payload,
+        "evidence_sha256": "",
+        "attestation": {
+            "status": "verified",
+            "id": str(locator["attestation_id"]),
+            "url": str(locator["attestation_url"]),
+            "signer_workflow": f".github/workflows/{WORKFLOW}",
+        },
+    }
+
+
+def download_attested_host_payloads(
+    repository: str,
+    run_id: int,
+    tag: str,
+    commit: str,
+    directory: Path,
+) -> dict[str, dict[str, object]]:
+    signer = f"{repository}/.github/workflows/{WORKFLOW}"
+    payloads: dict[str, dict[str, object]] = {}
+    for host in REQUIRED_HOST_LABELS:
+        target = directory / host
+        run(
+            [
+                "gh",
+                "run",
+                "download",
+                str(run_id),
+                "--repo",
+                repository,
+                "--name",
+                f"workbuddy-{host}-evidence",
+                "--dir",
+                str(target),
+            ]
+        )
+        evidence_path = target / "host-evidence.json"
+        locator_path = target / "attestation.json"
+        if not evidence_path.is_file() or not locator_path.is_file():
+            raise RuntimeError(f"{host} 门禁产物缺少证据或签名定位文件")
+        verification = json_command(
+            [
+                "gh",
+                "attestation",
+                "verify",
+                str(evidence_path),
+                "--repo",
+                repository,
+                "--signer-workflow",
+                signer,
+                "--source-digest",
+                commit,
+                "--format",
+                "json",
+            ]
+        )
+        payload = validate_attested_host_payload(
+            host,
+            json.loads(evidence_path.read_text(encoding="utf-8")),
+            json.loads(locator_path.read_text(encoding="utf-8")),
+            verification,
+            tag,
+        )
+        payload["attestation"]["source_digest"] = commit
+        payload["evidence_sha256"] = sha256(evidence_path)
+        payloads[host] = payload
+    if len({payload["archive_sha256"] for payload in payloads.values()}) != 1:
+        raise RuntimeError("macOS 与 Windows 验证的 WorkBuddy 包 SHA-256 不一致")
+    return payloads
+
+
+def host_evidence(
+    gate: dict[str, object],
+    tag: str,
+    run_id: int,
+    payloads: dict[str, dict[str, object]],
+) -> dict[str, object]:
     hosts = {}
     for host in REQUIRED_HOST_LABELS:
         job = next(job for job in gate["jobs"] if host in job["name"].lower())
+        payload = payloads[host]
         hosts[host] = {
             "status": "pass",
             "job_id": job["databaseId"],
             "job_url": job["url"],
             "completed_at": job["completedAt"],
+            "runner": payload["runner"],
+            "system_name": payload["system_name"],
+            "system_version": payload["system_version"],
+            "arch": payload["arch"],
+            "workbuddy_version": payload["workbuddy_version"],
+            "codebuddy_version": payload["codebuddy_version"],
+            "archive_sha256": payload["archive_sha256"],
+            "evidence_sha256": payload["evidence_sha256"],
+            "attestation": payload["attestation"],
         }
     return {
         "schema": "jiaotang-workbuddy-host-matrix/v1",
@@ -400,7 +525,14 @@ def main() -> None:
         )
         run_id = find_release_run(arguments.repository, commit, started_at)
         gate = wait_for_host_gate(arguments.repository, run_id, arguments.host_timeout)
-        evidence = host_evidence(gate, validation["tag"], run_id)
+        payloads = download_attested_host_payloads(
+            arguments.repository,
+            run_id,
+            validation["tag"],
+            commit,
+            temporary / "host-evidence",
+        )
+        evidence = host_evidence(gate, validation["tag"], run_id, payloads)
         evidence_path = temporary / f"workbuddy-host-matrix-{validation['tag']}.json"
         evidence_path.write_text(
             json.dumps(evidence, ensure_ascii=False, indent=2) + "\n",

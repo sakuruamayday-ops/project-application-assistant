@@ -35,3 +35,11 @@ def test_locate_marketplace_requires_one_root(tmp_path: Path) -> None:
     manifest.parent.mkdir(parents=True)
     manifest.write_text("{}", encoding="utf-8")
     assert MODULE.locate_marketplace(root) == root / "jiaotang"
+
+
+def test_codebuddy_version_is_extracted_from_installer_transcript() -> None:
+    assert (
+        MODULE.codebuddy_version("使用CLI：/Applications/WorkBuddy.app/cli\n2.115.0\n")
+        == "2.115.0"
+    )
+    assert MODULE.codebuddy_version("没有版本") == ""

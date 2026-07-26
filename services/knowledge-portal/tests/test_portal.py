@@ -3721,8 +3721,36 @@ def test_workbuddy_downloads_show_platforms_and_real_host_status(tmp_path):
                     "status": "pass",
                     "release_tag": "V1.2",
                     "hosts": {
-                        "macos": {"status": "pass"},
-                        "windows": {"status": "pass"},
+                        "macos": {
+                            "status": "pass",
+                            "job_url": "https://github.com/example/actions/jobs/10",
+                            "system_name": "macOS",
+                            "system_version": "26.5.2",
+                            "arch": "ARM64",
+                            "workbuddy_version": "5.3.3",
+                            "codebuddy_version": "2.115.0",
+                            "archive_sha256": "a" * 64,
+                            "evidence_sha256": "b" * 64,
+                            "attestation": {
+                                "status": "verified",
+                                "url": "https://github.com/example/attestations/10",
+                            },
+                        },
+                        "windows": {
+                            "status": "pass",
+                            "job_url": "https://github.com/example/actions/jobs/11",
+                            "system_name": "Windows",
+                            "system_version": "11.0.26100",
+                            "arch": "X64",
+                            "workbuddy_version": "5.3.3",
+                            "codebuddy_version": "2.115.0",
+                            "archive_sha256": "a" * 64,
+                            "evidence_sha256": "c" * 64,
+                            "attestation": {
+                                "status": "verified",
+                                "url": "https://github.com/example/attestations/11",
+                            },
+                        },
                     },
                 }
             ),
@@ -3730,6 +3758,11 @@ def test_workbuddy_downloads_show_platforms_and_real_host_status(tmp_path):
         )
         verified_page = client.get("/skills")
         assert verified_page.text.count("实机门禁通过") == 2
+        assert "macOS 26.5.2 · ARM64" in verified_page.text
+        assert "Windows 11.0.26100 · X64" in verified_page.text
+        assert "GitHub Job" in verified_page.text
+        assert "OIDC 签名证明" in verified_page.text
+        assert "a" * 64 in verified_page.text
 
 
 def test_release_announcement_appears_once_after_publish(tmp_path):

@@ -12302,9 +12302,22 @@ def workbuddy_platforms(version: str) -> list[dict[str, object]]:
         host = definition["id"]
         included = any(name.endswith(f"/{definition['launcher']}") for name in names)
         host_evidence = hosts.get(host) if isinstance(hosts, dict) else None
+        attestation = (
+            host_evidence.get("attestation")
+            if isinstance(host_evidence, dict)
+            and isinstance(host_evidence.get("attestation"), dict)
+            else {}
+        )
         verified = (
             isinstance(host_evidence, dict)
             and host_evidence.get("status") == "pass"
+            and attestation.get("status") == "verified"
+            and str(host_evidence.get("job_url") or "").startswith(
+                "https://github.com/"
+            )
+            and str(attestation.get("url") or "").startswith(
+                "https://github.com/"
+            )
         )
         result.append(
             {
@@ -12313,6 +12326,39 @@ def workbuddy_platforms(version: str) -> list[dict[str, object]]:
                 "verified": verified,
                 "status_label": "实机门禁通过" if verified else "安装器已包含，实机门禁待完成",
                 "download_url": f"/skills/latest/workbuddy/{host}/download",
+                "job_url": str(host_evidence.get("job_url") or "")
+                if verified
+                else "",
+                "system": (
+                    f"{host_evidence.get('system_name')} "
+                    f"{host_evidence.get('system_version')} · "
+                    f"{host_evidence.get('arch')}"
+                )
+                if verified
+                else "",
+                "workbuddy_version": str(
+                    host_evidence.get("workbuddy_version") or ""
+                )
+                if verified
+                else "",
+                "codebuddy_version": str(
+                    host_evidence.get("codebuddy_version") or ""
+                )
+                if verified
+                else "",
+                "archive_sha256": str(
+                    host_evidence.get("archive_sha256") or ""
+                )
+                if verified
+                else "",
+                "evidence_sha256": str(
+                    host_evidence.get("evidence_sha256") or ""
+                )
+                if verified
+                else "",
+                "attestation_url": str(attestation.get("url") or "")
+                if verified
+                else "",
             }
         )
     return result

@@ -56,6 +56,29 @@ def make_database(path: Path) -> None:
         )
 
 
+def host_evidence(host: str) -> dict[str, object]:
+    return {
+        "status": "pass",
+        "job_id": 10 if host == "macos" else 11,
+        "job_url": f"https://github.com/example/actions/jobs/{host}",
+        "runner": f"jiaotang-{host}",
+        "system_name": "macOS" if host == "macos" else "Windows",
+        "system_version": "26.5.2" if host == "macos" else "11.0.26100",
+        "arch": "ARM64" if host == "macos" else "X64",
+        "workbuddy_version": "5.3.3",
+        "codebuddy_version": "2.115.0",
+        "archive_sha256": "a" * 64,
+        "evidence_sha256": ("b" if host == "macos" else "c") * 64,
+        "attestation": {
+            "status": "verified",
+            "id": f"attestation-{host}",
+            "url": f"https://github.com/example/attestations/{host}",
+            "source_digest": "d" * 40,
+            "signer_workflow": ".github/workflows/workbuddy-host-matrix.yml",
+        },
+    }
+
+
 def test_publish_is_validated_and_idempotent(tmp_path: Path) -> None:
     database = tmp_path / "portal.db"
     release_dir = tmp_path / "releases"
@@ -98,8 +121,8 @@ def test_publish_requires_both_successful_hosts_when_evidence_is_supplied(
                 "status": "pass",
                 "release_tag": "V1.2",
                 "hosts": {
-                    "macos": {"status": "pass"},
-                    "windows": {"status": "pass"},
+                    "macos": host_evidence("macos"),
+                    "windows": host_evidence("windows"),
                 },
             }
         ),
