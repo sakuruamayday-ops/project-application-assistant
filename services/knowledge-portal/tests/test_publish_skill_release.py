@@ -150,3 +150,44 @@ def test_publish_requires_both_successful_hosts_when_evidence_is_supplied(
         assert "windows" in str(error)
     else:
         raise AssertionError("expected missing Windows evidence to fail")
+
+
+def test_publish_accepts_owner_collected_compatibility_feedback(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "portal.db"
+    release_dir = tmp_path / "releases"
+    generic, workbuddy = make_packages(tmp_path)
+    make_database(database)
+    feedback = tmp_path / "compatibility-feedback.json"
+    feedback.write_text(
+        json.dumps(
+            {
+                "schema": "jiaotang-workbuddy-compatibility-feedback/v1",
+                "release_tag": "V1.2",
+                "collection_method": "owner-collected",
+                "platforms": {
+                    "macos": {"status": "not-reported"},
+                    "windows": {
+                        "status": "reported-pass",
+                        "summary": "用户完成安装、启用和技能触发",
+                        "reported_at": "2026-07-26T23:00:00+08:00",
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = MODULE.publish(
+        database,
+        release_dir,
+        generic,
+        workbuddy,
+        "1.2",
+        "notes",
+        compatibility_feedback=feedback,
+    )
+
+    assert result["status"] == "published"
+    assert Path(result["compatibility_feedback_path"]).is_file()

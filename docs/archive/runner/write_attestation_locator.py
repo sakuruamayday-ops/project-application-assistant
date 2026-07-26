@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Persist non-secret GitHub attestation outputs beside signed host evidence."""
+"""Archived attestation locator writer retained for audit only."""
 from __future__ import annotations
 
 import argparse

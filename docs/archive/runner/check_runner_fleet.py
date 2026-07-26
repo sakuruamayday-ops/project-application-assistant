@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the repository's macOS and Windows WorkBuddy runner fleet."""
+"""Archived Runner fleet checker retained for audit only."""
 from __future__ import annotations
 
 import json

@@ -3656,7 +3656,7 @@ def test_latest_skill_release_metadata_and_download(tmp_path):
         assert historical_download.content == b"historical-skill-package"
 
 
-def test_workbuddy_downloads_show_platforms_and_real_host_status(tmp_path):
+def test_workbuddy_downloads_show_platforms_and_manual_feedback_status(tmp_path):
     module = load_app(tmp_path)
     package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy.zip"
     package.parent.mkdir(parents=True, exist_ok=True)
@@ -3703,13 +3703,39 @@ def test_workbuddy_downloads_show_platforms_and_real_host_status(tmp_path):
         assert "macOS" in page.text
         assert "Windows" in page.text
         assert "内容和 SHA-256 相同" in page.text
-        assert page.text.count("安装器已包含，实机门禁待完成") == 2
+        assert page.text.count("安装器已包含，等待人工反馈") == 2
         for platform_name in ("macos", "windows"):
             download = client.get(
                 f"/skills/latest/workbuddy/{platform_name}/download"
             )
             assert download.status_code == 200
             assert download.content == package.read_bytes()
+
+        feedback = module.SKILL_RELEASE_DIR / (
+            "企业全生命周期助手-V1.2-WorkBuddy-compatibility-feedback.json"
+        )
+        feedback.write_text(
+            json.dumps(
+                {
+                    "schema": "jiaotang-workbuddy-compatibility-feedback/v1",
+                    "release_tag": "V1.2",
+                    "collection_method": "owner-collected",
+                    "platforms": {
+                        "macos": {"status": "not-reported"},
+                        "windows": {
+                            "status": "reported-pass",
+                            "summary": "Windows 用户完成安装、启用和技能触发",
+                            "reported_at": "2026-07-26T23:00:00+08:00",
+                        },
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        feedback_page = client.get("/skills")
+        assert "人工反馈：安装与触发成功" in feedback_page.text
+        assert "Windows 用户完成安装、启用和技能触发" in feedback_page.text
+        assert "主人手动收集" in feedback_page.text
 
         evidence = module.SKILL_RELEASE_DIR / (
             "企业全生命周期助手-V1.2-WorkBuddy-host-evidence.json"
@@ -3757,7 +3783,7 @@ def test_workbuddy_downloads_show_platforms_and_real_host_status(tmp_path):
             encoding="utf-8",
         )
         verified_page = client.get("/skills")
-        assert verified_page.text.count("实机门禁通过") == 2
+        assert verified_page.text.count("自动实机证据已验证") == 2
         assert "macOS 26.5.2 · ARM64" in verified_page.text
         assert "Windows 11.0.26100 · X64" in verified_page.text
         assert "GitHub Job" in verified_page.text

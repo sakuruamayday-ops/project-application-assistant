@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the released WorkBuddy package on a real macOS or Windows host."""
+"""Archived real-host Runner release gate retained for audit only."""
 from __future__ import annotations
 
 import argparse

@@ -12272,6 +12272,22 @@ def workbuddy_host_evidence(version: str) -> dict[str, object]:
     return payload
 
 
+def workbuddy_compatibility_feedback(version: str) -> dict[str, object]:
+    path = SKILL_RELEASE_DIR / (
+        f"企业全生命周期助手-V{version}-WorkBuddy-compatibility-feedback.json"
+    )
+    payload = read_json_object(path)
+    if (
+        payload.get("schema")
+        != "jiaotang-workbuddy-compatibility-feedback/v1"
+        or payload.get("release_tag") != f"V{version}"
+        or payload.get("collection_method") != "owner-collected"
+        or not isinstance(payload.get("platforms"), dict)
+    ):
+        return {}
+    return payload
+
+
 def workbuddy_platforms(version: str) -> list[dict[str, object]]:
     package_path = workbuddy_skill_package(version)
     names: set[str] = set()
@@ -12283,6 +12299,12 @@ def workbuddy_platforms(version: str) -> list[dict[str, object]]:
             names = set()
     evidence = workbuddy_host_evidence(version)
     hosts = evidence.get("hosts") if isinstance(evidence.get("hosts"), dict) else {}
+    feedback = workbuddy_compatibility_feedback(version)
+    feedback_platforms = (
+        feedback.get("platforms")
+        if isinstance(feedback.get("platforms"), dict)
+        else {}
+    )
     definitions = [
         {
             "id": "macos",
@@ -12302,6 +12324,12 @@ def workbuddy_platforms(version: str) -> list[dict[str, object]]:
         host = definition["id"]
         included = any(name.endswith(f"/{definition['launcher']}") for name in names)
         host_evidence = hosts.get(host) if isinstance(hosts, dict) else None
+        manual_feedback = (
+            feedback_platforms.get(host)
+            if isinstance(feedback_platforms, dict)
+            and isinstance(feedback_platforms.get(host), dict)
+            else {}
+        )
         attestation = (
             host_evidence.get("attestation")
             if isinstance(host_evidence, dict)
@@ -12319,12 +12347,31 @@ def workbuddy_platforms(version: str) -> list[dict[str, object]]:
                 "https://github.com/"
             )
         )
+        feedback_status = str(manual_feedback.get("status") or "not-reported")
+        status_label = (
+            "自动实机证据已验证"
+            if verified
+            else (
+                "人工反馈：安装与触发成功"
+                if feedback_status == "reported-pass"
+                else (
+                    "人工反馈：存在兼容问题"
+                    if feedback_status == "reported-fail"
+                    else "安装器已包含，等待人工反馈"
+                )
+            )
+        )
         result.append(
             {
                 **definition,
                 "included": included,
                 "verified": verified,
-                "status_label": "实机门禁通过" if verified else "安装器已包含，实机门禁待完成",
+                "feedback_status": feedback_status,
+                "feedback_summary": str(manual_feedback.get("summary") or ""),
+                "feedback_reported_at": str(
+                    manual_feedback.get("reported_at") or ""
+                ),
+                "status_label": status_label,
                 "download_url": f"/skills/latest/workbuddy/{host}/download",
                 "job_url": str(host_evidence.get("job_url") or "")
                 if verified
