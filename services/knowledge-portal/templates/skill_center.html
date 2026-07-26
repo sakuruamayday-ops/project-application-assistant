@@ -1,10 +1,29 @@
 <section id="skills" class="section-block skill-center" data-skill-center>
-  <header class="skill-command-bar">
-    <div class="skill-scan-state"><span class="skill-live-dot"></span><div><strong>官方技能目录已就绪</strong><small>{{ skill_center.release_tag }} · {{ skill_center.summary.total }} 项能力已载入</small></div></div>
-    <div class="skill-command-actions">
-      {% if latest_release %}<button class="button skill-primary-action" type="button" data-skill-tab-target="downloads">选择安装平台</button>{% endif %}
-      <button class="button secondary" type="button" data-skill-rescan>刷新目录</button>
-      <button class="button skill-dark-action" type="button" data-skill-tab-target="install">{{ 'Agent 接入说明' if user.is_admin else '生成安全安装计划' }} <span>→</span></button>
+  <header class="skill-hero">
+    <div class="skill-hero-copy">
+      <span class="skill-kicker">团队 Skills 管理中心</span>
+      <h2>专业能力，可信可查<span>。</span></h2>
+      <p>统一查看企业项目、政策证据、专利、交付与治理能力。技能内容来自正式发布清单，所有团队成员均可检索和查阅。</p>
+    </div>
+    <div class="skill-hero-summary">
+      <div class="skill-coverage" aria-label="{{ skill_center.summary.coverage_percent }}% 的技能已完成签名验证">
+        <svg viewBox="0 0 120 120" role="img" aria-hidden="true"><circle class="skill-ring-track" cx="60" cy="60" r="48" pathLength="100"></circle><circle class="skill-ring-value" cx="60" cy="60" r="48" pathLength="100" stroke-dasharray="{{ skill_center.summary.coverage_percent }} {{ 100 - skill_center.summary.coverage_percent }}"></circle></svg>
+        <div><strong>{{ skill_center.summary.coverage_percent }}<small>%</small></strong><span>签名覆盖率</span></div>
+      </div>
+      <dl class="skill-metrics" aria-label="技能目录统计">
+        <div><dt>技能总数</dt><dd>{{ skill_center.summary.total }}</dd><small>{{ skill_center.summary.group_count }} 个能力组</small></div>
+        <div><dt>已验证</dt><dd>{{ skill_center.summary.verified }}</dd><small>签名齐备</small></div>
+        <div><dt>待签名</dt><dd>{{ skill_center.summary.pending }}</dd><small>仍可查阅</small></div>
+        <div><dt>发布版本</dt><dd>{{ skill_center.release_tag }}</dd><small>正式清单</small></div>
+      </dl>
+    </div>
+    <div class="skill-command-bar">
+      <div class="skill-scan-state"><span class="skill-live-dot"></span><div><strong>官方技能目录已就绪</strong><small>{{ skill_center.release_tag }} · {{ skill_center.summary.total }} 项能力已载入</small></div></div>
+      <div class="skill-command-actions">
+        {% if latest_release %}<button class="button skill-primary-action" type="button" data-skill-tab-target="downloads">选择安装平台</button>{% endif %}
+        <button class="button secondary" type="button" data-skill-rescan>刷新目录</button>
+        <button class="button skill-dark-action" type="button" data-skill-tab-target="install">{{ 'Agent 接入说明' if user.is_admin else '生成安全安装计划' }} <span>→</span></button>
+      </div>
     </div>
   </header>
 

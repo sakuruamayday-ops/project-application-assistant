@@ -618,8 +618,8 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
 
         catalog = client.get("/skills")
         assert catalog.status_code == 200
-        assert "专业能力，" in catalog.text
-        assert "可信可查" in catalog.text
+        assert "正式发布清单" in catalog.text
+        assert "技能清单" in catalog.text
         assert "版本与下载" in catalog.text
         assert "安装与设备" in catalog.text
         assert "生成安全安装计划" in catalog.text
