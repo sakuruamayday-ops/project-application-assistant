@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import importlib.util
-import os
-import pwd
 from pathlib import Path
 
 
@@ -43,20 +41,3 @@ def test_fleet_status_is_case_insensitive_and_requires_both_hosts() -> None:
         {"runners": [runner("mac", "macOS")]}
     )
     assert failures == ["windows: matched=0, online=0"]
-
-
-def test_gh_environment_uses_service_account_home(monkeypatch) -> None:
-    monkeypatch.setenv("GH_TOKEN", "workflow-token")
-    monkeypatch.setenv("GITHUB_TOKEN", "workflow-token")
-    monkeypatch.setenv("HOME", "/tmp/actions-runner-home")
-    monkeypatch.setenv("XDG_CONFIG_HOME", "/tmp/actions-xdg")
-    monkeypatch.setenv("GH_CONFIG_DIR", "/tmp/actions-gh")
-
-    environment = MODULE.gh_environment()
-
-    assert "GH_TOKEN" not in environment
-    assert "GITHUB_TOKEN" not in environment
-    assert "XDG_CONFIG_HOME" not in environment
-    service_home = pwd.getpwuid(os.getuid()).pw_dir
-    assert environment["HOME"] == service_home
-    assert environment["GH_CONFIG_DIR"] == str(Path(service_home) / ".config" / "gh")

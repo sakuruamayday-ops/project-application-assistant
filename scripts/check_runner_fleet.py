@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import pwd
 import subprocess
 import sys
 
@@ -13,19 +12,6 @@ REQUIRED = {
     "macos": {"self-hosted", "workbuddy", "macos"},
     "windows": {"self-hosted", "workbuddy", "windows"},
 }
-
-
-def gh_environment() -> dict[str, str]:
-    environment = os.environ.copy()
-    environment.pop("GH_TOKEN", None)
-    environment.pop("GITHUB_TOKEN", None)
-    environment.pop("XDG_CONFIG_HOME", None)
-    # Actions rewrites HOME to the runner work directory. Restore the service
-    # account's real home so gh can use its existing macOS Keychain credential.
-    service_home = pwd.getpwuid(os.getuid()).pw_dir
-    environment["HOME"] = service_home
-    environment["GH_CONFIG_DIR"] = os.path.join(service_home, ".config", "gh")
-    return environment
 
 
 def fleet_status(payload: dict[str, object]) -> tuple[list[str], list[str]]:
@@ -69,7 +55,6 @@ def main() -> None:
         check=False,
         capture_output=True,
         text=True,
-        env=gh_environment(),
     )
     if completed.returncode != 0:
         raise SystemExit(

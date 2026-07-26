@@ -26,7 +26,8 @@
 - 不在 Runner 保存技能签名私钥；实机只验证 GitHub 预发布中的已签名成品。
 - 不复制或上传 WorkBuddy 登录凭据。门禁只上传安装日志和不含密钥的宿主证据。
 - Runner 使用专用操作系统账号，不承载客户资料。
-- 每小时由 `.github/workflows/runner-fleet-health.yml` 在已受控的 macOS Runner 上使用本机 GitHub 登录态检查双宿主在线状态；缺少任一宿主时门禁失败并保留 Actions 记录。不得为了读取 Runner 列表把高权限个人令牌复制到 GitHub Secret。
+- `.github/workflows/runner-fleet-health.yml` 使用独立的最小权限机器凭据检查双宿主在线状态。凭据必须限定到本仓库且仅授予 `Administration: Read`，保存为 Actions Secret `RUNNER_MONITOR_TOKEN`。不得复制个人广域令牌，也不得复用发布、签名或网站部署凭据。
+- 在 `RUNNER_MONITOR_TOKEN` 配置完成前，巡检只允许手动触发，避免定时任务持续产生无意义的鉴权失败。配置完成并完成一次实测后，才恢复每小时计划任务。
 
 ## 登记与常驻
 
@@ -43,6 +44,8 @@
 gh api repos/sakuruamayday-ops/project-application-assistant/actions/runners \
   --jq '.runners[] | {name,os,status,busy,labels:[.labels[].name]}'
 ```
+
+当前机器凭据尚未配置，原因是 GitHub 默认 `GITHUB_TOKEN` 无权读取仓库 Runner 管理接口，而后台 Runner 也不应复用交互式个人登录态。该限制不影响 macOS LaunchAgent 的 `RunAtLoad`、`KeepAlive` 自恢复，也不影响受控发布器在发版前执行同步在线检查。
 
 ## 发布时序
 
