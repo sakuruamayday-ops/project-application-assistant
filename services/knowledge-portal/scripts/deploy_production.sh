@@ -11,17 +11,6 @@ timestamp="$(date +%Y%m%d%H%M%S)"
 remote_backup_dir="/opt/jiaotang-kb-backups/${timestamp}"
 remote_index_snapshot="/srv/jiaotang/index-snapshots/pre-policy-upgrade-${timestamp}.sqlite3"
 upgrade_index="${JIAOTANG_UPGRADE_INDEX:-false}"
-assistant_skill_paths=(
-    skills/enterprise-profile
-    skills/enterprise-panorama-analysis
-    skills/project-matching
-    skills/local-knowledge-retrieval
-    skills/policy-retrieval
-    skills/project-feasibility
-    skills/patent-search-core
-    skills/jiaotang-legal-regulations
-    skills/manufacturing-tax-risk-analysis
-)
 ssh_args=(
     -i "${deploy_key}"
     -o BatchMode=yes
@@ -37,7 +26,11 @@ done
 
 python3 "${service_dir}/scripts/build_static_assets.py"
 
-echo "[1/6] 校验服务器环境变量"
+echo "[1/7] 校验本地正式技能签名覆盖率"
+python3 "${service_dir}/scripts/verify_skill_signature_coverage.py" \
+    --skills-root "${repository_dir}/skills"
+
+echo "[2/7] 校验服务器环境变量"
 ssh "${ssh_args[@]}" "${deploy_host}" "python3 - <<'PY'
 from pathlib import Path
 
@@ -70,7 +63,7 @@ if values['JIAOTANG_SECURE_COOKIES'].lower() != 'true':
 print('环境变量校验通过')
 PY"
 
-echo "[2/6] 创建不可覆盖的部署备份"
+echo "[3/7] 创建不可覆盖的部署备份"
 ssh "${ssh_args[@]}" "${deploy_host}" \
     "set -e
     /usr/local/sbin/jiaotang-kb-backup
@@ -80,24 +73,27 @@ ssh "${ssh_args[@]}" "${deploy_host}" \
     if [ -d '${remote_app_dir}/docs' ]; then cp -a '${remote_app_dir}/docs' '${remote_backup_dir}/'; fi
     if [ -d '${remote_app_dir}/skills' ]; then cp -a '${remote_app_dir}/skills' '${remote_backup_dir}/'; fi"
 
-echo "[3/6] 上传应用与运维文件"
+echo "[4/7] 上传应用与运维文件"
 deployment_failed=0
 COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     app templates static installers deploy scripts/build_knowledge_content_index.py \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py scripts/refresh_index_from_oss.py \
+    scripts/deploy_index_delta_to_server.sh \
     scripts/verify_oss_mirror.py \
+    scripts/verify_skill_signature_coverage.py \
     scripts/build_policy_version_links.py \
     scripts/upgrade_structured_knowledge_index.py \
     scripts/evaluate_structured_knowledge.py \
     scripts/project_catalog_matching.py \
     scripts/migrate_first_public_release.py \
+    scripts/publish_skill_release.py \
     tests/fixtures/structured_knowledge_gold.jsonl \
     scripts/smoke_test_production.sh requirements.txt \
-    -C "${repository_dir}" docs/user-guide/企业全生命周期助手用户使用手册.md "${assistant_skill_paths[@]}" \
+    -C "${repository_dir}" docs/user-guide/企业全生命周期助手用户使用手册.md skills \
     | ssh "${ssh_args[@]}" "${deploy_host}" "tar -C '${remote_app_dir}' -xf -" \
     || deployment_failed=1
 
-echo "[4/6] 校验并重启服务"
+echo "[5/7] 校验生产技能签名覆盖率并重启服务"
 if [[ "${deployment_failed}" -eq 0 ]]; then
     ssh "${ssh_args[@]}" "${deploy_host}" "set -e
         systemctl stop jiaotang-kb-health.timer jiaotang-kb-backup.timer jiaotang-kb-oss-sync.timer jiaotang-kb-oss-sync.path 2>/dev/null || true
@@ -125,6 +121,9 @@ PY
         mv '/usr/local/sbin/jiaotang-kb-smoke-test.${timestamp}' /usr/local/sbin/jiaotang-kb-smoke-test
         cp '${remote_app_dir}/deploy/jiaotang-kb.service' '${remote_app_dir}/deploy/jiaotang-kb-health.service' '${remote_app_dir}/deploy/jiaotang-kb-backup.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.timer' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.path' /etc/systemd/system/
         chown -R jiaotang:jiaotang '${remote_app_dir}/app' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/installers' '${remote_app_dir}/docs' '${remote_app_dir}/skills'
+        source /etc/jiaotang-kb.env
+        '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/verify_skill_signature_coverage.py' --skills-root '${remote_app_dir}/skills' --output "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json" --deployment-id '${timestamp}' --scope production
+        chown jiaotang:jiaotang "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json"
         SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt '${remote_app_dir}/.venv/bin/pip' install -r '${remote_app_dir}/requirements.txt'
         '${remote_app_dir}/.venv/bin/python' -m py_compile '${remote_app_dir}/app/main.py'
         source /etc/jiaotang-kb.env
@@ -184,7 +183,7 @@ if [[ "${deployment_failed}" -ne 0 ]]; then
     exit 1
 fi
 
-echo "[5/6] 检查固定路由"
+echo "[6/7] 检查固定路由"
 ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     source /etc/jiaotang-kb.env
     resolve=(--resolve \"\${JIAOTANG_PUBLIC_HOST}:443:127.0.0.1\")
@@ -195,5 +194,5 @@ ssh "${ssh_args[@]}" "${deploy_host}" "set -e
 
 ssh "${ssh_args[@]}" "${deploy_host}" "set -e; source /etc/jiaotang-kb.env; curl --fail --silent --show-error --resolve \"\${JIAOTANG_PUBLIC_HOST}:443:127.0.0.1\" \"https://\${JIAOTANG_PUBLIC_HOST}/guide\" >/dev/null"
 
-echo "[6/6] 部署完成：${timestamp}"
+echo "[7/7] 部署完成：${timestamp}"
 echo "备份目录：${remote_backup_dir}"

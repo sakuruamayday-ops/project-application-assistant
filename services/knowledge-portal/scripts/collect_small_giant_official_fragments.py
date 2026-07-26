@@ -18,7 +18,7 @@ import certifi
 
 
 DEFAULT_REGISTRY = Path(
-    "/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/"
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/"
     "_全国小巨人批次主表/官方地方分片/official_fragments.json"
 )
 ALLOWED_HOST_SUFFIXES = (".gov.cn", "miit.gov.cn", "ncsti.gov.cn")

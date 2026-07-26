@@ -11,11 +11,11 @@ import fitz
 
 
 DEFAULT_PDF = Path(
-    "/Volumes/知识库/_云端知识库/10_政策与目录/首台套/"
+    "/Users/zsh/JiaotangData/知识库/10_政策与目录/首台套/"
     "关于印发浙江省首台（套）产品推广应用指导目录（2026）.pdf"
 )
 DEFAULT_OUTPUT = Path(
-    "/Volumes/知识库/_云端知识库/50_名单与对标/三首项目/_结构化数据/"
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/三首项目/_结构化数据/"
     "三首项目目录状态.jsonl"
 )
 SOURCE_URL = "https://jxt.zj.gov.cn/"

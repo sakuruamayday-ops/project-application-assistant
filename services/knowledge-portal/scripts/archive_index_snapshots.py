@@ -54,7 +54,10 @@ def main() -> int:
         "completed_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "hot_snapshots": min(len(candidates), max(args.keep_latest, 1)),
         "archived_snapshots": len(archived),
-        "policy": "最近12份保留在热回滚区，其余按年月移入服务器归档区，不永久删除",
+        "policy": (
+            f"最近{max(args.keep_latest, 1)}份保留在热回滚区，"
+            "其余按年月移入服务器归档区，不永久删除"
+        ),
     }
     args.status_file.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.status_file.with_suffix(".tmp")

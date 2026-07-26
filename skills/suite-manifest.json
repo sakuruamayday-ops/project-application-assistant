@@ -4,8 +4,8 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.1",
-    "version": "1.1.0"
+    "tag": "V1.2",
+    "version": "1.2.0"
   },
   "skills": [
     "agriculture-and-rural-projects",
@@ -67,6 +67,7 @@
   ],
   "shared_paths": [
     "_runtime/jiaotang-branding",
+    "_runtime/jiaotang-kb",
     "policy-freshness-manifest.json",
     "policy-freshness-manifest.md",
     "skill-call-graph.json"
@@ -109,6 +110,22 @@
       "command": [
         "{python}",
         "scripts/validate_deprecated_policy_rules.py"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "single-knowledge-mcp",
+      "command": [
+        "{python}",
+        "tests/validate_single_knowledge_mcp.py"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "name": "three-first-gold",
+      "command": [
+        "{python}",
+        "tests/validate_three_first_gold.py"
       ],
       "timeout_seconds": 60
     }
@@ -183,6 +200,28 @@
   "external_services": [
     "jiaotang-kb"
   ],
+  "workbuddy_plugin": {
+    "mcp_connector": {
+      "name": "jiaotang-kb",
+      "source": "_runtime/jiaotang-kb/jiaotang-agent.mjs",
+      "entry_command": "plugin-serve",
+      "bootstrap_option": "bootstrap_url",
+      "bootstrap_option_sensitive": true
+    },
+    "release_matrix": {
+      "hosts": [
+        "macos",
+        "windows"
+      ],
+      "required_flow": [
+        "marketplace-add",
+        "plugin-install",
+        "plugin-enable",
+        "skill-trigger",
+        "mcp-manifest-validation"
+      ]
+    }
+  },
   "ignored_reference_tokens": [
     "project-handoff",
     "application-evidence",

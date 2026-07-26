@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-KNOWLEDGE_ROOT = Path("/Volumes/知识库/_云端知识库")
+KNOWLEDGE_ROOT = Path("/Users/zsh/JiaotangData/知识库")
 REGIONAL_ROOT = KNOWLEDGE_ROOT / "10_政策与目录/政策数据库/企策顾问"
 COMPANY_LAW_PATH = (
     KNOWLEDGE_ROOT
@@ -25,8 +25,9 @@ SUPPLEMENTARY_ROOTS = (
     KNOWLEDGE_ROOT / "50_名单与对标/三首项目/_结构化数据",
     KNOWLEDGE_ROOT / "50_名单与对标/企业身份时间轴",
     KNOWLEDGE_ROOT / "90_方法与复盘",
+    KNOWLEDGE_ROOT / "10_政策与目录/三首项目/浙江省首批次新材料/应用示范指导目录",
 )
-MANIFEST_PATH = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/manifest.jsonl")
+MANIFEST_PATH = Path("/Users/zsh/JiaotangData/索引/current/manifest.jsonl")
 MANIFEST_CSV_PATH = MANIFEST_PATH.with_suffix(".csv")
 CONTROL_FILES = {"README.md", "整理摘要.json", "网站上传索引.csv", "网站上传索引.json"}
 EXTRACT_EXTENSIONS = {
@@ -41,6 +42,7 @@ EXTRACT_EXTENSIONS = {
     ".pdf",
     ".pptx",
     ".txt",
+    ".wps",
     ".xls",
     ".xlsx",
 }

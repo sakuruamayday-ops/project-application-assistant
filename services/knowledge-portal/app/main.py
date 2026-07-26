@@ -64,6 +64,7 @@ from app.device_security import (
     request_canonical_value,
     verify_ed25519_signature,
 )
+from app.three_first_routing import plan_three_first_analysis
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -99,6 +100,7 @@ OSS_SYNC_STATUS_PATH = DATA_DIR / "oss-sync-status.json"
 OSS_INDEX_CACHE_STATUS_PATH = DATA_DIR / "oss-index-cache-status.json"
 OSS_SYNC_REQUEST_PATH = DATA_DIR / "oss-sync-request.json"
 SNAPSHOT_RETENTION_STATUS_PATH = DATA_DIR / "snapshot-retention-status.json"
+SKILL_DEPLOY_GATE_STATUS_PATH = DATA_DIR / "skill-deploy-gate-status.json"
 PREFERENCE_SCHEMA_VERSION = 1
 DEFAULT_USER_PREFERENCES: dict[str, object] = {
     "region": {"province": "", "city": ""},
@@ -268,6 +270,227 @@ def render_guide_markdown(source: str) -> Markup:
         output.append(f"<pre><code>{html.escape(chr(10).join(code_lines))}</code></pre>")
     return Markup("\n".join(output))
 
+
+SKILL_GROUP_LABELS = {
+    "orchestration": "总控与配置",
+    "knowledge_and_evidence": "知识与证据",
+    "business_and_project": "企业与项目",
+    "patent": "专利专业",
+    "delivery": "交付与质检",
+    "evolution": "治理与进化",
+}
+SKILL_RELATION_LABELS = {
+    "route": "路由",
+    "requires": "必需依赖",
+    "handoff": "流程交接",
+    "quality_gate": "质量门禁",
+    "governance": "治理关系",
+    "optional": "可选协作",
+}
+SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{1,79}$")
+
+
+def read_json_object(path: Path) -> dict[str, object]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def skill_markdown_metadata(source: str, fallback_name: str) -> tuple[str, str, str]:
+    frontmatter = ""
+    body = source
+    if source.startswith("---\n"):
+        marker = source.find("\n---\n", 4)
+        if marker >= 0:
+            frontmatter = source[4:marker]
+            body = source[marker + 5 :].lstrip()
+    body = re.sub(r"<!--.*?-->", "", body, flags=re.DOTALL).lstrip()
+
+    def field(name: str) -> str:
+        match = re.search(rf"(?m)^{re.escape(name)}:\s*(.+?)\s*$", frontmatter)
+        return match.group(1).strip().strip("\"'") if match else ""
+
+    heading = re.search(r"(?m)^#\s+(.+?)\s*$", body)
+    title = heading.group(1).strip() if heading else fallback_name
+    return title, field("description"), body
+
+
+def format_file_size(size: int) -> str:
+    if size < 1024:
+        return f"{size} B"
+    if size < 1024 * 1024:
+        return f"{size / 1024:.1f} KB"
+    return f"{size / (1024 * 1024):.1f} MB"
+
+
+def skill_catalog_payload() -> dict[str, object]:
+    suite = read_json_object(SKILL_SOURCE_DIR / "suite-manifest.json")
+    graph = read_json_object(SKILL_SOURCE_DIR / "skill-call-graph.json")
+    raw_skills = suite.get("skills", [])
+    skill_names = [str(item) for item in raw_skills] if isinstance(raw_skills, list) else []
+    raw_groups = graph.get("groups", {})
+    groups = raw_groups if isinstance(raw_groups, dict) else {}
+    group_by_skill = {
+        str(skill_name): str(group_name)
+        for group_name, members in groups.items()
+        if isinstance(members, list)
+        for skill_name in members
+    }
+    release = suite.get("release", {})
+    release = release if isinstance(release, dict) else {}
+    default_release_tag = str(release.get("tag") or release.get("version") or "当前版本")
+    catalog: list[dict[str, object]] = []
+    for index, skill_name in enumerate(skill_names, start=1):
+        skill_dir = SKILL_SOURCE_DIR / skill_name
+        skill_path = skill_dir / "SKILL.md"
+        try:
+            source = skill_path.read_text(encoding="utf-8")
+        except OSError:
+            source = ""
+        title, description, _ = skill_markdown_metadata(source, skill_name)
+        manifest = read_json_object(skill_dir / "release-manifest.json")
+        signed = (skill_dir / "release-manifest.json.sig").is_file()
+        files = [path for path in skill_dir.rglob("*") if path.is_file()] if skill_dir.is_dir() else []
+        file_size = sum(path.stat().st_size for path in files)
+        latest_mtime = max((path.stat().st_mtime for path in files), default=0)
+        group_name = group_by_skill.get(skill_name, "business_and_project")
+        catalog.append(
+            {
+                "index": index,
+                "name": skill_name,
+                "title": title,
+                "description": description or "正式技能说明暂未填写。",
+                "group": group_name,
+                "group_label": SKILL_GROUP_LABELS.get(group_name, group_name),
+                "status": "verified" if signed else "pending",
+                "status_label": "已验证" if signed else "待签名",
+                "release_tag": str(manifest.get("release_tag") or default_release_tag),
+                "file_count": len(files),
+                "size_display": format_file_size(file_size),
+                "latest_change": (
+                    datetime.fromtimestamp(latest_mtime, ASSISTANT_TIMEZONE).strftime("%m月%d日")
+                    if latest_mtime
+                    else "—"
+                ),
+            }
+        )
+    verified = sum(1 for item in catalog if item["status"] == "verified")
+    group_options = [
+        {
+            "name": group_name,
+            "label": SKILL_GROUP_LABELS.get(group_name, group_name),
+            "count": sum(1 for item in catalog if item["group"] == group_name),
+        }
+        for group_name in SKILL_GROUP_LABELS
+        if any(item["group"] == group_name for item in catalog)
+    ]
+    return {
+        "product_name": str(suite.get("product_name") or "企业全生命周期助手"),
+        "release_tag": default_release_tag,
+        "skills": catalog,
+        "groups": group_options,
+        "summary": {
+            "total": len(catalog),
+            "verified": verified,
+            "pending": len(catalog) - verified,
+            "group_count": len(group_options),
+            "coverage_percent": round(verified / len(catalog) * 100) if catalog else 0,
+        },
+    }
+
+
+def skill_catalog_detail_payload(skill_name: str) -> dict[str, object] | None:
+    if not SKILL_NAME_PATTERN.fullmatch(skill_name):
+        return None
+    catalog = skill_catalog_payload()
+    summary = next(
+        (item for item in catalog["skills"] if item["name"] == skill_name),
+        None,
+    )
+    if summary is None:
+        return None
+    skill_dir = SKILL_SOURCE_DIR / skill_name
+    skill_path = skill_dir / "SKILL.md"
+    try:
+        source = skill_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    title, description, body = skill_markdown_metadata(source, skill_name)
+    manifest = read_json_object(skill_dir / "release-manifest.json")
+    suite = read_json_object(SKILL_SOURCE_DIR / "suite-manifest.json")
+    graph = read_json_object(SKILL_SOURCE_DIR / "skill-call-graph.json")
+    dependencies = suite.get("dependencies", {})
+    dependencies = dependencies if isinstance(dependencies, dict) else {}
+    dependency = dependencies.get(skill_name, {})
+    dependency = dependency if isinstance(dependency, dict) else {}
+    relations = graph.get("relations", [])
+    relations = relations if isinstance(relations, list) else []
+    related = []
+    for relation in relations:
+        if not isinstance(relation, dict):
+            continue
+        if relation.get("from") != skill_name and relation.get("to") != skill_name:
+            continue
+        relation_type = str(relation.get("type") or "optional")
+        related.append(
+            {
+                "direction": "调用" if relation.get("from") == skill_name else "被调用",
+                "skill": str(
+                    relation.get("to") if relation.get("from") == skill_name else relation.get("from")
+                ),
+                "type": relation_type,
+                "type_label": SKILL_RELATION_LABELS.get(relation_type, relation_type),
+                "reason": str(relation.get("reason") or ""),
+            }
+        )
+    files = []
+    directories: set[str] = set()
+    total_size = 0
+    latest_mtime = 0.0
+    for path in sorted(skill_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(skill_dir).as_posix()
+        size = path.stat().st_size
+        total_size += size
+        latest_mtime = max(latest_mtime, path.stat().st_mtime)
+        if "/" in relative:
+            directories.add(relative.rsplit("/", 1)[0])
+        files.append(
+            {
+                "path": relative,
+                "size": format_file_size(size),
+                "type": path.suffix.lstrip(".").upper() or "FILE",
+            }
+        )
+    fingerprint = hashlib.sha256(source.encode("utf-8")).hexdigest()[:8]
+    return {
+        **summary,
+        "title": title,
+        "description": description or summary["description"],
+        "directory_count": len(directories),
+        "size_display": format_file_size(total_size),
+        "fingerprint": fingerprint,
+        "latest_change_full": (
+            datetime.fromtimestamp(latest_mtime, ASSISTANT_TIMEZONE).strftime("%Y年%m月%d日 %H:%M")
+            if latest_mtime
+            else "—"
+        ),
+        "required_paths": [str(item) for item in manifest.get("required_paths", [])]
+        if isinstance(manifest.get("required_paths", []), list)
+        else [],
+        "required_skills": [str(item) for item in dependency.get("required_skills", [])]
+        if isinstance(dependency.get("required_skills", []), list)
+        else [],
+        "dependency_reason": str(dependency.get("reason") or ""),
+        "relations": related,
+        "files": files,
+        "skill_html": str(render_guide_markdown(body)),
+        "skill_source": source,
+    }
+
 password_hasher = PasswordHasher()
 MIN_PASSWORD_LENGTH = 9
 ACCOUNT_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9._-]{2,31}$")
@@ -376,6 +599,37 @@ class PolicySearchRequest(BaseModel):
 class ProjectCatalogMatchRequest(BaseModel):
     regions: list[str] = Field(default_factory=list, max_length=20)
     keywords: list[str] = Field(default_factory=list, max_length=30)
+    limit: int = Field(default=20, ge=1, le=50)
+
+
+class ThreeFirstDirectoryDiffRequest(BaseModel):
+    from_year: int | None = Field(default=None, ge=2000, le=2100)
+    to_year: int | None = Field(default=None, ge=2000, le=2100)
+    material_name: str = Field(default="", max_length=300)
+    change_type: str = Field(
+        default="",
+        pattern="^(|added|removed|retained|modified)$",
+    )
+    limit: int = Field(default=50, ge=1, le=200)
+
+
+class ThreeFirstProductMatchRequest(BaseModel):
+    enterprise_name: str = Field(default="", max_length=200)
+    product_name: str = Field(default="", max_length=300)
+    award_year: int | None = Field(default=None, ge=2000, le=2100)
+    directory_year: int | None = Field(default=None, ge=2000, le=2100)
+    include_review_candidates: bool = False
+    limit: int = Field(default=50, ge=1, le=200)
+
+
+class ThreeFirstAnalysisRequest(BaseModel):
+    query: str = Field(min_length=2, max_length=500)
+    enterprise_name: str = Field(default="", max_length=200)
+    product_name: str = Field(default="", max_length=300)
+    award_year: int | None = Field(default=None, ge=2000, le=2100)
+    from_year: int | None = Field(default=None, ge=2000, le=2100)
+    to_year: int | None = Field(default=None, ge=2000, le=2100)
+    include_review_candidates: bool = False
     limit: int = Field(default=20, ge=1, le=50)
 
 
@@ -682,6 +936,14 @@ def read_status_file(path: Path) -> dict[str, object]:
     except (FileNotFoundError, OSError, json.JSONDecodeError):
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def skill_deploy_gate_status() -> dict[str, object]:
+    payload = read_status_file(SKILL_DEPLOY_GATE_STATUS_PATH)
+    return {
+        **payload,
+        "checked_at_display": format_chinese_datetime(payload.get("checked_at")),
+    }
 
 
 def request_oss_sync(reason: str) -> None:
@@ -2251,6 +2513,243 @@ def search_public_list_entities(
             "region": region.strip(),
         },
         "results": [dict(row) for row in rows],
+    }
+
+
+def search_three_first_directory_diffs(
+    from_year: int | None = None,
+    to_year: int | None = None,
+    material_name: str = "",
+    change_type: str = "",
+    limit: int = 50,
+) -> dict[str, object]:
+    conditions = ["1 = 1"]
+    parameters: list[object] = []
+    if from_year is not None:
+        conditions.append("from_year = ?")
+        parameters.append(int(from_year))
+    if to_year is not None:
+        conditions.append("to_year = ?")
+        parameters.append(int(to_year))
+    if change_type.strip():
+        conditions.append("change_type = ?")
+        parameters.append(change_type.strip())
+    normalized_material = material_name.strip()
+    if normalized_material:
+        escaped = normalized_material.replace("%", "\\%").replace("_", "\\_")
+        conditions.append(
+            "(from_material_name LIKE ? ESCAPE '\\' OR to_material_name LIKE ? ESCAPE '\\')"
+        )
+        parameters.extend((f"%{escaped}%", f"%{escaped}%"))
+    bounded_limit = max(1, min(int(limit), 200))
+    comparison_mode = "exact_pair"
+    with closing(content_database()) as connection:
+        if not sqlite_table_exists(connection, "three_first_guidance_directory_diffs"):
+            raise HTTPException(status_code=503, detail="三首历年目录差异索引尚未构建")
+        rows = connection.execute(
+            f"""
+            SELECT from_year,to_year,change_type,from_sequence_no,to_sequence_no,
+                   from_material_name,to_material_name,match_type,match_score,
+                   changed_fields,before_values,after_values
+            FROM three_first_guidance_directory_diffs
+            WHERE {' AND '.join(conditions)}
+            ORDER BY to_year DESC,from_year DESC,
+                     CASE change_type
+                         WHEN 'modified' THEN 0 WHEN 'added' THEN 1
+                         WHEN 'removed' THEN 2 ELSE 3
+                     END,
+                     COALESCE(to_sequence_no,from_sequence_no)
+            LIMIT ?
+            """,
+            [*parameters, bounded_limit],
+        ).fetchall()
+        if (
+            not rows
+            and from_year is not None
+            and to_year is not None
+            and int(from_year) != int(to_year)
+        ):
+            comparison_mode = "transition_chain"
+            chain_conditions = ["from_year >= ?", "to_year <= ?"]
+            chain_parameters: list[object] = [
+                min(int(from_year), int(to_year)),
+                max(int(from_year), int(to_year)),
+            ]
+            if change_type.strip():
+                chain_conditions.append("change_type = ?")
+                chain_parameters.append(change_type.strip())
+            if normalized_material:
+                escaped = normalized_material.replace("%", "\\%").replace("_", "\\_")
+                chain_conditions.append(
+                    "(from_material_name LIKE ? ESCAPE '\\' OR "
+                    "to_material_name LIKE ? ESCAPE '\\')"
+                )
+                chain_parameters.extend((f"%{escaped}%", f"%{escaped}%"))
+            rows = connection.execute(
+                f"""
+                SELECT from_year,to_year,change_type,from_sequence_no,to_sequence_no,
+                       from_material_name,to_material_name,match_type,match_score,
+                       changed_fields,before_values,after_values
+                FROM three_first_guidance_directory_diffs
+                WHERE {' AND '.join(chain_conditions)}
+                ORDER BY from_year,to_year,
+                         CASE change_type
+                             WHEN 'modified' THEN 0 WHEN 'added' THEN 1
+                             WHEN 'removed' THEN 2 ELSE 3
+                         END,
+                         COALESCE(to_sequence_no,from_sequence_no)
+                LIMIT ?
+                """,
+                [*chain_parameters, bounded_limit],
+            ).fetchall()
+    results = []
+    for row in rows:
+        item = dict(row)
+        for field in ("changed_fields", "before_values", "after_values"):
+            try:
+                item[field] = json.loads(str(item[field] or "[]"))
+            except json.JSONDecodeError:
+                item[field] = [] if field == "changed_fields" else {}
+        results.append(item)
+    return {
+        "filters": {
+            "from_year": from_year,
+            "to_year": to_year,
+            "material_name": normalized_material,
+            "change_type": change_type.strip(),
+            "comparison_mode": comparison_mode,
+        },
+        "results": results,
+    }
+
+
+def search_three_first_product_matches(
+    enterprise_name: str = "",
+    product_name: str = "",
+    award_year: int | None = None,
+    directory_year: int | None = None,
+    include_review_candidates: bool = False,
+    limit: int = 50,
+) -> dict[str, object]:
+    if not enterprise_name.strip() and not product_name.strip():
+        raise HTTPException(status_code=422, detail="企业产品匹配至少需要企业名称或产品名称")
+    conditions = ["1 = 1"]
+    parameters: list[object] = []
+    _like_filter("enterprise_name", enterprise_name, conditions, parameters)
+    _like_filter("product_name", product_name, conditions, parameters)
+    if award_year is not None:
+        conditions.append("award_year = ?")
+        parameters.append(int(award_year))
+    if directory_year is not None:
+        conditions.append("directory_year = ?")
+        parameters.append(int(directory_year))
+    if not include_review_candidates:
+        conditions.append("review_status = 'auto_confirmed'")
+    bounded_limit = max(1, min(int(limit), 200))
+    with closing(content_database()) as connection:
+        if not sqlite_table_exists(connection, "three_first_award_directory_links"):
+            raise HTTPException(status_code=503, detail="三首企业产品目录匹配索引尚未构建")
+        rows = connection.execute(
+            f"""
+            SELECT enterprise_name,award_year,product_name,directory_year,
+                   directory_sequence_no,directory_material_name,match_type,
+                   match_score,match_confidence,review_status
+            FROM three_first_award_directory_links
+            WHERE {' AND '.join(conditions)}
+            ORDER BY directory_year DESC,match_score DESC,award_year DESC,
+                     enterprise_name,product_name
+            LIMIT ?
+            """,
+            [*parameters, bounded_limit],
+        ).fetchall()
+    return {
+        "filters": {
+            "enterprise_name": enterprise_name.strip(),
+            "product_name": product_name.strip(),
+            "award_year": award_year,
+            "directory_year": directory_year,
+            "include_review_candidates": include_review_candidates,
+        },
+        "results": [dict(row) for row in rows],
+        "candidate_notice": (
+            "结果包含待人工核验的近义匹配，不得直接作为申报或获批结论。"
+            if include_review_candidates
+            else ""
+        ),
+    }
+
+
+def analyze_three_first(
+    query: str,
+    enterprise_name: str = "",
+    product_name: str = "",
+    award_year: int | None = None,
+    from_year: int | None = None,
+    to_year: int | None = None,
+    include_review_candidates: bool = False,
+    limit: int = 20,
+) -> dict[str, object]:
+    normalized_query = normalize_search_text(query)
+    bounded_limit = max(1, min(int(limit), 50))
+    plan = plan_three_first_analysis(
+        normalized_query,
+        enterprise_name=enterprise_name,
+        product_name=product_name,
+        award_year=award_year,
+        from_year=from_year,
+        to_year=to_year,
+        include_review_candidates=include_review_candidates,
+    )
+    project_name = str(plan["project_name"])
+    project_type = str(plan["project_type"])
+    effective_from_year = plan["from_year"]
+    effective_to_year = plan["to_year"]
+    list_year = plan["list_year"]
+    knowledge = public_search_knowledge(normalized_query, bounded_limit)
+    list_results: dict[str, object] = {"filters": {}, "results": []}
+    if plan["routes"]["public_list_search"]:
+        list_results = search_public_list_entities(
+            enterprise_name=enterprise_name,
+            project_name=project_name,
+            year=list_year,
+            limit=bounded_limit,
+        )
+
+    directory_diffs: dict[str, object] = {"filters": {}, "results": []}
+    product_matches: dict[str, object] = {"filters": {}, "results": []}
+    if plan["routes"]["directory_diff"]:
+        directory_diffs = search_three_first_directory_diffs(
+            from_year=effective_from_year,
+            to_year=effective_to_year,
+            limit=bounded_limit,
+        )
+    if plan["routes"]["product_match"]:
+        product_matches = search_three_first_product_matches(
+            enterprise_name=enterprise_name,
+            product_name=product_name,
+            award_year=award_year,
+            directory_year=effective_to_year,
+            include_review_candidates=include_review_candidates,
+            limit=bounded_limit,
+        )
+
+    return {
+        "query": normalized_query,
+        "project_type": project_type,
+        "project_name": project_name,
+        "knowledge_results": knowledge.get("results", []),
+        "structured_results": knowledge.get("structured_results", []),
+        "list_results": list_results.get("results", []),
+        "directory_diffs": directory_diffs.get("results", []),
+        "product_matches": product_matches.get("results", []),
+        "deadline_reminders": knowledge.get("deadline_reminders", []),
+        "clarifications": plan["clarifications"],
+        "internal_routing": {
+            "knowledge_search": True,
+            "public_list_search": bool(plan["routes"]["public_list_search"]),
+            "directory_diff": bool(plan["routes"]["directory_diff"]),
+            "product_match": bool(plan["routes"]["product_match"]),
+        },
     }
 
 
@@ -5902,6 +6401,7 @@ MCP_SEARCH_TOOLS = {
     "policy_search",
     "public_list_search",
     "project_catalog_match",
+    "three_first_analysis",
 }
 
 
@@ -6304,6 +6804,36 @@ def complete_assistant_usage(
         connection.commit()
 
 
+def latest_agent_install_result_payload(
+    connection: sqlite3.Connection,
+    user_id: int,
+) -> dict[str, object] | None:
+    row = connection.execute(
+        """
+        SELECT result_schema,result_ok,result_status,result_error_stage,
+               result_user_message,result_next_action,result_host,result_platform,
+               result_activation_required,result_reported_at
+        FROM agent_enrollment_codes
+        WHERE user_id=? AND result_reported_at IS NOT NULL
+        ORDER BY result_reported_at DESC,id DESC
+        LIMIT 1
+        """,
+        (user_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        **dict(row),
+        "result_ok": bool(row["result_ok"]),
+        "result_activation_required": (
+            None
+            if row["result_activation_required"] is None
+            else bool(row["result_activation_required"])
+        ),
+        "result_reported_at_display": format_chinese_datetime(row["result_reported_at"]),
+    }
+
+
 def portal_payload(
     request: Request,
     user: sqlite3.Row,
@@ -6386,6 +6916,10 @@ def portal_payload(
             }
             if active_device_binding
             else None
+        )
+        latest_agent_install_result = latest_agent_install_result_payload(
+            connection,
+            int(user["id"]),
         )
         device_binding_history = [
             {
@@ -6601,6 +7135,7 @@ def portal_payload(
                 "oss_sync": read_status_file(OSS_SYNC_STATUS_PATH),
                 "oss_cache": read_status_file(OSS_INDEX_CACHE_STATUS_PATH),
                 "snapshot_retention": read_status_file(SNAPSHOT_RETENTION_STATUS_PATH),
+                "deploy_gate": skill_deploy_gate_status(),
             }
         latest_release = connection.execute(
             """
@@ -6673,6 +7208,7 @@ def portal_payload(
         "active_device_token": active_device_token,
         "reusable_token": reusable_token,
         "active_device_binding": active_device_binding_payload,
+        "latest_agent_install_result": latest_agent_install_result,
         "device_binding_history": device_binding_history,
         "oauth_connections": oauth_connections,
         "recent_calls": recent_calls,
@@ -6691,6 +7227,7 @@ def portal_payload(
         "releases": releases,
         "latest_release": latest_release_payload,
         "historical_releases": historical_releases,
+        "skill_center": skill_catalog_payload(),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_announcement": announcement_payload,
         "knowledge_stats": knowledge_index_stats(),
@@ -7630,9 +8167,11 @@ def portal_page_response(request: Request, user: sqlite3.Row, active_page: str) 
     admin_pages = {"health", "knowledge-admin", "skill-admin", "members"}
     if active_page in admin_pages:
         require_admin(user)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request, "portal.html", portal_payload(request, user, active_page=active_page)
     )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @app.get("/feedback", response_class=HTMLResponse)
@@ -7730,6 +8269,18 @@ def access_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_w
 @app.get("/skills", response_class=HTMLResponse)
 def skills_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
     return portal_page_response(request, user, "skills")
+
+
+@app.get("/skills/catalog/{skill_name}")
+def skill_catalog_detail(
+    skill_name: str,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    payload = skill_catalog_detail_payload(skill_name)
+    if payload is None:
+        raise HTTPException(status_code=404, detail="技能不存在")
+    return JSONResponse(payload, headers={"Cache-Control": "private, max-age=60"})
 
 
 @app.get("/admin/operations", response_class=HTMLResponse)
@@ -8706,6 +9257,7 @@ def admin_health_detail(
     oss_sync = read_status_file(OSS_SYNC_STATUS_PATH)
     oss_cache = read_status_file(OSS_INDEX_CACHE_STATUS_PATH)
     snapshot_retention = read_status_file(SNAPSHOT_RETENTION_STATUS_PATH)
+    deploy_gate = skill_deploy_gate_status()
     index = knowledge_index_stats()
     requested_activity = request.query_params.get("activity", "").strip()
     try:
@@ -9129,6 +9681,18 @@ def admin_health_detail(
                 ("保留规则", snapshot_retention.get("policy", "最近12份热快照，其余按年月归档")),
             ],
         ),
+        "deploy-gate": (
+            "Skills 部署门禁",
+            [
+                ("最近结果", "通过" if deploy_gate.get("status") == "pass" else ("阻断" if deploy_gate else "待首次记录")),
+                ("检查时间", deploy_gate.get("checked_at_display") or "待首次记录"),
+                ("部署批次", deploy_gate.get("deployment_id") or "—"),
+                ("正式技能", deploy_gate.get("skill_total", 0)),
+                ("签名文件", deploy_gate.get("signature_count", 0)),
+                ("真实验签", deploy_gate.get("verified_count", 0)),
+                ("检查范围", "生产服务器" if deploy_gate.get("scope") == "production" else "待首次记录"),
+            ],
+        ),
         "certificate": ("HTTPS 证书", [("证书状态", runtime.get("certificate_status", "待采集")), ("到期时间", runtime.get("certificate_expires", "待采集")), ("域名", os.environ.get("JIAOTANG_PUBLIC_HOST", "未配置"))]),
         "disk": ("磁盘使用", [("使用率", runtime.get("disk_percent", "待采集")), ("检查时间", runtime.get("checked_at", "待采集")), ("数据目录", str(DATA_DIR))]),
         "access": (
@@ -9183,6 +9747,7 @@ def admin_health_detail(
             "section": section,
             "title": title,
             "details": details,
+            "deploy_gate": deploy_gate if section == "deploy-gate" else {},
             "recent_calls": recent_calls if section == "calls" else [],
             "activity_filter_label": activity_filter_label,
             "activity_description": activity_description,
@@ -9828,58 +10393,18 @@ def rollback_knowledge_revision(
     return RedirectResponse("/admin/knowledge", status_code=303)
 
 
-def build_agent_install_command(
-    installer_url: str,
-    installer_sha256: str,
-    bootstrap_url: str,
-    result_url: str,
-) -> str:
-    node_script = (
-        "const fs=require('node:fs'),os=require('node:os'),crypto=require('node:crypto'),"
-        "path=require('node:path'),cp=require('node:child_process');"
-        "const fail=e=>({schema:'jiaotang-agent-result/v1',ok:false,status:'failed',"
-        "error_stage:'installer_download',"
-        "user_message:'安装失败：'+String(e.message||e),"
-        "next_action:'请检查网络后回到门户重新复制安装配置。',"
-        "host:'auto',platform:process.platform+'-'+process.arch});"
-        "const report=async v=>{try{await fetch(process.argv[4],{method:'POST',"
-        "headers:{'Content-Type':'application/json'},body:JSON.stringify(v)})}catch{}};"
-        "(async()=>{"
-        "const p=path.join(os.tmpdir(),'jiaotang-agent.mjs');"
-        "const r=await fetch(process.argv[1],{redirect:'follow'});"
-        "if(!r.ok)throw new Error('安装器下载失败：HTTP '+r.status);"
-        "const b=Buffer.from(await r.arrayBuffer());"
-        "const h=crypto.createHash('sha256').update(b).digest('hex');"
-        "if(h!==process.argv[2])throw new Error('安装器SHA-256校验失败');"
-        "fs.writeFileSync(p,b,{mode:0o700});"
-        "const x=cp.spawnSync(process.execPath,"
-        "[p,'install','--bootstrap-url',process.argv[3],"
-        "'--result-url',process.argv[4],'--host','auto'],"
-        "{stdio:'inherit'});"
-        "if(x.error)throw x.error;"
-        "process.exit(x.status??1)"
-        "})().catch(async e=>{const v=fail(e);await report(v);"
-        "console.log(JSON.stringify(v));process.exit(1)})"
-    )
-    return (
-        f'node -e "{node_script}" "{installer_url}" "{installer_sha256}" '
-        f'"{bootstrap_url}" "{result_url}"'
-    )
-
-
 def build_agent_bootstrap_prompt(install_protocol_url: str) -> str:
     return (
-        "请协助我在当前本地 Agent 中配置焦糖知识库。先读取下面的 HTTPS 安装说明，"
-        "校验 schema 为 jiaotang-agent-install/v1，并审查其中公开列出的安装器源码地址、"
-        "SHA-256、联网地址、本地改动、凭据保存方式和回滚方法：\n\n"
+        "请协助我审查焦糖知识库的 WorkBuddy 插件接入说明。读取下面的 HTTPS 安装说明，"
+        "校验 schema 为 jiaotang-agent-install/v1，并说明其中公开列出的签名插件包、"
+        "联网地址、本地改动、凭据保存方式和回滚方法：\n\n"
         f"{install_protocol_url}\n\n"
-        "请先用简洁中文告诉我：将访问哪些域名、下载什么文件、写入哪些本机位置、"
-        "保存什么类型的凭据，以及怎样撤销；同时明确展示待执行命令并说明风险。"
-        "只有在我明确回复同意后，才执行协议中的 execution.command。"
-        "执行前应读取 installer_url 的源码并核对 SHA-256；若内容、哈希、域名或本地改动"
-        "与协议不一致，立即停止。若 node 不在 PATH，可使用当前 Agent 自带的 Node.js。"
-        "安装码、API Token 和私钥属于敏感信息，不要在普通回复中复述。"
-        "执行完成后，根据结构化结果说明成功或失败、已完成阶段及下一步。"
+        "请用简洁中文告诉我：插件将访问哪些域名、包含什么组件、写入哪些本机位置、"
+        "保存什么类型的凭据，以及怎样撤销。不要执行网页返回的命令，因为本协议不包含"
+        "动态命令字段。安装应只通过门户下载的签名 WorkBuddy 插件包及包内固定安装器完成；"
+        "启用插件时，由我把协议中的 bootstrap_url 填入 WorkBuddy 的敏感配置提示。"
+        "安装码、API Token 和私钥属于敏感信息，不要在普通回复中复述或写入普通配置。"
+        "若插件包、签名、域名或本地改动与协议不一致，立即停止。"
         "若安装说明无法读取，请告诉我“安装说明读取失败，请检查网络后重新生成配置”。"
     )
 
@@ -9981,6 +10506,52 @@ def create_agent_bootstrap_code(
     )
 
 
+@app.get("/agent-installation-status")
+def web_agent_installation_status(
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    with closing(database()) as connection:
+        binding = connection.execute(
+            """
+            SELECT device_bindings.first_bound_at,
+                   device_keys.key_id,device_keys.credential_saved_at,
+                   device_keys.first_verified_at,device_keys.mcp_connected_at
+            FROM device_bindings
+            LEFT JOIN device_keys
+              ON device_keys.binding_id=device_bindings.id
+             AND device_keys.revoked_at IS NULL
+            WHERE device_bindings.user_id=? AND device_bindings.revoked_at IS NULL
+            ORDER BY device_bindings.id DESC LIMIT 1
+            """,
+            (int(user["id"]),),
+        ).fetchone()
+        result = latest_agent_install_result_payload(connection, int(user["id"]))
+    stage_fields = {
+        "registration": "first_bound_at",
+        "credential_saved": "credential_saved_at",
+        "first_signature": "first_verified_at",
+        "mcp_connection": "mcp_connected_at",
+    }
+    stages = {
+        stage: {
+            "complete": bool(binding and binding[field]),
+            "completed_at": (
+                format_chinese_datetime(binding[field]) if binding and binding[field] else ""
+            ),
+        }
+        for stage, field in stage_fields.items()
+    }
+    return JSONResponse(
+        {
+            "schema": "jiaotang-web-install-status/v1",
+            "configured": stages["mcp_connection"]["complete"],
+            "stages": stages,
+            "result": result,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 @app.get("/v1/agent-install/{enrollment_code}")
 def agent_install_protocol(enrollment_code: str, request: Request):
     now = isoformat(utc_now())
@@ -10000,18 +10571,22 @@ def agent_install_protocol(enrollment_code: str, request: Request):
     if str(enrollment["expires_at"]) <= now:
         raise HTTPException(status_code=410, detail="一次性安装协议已经过期，请回到门户重新复制。")
     public_endpoint = str(request.base_url).rstrip("/")
-    installer_path = BASE_DIR / "installers" / "jiaotang-agent.mjs"
-    if not installer_path.is_file():
-        raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
-    installer_url = f"{public_endpoint}/install/jiaotang-agent.mjs"
-    installer_sha256 = sha256_file(installer_path)
     bootstrap_url = f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
+    release = latest_skill_release()
+    package_path = (
+        workbuddy_skill_package(str(release["version"])) if release is not None else None
+    )
+    package_sha256 = (
+        sha256_file(package_path)
+        if package_path is not None and package_path.is_file()
+        else None
+    )
     return JSONResponse(
         {
             "schema": "jiaotang-agent-install/v1",
-            "protocol_version": 2,
-            "action": "review_then_execute",
+            "protocol_version": 3,
+            "action": "review_signed_plugin_then_install",
             "opaque": False,
             "review_required": True,
             "user_confirmation_required": True,
@@ -10025,21 +10600,21 @@ def agent_install_protocol(enrollment_code: str, request: Request):
                 "platforms": ["darwin", "win32"],
                 "agent_hosts": [
                     "workbuddy",
-                    "generic-local-agent",
                 ],
                 "requirements": [
-                    "https_fetch",
-                    "local_command_execution",
-                    "local_configuration_write",
-                    "nodejs_18_or_newer",
+                    "workbuddy_5_or_newer",
+                    "signed_plugin_installation",
+                    "system_credential_store",
                 ],
             },
             "review": {
-                "installer": {
-                    "url": installer_url,
-                    "media_type": "text/javascript; charset=utf-8",
-                    "sha256": sha256_file(installer_path),
-                    "inspection_required": True,
+                "plugin_package": {
+                    "download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
+                    "media_type": "application/zip",
+                    "sha256": package_sha256,
+                    "signature_required": True,
+                    "contains_fixed_installers": ["macos", "windows"],
+                    "contains_mcp_server": "jiaotang-kb",
                 },
                 "network_access": [
                     {
@@ -10050,8 +10625,8 @@ def agent_install_protocol(enrollment_code: str, request: Request):
                 "local_changes": [
                     {
                         "scope": "user_home",
-                        "path": "~/.jiaotang/bin/jiaotang-kb-mcp.mjs",
-                        "purpose": "保存已核验的本地 MCP 代理程序",
+                        "path": "~/.codebuddy/plugins/cache 与 ~/.codebuddy/plugins/data",
+                        "purpose": "保存已签名插件副本和插件持久数据",
                     },
                     {
                         "scope": "system_credential_store",
@@ -10059,9 +10634,9 @@ def agent_install_protocol(enrollment_code: str, request: Request):
                         "purpose": "保存个人访问凭据与设备私钥，普通配置文件不保存明文",
                     },
                     {
-                        "scope": "agent_user_config",
-                        "path": "当前 Agent 的用户级 MCP 配置",
-                        "purpose": "增加名为 jiaotang-kb 的 stdio MCP 连接器",
+                        "scope": "workbuddy_plugin_config",
+                        "path": "WorkBuddy 插件敏感配置",
+                        "purpose": "保存一次性 bootstrap_url；不写入普通 settings.json",
                     },
                 ],
                 "credential_handling": {
@@ -10072,33 +10647,27 @@ def agent_install_protocol(enrollment_code: str, request: Request):
                 },
                 "rollback": [
                     "在门户点击“更换绑定设备”或由管理员停用账号，使服务器端凭据与设备公钥立即失效。",
-                    "在 Agent 的连接器设置中删除或停用 jiaotang-kb。",
+                    "在 WorkBuddy 中停用或卸载 jiaotang-workbuddy-skills 插件。",
                     "将 ~/.jiaotang 移入系统回收站；macOS 可同时删除登录钥匙串中的 cn.zshjiaotang.knowledge-device 项，Windows 可删除对应 DPAPI 用户凭据文件。",
                 ],
             },
-            "execution": {
-                "type": "local_command",
-                "runtime": "nodejs",
-                "command": build_agent_install_command(
-                    installer_url,
-                    installer_sha256,
-                    bootstrap_url,
-                    result_url,
-                ),
-                "rules": [
-                    "inspect_installer_source_before_execution",
-                    "verify_installer_sha256_before_execution",
-                    "explain_network_and_local_changes",
-                    "require_explicit_user_confirmation",
-                    "execute_command_only_after_confirmation",
-                    "use_host_bundled_node_when_needed",
-                    "never_display_secret_values",
+            "installation": {
+                "type": "signed_workbuddy_plugin",
+                "dynamic_command": False,
+                "plugin_download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
+                "bootstrap_url": bootstrap_url,
+                "steps": [
+                    "从已登录门户下载签名 WorkBuddy 插件包。",
+                    "核对发布包 SHA-256 和 Ed25519 签名。",
+                    "运行包内与发布包哈希绑定的 macOS 或 Windows 固定安装器。",
+                    "WorkBuddy 提示插件配置时，将 bootstrap_url 填入敏感配置项。",
+                    "由插件内置 jiaotang-kb MCP 完成设备登记和首次签名连接。",
                 ],
             },
             "integrity": {
-                "algorithm": "sha256",
-                "installer_sha256": installer_sha256,
-                "verified_by": "installer",
+                "algorithms": ["sha256", "ed25519"],
+                "plugin_package_sha256": package_sha256,
+                "verified_by": "fixed_sidecar_installer_and_embedded_release_manifest",
             },
             "completion": {
                 "required_server_stages": [
@@ -10118,8 +10687,8 @@ def agent_install_protocol(enrollment_code: str, request: Request):
                         "explain_failure_stage_without_exposing_secrets",
                     ],
                     "workbuddy_instruction": (
-                        "连接成功。请在 WorkBuddy 左侧「连接器」中找到 "
-                        "`jiaotang-kb`，然后点击「启用」。"
+                        "插件启用后会自动启动内置 `jiaotang-kb` MCP；"
+                        "门户显示四个阶段完成后才算接入成功。"
                     ),
                 },
             },
@@ -10127,7 +10696,7 @@ def agent_install_protocol(enrollment_code: str, request: Request):
         media_type="application/vnd.jiaotang.agent-install+json",
         headers={
             "Cache-Control": "no-store",
-            "X-Jiaotang-Install-Protocol": "2",
+            "X-Jiaotang-Install-Protocol": "3",
         },
     )
 
@@ -10158,12 +10727,6 @@ def agent_bootstrap_manifest(enrollment_code: str, request: Request):
     installer_sha256 = sha256_file(installer_path)
     bootstrap_url = f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
-    install_command = build_agent_install_command(
-        installer_url,
-        installer_sha256,
-        bootstrap_url,
-        result_url,
-    )
     return JSONResponse(
         {
             "schema": "jiaotang-agent-bootstrap/v1",
@@ -10174,20 +10737,20 @@ def agent_bootstrap_manifest(enrollment_code: str, request: Request):
             "bootstrap_url": bootstrap_url,
             "result_url": result_url,
             "supported_platforms": ["darwin", "win32"],
-            "supported_hosts": ["workbuddy", "generic-local-agent"],
+            "supported_hosts": ["workbuddy"],
             "instructions": [
-                "Review the public installer source and verify installer_sha256 before execution.",
-                "Explain network access, local changes, credential storage, and rollback.",
-                "Require explicit user confirmation before executing commands.universal.",
-                "Use the host-bundled Node.js runtime when node is not available on PATH.",
-                "If the host requires permission, request only the host-native execution approval.",
+                "Install only the signed WorkBuddy plugin package downloaded from the authenticated portal.",
+                "Enter bootstrap_url only in the plugin's sensitive WorkBuddy user configuration prompt.",
+                "Do not execute any command returned by this website; this manifest contains no command field.",
                 "Never print or return enrollment codes, API tokens, private keys, or credential files.",
                 "Report success only after the server confirms the signed MCP connection.",
             ],
-            "commands": {
-                "universal": install_command,
-                "darwin": install_command,
-                "win32": install_command,
+            "workbuddy_plugin": {
+                "download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
+                "mcp_server": "jiaotang-kb",
+                "configuration_key": "bootstrap_url",
+                "configuration_sensitive": True,
+                "dynamic_command": False,
             },
         },
         headers={"Cache-Control": "no-store"},
@@ -10939,6 +11502,91 @@ def rollback_knowledge_update(
     return RedirectResponse("/admin/knowledge-update", status_code=303)
 
 
+def validate_complete_skill_release_archive(archive: zipfile.ZipFile) -> dict[str, object]:
+    names = archive.namelist()
+    if len(names) != len(set(names)):
+        raise ValueError("ZIP 包含重复路径")
+    bad_paths = [
+        name
+        for name in names
+        if name.startswith("/") or ".." in Path(name).parts or "\\" in name
+    ]
+    if bad_paths:
+        raise ValueError("ZIP 包含不安全路径")
+    suite_paths = [name for name in names if name.endswith("/skills/suite-manifest.json")]
+    if len(suite_paths) != 1:
+        raise ValueError("ZIP 必须包含且只能包含一份 skills/suite-manifest.json")
+    suite_path = suite_paths[0]
+    try:
+        suite = json.loads(archive.read(suite_path).decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("suite-manifest.json 无法解析") from error
+    packaged_skills = suite.get("skills") if isinstance(suite, dict) else None
+    if not isinstance(packaged_skills, list) or not all(
+        isinstance(name, str) and re.fullmatch(r"[a-z0-9][a-z0-9-]*", name)
+        for name in packaged_skills
+    ):
+        raise ValueError("suite-manifest.json 的 skills 清单无效")
+    if len(packaged_skills) != len(set(packaged_skills)):
+        raise ValueError("suite-manifest.json 包含重复技能")
+    official_suite = read_json_object(SKILL_SOURCE_DIR / "suite-manifest.json")
+    official_skills = official_suite.get("skills")
+    if not isinstance(official_skills, list):
+        raise ValueError("服务器正式技能清单不可用")
+    missing = sorted(set(official_skills) - set(packaged_skills))
+    unexpected = sorted(set(packaged_skills) - set(official_skills))
+    if missing or unexpected:
+        detail = []
+        if missing:
+            detail.append(f"缺少 {len(missing)} 项：{', '.join(missing[:5])}")
+        if unexpected:
+            detail.append(f"多出 {len(unexpected)} 项：{', '.join(unexpected[:5])}")
+        raise ValueError("技能清单与正式清单不一致；" + "；".join(detail))
+    skills_root = suite_path.removesuffix("suite-manifest.json")
+    for skill_name in official_skills:
+        skill_root = f"{skills_root}{skill_name}/"
+        required_release_files = [
+            "SKILL.md",
+            "release-manifest.json",
+            "release-manifest.json.sig",
+            "release-signature.json",
+            "publisher-ed25519.pub",
+        ]
+        absent_release_files = [
+            path for path in required_release_files if f"{skill_root}{path}" not in names
+        ]
+        if absent_release_files:
+            raise ValueError(
+                f"{skill_name} 缺少发布文件：{', '.join(absent_release_files)}"
+            )
+        try:
+            manifest = json.loads(
+                archive.read(f"{skill_root}release-manifest.json").decode("utf-8")
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError(f"{skill_name} 的 release-manifest.json 无法解析") from error
+        if manifest.get("skill_name") != skill_name:
+            raise ValueError(f"{skill_name} 的发布清单名称不一致")
+        required_paths = manifest.get("required_paths")
+        file_hashes = manifest.get("files")
+        if not isinstance(required_paths, list) or not isinstance(file_hashes, dict):
+            raise ValueError(f"{skill_name} 的发布清单字段不完整")
+        for relative_path in required_paths:
+            if not isinstance(relative_path, str) or f"{skill_root}{relative_path}" not in names:
+                raise ValueError(f"{skill_name} 缺少必需文件：{relative_path}")
+        for relative_path, expected_hash in file_hashes.items():
+            archive_path = f"{skill_root}{relative_path}"
+            if archive_path not in names:
+                raise ValueError(f"{skill_name} 缺少指纹文件：{relative_path}")
+            actual_hash = hashlib.sha256(archive.read(archive_path)).hexdigest()
+            if not hmac.compare_digest(actual_hash, str(expected_hash)):
+                raise ValueError(f"{skill_name} 文件指纹不一致：{relative_path}")
+    return {
+        "skill_count": len(official_skills),
+        "suite_manifest": suite_path,
+    }
+
+
 @app.post("/admin/skill-releases", response_class=HTMLResponse)
 def publish_skill_release(
     request: Request,
@@ -10993,16 +11641,7 @@ def publish_skill_release(
     stored_path, digest, _ = save_upload(skill_package, SKILL_RELEASE_DIR)
     try:
         with zipfile.ZipFile(stored_path) as archive:
-            skill_files = [name for name in archive.namelist() if name.endswith("/SKILL.md")]
-            if not skill_files:
-                raise ValueError("ZIP 中未找到任何 SKILL.md")
-            bad_paths = [
-                name
-                for name in archive.namelist()
-                if name.startswith("/") or ".." in Path(name).parts
-            ]
-            if bad_paths:
-                raise ValueError("ZIP 包含不安全路径")
+            validate_complete_skill_release_archive(archive)
     except (zipfile.BadZipFile, ValueError) as error:
         rejected = SKILL_RELEASE_DIR / "rejected"
         rejected.mkdir(parents=True, exist_ok=True)
@@ -11360,6 +11999,33 @@ def project_match_api(
     return match_project_catalog(**payload.model_dump())
 
 
+@app.post("/v1/three-first/directory-diffs")
+def three_first_directory_diff_api(
+    payload: ThreeFirstDirectoryDiffRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    return search_three_first_directory_diffs(**payload.model_dump())
+
+
+@app.post("/v1/three-first/product-matches")
+def three_first_product_match_api(
+    payload: ThreeFirstProductMatchRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    return search_three_first_product_matches(**payload.model_dump())
+
+
+@app.post("/v1/three-first/analyze")
+def three_first_analysis_api(
+    payload: ThreeFirstAnalysisRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    return analyze_three_first(**payload.model_dump())
+
+
 @app.get("/v1/admin/project-aliases")
 def project_aliases_api(
     user: Annotated[sqlite3.Row, Depends(require_api_user)],
@@ -11667,6 +12333,62 @@ def project_catalog_match(
 ) -> dict[str, object]:
     """按地区和企业关键词匹配理论候选项目，不替代当期政策核验。"""
     return match_project_catalog(regions, keywords, limit)
+
+
+def three_first_directory_diff(
+    from_year: int | None = None,
+    to_year: int | None = None,
+    material_name: str = "",
+    change_type: str = "",
+    limit: int = 50,
+) -> dict[str, object]:
+    """比较浙江省首批次新材料历年指导目录，返回新增、删除、保留和条款变化。"""
+    return search_three_first_directory_diffs(
+        from_year, to_year, material_name, change_type, limit
+    )
+
+
+def three_first_product_match(
+    enterprise_name: str = "",
+    product_name: str = "",
+    award_year: int | None = None,
+    directory_year: int | None = None,
+    include_review_candidates: bool = False,
+    limit: int = 50,
+) -> dict[str, object]:
+    """将企业历年首批次产品与对应年度指导目录自动匹配，默认只返回已自动确认结果。"""
+    return search_three_first_product_matches(
+        enterprise_name,
+        product_name,
+        award_year,
+        directory_year,
+        include_review_candidates,
+        limit,
+    )
+
+
+@knowledge_mcp.tool()
+def three_first_analysis(
+    query: str,
+    enterprise_name: str = "",
+    product_name: str = "",
+    award_year: int | None = None,
+    from_year: int | None = None,
+    to_year: int | None = None,
+    include_review_candidates: bool = False,
+    limit: int = 20,
+) -> dict[str, object]:
+    """统一分析首台套、首版次和首批次；自动组合知识检索、名单、目录差异与产品匹配。"""
+    return analyze_three_first(
+        query,
+        enterprise_name,
+        product_name,
+        award_year,
+        from_year,
+        to_year,
+        include_review_candidates,
+        limit,
+    )
 
 
 @knowledge_mcp.tool()

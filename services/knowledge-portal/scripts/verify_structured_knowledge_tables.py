@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 DEFAULT_DB = Path(
-    "/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3"
+    "/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3"
 )
 
 REQUIRED_TABLES = {
@@ -15,6 +15,9 @@ REQUIRED_TABLES = {
     "national_small_giant_master": 1,
     "three_first_project_awards": 1,
     "three_first_status_timeline": 1,
+    "three_first_guidance_directory_entries": 1,
+    "three_first_guidance_directory_diffs": 1,
+    "three_first_award_directory_links": 1,
     "enterprise_product_graph_nodes": 1,
     "enterprise_product_graph_edges": 1,
 }

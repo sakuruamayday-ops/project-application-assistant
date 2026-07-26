@@ -17,10 +17,10 @@ except ModuleNotFoundError:
     from build_small_giant_official_fragments import BATCHES, BATCH_YEARS, PROVINCES
 
 
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
 DEFAULT_DATASET = Path.home() / "Downloads" / "企策顾问_国家专精特新小巨人_2019年至今_2026-07-22.json"
 DEFAULT_OUTPUT = Path(
-    "/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/"
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/"
     "_全国小巨人批次主表/企策企业快照"
 )
 DEFAULT_ZERO_CELLS = (
@@ -154,7 +154,10 @@ def main() -> None:
                 key=lambda item: str(item["enterprise_name"]),
             )
             snapshot_path = batch_dir / f"{region}.jsonl"
-            write_jsonl(snapshot_path, cell_records)
+            snapshot_path_value = ""
+            if cell_records:
+                write_jsonl(snapshot_path, cell_records)
+                snapshot_path_value = str(snapshot_path)
             connection.execute(
                 """
                 INSERT INTO small_giant_qice_snapshots(
@@ -167,7 +170,7 @@ def main() -> None:
                     year,
                     region,
                     len(cell_records),
-                    str(snapshot_path),
+                    snapshot_path_value,
                     source_url,
                     captured_at,
                     "platform_snapshot_pending_official_evidence",
@@ -202,7 +205,7 @@ def main() -> None:
                 """,
                 (
                     len(cell_records),
-                    str(snapshot_path),
+                    snapshot_path_value,
                     source_url,
                     "platform_snapshot_pending_official_evidence",
                     status,
@@ -222,7 +225,7 @@ def main() -> None:
                     "recovered_url_count": int(recovered_url_count),
                     "closure_status": str(closure_status),
                     "resolution_status": status,
-                    "qice_snapshot_path": str(snapshot_path),
+                    "qice_snapshot_path": snapshot_path_value,
                     "qice_source_url": source_url,
                 }
             )

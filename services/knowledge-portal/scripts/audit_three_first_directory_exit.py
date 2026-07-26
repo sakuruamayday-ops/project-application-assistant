@@ -8,10 +8,10 @@ from pathlib import Path
 
 
 DEFAULT_DB = Path(
-    "/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3"
+    "/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3"
 )
 DEFAULT_OUTPUT = Path(
-    "/Volumes/知识库/_云端知识库/50_名单与对标/三首项目/_结构化数据/"
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/三首项目/_结构化数据/"
     "三首目录退出原文覆盖审计.md"
 )
 

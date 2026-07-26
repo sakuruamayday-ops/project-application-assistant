@@ -228,6 +228,12 @@ def write_status(path: Path, payload: dict[str, object]) -> None:
 
 
 def main() -> int:
+    raise SystemExit(
+        "旧式相对路径OSS同步已永久停用；请使用"
+        "sync_archived_knowledge_to_production.sh执行SHA-256内容寻址发布"
+    )
+
+    # 以下参数与实现仅保留用于读取历史状态和测试底层同步函数，不再作为生产入口。
     parser = argparse.ArgumentParser(description="增量同步生产知识库和索引到阿里云 OSS")
     parser.add_argument("--knowledge-dir", type=Path, required=True)
     parser.add_argument("--index-dir", type=Path, required=True)

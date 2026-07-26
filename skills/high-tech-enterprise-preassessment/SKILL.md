@@ -5,6 +5,17 @@ description: 高新技术企业认定申报前评估与申报年度选择。用�
 
 # 高新技术企业预评估
 
+
+<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
+## 便携运行门禁
+
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+
+!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "high-tech-enterprise-preassessment" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
+
+每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
 ## 总原则
 
 先判断资格硬门槛，再评分；先列事实和数据缺口，再给申报年度建议。把企业提供的数据作为本轮分析输入，但检查内部矛盾、计算错误和时间线冲突。涉及政策、截止日期、地方材料口径或知识产权使用规则时，先核验当期国家规则、属地通知和系统要求。

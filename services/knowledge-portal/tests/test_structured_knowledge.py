@@ -2,6 +2,8 @@ import json
 import hashlib
 import sqlite3
 from contextlib import closing
+from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 from scripts.build_knowledge_content_index import create_database
 from scripts.build_knowledge_content_index import enterprise_mentions
@@ -33,6 +35,19 @@ from scripts.refresh_index_from_oss import (
     REQUIRED_STRUCTURED_TABLES,
     valid_index as valid_cached_index,
 )
+from scripts.publish_index_to_oss import full_index_due
+
+
+def test_full_index_policy_skips_recent_weekly_snapshot():
+    now = datetime(2026, 7, 26, tzinfo=timezone.utc)
+    recent = SimpleNamespace(last_modified=(now - timedelta(days=2)).timestamp())
+    stale = SimpleNamespace(last_modified=(now - timedelta(days=8)).timestamp())
+
+    assert not full_index_due("skip", stale, max_age_days=7, now=now)
+    assert not full_index_due("weekly", recent, max_age_days=7, now=now)
+    assert full_index_due("weekly", stale, max_age_days=7, now=now)
+    assert full_index_due("weekly", None, max_age_days=7, now=now)
+    assert full_index_due("always", recent, max_age_days=7, now=now)
 
 
 def test_full_index_build_creates_policy_metadata_and_public_list_entities(tmp_path):
@@ -814,6 +829,12 @@ def test_superseded_policy_and_rd_platform_metadata_are_hard_gated():
         "本办法拟将原杭州市企业高新技术研究开发中心资格平移为杭州市企业研究院。",
         "10_政策与通知",
     )
+    first_batch_publicity_draft = infer_document_metadata(
+        "关于2025年浙江省重点新材料首批次应用示范指导目录的公示—浙江省重点新材料首批次应用示范指导目录（2025年版）.pdf",
+        "10_政策与目录/政策数据库/企策顾问/公示公告/浙江省首批次/附件.pdf",
+        "浙江省重点新材料首批次应用示范指导目录（2025年版）（公示稿）",
+        "10_政策与通知",
+    )
 
     assert old_sme["validity_status"] == "superseded"
     assert "2026" in old_sme["replacement_title"]
@@ -822,6 +843,8 @@ def test_superseded_policy_and_rd_platform_metadata_are_hard_gated():
     assert old_provincial_rd["replacement_title"] == "浙江省企业研究院"
     assert current_hangzhou["validity_status"] == "active_candidate"
     assert hangzhou_draft["validity_status"] == "draft"
+    assert first_batch_publicity_draft["validity_status"] == "draft"
+    assert first_batch_publicity_draft["document_stage"] == "公示"
 
 
 def test_parent_directory_terms_do_not_contaminate_document_metadata():
@@ -886,6 +909,252 @@ def test_three_first_subject_fields_extract_tier_category_and_material_name():
     assert equipment["recognition_tier"] == "国际首台（套）"
     assert material["recognition_tier"] == "国内首批次"
     assert material["product_name"] == "高性能靶材-超高纯Ta靶材"
+
+
+def test_three_first_subject_fields_support_positional_2024_formats():
+    from scripts.build_three_first_benchmark_graph import subject_fields
+
+    first_version = subject_fields("国内首版次软件::工业软件::中智达智能动态优化控制软件")
+    first_set = subject_fields("新型立式贴片机::省内首台（套）::整机装备")
+    product_with_internal_colon = subject_fields(
+        "省内首版次软件::点线推演者系统（简称：点线推演者）"
+    )
+
+    assert first_version == {
+        "product_name": "中智达智能动态优化控制软件",
+        "recognition_tier": "国内首版次软件",
+        "product_category": "工业软件",
+    }
+    assert first_set == {
+        "product_name": "新型立式贴片机",
+        "recognition_tier": "省内首台（套）",
+        "product_category": "整机装备",
+    }
+    assert product_with_internal_colon["product_name"] == "点线推演者系统（简称：点线推演者）"
+
+
+def test_three_first_details_never_use_project_name_as_product_name():
+    from scripts.build_three_first_benchmark_graph import normalize_details
+
+    payload = {
+        "projects": [
+            {
+                "projectId": "10",
+                "projectName": "浙江省首版次软件产品",
+                "policies": [
+                    {
+                        "policy": {
+                            "title": "关于公布《2024年浙江省首版次软件产品应用推广指导目录》的通知",
+                            "publishTime": "2024-12-30 00:00:00",
+                        },
+                        "records": [
+                            {
+                                "entName": "测试企业",
+                                "projectName": "浙江省首版次软件产品",
+                                "subject": "省内首版次软件::测试产品V1.0",
+                                "assessYear": "2024",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    records = normalize_details(payload, {})
+
+    assert records[0]["product_name"] == "测试产品V1.0"
+    assert records[0]["recognition_tier"] == "省内首版次软件"
+    assert records[0]["list_status"] == "final_recognition"
+
+
+def test_three_first_collector_includes_historical_first_set_title():
+    from scripts.collect_qice_three_first_details import include_policy
+
+    policy = {
+        "title": "关于公布2016年浙江省装备制造业重点领域首台（套）产品名单的通知",
+        "areaName": "浙江省",
+        "policyType": 3,
+    }
+
+    assert include_policy("12", policy)
+
+
+def test_three_first_collector_paginates_related_policies(monkeypatch):
+    from scripts import collect_qice_three_first_details as collector
+
+    calls = []
+
+    def fake_post(_session, _token, _endpoint, payload):
+        calls.append(dict(payload))
+        current = payload["current"]
+        return {
+            "data": {
+                "pages": 2,
+                "records": [{"id": current}],
+            }
+        }
+
+    monkeypatch.setattr(collector, "post", fake_post)
+    monkeypatch.setattr(collector.time, "sleep", lambda _seconds: None)
+
+    records = collector.related_policies(object(), "token", "11")
+
+    assert [record["id"] for record in records] == [1, 2]
+    assert [call["current"] for call in calls] == [1, 2]
+
+
+def test_three_first_public_supplement_parses_2024_first_batch(tmp_path):
+    from scripts.collect_three_first_public_supplements import parse_2024_first_batch
+
+    rows = "".join(
+        f"<tr><td>{index}</td><td>材料{index}</td><td>企业{index}</td><td>省内首批次</td></tr>"
+        for index in range(1, 65)
+    )
+    source = tmp_path / "first-batch.html"
+    source.write_text(
+        "<table><tr><th>序号</th><th>材料名称</th><th>企业名称</th><th>认定档次</th></tr>"
+        + rows
+        + "</table>",
+        encoding="utf-8",
+    )
+
+    records = parse_2024_first_batch(source)
+
+    assert len(records) == 64
+    assert records[0]["product_name"] == "材料1"
+    assert records[-1]["enterprise_name"] == "企业64"
+
+
+def test_three_first_public_supplement_includes_2021_non_reward_rows():
+    from scripts.collect_three_first_public_supplements import (
+        curated_2021_first_batch_non_reward,
+    )
+
+    records = curated_2021_first_batch_non_reward()
+
+    assert len(records) == 22
+    assert [record["sequence_no"] for record in records] == list(range(1, 23))
+    assert records[0]["enterprise_name"] == "中钢新型材料股份有限公司"
+    assert records[19]["product_name"] == "注塑钐铁氮稀土永磁复合材料"
+    assert records[-1]["recognition_tier"] == "其他"
+
+
+def test_first_batch_directory_sources_form_continuous_version_chain():
+    from scripts.collect_first_batch_material_directories import DRAFT_FILES, EXPECTED_COUNTS, SOURCES
+
+    assert sorted(SOURCES) == list(range(2020, 2026))
+    assert EXPECTED_COUNTS[2025] == 445
+    assert SOURCES[2025]["status"] == "active"
+    assert all(SOURCES[year]["status"] == "superseded" for year in range(2020, 2025))
+    assert DRAFT_FILES[2025]["validity_status"] == "draft_superseded"
+    assert DRAFT_FILES[2025]["superseded_by"] == "浙经信材料〔2025〕234号"
+
+
+def test_guidance_directory_diff_tracks_clause_changes_and_additions():
+    from scripts.build_three_first_benchmark_graph import directory_version_diffs
+
+    rows = [
+        {
+            "directory_year": 2024,
+            "sequence_no": 1,
+            "material_name": "高性能复合材料",
+            "top_category": "关键战略材料",
+            "major_category": "复合材料",
+            "sub_category": "",
+            "performance_requirements": "拉伸强度≥100MPa",
+            "application_field": "新能源汽车",
+        },
+        {
+            "directory_year": 2025,
+            "sequence_no": 2,
+            "material_name": "高性能复合材料",
+            "top_category": "关键战略材料",
+            "major_category": "复合材料",
+            "sub_category": "",
+            "performance_requirements": "拉伸强度≥120MPa",
+            "application_field": "新能源汽车",
+        },
+        {
+            "directory_year": 2025,
+            "sequence_no": 3,
+            "material_name": "低介电复合材料",
+            "top_category": "关键战略材料",
+            "major_category": "复合材料",
+            "sub_category": "",
+            "performance_requirements": "介电常数≤2.5",
+            "application_field": "通信",
+        },
+    ]
+
+    differences = directory_version_diffs(rows)
+
+    assert [row["change_type"] for row in differences] == ["added", "modified"]
+    modified = next(row for row in differences if row["change_type"] == "modified")
+    assert modified["changed_fields"] == ["performance_requirements"]
+
+
+def test_enterprise_product_automatically_matches_best_directory_candidate():
+    from scripts.build_three_first_benchmark_graph import (
+        enterprise_product_directory_matches,
+    )
+
+    records = [
+        {
+            "project_id": "11",
+            "enterprise_name": "测试材料有限公司",
+            "year": 2025,
+            "product_name": "车用高性能生物基TPV材料",
+        }
+    ]
+    directories = [
+        {
+            "directory_year": 2025,
+            "sequence_no": 27,
+            "material_name": "车用高性能生物基 TPV 材料",
+        },
+        {
+            "directory_year": 2025,
+            "sequence_no": 28,
+            "material_name": "高性能生物基聚酰胺材料",
+        },
+    ]
+
+    matches = enterprise_product_directory_matches(records, directories)
+
+    assert len(matches) == 1
+    assert matches[0]["directory_sequence_no"] == 27
+    assert matches[0]["match_type"] == "exact_material_name"
+    assert matches[0]["match_confidence"] == "high"
+    assert matches[0]["review_status"] == "auto_confirmed"
+
+
+def test_three_first_public_supplement_parses_2025_first_version_final(tmp_path):
+    from scripts.collect_three_first_public_supplements import parse_2025_first_version
+
+    rows = "".join(
+        f"<tr><td>{index}</td><td>工业软件</td><td>软件产品{index}</td><td>企业{index}</td></tr>"
+        for index in range(1, 85)
+    )
+    source = tmp_path / "first-version.json"
+    source.write_text(
+        json.dumps(
+            {
+                "body": {
+                    "TITLE": "浙江省经济和信息化厅关于公布《2025年浙江省首版次软件产品应用推广指导目录》的通知",
+                    "CONTENT": "<table>" + rows + "</table>",
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    records = parse_2025_first_version(source)
+
+    assert len(records) == 84
+    assert records[0]["list_status"] == "final_recognition"
+    assert records[-1]["product_name"] == "软件产品84"
 
 
 def test_confirmed_alias_correction_overrides_automatic_project_match():

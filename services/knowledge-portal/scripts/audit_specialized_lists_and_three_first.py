@@ -9,9 +9,9 @@ from datetime import datetime
 from pathlib import Path
 
 
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
-DEFAULT_MASTER_REPORT = Path("/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/_全国小巨人批次主表/全国小巨人批次主表核验报告.json")
-DEFAULT_OUTPUT = Path("/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/_覆盖矩阵/专精特新小巨人三首遗漏审计.md")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
+DEFAULT_MASTER_REPORT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/_全国小巨人批次主表/全国小巨人批次主表核验报告.json")
+DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/_覆盖矩阵/专精特新小巨人三首遗漏审计.md")
 
 
 def parse_args() -> argparse.Namespace:

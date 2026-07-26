@@ -19,6 +19,9 @@ REQUIRED_STRUCTURED_TABLES = {
     "national_small_giant_master": 1,
     "three_first_project_awards": 1,
     "three_first_status_timeline": 1,
+    "three_first_guidance_directory_entries": 1,
+    "three_first_guidance_directory_diffs": 1,
+    "three_first_award_directory_links": 1,
     "enterprise_product_graph_nodes": 1,
     "enterprise_product_graph_edges": 1,
 }
@@ -105,6 +108,37 @@ def main() -> int:
                 previous = json.loads(status_path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 previous = {}
+        local_release_sha256 = str(previous.get("index_sha256", ""))
+        if (
+            previous.get("source") == "rsync差异块"
+            and local_release_sha256
+            and local_index.is_file()
+            and hmac.compare_digest(sha256_file(local_index), local_release_sha256)
+            and valid_index(local_index, quick_check=False)
+        ):
+            oss_caught_up = bool(remote_sha256) and hmac.compare_digest(
+                remote_sha256, local_release_sha256
+            )
+            checked_at = utc_timestamp()
+            write_status(
+                status_path,
+                {
+                    "status": "正常",
+                    "mode": (
+                        "OSS 权威源 + 服务器只读查询缓存"
+                        if oss_caught_up
+                        else "服务器差异索引领先于 OSS"
+                    ),
+                    "checked_at": checked_at,
+                    "cache_updated_at": previous.get("cache_updated_at", checked_at),
+                    "source": "OSS" if oss_caught_up else "rsync差异块",
+                    "object_key": object_key,
+                    "remote_etag": remote.etag,
+                    "index_sha256": local_release_sha256,
+                    "cache_updated": False,
+                },
+            )
+            return 0
         local_size_matches = (
             local_index.is_file() and local_index.stat().st_size == remote.content_length
         )
@@ -128,12 +162,14 @@ def main() -> int:
                     "source": "OSS",
                     "object_key": object_key,
                     "remote_etag": remote.etag,
+                    "index_sha256": remote_sha256,
                     "cache_updated": False,
                 },
             )
             return 0
         index_dir.mkdir(parents=True, exist_ok=True)
         temporary = local_index.with_suffix(".oss-download.tmp")
+        temporary.unlink(missing_ok=True)
         bucket.get_object_to_file(object_key, str(temporary))
         if remote_sha256 and sha256_file(temporary) != remote_sha256:
             raise RuntimeError("OSS 索引 SHA-256 校验失败")
@@ -153,6 +189,7 @@ def main() -> int:
                 "source": "OSS",
                 "object_key": object_key,
                 "remote_etag": remote.etag,
+                "index_sha256": remote_sha256,
                 "cache_updated": True,
             },
         )

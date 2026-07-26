@@ -45,6 +45,8 @@ description: 识别政府项目申报、企业分析、知识产权、财税法�
 
 涉及登录网站、动态页面筛选、翻页、表单、上传或结构化网页提取时，调用 `web-task-operator`；政策和企业专业判断仍由对应业务Skill完成。
 
+涉及浙江省首台套、首版次或首批次的历年目录变化、企业产品匹配和跨年状态时，统一路由 `local-knowledge-retrieval`。由该技能通过现有 `jiaotang-kb` MCP 的 `three_first_analysis` 统一入口自动组合名单、目录差异、产品匹配和原文读取；不得要求用户新增 MCP、重新申请凭据、记忆内部工具名或手工选择工具。
+
 涉及财务门槛时先路由 `financial-verification`。若 `manufacturing-tax-risk-analysis` 已产出同一企业的 `enterprise-financial-facts/v1`，则校验后交给 `project-feasibility` 复用；只有企业身份、期间、口径或来源不符时才重新提取。
 
 涉及写标准、编标准、企业标准、团体标准、产品标准、服务标准、管理标准、试验方法标准、标准修订、标准审查或编制说明时，路由 `standard-drafting`。先确定标准层级和文件功能，再核验现行起草规则、法规、强制性标准及同类标准。

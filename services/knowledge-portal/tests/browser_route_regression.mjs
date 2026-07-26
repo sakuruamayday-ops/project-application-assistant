@@ -100,7 +100,18 @@ try {
     assert.equal(state.exists, true, `${legacyPath} 缺少 #${sectionId}`);
     assert.equal(state.visible, true, `${legacyPath} 未滚动到 #${sectionId}`);
     assert.equal(state.active, true, `${legacyPath} 未激活对应导航`);
+    if (legacyPath === "/admin/operations") {
+      assert.equal(await page.locator('a[href="/admin/health/deploy-gate"]').isVisible(), true, "健康看板应展示 Skills 部署门禁");
+    }
   }
+  await page.goto(`${baseUrl}/admin/health/deploy-gate`, {waitUntil: "networkidle"});
+  assert.equal(await page.locator(".deployment-gate-boundary article").count(), 2, "部署门禁详情应明确展示两类门禁边界");
+  const desktopWidth = await page.evaluate(() => ({document: document.documentElement.scrollWidth, viewport: window.innerWidth}));
+  assert.equal(desktopWidth.document, desktopWidth.viewport, "部署门禁详情桌面端不应横向溢出");
+  await page.setViewportSize({width: 390, height: 844});
+  await page.reload({waitUntil: "networkidle"});
+  const mobileWidth = await page.evaluate(() => ({document: document.documentElement.scrollWidth, viewport: window.innerWidth}));
+  assert.equal(mobileWidth.document, mobileWidth.viewport, "部署门禁详情移动端不应横向溢出");
   console.log(`PASS browser route regression: ${routes.size} legacy routes`);
 } finally {
   if (browser) await browser.close();

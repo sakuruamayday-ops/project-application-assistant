@@ -5,6 +5,17 @@ description: 专精特新中小企业与专精特新“小巨人”申报前测�
 
 # 专精特新与小巨人申报前评分
 
+
+<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
+## 便携运行门禁
+
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+
+!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "sme-score-preassessment" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
+
+每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
 ## 目标
 
 在企业尚未形成完整申请书时，快速判断申报基础、可核验得分、系统未知项和补强顺序。输出是前期咨询评估，不冒充主管部门系统评分或正式评审意见。

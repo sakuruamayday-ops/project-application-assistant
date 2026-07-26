@@ -12,6 +12,8 @@ YEAR_PATTERN = re.compile(r"(?<!\d)(20\d{2})(?!\d)")
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
+    if not path.is_file():
+        return []
     with path.open(encoding="utf-8-sig", newline="") as source:
         return list(csv.DictReader(source))
 
@@ -77,6 +79,8 @@ def main() -> None:
         "list_ocr_pages": sum(int(row.get("页数") or 0) for row in list_success),
         "list_ocr_table_rows": sum(int(row.get("表格数据行") or 0) for row in list_success),
         "list_structural_failures": len(list_failures),
+        "priority_audit_available": args.priority_audit.is_file(),
+        "list_audit_available": args.list_audit.is_file(),
         "audit_boundary": "结构门禁抽检，不等同于逐字符人工真值校对；企业名称与序号仍需周期性视觉复核。",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -95,6 +99,8 @@ def main() -> None:
         f"- 优先OCR成功样本：{summary['priority_ocr_success_documents']}份，{summary['priority_ocr_pages']}页，{summary['priority_ocr_markdown_characters']}字符",
         f"- 名单OCR成功样本：{summary['list_ocr_success_documents']}份，{summary['list_ocr_pages']}页，{summary['list_ocr_table_rows']}行",
         f"- 名单跳号、重复号或可疑企业名异常：{summary['list_structural_failures']}份",
+        f"- 历史优先OCR审计表：{'已读取' if summary['priority_audit_available'] else '未挂载，按零样本处理'}",
+        f"- 历史名单OCR审计表：{'已读取' if summary['list_audit_available'] else '未挂载，按零样本处理'}",
         "",
         "## 结论边界",
         "",

@@ -8,8 +8,8 @@ from datetime import datetime
 from pathlib import Path
 
 
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
-DEFAULT_OUTPUT = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
+DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/索引/current")
 
 
 def parse_args() -> argparse.Namespace:

@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Iterable
 
 
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
-DEFAULT_OUTPUT = Path("/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/_覆盖矩阵")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
+DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/_覆盖矩阵")
 PROVINCES = (
     "北京市", "天津市", "河北省", "山西省", "内蒙古自治区", "辽宁省", "吉林省", "黑龙江省",
     "上海市", "江苏省", "浙江省", "安徽省", "福建省", "江西省", "山东省", "河南省",
