@@ -31,7 +31,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Callable, Iterator
 from zoneinfo import ZoneInfo
-from urllib.parse import quote, urlencode, urlparse
+from urllib.parse import quote, urlparse
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
@@ -149,10 +149,6 @@ WEB_SEARCH_RSS_URL = os.environ.get(
 ).strip()
 ASSISTANT_DAILY_LIMIT = int(os.environ.get("JIAOTANG_ASSISTANT_DAILY_LIMIT", "5"))
 ASSISTANT_TIMEZONE = ZoneInfo("Asia/Shanghai")
-OAUTH_ACCESS_TOKEN_MINUTES = int(os.environ.get("JIAOTANG_OAUTH_ACCESS_TOKEN_MINUTES", "60"))
-OAUTH_REFRESH_TOKEN_DAYS = int(os.environ.get("JIAOTANG_OAUTH_REFRESH_TOKEN_DAYS", "30"))
-OAUTH_CODE_MINUTES = 10
-OAUTH_SCOPES = ("knowledge:read", "mcp:tools")
 DEPLOYED_SKILL_SOURCE_DIR = BASE_DIR / "skills"
 SOURCE_SKILL_SOURCE_DIR = BASE_DIR.parents[1] / "skills"
 SKILL_SOURCE_DIR = Path(
@@ -556,16 +552,6 @@ class SearchResponse(BaseModel):
     results: list[SearchResult]
     structured_results: list[dict[str, object]] = Field(default_factory=list)
     deadline_reminders: list[dict[str, object]] = Field(default_factory=list)
-
-
-class OAuthClientRegistrationRequest(BaseModel):
-    redirect_uris: list[str] = Field(min_length=1, max_length=20)
-    client_name: str = Field(default="MCP Client", max_length=200)
-    grant_types: list[str] = Field(
-        default_factory=lambda: ["authorization_code", "refresh_token"], max_length=5
-    )
-    response_types: list[str] = Field(default_factory=lambda: ["code"], max_length=5)
-    token_endpoint_auth_method: str = Field(default="none", max_length=50)
 
 
 class AgentDeviceRegistrationRequest(BaseModel):
@@ -5203,63 +5189,11 @@ def init_database() -> None:
                 activity_type TEXT NOT NULL DEFAULT 'rest_api',
                 activity_name TEXT NOT NULL DEFAULT '',
                 counts_toward_usage INTEGER NOT NULL DEFAULT 1,
-                auth_method TEXT NOT NULL DEFAULT 'api_key',
-                oauth_client_id TEXT NOT NULL DEFAULT '',
                 called_at TEXT NOT NULL
             );
 
             CREATE INDEX IF NOT EXISTS api_usage_user_time_idx
             ON api_usage(user_id, called_at DESC);
-
-            CREATE TABLE IF NOT EXISTS oauth_clients (
-                client_id TEXT PRIMARY KEY,
-                client_name TEXT NOT NULL,
-                redirect_uris_json TEXT NOT NULL,
-                grant_types_json TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS oauth_authorization_codes (
-                code_hash TEXT PRIMARY KEY,
-                client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                redirect_uri TEXT NOT NULL,
-                scope TEXT NOT NULL,
-                code_challenge TEXT NOT NULL,
-                resource TEXT NOT NULL,
-                expires_at TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                consumed_at TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS oauth_access_tokens (
-                token_hash TEXT PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
-                scope TEXT NOT NULL,
-                resource TEXT NOT NULL,
-                expires_at TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                revoked_at TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS oauth_refresh_tokens (
-                token_hash TEXT PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                client_id TEXT NOT NULL REFERENCES oauth_clients(client_id) ON DELETE CASCADE,
-                scope TEXT NOT NULL,
-                resource TEXT NOT NULL,
-                expires_at TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                revoked_at TEXT,
-                replaced_by_hash TEXT
-            );
-
-            CREATE INDEX IF NOT EXISTS oauth_access_tokens_user_idx
-            ON oauth_access_tokens(user_id, expires_at);
-
-            CREATE INDEX IF NOT EXISTS oauth_refresh_tokens_user_idx
-            ON oauth_refresh_tokens(user_id, expires_at);
 
             CREATE TABLE IF NOT EXISTS user_preferences (
                 user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -5664,8 +5598,6 @@ def init_database() -> None:
             "activity_type": "TEXT NOT NULL DEFAULT 'rest_api'",
             "activity_name": "TEXT NOT NULL DEFAULT ''",
             "counts_toward_usage": "INTEGER NOT NULL DEFAULT 1",
-            "auth_method": "TEXT NOT NULL DEFAULT 'api_key'",
-            "oauth_client_id": "TEXT NOT NULL DEFAULT ''",
         }
         for column_name, declaration in api_usage_migrations.items():
             if column_name not in api_usage_columns:
@@ -5713,6 +5645,14 @@ def init_database() -> None:
             "UPDATE assistant_usage SET status = 'failed', completed_at = ? WHERE status = 'running'",
             (isoformat(utc_now()),),
         )
+        connection.executescript(
+            """
+            DROP TABLE IF EXISTS oauth_authorization_codes;
+            DROP TABLE IF EXISTS oauth_access_tokens;
+            DROP TABLE IF EXISTS oauth_refresh_tokens;
+            DROP TABLE IF EXISTS oauth_clients;
+            """
+        )
         connection.commit()
 
 
@@ -5734,95 +5674,8 @@ def user_count() -> int:
 
 
 def safe_login_redirect(value: str) -> str:
-    candidate = value.strip()
-    if candidate.startswith("/authorize?") and "\r" not in candidate and "\n" not in candidate:
-        return candidate
+    del value
     return "/portal"
-
-
-def validate_oauth_redirect_uri(value: str) -> str:
-    parsed = urlparse(value.strip())
-    if parsed.fragment or parsed.username or parsed.password or not parsed.hostname:
-        raise ValueError("redirect_uri格式无效")
-    localhost = parsed.hostname == "localhost"
-    try:
-        loopback = ipaddress.ip_address(parsed.hostname).is_loopback
-    except ValueError:
-        loopback = False
-    if parsed.scheme != "https" and not (parsed.scheme == "http" and (localhost or loopback)):
-        raise ValueError("redirect_uri必须使用HTTPS，或使用本机回调地址")
-    return value.strip()
-
-
-def normalize_oauth_scope(value: str) -> str:
-    requested = [item for item in value.split() if item] or list(OAUTH_SCOPES)
-    if any(item not in OAUTH_SCOPES for item in requested):
-        raise ValueError("包含不支持的OAuth权限范围")
-    return " ".join(dict.fromkeys(requested))
-
-
-def normalize_oauth_resource(value: str | None) -> str:
-    candidate = str(value or oauth_resource_url()).rstrip("/") + "/"
-    if candidate != oauth_resource_url():
-        raise ValueError("OAuth资源地址与知识库MCP地址不一致")
-    return candidate
-
-
-def oauth_client(client_id: str) -> sqlite3.Row | None:
-    with closing(database()) as connection:
-        return connection.execute(
-            "SELECT * FROM oauth_clients WHERE client_id=?", (client_id,)
-        ).fetchone()
-
-
-def append_query_parameters(url: str, values: dict[str, str]) -> str:
-    separator = "&" if "?" in url else "?"
-    return f"{url}{separator}{urlencode(values)}"
-
-
-def issue_oauth_tokens(
-    connection: sqlite3.Connection,
-    *,
-    user_id: int,
-    client_id: str,
-    scope: str,
-    resource: str,
-) -> dict[str, object]:
-    now = utc_now()
-    access_token = "jto_" + secrets.token_urlsafe(36)
-    refresh_token = "jtr_" + secrets.token_urlsafe(48)
-    access_expires = now + timedelta(minutes=OAUTH_ACCESS_TOKEN_MINUTES)
-    refresh_expires = now + timedelta(days=OAUTH_REFRESH_TOKEN_DAYS)
-    connection.execute(
-        """
-        INSERT INTO oauth_access_tokens(
-            token_hash,user_id,client_id,scope,resource,expires_at,created_at
-        ) VALUES (?,?,?,?,?,?,?)
-        """,
-        (
-            token_hash(access_token), user_id, client_id, scope, resource,
-            isoformat(access_expires), isoformat(now),
-        ),
-    )
-    connection.execute(
-        """
-        INSERT INTO oauth_refresh_tokens(
-            token_hash,user_id,client_id,scope,resource,expires_at,created_at
-        ) VALUES (?,?,?,?,?,?,?)
-        """,
-        (
-            token_hash(refresh_token), user_id, client_id, scope, resource,
-            isoformat(refresh_expires), isoformat(now),
-        ),
-    )
-    return {
-        "access_token": access_token,
-        "token_type": "Bearer",
-        "expires_in": OAUTH_ACCESS_TOKEN_MINUTES * 60,
-        "refresh_token": refresh_token,
-        "scope": scope,
-        "resource": resource,
-    }
 
 
 def session_user(session_token: str | None) -> tuple[sqlite3.Row, sqlite3.Row] | None:
@@ -5860,59 +5713,8 @@ def require_web_user(
     return result[0]
 
 
-def oauth_base_url() -> str:
-    return f"https://{public_host}" if public_host != "localhost" else "http://localhost"
-
-
-def oauth_resource_url() -> str:
-    return f"{oauth_base_url()}/mcp/"
-
-
-def oauth_authenticate_header(scope: str | None = None) -> str:
-    value = (
-        f'Bearer resource_metadata="{oauth_base_url()}/.well-known/oauth-protected-resource"'
-    )
-    if scope:
-        value += f', scope="{scope}"'
-    return value
-
-
-def oauth_error(status_code: int, detail: str, scope: str | None = None) -> HTTPException:
-    return HTTPException(
-        status_code=status_code,
-        detail=detail,
-        headers={"WWW-Authenticate": oauth_authenticate_header(scope)},
-    )
-
-
-def ensure_active_device_token(connection: sqlite3.Connection, user: sqlite3.Row) -> int:
-    token = connection.execute(
-        "SELECT id FROM device_tokens WHERE user_id=? AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
-        (int(user["id"]),),
-    ).fetchone()
-    if token:
-        return int(token["id"])
-    seed = secrets.token_urlsafe(24)
-    raw_token = user_access_token(int(user["id"]), seed)
-    cursor = connection.execute(
-        """
-        INSERT INTO device_tokens(user_id,label,token_prefix,token_hash,token_seed,created_at)
-        VALUES (?,?,?,?,?,?)
-        """,
-        (
-            int(user["id"]),
-            str(user["real_name"] or user["username"]),
-            raw_token[:12],
-            token_hash(raw_token),
-            seed,
-            isoformat(utc_now()),
-        ),
-    )
-    return int(cursor.lastrowid)
-
-
-def required_oauth_scope(endpoint: str) -> str:
-    return "mcp:tools" if endpoint.startswith("/mcp") else "knowledge:read"
+def access_error(status_code: int, detail: str) -> HTTPException:
+    return HTTPException(status_code=status_code, detail=detail)
 
 
 def normalize_device_name(value: str | None, fallback: str) -> str:
@@ -5944,43 +5746,35 @@ def enforce_device_binding(
 ) -> sqlite3.Row | None:
     if bool(authentication_value(user, "is_admin", 0)):
         return None
-    auth_method = str(user["auth_method"])
     normalized_device_id = str(device_id or "").strip()
     if not normalized_device_id:
-        raise oauth_error(
+        raise access_error(
             428,
             "该账号必须通过门户“复制给 Agent”完成设备绑定。",
-            required_oauth_scope("/mcp" if auth_method == "oauth" else "/v1"),
         )
     if not DEVICE_ID_PATTERN.fullmatch(normalized_device_id):
-        raise oauth_error(
+        raise access_error(
             400,
             f"{DEVICE_ID_HEADER} 格式无效，应为16至128位设备安装标识",
-            required_oauth_scope("/mcp" if auth_method == "oauth" else "/v1"),
         )
     if device_signature is None:
-        raise oauth_error(
+        raise access_error(
             428,
             "缺少设备签名。请登录门户，将“一键配置”发送给当前本地 Agent。",
-            required_oauth_scope("/mcp" if auth_method == "oauth" else "/v1"),
         )
     if not KEY_ID_PATTERN.fullmatch(device_signature.key_id):
-        raise oauth_error(400, f"{DEVICE_KEY_ID_HEADER} 格式无效")
+        raise access_error(400, f"{DEVICE_KEY_ID_HEADER} 格式无效")
     if not NONCE_PATTERN.fullmatch(device_signature.nonce):
-        raise oauth_error(400, f"{DEVICE_NONCE_HEADER} 格式无效")
+        raise access_error(400, f"{DEVICE_NONCE_HEADER} 格式无效")
     try:
         signed_at = datetime.fromtimestamp(int(device_signature.timestamp), timezone.utc)
     except (ValueError, OverflowError):
-        raise oauth_error(400, f"{DEVICE_TIMESTAMP_HEADER} 格式无效") from None
+        raise access_error(400, f"{DEVICE_TIMESTAMP_HEADER} 格式无效") from None
     now_value = utc_now()
     if abs((now_value - signed_at).total_seconds()) > DEVICE_SIGNATURE_MAX_CLOCK_SKEW_SECONDS:
-        raise oauth_error(401, "设备签名时间已过期，请检查本机系统时间。")
+        raise access_error(401, "设备签名时间已过期，请检查本机系统时间。")
 
-    fallback_name = (
-        str(authentication_value(user, "oauth_client_name") or "OAuth MCP 客户端")
-        if auth_method == "oauth"
-        else "API Key 客户端"
-    )
+    fallback_name = "API Key 客户端"
     normalized_device_name = normalize_device_name(device_name, fallback_name)
     digest = hashlib.sha256(normalized_device_id.encode("utf-8")).hexdigest()
     key_row = connection.execute(
@@ -5996,12 +5790,12 @@ def enforce_device_binding(
         (int(user["id"]), device_signature.key_id),
     ).fetchone()
     if key_row is None:
-        raise oauth_error(
+        raise access_error(
             403,
             "设备公钥未登记或已撤销，请从门户重新复制一键配置。",
         )
     if not secrets.compare_digest(str(key_row["device_id_hash"]), digest):
-        raise oauth_error(
+        raise access_error(
             403,
             "设备标识与登记公钥不一致，请从门户重新配置。",
         )
@@ -6021,7 +5815,7 @@ def enforce_device_binding(
             canonical,
         )
     except DeviceSignatureError as exc:
-        raise oauth_error(403, str(exc)) from None
+        raise access_error(403, str(exc)) from None
 
     now = isoformat(now_value)
     if not connection.in_transaction:
@@ -6049,7 +5843,7 @@ def enforce_device_binding(
         )
     except sqlite3.IntegrityError:
         connection.rollback()
-        raise oauth_error(409, "检测到重复设备签名，请重新发起请求。") from None
+        raise access_error(409, "检测到重复设备签名，请重新发起请求。") from None
     connection.execute(
         """
         UPDATE device_bindings
@@ -6099,14 +5893,13 @@ def authenticate_api_token(
     counts_toward_usage: bool = True,
 ) -> sqlite3.Row:
     if not authorization or not authorization.startswith("Bearer "):
-        raise oauth_error(401, "缺少用户访问凭据", required_oauth_scope(endpoint))
+        raise access_error(401, "缺少用户访问凭据")
     raw_token = authorization.removeprefix("Bearer ").strip()
     with closing(database()) as connection:
         row = connection.execute(
             """
             SELECT users.id, users.username, device_tokens.id AS device_token_id,
-                   users.is_admin,
-                   'api_key' AS auth_method,'' AS oauth_client_id
+                   users.is_admin
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
             WHERE device_tokens.token_hash = ?
@@ -6123,48 +5916,8 @@ def authenticate_api_token(
             """,
             (token_hash(raw_token),),
         ).fetchone()
-        oauth_token = None
         if row is None:
-            oauth_token = connection.execute(
-                """
-                SELECT users.*,oauth_access_tokens.scope,oauth_access_tokens.expires_at,
-                       oauth_access_tokens.token_hash AS oauth_token_hash,
-                       oauth_access_tokens.client_id AS oauth_client_id,
-                       oauth_clients.client_name AS oauth_client_name
-                FROM oauth_access_tokens
-                JOIN users ON users.id=oauth_access_tokens.user_id
-                JOIN oauth_clients ON oauth_clients.client_id=oauth_access_tokens.client_id
-                WHERE oauth_access_tokens.token_hash=?
-                  AND oauth_access_tokens.revoked_at IS NULL
-                  AND users.active=1
-                  AND (
-                      users.is_admin=1 OR EXISTS(
-                          SELECT 1 FROM registration_authorizations authorization
-                          WHERE authorization.user_id=users.id
-                            AND authorization.status='registered'
-                            AND authorization.deleted_at IS NULL
-                      )
-                  )
-                """,
-                (token_hash(raw_token),),
-            ).fetchone()
-            if oauth_token and datetime.fromisoformat(str(oauth_token["expires_at"])) > utc_now():
-                scope = set(str(oauth_token["scope"]).split())
-                required_scope = required_oauth_scope(endpoint)
-                if required_scope not in scope:
-                    raise oauth_error(403, "OAuth令牌权限不足", required_scope)
-                device_token_id = ensure_active_device_token(connection, oauth_token)
-                row = {
-                    "id": int(oauth_token["id"]),
-                    "username": str(oauth_token["username"]),
-                    "device_token_id": device_token_id,
-                    "auth_method": "oauth",
-                    "oauth_client_id": str(oauth_token["oauth_client_id"]),
-                    "oauth_client_name": str(oauth_token["oauth_client_name"]),
-                    "is_admin": int(oauth_token["is_admin"]),
-                }
-        if row is None:
-            raise oauth_error(401, "用户访问凭据无效、过期或已吊销", required_oauth_scope(endpoint))
+            raise access_error(401, "用户访问凭据无效、过期或已吊销")
         signature_parts = (
             str(device_key_id or "").strip(),
             str(device_timestamp or "").strip(),
@@ -6204,9 +5957,9 @@ def authenticate_api_token(
                 INSERT INTO api_usage(
                     user_id, device_token_id, endpoint, method,
                     activity_type, activity_name, counts_toward_usage,
-                    auth_method,oauth_client_id,called_at
+                    called_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     row["id"],
@@ -6216,8 +5969,6 @@ def authenticate_api_token(
                     activity_type,
                     activity_name,
                     int(counts_toward_usage),
-                    str(row["auth_method"]),
-                    str(row["oauth_client_id"]),
                     isoformat(utc_now()),
                 ),
             )
@@ -6239,9 +5990,9 @@ def record_api_usage(
             INSERT INTO api_usage(
                 user_id, device_token_id, endpoint, method,
                 activity_type, activity_name, counts_toward_usage,
-                auth_method,oauth_client_id,called_at
+                called_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user["id"],
@@ -6251,8 +6002,6 @@ def record_api_usage(
                 activity_type,
                 activity_name,
                 int(counts_toward_usage),
-                str(user["auth_method"]),
-                str(user["oauth_client_id"]),
                 isoformat(utc_now()),
             ),
         )
@@ -6895,11 +6644,7 @@ def portal_payload(
                 "auth_method_display": (
                     "设备签名"
                     if active_device_binding["auth_method"] == "device_signature"
-                    else (
-                        "OAuth"
-                        if active_device_binding["auth_method"] == "oauth"
-                        else "API Key"
-                    )
+                    else "API Key"
                 ),
                 "last_verified_at_display": format_chinese_datetime(
                     active_device_binding["last_verified_at"]
@@ -6937,25 +6682,6 @@ def portal_payload(
                 (int(user["id"]),),
             ).fetchall()
         ]
-        oauth_connections = format_row_datetimes(
-            connection.execute(
-                """
-                SELECT oauth_clients.client_id,oauth_clients.client_name,
-                       MAX(oauth_refresh_tokens.created_at) AS authorized_at,
-                       MAX(oauth_refresh_tokens.expires_at) AS expires_at
-                FROM oauth_refresh_tokens
-                JOIN oauth_clients ON oauth_clients.client_id=oauth_refresh_tokens.client_id
-                WHERE oauth_refresh_tokens.user_id=?
-                  AND oauth_refresh_tokens.revoked_at IS NULL
-                  AND oauth_refresh_tokens.expires_at>?
-                GROUP BY oauth_clients.client_id,oauth_clients.client_name
-                ORDER BY authorized_at DESC
-                """,
-                (int(user["id"]), isoformat(utc_now())),
-            ).fetchall(),
-            "authorized_at",
-            "expires_at",
-        )
         recent_calls = format_row_datetimes(connection.execute(
             """
             SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
@@ -7210,7 +6936,6 @@ def portal_payload(
         "active_device_binding": active_device_binding_payload,
         "latest_agent_install_result": latest_agent_install_result,
         "device_binding_history": device_binding_history,
-        "oauth_connections": oauth_connections,
         "recent_calls": recent_calls,
         "usage_total": usage_total,
         "assistant_daily_limit": assistant_daily_limit,
@@ -7695,299 +7420,6 @@ def logout(
     response = RedirectResponse("/login", status_code=303)
     response.delete_cookie(SESSION_COOKIE)
     return response
-
-
-@app.get("/.well-known/oauth-protected-resource")
-@app.get("/.well-known/oauth-protected-resource/mcp")
-@app.get("/.well-known/oauth-protected-resource/mcp/")
-def oauth_protected_resource_metadata():
-    return {
-        "resource": oauth_resource_url(),
-        "authorization_servers": [oauth_base_url()],
-        "scopes_supported": list(OAUTH_SCOPES),
-        "bearer_methods_supported": ["header"],
-        "resource_documentation": f"{oauth_base_url()}/guide",
-    }
-
-
-@app.get("/.well-known/oauth-authorization-server")
-def oauth_authorization_server_metadata():
-    base = oauth_base_url()
-    return {
-        "issuer": base,
-        "authorization_endpoint": f"{base}/authorize",
-        "token_endpoint": f"{base}/oauth/token",
-        "registration_endpoint": f"{base}/oauth/register",
-        "revocation_endpoint": f"{base}/oauth/revoke",
-        "scopes_supported": list(OAUTH_SCOPES),
-        "response_types_supported": ["code"],
-        "grant_types_supported": ["authorization_code", "refresh_token"],
-        "token_endpoint_auth_methods_supported": ["none"],
-        "code_challenge_methods_supported": ["S256"],
-    }
-
-
-@app.post("/oauth/register")
-def oauth_dynamic_client_registration(payload: OAuthClientRegistrationRequest):
-    if payload.token_endpoint_auth_method != "none":
-        raise HTTPException(status_code=400, detail="仅支持无客户端密钥的PKCE公共客户端")
-    if payload.response_types != ["code"]:
-        raise HTTPException(status_code=400, detail="仅支持authorization_code响应类型")
-    allowed_grants = {"authorization_code", "refresh_token"}
-    if "authorization_code" not in payload.grant_types or any(
-        item not in allowed_grants for item in payload.grant_types
-    ):
-        raise HTTPException(status_code=400, detail="OAuth grant_types不受支持")
-    try:
-        redirect_uris = [validate_oauth_redirect_uri(item) for item in payload.redirect_uris]
-    except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
-    client_id = "jtc_" + secrets.token_urlsafe(24)
-    now = utc_now()
-    with closing(database()) as connection:
-        connection.execute(
-            """
-            INSERT INTO oauth_clients(
-                client_id,client_name,redirect_uris_json,grant_types_json,created_at
-            ) VALUES (?,?,?,?,?)
-            """,
-            (
-                client_id,
-                payload.client_name.strip() or "MCP Client",
-                json.dumps(redirect_uris, ensure_ascii=False),
-                json.dumps(payload.grant_types),
-                isoformat(now),
-            ),
-        )
-        connection.commit()
-    return JSONResponse(
-        {
-            "client_id": client_id,
-            "client_id_issued_at": int(now.timestamp()),
-            "client_name": payload.client_name.strip() or "MCP Client",
-            "redirect_uris": redirect_uris,
-            "grant_types": payload.grant_types,
-            "response_types": ["code"],
-            "token_endpoint_auth_method": "none",
-        },
-        status_code=201,
-    )
-
-
-@app.get("/authorize", response_class=HTMLResponse)
-def oauth_authorize_page(
-    request: Request,
-    response_type: str,
-    client_id: str,
-    redirect_uri: str,
-    code_challenge: str,
-    code_challenge_method: str = "S256",
-    scope: str = "",
-    state: str = "",
-    resource: str | None = None,
-    jiaotang_session: Annotated[str | None, Cookie()] = None,
-):
-    client = oauth_client(client_id)
-    if client is None:
-        raise HTTPException(status_code=400, detail="OAuth客户端不存在")
-    try:
-        registered_redirects = json.loads(str(client["redirect_uris_json"]))
-        normalized_scope = normalize_oauth_scope(scope)
-        normalized_resource = normalize_oauth_resource(resource)
-    except (ValueError, json.JSONDecodeError) as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
-    if response_type != "code" or redirect_uri not in registered_redirects:
-        raise HTTPException(status_code=400, detail="OAuth回调地址或响应类型无效")
-    if code_challenge_method != "S256" or not re.fullmatch(r"[A-Za-z0-9_-]{43,128}", code_challenge):
-        raise HTTPException(status_code=400, detail="OAuth客户端必须使用有效的PKCE S256")
-    active_session = session_user(jiaotang_session)
-    if active_session is None:
-        next_url = request.url.path + (f"?{request.url.query}" if request.url.query else "")
-        return RedirectResponse(f"/login?{urlencode({'next': next_url})}", status_code=303)
-    user = active_session[0]
-    return templates.TemplateResponse(
-        request,
-        "oauth_authorize.html",
-        {
-            "user": user,
-            "client_name": client["client_name"],
-            "client_id": client_id,
-            "redirect_uri": redirect_uri,
-            "scope": normalized_scope,
-            "scope_labels": [
-                "读取团队知识库" if item == "knowledge:read" else "调用知识库MCP工具"
-                for item in normalized_scope.split()
-            ],
-            "state": state,
-            "code_challenge": code_challenge,
-            "resource": normalized_resource,
-        },
-    )
-
-
-@app.post("/oauth/authorize")
-def oauth_authorize_submit(
-    client_id: Annotated[str, Form()],
-    redirect_uri: Annotated[str, Form()],
-    scope: Annotated[str, Form()],
-    state: Annotated[str, Form()],
-    code_challenge: Annotated[str, Form()],
-    resource: Annotated[str, Form()],
-    decision: Annotated[str, Form()],
-    csrf_token: Annotated[str, Form()],
-    user: Annotated[sqlite3.Row, Depends(require_web_user)],
-):
-    validate_csrf(user, csrf_token)
-    client = oauth_client(client_id)
-    if client is None:
-        raise HTTPException(status_code=400, detail="OAuth客户端不存在")
-    registered_redirects = json.loads(str(client["redirect_uris_json"]))
-    if redirect_uri not in registered_redirects:
-        raise HTTPException(status_code=400, detail="OAuth回调地址无效")
-    if decision != "approve":
-        values = {"error": "access_denied"}
-        if state:
-            values["state"] = state
-        return RedirectResponse(append_query_parameters(redirect_uri, values), status_code=303)
-    try:
-        normalized_scope = normalize_oauth_scope(scope)
-        normalized_resource = normalize_oauth_resource(resource)
-    except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
-    raw_code = "joc_" + secrets.token_urlsafe(36)
-    now = utc_now()
-    with closing(database()) as connection:
-        ensure_active_device_token(connection, user)
-        connection.execute(
-            """
-            INSERT INTO oauth_authorization_codes(
-                code_hash,client_id,user_id,redirect_uri,scope,code_challenge,
-                resource,expires_at,created_at
-            ) VALUES (?,?,?,?,?,?,?,?,?)
-            """,
-            (
-                token_hash(raw_code), client_id, int(user["id"]), redirect_uri,
-                normalized_scope, code_challenge, normalized_resource,
-                isoformat(now + timedelta(minutes=OAUTH_CODE_MINUTES)), isoformat(now),
-            ),
-        )
-        connection.commit()
-    values = {"code": raw_code}
-    if state:
-        values["state"] = state
-    return RedirectResponse(append_query_parameters(redirect_uri, values), status_code=303)
-
-
-@app.post("/oauth/token")
-def oauth_token_exchange(
-    grant_type: Annotated[str, Form()],
-    client_id: Annotated[str, Form()],
-    code: Annotated[str | None, Form()] = None,
-    redirect_uri: Annotated[str | None, Form()] = None,
-    code_verifier: Annotated[str | None, Form()] = None,
-    refresh_token: Annotated[str | None, Form()] = None,
-    resource: Annotated[str | None, Form()] = None,
-):
-    if oauth_client(client_id) is None:
-        return JSONResponse({"error": "invalid_client"}, status_code=401)
-    now = utc_now()
-    if grant_type == "authorization_code":
-        if not code or not redirect_uri or not code_verifier:
-            return JSONResponse({"error": "invalid_request"}, status_code=400)
-        if not re.fullmatch(r"[A-Za-z0-9._~-]{43,128}", code_verifier):
-            return JSONResponse({"error": "invalid_grant"}, status_code=400)
-        verifier_digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
-        challenge = urlsafe_b64encode(verifier_digest).decode("ascii").rstrip("=")
-        with closing(database()) as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            row = connection.execute(
-                """
-                SELECT * FROM oauth_authorization_codes
-                WHERE code_hash=? AND client_id=? AND consumed_at IS NULL
-                """,
-                (token_hash(code), client_id),
-            ).fetchone()
-            if (
-                row is None
-                or datetime.fromisoformat(str(row["expires_at"])) <= now
-                or row["redirect_uri"] != redirect_uri
-                or not secrets.compare_digest(str(row["code_challenge"]), challenge)
-            ):
-                connection.rollback()
-                return JSONResponse({"error": "invalid_grant"}, status_code=400)
-            try:
-                normalized_resource = normalize_oauth_resource(resource or str(row["resource"]))
-            except ValueError:
-                connection.rollback()
-                return JSONResponse({"error": "invalid_target"}, status_code=400)
-            connection.execute(
-                "UPDATE oauth_authorization_codes SET consumed_at=? WHERE code_hash=?",
-                (isoformat(now), token_hash(code)),
-            )
-            response = issue_oauth_tokens(
-                connection,
-                user_id=int(row["user_id"]),
-                client_id=client_id,
-                scope=str(row["scope"]),
-                resource=normalized_resource,
-            )
-            connection.commit()
-        return response
-    if grant_type == "refresh_token":
-        if not refresh_token:
-            return JSONResponse({"error": "invalid_request"}, status_code=400)
-        with closing(database()) as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            row = connection.execute(
-                """
-                SELECT * FROM oauth_refresh_tokens
-                WHERE token_hash=? AND client_id=? AND revoked_at IS NULL
-                """,
-                (token_hash(refresh_token), client_id),
-            ).fetchone()
-            if row is None or datetime.fromisoformat(str(row["expires_at"])) <= now:
-                connection.rollback()
-                return JSONResponse({"error": "invalid_grant"}, status_code=400)
-            try:
-                normalized_resource = normalize_oauth_resource(resource or str(row["resource"]))
-            except ValueError:
-                connection.rollback()
-                return JSONResponse({"error": "invalid_target"}, status_code=400)
-            response = issue_oauth_tokens(
-                connection,
-                user_id=int(row["user_id"]),
-                client_id=client_id,
-                scope=str(row["scope"]),
-                resource=normalized_resource,
-            )
-            replacement_hash = token_hash(str(response["refresh_token"]))
-            connection.execute(
-                "UPDATE oauth_refresh_tokens SET revoked_at=?,replaced_by_hash=? WHERE token_hash=?",
-                (isoformat(now), replacement_hash, token_hash(refresh_token)),
-            )
-            connection.commit()
-        return response
-    return JSONResponse({"error": "unsupported_grant_type"}, status_code=400)
-
-
-@app.post("/oauth/revoke", status_code=200)
-def oauth_revoke_token(
-    token: Annotated[str, Form()],
-    client_id: Annotated[str, Form()],
-):
-    digest = token_hash(token)
-    now = isoformat(utc_now())
-    with closing(database()) as connection:
-        connection.execute(
-            "UPDATE oauth_access_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE token_hash=? AND client_id=?",
-            (now, digest, client_id),
-        )
-        connection.execute(
-            "UPDATE oauth_refresh_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE token_hash=? AND client_id=?",
-            (now, digest, client_id),
-        )
-        connection.commit()
-    return Response(status_code=200)
 
 
 @app.get("/portal", response_class=HTMLResponse)
@@ -9267,8 +8699,6 @@ def admin_health_detail(
     calls_page_size = 50
     activity_filters = {
         "business": ("业务调用", "api_usage.counts_toward_usage = 1"),
-        "oauth": ("OAuth调用", "api_usage.auth_method = 'oauth'"),
-        "api_key": ("API Key调用", "api_usage.auth_method = 'api_key'"),
         "mcp_connection": ("MCP连接检测", "api_usage.activity_type = 'mcp_connection'"),
         "mcp_tools_list": ("工具列表", "api_usage.activity_type = 'mcp_tools_list'"),
         "mcp_search": ("实际检索", "api_usage.activity_type = 'mcp_search'"),
@@ -9278,8 +8708,6 @@ def admin_health_detail(
     activity_filter_label = activity_filters.get(selected_activity, ("全部调用", ""))[0]
     activity_descriptions = {
         "business": "计入用户累计调用的REST请求和实际MCP工具调用。连接检测与工具发现不计入。",
-        "oauth": "通过OAuth短期访问令牌发起的REST或MCP请求。",
-        "api_key": "通过网站生成的长期个人API Key发起的REST或MCP请求。",
         "mcp_connection": "扣子或其他客户端用于初始化、状态确认和保持连接，不读取知识库正文。",
         "mcp_tools_list": (
             "客户端读取当前MCP提供的工具清单，包括知识检索、文档读取、公示名单查询、"
@@ -9299,7 +8727,6 @@ def admin_health_detail(
             FROM api_usage
             JOIN users ON users.id = api_usage.user_id
             LEFT JOIN device_tokens ON device_tokens.id = api_usage.device_token_id
-            LEFT JOIN oauth_clients ON oauth_clients.client_id=api_usage.oauth_client_id
         """
         recent_calls_where = ""
         recent_calls_parameters: tuple[object, ...] = ()
@@ -9326,8 +8753,6 @@ def admin_health_detail(
         recent_calls_query = """
             SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
                    api_usage.activity_type, api_usage.activity_name,
-                   api_usage.auth_method,api_usage.oauth_client_id,
-                   COALESCE(oauth_clients.client_name,'') AS oauth_client_name,
                    COALESCE(NULLIF(api_usage.activity_name,''), api_usage.endpoint) AS activity_display,
                    users.username,
                    COALESCE(NULLIF(device_tokens.label,''), NULLIF(users.real_name,''), users.username) AS label
@@ -9393,54 +8818,6 @@ def admin_health_detail(
             LIMIT 100
             """
         ).fetchall(), "created_at", "last_used_at", "revoked_at")
-        oauth_summary = connection.execute(
-            """
-            SELECT
-              (SELECT COUNT(*) FROM oauth_clients) AS clients_total,
-              (SELECT COUNT(DISTINCT user_id || ':' || client_id)
-                 FROM oauth_refresh_tokens WHERE revoked_at IS NULL AND expires_at>?) AS active_connections,
-              (SELECT COUNT(DISTINCT user_id)
-                 FROM oauth_refresh_tokens WHERE revoked_at IS NULL AND expires_at>?) AS active_users,
-              (SELECT COUNT(*) FROM oauth_authorization_codes
-                 WHERE consumed_at>=?) AS authorizations_24h,
-              (SELECT COUNT(*) FROM api_usage WHERE auth_method='oauth') AS calls_total,
-              (SELECT COUNT(*) FROM api_usage
-                 WHERE auth_method='oauth' AND called_at>=?) AS calls_24h
-            """,
-            (isoformat(utc_now()), isoformat(utc_now()), calls_since_24_hours, calls_since_24_hours),
-        ).fetchone()
-        oauth_connections_admin = format_row_datetimes(
-            connection.execute(
-                """
-                SELECT oauth_clients.client_id,oauth_clients.client_name,
-                       users.username,users.real_name,
-                       MIN(oauth_refresh_tokens.created_at) AS authorized_at,
-                       MAX(oauth_refresh_tokens.expires_at) AS expires_at,
-                       SUM(CASE WHEN oauth_refresh_tokens.revoked_at IS NULL
-                                    AND oauth_refresh_tokens.expires_at>? THEN 1 ELSE 0 END) AS active_refresh_tokens,
-                       (SELECT COUNT(*) FROM oauth_access_tokens access
-                         WHERE access.user_id=users.id
-                           AND access.client_id=oauth_clients.client_id
-                           AND access.revoked_at IS NULL AND access.expires_at>?) AS active_access_tokens,
-                       (SELECT COUNT(*) FROM api_usage usage
-                         WHERE usage.user_id=users.id
-                           AND usage.oauth_client_id=oauth_clients.client_id) AS call_count,
-                       (SELECT MAX(called_at) FROM api_usage usage
-                         WHERE usage.user_id=users.id
-                           AND usage.oauth_client_id=oauth_clients.client_id) AS last_called_at
-                FROM oauth_refresh_tokens
-                JOIN oauth_clients ON oauth_clients.client_id=oauth_refresh_tokens.client_id
-                JOIN users ON users.id=oauth_refresh_tokens.user_id
-                GROUP BY oauth_clients.client_id,oauth_clients.client_name,users.id
-                ORDER BY authorized_at DESC
-                LIMIT 200
-                """,
-                (isoformat(utc_now()), isoformat(utc_now())),
-            ).fetchall(),
-            "authorized_at",
-            "expires_at",
-            "last_called_at",
-        )
         assistant_since_7_days = isoformat(utc_now() - timedelta(days=7))
         assistant_day_start, assistant_day_end = assistant_day_bounds()
         assistant_summary = connection.execute(
@@ -9700,12 +9077,6 @@ def admin_health_detail(
             [
                 ("有效用户", active_users),
                 ("有效 API Key", active_tokens),
-                ("OAuth活跃连接", int(oauth_summary["active_connections"] or 0)),
-                ("OAuth授权用户", int(oauth_summary["active_users"] or 0)),
-                ("24小时新授权", int(oauth_summary["authorizations_24h"] or 0)),
-                ("24小时OAuth调用", int(oauth_summary["calls_24h"] or 0), "/admin/health/calls?activity=oauth"),
-                ("累计OAuth调用", int(oauth_summary["calls_total"] or 0), "/admin/health/calls?activity=oauth"),
-                ("注册OAuth客户端", int(oauth_summary["clients_total"] or 0)),
                 ("权限模式", "统一知识只读权限"),
             ],
         ),
@@ -9714,8 +9085,7 @@ def admin_health_detail(
             [
                 ("全部调用", all_calls_total, "/admin/health/calls"),
                 ("24小时业务调用", business_calls_24h, "/admin/health/calls?activity=business"),
-                ("24小时OAuth调用", int(oauth_summary["calls_24h"] or 0), "/admin/health/calls?activity=oauth"),
-                ("24小时API Key调用", all_calls_24h - int(oauth_summary["calls_24h"] or 0), "/admin/health/calls?activity=api_key"),
+                ("24小时全部调用", all_calls_24h, "/admin/health/calls"),
                 ("MCP连接检测", mcp_activity_counts.get("mcp_connection", 0), "/admin/health/calls?activity=mcp_connection"),
                 ("工具列表", mcp_activity_counts.get("mcp_tools_list", 0), "/admin/health/calls?activity=mcp_tools_list"),
                 ("实际检索", mcp_activity_counts.get("mcp_search", 0), "/admin/health/calls?activity=mcp_search"),
@@ -9759,7 +9129,6 @@ def admin_health_detail(
             "failed_updates": failed_updates if section == "updates" else [],
             "access_users": access_users if section == "access" else [],
             "access_tokens": access_tokens if section == "access" else [],
-            "oauth_connections_admin": oauth_connections_admin if section == "access" else [],
             "assistant_users": assistant_users if section == "assistant" else [],
             "assistant_recent": assistant_recent if section == "assistant" else [],
             "assistant_anomalies": assistant_anomalies if section == "assistant" else [],
@@ -11209,30 +10578,6 @@ def replace_device_binding(
             """,
             (now, int(user["id"])),
         )
-        connection.execute(
-            """
-            UPDATE oauth_access_tokens
-            SET revoked_at=COALESCE(revoked_at,?)
-            WHERE user_id=?
-            """,
-            (now, int(user["id"])),
-        )
-        connection.execute(
-            """
-            UPDATE oauth_refresh_tokens
-            SET revoked_at=COALESCE(revoked_at,?)
-            WHERE user_id=?
-            """,
-            (now, int(user["id"])),
-        )
-        connection.execute(
-            """
-            UPDATE oauth_authorization_codes
-            SET consumed_at=COALESCE(consumed_at,?)
-            WHERE user_id=?
-            """,
-            (now, int(user["id"])),
-        )
         connection.commit()
         updated_user = connection.execute(
             "SELECT * FROM users WHERE id=?",
@@ -11248,27 +10593,6 @@ def replace_device_binding(
             active_page="access",
         ),
     )
-
-
-@app.post("/oauth/connections/{client_id}/revoke")
-def revoke_oauth_connection(
-    client_id: str,
-    csrf_token: Annotated[str, Form()],
-    user: Annotated[sqlite3.Row, Depends(require_web_user)],
-):
-    validate_csrf(user, csrf_token)
-    now = isoformat(utc_now())
-    with closing(database()) as connection:
-        connection.execute(
-            "UPDATE oauth_access_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE user_id=? AND client_id=?",
-            (now, int(user["id"]), client_id),
-        )
-        connection.execute(
-            "UPDATE oauth_refresh_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE user_id=? AND client_id=?",
-            (now, int(user["id"]), client_id),
-        )
-        connection.commit()
-    return RedirectResponse("/access", status_code=303)
 
 
 @app.post("/password")

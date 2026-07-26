@@ -56,15 +56,81 @@ try {
   const palette = await page.evaluate(() => {
     const center = document.querySelector(".skill-center");
     const active = document.querySelector(".skill-group-button.is-active");
+    const hero = center.querySelector(".skill-hero");
+    const tabs = center.querySelector(".skill-section-tabs");
+    const catalogShell = center.querySelector(".skill-catalog-shell");
+    const feedbackLink = document.querySelector('[data-section-link="feedback"]');
+    const skillsLink = document.querySelector('[data-section-link="skills"]');
     return {
       centerBackground: getComputedStyle(center).backgroundColor,
       activeBorder: getComputedStyle(active).borderColor,
       documentWidth: document.documentElement.scrollWidth,
       viewportWidth: window.innerWidth,
+      overviewBeforeTabs: hero.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+      catalogAfterTabs: tabs.compareDocumentPosition(catalogShell) & Node.DOCUMENT_POSITION_FOLLOWING,
+      catalogIsContinuous: Boolean(
+        catalogShell.querySelector(".skill-group-switcher")
+        && catalogShell.querySelector(".skill-filter-bar")
+        && catalogShell.querySelector(".skill-catalog-table"),
+      ),
+      feedbackBeforeSkills: Boolean(
+        feedbackLink.compareDocumentPosition(skillsLink) & Node.DOCUMENT_POSITION_FOLLOWING
+      ),
     };
   });
   assert.equal(palette.documentWidth, palette.viewportWidth, "桌面页面不应产生全局横向溢出");
   assert.notEqual(palette.activeBorder, "rgb(157, 185, 67)", "不应继续使用参考图荧光绿边框");
+  assert.ok(palette.overviewBeforeTabs, "Skills 总览必须位于页面内容最上方");
+  assert.ok(palette.catalogAfterTabs, "技能目录必须紧随页面页签");
+  assert.equal(palette.catalogIsContinuous, true, "分类、筛选与技能清单必须位于同一连续工作区");
+  assert.equal(palette.feedbackBeforeSkills, true, "左侧留言反馈必须位于 Skills 中心之前");
+  await page.evaluate(() => {
+    const shell = document.querySelector(".skill-catalog-shell");
+    window.scrollTo({top: window.scrollY + shell.getBoundingClientRect().top + 520, behavior: "instant"});
+  });
+  await page.waitForTimeout(100);
+  const stickyBarsState = await page.evaluate(() => {
+    const center = document.querySelector(".skill-center");
+    const switcher = document.querySelector(".skill-group-switcher");
+    const controls = document.querySelector(".skill-catalog-controls");
+    const firstGroup = document.querySelector(".skill-group-button");
+    return {
+      groupTop: Math.round(switcher.getBoundingClientRect().top),
+      expectedGroupTop: Math.round(Number.parseFloat(getComputedStyle(center).getPropertyValue("--skill-groups-top"))),
+      groupPosition: getComputedStyle(switcher).position,
+      controlsTop: Math.round(controls.getBoundingClientRect().top),
+      expectedControlsTop: Math.round(Number.parseFloat(getComputedStyle(center).getPropertyValue("--skill-controls-top"))),
+      controlsPosition: getComputedStyle(controls).position,
+      groupHeight: Math.round(firstGroup.getBoundingClientRect().height),
+      controlsHeight: Math.round(controls.getBoundingClientRect().height),
+    };
+  });
+  assert.equal(stickyBarsState.groupPosition, "sticky", "技能分类轨道必须启用吸顶");
+  assert.ok(Math.abs(stickyBarsState.groupTop - stickyBarsState.expectedGroupTop) <= 2, `分类轨道应固定在页签下方：${JSON.stringify(stickyBarsState)}`);
+  assert.equal(stickyBarsState.controlsPosition, "sticky", "技能清单栏必须启用吸顶");
+  assert.ok(Math.abs(stickyBarsState.controlsTop - stickyBarsState.expectedControlsTop) <= 2, `技能清单栏应固定在分类轨道下方：${JSON.stringify(stickyBarsState)}`);
+  assert.ok(stickyBarsState.groupHeight <= 62, `技能目录按钮高度应压缩至 62px 内：${JSON.stringify(stickyBarsState)}`);
+  assert.ok(stickyBarsState.controlsHeight <= 72, `技能清单栏高度应压缩至 72px 内：${JSON.stringify(stickyBarsState)}`);
+  const backToList = page.locator("[data-skill-back-to-list]");
+  const backButtonLayout = await backToList.evaluate((button) => ({
+    position: getComputedStyle(button).position,
+    followsCatalog: Boolean(
+      document.querySelector(".skill-catalog-shell").compareDocumentPosition(button)
+      & Node.DOCUMENT_POSITION_FOLLOWING
+    ),
+  }));
+  assert.notEqual(backButtonLayout.position, "fixed", "返回清单顶部按钮不得悬浮覆盖内容");
+  assert.equal(backButtonLayout.followsCatalog, true, "返回清单顶部按钮必须单独位于清单最下方");
+  await backToList.scrollIntoViewIfNeeded();
+  assert.equal(await backToList.isVisible(), true, "进入技能长清单后必须显示返回清单顶部按钮");
+  await backToList.click();
+  await page.waitForFunction(() => {
+    const center = document.querySelector(".skill-center");
+    const shell = document.querySelector(".skill-catalog-shell");
+    const tabs = document.querySelector(".skill-section-tabs");
+    const tabsTop = Number.parseFloat(getComputedStyle(center).getPropertyValue("--skill-tabs-top")) || 0;
+    return Math.abs(shell.getBoundingClientRect().top - tabsTop - tabs.getBoundingClientRect().height - 8) <= 3;
+  });
 
   await page.locator('[data-skill-section-tab="downloads"]').click();
   assert.equal(await page.locator('[data-skill-section-pane="downloads"]').isVisible(), true);
@@ -102,12 +168,19 @@ try {
   const desktopRail = await page.evaluate(() => {
     const rail = document.querySelector("[data-skill-group-rail]");
     const last = rail.querySelector("[data-skill-group]:last-child");
+    const currentGroup = document.querySelector("[data-skill-current-group]");
     const railRect = rail.getBoundingClientRect();
     const lastRect = last.getBoundingClientRect();
-    return {scrollLeft: rail.scrollLeft, fullyVisible: lastRect.left >= railRect.left && lastRect.right <= railRect.right + 1};
+    return {
+      scrollLeft: rail.scrollLeft,
+      fullyVisible: lastRect.left >= railRect.left && lastRect.right <= railRect.right + 1,
+      currentGroup: currentGroup.textContent.trim(),
+      selectedGroup: last.dataset.skillGroupLabel,
+    };
   });
   assert.ok(desktopRail.scrollLeft > 0, "点击远端能力后横向轨道应自动移动");
   assert.equal(desktopRail.fullyVisible, true, `选中的能力按钮应完整进入可视区：${JSON.stringify(desktopRail)}`);
+  assert.equal(desktopRail.currentGroup, desktopRail.selectedGroup, "当前位置提示必须与选中分类一致");
   if (process.env.SKILLS_QA_CATALOG_SCREENSHOT) {
     await page.screenshot({path: process.env.SKILLS_QA_CATALOG_SCREENSHOT, fullPage: true});
   }
@@ -121,6 +194,30 @@ try {
   }));
   assert.equal(mobileLayout.documentWidth, mobileLayout.viewportWidth, "390px 页面不应产生全局横向溢出");
   assert.equal(mobileLayout.railScrollable, true, "移动端能力切换应保留局部横向滚动");
+  await page.evaluate(() => {
+    const shell = document.querySelector(".skill-catalog-shell");
+    window.scrollTo({top: window.scrollY + shell.getBoundingClientRect().top + 520, behavior: "instant"});
+  });
+  await page.waitForTimeout(100);
+  const mobileStickyState = await page.evaluate(() => {
+    const center = document.querySelector(".skill-center");
+    const controls = document.querySelector(".skill-catalog-controls");
+    return {
+      actualTop: Math.round(controls.getBoundingClientRect().top),
+      expectedTop: Math.round(Number.parseFloat(getComputedStyle(center).getPropertyValue("--skill-controls-top"))),
+      position: getComputedStyle(controls).position,
+    };
+  });
+  assert.equal(mobileStickyState.position, "sticky", "移动端技能清单栏必须保持吸顶");
+  assert.ok(Math.abs(mobileStickyState.actualTop - mobileStickyState.expectedTop) <= 2, `移动端技能清单栏定位错误：${JSON.stringify(mobileStickyState)}`);
+  const mobileBackToList = page.locator("[data-skill-back-to-list]");
+  await mobileBackToList.scrollIntoViewIfNeeded();
+  assert.equal(await mobileBackToList.isVisible(), true, "移动端返回按钮必须位于清单末尾且可访问");
+  const mobileOverflow = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+  assert.equal(mobileOverflow.documentWidth, mobileOverflow.viewportWidth, "移动端回顶按钮不应造成全局横向溢出");
   assert.deepEqual(consoleErrors, [], `控制台不应出现错误：${consoleErrors.join(" | ")}`);
   console.log("PASS Skills Center UX: tabs, release notes collapse, stable download buttons, black-gold palette, auto-scroll, responsive layout, console");
 } finally {

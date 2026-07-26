@@ -518,19 +518,6 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   cursor: pointer;
   font-weight: 700;
 }
-.oauth-scope-list { display: grid; gap: 10px; margin: 24px 0; }
-.oauth-scope-list > div {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--atelier-line);
-  border-radius: 12px;
-  background: #f7f2e8;
-}
-.oauth-scope-list span { color: var(--atelier-gold); font-weight: 900; }
-.oauth-consent small { display: block; margin-top: 18px; overflow-wrap: anywhere; color: var(--atelier-muted); }
-
 .installation-stage-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
