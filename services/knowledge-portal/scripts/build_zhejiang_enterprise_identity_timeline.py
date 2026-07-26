@@ -12,16 +12,16 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
 DEFAULT_SMALL_GIANT_MASTER = Path(
-    "/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/"
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/"
     "_全国小巨人批次主表/全国小巨人企业级主表.csv"
 )
 DEFAULT_THREE_FIRST = Path(
-    "/Volumes/知识库/_云端知识库/50_名单与对标/三首项目/"
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/三首项目/"
     "_结构化数据/三首项目企业产品年度记录.jsonl"
 )
-DEFAULT_OUTPUT = Path("/Volumes/知识库/_云端知识库/50_名单与对标/企业身份时间轴/浙江省")
+DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省")
 DEFAULT_TYC_ENRICHMENT = DEFAULT_OUTPUT / "天眼查企业身份核验结果.csv"
 USCC_PATTERN = re.compile(r"^[0-9A-HJ-NPQRTUWXY]{18}$")
 YEAR_PATTERN = re.compile(r"20\d{2}")

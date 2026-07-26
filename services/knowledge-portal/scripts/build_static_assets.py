@@ -12,6 +12,7 @@ SOURCES = (
     ("base", "style.css"),
     ("console", "console.css"),
     ("theme", "atelier.css"),
+    ("theme", "skill-center.css"),
 )
 
 

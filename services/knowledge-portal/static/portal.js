@@ -140,6 +140,54 @@ document.querySelectorAll("[data-device-id-display]").forEach((element) => {
   element.textContent = knowledgeDeviceId;
 });
 
+const renderAgentInstallStatus = (card, payload) => {
+  const statusPanel = card?.closest("[data-skill-section-pane]")?.querySelector("[data-agent-install-status]");
+  if (!statusPanel || !payload?.stages) return;
+  Object.entries(payload.stages).forEach(([name, stage]) => {
+    const item = statusPanel.querySelector(`[data-agent-stage="${name}"]`);
+    if (!item) return;
+    item.classList.toggle("is-complete", Boolean(stage.complete));
+    const detail = item.querySelector("small");
+    if (detail) detail.textContent = stage.complete ? (stage.completed_at || "已通过") : "等待 Agent 回传";
+  });
+  const resultBox = statusPanel.querySelector("[data-agent-result]");
+  const title = statusPanel.querySelector("[data-agent-result-title]");
+  const message = statusPanel.querySelector("[data-agent-result-message]");
+  const next = statusPanel.querySelector("[data-agent-result-next]");
+  const result = payload.result;
+  resultBox?.classList.toggle("is-success", Boolean(result?.result_ok));
+  resultBox?.classList.toggle("is-error", Boolean(result && !result.result_ok));
+  if (title) title.textContent = result ? (result.result_ok ? "最近一次安装已通过" : "最近一次安装未完成") : "等待本地 Agent 回传";
+  if (message) message.textContent = result?.result_user_message || "本页正在等待设备登记、签名和 MCP 连接结果。";
+  if (next) next.textContent = result?.result_next_action || result?.result_reported_at_display || "";
+};
+
+const watchAgentInstallStatus = (card) => {
+  const statusUrl = card?.dataset.installStatusUrl;
+  if (!statusUrl || card.dataset.installPolling === "true") return;
+  card.dataset.installPolling = "true";
+  let attempts = 0;
+  const poll = async () => {
+    attempts += 1;
+    try {
+      const response = await fetch(statusUrl, {headers: {Accept: "application/json"}, cache: "no-store"});
+      if (response.ok) {
+        const payload = await response.json();
+        renderAgentInstallStatus(card, payload);
+        if (payload.configured || payload.result?.result_status === "failed") {
+          card.dataset.installPolling = "false";
+          return;
+        }
+      }
+    } catch {
+      // A temporary polling failure does not invalidate the one-time installation plan.
+    }
+    if (attempts < 120) window.setTimeout(poll, 5000);
+    else card.dataset.installPolling = "false";
+  };
+  poll();
+};
+
 document.addEventListener("click", async (event) => {
   const agentBootstrapButton = event.target.closest("[data-copy-agent-bootstrap]");
   if (agentBootstrapButton) {
@@ -159,6 +207,16 @@ document.addEventListener("click", async (event) => {
         body: form,
       });
       const payload = await response.json();
+      if (response.ok && payload.exempt) {
+        agentBootstrapButton.classList.remove("is-loading");
+        agentBootstrapButton.innerHTML = "<span>管理员无需生成安装码</span><small>请使用管理员连接凭据</small>";
+        if (status) status.textContent = payload.detail;
+        window.setTimeout(() => {
+          agentBootstrapButton.innerHTML = originalMarkup;
+          agentBootstrapButton.disabled = false;
+        }, 4000);
+        return;
+      }
       if (!response.ok || !payload.prompt) {
         throw new Error(payload.detail || "无法生成一键配置");
       }
@@ -167,6 +225,7 @@ document.addEventListener("click", async (event) => {
       agentBootstrapButton.innerHTML = "<span>已复制，发送给 Agent</span><small>60分钟内有效</small>";
       agentBootstrapButton.classList.add("copy-success");
       if (status) status.textContent = "现在只需粘贴到当前本地 Agent 的对话框。";
+      watchAgentInstallStatus(card);
       window.setTimeout(() => {
         agentBootstrapButton.innerHTML = originalMarkup;
         agentBootstrapButton.classList.remove("copy-success");
@@ -531,4 +590,189 @@ if (waterfallBoundary) {
       navigateWaterfall("previous");
     }
   });
+}
+
+const skillCenter = document.querySelector("[data-skill-center]");
+if (skillCenter) {
+  const search = skillCenter.querySelector("[data-skill-search]");
+  const rows = [...skillCenter.querySelectorAll("[data-skill-row]")];
+  const groupButtons = [...skillCenter.querySelectorAll("[data-skill-group]")];
+  const groupRail = skillCenter.querySelector("[data-skill-group-rail]");
+  const statusButtons = [...skillCenter.querySelectorAll("[data-skill-status]")];
+  const sectionTabs = [...skillCenter.querySelectorAll("[data-skill-section-tab]")];
+  const sectionPanes = [...skillCenter.querySelectorAll("[data-skill-section-pane]")];
+  const resultCount = skillCenter.querySelector("[data-skill-result-count]");
+  const emptyState = skillCenter.querySelector("[data-skill-empty]");
+  const dialog = skillCenter.querySelector("[data-skill-dialog]");
+  const loading = dialog?.querySelector("[data-skill-detail-loading]");
+  const content = dialog?.querySelector("[data-skill-detail-content]");
+  let activeGroup = "all";
+  let activeStatus = "all";
+
+  const showSkillSection = (name, {updateHash = true} = {}) => {
+    sectionTabs.forEach((tab) => {
+      const active = tab.dataset.skillSectionTab === name;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", String(active));
+    });
+    sectionPanes.forEach((pane) => {
+      const active = pane.dataset.skillSectionPane === name;
+      pane.classList.toggle("is-active", active);
+      pane.hidden = !active;
+    });
+    if (updateHash) history.replaceState(null, "", `/portal#skills-${name}`);
+    if (name === "install") {
+      const installCard = skillCenter.querySelector("[data-install-status-url]");
+      if (installCard) watchAgentInstallStatus(installCard);
+    }
+  };
+
+  sectionTabs.forEach((tab) => tab.addEventListener("click", () => {
+    showSkillSection(tab.dataset.skillSectionTab);
+  }));
+  skillCenter.querySelectorAll("[data-skill-tab-target]").forEach((button) => {
+    button.addEventListener("click", () => {
+      showSkillSection(button.dataset.skillTabTarget);
+      skillCenter.querySelector(".skill-section-tabs")?.scrollIntoView({behavior: "smooth", block: "start"});
+    });
+  });
+  const requestedSkillPane = window.location.hash.match(/^#skills-(catalog|downloads|install)$/)?.[1];
+  if (requestedSkillPane) showSkillSection(requestedSkillPane, {updateHash: false});
+
+  const applySkillFilters = () => {
+    const query = search.value.trim().toLocaleLowerCase("zh-CN");
+    let visible = 0;
+    rows.forEach((row) => {
+      const matchesQuery = !query || row.dataset.skillSearchValue.toLocaleLowerCase("zh-CN").includes(query);
+      const matchesGroup = activeGroup === "all" || row.dataset.skillGroupValue === activeGroup;
+      const matchesStatus = activeStatus === "all" || row.dataset.skillStatusValue === activeStatus;
+      row.hidden = !(matchesQuery && matchesGroup && matchesStatus);
+      if (!row.hidden) visible += 1;
+    });
+    resultCount.textContent = `${visible} / ${rows.length}`;
+    emptyState.hidden = visible !== 0;
+  };
+
+  const selectFilter = (buttons, selected) => {
+    buttons.forEach((button) => {
+      const active = button === selected;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  };
+
+  groupButtons.forEach((button) => button.addEventListener("click", () => {
+    activeGroup = button.dataset.skillGroup;
+    selectFilter(groupButtons, button);
+    applySkillFilters();
+    if (groupRail) {
+      button.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"});
+    }
+  }));
+  statusButtons.forEach((button) => button.addEventListener("click", () => {
+    activeStatus = button.dataset.skillStatus;
+    selectFilter(statusButtons, button);
+    applySkillFilters();
+  }));
+  search?.addEventListener("input", applySkillFilters);
+  window.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      search?.focus();
+    }
+  });
+  skillCenter.querySelector("[data-skill-rescan]")?.addEventListener("click", () => window.location.reload());
+
+  const showSkillPane = (name) => {
+    const tabs = [...dialog.querySelectorAll("[data-skill-detail-tab]")];
+    const panes = [...dialog.querySelectorAll("[data-skill-detail-pane]")];
+    tabs.forEach((tab) => {
+      const active = tab.dataset.skillDetailTab === name;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", String(active));
+    });
+    panes.forEach((pane) => pane.classList.toggle("is-active", pane.dataset.skillDetailPane === name));
+  };
+
+  const renderSkillDetail = (payload) => {
+    dialog.querySelector("[data-skill-detail-title]").textContent = payload.title;
+    dialog.querySelector("[data-skill-detail-name]").textContent = payload.name;
+    dialog.querySelector("[data-skill-detail-description]").textContent = payload.description;
+    const status = dialog.querySelector("[data-skill-detail-status]");
+    status.textContent = `${payload.group_label} · ${payload.status_label}`;
+    dialog.querySelector("[data-skill-detail-files]").textContent = `${payload.file_count} 文件 / ${payload.directory_count} 目录`;
+    dialog.querySelector("[data-skill-detail-size]").textContent = payload.size_display;
+    dialog.querySelector("[data-skill-detail-fingerprint]").textContent = payload.fingerprint;
+    dialog.querySelector("[data-skill-detail-version]").textContent = payload.release_tag;
+    dialog.querySelector('[data-skill-detail-pane="preview"]').innerHTML = payload.skill_html;
+    dialog.querySelector('[data-skill-detail-pane="source"] code').textContent = payload.skill_source;
+
+    const filePane = dialog.querySelector('[data-skill-detail-pane="files"]');
+    filePane.replaceChildren();
+    payload.files.forEach((file) => {
+      const row = document.createElement("div");
+      const path = document.createElement("code");
+      const meta = document.createElement("small");
+      path.textContent = file.path;
+      meta.textContent = `${file.type} · ${file.size}`;
+      row.append(path, meta);
+      filePane.appendChild(row);
+    });
+
+    const relationPane = dialog.querySelector('[data-skill-detail-pane="relations"]');
+    relationPane.replaceChildren();
+    const relations = [...payload.relations];
+    payload.required_skills.forEach((skill) => {
+      if (!relations.some((item) => item.skill === skill && item.type === "requires")) {
+        relations.unshift({direction: "调用", skill, type_label: "必需依赖", reason: payload.dependency_reason});
+      }
+    });
+    if (!relations.length) {
+      const empty = document.createElement("div");
+      empty.className = "skill-empty-state";
+      empty.textContent = "此技能可独立使用，当前清单未声明固定协作关系。";
+      relationPane.appendChild(empty);
+    } else {
+      relations.forEach((relation) => {
+        const card = document.createElement("article");
+        const title = document.createElement("strong");
+        const type = document.createElement("span");
+        const reason = document.createElement("p");
+        title.textContent = `${relation.direction} · ${relation.skill}`;
+        type.textContent = relation.type_label;
+        reason.textContent = relation.reason || "正式清单已声明此协作关系。";
+        card.append(title, type, reason);
+        relationPane.appendChild(card);
+      });
+    }
+    showSkillPane("preview");
+  };
+
+  dialog?.querySelectorAll("[data-skill-detail-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => showSkillPane(tab.dataset.skillDetailTab));
+  });
+  dialog?.querySelectorAll("[data-skill-dialog-close]").forEach((button) => {
+    button.addEventListener("click", () => dialog.close());
+  });
+  dialog?.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+
+  rows.forEach((row) => row.addEventListener("click", async () => {
+    if (!dialog) return;
+    loading.hidden = false;
+    loading.textContent = "正在读取正式技能清单…";
+    content.hidden = true;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    try {
+      const response = await fetch(`/skills/catalog/${encodeURIComponent(row.dataset.skillOpen)}`, {headers: {Accept: "application/json"}});
+      if (!response.ok) throw new Error("技能详情暂时不可用");
+      renderSkillDetail(await response.json());
+      loading.hidden = true;
+      content.hidden = false;
+    } catch (error) {
+      loading.textContent = error.message || "技能详情暂时不可用";
+    }
+  }));
 }

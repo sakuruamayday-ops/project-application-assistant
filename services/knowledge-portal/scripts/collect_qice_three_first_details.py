@@ -23,7 +23,7 @@ PROJECTS = {
 PROVINCE_LIST_PATTERNS = {
     "10": re.compile(r"浙江省.*首版次软件产品.*(?:目录|名单|公示|通知)"),
     "11": re.compile(r"浙江省.*(?:首批次新材料|重点新材料首批次).*(?:目录|名单|公示|认定|通知)"),
-    "12": re.compile(r"浙江省.*首台.?套.*装备.*(?:名单|公示|认定|通知)"),
+    "12": re.compile(r"浙江省.*(?:装备制造业.*首台.?套|首台.?套.*装备).*(?:名单|公示|认定|通知|产品)"),
 }
 
 
@@ -69,8 +69,26 @@ def get(session: requests.Session, token: str, endpoint: str, params: dict[str, 
 
 
 def related_policies(session: requests.Session, token: str, project_id: str) -> list[dict[str, Any]]:
-    result = post(session, token, "/data-api/mobile/policyProject/v2/pageRelatedPolicyLastUpdate", {"projectId": project_id, "current": 1, "size": 200})
-    return list(result.get("data", {}).get("records") or [])
+    payload = {"projectId": project_id, "current": 1, "size": 100}
+    data = post(
+        session,
+        token,
+        "/data-api/mobile/policyProject/v2/pageRelatedPolicyLastUpdate",
+        payload,
+    ).get("data", {})
+    records = list(data.get("records") or [])
+    pages = int(data.get("pages") or 1)
+    for current in range(2, pages + 1):
+        payload["current"] = current
+        page = post(
+            session,
+            token,
+            "/data-api/mobile/policyProject/v2/pageRelatedPolicyLastUpdate",
+            payload,
+        ).get("data", {})
+        records.extend(page.get("records") or [])
+        time.sleep(0.6)
+    return records
 
 
 def include_policy(project_id: str, policy: dict[str, Any]) -> bool:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 import re
@@ -13,10 +14,14 @@ from typing import Any, Iterable
 
 
 DEFAULT_HISTORY = Path.home() / "Downloads" / "qice_three_first_history_full.json"
-DEFAULT_OUTPUT = Path("/Volumes/知识库/_云端知识库/50_名单与对标/三首项目/_结构化数据")
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
+DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/三首项目/_结构化数据")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
 DEFAULT_SUPPLEMENTS = DEFAULT_OUTPUT / "三首项目官方公开补充.jsonl"
 DEFAULT_DIRECTORY_STATUS = DEFAULT_OUTPUT / "三首项目目录状态.jsonl"
+DEFAULT_GUIDANCE_DIRECTORIES = Path(
+    "/Users/zsh/JiaotangData/知识库/10_政策与目录/三首项目/浙江省首批次新材料/应用示范指导目录/"
+    "浙江省重点新材料首批次应用示范指导目录_结构化条目.jsonl"
+)
 PROJECT_NAMES = {
     "10": "浙江省首版次软件产品",
     "11": "浙江省首批次新材料",
@@ -38,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--details", type=Path)
     parser.add_argument("--supplements", type=Path, default=DEFAULT_SUPPLEMENTS)
     parser.add_argument("--directory-status", type=Path, default=DEFAULT_DIRECTORY_STATUS)
+    parser.add_argument("--guidance-directories", type=Path, default=DEFAULT_GUIDANCE_DIRECTORIES)
     parser.add_argument("--database", type=Path, default=DEFAULT_DB)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
@@ -52,24 +58,296 @@ def normalize_product(value: str) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip(" |,，;；")
 
 
+def normalize_material_key(value: str) -> str:
+    return re.sub(r"\s+", "", normalize_product(value)).replace("（", "(").replace("）", ")")
+
+
+def normalize_clause(value: str) -> str:
+    return re.sub(
+        r"[\s，。；：、,.;:（）()【】\[\]]+",
+        "",
+        str(value or ""),
+    ).lower()
+
+
+def material_similarity(left: str, right: str) -> tuple[float, str]:
+    left_key = normalize_material_key(left).lower()
+    right_key = normalize_material_key(right).lower()
+    if not left_key or not right_key:
+        return 0.0, "none"
+    if left_key == right_key:
+        return 1.0, "exact_material_name"
+    shorter, longer = sorted((left_key, right_key), key=len)
+    if len(shorter) >= 4 and shorter in longer and len(shorter) / len(longer) >= 0.6:
+        return 0.94, "material_name_contains"
+    score = difflib.SequenceMatcher(None, left_key, right_key).ratio()
+    return score, "fuzzy_material_name"
+
+
+def directory_version_diffs(
+    guidance_directories: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    by_year: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for row in guidance_directories:
+        by_year[int(row["directory_year"])].append(row)
+    differences: list[dict[str, Any]] = []
+    fields = (
+        "material_name",
+        "top_category",
+        "major_category",
+        "sub_category",
+        "performance_requirements",
+        "application_field",
+    )
+    for from_year, to_year in zip(sorted(by_year), sorted(by_year)[1:]):
+        previous = by_year[from_year]
+        current = by_year[to_year]
+        current_by_key = {
+            normalize_material_key(row["material_name"]): row for row in current
+        }
+        matched_current: set[int] = set()
+        pairs: list[tuple[dict[str, Any], dict[str, Any], float, str]] = []
+        unmatched_previous: list[dict[str, Any]] = []
+        for old in previous:
+            exact = current_by_key.get(normalize_material_key(old["material_name"]))
+            if exact:
+                matched_current.add(int(exact["sequence_no"]))
+                pairs.append((old, exact, 1.0, "exact_material_name"))
+            else:
+                unmatched_previous.append(old)
+        unmatched_current = [
+            row for row in current if int(row["sequence_no"]) not in matched_current
+        ]
+        fuzzy_candidates = sorted(
+            (
+                (material_similarity(old["material_name"], new["material_name"])[0], old, new)
+                for old in unmatched_previous
+                for new in unmatched_current
+            ),
+            key=lambda item: item[0],
+            reverse=True,
+        )
+        matched_previous_sequences: set[int] = set()
+        for score, old, new in fuzzy_candidates:
+            if score < 0.88:
+                break
+            old_sequence = int(old["sequence_no"])
+            new_sequence = int(new["sequence_no"])
+            if old_sequence in matched_previous_sequences or new_sequence in matched_current:
+                continue
+            _, match_type = material_similarity(old["material_name"], new["material_name"])
+            matched_previous_sequences.add(old_sequence)
+            matched_current.add(new_sequence)
+            pairs.append((old, new, score, match_type))
+        for old, new, score, match_type in pairs:
+            changed_fields = [
+                field
+                for field in fields
+                if normalize_clause(old.get(field, "")) != normalize_clause(new.get(field, ""))
+            ]
+            differences.append(
+                {
+                    "from_year": from_year,
+                    "to_year": to_year,
+                    "change_type": "modified" if changed_fields else "retained",
+                    "from_sequence_no": old["sequence_no"],
+                    "to_sequence_no": new["sequence_no"],
+                    "from_material_name": old["material_name"],
+                    "to_material_name": new["material_name"],
+                    "match_type": match_type,
+                    "match_score": round(score, 4),
+                    "changed_fields": changed_fields,
+                    "before_values": {field: old.get(field, "") for field in changed_fields},
+                    "after_values": {field: new.get(field, "") for field in changed_fields},
+                }
+            )
+        for old in unmatched_previous:
+            if int(old["sequence_no"]) in matched_previous_sequences:
+                continue
+            differences.append(
+                {
+                    "from_year": from_year,
+                    "to_year": to_year,
+                    "change_type": "removed",
+                    "from_sequence_no": old["sequence_no"],
+                    "to_sequence_no": None,
+                    "from_material_name": old["material_name"],
+                    "to_material_name": "",
+                    "match_type": "unmatched",
+                    "match_score": 0.0,
+                    "changed_fields": [],
+                    "before_values": {},
+                    "after_values": {},
+                }
+            )
+        for new in current:
+            if int(new["sequence_no"]) in matched_current:
+                continue
+            differences.append(
+                {
+                    "from_year": from_year,
+                    "to_year": to_year,
+                    "change_type": "added",
+                    "from_sequence_no": None,
+                    "to_sequence_no": new["sequence_no"],
+                    "from_material_name": "",
+                    "to_material_name": new["material_name"],
+                    "match_type": "unmatched",
+                    "match_score": 0.0,
+                    "changed_fields": [],
+                    "before_values": {},
+                    "after_values": {},
+                }
+            )
+    return sorted(
+        differences,
+        key=lambda row: (
+            row["from_year"],
+            row["to_year"],
+            str(row["change_type"]),
+            int(row["from_sequence_no"] or 0),
+            int(row["to_sequence_no"] or 0),
+        ),
+    )
+
+
+def enterprise_product_directory_matches(
+    records: list[dict[str, Any]],
+    guidance_directories: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    by_year: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for directory in guidance_directories:
+        by_year[int(directory["directory_year"])].append(directory)
+    matches: list[dict[str, Any]] = []
+    for award in records:
+        if str(award.get("project_id")) != "11":
+            continue
+        product_name = normalize_product(award.get("product_name") or "")
+        if not product_name:
+            continue
+        for directory_year, candidates in by_year.items():
+            ranked = []
+            for directory in candidates:
+                score, match_type = material_similarity(
+                    product_name, directory["material_name"]
+                )
+                if score >= 0.88:
+                    ranked.append((score, match_type, directory))
+            if not ranked:
+                continue
+            best_score = max(item[0] for item in ranked)
+            for score, match_type, directory in ranked:
+                if score < best_score:
+                    continue
+                matches.append(
+                    {
+                        "enterprise_name": award["enterprise_name"],
+                        "award_year": award.get("year"),
+                        "product_name": product_name,
+                        "directory_year": directory_year,
+                        "directory_sequence_no": directory["sequence_no"],
+                        "directory_material_name": directory["material_name"],
+                        "match_type": match_type,
+                        "match_score": round(score, 4),
+                        "match_confidence": "high" if score >= 0.94 else "medium",
+                        "review_status": (
+                            "auto_confirmed"
+                            if score >= 0.94
+                            else "candidate_requires_review"
+                        ),
+                    }
+                )
+    unique = {
+        (
+            row["enterprise_name"],
+            row["award_year"],
+            row["product_name"],
+            row["directory_year"],
+            row["directory_sequence_no"],
+        ): row
+        for row in matches
+    }
+    return sorted(
+        unique.values(),
+        key=lambda row: (
+            row["enterprise_name"],
+            int(row["award_year"] or 0),
+            row["product_name"],
+            row["directory_year"],
+        ),
+    )
+
+
+SUBJECT_CATEGORY_TERMS = {
+    "成套装备",
+    "整机装备",
+    "零部件",
+    "关键零部件",
+    "基础软件",
+    "工业软件",
+    "嵌入式软件",
+    "新兴技术软件",
+}
+
+
 def subject_fields(value: str) -> dict[str, str]:
     result = {"product_name": "", "recognition_tier": "", "product_category": ""}
+    unkeyed: list[str] = []
     for part in (normalize_product(item) for item in str(value or "").split("::")):
         if not part:
             continue
         match = re.match(r"([^：:]+)[：:](.+)", part)
-        if not match:
+        key = normalize_product(match.group(1)) if match else ""
+        recognized_key = any(
+            term in key
+            for term in (
+                "产品名称",
+                "材料名称",
+                "装备名称",
+                "软件名称",
+                "拟认定档次",
+                "认定档次",
+                "档次",
+                "产品类别",
+                "装备类别",
+                "材料类别",
+                "软件类别",
+                "类别",
+                "备注",
+            )
+        )
+        if not match or not recognized_key:
             if any(term in part for term in ("首台", "首版次", "首批次")):
                 result["recognition_tier"] = part
+            else:
+                unkeyed.append(part)
             continue
-        key, item = normalize_product(match.group(1)), normalize_product(match.group(2))
+        item = normalize_product(match.group(2))
         if any(term in key for term in ("产品名称", "材料名称", "装备名称", "软件名称")):
             result["product_name"] = item
         elif any(term in key for term in ("拟认定档次", "认定档次", "档次")):
             result["recognition_tier"] = item
         elif any(term in key for term in ("产品类别", "装备类别", "材料类别", "软件类别", "类别")):
             result["product_category"] = item
+        elif key == "备注" and item in SUBJECT_CATEGORY_TERMS:
+            result["product_category"] = item
+    remaining: list[str] = []
+    for part in unkeyed:
+        if part in SUBJECT_CATEGORY_TERMS and not result["product_category"]:
+            result["product_category"] = part
+        else:
+            remaining.append(part)
+    if not result["product_name"] and remaining:
+        result["product_name"] = remaining[-1]
     return result
+
+
+def infer_list_status(title: str) -> str:
+    if any(term in title for term in ("关于公布", "名单的通知", "正式公布")):
+        return "final_recognition"
+    if any(term in title for term in ("公示", "拟认定", "入围名单")):
+        return "publicity"
+    return "public_list"
 
 
 def parse_years(value: Any) -> list[int]:
@@ -196,9 +474,9 @@ def normalize_details(payload: Any, identities: dict[str, dict[str, Any]]) -> li
                 eid = first_value(enterprise, ("eid", "entInfoId", "enterpriseId")) or first_value(row, ("eid", "entInfoId"))
                 identity_key = eid or alias_to_key.get(normalize_enterprise(enterprise_name), normalize_enterprise(enterprise_name))
                 years = parse_years(first_value(enterprise, ("assessYear", "subsidyYear", "year"))) or parse_years(first_value(row, ("assessYear", "subsidyYear", "year"))) or policy_years
-                product_name = normalize_product(first_value(enterprise, ("production", "productName", "softwareName", "materialName", "equipmentName", "projectName")))
+                product_name = normalize_product(first_value(enterprise, ("production", "productName", "softwareName", "materialName", "equipmentName")))
                 if not product_name:
-                    product_name = normalize_product(first_value(row, ("production", "productName", "softwareName", "materialName", "equipmentName", "projectName")))
+                    product_name = normalize_product(first_value(row, ("production", "productName", "softwareName", "materialName", "equipmentName")))
                 tier = normalize_product(first_value(enterprise, ("recognitionTier", "assessLevel", "grade", "levelName", "accreditOrg")))
                 if not tier:
                     tier = normalize_product(first_value(row, ("recognitionTier", "assessLevel", "grade", "levelName", "accreditOrg")))
@@ -225,7 +503,7 @@ def normalize_details(payload: Any, identities: dict[str, dict[str, Any]]) -> li
                         "product_name": product_name,
                         "recognition_tier": tier,
                         "product_category": category,
-                        "list_status": first_value(policy_meta, ("listStatus", "evidenceType")) or "public_list",
+                        "list_status": first_value(policy_meta, ("listStatus", "evidenceType")) or infer_list_status(title),
                         "source_policy_id": policy_id,
                         "source_index_id": index_id,
                         "source_title": title,
@@ -332,13 +610,29 @@ def load_supplements(path: Path | None, identities: dict[str, dict[str, Any]]) -
     return output
 
 
+def load_guidance_directories(path: Path | None) -> list[dict[str, Any]]:
+    if not path or not path.is_file():
+        return []
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
 def source_priority(record: dict[str, Any]) -> int:
     tier = str(record.get("source_tier") or "")
     status = str(record.get("list_status") or "")
     confidence = str(record.get("confidence") or "")
     return (
-        {"official": 500, "public_archive": 400, "licensed_platform": 300, "public_repost": 200}.get(tier, 100)
-        + (80 if status.startswith("final_recognition") else 40 if status == "publicity" else 0)
+        {
+            "official": 500,
+            "user_provided_official_screenshot": 450,
+            "public_archive": 400,
+            "licensed_platform": 300,
+            "public_repost": 200,
+        }.get(tier, 100)
+        + (80 if status.startswith("final_recognition") else 40 if status.startswith("publicity") else 0)
         + (20 if confidence == "product_level" else 0)
     )
 
@@ -501,6 +795,9 @@ def import_database(
     records: list[dict[str, Any]],
     evidence: list[dict[str, Any]],
     timeline: list[dict[str, Any]],
+    guidance_directories: list[dict[str, Any]],
+    directory_diffs: list[dict[str, Any]],
+    directory_matches: list[dict[str, Any]],
     nodes: list[dict[str, Any]],
     edges: list[dict[str, Any]],
 ) -> None:
@@ -513,6 +810,9 @@ def import_database(
             DROP TABLE IF EXISTS enterprise_product_graph_edges;
             DROP TABLE IF EXISTS three_first_award_evidence;
             DROP TABLE IF EXISTS three_first_status_timeline;
+            DROP TABLE IF EXISTS three_first_guidance_directory_entries;
+            DROP TABLE IF EXISTS three_first_guidance_directory_diffs;
+            DROP TABLE IF EXISTS three_first_award_directory_links;
             CREATE TABLE three_first_project_awards(
                 id INTEGER PRIMARY KEY,
                 enterprise_key TEXT NOT NULL,
@@ -588,6 +888,65 @@ def import_database(
                 ON three_first_status_timeline(enterprise_name,project_name,year,event_stage_order);
             CREATE INDEX three_first_timeline_product_idx
                 ON three_first_status_timeline(product_name,year,event_stage_order);
+            CREATE TABLE three_first_guidance_directory_entries(
+                id INTEGER PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                project_name TEXT NOT NULL,
+                directory_year INTEGER NOT NULL,
+                sequence_no INTEGER NOT NULL,
+                material_name TEXT NOT NULL,
+                top_category TEXT NOT NULL,
+                major_category TEXT NOT NULL,
+                sub_category TEXT NOT NULL,
+                performance_requirements TEXT NOT NULL,
+                application_field TEXT NOT NULL,
+                document_title TEXT NOT NULL,
+                document_number TEXT NOT NULL,
+                effective_date TEXT NOT NULL,
+                validity_status TEXT NOT NULL,
+                replacement_year INTEGER,
+                source_url TEXT NOT NULL,
+                source_tier TEXT NOT NULL,
+                UNIQUE(directory_year,sequence_no)
+            );
+            CREATE INDEX three_first_guidance_material_idx
+                ON three_first_guidance_directory_entries(material_name,directory_year);
+            CREATE INDEX three_first_guidance_status_idx
+                ON three_first_guidance_directory_entries(validity_status,directory_year);
+            CREATE TABLE three_first_guidance_directory_diffs(
+                id INTEGER PRIMARY KEY,
+                from_year INTEGER NOT NULL,
+                to_year INTEGER NOT NULL,
+                change_type TEXT NOT NULL,
+                from_sequence_no INTEGER,
+                to_sequence_no INTEGER,
+                from_material_name TEXT NOT NULL,
+                to_material_name TEXT NOT NULL,
+                match_type TEXT NOT NULL,
+                match_score REAL NOT NULL,
+                changed_fields TEXT NOT NULL,
+                before_values TEXT NOT NULL,
+                after_values TEXT NOT NULL,
+                UNIQUE(from_year,to_year,change_type,from_sequence_no,to_sequence_no)
+            );
+            CREATE INDEX three_first_guidance_diff_lookup_idx
+                ON three_first_guidance_directory_diffs(from_year,to_year,change_type);
+            CREATE TABLE three_first_award_directory_links(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT NOT NULL,
+                award_year INTEGER,
+                product_name TEXT NOT NULL,
+                directory_year INTEGER NOT NULL,
+                directory_sequence_no INTEGER NOT NULL,
+                directory_material_name TEXT NOT NULL,
+                match_type TEXT NOT NULL,
+                match_score REAL NOT NULL,
+                match_confidence TEXT NOT NULL,
+                review_status TEXT NOT NULL,
+                UNIQUE(enterprise_name,award_year,product_name,directory_year,directory_sequence_no)
+            );
+            CREATE INDEX three_first_award_directory_lookup_idx
+                ON three_first_award_directory_links(enterprise_name,award_year,product_name);
             CREATE TABLE enterprise_product_graph_nodes(id TEXT PRIMARY KEY,type TEXT NOT NULL,payload TEXT NOT NULL);
             CREATE TABLE enterprise_product_graph_edges(id INTEGER PRIMARY KEY,source TEXT NOT NULL,target TEXT NOT NULL,relation TEXT NOT NULL);
             """
@@ -668,6 +1027,69 @@ def import_database(
             ],
         )
         connection.executemany(
+            """INSERT INTO three_first_guidance_directory_entries(
+                project_id,project_name,directory_year,sequence_no,material_name,
+                top_category,major_category,sub_category,performance_requirements,application_field,
+                document_title,document_number,effective_date,validity_status,replacement_year,
+                source_url,source_tier
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            [
+                (
+                    row["project_id"], row["project_name"], row["directory_year"], row["sequence_no"],
+                    row["material_name"], row["top_category"], row["major_category"], row["sub_category"],
+                    row["performance_requirements"], row["application_field"], row["document_title"],
+                    row["document_number"], row["effective_date"], row["validity_status"],
+                    row.get("replacement_year"), row["source_url"], row["source_tier"],
+                )
+                for row in guidance_directories
+            ],
+        )
+        connection.executemany(
+            """INSERT INTO three_first_guidance_directory_diffs(
+                from_year,to_year,change_type,from_sequence_no,to_sequence_no,
+                from_material_name,to_material_name,match_type,match_score,
+                changed_fields,before_values,after_values
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+            [
+                (
+                    row["from_year"],
+                    row["to_year"],
+                    row["change_type"],
+                    row["from_sequence_no"],
+                    row["to_sequence_no"],
+                    row["from_material_name"],
+                    row["to_material_name"],
+                    row["match_type"],
+                    row["match_score"],
+                    json.dumps(row["changed_fields"], ensure_ascii=False),
+                    json.dumps(row["before_values"], ensure_ascii=False),
+                    json.dumps(row["after_values"], ensure_ascii=False),
+                )
+                for row in directory_diffs
+            ],
+        )
+        connection.executemany(
+            """INSERT OR IGNORE INTO three_first_award_directory_links(
+                enterprise_name,award_year,product_name,directory_year,directory_sequence_no,
+                directory_material_name,match_type,match_score,match_confidence,review_status
+            ) VALUES(?,?,?,?,?,?,?,?,?,?)""",
+            [
+                (
+                    row["enterprise_name"],
+                    row["award_year"],
+                    row["product_name"],
+                    row["directory_year"],
+                    row["directory_sequence_no"],
+                    row["directory_material_name"],
+                    row["match_type"],
+                    row["match_score"],
+                    row["match_confidence"],
+                    row["review_status"],
+                )
+                for row in directory_matches
+            ],
+        )
+        connection.executemany(
             "INSERT INTO enterprise_product_graph_nodes(id,type,payload) VALUES(?,?,?)",
             [(node["id"], node["type"], json.dumps(node, ensure_ascii=False)) for node in nodes],
         )
@@ -690,6 +1112,7 @@ def main() -> None:
     details = canonicalize_details(detail_evidence)
     supplements = load_supplements(args.supplements, identities)
     directory_status = load_supplements(args.directory_status, identities)
+    guidance_directories = load_guidance_directories(args.guidance_directories)
     supplemented_project_years = {
         (str(record.get("project_id")), record.get("year"))
         for record in supplements
@@ -701,6 +1124,10 @@ def main() -> None:
         if (str(record.get("project_id")), record.get("year")) not in supplemented_project_years
     ]
     records = merge_records(history, [*details, *supplements])
+    guidance_diffs = directory_version_diffs(guidance_directories)
+    directory_matches = enterprise_product_directory_matches(
+        records, guidance_directories
+    )
     nodes, edges = build_graph(records)
     all_evidence = [*detail_evidence, *supplements, *directory_status]
     timeline = build_status_timeline(all_evidence)
@@ -708,6 +1135,8 @@ def main() -> None:
     write_jsonl(args.output / "三首项目状态时间轴.jsonl", timeline)
     write_jsonl(args.output / "三首项目图谱节点.jsonl", nodes)
     write_jsonl(args.output / "三首项目图谱关系.jsonl", edges)
+    write_jsonl(args.output / "三首目录历年条款差异.jsonl", guidance_diffs)
+    write_jsonl(args.output / "三首企业产品目录自动匹配.jsonl", directory_matches)
     identity_rows = list(identities.values())
     write_jsonl(args.output / "三首项目企业身份别名.jsonl", identity_rows)
     product_records = sum(bool(row["product_name"]) for row in records)
@@ -720,6 +1149,17 @@ def main() -> None:
         "canonical_detail_records": len(details),
         "supplement_records": len(supplements),
         "directory_status_records": len(directory_status),
+        "guidance_directory_entries": len(guidance_directories),
+        "guidance_directory_diffs": len(guidance_diffs),
+        "directory_matches": len(directory_matches),
+        "directory_exact_matches": sum(
+            row["match_type"] == "exact_material_name"
+            for row in directory_matches
+        ),
+        "directory_fuzzy_matches": sum(
+            row["match_type"] != "exact_material_name"
+            for row in directory_matches
+        ),
         "timeline_events": len(timeline),
         "timeline_publicity": sum(row["event_type"] == "publicity" for row in timeline),
         "timeline_recognition": sum(row["event_type"] == "recognition" for row in timeline),
@@ -755,7 +1195,17 @@ def main() -> None:
         ]),
         encoding="utf-8",
     )
-    import_database(args.database, records, all_evidence, timeline, nodes, edges)
+    import_database(
+        args.database,
+        records,
+        all_evidence,
+        timeline,
+        guidance_directories,
+        guidance_diffs,
+        directory_matches,
+        nodes,
+        edges,
+    )
     print(json.dumps(summary, ensure_ascii=False))
 
 

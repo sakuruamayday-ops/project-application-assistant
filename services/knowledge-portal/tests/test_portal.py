@@ -697,6 +697,73 @@ def test_directory_storage_size_ignores_inaccessible_path(tmp_path, monkeypatch)
     assert module.directory_storage_size(module.Path("/restricted")) == 0
 
 
+def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,real_name,company_name,password_hash,created_at)
+            VALUES (?,?,?,?,?)
+            """,
+            (
+                "member",
+                "王小明",
+                "共创集团",
+                module.password_hasher.hash("member-password-123"),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        anonymous = client.get("/skills", follow_redirects=False)
+        assert anonymous.status_code == 303
+        assert anonymous.headers["location"].startswith("/login")
+
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        assert login.status_code == 303
+        client.cookies.update(login.cookies)
+
+        catalog = client.get("/skills")
+        assert catalog.status_code == 200
+        assert "专业能力，" in catalog.text
+        assert "可信可查" in catalog.text
+        assert "版本与下载" in catalog.text
+        assert "安装与设备" in catalog.text
+        assert "生成安全安装计划" in catalog.text
+        assert 'data-skill-open="project-application-assistant"' in catalog.text
+        assert 'data-skill-row' in catalog.text
+        assert "56 / 56" in catalog.text
+
+        installation_status = client.get("/agent-installation-status")
+        assert installation_status.status_code == 200
+        assert installation_status.json()["schema"] == "jiaotang-web-install-status/v1"
+        assert not installation_status.json()["configured"]
+        assert set(installation_status.json()["stages"]) == {
+            "registration",
+            "credential_saved",
+            "first_signature",
+            "mcp_connection",
+        }
+
+        detail = client.get("/skills/catalog/project-application-assistant")
+        assert detail.status_code == 200
+        payload = detail.json()
+        assert payload["name"] == "project-application-assistant"
+        assert payload["title"] == "企业全生命周期助手"
+        assert payload["file_count"] >= 1
+        assert payload["fingerprint"]
+        assert "企业全生命周期助手" in payload["skill_html"]
+        assert any(item["path"] == "SKILL.md" for item in payload["files"])
+
+        assert client.get("/skills/catalog/not-a-real-skill").status_code == 404
+        assert client.get("/skills/catalog/%2E%2E%2Fapp%2Fmain.py").status_code == 404
+
+
 def test_setup_login_and_device_token(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:
@@ -734,7 +801,7 @@ def test_setup_login_and_device_token(tmp_path):
         access_page = client.get("/access")
         assert "管理员 API Key" in access_page.text
         assert "管理员豁免" in access_page.text
-        assert "first-run-configuration" not in access_page.text
+        assert 'data-skill-open="first-run-configuration"' in access_page.text
         cockpit_page = client.get("/cockpit")
         assert "驾驶舱智能看板" in cockpit_page.text
         assert "免费知识检索" in cockpit_page.text
@@ -1309,6 +1376,176 @@ def test_structured_list_policy_and_project_tools(tmp_path):
         "policy_search",
         "project_catalog_match",
     }.issubset(tool_names)
+
+
+def test_three_first_directory_diff_and_product_match_tools(tmp_path):
+    module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE three_first_guidance_directory_diffs(
+                id INTEGER PRIMARY KEY,
+                from_year INTEGER NOT NULL,
+                to_year INTEGER NOT NULL,
+                change_type TEXT NOT NULL,
+                from_sequence_no INTEGER,
+                to_sequence_no INTEGER,
+                from_material_name TEXT NOT NULL,
+                to_material_name TEXT NOT NULL,
+                match_type TEXT NOT NULL,
+                match_score REAL NOT NULL,
+                changed_fields TEXT NOT NULL,
+                before_values TEXT NOT NULL,
+                after_values TEXT NOT NULL
+            );
+            CREATE TABLE three_first_award_directory_links(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT NOT NULL,
+                award_year INTEGER,
+                product_name TEXT NOT NULL,
+                directory_year INTEGER NOT NULL,
+                directory_sequence_no INTEGER NOT NULL,
+                directory_material_name TEXT NOT NULL,
+                match_type TEXT NOT NULL,
+                match_score REAL NOT NULL,
+                match_confidence TEXT NOT NULL,
+                review_status TEXT NOT NULL
+            );
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO three_first_guidance_directory_diffs VALUES
+            (1,2023,2025,'modified',8,9,'高性能复合材料','高性能复合材料',
+             'exact',1.0,'["performance_requirement"]',
+             '{"performance_requirement":"旧指标"}',
+             '{"performance_requirement":"新指标"}')
+            """
+        )
+        connection.executemany(
+            """
+            INSERT INTO three_first_award_directory_links VALUES
+            (?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            [
+                (
+                    1,
+                    "浙江测试材料有限公司",
+                    2024,
+                    "高性能复合材料",
+                    2025,
+                    9,
+                    "高性能复合材料",
+                    "exact",
+                    1.0,
+                    "high",
+                    "auto_confirmed",
+                ),
+                (
+                    2,
+                    "浙江测试材料有限公司",
+                    2024,
+                    "高性能复合材",
+                    2025,
+                    9,
+                    "高性能复合材料",
+                    "fuzzy",
+                    0.91,
+                    "medium",
+                    "candidate_requires_review",
+                ),
+            ],
+        )
+        connection.commit()
+
+    diff_result = module.search_three_first_directory_diffs(
+        from_year=2023,
+        to_year=2025,
+        material_name="复合材料",
+    )
+    assert diff_result["results"][0]["changed_fields"] == ["performance_requirement"]
+    assert diff_result["results"][0]["before_values"]["performance_requirement"] == "旧指标"
+
+    confirmed = module.search_three_first_product_matches(
+        enterprise_name="浙江测试材料有限公司"
+    )
+    assert len(confirmed["results"]) == 1
+    assert confirmed["results"][0]["review_status"] == "auto_confirmed"
+
+    with_candidates = module.search_three_first_product_matches(
+        enterprise_name="浙江测试材料有限公司",
+        include_review_candidates=True,
+    )
+    assert len(with_candidates["results"]) == 2
+    assert with_candidates["candidate_notice"]
+
+    analysis = module.analyze_three_first(
+        query="对比2023年和2025年首批次目录条款差异",
+        enterprise_name="浙江测试材料有限公司",
+        product_name="高性能复合材料",
+        from_year=2023,
+        to_year=2025,
+    )
+    assert analysis["project_type"] == "首批次"
+    assert analysis["directory_diffs"][0]["change_type"] == "modified"
+    assert analysis["product_matches"][0]["review_status"] == "auto_confirmed"
+    assert analysis["internal_routing"]["knowledge_search"]
+
+
+def test_three_first_directory_diff_falls_back_to_transition_chain(tmp_path):
+    module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE three_first_guidance_directory_diffs(
+                id INTEGER PRIMARY KEY,
+                from_year INTEGER NOT NULL,
+                to_year INTEGER NOT NULL,
+                change_type TEXT NOT NULL,
+                from_sequence_no INTEGER,
+                to_sequence_no INTEGER,
+                from_material_name TEXT NOT NULL,
+                to_material_name TEXT NOT NULL,
+                match_type TEXT NOT NULL,
+                match_score REAL NOT NULL,
+                changed_fields TEXT NOT NULL,
+                before_values TEXT NOT NULL,
+                after_values TEXT NOT NULL
+            );
+            """
+        )
+        connection.executemany(
+            """
+            INSERT INTO three_first_guidance_directory_diffs VALUES
+            (?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            [
+                (
+                    1, 2023, 2024, "modified", 1, 1, "测试材料", "测试材料",
+                    "exact", 1.0, '["performance_requirements"]',
+                    '{"performance_requirements":"A"}',
+                    '{"performance_requirements":"B"}',
+                ),
+                (
+                    2, 2024, 2025, "modified", 1, 1, "测试材料", "测试材料",
+                    "exact", 1.0, '["performance_requirements"]',
+                    '{"performance_requirements":"B"}',
+                    '{"performance_requirements":"C"}',
+                ),
+            ],
+        )
+        connection.commit()
+
+    result = module.search_three_first_directory_diffs(
+        from_year=2023,
+        to_year=2025,
+        material_name="测试材料",
+    )
+    assert result["filters"]["comparison_mode"] == "transition_chain"
+    assert [(item["from_year"], item["to_year"]) for item in result["results"]] == [
+        (2023, 2024),
+        (2024, 2025),
+    ]
 
 
 def test_alias_correction_evidence_and_policy_verification_workflow(tmp_path):
@@ -2846,9 +3083,9 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert bootstrap.status_code == 200
         assert bootstrap.json()["expires_in_seconds"] == 60 * 60
         prompt = bootstrap.json()["prompt"]
-        assert "审查其中公开列出的安装器源码地址" in prompt
-        assert "只有在我明确回复同意后" in prompt
-        assert "execution.command" in prompt
+        assert "签名插件包" in prompt
+        assert "不包含动态命令字段" in prompt
+        assert "execution.command" not in prompt
         assert "安装说明读取失败" in prompt
         assert "node -e" not in prompt
         assert "不透明" not in prompt
@@ -2865,29 +3102,26 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert protocol.headers["content-type"].startswith(
             "application/vnd.jiaotang.agent-install+json"
         )
-        assert protocol.headers["x-jiaotang-install-protocol"] == "2"
+        assert protocol.headers["x-jiaotang-install-protocol"] == "3"
         assert protocol.json()["schema"] == "jiaotang-agent-install/v1"
-        assert protocol.json()["protocol_version"] == 2
-        assert protocol.json()["action"] == "review_then_execute"
+        assert protocol.json()["protocol_version"] == 3
+        assert protocol.json()["action"] == "review_signed_plugin_then_install"
         assert protocol.json()["opaque"] is False
         assert protocol.json()["review_required"] is True
         assert protocol.json()["user_confirmation_required"] is True
         review = protocol.json()["review"]
-        assert review["installer"]["url"].endswith("/install/jiaotang-agent.mjs")
-        assert review["installer"]["inspection_required"] is True
-        assert re.fullmatch(r"[a-f0-9]{64}", review["installer"]["sha256"])
+        assert review["plugin_package"]["download_url"].endswith(
+            "/skills/latest/workbuddy/download"
+        )
+        assert review["plugin_package"]["signature_required"] is True
+        assert review["plugin_package"]["contains_mcp_server"] == "jiaotang-kb"
         assert review["credential_handling"]["private_key_uploaded"] is False
         assert review["local_changes"]
         assert review["rollback"]
-        assert protocol.json()["execution"]["command"].startswith('node -e "')
-        assert "jiaotang-agent-result/v1" in protocol.json()["execution"]["command"]
-        assert "安装器SHA-256校验失败" in protocol.json()["execution"]["command"]
-        assert protocol.json()["integrity"]["installer_sha256"] in (
-            protocol.json()["execution"]["command"]
-        )
-        assert f"/v1/agent-install-result/{enrollment_code}" in (
-            protocol.json()["execution"]["command"]
-        )
+        assert "execution" not in protocol.json()
+        assert protocol.json()["installation"]["dynamic_command"] is False
+        assert protocol.json()["installation"]["type"] == "signed_workbuddy_plugin"
+        assert protocol.json()["integrity"]["algorithms"] == ["sha256", "ed25519"]
         assert protocol.json()["completion"]["success_condition"] == (
             "server_confirmed_signed_mcp_connection"
         )
@@ -2901,16 +3135,12 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert "explain_failure_stage_without_exposing_secrets" in (
             result_handling["display_rules"]
         )
-        execution_rules = protocol.json()["execution"]["rules"]
-        assert "inspect_installer_source_before_execution" in execution_rules
-        assert "require_explicit_user_confirmation" in execution_rules
-        assert "do_not_rewrite_or_split" not in execution_rules
         workbuddy_instruction = result_handling[
             "workbuddy_instruction"
         ]
-        assert "WorkBuddy 左侧「连接器」" in workbuddy_instruction
+        assert "自动启动" in workbuddy_instruction
         assert "`jiaotang-kb`" in workbuddy_instruction
-        assert {"workbuddy", "generic-local-agent"} <= set(
+        assert {"workbuddy"} <= set(
             protocol.json()["compatibility"]["agent_hosts"]
         )
         installer = client.get("/install/jiaotang-agent.mjs")
@@ -2940,14 +3170,13 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         )
         assert manifest.json()["supported_platforms"] == ["darwin", "win32"]
         assert re.fullmatch(r"[a-f0-9]{64}", manifest.json()["installer_sha256"])
-        assert {"workbuddy", "generic-local-agent"} <= set(
+        assert {"workbuddy"} <= set(
             manifest.json()["supported_hosts"]
         )
-        commands = manifest.json()["commands"]
-        assert commands["universal"] == commands["darwin"] == commands["win32"]
-        assert commands["universal"].startswith('node -e "')
-        assert "bootstrap-url" in commands["universal"]
-        assert "result-url" in commands["universal"]
+        assert "commands" not in manifest.json()
+        assert manifest.json()["workbuddy_plugin"]["dynamic_command"] is False
+        assert manifest.json()["workbuddy_plugin"]["configuration_key"] == "bootstrap_url"
+        assert manifest.json()["workbuddy_plugin"]["configuration_sensitive"] is True
 
         failed_report = client.post(
             f"/v1/agent-install-result/{enrollment_code}",
@@ -3186,7 +3415,8 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         )
         assert renewed.status_code == 200
         assert "安装说明" in renewed.json()["prompt"]
-        assert "明确回复同意后" in renewed.json()["prompt"]
+        assert "不再返回或要求执行任何动态命令" not in renewed.json()["prompt"]
+        assert "不包含动态命令字段" in renewed.json()["prompt"]
         renewed_code = re.search(
             r"http://testserver/v1/agent-install/(jbe_[A-Za-z0-9_-]+)",
             renewed.json()["prompt"],
@@ -3541,9 +3771,10 @@ def test_admin_incremental_index_release_and_rollback(tmp_path):
         assert search.status_code == 200
         assert any(item["title"] == "新增政策.md" for item in search.json()["results"])
 
-        archive = io.BytesIO()
-        with zipfile.ZipFile(archive, "w") as package:
-            package.writestr("skills/sample-skill/SKILL.md", "---\nname: sample-skill\n---\n")
+        archive = (
+            module.SKILL_SOURCE_DIR.parent
+            / "dist/release-artifacts/jiaotang-skills-V1.1.zip"
+        ).read_bytes()
         release = client.post(
             "/admin/skill-releases",
             data={
@@ -3551,7 +3782,7 @@ def test_admin_incremental_index_release_and_rollback(tmp_path):
                 "release_notes": "新增测试技能",
                 "csrf_token": user["csrf_token"],
             },
-            files={"skill_package": ("skills-1.2.0.zip", archive.getvalue(), "application/zip")},
+            files={"skill_package": ("skills-1.2.0.zip", archive, "application/zip")},
             follow_redirects=False,
         )
         assert release.status_code == 303
@@ -3666,6 +3897,12 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             {"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": {}},
         )
         assert tool_list.status_code == 200
+        tool_names = {
+            item["name"] for item in tool_list.json()["result"]["tools"]
+        }
+        assert "three_first_analysis" in tool_names
+        assert "three_first_directory_diff" not in tool_names
+        assert "three_first_product_match" not in tool_names
         response = mcp_request(
             client,
             {
@@ -3795,10 +4032,15 @@ def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
         assert "/admin/health/index" in health_portal.text
         assert "/admin/health/oss" in health_portal.text
         assert "/admin/health/snapshot" in health_portal.text
+        assert "/admin/health/deploy-gate" in health_portal.text
         assert "/admin/knowledge" in portal.text
         health = client.get("/admin/health/index")
         assert health.status_code == 200
         assert "全文资料" in health.text
+        deploy_gate_health = client.get("/admin/health/deploy-gate")
+        assert deploy_gate_health.status_code == 200
+        assert "部署签名覆盖" in deploy_gate_health.text
+        assert "套件内容完整性" in deploy_gate_health.text
         access_health = client.get("/admin/health/access")
         assert access_health.status_code == 200
         assert "具体用户" in access_health.text

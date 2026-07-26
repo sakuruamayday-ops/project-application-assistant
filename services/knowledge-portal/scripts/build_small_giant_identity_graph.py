@@ -11,9 +11,9 @@ from datetime import datetime
 from pathlib import Path
 
 
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
 DEFAULT_OUTPUT = Path(
-    "/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/"
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/"
     "_全国小巨人批次主表/企业身份关联"
 )
 DEFAULT_REGISTRY = DEFAULT_OUTPUT / "企业信用代码权威补全.csv"

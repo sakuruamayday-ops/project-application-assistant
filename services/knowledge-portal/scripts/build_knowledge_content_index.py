@@ -300,6 +300,8 @@ def infer_document_stage(title: str, source: str, document_role: str) -> str:
         return "公示名单"
     if "名单" in value and any(term in value for term in ("认定", "通过", "入选")):
         return "认定名单"
+    if "公示稿" in value or "公示" in value:
+        return "公示稿" if "公示稿" in value else "公示"
     for stage, terms in DOCUMENT_STAGE_RULES:
         if any(term in value for term in terms):
             return stage
@@ -349,6 +351,9 @@ def infer_validity_status(title: str, content: str) -> str:
     lifecycle = extract_lifecycle_evidence(content[:12_000])
     if lifecycle["self_invalid"]:
         return "invalid"
+    draft_text = f"{title}\n{content[:12_000]}"
+    if any(term in draft_text for term in ("公示稿", "征求意见稿", "草案")):
+        return "draft"
     return detect_policy_status(title)
 
 
@@ -1131,7 +1136,7 @@ def extract(path: Path, extension: str) -> tuple[str, str]:
         else:
             try:
                 text = extract_docx(path)
-            except (ValueError, zipfile.BadZipFile):
+            except (KeyError, ValueError, zipfile.BadZipFile):
                 text = extract_legacy_office(path)
         return text, "indexed" if len(text) >= MIN_TEXT_CHARS else "empty"
     if extension in {".xlsx", ".xlsm"}:

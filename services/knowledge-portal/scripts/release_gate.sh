@@ -30,7 +30,7 @@ if [[ -n "${JIAOTANG_RESOLVE_IP:-}" ]]; then
 fi
 
 echo "[1/6] 自动测试"
-index_database="${JIAOTANG_INDEX_DATABASE:-/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3}"
+index_database="${JIAOTANG_INDEX_DATABASE:-/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3}"
 if [[ -f "${index_database}" ]]; then
   python3 "${script_dir}/verify_structured_knowledge_tables.py" --database "${index_database}"
 else

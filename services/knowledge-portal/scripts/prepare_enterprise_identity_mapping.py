@@ -19,9 +19,9 @@ except ModuleNotFoundError:
     from build_small_giant_identity_graph import DEFAULT_REGISTRY, USCC_PATTERN, normalize_name
 
 
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
 DEFAULT_OUTPUT = Path(
-    "/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/"
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/"
     "_全国小巨人批次主表/企业身份关联"
 )
 DEFAULT_IMPORT = DEFAULT_OUTPUT / "企业身份公开信息核验结果.csv"
@@ -291,12 +291,13 @@ def main() -> None:
     rejection_fields = sorted(
         {key for item in rejected for key in item} | {"rejection_reason"}
     )
-    with (args.output / "企业身份公开信息导入拒绝清单.csv").open(
-        "w", encoding="utf-8-sig", newline=""
-    ) as handle:
-        writer = csv.DictWriter(handle, fieldnames=rejection_fields)
-        writer.writeheader()
-        writer.writerows(rejected)
+    if rejected:
+        with (args.output / "企业身份公开信息导入拒绝清单.csv").open(
+            "w", encoding="utf-8-sig", newline=""
+        ) as handle:
+            writer = csv.DictWriter(handle, fieldnames=rejection_fields)
+            writer.writeheader()
+            writer.writerows(rejected)
     report = {
         "generated_at": imported_at,
         "schema_version": 1,

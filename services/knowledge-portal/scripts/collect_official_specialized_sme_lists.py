@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 
 
 DEFAULT_CONFIG = Path(__file__).resolve().parents[1] / "references" / "official_specialized_sme_sources.json"
-DEFAULT_OUTPUT = Path("/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/_省级专精特新")
+DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/_省级专精特新")
 ATTACHMENT_SUFFIXES = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".wps", ".zip"}
 USER_AGENT = "JiaotangKnowledgeCollector/1.0"
 JINA_READER_PREFIX = "https://r.jina.ai/"

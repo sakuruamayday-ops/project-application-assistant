@@ -1,0 +1,122 @@
+<section id="skills" class="section-block skill-center" data-skill-center>
+  <header class="skill-command-bar">
+    <div class="skill-scan-state"><span class="skill-live-dot"></span><div><strong>官方技能目录已就绪</strong><small>{{ skill_center.release_tag }} · {{ skill_center.summary.total }} 项能力已载入</small></div></div>
+    <div class="skill-command-actions">
+      {% if latest_release %}<a class="button skill-primary-action" href="/skills/latest/download">下载官方技能包</a>{% endif %}
+      <button class="button secondary" type="button" data-skill-rescan>刷新目录</button>
+      <button class="button skill-dark-action" type="button" data-skill-tab-target="install">{{ 'Agent 接入说明' if user.is_admin else '生成安全安装计划' }} <span>→</span></button>
+    </div>
+  </header>
+
+  <nav class="skill-section-tabs" role="tablist" aria-label="Skills 页面内容">
+    <button class="is-active" type="button" role="tab" data-skill-section-tab="catalog" aria-selected="true">技能目录 <small>{{ skill_center.summary.total }}</small></button>
+    <button type="button" role="tab" data-skill-section-tab="downloads" aria-selected="false">版本与下载 <small>{{ 'V' ~ latest_release.version if latest_release else '—' }}</small></button>
+    <button type="button" role="tab" data-skill-section-tab="install" aria-selected="false">安装与设备 <small>{{ '已连接' if active_device_binding and active_device_binding.mcp_connected_at else ('管理员' if user.is_admin else '待配置') }}</small></button>
+  </nav>
+
+  <div class="skill-section-pane is-active" data-skill-section-pane="catalog" role="tabpanel">
+    <div class="skill-group-switcher">
+      <div class="skill-switcher-label"><strong>能力切换</strong><small>按专业工作流浏览</small></div>
+      <div class="skill-group-rail" data-skill-group-rail aria-label="技能分类">
+        <button class="skill-group-button is-active" type="button" data-skill-group="all" aria-pressed="true"><span class="skill-group-icon">全</span><span><strong>全部</strong><small>跨领域汇总</small></span><b>{{ skill_center.summary.total }}</b></button>
+        {% for group in skill_center.groups %}<button class="skill-group-button" type="button" data-skill-group="{{ group.name }}" aria-pressed="false"><span class="skill-group-icon">{{ loop.index|string }}</span><span><strong>{{ group.label }}</strong><small>{{ group.count }} 个技能</small></span><b>{{ group.count }}</b></button>{% endfor %}
+      </div>
+    </div>
+
+    <div class="skill-hero">
+      <div><span class="skill-kicker">团队 Skills 管理中心</span><h2>专业能力，<br>可信可查<span>。</span></h2><p>统一查看企业项目、政策证据、专利、交付与治理能力。技能内容来自正式发布清单，所有团队成员均可检索和查阅。</p></div>
+      <div class="skill-coverage" aria-label="{{ skill_center.summary.coverage_percent }}% 的技能已完成签名验证">
+        <svg viewBox="0 0 120 120" role="img" aria-hidden="true"><circle class="skill-ring-track" cx="60" cy="60" r="48" pathLength="100"></circle><circle class="skill-ring-value" cx="60" cy="60" r="48" pathLength="100" stroke-dasharray="{{ skill_center.summary.coverage_percent }} {{ 100 - skill_center.summary.coverage_percent }}"></circle></svg>
+        <div><strong>{{ skill_center.summary.coverage_percent }}<small>%</small></strong><span>签名覆盖率</span></div>
+        <p>{{ skill_center.summary.pending }} 项待补签，不影响内容查阅</p>
+      </div>
+    </div>
+
+    <div class="skill-metrics" aria-label="技能目录统计">
+      <article class="is-dark"><span>技能总数</span><strong>{{ skill_center.summary.total }}</strong><small>{{ skill_center.summary.group_count }} 个专业能力组</small></article>
+      <article><span>已验证</span><strong>{{ skill_center.summary.verified }}</strong><small>内容指纹与签名齐备</small></article>
+      <article><span>待签名</span><strong>{{ skill_center.summary.pending }}</strong><small>仍可查看正式内容</small></article>
+      <article><span>发布版本</span><strong>{{ skill_center.release_tag }}</strong><small>来自正式发布清单</small></article>
+    </div>
+
+    <div class="skill-list-heading"><div><span class="skill-kicker">技能清单</span><h3>全部正式技能</h3></div><span data-skill-result-count aria-live="polite">{{ skill_center.summary.total }} / {{ skill_center.summary.total }}</span></div>
+    <div class="skill-filter-bar">
+      <label class="skill-search"><span>⌕</span><input type="search" data-skill-search placeholder="搜索名称、描述或分类…" autocomplete="off"><kbd>⌘ K</kbd></label>
+      <div class="skill-status-filters" aria-label="按签名状态筛选"><button class="is-active" type="button" data-skill-status="all" aria-pressed="true">全部</button><button type="button" data-skill-status="verified" aria-pressed="false">已验证</button><button type="button" data-skill-status="pending" aria-pressed="false">待签名</button></div>
+    </div>
+
+    <div class="skill-catalog-table" role="table" aria-label="技能目录">
+      <div class="skill-table-head" role="row"><span role="columnheader">技能 / 描述</span><span role="columnheader">专业分类</span><span role="columnheader">状态</span><span role="columnheader">最近变化</span><span></span></div>
+      {% for skill in skill_center.skills %}<button class="skill-row" type="button" role="row" data-skill-row data-skill-open="{{ skill.name }}" data-skill-group-value="{{ skill.group }}" data-skill-status-value="{{ skill.status }}" data-skill-search-value="{{ skill.name }} {{ skill.title }} {{ skill.description }} {{ skill.group_label }}">
+        <span class="skill-row-main" role="cell"><span class="skill-row-index">{{ '%02d'|format(loop.index) }}</span><span><strong>{{ skill.title }}</strong><code>{{ skill.name }}</code><small>{{ skill.description }}</small></span></span>
+        <span class="skill-row-group" role="cell"><i>{{ skill.group_label[:1] }}</i>{{ skill.group_label }}</span>
+        <span role="cell"><em class="skill-status is-{{ skill.status }}"><i></i>{{ skill.status_label }}</em></span>
+        <span class="skill-row-date" role="cell">{{ skill.updated_display }}</span>
+        <span class="skill-row-action" role="cell">查看 <b>→</b></span>
+      </button>{% endfor %}
+      <div class="skill-empty-state" data-skill-empty hidden>没有符合当前筛选条件的技能。</div>
+    </div>
+  </div>
+
+  <div class="skill-section-pane" data-skill-section-pane="downloads" role="tabpanel" hidden>
+    <div class="skill-pane-heading"><span class="skill-kicker">Release Ledger</span><h2>版本与下载</h2><p>下载正式套件，核对版本说明与文件指纹。发布时执行完整清单校验，不以页面截图作为发布门禁。</p></div>
+    <div class="skill-download-content">
+      <article class="skill-current-release"><span class="download-icon">ZIP</span><div><h3>{{ '企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div>{% if latest_release %}<div class="button-row"><a class="button" href="/skills/latest/download">下载通用 Skills 包</a>{% if latest_release.workbuddy_available %}<a class="button secondary" href="/skills/latest/workbuddy/download">下载 WorkBuddy 插件包</a>{% endif %}</div>{% endif %}</article>
+      {% for release in historical_releases %}<article><span class="download-icon">HIS</span><div><h3>企业全生命周期助手 V{{ release.version }}</h3><small>发布时间 {{ release.published_at_display }}</small><details class="skill-release-notes"><summary>查看发布说明</summary><div class="manual-content">{{ release.release_notes_html }}</div></details></div><div class="button-row"><a class="button secondary" href="/skills/releases/{{ release.id }}/download">下载 V{{ release.version }} 通用包</a>{% if release.workbuddy_available %}<a class="button secondary" href="/skills/releases/{{ release.id }}/workbuddy/download">WorkBuddy 包</a>{% endif %}</div></article>{% endfor %}
+    </div>
+  </div>
+
+  <div class="skill-section-pane" data-skill-section-pane="install" role="tabpanel" hidden>
+    <div class="skill-pane-heading"><span class="skill-kicker">Local Agent Handshake</span><h2>安装与设备</h2><p>网页无法可靠拉起所有 Agent 客户端，因此这里生成一次性安全安装计划。你把指令粘贴给本地 Agent，审查改动并确认后执行，Agent 再把验收结果回传本站。</p></div>
+    <div class="skill-install-grid">
+      <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
+        <span class="skill-card-index">01 / 安装计划</span>
+        <h3>{{ '管理员接入方式' if user.is_admin else '生成一次性安全安装指令' }}</h3>
+        {% if user.is_admin %}
+        <p>管理员账号不执行单设备公钥绑定，可继续使用现有管理员凭据连接受信 Agent。此处不会伪装成自动拉起客户端。</p>
+        <a class="button" href="/access">管理管理员连接凭据</a>
+        {% elif active_device_binding and active_device_binding.mcp_connected_at %}
+        <p>当前账号已有通过服务器验收的本地 Agent。需要更换电脑时，请先在“API 与用户”撤销原设备，再生成新计划。</p>
+        <a class="button" href="/access">查看已连接设备</a>
+        {% else %}
+        <p>计划会公开安装器来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法；只有你明确同意后，Agent 才能执行。</p>
+        <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制安装指令</span><small>一次性 · 60 分钟有效</small></button>
+        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到本地 Agent，对照计划完成审查与确认。</p>
+        {% endif %}
+      </article>
+      <article class="skill-install-status" data-agent-install-status>
+        <span class="skill-card-index">02 / 回传验收</span>
+        <h3>本机 Agent 状态</h3>
+        <ol class="skill-install-stages">
+          <li class="{{ 'is-complete' if active_device_binding and active_device_binding.key_id else '' }}" data-agent-stage="registration"><i></i><span><strong>设备登记</strong><small>{{ active_device_binding.first_bound_at_display if active_device_binding and active_device_binding.key_id else '等待 Agent 回传' }}</small></span></li>
+          <li class="{{ 'is-complete' if active_device_binding and active_device_binding.credential_saved_at else '' }}" data-agent-stage="credential_saved"><i></i><span><strong>凭据安全保存</strong><small>{{ active_device_binding.credential_saved_at_display if active_device_binding and active_device_binding.credential_saved_at else '尚未验收' }}</small></span></li>
+          <li class="{{ 'is-complete' if active_device_binding and active_device_binding.first_verified_at else '' }}" data-agent-stage="first_signature"><i></i><span><strong>设备签名验证</strong><small>{{ active_device_binding.first_verified_at_display if active_device_binding and active_device_binding.first_verified_at else '尚未验收' }}</small></span></li>
+          <li class="{{ 'is-complete' if active_device_binding and active_device_binding.mcp_connected_at else '' }}" data-agent-stage="mcp_connection"><i></i><span><strong>MCP 首次连接</strong><small>{{ active_device_binding.mcp_connected_at_display if active_device_binding and active_device_binding.mcp_connected_at else '尚未验收' }}</small></span></li>
+        </ol>
+        <div class="skill-install-result {{ 'is-success' if latest_agent_install_result and latest_agent_install_result.result_ok else ('is-error' if latest_agent_install_result else '') }}" data-agent-result>
+          <strong data-agent-result-title>{{ '最近一次安装已通过' if latest_agent_install_result and latest_agent_install_result.result_ok else ('最近一次安装未完成' if latest_agent_install_result else '等待本地 Agent 回传') }}</strong>
+          <p data-agent-result-message>{{ latest_agent_install_result.result_user_message if latest_agent_install_result else '生成安装计划后，本页会自动刷新设备登记、签名和 MCP 连接结果。' }}</p>
+          <small data-agent-result-next>{{ latest_agent_install_result.result_next_action if latest_agent_install_result and latest_agent_install_result.result_next_action else (latest_agent_install_result.result_reported_at_display if latest_agent_install_result else '') }}</small>
+        </div>
+      </article>
+    </div>
+    <div class="skill-install-safety"><span>安全边界</span><p>安装器必须先校验 SHA-256；私钥只在本机生成且不上传；凭据进入系统安全存储；失败时回传阶段和下一步，但不回传密钥。</p></div>
+  </div>
+
+  <dialog class="skill-detail-dialog" data-skill-dialog aria-labelledby="skill-detail-title">
+    <article class="skill-detail-card">
+      <header><span>技能详情</span><button type="button" data-skill-dialog-close aria-label="关闭技能详情">×</button></header>
+      <div class="skill-detail-loading" data-skill-detail-loading>正在读取正式技能清单…</div>
+      <div class="skill-detail-content" data-skill-detail-content hidden>
+        <section class="skill-detail-title"><span class="skill-detail-mark">S</span><div><div><h2 id="skill-detail-title" data-skill-detail-title></h2><em data-skill-detail-status></em></div><code data-skill-detail-name></code><p data-skill-detail-description></p></div></section>
+        <dl class="skill-detail-stats"><div><dt>文件</dt><dd data-skill-detail-files></dd></div><div><dt>体积</dt><dd data-skill-detail-size></dd></div><div><dt>内容指纹</dt><dd data-skill-detail-fingerprint></dd></div><div><dt>版本</dt><dd data-skill-detail-version></dd></div></dl>
+        <div class="skill-detail-tabs" role="tablist"><button class="is-active" type="button" role="tab" data-skill-detail-tab="preview" aria-selected="true">内容预览</button><button type="button" role="tab" data-skill-detail-tab="files" aria-selected="false">文件结构</button><button type="button" role="tab" data-skill-detail-tab="relations" aria-selected="false">协作关系</button><button type="button" role="tab" data-skill-detail-tab="source" aria-selected="false">原文</button></div>
+        <section class="skill-detail-pane manual-content is-active" data-skill-detail-pane="preview"></section>
+        <section class="skill-detail-pane skill-file-list" data-skill-detail-pane="files"></section>
+        <section class="skill-detail-pane skill-relation-list" data-skill-detail-pane="relations"></section>
+        <pre class="skill-detail-pane skill-source-pane" data-skill-detail-pane="source"><code></code></pre>
+      </div>
+      <footer><button class="button secondary" type="button" data-skill-dialog-close>关闭</button>{% if latest_release %}<a class="button" href="/skills/latest/download">下载官方套件</a>{% endif %}<button class="button skill-primary-action" type="button" data-skill-tab-target="install" data-skill-dialog-close>查看安装计划 →</button></footer>
+    </article>
+  </dialog>
+</section>

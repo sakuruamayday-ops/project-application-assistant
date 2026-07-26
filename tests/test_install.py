@@ -127,6 +127,30 @@ class InstallTests(unittest.TestCase):
                 self.assertTrue((installed / "skills/first-run-configuration/scripts/migrate_skill_preferences.py").is_file())
                 self.assertFalse(any((installed / "skills").glob("*/agents")))
 
+    def test_install_and_upgrade_reuse_single_knowledge_mcp(self):
+        repository = Path(__file__).resolve().parents[1]
+        manifest = self.suite_manifest(repository)
+        self.assertEqual(manifest["external_services"].count("jiaotang-kb"), 1)
+        gate_names = {item["name"] for item in manifest["release_gates"]}
+        self.assertIn("single-knowledge-mcp", gate_names)
+        protocol = (
+            repository
+            / "skills/first-run-configuration/references/first-startup-protocol.md"
+        ).read_text(encoding="utf-8")
+        retrieval = (
+            repository / "skills/local-knowledge-retrieval/SKILL.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("只允许配置一个名为 `jiaotang-kb` 的 MCP", protocol)
+        self.assertIn("不得新增知识库 MCP", protocol)
+        self.assertIn("MCP `three_first_analysis`", retrieval)
+        subprocess.run(
+            [sys.executable, str(repository / "tests/validate_single_knowledge_mcp.py")],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
     def test_copy_install(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

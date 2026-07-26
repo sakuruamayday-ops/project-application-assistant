@@ -1,0 +1,84 @@
+name: WorkBuddy real-host release gate
+
+on:
+  workflow_dispatch:
+  release:
+    types: [prereleased]
+
+permissions:
+  contents: read
+
+jobs:
+  real-host:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: macos
+            runs_on: '["self-hosted","workbuddy","macos"]'
+          - host: windows
+            runs_on: '["self-hosted","workbuddy","windows"]'
+    runs-on: ${{ fromJSON(matrix.runs_on) }}
+    timeout-minutes: 30
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify release-host prerequisites
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          python --version
+          if (-not (Test-Path "$HOME/.codex/skills/skill-release-manager/scripts/package_workbuddy_suite.py")) {
+            throw "Missing signed skill-release-manager on the real WorkBuddy host"
+          }
+          if (-not (Test-Path "$HOME/.codex/skill-signing/jiaotang-skill-release-ed25519")) {
+            throw "Missing protected release signing identity on the real WorkBuddy host"
+          }
+
+      - name: Verify connector mirror and website protocol
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $service = [IO.File]::ReadAllBytes("services/knowledge-portal/installers/jiaotang-agent.mjs")
+          $plugin = [IO.File]::ReadAllBytes("skills/_runtime/jiaotang-kb/jiaotang-agent.mjs")
+          if (-not [Linq.Enumerable]::SequenceEqual($service, $plugin)) {
+            throw "The website connector and signed plugin connector differ"
+          }
+          Push-Location services/knowledge-portal
+          try {
+            python -m pytest -q tests/test_portal.py::test_member_agent_bootstrap_device_signature_and_replacement
+          }
+          finally {
+            Pop-Location
+          }
+
+      - name: Run real marketplace add-install-enable-trigger gate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path "artifacts/workbuddy-${{ matrix.host }}" | Out-Null
+          python -m pytest -q tests/test_workbuddy_runtime_hardening.py --junitxml "artifacts/workbuddy-${{ matrix.host }}/junit.xml"
+
+      - name: Record host evidence
+        if: always()
+        shell: pwsh
+        run: |
+          $payload = [ordered]@{
+            schema = "jiaotang-workbuddy-host-evidence/v1"
+            host = "${{ matrix.host }}"
+            runner = "${{ runner.name }}"
+            os = "${{ runner.os }}"
+            arch = "${{ runner.arch }}"
+            commit = "${{ github.sha }}"
+            recorded_at = [DateTime]::UtcNow.ToString("o")
+          }
+          $payload | ConvertTo-Json | Set-Content -Encoding UTF8 "artifacts/workbuddy-${{ matrix.host }}/host.json"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workbuddy-${{ matrix.host }}-evidence
+          path: artifacts/workbuddy-${{ matrix.host }}
+          if-no-files-found: error

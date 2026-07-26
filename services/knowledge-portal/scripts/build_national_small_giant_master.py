@@ -16,8 +16,8 @@ except ModuleNotFoundError:
     from build_specialized_sme_coverage_matrix import BATCH_YEARS, infer_scope
 
 
-DEFAULT_DB = Path("/Volumes/知识库/_云端迁移索引/cloud_package_index/knowledge_content.sqlite3")
-DEFAULT_OUTPUT = Path("/Volumes/知识库/_云端知识库/50_名单与对标/优质中小企业梯度培育/_全国小巨人批次主表")
+DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
+DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/_全国小巨人批次主表")
 DEFAULT_QICE_DATASET = Path.home() / "Downloads" / "企策顾问_国家专精特新小巨人_2019年至今_2026-07-22.json"
 DEFAULT_SOURCES = Path(__file__).resolve().parents[1] / "references" / "official_national_small_giant_batches.json"
 YEAR_BATCHES = {year: batch for batch, year in BATCH_YEARS.items() if year <= 2025}

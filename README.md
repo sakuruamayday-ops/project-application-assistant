@@ -1,18 +1,22 @@
 # 企业全生命周期助手
 
-面向政府项目申报工程师的53项Skills。团队知识库通过统一API或MCP读取，模型、企业数据、专利数据、OCR、文档和联网能力由用户所在Agent提供或自行配置。
+面向政府项目申报工程师与知识产权顾问的56项 Skills。团队知识库通过统一 API 或 MCP 读取，模型、企业数据、专利数据、OCR、文档和联网能力由用户所在 Agent 提供或自行配置。
 
 ## 当前状态
 
-当前稳定版本为 V1.0。规则和技能采用原创重构，不包含受限制的第三方文档技能、客户密钥、账号登录态或付费平台原始数据库。
+当前稳定版本为 V1.2。规则和技能采用原创重构，不包含受限制的第三方文档技能、客户密钥、账号登录态或付费平台原始数据库。
+
+产品定位、后续演进范围和路线图见 [`docs/product/`](docs/product/README.md)。V1.2 的正式能力清单以 `skills/suite-manifest.json` 为准。
 
 ## 安装
 
-1. 从团队管理员提供的下载地址获取最新版 ZIP。
-2. 解压后，将 `skills` 文件夹拖入当前 Agent 支持的 Skills 目录或工作区。
-3. 输入“请检查企业全生命周期助手是否安装完整，并启动首次配置向导”。
+1. 登录团队门户，在 Skills 管理中心打开“安装与设备”。
+2. 生成一次性安全安装计划并粘贴给本地 Agent；先审查来源、本机改动和撤销方式，再明确确认执行。
+3. 回到门户查看设备登记、凭据保存、签名验证和 MCP 首次连接结果。
 
-如果Agent不能直接识别 `SKILL.md`，请使用Agent提供的Skill导入或转换能力。完整步骤见 `docs/user-guide/企业全生命周期助手用户使用手册.md`。
+仍可在“版本与下载”中获取最新版 ZIP 并手工导入，但网页不会伪装成能够直接拉起所有 Agent 客户端。
+
+如果 Agent 不能直接识别 `SKILL.md`，请使用 Agent 提供的 Skill 导入或转换能力。完整步骤见 `docs/user-guide/企业全生命周期助手用户使用手册.md`。
 
 ## 健康检查
 
@@ -20,7 +24,7 @@
 
 ```bash
 PYTHONPATH=src:. uv run --with pytest --with pyyaml pytest -q tests
-python3 scripts/build_standard_package.py --version 1.0 --status stable
+python3 scripts/build_standard_package.py --version 1.2 --status stable
 ```
 
 ## 配置

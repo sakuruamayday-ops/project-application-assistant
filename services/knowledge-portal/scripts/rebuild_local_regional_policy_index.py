@@ -14,9 +14,9 @@ from build_knowledge_content_index import DEFAULT_CACHE_PATH, cache_status_reusa
 
 
 DEFAULT_SOURCE_ROOT = Path(
-    "/Volumes/知识库/_云端知识库/10_政策与目录/政策数据库/企策顾问"
+    "/Users/zsh/JiaotangData/知识库/10_政策与目录/政策数据库/企策顾问"
 )
-DEFAULT_INDEX_ROOT = Path("/Volumes/知识库/_云端迁移索引")
+DEFAULT_INDEX_ROOT = Path("/Users/zsh/JiaotangData/索引")
 SUPPORTED_CONTENT_EXTENSIONS = {
     ".csv",
     ".doc",
