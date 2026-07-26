@@ -99,6 +99,107 @@ def _install_file(source: Path, target: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _ensure_stage_table(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS skill_release_stages(
+            version TEXT PRIMARY KEY,
+            status TEXT NOT NULL,
+            generic_path TEXT NOT NULL,
+            generic_sha256 TEXT NOT NULL,
+            workbuddy_path TEXT NOT NULL,
+            workbuddy_sha256 TEXT NOT NULL,
+            release_notes TEXT NOT NULL,
+            git_commit TEXT NOT NULL,
+            github_url TEXT NOT NULL,
+            staged_at TEXT NOT NULL,
+            promoted_at TEXT
+        )
+        """
+    )
+
+
+def stage(
+    database_path: Path,
+    release_directory: Path,
+    generic_package: Path,
+    workbuddy_package: Path,
+    version: str,
+    release_notes: str,
+    git_commit: str,
+    github_url: str,
+) -> dict[str, object]:
+    validation = validate_packages(generic_package, workbuddy_package, version)
+    stage_directory = release_directory / ".staging" / f"V{version}"
+    generic_target = stage_directory / f"企业全生命周期助手-V{version}.zip"
+    workbuddy_target = (
+        stage_directory / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
+    )
+    release_directory.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        _ensure_stage_table(connection)
+        if connection.execute(
+            "SELECT 1 FROM skill_releases WHERE version=?", (version,)
+        ).fetchone():
+            raise RuntimeError(f"版本 {version} 已正式发布，不能重新进入发布中")
+        existing = connection.execute(
+            "SELECT * FROM skill_release_stages WHERE version=?", (version,)
+        ).fetchone()
+        if existing is not None:
+            if (
+                str(existing["status"]) == "releasing"
+                and str(existing["generic_sha256"]) == validation["generic_sha256"]
+                and str(existing["workbuddy_sha256"])
+                == validation["workbuddy_sha256"]
+                and Path(str(existing["generic_path"])).is_file()
+                and Path(str(existing["workbuddy_path"])).is_file()
+                and sha256(Path(str(existing["generic_path"])))
+                == str(existing["generic_sha256"])
+                and sha256(Path(str(existing["workbuddy_path"])))
+                == str(existing["workbuddy_sha256"])
+            ):
+                return {
+                    **validation,
+                    "status": "already-staged",
+                    "release_state": "releasing",
+                    "github_url": str(existing["github_url"]),
+                }
+            raise RuntimeError(f"版本 {version} 已有不同内容的发布中记录")
+        _install_file(generic_package, generic_target)
+        _install_file(workbuddy_package, workbuddy_target)
+        staged_at = datetime.now(timezone.utc).isoformat()
+        connection.execute(
+            """
+            INSERT INTO skill_release_stages(
+                version,status,generic_path,generic_sha256,
+                workbuddy_path,workbuddy_sha256,release_notes,
+                git_commit,github_url,staged_at,promoted_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,NULL)
+            """,
+            (
+                version,
+                "releasing",
+                str(generic_target),
+                validation["generic_sha256"],
+                str(workbuddy_target),
+                validation["workbuddy_sha256"],
+                release_notes.strip(),
+                git_commit.strip(),
+                github_url.strip(),
+                staged_at,
+            ),
+        )
+        connection.commit()
+    return {
+        **validation,
+        "status": "staged",
+        "release_state": "releasing",
+        "github_url": github_url.strip(),
+        "staged_at": staged_at,
+    }
+
+
 def publish(
     database_path: Path,
     release_directory: Path,
@@ -161,23 +262,95 @@ def publish(
     }
 
 
+def promote(
+    database_path: Path,
+    release_directory: Path,
+    version: str,
+) -> dict[str, object]:
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        _ensure_stage_table(connection)
+        staged = connection.execute(
+            "SELECT * FROM skill_release_stages WHERE version=?", (version,)
+        ).fetchone()
+    if staged is None or str(staged["status"]) != "releasing":
+        raise RuntimeError(f"版本 {version} 未处于正式发布中，禁止确认发布")
+    generic_package = Path(str(staged["generic_path"]))
+    workbuddy_package = Path(str(staged["workbuddy_path"]))
+    if not generic_package.is_file() or not workbuddy_package.is_file():
+        raise RuntimeError("正式发布中的候选包缺失")
+    if (
+        sha256(generic_package) != str(staged["generic_sha256"])
+        or sha256(workbuddy_package) != str(staged["workbuddy_sha256"])
+    ):
+        raise RuntimeError("正式发布中的候选包哈希发生变化")
+    result = publish(
+        database_path,
+        release_directory,
+        generic_package,
+        workbuddy_package,
+        version,
+        str(staged["release_notes"]),
+    )
+    promoted_at = datetime.now(timezone.utc).isoformat()
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            UPDATE skill_release_stages
+            SET status='published',promoted_at=?
+            WHERE version=? AND status='releasing'
+            """,
+            (promoted_at, version),
+        )
+        connection.commit()
+    return {
+        **result,
+        "release_state": "published",
+        "promoted_at": promoted_at,
+    }
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="发布已签名的通用与 WorkBuddy 技能包")
+    parser = argparse.ArgumentParser(
+        description="两阶段发布已签名的通用与 WorkBuddy 技能包"
+    )
+    parser.add_argument("--mode", choices=("stage", "promote"), required=True)
     parser.add_argument("--database", type=Path, required=True)
     parser.add_argument("--release-dir", type=Path, required=True)
-    parser.add_argument("--generic-package", type=Path, required=True)
-    parser.add_argument("--workbuddy-package", type=Path, required=True)
+    parser.add_argument("--generic-package", type=Path)
+    parser.add_argument("--workbuddy-package", type=Path)
     parser.add_argument("--version", required=True)
-    parser.add_argument("--release-notes-file", type=Path, required=True)
+    parser.add_argument("--release-notes-file", type=Path)
+    parser.add_argument("--git-commit", default="")
+    parser.add_argument("--github-url", default="")
     arguments = parser.parse_args()
-    result = publish(
-        arguments.database,
-        arguments.release_dir,
-        arguments.generic_package,
-        arguments.workbuddy_package,
-        arguments.version,
-        arguments.release_notes_file.read_text(encoding="utf-8"),
-    )
+    if arguments.mode == "stage":
+        if (
+            arguments.generic_package is None
+            or arguments.workbuddy_package is None
+            or arguments.release_notes_file is None
+            or not arguments.git_commit.strip()
+            or not arguments.github_url.strip()
+        ):
+            parser.error(
+                "stage模式必须提供候选包、发布说明、git提交和GitHub预发布地址"
+            )
+        result = stage(
+            arguments.database,
+            arguments.release_dir,
+            arguments.generic_package,
+            arguments.workbuddy_package,
+            arguments.version,
+            arguments.release_notes_file.read_text(encoding="utf-8"),
+            arguments.git_commit,
+            arguments.github_url,
+        )
+    else:
+        result = promote(
+            arguments.database,
+            arguments.release_dir,
+            arguments.version,
+        )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

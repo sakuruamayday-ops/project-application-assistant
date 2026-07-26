@@ -74,6 +74,60 @@ def test_publish_is_validated_and_idempotent(tmp_path: Path) -> None:
         assert connection.execute("SELECT COUNT(*) FROM skill_releases").fetchone()[0] == 1
 
 
+def test_two_stage_release_requires_stage_before_promotion(tmp_path: Path) -> None:
+    database = tmp_path / "portal.db"
+    release_dir = tmp_path / "releases"
+    generic, workbuddy = make_packages(tmp_path)
+    make_database(database)
+
+    try:
+        MODULE.promote(database, release_dir, "1.2")
+    except RuntimeError as error:
+        assert "未处于正式发布中" in str(error)
+    else:
+        raise AssertionError("promotion must be blocked before staging")
+
+    staged = MODULE.stage(
+        database,
+        release_dir,
+        generic,
+        workbuddy,
+        "1.2",
+        "notes",
+        "abc123",
+        "https://github.example/releases/V1.2",
+    )
+    assert staged["status"] == "staged"
+    assert staged["release_state"] == "releasing"
+    assert not (release_dir / "企业全生命周期助手-V1.2.zip").exists()
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM skill_releases").fetchone()[0] == 0
+        assert connection.execute(
+            "SELECT status FROM skill_release_stages WHERE version='1.2'"
+        ).fetchone()[0] == "releasing"
+
+    repeated = MODULE.stage(
+        database,
+        release_dir,
+        generic,
+        workbuddy,
+        "1.2",
+        "notes",
+        "abc123",
+        "https://github.example/releases/V1.2",
+    )
+    assert repeated["status"] == "already-staged"
+
+    promoted = MODULE.promote(database, release_dir, "1.2")
+    assert promoted["release_state"] == "published"
+    assert (release_dir / "企业全生命周期助手-V1.2.zip").is_file()
+    assert (release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip").is_file()
+    with sqlite3.connect(database) as connection:
+        assert connection.execute(
+            "SELECT status FROM skill_release_stages WHERE version='1.2'"
+        ).fetchone()[0] == "published"
+
+
 def test_publish_rejects_version_mismatch(tmp_path: Path) -> None:
     generic, workbuddy = make_packages(tmp_path)
     try:

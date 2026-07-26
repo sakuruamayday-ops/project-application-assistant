@@ -3633,6 +3633,81 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
             assert download.status_code == 200
             assert download.content == package.read_bytes()
 
+
+def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
+    module = load_app(tmp_path)
+    generic = tmp_path / "generic-v1.3.zip"
+    generic.write_bytes(b"published-generic")
+    staged_generic = tmp_path / "staged-generic-v1.4.zip"
+    staged_workbuddy = tmp_path / "staged-workbuddy-v1.4.zip"
+    staged_generic.write_bytes(b"staged-generic")
+    staged_workbuddy.write_bytes(b"staged-workbuddy")
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            (
+                "member",
+                module.password_hasher.hash("member-password-123"),
+                now,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_releases(version,file_name,file_path,sha256,release_notes,published_at)
+            VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.3",
+                generic.name,
+                str(generic),
+                hashlib.sha256(generic.read_bytes()).hexdigest(),
+                "V1.3 current",
+                now,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_release_stages(
+                version,status,generic_path,generic_sha256,
+                workbuddy_path,workbuddy_sha256,release_notes,
+                git_commit,github_url,staged_at,promoted_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,NULL)
+            """,
+            (
+                "1.4",
+                "releasing",
+                str(staged_generic),
+                hashlib.sha256(staged_generic.read_bytes()).hexdigest(),
+                str(staged_workbuddy),
+                hashlib.sha256(staged_workbuddy.read_bytes()).hexdigest(),
+                "V1.4 staged",
+                "abc123",
+                "https://github.example/releases/V1.4",
+                now,
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        page = client.get("/skills")
+        assert page.status_code == 200
+        assert 'data-release-stage="releasing"' in page.text
+        assert "正式发布中" in page.text
+        assert "企业全生命周期助手 V1.4" in page.text
+        assert "等待主人确认正式发布" in page.text
+        assert "企业全生命周期助手 V1.3" in page.text
+        current_download = client.get("/skills/latest/download")
+        assert current_download.status_code == 200
+        assert current_download.content == generic.read_bytes()
+
+
 def test_release_announcement_appears_once_after_publish(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:

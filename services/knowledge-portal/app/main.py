@@ -5270,6 +5270,20 @@ def init_database() -> None:
                 published_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS skill_release_stages (
+                version TEXT PRIMARY KEY,
+                status TEXT NOT NULL,
+                generic_path TEXT NOT NULL,
+                generic_sha256 TEXT NOT NULL,
+                workbuddy_path TEXT NOT NULL,
+                workbuddy_sha256 TEXT NOT NULL,
+                release_notes TEXT NOT NULL,
+                git_commit TEXT NOT NULL,
+                github_url TEXT NOT NULL,
+                staged_at TEXT NOT NULL,
+                promoted_at TEXT
+            );
+
             CREATE TABLE IF NOT EXISTS release_announcements (
                 release_id INTEGER PRIMARY KEY REFERENCES skill_releases(id) ON DELETE CASCADE,
                 title TEXT NOT NULL,
@@ -6871,6 +6885,26 @@ def portal_payload(
             LIMIT 1
             """
         ).fetchone()
+        release_stage = connection.execute(
+            """
+            SELECT version,status,generic_sha256,workbuddy_sha256,
+                   git_commit,github_url,staged_at
+            FROM skill_release_stages
+            WHERE status='releasing'
+            ORDER BY staged_at DESC
+            LIMIT 1
+            """
+        ).fetchone()
+        release_stage_payload = (
+            {
+                **dict(release_stage),
+                "staged_at_display": format_chinese_datetime(
+                    release_stage["staged_at"]
+                ),
+            }
+            if release_stage
+            else None
+        )
         latest_release_payload = (
             {
                 **dict(latest_release),
@@ -6955,6 +6989,7 @@ def portal_payload(
         "update_jobs": update_jobs,
         "releases": releases,
         "latest_release": latest_release_payload,
+        "release_stage": release_stage_payload,
         "historical_releases": historical_releases,
         "skill_center": skill_catalog_payload(),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,

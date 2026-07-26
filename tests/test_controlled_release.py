@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -40,3 +41,52 @@ def test_prepare_assets_contains_only_release_files(tmp_path) -> None:
         "jiaotang-skills-V1.3-WorkBuddy.zip",
         "jiaotang-skills-V1.3-release-gate.json",
     ]
+
+
+def test_release_action_blocks_one_step_and_requires_exact_confirmation() -> None:
+    assert MODULE.release_action(
+        stage=False, promote=False, execute=False, confirm_text=""
+    ) == "preflight"
+    assert MODULE.release_action(
+        stage=True, promote=False, execute=False, confirm_text=""
+    ) == "stage"
+    with pytest.raises(RuntimeError, match="一步直发已停用"):
+        MODULE.release_action(
+            stage=False, promote=False, execute=True, confirm_text=""
+        )
+    with pytest.raises(RuntimeError, match="缺少独立确认"):
+        MODULE.release_action(
+            stage=False, promote=True, execute=False, confirm_text=""
+        )
+    assert MODULE.release_action(
+        stage=False,
+        promote=True,
+        execute=False,
+        confirm_text="确认正式发布",
+    ) == "promote"
+
+
+def test_promote_cannot_create_a_missing_prerelease(tmp_path, monkeypatch) -> None:
+    asset = tmp_path / "asset.zip"
+    notes = tmp_path / "notes.md"
+    asset.write_bytes(b"asset")
+    notes.write_text("V1.4", encoding="utf-8")
+    monkeypatch.setattr(
+        MODULE.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=1,
+            stdout="",
+            stderr="release not found",
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="尚未进入正式发布中"):
+        MODULE.ensure_prerelease(
+            "owner/repository",
+            "V1.4",
+            "abc123",
+            notes,
+            [asset],
+            create_if_missing=False,
+        )

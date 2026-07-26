@@ -70,6 +70,17 @@
   <div class="skill-section-pane" data-skill-section-pane="downloads" role="tabpanel" hidden>
     <div class="skill-pane-heading"><span class="skill-kicker">Release Ledger</span><h2>版本与下载</h2><p>下载正式套件，核对版本说明与文件指纹。发布时执行完整清单校验，不以页面截图作为发布门禁。</p></div>
     <div class="skill-download-content">
+      {% if release_stage %}
+      <article class="skill-current-release is-releasing" data-release-stage="releasing">
+        <span class="download-icon">V{{ release_stage.version }}</span>
+        <div>
+          <span class="skill-status is-pending"><i></i>正式发布中</span>
+          <h3>企业全生命周期助手 V{{ release_stage.version }}</h3>
+          <small>进入发布流程 {{ release_stage.staged_at_display }} · 等待主人确认正式发布</small>
+        </div>
+        <div class="button-row"><a class="button secondary" href="{{ release_stage.github_url }}" target="_blank" rel="noreferrer">查看预发布</a></div>
+      </article>
+      {% endif %}
       <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
       <div class="skill-platform-note"><strong>专有许可</strong><p>源码可见，仅限非商业评估、安全审计和内部测试。未经著作权人事先书面许可，不得用于客户交付、咨询服务、SaaS、产品集成、付费培训或其他直接、间接商业用途。</p></div>

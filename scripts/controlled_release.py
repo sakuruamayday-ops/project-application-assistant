@@ -53,6 +53,26 @@ def normalize_version(value: str) -> tuple[str, str, str]:
     return short, f"{short}.0", f"V{short}"
 
 
+def release_action(
+    *,
+    stage: bool,
+    promote: bool,
+    execute: bool,
+    confirm_text: str,
+) -> str:
+    if execute:
+        raise RuntimeError(
+            "--execute一步直发已停用；请先使用--stage，收到独立确认后再使用--promote"
+        )
+    if promote:
+        if confirm_text != "确认正式发布":
+            raise RuntimeError(
+                "缺少独立确认；--confirm-text必须逐字为“确认正式发布”"
+            )
+        return "promote"
+    return "stage" if stage else "preflight"
+
+
 def load_portal_publisher(root: Path):
     path = root / "services/knowledge-portal/scripts/publish_skill_release.py"
     specification = importlib.util.spec_from_file_location(
@@ -147,20 +167,48 @@ def prepare_ascii_assets(
     return targets
 
 
-def create_prerelease(
+def ensure_prerelease(
     repository: str,
     tag: str,
     commit: str,
     notes: Path,
     assets: list[Path],
+    *,
+    create_if_missing: bool = True,
 ) -> str:
-    exists = subprocess.run(
-        ["gh", "release", "view", tag, "--repo", repository],
+    existing = subprocess.run(
+        [
+            "gh",
+            "release",
+            "view",
+            tag,
+            "--repo",
+            repository,
+            "--json",
+            "url,isPrerelease,targetCommitish,assets",
+        ],
         capture_output=True,
         text=True,
-    ).returncode == 0
-    if exists:
-        raise RuntimeError(f"GitHub 已存在 {tag}，受控命令拒绝覆盖")
+    )
+    if existing.returncode == 0:
+        payload = json.loads(existing.stdout)
+        if not payload.get("isPrerelease"):
+            raise RuntimeError(f"GitHub {tag} 已是正式版，不能重新进入发布中")
+        target = str(payload.get("targetCommitish") or "")
+        if target != commit:
+            raise RuntimeError("GitHub 预发布的目标提交与当前正式提交不一致")
+        remote_assets = {
+            str(item["name"]): str(item.get("digest") or "")
+            for item in payload.get("assets", [])
+        }
+        expected_assets = {
+            path.name: f"sha256:{sha256(path)}" for path in assets
+        }
+        if remote_assets != expected_assets:
+            raise RuntimeError("GitHub 预发布资产与本地候选包不一致")
+        return str(payload["url"])
+    if not create_if_missing:
+        raise RuntimeError(f"GitHub {tag} 尚未进入正式发布中，不能直接提升")
     return run(
         [
             "gh",
@@ -181,12 +229,14 @@ def create_prerelease(
     )
 
 
-def publish_portal(
+def stage_portal(
     version: str,
     generic: Path,
     workbuddy: Path,
     notes: Path,
-) -> None:
+    commit: str,
+    release_url: str,
+) -> dict[str, object]:
     deploy_host = os.environ.get("JIAOTANG_DEPLOY_HOST")
     deploy_key = os.environ.get("JIAOTANG_DEPLOY_KEY")
     if not deploy_host or not deploy_key:
@@ -211,19 +261,40 @@ def publish_portal(
         "set -a; source /etc/jiaotang-kb.env; set +a; "
         "/opt/jiaotang-kb/.venv/bin/python "
         "/opt/jiaotang-kb/scripts/publish_skill_release.py "
+        "--mode stage "
         f"--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
         f"--release-dir \"$JIAOTANG_SKILL_RELEASE_DIR\" "
         f"--generic-package {shlex.quote(f'{remote_stage}/{generic.name}')} "
         f"--workbuddy-package {shlex.quote(f'{remote_stage}/{workbuddy.name}')} "
         f"--version {shlex.quote(version)} "
-        f"--release-notes-file {shlex.quote(f'{remote_stage}/{notes.name}')}"
+        f"--release-notes-file {shlex.quote(f'{remote_stage}/{notes.name}')} "
+        f"--git-commit {shlex.quote(commit)} "
+        f"--github-url {shlex.quote(release_url)}"
     )
-    run([*ssh, remote_command])
+    return json.loads(run([*ssh, remote_command]))
+
+
+def promote_portal(version: str) -> dict[str, object]:
+    deploy_host = os.environ.get("JIAOTANG_DEPLOY_HOST")
+    deploy_key = os.environ.get("JIAOTANG_DEPLOY_KEY")
+    if not deploy_host or not deploy_key:
+        raise RuntimeError("缺少 JIAOTANG_DEPLOY_HOST 或 JIAOTANG_DEPLOY_KEY")
+    ssh = ["ssh", "-i", deploy_key, "-o", "IdentitiesOnly=yes", deploy_host]
+    remote_command = (
+        "set -a; source /etc/jiaotang-kb.env; set +a; "
+        "/opt/jiaotang-kb/.venv/bin/python "
+        "/opt/jiaotang-kb/scripts/publish_skill_release.py "
+        "--mode promote "
+        f"--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
+        f"--release-dir \"$JIAOTANG_SKILL_RELEASE_DIR\" "
+        f"--version {shlex.quote(version)}"
+    )
+    return json.loads(run([*ssh, remote_command]))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="受控发布：版本与包校验 → GitHub 预发布 → 网站登记 → 正式版"
+        description="两阶段受控发布：进入正式发布中 → 独立确认后正式发布"
     )
     parser.add_argument("--version", required=True)
     parser.add_argument("--generic-package", type=Path, required=True)
@@ -234,12 +305,34 @@ def main() -> None:
         "--repository",
         default="sakuruamayday-ops/project-application-assistant",
     )
-    parser.add_argument(
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument(
+        "--stage",
+        action="store_true",
+        help="创建GitHub预发布并在网站登记为正式发布中，然后暂停",
+    )
+    action.add_argument(
+        "--promote",
+        action="store_true",
+        help="将已处于正式发布中的版本提升为网站正式版和GitHub Latest",
+    )
+    action.add_argument(
         "--execute",
         action="store_true",
-        help="未提供时只执行只读预检，不创建预发布或修改网站",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--confirm-text",
+        default="",
+        help="promote时必须逐字提供“确认正式发布”",
     )
     arguments = parser.parse_args()
+    action_name = release_action(
+        stage=arguments.stage,
+        promote=arguments.promote,
+        execute=arguments.execute,
+        confirm_text=arguments.confirm_text,
+    )
     validation = validate_inputs(
         ROOT,
         arguments.version,
@@ -254,33 +347,30 @@ def main() -> None:
         "release": validation,
         "commit": commit,
     }
-    if not arguments.execute:
+    if action_name == "preflight":
         print(json.dumps(preflight, ensure_ascii=False, indent=2))
         return
 
-    with tempfile.TemporaryDirectory(
-        prefix="jiaotang-controlled-release-"
-    ) as directory:
-        assets = prepare_ascii_assets(
-            Path(directory) / "assets",
-            validation["tag"],
-            arguments.generic_package.resolve(),
-            arguments.workbuddy_package.resolve(),
-            arguments.gate_report.resolve(),
-        )
-        release_url = create_prerelease(
-            arguments.repository,
-            validation["tag"],
-            commit,
-            arguments.release_notes.resolve(),
-            assets,
-        )
-        publish_portal(
-            validation["short_version"],
-            arguments.generic_package.resolve(),
-            arguments.workbuddy_package.resolve(),
-            arguments.release_notes.resolve(),
-        )
+    if action_name == "promote":
+        with tempfile.TemporaryDirectory(
+            prefix="jiaotang-controlled-release-verify-"
+        ) as directory:
+            assets = prepare_ascii_assets(
+                Path(directory) / "assets",
+                validation["tag"],
+                arguments.generic_package.resolve(),
+                arguments.workbuddy_package.resolve(),
+                arguments.gate_report.resolve(),
+            )
+            release_url = ensure_prerelease(
+                arguments.repository,
+                validation["tag"],
+                commit,
+                arguments.release_notes.resolve(),
+                assets,
+                create_if_missing=False,
+            )
+        portal_result = promote_portal(validation["short_version"])
         run(
             [
                 "gh",
@@ -299,7 +389,47 @@ def main() -> None:
                     **preflight,
                     "status": "published",
                     "release_url": release_url,
-                    "portal": "published",
+                    "portal": portal_result,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+
+    with tempfile.TemporaryDirectory(
+        prefix="jiaotang-controlled-release-stage-"
+    ) as directory:
+        assets = prepare_ascii_assets(
+            Path(directory) / "assets",
+            validation["tag"],
+            arguments.generic_package.resolve(),
+            arguments.workbuddy_package.resolve(),
+            arguments.gate_report.resolve(),
+        )
+        release_url = ensure_prerelease(
+            arguments.repository,
+            validation["tag"],
+            commit,
+            arguments.release_notes.resolve(),
+            assets,
+        )
+        portal_result = stage_portal(
+            validation["short_version"],
+            arguments.generic_package.resolve(),
+            arguments.workbuddy_package.resolve(),
+            arguments.release_notes.resolve(),
+            commit,
+            release_url,
+        )
+        print(
+            json.dumps(
+                {
+                    **preflight,
+                    "status": "releasing",
+                    "release_url": release_url,
+                    "portal": portal_result,
+                    "next_action": "等待主人明确说“确认正式发布”",
                 },
                 ensure_ascii=False,
                 indent=2,

@@ -139,6 +139,9 @@
 .skill-download-content .manual-content * { color:var(--skill-muted); }
 .skill-download-content > article > .button-row { align-self:start !important; justify-self:end; align-items:flex-start; justify-content:flex-end; height:max-content; margin-top:0; }
 .skill-download-content > article > .button-row .button { flex:0 0 auto; align-self:flex-start; width:auto; height:auto; }
+.skill-current-release.is-releasing { border:1px solid rgba(207,169,92,.48); background:linear-gradient(120deg,rgba(207,169,92,.13),rgba(19,20,22,.96) 58%); }
+.skill-current-release.is-releasing .download-icon { color:#17130b; background:var(--skill-gold); }
+.skill-current-release.is-releasing .skill-status { margin-bottom:8px; }
 .skill-platform-note { display:grid; grid-template-columns:150px minmax(0,1fr); gap:18px; padding:20px 22px; border-bottom:1px solid var(--skill-line); background:#0d0e0f; }
 .skill-platform-note strong { color:var(--skill-gold-light); font-size:12px; }
 .skill-platform-note p { margin:0; color:var(--skill-muted); font-size:11px; line-height:1.7; }
