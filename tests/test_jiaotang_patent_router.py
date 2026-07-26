@@ -3,6 +3,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,12 +31,13 @@ def test_core_patent_skill_count_and_internal_components():
         "jiaotang-patent-router",
         "checking-patdocx-cn-single-agent",
     }
-    for component in (
-        "patent-lawyer-agent",
-        "patent-mining-disclosure-skill",
-        "patent-preliminary-examination-check",
+    for method in (
+        "p1-search-analysis.md",
+        "p2-mining-disclosure.md",
+        "p3-preexam.md",
     ):
-        assert (ROUTER / "components" / component / "METHOD.md").is_file()
+        assert (ROUTER / "references" / method).is_file()
+    assert not (ROUTER / "components").exists()
 
 
 def test_claim_structure_marks_nested_alternatives_and_markush_for_review():
@@ -122,3 +124,33 @@ def test_checker_extracts_extended_docx_objects_contract():
     source = (CHECKER / "scripts" / "patent_extractor.py").read_text(encoding="utf-8")
     for field in ("footnotes", "endnotes", "equations", "embedded_objects"):
         assert field in source
+
+
+def test_comment_anchor_splits_cross_run_text_exactly():
+    module = load_module(CHECKER / "scripts" / "review_adder.py")
+    paragraph = ET.Element(module.qname(module.W, "p"))
+    for value in ("前缀", "目标", "文本", "后缀"):
+        run = ET.SubElement(paragraph, module.qname(module.W, "r"))
+        ET.SubElement(run, module.qname(module.W, "t")).text = value
+    precision = module.add_markers(paragraph, "0", "目标文本", 1)
+    assert precision == "exact"
+    tags = [child.tag.rsplit("}", 1)[-1] for child in paragraph]
+    assert tags.index("commentRangeStart") < tags.index("commentRangeEnd")
+    assert module.paragraph_text(paragraph) == "前缀目标文本后缀"
+
+
+def test_no_unfused_patent_skill_names_remain():
+    checked = [
+        ROUTER / "SKILL.md",
+        CHECKER / "SKILL.md",
+        ROOT / "docs/provenance/patent-skills.md",
+    ]
+    forbidden = (
+        "SkillHub",
+        "formal-suite-v1.2",
+        "patent-mining-disclosure-skill",
+        "patent-preliminary-examination-check",
+        "patent-lawyer-agent",
+    )
+    content = "\n".join(path.read_text(encoding="utf-8") for path in checked)
+    assert all(value not in content for value in forbidden)

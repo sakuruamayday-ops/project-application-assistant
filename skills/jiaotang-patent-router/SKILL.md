@@ -33,12 +33,11 @@ description: 焦糖公司级专利工作的唯一综合入口。用户提出“�
    - 使用 `scripts/claim_structure.py` 解析超长权利要求中的嵌套限定、并列与择一关系、数值范围和马库什变量。三层以上嵌套、多组择一或马库什结构强制标记特征边界复核。
    - 语义等同采用“机器发现候选＋原文、上下文权利要求、附图和本领域含义裁决”。词项、同义词、字符相似或模型判断只能标记 `LEXICAL_REVIEW_REQUIRED` 或 `SEMANTIC_REVIEW_REQUIRED`，不能自动认定已公开。
    - 新颖性按单一在先文件逐项判断；创造性依次记录最接近现有技术、区别特征、技术效果、实际技术问题和技术启示。详细数据契约见 `references/claim-prior-art-matrix.md`。
-   - 内部方法资源位于 `components/patent-lawyer-agent/`。
-   - 用户要求通俗解读现有专利或生成Obsidian专利图谱时，调用其 `toolkits/patent-reader/`，不恢复重复全流程技能。
+   - 方法见 `references/p1-search-analysis.md`。
 2. `P2 专利挖掘与交底策略`
    - 扫描技术材料，形成专利点资产清单、保护主题、组合关系和交底缺口。
    - 未完成专利点清单与取舍，不直接成文交底书。
-   - 内部方法资源位于 `components/patent-mining-disclosure-skill/`。
+   - 方法见 `references/p2-mining-disclosure.md`。
 3. `P3 预审通道推荐`
    - 先比较浙江省、杭州市两个候选中心，再推荐一个主目标中心。
    - 不把两个中心的规则合并审查同一案件。
@@ -47,7 +46,7 @@ description: 焦糖公司级专利工作的唯一综合入口。用户提出“�
    - 技术主题与拟申请 IPC 不作为默认反问项：优先从用户提供的技术材料、交底书或申请文件提取技术主题，由 P1/P2 分析形成拟申请 IPC、备选 IPC 和判断依据。
    - 对 `.docx` 申请文件先运行 `scripts/build_ipc_evidence_chain.py`，生成“原件哈希 → 权利要求引用图 → 独立权利要求技术特征树 → IPC候选 → 查新蓝图 → 双中心命中 → 唯一推荐”的JSON证据链。关键词结果只是候选，最终IPC仍按独立权利要求和正式分类复核。
    - 使用 `scripts/recommend_preexam_center.py`；进入正式预审检查前再运行 `scripts/audit_preexam_rules.py`。
-   - 内部方法资源位于 `components/patent-preliminary-examination-check/`。
+   - 方法见 `references/p3-preexam.md`。
 
 用户只问查新、交底或预审时，可以缩小输出，但仍由本技能统一记录；用户说“给出这家公司的审查意见、全面建议”时，P1、P2、P3 全部执行。
 

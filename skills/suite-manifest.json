@@ -165,9 +165,9 @@
     "jiaotang-patent-router": {
       "required_skills": [],
       "required_paths": [
-        "jiaotang-patent-router/components/patent-lawyer-agent/METHOD.md",
-        "jiaotang-patent-router/components/patent-mining-disclosure-skill/METHOD.md",
-        "jiaotang-patent-router/components/patent-preliminary-examination-check/METHOD.md"
+        "jiaotang-patent-router/references/p1-search-analysis.md",
+        "jiaotang-patent-router/references/p2-mining-disclosure.md",
+        "jiaotang-patent-router/references/p3-preexam.md"
       ],
       "reason": "公司级专利查新、挖掘交底、双中心预审、FTO和布局统一由总路由内部组件完成，避免多个全流程入口竞争。"
     },
