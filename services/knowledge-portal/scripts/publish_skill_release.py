@@ -87,6 +87,35 @@ def validate_host_evidence(path: Path, version: str) -> dict[str, object]:
         item = hosts.get(host)
         if not isinstance(item, dict) or item.get("status") != "pass":
             raise ValueError(f"双宿主证据缺少成功的 {host} 实机任务")
+        required = (
+            "job_id",
+            "job_url",
+            "runner",
+            "system_name",
+            "system_version",
+            "arch",
+            "workbuddy_version",
+            "codebuddy_version",
+            "archive_sha256",
+            "evidence_sha256",
+        )
+        if any(not str(item.get(field) or "").strip() for field in required):
+            raise ValueError(f"{host} 实机证据缺少宿主、版本、Job 或 SHA-256")
+        if not str(item["job_url"]).startswith("https://github.com/"):
+            raise ValueError(f"{host} GitHub Job 地址无效")
+        attestation = item.get("attestation")
+        if (
+            not isinstance(attestation, dict)
+            or attestation.get("status") != "verified"
+            or not str(attestation.get("id") or "")
+            or not str(attestation.get("url") or "").startswith("https://github.com/")
+            or len(str(attestation.get("source_digest") or "")) != 40
+            or attestation.get("signer_workflow")
+            != ".github/workflows/workbuddy-host-matrix.yml"
+        ):
+            raise ValueError(f"{host} 实机证据缺少已验证的 GitHub OIDC 签名")
+    if len({str(hosts[host]["archive_sha256"]) for host in ("macos", "windows")}) != 1:
+        raise ValueError("macOS 与 Windows 实机证据的 WorkBuddy 包 SHA-256 不一致")
     return evidence
 
 

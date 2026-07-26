@@ -17,6 +17,9 @@ assert.match(skillCenterTemplate, /<details class="skill-release-notes skill-cur
 assert.match(skillCenterTemplate, /latest_release\.workbuddy_platforms/, "下载区必须按 WorkBuddy 平台渲染");
 assert.match(skillCenterTemplate, /platform\.download_url/, "每个平台必须使用独立下载入口");
 assert.match(skillCenterTemplate, /内容和 SHA-256 相同/, "下载区必须解释跨平台共用签名包");
+assert.match(skillCenterTemplate, /platform\.job_url/, "实机证据必须链接对应 GitHub Job");
+assert.match(skillCenterTemplate, /platform\.attestation_url/, "实机证据必须链接 OIDC 签名证明");
+assert.match(skillCenterTemplate, /platform\.archive_sha256/, "实机证据必须展示发布包 SHA-256");
 const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
 const server = spawn(python, ["tests/browser_route_server.py"], {
   env: {

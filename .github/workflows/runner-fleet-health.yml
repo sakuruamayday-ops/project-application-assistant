@@ -1,0 +1,66 @@
+name: WorkBuddy runner fleet health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  runner-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Require one online macOS and Windows WorkBuddy runner
+        shell: python
+        run: |
+          import json
+          import os
+          import subprocess
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          payload = json.loads(
+              subprocess.run(
+                  ["gh", "api", f"repos/{repository}/actions/runners"],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              ).stdout
+          )
+          required = {
+              "macos": {"self-hosted", "workbuddy", "macos"},
+              "windows": {"self-hosted", "workbuddy", "windows"},
+          }
+          rows = []
+          failures = []
+          for host, labels in required.items():
+              matches = []
+              for runner in payload.get("runners", []):
+                  actual = {
+                      str(label.get("name") or "").casefold()
+                      for label in runner.get("labels", [])
+                  }
+                  if labels <= actual:
+                      matches.append(runner)
+              online = [runner for runner in matches if runner.get("status") == "online"]
+              state = "online" if len(online) == 1 else "missing/offline"
+              name = online[0]["name"] if len(online) == 1 else "—"
+              busy = str(online[0].get("busy", "—")).lower() if len(online) == 1 else "—"
+              rows.append(f"| {host} | {name} | {state} | {busy} |")
+              if len(online) != 1:
+                  failures.append(
+                      f"{host}: matched={len(matches)}, online={len(online)}"
+                  )
+          summary = os.environ["GITHUB_STEP_SUMMARY"]
+          with open(summary, "a", encoding="utf-8") as output:
+              output.write("## WorkBuddy Runner Fleet\n\n")
+              output.write("| Host | Runner | Status | Busy |\n")
+              output.write("|---|---|---|---|\n")
+              output.write("\n".join(rows) + "\n")
+          if failures:
+              raise SystemExit("Runner fleet unhealthy: " + "; ".join(failures))

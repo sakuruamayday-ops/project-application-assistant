@@ -12,6 +12,8 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  attestations: write
 
 concurrency:
   group: workbuddy-real-host-${{ github.event.release.tag_name || inputs.release_tag }}
@@ -25,8 +27,12 @@ jobs:
         include:
           - host: macos
             runs_on: '["self-hosted","workbuddy","macos"]'
+            python: python3
+            shell: bash
           - host: windows
             runs_on: '["self-hosted","workbuddy","windows"]'
+            python: python
+            shell: pwsh
     runs-on: ${{ fromJSON(matrix.runs_on) }}
     timeout-minutes: 30
     env:
@@ -39,38 +45,30 @@ jobs:
           ref: ${{ github.event.release.tag_name || inputs.release_tag }}
 
       - name: Verify release-host prerequisites
-        shell: python
+        shell: ${{ matrix.shell }}
         run: |
-          import os
-          import platform
-          import shutil
-          expected = "${{ matrix.host }}"
-          actual = "macos" if platform.system() == "Darwin" else platform.system().lower()
-          if actual != expected:
-              raise SystemExit(f"Runner label says {expected}, actual OS is {actual}")
-          if not shutil.which("gh"):
-              raise SystemExit("GitHub CLI is required on the release host")
-          print({"host": actual, "python": platform.python_version(), "runner": os.environ.get("RUNNER_NAME", "")})
+          ${{ matrix.python }} --version
+          gh --version
 
       - name: Run real marketplace add-install-enable-trigger gate
-        shell: python
+        shell: ${{ matrix.shell }}
         run: |
-          import subprocess
-          subprocess.run(
-              [
-                  "python",
-                  "scripts/run_workbuddy_release_gate.py",
-                  "--release-tag",
-                  "${{ github.event.release.tag_name || inputs.release_tag }}",
-                  "--repository",
-                  "${{ github.repository }}",
-                  "--host",
-                  "${{ matrix.host }}",
-                  "--output-dir",
-                  "artifacts/workbuddy-${{ matrix.host }}",
-              ],
-              check=True,
-          )
+          ${{ matrix.python }} scripts/run_workbuddy_release_gate.py --release-tag "${{ github.event.release.tag_name || inputs.release_tag }}" --repository "${{ github.repository }}" --host "${{ matrix.host }}" --output-dir "artifacts/workbuddy-${{ matrix.host }}"
+
+      - name: Sign host evidence with GitHub OIDC
+        id: attest
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: artifacts/workbuddy-${{ matrix.host }}/host-evidence.json
+
+      - name: Record attestation locator
+        shell: ${{ matrix.shell }}
+        env:
+          ATTESTATION_ID: ${{ steps.attest.outputs.attestation-id }}
+          ATTESTATION_URL: ${{ steps.attest.outputs.attestation-url }}
+          ATTESTATION_BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          ${{ matrix.python }} scripts/write_attestation_locator.py --output-dir "artifacts/workbuddy-${{ matrix.host }}"
 
       - uses: actions/upload-artifact@v4
         if: always()
