@@ -1810,16 +1810,7 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 .skill-platform-card p { margin:0; color:var(--skill-muted); font-size:10px; line-height:1.7; }
 .skill-platform-status { display:flex; align-items:center; gap:7px; width:fit-content; color:var(--skill-muted); font-size:9px; }
 .skill-platform-status i { width:7px; height:7px; border-radius:50%; background:currentColor; }
-.skill-platform-status.is-ready,.skill-platform-status.is-verified { color:var(--skill-success); }
-.skill-platform-status.is-pending { color:#d8a75a; }
-.skill-host-proof { display:grid; gap:12px; padding:14px; border:1px solid var(--skill-line); border-radius:10px; background:#0c0d0e; }
-.skill-host-evidence { display:grid; gap:9px; margin:0; }
-.skill-host-evidence > div { display:grid; grid-template-columns:92px minmax(0,1fr); gap:10px; align-items:start; }
-.skill-host-evidence dt { color:var(--skill-faint); font-size:9px; }
-.skill-host-evidence dd { min-width:0; margin:0; color:var(--skill-ink); font-size:9px; overflow-wrap:anywhere; }
-.skill-host-evidence code { color:var(--skill-gold-light); font-size:8px; word-break:break-all; }
-.skill-evidence-links { display:flex; gap:12px; flex-wrap:wrap; }
-.skill-evidence-links a { color:var(--skill-gold); font-size:9px; text-decoration:underline; text-underline-offset:3px; }
+.skill-platform-status.is-ready { color:var(--skill-success); }
 .skill-platform-card > .button { align-self:flex-start; margin-top:auto; }
 .skill-platform-card > .button.is-disabled { pointer-events:none; opacity:.45; }
 .skill-release-notes summary { display:flex; align-items:center; gap:8px; width:fit-content; margin-top:12px; color:var(--skill-gold); cursor:pointer; list-style:none; }

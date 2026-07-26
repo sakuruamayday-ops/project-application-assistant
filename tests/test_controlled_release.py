@@ -20,12 +20,11 @@ def test_normalize_version_uses_one_public_version_model() -> None:
         MODULE.normalize_version("1.2.3")
 
 
-def test_prepare_assets_includes_optional_manual_feedback(tmp_path) -> None:
+def test_prepare_assets_contains_only_release_files(tmp_path) -> None:
     generic = tmp_path / "generic.zip"
     workbuddy = tmp_path / "workbuddy.zip"
     gate = tmp_path / "gate.json"
-    feedback = tmp_path / "feedback.json"
-    for path in (generic, workbuddy, gate, feedback):
+    for path in (generic, workbuddy, gate):
         path.write_text(path.name, encoding="utf-8")
 
     assets = MODULE.prepare_ascii_assets(
@@ -34,12 +33,10 @@ def test_prepare_assets_includes_optional_manual_feedback(tmp_path) -> None:
         generic,
         workbuddy,
         gate,
-        feedback,
     )
 
     assert [path.name for path in assets] == [
         "jiaotang-skills-V1.3.zip",
         "jiaotang-skills-V1.3-WorkBuddy.zip",
         "jiaotang-skills-V1.3-release-gate.json",
-        "jiaotang-skills-V1.3-compatibility-feedback.json",
     ]

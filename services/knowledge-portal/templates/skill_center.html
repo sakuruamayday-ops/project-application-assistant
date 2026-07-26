@@ -76,23 +76,7 @@
         <article class="skill-platform-card is-{{ platform.id }}">
           <span class="skill-platform-mark">{{ '⌘' if platform.id == 'macos' else '⊞' }}</span>
           <div><span class="skill-card-index">WorkBuddy</span><h3>{{ platform.name }}</h3><p>{{ platform.detail }}。安装前展示来源、哈希、本机改动和撤销命令。</p></div>
-          <div class="skill-platform-status {{ 'is-verified' if platform.verified or platform.feedback_status == 'reported-pass' else 'is-pending' }}"><i></i>{{ platform.status_label }}</div>
-          {% if not platform.verified and platform.feedback_status != 'not-reported' %}
-          <div class="skill-host-proof"><p>{{ platform.feedback_summary }}</p><small>主人手动收集 · {{ platform.feedback_reported_at }}</small></div>
-          {% endif %}
-          {% if platform.verified %}
-          <div class="skill-host-proof">
-          <dl class="skill-host-evidence">
-            <div><dt>系统</dt><dd>{{ platform.system }}</dd></div>
-            <div><dt>WorkBuddy</dt><dd>{{ platform.workbuddy_version }}</dd></div>
-            <div><dt>CodeBuddy CLI</dt><dd>{{ platform.codebuddy_version }}</dd></div>
-            <div><dt>包 SHA-256</dt><dd><code>{{ platform.archive_sha256 }}</code></dd></div>
-            <div><dt>证据 SHA-256</dt><dd><code>{{ platform.evidence_sha256 }}</code></dd></div>
-          </dl>
-          <div class="skill-evidence-links"><a href="{{ platform.job_url }}" target="_blank" rel="noopener noreferrer">GitHub Job</a><a href="{{ platform.attestation_url }}" target="_blank" rel="noopener noreferrer">OIDC 签名证明</a></div>
-          </div>
-          {% endif %}
-          {% if platform.included %}<a class="button {{ 'secondary' if not platform.verified else '' }}" href="{{ platform.download_url }}">下载 {{ platform.name }} 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
+          {% if platform.included %}<a class="button" href="{{ platform.download_url }}">下载 {{ platform.name }} 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
         </article>
         {% endfor %}
       </div>
