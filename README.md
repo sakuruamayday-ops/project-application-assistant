@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="skills/_runtime/jiaotang-branding/assets/brand-mark.png" alt="焦糖企业全生命周期助手" width="112">
-</p>
-
 <h1 align="center">企业全生命周期助手</h1>
 
 <p align="center">
