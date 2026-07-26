@@ -119,6 +119,29 @@ def validate_host_evidence(path: Path, version: str) -> dict[str, object]:
     return evidence
 
 
+def validate_compatibility_feedback(path: Path, version: str) -> dict[str, object]:
+    feedback = json.loads(path.read_text(encoding="utf-8"))
+    if feedback.get("schema") != "jiaotang-workbuddy-compatibility-feedback/v1":
+        raise ValueError("WorkBuddy 人工兼容反馈格式不受支持")
+    if feedback.get("release_tag") != f"V{version}":
+        raise ValueError("WorkBuddy 人工兼容反馈版本不一致")
+    if feedback.get("collection_method") != "owner-collected":
+        raise ValueError("WorkBuddy 反馈必须明确标记为主人手动收集")
+    platforms = feedback.get("platforms")
+    if not isinstance(platforms, dict):
+        raise ValueError("WorkBuddy 人工兼容反馈缺少 platforms")
+    allowed = {"reported-pass", "reported-fail", "not-reported"}
+    for platform in ("macos", "windows"):
+        item = platforms.get(platform)
+        if not isinstance(item, dict) or item.get("status") not in allowed:
+            raise ValueError(f"{platform} 人工兼容反馈状态无效")
+        if item["status"] != "not-reported":
+            required = ("summary", "reported_at")
+            if any(not str(item.get(field) or "").strip() for field in required):
+                raise ValueError(f"{platform} 人工兼容反馈缺少摘要或时间")
+    return feedback
+
+
 def _install_file(source: Path, target: Path) -> None:
     if target.exists():
         if sha256(target) == sha256(source):
@@ -143,13 +166,22 @@ def publish(
     version: str,
     release_notes: str,
     host_evidence: Path | None = None,
+    compatibility_feedback: Path | None = None,
 ) -> dict[str, object]:
     validation = validate_packages(generic_package, workbuddy_package, version)
     evidence = validate_host_evidence(host_evidence, version) if host_evidence else None
+    feedback = (
+        validate_compatibility_feedback(compatibility_feedback, version)
+        if compatibility_feedback
+        else None
+    )
     generic_target = release_directory / f"企业全生命周期助手-V{version}.zip"
     workbuddy_target = release_directory / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
     evidence_target = (
         release_directory / f"企业全生命周期助手-V{version}-WorkBuddy-host-evidence.json"
+    )
+    feedback_target = release_directory / (
+        f"企业全生命周期助手-V{version}-WorkBuddy-compatibility-feedback.json"
     )
     release_directory.mkdir(parents=True, exist_ok=True)
 
@@ -171,6 +203,14 @@ def publish(
                         and validate_host_evidence(evidence_target, version) == evidence
                     )
                 )
+                and (
+                    compatibility_feedback is None
+                    or (
+                        feedback_target.is_file()
+                        and validate_compatibility_feedback(feedback_target, version)
+                        == feedback
+                    )
+                )
             ):
                 return {**validation, "release_id": int(existing["id"]), "status": "already-published"}
             raise RuntimeError(f"版本 {version} 已存在，但发布文件或哈希不一致")
@@ -184,6 +224,8 @@ def publish(
         _install_file(workbuddy_package, workbuddy_target)
         if host_evidence is not None:
             _install_file(host_evidence, evidence_target)
+        if compatibility_feedback is not None:
+            _install_file(compatibility_feedback, feedback_target)
         published_at = datetime.now(timezone.utc).isoformat()
         cursor = connection.execute(
             """
@@ -209,6 +251,9 @@ def publish(
         "generic_path": str(generic_target),
         "workbuddy_path": str(workbuddy_target),
         "host_evidence_path": str(evidence_target) if host_evidence else "",
+        "compatibility_feedback_path": (
+            str(feedback_target) if compatibility_feedback else ""
+        ),
     }
 
 
@@ -221,6 +266,7 @@ def main() -> None:
     parser.add_argument("--version", required=True)
     parser.add_argument("--release-notes-file", type=Path, required=True)
     parser.add_argument("--host-evidence", type=Path)
+    parser.add_argument("--compatibility-feedback", type=Path)
     arguments = parser.parse_args()
     result = publish(
         arguments.database,
@@ -230,6 +276,7 @@ def main() -> None:
         arguments.version,
         arguments.release_notes_file.read_text(encoding="utf-8"),
         arguments.host_evidence,
+        arguments.compatibility_feedback,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

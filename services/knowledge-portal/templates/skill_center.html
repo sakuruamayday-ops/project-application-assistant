@@ -76,7 +76,10 @@
         <article class="skill-platform-card is-{{ platform.id }}">
           <span class="skill-platform-mark">{{ '⌘' if platform.id == 'macos' else '⊞' }}</span>
           <div><span class="skill-card-index">WorkBuddy</span><h3>{{ platform.name }}</h3><p>{{ platform.detail }}。安装前展示来源、哈希、本机改动和撤销命令。</p></div>
-          <div class="skill-platform-status {{ 'is-verified' if platform.verified else 'is-pending' }}"><i></i>{{ platform.status_label }}</div>
+          <div class="skill-platform-status {{ 'is-verified' if platform.verified or platform.feedback_status == 'reported-pass' else 'is-pending' }}"><i></i>{{ platform.status_label }}</div>
+          {% if not platform.verified and platform.feedback_status != 'not-reported' %}
+          <div class="skill-host-proof"><p>{{ platform.feedback_summary }}</p><small>主人手动收集 · {{ platform.feedback_reported_at }}</small></div>
+          {% endif %}
           {% if platform.verified %}
           <div class="skill-host-proof">
           <dl class="skill-host-evidence">

@@ -17,9 +17,8 @@ assert.match(skillCenterTemplate, /<details class="skill-release-notes skill-cur
 assert.match(skillCenterTemplate, /latest_release\.workbuddy_platforms/, "下载区必须按 WorkBuddy 平台渲染");
 assert.match(skillCenterTemplate, /platform\.download_url/, "每个平台必须使用独立下载入口");
 assert.match(skillCenterTemplate, /内容和 SHA-256 相同/, "下载区必须解释跨平台共用签名包");
-assert.match(skillCenterTemplate, /platform\.job_url/, "实机证据必须链接对应 GitHub Job");
-assert.match(skillCenterTemplate, /platform\.attestation_url/, "实机证据必须链接 OIDC 签名证明");
-assert.match(skillCenterTemplate, /platform\.archive_sha256/, "实机证据必须展示发布包 SHA-256");
+assert.match(skillCenterTemplate, /platform\.feedback_status/, "下载区必须区分人工反馈状态");
+assert.match(skillCenterTemplate, /主人手动收集/, "人工反馈必须明确来源，不能冒充自动验证");
 const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
 const server = spawn(python, ["tests/browser_route_server.py"], {
   env: {
@@ -83,7 +82,7 @@ try {
   assert.equal(await page.locator(".skill-platform-card").count(), 3, "下载区必须呈现通用、macOS、Windows 三个入口");
   assert.equal(await page.locator(".skill-platform-card.is-macos").isVisible(), true);
   assert.equal(await page.locator(".skill-platform-card.is-windows").isVisible(), true);
-  assert.equal(await page.locator(".skill-platform-status.is-pending").count(), 2, "无双宿主证据时不得显示实机门禁通过");
+  assert.equal(await page.locator(".skill-platform-status.is-pending").count(), 2, "无人工反馈时不得显示兼容成功");
   if (process.env.SKILLS_QA_DOWNLOAD_SCREENSHOT) {
     await page.screenshot({path: process.env.SKILLS_QA_DOWNLOAD_SCREENSHOT, fullPage: true});
   }

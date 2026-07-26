@@ -1,3 +1,4 @@
+"""Archived test for the retired Runner release gate; intentionally disabled."""
 from __future__ import annotations
 
 import importlib.util

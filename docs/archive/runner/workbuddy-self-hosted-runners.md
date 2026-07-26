@@ -1,4 +1,4 @@
-# WorkBuddy 双宿主 Runner 运维要求
+# 已停用：WorkBuddy 双宿主 Runner 运维要求
 
 正式发布必须同时取得 macOS 与 Windows 的真实 WorkBuddy 安装证据。GitHub 仓库没有两台在线 Runner 时，受控发布命令会在创建预发布前失败，不会留下永久排队任务。
 

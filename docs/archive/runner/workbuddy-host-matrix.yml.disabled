@@ -1,4 +1,4 @@
-name: WorkBuddy real-host release gate
+name: ARCHIVED WorkBuddy real-host release gate
 
 on:
   workflow_dispatch:

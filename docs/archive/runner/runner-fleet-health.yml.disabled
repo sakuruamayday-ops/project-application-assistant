@@ -1,4 +1,4 @@
-name: WorkBuddy runner fleet health
+name: ARCHIVED WorkBuddy runner fleet health
 
 on:
   workflow_dispatch:

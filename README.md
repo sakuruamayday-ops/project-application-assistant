@@ -55,13 +55,13 @@
 
 ### 当前兼容状态
 
-| 宿主 | 包内安装器 | 安全与结构测试 | GitHub 长期实机门禁 |
+| 宿主 | 包内安装器 | 安全与结构测试 | 兼容反馈 |
 |---|---:|---:|---:|
-| macOS | ✅ | ✅ | Runner 已在线，待下一次发布产出签名证据 |
-| Windows | ✅ | ✅ | 待登记真实 Windows Runner |
+| macOS | ✅ | ✅ | 由维护者实际安装或收集团队用户反馈 |
+| Windows | ✅ | ✅ | 由主人手动收集用户反馈后登记 |
 | 其他 Agent | 通用 ZIP | ✅ | 按宿主导入能力验收 |
 
-没有对应真实宿主证据时，只能称为“安装器已包含”或“结构兼容”，不得称为实机验证通过。
+没有对应人工反馈时，只能称为“安装器已包含”或“结构兼容”。人工反馈会明确标注来源，不等同于 GitHub 自动验签证据。
 
 ## 安全边界
 
@@ -70,7 +70,7 @@
 - 安装前必须明确确认；不执行网页返回的动态命令。
 - WorkBuddy MCP 连接器随插件签名发布，不写入宿主级 MCP 配置。
 - 安装后执行真实 `marketplace add → install → enable → Skill 触发`，不把“已启用”冒充成功。
-- 双宿主证据由 GitHub OIDC 生成 Artifact Attestation；网站只展示签名验证通过的 Job、系统版本和 SHA-256。
+- WorkBuddy 兼容情况由主人手动收集团队用户反馈，登记时只保存系统版本、WorkBuddy 版本、结果摘要和时间，不采集设备密钥、账号或客户资料。
 - 客户密钥、账号登录态、签名私钥和付费数据库不进入仓库或发布包。
 
 ## 56 项 Skills
@@ -95,7 +95,7 @@
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
 | [V1.2 发布说明](docs/releases/V1.2.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
-| [双宿主 Runner 运维](docs/release/workbuddy-self-hosted-runners.md) | macOS/Windows 自托管 Runner 标签与常驻要求 |
+| [WorkBuddy 人工兼容反馈](docs/release/workbuddy-compatibility-feedback.md) | macOS/Windows 反馈口径、隐私边界与登记格式 |
 
 ## 开发与验证
 
@@ -120,12 +120,11 @@ python3 scripts/controlled_release.py \
   --release-notes docs/releases/V1.3.md
 ```
 
-只有预检确认版本完全一致、默认分支干净、macOS 与 Windows Runner 均在线空闲后，才允许追加 `--execute`。执行顺序固定为：
+只有预检确认版本完全一致、默认分支干净、签名包与发布门禁全部通过后，才允许追加 `--execute`。如果主人已经收集兼容反馈，可额外传入 `--compatibility-feedback`。执行顺序固定为：
 
 ```text
 GitHub 预发布
-  → macOS 与 Windows 真实 WorkBuddy 门禁
-  → 网站登记同一批文件与宿主证据
+  → 网站登记同一批文件与可选人工兼容反馈
   → GitHub 提升为正式 Latest
 ```
 

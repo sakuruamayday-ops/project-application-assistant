@@ -1,3 +1,4 @@
+"""Archived test for the retired Runner fleet checker; intentionally disabled."""
 from __future__ import annotations
 
 import importlib.util
