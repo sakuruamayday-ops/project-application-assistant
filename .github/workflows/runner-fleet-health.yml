@@ -2,18 +2,26 @@ name: WorkBuddy runner fleet health
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 * * * *"
 
 permissions:
   contents: read
 
 jobs:
   runner-health:
-    runs-on: [self-hosted, workbuddy, macos]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.RUNNER_MONITOR_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Require least-privilege runner monitor credential
+        shell: bash
+        run: |
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "::error::RUNNER_MONITOR_TOKEN is not configured. Use a fine-grained credential limited to this repository with Administration: Read."
+            exit 1
+          fi
 
       - name: Require one online macOS and Windows WorkBuddy runner
         shell: bash
