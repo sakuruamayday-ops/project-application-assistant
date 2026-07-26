@@ -14,8 +14,17 @@ const baseUrl = `http://127.0.0.1:${port}`;
 const dataDir = await mkdtemp(join(tmpdir(), "jiaotang-skills-ux-"));
 const skillCenterTemplate = await readFile(new URL("../templates/skill_center.html", import.meta.url), "utf8");
 assert.match(skillCenterTemplate, /<details class="skill-release-notes skill-current-release-notes">/, "当前版本发布说明必须使用默认折叠的 details");
-const server = spawn(".venv/bin/python", ["tests/browser_route_server.py"], {
-  env: {...process.env, JIAOTANG_BROWSER_TEST_DATA: dataDir, JIAOTANG_BROWSER_TEST_PORT: String(port)},
+assert.match(skillCenterTemplate, /latest_release\.workbuddy_platforms/, "下载区必须按 WorkBuddy 平台渲染");
+assert.match(skillCenterTemplate, /platform\.download_url/, "每个平台必须使用独立下载入口");
+assert.match(skillCenterTemplate, /内容和 SHA-256 相同/, "下载区必须解释跨平台共用签名包");
+const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
+const server = spawn(python, ["tests/browser_route_server.py"], {
+  env: {
+    ...process.env,
+    JIAOTANG_BROWSER_TEST_DATA: dataDir,
+    JIAOTANG_BROWSER_TEST_PORT: String(port),
+    JIAOTANG_BROWSER_TEST_SKILL_RELEASE_FIXTURE: "1",
+  },
   stdio: ["ignore", "pipe", "pipe"],
 });
 let serverLog = "";
@@ -68,6 +77,13 @@ try {
 
   await page.locator('[data-skill-section-tab="downloads"]').click();
   assert.equal(await page.locator('[data-skill-section-pane="downloads"]').isVisible(), true);
+  assert.equal(await page.locator(".skill-platform-card").count(), 3, "下载区必须呈现通用、macOS、Windows 三个入口");
+  assert.equal(await page.locator(".skill-platform-card.is-macos").isVisible(), true);
+  assert.equal(await page.locator(".skill-platform-card.is-windows").isVisible(), true);
+  assert.equal(await page.locator(".skill-platform-status.is-pending").count(), 2, "无双宿主证据时不得显示实机门禁通过");
+  if (process.env.SKILLS_QA_DOWNLOAD_SCREENSHOT) {
+    await page.screenshot({path: process.env.SKILLS_QA_DOWNLOAD_SCREENSHOT, fullPage: true});
+  }
   if (await page.locator(".skill-current-release-notes").count() === 0) {
     await page.locator(".skill-download-content").evaluate((container) => {
       container.insertAdjacentHTML("afterbegin", '<article class="skill-current-release"><span class="download-icon">ZIP</span><div><h3>回归测试版本</h3><small>发布时间 测试</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content"><p>用于验证展开时按钮不会拉伸。</p></div></details></div><div class="button-row"><a class="button" href="#test-download">下载通用 Skills 包</a><a class="button secondary" href="#test-workbuddy">下载 WorkBuddy 插件包</a></div></article>');

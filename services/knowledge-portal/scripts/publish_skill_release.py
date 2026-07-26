@@ -74,6 +74,22 @@ def validate_packages(generic: Path, workbuddy: Path, version: str) -> dict[str,
     }
 
 
+def validate_host_evidence(path: Path, version: str) -> dict[str, object]:
+    evidence = json.loads(path.read_text(encoding="utf-8"))
+    if evidence.get("schema") != "jiaotang-workbuddy-host-matrix/v1":
+        raise ValueError("双宿主证据格式不受支持")
+    if evidence.get("status") != "pass" or evidence.get("release_tag") != f"V{version}":
+        raise ValueError("双宿主证据状态或版本不一致")
+    hosts = evidence.get("hosts")
+    if not isinstance(hosts, dict):
+        raise ValueError("双宿主证据缺少 hosts")
+    for host in ("macos", "windows"):
+        item = hosts.get(host)
+        if not isinstance(item, dict) or item.get("status") != "pass":
+            raise ValueError(f"双宿主证据缺少成功的 {host} 实机任务")
+    return evidence
+
+
 def _install_file(source: Path, target: Path) -> None:
     if target.exists():
         if sha256(target) == sha256(source):
@@ -97,10 +113,15 @@ def publish(
     workbuddy_package: Path,
     version: str,
     release_notes: str,
+    host_evidence: Path | None = None,
 ) -> dict[str, object]:
     validation = validate_packages(generic_package, workbuddy_package, version)
+    evidence = validate_host_evidence(host_evidence, version) if host_evidence else None
     generic_target = release_directory / f"企业全生命周期助手-V{version}.zip"
     workbuddy_target = release_directory / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
+    evidence_target = (
+        release_directory / f"企业全生命周期助手-V{version}-WorkBuddy-host-evidence.json"
+    )
     release_directory.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(database_path) as connection:
@@ -114,6 +135,13 @@ def publish(
                 and Path(str(existing["file_path"])).is_file()
                 and workbuddy_target.is_file()
                 and sha256(workbuddy_target) == validation["workbuddy_sha256"]
+                and (
+                    host_evidence is None
+                    or (
+                        evidence_target.is_file()
+                        and validate_host_evidence(evidence_target, version) == evidence
+                    )
+                )
             ):
                 return {**validation, "release_id": int(existing["id"]), "status": "already-published"}
             raise RuntimeError(f"版本 {version} 已存在，但发布文件或哈希不一致")
@@ -125,6 +153,8 @@ def publish(
 
         _install_file(generic_package, generic_target)
         _install_file(workbuddy_package, workbuddy_target)
+        if host_evidence is not None:
+            _install_file(host_evidence, evidence_target)
         published_at = datetime.now(timezone.utc).isoformat()
         cursor = connection.execute(
             """
@@ -149,6 +179,7 @@ def publish(
         "database_backup": str(backup_path),
         "generic_path": str(generic_target),
         "workbuddy_path": str(workbuddy_target),
+        "host_evidence_path": str(evidence_target) if host_evidence else "",
     }
 
 
@@ -160,6 +191,7 @@ def main() -> None:
     parser.add_argument("--workbuddy-package", type=Path, required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--release-notes-file", type=Path, required=True)
+    parser.add_argument("--host-evidence", type=Path)
     arguments = parser.parse_args()
     result = publish(
         arguments.database,
@@ -168,6 +200,7 @@ def main() -> None:
         arguments.workbuddy_package,
         arguments.version,
         arguments.release_notes_file.read_text(encoding="utf-8"),
+        arguments.host_evidence,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

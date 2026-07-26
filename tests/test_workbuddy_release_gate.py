@@ -1,0 +1,37 @@
+from __future__ import annotations
+
+import importlib.util
+import zipfile
+from pathlib import Path
+
+import pytest
+
+
+SCRIPT = Path(__file__).parents[1] / "scripts" / "run_workbuddy_release_gate.py"
+SPEC = importlib.util.spec_from_file_location("workbuddy_release_gate", SCRIPT)
+MODULE = importlib.util.module_from_spec(SPEC)
+assert SPEC and SPEC.loader
+SPEC.loader.exec_module(MODULE)
+
+
+def test_safe_extract_rejects_traversal_and_duplicates(tmp_path: Path) -> None:
+    traversal = tmp_path / "traversal.zip"
+    with zipfile.ZipFile(traversal, "w") as archive:
+        archive.writestr("../escape.txt", "x")
+    with pytest.raises(RuntimeError, match="不安全"):
+        MODULE.safe_extract(traversal, tmp_path / "out")
+
+    duplicate = tmp_path / "duplicate.zip"
+    with zipfile.ZipFile(duplicate, "w") as archive:
+        archive.writestr("Same.txt", "a")
+        archive.writestr("same.txt", "b")
+    with pytest.raises(RuntimeError, match="不安全"):
+        MODULE.safe_extract(duplicate, tmp_path / "out-duplicate")
+
+
+def test_locate_marketplace_requires_one_root(tmp_path: Path) -> None:
+    root = tmp_path / "bundle"
+    manifest = root / "jiaotang/.codebuddy-plugin/marketplace.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("{}", encoding="utf-8")
+    assert MODULE.locate_marketplace(root) == root / "jiaotang"

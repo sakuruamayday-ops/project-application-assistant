@@ -3656,6 +3656,82 @@ def test_latest_skill_release_metadata_and_download(tmp_path):
         assert historical_download.content == b"historical-skill-package"
 
 
+def test_workbuddy_downloads_show_platforms_and_real_host_status(tmp_path):
+    module = load_app(tmp_path)
+    package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy.zip"
+    package.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
+        archive.writestr("jiaotang/install-jiaotang-workbuddy.command", "#!/bin/zsh\n")
+        archive.writestr("jiaotang/install-jiaotang-workbuddy.cmd", "@echo off\r\n")
+        archive.writestr("jiaotang/install-jiaotang-workbuddy.ps1", "exit 0\r\n")
+    generic = tmp_path / "generic.zip"
+    generic.write_bytes(b"generic")
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            (
+                "member",
+                module.password_hasher.hash("member-password-123"),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_releases(version,file_name,file_path,sha256,release_notes,published_at)
+            VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.2",
+                generic.name,
+                str(generic),
+                hashlib.sha256(generic.read_bytes()).hexdigest(),
+                "V1.2",
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        page = client.get("/skills")
+        assert "macOS" in page.text
+        assert "Windows" in page.text
+        assert "内容和 SHA-256 相同" in page.text
+        assert page.text.count("安装器已包含，实机门禁待完成") == 2
+        for platform_name in ("macos", "windows"):
+            download = client.get(
+                f"/skills/latest/workbuddy/{platform_name}/download"
+            )
+            assert download.status_code == 200
+            assert download.content == package.read_bytes()
+
+        evidence = module.SKILL_RELEASE_DIR / (
+            "企业全生命周期助手-V1.2-WorkBuddy-host-evidence.json"
+        )
+        evidence.write_text(
+            json.dumps(
+                {
+                    "schema": "jiaotang-workbuddy-host-matrix/v1",
+                    "status": "pass",
+                    "release_tag": "V1.2",
+                    "hosts": {
+                        "macos": {"status": "pass"},
+                        "windows": {"status": "pass"},
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        verified_page = client.get("/skills")
+        assert verified_page.text.count("实机门禁通过") == 2
+
+
 def test_release_announcement_appears_once_after_publish(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:

@@ -1,64 +1,158 @@
-# 企业全生命周期助手
+<p align="center">
+  <img src="skills/_runtime/jiaotang-branding/assets/brand-mark.png" alt="焦糖企业全生命周期助手" width="112">
+</p>
 
-面向政府项目申报工程师与知识产权顾问的56项 Skills。团队知识库通过统一 API 或 MCP 读取，模型、企业数据、专利数据、OCR、文档和联网能力由用户所在 Agent 提供或自行配置。
+<h1 align="center">企业全生命周期助手</h1>
 
-## 当前版本
+<p align="center">
+  面向政府项目申报工程师与知识产权顾问的专业 Agent 工作系统。<br>
+  把政策、企业、财务、知识产权与申报材料组织成可追溯、可复核的完整工作流。
+</p>
 
-当前稳定版本为 V1.2。规则和技能采用原创重构，不包含受限制的第三方文档技能、客户密钥、账号登录态或付费平台原始数据库。
+<p align="center">
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.2"><img src="https://img.shields.io/badge/Release-V1.2-C9A760?style=for-the-badge" alt="Release V1.2"></a>
+  <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-56-17181A?style=for-the-badge" alt="56 Skills"></a>
+  <a href="docs/releases/V1.2.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
+  <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
+</p>
 
-产品定位、后续演进范围和路线图见 [`docs/product/`](docs/product/README.md)。V1.2 的正式能力清单以 `skills/suite-manifest.json` 为准。
+---
 
-## 安装
+## 它解决什么问题
 
-1. 登录团队门户，在 Skills 管理中心打开“安装与设备”。
-2. 生成一次性安全安装计划并粘贴给本地 Agent；先审查来源、本机改动和撤销方式，再明确确认执行。
-3. 回到门户查看设备登记、凭据保存、签名验证和 MCP 首次连接结果。
+申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。企业全生命周期助手把这些要求编排成 56 项可复用 Skills，并通过统一入口自动路由。
 
-仍可在“版本与下载”中获取最新版 ZIP 并手工导入，但网页不会伪装成能够直接拉起所有 Agent 客户端。
-
-如果 Agent 不能直接识别 `SKILL.md`，请使用 Agent 提供的 Skill 导入或转换能力。完整步骤见 `docs/user-guide/企业全生命周期助手用户使用手册.md`。
-
-## 工作流程
+| 核心能力 | 能做什么 |
+|---|---|
+| 项目发现与评估 | 识别可申报项目、核对门槛、计算差距并形成申报优先级 |
+| 政策与证据 | 检索政策原文、记录来源与时效，区分事实、计算、推断和待核验项 |
+| 材料写作与体检 | 撰写、复核和对比申报材料，检查数据、产品、知识产权与叙事一致性 |
+| 企业与财税 | 形成企业画像、公开信息全景分析、财务复算与制造企业税务风险筛查 |
+| 专利全流程 | 覆盖检索、相似性、权利要求、FTO、挖掘布局、撰写辅导和提交前审查 |
+| 交付与治理 | 执行版本门禁、证据台账、四问复盘、受控进化和可回滚发布 |
 
 ```text
 用户提出任务
   → project-application-assistant 统一入口
-  → project-task-router 识别任务类型
-  → 专业 Skills 调用知识库、企业数据或专利数据
-  → evidence-ledger 记录事实、计算、推断与待核验项
-  → consistency-check 与专项门禁检查
-  → 输出报告、申报建议、材料或行动清单
+  → project-task-router 识别任务与阶段
+  → 专业 Skills 调用知识、企业或专利能力
+  → evidence-ledger 记录事实、计算、推断与缺口
+  → consistency-check 与专项门禁
+  → 输出报告、材料或行动清单
 ```
 
-团队知识库内容更新后，用户无需重新安装 Skills；只有规则、流程、能力或发布门禁变化时才发布新的 Skills 版本。
+## 下载与安装
 
-## 发布验证
+### 团队成员
 
-发布统一执行自动测试、检索金标准、REST API、MCP、下载包和备份六项门禁。维护者可运行：
+登录 [团队门户](https://zshjiaotang.cn/)，进入「Skills → 版本与下载」，按宿主选择安装包。安装与设备页面会生成透明的一次性接入计划，执行前完整展示来源、哈希、本机改动、凭据边界和撤销方式。
+
+### GitHub 下载
+
+| 使用环境 | 下载 | 安装入口 |
+|---|---|---|
+| 支持完整 Skills 目录的 Agent | [通用 Skills V1.2](https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/V1.2/jiaotang-skills-V1.2.zip) | 按宿主的 Skill 导入流程加载完整目录 |
+| WorkBuddy 5 或更高版本 | [WorkBuddy V1.2 跨平台签名包](https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/V1.2/jiaotang-skills-V1.2-WorkBuddy.zip) | macOS 运行 `.command`；Windows 运行 `.cmd`，再由固定 `.ps1` 安装 |
+
+> **为什么 WorkBuddy 只有一个 ZIP？**
+> macOS 与 Windows 使用同一份已签名插件内容、市场清单和 SHA-256。ZIP 内同时包含两个系统的固定安装器，拆成两份只会制造重复签名包和版本漂移。网站提供两个平台入口，但下载字节保持一致。
+
+### 当前兼容状态
+
+| 宿主 | 包内安装器 | 安全与结构测试 | GitHub 长期实机门禁 |
+|---|---:|---:|---:|
+| macOS | ✅ | ✅ | 待登记长期在线 Runner |
+| Windows | ✅ | ✅ | 待登记真实 Windows Runner |
+| 其他 Agent | 通用 ZIP | ✅ | 按宿主导入能力验收 |
+
+没有对应真实宿主证据时，只能称为“安装器已包含”或“结构兼容”，不得称为实机验证通过。
+
+## 安全边界
+
+- 发布包使用 Ed25519 签名，并记录逐文件 SHA-256。
+- 安装器拒绝路径穿越、绝对路径、符号链接、重复条目和哈希不一致。
+- 安装前必须明确确认；不执行网页返回的动态命令。
+- WorkBuddy MCP 连接器随插件签名发布，不写入宿主级 MCP 配置。
+- 安装后执行真实 `marketplace add → install → enable → Skill 触发`，不把“已启用”冒充成功。
+- 客户密钥、账号登录态、签名私钥和付费数据库不进入仓库或发布包。
+
+## 56 项 Skills
+
+正式技能、依赖关系、外部服务和发布门禁以 [`skills/suite-manifest.json`](skills/suite-manifest.json) 为唯一机器可读基线。
+
+主要能力组包括：
+
+- 企业画像、同行对标与项目成长路径
+- 政策检索、项目匹配、可行性分析与测分
+- 申报材料写作、版本对比、一致性检查与归档
+- 专精特新、小巨人、高新技术企业与三首项目
+- 专利检索、分析、FTO、布局、撰写和审查
+- 财务核验、制造企业税务风险、法律法规与标准
+- 证据台账、首次配置、偏好继承与受控进化
+
+## 文档导航
+
+| 文档 | 用途 |
+|---|---|
+| [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.md) | 下载、安装、首次配置和日常使用 |
+| [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
+| [V1.2 发布说明](docs/releases/V1.2.md) | 当前版本变更、兼容性和已知限制 |
+| [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
+| [双宿主 Runner 运维](docs/release/workbuddy-self-hosted-runners.md) | macOS/Windows 自托管 Runner 标签与常驻要求 |
+
+## 开发与验证
 
 ```bash
-PYTHONPATH=src:. uv run --with pytest --with pyyaml pytest -q tests
-python3 scripts/build_standard_package.py --version 1.2 --status stable
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
+cd services/knowledge-portal
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 ```
 
-技能数量、版本和调用关系统一从 `skills/suite-manifest.json` 动态生成，数量或依赖漂移会阻断发布。
+知识库内容更新不要求重新安装 Skills。只有规则、流程、能力或发布门禁发生变化时才创建新版本。
 
-## 配置边界
+### 单一受控发布命令
 
-- 团队知识服务通过首次配置向导统一连接。
-- 企业工商信息、专利数据和网页采集属于可选增强能力。
-- OCR、PDF、Word、Excel、PPT 和联网检索由用户所在宿主提供。
-- 成员可在本地维护地区政策规则，不允许直接写入团队云端知识库。
+受控命令只消费已经完成签名的候选包，不生成签名，也不会自动递增版本。先执行只读预检：
+
+```bash
+python3 scripts/controlled_release.py \
+  --version 1.3 \
+  --generic-package dist/企业全生命周期助手-V1.3.zip \
+  --workbuddy-package dist/企业全生命周期助手-V1.3-WorkBuddy.zip \
+  --gate-report dist/企业全生命周期助手-V1.3-发布门禁.json \
+  --release-notes docs/releases/V1.3.md
+```
+
+只有预检确认版本完全一致、默认分支干净、macOS 与 Windows Runner 均在线空闲后，才允许追加 `--execute`。执行顺序固定为：
+
+```text
+GitHub 预发布
+  → macOS 与 Windows 真实 WorkBuddy 门禁
+  → 网站登记同一批文件与宿主证据
+  → GitHub 提升为正式 Latest
+```
+
+任一步失败都会停止；网站不会提前登记，GitHub 预发布也不会提升为正式版。
+
+## 版本口径
+
+| 层级 | 当前值 | 说明 |
+|---|---|---|
+| 产品标签 | `V1.2` | 网站、GitHub Release 和用户可见版本 |
+| 语义版本 | `1.2.0` | 套件、插件和 Python 组件版本 |
+| 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
+| 历史版本 | `V1.0`、`V1.1` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
+
+GitHub 文件列表右侧显示的是“最后修改该路径的提交标题”，不是该目录的当前版本。
 
 ## 使用边界
 
-- 不承诺企业一定符合或项目一定获批。
-- 正式判断优先使用管理办法和当期官方申报通知。
-- 无可靠数据时不推算企业财务。
-- 不把审中专利视为授权成果。
-- 未命中只能表述为“当前检索层未命中”，不能据此判断资料不存在。
-- 外部提交、云端上传和技能核心替换需要用户确认。
+- 不承诺企业一定符合条件或项目一定获批。
+- 正式判断优先使用管理办法、当期通知和可核验企业资料。
+- 无可靠数据时不补造财务、客户、产能或知识产权状态。
+- 未命中只能表述为“当前检索层未命中”。
+- 外部提交、云端上传和技能签名核心替换必须获得明确授权。
 
 ## 许可证
 
-许可证待项目所有者在正式对外开源前确认。
+许可证尚待项目所有者确认。确认前不得把仓库或发布包表述为开源软件。

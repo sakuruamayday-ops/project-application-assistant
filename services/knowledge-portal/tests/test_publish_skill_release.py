@@ -33,6 +33,9 @@ def make_packages(root: Path) -> tuple[Path, Path]:
             json.dumps({"version": "1.2.0"}),
         )
         archive.writestr("jiaotang/plugins/plugin/skills/suite-manifest.json", json.dumps(suite))
+        archive.writestr("jiaotang/install-jiaotang-workbuddy.command", "#!/bin/zsh\n")
+        archive.writestr("jiaotang/install-jiaotang-workbuddy.cmd", "@echo off\r\n")
+        archive.writestr("jiaotang/install-jiaotang-workbuddy.ps1", "exit 0\r\n")
     return generic, workbuddy
 
 
@@ -78,3 +81,49 @@ def test_publish_rejects_version_mismatch(tmp_path: Path) -> None:
         assert "版本" in str(error)
     else:
         raise AssertionError("expected a version mismatch")
+
+
+def test_publish_requires_both_successful_hosts_when_evidence_is_supplied(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "portal.db"
+    release_dir = tmp_path / "releases"
+    generic, workbuddy = make_packages(tmp_path)
+    make_database(database)
+    evidence = tmp_path / "host-evidence.json"
+    evidence.write_text(
+        json.dumps(
+            {
+                "schema": "jiaotang-workbuddy-host-matrix/v1",
+                "status": "pass",
+                "release_tag": "V1.2",
+                "hosts": {
+                    "macos": {"status": "pass"},
+                    "windows": {"status": "pass"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = MODULE.publish(
+        database,
+        release_dir,
+        generic,
+        workbuddy,
+        "1.2",
+        "notes",
+        evidence,
+    )
+    assert result["status"] == "published"
+    assert Path(result["host_evidence_path"]).is_file()
+
+    payload = json.loads(evidence.read_text(encoding="utf-8"))
+    payload["hosts"]["windows"]["status"] = "pending"
+    evidence.write_text(json.dumps(payload), encoding="utf-8")
+    try:
+        MODULE.validate_host_evidence(evidence, "1.2")
+    except ValueError as error:
+        assert "windows" in str(error)
+    else:
+        raise AssertionError("expected missing Windows evidence to fail")
