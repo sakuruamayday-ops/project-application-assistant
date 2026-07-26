@@ -2,11 +2,20 @@ name: WorkBuddy real-host release gate
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing GitHub prerelease tag to verify
+        required: true
+        type: string
   release:
     types: [prereleased]
 
 permissions:
   contents: read
+
+concurrency:
+  group: workbuddy-real-host-${{ github.event.release.tag_name || inputs.release_tag }}
+  cancel-in-progress: false
 
 jobs:
   real-host:
@@ -22,59 +31,46 @@ jobs:
     timeout-minutes: 30
     env:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      GH_TOKEN: ${{ github.token }}
+      JIAOTANG_RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.release_tag }}
 
       - name: Verify release-host prerequisites
-        shell: pwsh
+        shell: python
         run: |
-          $ErrorActionPreference = "Stop"
-          python --version
-          if (-not (Test-Path "$HOME/.codex/skills/skill-release-manager/scripts/package_workbuddy_suite.py")) {
-            throw "Missing signed skill-release-manager on the real WorkBuddy host"
-          }
-          if (-not (Test-Path "$HOME/.codex/skill-signing/jiaotang-skill-release-ed25519")) {
-            throw "Missing protected release signing identity on the real WorkBuddy host"
-          }
-
-      - name: Verify connector mirror and website protocol
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $service = [IO.File]::ReadAllBytes("services/knowledge-portal/installers/jiaotang-agent.mjs")
-          $plugin = [IO.File]::ReadAllBytes("skills/_runtime/jiaotang-kb/jiaotang-agent.mjs")
-          if (-not [Linq.Enumerable]::SequenceEqual($service, $plugin)) {
-            throw "The website connector and signed plugin connector differ"
-          }
-          Push-Location services/knowledge-portal
-          try {
-            python -m pytest -q tests/test_portal.py::test_member_agent_bootstrap_device_signature_and_replacement
-          }
-          finally {
-            Pop-Location
-          }
+          import os
+          import platform
+          import shutil
+          expected = "${{ matrix.host }}"
+          actual = "macos" if platform.system() == "Darwin" else platform.system().lower()
+          if actual != expected:
+              raise SystemExit(f"Runner label says {expected}, actual OS is {actual}")
+          if not shutil.which("gh"):
+              raise SystemExit("GitHub CLI is required on the release host")
+          print({"host": actual, "python": platform.python_version(), "runner": os.environ.get("RUNNER_NAME", "")})
 
       - name: Run real marketplace add-install-enable-trigger gate
-        shell: pwsh
+        shell: python
         run: |
-          $ErrorActionPreference = "Stop"
-          New-Item -ItemType Directory -Force -Path "artifacts/workbuddy-${{ matrix.host }}" | Out-Null
-          python -m pytest -q tests/test_workbuddy_runtime_hardening.py --junitxml "artifacts/workbuddy-${{ matrix.host }}/junit.xml"
-
-      - name: Record host evidence
-        if: always()
-        shell: pwsh
-        run: |
-          $payload = [ordered]@{
-            schema = "jiaotang-workbuddy-host-evidence/v1"
-            host = "${{ matrix.host }}"
-            runner = "${{ runner.name }}"
-            os = "${{ runner.os }}"
-            arch = "${{ runner.arch }}"
-            commit = "${{ github.sha }}"
-            recorded_at = [DateTime]::UtcNow.ToString("o")
-          }
-          $payload | ConvertTo-Json | Set-Content -Encoding UTF8 "artifacts/workbuddy-${{ matrix.host }}/host.json"
+          import subprocess
+          subprocess.run(
+              [
+                  "python",
+                  "scripts/run_workbuddy_release_gate.py",
+                  "--release-tag",
+                  "${{ github.event.release.tag_name || inputs.release_tag }}",
+                  "--repository",
+                  "${{ github.repository }}",
+                  "--host",
+                  "${{ matrix.host }}",
+                  "--output-dir",
+                  "artifacts/workbuddy-${{ matrix.host }}",
+              ],
+              check=True,
+          )
 
       - uses: actions/upload-artifact@v4
         if: always()

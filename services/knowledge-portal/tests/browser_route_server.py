@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import os
+import sqlite3
 import sys
+import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import uvicorn
@@ -37,6 +41,34 @@ def main() -> None:
     from app import main as portal
 
     portal.init_database()
+    if os.environ.get("JIAOTANG_BROWSER_TEST_SKILL_RELEASE_FIXTURE") == "1":
+        release_dir = data_dir / "skill-releases"
+        release_dir.mkdir(parents=True, exist_ok=True)
+        generic = release_dir / "企业全生命周期助手-V1.2.zip"
+        generic.write_bytes(b"browser-release-fixture")
+        workbuddy = release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip"
+        with zipfile.ZipFile(workbuddy, "w") as archive:
+            archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
+            archive.writestr("jiaotang/install-jiaotang-workbuddy.command", "#!/bin/zsh\n")
+            archive.writestr("jiaotang/install-jiaotang-workbuddy.cmd", "@echo off\r\n")
+            archive.writestr("jiaotang/install-jiaotang-workbuddy.ps1", "exit 0\r\n")
+        with sqlite3.connect(data_dir / "knowledge.db") as connection:
+            connection.execute(
+                """
+                INSERT INTO skill_releases(
+                    version,file_name,file_path,sha256,release_notes,published_at
+                ) VALUES (?,?,?,?,?,?)
+                """,
+                (
+                    "1.2",
+                    generic.name,
+                    str(generic),
+                    hashlib.sha256(generic.read_bytes()).hexdigest(),
+                    "## 浏览器回归版本\n\n验证 macOS 与 Windows 下载呈现。",
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+            connection.commit()
     uvicorn.run(portal.app, host="127.0.0.1", port=int(os.environ["JIAOTANG_BROWSER_TEST_PORT"]))
 
 

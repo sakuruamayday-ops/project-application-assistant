@@ -7153,6 +7153,9 @@ def portal_payload(
                 "workbuddy_available": workbuddy_skill_package(
                     str(latest_release["version"])
                 ).is_file(),
+                "workbuddy_platforms": workbuddy_platforms(
+                    str(latest_release["version"])
+                ),
             }
             if latest_release
             else None
@@ -7178,6 +7181,7 @@ def portal_payload(
                 "published_at_display": format_chinese_datetime(row["published_at"]),
                 "release_notes_html": render_guide_markdown(str(row["release_notes"])),
                 "workbuddy_available": workbuddy_skill_package(str(row["version"])).is_file(),
+                "workbuddy_platforms": workbuddy_platforms(str(row["version"])),
             }
             for row in historical_release_rows
         ]
@@ -11789,6 +11793,29 @@ def web_download_latest_workbuddy_skills(
     )
 
 
+@app.get("/skills/latest/workbuddy/{platform_name}/download")
+def web_download_latest_workbuddy_platform(
+    platform_name: str,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    if platform_name not in {"macos", "windows"}:
+        raise HTTPException(status_code=404, detail="不支持的 WorkBuddy 平台")
+    release = latest_skill_release()
+    if release is None:
+        raise HTTPException(status_code=404, detail="尚未发布 Skills 版本")
+    version = str(release["version"])
+    platform = next(item for item in workbuddy_platforms(version) if item["id"] == platform_name)
+    if not platform["included"]:
+        raise HTTPException(status_code=404, detail=f"当前版本未包含 {platform['name']} 安装器")
+    package_path = workbuddy_skill_package(version)
+    return FileResponse(
+        package_path,
+        filename=f"企业全生命周期助手-V{version}-WorkBuddy-{platform['name']}.zip",
+        media_type="application/zip",
+    )
+
+
 @app.get("/skills/releases/{release_id}/download")
 def web_download_historical_skills(
     release_id: int,
@@ -12229,6 +12256,66 @@ def latest_skill_release() -> sqlite3.Row | None:
 
 def workbuddy_skill_package(version: str) -> Path:
     return SKILL_RELEASE_DIR / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
+
+
+def workbuddy_host_evidence(version: str) -> dict[str, object]:
+    path = SKILL_RELEASE_DIR / (
+        f"企业全生命周期助手-V{version}-WorkBuddy-host-evidence.json"
+    )
+    payload = read_json_object(path)
+    if (
+        payload.get("schema") != "jiaotang-workbuddy-host-matrix/v1"
+        or payload.get("status") != "pass"
+        or payload.get("release_tag") != f"V{version}"
+    ):
+        return {}
+    return payload
+
+
+def workbuddy_platforms(version: str) -> list[dict[str, object]]:
+    package_path = workbuddy_skill_package(version)
+    names: set[str] = set()
+    if package_path.is_file():
+        try:
+            with zipfile.ZipFile(package_path) as archive:
+                names = set(archive.namelist())
+        except zipfile.BadZipFile:
+            names = set()
+    evidence = workbuddy_host_evidence(version)
+    hosts = evidence.get("hosts") if isinstance(evidence.get("hosts"), dict) else {}
+    definitions = [
+        {
+            "id": "macos",
+            "name": "macOS",
+            "launcher": "install-jiaotang-workbuddy.command",
+            "detail": "运行签名包内的 .command 安装器",
+        },
+        {
+            "id": "windows",
+            "name": "Windows",
+            "launcher": "install-jiaotang-workbuddy.cmd",
+            "detail": "运行 .cmd，由固定 PowerShell 脚本完成安装",
+        },
+    ]
+    result = []
+    for definition in definitions:
+        host = definition["id"]
+        included = any(name.endswith(f"/{definition['launcher']}") for name in names)
+        host_evidence = hosts.get(host) if isinstance(hosts, dict) else None
+        verified = (
+            isinstance(host_evidence, dict)
+            and host_evidence.get("status") == "pass"
+        )
+        result.append(
+            {
+                **definition,
+                "included": included,
+                "verified": verified,
+                "status_label": "实机门禁通过" if verified else "安装器已包含，实机门禁待完成",
+                "download_url": f"/skills/latest/workbuddy/{host}/download",
+            }
+        )
+    return result
 
 
 @app.get("/v1/skills/latest", response_model=SkillLatestResponse)
