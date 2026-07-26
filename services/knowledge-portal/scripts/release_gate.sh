@@ -4,6 +4,21 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 service_dir="$(cd "${script_dir}/.." && pwd)"
 root_dir="$(cd "${service_dir}/../.." && pwd)"
+canonical_deploy_root="$(git -C "${root_dir}" config --local --get jiaotang.deployWorktree 2>/dev/null || true)"
+if [[ -n "${canonical_deploy_root}" ]]; then
+  canonical_deploy_root="$(cd "${canonical_deploy_root}" && pwd -P)"
+  current_root="$(cd "${root_dir}" && pwd -P)"
+  if [[ "${current_root}" != "${canonical_deploy_root}" ]]; then
+    echo "六项发布门禁只能从唯一正式工作树执行：${canonical_deploy_root}" >&2
+    exit 76
+  fi
+fi
+if git -C "${root_dir}" show-ref --verify --quiet refs/remotes/origin/main; then
+  if ! git -C "${root_dir}" merge-base --is-ancestor origin/main HEAD; then
+    echo "六项发布门禁阻断：当前工作树尚未合入最新 origin/main。" >&2
+    exit 77
+  fi
+fi
 endpoint="${JIAOTANG_KB_ENDPOINT:?请设置 JIAOTANG_KB_ENDPOINT}"
 token="${JIAOTANG_KB_TOKEN:?请设置 JIAOTANG_KB_TOKEN}"
 device_id="${JIAOTANG_KB_DEVICE_ID:?请设置 JIAOTANG_KB_DEVICE_ID}"
@@ -90,6 +105,25 @@ fi
   cd "${service_dir}"
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests -q
 )
+node_bin="${JIAOTANG_NODE_BIN:-$(command -v node || true)}"
+node_modules="${JIAOTANG_NODE_MODULES:-}"
+if [[ -z "${node_modules}" ]]; then
+  bundled_node_root="${HOME}/.cache/codex-runtimes/codex-primary-runtime/dependencies/node"
+  if [[ -d "${bundled_node_root}/node_modules" ]]; then
+    node_modules="${bundled_node_root}/node_modules"
+    if [[ -x "${bundled_node_root}/bin/node" ]]; then
+      node_bin="${bundled_node_root}/bin/node"
+    fi
+  fi
+fi
+if [[ -z "${node_bin}" || -z "${node_modules}" ]]; then
+  echo "缺少 Node.js 或 Playwright 依赖，无法执行 Skills 浏览器视觉门禁" >&2
+  exit 1
+fi
+(
+  cd "${service_dir}"
+  NODE_PATH="${node_modules}" "${node_bin}" tests/skills_center_ux_regression.mjs
+)
 
 echo "[2/6] 高频项目检索金标准"
 (
@@ -99,6 +133,10 @@ echo "[2/6] 高频项目检索金标准"
 )
 
 echo "[3/6] REST API"
+ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
+  "set -e; source /etc/jiaotang-kb.env; \
+  /opt/jiaotang-kb/.venv/bin/python /opt/jiaotang-kb/scripts/verify_authenticated_portal.py \
+  --base-url http://127.0.0.1:8100"
 if [[ "${remote_online_gate}" = "true" ]]; then
   {
     printf 'export JIAOTANG_KB_ENDPOINT=%q\n' "${endpoint}"

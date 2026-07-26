@@ -1,4 +1,3 @@
-import base64
 import hashlib
 import importlib
 import io
@@ -8,7 +7,6 @@ import re
 import sqlite3
 import subprocess
 import time
-import urllib.parse
 import uuid
 import zipfile
 from contextlib import closing
@@ -522,8 +520,19 @@ def test_personal_preferences_api_sync_history_undo_and_reset(tmp_path):
         assert "恢复官方默认" in page.text
 
 
-def test_oauth_discovery_pkce_refresh_and_revoke(tmp_path):
+def test_oauth_routes_and_tables_are_removed(tmp_path):
     module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        for table_name in (
+            "oauth_clients",
+            "oauth_authorization_codes",
+            "oauth_access_tokens",
+            "oauth_refresh_tokens",
+        ):
+            connection.execute(f"CREATE TABLE {table_name}(id INTEGER PRIMARY KEY)")
+            connection.execute(f"INSERT INTO {table_name}(id) VALUES (1)")
+        connection.commit()
+    module.init_database()
     with TestClient(module.app) as client:
         client.post(
             "/setup",
@@ -535,156 +544,35 @@ def test_oauth_discovery_pkce_refresh_and_revoke(tmp_path):
             follow_redirects=False,
         )
         client.cookies.update(login.cookies)
-        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
-
-        protected = client.get("/.well-known/oauth-protected-resource")
-        assert protected.status_code == 200
-        assert protected.json()["resource"] == "https://testserver/mcp/"
-        assert protected.json()["authorization_servers"] == ["https://testserver"]
-        metadata = client.get("/.well-known/oauth-authorization-server")
-        assert metadata.status_code == 200
-        assert metadata.json()["registration_endpoint"] == "https://testserver/oauth/register"
-        assert metadata.json()["code_challenge_methods_supported"] == ["S256"]
-
-        registration = client.post(
-            "/oauth/register",
-            json={
-                "client_name": "测试MCP客户端",
-                "redirect_uris": ["https://client.example/callback"],
-                "grant_types": ["authorization_code", "refresh_token"],
-                "response_types": ["code"],
-                "token_endpoint_auth_method": "none",
-            },
+        removed_paths = (
+            "/.well-known/oauth-protected-resource",
+            "/.well-known/oauth-authorization-server",
+            "/authorize",
         )
-        assert registration.status_code == 201
-        client_id = registration.json()["client_id"]
-        verifier = "oauth-test-verifier-abcdefghijklmnopqrstuvwxyz0123456789"
-        challenge = base64.urlsafe_b64encode(
-            hashlib.sha256(verifier.encode()).digest()
-        ).decode().rstrip("=")
-        authorize_params = {
-            "response_type": "code",
-            "client_id": client_id,
-            "redirect_uri": "https://client.example/callback",
-            "code_challenge": challenge,
-            "code_challenge_method": "S256",
-            "scope": "knowledge:read mcp:tools",
-            "state": "test-state",
-            "resource": "https://testserver/mcp/",
-        }
-        consent = client.get("/authorize", params=authorize_params)
-        assert consent.status_code == 200
-        assert "测试MCP客户端" in consent.text
-        assert "读取团队知识库" in consent.text
-
-        approval = client.post(
-            "/oauth/authorize",
-            data={
-                **authorize_params,
-                "csrf_token": user["csrf_token"],
-                "decision": "approve",
-            },
-            follow_redirects=False,
-        )
-        assert approval.status_code == 303
-        approval_query = urllib.parse.parse_qs(urllib.parse.urlparse(approval.headers["location"]).query)
-        assert approval_query["state"] == ["test-state"]
-        code = approval_query["code"][0]
-
-        exchange = client.post(
-            "/oauth/token",
-            data={
-                "grant_type": "authorization_code",
-                "client_id": client_id,
-                "code": code,
-                "redirect_uri": "https://client.example/callback",
-                "code_verifier": verifier,
-                "resource": "https://testserver/mcp/",
-            },
-        )
-        assert exchange.status_code == 200
-        access_token = exchange.json()["access_token"]
-        refresh_token = exchange.json()["refresh_token"]
-        oauth_headers = {"Authorization": f"Bearer {access_token}"}
-        me = client.get("/v1/me", headers=oauth_headers)
-        assert me.status_code == 200
-        assert me.json()["username"] == "owner"
-        search = client.post(
-            "/v1/search",
-            headers=oauth_headers,
-            json={"query": "小巨人", "limit": 3},
-        )
-        assert search.status_code == 200
-        assert search.json()["results"]
-
-        refreshed = client.post(
-            "/oauth/token",
-            data={
-                "grant_type": "refresh_token",
-                "client_id": client_id,
-                "refresh_token": refresh_token,
-                "resource": "https://testserver/mcp/",
-            },
-        )
-        assert refreshed.status_code == 200
-        assert refreshed.json()["refresh_token"] != refresh_token
-        reused = client.post(
-            "/oauth/token",
-            data={
-                "grant_type": "refresh_token",
-                "client_id": client_id,
-                "refresh_token": refresh_token,
-            },
-        )
-        assert reused.status_code == 400
-        assert reused.json()["error"] == "invalid_grant"
-
-        revoked_access = refreshed.json()["access_token"]
-        assert client.get(
-            "/v1/me", headers={"Authorization": f"Bearer {revoked_access}"}
-        ).status_code == 200
+        for path in removed_paths:
+            assert client.get(path).status_code == 404
+        for path in ("/oauth/register", "/oauth/authorize", "/oauth/token", "/oauth/revoke"):
+            assert client.post(path).status_code == 404
         with closing(module.database()) as connection:
-            oauth_usage = connection.execute(
-                """
-                SELECT endpoint,auth_method,oauth_client_id
-                FROM api_usage
-                WHERE auth_method='oauth'
-                ORDER BY id
-                """
-            ).fetchall()
-        assert [row["endpoint"] for row in oauth_usage] == ["/v1/me", "/v1/search", "/v1/me"]
-        assert all(row["oauth_client_id"] == client_id for row in oauth_usage)
+            tables = {
+                str(row["name"])
+                for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()
+            }
+        assert not {
+            "oauth_clients",
+            "oauth_authorization_codes",
+            "oauth_access_tokens",
+            "oauth_refresh_tokens",
+        } & tables
+        access_page = client.get("/access")
+        assert access_page.status_code == 200
+        assert "已授权 OAuth 客户端" not in access_page.text
         access_health = client.get("/admin/health/access")
         assert access_health.status_code == 200
-        assert "OAuth授权与调用" in access_health.text
-        assert "测试MCP客户端" in access_health.text
-        assert "累计OAuth调用" in access_health.text
-        oauth_calls = client.get("/admin/health/calls?activity=oauth")
-        assert oauth_calls.status_code == 200
-        assert "OAuth调用明细" in oauth_calls.text
-        assert "认证方式" in oauth_calls.text
-        assert "测试MCP客户端" in oauth_calls.text
-        revoke = client.post(
-            "/oauth/revoke", data={"token": access_token, "client_id": client_id}
-        )
-        assert revoke.status_code == 200
-        denied = client.get(
-            "/v1/me", headers={"Authorization": f"Bearer {access_token}"}
-        )
-        assert denied.status_code == 401
-        assert "resource_metadata" in denied.headers["www-authenticate"]
-        connections = client.get("/access")
-        assert "测试MCP客户端" in connections.text
-        assert "撤销授权" in connections.text
-        web_revoke = client.post(
-            f"/oauth/connections/{client_id}/revoke",
-            data={"csrf_token": user["csrf_token"]},
-            follow_redirects=False,
-        )
-        assert web_revoke.status_code == 303
-        assert client.get(
-            "/v1/me", headers={"Authorization": f"Bearer {revoked_access}"}
-        ).status_code == 401
+        assert "OAuth授权与调用" not in access_health.text
+        assert "累计OAuth调用" not in access_health.text
 
 
 def test_directory_storage_size_ignores_inaccessible_path(tmp_path, monkeypatch):

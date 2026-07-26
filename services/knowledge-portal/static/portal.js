@@ -602,7 +602,10 @@ if (skillCenter) {
   const sectionTabs = [...skillCenter.querySelectorAll("[data-skill-section-tab]")];
   const sectionPanes = [...skillCenter.querySelectorAll("[data-skill-section-pane]")];
   const resultCount = skillCenter.querySelector("[data-skill-result-count]");
+  const currentGroup = skillCenter.querySelector("[data-skill-current-group]");
   const emptyState = skillCenter.querySelector("[data-skill-empty]");
+  const catalogShell = skillCenter.querySelector(".skill-catalog-shell");
+  const backToList = skillCenter.querySelector("[data-skill-back-to-list]");
   const dialog = skillCenter.querySelector("[data-skill-dialog]");
   const loading = dialog?.querySelector("[data-skill-detail-loading]");
   const content = dialog?.querySelector("[data-skill-detail-content]");
@@ -650,6 +653,10 @@ if (skillCenter) {
       if (!row.hidden) visible += 1;
     });
     resultCount.textContent = `${visible} / ${rows.length}`;
+    const activeGroupButton = groupButtons.find((button) => button.dataset.skillGroup === activeGroup);
+    if (currentGroup && activeGroupButton) {
+      currentGroup.textContent = activeGroupButton.dataset.skillGroupLabel || activeGroupButton.textContent.trim();
+    }
     emptyState.hidden = visible !== 0;
   };
 
@@ -666,7 +673,10 @@ if (skillCenter) {
     selectFilter(groupButtons, button);
     applySkillFilters();
     if (groupRail) {
-      button.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"});
+      const railRect = groupRail.getBoundingClientRect();
+      const buttonRect = button.getBoundingClientRect();
+      const centeredOffset = buttonRect.left - railRect.left - (groupRail.clientWidth - buttonRect.width) / 2;
+      groupRail.scrollBy({left: centeredOffset, behavior: "smooth"});
     }
   }));
   statusButtons.forEach((button) => button.addEventListener("click", () => {
@@ -675,6 +685,12 @@ if (skillCenter) {
     applySkillFilters();
   }));
   search?.addEventListener("input", applySkillFilters);
+  backToList?.addEventListener("click", () => {
+    const tabsHeight = skillCenter.querySelector(".skill-section-tabs")?.getBoundingClientRect().height || 0;
+    const tabsTop = Number.parseFloat(getComputedStyle(skillCenter).getPropertyValue("--skill-tabs-top")) || 0;
+    const targetTop = window.scrollY + catalogShell.getBoundingClientRect().top - tabsTop - tabsHeight - 8;
+    window.scrollTo({top: Math.max(0, targetTop), behavior: "smooth"});
+  });
   window.addEventListener("keydown", (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();

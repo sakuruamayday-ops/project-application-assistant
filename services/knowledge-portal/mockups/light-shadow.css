@@ -175,10 +175,6 @@ button{font:inherit;cursor:pointer}
 .secret button{padding:5px 11px;border:1px solid var(--line2);border-radius:999px;
   color:var(--muted);background:transparent;font-size:11px}
 .secret .cp{color:var(--teal);border-color:rgba(110,231,216,.4)}
-.oauth-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:12px 0;border-bottom:1px solid var(--line)}
-.oauth-row strong{display:block;font-size:13px}
-.oauth-row small{display:block;margin-top:3px;color:var(--dim);font-size:10px}
 .danger{padding:5px 11px;border:1px solid rgba(240,120,120,.35);border-radius:999px;
   color:#f09090;background:transparent;font-size:11px}
 .danger:hover{background:rgba(240,120,120,.08)}

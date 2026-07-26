@@ -15,46 +15,36 @@
   </nav>
 
   <div class="skill-section-pane is-active" data-skill-section-pane="catalog" role="tabpanel">
-    <div class="skill-group-switcher">
-      <div class="skill-switcher-label"><strong>能力切换</strong><small>按专业工作流浏览</small></div>
-      <div class="skill-group-rail" data-skill-group-rail aria-label="技能分类">
-        <button class="skill-group-button is-active" type="button" data-skill-group="all" aria-pressed="true"><span class="skill-group-icon">全</span><span><strong>全部</strong><small>跨领域汇总</small></span><b>{{ skill_center.summary.total }}</b></button>
-        {% for group in skill_center.groups %}<button class="skill-group-button" type="button" data-skill-group="{{ group.name }}" aria-pressed="false"><span class="skill-group-icon">{{ loop.index|string }}</span><span><strong>{{ group.label }}</strong><small>{{ group.count }} 个技能</small></span><b>{{ group.count }}</b></button>{% endfor %}
+    <div class="skill-catalog-shell">
+      <div class="skill-group-switcher">
+        <div class="skill-switcher-label"><strong>技能目录</strong><small>按专业工作流浏览</small></div>
+        <div class="skill-group-rail" data-skill-group-rail aria-label="技能分类">
+          <button class="skill-group-button is-active" type="button" data-skill-group="all" data-skill-group-label="全部技能" aria-pressed="true"><span class="skill-group-icon">全</span><span><strong>全部</strong><small>跨领域汇总</small></span><b>{{ skill_center.summary.total }}</b></button>
+          {% for group in skill_center.groups %}<button class="skill-group-button" type="button" data-skill-group="{{ group.name }}" data-skill-group-label="{{ group.label }}" aria-pressed="false"><span class="skill-group-icon">{{ loop.index|string }}</span><span><strong>{{ group.label }}</strong><small>{{ group.count }} 个技能</small></span><b>{{ group.count }}</b></button>{% endfor %}
+        </div>
+      </div>
+      <div class="skill-catalog-controls">
+        <div class="skill-list-heading"><div><span class="skill-kicker">正式发布清单</span><h3>技能清单 <em data-skill-current-group aria-live="polite">全部技能</em></h3></div><span data-skill-result-count aria-live="polite">{{ skill_center.summary.total }} / {{ skill_center.summary.total }}</span></div>
+        <div class="skill-filter-bar">
+          <label class="skill-search"><span>⌕</span><input type="search" data-skill-search placeholder="搜索名称、描述或分类…" autocomplete="off"><kbd>⌘ K</kbd></label>
+          <div class="skill-status-filters" aria-label="按签名状态筛选"><button class="is-active" type="button" data-skill-status="all" aria-pressed="true">全部</button><button type="button" data-skill-status="verified" aria-pressed="false">已验证</button><button type="button" data-skill-status="pending" aria-pressed="false">待签名</button></div>
+        </div>
+      </div>
+
+      <div class="skill-catalog-table" role="table" aria-label="技能目录">
+        <div class="skill-table-head" role="row"><span role="columnheader">技能 / 描述</span><span role="columnheader">专业分类</span><span role="columnheader">状态</span><span role="columnheader">最近变化</span><span></span></div>
+        {% for skill in skill_center.skills %}<button class="skill-row" type="button" role="row" data-skill-row data-skill-open="{{ skill.name }}" data-skill-group-value="{{ skill.group }}" data-skill-status-value="{{ skill.status }}" data-skill-search-value="{{ skill.name }} {{ skill.title }} {{ skill.description }} {{ skill.group_label }}">
+          <span class="skill-row-main" role="cell"><span class="skill-row-index">{{ '%02d'|format(loop.index) }}</span><span><strong>{{ skill.title }}</strong><code>{{ skill.name }}</code><small>{{ skill.description }}</small></span></span>
+          <span class="skill-row-group" role="cell"><i>{{ skill.group_label[:1] }}</i>{{ skill.group_label }}</span>
+          <span role="cell"><em class="skill-status is-{{ skill.status }}"><i></i>{{ skill.status_label }}</em></span>
+          <span class="skill-row-date" role="cell">{{ skill.updated_display }}</span>
+          <span class="skill-row-action" role="cell">查看 <b>→</b></span>
+        </button>{% endfor %}
+        <div class="skill-empty-state" data-skill-empty hidden>没有符合当前筛选条件的技能。</div>
       </div>
     </div>
-
-    <div class="skill-hero">
-      <div><span class="skill-kicker">团队 Skills 管理中心</span><h2>专业能力，<br>可信可查<span>。</span></h2><p>统一查看企业项目、政策证据、专利、交付与治理能力。技能内容来自正式发布清单，所有团队成员均可检索和查阅。</p></div>
-      <div class="skill-coverage" aria-label="{{ skill_center.summary.coverage_percent }}% 的技能已完成签名验证">
-        <svg viewBox="0 0 120 120" role="img" aria-hidden="true"><circle class="skill-ring-track" cx="60" cy="60" r="48" pathLength="100"></circle><circle class="skill-ring-value" cx="60" cy="60" r="48" pathLength="100" stroke-dasharray="{{ skill_center.summary.coverage_percent }} {{ 100 - skill_center.summary.coverage_percent }}"></circle></svg>
-        <div><strong>{{ skill_center.summary.coverage_percent }}<small>%</small></strong><span>签名覆盖率</span></div>
-        <p>{{ skill_center.summary.pending }} 项待补签，不影响内容查阅</p>
-      </div>
-    </div>
-
-    <div class="skill-metrics" aria-label="技能目录统计">
-      <article class="is-dark"><span>技能总数</span><strong>{{ skill_center.summary.total }}</strong><small>{{ skill_center.summary.group_count }} 个专业能力组</small></article>
-      <article><span>已验证</span><strong>{{ skill_center.summary.verified }}</strong><small>内容指纹与签名齐备</small></article>
-      <article><span>待签名</span><strong>{{ skill_center.summary.pending }}</strong><small>仍可查看正式内容</small></article>
-      <article><span>发布版本</span><strong>{{ skill_center.release_tag }}</strong><small>来自正式发布清单</small></article>
-    </div>
-
-    <div class="skill-list-heading"><div><span class="skill-kicker">技能清单</span><h3>全部正式技能</h3></div><span data-skill-result-count aria-live="polite">{{ skill_center.summary.total }} / {{ skill_center.summary.total }}</span></div>
-    <div class="skill-filter-bar">
-      <label class="skill-search"><span>⌕</span><input type="search" data-skill-search placeholder="搜索名称、描述或分类…" autocomplete="off"><kbd>⌘ K</kbd></label>
-      <div class="skill-status-filters" aria-label="按签名状态筛选"><button class="is-active" type="button" data-skill-status="all" aria-pressed="true">全部</button><button type="button" data-skill-status="verified" aria-pressed="false">已验证</button><button type="button" data-skill-status="pending" aria-pressed="false">待签名</button></div>
-    </div>
-
-    <div class="skill-catalog-table" role="table" aria-label="技能目录">
-      <div class="skill-table-head" role="row"><span role="columnheader">技能 / 描述</span><span role="columnheader">专业分类</span><span role="columnheader">状态</span><span role="columnheader">最近变化</span><span></span></div>
-      {% for skill in skill_center.skills %}<button class="skill-row" type="button" role="row" data-skill-row data-skill-open="{{ skill.name }}" data-skill-group-value="{{ skill.group }}" data-skill-status-value="{{ skill.status }}" data-skill-search-value="{{ skill.name }} {{ skill.title }} {{ skill.description }} {{ skill.group_label }}">
-        <span class="skill-row-main" role="cell"><span class="skill-row-index">{{ '%02d'|format(loop.index) }}</span><span><strong>{{ skill.title }}</strong><code>{{ skill.name }}</code><small>{{ skill.description }}</small></span></span>
-        <span class="skill-row-group" role="cell"><i>{{ skill.group_label[:1] }}</i>{{ skill.group_label }}</span>
-        <span role="cell"><em class="skill-status is-{{ skill.status }}"><i></i>{{ skill.status_label }}</em></span>
-        <span class="skill-row-date" role="cell">{{ skill.updated_display }}</span>
-        <span class="skill-row-action" role="cell">查看 <b>→</b></span>
-      </button>{% endfor %}
-      <div class="skill-empty-state" data-skill-empty hidden>没有符合当前筛选条件的技能。</div>
+    <div class="skill-catalog-footer">
+      <button class="skill-back-to-list" type="button" data-skill-back-to-list aria-label="返回技能清单顶部"><span>↑</span>返回清单顶部</button>
     </div>
   </div>
 

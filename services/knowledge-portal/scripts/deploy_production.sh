@@ -4,6 +4,32 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 service_dir="$(cd "${script_dir}/.." && pwd)"
 repository_dir="$(cd "${service_dir}/../.." && pwd)"
+if [[ "${JIAOTANG_DEPLOY_LOCK_HELD:-false}" != "true" ]]; then
+    exec python3 "${script_dir}/with_deployment_lock.py" \
+        --lock-file "${JIAOTANG_DEPLOY_LOCK_FILE:-${HOME}/.cache/jiaotang/deploy-production.lock}" \
+        -- "$0" "$@"
+fi
+
+canonical_deploy_root="$(git -C "${repository_dir}" config --local --get jiaotang.deployWorktree 2>/dev/null || true)"
+if [[ -n "${canonical_deploy_root}" && "${JIAOTANG_ALLOW_NONCANONICAL_DEPLOY:-false}" != "true" ]]; then
+    canonical_deploy_root="$(cd "${canonical_deploy_root}" && pwd -P)"
+    current_deploy_root="$(cd "${repository_dir}" && pwd -P)"
+    if [[ "${current_deploy_root}" != "${canonical_deploy_root}" ]]; then
+        echo "拒绝从非正式工作树部署生产环境。" >&2
+        echo "正式部署源：${canonical_deploy_root}" >&2
+        echo "当前工作树：${current_deploy_root}" >&2
+        exit 76
+    fi
+fi
+
+if git -C "${repository_dir}" show-ref --verify --quiet refs/remotes/origin/main; then
+    if ! git -C "${repository_dir}" merge-base --is-ancestor origin/main HEAD; then
+        echo "拒绝部署：当前正式工作树尚未合入最新 origin/main。" >&2
+        echo "请先完成主线合并与冲突验收，再重新执行唯一正式部署。" >&2
+        exit 77
+    fi
+fi
+
 deploy_host="${JIAOTANG_DEPLOY_HOST:?请设置 JIAOTANG_DEPLOY_HOST，例如 root@server.example.com}"
 deploy_key="${JIAOTANG_DEPLOY_KEY:-${HOME}/.ssh/jiaotang_kb_aliyun}"
 remote_app_dir="${JIAOTANG_REMOTE_APP_DIR:-/opt/jiaotang-kb}"
@@ -80,6 +106,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py scripts/refresh_index_from_oss.py \
     scripts/deploy_index_delta_to_server.sh \
     scripts/verify_oss_mirror.py \
+    scripts/verify_authenticated_portal.py \
     scripts/verify_skill_signature_coverage.py \
     scripts/build_policy_version_links.py \
     scripts/upgrade_structured_knowledge_index.py \
@@ -157,7 +184,9 @@ PY
             --database "\${JIAOTANG_DATA_DIR}/knowledge.db" \
             --release-dir "\${JIAOTANG_SKILL_RELEASE_DIR}"
         systemctl start jiaotang-kb-health.service
-        systemctl start --no-block jiaotang-kb-backup.service" || deployment_failed=1
+        systemctl start --no-block jiaotang-kb-backup.service
+        '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/verify_authenticated_portal.py' \
+            --base-url http://127.0.0.1:8100" || deployment_failed=1
 fi
 
 if [[ "${deployment_failed}" -ne 0 ]]; then
