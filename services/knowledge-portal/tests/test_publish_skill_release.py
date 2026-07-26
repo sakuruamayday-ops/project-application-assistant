@@ -19,7 +19,7 @@ def make_packages(root: Path) -> tuple[Path, Path]:
     workbuddy = root / "workbuddy.zip"
     suite = {
         "release": {"tag": "V1.2", "version": "1.2.0"},
-        "skills": [f"skill-{index}" for index in range(56)],
+        "skills": [f"skill-{index}" for index in range(48)],
     }
     with zipfile.ZipFile(generic, "w") as archive:
         archive.writestr("bundle/skills/suite-manifest.json", json.dumps(suite))
@@ -64,6 +64,7 @@ def test_publish_is_validated_and_idempotent(tmp_path: Path) -> None:
 
     result = MODULE.publish(database, release_dir, generic, workbuddy, "1.2", "notes")
     assert result["status"] == "published"
+    assert result["skill_count"] == 48
     assert (release_dir / "企业全生命周期助手-V1.2.zip").is_file()
     assert (release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip").is_file()
 

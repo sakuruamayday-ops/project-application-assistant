@@ -54,8 +54,13 @@ def validate_packages(generic: Path, workbuddy: Path, version: str) -> dict[str,
         if release.get("tag") != release_tag or release.get("version") != semantic_version:
             raise ValueError("通用包版本与发布版本不一致")
         skills = suite.get("skills")
-        if not isinstance(skills, list) or len(skills) != 56:
-            raise ValueError("通用包必须完整包含 56 个技能")
+        if (
+            not isinstance(skills, list)
+            or not skills
+            or not all(isinstance(name, str) and name.strip() for name in skills)
+            or len(set(skills)) != len(skills)
+        ):
+            raise ValueError("通用包技能清单必须为非空、无重复的字符串数组")
     with zipfile.ZipFile(workbuddy) as archive:
         marketplace = _single_json(archive, "/.codebuddy-plugin/marketplace.json")
         plugin = _single_json(archive, "/.codebuddy-plugin/plugin.json")
@@ -67,8 +72,12 @@ def validate_packages(generic: Path, workbuddy: Path, version: str) -> dict[str,
         release = suite.get("release")
         if not isinstance(release, dict) or release.get("tag") != release_tag:
             raise ValueError("WorkBuddy 技能清单与发布版本不一致")
+        workbuddy_skills = suite.get("skills")
+        if workbuddy_skills != skills:
+            raise ValueError("WorkBuddy 与通用包的技能清单不一致")
     return {
         "version": version,
+        "skill_count": len(skills),
         "generic_sha256": sha256(generic),
         "workbuddy_sha256": sha256(workbuddy),
     }
