@@ -249,7 +249,16 @@ python3 "${script_dir}/upload_manifest_to_oss.py" \
   --allowlist "${index_dir}/upload_allowlist.csv" \
   --object-layout sha256 \
   --workers "${JIAOTANG_OSS_VERIFY_WORKERS:-8}" \
-  --verify-only \
+  --verify-only
+
+echo "[发布2/5] 生成OSS孤立对象完整待确认名单"
+orphan_audit_dir="${JIAOTANG_OSS_ORPHAN_AUDIT_ROOT:-/Users/zsh/JiaotangData/索引/audits/oss-orphans}/$(date '+%Y%m%d-%H%M%S')"
+python3 "${script_dir}/audit_oss_orphans.py" \
+  --manifest "${manifest}" \
+  --allowlist "${index_dir}/upload_allowlist.csv" \
+  --manifest-history-dir "${index_dir}" \
+  --cleanup-audit-root "${JIAOTANG_INDEX_ROOT:-/Users/zsh/JiaotangData/索引}/audits" \
+  --output-dir "${orphan_audit_dir}" \
   --require-no-orphans
 
 echo "[发布3/5] 复核冻结集合未变化且对象二次校验已经通过"

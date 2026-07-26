@@ -10,7 +10,6 @@
 - 登录密码使用 Argon2 哈希保存。
 - Session 和用户凭据仅保存 SHA-256 哈希；普通成员的明文 Token 只返回给本地安装代理，不在门户显示。
 - 普通成员使用 Ed25519 逐请求签名，云端保存公钥和 nonce；私钥在 macOS 系统钥匙串或 Windows 当前用户 DPAPI 中保存。
-- OAuth使用Authorization Code、PKCE S256、1小时访问令牌和轮换刷新令牌。
 - 登录账号使用英文；生成 API Token 时填写中文真实姓名，公司全称用于团队成员身份验证。
 - 登录时可选择七天自动登录，未选择时沿用短会话时长。
 - OSS、SSH、数据库密码和阿里云 AccessKey 不进入 Skills。
@@ -46,15 +45,6 @@ export JIAOTANG_SECURE_COOKIES=false
 10. 管理员可在“成员管理”查看安装阶段和最近结果；若安装说明未读到，门户显示“未收到结果”。
 
 本流程支持 WorkBuddy 的 macOS 与 Windows 宿主。其他本地 Agent 不再使用网站动态安装命令；需要接入时必须采用该宿主原生、可审查并签名的扩展机制。
-
-OAuth 发现端点仍保留给管理员和兼容客户端：
-
-- `/.well-known/oauth-protected-resource`
-- `/.well-known/oauth-authorization-server`
-- `/oauth/register`
-- `/authorize`
-- `/oauth/token`
-- `/oauth/revoke`
 
 管理员可在门户生成管理员 API Key：
 
@@ -122,7 +112,7 @@ curl -L -H "Authorization: Bearer $JIAOTANG_KB_TOKEN" \
 | `/v1/usage` | `GET` | 查询当前账号的调用总量、接口分布和最近记录 |
 | `/v1/skills/latest` | `GET` | 获取最新版 Skills 的版本、哈希、说明和下载地址 |
 
-所有 `/v1` 接口接受 OAuth 短期访问令牌或 `Authorization: Bearer jtk_xxx` API Key。普通成员还必须通过已登记的 Ed25519 公钥逐请求签名；管理员豁免设备签名。原始资料与运行索引的上传边界见项目根目录 `docs/cloud-upload-scope.md`。
+所有 `/v1` 接口接受网站生成的 `Authorization: Bearer jtk_xxx` API Key。普通成员还必须通过已登记的 Ed25519 公钥逐请求签名；管理员豁免设备签名。原始资料与运行索引的上传边界见项目根目录 `docs/cloud-upload-scope.md`。
 
 ## 知识库索引
 

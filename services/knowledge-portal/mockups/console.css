@@ -166,10 +166,6 @@ button{font:inherit;cursor:pointer}
 .secret button{padding:5px 10px;border:1px solid var(--line2);border-radius:6px;
   color:var(--muted);background:transparent;font-size:11px}
 .secret .cp{color:var(--blue);border-color:rgba(79,124,255,.4)}
-.oauth-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:11px 0;border-bottom:1px solid var(--line)}
-.oauth-row strong{display:block;font-size:13px}
-.oauth-row small{display:block;margin-top:3px;color:var(--dim);font:10px var(--mono)}
 .danger{padding:5px 10px;border:1px solid rgba(248,113,113,.35);border-radius:6px;
   color:var(--red);background:transparent;font-size:11px}
 .danger:hover{background:rgba(248,113,113,.1)}
