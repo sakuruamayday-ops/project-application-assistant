@@ -72,7 +72,6 @@ def validate_inputs(
     workbuddy: Path,
     gate_report: Path,
     notes: Path,
-    compatibility_feedback: Path | None = None,
 ) -> dict[str, object]:
     short, semantic, tag = normalize_version(version)
     manifest = json.loads(
@@ -98,11 +97,6 @@ def validate_inputs(
         raise RuntimeError("本地发布门禁报告未全部通过")
     publisher = load_portal_publisher(root)
     package_validation = publisher.validate_packages(generic, workbuddy, short)
-    feedback = (
-        publisher.validate_compatibility_feedback(compatibility_feedback, short)
-        if compatibility_feedback
-        else None
-    )
     return {
         "short_version": short,
         "semantic_version": semantic,
@@ -111,7 +105,6 @@ def validate_inputs(
         "generic_sha256": package_validation["generic_sha256"],
         "workbuddy_sha256": package_validation["workbuddy_sha256"],
         "gate_sha256": sha256(gate_report),
-        "compatibility_feedback": feedback,
     }
 
 
@@ -141,7 +134,6 @@ def prepare_ascii_assets(
     generic: Path,
     workbuddy: Path,
     gate_report: Path,
-    compatibility_feedback: Path | None = None,
 ) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
     sources = [generic, workbuddy, gate_report]
@@ -150,11 +142,6 @@ def prepare_ascii_assets(
         directory / f"jiaotang-skills-{tag}-WorkBuddy.zip",
         directory / f"jiaotang-skills-{tag}-release-gate.json",
     ]
-    if compatibility_feedback:
-        sources.append(compatibility_feedback)
-        targets.append(
-            directory / f"jiaotang-skills-{tag}-compatibility-feedback.json"
-        )
     for source, target in zip(sources, targets, strict=True):
         shutil.copy2(source, target)
     return targets
@@ -199,7 +186,6 @@ def publish_portal(
     generic: Path,
     workbuddy: Path,
     notes: Path,
-    compatibility_feedback: Path | None = None,
 ) -> None:
     deploy_host = os.environ.get("JIAOTANG_DEPLOY_HOST")
     deploy_key = os.environ.get("JIAOTANG_DEPLOY_KEY")
@@ -208,9 +194,6 @@ def publish_portal(
     remote_stage = f"/tmp/jiaotang-release-{version}-{int(time.time())}"
     ssh = ["ssh", "-i", deploy_key, "-o", "IdentitiesOnly=yes", deploy_host]
     run([*ssh, f"install -d -m 0700 '{remote_stage}'"])
-    uploads = [generic, workbuddy, notes]
-    if compatibility_feedback:
-        uploads.append(compatibility_feedback)
     run(
         [
             "scp",
@@ -218,7 +201,9 @@ def publish_portal(
             deploy_key,
             "-o",
             "IdentitiesOnly=yes",
-            *(str(path) for path in uploads),
+            str(generic),
+            str(workbuddy),
+            str(notes),
             f"{deploy_host}:{remote_stage}/",
         ]
     )
@@ -233,27 +218,18 @@ def publish_portal(
         f"--version {shlex.quote(version)} "
         f"--release-notes-file {shlex.quote(f'{remote_stage}/{notes.name}')}"
     )
-    if compatibility_feedback:
-        remote_command += (
-            " --compatibility-feedback "
-            + shlex.quote(f"{remote_stage}/{compatibility_feedback.name}")
-        )
     run([*ssh, remote_command])
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description=(
-            "受控发布：版本与包校验 → GitHub 预发布 → 网站登记 → 正式版；"
-            "兼容反馈由主人收集后按需登记"
-        )
+        description="受控发布：版本与包校验 → GitHub 预发布 → 网站登记 → 正式版"
     )
     parser.add_argument("--version", required=True)
     parser.add_argument("--generic-package", type=Path, required=True)
     parser.add_argument("--workbuddy-package", type=Path, required=True)
     parser.add_argument("--gate-report", type=Path, required=True)
     parser.add_argument("--release-notes", type=Path, required=True)
-    parser.add_argument("--compatibility-feedback", type=Path)
     parser.add_argument(
         "--repository",
         default="sakuruamayday-ops/project-application-assistant",
@@ -264,11 +240,6 @@ def main() -> None:
         help="未提供时只执行只读预检，不创建预发布或修改网站",
     )
     arguments = parser.parse_args()
-    feedback_path = (
-        arguments.compatibility_feedback.resolve()
-        if arguments.compatibility_feedback
-        else None
-    )
     validation = validate_inputs(
         ROOT,
         arguments.version,
@@ -276,16 +247,12 @@ def main() -> None:
         arguments.workbuddy_package.resolve(),
         arguments.gate_report.resolve(),
         arguments.release_notes.resolve(),
-        feedback_path,
     )
     commit = validate_clean_default_branch(arguments.repository)
     preflight = {
         "status": "preflight-pass",
         "release": validation,
         "commit": commit,
-        "compatibility_evidence": (
-            "owner-collected-feedback" if feedback_path else "not-provided"
-        ),
     }
     if not arguments.execute:
         print(json.dumps(preflight, ensure_ascii=False, indent=2))
@@ -300,7 +267,6 @@ def main() -> None:
             arguments.generic_package.resolve(),
             arguments.workbuddy_package.resolve(),
             arguments.gate_report.resolve(),
-            feedback_path,
         )
         release_url = create_prerelease(
             arguments.repository,
@@ -314,7 +280,6 @@ def main() -> None:
             arguments.generic_package.resolve(),
             arguments.workbuddy_package.resolve(),
             arguments.release_notes.resolve(),
-            feedback_path,
         )
         run(
             [

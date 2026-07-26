@@ -53,15 +53,9 @@
 > **为什么 WorkBuddy 只有一个 ZIP？**
 > macOS 与 Windows 使用同一份已签名插件内容、市场清单和 SHA-256。ZIP 内同时包含两个系统的固定安装器，拆成两份只会制造重复签名包和版本漂移。网站提供两个平台入口，但下载字节保持一致。
 
-### 当前兼容状态
+### WorkBuddy 平台说明
 
-| 宿主 | 包内安装器 | 安全与结构测试 | 兼容反馈 |
-|---|---:|---:|---:|
-| macOS | ✅ | ✅ | 由维护者实际安装或收集团队用户反馈 |
-| Windows | ✅ | ✅ | 由主人手动收集用户反馈后登记 |
-| 其他 Agent | 通用 ZIP | ✅ | 按宿主导入能力验收 |
-
-没有对应人工反馈时，只能称为“安装器已包含”或“结构兼容”。人工反馈会明确标注来源，不等同于 GitHub 自动验签证据。
+WorkBuddy 包内同时提供 macOS 与 Windows 固定安装器，不再维护平台确认、兼容反馈或 Runner 证明状态。用户遇到需要适配的问题时，由维护者按具体环境单独处理。
 
 ## 安全边界
 
@@ -70,7 +64,6 @@
 - 安装前必须明确确认；不执行网页返回的动态命令。
 - WorkBuddy MCP 连接器随插件签名发布，不写入宿主级 MCP 配置。
 - 安装后执行真实 `marketplace add → install → enable → Skill 触发`，不把“已启用”冒充成功。
-- WorkBuddy 兼容情况由主人手动收集团队用户反馈，登记时只保存系统版本、WorkBuddy 版本、结果摘要和时间，不采集设备密钥、账号或客户资料。
 - 客户密钥、账号登录态、签名私钥和付费数据库不进入仓库或发布包。
 
 ## 56 项 Skills
@@ -95,7 +88,6 @@
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
 | [V1.2 发布说明](docs/releases/V1.2.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
-| [WorkBuddy 人工兼容反馈](docs/release/workbuddy-compatibility-feedback.md) | macOS/Windows 反馈口径、隐私边界与登记格式 |
 
 ## 开发与验证
 
@@ -120,11 +112,11 @@ python3 scripts/controlled_release.py \
   --release-notes docs/releases/V1.3.md
 ```
 
-只有预检确认版本完全一致、默认分支干净、签名包与发布门禁全部通过后，才允许追加 `--execute`。如果主人已经收集兼容反馈，可额外传入 `--compatibility-feedback`。执行顺序固定为：
+只有预检确认版本完全一致、默认分支干净、签名包与发布门禁全部通过后，才允许追加 `--execute`。执行顺序固定为：
 
 ```text
 GitHub 预发布
-  → 网站登记同一批文件与可选人工兼容反馈
+  → 网站登记同一批文件
   → GitHub 提升为正式 Latest
 ```
 
@@ -151,4 +143,12 @@ GitHub 文件列表右侧显示的是“最后修改该路径的提交标题”�
 
 ## 许可证
 
-本项目采用[专有许可](LICENSE)：源码可见，但未经著作权人事先书面许可，不得用于客户交付、咨询服务、SaaS、产品集成、付费培训或其他直接、间接商业用途。公开仓库、Fork、下载或 Pull Request 均不构成商业授权。
+本项目采用[专有许可](LICENSE)：源码可见，但未经著作权人事先书面许可，不得用于客户交付、咨询服务、SaaS、产品集成、付费培训或其他直接、间接商业用途。公开仓库、Fork、下载或 Pull Request 均不构成商业授权。商业合作请通过下方联系方式联系。
+
+## 联系与商业合作
+
+微信：扫描二维码添加，添加时请备注合作事项。
+
+<img src="docs/assets/contact/wechat-qr.jpg" alt="微信二维码，人生海海" width="280">
+
+QQ：`138500227` · [点击唤起 QQ 聊天](https://wpa.qq.com/msgrd?v=3&uin=138500227&site=qq&menu=yes)
