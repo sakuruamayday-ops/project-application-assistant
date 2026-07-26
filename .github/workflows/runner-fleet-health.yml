@@ -6,30 +6,31 @@ on:
     - cron: "17 * * * *"
 
 permissions:
-  actions: read
   contents: read
 
 jobs:
   runner-health:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, workbuddy, macos]
     timeout-minutes: 5
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Require one online macOS and Windows WorkBuddy runner
-        shell: python
+        shell: python3
         run: |
           import json
           import os
           import subprocess
 
           repository = os.environ["GITHUB_REPOSITORY"]
+          environment = os.environ.copy()
+          environment.pop("GH_TOKEN", None)
+          environment.pop("GITHUB_TOKEN", None)
           payload = json.loads(
               subprocess.run(
                   ["gh", "api", f"repos/{repository}/actions/runners"],
                   check=True,
                   capture_output=True,
                   text=True,
+                  env=environment,
               ).stdout
           )
           required = {

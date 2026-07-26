@@ -26,7 +26,7 @@
 - 不在 Runner 保存技能签名私钥；实机只验证 GitHub 预发布中的已签名成品。
 - 不复制或上传 WorkBuddy 登录凭据。门禁只上传安装日志和不含密钥的宿主证据。
 - Runner 使用专用操作系统账号，不承载客户资料。
-- 每小时由 `.github/workflows/runner-fleet-health.yml` 在 GitHub 托管 Runner 上检查双宿主在线状态；缺少任一宿主时门禁失败并保留 Actions 记录。
+- 每小时由 `.github/workflows/runner-fleet-health.yml` 在已受控的 macOS Runner 上使用本机 GitHub 登录态检查双宿主在线状态；缺少任一宿主时门禁失败并保留 Actions 记录。不得为了读取 Runner 列表把高权限个人令牌复制到 GitHub Secret。
 
 ## 登记与常驻
 
