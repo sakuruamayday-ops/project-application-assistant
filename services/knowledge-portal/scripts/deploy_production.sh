@@ -125,6 +125,7 @@ if [[ "${deployment_failed}" -eq 0 ]]; then
     ssh "${ssh_args[@]}" "${deploy_host}" "set -e
         systemctl stop jiaotang-kb-health.timer jiaotang-kb-backup.timer jiaotang-kb-oss-sync.timer jiaotang-kb-oss-sync.path 2>/dev/null || true
         REMOTE_APP_DIR='${remote_app_dir}' METADATA_QUARANTINE='/opt/jiaotang-kb-quarantine/macos-metadata-${timestamp}' python3 - <<'PY'
+import json
 import os
 from pathlib import Path
 
@@ -135,6 +136,19 @@ for path in sorted(root.rglob('*')):
         target = quarantine / path.relative_to(root)
         target.parent.mkdir(parents=True, exist_ok=True)
         path.replace(target)
+
+skills_root = root / 'skills'
+suite = json.loads((skills_root / 'suite-manifest.json').read_text(encoding='utf-8'))
+declared = set(suite['skills'])
+undeclared_quarantine = quarantine.parent / 'undeclared-skills-${timestamp}'
+for skill_dir in sorted(skills_root.iterdir()):
+    if (
+        skill_dir.is_dir()
+        and (skill_dir / 'SKILL.md').is_file()
+        and skill_dir.name not in declared
+    ):
+        undeclared_quarantine.mkdir(parents=True, exist_ok=True)
+        skill_dir.replace(undeclared_quarantine / skill_dir.name)
 PY
         install -m 0755 '${remote_app_dir}/deploy/healthcheck.sh' '/usr/local/sbin/jiaotang-kb-healthcheck.${timestamp}'
         install -m 0755 '${remote_app_dir}/deploy/backup.sh' '/usr/local/sbin/jiaotang-kb-backup.${timestamp}'
