@@ -234,10 +234,50 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         self.assertIn("插件内含签名jiaotang-kb连接器", script)
         self.assertIn("Read-Host", script)
         self.assertIn("plugin marketplace remove", script)
+        self.assertIn(
+            '$_.PSObject.Properties["InstallLocation"]',
+            script,
+        )
+        explicit_cli_check = script.index(
+            "foreach ($candidate in @($CodeBuddyCli, $env:CODEBUDDY_CLI))"
+        )
+        registry_discovery = script.index(
+            "foreach ($base in Get-WorkBuddyInstallLocations)"
+        )
+        self.assertLess(explicit_cli_check, registry_discovery)
+        self.assertIn(
+            "return (Resolve-Path -LiteralPath $candidate).Path",
+            script[explicit_cli_check:registry_discovery],
+        )
+        self.assertIn("${SmokeSkill}并", script)
+        self.assertIn("${SmokeSkill}。", script)
+        self.assertIn("${SmokeToken}；", script)
+        self.assertNotRegex(
+            script,
+            r"\$[A-Za-z_][A-Za-z0-9_:{}()]*"
+            r"[\u3000-\u303f\u3400-\u9fff\uff00-\uffef]",
+        )
         self.assertNotIn("Invoke-Expression", script)
         self.assertNotIn("ExecutionPolicy Bypass", script)
         self.assertNotIn("-ExecutionPolicy", launcher)
         self.assertIn("-NoProfile -File", launcher)
+
+    def test_windows_installer_is_written_with_utf8_bom_for_powershell_51(self):
+        script = SUITE_PACKAGER.windows_installer_script(
+            archive_name="suite.zip",
+            marketplace_name="jiaotang-test",
+            plugin_name="jiaotang-test-skills",
+            release_version="1.2.3",
+            smoke_skill="enterprise-profile",
+            expected_archive_sha256="a" * 64,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            installer = Path(directory) / "install.ps1"
+            SUITE_PACKAGER.write_windows_installer(installer, script)
+            content = installer.read_bytes()
+
+        self.assertTrue(content.startswith(b"\xef\xbb\xbf"))
+        self.assertEqual(content[3:].decode("utf-8"), script)
 
     def test_signed_plugin_embeds_mcp_connector_and_sensitive_bootstrap(self):
         with tempfile.TemporaryDirectory() as directory:
