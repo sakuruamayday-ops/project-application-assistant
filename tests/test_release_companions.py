@@ -126,3 +126,45 @@ def test_generated_word_manual_is_byte_deterministic(tmp_path: Path) -> None:
     assert MODULE.sha256(Path(first["manual"])) == MODULE.sha256(
         Path(second["manual"])
     )
+
+
+def test_companion_is_path_independent(tmp_path: Path, monkeypatch) -> None:
+    root = fixture_root(tmp_path)
+
+    def fake_branding(path: Path) -> dict:
+        return {
+            "status": "passed",
+            "artifacts": [{"format": "docx", "path": str(path)}],
+        }
+
+    def fake_render(path: Path, output_dir: Path) -> dict:
+        return {
+            "status": "pass",
+            "page_count": 1,
+            "pdf_sha256": str(output_dir),
+            "pages": [{"file": "page-1.png", "sha256": "stable"}],
+        }
+
+    monkeypatch.setattr(MODULE, "apply_branding", fake_branding)
+    monkeypatch.setattr(MODULE, "render_qa", fake_render)
+    first = MODULE.generate(
+        root,
+        tmp_path / "first",
+        apply_brand=True,
+        render=True,
+    )
+    second = MODULE.generate(
+        root,
+        tmp_path / "second",
+        apply_brand=True,
+        render=True,
+    )
+
+    assert MODULE.sha256(Path(first["companion"])) == MODULE.sha256(
+        Path(second["companion"])
+    )
+    payload = json.loads(Path(first["companion"]).read_text(encoding="utf-8"))
+    assert payload["manual"]["branding_audit"]["artifacts"][0]["path"] == (
+        "manual-V2.0.1.docx"
+    )
+    assert "pdf_sha256" not in payload["manual"]["render_audit"]
