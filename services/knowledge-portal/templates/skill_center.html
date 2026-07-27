@@ -117,9 +117,31 @@
         <p>当前账号已有通过服务器验收的本地 Agent。需要更换电脑时，请先在“API 与用户”撤销原设备，再生成新计划。</p>
         <a class="button" href="/access">查看已连接设备</a>
         {% else %}
-        <p>计划会公开安装器来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法；只有你明确同意后，Agent 才能执行。</p>
-        <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制安装指令</span><small>一次性 · 60 分钟有效</small></button>
-        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到本地 Agent，对照计划完成审查与确认。</p>
+        <p>第一步只公开安装器来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法，不包含引导地址；只有你回到本页明确同意后，Agent 才能执行。</p>
+        <div class="agent-install-actions">
+          <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制审查说明</span><small>第一步 · 仅审查</small></button>
+          <button class="button secondary" type="button" data-toggle-manual-agent-config aria-expanded="false">手工配置</button>
+        </div>
+        <button class="button agent-confirm-install" type="button" data-confirm-agent-bootstrap hidden><span>我已审查，复制安装确认</span><small>第二步 · 明确授权</small></button>
+        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">先把审查说明粘贴到本地 Agent，核对无误后再回到本页确认安装。</p>
+        <section class="manual-agent-config" data-manual-agent-config hidden>
+          <h4>手工配置 WorkBuddy</h4>
+          <ol>
+            <li>下载门户为当前设备选择的签名 WorkBuddy 插件包。</li>
+            <li>核对页面公布的 SHA-256 与包内 Ed25519 签名。</li>
+            <li>运行包内固定 macOS 或 Windows 安装器并启用插件。</li>
+            <li>将一次性引导地址填入插件敏感配置项 <code>bootstrap_url</code>。</li>
+          </ol>
+          <div class="endpoint-list">
+            <div><span>插件包</span><code>当前平台签名 WorkBuddy ZIP</code><a class="button secondary" href="/skills" data-manual-package-download>下载</a></div>
+            <div><span>MCP 服务名</span><code>jiaotang-kb</code><button type="button" data-copy-value="jiaotang-kb">复制</button></div>
+            <div><span>敏感配置键</span><code>bootstrap_url</code><button type="button" data-copy-value="bootstrap_url">复制</button></div>
+            <div data-manual-bootstrap-row hidden><span>一次性引导地址</span><code data-manual-bootstrap-value>确认审查后生成</code><button type="button" data-copy-manual-bootstrap>复制</button></div>
+            <div data-manual-package-hash-row hidden><span>插件包 SHA-256</span><code data-manual-package-hash></code><button type="button" data-copy-manual-package-hash>复制</button></div>
+          </div>
+          <button class="button" type="button" data-confirm-manual-agent-bootstrap hidden>我已审查，生成手工配置</button>
+          <p>引导地址属于一次性敏感配置，只在当前页面确认后显示；不要写入 settings.json 或发送给他人。</p>
+        </section>
         {% endif %}
       </article>
       <article class="skill-install-status" data-agent-install-status>

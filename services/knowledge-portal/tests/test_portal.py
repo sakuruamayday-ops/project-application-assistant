@@ -3141,6 +3141,236 @@ def test_admin_can_open_member_details_and_restore_soft_deleted_records(tmp_path
         assert restored_authorization["deleted_at"] is None
 
 
+def test_admin_can_search_registration_authorizations(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)",
+            ("owner", "管理员", module.password_hasher.hash("owner-password-123"), now),
+        )
+        member_id = connection.execute(
+            """
+            INSERT INTO users(username, real_name, password_hash, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            ("lisi", "李四", module.password_hasher.hash("member-password-123"), now),
+        ).lastrowid
+        connection.executemany(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,user_id,status,created_at,registered_at,revoked_at
+            ) VALUES (?,?,?,?,?,?,?)
+            """,
+            [
+                ("张三", "1234", None, "pending", now, None, None),
+                ("李四", "5678", member_id, "registered", now, now, None),
+                ("王五", "9999", None, "revoked", now, None, now),
+            ],
+        )
+        authorization_ids = {
+            row["real_name"]: row["id"]
+            for row in connection.execute(
+                "SELECT id,real_name FROM registration_authorizations"
+            ).fetchall()
+        }
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        by_name = client.get("/admin/members", params={"invite_query": "张三"})
+        assert by_name.status_code == 200
+        assert f'/admin/registration-authorizations/{authorization_ids["张三"]}' in by_name.text
+        assert f'/admin/registration-authorizations/{authorization_ids["李四"]}' not in by_name.text
+        assert re.search(r"筛选\s*1\s*/\s*\d+\s*人", by_name.text)
+
+        by_tail = client.get("/admin/members", params={"invite_query": "5678"})
+        assert f'/admin/registration-authorizations/{authorization_ids["李四"]}' in by_tail.text
+        assert f'/admin/registration-authorizations/{authorization_ids["张三"]}' not in by_tail.text
+
+        by_username = client.get("/admin/members", params={"invite_query": "lisi"})
+        assert f'/admin/registration-authorizations/{authorization_ids["李四"]}' in by_username.text
+        assert f'/admin/registration-authorizations/{authorization_ids["王五"]}' not in by_username.text
+
+        by_status = client.get("/admin/members", params={"invite_query": "已撤销"})
+        assert f'/admin/registration-authorizations/{authorization_ids["王五"]}' in by_status.text
+        assert f'/admin/registration-authorizations/{authorization_ids["张三"]}' not in by_status.text
+
+        no_match = client.get("/admin/members", params={"invite_query": "不存在"})
+        assert "未找到匹配的邀请记录" in no_match.text
+
+
+def test_admin_can_search_registered_members(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, real_name, company_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, ?, 1, ?)",
+            ("owner", "管理员", "总部", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.executemany(
+            "INSERT INTO users(username, real_name, company_name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("zhangsan", "张三", "共创集团", module.password_hasher.hash("member-password-123"), now),
+                ("lisi", "李四", "示例集团", module.password_hasher.hash("member-password-123"), now),
+            ],
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        by_name = client.get("/admin/members", params={"member_query": "张三"})
+        assert by_name.status_code == 200
+        assert "张三" in by_name.text
+        assert "共创集团" in by_name.text
+        # 邀请名单会回填全部已注册成员（含李四），用只在账号表出现的公司名做判别
+        assert "示例集团" not in by_name.text
+        assert re.search(r"筛选\s*1\s*/\s*\d+\s*个账号", by_name.text)
+
+        by_company = client.get("/admin/members", params={"member_query": "示例集团"})
+        assert "示例集团" in by_company.text
+        assert "共创集团" not in by_company.text
+
+        no_match = client.get("/admin/members", params={"member_query": "不存在"})
+        assert "未找到匹配的账号" in no_match.text
+
+
+def test_admin_can_filter_feedback(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)",
+            ("owner", "管理员", module.password_hasher.hash("owner-password-123"), now),
+        )
+        member_id = connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, created_at) VALUES (?, ?, ?, ?)",
+            ("lisi", "李四", module.password_hasher.hash("member-password-123"), now),
+        ).lastrowid
+        connection.executemany(
+            """
+            INSERT INTO feedback_messages(user_id,category,subject,content,status,created_at,updated_at)
+            VALUES (?,?,?,?,?,?,?)
+            """,
+            [
+                (member_id, "bug", "登录页按钮失灵", "点击登录没有反应", "pending", now, now),
+                (member_id, "suggestion", "建议增加暗色模式", "夜间使用刺眼", "resolved", now, now),
+            ],
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        by_status = client.get("/feedback", params={"feedback_status": "pending"})
+        assert by_status.status_code == 200
+        assert "登录页按钮失灵" in by_status.text
+        assert "建议增加暗色模式" not in by_status.text
+
+        by_query = client.get("/feedback", params={"feedback_query": "暗色"})
+        assert "建议增加暗色模式" in by_query.text
+        assert "登录页按钮失灵" not in by_query.text
+
+        no_match = client.get("/feedback", params={"feedback_query": "不存在"})
+        assert "未找到匹配的留言" in no_match.text
+
+
+def test_admin_can_search_knowledge_trash(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        owner_id = connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)",
+            ("owner", "管理员", module.password_hasher.hash("owner-password-123"), now),
+        ).lastrowid
+        connection.executemany(
+            """
+            INSERT INTO knowledge_document_trash(document_id,document_payload,status,deleted_by,deleted_at)
+            VALUES (?,?,?,?,?)
+            """,
+            [
+                (101, json.dumps({"title": "高新技术企业认定管理办法"}), "trashed", owner_id, now),
+                (102, json.dumps({"title": "专精特新申报指南"}), "trashed", owner_id, now),
+            ],
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        by_title = client.get("/admin/knowledge-trash", params={"trash_query": "高新技术"})
+        assert by_title.status_code == 200
+        assert "高新技术企业认定管理办法" in by_title.text
+        assert "专精特新申报指南" not in by_title.text
+
+        no_match = client.get("/admin/knowledge-trash", params={"trash_query": "不存在"})
+        assert "未找到匹配的回收记录" in no_match.text
+
+
+def test_admin_can_search_member_trash(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)",
+            ("owner", "管理员", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.executemany(
+            "INSERT INTO users(username, real_name, password_hash, created_at, deleted_at) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("zhangsan", "张三", module.password_hasher.hash("member-password-123"), now, now),
+                ("lisi", "李四", module.password_hasher.hash("member-password-123"), now, now),
+            ],
+        )
+        connection.execute(
+            "INSERT INTO registration_authorizations(real_name,identity_code,status,created_at,deleted_at) VALUES (?,?,?,?,?)",
+            ("王五", "9999", "pending", now, now),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        by_name = client.get("/admin/members/trash", params={"trash_query": "张三"})
+        assert by_name.status_code == 200
+        assert "张三" in by_name.text
+        assert "李四" not in by_name.text
+
+        by_tail = client.get("/admin/members/trash", params={"trash_query": "9999"})
+        assert "王五" in by_tail.text
+
+        no_match = client.get("/admin/members/trash", params={"trash_query": "不存在"})
+        assert "未找到匹配的账号" in no_match.text
+        assert "未找到匹配的邀请" in no_match.text
+
+
 def test_registration_rejects_name_outside_authorized_list(tmp_path):
     module = load_app(tmp_path)
     with closing(module.database()) as connection:
@@ -3221,7 +3451,18 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
 
         access = client.get("/access")
         assert "复制给 Agent" in access.text
+        assert "手工配置" in access.text
+        assert "data-toggle-manual-agent-config" in access.text
+        assert "data-confirm-manual-agent-bootstrap" in access.text
+        assert "data-manual-package-download" in access.text
+        assert "我已审查，复制安装确认" in access.text
+        assert "一次性引导地址" in access.text
         assert "等待配置" in access.text
+        skills = client.get("/skills")
+        assert skills.status_code == 200
+        assert "data-toggle-manual-agent-config" in skills.text
+        assert "data-confirm-manual-agent-bootstrap" in skills.text
+        assert "data-manual-package-download" in skills.text
 
         bootstrap = client.post(
             "/agent-bootstrap-codes",
@@ -3229,7 +3470,10 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         )
         assert bootstrap.status_code == 200
         assert bootstrap.json()["expires_in_seconds"] == 60 * 60
+        assert bootstrap.json()["phase"] == "review"
         prompt = bootstrap.json()["prompt"]
+        assert "不要开始安装" in prompt
+        assert "本阶段不包含 bootstrap_url" in prompt
         assert "签名插件包" in prompt
         assert "不包含动态命令字段" in prompt
         assert "execution.command" not in prompt
@@ -3249,10 +3493,11 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert protocol.headers["content-type"].startswith(
             "application/vnd.jiaotang.agent-install+json"
         )
-        assert protocol.headers["x-jiaotang-install-protocol"] == "3"
+        assert protocol.headers["x-jiaotang-install-protocol"] == "4"
         assert protocol.json()["schema"] == "jiaotang-agent-install/v1"
-        assert protocol.json()["protocol_version"] == 3
-        assert protocol.json()["action"] == "review_signed_plugin_then_install"
+        assert protocol.json()["protocol_version"] == 4
+        assert protocol.json()["phase"] == "review"
+        assert protocol.json()["action"] == "review_signed_plugin"
         assert protocol.json()["opaque"] is False
         assert protocol.json()["review_required"] is True
         assert protocol.json()["user_confirmation_required"] is True
@@ -3266,8 +3511,9 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert review["local_changes"]
         assert review["rollback"]
         assert "execution" not in protocol.json()
+        assert protocol.json()["installation"]["authorized"] is False
         assert protocol.json()["installation"]["dynamic_command"] is False
-        assert protocol.json()["installation"]["type"] == "signed_workbuddy_plugin"
+        assert "bootstrap_url" not in protocol.json()["installation"]
         assert protocol.json()["integrity"]["algorithms"] == ["sha256", "ed25519"]
         assert protocol.json()["completion"]["success_condition"] == (
             "server_confirmed_signed_mcp_connection"
@@ -3290,6 +3536,49 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert {"workbuddy"} <= set(
             protocol.json()["compatibility"]["agent_hosts"]
         )
+        unconfirmed_manifest = client.get(
+            f"/v1/agent-bootstrap/{enrollment_code}"
+        )
+        assert unconfirmed_manifest.status_code == 403
+        assert "尚未由用户确认" in unconfirmed_manifest.json()["detail"]
+
+        confirmed = client.post(
+            "/agent-bootstrap-codes/confirm",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+                "platform": "macos",
+            },
+        )
+        assert confirmed.status_code == 200
+        assert confirmed.json()["phase"] == "install_authorized"
+        assert "明确授权继续安装" in confirmed.json()["prompt"]
+        manual = confirmed.json()["manual_configuration"]
+        assert manual["configuration_key"] == "bootstrap_url"
+        assert manual["mcp_server"] == "jiaotang-kb"
+        assert manual["platform"] == "macos"
+        assert manual["plugin_download_url"].endswith(
+            "/skills/latest/workbuddy/macos/download"
+        )
+        assert manual["bootstrap_url"].endswith(
+            f"/v1/agent-bootstrap/{enrollment_code}?platform=macos"
+        )
+        assert f"?platform=macos" in confirmed.json()["prompt"]
+
+        authorized_protocol = client.get(
+            f"/v1/agent-install/{enrollment_code}?platform=macos"
+        )
+        assert authorized_protocol.status_code == 200
+        assert authorized_protocol.json()["phase"] == "install_authorized"
+        assert authorized_protocol.json()["user_confirmation_required"] is False
+        assert authorized_protocol.json()["installation"]["authorized"] is True
+        assert authorized_protocol.json()["installation"]["type"] == (
+            "signed_workbuddy_plugin"
+        )
+        assert authorized_protocol.json()["installation"]["bootstrap_url"].endswith(
+            f"/v1/agent-bootstrap/{enrollment_code}?platform=macos"
+        )
+
         installer = client.get("/install/jiaotang-agent.mjs")
         assert installer.status_code == 200
         assert "activation_required" in installer.text
@@ -3401,12 +3690,17 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
             f"/v1/agent-bootstrap/{enrollment_code}/register",
             json=retry_registration,
         )
-        assert retried.status_code == 200
-        assert client.get("/v1/me", headers=api_headers(old_token)).status_code == 401
-        registration = retry_registration
-        private_key = retry_private_key
-        token = retried.json()["token"]
-        key_id = retried.json()["key_id"]
+        assert retried.status_code == 409
+        assert "已经登记到另一组设备密钥" in retried.json()["detail"]
+        idempotent = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/register",
+            json=registration,
+        )
+        assert idempotent.status_code == 200
+        assert idempotent.json()["idempotent"] is True
+        assert idempotent.json()["token"] == old_token
+        token = old_token
+        key_id = enrolled.json()["key_id"]
 
         unsigned = client.get("/v1/me", headers=api_headers(token))
         assert unsigned.status_code == 428
@@ -3645,9 +3939,30 @@ def test_bootstrap_recovers_unverified_partial_installation(tmp_path):
             "/agent-bootstrap-codes",
             data={"csrf_token": user["csrf_token"]},
         )
+        assert recovered.status_code == 200
+        assert recovered.json()["expires_in_seconds"] == 60 * 60
+        enrollment_code = recovered.json()["review_code"]
+        with closing(module.database()) as connection:
+            binding_before_confirmation = connection.execute(
+                "SELECT revoked_at FROM device_bindings WHERE user_id=?",
+                (user_id,),
+            ).fetchone()
+            key_before_confirmation = connection.execute(
+                "SELECT revoked_at FROM device_keys WHERE user_id=?",
+                (user_id,),
+            ).fetchone()
+        assert binding_before_confirmation["revoked_at"] is None
+        assert key_before_confirmation["revoked_at"] is None
 
-    assert recovered.status_code == 200
-    assert recovered.json()["expires_in_seconds"] == 60 * 60
+        confirmed = client.post(
+            "/agent-bootstrap-codes/confirm",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+            },
+        )
+        assert confirmed.status_code == 200
+
     with closing(module.database()) as connection:
         binding = connection.execute(
             "SELECT revoked_at,revoked_reason FROM device_bindings WHERE user_id=?",
@@ -3665,9 +3980,9 @@ def test_bootstrap_recovers_unverified_partial_installation(tmp_path):
             (user_id,),
         ).fetchone()[0]
     assert binding["revoked_at"]
-    assert binding["revoked_reason"] == "incomplete_installation_recovery"
+    assert binding["revoked_reason"] == "confirmed_installation_retry"
     assert key["revoked_at"]
-    assert key["revoked_reason"] == "incomplete_installation_recovery"
+    assert key["revoked_reason"] == "confirmed_installation_retry"
     assert active_codes == 1
 
 
