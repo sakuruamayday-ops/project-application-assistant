@@ -324,6 +324,52 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     validated.stdout + validated.stderr,
                 )
 
+    def test_workbuddy_mcp_connector_has_only_one_packaged_runtime_copy(self):
+        skills_root = Path(__file__).resolve().parents[1] / "skills"
+        suite_manifest = json.loads(
+            (skills_root / "suite-manifest.json").read_text(encoding="utf-8")
+        )
+        connector = suite_manifest["workbuddy_plugin"]["mcp_connector"]
+        source = Path(connector["source"])
+
+        self.assertTrue((skills_root / source).is_file())
+        self.assertFalse(
+            any(
+                source == Path(shared) or source.is_relative_to(Path(shared))
+                for shared in suite_manifest["shared_paths"]
+            ),
+            "MCP连接器已由打包器复制到mcp/，不得再作为shared_path重复入包",
+        )
+
+    def test_source_use_license_is_packaged_but_not_rendered_on_website(self):
+        root = Path(__file__).resolve().parents[1]
+        skills_root = root / "skills"
+        suite_manifest = json.loads(
+            (skills_root / "suite-manifest.json").read_text(encoding="utf-8")
+        )
+        license_name = "SOURCE-USE-LICENSE.txt"
+        protected_text = (
+            "未经著作权人事先书面许可，不得用于客户交付、咨询服务、"
+            "SaaS、产品集成、付费培训或其他直接、间接商业用途。"
+        )
+
+        self.assertIn(license_name, suite_manifest["shared_paths"])
+        self.assertNotIn(license_name, suite_manifest["skills"])
+        self.assertIn(
+            protected_text,
+            (skills_root / license_name).read_text(encoding="utf-8"),
+        )
+        website_source = "\n".join(
+            path.read_text(encoding="utf-8", errors="replace")
+            for directory in (
+                root / "services/knowledge-portal/templates",
+                root / "services/knowledge-portal/static",
+            )
+            for path in directory.rglob("*")
+            if path.is_file()
+        )
+        self.assertNotIn(protected_text, website_source)
+
     def test_safe_extract_rejects_traversal_symlink_and_duplicates(self):
         cases = {
             "traversal.zip": [("../escape.txt", b"x", None)],

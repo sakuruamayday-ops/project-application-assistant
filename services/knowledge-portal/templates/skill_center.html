@@ -88,9 +88,10 @@
         <p>当前账号已有通过服务器验收的本地 Agent。需要更换电脑时，请先在“API 与用户”撤销原设备，再生成新计划。</p>
         <a class="button" href="/access">查看已连接设备</a>
         {% else %}
-        <p>计划会公开安装器来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法；只有你明确同意后，Agent 才能执行。</p>
-        <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制安装指令</span><small>一次性 · 60 分钟有效</small></button>
-        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到本地 Agent，对照计划完成审查与确认。</p>
+        <p>第一步只公开安装器来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法，不包含引导地址；只有你回到本页明确同意后，Agent 才能执行。</p>
+        <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制审查说明</span><small>第一步 · 仅审查</small></button>
+        <button class="button agent-confirm-install" type="button" data-confirm-agent-bootstrap hidden><span>我已审查，复制安装确认</span><small>第二步 · 明确授权</small></button>
+        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">先把审查说明粘贴到本地 Agent，核对无误后再回到本页确认安装。</p>
         {% endif %}
       </article>
       <article class="skill-install-status" data-agent-install-status>

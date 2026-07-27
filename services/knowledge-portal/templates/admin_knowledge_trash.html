@@ -5,7 +5,8 @@
 <main class="standalone-admin">
   <header class="admin-page-head"><div><p class="eyebrow">Recovery Archive</p><h1>知识库回收站</h1><p>这里保存从生产索引移除的资料。恢复后沿用原文档编号，不提供永久删除。</p></div><a class="button secondary" href="/admin/knowledge">返回档案目录</a></header>
   <section class="panel table-panel">
-    <div class="panel-head"><h3>回收记录</h3><span>{{ trash_items|length }} 条</span></div>
+    <div class="panel-head"><h3>回收记录</h3><span>{% if trash_query %}筛选 {{ trash_items|length }} / {% endif %}{{ trash_total }} 条</span></div>
+    <form class="knowledge-filter" method="get" action="/admin/knowledge-trash"><label>搜索回收站<input name="trash_query" value="{{ trash_query }}" maxlength="100" placeholder="标题、原编号或管理员"></label><button class="button" type="submit">搜索</button>{% if trash_query %}<a class="button secondary" href="/admin/knowledge-trash">清除筛选</a>{% else %}<span></span>{% endif %}</form>
     <div class="table-wrap"><table class="archive-table"><thead><tr><th>记录</th><th>原编号</th><th>标题</th><th>管理员</th><th>移入时间</th><th>状态</th><th>操作</th></tr></thead><tbody>
       {% for item in trash_items %}<tr>
         <td data-label="记录">#{{ item.id }}</td>
@@ -15,7 +16,7 @@
         <td data-label="移入时间">{{ item.deleted_at|standard_datetime }}</td>
         <td data-label="状态"><span class="job-status status-{{ item.status }}">{{ '已恢复' if item.restored_at else item.status }}</span></td>
         <td data-label="操作">{% if item.status == 'trashed' and not item.restored_at %}<form method="post" action="/admin/knowledge-trash/{{ item.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-action" type="submit">恢复到生产库</button></form>{% else %}<span class="muted">—</span>{% endif %}</td>
-      </tr>{% else %}<tr class="empty-row"><td colspan="7" class="empty">回收站为空</td></tr>{% endfor %}
+      </tr>{% else %}<tr class="empty-row"><td colspan="7" class="empty">{{ '未找到匹配的回收记录' if trash_query else '回收站为空' }}</td></tr>{% endfor %}
     </tbody></table></div>
   </section>
 </main>
