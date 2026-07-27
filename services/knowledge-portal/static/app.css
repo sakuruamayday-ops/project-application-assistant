@@ -1927,6 +1927,15 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 .skill-install-plan > p { color:var(--skill-muted); line-height:1.75; }
 .skill-install-plan .agent-copy-primary { display:grid; width:100%; min-height:70px; margin-top:28px; text-align:left; }
 .skill-install-plan .agent-copy-primary small { opacity:.72; }
+.agent-install-actions { align-items:stretch; margin-top:22px; }
+.agent-install-actions .agent-copy-primary { flex:1 1 280px; }
+.agent-install-actions .button.secondary { flex:0 0 auto; }
+.agent-confirm-install { display:grid; width:100%; min-height:64px; margin-top:12px; text-align:left; }
+.agent-confirm-install small { opacity:.72; }
+.manual-agent-config { margin-top:18px; padding:18px; border:1px solid var(--line); border-radius:16px; background:#faf8f4; }
+.manual-agent-config h4 { margin:0 0 10px; }
+.manual-agent-config ol { margin:0 0 16px; padding-left:20px; color:var(--muted); line-height:1.75; }
+.manual-agent-config .endpoint-list code { overflow-wrap:anywhere; word-break:break-all; }
 .skill-install-plan .agent-copy-status { min-height:38px; color:var(--skill-muted); font-size:10px; }
 .skill-install-plan .agent-copy-status.is-error { color:var(--skill-danger); }
 .skill-install-stages { display:grid; gap:0; margin:24px 0; padding:0; list-style:none; }
