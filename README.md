@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.3.2"><img src="https://img.shields.io/badge/Release-V1.3.2-C9A760?style=for-the-badge" alt="Release V1.3.2"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.3.1.1"><img src="https://img.shields.io/badge/Release-V1.3.1.1-C9A760?style=for-the-badge" alt="Release V1.3.1.1"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.3.2.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
+  <a href="docs/releases/V1.3.1.1.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -48,11 +48,11 @@
 
 | 使用环境 | 下载 | 安装入口 |
 |---|---|---|
-| 支持完整 Skills 目录的 Agent | [通用 Skills V1.3.2](https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/V1.3.2/jiaotang-skills-V1.3.2.zip) | 按宿主的 Skill 导入流程加载完整目录 |
-| WorkBuddy 5 或更高版本 | [WorkBuddy V1.3.2 跨平台签名包](https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/V1.3.2/jiaotang-skills-V1.3.2-WorkBuddy.zip) | macOS 运行 `.command`；Windows 运行 `.cmd`，再由固定 `.ps1` 安装 |
+| 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
+| WorkBuddy 5 或更高版本，macOS | WorkBuddy macOS 签名包 | 运行 `.command` 固定安装器 |
+| WorkBuddy 5 或更高版本，Windows | WorkBuddy Windows 签名包 | 运行 `.cmd`，再由固定 `.ps1` 安装 |
 
-> **为什么 WorkBuddy 只有一个 ZIP？**
-> macOS 与 Windows 使用同一份已签名插件内容、市场清单和 SHA-256。ZIP 内同时包含两个系统的固定安装器，拆成两份只会制造重复签名包和版本漂移。网站提供两个平台入口，但下载字节保持一致。
+通用 Skills、WorkBuddy macOS、WorkBuddy Windows 是三个独立发布目标，可以同批发布，也可以只发布发生修复的客户端。各下载入口独立保留最近一次正式版本。
 
 ### WorkBuddy 平台说明
 
@@ -87,7 +87,7 @@ WorkBuddy 包内同时提供 macOS 与 Windows 固定安装器，不再维护平
 |---|---|
 | [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.md) | 下载、安装、首次配置和日常使用 |
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
-| [V1.3.2 发布说明](docs/releases/V1.3.2.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.3.1.1 发布说明](docs/releases/V1.3.1.1.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -106,11 +106,10 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 ```bash
 python3 scripts/controlled_release.py \
-  --version 1.3.2 \
-  --generic-package dist/企业全生命周期助手-V1.3.2.zip \
-  --workbuddy-package dist/企业全生命周期助手-V1.3.2-WorkBuddy.zip \
-  --gate-report dist/企业全生命周期助手-V1.3.2-发布门禁.json \
-  --release-notes docs/releases/V1.3.2.md
+  --version 1.3.1.1 \
+  --workbuddy-macos-package dist/企业全生命周期助手-V1.3.1.1-WorkBuddy-macOS.zip \
+  --gate-report dist/企业全生命周期助手-V1.3.1.1-发布门禁.json \
+  --release-notes docs/releases/V1.3.1.1.md
 ```
 
 预检确认版本完全一致、默认分支干净、签名包与发布门禁全部通过后，先在同一命令末尾追加 `--stage`。系统创建 GitHub 预发布，并在知识门户登记“正式发布中”，随后强制暂停：
@@ -132,8 +131,8 @@ GitHub 预发布
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.3.2` | 网站、GitHub Release 和用户可见版本 |
-| 语义版本 | `1.3.2` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.3.1.1` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.3.1.1` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 | 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
 

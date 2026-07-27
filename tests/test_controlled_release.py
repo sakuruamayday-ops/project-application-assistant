@@ -19,8 +19,11 @@ def test_normalize_version_uses_one_public_version_model() -> None:
     assert MODULE.normalize_version("1.2.0") == ("1.2", "1.2.0", "V1.2")
     assert MODULE.normalize_version("1.2.3") == ("1.2.3", "1.2.3", "V1.2.3")
     assert MODULE.normalize_version("V1.2.3") == ("1.2.3", "1.2.3", "V1.2.3")
-    with pytest.raises(ValueError):
-        MODULE.normalize_version("1.2.3.4")
+    assert MODULE.normalize_version("1.2.3.4") == (
+        "1.2.3.4",
+        "1.2.3.4",
+        "V1.2.3.4",
+    )
 
 
 def test_prepare_assets_contains_only_release_files(tmp_path) -> None:
@@ -33,15 +36,37 @@ def test_prepare_assets_contains_only_release_files(tmp_path) -> None:
     assets = MODULE.prepare_ascii_assets(
         tmp_path / "assets",
         "V1.3",
-        generic,
-        workbuddy,
+        {"generic": generic, "windows": workbuddy},
         gate,
     )
 
     assert [path.name for path in assets] == [
         "jiaotang-skills-V1.3.zip",
-        "jiaotang-skills-V1.3-WorkBuddy.zip",
+        "jiaotang-skills-V1.3-WorkBuddy-Windows.zip",
         "jiaotang-skills-V1.3-release-gate.json",
+    ]
+
+
+def test_prepare_assets_allows_one_or_three_release_targets(tmp_path) -> None:
+    packages = {}
+    for target in ("generic", "macos", "windows"):
+        package = tmp_path / f"{target}.zip"
+        package.write_text(target, encoding="utf-8")
+        packages[target] = package
+    gate = tmp_path / "gate.json"
+    gate.write_text("gate", encoding="utf-8")
+
+    assets = MODULE.prepare_ascii_assets(
+        tmp_path / "assets",
+        "V1.3.1.1",
+        packages,
+        gate,
+    )
+    assert [path.name for path in assets] == [
+        "jiaotang-skills-V1.3.1.1.zip",
+        "jiaotang-skills-V1.3.1.1-WorkBuddy-macOS.zip",
+        "jiaotang-skills-V1.3.1.1-WorkBuddy-Windows.zip",
+        "jiaotang-skills-V1.3.1.1-release-gate.json",
     ]
 
 

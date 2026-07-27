@@ -4,8 +4,8 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.3.2",
-    "version": "1.3.2"
+    "tag": "V1.3.1.1",
+    "version": "1.3.1.1"
   },
   "skills": [
     "agriculture-and-rural-projects",
