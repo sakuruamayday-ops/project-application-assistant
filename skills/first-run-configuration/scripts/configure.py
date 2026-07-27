@@ -32,6 +32,10 @@ SECRET_NAMES = {
     "PATENT_API_KEY",
     "PADDLE_OCR_API_KEY",
 }
+SYSTEM_CREDENTIAL_ONLY_NAMES = {
+    "JIAOTANG_KB_TOKEN",
+}
+PLAINTEXT_CREDENTIAL_NAMES = SECRET_NAMES - SYSTEM_CREDENTIAL_ONLY_NAMES
 BOOLEAN_NAMES = {
     "TYC_MCP_READY",
     "QCC_MCP_READY",
@@ -128,11 +132,23 @@ def write_credentials(path: Path, values: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = ["# 企业全生命周期助手统一凭据；禁止提交到Git或发送到对话。"]
     for key in sorted(values):
+        if key in SYSTEM_CREDENTIAL_ONLY_NAMES:
+            continue
         value = values[key].strip()
         if value:
             lines.append(f"{key}={shlex.quote(value)}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     path.chmod(stat.S_IRUSR | stat.S_IWUSR)
+
+
+def scrub_system_credentials_from_plaintext(path: Path) -> list[str]:
+    values = read_env_file(path)
+    removed = sorted(
+        key for key in SYSTEM_CREDENTIAL_ONLY_NAMES if values.get(key, "").strip()
+    )
+    if removed:
+        write_credentials(path, values)
+    return removed
 
 
 def write_region_profile(region: str, path: Path = REGION_PROFILE_PATH) -> None:
@@ -313,7 +329,7 @@ def render_markdown(report: dict[str, object], credentials_file: Path) -> str:
             "",
             f"凭据文件：`{credentials_file}`",
             "",
-            "该报告不包含Token、API Key、密码、Cookie或认证Header。启动Agent前，将凭据文件导入宿主安全环境；不要把凭据文件发送给他人。",
+            "团队知识库Token和设备私钥只允许保存在系统凭据库，不写入该文件。该报告不包含Token、API Key、密码、Cookie或认证Header。启动Agent前，将第三方供应商凭据导入宿主安全环境；不要把凭据文件发送给他人。",
             "",
             "## 后续规则",
             "",
@@ -376,9 +392,10 @@ def configure_interactively(values: dict[str, str]) -> dict[str, str]:
         configured.get("JIAOTANG_KB_ENDPOINT", DEFAULT_ENDPOINT),
     )
     if not configured.get("JIAOTANG_KB_TOKEN"):
-        token = getpass.getpass("个人Token，不会显示输入内容；暂不配置可直接回车: ").strip()
-        if token:
-            configured["JIAOTANG_KB_TOKEN"] = token
+        print(
+            "团队知识库凭据不再通过首次配置脚本录入；"
+            "请在登录门户生成一次性安装引导，由本地Agent保存到系统凭据库。"
+        )
 
     if ask_yes_no("天眼查是否已经通过MCP连接", truthy(configured.get("TYC_MCP_READY"))):
         configured["TYC_MCP_READY"] = "true"
@@ -428,6 +445,9 @@ def run(
     report_file = config_dir / "首次配置检测报告.md"
     needs_startup = startup_protocol_required(profile_file)
     values = effective_values(credentials_file, environment)
+    removed_plaintext_credentials = scrub_system_credentials_from_plaintext(
+        credentials_file
+    )
     if not values.get("JIAOTANG_KB_DEVICE_ID", "").strip():
         values["JIAOTANG_KB_DEVICE_ID"] = f"device:{uuid.uuid4()}"
     if not values.get("JIAOTANG_KB_DEVICE_NAME", "").strip():
@@ -440,7 +460,7 @@ def run(
             allowed = {
                 key: value
                 for key, value in values.items()
-                if key in SECRET_NAMES
+                if key in PLAINTEXT_CREDENTIAL_NAMES
                 or key in BOOLEAN_NAMES
                 or key in {
                     "JIAOTANG_KB_ENDPOINT",
@@ -454,6 +474,12 @@ def run(
             write_credentials(credentials_file, allowed)
 
     report = capability_report(values, network=network, startup_required=needs_startup)
+    report["credentials"]["system_store_only_names"] = sorted(
+        SYSTEM_CREDENTIAL_ONLY_NAMES
+    )
+    report["credentials"]["removed_from_plaintext_file"] = (
+        removed_plaintext_credentials
+    )
     write_region_profile(values.get("PROJECT_ASSISTANT_DEFAULT_REGION", ""))
     config_dir.mkdir(parents=True, exist_ok=True)
     preference_status, preference_detail = initialize_preferences(

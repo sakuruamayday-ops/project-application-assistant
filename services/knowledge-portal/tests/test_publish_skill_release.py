@@ -14,11 +14,16 @@ assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
 
 
-def make_packages(root: Path) -> tuple[Path, Path]:
+def make_packages(
+    root: Path,
+    *,
+    tag: str = "V1.2",
+    semantic_version: str = "1.2.0",
+) -> tuple[Path, Path]:
     generic = root / "generic.zip"
     workbuddy = root / "workbuddy.zip"
     suite = {
-        "release": {"tag": "V1.2", "version": "1.2.0"},
+        "release": {"tag": tag, "version": semantic_version},
         "skills": [f"skill-{index}" for index in range(48)],
     }
     with zipfile.ZipFile(generic, "w") as archive:
@@ -26,11 +31,11 @@ def make_packages(root: Path) -> tuple[Path, Path]:
     with zipfile.ZipFile(workbuddy, "w") as archive:
         archive.writestr(
             "jiaotang/.codebuddy-plugin/marketplace.json",
-            json.dumps({"plugins": [{"version": "1.2.0"}]}),
+            json.dumps({"plugins": [{"version": semantic_version}]}),
         )
         archive.writestr(
             "jiaotang/plugins/plugin/.codebuddy-plugin/plugin.json",
-            json.dumps({"version": "1.2.0"}),
+            json.dumps({"version": semantic_version}),
         )
         archive.writestr("jiaotang/plugins/plugin/skills/suite-manifest.json", json.dumps(suite))
         archive.writestr("jiaotang/install-jiaotang-workbuddy.command", "#!/bin/zsh\n")
@@ -136,3 +141,14 @@ def test_publish_rejects_version_mismatch(tmp_path: Path) -> None:
         assert "版本" in str(error)
     else:
         raise AssertionError("expected a version mismatch")
+
+
+def test_validate_packages_accepts_patch_release(tmp_path: Path) -> None:
+    generic, workbuddy = make_packages(
+        tmp_path,
+        tag="V1.3.1",
+        semantic_version="1.3.1",
+    )
+    result = MODULE.validate_packages(generic, workbuddy, "1.3.1")
+    assert result["version"] == "1.3.1"
+    assert result["skill_count"] == 48

@@ -205,6 +205,12 @@
       "reason": "产业定位必须复用包内产业链和工业六基目录匹配结果。"
     },
     {
+      "from": "industry-positioning",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "细分市场边界、占有率测算、替代对象和证据缺口必须进入可追溯台账。"
+    },
+    {
       "from": "intellectual-property-projects",
       "to": "ip-assessment",
       "type": "requires",
@@ -266,6 +272,18 @@
     },
     {
       "from": "sme-development-projects",
+      "to": "industry-positioning",
+      "type": "requires",
+      "reason": "市场占有率、细分领域与补短板填空白国产替代使用统一边界和证据闸门。"
+    },
+    {
+      "from": "sme-development-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "市场测算、客户验证、替代对象及缺失证据必须保持可追溯。"
+    },
+    {
+      "from": "sme-development-projects",
       "to": "financial-verification",
       "type": "optional",
       "reason": "申请书财务指标和市场占有率底稿需要可靠数据时调用。"
@@ -275,6 +293,18 @@
       "to": "ip-assessment",
       "type": "optional",
       "reason": "核验知识产权法律状态及其对主导产品的直接支撑关系。"
+    },
+    {
+      "from": "quality-brand-projects",
+      "to": "industry-positioning",
+      "type": "requires",
+      "reason": "隐形冠军、单项冠军及市场地位项目先核验细分市场边界和项目专属阈值。"
+    },
+    {
+      "from": "quality-brand-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "冠军类项目的分类、市场规模、排名和性能证据必须可追溯。"
     },
     {
       "from": "manufacturing-tax-risk-analysis",

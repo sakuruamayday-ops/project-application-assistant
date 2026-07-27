@@ -5,12 +5,12 @@
     {
       "id": "sme-current-policy-2026",
       "path": "sme-development-projects/references/current-policy-baseline-2026.md",
-      "verified_at": "2026-07-24",
+      "verified_at": "2026-07-27",
       "effective_from": "2026-01-01",
       "effective_until": null,
       "next_review_at": "2026-09-30",
-      "source_locator": "工信部企业〔2026〕2号现行基线；工信厅企业函〔2026〕117号仅作已结束复核的历史事实记录",
-      "source_sha256": "b9b49b3bf59c14a3bbe01cba390cd70f6e450f8d23777089357b9e0f75747d9c",
+      "source_locator": "工信部企业〔2026〕2号、2026年专精特新小巨人认定复核通知及申请书；工信厅企业函〔2026〕117号仅作已结束复核的历史事实记录",
+      "source_sha256": "3c51494472c2c896d0446e9c333c836c376539f9938ece6acfff2aa66ea16585",
       "block_after_next_review": true
     },
     {

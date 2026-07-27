@@ -45,12 +45,11 @@ def sha256(path: Path) -> str:
 def normalize_version(value: str) -> tuple[str, str, str]:
     match = re.fullmatch(r"V?(\d+)\.(\d+)(?:\.(\d+))?", value.strip())
     if not match:
-        raise ValueError("版本必须形如 1.3、1.3.0 或 V1.3")
+        raise ValueError("版本必须形如 1.3、1.3.1、V1.3 或 V1.3.1")
     major, minor, patch = match.group(1), match.group(2), match.group(3) or "0"
-    if patch != "0":
-        raise ValueError("产品发布只接受补丁位为 0 的版本")
-    short = f"{major}.{minor}"
-    return short, f"{short}.0", f"V{short}"
+    public = f"{major}.{minor}" if patch == "0" else f"{major}.{minor}.{patch}"
+    semantic = f"{major}.{minor}.{patch}"
+    return public, semantic, f"V{public}"
 
 
 def release_action(

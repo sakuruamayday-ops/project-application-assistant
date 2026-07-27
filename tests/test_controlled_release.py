@@ -17,8 +17,10 @@ SPEC.loader.exec_module(MODULE)
 def test_normalize_version_uses_one_public_version_model() -> None:
     assert MODULE.normalize_version("V1.2") == ("1.2", "1.2.0", "V1.2")
     assert MODULE.normalize_version("1.2.0") == ("1.2", "1.2.0", "V1.2")
+    assert MODULE.normalize_version("1.2.3") == ("1.2.3", "1.2.3", "V1.2.3")
+    assert MODULE.normalize_version("V1.2.3") == ("1.2.3", "1.2.3", "V1.2.3")
     with pytest.raises(ValueError):
-        MODULE.normalize_version("1.2.3")
+        MODULE.normalize_version("1.2.3.4")
 
 
 def test_prepare_assets_contains_only_release_files(tmp_path) -> None:

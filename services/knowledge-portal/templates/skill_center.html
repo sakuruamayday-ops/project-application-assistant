@@ -83,7 +83,6 @@
       {% endif %}
       <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
-      <div class="skill-platform-note"><strong>专有许可</strong><p>源码可见，仅限非商业评估、安全审计和内部测试。未经著作权人事先书面许可，不得用于客户交付、咨询服务、SaaS、产品集成、付费培训或其他直接、间接商业用途。</p></div>
       <div class="skill-platform-note"><strong>按宿主选择</strong><p>WorkBuddy 使用同一个跨平台签名包，包内同时包含 macOS 与 Windows 安装器。下面两个平台按钮下载内容和 SHA-256 相同，但文件名与安装说明按系统区分。</p></div>
       <div class="skill-platform-downloads">
         <article class="skill-platform-card is-generic">

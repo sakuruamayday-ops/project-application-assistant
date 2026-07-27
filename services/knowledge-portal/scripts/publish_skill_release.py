@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import sqlite3
 import tempfile
@@ -43,15 +44,26 @@ def _single_json(archive: zipfile.ZipFile, suffix: str) -> dict[str, object]:
     return value
 
 
+def semantic_version(value: str) -> str:
+    match = re.fullmatch(r"(\d+)\.(\d+)(?:\.(\d+))?", value.strip())
+    if not match:
+        raise ValueError("版本必须形如 1.3 或 1.3.1")
+    patch = match.group(3) or "0"
+    return f"{match.group(1)}.{match.group(2)}.{patch}"
+
+
 def validate_packages(generic: Path, workbuddy: Path, version: str) -> dict[str, object]:
     release_tag = f"V{version}"
-    semantic_version = f"{version}.0"
+    expected_semantic_version = semantic_version(version)
     with zipfile.ZipFile(generic) as archive:
         suite = _single_json(archive, "/skills/suite-manifest.json")
         release = suite.get("release")
         if not isinstance(release, dict):
             raise ValueError("通用包 suite-manifest 缺少 release")
-        if release.get("tag") != release_tag or release.get("version") != semantic_version:
+        if (
+            release.get("tag") != release_tag
+            or release.get("version") != expected_semantic_version
+        ):
             raise ValueError("通用包版本与发布版本不一致")
         skills = suite.get("skills")
         if (
@@ -67,7 +79,10 @@ def validate_packages(generic: Path, workbuddy: Path, version: str) -> dict[str,
         suite = _single_json(archive, "/skills/suite-manifest.json")
         plugins = marketplace.get("plugins")
         marketplace_version = plugins[0].get("version") if isinstance(plugins, list) and plugins else None
-        if marketplace_version != semantic_version or plugin.get("version") != semantic_version:
+        if (
+            marketplace_version != expected_semantic_version
+            or plugin.get("version") != expected_semantic_version
+        ):
             raise ValueError("WorkBuddy 市场清单或插件版本与发布版本不一致")
         release = suite.get("release")
         if not isinstance(release, dict) or release.get("tag") != release_tag:

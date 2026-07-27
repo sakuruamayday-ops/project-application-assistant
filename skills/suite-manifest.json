@@ -4,8 +4,8 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.3",
-    "version": "1.3.0"
+    "tag": "V1.3.1",
+    "version": "1.3.1"
   },
   "skills": [
     "agriculture-and-rural-projects",
@@ -59,7 +59,7 @@
   ],
   "shared_paths": [
     "_runtime/jiaotang-branding",
-    "_runtime/jiaotang-kb",
+    "SOURCE-USE-LICENSE.txt",
     "policy-freshness-manifest.json",
     "policy-freshness-manifest.md",
     "skill-call-graph.json"
@@ -133,10 +133,11 @@
     },
     "industry-positioning": {
       "required_skills": [
-        "industry-chain-foundation-matcher"
+        "industry-chain-foundation-matcher",
+        "evidence-ledger"
       ],
       "required_paths": [],
-      "reason": "产业定位判断只使用目录匹配技能返回的可追溯产业链和产业基础候选。"
+      "reason": "产业定位判断使用可追溯目录候选，并将市场边界、占有率测算和产业链价值证据写入证据台账。"
     },
     "high-tech-enterprise-preassessment": {
       "required_skills": [
@@ -178,6 +179,23 @@
       ],
       "required_paths": [],
       "reason": "临时专项先取得完整官方政策链，再把已核验候选规则交给通用可行性流程。"
+    },
+    "quality-brand-projects": {
+      "required_skills": [
+        "industry-positioning",
+        "evidence-ledger"
+      ],
+      "required_paths": [],
+      "reason": "冠军和市场地位项目必须先核验细分市场边界，再记录排名测算与证据状态。"
+    },
+    "sme-development-projects": {
+      "required_skills": [
+        "industry-chain-foundation-matcher",
+        "industry-positioning",
+        "evidence-ledger"
+      ],
+      "required_paths": [],
+      "reason": "专精特新和小巨人使用统一目录、市场边界与产业链价值证据闸门。"
     },
     "sme-score-preassessment": {
       "required_skills": [

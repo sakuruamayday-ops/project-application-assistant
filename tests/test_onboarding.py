@@ -39,19 +39,51 @@ def test_unified_report_redacts_all_secret_values(tmp_path):
     assert report["capabilities"]["patent_data"]["status"] == "ready"
 
 
-def test_credentials_file_is_current_user_only(tmp_path):
+def test_credentials_file_excludes_system_store_only_secrets(tmp_path):
     target = tmp_path / "credentials.env"
     MODULE.write_credentials(
         target,
         {
             "JIAOTANG_KB_ENDPOINT": "https://knowledge.example.com",
             "JIAOTANG_KB_TOKEN": "token with spaces",
+            "QCC_API_KEY": "qcc with spaces",
         },
     )
     mode = stat.S_IMODE(target.stat().st_mode)
     assert mode == 0o600
     values = MODULE.read_env_file(target)
-    assert values["JIAOTANG_KB_TOKEN"] == "token with spaces"
+    assert "JIAOTANG_KB_TOKEN" not in values
+    assert values["QCC_API_KEY"] == "qcc with spaces"
+
+
+def test_existing_plaintext_team_token_is_scrubbed_without_losing_other_values(tmp_path):
+    target = tmp_path / "credentials.env"
+    target.write_text(
+        "\n".join(
+            [
+                "JIAOTANG_KB_TOKEN=legacy-team-token",
+                "QCC_API_KEY=retained-qcc-token",
+                "PROJECT_ASSISTANT_BROWSER_READY=true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report, _, _ = MODULE.run(
+        tmp_path,
+        non_interactive=True,
+        network=False,
+        environment={},
+    )
+
+    values = MODULE.read_env_file(target)
+    assert "JIAOTANG_KB_TOKEN" not in values
+    assert values["QCC_API_KEY"] == "retained-qcc-token"
+    assert values["PROJECT_ASSISTANT_BROWSER_READY"] == "true"
+    assert report["credentials"]["removed_from_plaintext_file"] == [
+        "JIAOTANG_KB_TOKEN"
+    ]
 
 
 def test_first_run_can_persist_default_policy_region(tmp_path):
