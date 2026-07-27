@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "project_id": "zhejiang-hidden-champion",
+  "project_name": "浙江省隐形冠军企业",
+  "version": "1.0",
+  "coverage_status": "routing-only",
+  "aliases": [
+    "隐形冠军"
+  ],
+  "fact_fields": [],
+  "rule_cards": [],
+  "gold_cases": [
+    {
+      "case_id": "rules-pending",
+      "facts": [],
+      "confirm_rule_ids": [],
+      "expected_conclusion": "undetermined"
+    }
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-hidden-champion"
+  ]
+}

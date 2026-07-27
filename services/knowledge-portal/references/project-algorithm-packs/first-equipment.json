@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "project_id": "first-equipment",
+  "project_name": "首台（套）装备",
+  "version": "1.0",
+  "coverage_status": "routing-only",
+  "aliases": [
+    "首台套"
+  ],
+  "fact_fields": [],
+  "rule_cards": [],
+  "gold_cases": [
+    {
+      "case_id": "rules-pending",
+      "facts": [],
+      "confirm_rule_ids": [],
+      "expected_conclusion": "undetermined"
+    }
+  ],
+  "source_retrieval_rule_ids": [
+    "first-equipment"
+  ]
+}

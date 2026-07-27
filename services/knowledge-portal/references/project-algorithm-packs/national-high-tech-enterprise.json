@@ -1,0 +1,589 @@
+{
+  "schema_version": 1,
+  "project_id": "national-high-tech-enterprise",
+  "project_name": "高新技术企业",
+  "version": "2016-current-20260727",
+  "coverage_status": "rules-confirmed",
+  "aliases": [
+    "国高",
+    "国家高企",
+    "国家高新技术企业",
+    "高企",
+    "高新"
+  ],
+  "source_retrieval_rule_ids": [
+    "national-high-tech-enterprise"
+  ],
+  "fact_fields": [
+    {
+      "field": "registration_years",
+      "label": "注册成立年限",
+      "aliases": [
+        "注册成立年限",
+        "成立年限"
+      ],
+      "value_type": "number",
+      "unit": "年"
+    },
+    {
+      "field": "core_ip_support_met",
+      "label": "核心知识产权支持要求",
+      "aliases": [
+        "核心知识产权支持要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "high_tech_field_match",
+      "label": "核心技术领域匹配",
+      "aliases": [
+        "高新技术领域匹配"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_personnel_ratio",
+      "label": "科技人员占比",
+      "aliases": [
+        "科技人员占比"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "rnd_ratio_tier_requirement_met",
+      "label": "研发费用比例分档要求",
+      "aliases": [
+        "研发费用比例分档要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "domestic_rnd_ratio",
+      "label": "境内研发费用占比",
+      "aliases": [
+        "境内研发费用占比"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "high_tech_revenue_ratio",
+      "label": "高新技术产品服务收入占比",
+      "aliases": [
+        "高新收入占比"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "innovation_evaluation_met",
+      "label": "创新能力评价达到要求",
+      "aliases": [
+        "创新能力评价达到要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "no_major_incident",
+      "label": "无重大事故及严重违法",
+      "aliases": [
+        "无重大事故",
+        "无严重违法",
+        "合规状态"
+      ],
+      "value_type": "boolean",
+      "trusted_document_types": [
+        "official_registry",
+        "compliance_statement"
+      ]
+    }
+  ],
+  "rule_cards": [
+    {
+      "rule_id": "hte-registration-years",
+      "type": "hard-threshold",
+      "field": "registration_years",
+      "operator": "gte",
+      "expected": 1,
+      "unit": "年",
+      "source": "《高新技术企业认定管理办法》国科发火〔2016〕32号第十一条",
+      "source_quote": "申请认定时须注册成立一年以上。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    },
+    {
+      "rule_id": "hte-core-ip-support",
+      "type": "hard-threshold",
+      "field": "core_ip_support_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "知识产权须对主要产品或服务发挥核心支持作用。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    },
+    {
+      "rule_id": "hte-field-match",
+      "type": "hard-threshold",
+      "field": "high_tech_field_match",
+      "operator": "truthy",
+      "expected": true,
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "核心技术属于国家重点支持的高新技术领域。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    },
+    {
+      "rule_id": "hte-technology-personnel-ratio",
+      "type": "hard-threshold",
+      "field": "technology_personnel_ratio",
+      "operator": "gte",
+      "expected": 10,
+      "unit": "%",
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "科技人员占当年职工总数的比例不低于百分之十。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    },
+    {
+      "rule_id": "hte-rnd-tier",
+      "type": "hard-threshold",
+      "field": "rnd_ratio_tier_requirement_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "研发费用比例须达到与最近一年销售收入对应的分档要求。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    },
+    {
+      "rule_id": "hte-domestic-rnd",
+      "type": "hard-threshold",
+      "field": "domestic_rnd_ratio",
+      "operator": "gte",
+      "expected": 60,
+      "unit": "%",
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "境内研发费用占全部研发费用的比例不低于百分之六十。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    },
+    {
+      "rule_id": "hte-high-tech-revenue",
+      "type": "hard-threshold",
+      "field": "high_tech_revenue_ratio",
+      "operator": "gte",
+      "expected": 60,
+      "unit": "%",
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "高新技术产品或服务收入占同期总收入的比例不低于百分之六十。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    },
+    {
+      "rule_id": "hte-innovation-evaluation",
+      "type": "hard-threshold",
+      "field": "innovation_evaluation_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "企业创新能力评价应达到相应要求。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    },
+    {
+      "rule_id": "hte-compliance",
+      "type": "hard-threshold",
+      "field": "no_major_incident",
+      "operator": "truthy",
+      "expected": true,
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "申请认定前一年内不得发生规定的重大事故或严重环境违法行为。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按科技部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+    }
+  ],
+  "rule_layers": [
+    {
+      "layer_id": "stable-management",
+      "layer_type": "stable",
+      "label": "稳定管理办法",
+      "applicability": {},
+      "rules": [
+        {
+          "rule_id": "hte-registration-years",
+          "type": "hard-threshold",
+          "field": "registration_years",
+          "operator": "gte",
+          "expected": 1,
+          "unit": "年",
+          "source": "《高新技术企业认定管理办法》国科发火〔2016〕32号第十一条",
+          "source_quote": "申请认定时须注册成立一年以上。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        },
+        {
+          "rule_id": "hte-core-ip-support",
+          "type": "hard-threshold",
+          "field": "core_ip_support_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "国科发火〔2016〕32号第十一条",
+          "source_quote": "知识产权须对主要产品或服务发挥核心支持作用。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        },
+        {
+          "rule_id": "hte-field-match",
+          "type": "hard-threshold",
+          "field": "high_tech_field_match",
+          "operator": "truthy",
+          "expected": true,
+          "source": "国科发火〔2016〕32号第十一条",
+          "source_quote": "核心技术属于国家重点支持的高新技术领域。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        },
+        {
+          "rule_id": "hte-technology-personnel-ratio",
+          "type": "hard-threshold",
+          "field": "technology_personnel_ratio",
+          "operator": "gte",
+          "expected": 10,
+          "unit": "%",
+          "source": "国科发火〔2016〕32号第十一条",
+          "source_quote": "科技人员占当年职工总数的比例不低于百分之十。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        },
+        {
+          "rule_id": "hte-rnd-tier",
+          "type": "hard-threshold",
+          "field": "rnd_ratio_tier_requirement_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "国科发火〔2016〕32号第十一条",
+          "source_quote": "研发费用比例须达到与最近一年销售收入对应的分档要求。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        },
+        {
+          "rule_id": "hte-domestic-rnd",
+          "type": "hard-threshold",
+          "field": "domestic_rnd_ratio",
+          "operator": "gte",
+          "expected": 60,
+          "unit": "%",
+          "source": "国科发火〔2016〕32号第十一条",
+          "source_quote": "境内研发费用占全部研发费用的比例不低于百分之六十。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        },
+        {
+          "rule_id": "hte-high-tech-revenue",
+          "type": "hard-threshold",
+          "field": "high_tech_revenue_ratio",
+          "operator": "gte",
+          "expected": 60,
+          "unit": "%",
+          "source": "国科发火〔2016〕32号第十一条",
+          "source_quote": "高新技术产品或服务收入占同期总收入的比例不低于百分之六十。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        },
+        {
+          "rule_id": "hte-innovation-evaluation",
+          "type": "hard-threshold",
+          "field": "innovation_evaluation_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "国科发火〔2016〕32号第十一条",
+          "source_quote": "企业创新能力评价应达到相应要求。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        },
+        {
+          "rule_id": "hte-compliance",
+          "type": "hard-threshold",
+          "field": "no_major_incident",
+          "operator": "truthy",
+          "expected": true,
+          "source": "国科发火〔2016〕32号第十一条",
+          "source_quote": "申请认定前一年内不得发生规定的重大事故或严重环境违法行为。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按科技部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        }
+      ]
+    }
+  ],
+  "gold_cases": [
+    {
+      "case_id": "eligible-verified",
+      "facts": [
+        {
+          "field": "registration_years",
+          "value": 1,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "core_ip_support_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "high_tech_field_match",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "technology_personnel_ratio",
+          "value": 10,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_ratio_tier_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "domestic_rnd_ratio",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "high_tech_revenue_ratio",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "innovation_evaluation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "no_major_incident",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "hte-registration-years",
+        "hte-core-ip-support",
+        "hte-field-match",
+        "hte-technology-personnel-ratio",
+        "hte-rnd-tier",
+        "hte-domestic-rnd",
+        "hte-high-tech-revenue",
+        "hte-innovation-evaluation",
+        "hte-compliance"
+      ],
+      "expected_conclusion": "eligible"
+    },
+    {
+      "case_id": "conditional-pending",
+      "facts": [
+        {
+          "field": "registration_years",
+          "value": 1,
+          "evidence_state": "claimed",
+          "source": "金标准事实"
+        },
+        {
+          "field": "core_ip_support_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "high_tech_field_match",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "technology_personnel_ratio",
+          "value": 10,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_ratio_tier_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "domestic_rnd_ratio",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "high_tech_revenue_ratio",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "innovation_evaluation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "no_major_incident",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "hte-registration-years",
+        "hte-core-ip-support",
+        "hte-field-match",
+        "hte-technology-personnel-ratio",
+        "hte-rnd-tier",
+        "hte-domestic-rnd",
+        "hte-high-tech-revenue",
+        "hte-innovation-evaluation",
+        "hte-compliance"
+      ],
+      "expected_conclusion": "conditional"
+    },
+    {
+      "case_id": "ineligible-failed",
+      "facts": [
+        {
+          "field": "registration_years",
+          "value": 0.99,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "core_ip_support_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "high_tech_field_match",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "technology_personnel_ratio",
+          "value": 10,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_ratio_tier_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "domestic_rnd_ratio",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "high_tech_revenue_ratio",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "innovation_evaluation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "no_major_incident",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "hte-registration-years",
+        "hte-core-ip-support",
+        "hte-field-match",
+        "hte-technology-personnel-ratio",
+        "hte-rnd-tier",
+        "hte-domestic-rnd",
+        "hte-high-tech-revenue",
+        "hte-innovation-evaluation",
+        "hte-compliance"
+      ],
+      "expected_conclusion": "ineligible"
+    }
+  ]
+}

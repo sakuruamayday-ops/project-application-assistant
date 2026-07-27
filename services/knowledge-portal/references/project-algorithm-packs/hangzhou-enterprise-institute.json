@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "project_id": "hangzhou-enterprise-institute",
+  "project_name": "杭州市企业研究院",
+  "version": "1.0",
+  "coverage_status": "routing-only",
+  "aliases": [
+    "杭州研发中心",
+    "杭州市研发中心",
+    "市高企研发中心"
+  ],
+  "fact_fields": [],
+  "rule_cards": [],
+  "gold_cases": [
+    {
+      "case_id": "rules-pending",
+      "facts": [],
+      "confirm_rule_ids": [],
+      "expected_conclusion": "undetermined"
+    }
+  ],
+  "source_retrieval_rule_ids": [
+    "hangzhou-enterprise-institute"
+  ]
+}

@@ -1,0 +1,340 @@
+{
+  "schema_version": 1,
+  "project_id": "green-factory-4",
+  "project_name": "国家绿色工厂",
+  "version": "2024.13-current",
+  "coverage_status": "rules-confirmed",
+  "aliases": [
+    "绿色工厂",
+    "国家级绿色工厂",
+    "国家绿色工厂"
+  ],
+  "source_retrieval_rule_ids": [
+    "green-factory"
+  ],
+  "fact_fields": [
+    {
+      "field": "manufacturing_independent_entity",
+      "label": "独立核算制造型生产主体",
+      "aliases": [
+        "独立核算制造型生产主体"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_standard_met",
+      "label": "绿色工厂评价标准符合性",
+      "aliases": [
+        "绿色工厂评价标准符合性"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "provincial_green_factory_status",
+      "label": "省级绿色工厂状态",
+      "aliases": [
+        "省级绿色工厂状态"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_exclusion_clear",
+      "label": "绿色制造名单排除情形核验通过",
+      "aliases": [
+        "绿色工厂排除情形核验"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_evaluation_report_available",
+      "label": "绿色工厂评价报告",
+      "aliases": [
+        "绿色工厂评价报告"
+      ],
+      "value_type": "boolean"
+    }
+  ],
+  "rule_cards": [
+    {
+      "rule_id": "national-green-factory-entity",
+      "type": "hard-threshold",
+      "field": "manufacturing_independent_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《绿色工厂梯度培育及管理暂行办法》工信部节〔2024〕13号第七条",
+      "source_quote": "应为依法设立的独立法人或视同法人的独立核算制造型生产企业。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+      "approved_at": "2026-07-27 17:00:00",
+      "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+    },
+    {
+      "rule_id": "national-green-factory-standard",
+      "type": "hard-threshold",
+      "field": "green_factory_standard_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部节〔2024〕13号第七条、第十四条",
+      "source_quote": "须符合适用行业标准或绿色工厂评价通则要求。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+      "approved_at": "2026-07-27 17:00:00",
+      "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+    },
+    {
+      "rule_id": "national-green-factory-provincial-status",
+      "type": "hard-threshold",
+      "field": "provincial_green_factory_status",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部节〔2024〕13号第十一条、第十二条",
+      "source_quote": "国家层面绿色工厂由省层面绿色工厂择优推荐。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+      "approved_at": "2026-07-27 17:00:00",
+      "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+    },
+    {
+      "rule_id": "national-green-factory-exclusion",
+      "type": "hard-threshold",
+      "field": "green_factory_exclusion_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部节〔2024〕13号第十五条",
+      "source_quote": "近三年不得存在办法列明的经营、事故、违法、整改或失信情形。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+      "approved_at": "2026-07-27 17:00:00",
+      "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+    },
+    {
+      "rule_id": "national-green-factory-report",
+      "type": "submission",
+      "field": "green_evaluation_report_available",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部节〔2024〕13号第十条",
+      "source_quote": "企业应完成自评价或第三方评价并通过管理平台提交评价报告。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+      "approved_at": "2026-07-27 17:00:00",
+      "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+    }
+  ],
+  "rule_layers": [
+    {
+      "layer_id": "stable-management",
+      "layer_type": "stable",
+      "label": "稳定管理办法",
+      "applicability": {},
+      "rules": [
+        {
+          "rule_id": "national-green-factory-entity",
+          "type": "hard-threshold",
+          "field": "manufacturing_independent_entity",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《绿色工厂梯度培育及管理暂行办法》工信部节〔2024〕13号第七条",
+          "source_quote": "应为依法设立的独立法人或视同法人的独立核算制造型生产企业。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+          "approved_at": "2026-07-27 17:00:00",
+          "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+        },
+        {
+          "rule_id": "national-green-factory-standard",
+          "type": "hard-threshold",
+          "field": "green_factory_standard_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部节〔2024〕13号第七条、第十四条",
+          "source_quote": "须符合适用行业标准或绿色工厂评价通则要求。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+          "approved_at": "2026-07-27 17:00:00",
+          "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+        },
+        {
+          "rule_id": "national-green-factory-provincial-status",
+          "type": "hard-threshold",
+          "field": "provincial_green_factory_status",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部节〔2024〕13号第十一条、第十二条",
+          "source_quote": "国家层面绿色工厂由省层面绿色工厂择优推荐。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+          "approved_at": "2026-07-27 17:00:00",
+          "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+        },
+        {
+          "rule_id": "national-green-factory-exclusion",
+          "type": "hard-threshold",
+          "field": "green_factory_exclusion_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部节〔2024〕13号第十五条",
+          "source_quote": "近三年不得存在办法列明的经营、事故、违法、整改或失信情形。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+          "approved_at": "2026-07-27 17:00:00",
+          "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+        },
+        {
+          "rule_id": "national-green-factory-report",
+          "type": "submission",
+          "field": "green_evaluation_report_available",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部节〔2024〕13号第十条",
+          "source_quote": "企业应完成自评价或第三方评价并通过管理平台提交评价报告。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
+          "approved_at": "2026-07-27 17:00:00",
+          "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+        }
+      ]
+    }
+  ],
+  "gold_cases": [
+    {
+      "case_id": "eligible-verified",
+      "facts": [
+        {
+          "field": "manufacturing_independent_entity",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_standard_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "provincial_green_factory_status",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_exclusion_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_evaluation_report_available",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "national-green-factory-entity",
+        "national-green-factory-standard",
+        "national-green-factory-provincial-status",
+        "national-green-factory-exclusion",
+        "national-green-factory-report"
+      ],
+      "expected_conclusion": "eligible"
+    },
+    {
+      "case_id": "conditional-pending",
+      "facts": [
+        {
+          "field": "manufacturing_independent_entity",
+          "value": true,
+          "evidence_state": "claimed",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_standard_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "provincial_green_factory_status",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_exclusion_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_evaluation_report_available",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "national-green-factory-entity",
+        "national-green-factory-standard",
+        "national-green-factory-provincial-status",
+        "national-green-factory-exclusion",
+        "national-green-factory-report"
+      ],
+      "expected_conclusion": "conditional"
+    },
+    {
+      "case_id": "ineligible-failed",
+      "facts": [
+        {
+          "field": "manufacturing_independent_entity",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_standard_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "provincial_green_factory_status",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_exclusion_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_evaluation_report_available",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "national-green-factory-entity",
+        "national-green-factory-standard",
+        "national-green-factory-provincial-status",
+        "national-green-factory-exclusion",
+        "national-green-factory-report"
+      ],
+      "expected_conclusion": "ineligible"
+    }
+  ]
+}

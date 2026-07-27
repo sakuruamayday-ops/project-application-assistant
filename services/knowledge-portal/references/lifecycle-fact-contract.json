@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "fields": [
+    {
+      "field": "enterprise_name",
+      "label": "企业名称",
+      "aliases": ["企业名称", "公司名称", "申请企业"],
+      "value_type": "string",
+      "trusted_document_types": ["business_license", "official_registry"]
+    },
+    {
+      "field": "unified_social_credit_code",
+      "label": "统一社会信用代码",
+      "aliases": ["统一社会信用代码", "信用代码"],
+      "value_type": "string",
+      "trusted_document_types": ["business_license", "official_registry"]
+    },
+    {
+      "field": "registered_region",
+      "label": "注册地区",
+      "aliases": ["注册地区", "注册地址", "登记机关所在地"],
+      "value_type": "string",
+      "trusted_document_types": ["business_license", "official_registry"]
+    },
+    {
+      "field": "establishment_date",
+      "label": "成立日期",
+      "aliases": ["成立日期", "注册日期", "成立时间"],
+      "value_type": "date",
+      "trusted_document_types": ["business_license", "official_registry"]
+    },
+    {
+      "field": "operating_status",
+      "label": "经营状态",
+      "aliases": ["经营状态", "登记状态", "企业状态"],
+      "value_type": "string",
+      "trusted_document_types": ["official_registry"]
+    },
+    {
+      "field": "revenue",
+      "label": "营业收入",
+      "aliases": ["营业收入", "主营业务收入", "销售收入"],
+      "value_type": "number",
+      "unit": "万元",
+      "trusted_document_types": ["audit_report", "tax_return", "financial_statement"]
+    },
+    {
+      "field": "rnd_expense",
+      "label": "研发费用",
+      "aliases": ["研发费用", "研究开发费用", "研发投入"],
+      "value_type": "number",
+      "unit": "万元",
+      "trusted_document_types": ["audit_report", "special_audit_report", "financial_statement"]
+    },
+    {
+      "field": "rnd_ratio",
+      "label": "研发费用占比",
+      "aliases": ["研发费用占比", "研发投入占比", "研发强度"],
+      "value_type": "number",
+      "unit": "%",
+      "trusted_document_types": ["special_audit_report", "verified_calculation"]
+    },
+    {
+      "field": "employee_count",
+      "label": "职工总数",
+      "aliases": ["职工总数", "员工总数", "从业人员数"],
+      "value_type": "number",
+      "unit": "人",
+      "trusted_document_types": ["social_security_record", "application_form"]
+    },
+    {
+      "field": "authorized_invention_patent_count",
+      "label": "有效授权发明专利数量",
+      "aliases": ["有效授权发明专利数量", "授权发明专利数", "有效发明专利数"],
+      "value_type": "number",
+      "unit": "件",
+      "trusted_document_types": ["patent_register", "official_patent_record"]
+    },
+    {
+      "field": "specialized_sme_status",
+      "label": "专精特新中小企业状态",
+      "aliases": ["专精特新中小企业", "省级专精特新", "省专状态"],
+      "value_type": "boolean",
+      "trusted_document_types": ["official_list", "certificate"]
+    },
+    {
+      "field": "investment_amount",
+      "label": "项目投资额",
+      "aliases": ["项目投资额", "实际投资额", "设备投资额"],
+      "value_type": "number",
+      "unit": "万元",
+      "trusted_document_types": ["audit_report", "investment_ledger", "verified_calculation"]
+    },
+    {
+      "field": "no_major_incident",
+      "label": "无重大事故及严重违法",
+      "aliases": ["无重大事故", "无严重违法", "合规状态"],
+      "value_type": "boolean",
+      "trusted_document_types": ["official_registry", "compliance_statement"]
+    }
+  ]
+}

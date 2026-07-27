@@ -1,0 +1,512 @@
+{
+  "schema_version": 1,
+  "project_id": "manufacturing-single-champion-2",
+  "project_name": "国家制造业单项冠军企业",
+  "version": "2023.138-current",
+  "coverage_status": "rules-confirmed",
+  "aliases": [
+    "单项冠军",
+    "国家单项冠军",
+    "国家级制造业单项冠军",
+    "制造业单项冠军"
+  ],
+  "source_retrieval_rule_ids": [
+    "manufacturing-single-champion"
+  ],
+  "fact_fields": [
+    {
+      "field": "manufacturing_independent_legal_entity",
+      "label": "制造业独立法人主体",
+      "aliases": [
+        "制造业独立法人主体"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_specialization_years_met",
+      "label": "专业化发展年限要求",
+      "aliases": [
+        "单项冠军专业化年限"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "average_main_revenue_or_little_giant_met",
+      "label": "主营收入或小巨人替代条件",
+      "aliases": [
+        "主营收入或小巨人条件"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "global_market_top_three_met",
+      "label": "全球市场占有率前三",
+      "aliases": [
+        "全球市场前三"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "product_quality_performance_energy_met",
+      "label": "产品质量性能与能耗要求",
+      "aliases": [
+        "产品质量性能与能耗要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_innovation_met",
+      "label": "创新能力要求",
+      "aliases": [
+        "单项冠军创新能力"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_management_met",
+      "label": "经营效益与管理要求",
+      "aliases": [
+        "单项冠军经营管理要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_compliance_clear",
+      "label": "近三年合规核验通过",
+      "aliases": [
+        "单项冠军合规核验"
+      ],
+      "value_type": "boolean"
+    }
+  ],
+  "rule_cards": [
+    {
+      "rule_id": "single-champion-entity",
+      "type": "hard-threshold",
+      "field": "manufacturing_independent_legal_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号",
+      "source_quote": "申报主体应为具有独立法人资格的制造业企业。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+      "approved_at": "2026-07-27 17:15:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+    },
+    {
+      "rule_id": "single-champion-specialization",
+      "type": "hard-threshold",
+      "field": "single_champion_specialization_years_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部政法〔2023〕138号",
+      "source_quote": "长期专注细分领域并达到一般产品或新产品对应的从业年限。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+      "approved_at": "2026-07-27 17:15:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+    },
+    {
+      "rule_id": "single-champion-revenue",
+      "type": "hard-threshold",
+      "field": "average_main_revenue_or_little_giant_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部政法〔2023〕138号",
+      "source_quote": "近三年平均主营业务收入或小巨人替代条件须符合规定。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+      "approved_at": "2026-07-27 17:15:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+    },
+    {
+      "rule_id": "single-champion-market",
+      "type": "hard-threshold",
+      "field": "global_market_top_three_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部政法〔2023〕138号",
+      "source_quote": "申请产品市场占有率应位居全球前三。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+      "approved_at": "2026-07-27 17:15:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+    },
+    {
+      "rule_id": "single-champion-product",
+      "type": "hard-threshold",
+      "field": "product_quality_performance_energy_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部政法〔2023〕138号",
+      "source_quote": "产品质量、关键性能和能耗水平须达到规定的领先标准。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+      "approved_at": "2026-07-27 17:15:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+    },
+    {
+      "rule_id": "single-champion-innovation",
+      "type": "hard-threshold",
+      "field": "single_champion_innovation_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部政法〔2023〕138号",
+      "source_quote": "须具备高水平研发机构、研发投入和核心自主知识产权等创新能力。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+      "approved_at": "2026-07-27 17:15:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+    },
+    {
+      "rule_id": "single-champion-management",
+      "type": "hard-threshold",
+      "field": "single_champion_management_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部政法〔2023〕138号",
+      "source_quote": "经营效益、管理体系、人才队伍和品牌国际化能力须符合要求。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+      "approved_at": "2026-07-27 17:15:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+    },
+    {
+      "rule_id": "single-champion-compliance",
+      "type": "hard-threshold",
+      "field": "single_champion_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部政法〔2023〕138号",
+      "source_quote": "近三年不得存在重大事故、违法违规、失信或数据造假等情形。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+      "approved_at": "2026-07-27 17:15:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+    }
+  ],
+  "rule_layers": [
+    {
+      "layer_id": "stable-management",
+      "layer_type": "stable",
+      "label": "稳定管理办法",
+      "applicability": {},
+      "rules": [
+        {
+          "rule_id": "single-champion-entity",
+          "type": "hard-threshold",
+          "field": "manufacturing_independent_legal_entity",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号",
+          "source_quote": "申报主体应为具有独立法人资格的制造业企业。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+          "approved_at": "2026-07-27 17:15:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+        },
+        {
+          "rule_id": "single-champion-specialization",
+          "type": "hard-threshold",
+          "field": "single_champion_specialization_years_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部政法〔2023〕138号",
+          "source_quote": "长期专注细分领域并达到一般产品或新产品对应的从业年限。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+          "approved_at": "2026-07-27 17:15:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+        },
+        {
+          "rule_id": "single-champion-revenue",
+          "type": "hard-threshold",
+          "field": "average_main_revenue_or_little_giant_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部政法〔2023〕138号",
+          "source_quote": "近三年平均主营业务收入或小巨人替代条件须符合规定。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+          "approved_at": "2026-07-27 17:15:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+        },
+        {
+          "rule_id": "single-champion-market",
+          "type": "hard-threshold",
+          "field": "global_market_top_three_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部政法〔2023〕138号",
+          "source_quote": "申请产品市场占有率应位居全球前三。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+          "approved_at": "2026-07-27 17:15:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+        },
+        {
+          "rule_id": "single-champion-product",
+          "type": "hard-threshold",
+          "field": "product_quality_performance_energy_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部政法〔2023〕138号",
+          "source_quote": "产品质量、关键性能和能耗水平须达到规定的领先标准。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+          "approved_at": "2026-07-27 17:15:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+        },
+        {
+          "rule_id": "single-champion-innovation",
+          "type": "hard-threshold",
+          "field": "single_champion_innovation_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部政法〔2023〕138号",
+          "source_quote": "须具备高水平研发机构、研发投入和核心自主知识产权等创新能力。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+          "approved_at": "2026-07-27 17:15:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+        },
+        {
+          "rule_id": "single-champion-management",
+          "type": "hard-threshold",
+          "field": "single_champion_management_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部政法〔2023〕138号",
+          "source_quote": "经营效益、管理体系、人才队伍和品牌国际化能力须符合要求。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+          "approved_at": "2026-07-27 17:15:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+        },
+        {
+          "rule_id": "single-champion-compliance",
+          "type": "hard-threshold",
+          "field": "single_champion_compliance_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部政法〔2023〕138号",
+          "source_quote": "近三年不得存在重大事故、违法违规、失信或数据造假等情形。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
+          "approved_at": "2026-07-27 17:15:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html"
+        }
+      ]
+    }
+  ],
+  "gold_cases": [
+    {
+      "case_id": "eligible-verified",
+      "facts": [
+        {
+          "field": "manufacturing_independent_legal_entity",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_specialization_years_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "average_main_revenue_or_little_giant_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "global_market_top_three_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "product_quality_performance_energy_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_innovation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_management_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "single-champion-entity",
+        "single-champion-specialization",
+        "single-champion-revenue",
+        "single-champion-market",
+        "single-champion-product",
+        "single-champion-innovation",
+        "single-champion-management",
+        "single-champion-compliance"
+      ],
+      "expected_conclusion": "eligible"
+    },
+    {
+      "case_id": "conditional-pending",
+      "facts": [
+        {
+          "field": "manufacturing_independent_legal_entity",
+          "value": true,
+          "evidence_state": "claimed",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_specialization_years_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "average_main_revenue_or_little_giant_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "global_market_top_three_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "product_quality_performance_energy_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_innovation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_management_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "single-champion-entity",
+        "single-champion-specialization",
+        "single-champion-revenue",
+        "single-champion-market",
+        "single-champion-product",
+        "single-champion-innovation",
+        "single-champion-management",
+        "single-champion-compliance"
+      ],
+      "expected_conclusion": "conditional"
+    },
+    {
+      "case_id": "ineligible-failed",
+      "facts": [
+        {
+          "field": "manufacturing_independent_legal_entity",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_specialization_years_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "average_main_revenue_or_little_giant_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "global_market_top_three_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "product_quality_performance_energy_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_innovation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_management_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "single-champion-entity",
+        "single-champion-specialization",
+        "single-champion-revenue",
+        "single-champion-market",
+        "single-champion-product",
+        "single-champion-innovation",
+        "single-champion-management",
+        "single-champion-compliance"
+      ],
+      "expected_conclusion": "ineligible"
+    }
+  ]
+}

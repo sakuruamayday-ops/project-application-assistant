@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "project_id": "technology-sme-1",
+  "project_name": "浙江省科技型中小企业",
+  "version": "1.0",
+  "coverage_status": "routing-only",
+  "aliases": [
+    "科小"
+  ],
+  "fact_fields": [],
+  "rule_cards": [],
+  "gold_cases": [
+    {
+      "case_id": "rules-pending",
+      "facts": [],
+      "confirm_rule_ids": [],
+      "expected_conclusion": "undetermined"
+    }
+  ],
+  "source_retrieval_rule_ids": [
+    "technology-sme"
+  ]
+}

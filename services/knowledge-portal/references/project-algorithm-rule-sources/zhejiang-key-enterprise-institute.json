@@ -1,0 +1,28 @@
+{
+  "project_id": "zhejiang-key-enterprise-institute",
+  "project_name": "浙江省重点企业研究院",
+  "version": "2025.169-current",
+  "aliases": ["省重点企业研究院", "省重点研究院"],
+  "source_retrieval_rule_ids": ["zhejiang-key-enterprise-institute"],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
+  "approved_at": "2026-07-27 16:30:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+  "fact_fields": [
+    {"field": "zhejiang_independent_legal_entity", "label": "浙江省注册独立法人", "aliases": ["浙江省注册独立法人"], "value_type": "boolean"},
+    {"field": "key_institute_platform_basis_met", "label": "省级研发平台前置条件", "aliases": ["省级研发平台前置条件"], "value_type": "boolean"},
+    {"field": "key_institute_revenue_requirement_met", "label": "重点研究院营业收入要求", "aliases": ["重点研究院营业收入要求"], "value_type": "boolean"},
+    {"field": "key_institute_rnd_requirement_met", "label": "重点研究院研发投入要求", "aliases": ["重点研究院研发投入要求"], "value_type": "boolean"},
+    {"field": "innovation_score", "label": "创新能力评价得分", "aliases": ["创新能力评价得分"], "value_type": "number", "unit": "分"},
+    {"field": "core_ip_talent_rnd_foundation_met", "label": "核心知识产权人才与研发基础", "aliases": ["核心知识产权人才与研发基础"], "value_type": "boolean"}
+  ],
+  "rules": [
+    {"rule_id": "zj-key-institute-entity", "type": "hard-threshold", "field": "zhejiang_independent_legal_entity", "operator": "truthy", "expected": true, "source": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号", "source_quote": "依托企业须在浙江省注册并具有独立法人资格。"},
+    {"rule_id": "zj-key-institute-platform", "type": "hard-threshold", "field": "key_institute_platform_basis_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "原则上应建有规定的省级企业研发机构。"},
+    {"rule_id": "zj-key-institute-revenue", "type": "hard-threshold", "field": "key_institute_revenue_requirement_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "营业收入须达到一般企业或农业企业对应标准。"},
+    {"rule_id": "zj-key-institute-rnd", "type": "hard-threshold", "field": "key_institute_rnd_requirement_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "研发强度或研发费用须达到相应标准。"},
+    {"rule_id": "zj-key-institute-score", "type": "hard-threshold", "field": "innovation_score", "operator": "gte", "expected": 60, "unit": "分", "source": "浙经信高新〔2025〕169号", "source_quote": "创新能力评价得分达到六十分以上。"},
+    {"rule_id": "zj-key-institute-foundation", "type": "hard-threshold", "field": "core_ip_talent_rnd_foundation_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "须具备核心自主知识产权、人才队伍和研发基础条件。"},
+    {"rule_id": "zj-key-institute-compliance", "type": "hard-threshold", "field": "no_major_incident", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "规定期间内不得发生重大事故及严重违法失信行为。"}
+  ]
+}

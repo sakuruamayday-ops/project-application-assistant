@@ -156,3 +156,128 @@ def test_every_high_frequency_alias_builds_a_resolved_search_plan(tmp_path):
                 plan,
             )
             assert plan["variants"], (rule["id"], alias)
+
+
+def test_portal_exposes_one_internal_lifecycle_decision_entry(tmp_path):
+    module = load_app(tmp_path)
+
+    result = module.enterprise_lifecycle_decision(
+        "这家企业能否申报小巨人",
+        enterprise_facts=[
+            {
+                "field": "specialized_sme_status",
+                "value": True,
+                "evidence_state": "verified",
+                "source": "认定名单",
+            }
+        ],
+        project_context={
+            "project_id": "little-giant",
+            "project_name": "专精特新小巨人",
+            "region": "全国",
+            "year": 2026,
+            "application_type": "recognition",
+            "policy_status": "current",
+        },
+        requirements=[
+            {
+                "rule_id": "little-giant-prerequisite",
+                "type": "hard-threshold",
+                "field": "specialized_sme_status",
+                "operator": "truthy",
+                "expected": True,
+                "source": "当期通知",
+            }
+        ],
+    )
+
+    assert result["decision_type"] == "enterprise-project-lifecycle"
+    assert result["feasibility"]["overall_conclusion"] == "undetermined"
+    assert any(
+        gap["field"] == "market_years"
+        for gap in result["feasibility"]["evidence_gaps"]
+    )
+    assert result["scoring"]["enabled"] is False
+
+
+def test_portal_lifecycle_entry_compiles_materials_and_requires_rule_confirmation(
+    tmp_path,
+):
+    module = load_app(tmp_path)
+    arguments = {
+        "query": "企业能否申报测试项目",
+        "enterprise_facts": [],
+        "project_context": {
+            "project_id": "test-project",
+            "project_name": "测试项目",
+            "policy_status": "current",
+        },
+        "requirements": [],
+        "enterprise_materials": [
+            {
+                "document_type": "audit_report",
+                "source": "2025年度审计报告",
+                "verified": True,
+                "fields": {"营业收入": "6000万元"},
+            }
+        ],
+        "policy_text": "企业上年度营业收入不低于5000万元。",
+        "policy_source": "现行政策原文",
+        "policy_status": "current",
+    }
+
+    candidate_result = module.enterprise_lifecycle_decision(**arguments)
+    candidate = candidate_result["policy_rule_compilation"]["reviewed_candidates"][0]
+    assert candidate_result["policy_rule_compilation"]["active_rules"] == []
+    assert candidate_result["feasibility"]["overall_conclusion"] == "undetermined"
+
+    confirmed_result = module.enterprise_lifecycle_decision(
+        **arguments,
+        rule_confirmations={candidate["rule_id"]: "confirmed"},
+    )
+    assert confirmed_result["feasibility"]["overall_conclusion"] == "eligible"
+
+
+def test_portal_lifecycle_entry_uses_host_extraction_and_project_pack(tmp_path):
+    module = load_app(tmp_path)
+
+    result = module.enterprise_lifecycle_decision(
+        "这家企业能否申报小巨人",
+        enterprise_facts=[],
+        project_context={
+            "project_id": "little-giant",
+            "project_name": "专精特新小巨人",
+            "policy_status": "current",
+        },
+        requirements=[],
+        host_extractions=[
+            {
+                "format": "xlsx",
+                "file_name": "官方认定名单.xlsx",
+                "document_type": "official_list",
+                "verified": True,
+                "worksheets": [
+                    {
+                        "rows": [
+                            ["专精特新中小企业", "是"],
+                        ]
+                    }
+                ],
+            }
+        ],
+    )
+
+    assert result["project_algorithm_pack"]["project_id"] == "little-giant"
+    assert result["host_extraction"]["materials"][0]["fields"] == {
+        "专精特新中小企业": "是"
+    }
+    assert result["feasibility"]["overall_conclusion"] == "undetermined"
+    assert any(
+        gate["field"] == "specialized_sme_status"
+        and gate["status"] == "passed"
+        for gate in result["feasibility"]["hard_gates"]
+    )
+    assert any(
+        gap["field"] == "market_years"
+        for gap in result["feasibility"]["evidence_gaps"]
+    )
