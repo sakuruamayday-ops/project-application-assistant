@@ -3439,9 +3439,17 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         access = client.get("/access")
         assert "复制给 Agent" in access.text
         assert "手工配置" in access.text
+        assert "data-toggle-manual-agent-config" in access.text
+        assert "data-confirm-manual-agent-bootstrap" in access.text
+        assert "data-manual-package-download" in access.text
         assert "我已审查，复制安装确认" in access.text
         assert "一次性引导地址" in access.text
         assert "等待配置" in access.text
+        skills = client.get("/skills")
+        assert skills.status_code == 200
+        assert "data-toggle-manual-agent-config" in skills.text
+        assert "data-confirm-manual-agent-bootstrap" in skills.text
+        assert "data-manual-package-download" in skills.text
 
         bootstrap = client.post(
             "/agent-bootstrap-codes",
@@ -3526,6 +3534,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
             data={
                 "csrf_token": user["csrf_token"],
                 "enrollment_code": enrollment_code,
+                "platform": "macos",
             },
         )
         assert confirmed.status_code == 200
@@ -3534,12 +3543,17 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         manual = confirmed.json()["manual_configuration"]
         assert manual["configuration_key"] == "bootstrap_url"
         assert manual["mcp_server"] == "jiaotang-kb"
-        assert manual["bootstrap_url"].endswith(
-            f"/v1/agent-bootstrap/{enrollment_code}"
+        assert manual["platform"] == "macos"
+        assert manual["plugin_download_url"].endswith(
+            "/skills/latest/workbuddy/macos/download"
         )
+        assert manual["bootstrap_url"].endswith(
+            f"/v1/agent-bootstrap/{enrollment_code}?platform=macos"
+        )
+        assert f"?platform=macos" in confirmed.json()["prompt"]
 
         authorized_protocol = client.get(
-            f"/v1/agent-install/{enrollment_code}"
+            f"/v1/agent-install/{enrollment_code}?platform=macos"
         )
         assert authorized_protocol.status_code == 200
         assert authorized_protocol.json()["phase"] == "install_authorized"
@@ -3549,7 +3563,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
             "signed_workbuddy_plugin"
         )
         assert authorized_protocol.json()["installation"]["bootstrap_url"].endswith(
-            f"/v1/agent-bootstrap/{enrollment_code}"
+            f"/v1/agent-bootstrap/{enrollment_code}?platform=macos"
         )
 
         installer = client.get("/install/jiaotang-agent.mjs")

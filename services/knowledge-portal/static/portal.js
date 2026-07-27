@@ -211,10 +211,14 @@ const loadAgentInstallReview = async (card, {copyPrompt = false} = {}) => {
   if (protocolResponse.ok) {
     const protocol = await protocolResponse.json();
     const packageHash = protocol?.review?.plugin_package?.sha256 || "";
+    const packageUrl = protocol?.review?.plugin_package?.download_url || "";
     const hashRow = card.querySelector("[data-manual-package-hash-row]");
     const hashValue = card.querySelector("[data-manual-package-hash]");
+    const packageLink = card.querySelector("[data-manual-package-download]");
     if (hashValue) hashValue.textContent = packageHash || "当前发布包未提供哈希";
     if (hashRow) hashRow.hidden = false;
+    if (packageLink && packageUrl) packageLink.href = packageUrl;
+    card.dataset.manualPackageHash = packageHash;
   }
   card.querySelectorAll(
     "[data-confirm-agent-bootstrap], [data-confirm-manual-agent-bootstrap]"
@@ -230,6 +234,11 @@ const confirmAgentInstall = async (card) => {
   const form = new URLSearchParams();
   form.set("csrf_token", card?.dataset.csrfToken || "");
   form.set("enrollment_code", reviewCode);
+  const reviewUrl = card?.dataset.agentReviewUrl || "";
+  if (reviewUrl) {
+    const platform = new URL(reviewUrl, window.location.origin).searchParams.get("platform");
+    if (platform) form.set("platform", platform);
+  }
   const response = await fetch("/agent-bootstrap-codes/confirm", {
     method: "POST",
     headers: {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},

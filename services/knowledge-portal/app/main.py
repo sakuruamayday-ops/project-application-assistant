@@ -10305,6 +10305,7 @@ def confirm_agent_bootstrap_code(
     enrollment_code: Annotated[str, Form(min_length=20, max_length=200)],
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    platform: Annotated[str, Form()] = "",
 ):
     validate_csrf(user, csrf_token)
     if user["is_admin"]:
@@ -10382,24 +10383,62 @@ def confirm_agent_bootstrap_code(
             )
         connection.commit()
     public_endpoint = str(request.base_url).rstrip("/")
+    platform_name = platform.strip().lower()
+    if platform_name not in {"macos", "windows"}:
+        user_agent = request.headers.get("user-agent", "").lower()
+        platform_name = (
+            "windows"
+            if "windows" in user_agent
+            else "macos"
+            if "macintosh" in user_agent or "mac os" in user_agent
+            else ""
+        )
+    if platform_name not in {"macos", "windows"}:
+        macos = latest_skill_artifact("macos")
+        windows = latest_skill_artifact("windows")
+        platform_name = (
+            "unified"
+            if (
+                (macos is None and windows is None)
+                or (
+                    macos is not None
+                    and windows is not None
+                    and macos["file_path"] == windows["file_path"]
+                )
+            )
+            else ""
+        )
+    if not platform_name:
+        raise HTTPException(
+            status_code=400,
+            detail="无法识别客户端平台，请重新从当前设备生成安装说明",
+        )
     install_protocol_url = (
         f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
+        f"?platform={platform_name}"
     )
     bootstrap_url = (
         f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
+        f"?platform={platform_name}"
     )
-    release = latest_skill_release()
-    package_path = (
-        workbuddy_skill_package(str(release["version"])) if release is not None else None
+    artifact = (
+        latest_skill_artifact("windows")
+        if platform_name == "unified"
+        else latest_skill_artifact(platform_name)
+    )
+    package_path = Path(str(artifact["file_path"])) if artifact is not None else None
+    plugin_download_url = (
+        f"{public_endpoint}/skills/latest/workbuddy/download"
+        if platform_name == "unified"
+        else f"{public_endpoint}/skills/latest/workbuddy/{platform_name}/download"
     )
     return JSONResponse(
         {
             "phase": "install_authorized",
             "prompt": build_agent_install_prompt(install_protocol_url),
             "manual_configuration": {
-                "plugin_download_url": (
-                    f"{public_endpoint}/skills/latest/workbuddy/download"
-                ),
+                "platform": platform_name,
+                "plugin_download_url": plugin_download_url,
                 "plugin_sha256": (
                     sha256_file(package_path)
                     if package_path is not None and package_path.is_file()
