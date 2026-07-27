@@ -3454,7 +3454,10 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert "手工配置" in access.text
         assert "data-toggle-manual-agent-config" in access.text
         assert "data-confirm-manual-agent-bootstrap" in access.text
-        assert "data-manual-package-download" in access.text
+        assert "前往 Skills 中心" in access.text
+        assert "macOS 与 Windows 安装包统一在 Skills 中心下载" in access.text
+        assert 'class="button secondary skill-center-link" href="/skills"' in access.text
+        assert access.text.count("data-manual-package-download") == 1
         assert "我已审查，复制安装确认" in access.text
         assert "一次性引导地址" in access.text
         assert "等待配置" in access.text
