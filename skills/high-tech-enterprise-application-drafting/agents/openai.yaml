@@ -1,0 +1,7 @@
+interface:
+  display_name: "高新技术企业申请书撰写"
+  short_description: "生成并校核国高申请书RD、PS与创新能力内容"
+  brand_color: "#8B4513"
+  default_prompt: "使用 $high-tech-enterprise-application-drafting 根据企业资料撰写并扩展高新技术企业认定申请书。"
+policy:
+  allow_implicit_invocation: true

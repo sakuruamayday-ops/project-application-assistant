@@ -655,7 +655,7 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
         assert "生成安全安装计划" in catalog.text
         assert 'data-skill-open="project-application-assistant"' in catalog.text
         assert 'data-skill-row' in catalog.text
-        assert "48 / 48" in catalog.text
+        assert "49 / 49" in catalog.text
 
         installation_status = client.get("/agent-installation-status")
         assert installation_status.status_code == 200

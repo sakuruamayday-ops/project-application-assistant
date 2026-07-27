@@ -23,6 +23,7 @@
     "first-run-configuration",
     "graphify",
     "green-development-projects",
+    "high-tech-enterprise-application-drafting",
     "high-tech-enterprise-preassessment",
     "industrialization-projects",
     "industry-chain-foundation-matcher",
@@ -146,6 +147,18 @@
       ],
       "required_paths": [],
       "reason": "高企预评估先核验现行政策与企业事实，再比较申报年度和整改窗口。"
+    },
+    "high-tech-enterprise-application-drafting": {
+      "required_skills": [
+        "high-tech-enterprise-preassessment",
+        "evidence-ledger"
+      ],
+      "required_paths": [
+        "high-tech-enterprise-application-drafting/assets/高新技术企业认定申请书空白模板.docx",
+        "high-tech-enterprise-application-drafting/scripts/expand_rd_ps_tables.py",
+        "high-tech-enterprise-application-drafting/scripts/audit_application_docx.py"
+      ],
+      "reason": "高企申请书撰写先锁定申报基线与企业事实，并使用完整母版、扩缩表脚本和自动审计保证正式文档结构与证据边界。"
     },
     "intellectual-property-projects": {
       "required_skills": [
