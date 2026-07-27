@@ -824,8 +824,15 @@ if (skillCenter) {
     if (groupRail) {
       const railRect = groupRail.getBoundingClientRect();
       const buttonRect = button.getBoundingClientRect();
-      const centeredOffset = buttonRect.left - railRect.left - (groupRail.clientWidth - buttonRect.width) / 2;
-      groupRail.scrollBy({left: centeredOffset, behavior: "smooth"});
+      const centeredTarget = groupRail.scrollLeft
+        + buttonRect.left
+        - railRect.left
+        - (groupRail.clientWidth - buttonRect.width) / 2;
+      const maximumScroll = Math.max(0, groupRail.scrollWidth - groupRail.clientWidth);
+      groupRail.scrollTo({
+        left: Math.max(0, Math.min(centeredTarget, maximumScroll)),
+        behavior: "auto",
+      });
     }
   }));
   statusButtons.forEach((button) => button.addEventListener("click", () => {
