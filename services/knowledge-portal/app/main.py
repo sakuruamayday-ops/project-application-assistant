@@ -12021,12 +12021,18 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
             return dict(row)
         releases = connection.execute(
             """
-            SELECT id,version,file_name,file_path,sha256,release_notes,published_at
+            SELECT id,version,file_name,file_path,sha256,release_notes,published_at,
+                   EXISTS(
+                       SELECT 1 FROM skill_release_artifacts linked
+                       WHERE linked.release_id=skill_releases.id
+                   ) AS has_targeted_artifacts
             FROM skill_releases
             ORDER BY published_at DESC,id DESC
             """
         ).fetchall()
     for release in releases:
+        if bool(release["has_targeted_artifacts"]):
+            continue
         if target == "generic" and Path(str(release["file_path"])).is_file():
             return {**dict(release), "target": "generic"}
         if target in {"macos", "windows"}:
