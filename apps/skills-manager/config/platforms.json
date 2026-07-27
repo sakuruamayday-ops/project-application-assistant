@@ -1,0 +1,155 @@
+{
+  "schema": "jiaotang-skills-manager-platforms/v1",
+  "platforms": [
+    {
+      "id": "workbuddy",
+      "name": "WorkBuddy",
+      "vendor": "腾讯",
+      "support": "full",
+      "channel": "workbuddy",
+      "install_mode": "fixed-installer",
+      "notes": "使用签名包内固定安装器；运行前必须关闭 WorkBuddy，避免插件 CLI 端口冲突。",
+      "darwin": {
+        "applications": [
+          "/Applications/WorkBuddy.app",
+          "~/Applications/WorkBuddy.app"
+        ],
+        "managed_roots": [
+          "~/.codebuddy/plugins"
+        ]
+      },
+      "win32": {
+        "applications": [
+          "%LOCALAPPDATA%/Programs/WorkBuddy/WorkBuddy.exe",
+          "%PROGRAMFILES%/WorkBuddy/WorkBuddy.exe"
+        ],
+        "managed_roots": [
+          "%USERPROFILE%/.codebuddy/plugins"
+        ]
+      }
+    },
+    {
+      "id": "trae",
+      "name": "TRAE",
+      "vendor": "字节跳动",
+      "support": "full",
+      "channel": "generic",
+      "install_mode": "managed-directory",
+      "notes": "TRAE 中国版使用用户级 ~/.trae-cn/skills；国际版使用 ~/.trae/skills，更新后新建会话复验。",
+      "darwin": {
+        "applications": [
+          "/Applications/TRAE.app"
+        ],
+        "managed_roots": [
+          "~/.trae-cn/skills",
+          "~/.trae/skills"
+        ]
+      },
+      "win32": {
+        "applications": [
+          "%LOCALAPPDATA%/Programs/trae/TRAE.exe",
+          "%LOCALAPPDATA%/Programs/TRAE/TRAE.exe"
+        ],
+        "managed_roots": [
+          "%USERPROFILE%/.trae-cn/skills",
+          "%USERPROFILE%/.trae/skills"
+        ]
+      }
+    },
+    {
+      "id": "kimi-code",
+      "name": "Kimi Code",
+      "vendor": "月之暗面",
+      "support": "full",
+      "channel": "generic",
+      "install_mode": "shared-agents-directory",
+      "notes": "Kimi Code 原生扫描 ~/.agents/skills，可与 TRAE 共用同一份托管 Skills。",
+      "darwin": {
+        "applications": [
+          "~/.local/bin/kimi",
+          "/opt/homebrew/bin/kimi",
+          "/usr/local/bin/kimi"
+        ],
+        "managed_roots": [
+          "~/.agents/skills"
+        ]
+      },
+      "win32": {
+        "applications": [
+          "%USERPROFILE%/.local/bin/kimi.exe",
+          "%APPDATA%/npm/kimi.cmd"
+        ],
+        "managed_roots": [
+          "%USERPROFILE%/.agents/skills"
+        ]
+      }
+    },
+    {
+      "id": "lingma",
+      "name": "通义灵码",
+      "vendor": "阿里云",
+      "support": "guided",
+      "channel": "generic",
+      "install_mode": "guided-import",
+      "notes": "当前官方资料未公开稳定的用户级 Skills 目录或外部安装 API；首版只提供已验签包和人工导入指引。",
+      "darwin": {
+        "applications": [
+          "/Applications/通义灵码.app",
+          "/Applications/Lingma.app"
+        ],
+        "managed_roots": []
+      },
+      "win32": {
+        "applications": [
+          "%LOCALAPPDATA%/Programs/Lingma/Lingma.exe"
+        ],
+        "managed_roots": []
+      }
+    },
+    {
+      "id": "qoder",
+      "name": "Qoder",
+      "vendor": "阿里云",
+      "support": "adapter",
+      "channel": "generic",
+      "install_mode": "plugin-or-project",
+      "notes": "支持插件和项目级 Skills；首版只生成已验证导入包，不直接修改未知的用户级内部目录。",
+      "darwin": {
+        "applications": [
+          "/Applications/Qoder.app",
+          "/Applications/QoderWork.app"
+        ],
+        "managed_roots": []
+      },
+      "win32": {
+        "applications": [
+          "%LOCALAPPDATA%/Programs/Qoder/Qoder.exe",
+          "%LOCALAPPDATA%/Programs/QoderWork/QoderWork.exe"
+        ],
+        "managed_roots": []
+      }
+    },
+    {
+      "id": "cherry-studio",
+      "name": "Cherry Studio",
+      "vendor": "CherryHQ",
+      "support": "guided",
+      "channel": "generic",
+      "install_mode": "guided-import",
+      "notes": "官方支持 ZIP/文件夹导入，但没有稳定的外部安装 API；管理器只下载、验签并打开导入位置。",
+      "darwin": {
+        "applications": [
+          "/Applications/Cherry Studio.app"
+        ],
+        "managed_roots": []
+      },
+      "win32": {
+        "applications": [
+          "%LOCALAPPDATA%/Programs/CherryStudio/CherryStudio.exe",
+          "%PROGRAMFILES%/Cherry Studio/Cherry Studio.exe"
+        ],
+        "managed_roots": []
+      }
+    }
+  ]
+}

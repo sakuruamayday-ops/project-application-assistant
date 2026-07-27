@@ -12,3 +12,4 @@
 ## 待发布修改
 
 - 2026-07-27：修复Windows单端热修复发布后，Skills下载页错误按总体最新版本判断macOS包，导致macOS下载入口显示“当前版本未包含”的问题。门户现按macOS、Windows各自最近正式版本独立展示下载入口；不重新发布客户端包，不修改既有版本和签名产物。已通过门户完整测试与Skills Center浏览器回归。
+- 2026-07-27：新增“焦糖 Skills 管理器”MVP。首版支持WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder和Cherry Studio的平台识别与分级适配；通用、WorkBuddy macOS和WorkBuddy Windows使用独立发布通道。稳定目录采用冲突阻断、同盘备份、原子替换和可恢复回滚，WorkBuddy仅运行签名包内固定安装器。同一台电脑会复用钥匙串或DPAPI中的既有设备凭据并逐请求签名，不触发换绑。应用内展示Gatekeeper或Authenticode状态，并增加macOS Developer ID公证、Windows Authenticode与SmartScreen正式发布门禁。本项不包含短信登录，不改变V1.3.1.2的49项技能内容，也不影响既有用户安装和凭据。已通过62项门户测试、6项管理器核心测试、生产依赖审计和1440×940、1100×760两档界面回归；正式桌面包仍须取得有效发行证书并完成双端实机验收后另行发布。

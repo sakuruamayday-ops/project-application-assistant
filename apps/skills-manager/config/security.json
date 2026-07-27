@@ -1,0 +1,15 @@
+{
+  "schema": "jiaotang-skills-manager-security/v1",
+  "publisher": {
+    "identity": "jiaotang-codex-skill-release",
+    "namespace": "codex-workbuddy-plugin-manifest",
+    "ed25519_fingerprint": "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
+  },
+  "allowed_download_origins": [
+    "https://zshjiaotang.cn"
+  ],
+  "require_https": true,
+  "require_package_sha256": true,
+  "require_manifest_signature": true,
+  "require_complete_file_manifest": true
+}

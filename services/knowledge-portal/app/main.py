@@ -729,6 +729,26 @@ class SkillLatestResponse(BaseModel):
     download_url: str | None = None
 
 
+class SkillChannelArtifactResponse(BaseModel):
+    id: str
+    available: bool
+    version: str | None = None
+    file_name: str | None = None
+    sha256: str | None = None
+    file_size: int | None = None
+    release_notes: str | None = None
+    published_at: str | None = None
+    download_url: str | None = None
+
+
+class SkillChannelsResponse(BaseModel):
+    schema_id: str = Field(
+        default="jiaotang-skill-channels/v1",
+        serialization_alias="schema",
+    )
+    channels: list[SkillChannelArtifactResponse]
+
+
 SUPPORTED_UPLOAD_EXTENSIONS = {
     ".pdf",
     ".docx",
@@ -12497,6 +12517,45 @@ def latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
     )
 
 
+def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
+    release = latest_skill_artifact(target)
+    if release is None:
+        return SkillChannelArtifactResponse(id=target, available=False)
+    package_path = Path(str(release["file_path"]))
+    if not package_path.is_file():
+        return SkillChannelArtifactResponse(id=target, available=False)
+    download_url = (
+        "/v1/skills/latest/download"
+        if target == "generic"
+        else f"/v1/skills/latest/workbuddy/{target}/download"
+    )
+    return SkillChannelArtifactResponse(
+        id=target,
+        available=True,
+        version=str(release["version"]),
+        file_name=str(release["file_name"]),
+        sha256=str(release["sha256"]),
+        file_size=package_path.stat().st_size,
+        release_notes=str(release["release_notes"] or ""),
+        published_at=str(release["published_at"]),
+        download_url=download_url,
+    )
+
+
+@app.get("/v1/skills/channels", response_model=SkillChannelsResponse)
+def latest_skill_channels(
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    return SkillChannelsResponse(
+        channels=[
+            skill_channel_artifact("generic"),
+            skill_channel_artifact("macos"),
+            skill_channel_artifact("windows"),
+        ]
+    )
+
+
 @app.get("/v1/skills/latest/download")
 def download_latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
     del user
@@ -12534,6 +12593,27 @@ def download_latest_workbuddy_skills(
             "/skills/latest/workbuddy/macos/download或"
             "/skills/latest/workbuddy/windows/download"
         ),
+    )
+
+
+@app.get("/v1/skills/latest/workbuddy/{platform_name}/download")
+def download_latest_workbuddy_platform_skills(
+    platform_name: str,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    if platform_name not in {"macos", "windows"}:
+        raise HTTPException(status_code=404, detail="未知 WorkBuddy 客户端")
+    release = latest_skill_artifact(platform_name)
+    if release is None:
+        raise HTTPException(status_code=404, detail="当前客户端尚未发布 WorkBuddy 包")
+    package_path = Path(str(release["file_path"]))
+    if not package_path.is_file():
+        raise HTTPException(status_code=503, detail="最新版 WorkBuddy 文件暂不可用")
+    return FileResponse(
+        package_path,
+        filename=str(release["file_name"]),
+        media_type="application/zip",
     )
 
 

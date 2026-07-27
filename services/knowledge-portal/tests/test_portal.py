@@ -4213,11 +4213,28 @@ def test_client_channels_keep_independent_latest_versions(tmp_path):
             "exit 0\r\n",
         )
     with closing(module.database()) as connection:
-        connection.execute(
+        user_cursor = connection.execute(
             "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
             (
                 "member",
                 module.password_hasher.hash("member-password-123"),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        token_seed = "skills-manager-channel-token"
+        raw_token = module.user_access_token(user_cursor.lastrowid, token_seed)
+        connection.execute(
+            """
+            INSERT INTO device_tokens(
+                user_id,label,token_prefix,token_hash,token_seed,created_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                user_cursor.lastrowid,
+                "skills-manager",
+                raw_token[:12],
+                module.token_hash(raw_token),
+                token_seed,
                 module.isoformat(module.utc_now()),
             ),
         )
@@ -4309,6 +4326,37 @@ def test_client_channels_keep_independent_latest_versions(tmp_path):
         )
         assert "下载 macOS 包" in page.text
         assert "下载 Windows 包" in page.text
+        assert client.get("/v1/skills/channels").status_code == 401
+        channels = client.get(
+            "/v1/skills/channels",
+            headers=api_headers(raw_token),
+        )
+        assert channels.status_code == 200
+        assert channels.json()["schema"] == "jiaotang-skill-channels/v1"
+        artifacts = {item["id"]: item for item in channels.json()["channels"]}
+        assert artifacts["generic"]["version"] == "1.3.1"
+        assert artifacts["macos"]["version"] == "1.3.1"
+        assert artifacts["windows"]["version"] == "1.3.1.1"
+        assert artifacts["macos"]["download_url"].endswith(
+            "/v1/skills/latest/workbuddy/macos/download"
+        )
+        assert artifacts["windows"]["download_url"].endswith(
+            "/v1/skills/latest/workbuddy/windows/download"
+        )
+        assert (
+            client.get(
+                artifacts["macos"]["download_url"],
+                headers=api_headers(raw_token),
+            ).content
+            == macos.read_bytes()
+        )
+        assert (
+            client.get(
+                artifacts["windows"]["download_url"],
+                headers=api_headers(raw_token),
+            ).content
+            == windows.read_bytes()
+        )
 
 
 def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
