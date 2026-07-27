@@ -59,6 +59,7 @@
     ],
     "delivery": [
       "application-writing",
+      "high-tech-enterprise-application-drafting",
       "application-version-diff",
       "consistency-check",
       "project-deliverable-archive"
@@ -245,6 +246,24 @@
       "to": "financial-verification",
       "type": "optional",
       "reason": "成长性、研发费用和高新收入测算复用可靠财务事实。"
+    },
+    {
+      "from": "project-task-router",
+      "to": "high-tech-enterprise-application-drafting",
+      "type": "route",
+      "reason": "高企正式申请书撰写、RD与PS扩缩表、回填和核稿进入专用母版流程。"
+    },
+    {
+      "from": "high-tech-enterprise-application-drafting",
+      "to": "high-tech-enterprise-preassessment",
+      "type": "requires",
+      "reason": "正式撰写前先锁定申报年度、资格基线和需要补证的企业事实。"
+    },
+    {
+      "from": "high-tech-enterprise-application-drafting",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "申请书中的研发、知识产权、产品、人员和财务数据必须保持来源与待补字段可追溯。"
     },
     {
       "from": "sme-score-preassessment",

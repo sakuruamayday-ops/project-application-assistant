@@ -3,12 +3,12 @@
 <p align="center">
   面向政府项目申报工程师与知识产权顾问的专业 Agent 工作系统。<br>
   把政策、企业、财务、知识产权与申报材料组织成可追溯、可复核的完整工作流。<br>
-  当前包含 48 项顶层 Skills，专利能力收敛为 2 个顶层入口；公司级总路由内部执行 P1、P2、P3 三个阶段。
+  当前包含 49 项顶层 Skills，专利能力收敛为 2 个顶层入口；公司级总路由内部执行 P1、P2、P3 三个阶段。
 </p>
 
 <p align="center">
   <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.3.1"><img src="https://img.shields.io/badge/Release-V1.3.1-C9A760?style=for-the-badge" alt="Release V1.3.1"></a>
-  <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-48-17181A?style=for-the-badge" alt="48 Skills"></a>
+  <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
   <a href="docs/releases/V1.3.1.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
@@ -17,7 +17,7 @@
 
 ## 它解决什么问题
 
-申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。企业全生命周期助手把这些要求编排成 48 项可复用 Skills，并通过统一入口自动路由。
+申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。企业全生命周期助手把这些要求编排成 49 项可复用 Skills，并通过统一入口自动路由。
 
 | 核心能力 | 能做什么 |
 |---|---|
@@ -67,7 +67,7 @@ WorkBuddy 包内同时提供 macOS 与 Windows 固定安装器，不再维护平
 - 安装后执行真实 `marketplace add → install → enable → Skill 触发`，不把“已启用”冒充成功。
 - 客户密钥、账号登录态、签名私钥和付费数据库不进入仓库或发布包。
 
-## 48 项 Skills
+## 49 项 Skills
 
 正式技能、依赖关系、外部服务和发布门禁以 [`skills/suite-manifest.json`](skills/suite-manifest.json) 为唯一机器可读基线。
 
