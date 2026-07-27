@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "required_fields": [
+    "project_id",
+    "project_name",
+    "version",
+    "aliases",
+    "fact_fields",
+    "rule_cards",
+    "rule_layers",
+    "gold_cases"
+  ],
+  "extension_rule": "新增高频项目只允许增加或修改项目算法包，不修改REST、MCP、网站和统一生命周期入口",
+  "fact_fields": "项目专属事实字段，结构与lifecycle-fact-contract.json一致",
+  "coverage_status": "routing-only表示已覆盖项目识别但尚无可激活门槛；rules-confirmed表示规则已按现行政策原文人工确认",
+  "rule_cards": "规则卡可为candidate或confirmed。confirmed规则必须同时保存确认人、确认时间、官方原文链接并标记policy_status=current",
+  "rule_layers": "三层规则模型：stable稳定管理办法、annual年度通知、jurisdiction属地覆盖；后层可按相同rule_id覆盖前层",
+  "gold_cases": "至少包含满足、待补证、明确不满足中的适用场景",
+  "release_gate": "高频项目检索规则中的每个正式项目必须存在唯一算法包；仅rules-confirmed算法包可直接形成门槛结论",
+  "forbidden_fields": [
+    "api",
+    "api_url",
+    "endpoint",
+    "mcp",
+    "mcp_url",
+    "route",
+    "router"
+  ]
+}

@@ -1,0 +1,760 @@
+{
+  "schema_version": 1,
+  "project_id": "little-giant",
+  "project_name": "专精特新小巨人",
+  "version": "2026.1",
+  "coverage_status": "rules-confirmed",
+  "aliases": [
+    "国家专精特新小巨人",
+    "国家专精特新“小巨人”企业",
+    "小巨人"
+  ],
+  "source_retrieval_rule_ids": [
+    "little-giant"
+  ],
+  "fact_fields": [
+    {
+      "field": "specialized_sme_status",
+      "label": "专精特新中小企业状态",
+      "aliases": [
+        "专精特新中小企业状态"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "market_years",
+      "label": "从事特定细分市场年限",
+      "aliases": [
+        "细分市场年限"
+      ],
+      "value_type": "number",
+      "unit": "年"
+    },
+    {
+      "field": "revenue",
+      "label": "上年度营业收入",
+      "aliases": [
+        "上年度营业收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "main_business_revenue_ratio",
+      "label": "主营业务收入占比",
+      "aliases": [
+        "主营业务收入占比"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "two_year_revenue_cagr",
+      "label": "近两年营业收入复合增长率",
+      "aliases": [
+        "近两年营收复合增长率"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "asset_liability_ratio",
+      "label": "资产负债率",
+      "aliases": [
+        "资产负债率"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "little_giant_rnd_requirement_met",
+      "label": "近两年研发投入要求",
+      "aliases": [
+        "小巨人研发投入要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_ip_or_exemption_met",
+      "label": "知识产权或豁免要求",
+      "aliases": [
+        "小巨人知识产权要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "market_share_requirement_met",
+      "label": "市场占有率要求",
+      "aliases": [
+        "市场占有率要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "industry_chain_key_link_met",
+      "label": "产业链关键环节要求",
+      "aliases": [
+        "产业链关键环节要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "specialized_quality_score",
+      "label": "专精特新发展质量评价得分",
+      "aliases": [
+        "发展质量评价得分"
+      ],
+      "value_type": "number",
+      "unit": "分"
+    },
+    {
+      "field": "leading_product_revenue_ratio",
+      "label": "主导产品收入占比",
+      "aliases": [
+        "主导产品收入占比"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    }
+  ],
+  "rule_cards": [
+    {
+      "rule_id": "little-giant-specialized-sme-status",
+      "type": "hard-threshold",
+      "field": "specialized_sme_status",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
+      "source_quote": "申请企业须已获得专精特新中小企业称号。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-market-years",
+      "type": "hard-threshold",
+      "field": "market_years",
+      "operator": "gte",
+      "expected": 3,
+      "unit": "年",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "截至上年末从事特定细分市场满三年。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-revenue",
+      "type": "hard-threshold",
+      "field": "revenue",
+      "operator": "gte",
+      "expected": 5000,
+      "unit": "万元",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "上年度营业收入达到五千万元以上。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-main-business-ratio",
+      "type": "hard-threshold",
+      "field": "main_business_revenue_ratio",
+      "operator": "gte",
+      "expected": 90,
+      "unit": "%",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "主营业务收入占营业收入比重不低于百分之九十。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-revenue-cagr",
+      "type": "hard-threshold",
+      "field": "two_year_revenue_cagr",
+      "operator": "gte",
+      "expected": 5,
+      "unit": "%",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "近两年营业收入复合增长率不低于百分之五。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-liability-ratio",
+      "type": "hard-threshold",
+      "field": "asset_liability_ratio",
+      "operator": "lte",
+      "expected": 75,
+      "unit": "%",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "资产负债率不超过百分之七十五。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-rnd",
+      "type": "hard-threshold",
+      "field": "little_giant_rnd_requirement_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "近两年研发费用合计和逐年研发强度须达到规定标准。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-ip",
+      "type": "hard-threshold",
+      "field": "little_giant_ip_or_exemption_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "须满足主导产品相关Ⅰ类知识产权要求或规定的豁免条件。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-market-share",
+      "type": "hard-threshold",
+      "field": "market_share_requirement_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "主导产品市场占有率须达到规定比例或国内排名要求。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-industry-chain",
+      "type": "hard-threshold",
+      "field": "industry_chain_key_link_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "主导产品应位于规定产业链关键环节并发挥重要作用。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-quality-score",
+      "type": "hard-threshold",
+      "field": "specialized_quality_score",
+      "operator": "gte",
+      "expected": 60,
+      "unit": "分",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "当年度专精特新发展质量评价得分达到六十分以上。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    },
+    {
+      "rule_id": "little-giant-leading-product-ratio",
+      "type": "hard-threshold",
+      "field": "leading_product_revenue_ratio",
+      "operator": "gt",
+      "expected": 50,
+      "unit": "%",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "主导产品收入占同期营业收入比重超过百分之五十。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按工信部现行原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+    }
+  ],
+  "rule_layers": [
+    {
+      "layer_id": "stable-management",
+      "layer_type": "stable",
+      "label": "稳定管理办法",
+      "applicability": {},
+      "rules": [
+        {
+          "rule_id": "little-giant-specialized-sme-status",
+          "type": "hard-threshold",
+          "field": "specialized_sme_status",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
+          "source_quote": "申请企业须已获得专精特新中小企业称号。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-market-years",
+          "type": "hard-threshold",
+          "field": "market_years",
+          "operator": "gte",
+          "expected": 3,
+          "unit": "年",
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "截至上年末从事特定细分市场满三年。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-revenue",
+          "type": "hard-threshold",
+          "field": "revenue",
+          "operator": "gte",
+          "expected": 5000,
+          "unit": "万元",
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "上年度营业收入达到五千万元以上。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-main-business-ratio",
+          "type": "hard-threshold",
+          "field": "main_business_revenue_ratio",
+          "operator": "gte",
+          "expected": 90,
+          "unit": "%",
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "主营业务收入占营业收入比重不低于百分之九十。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-revenue-cagr",
+          "type": "hard-threshold",
+          "field": "two_year_revenue_cagr",
+          "operator": "gte",
+          "expected": 5,
+          "unit": "%",
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "近两年营业收入复合增长率不低于百分之五。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-liability-ratio",
+          "type": "hard-threshold",
+          "field": "asset_liability_ratio",
+          "operator": "lte",
+          "expected": 75,
+          "unit": "%",
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "资产负债率不超过百分之七十五。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-rnd",
+          "type": "hard-threshold",
+          "field": "little_giant_rnd_requirement_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "近两年研发费用合计和逐年研发强度须达到规定标准。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-ip",
+          "type": "hard-threshold",
+          "field": "little_giant_ip_or_exemption_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "须满足主导产品相关Ⅰ类知识产权要求或规定的豁免条件。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-market-share",
+          "type": "hard-threshold",
+          "field": "market_share_requirement_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "主导产品市场占有率须达到规定比例或国内排名要求。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-industry-chain",
+          "type": "hard-threshold",
+          "field": "industry_chain_key_link_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "主导产品应位于规定产业链关键环节并发挥重要作用。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-quality-score",
+          "type": "hard-threshold",
+          "field": "specialized_quality_score",
+          "operator": "gte",
+          "expected": 60,
+          "unit": "分",
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "当年度专精特新发展质量评价得分达到六十分以上。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        },
+        {
+          "rule_id": "little-giant-leading-product-ratio",
+          "type": "hard-threshold",
+          "field": "leading_product_revenue_ratio",
+          "operator": "gt",
+          "expected": 50,
+          "unit": "%",
+          "source": "工信部企业〔2026〕2号",
+          "source_quote": "主导产品收入占同期营业收入比重超过百分之五十。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按工信部现行原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        }
+      ]
+    }
+  ],
+  "gold_cases": [
+    {
+      "case_id": "eligible-verified",
+      "facts": [
+        {
+          "field": "specialized_sme_status",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "market_years",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "revenue",
+          "value": 5000,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "main_business_revenue_ratio",
+          "value": 90,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "two_year_revenue_cagr",
+          "value": 5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "asset_liability_ratio",
+          "value": 75,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "little_giant_rnd_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "little_giant_ip_or_exemption_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "market_share_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "industry_chain_key_link_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_quality_score",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "leading_product_revenue_ratio",
+          "value": 50.5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "little-giant-specialized-sme-status",
+        "little-giant-market-years",
+        "little-giant-revenue",
+        "little-giant-main-business-ratio",
+        "little-giant-revenue-cagr",
+        "little-giant-liability-ratio",
+        "little-giant-rnd",
+        "little-giant-ip",
+        "little-giant-market-share",
+        "little-giant-industry-chain",
+        "little-giant-quality-score",
+        "little-giant-leading-product-ratio"
+      ],
+      "expected_conclusion": "eligible"
+    },
+    {
+      "case_id": "conditional-pending",
+      "facts": [
+        {
+          "field": "specialized_sme_status",
+          "value": true,
+          "evidence_state": "claimed",
+          "source": "金标准事实"
+        },
+        {
+          "field": "market_years",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "revenue",
+          "value": 5000,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "main_business_revenue_ratio",
+          "value": 90,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "two_year_revenue_cagr",
+          "value": 5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "asset_liability_ratio",
+          "value": 75,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "little_giant_rnd_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "little_giant_ip_or_exemption_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "market_share_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "industry_chain_key_link_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_quality_score",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "leading_product_revenue_ratio",
+          "value": 50.5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "little-giant-specialized-sme-status",
+        "little-giant-market-years",
+        "little-giant-revenue",
+        "little-giant-main-business-ratio",
+        "little-giant-revenue-cagr",
+        "little-giant-liability-ratio",
+        "little-giant-rnd",
+        "little-giant-ip",
+        "little-giant-market-share",
+        "little-giant-industry-chain",
+        "little-giant-quality-score",
+        "little-giant-leading-product-ratio"
+      ],
+      "expected_conclusion": "conditional"
+    },
+    {
+      "case_id": "ineligible-failed",
+      "facts": [
+        {
+          "field": "specialized_sme_status",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "market_years",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "revenue",
+          "value": 5000,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "main_business_revenue_ratio",
+          "value": 90,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "two_year_revenue_cagr",
+          "value": 5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "asset_liability_ratio",
+          "value": 75,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "little_giant_rnd_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "little_giant_ip_or_exemption_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "market_share_requirement_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "industry_chain_key_link_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_quality_score",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "leading_product_revenue_ratio",
+          "value": 50.5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "little-giant-specialized-sme-status",
+        "little-giant-market-years",
+        "little-giant-revenue",
+        "little-giant-main-business-ratio",
+        "little-giant-revenue-cagr",
+        "little-giant-liability-ratio",
+        "little-giant-rnd",
+        "little-giant-ip",
+        "little-giant-market-share",
+        "little-giant-industry-chain",
+        "little-giant-quality-score",
+        "little-giant-leading-product-ratio"
+      ],
+      "expected_conclusion": "ineligible"
+    }
+  ]
+}

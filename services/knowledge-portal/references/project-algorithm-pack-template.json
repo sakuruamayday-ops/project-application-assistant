@@ -1,0 +1,55 @@
+{
+  "project_id": "replace-with-stable-id",
+  "project_name": "替换为正式项目名称",
+  "version": "1.0",
+  "aliases": [
+    "项目简称"
+  ],
+  "policy_status": "current",
+  "approved_by": "规则确认人",
+  "approved_at": "YYYY-MM-DD HH:MM:SS",
+  "source_url": "https://官方政策原文地址",
+  "fact_fields": [],
+  "rules": [
+    {
+      "rule_id": "stable-rule-id",
+      "type": "hard-threshold",
+      "field": "统一事实字段",
+      "operator": "gte",
+      "expected": 0,
+      "unit": "万元",
+      "source": "正式政策名称及文号",
+      "source_quote": "逐字保存对应政策原文条款"
+    }
+  ],
+  "annual_overlays": [
+    {
+      "overlay_id": "annual-YYYY",
+      "label": "YYYY年度申报通知",
+      "year": "YYYY",
+      "policy_status": "current",
+      "approved_by": "规则确认人",
+      "approved_at": "YYYY-MM-DD HH:MM:SS",
+      "source_url": "https://年度通知官方地址",
+      "application_types": [],
+      "rules": []
+    }
+  ],
+  "jurisdiction_overlays": [
+    {
+      "overlay_id": "region-example",
+      "label": "属地实施细则",
+      "regions": [
+        "浙江省",
+        "杭州市"
+      ],
+      "policy_status": "current",
+      "approved_by": "规则确认人",
+      "approved_at": "YYYY-MM-DD HH:MM:SS",
+      "source_url": "https://属地政策官方地址",
+      "years": [],
+      "application_types": [],
+      "rules": []
+    }
+  ]
+}

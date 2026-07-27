@@ -105,6 +105,11 @@ fi
   cd "${service_dir}"
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests -q
 )
+(
+  cd "${service_dir}"
+  .venv/bin/python scripts/manage_project_algorithm_packs.py generate-all
+  .venv/bin/python scripts/validate_project_algorithm_packs.py
+)
 node_bin="${JIAOTANG_NODE_BIN:-$(command -v node || true)}"
 node_modules="${JIAOTANG_NODE_MODULES:-}"
 if [[ -z "${node_modules}" ]]; then

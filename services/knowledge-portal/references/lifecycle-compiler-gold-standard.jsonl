@@ -1,0 +1,4 @@
+{"case_id":"policy-revenue-threshold","kind":"policy","text":"企业上年度营业收入不低于5000万元。","expected":{"field":"revenue","operator":"gte","value":5000,"unit":"万元"}}
+{"case_id":"policy-rnd-ratio-threshold","kind":"policy","text":"企业研发费用占比不低于3%。","expected":{"field":"rnd_ratio","operator":"gte","value":3,"unit":"%"}}
+{"case_id":"material-verified-unit-conversion","kind":"material","material":{"document_type":"audit_report","source":"2025年度审计报告","period":"2025","verified":true,"fields":{"营业收入":"1.2亿元"}},"expected":{"field":"revenue","value":12000,"evidence_state":"verified"}}
+{"case_id":"material-text-remains-claimed","kind":"material","material":{"document_type":"application_form","source":"企业申请书","period":"2025","text":"企业2025年度营业收入：5000万元。"},"expected":{"field":"revenue","value":5000,"evidence_state":"claimed"}}

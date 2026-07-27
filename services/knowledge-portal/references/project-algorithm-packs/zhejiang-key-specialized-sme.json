@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "project_id": "zhejiang-key-specialized-sme",
+  "project_name": "浙江省重点专精特新中小企业",
+  "version": "1.0",
+  "coverage_status": "routing-only",
+  "aliases": [
+    "重点省专",
+    "重专"
+  ],
+  "fact_fields": [],
+  "rule_cards": [],
+  "gold_cases": [
+    {
+      "case_id": "rules-pending",
+      "facts": [],
+      "confirm_rule_ids": [],
+      "expected_conclusion": "undetermined"
+    }
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-key-specialized-sme"
+  ]
+}

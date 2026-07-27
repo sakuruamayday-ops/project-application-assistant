@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "project_id": "digital-workshop",
+  "project_name": "浙江省数字化车间",
+  "version": "1.0",
+  "coverage_status": "routing-only",
+  "aliases": [
+    "数字化车间"
+  ],
+  "fact_fields": [],
+  "rule_cards": [],
+  "gold_cases": [
+    {
+      "case_id": "rules-pending",
+      "facts": [],
+      "confirm_rule_ids": [],
+      "expected_conclusion": "undetermined"
+    }
+  ],
+  "source_retrieval_rule_ids": [
+    "digital-workshop"
+  ]
+}
