@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "project_id": "zhejiang-enterprise-technology-center",
+  "project_name": "浙江省企业技术中心",
+  "version": "1.0",
+  "coverage_status": "routing-only",
+  "aliases": [
+    "省技中心",
+    "省企业技术中心"
+  ],
+  "fact_fields": [],
+  "rule_cards": [],
+  "gold_cases": [
+    {
+      "case_id": "rules-pending",
+      "facts": [],
+      "confirm_rule_ids": [],
+      "expected_conclusion": "undetermined"
+    }
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-enterprise-technology-center"
+  ]
+}

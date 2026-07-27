@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "required_fields": [
+    "rule_id",
+    "type",
+    "field",
+    "operator",
+    "expected",
+    "source",
+    "source_quote",
+    "review_status"
+  ],
+  "rule_types": [
+    "exclusion",
+    "hard-threshold",
+    "competitive",
+    "submission"
+  ],
+  "operators": [
+    "exists",
+    "truthy",
+    "falsy",
+    "equals",
+    "not-equals",
+    "in",
+    "not-in",
+    "contains",
+    "gte",
+    "gt",
+    "lte",
+    "lt"
+  ],
+  "review_statuses": [
+    "candidate",
+    "confirmed",
+    "rejected"
+  ],
+  "activation_rule": "只有review_status为confirmed且政策状态为current的规则可以进入硬门槛判断",
+  "prohibited_behavior": [
+    "不得从历史名单、培训材料或非当期解读生成现行硬门槛",
+    "不得把评分项转换为硬门槛",
+    "不得在字段、运算符或单位不明确时自动确认规则"
+  ]
+}

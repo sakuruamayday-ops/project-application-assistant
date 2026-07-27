@@ -64,6 +64,29 @@ from app.device_security import (
     request_canonical_value,
     verify_ed25519_signature,
 )
+from app.project_decision import (
+    base_knowledge_search_query as decide_base_knowledge_search_query,
+    build_lifecycle_decision,
+    build_project_decision,
+    convert_host_extractions_to_materials,
+    evaluate_policy_evidence,
+    explicit_project_regions as decide_explicit_project_regions,
+    matched_project_retrieval_rule as decide_matched_project_retrieval_rule,
+    normalize_search_text as decide_normalize_search_text,
+    parse_deadline_candidates as decide_deadline_candidates,
+    project_region_prompt as decide_project_region_prompt,
+    project_query_is_resolved as decide_project_query_is_resolved,
+    project_query_variants as decide_project_query_variants,
+    project_selection_prompt as decide_project_selection_prompt,
+    project_algorithm_pack_matches,
+    select_project_algorithm_rules,
+    requires_current_policy_sources as decide_requires_current_policy_sources,
+    requires_current_sme_policy_sources as decide_requires_current_sme_policy_sources,
+    merge_fact_contract,
+    selected_project_targets as decide_selected_project_targets,
+    small_giant_recognition_batch as decide_small_giant_recognition_batch,
+    validate_project_algorithm_pack,
+)
 from app.three_first_routing import plan_three_first_analysis
 
 
@@ -173,6 +196,10 @@ PROJECT_INDEX_PATH = Path(
 )
 PROJECT_QUERY_ALIASES_PATH = PROJECT_INDEX_PATH.parent / "query-aliases.json"
 PROJECT_RETRIEVAL_RULES_PATH = PROJECT_INDEX_PATH.parent / "high-frequency-project-retrieval-rules.json"
+LIFECYCLE_FACT_CONTRACT_PATH = (
+    BASE_DIR / "references" / "lifecycle-fact-contract.json"
+)
+PROJECT_ALGORITHM_PACK_DIR = BASE_DIR / "references" / "project-algorithm-packs"
 
 POLICY_INTENT_TERMS = (
     "条件",
@@ -1072,7 +1099,7 @@ def query_terms(query: str) -> list[str]:
 
 
 def normalize_search_text(value: object) -> str:
-    return re.sub(r"[^0-9A-Za-z\u4e00-\u9fff]+", "", str(value or ""))
+    return decide_normalize_search_text(value)
 
 
 def fuzzy_retrieval_terms(query: str, retrieval_queries: list[str]) -> list[str]:
@@ -1638,30 +1665,11 @@ def restore_content_snapshot(snapshot: Path, job_id: int) -> None:
 
 
 def requires_current_policy_sources(query: str) -> bool:
-    project_terms = (
-        "专精特新",
-        "小巨人",
-        "梯度培育",
-        "研发中心",
-        "企业研究院",
-        "高新技术企业",
-        "高企",
-        "高新",
-    )
-    return any(term in query for term in project_terms) and any(
-        term in query for term in POLICY_INTENT_TERMS
-    )
+    return decide_requires_current_policy_sources(query)
 
 
 def requires_current_sme_policy_sources(query: str) -> bool:
-    project_terms = (
-        "优质中小企业梯度培育",
-        "专精特新",
-        "重点专精特新",
-        "小巨人",
-        "重点小巨人",
-    )
-    return requires_current_policy_sources(query) and any(term in query for term in project_terms)
+    return decide_requires_current_sme_policy_sources(query)
 
 
 SMALL_GIANT_RECOGNITION_BATCH_BY_YEAR = {
@@ -1677,50 +1685,11 @@ SMALL_GIANT_RECOGNITION_BATCH_BY_YEAR = {
 
 
 def small_giant_recognition_batch(query: str) -> str:
-    if "小巨人" not in query or any(term in query for term in ("复核", "重点小巨人", "重点专精特新")):
-        return ""
-    explicit = re.search(r"第[一二三四五六七八九十0-9]+批", query)
-    if explicit:
-        return explicit.group(0)
-    match = re.search(r"(?<!\d)(20\d{2})(?:年|年度)?", query)
-    if not match:
-        return ""
-    return SMALL_GIANT_RECOGNITION_BATCH_BY_YEAR.get(int(match.group(1)), "")
+    return decide_small_giant_recognition_batch(query)
 
 
 def base_knowledge_search_query(query: str) -> str:
-    normalized = query.replace("高企", "高新技术企业")
-    if "高新技术企业" not in normalized and "高新" in normalized:
-        normalized = normalized.replace("高新", "高新技术企业")
-    if "公司法" in normalized:
-        legal_terms = [
-            term
-            for term in ("公司法", "注册资本", "股东出资", "股权转让", "董事", "清算", "注销")
-            if term in normalized
-        ]
-        return " ".join(legal_terms[:3]) or "公司法"
-    if not requires_current_policy_sources(normalized):
-        return normalized
-    terms: list[str] = []
-    for term in (
-        "优质中小企业梯度培育",
-        "重点专精特新",
-        "重点小巨人",
-        "专精特新",
-        "小巨人",
-        "杭州市",
-        "宁波市",
-        "金华市",
-        "绍兴市",
-        "浙江省",
-        "研发中心",
-        "企业研究院",
-        "高新技术企业",
-        "高新技术企业",
-    ):
-        if term in normalized and term not in terms:
-            terms.append(term)
-    return " ".join(terms) or normalized
+    return decide_base_knowledge_search_query(query)
 
 
 @lru_cache(maxsize=1)
@@ -1758,22 +1727,38 @@ def load_project_retrieval_rules() -> list[dict[str, object]]:
     return [rule for rule in rules if isinstance(rule, dict)]
 
 
-def matched_project_retrieval_rule(query: str) -> dict[str, object] | None:
-    matches: list[tuple[int, dict[str, object]]] = []
-    normalized_query = normalize_search_text(query)
-    for rule in load_project_retrieval_rules():
-        excluded_terms = [
-            normalize_search_text(term)
-            for term in rule.get("excluded_title_terms", [])
-            if str(term).strip()
-        ]
-        if any(term and term in normalized_query for term in excluded_terms):
+@lru_cache(maxsize=1)
+def load_lifecycle_fact_contract() -> tuple[dict[str, object], ...]:
+    if not LIFECYCLE_FACT_CONTRACT_PATH.is_file():
+        return ()
+    try:
+        payload = json.loads(
+            LIFECYCLE_FACT_CONTRACT_PATH.read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        return ()
+    fields = payload.get("fields", []) if isinstance(payload, dict) else []
+    return tuple(field for field in fields if isinstance(field, dict))
+
+
+@lru_cache(maxsize=1)
+def load_project_algorithm_packs() -> tuple[dict[str, object], ...]:
+    if not PROJECT_ALGORITHM_PACK_DIR.is_dir():
+        return ()
+    packs: list[dict[str, object]] = []
+    for path in sorted(PROJECT_ALGORITHM_PACK_DIR.glob("*.json")):
+        try:
+            pack = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
             continue
-        for alias in rule.get("aliases", []):
-            normalized_alias = str(alias).strip()
-            if normalized_alias and normalized_alias in query:
-                matches.append((len(normalized_alias), rule))
-    return max(matches, key=lambda item: item[0])[1] if matches else None
+        if isinstance(pack, dict) and not validate_project_algorithm_pack(pack):
+            packs.append(pack)
+    return tuple(packs)
+
+
+def matched_project_retrieval_rule(query: str) -> dict[str, object] | None:
+    rule = decide_matched_project_retrieval_rule(query, load_project_retrieval_rules())
+    return dict(rule) if rule else None
 
 
 def matched_project_alias(query: str, rule: dict[str, object]) -> str:
@@ -1783,225 +1768,114 @@ def matched_project_alias(query: str, rule: dict[str, object]) -> str:
 
 
 def selected_project_targets(query: str, rule: dict[str, object]) -> list[str]:
-    targets = [str(target).strip() for target in rule.get("targets", []) if str(target).strip()]
-    selectors = rule.get("selectors", {})
-    if isinstance(selectors, dict):
-        for selector, target in sorted(selectors.items(), key=lambda item: len(str(item[0])), reverse=True):
-            if str(selector) in query and str(target) in targets:
-                return [str(target)]
-    rule_id = str(rule.get("id") or "")
-    if rule_id == "green-factory":
-        if "国家" in query:
-            return ["国家绿色工厂"]
-        if "浙江省" in query or "省级" in query:
-            return ["浙江省绿色低碳工厂"]
-        if re.search(r"[\u4e00-\u9fff]{2,8}(?:区|县)", query) or "区级" in query:
-            return ["区级绿色工厂"]
-        if re.search(r"[\u4e00-\u9fff]{2,8}市", query) or "市级" in query:
-            return ["市级绿色工厂"]
-    return targets
+    return decide_selected_project_targets(query, rule)
 
 
 def explicit_project_regions(query: str) -> list[str]:
-    normalized_query = re.sub(r"(?<!\d)20\d{2}(?:年|年度)?", " ", query)
-    return list(
-        dict.fromkeys(
-            region
-            for region in re.findall(
-                r"[\u4e00-\u9fff]{2,8}(?:省|自治区|市|区|县)",
-                normalized_query,
-            )
-            if not region.startswith(("重点", "省级", "市级", "区级", "国家"))
-        )
-    )
+    return decide_explicit_project_regions(query)
 
 
 def project_region_prompt(query: str, rule: dict[str, object], targets: list[str]) -> str | None:
-    regions = explicit_project_regions(query)
-    required_level = str(rule.get("required_region_level") or "")
-    if required_level == "city" and not any(region.endswith("市") for region in regions):
-        return str(rule.get("region_prompt") or "请先说明企业所在城市。")
-    if required_level == "district" and not any(region.endswith(("区", "县")) for region in regions):
-        return str(rule.get("region_prompt") or "请先说明企业所在区县。")
-    region_required_targets = {
-        str(target) for target in rule.get("region_required_targets", []) if str(target).strip()
-    }
-    if region_required_targets.intersection(targets):
-        needs_district = any(target.startswith("区级") for target in targets)
-        suffixes = ("区", "县") if needs_district else ("市",)
-        if not any(region.endswith(suffixes) for region in regions):
-            return str(rule.get("region_prompt") or "请先说明企业所在地区。")
-    return None
+    return decide_project_region_prompt(query, rule, targets)
 
 
 def project_selection_prompt(query: str) -> str | None:
-    rule = matched_project_retrieval_rule(query)
-    if not rule:
-        return None
-    selected_targets = selected_project_targets(query, rule)
-    region_prompt = project_region_prompt(query, rule, selected_targets)
-    if region_prompt:
-        return region_prompt
-    if not bool(rule.get("selection_required")):
-        return None
-    targets = [str(target) for target in rule.get("targets", [])]
-    if len(selected_targets) == 1:
-        return None
-    return str(rule.get("selection_prompt") or f"请选择具体项目：{'、'.join(targets)}。")
+    return decide_project_selection_prompt(query, load_project_retrieval_rules())
 
 
 def project_query_variants(query: str) -> list[str]:
-    normalized = query.strip().replace("高企", "高新技术企业")
-    if "高新技术企业" not in normalized and "高新" in normalized:
-        normalized = normalized.replace("高新", "高新技术企业")
-    region_terms = explicit_project_regions(normalized)
-
-    def with_regions(project_name: str) -> str:
-        prefixes = [region for region in region_terms if region not in project_name]
-        return " ".join((*prefixes, project_name))
-
-    retrieval_rule = matched_project_retrieval_rule(query)
-    if retrieval_rule:
-        targets = selected_project_targets(query, retrieval_rule)
-        if targets:
-            return list(dict.fromkeys(with_regions(name) for name in targets))
-
-    records = load_project_index_records()
-    formal_matches: list[str] = []
-    indexed_alias_matches: list[str] = []
-    for record in records:
-        canonical_name = str(record.get("canonical_project_name") or "").strip()
-        if canonical_name and canonical_name in normalized:
-            formal_matches.append(canonical_name)
-            continue
-        for alias in record.get("aliases", []):
-            normalized_alias = str(alias).strip()
-            if normalized_alias and normalized_alias in normalized:
-                indexed_alias_matches.append(canonical_name)
-                break
-    if formal_matches:
-        return list(dict.fromkeys(with_regions(name) for name in formal_matches))
-    if indexed_alias_matches:
-        return list(dict.fromkeys(with_regions(name) for name in indexed_alias_matches))
-
-    configured_aliases = load_project_query_aliases()
-    matched_aliases = [alias for alias in configured_aliases if alias in normalized]
-    if matched_aliases:
-        longest = max(len(alias) for alias in matched_aliases)
-        variants: list[str] = []
-        for alias in matched_aliases:
-            if len(alias) != longest:
-                continue
-            variants.extend(configured_aliases[alias])
-        return list(dict.fromkeys(with_regions(name) for name in variants))
-
-    base_query = base_knowledge_search_query(normalized)
-    if base_query != normalized:
-        return [base_query]
-    reduced = normalized
-    for term in sorted(POLICY_INTENT_TERMS, key=len, reverse=True):
-        reduced = reduced.replace(term, " ")
-    reduced = re.sub(r"(?:帮我|请问|查询|检索|一下|有哪些|是什么|怎么报|如何报|怎么申请|如何申请)", " ", reduced)
-    reduced = re.sub(r"[的，。！？、：:；;（）()]+", " ", reduced)
-    reduced = re.sub(r"\s+", " ", reduced).strip()
-    return [reduced or normalized]
+    return decide_project_query_variants(
+        query,
+        rules=load_project_retrieval_rules(),
+        project_records=load_project_index_records(),
+        configured_aliases=load_project_query_aliases(),
+    )
 
 
 def project_search_plan(query: str) -> dict[str, object]:
-    normalized_query = query.strip()
-    year_match = re.search(r"(?<!\d)(20\d{2})(?:年|年度)?", normalized_query)
-    requested_year = int(year_match.group(1)) if year_match else None
-    requested_batch = small_giant_recognition_batch(normalized_query)
-    retrieval_rule = matched_project_retrieval_rule(normalized_query)
-    if retrieval_rule:
-        targets = selected_project_targets(normalized_query, retrieval_rule)
-    else:
-        targets = resolved_canonical_projects(normalized_query)
-    if not targets and project_query_is_resolved(normalized_query):
-        targets = [
-            variant
-            for variant in project_query_variants(normalized_query)
-            if variant.strip()
-        ]
-    regions = explicit_project_regions(normalized_query)
-    list_intent = any(
-        term in normalized_query
-        for term in ("名单", "公示", "认定企业", "入选企业", "通过企业", "同行")
+    return build_project_decision(
+        query,
+        rules=load_project_retrieval_rules(),
+        project_records=load_project_index_records(),
+        configured_aliases=load_project_query_aliases(),
     )
-    condition_intent = any(
-        term in normalized_query
-        for term in ("条件", "要求", "标准", "门槛", "办法", "材料", "流程", "怎么报", "如何报")
+
+
+def enterprise_lifecycle_decision(
+    query: str,
+    *,
+    enterprise_facts: list[dict[str, object]],
+    project_context: dict[str, object],
+    requirements: list[dict[str, object]],
+    growth_projects: list[dict[str, object]] | None = None,
+    deliverable: dict[str, object] | None = None,
+    enterprise_materials: list[dict[str, object]] | None = None,
+    policy_text: str = "",
+    policy_source: str = "",
+    policy_status: str = "",
+    rule_confirmations: dict[str, object] | None = None,
+    host_extractions: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    host_conversion = convert_host_extractions_to_materials(host_extractions or [])
+    selected_pack = next(
+        (
+            pack
+            for pack in load_project_algorithm_packs()
+            if project_algorithm_pack_matches(pack, project_context)
+        ),
+        None,
     )
-    current_intent = any(
-        term in normalized_query
-        for term in ("最新", "当前", "通知", "截止", "开放", "申报期", "正在申报")
+    fact_contract = merge_fact_contract(
+        load_lifecycle_fact_contract(),
+        selected_pack.get("fact_fields", []) if selected_pack else [],
     )
-    planning_intent = any(
-        term in normalized_query
-        for term in ("成长路径", "项目规划", "申报规划", "未来规划", "五年规划", "可报项目", "能报什么")
+    selected_algorithm_rules = (
+        select_project_algorithm_rules(selected_pack, project_context)
+        if selected_pack
+        else {"rules": [], "selected_layers": []}
     )
-    stages: list[str] = []
-    if condition_intent:
-        stages.extend(("申报通知", "管理办法"))
-    if list_intent:
-        stages.extend(("认定名单", "公示名单"))
-    if current_intent or planning_intent:
-        stages.append("申报通知")
-    base_variants = project_query_variants(normalized_query)
-    variants: list[str] = []
-    for base_variant in base_variants:
-        variants.append(base_variant)
-        if requested_year is not None:
-            variants.append(f"{base_variant} {requested_year}")
-        if requested_batch:
-            variants.append(f"{base_variant} {requested_batch}")
-        for stage in stages:
-            variants.append(f"{base_variant} {stage}")
-            if requested_year is not None:
-                variants.append(f"{base_variant} {requested_year} {stage}")
-            if requested_batch:
-                variants.append(f"{base_variant} {requested_batch} {stage}")
-    if requested_batch and "小巨人" in normalized_query:
-        variants.extend(
-            (
-                f"{requested_batch} 专精特新 小巨人",
-                f"{requested_batch} 专精特新 小巨人 申报通知",
-                f"{requested_batch} 专精特新 小巨人 公示名单",
-                f"{requested_batch} 专精特新 小巨人 认定名单",
-            )
-        )
-    return {
-        "query": normalized_query,
-        "targets": list(dict.fromkeys(str(target).strip() for target in targets if str(target).strip())),
-        "regions": regions,
-        "year": requested_year,
-        "batch": requested_batch,
-        "list_intent": list_intent,
-        "condition_intent": condition_intent,
-        "current_intent": current_intent,
-        "planning_intent": planning_intent,
-        "stages": list(dict.fromkeys(stages)),
-        "variants": list(dict.fromkeys(variant.strip() for variant in variants if variant.strip()))[:30],
-    }
+    result = build_lifecycle_decision(
+        query,
+        rules=load_project_retrieval_rules(),
+        project_records=load_project_index_records(),
+        configured_aliases=load_project_query_aliases(),
+        enterprise_facts=enterprise_facts,
+        project_context=project_context,
+        requirements=requirements,
+        growth_projects=growth_projects or [],
+        deliverable=deliverable,
+        enterprise_materials=[
+            *(enterprise_materials or []),
+            *host_conversion["materials"],
+        ],
+        fact_contract=fact_contract,
+        policy_text=policy_text,
+        policy_source=policy_source,
+        policy_status=policy_status,
+        rule_confirmations=rule_confirmations or {},
+        rule_candidates=selected_algorithm_rules["rules"],
+    )
+    result["host_extraction"] = host_conversion
+    result["project_algorithm_pack"] = (
+        {
+            "project_id": selected_pack.get("project_id"),
+            "project_name": selected_pack.get("project_name"),
+            "version": selected_pack.get("version"),
+            "selected_layers": selected_algorithm_rules["selected_layers"],
+        }
+        if selected_pack
+        else None
+    )
+    return result
 
 
 def project_query_is_resolved(query: str) -> bool:
-    if matched_project_retrieval_rule(query):
-        return True
-    normalized = query.strip().replace("高企", "高新技术企业")
-    if "高新技术企业" not in normalized and "高新" in normalized:
-        normalized = normalized.replace("高新", "高新技术企业")
-    if "高新技术企业" in normalized and not any(
-        term in normalized for term in ("研究开发中心", "研究院", "产业园", "产品")
-    ):
-        return True
-    for record in load_project_index_records():
-        canonical_name = str(record.get("canonical_project_name") or "").strip()
-        if canonical_name and canonical_name in normalized:
-            return True
-        if any(str(alias).strip() and str(alias).strip() in normalized for alias in record.get("aliases", [])):
-            return True
-    return any(alias in normalized for alias in load_project_query_aliases())
+    return decide_project_query_is_resolved(
+        query,
+        rules=load_project_retrieval_rules(),
+        project_records=load_project_index_records(),
+        configured_aliases=load_project_query_aliases(),
+    )
 
 
 def knowledge_search_query(query: str) -> str:
@@ -2079,16 +1953,9 @@ def search_knowledge(
     requested_year = query_plan["year"]
     requested_batch = str(query_plan["batch"] or "")
     retrieval_queries = list(query_plan["variants"])
-    project_query_resolved = project_query_is_resolved(normalized_query)
-    current_policy_only = requested_year is None and not requested_batch and (
-        requires_current_policy_sources(normalized_query)
-        or (project_query_resolved and any(term in normalized_query for term in POLICY_INTENT_TERMS))
-    )
-    current_sme_policy_only = (
-        requested_year is None
-        and not requested_batch
-        and requires_current_sme_policy_sources(normalized_query)
-    )
+    retrieval_policy = dict(query_plan.get("retrieval_policy") or {})
+    current_policy_only = bool(retrieval_policy.get("current_policy_only"))
+    current_sme_policy_only = bool(retrieval_policy.get("current_sme_policy_only"))
     fuzzy_terms = fuzzy_retrieval_terms(normalized_query, retrieval_queries)
     candidate_limit = min(max(bounded_limit * 8, 40), 160)
     source_order = policy_source_order(normalized_query)
@@ -2355,6 +2222,7 @@ def search_knowledge(
                 "document_role": row["document_role"],
                 "index_layer": "content",
                 **knowledge_source_metadata(row),
+                "evidence_gate": evaluate_policy_evidence(row),
                 "document_stage": row["document_stage"],
                 "canonical_project_name": row["canonical_project_name"],
                 "policy_year": row["policy_year"],
@@ -2373,6 +2241,7 @@ def public_search_knowledge(query: str, limit: int = 8) -> dict[str, object]:
         "source_layer",
         "source_labels",
         "verification_status",
+        "evidence_gate",
         "document_stage",
         "canonical_project_name",
         "policy_year",
@@ -2886,44 +2755,7 @@ def parse_deadline_candidates(
     policy_year: int | None,
     now: datetime,
 ) -> list[tuple[datetime, str, int]]:
-    normalized = re.sub(r"\s+", " ", text)
-    candidates: list[tuple[datetime, str, int]] = []
-    for match in DEADLINE_DATE_PATTERN.finditer(normalized):
-        context_start = max(0, match.start() - 90)
-        context_end = min(len(normalized), match.end() + 100)
-        context = normalized[context_start:context_end]
-        if not DEADLINE_CONTEXT_PATTERN.search(context):
-            continue
-        year = int(match.group("year") or policy_year or now.year)
-        month = int(match.group("month"))
-        day = int(match.group("day"))
-        hour_value = match.group("hour")
-        minute_value = match.group("minute")
-        meridiem = match.group("meridiem") or ""
-        hour = int(hour_value) if hour_value else 23
-        minute = int(minute_value) if minute_value else (0 if hour_value else 59)
-        if meridiem == "下午" and hour < 12:
-            hour += 12
-        elif meridiem == "中午" and hour < 11:
-            hour += 12
-        try:
-            deadline = datetime(year, month, day, hour, minute, 59, tzinfo=ASSISTANT_TIMEZONE)
-        except ValueError:
-            continue
-        remaining_seconds = (deadline - now).total_seconds()
-        if remaining_seconds < 0 or remaining_seconds > 370 * 24 * 60 * 60:
-            continue
-        administrative_context = any(
-            term in context
-            for term in ("推荐单位", "主管部门", "区县", "审核截止", "报送截止", "经信部门", "科技部门")
-        )
-        enterprise_context = any(
-            term in context
-            for term in ("企业申报", "申报人", "网上申报", "申请人", "报名", "材料提交")
-        )
-        priority = 0 if enterprise_context else (2 if administrative_context else 1)
-        candidates.append((deadline, context.strip(), priority))
-    return candidates
+    return decide_deadline_candidates(text, policy_year=policy_year, now=now)
 
 
 def deadline_reminders_for_documents(
@@ -6590,6 +6422,10 @@ def portal_payload(
     message: str | None = None,
     error: str | None = None,
     active_page: str = "overview",
+    invite_query: str = "",
+    member_query: str = "",
+    feedback_status: str = "",
+    feedback_query: str = "",
 ) -> dict[str, object]:
     with closing(database()) as connection:
         device_tokens = connection.execute(
@@ -6713,6 +6549,8 @@ def portal_payload(
         )
         users = []
         registration_authorizations = []
+        registration_authorizations_total = 0
+        users_total = 0
         feedback_messages = []
         update_jobs = []
         releases = []
@@ -6739,6 +6577,24 @@ def portal_payload(
                 ORDER BY users.id
                 """
             ).fetchall(), "created_at", "install_reported_at")
+            users_total = len(users)
+            normalized_member_query = " ".join(member_query.strip().split())[:100]
+            if normalized_member_query:
+                member_key = normalized_member_query.casefold()
+                users = [
+                    member
+                    for member in users
+                    if member_key
+                    in " ".join(
+                        (
+                            str(member.get("real_name") or ""),
+                            str(member.get("username") or ""),
+                            str(member.get("company_name") or ""),
+                            "管理员" if member.get("is_admin") else "成员",
+                            "有效" if member.get("active") else "已停用",
+                        )
+                    ).casefold()
+                ]
             registration_authorization_rows = connection.execute(
                 """
                 SELECT registration_authorizations.*,users.username
@@ -6765,6 +6621,29 @@ def portal_payload(
                 }
                 for authorization in registration_authorization_rows
             ]
+            registration_authorizations_total = len(registration_authorizations)
+            normalized_invite_query = " ".join(invite_query.strip().split())[:100]
+            if normalized_invite_query:
+                query_key = normalized_invite_query.casefold()
+                status_labels = {
+                    "pending": "待接受",
+                    "registered": "已注册",
+                    "revoked": "已撤销",
+                }
+                registration_authorizations = [
+                    authorization
+                    for authorization in registration_authorizations
+                    if query_key
+                    in " ".join(
+                        (
+                            str(authorization.get("real_name") or ""),
+                            str(authorization.get("identity_code") or ""),
+                            str(authorization.get("username") or ""),
+                            str(authorization.get("status") or ""),
+                            status_labels.get(str(authorization.get("status") or ""), ""),
+                        )
+                    ).casefold()
+                ]
         feedback_query = """
             SELECT feedback_messages.*,users.username,users.real_name
             FROM feedback_messages
@@ -6947,6 +6826,8 @@ def portal_payload(
         ),
         "users": users,
         "registration_authorizations": registration_authorizations,
+        "registration_authorizations_total": registration_authorizations_total,
+        "invite_query": " ".join(invite_query.strip().split())[:100],
         "feedback_messages": feedback_messages,
         "update_jobs": update_jobs,
         "releases": releases,
@@ -7595,12 +7476,25 @@ def preferences_reset(
     return RedirectResponse("/preferences?reset=1", status_code=303)
 
 
-def portal_page_response(request: Request, user: sqlite3.Row, active_page: str) -> HTMLResponse:
+def portal_page_response(
+    request: Request,
+    user: sqlite3.Row,
+    active_page: str,
+    *,
+    invite_query: str = "",
+) -> HTMLResponse:
     admin_pages = {"health", "knowledge-admin", "skill-admin", "members"}
     if active_page in admin_pages:
         require_admin(user)
     response = templates.TemplateResponse(
-        request, "portal.html", portal_payload(request, user, active_page=active_page)
+        request,
+        "portal.html",
+        portal_payload(
+            request,
+            user,
+            active_page=active_page,
+            invite_query=invite_query,
+        ),
     )
     response.headers["Cache-Control"] = "private, no-store"
     return response
@@ -7733,8 +7627,12 @@ def releases_page(request: Request, user: Annotated[sqlite3.Row, Depends(require
 
 
 @app.get("/admin/members", response_class=HTMLResponse)
-def members_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
-    return portal_page_response(request, user, "members")
+def members_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    invite_query: str = "",
+):
+    return portal_page_response(request, user, "members", invite_query=invite_query)
 
 
 @app.post("/admin/registration-authorizations")

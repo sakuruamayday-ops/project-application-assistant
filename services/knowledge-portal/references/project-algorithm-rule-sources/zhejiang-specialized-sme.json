@@ -1,0 +1,35 @@
+{
+  "project_id": "zhejiang-specialized-sme",
+  "project_name": "专精特新中小企业",
+  "version": "2026.1",
+  "aliases": ["省级专精特新", "省专", "专精特新"],
+  "source_retrieval_rule_ids": ["zhejiang-specialized-sme"],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖按工信部现行原文核验",
+  "approved_at": "2026-07-27 16:30:00",
+  "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+  "fact_fields": [
+    {"field": "technology_and_innovative_sme_status_met", "label": "科技型和创新型中小企业资格要求", "aliases": ["科技型和创新型中小企业资格要求"], "value_type": "boolean"},
+    {"field": "market_years", "label": "从事特定细分市场年限", "aliases": ["细分市场年限"], "value_type": "number", "unit": "年"},
+    {"field": "revenue_or_equity_investment_met", "label": "营收或股权投资替代条件", "aliases": ["营收或股权投资条件"], "value_type": "boolean"},
+    {"field": "main_business_revenue_ratio", "label": "主营业务收入占比", "aliases": ["主营业务收入占比"], "value_type": "number", "unit": "%"},
+    {"field": "asset_liability_ratio", "label": "资产负债率", "aliases": ["资产负债率"], "value_type": "number", "unit": "%"},
+    {"field": "rnd_each_year_requirement_met", "label": "近两年研发费用与强度要求", "aliases": ["近两年研发要求"], "value_type": "boolean"},
+    {"field": "ip_or_exemption_requirement_met", "label": "知识产权或豁免要求", "aliases": ["知识产权或豁免要求"], "value_type": "boolean"},
+    {"field": "market_influence_requirement_met", "label": "细分市场影响力要求", "aliases": ["细分市场影响力"], "value_type": "boolean"},
+    {"field": "specialized_quality_score", "label": "专精特新发展质量评价得分", "aliases": ["发展质量评价得分"], "value_type": "number", "unit": "分"},
+    {"field": "leading_product_revenue_ratio", "label": "主导产品收入占比", "aliases": ["主导产品收入占比"], "value_type": "number", "unit": "%"}
+  ],
+  "rules": [
+    {"rule_id": "specialized-sme-entry-status", "type": "hard-threshold", "field": "technology_and_innovative_sme_status_met", "operator": "truthy", "expected": true, "source": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号", "source_quote": "须满足科技型和创新型中小企业相关资格要求。"},
+    {"rule_id": "specialized-sme-market-years", "type": "hard-threshold", "field": "market_years", "operator": "gte", "expected": 3, "unit": "年", "source": "工信部企业〔2026〕2号", "source_quote": "截至上年末从事特定细分市场满三年。"},
+    {"rule_id": "specialized-sme-revenue-or-investment", "type": "hard-threshold", "field": "revenue_or_equity_investment_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "营业收入或合格机构投资者实缴股权投资须满足规定条件。"},
+    {"rule_id": "specialized-sme-main-business-ratio", "type": "hard-threshold", "field": "main_business_revenue_ratio", "operator": "gte", "expected": 80, "unit": "%", "source": "工信部企业〔2026〕2号", "source_quote": "主营业务收入占营业收入比重不低于百分之八十。"},
+    {"rule_id": "specialized-sme-liability-ratio", "type": "hard-threshold", "field": "asset_liability_ratio", "operator": "lte", "expected": 80, "unit": "%", "source": "工信部企业〔2026〕2号", "source_quote": "资产负债率不超过百分之八十。"},
+    {"rule_id": "specialized-sme-rnd", "type": "hard-threshold", "field": "rnd_each_year_requirement_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "近两年研发费用和研发强度须逐年达到规定标准。"},
+    {"rule_id": "specialized-sme-ip", "type": "hard-threshold", "field": "ip_or_exemption_requirement_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "须满足主导产品相关知识产权要求或规定的豁免条件。"},
+    {"rule_id": "specialized-sme-market-influence", "type": "hard-threshold", "field": "market_influence_requirement_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "主导产品细分市场占有率应较为靠前并具有一定影响力。"},
+    {"rule_id": "specialized-sme-quality-score", "type": "hard-threshold", "field": "specialized_quality_score", "operator": "gte", "expected": 50, "unit": "分", "source": "工信部企业〔2026〕2号", "source_quote": "当年度专精特新发展质量评价得分达到五十分以上。"},
+    {"rule_id": "specialized-sme-leading-product-ratio", "type": "hard-threshold", "field": "leading_product_revenue_ratio", "operator": "gt", "expected": 50, "unit": "%", "source": "工信部企业〔2026〕2号", "source_quote": "主导产品收入占同期营业收入比重超过百分之五十。"}
+  ]
+}

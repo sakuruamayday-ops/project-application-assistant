@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "project_id": "manufacturing-single-champion-1",
+  "project_name": "浙江省制造业单项冠军企业",
+  "version": "1.0",
+  "coverage_status": "routing-only",
+  "aliases": [
+    "单项冠军"
+  ],
+  "fact_fields": [],
+  "rule_cards": [],
+  "gold_cases": [
+    {
+      "case_id": "rules-pending",
+      "facts": [],
+      "confirm_rule_ids": [],
+      "expected_conclusion": "undetermined"
+    }
+  ],
+  "source_retrieval_rule_ids": [
+    "manufacturing-single-champion"
+  ]
+}
