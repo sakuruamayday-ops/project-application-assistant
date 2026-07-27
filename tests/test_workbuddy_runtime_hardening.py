@@ -51,6 +51,10 @@ SIGNING_KEY = (
     / ".codex/skill-signing/jiaotang-skill-release-ed25519"
 )
 PUBLIC_KEY = SIGNING_KEY.with_suffix(".pub")
+RUN_REAL_WORKBUDDY_REGRESSION = (
+    os.environ.get("JIAOTANG_RUN_REAL_WORKBUDDY_REGRESSION", "").strip().lower()
+    == "true"
+)
 
 
 class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
@@ -100,8 +104,8 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         return marketplace
 
     @unittest.skipUnless(
-        WORKBUDDY_CLI.is_file(),
-        "当前主机未安装WorkBuddy，跳过真实宿主回归",
+        RUN_REAL_WORKBUDDY_REGRESSION and WORKBUDDY_CLI.is_file(),
+        "未显式启用真实WorkBuddy回归，跳过宿主市场安装测试",
     )
     def test_real_marketplace_add_install_enable_uses_isolated_config(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -399,10 +403,11 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                         )
 
     @unittest.skipUnless(
-        WORKBUDDY_CLI.is_file()
+        RUN_REAL_WORKBUDDY_REGRESSION
+        and WORKBUDDY_CLI.is_file()
         and SIGNING_KEY.is_file()
         and PUBLIC_KEY.is_file(),
-        "当前主机缺少WorkBuddy或测试签名身份，跳过完整发布回归",
+        "未显式启用真实WorkBuddy回归，跳过宿主安装测试",
     )
     def test_packager_emits_signed_sidecar_and_runs_real_install_gate(self):
         source_skill = (
