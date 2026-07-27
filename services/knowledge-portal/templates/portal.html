@@ -71,13 +71,42 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
 
       {% if single_page or active_page == 'algorithms' %}<section id="algorithms" class="section-block algorithm-section">
         <div class="section-heading"><div><p class="eyebrow">Decision Registry</p><h2>项目算法包</h2></div><p>算法包把项目识别、稳定管理办法、年度通知和属地要求组织为统一决策规则。规则更新由服务端完成，现有 Skills 与 MCP 无需重复配置。</p></div>
+        <article class="panel algorithm-introduction">
+          <div><span class="eyebrow">它解决什么问题</span><h3>让网站、API、MCP 和 Skills 使用同一套项目判断口径</h3></div>
+          <p>正式规则包会读取企业事实字段并逐项核对政策门槛；检索路由包只负责识别项目、限定检索范围和防止串项。点击清单中的项目，可以查看适用场景、企业字段、规则层、政策来源和实际运行配置。</p>
+        </article>
         <div class="health-grid">
           <article class="health-card"><span>算法包总数</span><strong>{{ project_algorithms.total }}</strong><small>已覆盖高频项目入口</small></article>
           <article class="health-card"><span>正式规则包</span><strong>{{ project_algorithms.confirmed }}</strong><small>可执行已确认门槛判断</small></article>
           <article class="health-card"><span>检索路由包</span><strong>{{ project_algorithms.routing_only }}</strong><small>只检索与核验，不直接下结论</small></article>
           <article class="health-card"><span>当前首要补齐</span><strong>{{ project_algorithms.priority_title }}</strong><small>{{ project_algorithms.priority_detail }}</small></article>
         </div>
-        <article class="panel table-panel"><div class="panel-head"><h3>项目算法清单</h3><span>{{ project_algorithms.total }} 个项目 · 检索路由包按近7日真实查询频率排序</span></div><div class="table-wrap"><table><thead><tr><th>项目</th><th>状态</th><th>补齐顺序</th><th>近7日查询</th><th>规则层</th><th>正式规则</th><th>当前能力</th></tr></thead><tbody>{% for item in project_algorithms["items"] %}<tr><td><strong>{{ item.project_name }}</strong><small>{{ item.project_id }}</small></td><td><span class="table-status {{ 'off' if item.coverage_status != 'rules-confirmed' else '' }}">{{ item.coverage_label }}</span></td><td><strong>{{ item.priority_label }}</strong><small>{{ item.priority_reason }}</small></td><td>{{ item.usage_7d }} 次<small>{{ item.users_7d }} 名成员</small></td><td>{% if item.layers %}{% for layer in item.layers %}<span class="status-pill">{{ layer.label }} · {{ layer.rule_count }}</span>{% endfor %}{% else %}<span class="muted">待确认规则源</span>{% endif %}</td><td>{{ item.rule_count }}</td><td>{{ item.decision_scope }}</td></tr>{% endfor %}</tbody></table></div></article>
+        {% if project_algorithm_detail %}
+        <article class="panel algorithm-detail" id="algorithm-detail">
+          <div class="algorithm-detail-head">
+            <div><span class="eyebrow">{{ project_algorithm_detail.coverage_label }}</span><h3>{{ project_algorithm_detail.project_name }}</h3><p>{{ project_algorithm_detail.project_id }} · 配置版本 {{ project_algorithm_detail.version }}</p></div>
+            <a class="button secondary" href="/algorithms">返回完整清单</a>
+          </div>
+          <div class="algorithm-purpose"><strong>用途说明</strong><p>{{ project_algorithm_detail.purpose }}</p></div>
+          <dl class="algorithm-detail-metrics">
+            <div><dt>项目别名</dt><dd>{{ project_algorithm_detail.aliases|join('、') if project_algorithm_detail.aliases else '仅使用正式名称' }}</dd></div>
+            <div><dt>企业事实字段</dt><dd>{{ project_algorithm_detail.fact_fields|length }} 项</dd></div>
+            <div><dt>已配置规则</dt><dd>{{ project_algorithm_detail.rules|length }} 条</dd></div>
+            <div><dt>政策来源</dt><dd>{{ project_algorithm_detail.sources|length }} 项</dd></div>
+          </dl>
+          {% if project_algorithm_detail.fact_fields %}
+          <div class="algorithm-detail-section"><h4>需要读取的企业事实</h4><div class="algorithm-chip-list">{% for field in project_algorithm_detail.fact_fields %}<span><strong>{{ field.label }}</strong><small>{{ field.field }}{% if field.unit %} · {{ field.unit }}{% endif %}</small></span>{% endfor %}</div></div>
+          {% endif %}
+          {% if project_algorithm_detail.rules %}
+          <div class="algorithm-detail-section"><h4>正式判断规则</h4><div class="table-wrap"><table><thead><tr><th>规则字段</th><th>判断</th><th>规则层</th><th>政策依据</th></tr></thead><tbody>{% for rule in project_algorithm_detail.rules %}<tr><td><strong>{{ rule.field }}</strong><small>{{ rule.rule_id }}</small></td><td>{{ rule.operator }} {{ rule.expected }} {{ rule.unit }}</td><td>{{ rule.layer_label }}</td><td><strong>{{ rule.source }}</strong>{% if rule.source_quote %}<small>{{ rule.source_quote }}</small>{% endif %}{% if rule.source_url %}<a href="{{ rule.source_url }}" target="_blank" rel="noreferrer">查看官方原文 →</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div>
+          {% else %}
+          <div class="algorithm-routing-notice"><strong>为什么暂时没有门槛源代码</strong><p>该项目目前只有识别与检索配置。待稳定管理办法、年度通知和属地覆盖规则逐项确认后，才会升级为正式规则包，避免把未经确认的条件用于企业判断。</p></div>
+          {% endif %}
+          {% if project_algorithm_detail.sources %}<div class="algorithm-detail-section"><h4>规则来源</h4><ul class="algorithm-source-list">{% for source in project_algorithm_detail.sources %}<li>{% if source.url %}<a href="{{ source.url }}" target="_blank" rel="noreferrer">{{ source.title }}</a>{% else %}<span>{{ source.title }}</span>{% endif %}<span>{{ source.status or '待标记状态' }}</span></li>{% endfor %}</ul></div>{% endif %}
+          <details class="algorithm-source-code"><summary>查看算法包源配置 JSON</summary><pre>{{ project_algorithm_detail.raw_json }}</pre></details>
+        </article>
+        {% endif %}
+        <article class="panel table-panel"><div class="panel-head"><h3>项目算法清单</h3><span>{{ project_algorithms.total }} 个项目 · 点击项目查看规则详情</span></div><div class="table-wrap"><table><thead><tr><th>项目</th><th>状态</th><th>补齐顺序</th><th>近7日查询</th><th>规则层</th><th>正式规则</th><th>当前能力</th><th></th></tr></thead><tbody>{% for item in project_algorithms["items"] %}<tr><td><a class="algorithm-project-link" href="/algorithms?project={{ item.project_id }}#algorithm-detail"><strong>{{ item.project_name }}</strong><small>{{ item.project_id }}</small></a></td><td><span class="table-status {{ 'off' if item.coverage_status != 'rules-confirmed' else '' }}">{{ item.coverage_label }}</span></td><td><strong>{{ item.priority_label }}</strong><small>{{ item.priority_reason }}</small></td><td>{{ item.usage_7d }} 次<small>{{ item.users_7d }} 名成员</small></td><td>{% if item.layers %}{% for layer in item.layers %}<span class="status-pill">{{ layer.label }} · {{ layer.rule_count }}</span>{% endfor %}{% else %}<span class="muted">待确认规则源</span>{% endif %}</td><td>{{ item.rule_count }}</td><td>{{ item.decision_scope }}</td><td><a class="text-action" href="/algorithms?project={{ item.project_id }}#algorithm-detail">查看详情 →</a></td></tr>{% endfor %}</tbody></table></div></article>
       </section>{% endif %}
 
       {% if user.is_admin and (single_page or active_page == 'health') %}

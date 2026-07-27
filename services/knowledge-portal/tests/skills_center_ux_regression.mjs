@@ -16,7 +16,7 @@ const skillCenterTemplate = await readFile(new URL("../templates/skill_center.ht
 assert.match(skillCenterTemplate, /<details class="skill-release-notes skill-current-release-notes">/, "当前版本发布说明必须使用默认折叠的 details");
 assert.match(skillCenterTemplate, /latest_release\.workbuddy_platforms/, "下载区必须按 WorkBuddy 平台渲染");
 assert.match(skillCenterTemplate, /platform\.download_url/, "每个平台必须使用独立下载入口");
-assert.match(skillCenterTemplate, /内容和 SHA-256 相同/, "下载区必须解释跨平台共用签名包");
+assert.match(skillCenterTemplate, /下载通道独立维护/, "下载区必须解释各平台独立发布策略");
 assert.doesNotMatch(skillCenterTemplate, /platform\.feedback_status|OIDC 签名证明|GitHub Job/, "下载区不应再展示平台确认状态");
 const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
 const server = spawn(python, ["tests/browser_route_server.py"], {
@@ -239,6 +239,11 @@ try {
   assert.equal(await page.getByRole("heading", {name: "项目算法包"}).count(), 1, "算法包页面必须正常展示");
   assert.equal(await page.getByText("当前首要补齐", {exact: true}).count(), 1, "算法包页面必须展示动态补齐重点");
   assert.equal(await page.getByText("近7日查询", {exact: true}).count(), 1, "算法包页面必须展示真实查询频率");
+  assert.equal(await page.getByText("它解决什么问题", {exact: true}).count(), 1, "算法包页面必须解释实际用途");
+  await page.getByRole("link", {name: /专精特新小巨人/}).first().click();
+  await page.waitForLoadState("networkidle");
+  assert.equal(await page.getByText("用途说明", {exact: true}).count(), 1, "算法包必须提供可点击详情");
+  assert.equal(await page.getByText("查看算法包源配置 JSON", {exact: true}).count(), 1, "算法包详情必须提供源配置");
   const algorithmMobileOverflow = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
