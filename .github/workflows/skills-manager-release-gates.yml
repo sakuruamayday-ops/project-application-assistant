@@ -24,7 +24,7 @@ jobs:
       - run: node --check services/knowledge-portal/static/skills-manager/zip-reader.js
       - run: node --check services/knowledge-portal/static/skills-manager/sw.js
       - run: node services/knowledge-portal/scripts/check_skills_manager_pwa.mjs
-      - run: pytest -q tests/test_portal.py -k client_channels_keep_independent_latest_versions
+      - run: python -m pytest -q tests/test_portal.py -k client_channels_keep_independent_latest_versions
         working-directory: services/knowledge-portal
 
   native-release-policy:
