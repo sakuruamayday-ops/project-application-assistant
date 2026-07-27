@@ -162,6 +162,7 @@ body,
 }
 .button:hover,
 .button.white:hover { color: #050604; background: #e1ca98; transform: translateY(-2px); }
+.panel .agent-copy-primary small { color: inherit; }
 .button.secondary,
 .button.outline-light {
   color: #e8dcc3;
@@ -983,6 +984,62 @@ body, .sidebar, .table-wrap, .feedback-items, .assistant-progress,
 }
 .algorithm-introduction h3 { margin: 6px 0 0; font-size: 22px; }
 .algorithm-introduction p { margin: 0; color: var(--muted); line-height: 1.8; }
+.algorithm-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(250px, 1.35fr);
+  gap: 12px;
+  margin: 0 0 18px;
+}
+.algorithm-stat-card {
+  position: relative;
+  display: grid;
+  min-height: 152px;
+  align-content: space-between;
+  gap: 7px;
+  padding: 20px;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid rgba(202,169,105,.22);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(18,19,16,.96), rgba(9,10,8,.93));
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+.algorithm-stat-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -35px -55px auto;
+  width: 125px;
+  height: 125px;
+  border: 1px solid rgba(202,169,105,.18);
+  border-radius: 50%;
+}
+a.algorithm-stat-card:hover,
+.algorithm-stat-card.is-active {
+  transform: translateY(-3px);
+  border-color: rgba(202,169,105,.72);
+  background: linear-gradient(145deg, rgba(45,39,25,.94), rgba(13,14,11,.96));
+}
+.algorithm-stat-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .06em;
+}
+.algorithm-stat-card strong {
+  color: #f5f0e7;
+  font-size: clamp(27px, 3vw, 42px);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+.algorithm-stat-card small { color: var(--muted); line-height: 1.5; }
+.algorithm-stat-card em {
+  color: var(--brand);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+.algorithm-priority-card strong { font-size: clamp(20px, 2vw, 29px); }
 .algorithm-detail { margin: 17px 0; }
 .algorithm-detail-head {
   display: flex;
@@ -1033,6 +1090,43 @@ body, .sidebar, .table-wrap, .feedback-items, .assistant-progress,
 }
 .algorithm-project-link { color: inherit; text-decoration: none; }
 .algorithm-project-link:hover strong, .algorithm-source-list a:hover { color: var(--brand); }
+.algorithm-catalog { scroll-margin-top: 88px; }
+.algorithm-catalog-head { align-items: end; }
+.algorithm-catalog-head h3 { margin: 5px 0 0; }
+.algorithm-catalog-summary {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-items: end;
+  gap: 3px 12px;
+  text-align: right;
+}
+.algorithm-catalog-summary strong { color: var(--brand); }
+.algorithm-catalog-summary span { color: var(--muted); font-size: 12px; }
+.algorithm-catalog-summary a {
+  grid-column: 1 / -1;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 800;
+}
+.algorithm-table-wrap {
+  max-height: min(68vh, 760px);
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+.algorithm-table { min-width: 1080px; }
+.algorithm-table thead {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+}
+.algorithm-table tbody tr { transition: background-color .18s ease, box-shadow .18s ease; }
+.algorithm-table tbody tr.is-current {
+  background: rgba(202,169,105,.09);
+  box-shadow: inset 3px 0 #caaa69;
+}
+.algorithm-table td:first-child { min-width: 230px; }
+.algorithm-table td:nth-child(7) { min-width: 250px; line-height: 1.6; }
+.algorithm-table .text-action { white-space: nowrap; }
 .algorithm-routing-notice {
   margin-top: 22px;
   padding: 18px;
@@ -1067,10 +1161,15 @@ body, .sidebar, .table-wrap, .feedback-items, .assistant-progress,
 }
 @media (max-width: 760px) {
   .algorithm-introduction { grid-template-columns: 1fr; }
+  .algorithm-metrics { grid-template-columns: 1fr 1fr; }
+  .algorithm-stat-card { min-height: 136px; padding: 16px; }
+  .algorithm-priority-card { grid-column: 1 / -1; }
   .algorithm-detail-head { display: grid; }
   .algorithm-detail-metrics { grid-template-columns: 1fr 1fr; }
   .algorithm-detail-metrics div:nth-child(2) { border-right: 0; }
   .algorithm-detail-metrics div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .algorithm-catalog-head { align-items: flex-start; }
+  .algorithm-catalog-summary { justify-items: start; text-align: left; }
 }
 
 /* --- 6. Print styles --- */

@@ -713,21 +713,34 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
         )
         client.cookies.update(login.cookies)
         response = client.get("/algorithms")
+        confirmed_response = client.get("/algorithms?coverage=rules-confirmed")
+        routing_catalog_response = client.get("/algorithms?coverage=routing-only")
         detail_response = client.get("/algorithms?project=little-giant")
         routing_response = client.get("/algorithms?project=first-equipment")
 
     assert response.status_code == 200
     assert 'data-section-link="algorithms"' in response.text
     assert "项目算法包" in response.text
-    assert "29 个项目" in response.text
+    assert "显示 29 / 29 个项目" in response.text
     assert "正式规则包" in response.text
     assert "检索路由包" in response.text
     assert "近7日查询" in response.text
     assert "当前首要补齐" in response.text
     assert "只检索与核验，不直接下结论" in response.text
     assert "稳定管理办法" in response.text
-    assert "点击项目查看规则详情" in response.text
+    assert "点击清单中的项目" in response.text
+    assert 'href="/algorithms?coverage=rules-confirmed#algorithm-catalog"' in response.text
+    assert 'href="/algorithms#algorithm-catalog" data-force-navigation' in response.text
+    assert confirmed_response.status_code == 200
+    assert "显示 8 / 29 个项目" in confirmed_response.text
+    assert "专精特新小巨人" in confirmed_response.text
+    assert "区级绿色工厂" not in confirmed_response.text
+    assert routing_catalog_response.status_code == 200
+    assert "显示 21 / 29 个项目" in routing_catalog_response.text
+    assert "区级绿色工厂" in routing_catalog_response.text
+    assert 'href="/algorithms?project=little-giant#algorithm-detail"' not in routing_catalog_response.text
     assert detail_response.status_code == 200
+    assert 'href="/algorithms#algorithm-catalog" data-force-navigation' in detail_response.text
     assert "用途说明" in detail_response.text
     assert "查看算法包源配置 JSON" in detail_response.text
     assert "little-giant-revenue" in detail_response.text
