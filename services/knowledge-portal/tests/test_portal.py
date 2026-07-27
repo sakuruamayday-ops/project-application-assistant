@@ -682,6 +682,48 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
         assert client.get("/skills/catalog/%2E%2E%2Fapp%2Fmain.py").status_code == 404
 
 
+def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,real_name,company_name,password_hash,created_at)
+            VALUES (?,?,?,?,?)
+            """,
+            (
+                "algorithm-member",
+                "算法成员",
+                "共创集团",
+                module.password_hasher.hash("member-password-123"),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        anonymous = client.get("/algorithms", follow_redirects=False)
+        assert anonymous.status_code == 303
+        login = client.post(
+            "/login",
+            data={
+                "username": "algorithm-member",
+                "password": "member-password-123",
+            },
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        response = client.get("/algorithms")
+
+    assert response.status_code == 200
+    assert 'data-section-link="algorithms"' in response.text
+    assert "项目算法包" in response.text
+    assert "29 个项目" in response.text
+    assert "正式规则包" in response.text
+    assert "检索路由包" in response.text
+    assert "只检索与核验，不直接下结论" in response.text
+    assert "稳定管理办法" in response.text
+
+
 def test_setup_login_and_device_token(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:

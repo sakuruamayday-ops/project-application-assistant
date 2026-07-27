@@ -21,6 +21,7 @@
     <nav class="side-nav">
       <a href="#overview" data-section-link="overview">工作台</a>
       <a href="#cockpit" data-section-link="cockpit">智能驾驶舱</a>
+      <a href="#algorithms" data-section-link="algorithms">项目算法包</a>
       <a href="#api-access" data-section-link="api-access">API 与用户</a>
       <a href="#feedback" data-section-link="feedback">留言反馈</a>
       <a href="#skills" data-section-link="skills">Skills 中心</a>
@@ -34,7 +35,7 @@
   </aside>
 
   <main class="app-main">
-    <header class="topbar"><div><span class="topbar-label">知识产权大脑</span><strong>{{ {'overview':'工作台','cockpit':'智能驾驶舱','access':'API 与用户','skills':'Skills 中心','feedback':'留言反馈','health':'健康看板','knowledge-admin':'知识库更新','skill-admin':'版本发布','members':'成员管理'}.get(active_page, '团队门户') }}</strong></div><div class="account-actions"><details class="account-menu"><summary class="account-chip"><span class="avatar">{{ (user.real_name or user.username)[:1] }}</span><span><strong>{{ user.real_name or user.username }}</strong><small>{{ user.username }} · {{ "管理员" if user.is_admin else "团队成员" }}</small></span><i>⌄</i></summary><div class="account-menu-panel"><div class="account-menu-identity"><strong>{{ user.real_name or user.username }}</strong><span>登录账号：{{ user.username }}</span><small>{{ user.company_name }} · 统一知识与 Skills 权限</small></div><a class="account-menu-link" href="/preferences">个人偏好与跨设备同步</a><form method="post" action="/password" class="form-stack compact-account-form"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><label>当前密码<input name="current_password" type="password" required autocomplete="current-password"></label><label>新密码<input name="new_password" type="password" required minlength="9" maxlength="256" autocomplete="new-password"></label><button class="button" type="submit">修改密码</button></form><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="account-logout-button" type="submit">退出当前账号</button></form></div></details></div></header>
+    <header class="topbar"><div><span class="topbar-label">知识产权大脑</span><strong>{{ {'overview':'工作台','cockpit':'智能驾驶舱','algorithms':'项目算法包','access':'API 与用户','skills':'Skills 中心','feedback':'留言反馈','health':'健康看板','knowledge-admin':'知识库更新','skill-admin':'版本发布','members':'成员管理'}.get(active_page, '团队门户') }}</strong></div><div class="account-actions"><details class="account-menu"><summary class="account-chip"><span class="avatar">{{ (user.real_name or user.username)[:1] }}</span><span><strong>{{ user.real_name or user.username }}</strong><small>{{ user.username }} · {{ "管理员" if user.is_admin else "团队成员" }}</small></span><i>⌄</i></summary><div class="account-menu-panel"><div class="account-menu-identity"><strong>{{ user.real_name or user.username }}</strong><span>登录账号：{{ user.username }}</span><small>{{ user.company_name }} · 统一知识与 Skills 权限</small></div><a class="account-menu-link" href="/preferences">个人偏好与跨设备同步</a><form method="post" action="/password" class="form-stack compact-account-form"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><label>当前密码<input name="current_password" type="password" required autocomplete="current-password"></label><label>新密码<input name="new_password" type="password" required minlength="9" maxlength="256" autocomplete="new-password"></label><button class="button" type="submit">修改密码</button></form><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="account-logout-button" type="submit">退出当前账号</button></form></div></details></div></header>
     <div class="content-wrap">
       {% if message %}<div class="notice success">{{ message }}</div>{% endif %}
       {% if error %}<div class="notice alert">{{ error }}</div>{% endif %}
@@ -66,6 +67,16 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
             <div id="assistant-result" class="assistant-result" hidden><div class="assistant-result-head"><strong>答疑结果</strong><span id="assistant-result-mode"></span></div><div id="assistant-skills" class="assistant-skills"></div><div id="assistant-answer"></div><div id="assistant-sources" class="assistant-sources"></div></div>
           </article>
         </div>
+      </section>{% endif %}
+
+      {% if single_page or active_page == 'algorithms' %}<section id="algorithms" class="section-block algorithm-section">
+        <div class="section-heading"><div><p class="eyebrow">Decision Registry</p><h2>项目算法包</h2></div><p>算法包把项目识别、稳定管理办法、年度通知和属地要求组织为统一决策规则。规则更新由服务端完成，现有 Skills 与 MCP 无需重复配置。</p></div>
+        <div class="health-grid">
+          <article class="health-card"><span>算法包总数</span><strong>{{ project_algorithms.total }}</strong><small>已覆盖高频项目入口</small></article>
+          <article class="health-card"><span>正式规则包</span><strong>{{ project_algorithms.confirmed }}</strong><small>可执行已确认门槛判断</small></article>
+          <article class="health-card"><span>检索路由包</span><strong>{{ project_algorithms.routing_only }}</strong><small>只检索与核验，不直接下结论</small></article>
+        </div>
+        <article class="panel table-panel"><div class="panel-head"><h3>项目算法清单</h3><span>{{ project_algorithms.total }} 个项目</span></div><div class="table-wrap"><table><thead><tr><th>项目</th><th>状态</th><th>版本</th><th>规则层</th><th>正式规则</th><th>当前能力</th></tr></thead><tbody>{% for item in project_algorithms["items"] %}<tr><td><strong>{{ item.project_name }}</strong><small>{{ item.project_id }}</small></td><td><span class="table-status {{ 'off' if item.coverage_status != 'rules-confirmed' else '' }}">{{ item.coverage_label }}</span></td><td>{{ item.version }}</td><td>{% if item.layers %}{% for layer in item.layers %}<span class="status-pill">{{ layer.label }} · {{ layer.rule_count }}</span>{% endfor %}{% else %}<span class="muted">待确认规则源</span>{% endif %}</td><td>{{ item.rule_count }}</td><td>{{ item.decision_scope }}</td></tr>{% endfor %}</tbody></table></div></article>
       </section>{% endif %}
 
       {% if user.is_admin and (single_page or active_page == 'health') %}
