@@ -365,6 +365,22 @@ def write_companion(
     branding_audit: dict[str, Any] | None,
     render_audit: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    def portable_audit(value: Any) -> Any:
+        if isinstance(value, dict):
+            result = {}
+            for key, item in value.items():
+                if key == "pdf_sha256":
+                    continue
+                result[key] = (
+                    Path(str(item)).name
+                    if key == "path" and item
+                    else portable_audit(item)
+                )
+            return result
+        if isinstance(value, list):
+            return [portable_audit(item) for item in value]
+        return value
+
     payload = {
         "schema_version": 1,
         "product_name": spec["product_name"],
@@ -380,8 +396,8 @@ def write_companion(
             "file": manual.name,
             "sha256": sha256(manual),
             "content_audit": content_audit,
-            "branding_audit": branding_audit,
-            "render_audit": render_audit,
+            "branding_audit": portable_audit(branding_audit),
+            "render_audit": portable_audit(render_audit),
         },
         "source_of_truth": "skills/suite-manifest.json",
     }
