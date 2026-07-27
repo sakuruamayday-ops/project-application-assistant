@@ -47,6 +47,30 @@ def test_prepare_assets_contains_only_release_files(tmp_path) -> None:
     ]
 
 
+def test_prepare_assets_includes_word_manual_and_companion_audit(tmp_path) -> None:
+    generic = tmp_path / "generic.zip"
+    gate = tmp_path / "gate.json"
+    manual = tmp_path / "manual.docx"
+    companion = tmp_path / "companion.json"
+    for path in (generic, gate, manual, companion):
+        path.write_text(path.name, encoding="utf-8")
+
+    assets = MODULE.prepare_ascii_assets(
+        tmp_path / "assets",
+        "V1.3.1.1",
+        {"generic": generic},
+        gate,
+        {"manual": manual, "companion": companion},
+    )
+
+    assert [path.name for path in assets] == [
+        "jiaotang-skills-V1.3.1.1.zip",
+        "jiaotang-skills-V1.3.1.1-release-gate.json",
+        "jiaotang-user-manual-V1.3.1.1.docx",
+        "jiaotang-release-companions-V1.3.1.1.json",
+    ]
+
+
 def test_prepare_assets_allows_one_or_three_release_targets(tmp_path) -> None:
     packages = {}
     for target in ("generic", "macos", "windows"):
