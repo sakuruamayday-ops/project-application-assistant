@@ -1756,6 +1756,74 @@ def load_project_algorithm_packs() -> tuple[dict[str, object], ...]:
     return tuple(packs)
 
 
+def project_algorithm_catalog_payload() -> dict[str, object]:
+    items: list[dict[str, object]] = []
+    for pack in load_project_algorithm_packs():
+        layers = [
+            layer
+            for layer in pack.get("rule_layers", [])
+            if isinstance(layer, dict)
+        ]
+        confirmed_rules = {
+            str(rule.get("rule_id") or "")
+            for layer in layers
+            for rule in layer.get("rules", [])
+            if isinstance(rule, dict)
+            and str(rule.get("review_status") or "") == "confirmed"
+        }
+        coverage_status = str(pack.get("coverage_status") or "routing-only")
+        items.append(
+            {
+                "project_id": str(pack.get("project_id") or ""),
+                "project_name": str(pack.get("project_name") or ""),
+                "version": str(pack.get("version") or ""),
+                "coverage_status": coverage_status,
+                "coverage_label": (
+                    "正式规则"
+                    if coverage_status == "rules-confirmed"
+                    else "检索路由"
+                ),
+                "decision_scope": (
+                    "可按已确认规则判断门槛，并继续核验年度通知和属地要求。"
+                    if coverage_status == "rules-confirmed"
+                    else "可识别项目并检索政策；现阶段不直接输出符合或不符合。"
+                ),
+                "rule_count": len(confirmed_rules),
+                "layers": [
+                    {
+                        "layer_id": str(layer.get("layer_id") or ""),
+                        "layer_type": str(layer.get("layer_type") or ""),
+                        "label": str(layer.get("label") or ""),
+                        "rule_count": len(
+                            [
+                                rule
+                                for rule in layer.get("rules", [])
+                                if isinstance(rule, dict)
+                            ]
+                        ),
+                    }
+                    for layer in layers
+                ],
+            }
+        )
+    items.sort(
+        key=lambda item: (
+            item["coverage_status"] != "rules-confirmed",
+            item["project_name"],
+        )
+    )
+    confirmed = sum(
+        item["coverage_status"] == "rules-confirmed"
+        for item in items
+    )
+    return {
+        "total": len(items),
+        "confirmed": confirmed,
+        "routing_only": len(items) - confirmed,
+        "items": items,
+    }
+
+
 def matched_project_retrieval_rule(query: str) -> dict[str, object] | None:
     rule = decide_matched_project_retrieval_rule(query, load_project_retrieval_rules())
     return dict(rule) if rule else None
@@ -6343,6 +6411,7 @@ class AllPortalSections(str):
     visible_sections = {
         "overview",
         "cockpit",
+        "algorithms",
         "health",
         "access",
         "skills",
@@ -6873,6 +6942,7 @@ def portal_payload(
         "release_stage": release_stage_payload,
         "historical_releases": historical_releases,
         "skill_center": skill_catalog_payload(),
+        "project_algorithms": project_algorithm_catalog_payload(),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_announcement": announcement_payload,
         "knowledge_stats": knowledge_index_stats(),
@@ -7634,6 +7704,14 @@ def access_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_w
 @app.get("/skills", response_class=HTMLResponse)
 def skills_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
     return portal_page_response(request, user, "skills")
+
+
+@app.get("/algorithms", response_class=HTMLResponse)
+def algorithms_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    return portal_page_response(request, user, "algorithms")
 
 
 @app.get("/skills/catalog/{skill_name}")
