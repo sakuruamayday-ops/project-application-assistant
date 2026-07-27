@@ -4034,6 +4034,107 @@ def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
         assert current_download.content == generic.read_bytes()
 
 
+def test_selective_macos_release_keeps_legacy_generic_and_windows_downloads(tmp_path):
+    module = load_app(tmp_path)
+    old_generic = tmp_path / "generic-v1.3.1.zip"
+    new_macos = tmp_path / "macos-v1.3.1.1.zip"
+    old_generic.write_bytes(b"legacy-generic")
+    with zipfile.ZipFile(new_macos, "w") as archive:
+        archive.writestr(
+            "jiaotang/install-jiaotang-workbuddy.command",
+            "#!/bin/zsh\n",
+        )
+    module.SKILL_RELEASE_DIR.mkdir(parents=True, exist_ok=True)
+    old_workbuddy = (
+        module.SKILL_RELEASE_DIR
+        / "企业全生命周期助手-V1.3.1-WorkBuddy.zip"
+    )
+    with zipfile.ZipFile(old_workbuddy, "w") as archive:
+        archive.writestr(
+            "jiaotang/install-jiaotang-workbuddy.command",
+            "#!/bin/zsh\n",
+        )
+        archive.writestr(
+            "jiaotang/install-jiaotang-workbuddy.cmd",
+            "@echo off\r\n",
+        )
+        archive.writestr(
+            "jiaotang/install-jiaotang-workbuddy.ps1",
+            "exit 0\r\n",
+        )
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            (
+                "member",
+                module.password_hasher.hash("member-password-123"),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_releases(
+                version,file_name,file_path,sha256,release_notes,published_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.3.1",
+                old_generic.name,
+                str(old_generic),
+                hashlib.sha256(old_generic.read_bytes()).hexdigest(),
+                "V1.3.1",
+                module.isoformat(module.utc_now() - timedelta(days=1)),
+            ),
+        )
+        new_cursor = connection.execute(
+            """
+            INSERT INTO skill_releases(
+                version,file_name,file_path,sha256,release_notes,published_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.3.1.1",
+                new_macos.name,
+                str(new_macos),
+                hashlib.sha256(new_macos.read_bytes()).hexdigest(),
+                "macOS MCP hotfix",
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_release_artifacts(
+                release_id,target,file_name,file_path,sha256
+            ) VALUES (?,?,?,?,?)
+            """,
+            (
+                new_cursor.lastrowid,
+                "macos",
+                new_macos.name,
+                str(new_macos),
+                hashlib.sha256(new_macos.read_bytes()).hexdigest(),
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        assert client.get("/skills/latest/download").content == old_generic.read_bytes()
+        assert (
+            client.get("/skills/latest/workbuddy/macos/download").content
+            == new_macos.read_bytes()
+        )
+        assert (
+            client.get("/skills/latest/workbuddy/windows/download").content
+            == old_workbuddy.read_bytes()
+        )
+
+
 def test_release_announcement_appears_once_after_publish(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:
