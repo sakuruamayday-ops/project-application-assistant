@@ -514,6 +514,11 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 }
 .endpoint-list span { color: #caaa69; font-size: 12px; font-weight: 700; }
 .endpoint-list code { min-width: 0; overflow-wrap: anywhere; color: #f4efe5; }
+.endpoint-list .skill-center-link {
+  min-height: 38px;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
 .endpoint-list button {
   border: 0;
   background: transparent;
