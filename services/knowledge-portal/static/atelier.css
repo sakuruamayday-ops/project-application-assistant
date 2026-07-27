@@ -518,11 +518,29 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   cursor: pointer;
   font-weight: 700;
 }
-.agent-install-actions { align-items:stretch; margin-top:22px; }
-.agent-install-actions .agent-copy-primary { flex:1 1 280px; }
-.agent-install-actions .button.secondary { flex:0 0 auto; }
-.agent-confirm-install { display:grid; width:100%; min-height:64px; margin-top:12px; text-align:left; }
-.agent-confirm-install small { opacity:.72; }
+.agent-install-actions {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) auto;
+  align-items: stretch;
+  justify-content: start;
+  width: fit-content;
+  max-width: 100%;
+  gap: 10px;
+  margin-top: 22px;
+}
+.agent-install-actions .agent-copy-primary,
+.agent-confirm-install {
+  display: grid;
+  align-content: center;
+  min-height: 52px;
+  padding: 8px 16px;
+  text-align: left;
+}
+.agent-install-actions .agent-copy-primary { width: 100%; }
+.agent-install-actions .button.secondary { min-height: 52px; }
+.agent-confirm-install { width: min(100%, 320px); margin-top: 10px; }
+.agent-copy-primary small,
+.agent-confirm-install small { color: inherit; opacity: 1; }
 .manual-agent-config { margin-top:18px; padding:18px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.025); }
 .manual-agent-config h4 { margin:0 0 10px; }
 .manual-agent-config ol { margin:0 0 16px; padding-left:20px; color:var(--muted); line-height:1.75; }
@@ -605,6 +623,9 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .side-nav a { min-height: 34px; flex: 0 0 auto; padding: 0 10px; font-size: 12px; }
   .app-main { min-width: 0; }
   .topbar { min-height: 62px; padding: 0 16px; }
+  .agent-install-actions { grid-template-columns: 1fr; width: 100%; }
+  .agent-install-actions .button,
+  .agent-confirm-install { width: 100%; }
   .topbar-label, .account-chip > span:nth-child(2) { display: none; }
   .content-wrap { padding: 24px 16px 46px; }
   .page-heading, .section-heading, .admin-page-head { align-items: start; flex-direction: column; }
