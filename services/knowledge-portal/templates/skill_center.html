@@ -20,6 +20,7 @@
     <div class="skill-command-bar">
       <div class="skill-scan-state"><span class="skill-live-dot"></span><div><strong>官方技能目录已就绪</strong><small>{{ skill_center.release_tag }} · {{ skill_center.summary.total }} 项能力已载入</small></div></div>
       <div class="skill-command-actions">
+        <a class="button secondary" href="/skills-manager">打开双端管理器</a>
         {% if latest_release %}<button class="button skill-primary-action" type="button" data-skill-tab-target="downloads">选择安装平台</button>{% endif %}
         <button class="button secondary" type="button" data-skill-rescan>刷新目录</button>
         <button class="button skill-dark-action" type="button" data-skill-tab-target="install">{{ 'Agent 接入说明' if user.is_admin else '生成安全安装计划' }} <span>→</span></button>

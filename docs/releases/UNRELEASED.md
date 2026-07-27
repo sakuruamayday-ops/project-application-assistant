@@ -12,3 +12,4 @@
 ## 待发布修改
 
 - 2026-07-27：修复Windows单端热修复发布后，Skills下载页错误按总体最新版本判断macOS包，导致macOS下载入口显示“当前版本未包含”的问题。门户现按macOS、Windows各自最近正式版本独立展示下载入口；不重新发布客户端包，不修改既有版本和签名产物。已通过门户完整测试与Skills Center浏览器回归。
+- 2026-07-27：新增“焦糖 Skills 管理器”MVP，并修正无双端发行证书时的交付路线。当前正式入口改为门户内HTTPS PWA，不发布未签名原生程序，不要求用户绕过Gatekeeper、SmartScreen或未知发布者警告；Electron双端客户端保留为取得Apple Developer ID、公证能力和Windows Authenticode证书后的可选产品。PWA支持WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder和Cherry Studio的平台识别与分级适配，通用、WorkBuddy macOS和WorkBuddy Windows使用独立发布通道；先按能力清单检查安全上下文、WebCrypto、ZIP解压、目录授权和可恢复替换能力，能力不足自动降级为校验后下载。稳定目录采用冲突阻断、目录内备份和可恢复回滚。WorkBuddy只下载既有发布者签名包；包内Ed25519证明内容来源但不等于操作系统代码签名，系统阻断时不得引导绕过。本项不包含短信登录，不改变V1.3.1.2的49项技能内容，也不影响既有用户安装、设备绑定和凭据。新增PWA路由、会话隔离、静态清单、原生证书阻断和CI发布门禁。
