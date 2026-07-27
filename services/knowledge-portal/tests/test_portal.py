@@ -2800,6 +2800,69 @@ def test_local_green_factory_requires_matching_region_level(tmp_path):
     assert module.project_selection_prompt("余杭区区级绿色工厂申报条件") is None
 
 
+def test_admin_can_search_registration_authorizations(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, 1, ?)",
+            ("owner", "管理员", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.execute(
+            "INSERT INTO users(username, real_name, password_hash, created_at) VALUES (?, ?, ?, ?)",
+            ("zhangsan", "张三", module.password_hasher.hash("member-password-123"), now),
+        )
+        member_id = connection.execute(
+            "SELECT id FROM users WHERE username='zhangsan'"
+        ).fetchone()["id"]
+        connection.executemany(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            [
+                ("张三", "8899", "registered", member_id, now, now),
+                ("李四", "6677", "pending", None, now, None),
+                ("王五", "4455", "revoked", None, now, None),
+            ],
+        )
+        authorization_ids = {
+            row["real_name"]: row["id"]
+            for row in connection.execute(
+                "SELECT id,real_name FROM registration_authorizations"
+            ).fetchall()
+        }
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        by_name = client.get("/admin/members?invite_query=张三")
+        assert f'id="invite-{authorization_ids["张三"]}"' in by_name.text
+        assert f'id="invite-{authorization_ids["李四"]}"' not in by_name.text
+
+        by_tail = client.get("/admin/members?invite_query=6677")
+        assert f'id="invite-{authorization_ids["李四"]}"' in by_tail.text
+        assert f'id="invite-{authorization_ids["张三"]}"' not in by_tail.text
+
+        by_username = client.get("/admin/members?invite_query=zhangsan")
+        assert f'id="invite-{authorization_ids["张三"]}"' in by_username.text
+        assert f'id="invite-{authorization_ids["李四"]}"' not in by_username.text
+
+        by_status = client.get("/admin/members?invite_query=已撤销")
+        assert f'id="invite-{authorization_ids["王五"]}"' in by_status.text
+        assert f'id="invite-{authorization_ids["张三"]}"' not in by_status.text
+
+        empty = client.get("/admin/members?invite_query=不存在")
+        assert "未找到匹配的邀请记录" in empty.text
+
+
 def test_admin_can_open_member_details_and_restore_soft_deleted_records(tmp_path):
     module = load_app(tmp_path)
     now = module.isoformat(module.utc_now())
