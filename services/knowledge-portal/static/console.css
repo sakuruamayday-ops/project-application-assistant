@@ -988,7 +988,7 @@ body, .sidebar, .table-wrap, .feedback-items, .assistant-progress,
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(250px, 1.35fr);
   gap: 12px;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
 }
 .algorithm-stat-card {
   position: relative;
@@ -1090,7 +1090,10 @@ a.algorithm-stat-card:hover,
 }
 .algorithm-project-link { color: inherit; text-decoration: none; }
 .algorithm-project-link:hover strong, .algorithm-source-list a:hover { color: var(--brand); }
-.algorithm-catalog { scroll-margin-top: 88px; }
+.algorithm-catalog {
+  margin-top: 0;
+  scroll-margin-top: 88px;
+}
 .algorithm-catalog-head { align-items: end; }
 .algorithm-catalog-head h3 { margin: 5px 0 0; }
 .algorithm-catalog-summary {

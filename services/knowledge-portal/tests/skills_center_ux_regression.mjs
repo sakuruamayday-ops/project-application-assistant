@@ -235,11 +235,31 @@ try {
     viewportWidth: window.innerWidth,
   }));
   assert.equal(mobileOverflow.documentWidth, mobileOverflow.viewportWidth, "移动端回顶按钮不应造成全局横向溢出");
+  await page.setViewportSize({width: 1920, height: 1080});
   await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
   assert.equal(await page.getByRole("heading", {name: "项目算法包"}).count(), 1, "算法包页面必须正常展示");
   assert.equal(await page.getByText("当前首要补齐", {exact: true}).count(), 1, "算法包页面必须展示动态补齐重点");
   assert.equal(await page.getByText("近7日查询", {exact: true}).count(), 1, "算法包页面必须展示真实查询频率");
   assert.equal(await page.getByText("它解决什么问题", {exact: true}).count(), 1, "算法包页面必须解释实际用途");
+  const desktopAlgorithmFlow = await page.evaluate(() => {
+    const metrics = document.querySelector(".algorithm-metrics").getBoundingClientRect();
+    const catalog = document.querySelector("#algorithm-catalog").getBoundingClientRect();
+    const section = document.querySelector(".algorithm-section");
+    const sectionStyle = getComputedStyle(section);
+    return {
+      gap: Math.round(catalog.top - metrics.bottom),
+      metricsBottom: Math.round(metrics.bottom),
+      catalogTop: Math.round(catalog.top),
+      sectionHeight: Math.round(section.getBoundingClientRect().height),
+      sectionMinHeight: sectionStyle.minHeight,
+      sectionDisplay: sectionStyle.display,
+      sectionAlignContent: sectionStyle.alignContent,
+      sectionGridRows: sectionStyle.gridTemplateRows,
+      sectionRowGap: sectionStyle.rowGap,
+      catalogMarginTop: getComputedStyle(document.querySelector("#algorithm-catalog")).marginTop,
+    };
+  });
+  assert.ok(desktopAlgorithmFlow.gap <= 32, `算法统计卡与清单之间不得出现大面积空白：${JSON.stringify(desktopAlgorithmFlow)}`);
   await page.getByRole("link", {name: /正式规则包/}).click();
   await page.waitForLoadState("networkidle");
   assert.equal(new URL(page.url()).searchParams.get("coverage"), "rules-confirmed", "正式规则包卡片必须进入正式项目筛选");
@@ -260,6 +280,8 @@ try {
     "grid",
     "算法包用途说明必须加载正式构建样式",
   );
+  await page.setViewportSize({width: 390, height: 844});
+  await page.reload({waitUntil: "networkidle"});
   const algorithmMobileOverflow = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,

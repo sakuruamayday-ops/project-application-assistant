@@ -230,6 +230,9 @@ textarea:focus-visible, select:focus-visible {
   min-height: calc(100vh - 92px);
   border-bottom: 0;
 }
+.single-page .section-block.algorithm-section {
+  min-height: auto;
+}
 .page-overview #overview, .page-cockpit #cockpit, .page-access #api-access, .page-skills #skills,
 .page-health #health-admin, .page-knowledge-admin #knowledge-admin, .page-skill-admin #skill-admin, .page-members #members { display: grid; }
 .page-heading, .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 30px; }
