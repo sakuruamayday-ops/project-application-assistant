@@ -25,7 +25,7 @@
 
 1. `skills/suite-manifest.json` 中的正式套件版本、Skill 数量和依赖关系。
 2. `docs/releases/` 中的正式发布说明。
-3. `docs/user-guide/企业全生命周期助手用户使用手册.md` 中的用户可见能力。
+3. `docs/user-guide/企业全生命周期助手用户使用手册.docx` 中的用户可见能力。
 4. `services/knowledge-portal/README.md` 中的门户、API、MCP 和安全边界。
 5. 代码、测试和生产验收记录。
 

@@ -3461,11 +3461,21 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert "我已审查，复制安装确认" in access.text
         assert "一次性引导地址" in access.text
         assert "等待配置" in access.text
+        portal_script = client.get("/static/portal.js")
+        assert portal_script.status_code == 200
+        assert "我已审查，生成并复制 bootstrap_url" in portal_script.text
+        assert (
+            "copyToClipboard(payload.manual_configuration.bootstrap_url)"
+            in portal_script.text
+        )
+        assert "浏览器未允许自动复制" in portal_script.text
         skills = client.get("/skills")
         assert skills.status_code == 200
         assert "data-toggle-manual-agent-config" in skills.text
         assert "data-confirm-manual-agent-bootstrap" in skills.text
         assert "data-manual-package-download" in skills.text
+        assert "生成并复制 bootstrap_url" in skills.text
+        assert "install-jiaotang-workbuddy.cmd" in skills.text
 
         bootstrap = client.post(
             "/agent-bootstrap-codes",
@@ -4168,6 +4178,7 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
         assert "macOS" in page.text
         assert "Windows" in page.text
         assert "macOS 与 Windows 下载通道独立维护" in page.text
+        assert "解压后双击 .cmd" in page.text
         assert "等待人工反馈" not in page.text
         assert "人工反馈" not in page.text
         assert "自动实机证据" not in page.text
