@@ -720,8 +720,108 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "29 个项目" in response.text
     assert "正式规则包" in response.text
     assert "检索路由包" in response.text
+    assert "近7日查询" in response.text
+    assert "当前首要补齐" in response.text
     assert "只检索与核验，不直接下结论" in response.text
     assert "稳定管理办法" in response.text
+
+
+def test_project_usage_metadata_covers_rest_and_mcp_searches(tmp_path):
+    module = load_app(tmp_path)
+
+    rest_rule, rest_alias = module.project_usage_metadata_from_request(
+        "/v1/search",
+        json.dumps({"query": "国家高企申报条件"}).encode(),
+    )
+    mcp_rule, mcp_alias = module.project_usage_metadata_from_request(
+        "/mcp",
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/call",
+                "params": {
+                    "name": "knowledge_search",
+                    "arguments": {"query": "国家高企申报条件"},
+                },
+            }
+        ).encode(),
+    )
+
+    assert rest_rule == "national-high-tech-enterprise"
+    assert rest_alias == "国家高企"
+    assert (mcp_rule, mcp_alias) == (rest_rule, rest_alias)
+
+
+def test_mcp_usage_persists_project_without_storing_raw_query(tmp_path):
+    module = load_app(tmp_path)
+    module.init_database()
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        user_id = connection.execute(
+            """
+            INSERT INTO users(username,real_name,password_hash,created_at)
+            VALUES (?,?,?,?)
+            """,
+            ("usage-member", "使用成员", "hash", now),
+        ).lastrowid
+        token_id = connection.execute(
+            """
+            INSERT INTO device_tokens(
+                user_id,label,token_prefix,token_hash,created_at
+            ) VALUES (?,?,?,?,?)
+            """,
+            (user_id, "成员", "jtk_test", "token-hash", now),
+        ).lastrowid
+        connection.commit()
+        user = connection.execute(
+            """
+            SELECT users.id,device_tokens.id AS device_token_id
+            FROM users JOIN device_tokens ON device_tokens.user_id=users.id
+            WHERE users.id=?
+            """,
+            (user_id,),
+        ).fetchone()
+    body = json.dumps(
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "knowledge_search",
+                "arguments": {"query": "国家高企申报条件"},
+            },
+        }
+    ).encode()
+
+    module.record_api_usage(
+        user,
+        "/mcp",
+        "POST",
+        "mcp_search",
+        "实际检索",
+        True,
+        body=body,
+    )
+
+    with closing(module.database()) as connection:
+        usage = connection.execute(
+            """
+            SELECT project_rule_id,project_alias
+            FROM api_usage WHERE device_token_id=?
+            """,
+            (token_id,),
+        ).fetchone()
+        columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(api_usage)")
+        }
+    assert dict(usage) == {
+        "project_rule_id": "national-high-tech-enterprise",
+        "project_alias": "国家高企",
+    }
+    assert "query" not in columns
+    assert "question" not in columns
 
 
 def test_setup_login_and_device_token(tmp_path):
