@@ -3825,7 +3825,7 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
         page = client.get("/skills")
         assert "macOS" in page.text
         assert "Windows" in page.text
-        assert "内容和 SHA-256 相同" in page.text
+        assert "macOS 与 Windows 下载通道独立维护" in page.text
         assert "等待人工反馈" not in page.text
         assert "人工反馈" not in page.text
         assert "自动实机证据" not in page.text
@@ -3837,6 +3837,116 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
             )
             assert download.status_code == 200
             assert download.content == package.read_bytes()
+
+
+def test_client_channels_keep_independent_latest_versions(tmp_path):
+    module = load_app(tmp_path)
+    generic = tmp_path / "generic-v1.3.1.zip"
+    generic.write_bytes(b"generic-v1.3.1")
+    macos = tmp_path / "workbuddy-macos-v1.3.1.zip"
+    windows = tmp_path / "workbuddy-windows-v1.3.1.1.zip"
+    with zipfile.ZipFile(macos, "w") as archive:
+        archive.writestr(
+            "jiaotang/install-jiaotang-workbuddy.command",
+            "#!/bin/zsh\n",
+        )
+    with zipfile.ZipFile(windows, "w") as archive:
+        archive.writestr(
+            "jiaotang/install-jiaotang-workbuddy.cmd",
+            "@echo off\r\n",
+        )
+        archive.writestr(
+            "jiaotang/install-jiaotang-workbuddy.ps1",
+            "exit 0\r\n",
+        )
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            (
+                "member",
+                module.password_hasher.hash("member-password-123"),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        old_cursor = connection.execute(
+            """
+            INSERT INTO skill_releases(
+                version,file_name,file_path,sha256,release_notes,published_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.3.1",
+                generic.name,
+                str(generic),
+                hashlib.sha256(generic.read_bytes()).hexdigest(),
+                "V1.3.1",
+                module.isoformat(module.utc_now() - timedelta(days=1)),
+            ),
+        )
+        new_cursor = connection.execute(
+            """
+            INSERT INTO skill_releases(
+                version,file_name,file_path,sha256,release_notes,published_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.3.1.1",
+                windows.name,
+                str(windows),
+                hashlib.sha256(windows.read_bytes()).hexdigest(),
+                "Windows hotfix",
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.executemany(
+            """
+            INSERT INTO skill_release_artifacts(
+                release_id,target,file_name,file_path,sha256
+            ) VALUES (?,?,?,?,?)
+            """,
+            [
+                (
+                    old_cursor.lastrowid,
+                    "generic",
+                    generic.name,
+                    str(generic),
+                    hashlib.sha256(generic.read_bytes()).hexdigest(),
+                ),
+                (
+                    old_cursor.lastrowid,
+                    "macos",
+                    macos.name,
+                    str(macos),
+                    hashlib.sha256(macos.read_bytes()).hexdigest(),
+                ),
+                (
+                    new_cursor.lastrowid,
+                    "windows",
+                    windows.name,
+                    str(windows),
+                    hashlib.sha256(windows.read_bytes()).hexdigest(),
+                ),
+            ],
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        assert client.get("/skills/latest/download").content == generic.read_bytes()
+        assert (
+            client.get("/skills/latest/workbuddy/macos/download").content
+            == macos.read_bytes()
+        )
+        assert (
+            client.get("/skills/latest/workbuddy/windows/download").content
+            == windows.read_bytes()
+        )
+        assert client.get("/skills/latest/workbuddy/download").status_code == 409
 
 
 def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):

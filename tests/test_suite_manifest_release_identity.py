@@ -6,8 +6,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_ROOT = ROOT / "skills"
 MANIFEST_PATH = SKILLS_ROOT / "suite-manifest.json"
-SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
-RELEASE_TAG = re.compile(r"^V(\d+)\.(\d+)(?:\.(\d+))?$")
+SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$")
+RELEASE_TAG = re.compile(
+    r"^V(\d+)\.(\d+)(?:\.(\d+))?(?:\.(\d+))?$"
+)
 
 
 def load_manifest() -> dict:
@@ -43,6 +45,7 @@ def test_suite_release_tag_and_semver_are_consistent() -> None:
         tag_match.group(1),
         tag_match.group(2),
         tag_match.group(3) or "0",
+        tag_match.group(4),
     ) == version_match.groups()
 
 

@@ -43,12 +43,24 @@ def sha256(path: Path) -> str:
 
 
 def normalize_version(value: str) -> tuple[str, str, str]:
-    match = re.fullmatch(r"V?(\d+)\.(\d+)(?:\.(\d+))?", value.strip())
+    match = re.fullmatch(
+        r"V?(\d+)\.(\d+)(?:\.(\d+))?(?:\.(\d+))?",
+        value.strip(),
+    )
     if not match:
-        raise ValueError("版本必须形如 1.3、1.3.1、V1.3 或 V1.3.1")
+        raise ValueError(
+            "版本必须形如 1.3、1.3.1、1.3.1.1，或带V前缀"
+        )
     major, minor, patch = match.group(1), match.group(2), match.group(3) or "0"
-    public = f"{major}.{minor}" if patch == "0" else f"{major}.{minor}.{patch}"
-    semantic = f"{major}.{minor}.{patch}"
+    hotfix = match.group(4)
+    if hotfix is not None:
+        public = f"{major}.{minor}.{patch}.{hotfix}"
+        semantic = public
+    else:
+        public = (
+            f"{major}.{minor}" if patch == "0" else f"{major}.{minor}.{patch}"
+        )
+        semantic = f"{major}.{minor}.{patch}"
     return public, semantic, f"V{public}"
 
 
@@ -87,8 +99,7 @@ def load_portal_publisher(root: Path):
 def validate_inputs(
     root: Path,
     version: str,
-    generic: Path,
-    workbuddy: Path,
+    packages: dict[str, Path],
     gate_report: Path,
     notes: Path,
 ) -> dict[str, object]:
@@ -115,14 +126,14 @@ def validate_inputs(
     ):
         raise RuntimeError("本地发布门禁报告未全部通过")
     publisher = load_portal_publisher(root)
-    package_validation = publisher.validate_packages(generic, workbuddy, short)
+    package_validation = publisher.validate_release_packages(packages, short)
     return {
         "short_version": short,
         "semantic_version": semantic,
         "tag": tag,
         "skill_total": len(manifest.get("skills", [])),
-        "generic_sha256": package_validation["generic_sha256"],
-        "workbuddy_sha256": package_validation["workbuddy_sha256"],
+        "targets": package_validation["targets"],
+        "artifacts": package_validation["artifacts"],
         "gate_sha256": sha256(gate_report),
     }
 
@@ -150,19 +161,23 @@ def validate_clean_default_branch(repository: str) -> str:
 def prepare_ascii_assets(
     directory: Path,
     tag: str,
-    generic: Path,
-    workbuddy: Path,
+    packages: dict[str, Path],
     gate_report: Path,
 ) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
-    sources = [generic, workbuddy, gate_report]
-    targets = [
-        directory / f"jiaotang-skills-{tag}.zip",
-        directory / f"jiaotang-skills-{tag}-WorkBuddy.zip",
-        directory / f"jiaotang-skills-{tag}-release-gate.json",
-    ]
-    for source, target in zip(sources, targets, strict=True):
+    names = {
+        "generic": f"jiaotang-skills-{tag}.zip",
+        "macos": f"jiaotang-skills-{tag}-WorkBuddy-macOS.zip",
+        "windows": f"jiaotang-skills-{tag}-WorkBuddy-Windows.zip",
+    }
+    targets: list[Path] = []
+    for target_name, source in packages.items():
+        target = directory / names[target_name]
         shutil.copy2(source, target)
+        targets.append(target)
+    gate_target = directory / f"jiaotang-skills-{tag}-release-gate.json"
+    shutil.copy2(gate_report, gate_target)
+    targets.append(gate_target)
     return targets
 
 
@@ -230,8 +245,7 @@ def ensure_prerelease(
 
 def stage_portal(
     version: str,
-    generic: Path,
-    workbuddy: Path,
+    packages: dict[str, Path],
     notes: Path,
     commit: str,
     release_url: str,
@@ -250,11 +264,17 @@ def stage_portal(
             deploy_key,
             "-o",
             "IdentitiesOnly=yes",
-            str(generic),
-            str(workbuddy),
+            *(str(package) for package in packages.values()),
             str(notes),
             f"{deploy_host}:{remote_stage}/",
         ]
+    )
+    package_flags = " ".join(
+        f"--{target.replace('macos', 'workbuddy-macos').replace('windows', 'workbuddy-windows')}-package "
+        f"{shlex.quote(f'{remote_stage}/{package.name}')}"
+        if target != "generic"
+        else f"--generic-package {shlex.quote(f'{remote_stage}/{package.name}')}"
+        for target, package in packages.items()
     )
     remote_command = (
         "set -a; source /etc/jiaotang-kb.env; set +a; "
@@ -263,8 +283,7 @@ def stage_portal(
         "--mode stage "
         f"--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
         f"--release-dir \"$JIAOTANG_SKILL_RELEASE_DIR\" "
-        f"--generic-package {shlex.quote(f'{remote_stage}/{generic.name}')} "
-        f"--workbuddy-package {shlex.quote(f'{remote_stage}/{workbuddy.name}')} "
+        f"{package_flags} "
         f"--version {shlex.quote(version)} "
         f"--release-notes-file {shlex.quote(f'{remote_stage}/{notes.name}')} "
         f"--git-commit {shlex.quote(commit)} "
@@ -296,8 +315,14 @@ def main() -> None:
         description="两阶段受控发布：进入正式发布中 → 独立确认后正式发布"
     )
     parser.add_argument("--version", required=True)
-    parser.add_argument("--generic-package", type=Path, required=True)
-    parser.add_argument("--workbuddy-package", type=Path, required=True)
+    parser.add_argument("--generic-package", type=Path)
+    parser.add_argument(
+        "--workbuddy-package",
+        type=Path,
+        help="兼容旧流程：同一WorkBuddy包同时用于macOS和Windows",
+    )
+    parser.add_argument("--workbuddy-macos-package", type=Path)
+    parser.add_argument("--workbuddy-windows-package", type=Path)
     parser.add_argument("--gate-report", type=Path, required=True)
     parser.add_argument("--release-notes", type=Path, required=True)
     parser.add_argument(
@@ -326,6 +351,25 @@ def main() -> None:
         help="promote时必须逐字提供“确认正式发布”",
     )
     arguments = parser.parse_args()
+    packages = {
+        target: package.resolve()
+        for target, package in (
+            ("generic", arguments.generic_package),
+            (
+                "macos",
+                arguments.workbuddy_macos_package
+                or arguments.workbuddy_package,
+            ),
+            (
+                "windows",
+                arguments.workbuddy_windows_package
+                or arguments.workbuddy_package,
+            ),
+        )
+        if package is not None
+    }
+    if not packages:
+        parser.error("至少提供一个发布包")
     action_name = release_action(
         stage=arguments.stage,
         promote=arguments.promote,
@@ -335,8 +379,7 @@ def main() -> None:
     validation = validate_inputs(
         ROOT,
         arguments.version,
-        arguments.generic_package.resolve(),
-        arguments.workbuddy_package.resolve(),
+        packages,
         arguments.gate_report.resolve(),
         arguments.release_notes.resolve(),
     )
@@ -357,8 +400,7 @@ def main() -> None:
             assets = prepare_ascii_assets(
                 Path(directory) / "assets",
                 validation["tag"],
-                arguments.generic_package.resolve(),
-                arguments.workbuddy_package.resolve(),
+                packages,
                 arguments.gate_report.resolve(),
             )
             release_url = ensure_prerelease(
@@ -402,8 +444,7 @@ def main() -> None:
         assets = prepare_ascii_assets(
             Path(directory) / "assets",
             validation["tag"],
-            arguments.generic_package.resolve(),
-            arguments.workbuddy_package.resolve(),
+            packages,
             arguments.gate_report.resolve(),
         )
         release_url = ensure_prerelease(
@@ -415,8 +456,7 @@ def main() -> None:
         )
         portal_result = stage_portal(
             validation["short_version"],
-            arguments.generic_package.resolve(),
-            arguments.workbuddy_package.resolve(),
+            packages,
             arguments.release_notes.resolve(),
             commit,
             release_url,
