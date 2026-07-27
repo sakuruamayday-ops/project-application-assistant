@@ -630,6 +630,7 @@ document.querySelectorAll("a.page-transition-link").forEach((link) => {
 document.querySelector(".single-page")?.addEventListener("click", (event) => {
   const link = event.target.closest("a[href]");
   if (!link || link.classList.contains("page-transition-link")) return;
+  if (link.hasAttribute("data-force-navigation")) return;
   const targetUrl = new URL(link.href, window.location.origin);
   if (targetUrl.origin !== window.location.origin) return;
   const sectionId = targetUrl.hash.slice(1) || ROUTE_SECTIONS[targetUrl.pathname];

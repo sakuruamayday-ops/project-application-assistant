@@ -1756,7 +1756,14 @@ def load_project_algorithm_packs() -> tuple[dict[str, object], ...]:
     return tuple(packs)
 
 
-def project_algorithm_catalog_payload() -> dict[str, object]:
+def project_algorithm_catalog_payload(
+    coverage_filter: str = "",
+) -> dict[str, object]:
+    normalized_filter = (
+        coverage_filter
+        if coverage_filter in {"rules-confirmed", "routing-only"}
+        else ""
+    )
     usage_metrics = project_algorithm_usage_metrics()
     items: list[dict[str, object]] = []
     for pack in load_project_algorithm_packs():
@@ -1870,10 +1877,25 @@ def project_algorithm_catalog_payload() -> dict[str, object]:
         ),
         None,
     )
+    visible_items = [
+        item
+        for item in items
+        if not normalized_filter
+        or item["coverage_status"] == normalized_filter
+    ]
     return {
         "total": len(items),
         "confirmed": confirmed,
         "routing_only": len(items) - confirmed,
+        "coverage_filter": normalized_filter,
+        "coverage_filter_label": (
+            "正式规则包"
+            if normalized_filter == "rules-confirmed"
+            else "检索路由包"
+            if normalized_filter == "routing-only"
+            else "全部算法包"
+        ),
+        "visible_total": len(visible_items),
         "top_priority": top_priority,
         "priority_title": (
             str(top_priority["project_name"])
@@ -1889,7 +1911,7 @@ def project_algorithm_catalog_payload() -> dict[str, object]:
             if len(items) - confirmed
             else "全部项目已有正式规则"
         ),
-        "items": items,
+        "items": visible_items,
     }
 
 
@@ -6803,6 +6825,7 @@ def portal_payload(
     feedback_status: str = "",
     feedback_query: str = "",
     algorithm_project_id: str = "",
+    algorithm_coverage: str = "",
 ) -> dict[str, object]:
     with closing(database()) as connection:
         device_tokens = connection.execute(
@@ -7271,7 +7294,7 @@ def portal_payload(
         "release_stage": release_stage_payload,
         "historical_releases": historical_releases,
         "skill_center": skill_catalog_payload(),
-        "project_algorithms": project_algorithm_catalog_payload(),
+        "project_algorithms": project_algorithm_catalog_payload(algorithm_coverage),
         "project_algorithm_detail": project_algorithm_detail_payload(
             algorithm_project_id
         ),
@@ -7927,6 +7950,7 @@ def portal_page_response(
     member_query: str = "",
     feedback_status: str = "",
     feedback_query: str = "",
+    algorithm_coverage: str = "",
 ) -> HTMLResponse:
     admin_pages = {"health", "knowledge-admin", "skill-admin", "members"}
     if active_page in admin_pages:
@@ -7943,6 +7967,7 @@ def portal_page_response(
             member_query=member_query,
             feedback_status=feedback_status,
             feedback_query=feedback_query,
+            algorithm_coverage=algorithm_coverage,
         ),
     )
     response.headers["Cache-Control"] = "private, no-store"
@@ -8060,12 +8085,14 @@ def algorithms_page(
     request: Request,
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
     project: str = "",
+    coverage: str = "",
 ):
     return portal_page_response(
         request,
         user,
         "algorithms",
         algorithm_project_id=project,
+        algorithm_coverage=coverage,
     )
 
 
