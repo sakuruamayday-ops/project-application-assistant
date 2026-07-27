@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.3.1.1"><img src="https://img.shields.io/badge/Release-V1.3.1.1-C9A760?style=for-the-badge" alt="Release V1.3.1.1"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.3.1.2"><img src="https://img.shields.io/badge/Release-V1.3.1.2-C9A760?style=for-the-badge" alt="Release V1.3.1.2"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.3.1.1.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
+  <a href="docs/releases/V1.3.1.2.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -56,7 +56,7 @@
 
 ### WorkBuddy 平台说明
 
-WorkBuddy 包内同时提供 macOS 与 Windows 固定安装器，不再维护平台确认、兼容反馈或 Runner 证明状态。用户遇到需要适配的问题时，由维护者按具体环境单独处理。
+WorkBuddy 的 macOS 与 Windows 下载通道独立维护，既可分别发布，也可在同一版本同时发布；未更新的平台继续保留最近一次正式版本。用户遇到需要适配的问题时，由维护者按具体环境单独处理。
 
 ## 安全边界
 
@@ -85,9 +85,9 @@ WorkBuddy 包内同时提供 macOS 与 Windows 固定安装器，不再维护平
 
 | 文档 | 用途 |
 |---|---|
-| [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.md) | 下载、安装、首次配置和日常使用 |
+| [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.docx) | 下载、安装、首次配置和日常使用 |
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
-| [V1.3.1.1 发布说明](docs/releases/V1.3.1.1.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.3.1.2 发布说明](docs/releases/V1.3.1.2.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -106,10 +106,10 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 ```bash
 python3 scripts/controlled_release.py \
-  --version 1.3.1.1 \
-  --workbuddy-macos-package dist/企业全生命周期助手-V1.3.1.1-WorkBuddy-macOS.zip \
-  --gate-report dist/企业全生命周期助手-V1.3.1.1-发布门禁.json \
-  --release-notes docs/releases/V1.3.1.1.md
+  --version 1.3.1.2 \
+  --workbuddy-windows-package dist/企业全生命周期助手-V1.3.1.2-WorkBuddy-Windows.zip \
+  --gate-report dist/企业全生命周期助手-V1.3.1.2-发布门禁.json \
+  --release-notes docs/releases/V1.3.1.2.md
 ```
 
 预检确认版本完全一致、默认分支干净、签名包与发布门禁全部通过后，先在同一命令末尾追加 `--stage`。系统创建 GitHub 预发布，并在知识门户登记“正式发布中”，随后强制暂停：
@@ -131,10 +131,10 @@ GitHub 预发布
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.3.1.1` | 网站、GitHub Release 和用户可见版本 |
-| 组件版本 | `1.3.1.1` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.3.1.2` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.3.1.2` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
-| 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
+| 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1`、`V1.3.1.1` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
 
 GitHub 文件列表右侧显示的是“最后修改该路径的提交标题”，不是该目录的当前版本。
 

@@ -129,8 +129,8 @@
           <ol>
             <li>下载门户为当前设备选择的签名 WorkBuddy 插件包。</li>
             <li>核对页面公布的 SHA-256 与包内 Ed25519 签名。</li>
-            <li>运行包内固定 macOS 或 Windows 安装器并启用插件。</li>
-            <li>将一次性引导地址填入插件敏感配置项 <code>bootstrap_url</code>。</li>
+            <li>Windows 解压后直接双击 <code>install-jiaotang-workbuddy.cmd</code>；macOS 运行固定 <code>.command</code> 安装器。</li>
+            <li>点击下方按钮生成并复制一次性引导地址，再填入插件敏感配置项 <code>bootstrap_url</code>。</li>
           </ol>
           <div class="endpoint-list">
             <div><span>插件包</span><code>当前平台签名 WorkBuddy ZIP</code><a class="button secondary" href="/skills" data-manual-package-download>下载</a></div>
@@ -139,8 +139,8 @@
             <div data-manual-bootstrap-row hidden><span>一次性引导地址</span><code data-manual-bootstrap-value>确认审查后生成</code><button type="button" data-copy-manual-bootstrap>复制</button></div>
             <div data-manual-package-hash-row hidden><span>插件包 SHA-256</span><code data-manual-package-hash></code><button type="button" data-copy-manual-package-hash>复制</button></div>
           </div>
-          <button class="button" type="button" data-confirm-manual-agent-bootstrap hidden>我已审查，生成手工配置</button>
-          <p>引导地址属于一次性敏感配置，只在当前页面确认后显示；不要写入 settings.json 或发送给他人。</p>
+          <button class="button" type="button" data-confirm-manual-agent-bootstrap hidden>我已审查，生成并复制 bootstrap_url</button>
+          <p>引导地址属于一次性敏感配置，只在当前页面确认后显示并复制；不要写入 settings.json 或发送给他人。</p>
         </section>
         {% endif %}
       </article>

@@ -223,6 +223,9 @@ const loadAgentInstallReview = async (card, {copyPrompt = false} = {}) => {
   card.querySelectorAll(
     "[data-confirm-agent-bootstrap], [data-confirm-manual-agent-bootstrap]"
   ).forEach((button) => {
+    if (button.matches("[data-confirm-manual-agent-bootstrap]")) {
+      button.textContent = "我已审查，生成并复制 bootstrap_url";
+    }
     button.hidden = false;
   });
   return payload;
@@ -281,7 +284,7 @@ document.addEventListener("click", async (event) => {
       manualToggle.disabled = true;
       try {
         await loadAgentInstallReview(card);
-        if (status) status.textContent = "手工审查信息已加载；核对后点击“我已审查，生成手工配置”。";
+        if (status) status.textContent = "手工审查信息已加载；核对后点击“我已审查，生成并复制 bootstrap_url”。";
       } catch (error) {
         if (status) {
           status.classList.add("is-error");
@@ -363,8 +366,14 @@ document.addEventListener("click", async (event) => {
     try {
       const payload = await confirmAgentInstall(card);
       renderManualAgentConfiguration(card, payload);
-      confirmManualButton.textContent = "手工配置已生成";
-      if (status) status.textContent = "请完成签名包核验，并将一次性引导地址仅填入插件敏感配置。";
+      try {
+        await copyToClipboard(payload.manual_configuration.bootstrap_url);
+        confirmManualButton.textContent = "bootstrap_url 已复制";
+        if (status) status.textContent = "一次性引导地址已复制；请仅粘贴到插件的敏感配置项 bootstrap_url。";
+      } catch (_copyError) {
+        confirmManualButton.textContent = "bootstrap_url 已生成";
+        if (status) status.textContent = "浏览器未允许自动复制；请复制下方一次性引导地址，并仅粘贴到插件敏感配置项 bootstrap_url。";
+      }
       watchAgentInstallStatus(card);
     } catch (error) {
       if (status) {

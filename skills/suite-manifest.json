@@ -4,18 +4,18 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.3.1.1",
-    "version": "1.3.1.1",
-    "summary": "修复 WorkBuddy MCP 配置问题，增加两阶段自动接入与手工配置兜底。",
+    "tag": "V1.3.1.2",
+    "version": "1.3.1.2",
+    "summary": "修复 WorkBuddy Windows 安装卡住问题，并增加 bootstrap_url 一键复制。",
     "changes": [
-      "WorkBuddy MCP 接入改为两阶段流程，确认阶段保留 macOS 或 Windows 平台信息。",
-      "API 与用户页、Skills 管理中心增加手工配置入口，自动接入失败时仍可完成连接。",
-      "通用、macOS WorkBuddy、Windows WorkBuddy 三类产物统一使用同一版本、技能清单和知识库接入协议。"
+      "Windows 用户解压签名包后可直接双击 .cmd；安装器会在调用插件 CLI 前检查并等待 WorkBuddy 完全退出，避免本地端口冲突导致无输出卡住。",
+      "API 与用户页、Skills 管理中心的手工配置确认按钮会生成并复制一次性 bootstrap_url；浏览器拒绝剪贴板权限时保留下方手工复制兜底。",
+      "本次只发布 WorkBuddy Windows 包；macOS 继续使用 V1.3.1.1，通用 Skills 继续使用最近一次正式版本，49 项技能内容不变。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "WorkBuddy 用户使用对应平台安装包，先审阅来源、哈希、本机改动和撤销命令，再输入 INSTALL 确认安装。",
-      "manual_fallback": "自动接入未完成时，从 API 与用户页或 Skills 管理中心复制手工配置内容交给本地 Agent。",
+      "workbuddy": "Windows 用户解压 V1.3.1.2 签名包并直接双击 install-jiaotang-workbuddy.cmd；macOS 用户继续使用 V1.3.1.1，无需更新。",
+      "manual_fallback": "从 API 与用户页或 Skills 管理中心完成公开说明审查后，点击生成并复制 bootstrap_url，再粘贴到 WorkBuddy 插件敏感配置。",
       "verification": "安装后必须核对技能清单，并完成身份、检索、文档读取、用量和 MCP 工具调用验收。"
     },
     "compatibility": [
@@ -26,18 +26,18 @@
       },
       {
         "target": "macOS WorkBuddy",
-        "status": "已验证",
-        "note": "已完成真实安装、启用、Skill 触发和 MCP 接入验收。"
+        "status": "保持 V1.3.1.1",
+        "note": "本次未修改 macOS 包，不要求更新；原有安装、设备绑定、系统凭据和 MCP 接入继续有效。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "结构兼容",
-        "note": "安装器、安全与完整性检查已通过，真实 Windows 宿主证据仍需补齐。"
+        "status": "热修复",
+        "note": "已完成安装器契约、安全、完整性和端口冲突保护检查；真实 Windows 宿主安装仍需发布后按五步流程复验。"
       }
     ],
     "rollback": [
       "通用 Skills 回滚时恢复上一版本 skills 目录，并重新运行安装完整性检查。",
-      "WorkBuddy 回滚时执行安装计划展示的撤销命令，再安装上一正式版本。",
+      "Windows WorkBuddy 回滚时执行安装计划展示的撤销命令，再安装 V1.3.1.1；macOS 无需回滚。",
       "回滚不得覆盖个人项目资料、本地政策规则、个人偏好或系统凭据。"
     ]
   },

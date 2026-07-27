@@ -12429,7 +12429,7 @@ def workbuddy_platforms(version: str) -> list[dict[str, object]]:
             "id": "windows",
             "name": "Windows",
             "launcher": "install-jiaotang-workbuddy.cmd",
-            "detail": "运行 .cmd，由固定 PowerShell 脚本完成安装",
+            "detail": "解压后双击 .cmd，由固定 PowerShell 脚本完成安装",
         },
     ]
     result = []
