@@ -125,6 +125,7 @@ if [[ -z "${node_bin}" || -z "${node_modules}" ]]; then
   echo "缺少 Node.js 或 Playwright 依赖，无法执行 Skills 浏览器视觉门禁" >&2
   exit 1
 fi
+python3 "${script_dir}/build_static_assets.py"
 (
   cd "${service_dir}"
   NODE_PATH="${node_modules}" "${node_bin}" tests/skills_center_ux_regression.mjs

@@ -244,6 +244,11 @@ try {
   await page.waitForLoadState("networkidle");
   assert.equal(await page.getByText("用途说明", {exact: true}).count(), 1, "算法包必须提供可点击详情");
   assert.equal(await page.getByText("查看算法包源配置 JSON", {exact: true}).count(), 1, "算法包详情必须提供源配置");
+  assert.equal(
+    await page.locator(".algorithm-introduction").evaluate((element) => getComputedStyle(element).display),
+    "grid",
+    "算法包用途说明必须加载正式构建样式",
+  );
   const algorithmMobileOverflow = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
