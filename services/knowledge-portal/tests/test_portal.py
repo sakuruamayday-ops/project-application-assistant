@@ -4300,6 +4300,15 @@ def test_client_channels_keep_independent_latest_versions(tmp_path):
             == windows.read_bytes()
         )
         assert client.get("/skills/latest/workbuddy/download").status_code == 409
+        page = client.get("/skills")
+        assert page.status_code == 200
+        assert 'class="skill-platform-card is-macos" data-platform-version="1.3.1"' in page.text
+        assert (
+            'class="skill-platform-card is-windows" data-platform-version="1.3.1.1"'
+            in page.text
+        )
+        assert "下载 macOS 包" in page.text
+        assert "下载 Windows 包" in page.text
 
 
 def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):

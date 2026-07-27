@@ -92,9 +92,9 @@
           <a class="button" href="/skills/latest/download">下载通用包</a>
         </article>
         {% for platform in latest_release.workbuddy_platforms %}
-        <article class="skill-platform-card is-{{ platform.id }}">
+        <article class="skill-platform-card is-{{ platform.id }}" data-platform-version="{{ platform.version or '' }}">
           <span class="skill-platform-mark">{{ '⌘' if platform.id == 'macos' else '⊞' }}</span>
-          <div><span class="skill-card-index">WorkBuddy</span><h3>{{ platform.name }}</h3><p>{{ platform.detail }}。安装前展示来源、哈希、本机改动和撤销命令。</p></div>
+          <div><span class="skill-card-index">WorkBuddy</span><h3>{{ platform.name }}</h3>{% if platform.version %}<small>当前提供 V{{ platform.version }}</small>{% endif %}<p>{{ platform.detail }}。安装前展示来源、哈希、本机改动和撤销命令。</p></div>
           {% if platform.included %}<a class="button" href="{{ platform.download_url }}">下载 {{ platform.name }} 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
         </article>
         {% endfor %}
