@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -314,6 +315,58 @@ def test_generate_all_rebuilds_each_confirmed_source(tmp_path):
 
     assert result["generated_packs"] == 2
     assert len(list(packs_dir.glob("*.json"))) == 2
+    assert result["coverage"] == {
+        "total": 2,
+        "rules_confirmed": 2,
+        "routing_only": 0,
+        "routing_only_projects": [],
+    }
+
+
+def test_priority_queue_orders_routing_packs_by_real_usage(tmp_path):
+    database_path = tmp_path / "portal.sqlite3"
+    packs_dir = tmp_path / "packs"
+    with sqlite3.connect(database_path) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE api_usage(
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                project_rule_id TEXT NOT NULL DEFAULT '',
+                counts_toward_usage INTEGER NOT NULL DEFAULT 1,
+                called_at TEXT NOT NULL
+            );
+            INSERT INTO api_usage(user_id,project_rule_id,called_at)
+            VALUES
+              (1,'project-a','2099-01-01T00:00:00+00:00'),
+              (2,'project-a','2099-01-01T00:00:00+00:00'),
+              (1,'project-b','2099-01-01T00:00:00+00:00');
+            """
+        )
+    for project_id, project_name in (
+        ("project-a", "项目甲"),
+        ("project-b", "项目乙"),
+    ):
+        write_json(
+            packs_dir / f"{project_id}.json",
+            {
+                "project_id": project_id,
+                "project_name": project_name,
+                "coverage_status": "routing-only",
+                "source_retrieval_rule_ids": [project_id],
+            },
+        )
+
+    result = MANAGER.project_priority_queue(
+        database_path=database_path,
+        packs_dir=packs_dir,
+        days=7,
+    )
+
+    assert [item["project_name"] for item in result["queue"]] == ["项目甲", "项目乙"]
+    assert result["queue"][0]["usage"] == 2
+    assert result["queue"][0]["users"] == 2
+    assert result["queue"][0]["rank"] == 1
 
 
 def test_release_validator_blocks_missing_high_frequency_pack(tmp_path):
@@ -369,5 +422,8 @@ def test_production_deployment_includes_algorithm_references_and_rollback():
     ).read_text(encoding="utf-8")
 
     assert "app references templates static" in deploy_script
+    assert "scripts/manage_project_algorithm_packs.py" in deploy_script
+    assert "scripts/validate_project_algorithm_packs.py" in deploy_script
+    assert "remote_backup_dir}/scripts" in deploy_script
     assert "remote_backup_dir}/references" in deploy_script
     assert "remote_app_dir}/references" in deploy_script

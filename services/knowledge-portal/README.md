@@ -149,6 +149,25 @@ PYTHONPATH=. python3 scripts/evaluate_structured_knowledge.py \
 
 默认门槛为核心字段准确率不低于95%，名单、政策和项目地图的前五位命中率不低于90%。
 
+## 项目算法包更新
+
+项目算法包由服务端统一加载。团队通过现有 REST API 与 MCP 使用，无需因规则更新重新下载 Skills，也无需增加新的 MCP 工具。
+
+正式规则采用“稳定管理办法＋年度通知＋属地覆盖层”。仅将已经核验为现行、保存官方链接和原文条款、并完成人工确认的规则写入 `references/project-algorithm-rule-sources`，随后执行：
+
+```bash
+.venv/bin/python scripts/manage_project_algorithm_packs.py generate-all
+.venv/bin/python scripts/validate_project_algorithm_packs.py
+```
+
+系统只记录检索命中的标准项目与简称，不保存 REST 或 MCP 原始查询正文。管理员可根据近7日真实团队查询频率查看路由型项目补齐顺序，也可输出独立队列：
+
+```bash
+.venv/bin/python scripts/manage_project_algorithm_packs.py priority-queue \
+  --database /srv/jiaotang/data/portal.sqlite3 \
+  --days 7
+```
+
 管理员增量上传会把原始文件写入 `JIAOTANG_KNOWLEDGE_FILES_DIR`，对文本执行 SHA-256 查重、提取和临时索引校验，通过后原子替换全文索引。扫描件不在网站统一 OCR；用户应先由本地 Agent 完成 OCR，再上传可提取文本的 PDF、Markdown 或其他受支持文件。网站检测到扫描件时仅标记“需本地 OCR”，不调用第三方 OCR 服务。
 
 ## 内网并发验收

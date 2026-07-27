@@ -4,7 +4,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sqlite3
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -453,10 +455,123 @@ def generate_all_confirmed_rules(
         )
     if not generated:
         raise ValueError("没有发现已确认规则源文件")
+    packs = [
+        payload
+        for payload in (
+            load_json(path)
+            for path in sorted(packs_dir.glob("*.json"))
+        )
+        if isinstance(payload, dict)
+    ]
+    routing_only = [
+        str(pack.get("project_name") or "")
+        for pack in packs
+        if str(pack.get("coverage_status") or "") != "rules-confirmed"
+    ]
     return {
         "status": "pass",
         "generated_packs": len(generated),
         "outputs": [item["output"] for item in generated],
+        "coverage": {
+            "total": len(packs),
+            "rules_confirmed": len(packs) - len(routing_only),
+            "routing_only": len(routing_only),
+            "routing_only_projects": routing_only,
+        },
+    }
+
+
+def project_priority_queue(
+    *,
+    database_path: Path,
+    packs_dir: Path,
+    days: int,
+) -> dict[str, object]:
+    if not database_path.is_file():
+        raise ValueError(f"团队数据库不存在：{database_path}")
+    since = (
+        datetime.now(timezone.utc) - timedelta(days=max(1, int(days)))
+    ).isoformat(timespec="seconds")
+    packs = [
+        payload
+        for payload in (
+            load_json(path)
+            for path in sorted(packs_dir.glob("*.json"))
+        )
+        if isinstance(payload, dict)
+    ]
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        columns = {
+            str(row["name"])
+            for row in connection.execute("PRAGMA table_info(api_usage)")
+        }
+        usage_by_rule: dict[str, dict[str, object]] = {}
+        if "project_rule_id" in columns:
+            rows = connection.execute(
+                """
+                SELECT project_rule_id,COUNT(*) AS total,
+                       COUNT(DISTINCT user_id) AS users
+                FROM api_usage
+                WHERE called_at>=?
+                  AND project_rule_id<>''
+                  AND counts_toward_usage=1
+                GROUP BY project_rule_id
+                """,
+                (since,),
+            ).fetchall()
+            usage_by_rule = {
+                str(row["project_rule_id"]): {
+                    "total": int(row["total"] or 0),
+                    "users": int(row["users"] or 0),
+                }
+                for row in rows
+            }
+    queue: list[dict[str, object]] = []
+    for pack in packs:
+        if str(pack.get("coverage_status") or "") == "rules-confirmed":
+            continue
+        source_rule_ids = [
+            str(rule_id)
+            for rule_id in pack.get("source_retrieval_rule_ids", [])
+            if str(rule_id)
+        ]
+        total = sum(
+            int(usage_by_rule.get(rule_id, {}).get("total", 0))
+            for rule_id in source_rule_ids
+        )
+        users = max(
+            (
+                int(usage_by_rule.get(rule_id, {}).get("users", 0))
+                for rule_id in source_rule_ids
+            ),
+            default=0,
+        )
+        queue.append(
+            {
+                "project_id": str(pack.get("project_id") or ""),
+                "project_name": str(pack.get("project_name") or ""),
+                "usage": total,
+                "users": users,
+                "source_retrieval_rule_ids": source_rule_ids,
+            }
+        )
+    queue.sort(key=lambda item: (-int(item["usage"]), str(item["project_name"])))
+    observed_rank = 0
+    for item in queue:
+        if int(item["usage"]) <= 0:
+            item["rank"] = None
+            item["priority"] = "waiting-for-samples"
+            continue
+        observed_rank += 1
+        item["rank"] = observed_rank
+        item["priority"] = "high" if observed_rank <= 5 else "normal"
+    return {
+        "status": "pass",
+        "window_days": max(1, int(days)),
+        "routing_only": len(queue),
+        "high_priority": sum(item["priority"] == "high" for item in queue),
+        "queue": queue,
     }
 
 
@@ -548,6 +663,11 @@ def main() -> int:
         default=DEFAULT_FACT_CONTRACT,
     )
 
+    priority_parser = subparsers.add_parser("priority-queue")
+    priority_parser.add_argument("--database", type=Path, required=True)
+    priority_parser.add_argument("--packs-dir", type=Path, default=DEFAULT_PACKS)
+    priority_parser.add_argument("--days", type=int, default=7)
+
     template_parser = subparsers.add_parser("template")
     template_parser.add_argument("--output", type=Path, required=True)
 
@@ -570,6 +690,12 @@ def main() -> int:
                 sources_dir=arguments.sources_dir,
                 packs_dir=arguments.packs_dir,
                 fact_contract_path=arguments.fact_contract,
+            )
+        elif arguments.command == "priority-queue":
+            result = project_priority_queue(
+                database_path=arguments.database,
+                packs_dir=arguments.packs_dir,
+                days=arguments.days,
             )
         else:
             write_json(arguments.output, template_payload())

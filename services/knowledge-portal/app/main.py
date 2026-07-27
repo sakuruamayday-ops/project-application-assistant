@@ -1757,6 +1757,7 @@ def load_project_algorithm_packs() -> tuple[dict[str, object], ...]:
 
 
 def project_algorithm_catalog_payload() -> dict[str, object]:
+    usage_metrics = project_algorithm_usage_metrics()
     items: list[dict[str, object]] = []
     for pack in load_project_algorithm_packs():
         layers = [
@@ -1772,6 +1773,22 @@ def project_algorithm_catalog_payload() -> dict[str, object]:
             and str(rule.get("review_status") or "") == "confirmed"
         }
         coverage_status = str(pack.get("coverage_status") or "routing-only")
+        source_rule_ids = [
+            str(rule_id)
+            for rule_id in pack.get("source_retrieval_rule_ids", [])
+            if str(rule_id)
+        ]
+        usage_7d = sum(
+            int(usage_metrics.get(rule_id, {}).get("total", 0))
+            for rule_id in source_rule_ids
+        )
+        users_7d = max(
+            (
+                int(usage_metrics.get(rule_id, {}).get("users", 0))
+                for rule_id in source_rule_ids
+            ),
+            default=0,
+        )
         items.append(
             {
                 "project_id": str(pack.get("project_id") or ""),
@@ -1789,6 +1806,19 @@ def project_algorithm_catalog_payload() -> dict[str, object]:
                     else "可识别项目并检索政策；现阶段不直接输出符合或不符合。"
                 ),
                 "rule_count": len(confirmed_rules),
+                "usage_7d": usage_7d,
+                "users_7d": users_7d,
+                "priority_rank": None,
+                "priority_label": "已完成" if coverage_status == "rules-confirmed" else "",
+                "priority_reason": (
+                    "已具备正式门槛规则"
+                    if coverage_status == "rules-confirmed"
+                    else (
+                        f"近7日命中{usage_7d}次，覆盖{users_7d}名成员"
+                        if usage_7d
+                        else "近7日暂无可识别项目样本"
+                    )
+                ),
                 "layers": [
                     {
                         "layer_id": str(layer.get("layer_id") or ""),
@@ -1809,17 +1839,56 @@ def project_algorithm_catalog_payload() -> dict[str, object]:
     items.sort(
         key=lambda item: (
             item["coverage_status"] != "rules-confirmed",
+            -int(item["usage_7d"]),
             item["project_name"],
         )
     )
+    routing_rank = 0
+    for item in items:
+        if item["coverage_status"] == "rules-confirmed":
+            continue
+        if int(item["usage_7d"]) <= 0:
+            item["priority_label"] = "待积累"
+            continue
+        routing_rank += 1
+        item["priority_rank"] = routing_rank
+        item["priority_label"] = (
+            "优先补齐"
+            if routing_rank <= 5
+            else f"第{routing_rank}位"
+        )
     confirmed = sum(
         item["coverage_status"] == "rules-confirmed"
         for item in items
+    )
+    top_priority = next(
+        (
+            item
+            for item in items
+            if item["coverage_status"] != "rules-confirmed"
+            and int(item["usage_7d"]) > 0
+        ),
+        None,
     )
     return {
         "total": len(items),
         "confirmed": confirmed,
         "routing_only": len(items) - confirmed,
+        "top_priority": top_priority,
+        "priority_title": (
+            str(top_priority["project_name"])
+            if top_priority
+            else "等待真实查询样本"
+            if len(items) - confirmed
+            else "已全部完成"
+        ),
+        "priority_detail": (
+            str(top_priority["priority_reason"])
+            if top_priority
+            else "近7日暂无可识别项目查询，暂不人为指定优先级"
+            if len(items) - confirmed
+            else "全部项目已有正式规则"
+        ),
         "items": items,
     }
 
@@ -5088,6 +5157,8 @@ def init_database() -> None:
                 method TEXT NOT NULL,
                 activity_type TEXT NOT NULL DEFAULT 'rest_api',
                 activity_name TEXT NOT NULL DEFAULT '',
+                project_rule_id TEXT NOT NULL DEFAULT '',
+                project_alias TEXT NOT NULL DEFAULT '',
                 counts_toward_usage INTEGER NOT NULL DEFAULT 1,
                 called_at TEXT NOT NULL
             );
@@ -5511,6 +5582,8 @@ def init_database() -> None:
         api_usage_migrations = {
             "activity_type": "TEXT NOT NULL DEFAULT 'rest_api'",
             "activity_name": "TEXT NOT NULL DEFAULT ''",
+            "project_rule_id": "TEXT NOT NULL DEFAULT ''",
+            "project_alias": "TEXT NOT NULL DEFAULT ''",
             "counts_toward_usage": "INTEGER NOT NULL DEFAULT 1",
         }
         for column_name, declaration in api_usage_migrations.items():
@@ -5786,6 +5859,95 @@ def enforce_device_binding(
     ).fetchone()
 
 
+def project_usage_metadata_from_request(
+    endpoint: str,
+    body: bytes,
+) -> tuple[str, str]:
+    try:
+        payload = json.loads(body.decode("utf-8")) if body else {}
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return "", ""
+    messages = (
+        [item for item in payload if isinstance(item, dict)]
+        if isinstance(payload, list)
+        else [payload] if isinstance(payload, dict) else []
+    )
+    candidates: list[str] = []
+    for message in messages:
+        if endpoint == "/mcp":
+            params = message.get("params")
+            if not isinstance(params, dict) or str(params.get("name") or "") not in MCP_SEARCH_TOOLS:
+                continue
+            arguments = params.get("arguments")
+            if not isinstance(arguments, dict):
+                continue
+            candidates.extend(
+                str(arguments.get(field) or "").strip()
+                for field in ("query", "project_name")
+            )
+        else:
+            candidates.extend(
+                str(message.get(field) or "").strip()
+                for field in ("query", "project_name")
+            )
+    for candidate in candidates:
+        if not candidate:
+            continue
+        rule = matched_project_retrieval_rule(candidate)
+        if rule:
+            return (
+                str(rule.get("id") or ""),
+                matched_project_alias(candidate, rule),
+            )
+    return "", ""
+
+
+def project_algorithm_usage_metrics(days: int = 7) -> dict[str, dict[str, int]]:
+    since = isoformat(utc_now() - timedelta(days=max(1, int(days))))
+    metrics: dict[str, dict[str, int]] = {}
+    with closing(database()) as connection:
+        api_rows = connection.execute(
+            """
+            SELECT project_rule_id,user_id,COUNT(*) AS total
+            FROM api_usage
+            WHERE called_at>=?
+              AND project_rule_id<>''
+              AND counts_toward_usage=1
+            GROUP BY project_rule_id,user_id
+            """,
+            (since,),
+        ).fetchall()
+        assistant_rows = connection.execute(
+            """
+            SELECT user_id,question
+            FROM assistant_usage
+            WHERE started_at>=?
+              AND status IN ('running','completed','failed')
+            """,
+            (since,),
+        ).fetchall()
+    user_sets: dict[str, set[int]] = {}
+    for row in api_rows:
+        rule_id = str(row["project_rule_id"])
+        metric = metrics.setdefault(rule_id, {"total": 0, "users": 0})
+        metric["total"] += int(row["total"] or 0)
+        user_sets.setdefault(rule_id, set()).add(int(row["user_id"]))
+    for row in assistant_rows:
+        rule = matched_project_retrieval_rule(str(row["question"] or ""))
+        if not rule:
+            continue
+        rule_id = str(rule.get("id") or "")
+        if not rule_id:
+            continue
+        metric = metrics.setdefault(rule_id, {"total": 0, "users": 0})
+        metric["total"] += 1
+        users = user_sets.setdefault(rule_id, set())
+        users.add(int(row["user_id"]))
+    for rule_id, users in user_sets.items():
+        metrics[rule_id]["users"] = len(users)
+    return metrics
+
+
 def authenticate_api_token(
     authorization: str | None,
     endpoint: str,
@@ -5866,14 +6028,19 @@ def authenticate_api_token(
             (isoformat(utc_now()), row["device_token_id"]),
         )
         if record_usage:
+            project_rule_id, project_alias = project_usage_metadata_from_request(
+                endpoint,
+                body,
+            )
             connection.execute(
                 """
                 INSERT INTO api_usage(
                     user_id, device_token_id, endpoint, method,
-                    activity_type, activity_name, counts_toward_usage,
+                    activity_type, activity_name, project_rule_id, project_alias,
+                    counts_toward_usage,
                     called_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     row["id"],
@@ -5882,6 +6049,8 @@ def authenticate_api_token(
                     method,
                     activity_type,
                     activity_name,
+                    project_rule_id,
+                    project_alias,
                     int(counts_toward_usage),
                     isoformat(utc_now()),
                 ),
@@ -5897,16 +6066,23 @@ def record_api_usage(
     activity_type: str,
     activity_name: str,
     counts_toward_usage: bool,
+    *,
+    body: bytes = b"",
 ) -> None:
+    project_rule_id, project_alias = project_usage_metadata_from_request(
+        endpoint,
+        body,
+    )
     with closing(database()) as connection:
         connection.execute(
             """
             INSERT INTO api_usage(
                 user_id, device_token_id, endpoint, method,
-                activity_type, activity_name, counts_toward_usage,
+                activity_type, activity_name, project_rule_id, project_alias,
+                counts_toward_usage,
                 called_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user["id"],
@@ -5915,6 +6091,8 @@ def record_api_usage(
                 method,
                 activity_type,
                 activity_name,
+                project_rule_id,
+                project_alias,
                 int(counts_toward_usage),
                 isoformat(utc_now()),
             ),
@@ -6274,6 +6452,7 @@ class MCPBearerMiddleware:
                 activity_type,
                 activity_name,
                 counts_toward_usage,
+                body=request_body,
             )
 
 

@@ -235,8 +235,19 @@ try {
     viewportWidth: window.innerWidth,
   }));
   assert.equal(mobileOverflow.documentWidth, mobileOverflow.viewportWidth, "移动端回顶按钮不应造成全局横向溢出");
+  await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
+  assert.equal(await page.getByRole("heading", {name: "项目算法包"}).count(), 1, "算法包页面必须正常展示");
+  assert.equal(await page.getByText("当前首要补齐", {exact: true}).count(), 1, "算法包页面必须展示动态补齐重点");
+  assert.equal(await page.getByText("近7日查询", {exact: true}).count(), 1, "算法包页面必须展示真实查询频率");
+  const algorithmMobileOverflow = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    tableScrollable: document.querySelector(".table-wrap").scrollWidth > document.querySelector(".table-wrap").clientWidth,
+  }));
+  assert.equal(algorithmMobileOverflow.documentWidth, algorithmMobileOverflow.viewportWidth, "算法包移动端页面不应产生全局横向溢出");
+  assert.equal(algorithmMobileOverflow.tableScrollable, true, "算法清单应在移动端保持局部横向滚动");
   assert.deepEqual(consoleErrors, [], `控制台不应出现错误：${consoleErrors.join(" | ")}`);
-  console.log("PASS Skills Center UX: tabs, release notes collapse, stable download buttons, black-gold palette, auto-scroll, responsive layout, console");
+  console.log("PASS Skills Center and algorithm catalog UX: responsive layout, priority metrics, console");
 } finally {
   if (browser) await browser.close();
   server.kill("SIGTERM");
