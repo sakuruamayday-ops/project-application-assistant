@@ -1003,7 +1003,7 @@ body, .sidebar, .table-wrap, .feedback-items, .assistant-progress,
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(250px, 1.35fr);
   gap: 12px;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
 }
 .algorithm-stat-card {
   position: relative;
@@ -1105,7 +1105,10 @@ a.algorithm-stat-card:hover,
 }
 .algorithm-project-link { color: inherit; text-decoration: none; }
 .algorithm-project-link:hover strong, .algorithm-source-list a:hover { color: var(--brand); }
-.algorithm-catalog { scroll-margin-top: 88px; }
+.algorithm-catalog {
+  margin-top: 0;
+  scroll-margin-top: 88px;
+}
 .algorithm-catalog-head { align-items: end; }
 .algorithm-catalog-head h3 { margin: 5px 0 0; }
 .algorithm-catalog-summary {
@@ -1457,6 +1460,9 @@ textarea:focus-visible, select:focus-visible {
   min-height: calc(100vh - 92px);
   border-bottom: 0;
 }
+.single-page .section-block.algorithm-section {
+  min-height: auto;
+}
 .page-overview #overview, .page-cockpit #cockpit, .page-access #api-access, .page-skills #skills,
 .page-health #health-admin, .page-knowledge-admin #knowledge-admin, .page-skill-admin #skill-admin, .page-members #members { display: grid; }
 .page-heading, .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 30px; }
@@ -1745,11 +1751,29 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   cursor: pointer;
   font-weight: 700;
 }
-.agent-install-actions { align-items:stretch; margin-top:22px; }
-.agent-install-actions .agent-copy-primary { flex:1 1 280px; }
-.agent-install-actions .button.secondary { flex:0 0 auto; }
-.agent-confirm-install { display:grid; width:100%; min-height:64px; margin-top:12px; text-align:left; }
-.agent-confirm-install small { opacity:.72; }
+.agent-install-actions {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) auto;
+  align-items: stretch;
+  justify-content: start;
+  width: fit-content;
+  max-width: 100%;
+  gap: 10px;
+  margin-top: 22px;
+}
+.agent-install-actions .agent-copy-primary,
+.agent-confirm-install {
+  display: grid;
+  align-content: center;
+  min-height: 52px;
+  padding: 8px 16px;
+  text-align: left;
+}
+.agent-install-actions .agent-copy-primary { width: 100%; }
+.agent-install-actions .button.secondary { min-height: 52px; }
+.agent-confirm-install { width: min(100%, 320px); margin-top: 10px; }
+.agent-copy-primary small,
+.agent-confirm-install small { color: inherit; opacity: 1; }
 .manual-agent-config { margin-top:18px; padding:18px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.025); }
 .manual-agent-config h4 { margin:0 0 10px; }
 .manual-agent-config ol { margin:0 0 16px; padding-left:20px; color:var(--muted); line-height:1.75; }
@@ -1832,6 +1856,9 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .side-nav a { min-height: 34px; flex: 0 0 auto; padding: 0 10px; font-size: 12px; }
   .app-main { min-width: 0; }
   .topbar { min-height: 62px; padding: 0 16px; }
+  .agent-install-actions { grid-template-columns: 1fr; width: 100%; }
+  .agent-install-actions .button,
+  .agent-confirm-install { width: 100%; }
   .topbar-label, .account-chip > span:nth-child(2) { display: none; }
   .content-wrap { padding: 24px 16px 46px; }
   .page-heading, .section-heading, .admin-page-head { align-items: start; flex-direction: column; }
@@ -2033,12 +2060,29 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 .skill-card-index { display:block; color:var(--skill-gold); font:9px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.15em; text-transform:uppercase; }
 .skill-install-grid h3 { margin:20px 0 12px; color:var(--skill-ink); font-size:24px; }
 .skill-install-plan > p { color:var(--skill-muted); line-height:1.75; }
-.skill-install-plan .agent-copy-primary { display:grid; flex:1 1 280px; min-height:70px; text-align:left; }
-.skill-install-plan .agent-copy-primary small { opacity:.72; }
-.skill-install-plan .agent-install-actions { display:flex; align-items:stretch; gap:10px; margin-top:28px; }
-.skill-install-plan .agent-install-actions .button.secondary { flex:0 0 auto; }
-.skill-install-plan .agent-confirm-install { display:grid; width:100%; min-height:64px; margin-top:12px; text-align:left; }
-.skill-install-plan .agent-confirm-install small { opacity:.72; }
+.skill-install-plan .agent-install-actions {
+  display:grid;
+  grid-template-columns:minmax(220px,320px) auto;
+  align-items:stretch;
+  justify-content:start;
+  width:fit-content;
+  max-width:100%;
+  gap:10px;
+  margin-top:28px;
+}
+.skill-install-plan .agent-copy-primary,
+.skill-install-plan .agent-confirm-install {
+  display:grid;
+  align-content:center;
+  min-height:52px;
+  padding:8px 16px;
+  text-align:left;
+}
+.skill-install-plan .agent-copy-primary { width:100%; }
+.skill-install-plan .agent-install-actions .button.secondary { min-height:52px; }
+.skill-install-plan .agent-confirm-install { width:min(100%,320px); margin-top:10px; }
+.skill-install-plan .agent-copy-primary small,
+.skill-install-plan .agent-confirm-install small { color:inherit; opacity:1; }
 .skill-install-plan .manual-agent-config { margin-top:18px; padding:18px; border:1px solid var(--skill-line); border-radius:14px; background:#0c0d0e; }
 .skill-install-plan .manual-agent-config h4 { margin:0 0 10px; color:var(--skill-ink); }
 .skill-install-plan .manual-agent-config ol { margin:0 0 16px; padding-left:20px; color:var(--skill-muted); line-height:1.75; }
@@ -2149,6 +2193,9 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .skill-download-content > article > .button-row { grid-column:1/-1; justify-self:start; align-items:flex-start; flex-direction:row; width:auto; }
   .skill-platform-note { grid-template-columns:1fr; }
   .skill-install-plan,.skill-install-status { min-height:auto; padding:20px; }
+  .skill-install-plan .agent-install-actions { grid-template-columns:1fr; width:100%; }
+  .skill-install-plan .agent-install-actions .button,
+  .skill-install-plan .agent-confirm-install { width:100%; }
   .skill-install-safety { grid-template-columns:1fr; }
   .skill-detail-dialog { width:calc(100vw - 12px); max-height:calc(100vh - 12px); }
   .skill-detail-card { max-height:calc(100vh - 14px); }
