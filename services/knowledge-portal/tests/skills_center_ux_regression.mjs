@@ -240,10 +240,21 @@ try {
   assert.equal(await page.getByText("当前首要补齐", {exact: true}).count(), 1, "算法包页面必须展示动态补齐重点");
   assert.equal(await page.getByText("近7日查询", {exact: true}).count(), 1, "算法包页面必须展示真实查询频率");
   assert.equal(await page.getByText("它解决什么问题", {exact: true}).count(), 1, "算法包页面必须解释实际用途");
+  await page.getByRole("link", {name: /正式规则包/}).click();
+  await page.waitForLoadState("networkidle");
+  assert.equal(new URL(page.url()).searchParams.get("coverage"), "rules-confirmed", "正式规则包卡片必须进入正式项目筛选");
+  assert.equal(await page.locator(".algorithm-table tbody tr").count(), 8, "正式规则包筛选必须只展示8个已确认项目");
   await page.getByRole("link", {name: /专精特新小巨人/}).first().click();
   await page.waitForLoadState("networkidle");
+  assert.equal(new URL(page.url()).searchParams.get("project"), "little-giant", "项目点击必须真实切换详情路由");
   assert.equal(await page.getByText("用途说明", {exact: true}).count(), 1, "算法包必须提供可点击详情");
   assert.equal(await page.getByText("查看算法包源配置 JSON", {exact: true}).count(), 1, "算法包详情必须提供源配置");
+  await page.getByRole("link", {name: "返回完整清单"}).click();
+  await page.waitForLoadState("networkidle");
+  assert.equal(new URL(page.url()).pathname, "/algorithms", "返回按钮必须回到项目算法包页面");
+  assert.equal(new URL(page.url()).search, "", "返回按钮必须清除项目详情参数");
+  assert.equal(new URL(page.url()).hash, "#algorithm-catalog", "返回按钮必须定位完整清单");
+  assert.equal(await page.locator("#algorithm-detail").count(), 0, "返回完整清单后不得残留旧项目详情");
   assert.equal(
     await page.locator(".algorithm-introduction").evaluate((element) => getComputedStyle(element).display),
     "grid",

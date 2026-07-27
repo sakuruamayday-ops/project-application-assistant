@@ -75,17 +75,31 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           <div><span class="eyebrow">它解决什么问题</span><h3>让网站、API、MCP 和 Skills 使用同一套项目判断口径</h3></div>
           <p>正式规则包会读取企业事实字段并逐项核对政策门槛；检索路由包只负责识别项目、限定检索范围和防止串项。点击清单中的项目，可以查看适用场景、企业字段、规则层、政策来源和实际运行配置。</p>
         </article>
-        <div class="health-grid">
-          <article class="health-card"><span>算法包总数</span><strong>{{ project_algorithms.total }}</strong><small>已覆盖高频项目入口</small></article>
-          <article class="health-card"><span>正式规则包</span><strong>{{ project_algorithms.confirmed }}</strong><small>可执行已确认门槛判断</small></article>
-          <article class="health-card"><span>检索路由包</span><strong>{{ project_algorithms.routing_only }}</strong><small>只检索与核验，不直接下结论</small></article>
-          <article class="health-card"><span>当前首要补齐</span><strong>{{ project_algorithms.priority_title }}</strong><small>{{ project_algorithms.priority_detail }}</small></article>
+        <nav class="algorithm-metrics" aria-label="算法包分类">
+          <a class="algorithm-stat-card {{ 'is-active' if not project_algorithms.coverage_filter else '' }}" href="/algorithms#algorithm-catalog" data-force-navigation>
+            <span>全部算法包</span><strong>{{ project_algorithms.total }}</strong><small>查看完整项目清单</small><em>查看全部 →</em>
+          </a>
+          <a class="algorithm-stat-card {{ 'is-active' if project_algorithms.coverage_filter == 'rules-confirmed' else '' }}" href="/algorithms?coverage=rules-confirmed#algorithm-catalog" data-force-navigation>
+            <span>正式规则包</span><strong>{{ project_algorithms.confirmed }}</strong><small>可执行已确认门槛判断</small><em>筛选项目 →</em>
+          </a>
+          <a class="algorithm-stat-card {{ 'is-active' if project_algorithms.coverage_filter == 'routing-only' else '' }}" href="/algorithms?coverage=routing-only#algorithm-catalog" data-force-navigation>
+            <span>检索路由包</span><strong>{{ project_algorithms.routing_only }}</strong><small>只检索与核验，不直接下结论</small><em>筛选项目 →</em>
+          </a>
+          {% if project_algorithms.top_priority %}
+          <a class="algorithm-stat-card algorithm-priority-card" href="/algorithms?project={{ project_algorithms.top_priority.project_id }}#algorithm-detail" data-force-navigation>
+            <span>当前首要补齐</span><strong>{{ project_algorithms.priority_title }}</strong><small>{{ project_algorithms.priority_detail }}</small><em>查看项目 →</em>
+          </a>
+          {% else %}
+          <div class="algorithm-stat-card algorithm-priority-card">
+            <span>当前首要补齐</span><strong>{{ project_algorithms.priority_title }}</strong><small>{{ project_algorithms.priority_detail }}</small>
+          </div>
+          {% endif %}
         </div>
         {% if project_algorithm_detail %}
         <article class="panel algorithm-detail" id="algorithm-detail">
           <div class="algorithm-detail-head">
             <div><span class="eyebrow">{{ project_algorithm_detail.coverage_label }}</span><h3>{{ project_algorithm_detail.project_name }}</h3><p>{{ project_algorithm_detail.project_id }} · 配置版本 {{ project_algorithm_detail.version }}</p></div>
-            <a class="button secondary" href="/algorithms">返回完整清单</a>
+            <a class="button secondary" href="/algorithms#algorithm-catalog" data-force-navigation>返回完整清单</a>
           </div>
           <div class="algorithm-purpose"><strong>用途说明</strong><p>{{ project_algorithm_detail.purpose }}</p></div>
           <dl class="algorithm-detail-metrics">
@@ -106,7 +120,13 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           <details class="algorithm-source-code"><summary>查看算法包源配置 JSON</summary><pre>{{ project_algorithm_detail.raw_json }}</pre></details>
         </article>
         {% endif %}
-        <article class="panel table-panel"><div class="panel-head"><h3>项目算法清单</h3><span>{{ project_algorithms.total }} 个项目 · 点击项目查看规则详情</span></div><div class="table-wrap"><table><thead><tr><th>项目</th><th>状态</th><th>补齐顺序</th><th>近7日查询</th><th>规则层</th><th>正式规则</th><th>当前能力</th><th></th></tr></thead><tbody>{% for item in project_algorithms["items"] %}<tr><td><a class="algorithm-project-link" href="/algorithms?project={{ item.project_id }}#algorithm-detail"><strong>{{ item.project_name }}</strong><small>{{ item.project_id }}</small></a></td><td><span class="table-status {{ 'off' if item.coverage_status != 'rules-confirmed' else '' }}">{{ item.coverage_label }}</span></td><td><strong>{{ item.priority_label }}</strong><small>{{ item.priority_reason }}</small></td><td>{{ item.usage_7d }} 次<small>{{ item.users_7d }} 名成员</small></td><td>{% if item.layers %}{% for layer in item.layers %}<span class="status-pill">{{ layer.label }} · {{ layer.rule_count }}</span>{% endfor %}{% else %}<span class="muted">待确认规则源</span>{% endif %}</td><td>{{ item.rule_count }}</td><td>{{ item.decision_scope }}</td><td><a class="text-action" href="/algorithms?project={{ item.project_id }}#algorithm-detail">查看详情 →</a></td></tr>{% endfor %}</tbody></table></div></article>
+        <article class="panel table-panel algorithm-catalog" id="algorithm-catalog">
+          <div class="panel-head algorithm-catalog-head">
+            <div><span class="eyebrow">Project Registry</span><h3>项目算法清单</h3></div>
+            <div class="algorithm-catalog-summary"><strong>{{ project_algorithms.coverage_filter_label }}</strong><span>显示 {{ project_algorithms.visible_total }} / {{ project_algorithms.total }} 个项目</span>{% if project_algorithms.coverage_filter %}<a href="/algorithms#algorithm-catalog" data-force-navigation>清除筛选</a>{% endif %}</div>
+          </div>
+          <div class="table-wrap algorithm-table-wrap"><table class="algorithm-table"><thead><tr><th>项目</th><th>状态</th><th>补齐顺序</th><th>近7日查询</th><th>规则层</th><th>正式规则</th><th>当前能力</th><th></th></tr></thead><tbody>{% for item in project_algorithms["items"] %}<tr class="{{ 'is-current' if project_algorithm_detail and project_algorithm_detail.project_id == item.project_id else '' }}"><td><a class="algorithm-project-link" href="/algorithms?project={{ item.project_id }}#algorithm-detail" data-force-navigation><strong>{{ item.project_name }}</strong><small>{{ item.project_id }}</small></a></td><td><span class="table-status {{ 'off' if item.coverage_status != 'rules-confirmed' else '' }}">{{ item.coverage_label }}</span></td><td><strong>{{ item.priority_label }}</strong><small>{{ item.priority_reason }}</small></td><td>{{ item.usage_7d }} 次<small>{{ item.users_7d }} 名成员</small></td><td>{% if item.layers %}{% for layer in item.layers %}<span class="status-pill">{{ layer.label }} · {{ layer.rule_count }}</span>{% endfor %}{% else %}<span class="muted">待确认规则源</span>{% endif %}</td><td>{{ item.rule_count }}</td><td>{{ item.decision_scope }}</td><td><a class="text-action" href="/algorithms?project={{ item.project_id }}#algorithm-detail" data-force-navigation>查看详情 →</a></td></tr>{% else %}<tr><td colspan="8" class="empty">当前筛选条件下没有项目</td></tr>{% endfor %}</tbody></table></div>
+        </article>
       </section>{% endif %}
 
       {% if user.is_admin and (single_page or active_page == 'health') %}
