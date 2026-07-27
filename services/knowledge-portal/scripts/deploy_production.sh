@@ -95,6 +95,7 @@ ssh "${ssh_args[@]}" "${deploy_host}" \
     /usr/local/sbin/jiaotang-kb-backup
     install -d '${remote_backup_dir}'
     cp -a '${remote_app_dir}/app' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/requirements.txt' '${remote_backup_dir}/'
+    if [ -d '${remote_app_dir}/references' ]; then cp -a '${remote_app_dir}/references' '${remote_backup_dir}/'; fi
     if [ -d '${remote_app_dir}/installers' ]; then cp -a '${remote_app_dir}/installers' '${remote_backup_dir}/'; fi
     if [ -d '${remote_app_dir}/docs' ]; then cp -a '${remote_app_dir}/docs' '${remote_backup_dir}/'; fi
     if [ -d '${remote_app_dir}/skills' ]; then cp -a '${remote_app_dir}/skills' '${remote_backup_dir}/'; fi"
@@ -102,7 +103,7 @@ ssh "${ssh_args[@]}" "${deploy_host}" \
 echo "[4/7] 上传应用与运维文件"
 deployment_failed=0
 COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
-    app templates static installers deploy scripts/build_knowledge_content_index.py \
+    app references templates static installers deploy scripts/build_knowledge_content_index.py \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py scripts/refresh_index_from_oss.py \
     scripts/deploy_index_delta_to_server.sh \
     scripts/verify_oss_mirror.py \
@@ -161,7 +162,7 @@ PY
         mv '/usr/local/sbin/jiaotang-kb-refresh-index.${timestamp}' /usr/local/sbin/jiaotang-kb-refresh-index
         mv '/usr/local/sbin/jiaotang-kb-smoke-test.${timestamp}' /usr/local/sbin/jiaotang-kb-smoke-test
         cp '${remote_app_dir}/deploy/jiaotang-kb.service' '${remote_app_dir}/deploy/jiaotang-kb-health.service' '${remote_app_dir}/deploy/jiaotang-kb-backup.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.timer' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.path' /etc/systemd/system/
-        chown -R jiaotang:jiaotang '${remote_app_dir}/app' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/installers' '${remote_app_dir}/docs' '${remote_app_dir}/skills'
+        chown -R jiaotang:jiaotang '${remote_app_dir}/app' '${remote_app_dir}/references' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/installers' '${remote_app_dir}/docs' '${remote_app_dir}/skills'
         source /etc/jiaotang-kb.env
         '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/verify_skill_signature_coverage.py' --skills-root '${remote_app_dir}/skills' --output "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json" --deployment-id '${timestamp}' --scope production
         chown jiaotang:jiaotang "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json"
@@ -208,6 +209,10 @@ if [[ "${deployment_failed}" -ne 0 ]]; then
     ssh "${ssh_args[@]}" "${deploy_host}" \
         "set -e
         cp -a '${remote_backup_dir}/app/.' '${remote_app_dir}/app/'
+        if [ -d '${remote_backup_dir}/references' ]; then
+            install -d '${remote_app_dir}/references'
+            cp -a '${remote_backup_dir}/references/.' '${remote_app_dir}/references/'
+        fi
         cp -a '${remote_backup_dir}/templates/.' '${remote_app_dir}/templates/'
         cp -a '${remote_backup_dir}/static/.' '${remote_app_dir}/static/'
         cp -a '${remote_backup_dir}/requirements.txt' '${remote_app_dir}/requirements.txt'
