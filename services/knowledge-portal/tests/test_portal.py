@@ -713,6 +713,8 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
         )
         client.cookies.update(login.cookies)
         response = client.get("/algorithms")
+        detail_response = client.get("/algorithms?project=little-giant")
+        routing_response = client.get("/algorithms?project=first-equipment")
 
     assert response.status_code == 200
     assert 'data-section-link="algorithms"' in response.text
@@ -724,6 +726,15 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "当前首要补齐" in response.text
     assert "只检索与核验，不直接下结论" in response.text
     assert "稳定管理办法" in response.text
+    assert "点击项目查看规则详情" in response.text
+    assert detail_response.status_code == 200
+    assert "用途说明" in detail_response.text
+    assert "查看算法包源配置 JSON" in detail_response.text
+    assert "little-giant-revenue" in detail_response.text
+    assert "查看官方原文" in detail_response.text
+    assert routing_response.status_code == 200
+    assert "为什么暂时没有门槛源代码" in routing_response.text
+    assert "正式门槛尚未逐项确认" in routing_response.text
 
 
 def test_project_usage_metadata_covers_rest_and_mcp_searches(tmp_path):

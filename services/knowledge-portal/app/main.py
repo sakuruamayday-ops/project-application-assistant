@@ -1893,6 +1893,99 @@ def project_algorithm_catalog_payload() -> dict[str, object]:
     }
 
 
+def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | None:
+    normalized_project_id = project_id.strip()
+    if not normalized_project_id:
+        return None
+    pack = next(
+        (
+            item
+            for item in load_project_algorithm_packs()
+            if str(item.get("project_id") or "") == normalized_project_id
+        ),
+        None,
+    )
+    if pack is None:
+        return None
+    coverage_status = str(pack.get("coverage_status") or "routing-only")
+    layers = [
+        layer for layer in pack.get("rule_layers", []) if isinstance(layer, dict)
+    ]
+    rules = [
+        {
+            "rule_id": str(rule.get("rule_id") or ""),
+            "field": str(rule.get("field") or ""),
+            "operator": str(rule.get("operator") or ""),
+            "expected": rule.get("expected"),
+            "unit": str(rule.get("unit") or ""),
+            "source": str(rule.get("source") or ""),
+            "source_quote": str(rule.get("source_quote") or ""),
+            "source_url": str(rule.get("source_url") or ""),
+            "policy_status": str(rule.get("policy_status") or ""),
+            "review_status": str(rule.get("review_status") or ""),
+            "layer_label": str(layer.get("label") or ""),
+        }
+        for layer in layers
+        for rule in layer.get("rules", [])
+        if isinstance(rule, dict)
+    ]
+    sources: list[dict[str, str]] = []
+    seen_sources: set[tuple[str, str]] = set()
+    for rule in rules:
+        source_key = (rule["source"], rule["source_url"])
+        if not any(source_key) or source_key in seen_sources:
+            continue
+        seen_sources.add(source_key)
+        sources.append(
+            {
+                "title": rule["source"] or rule["source_url"],
+                "url": rule["source_url"],
+                "status": rule["policy_status"],
+            }
+        )
+    return {
+        "project_id": normalized_project_id,
+        "project_name": str(pack.get("project_name") or normalized_project_id),
+        "version": str(pack.get("version") or ""),
+        "coverage_status": coverage_status,
+        "coverage_label": (
+            "正式规则包"
+            if coverage_status == "rules-confirmed"
+            else "检索路由包"
+        ),
+        "purpose": (
+            "把企业事实字段与已确认政策门槛逐项比对，形成可追溯的符合、"
+            "不符合或待补资料结论；年度通知和属地要求仍会继续核验。"
+            if coverage_status == "rules-confirmed"
+            else "负责识别项目名称、简称和检索范围，避免跨项目串项。"
+            "正式门槛尚未逐项确认，因此只返回政策证据和待核验项，"
+            "不直接判断企业符合或不符合。"
+        ),
+        "aliases": [str(alias) for alias in pack.get("aliases", []) if str(alias)],
+        "fact_fields": [
+            field for field in pack.get("fact_fields", []) if isinstance(field, dict)
+        ],
+        "layers": [
+            {
+                "layer_id": str(layer.get("layer_id") or ""),
+                "label": str(layer.get("label") or ""),
+                "layer_type": str(layer.get("layer_type") or ""),
+                "rule_count": len(
+                    [
+                        rule
+                        for rule in layer.get("rules", [])
+                        if isinstance(rule, dict)
+                    ]
+                ),
+            }
+            for layer in layers
+        ],
+        "rules": rules,
+        "sources": sources,
+        "raw_json": json.dumps(pack, ensure_ascii=False, indent=2),
+    }
+
+
 def matched_project_retrieval_rule(query: str) -> dict[str, object] | None:
     rule = decide_matched_project_retrieval_rule(query, load_project_retrieval_rules())
     return dict(rule) if rule else None
@@ -6705,6 +6798,7 @@ def portal_payload(
     member_query: str = "",
     feedback_status: str = "",
     feedback_query: str = "",
+    algorithm_project_id: str = "",
 ) -> dict[str, object]:
     with closing(database()) as connection:
         device_tokens = connection.execute(
@@ -7145,6 +7239,9 @@ def portal_payload(
         "historical_releases": historical_releases,
         "skill_center": skill_catalog_payload(),
         "project_algorithms": project_algorithm_catalog_payload(),
+        "project_algorithm_detail": project_algorithm_detail_payload(
+            algorithm_project_id
+        ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_announcement": announcement_payload,
         "knowledge_stats": knowledge_index_stats(),
@@ -7793,6 +7890,7 @@ def portal_page_response(
     active_page: str,
     *,
     invite_query: str = "",
+    algorithm_project_id: str = "",
 ) -> HTMLResponse:
     admin_pages = {"health", "knowledge-admin", "skill-admin", "members"}
     if active_page in admin_pages:
@@ -7805,6 +7903,7 @@ def portal_page_response(
             user,
             active_page=active_page,
             invite_query=invite_query,
+            algorithm_project_id=algorithm_project_id,
         ),
     )
     response.headers["Cache-Control"] = "private, no-store"
@@ -7912,8 +8011,14 @@ def skills_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_w
 def algorithms_page(
     request: Request,
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    project: str = "",
 ):
-    return portal_page_response(request, user, "algorithms")
+    return portal_page_response(
+        request,
+        user,
+        "algorithms",
+        algorithm_project_id=project,
+    )
 
 
 @app.get("/skills/catalog/{skill_name}")
