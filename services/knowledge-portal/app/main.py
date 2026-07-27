@@ -8096,6 +8096,42 @@ def skills_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_w
     return portal_page_response(request, user, "skills")
 
 
+@app.get("/skills-manager", response_class=HTMLResponse)
+def skills_manager_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    response = templates.TemplateResponse(
+        request,
+        "skills_manager_pwa.html",
+        {"user": user},
+    )
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+
+@app.get("/skills-manager/manifest.webmanifest")
+def skills_manager_manifest():
+    return FileResponse(
+        BASE_DIR / "static" / "skills-manager" / "manifest.webmanifest",
+        media_type="application/manifest+json",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
+@app.get("/skills-manager/sw.js")
+def skills_manager_service_worker():
+    return FileResponse(
+        BASE_DIR / "static" / "skills-manager" / "sw.js",
+        media_type="application/javascript",
+        headers={
+            "Cache-Control": "no-cache",
+            "Service-Worker-Allowed": "/skills-manager",
+        },
+    )
+
+
 @app.get("/algorithms", response_class=HTMLResponse)
 def algorithms_page(
     request: Request,
@@ -12554,6 +12590,27 @@ def latest_skill_channels(
             skill_channel_artifact("windows"),
         ]
     )
+
+
+@app.get("/v1/web/skills/channels", response_model=SkillChannelsResponse)
+def web_skill_channels(
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    channels = [
+        skill_channel_artifact("generic"),
+        skill_channel_artifact("macos"),
+        skill_channel_artifact("windows"),
+    ]
+    for channel in channels:
+        if not channel.available:
+            continue
+        channel.download_url = (
+            "/skills/latest/download"
+            if channel.id == "generic"
+            else f"/skills/latest/workbuddy/{channel.id}/download"
+        )
+    return SkillChannelsResponse(channels=channels)
 
 
 @app.get("/v1/skills/latest/download")

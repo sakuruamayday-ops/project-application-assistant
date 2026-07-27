@@ -1,5 +1,11 @@
 # 桌面发行签名与安全门禁
 
+## 当前发布决策
+
+在没有 Apple Developer ID 和 Windows Authenticode 证书的阶段，正式双端入口是知识门户的 HTTPS PWA `/skills-manager`。PWA由已部署网站承载，不把未签名 Electron 构建交给用户，也不要求用户放宽操作系统安全策略。
+
+本目录中的原生构建仅允许工程验证。下述门禁全部通过后，才能把原生客户端从“开发预览”改为“正式发布”；PWA不会降低或替代这些门禁。
+
 Skills 管理器同时校验两条互不替代的信任链：
 
 1. 桌面应用信任链：macOS 使用 Developer ID、Hardened Runtime 与 Apple 公证；Windows 使用 Authenticode 代码签名。
@@ -68,9 +74,12 @@ Windows 端使用 `.cmd` 直接安装；macOS 端继续使用 `.command`。平�
 
 ## 发布阻断条件
 
+- 尚未取得相应平台发行证书，却准备把原生构建提供给终端用户。
 - 应用未签名、签名失效或公证未 staple。
 - 安装器的 Authenticode 状态不是 `Valid`。
 - 发布包 SHA-256 与门户元数据不一致。
 - Ed25519 公钥指纹不是信任清单中的固定值。
 - 签名清单缺文件、路径越界、重复路径或任一文件哈希不一致。
 - 干净系统安装、更新、回滚测试未完成。
+
+任一条件命中时，可以继续发布PWA和既有签名Skills包，但不得发布新的原生管理器安装包。

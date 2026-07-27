@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0c0f0f" />
+    <meta name="description" content="焦糖跨平台 Skills 管理器" />
+    <link rel="manifest" href="/skills-manager/manifest.webmanifest" />
+    <link rel="icon" href="/static/favicon.svg" />
+    <link rel="stylesheet" href="/static/skills-manager/app.css" />
+    <link rel="stylesheet" href="/static/skills-manager/polish.css" />
+    <title>焦糖 Skills 管理器</title>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="rail">
+        <a class="brand" href="/portal"><span class="mark">✓</span><span><strong>焦糖</strong><small>SKILLS MANAGER</small></span></a>
+        <nav>
+          <button class="nav active" data-view="overview">总览</button>
+          <button class="nav" data-view="platforms">平台</button>
+          <button class="nav" data-view="security">安全</button>
+        </nav>
+        <div class="session"><i></i><span>{{ user["username"] }}<small>门户会话已连接</small></span></div>
+      </aside>
+      <main>
+        <header>
+          <div><p class="eyebrow">HTTPS CONTROL ROOM</p><h1 id="page-title">技能交付控制台</h1></div>
+          <div class="header-actions"><button class="ghost" id="install-pwa" hidden>安装到桌面</button><button class="primary" id="refresh">检查更新</button></div>
+        </header>
+
+        <section class="view active" data-panel="overview">
+          <div class="hero-grid">
+            <article class="hero">
+              <span class="chip">无需原生签名证书</span>
+              <h2>一套 Skills，<em>双端安心更新。</em></h2>
+              <p>由浏览器和现有 HTTPS 门户承载管理器。只有在你主动选择目录后才写入；未知同名内容不会被覆盖。</p>
+              <div class="actions"><button class="primary" data-sync>选择目录并同步</button><button class="text" data-view-jump="security">查看安全边界 →</button></div>
+              <div class="orbit"><strong>49</strong><span>签名技能</span></div>
+            </article>
+            <article class="status-card">
+              <p class="eyebrow">RELEASE STATE</p>
+              <h3 id="release-state">正在读取发布通道</h3>
+              <div class="trust-chain"><span>HTTPS</span><span>SHA-256</span><span>用户授权</span></div>
+              <p id="release-detail">门户会话不会把安装码、令牌或设备私钥交给网页脚本。</p>
+              <hr />
+              <p class="eyebrow">CAPABILITY NEGOTIATION</p>
+              <h3 id="capability-state">正在检查浏览器能力</h3>
+              <p id="capability-detail">缺少必要能力时自动降级为只下载，不尝试写目录或替换旧版本。</p>
+            </article>
+          </div>
+          <div class="section-head"><div><p class="eyebrow">CHANNELS</p><h2>独立更新通道</h2></div><p>Windows 热修复不会推动 macOS 强制更新。</p></div>
+          <div class="channels" id="channels"></div>
+          <div class="principles">
+            <article><b>01</b><strong>证书缺口已绕开</strong><p>PWA由浏览器从HTTPS门户安装，不分发未知原生应用。</p></article>
+            <article><b>02</b><strong>安装前能力协商</strong><p>先检查浏览器目录权限、平台入口和包结构，再开放同步。</p></article>
+            <article><b>03</b><strong>更新可恢复</strong><p>覆盖已托管内容前先复制到目录内备份区，回滚不删除当前版本。</p></article>
+          </div>
+        </section>
+
+        <section class="view" data-panel="platforms">
+          <div class="section-head page"><div><p class="eyebrow">ADAPTERS</p><h2>平台能力分层</h2></div><p>“支持 Agent”不等于“有稳定外部 Skills 安装接口”。</p></div>
+          <div class="platform-grid">
+            <article class="platform full"><span>完整同步</span><h3>WorkBuddy</h3><p>下载当前系统独立签名包，用户审查后运行固定 .command 或 .cmd。</p><button class="ghost" data-workbuddy>下载当前系统包</button></article>
+            <article class="platform full"><span>完整同步</span><h3>TRAE 中国版</h3><p>授权并选择 ~/.trae-cn/skills 后同步49项正式技能。</p><button class="ghost" data-sync>选择目录</button></article>
+            <article class="platform full"><span>完整同步</span><h3>Kimi Code</h3><p>授权并选择 ~/.agents/skills，更新后在Kimi中新建会话复验。</p><button class="ghost" data-sync>选择目录</button></article>
+            <article class="platform guided"><span>引导导入</span><h3>通义灵码</h3><p>官方未公开稳定外部安装接口，不自动修改内部目录。</p><button class="ghost" data-generic-download>下载已验证包</button></article>
+            <article class="platform adapter"><span>适配导入</span><h3>Qoder</h3><p>提供通用包，由平台导入界面完成最终安装与复验。</p><button class="ghost" data-generic-download>下载通用包</button></article>
+            <article class="platform guided"><span>引导导入</span><h3>Cherry Studio</h3><p>不写平台数据库，只把已验证包交给官方导入界面。</p><button class="ghost" data-generic-download>下载通用包</button></article>
+          </div>
+          <article class="rollback-card"><div><p class="eyebrow">RECOVERABLE</p><h3>目录内可恢复回滚</h3><p>再次选择已经由管理器接管的目录，即可恢复最近备份；当前版本会先进入 displaced 恢复区。</p></div><button class="danger" id="rollback">选择目录并回滚</button></article>
+        </section>
+
+        <section class="view" data-panel="security">
+          <div class="section-head page"><div><p class="eyebrow">TRUST BOUNDARY</p><h2>没有证书时，安全来自哪里</h2></div></div>
+          <div class="security-grid">
+            <article><b>01</b><h3>应用分发</h3><p>PWA运行在已部署HTTPS门户内，由Chrome或Edge安装，不产生“未知开发者”原生程序。</p></article>
+            <article><b>02</b><h3>内容完整性</h3><p>浏览器下载后重新计算SHA-256，只有与门户发布元数据完全一致才允许解包。</p></article>
+            <article><b>03</b><h3>文件权限</h3><p>File System Access权限由浏览器弹窗授予；网页无法扫描整台电脑，也不能越过用户选择的目录。</p></article>
+            <article><b>04</b><h3>WorkBuddy边界</h3><p>PWA只下载现有签名平台包。固定安装器仍需用户审查并主动运行，不执行网页返回命令。</p></article>
+          </div>
+          <div class="notice"><strong>浏览器要求</strong><p>目录同步需要桌面版Chrome或Edge。Safari和Firefox当前只提供包下载，不自动写目录；这属于浏览器能力差异，不伪装成全平台自动同步。</p></div>
+        </section>
+      </main>
+    </div>
+    <dialog id="progress"><div class="dialog-body"><span class="spinner"></span><h3 id="progress-title">正在处理</h3><p id="progress-detail">请不要关闭页面。</p><button class="ghost" id="progress-close" hidden>关闭</button></div></dialog>
+    <div id="toasts" aria-live="polite"></div>
+    <script src="/static/skills-manager/zip-reader.js"></script>
+    <script src="/static/skills-manager/app.js"></script>
+  </body>
+</html>

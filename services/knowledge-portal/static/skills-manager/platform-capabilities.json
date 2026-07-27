@@ -1,0 +1,44 @@
+{
+  "schema": "jiaotang-skills-manager-capabilities/v1",
+  "delivery": {
+    "primary": "https_pwa",
+    "native_clients": {
+      "macos": {
+        "status": "blocked_until_signed",
+        "required": [
+          "Apple Developer ID Application",
+          "hardened runtime",
+          "Apple notarization",
+          "stapled notarization ticket"
+        ]
+      },
+      "windows": {
+        "status": "blocked_until_signed",
+        "required": [
+          "Authenticode code-signing certificate",
+          "timestamped signature",
+          "SmartScreen reputation validation"
+        ]
+      }
+    }
+  },
+  "directory_sync": {
+    "required_browser_capabilities": [
+      "secureContext",
+      "webCrypto",
+      "directoryPicker",
+      "directoryRemove",
+      "zipDeflate"
+    ],
+    "fallback": "verified_download_only",
+    "managed_skill_count": 49
+  },
+  "platforms": {
+    "workbuddy": "signed_package_download",
+    "trae_cn": "directory_sync",
+    "kimi_code": "directory_sync",
+    "lingma": "guided_import",
+    "qoder": "adapter_import",
+    "cherry_studio": "guided_import"
+  }
+}

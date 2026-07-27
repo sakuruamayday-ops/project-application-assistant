@@ -1,10 +1,21 @@
 # 焦糖 Skills 管理器
 
-面向 macOS 与 Windows 的 Skills 交付控制台。它把同一份签名 Skills 发布到不同 Agent 的稳定导入入口，并保留平台差异、冲突确认、备份和回滚。
+本目录保存未来的原生 macOS 与 Windows 客户端。当前可正式交付的双端管理器是知识门户中的 HTTPS PWA，入口为 `/skills-manager`；它不分发未签名原生程序，因此不要求用户绕过 Gatekeeper、SmartScreen 或“未知发布者”警告。
 
-当前为 MVP 开发版，尚未作为正式桌面安装包发布。
+原生客户端当前仅为工程验证版。取得 Apple Developer ID、公证能力与 Windows Authenticode 证书，并通过双端实机门禁前，不得作为正式下载提供。
 
-## 已实现
+## PWA 正式路线
+
+- 使用现有门户登录态，不向网页脚本暴露设备私钥、个人访问凭据或一次性安装码。
+- 在桌面版 Chrome 或 Edge 中由用户明确选择目标目录后同步；Safari、Firefox 或缺少必要 API 的环境自动降级为校验后下载。
+- 运行时读取平台能力清单，先检查安全上下文、WebCrypto、ZIP 解压和目录授权，再决定是否开放写入。
+- 只写入发布清单列出的 49 项技能与共享路径，未托管同名内容会阻断安装。
+- 覆盖前保留目录内备份，回滚时当前版本先进入 displaced 恢复区，不永久删除用户文件。
+- WorkBuddy 只下载对应平台的既有签名包，仍由用户审查并运行包内固定 `.command` 或 `.cmd`。
+
+实现位于 `services/knowledge-portal/static/skills-manager`，发布说明见 `docs/skills-manager-pwa.md`。
+
+## 原生工程验证版已实现
 
 - 自动识别 WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder 与 Cherry Studio，并按“完整同步、适配导入、引导导入”分级。
 - 通用 Skills、WorkBuddy macOS、WorkBuddy Windows 三条独立更新通道。
@@ -27,7 +38,7 @@ npm run check
 npm start
 ```
 
-正式发行要求见 `docs/SECURITY_SIGNING.md`。未通过 Apple 公证或 Windows Authenticode 门禁的构建只能用于开发测试。
+原生正式发行要求见 `docs/SECURITY_SIGNING.md`。未通过 Apple 公证或 Windows Authenticode 门禁的构建只能用于开发测试，不能用“右键打开”“仍要运行”或关闭系统防护作为发布说明。
 
 ## 数据边界
 
