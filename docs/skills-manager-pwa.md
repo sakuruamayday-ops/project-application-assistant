@@ -22,7 +22,7 @@
 
 - TRAE 中国版与 Kimi Code：用户选择官方 Skills 目录后同步。
 - 通义灵码、Qoder与Cherry Studio：下载已校验通用包，再走平台官方导入界面。
-- WorkBuddy：只下载当前系统独立发布通道的签名包；用户审查并运行包内固定 `.command` 或 `.cmd`。
+- WorkBuddy：只下载当前系统独立发布通道的发布者签名包。包内 Ed25519 用于验证内容来源和完整性，不等于 Gatekeeper 或 Authenticode 代码签名；操作系统阻断时停止安装，不提供绕过步骤。要消除未知开发者或未知发布者提示，仍需改为相应平台正式签名、公证的原生安装载体。
 - 同名但未由管理器登记的内容会阻断写入。
 - 已托管内容更新前复制到 `.jiaotang-skills-manager/backups`。
 - 回滚时被替换的当前版本进入 `.jiaotang-skills-manager/displaced`，不永久删除。

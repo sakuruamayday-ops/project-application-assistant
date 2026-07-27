@@ -60,7 +60,7 @@
         <section class="view" data-panel="platforms">
           <div class="section-head page"><div><p class="eyebrow">ADAPTERS</p><h2>平台能力分层</h2></div><p>“支持 Agent”不等于“有稳定外部 Skills 安装接口”。</p></div>
           <div class="platform-grid">
-            <article class="platform full"><span>完整同步</span><h3>WorkBuddy</h3><p>下载当前系统独立签名包，用户审查后运行固定 .command 或 .cmd。</p><button class="ghost" data-workbuddy>下载当前系统包</button></article>
+            <article class="platform full"><span>签名包下载</span><h3>WorkBuddy</h3><p>下载当前系统的发布者签名包。Ed25519可验证内容来源，但不等于操作系统代码签名；系统拦截时不会引导绕过。</p><button class="ghost" data-workbuddy>下载当前系统包</button></article>
             <article class="platform full"><span>完整同步</span><h3>TRAE 中国版</h3><p>授权并选择 ~/.trae-cn/skills 后同步49项正式技能。</p><button class="ghost" data-sync>选择目录</button></article>
             <article class="platform full"><span>完整同步</span><h3>Kimi Code</h3><p>授权并选择 ~/.agents/skills，更新后在Kimi中新建会话复验。</p><button class="ghost" data-sync>选择目录</button></article>
             <article class="platform guided"><span>引导导入</span><h3>通义灵码</h3><p>官方未公开稳定外部安装接口，不自动修改内部目录。</p><button class="ghost" data-generic-download>下载已验证包</button></article>
@@ -76,7 +76,7 @@
             <article><b>01</b><h3>应用分发</h3><p>PWA运行在已部署HTTPS门户内，由Chrome或Edge安装，不产生“未知开发者”原生程序。</p></article>
             <article><b>02</b><h3>内容完整性</h3><p>浏览器下载后重新计算SHA-256，只有与门户发布元数据完全一致才允许解包。</p></article>
             <article><b>03</b><h3>文件权限</h3><p>File System Access权限由浏览器弹窗授予；网页无法扫描整台电脑，也不能越过用户选择的目录。</p></article>
-            <article><b>04</b><h3>WorkBuddy边界</h3><p>PWA只下载现有签名平台包。固定安装器仍需用户审查并主动运行，不执行网页返回命令。</p></article>
+            <article><b>04</b><h3>WorkBuddy边界</h3><p>PWA只下载现有发布者签名包，不执行网页返回命令。Ed25519不是Gatekeeper或Authenticode信任；系统阻断时应停止，不提供绕过步骤。</p></article>
           </div>
           <div class="notice"><strong>浏览器要求</strong><p>目录同步需要桌面版Chrome或Edge。Safari和Firefox当前只提供包下载，不自动写目录；这属于浏览器能力差异，不伪装成全平台自动同步。</p></div>
         </section>
