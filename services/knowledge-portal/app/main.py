@@ -7201,13 +7201,9 @@ def portal_payload(
                 "release_notes_html": render_guide_markdown(str(latest_release["release_notes"])),
                 "workbuddy_available": any(
                     item["included"]
-                    for item in workbuddy_platforms(
-                        str(latest_release["version"])
-                    )
+                    for item in latest_workbuddy_platforms()
                 ),
-                "workbuddy_platforms": workbuddy_platforms(
-                    str(latest_release["version"])
-                ),
+                "workbuddy_platforms": latest_workbuddy_platforms(),
             }
             if latest_release
             else None
@@ -12449,6 +12445,32 @@ def workbuddy_platforms(version: str) -> list[dict[str, object]]:
                 **definition,
                 "included": included,
                 "download_url": f"/skills/latest/workbuddy/{host}/download",
+            }
+        )
+    return result
+
+
+def latest_workbuddy_platforms() -> list[dict[str, object]]:
+    result = []
+    for platform_name in ("macos", "windows"):
+        artifact = latest_skill_artifact(platform_name)
+        if artifact is None:
+            platform = next(
+                item
+                for item in workbuddy_platforms("0.0.0")
+                if item["id"] == platform_name
+            )
+            result.append({**platform, "version": None})
+            continue
+        platform = next(
+            item
+            for item in workbuddy_platforms(str(artifact["version"]))
+            if item["id"] == platform_name
+        )
+        result.append(
+            {
+                **platform,
+                "version": str(artifact["version"]),
             }
         )
     return result
