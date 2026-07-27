@@ -141,6 +141,7 @@ button { font: inherit; }
   max-width: 720px;
   font: 600 clamp(48px, 6.3vw, 88px)/1.02 "Songti SC", "STSong", serif;
   letter-spacing: -.055em;
+  text-wrap: balance;
 }
 .demo-hero h1 em { color: var(--demo-gold-bright); font-style: normal; }
 .hero-summary {
@@ -216,7 +217,7 @@ button { font: inherit; }
 .demo-section { width: var(--demo-width); margin: 0 auto; padding: 128px 0; }
 .section-heading { display: grid; grid-template-columns: minmax(0, .8fr) minmax(360px, .45fr); gap: 70px; align-items: end; margin-bottom: 60px; }
 .section-heading .demo-kicker { grid-column: 1 / -1; margin-bottom: -30px; }
-.section-heading h2 { margin: 0; font: 550 clamp(38px, 5vw, 65px)/1.08 "Songti SC", serif; letter-spacing: -.045em; }
+.section-heading h2 { margin: 0; font: 550 clamp(38px, 5vw, 65px)/1.08 "Songti SC", serif; letter-spacing: -.045em; text-wrap: balance; }
 .section-heading > p:last-child { margin: 0; color: var(--demo-muted); line-height: 1.9; }
 .section-heading.compact { display: block; }
 .section-heading.compact .demo-kicker { margin-bottom: 24px; }
@@ -291,7 +292,7 @@ button { font: inherit; }
 .capability-map small { position: absolute; left: 28px; bottom: 24px; color: #5f615a; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
 
 .demo-boundary { width: var(--demo-width); margin: 40px auto 0; padding: 70px; display: grid; grid-template-columns: .8fr 1fr; gap: 80px; border-radius: 30px; color: #090a08; background: var(--demo-gold); }
-.demo-boundary h2 { margin: 0; font: 600 clamp(38px, 5vw, 62px)/1.08 "Songti SC", serif; letter-spacing: -.045em; }
+.demo-boundary h2 { margin: 0; font: 600 clamp(38px, 5vw, 62px)/1.08 "Songti SC", serif; letter-spacing: -.045em; text-wrap: balance; }
 .demo-boundary .demo-kicker { color: #59471f; }
 .demo-boundary ul { margin: 0; padding: 0; list-style: none; }
 .demo-boundary li { padding: 18px 0; display: grid; grid-template-columns: 42px 1fr; gap: 10px; border-bottom: 1px solid rgba(9,10,8,.2); font-weight: 650; }
@@ -299,7 +300,7 @@ button { font: inherit; }
 
 .demo-cta { width: var(--demo-width); margin: 0 auto; padding: 150px 0; text-align: center; }
 .demo-cta .demo-kicker { justify-content: center; }
-.demo-cta h2 { margin: 0 auto; max-width: 850px; font: 550 clamp(42px, 6vw, 78px)/1.06 "Songti SC", serif; letter-spacing: -.05em; }
+.demo-cta h2 { margin: 0 auto; max-width: 850px; font: 550 clamp(42px, 6vw, 78px)/1.06 "Songti SC", serif; letter-spacing: -.05em; text-wrap: balance; }
 .demo-cta > div { margin-top: 36px; display: flex; justify-content: center; gap: 12px; }
 .demo-footer { width: var(--demo-width); margin: 0 auto; padding: 24px 0 38px; display: flex; justify-content: space-between; color: #696b63; font-size: 10px; border-top: 1px solid var(--demo-line); }
 
@@ -340,6 +341,7 @@ button { font: inherit; }
   .console-top span:last-child { display: none; }
   .demo-section { padding: 90px 0; }
   .section-heading h2, .demo-boundary h2 { font-size: 40px; }
+  .demo-hero h1 br, .section-heading h2 br, .demo-boundary h2 br, .demo-cta h2 br { display: none; }
   .workflow-grid { grid-template-columns: 1fr; }
   .workflow-grid article { min-height: 210px; border-right: 0; border-bottom: 1px solid var(--demo-line); }
   .workflow-grid article:last-child { border-bottom: 0; }

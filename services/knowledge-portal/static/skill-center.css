@@ -11,7 +11,7 @@
   --skill-line: rgba(202, 169, 105, .2);
   --skill-line-strong: rgba(202, 169, 105, .42);
   --skill-success: #75c69b;
-  --skill-danger: #e68b82;
+  --skill-danger: #ead9b2;
   --skill-shadow: 0 28px 80px rgba(0, 0, 0, .3);
   --skill-tabs-top: 70px;
   --skill-groups-top: 128px;
@@ -188,7 +188,7 @@
 .skill-install-result small { color:var(--skill-faint); }
 .skill-install-result.is-success { border-color:rgba(117,198,155,.42); }
 .skill-install-result.is-success strong { color:var(--skill-success); }
-.skill-install-result.is-error { border-color:rgba(230,139,130,.4); }
+.skill-install-result.is-error { border-color:rgba(234,217,178,.35); }
 .skill-install-result.is-error strong { color:var(--skill-danger); }
 .skill-install-safety { display:grid; grid-template-columns:auto 1fr; gap:16px; margin-top:14px; padding:17px; border-radius:12px; }
 .skill-install-safety span { color:var(--skill-gold); font-weight:800; }
