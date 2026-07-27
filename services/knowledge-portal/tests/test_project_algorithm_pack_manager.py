@@ -359,3 +359,15 @@ def test_release_validator_blocks_missing_high_frequency_pack(tmp_path):
     assert result.returncode == 2
     assert report["coverage"] == "incomplete"
     assert report["missing_projects"] == ["必须覆盖的项目"]
+
+
+def test_production_deployment_includes_algorithm_references_and_rollback():
+    deploy_script = (
+        Path(__file__).resolve().parents[1]
+        / "scripts"
+        / "deploy_production.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "app references templates static" in deploy_script
+    assert "remote_backup_dir}/references" in deploy_script
+    assert "remote_app_dir}/references" in deploy_script
