@@ -23,4 +23,5 @@ contextBridge.exposeInMainWorld("jiaotang", {
   }),
   revealPath: (value) => ipcRenderer.invoke("path:reveal", value),
   showItem: (value) => ipcRenderer.invoke("path:show-item", value),
+  revealAuditLog: () => ipcRenderer.invoke("audit:reveal"),
 });

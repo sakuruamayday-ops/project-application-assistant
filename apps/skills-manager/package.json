@@ -1,6 +1,6 @@
 {
   "name": "jiaotang-skills-manager",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "企业全生命周期助手跨平台 Skills 管理器",
   "main": "electron/main.cjs",
@@ -13,8 +13,12 @@
     "test": "node --test tests/*.test.mjs",
     "check": "node scripts/check-app.mjs",
     "release:verify": "node scripts/release-security-check.mjs",
+    "release:verify:unsigned-local": "node scripts/release-security-check.mjs --mode unsigned-local-authorization",
     "package:mac": "npm run catalog && electron-builder --mac dmg --arm64 --x64",
-    "package:win": "npm run catalog && electron-builder --win nsis --x64"
+    "package:win": "npm run catalog && electron-builder --win nsis --x64",
+    "package:mac:unsigned-local": "npm run catalog && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --config electron-builder.unsigned-local.cjs --mac dmg --arm64 --x64",
+    "package:win:unsigned-local": "npm run catalog && electron-builder --config electron-builder.unsigned-local.cjs --win nsis --x64",
+    "package:unsigned-local": "npm run package:mac:unsigned-local && npm run package:win:unsigned-local"
   },
   "dependencies": {
     "adm-zip": "0.6.0"

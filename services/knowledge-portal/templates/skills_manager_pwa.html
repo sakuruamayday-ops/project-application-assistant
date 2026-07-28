@@ -31,11 +31,11 @@
         <section class="view active" data-panel="overview">
           <div class="hero-grid">
             <article class="hero">
-              <span class="chip">无需原生签名证书</span>
+              <span class="chip">PWA 保留 · 桌面端本机授权</span>
               <h2>一套 Skills，<em>双端安心更新。</em></h2>
               <p>由浏览器和现有 HTTPS 门户承载管理器。只有在你主动选择目录后才写入；未知同名内容不会被覆盖。</p>
               <div class="actions"><button class="primary" data-sync>选择目录并同步</button><button class="text" data-view-jump="security">查看安全边界 →</button></div>
-              <div class="orbit"><strong>49</strong><span>签名技能</span></div>
+              <div class="orbit"><strong>49</strong><span>正式技能</span></div>
             </article>
             <article class="status-card">
               <p class="eyebrow">RELEASE STATE</p>
@@ -50,8 +50,27 @@
           </div>
           <div class="section-head"><div><p class="eyebrow">CHANNELS</p><h2>更新通道</h2></div><p>通用 Skills 与跨平台 WorkBuddy 包分别更新。</p></div>
           <div class="channels" id="channels"></div>
+          <section class="native-release-panel" aria-labelledby="native-release-title">
+            <div class="native-release-copy">
+              <span class="native-kicker">OPTIONAL DESKTOP CLIENT · V0.2.0</span>
+              <h2 id="native-release-title">需要扫描本机 Agent？<br /><em>可选用桌面客户端。</em></h2>
+              <p>网页 PWA 继续保留，适合选择目录后同步。桌面客户端增加本机 Agent 扫描与逐平台导入，但当前采用未签名的“用户本机授权版”。</p>
+              <div class="native-trust-note">
+                <strong>未签名，不等于不校验</strong>
+                <span>macOS 需要在“隐私与安全性”中确认打开；Windows 可能需要通过 SmartScreen 的“更多信息”继续。Smart App Control、企业安全策略或杀毒软件仍可能阻止运行。</span>
+              </div>
+              <a class="ghost native-manual-download is-disabled" id="native-user-manual" aria-disabled="true">Word 用户手册随正式包发布</a>
+            </div>
+            <div class="native-client-list" id="native-client-list" aria-live="polite">
+              <article class="native-client-card is-pending">
+                <span>正在读取</span>
+                <h3>桌面客户端候选包</h3>
+                <p>发布状态与 SHA-256 将从登录保护的门户接口加载。</p>
+              </article>
+            </div>
+          </section>
           <div class="principles">
-            <article><b>01</b><strong>证书缺口已绕开</strong><p>PWA由浏览器从HTTPS门户安装，不分发未知原生应用。</p></article>
+            <article><b>01</b><strong>PWA 始终可用</strong><p>不愿授权未签名应用时，继续使用 HTTPS PWA 选择目录并同步。</p></article>
             <article><b>02</b><strong>安装前能力协商</strong><p>先检查浏览器目录权限、平台入口和包结构，再开放同步。</p></article>
             <article><b>03</b><strong>更新可恢复</strong><p>覆盖已托管内容前先复制到目录内备份区，回滚不删除当前版本。</p></article>
           </div>
@@ -73,12 +92,12 @@
         <section class="view" data-panel="security">
           <div class="section-head page"><div><p class="eyebrow">TRUST BOUNDARY</p><h2>没有证书时，安全来自哪里</h2></div></div>
           <div class="security-grid">
-            <article><b>01</b><h3>应用分发</h3><p>PWA运行在已部署HTTPS门户内，由Chrome或Edge安装，不产生“未知开发者”原生程序。</p></article>
+            <article><b>01</b><h3>两种交付方式</h3><p>PWA由HTTPS门户承载；可选桌面客户端明确标注为未签名本机授权版，不冒充操作系统可信软件。</p></article>
             <article><b>02</b><h3>内容完整性</h3><p>浏览器下载后重新计算SHA-256，只有与门户发布元数据完全一致才允许解包。</p></article>
             <article><b>03</b><h3>文件权限</h3><p>File System Access权限由浏览器弹窗授予；网页无法扫描整台电脑，也不能越过用户选择的目录。</p></article>
             <article><b>04</b><h3>WorkBuddy边界</h3><p>PWA只下载现有发布者签名包，不执行网页返回命令。Ed25519不是Gatekeeper或Authenticode信任；系统阻断时应停止，不提供绕过步骤。</p></article>
           </div>
-          <div class="notice"><strong>浏览器要求</strong><p>目录同步需要桌面版Chrome或Edge。Safari和Firefox当前只提供包下载，不自动写目录；这属于浏览器能力差异，不伪装成全平台自动同步。</p></div>
+          <div class="notice"><strong>浏览器与本机策略</strong><p>目录同步需要桌面版Chrome或Edge。Safari和Firefox当前只提供包下载；未签名桌面客户端也可能被企业策略完全阻止。管理员权限只负责提权，不能替代 Developer ID 或 Authenticode。</p></div>
         </section>
       </main>
     </div>

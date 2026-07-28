@@ -4150,7 +4150,7 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
                 module.isoformat(module.utc_now()),
             ),
         )
-        connection.execute(
+        release_cursor = connection.execute(
             """
             INSERT INTO skill_releases(version,file_name,file_path,sha256,release_notes,published_at)
             VALUES (?,?,?,?,?,?)
@@ -4162,6 +4162,20 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
                 hashlib.sha256(generic.read_bytes()).hexdigest(),
                 "V1.2",
                 module.isoformat(module.utc_now()),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_release_artifacts(
+                release_id,target,file_name,file_path,sha256
+            ) VALUES (?,?,?,?,?)
+            """,
+            (
+                release_cursor.lastrowid,
+                "workbuddy",
+                package.name,
+                str(package),
+                hashlib.sha256(package.read_bytes()).hexdigest(),
             ),
         )
         connection.commit()
@@ -4191,7 +4205,7 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
             assert download.content == package.read_bytes()
 
 
-def test_legacy_client_artifacts_are_exposed_as_one_workbuddy_channel(tmp_path):
+def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path):
     module = load_app(tmp_path)
     generic = tmp_path / "generic-v1.3.1.zip"
     generic.write_bytes(b"generic-v1.3.1")
@@ -4259,6 +4273,7 @@ def test_legacy_client_artifacts_are_exposed_as_one_workbuddy_channel(tmp_path):
                 module.isoformat(module.utc_now()),
             ),
         )
+        windows_release_id = new_cursor.lastrowid
         connection.executemany(
             """
             INSERT INTO skill_release_artifacts(
@@ -4298,6 +4313,21 @@ def test_legacy_client_artifacts_are_exposed_as_one_workbuddy_channel(tmp_path):
         )
         assert unauthenticated_manager.status_code == 303
         assert unauthenticated_manager.headers["location"].startswith("/login")
+        unauthenticated_release = client.get(
+            "/v1/web/skills-manager/native-release",
+            follow_redirects=False,
+        )
+        assert unauthenticated_release.status_code == 303
+        assert unauthenticated_release.headers["location"].startswith("/login")
+        for path in (
+            "/skills-manager/download/macos/arm64",
+            "/skills-manager/download/macos/x64",
+            "/skills-manager/download/windows/x64",
+            "/skills-manager/download/user-manual",
+        ):
+            unauthenticated_download = client.get(path, follow_redirects=False)
+            assert unauthenticated_download.status_code == 303
+            assert unauthenticated_download.headers["location"].startswith("/login")
         login = client.post(
             "/login",
             data={"username": "member", "password": "member-password-123"},
@@ -4307,8 +4337,53 @@ def test_legacy_client_artifacts_are_exposed_as_one_workbuddy_channel(tmp_path):
         manager = client.get("/skills-manager")
         assert manager.status_code == 200
         assert manager.headers["cache-control"] == "no-store"
-        assert "无需原生签名证书" in manager.text
+        assert "需要扫描本机 Agent？" in manager.text
+        assert "可选用桌面客户端。" in manager.text
+        assert "未签名，不等于不校验" in manager.text
+        assert "企业策略完全阻止" in manager.text
+        assert 'id="native-client-list"' in manager.text
+        assert 'id="native-user-manual"' in manager.text
         assert "CAPABILITY NEGOTIATION" in manager.text
+        native_release_response = client.get(
+            "/v1/web/skills-manager/native-release"
+        )
+        assert native_release_response.status_code == 200
+        assert native_release_response.headers["cache-control"] == "no-store"
+        native_release = native_release_response.json()
+        assert native_release["schema"] == (
+            "jiaotang-skills-manager-native-release/v1"
+        )
+        assert native_release["version"] == "0.2.0"
+        assert native_release["state"] == "pending"
+        assert native_release["publication_policy"] == (
+            "release_then_reviewed_portal_backfill"
+        )
+        assert native_release["available"] is False
+        native_artifacts = {
+            item["id"]: item for item in native_release["artifacts"]
+        }
+        assert set(native_artifacts) == {
+            "macos-arm64",
+            "macos-x64",
+            "windows-x64",
+        }
+        for artifact in native_artifacts.values():
+            assert artifact["available"] is False
+            assert artifact["sha256"] == ""
+            unavailable_download = client.get(
+                artifact["download_url"],
+                follow_redirects=False,
+            )
+            assert unavailable_download.status_code == 404
+            assert unavailable_download.headers["cache-control"] == "no-store"
+        assert native_release["user_manual"]["available"] is False
+        assert native_release["user_manual"]["sha256"] == ""
+        unavailable_manual = client.get(
+            native_release["user_manual"]["download_url"],
+            follow_redirects=False,
+        )
+        assert unavailable_manual.status_code == 404
+        assert unavailable_manual.headers["cache-control"] == "no-store"
         web_channels = client.get("/v1/web/skills/channels")
         assert web_channels.status_code == 200
         web_artifacts = {
@@ -4316,30 +4391,37 @@ def test_legacy_client_artifacts_are_exposed_as_one_workbuddy_channel(tmp_path):
         }
         assert web_artifacts["generic"]["download_url"] == "/skills/latest/download"
         assert set(web_artifacts) == {"generic", "workbuddy"}
-        assert web_artifacts["workbuddy"]["download_url"] == (
-            "/skills/latest/workbuddy/download"
-        )
+        assert web_artifacts["workbuddy"]["available"] is False
+        assert web_artifacts["workbuddy"]["version"] is None
+        assert web_artifacts["workbuddy"]["download_url"] is None
         pwa_manifest = client.get("/skills-manager/manifest.webmanifest")
         assert pwa_manifest.status_code == 200
         assert pwa_manifest.json()["display"] == "standalone"
         service_worker = client.get("/skills-manager/sw.js")
         assert service_worker.status_code == 200
         assert service_worker.headers["service-worker-allowed"] == "/skills-manager"
+        assert "jiaotang-skills-manager-pwa-v2" in service_worker.text
         assert client.get("/skills/latest/download").content == generic.read_bytes()
-        assert (
-            client.get("/skills/latest/workbuddy/macos/download").content
-            == windows.read_bytes()
+        for path in (
+            "/skills/latest/workbuddy/macos/download",
+            "/skills/latest/workbuddy/windows/download",
+            "/skills/latest/workbuddy/download",
+        ):
+            assert client.get(path).status_code == 404
+        historical = client.get(
+            f"/skills/releases/{windows_release_id}/workbuddy/download"
         )
-        assert (
-            client.get("/skills/latest/workbuddy/windows/download").content
-            == windows.read_bytes()
-        )
-        assert client.get("/skills/latest/workbuddy/download").content == windows.read_bytes()
+        assert historical.status_code == 200
+        assert historical.content == windows.read_bytes()
         page = client.get("/skills")
         assert page.status_code == 200
         assert "打开双端管理器" in page.text
-        assert 'class="skill-platform-card is-workbuddy" data-platform-version="1.3.1.1"' in page.text
-        assert "下载 WorkBuddy 包" in page.text
+        assert (
+            'class="skill-platform-card is-workbuddy" data-platform-version=""'
+            in page.text
+        )
+        assert "当前版本未包含" in page.text
+        assert "下载 WorkBuddy 包" not in page.text
         assert "下载 macOS 包" not in page.text
         assert "下载 Windows 包" not in page.text
         assert client.get("/v1/skills/channels").status_code == 401
@@ -4352,17 +4434,167 @@ def test_legacy_client_artifacts_are_exposed_as_one_workbuddy_channel(tmp_path):
         artifacts = {item["id"]: item for item in channels.json()["channels"]}
         assert artifacts["generic"]["version"] == "1.3.1"
         assert set(artifacts) == {"generic", "workbuddy"}
-        assert artifacts["workbuddy"]["version"] == "1.3.1.1"
-        assert artifacts["workbuddy"]["download_url"].endswith(
-            "/v1/skills/latest/workbuddy/download"
+        assert artifacts["workbuddy"]["available"] is False
+        assert artifacts["workbuddy"]["version"] is None
+        assert artifacts["workbuddy"]["download_url"] is None
+
+
+def test_workbuddy_distribution_revision_is_visible_without_rewriting_content_notes(
+    tmp_path,
+):
+    module = load_app(tmp_path)
+    package = tmp_path / "workbuddy-universal.zip"
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
+        archive.writestr(
+            "jiaotang/plugins/plugin/.codebuddy-plugin/plugin.json",
+            "{}",
         )
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            (
+                "member",
+                module.password_hasher.hash("member-password-123"),
+                module.isoformat(module.utc_now()),
+            ),
+        )
+        release_cursor = connection.execute(
+            """
+            INSERT INTO skill_releases(
+                version,file_name,file_path,sha256,release_notes,published_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.3.1.2",
+                "historical-windows.zip",
+                "/retained/historical-windows.zip",
+                "historical",
+                "初始 Windows 历史说明",
+                module.isoformat(module.utc_now() - timedelta(days=1)),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_release_artifacts(
+                release_id,target,file_name,file_path,sha256
+            ) VALUES (?,?,?,?,?)
+            """,
+            (
+                release_cursor.lastrowid,
+                "workbuddy",
+                package.name,
+                str(package),
+                hashlib.sha256(package.read_bytes()).hexdigest(),
+            ),
+        )
+        now = module.isoformat(module.utc_now())
+        connection.execute(
+            """
+            INSERT INTO skill_release_artifact_stages(
+                version,target,status,file_path,sha256,release_notes,
+                git_commit,github_url,staged_at,promoted_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                "1.3.1.2",
+                "workbuddy",
+                "published",
+                str(package),
+                hashlib.sha256(package.read_bytes()).hexdigest(),
+                "跨平台分发修订：移除外层固定安装器。",
+                "abc123",
+                "https://github.example/workbuddy-universal-v1.3.1.2-r1",
+                now,
+                now,
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        page = client.get("/skills")
+        assert page.status_code == 200
+        assert "查看 WorkBuddy 分发修订说明" in page.text
+        assert "跨平台分发修订：移除外层固定安装器。" in page.text
+        assert "查看不可变发行记录" in page.text
+        assert "初始 Windows 历史说明" in page.text
+
+
+def test_skills_manager_native_download_redirects_to_validated_release_assets(
+    tmp_path,
+):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            (
+                "member",
+                module.password_hasher.hash("member-password-123"),
+                now,
+            ),
+        )
+        connection.commit()
+
+    native_release = json.loads(
+        module.SKILLS_MANAGER_NATIVE_RELEASE_PATH.read_text(encoding="utf-8")
+    )
+    native_release["state"] = "published"
+    native_release["available"] = True
+    native_release["published_at"] = "2026-07-28T10:00:00Z"
+    for index, artifact in enumerate(native_release["artifacts"]):
+        artifact["available"] = True
+        artifact["sha256"] = f"{index + 1:064x}"
+    native_release["user_manual"]["available"] = True
+    native_release["user_manual"]["sha256"] = f"{4:064x}"
+    release_path = tmp_path / "native-release.json"
+    release_path.write_text(
+        json.dumps(native_release, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    module.SKILLS_MANAGER_NATIVE_RELEASE_PATH = release_path
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        metadata = client.get("/v1/web/skills-manager/native-release")
+        assert metadata.status_code == 200
+        assert metadata.json()["state"] == "published"
+        assert metadata.json()["available"] is True
+        for artifact in native_release["artifacts"]:
+            download = client.get(
+                artifact["download_url"],
+                follow_redirects=False,
+            )
+            assert download.status_code == 307
+            assert download.headers["cache-control"] == "no-store"
+            assert download.headers["location"] == artifact["github_asset_url"]
+        manual = client.get(
+            native_release["user_manual"]["download_url"],
+            follow_redirects=False,
+        )
+        assert manual.status_code == 307
+        assert manual.headers["cache-control"] == "no-store"
         assert (
-            client.get(
-                artifacts["workbuddy"]["download_url"],
-                headers=api_headers(raw_token),
-            ).content
-            == windows.read_bytes()
+            manual.headers["location"]
+            == native_release["user_manual"]["github_asset_url"]
         )
+        unsupported_download = client.get(
+            "/skills-manager/download/linux/x64",
+            follow_redirects=False,
+        )
+        assert unsupported_download.status_code == 404
+        assert unsupported_download.headers["cache-control"] == "no-store"
 
 
 def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
@@ -4439,7 +4671,7 @@ def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
         assert current_download.content == generic.read_bytes()
 
 
-def test_selective_macos_release_keeps_legacy_generic_and_windows_downloads(tmp_path):
+def test_selective_macos_release_preserves_only_historical_client_downloads(tmp_path):
     module = load_app(tmp_path)
     old_generic = tmp_path / "generic-v1.3.1.zip"
     new_macos = tmp_path / "macos-v1.3.1.1.zip"
@@ -4464,7 +4696,7 @@ def test_selective_macos_release_keeps_legacy_generic_and_windows_downloads(tmp_
                 module.isoformat(module.utc_now()),
             ),
         )
-        connection.execute(
+        old_cursor = connection.execute(
             """
             INSERT INTO skill_releases(
                 version,file_name,file_path,sha256,release_notes,published_at
@@ -4479,6 +4711,7 @@ def test_selective_macos_release_keeps_legacy_generic_and_windows_downloads(tmp_
                 module.isoformat(module.utc_now() - timedelta(days=1)),
             ),
         )
+        old_release_id = old_cursor.lastrowid
         new_cursor = connection.execute(
             """
             INSERT INTO skill_releases(
@@ -4494,6 +4727,7 @@ def test_selective_macos_release_keeps_legacy_generic_and_windows_downloads(tmp_
                 module.isoformat(module.utc_now()),
             ),
         )
+        new_release_id = new_cursor.lastrowid
         connection.execute(
             """
             INSERT INTO skill_release_artifacts(
@@ -4518,14 +4752,22 @@ def test_selective_macos_release_keeps_legacy_generic_and_windows_downloads(tmp_
         )
         client.cookies.update(login.cookies)
         assert client.get("/skills/latest/download").content == old_generic.read_bytes()
-        assert (
-            client.get("/skills/latest/workbuddy/macos/download").content
-            == new_macos.read_bytes()
+        for path in (
+            "/skills/latest/workbuddy/download",
+            "/skills/latest/workbuddy/macos/download",
+            "/skills/latest/workbuddy/windows/download",
+        ):
+            assert client.get(path).status_code == 404
+        old_historical = client.get(
+            f"/skills/releases/{old_release_id}/workbuddy/download"
         )
-        assert (
-            client.get("/skills/latest/workbuddy/windows/download").content
-            == new_macos.read_bytes()
+        assert old_historical.status_code == 200
+        assert old_historical.content == old_workbuddy.read_bytes()
+        macos_historical = client.get(
+            f"/skills/releases/{new_release_id}/workbuddy/download"
         )
+        assert macos_historical.status_code == 200
+        assert macos_historical.content == new_macos.read_bytes()
 
 
 def test_release_announcement_appears_once_after_publish(tmp_path):

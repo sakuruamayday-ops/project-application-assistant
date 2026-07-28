@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -12,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import zipfile
 from pathlib import Path
 from typing import Any, Iterable
@@ -32,6 +34,40 @@ RELEASE_PREFIXES = (
     "兼容性：",
     "回滚：",
 )
+
+
+def _recovery_root() -> Path:
+    if sys.platform == "darwin":
+        return Path.home() / ".Trash" / "jiaotang-release-workspaces"
+    if os.name == "nt":
+        return Path(tempfile.gettempdir()) / "jiaotang-release-workspaces"
+    return (
+        Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
+        / "Trash"
+        / "files"
+        / "jiaotang-release-workspaces"
+    )
+
+
+@contextmanager
+def recoverable_workspace(prefix: str) -> Iterable[Path]:
+    """Create scratch space in a recoverable location and never hard-delete it."""
+    root = _recovery_root()
+    root.mkdir(parents=True, exist_ok=True)
+    directory = Path(
+        tempfile.mkdtemp(prefix=f"{prefix}{int(time.time())}-", dir=root)
+    )
+    yield directory
+
+
+def move_to_recovery(path: Path) -> None:
+    """Move an unexpected leftover into recoverable storage."""
+    if not path.exists():
+        return
+    root = _recovery_root()
+    root.mkdir(parents=True, exist_ok=True)
+    destination = root / f"{path.name}.{time.time_ns()}"
+    shutil.move(os.fspath(path), os.fspath(destination))
 
 
 def sha256(path: Path) -> str:
@@ -68,7 +104,7 @@ def canonicalize_docx(path: Path) -> None:
         temporary.replace(path)
     finally:
         if temporary.exists():
-            temporary.unlink()
+            move_to_recovery(temporary)
 
 
 def load_manifest(path: Path = MANIFEST_PATH) -> dict[str, Any]:
@@ -131,6 +167,15 @@ def release_spec(manifest: dict[str, Any]) -> dict[str, Any]:
         "word_manual_only": bool(companion.get("word_manual_only")),
         "require_branding": bool(companion.get("require_branding")),
         "require_render_qa": bool(companion.get("require_render_qa")),
+        "manual_profile": str(companion.get("manual_profile") or "legacy-release"),
+        "manual_required_markers": [
+            str(item).format(
+                tag=release["tag"],
+                version=release["version"],
+                skill_count=len(skills),
+            )
+            for item in companion.get("manual_required_markers", [])
+        ],
     }
 
 
@@ -186,16 +231,35 @@ def release_lines(spec: dict[str, Any]) -> list[str]:
 def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
     document = Document(template)
     paragraphs = list(_all_paragraphs(document))
-    version_paragraph = next(
-        (paragraph for paragraph in paragraphs if paragraph.text.strip().startswith("适用版本：")),
-        None,
-    )
+    manager_profile = spec["manual_profile"] == "skills-manager-guide"
+    if manager_profile:
+        version_paragraph = next(
+            (
+                paragraph
+                for paragraph in paragraphs
+                if "Skills" in paragraph.text
+                and re.search(r"V\d+(?:\.\d+){1,3}", paragraph.text)
+                and ("正式" in paragraph.text or "共" in paragraph.text)
+            ),
+            None,
+        )
+    else:
+        version_paragraph = next(
+            (
+                paragraph
+                for paragraph in paragraphs
+                if paragraph.text.strip().startswith("适用版本：")
+            ),
+            None,
+        )
     if version_paragraph is None:
-        raise ValueError("Word 手册缺少“适用版本”段落")
+        raise ValueError("Word 手册缺少可识别的 Skills 版本段落")
     old_tag_match = re.search(r"V\d+(?:\.\d+){1,3}", version_paragraph.text)
     if old_tag_match is None:
         raise ValueError("Word 手册无法识别旧版本号")
     old_tag = old_tag_match.group(0)
+    old_count_match = re.search(r"共\s*(\d+)\s*项", version_paragraph.text)
+    old_count = old_count_match.group(1) if old_count_match else None
 
     for paragraph in paragraphs:
         text = paragraph.text
@@ -207,8 +271,25 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
                 updated,
                 count=1,
             )
+        if old_count is not None:
+            updated = re.sub(
+                rf"(?<!\d){re.escape(old_count)}\s*项",
+                f"{spec['skill_count']} 项",
+                updated,
+            )
+            updated = re.sub(
+                rf"共\s*{re.escape(old_count)}\s*项",
+                f"共 {spec['skill_count']} 项",
+                updated,
+            )
         if updated != text:
             _replace_paragraph_text(paragraph, updated)
+
+    if manager_profile:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        document.save(output)
+        canonicalize_docx(output)
+        return
 
     existing = {
         prefix: next(
@@ -253,6 +334,29 @@ def extracted_text(path: Path) -> str:
 
 def validate_manual_content(path: Path, spec: dict[str, Any]) -> dict[str, Any]:
     text = extracted_text(path)
+    if spec["manual_profile"] == "skills-manager-guide":
+        required = [
+            spec["tag"],
+            *spec["manual_required_markers"],
+        ]
+        missing = [item for item in required if item not in text]
+        count_match = re.search(
+            rf"共\s*{spec['skill_count']}\s*项",
+            text,
+        )
+        if not count_match:
+            missing.append(f"共 {spec['skill_count']} 项")
+        if missing:
+            raise ValueError("Word 手册缺少清单事实：" + "、".join(missing))
+        return {
+            "status": "pass",
+            "profile": spec["manual_profile"],
+            "version": spec["tag"],
+            "skill_count": spec["skill_count"],
+            "required_facts": len(required) + 1,
+            "sha256": sha256(path),
+        }
+
     required = [
         f"适用版本：{spec['tag']}",
         f"由{spec['skill_count']}个",
@@ -310,7 +414,7 @@ def render_qa(path: Path, output_dir: Path) -> dict[str, Any]:
     if not soffice or not pdftoppm or not pdfinfo:
         raise RuntimeError("逐页渲染需要 soffice、pdftoppm 和 pdfinfo")
     output_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="manual-render-") as profile:
+    with recoverable_workspace("manual-render-") as profile:
         subprocess.run(
             [
                 soffice,
@@ -483,12 +587,10 @@ def main() -> int:
     args = parser.parse_args()
     try:
         if args.check:
-            with tempfile.TemporaryDirectory(
-                prefix="release-companion-contract-"
-            ) as directory:
+            with recoverable_workspace("release-companion-contract-") as directory:
                 result = generate(
                     args.root.resolve(),
-                    Path(directory),
+                    directory,
                     apply_brand=False,
                     render=False,
                 )

@@ -1139,6 +1139,19 @@ td:first-child {
   gap: 14px;
 }
 
+.security-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.security-heading-actions p {
+  margin: 0;
+  max-width: 540px;
+}
+
 .security-card {
   min-height: 285px;
   padding: 24px;

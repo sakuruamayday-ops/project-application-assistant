@@ -1,5 +1,6 @@
 const os = require("node:os");
 const path = require("node:path");
+const crypto = require("node:crypto");
 
 function expandPath(value, platform = process.platform, environment = process.env) {
   if (!value) return value;
@@ -26,7 +27,8 @@ function safeRelativePath(value) {
 }
 
 function timestampId(date = new Date()) {
-  return date.toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  const timestamp = date.toISOString().replace(/[-:.TZ]/g, "");
+  return `${timestamp}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 module.exports = {

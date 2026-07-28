@@ -17,6 +17,8 @@ const required = [
   "build/icon.icns",
   "build/icon.png",
   "scripts/release-security-check.mjs",
+  "scripts/build-platform-adapter-release.mjs",
+  "electron-builder.unsigned-local.cjs",
 ];
 
 const missing = required.filter((relative) => !fs.existsSync(path.join(appRoot, relative)));
@@ -26,8 +28,26 @@ if (missing.length) {
 }
 
 const platformConfig = JSON.parse(fs.readFileSync(path.join(appRoot, "config/platforms.json"), "utf8"));
+const securityConfig = JSON.parse(fs.readFileSync(path.join(appRoot, "config/security.json"), "utf8"));
 const catalog = JSON.parse(fs.readFileSync(path.join(appRoot, "data/skill-catalog.json"), "utf8"));
 if (catalog.count !== 49) throw new Error(`skill catalog count must be 49, got ${catalog.count}`);
 if (platformConfig.platforms.length < 6) throw new Error("platform adapter catalog is incomplete");
+if (
+  !Number.isSafeInteger(platformConfig.sequence)
+  || platformConfig.sequence < 1
+  || !platformConfig.revision
+  || !platformConfig.minimum_manager_version
+) {
+  throw new Error("platform adapter release metadata is incomplete");
+}
+if (
+  securityConfig.platform_adapters?.namespace
+  !== "jiaotang-skills-manager-platform-adapters"
+) {
+  throw new Error("platform adapter signature namespace is not pinned");
+}
+if (!securityConfig.publisher?.public_key?.startsWith("ssh-ed25519 ")) {
+  throw new Error("platform adapter publisher public key is not pinned");
+}
 
 console.log(`check: ${catalog.count} skills, ${platformConfig.platforms.length} platform adapters`);

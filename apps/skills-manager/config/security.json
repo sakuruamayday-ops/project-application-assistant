@@ -3,7 +3,20 @@
   "publisher": {
     "identity": "jiaotang-codex-skill-release",
     "namespace": "codex-workbuddy-plugin-manifest",
-    "ed25519_fingerprint": "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
+    "ed25519_fingerprint": "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI",
+    "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICcDJACg0boSFDFpF2Akq0srFwlQYU9XiIpm/ldEEFeU jiaotang-codex-skill-release"
+  },
+  "application_distribution": {
+    "mode": "local-user-authorization",
+    "publisher_signature": "not-included",
+    "skills_content_verification": "required"
+  },
+  "platform_adapters": {
+    "manifest_path": "/static/skills-manager/platform-adapters.json",
+    "signature_path": "/static/skills-manager/platform-adapters.json.sig",
+    "metadata_path": "/static/skills-manager/platform-adapters-signature.json",
+    "namespace": "jiaotang-skills-manager-platform-adapters",
+    "maximum_bytes": 262144
   },
   "allowed_download_origins": [
     "https://zshjiaotang.cn"

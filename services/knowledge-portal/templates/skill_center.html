@@ -95,7 +95,7 @@
         {% set workbuddy = latest_release.workbuddy %}
         <article class="skill-platform-card is-workbuddy" data-platform-version="{{ workbuddy.version or '' }}">
           <span class="skill-platform-mark">WB</span>
-          <div><span class="skill-card-index">WorkBuddy</span><h3>macOS 与 Windows</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}</small>{% endif %}<p>同一个签名插件市场 ZIP 适用于两个系统。解压后在 WorkBuddy 内添加本地插件市场并安装。</p></div>
+          <div><span class="skill-card-index">WorkBuddy</span><h3>macOS 与 Windows</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% endif %}<p>同一个签名插件市场 ZIP 适用于两个系统。解压后在 WorkBuddy 内添加本地插件市场并安装。</p>{% if workbuddy.distribution_notes_html %}<details class="skill-release-notes"><summary>查看 WorkBuddy 分发修订说明</summary><div class="manual-content">{{ workbuddy.distribution_notes_html }}</div>{% if workbuddy.distribution_url %}<a href="{{ workbuddy.distribution_url }}" target="_blank" rel="noreferrer">查看不可变发行记录</a>{% endif %}</details>{% endif %}</div>
           {% if workbuddy.included %}<a class="button" href="{{ workbuddy.download_url }}">下载 WorkBuddy 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
         </article>
       </div>

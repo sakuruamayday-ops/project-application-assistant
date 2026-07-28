@@ -168,3 +168,48 @@ def test_companion_is_path_independent(tmp_path: Path, monkeypatch) -> None:
         "manual-V2.0.1.docx"
     )
     assert "pdf_sha256" not in payload["manual"]["render_audit"]
+
+
+def test_manager_manual_profile_updates_release_facts_without_legacy_appendix(
+    tmp_path: Path,
+) -> None:
+    root = fixture_root(tmp_path)
+    manifest_path = root / "skills/suite-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["release_companions"].update(
+        {
+            "manual_profile": "skills-manager-guide",
+            "manual_required_markers": [
+                "Skills 管理器 0.2.0 用户手册",
+                "正式 Skills 仍为 {tag}，共 {skill_count} 项",
+                "同一个跨平台包",
+                "现有用户不受影响",
+            ],
+        }
+    )
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    document = Document()
+    document.add_paragraph("Skills 管理器 0.2.0 用户手册")
+    document.add_paragraph(
+        "管理器版本与 Skills 内容版本相互独立。正式 Skills 仍为 V1.9，共 9 项。"
+    )
+    document.add_paragraph("WorkBuddy 使用同一个跨平台包。")
+    document.add_paragraph("现有用户不受影响。")
+    document.save(root / "docs/user-guide/manual.docx")
+
+    result = MODULE.generate(
+        root,
+        tmp_path / "manager-output",
+        apply_brand=False,
+        render=False,
+    )
+
+    text = MODULE.extracted_text(Path(result["manual"]))
+    assert "正式 Skills 仍为 V2.0.1，共 2 项" in text
+    assert "本版本更新：" not in text
+    assert result["payload"]["manual"]["content_audit"]["profile"] == (
+        "skills-manager-guide"
+    )
