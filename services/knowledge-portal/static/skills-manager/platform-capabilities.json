@@ -4,23 +4,29 @@
     "primary": "https_pwa",
     "native_clients": {
       "macos": {
-        "status": "blocked_until_signed",
+        "status": "user_authorized_unsigned",
+        "version": "0.2.0",
+        "local_authorization": "privacy_and_security_open_anyway",
+        "enterprise_policy_may_block": true,
         "required": [
-          "Apple Developer ID Application",
-          "hardened runtime",
-          "Apple notarization",
-          "stapled notarization ticket"
+          "explicit_user_download",
+          "published_sha256",
+          "macos_local_open_authorization"
         ]
       },
       "windows": {
-        "status": "blocked_until_signed",
+        "status": "user_authorized_unsigned",
+        "version": "0.2.0",
+        "local_authorization": "smartscreen_more_info_run_anyway",
+        "enterprise_policy_may_block": true,
         "required": [
-          "Authenticode code-signing certificate",
-          "timestamped signature",
-          "SmartScreen reputation validation"
+          "explicit_user_download",
+          "published_sha256",
+          "windows_local_run_authorization"
         ]
       }
-    }
+    },
+    "unsigned_notice": "本机授权不等于 Developer ID 或 Authenticode 签名；Smart App Control、企业策略或安全软件可能阻止运行。"
   },
   "directory_sync": {
     "required_browser_capabilities": [

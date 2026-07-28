@@ -4,6 +4,15 @@ const crypto = require("node:crypto");
 const { Readable } = require("node:stream");
 const { pipeline } = require("node:stream/promises");
 const { signedHeaders } = require("./device-auth.cjs");
+const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
+const DOWNLOAD_TIMEOUT_MS = 120000;
+
+function requestSignal(signal, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS) {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  if (!signal) return timeoutSignal;
+  if (typeof AbortSignal.any === "function") return AbortSignal.any([signal, timeoutSignal]);
+  return signal;
+}
 
 function normalizedPortalUrl(value) {
   const url = new URL(value);
@@ -19,7 +28,7 @@ function normalizedPortalUrl(value) {
 function requestHeaders({ accessToken, credentials, method, url, body = Buffer.alloc(0) }) {
   const headers = {
     Accept: "application/json",
-    "User-Agent": "jiaotang-skills-manager/0.1",
+    "User-Agent": "jiaotang-skills-manager/0.2",
   };
   if (credentials) Object.assign(headers, signedHeaders(credentials, method, url, body));
   else if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
@@ -36,7 +45,7 @@ async function fetchChannels({ portalUrl, accessToken, credentials, signal }) {
       method: "GET",
       url: endpoint,
     }),
-    signal,
+    signal: requestSignal(signal),
   });
   if (!response.ok) {
     const detail = await response.text();
@@ -47,6 +56,59 @@ async function fetchChannels({ portalUrl, accessToken, credentials, signal }) {
     throw new Error("门户返回了无法识别的发布通道格式");
   }
   return payload;
+}
+
+async function fetchSmallAsset({
+  base,
+  pathName,
+  accessToken,
+  credentials,
+  signal,
+  maximumBytes,
+}) {
+  const endpoint = new URL(pathName, base);
+  if (endpoint.origin !== base.origin) throw new Error("平台适配器地址越过门户来源边界");
+  const response = await fetch(endpoint, {
+    headers: requestHeaders({
+      accessToken,
+      credentials,
+      method: "GET",
+      url: endpoint,
+    }),
+    signal: requestSignal(signal),
+    redirect: "error",
+  });
+  if (!response.ok) throw new Error(`读取平台适配器失败：HTTP ${response.status}`);
+  const declaredLength = Number(response.headers.get("content-length") || 0);
+  if (declaredLength > maximumBytes) throw new Error("平台适配器响应超过大小上限");
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (buffer.length > maximumBytes) throw new Error("平台适配器响应超过大小上限");
+  return buffer;
+}
+
+async function fetchPlatformAdapterBundle({
+  portalUrl,
+  accessToken,
+  credentials,
+  securityConfig,
+  signal,
+}) {
+  const base = normalizedPortalUrl(portalUrl);
+  const config = securityConfig.platform_adapters;
+  const maximumBytes = Number(config.maximum_bytes || 262144);
+  const common = {
+    base,
+    accessToken,
+    credentials,
+    signal,
+    maximumBytes,
+  };
+  const [manifest, signature, metadata] = await Promise.all([
+    fetchSmallAsset({ ...common, pathName: config.manifest_path }),
+    fetchSmallAsset({ ...common, pathName: config.signature_path }),
+    fetchSmallAsset({ ...common, pathName: config.metadata_path }),
+  ]);
+  return { manifest, signature, metadata };
 }
 
 async function downloadArtifact({
@@ -69,7 +131,7 @@ async function downloadArtifact({
       method: "GET",
       url: endpoint,
     }),
-    signal,
+    signal: requestSignal(signal, DOWNLOAD_TIMEOUT_MS),
     redirect: "error",
   });
   if (!response.ok || !response.body) {
@@ -102,5 +164,6 @@ async function downloadArtifact({
 module.exports = {
   normalizedPortalUrl,
   fetchChannels,
+  fetchPlatformAdapterBundle,
   downloadArtifact,
 };

@@ -1,4 +1,4 @@
-const CACHE = "jiaotang-skills-manager-pwa-v1";
+const CACHE = "jiaotang-skills-manager-pwa-v2";
 const STATIC = [
   "/static/skills-manager/app.css",
   "/static/skills-manager/polish.css",

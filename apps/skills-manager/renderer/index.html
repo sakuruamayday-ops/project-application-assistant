@@ -268,7 +268,10 @@
               <span class="kicker">TRUST CHAIN</span>
               <h2>安全中心</h2>
             </div>
-            <p>系统对管理器本身和技能包分别验真；任一必选门禁失败都会阻止自动安装。</p>
+            <div class="security-heading-actions">
+              <p>系统对管理器本身和技能包分别验真；任一必选门禁失败都会阻止自动安装。</p>
+              <button class="button ghost" id="open-audit-log" type="button">打开审计日志</button>
+            </div>
           </div>
           <div class="security-grid">
             <article class="security-card accent">
@@ -316,15 +319,15 @@
             <div class="guidance-columns">
               <div>
                 <strong>macOS</strong>
-                <p>开发版可由用户在“隐私与安全性”中单次授权运行，但这不会替代 Developer ID。正式直发仍需签名、公证并装订票据。</p>
+                <p>本地授权版不含 Developer ID 签名和 Apple 公证。用户可在“隐私与安全性”中明确选择“仍要打开”，但这不会建立 Apple 发布者身份。</p>
               </div>
               <div>
                 <strong>Windows</strong>
-                <p>UAC 管理员授权只负责提权，不会变成 Authenticode 签名。正式直发应使用稳定代码签名身份或 Microsoft Store；新签名仍可能经历 SmartScreen 信誉积累。</p>
+                <p>未签名安装器只能在系统策略允许时由用户明确选择继续运行。UAC 管理员授权只负责提权，不会变成 Authenticode 签名，也不能绕过组织策略。</p>
               </div>
               <div>
                 <strong>焦糖策略</strong>
-                <p>用户级 Skills 安装不索要管理员权限。未签名客户端仅供受控测试，不作为面向公众的正式安装包。</p>
+                <p>本地授权版会在文件名和审计清单中明确标识 unsigned-local。应用代码没有平台发布者签名，但 Skills 仍执行 HTTPS、SHA-256、Ed25519 和逐文件哈希校验。</p>
               </div>
             </div>
           </div>

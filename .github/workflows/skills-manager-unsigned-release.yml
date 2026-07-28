@@ -1,0 +1,469 @@
+name: Skills Manager unsigned local-authorized release
+
+run-name: Skills Manager v0.2.0 unsigned local-authorized release by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 输入“确认发布未签名本地授权版”后才允许发布
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skills-manager-unsigned-release-v0.2.0
+  cancel-in-progress: false
+
+env:
+  APP_VERSION: "0.2.0"
+  RELEASE_TAG: "skills-manager-v0.2.0"
+  RELEASE_CONFIRMATION: "确认发布未签名本地授权版"
+  APP_DIR: "apps/skills-manager"
+  MAC_ARM64_ASSET: "Jiaotang-Skills-Manager-0.2.0-unsigned-local-mac-arm64.dmg"
+  MAC_X64_ASSET: "Jiaotang-Skills-Manager-0.2.0-unsigned-local-mac-x64.dmg"
+  WINDOWS_X64_ASSET: "Jiaotang-Skills-Manager-0.2.0-unsigned-local-win-x64.exe"
+  USER_MANUAL_SOURCE: "docs/user-guide/企业全生命周期助手用户使用手册.docx"
+  USER_MANUAL_ASSET: "Jiaotang-Skills-Manager-0.2.0-User-Manual.docx"
+  RELEASE_NOTES_SOURCE: "docs/releases/skills-manager-v0.2.0.md"
+  PENDING_MANIFEST: "services/knowledge-portal/static/skills-manager/native-release.json"
+  PUBLISHED_MANIFEST_ASSET: "native-release.published.json"
+
+jobs:
+  authorize:
+    name: Confirm release authority
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify main branch, confirmation and immutable version
+        shell: bash
+        env:
+          PROVIDED_CONFIRMATION: ${{ inputs.confirmation }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "Unsigned local-authorized releases must run from main; got ${GITHUB_REF}." >&2
+            exit 1
+          fi
+          if [[ "${PROVIDED_CONFIRMATION}" != "${RELEASE_CONFIRMATION}" ]]; then
+            echo "Release confirmation phrase does not match." >&2
+            exit 1
+          fi
+          node services/knowledge-portal/scripts/check_skills_manager_pwa.mjs
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const pkg = require("./apps/skills-manager/package.json");
+          const release = require(
+            `./${process.env.PENDING_MANIFEST}`,
+          );
+          const expected = process.env.APP_VERSION;
+          if (pkg.version !== expected) {
+            throw new Error(`package version ${pkg.version} does not match ${expected}`);
+          }
+          if (
+            release.state !== "pending"
+            || release.available !== false
+            || release.published_at !== null
+          ) {
+            throw new Error("repository native-release manifest must be pending before release");
+          }
+          NODE
+          if git show-ref --verify --quiet "refs/tags/${RELEASE_TAG}"; then
+            echo "Tag ${RELEASE_TAG} already exists; release assets are immutable." >&2
+            exit 1
+          fi
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists; refusing to replace it." >&2
+            exit 1
+          fi
+          test -f "${APP_DIR}/electron-builder.unsigned-local.cjs"
+          test -f "${APP_DIR}/scripts/release-security-check.mjs"
+          test -s "${RELEASE_NOTES_SOURCE}"
+          test -s "${USER_MANUAL_SOURCE}"
+          unzip -t "${USER_MANUAL_SOURCE}" >/dev/null
+          unzip -Z1 "${USER_MANUAL_SOURCE}" | grep -Fx "[Content_Types].xml" >/dev/null
+          unzip -Z1 "${USER_MANUAL_SOURCE}" | grep -Fx "word/document.xml" >/dev/null
+
+  build-macos:
+    name: Build and audit macOS
+    needs: authorize
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/skills-manager
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/skills-manager/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run client tests and catalog checks
+        run: |
+          npm test
+          npm run check
+
+      - name: Build explicitly unsigned macOS packages
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run package:mac:unsigned-local
+
+      - name: Verify expected macOS artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "dist/${MAC_ARM64_ASSET}"
+          test -f "dist/${MAC_X64_ASSET}"
+
+      - name: Prove local-authorization trust mode
+        run: >-
+          npm run release:verify:unsigned-local --
+          --artifact "dist/${MAC_ARM64_ASSET}"
+          --artifact "dist/${MAC_X64_ASSET}"
+          --audit-output "dist/release-trust-macos.json"
+
+      - name: Upload audited macOS candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: skills-manager-macos-${{ env.APP_VERSION }}
+          path: |
+            apps/skills-manager/dist/${{ env.MAC_ARM64_ASSET }}
+            apps/skills-manager/dist/${{ env.MAC_X64_ASSET }}
+            apps/skills-manager/dist/release-trust-macos.json
+          if-no-files-found: error
+          retention-days: 14
+
+  build-windows:
+    name: Build and audit Windows
+    needs: authorize
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/skills-manager
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/skills-manager/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run client tests and catalog checks
+        run: |
+          npm test
+          npm run check
+
+      - name: Build explicitly unsigned Windows installer
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run package:win:unsigned-local
+
+      - name: Verify expected Windows artifact
+        shell: pwsh
+        run: |
+          $artifact = "dist/$env:WINDOWS_X64_ASSET"
+          if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
+            throw "Missing expected artifact: $artifact"
+          }
+
+      - name: Prove local-authorization trust mode
+        shell: pwsh
+        run: |
+          npm run release:verify:unsigned-local -- `
+            --artifact "dist/$env:WINDOWS_X64_ASSET" `
+            --audit-output "dist/release-trust-windows.json"
+
+      - name: Upload audited Windows candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: skills-manager-windows-${{ env.APP_VERSION }}
+          path: |
+            apps/skills-manager/dist/${{ env.WINDOWS_X64_ASSET }}
+            apps/skills-manager/dist/release-trust-windows.json
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish non-latest GitHub Release
+    needs:
+      - authorize
+      - build-macos
+      - build-windows
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: skills-manager-*-${{ env.APP_VERSION }}
+          path: release-assets
+          merge-multiple: true
+
+      - name: Validate and combine cross-platform audit evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${USER_MANUAL_SOURCE}" "release-assets/${USER_MANUAL_ASSET}"
+          cd release-assets
+          expected=(
+            "${MAC_ARM64_ASSET}"
+            "${MAC_X64_ASSET}"
+            "${WINDOWS_X64_ASSET}"
+            "${USER_MANUAL_ASSET}"
+            "release-trust-macos.json"
+            "release-trust-windows.json"
+          )
+          for artifact in "${expected[@]}"; do
+            test -f "${artifact}" || {
+              echo "Missing audited release asset: ${artifact}" >&2
+              exit 1
+            }
+          done
+          jq -e \
+            --arg version "${APP_VERSION}" \
+            --arg arm64 "${MAC_ARM64_ASSET}" \
+            --arg x64 "${MAC_X64_ASSET}" '
+              .schema == "jiaotang-skills-manager-release-audit/v1"
+              and .status == "pass"
+              and .mode == "unsigned-local-authorization"
+              and .os_trust == "local-user-exception"
+              and .manager_version == $version
+              and .error == null
+              and .target_platforms == ["darwin"]
+              and (.artifacts | length == 2)
+              and ((.artifacts | map(.file) | sort) == ([$arm64, $x64] | sort))
+              and all(.artifacts[];
+                .platform == "darwin"
+                and .platform_trust == "local-user-exception"
+                and .local_authorization_required == true
+              )
+              and (.skills_content_scope.bundled == false)
+              and (.skills_content_scope.verified == false)
+              and (
+                .skills_content_scope.release_channel
+                == "independent-portal-skills-channels"
+              )
+            ' release-trust-macos.json >/dev/null
+          jq -e \
+            --arg version "${APP_VERSION}" \
+            --arg windows "${WINDOWS_X64_ASSET}" '
+              .schema == "jiaotang-skills-manager-release-audit/v1"
+              and .status == "pass"
+              and .mode == "unsigned-local-authorization"
+              and .os_trust == "local-user-exception"
+              and .manager_version == $version
+              and .error == null
+              and .target_platforms == ["win32"]
+              and (.artifacts | length == 1)
+              and (.artifacts[0].file == $windows)
+              and all(.artifacts[];
+                .platform == "win32"
+                and .platform_trust == "local-user-exception"
+                and .local_authorization_required == true
+              )
+              and (.skills_content_scope.bundled == false)
+              and (.skills_content_scope.verified == false)
+              and (
+                .skills_content_scope.release_channel
+                == "independent-portal-skills-channels"
+              )
+            ' release-trust-windows.json >/dev/null
+          while IFS=$'\t' read -r artifact expected_sha; do
+            name="$(basename "${artifact}")"
+            test -f "${name}" || {
+              echo "Audited artifact is absent after cross-job download: ${name}" >&2
+              exit 1
+            }
+            actual_sha="$(sha256sum "${name}" | cut -d' ' -f1)"
+            if [[ "${actual_sha}" != "${expected_sha}" ]]; then
+              echo "Audited SHA-256 mismatch for ${name}." >&2
+              exit 1
+            fi
+          done < <(
+            jq -rs '
+              [.[].artifacts[]]
+              | if length == 3 then . else error("expected three audited artifacts") end
+              | .[]
+              | [.file, .sha256]
+              | @tsv
+            ' release-trust-macos.json release-trust-windows.json
+          )
+          generated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          manual_sha="$(sha256sum "${USER_MANUAL_ASSET}" | cut -d' ' -f1)"
+          manual_bytes="$(stat -c '%s' "${USER_MANUAL_ASSET}")"
+          jq -n \
+            --arg version "${APP_VERSION}" \
+            --arg tag "${RELEASE_TAG}" \
+            --arg commit "${GITHUB_SHA}" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg run_attempt "${GITHUB_RUN_ATTEMPT}" \
+            --arg generated_at "${generated_at}" \
+            --arg manual_file "${USER_MANUAL_ASSET}" \
+            --arg manual_source "${USER_MANUAL_SOURCE}" \
+            --arg manual_sha "${manual_sha}" \
+            --argjson manual_bytes "${manual_bytes}" \
+            --arg pending_manifest "${PENDING_MANIFEST}" \
+            --arg published_manifest "${PUBLISHED_MANIFEST_ASSET}" \
+            --slurpfile macos release-trust-macos.json \
+            --slurpfile windows release-trust-windows.json \
+            '{
+              schema: "jiaotang-skills-manager-release-audit/v1",
+              status: "pass",
+              mode: "unsigned-local-authorization",
+              os_trust: "local-user-exception",
+              version: $version,
+              tag: $tag,
+              git_commit: $commit,
+              github_run_id: $run_id,
+              github_run_attempt: $run_attempt,
+              generated_at: $generated_at,
+              platform_audits: {
+                macos: $macos[0],
+                windows: $windows[0]
+              },
+              skills_content_scope: {
+                bundled: false,
+                verified: false,
+                release_channel: "independent-portal-skills-channels",
+                statement: "This desktop-client release does not bundle or verify Skills content."
+              },
+              documentation: {
+                user_manual: {
+                  included_in_release: true,
+                  source_path: $manual_source,
+                  file: $manual_file,
+                  bytes: $manual_bytes,
+                  sha256: $manual_sha
+                }
+              },
+              portal_backfill: {
+                policy: "release_then_reviewed_portal_backfill",
+                phase: "published-manifest-candidate-generated",
+                pending_manifest: $pending_manifest,
+                published_manifest: $published_manifest,
+                automatic_repository_mutation: false,
+                reviewed_backfill_required: true
+              }
+            }' > release-audit.json
+          PUBLISHED_AT="${generated_at}" node - <<'NODE'
+          const crypto = require("node:crypto");
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const pendingPath = path.resolve("..", process.env.PENDING_MANIFEST);
+          const outputPath = path.resolve(process.env.PUBLISHED_MANIFEST_ASSET);
+          const release = JSON.parse(fs.readFileSync(pendingPath, "utf8"));
+          if (
+            release.state !== "pending"
+            || release.available !== false
+            || release.published_at !== null
+          ) {
+            throw new Error("portal source manifest is not a clean pending manifest");
+          }
+          const digest = (fileName) => crypto
+            .createHash("sha256")
+            .update(fs.readFileSync(path.resolve(fileName)))
+            .digest("hex");
+          release.state = "published";
+          release.available = true;
+          release.published_at = process.env.PUBLISHED_AT;
+          for (const artifact of release.artifacts) {
+            artifact.available = true;
+            artifact.sha256 = digest(artifact.file_name);
+          }
+          release.user_manual.available = true;
+          release.user_manual.sha256 = digest(release.user_manual.file_name);
+          fs.writeFileSync(outputPath, `${JSON.stringify(release, null, 2)}\n`);
+          NODE
+          JIAOTANG_NATIVE_RELEASE_PATH="$(pwd)/${PUBLISHED_MANIFEST_ASSET}" \
+            node ../services/knowledge-portal/scripts/check_skills_manager_pwa.mjs
+          LC_ALL=C sha256sum \
+            "${MAC_ARM64_ASSET}" \
+            "${MAC_X64_ASSET}" \
+            "${WINDOWS_X64_ASSET}" \
+            "${USER_MANUAL_ASSET}" \
+            release-audit.json \
+            "${PUBLISHED_MANIFEST_ASSET}" \
+            > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+
+      - name: Create immutable non-latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists; refusing to mutate it." >&2
+            exit 1
+          fi
+          gh release create "${RELEASE_TAG}" \
+            "release-assets/${MAC_ARM64_ASSET}" \
+            "release-assets/${MAC_X64_ASSET}" \
+            "release-assets/${WINDOWS_X64_ASSET}" \
+            "release-assets/${USER_MANUAL_ASSET}" \
+            release-assets/SHA256SUMS.txt \
+            release-assets/release-audit.json \
+            "release-assets/${PUBLISHED_MANIFEST_ASSET}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "焦糖 Skills 管理器 v0.2.0（未签名本地授权版）" \
+            --notes-file "${RELEASE_NOTES_SOURCE}" \
+            --latest=false
+
+      - name: Preserve reviewed portal backfill candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: skills-manager-portal-backfill-${{ env.APP_VERSION }}
+          path: |
+            release-assets/${{ env.PUBLISHED_MANIFEST_ASSET }}
+            release-assets/release-audit.json
+            release-assets/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Record phase-two portal instruction
+        shell: bash
+        run: |
+          {
+            echo "## Phase two: reviewed portal backfill"
+            echo
+            echo "The GitHub Release is immutable and the repository manifest remains pending."
+            echo "Review \`${PUBLISHED_MANIFEST_ASSET}\`, \`release-audit.json\`, and \`SHA256SUMS.txt\`."
+            echo "Only then replace \`${PENDING_MANIFEST}\` in a separate reviewed commit and deploy the portal."
+          } >> "${GITHUB_STEP_SUMMARY}"

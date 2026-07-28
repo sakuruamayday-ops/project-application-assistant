@@ -42,19 +42,12 @@ SUITE_PACKAGER = load_module(
     "package_workbuddy_suite",
     RELEASE_MANAGER / "package_workbuddy_suite.py",
 )
-WORKBUDDY_CLI = SUITE_PACKAGER.discover_workbuddy_cli() or Path(
-    "/Applications/WorkBuddy.app/Contents/Resources/"
-    "app.asar.unpacked/cli/bin/codebuddy"
-)
 SIGNING_KEY = (
     Path.home()
     / ".codex/skill-signing/jiaotang-skill-release-ed25519"
 )
 PUBLIC_KEY = SIGNING_KEY.with_suffix(".pub")
-RUN_REAL_WORKBUDDY_REGRESSION = (
-    os.environ.get("JIAOTANG_RUN_REAL_WORKBUDDY_REGRESSION", "").strip().lower()
-    == "true"
-)
+
 
 
 class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
@@ -103,181 +96,125 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         )
         return marketplace
 
-    @unittest.skipUnless(
-        RUN_REAL_WORKBUDDY_REGRESSION and WORKBUDDY_CLI.is_file(),
-        "未显式启用真实WorkBuddy回归，跳过宿主市场安装测试",
-    )
-    def test_real_marketplace_add_install_enable_uses_isolated_config(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            marketplace = self.write_marketplace_fixture(root)
-            result = SUITE_PACKAGER.run_host_install_regression(
-                workbuddy_cli=WORKBUDDY_CLI,
-                marketplace_root=marketplace,
-                marketplace_name="jiaotang-test",
-                plugin_name="jiaotang-test-skills",
-                isolated_root=root / "isolated",
-            )
-
-            self.assertEqual(result["status"], "pass")
-            self.assertEqual(
-                [item["name"] for item in result["commands"]],
-                [
-                    "validate-marketplace",
-                    "validate-plugin",
-                    "marketplace-add",
-                    "plugin-install",
-                    "plugin-enable",
-                ],
-            )
-            settings = json.loads(
-                (
-                    root / "isolated/config/settings.json"
-                ).read_text(encoding="utf-8")
-            )
-            self.assertTrue(
-                settings["enabledPlugins"][
-                    "jiaotang-test-skills@jiaotang-test"
-                ]
+    def test_packager_has_no_external_installer_or_host_cli_api(self):
+        for removed in (
+            "discover_workbuddy_cli",
+            "installer_script",
+            "windows_installer_script",
+            "windows_launcher_script",
+            "write_windows_installer",
+            "run_host_install_regression",
+        ):
+            self.assertFalse(
+                hasattr(SUITE_PACKAGER, removed),
+                f"已停用的外部安装接口仍可调用：{removed}",
             )
 
     @unittest.skipUnless(
-        WORKBUDDY_CLI.is_file(),
-        "当前主机未安装WorkBuddy，跳过一键安装器安全实测",
+        SIGNING_KEY.is_file() and PUBLIC_KEY.is_file(),
+        "发布签名密钥不可用，跳过WorkBuddy市场包构建回归",
     )
-    def test_one_click_installer_rejects_hash_mismatch_before_cli(self):
+    def test_packager_emits_only_cross_platform_marketplace_package(self):
+        source_skill = (
+            Path(__file__).resolve().parents[1]
+            / "skills/enterprise-profile"
+        )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source = root / "source"
-            marketplace = self.write_marketplace_fixture(source)
-            archive = root / "suite.zip"
-            with zipfile.ZipFile(
-                archive,
-                "w",
-                compression=zipfile.ZIP_DEFLATED,
-            ) as bundle:
-                for path in sorted(marketplace.rglob("*")):
-                    if path.is_file():
-                        bundle.write(
-                            path,
-                            (
-                                Path("jiaotang-test")
-                                / path.relative_to(marketplace)
-                            ).as_posix(),
-                        )
-            installer = root / "install.command"
-            installer.write_text(
-                SUITE_PACKAGER.installer_script(
-                    archive_name=archive.name,
-                    marketplace_name="jiaotang-test",
-                    plugin_name="jiaotang-test-skills",
-                    release_version="1.2.3",
-                    smoke_skill="enterprise-profile",
-                    expected_archive_sha256="0" * 64,
+            skills_root = root / "skills"
+            output = root / "output"
+            shutil.copytree(
+                source_skill,
+                skills_root / "enterprise-profile",
+            )
+            text = (
+                skills_root / "enterprise-profile/SKILL.md"
+            ).read_text(encoding="utf-8")
+            references = sorted(
+                set(
+                    re.findall(
+                        r"`([a-z][a-z0-9]*(?:-[a-z0-9]+)+)`",
+                        text,
+                    )
+                )
+                - {"enterprise-profile"}
+            )
+            (skills_root / "suite-manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "product_name": "WorkBuddy发布回归",
+                        "product_slug": "workbuddy-release-regression",
+                        "install_mode": "bundle-only",
+                        "release": {
+                            "tag": "V9.9",
+                            "version": "9.9.0",
+                        },
+                        "skills": ["enterprise-profile"],
+                        "allowed_external_skills": references,
+                        "external_services": [],
+                        "ignored_reference_tokens": [],
+                        "shared_paths": [],
+                        "dependencies": {},
+                    },
+                    ensure_ascii=False,
                 ),
                 encoding="utf-8",
             )
-            installer.chmod(0o755)
-            environment = os.environ.copy()
-            environment.update(
-                {
-                    "CODEBUDDY_CONFIG_DIR": str(root / "config"),
-                    "HOME": str(root / "home"),
-                    "JIAOTANG_WORKBUDDY_INSTALL_ROOT": str(root / "installed"),
-                    "DISABLE_AUTOUPDATER": "1",
-                }
+            options = Namespace(
+                skills_root=str(skills_root),
+                output_dir=str(output),
+                release_tag="V9.9",
+                signing_key=str(SIGNING_KEY),
+                public_key=str(PUBLIC_KEY),
+                plugin_name="jiaotang-regression-skills",
+                marketplace_name="jiaotang-regression",
+                smoke_skill="enterprise-profile",
             )
-            (root / "config").mkdir()
-            (root / "home").mkdir()
-            process = SUITE_PACKAGER.subprocess.run(
-                ["/bin/zsh", str(installer), str(archive)],
-                check=False,
-                capture_output=True,
-                text=True,
-                env=environment,
-                timeout=120,
+            stdout = io.StringIO()
+            with mock.patch.object(
+                SUITE_PACKAGER,
+                "arguments",
+                return_value=options,
+            ):
+                with contextlib.redirect_stdout(stdout):
+                    returncode = SUITE_PACKAGER.main()
+
+            self.assertEqual(returncode, 0, stdout.getvalue())
+            payload = json.loads(stdout.getvalue())
+            self.assertEqual(payload["fixed_installers"], [])
+            self.assertEqual(
+                payload["install_mode"],
+                "workbuddy-in-app-local-marketplace",
             )
-
-            self.assertNotEqual(process.returncode, 0)
-            self.assertIn(
-                "发布包SHA-256不匹配",
-                process.stdout + process.stderr,
+            self.assertEqual(
+                payload["download_regression"][
+                    "host_install_regression"
+                ]["status"],
+                "manual-in-app-required",
             )
-            self.assertFalse((root / "config/plugins").exists())
-
-    def test_windows_installer_covers_discovery_safe_extract_and_trigger(self):
-        script = SUITE_PACKAGER.windows_installer_script(
-            archive_name="suite.zip",
-            marketplace_name="jiaotang-test",
-            plugin_name="jiaotang-test-skills",
-            release_version="1.2.3",
-            smoke_skill="enterprise-profile",
-            expected_archive_sha256="a" * 64,
-        )
-        launcher = SUITE_PACKAGER.windows_launcher_script(
-            "install-jiaotang-test.ps1"
-        )
-
-        self.assertIn("Get-WorkBuddyInstallLocations", script)
-        self.assertIn("app.asar.unpacked\\cli\\bin\\codebuddy", script)
-        self.assertIn("Expand-SafeZip", script)
-        self.assertIn("ExternalAttributes", script)
-        self.assertIn("COM[1-9]", script)
-        self.assertIn("$unsafeWindowsPart", script)
-        self.assertIn("Get-FileHash", script)
-        self.assertIn('"--permission-mode", "dontAsk"', script)
-        self.assertIn('"--tools", "Skill"', script)
-        self.assertIn("active_skills", script)
-        self.assertIn("enterprise-profile", script)
-        self.assertIn("WorkBuddy透明安装计划", script)
-        self.assertIn("不执行远程返回命令", script)
-        self.assertIn("插件内含签名jiaotang-kb连接器", script)
-        self.assertIn("Read-Host", script)
-        self.assertIn("plugin marketplace remove", script)
-        self.assertIn(
-            '$_.PSObject.Properties["InstallLocation"]',
-            script,
-        )
-        explicit_cli_check = script.index(
-            "foreach ($candidate in @($CodeBuddyCli, $env:CODEBUDDY_CLI))"
-        )
-        registry_discovery = script.index(
-            "foreach ($base in Get-WorkBuddyInstallLocations)"
-        )
-        self.assertLess(explicit_cli_check, registry_discovery)
-        self.assertIn(
-            "return (Resolve-Path -LiteralPath $candidate).Path",
-            script[explicit_cli_check:registry_discovery],
-        )
-        self.assertIn("${SmokeSkill}并", script)
-        self.assertIn("${SmokeSkill}。", script)
-        self.assertIn("${SmokeToken}；", script)
-        self.assertNotRegex(
-            script,
-            r"\$[A-Za-z_][A-Za-z0-9_:{}()]*"
-            r"[\u3000-\u303f\u3400-\u9fff\uff00-\uffef]",
-        )
-        self.assertNotIn("Invoke-Expression", script)
-        self.assertNotIn("ExecutionPolicy Bypass", script)
-        self.assertNotIn("-ExecutionPolicy", launcher)
-        self.assertIn("-NoProfile -File", launcher)
-
-    def test_windows_installer_is_written_with_utf8_bom_for_powershell_51(self):
-        script = SUITE_PACKAGER.windows_installer_script(
-            archive_name="suite.zip",
-            marketplace_name="jiaotang-test",
-            plugin_name="jiaotang-test-skills",
-            release_version="1.2.3",
-            smoke_skill="enterprise-profile",
-            expected_archive_sha256="a" * 64,
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            installer = Path(directory) / "install.ps1"
-            SUITE_PACKAGER.write_windows_installer(installer, script)
-            content = installer.read_bytes()
-
-        self.assertTrue(content.startswith(b"\xef\xbb\xbf"))
-        self.assertEqual(content[3:].decode("utf-8"), script)
+            self.assertNotIn("installer", payload)
+            self.assertNotIn("installers", payload)
+            archive = Path(payload["archive"])
+            self.assertTrue(archive.is_file())
+            with zipfile.ZipFile(archive) as bundle:
+                names = set(bundle.namelist())
+                guide = bundle.read(
+                    "jiaotang-regression/INSTALL.md"
+                ).decode("utf-8")
+            self.assertFalse(
+                any(
+                    name.endswith((".command", ".ps1"))
+                    or (
+                        name.endswith(".cmd")
+                        and "/plugins/" not in name
+                    )
+                    for name in names
+                )
+            )
+            self.assertIn("WorkBuddy 应用内完成", guide)
+            self.assertIn("不需要退出", guide)
+            self.assertIn("/plugin", guide)
 
     def test_signed_plugin_embeds_mcp_connector_and_sensitive_bootstrap(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -337,36 +274,6 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 json.dumps(plugin_manifest, ensure_ascii=False),
                 encoding="utf-8",
             )
-            if WORKBUDDY_CLI.is_file():
-                validation_command = [
-                    str(WORKBUDDY_CLI),
-                    "plugin",
-                    "validate",
-                    str(plugin_root),
-                ]
-                if (
-                    os.name == "nt"
-                    and WORKBUDDY_CLI.suffix.lower() in {".cmd", ".bat"}
-                ):
-                    validation_command = [
-                        os.environ.get("COMSPEC", "cmd.exe"),
-                        "/d",
-                        "/s",
-                        "/c",
-                        *validation_command,
-                    ]
-                validated = subprocess.run(
-                    validation_command,
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    timeout=90,
-                )
-                self.assertEqual(
-                    validated.returncode,
-                    0,
-                    validated.stdout + validated.stderr,
-                )
 
     def test_workbuddy_mcp_connector_has_only_one_packaged_runtime_copy(self):
         skills_root = Path(__file__).resolve().parents[1] / "skills"
@@ -441,192 +348,6 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                             archive,
                             root / f"extract-{archive.stem}",
                         )
-
-    @unittest.skipUnless(
-        RUN_REAL_WORKBUDDY_REGRESSION
-        and WORKBUDDY_CLI.is_file()
-        and SIGNING_KEY.is_file()
-        and PUBLIC_KEY.is_file(),
-        "未显式启用真实WorkBuddy回归，跳过宿主安装测试",
-    )
-    def test_packager_emits_signed_sidecar_and_runs_real_install_gate(self):
-        source_skill = (
-            Path(__file__).resolve().parents[1]
-            / "skills/enterprise-profile"
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            skills_root = root / "skills"
-            output = root / "output"
-            shutil.copytree(
-                source_skill,
-                skills_root / "enterprise-profile",
-            )
-            text = (
-                skills_root / "enterprise-profile/SKILL.md"
-            ).read_text(encoding="utf-8")
-            references = sorted(
-                set(
-                    re.findall(
-                        r"`([a-z][a-z0-9]*(?:-[a-z0-9]+)+)`",
-                        text,
-                    )
-                )
-                - {"enterprise-profile"}
-            )
-            (skills_root / "suite-manifest.json").write_text(
-                json.dumps(
-                    {
-                        "schema_version": 1,
-                        "product_name": "WorkBuddy发布回归",
-                        "product_slug": "workbuddy-release-regression",
-                        "install_mode": "bundle-only",
-                        "release": {
-                            "tag": "V9.9",
-                            "version": "9.9.0",
-                        },
-                        "skills": ["enterprise-profile"],
-                        "allowed_external_skills": references,
-                        "external_services": [],
-                        "ignored_reference_tokens": [],
-                        "shared_paths": [],
-                        "dependencies": {},
-                    },
-                    ensure_ascii=False,
-                ),
-                encoding="utf-8",
-            )
-            options = Namespace(
-                skills_root=str(skills_root),
-                output_dir=str(output),
-                release_tag="V9.9",
-                signing_key=str(SIGNING_KEY),
-                public_key=str(PUBLIC_KEY),
-                plugin_name="jiaotang-regression-skills",
-                marketplace_name="jiaotang-regression",
-                workbuddy_cli=str(WORKBUDDY_CLI),
-                smoke_skill="enterprise-profile",
-            )
-            stdout = io.StringIO()
-            with mock.patch.object(
-                SUITE_PACKAGER,
-                "arguments",
-                return_value=options,
-            ):
-                with contextlib.redirect_stdout(stdout):
-                    returncode = SUITE_PACKAGER.main()
-
-            self.assertEqual(returncode, 0, stdout.getvalue())
-            payload = json.loads(stdout.getvalue())
-            self.assertEqual(
-                payload["download_regression"][
-                    "host_install_regression"
-                ]["status"],
-                "pass",
-            )
-            self.assertEqual(
-                payload["download_regression"][
-                    "host_install_regression"
-                ]["smoke_trigger"]["active_skills"],
-                ["enterprise-profile"],
-            )
-            self.assertEqual(
-                payload["download_regression"][
-                    "host_install_regression"
-                ]["smoke_trigger"]["status"],
-                "pass",
-            )
-            archive = Path(payload["archive"])
-            installer = Path(payload["installer"]["archive"])
-            windows_installer = Path(
-                payload["installers"]["windows"]["archive"]
-            )
-            windows_launcher = Path(
-                payload["installers"]["windows_launcher"]["archive"]
-            )
-            self.assertTrue(archive.is_file())
-            self.assertTrue(installer.is_file())
-            self.assertTrue(windows_installer.is_file())
-            self.assertTrue(windows_launcher.is_file())
-            self.assertTrue(
-                Path(payload["installer"]["signature"]).is_file()
-            )
-            with zipfile.ZipFile(archive) as bundle:
-                names = set(bundle.namelist())
-                install_text = bundle.read(
-                    "jiaotang-regression/INSTALL.md"
-                ).decode("utf-8")
-            self.assertIn(
-                "jiaotang-regression/install-jiaotang-workbuddy.command",
-                names,
-            )
-            self.assertIn(
-                "jiaotang-regression/install-jiaotang-workbuddy.ps1",
-                names,
-            )
-            self.assertIn(
-                "jiaotang-regression/install-jiaotang-workbuddy.cmd",
-                names,
-            )
-            self.assertIn("不能直接传ZIP", install_text)
-            self.assertIn("真实调用enterprise-profile技能", install_text)
-            self.assertIn(
-                "plugin marketplace add <解压目录>/jiaotang-regression",
-                install_text,
-            )
-
-            sidecar_environment = os.environ.copy()
-            sidecar_environment.update(
-                {
-                    "CODEBUDDY_CONFIG_DIR": str(
-                        root / "sidecar-config"
-                    ),
-                    "JIAOTANG_WORKBUDDY_INSTALL_ROOT": str(
-                        root / "sidecar-install"
-                    ),
-                    "JIAOTANG_WORKBUDDY_INSTALL_CONFIRM": "INSTALL",
-                    "DISABLE_AUTOUPDATER": "1",
-                }
-            )
-            (root / "sidecar-config").mkdir()
-            if os.name == "nt":
-                sidecar_command = [
-                    "powershell.exe",
-                    "-NoLogo",
-                    "-NoProfile",
-                    "-File",
-                    str(windows_installer),
-                    "-ArchivePath",
-                    str(archive),
-                    "-CodeBuddyCli",
-                    str(WORKBUDDY_CLI),
-                    "-InstallRoot",
-                    str(root / "sidecar-install"),
-                ]
-            else:
-                sidecar_command = ["/bin/zsh", str(installer), str(archive)]
-            sidecar_process = subprocess.run(
-                sidecar_command,
-                check=False,
-                capture_output=True,
-                text=True,
-                env=sidecar_environment,
-                timeout=180,
-            )
-            self.assertEqual(
-                sidecar_process.returncode,
-                0,
-                sidecar_process.stdout + sidecar_process.stderr,
-            )
-            self.assertIn("enterprise-profile", sidecar_process.stdout)
-            self.assertIn(
-                "WorkBuddy透明安装计划",
-                sidecar_process.stdout,
-            )
-            self.assertIn(
-                "不执行远程返回命令",
-                sidecar_process.stdout,
-            )
 
     def test_runtime_exception_degrades_but_integrity_error_blocks(self):
         options = Namespace(command="prompt", plugin_root="/tmp/plugin")

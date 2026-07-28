@@ -1,5 +1,6 @@
 const state = {
   channels: null,
+  nativeRelease: null,
   capabilities: null,
   canSyncDirectory: false,
   installPrompt: null,
@@ -8,6 +9,15 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const encode = new TextEncoder();
 const decode = new TextDecoder();
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 function toast(title, detail = "") {
   const item = document.createElement("div");
@@ -63,13 +73,18 @@ function evaluateCapabilities(manifest) {
 }
 
 async function loadControlPlane() {
-  const [channelResponse, capabilityResponse] = await Promise.all([
+  const [channelResponse, capabilityResponse, nativeReleaseResponse] = await Promise.all([
     fetch("/v1/web/skills/channels", { credentials: "same-origin" }),
     fetch("/static/skills-manager/platform-capabilities.json", { credentials: "same-origin" }),
+    fetch("/v1/web/skills-manager/native-release", { credentials: "same-origin" })
+      .catch(() => null),
   ]);
   if (!channelResponse.ok) throw new Error(`读取发布通道失败：HTTP ${channelResponse.status}`);
   if (!capabilityResponse.ok) throw new Error(`读取能力清单失败：HTTP ${capabilityResponse.status}`);
   state.channels = await channelResponse.json();
+  state.nativeRelease = nativeReleaseResponse?.ok
+    ? await nativeReleaseResponse.json()
+    : null;
   evaluateCapabilities(await capabilityResponse.json());
   const labels = { generic: "通用 Skills", workbuddy: "WorkBuddy 跨平台包" };
   $("#channels").innerHTML = state.channels.channels.map((item) => `
@@ -81,7 +96,76 @@ async function loadControlPlane() {
     </article>`).join("");
   const available = state.channels.channels.filter((item) => item.available).length;
   $("#release-state").textContent = `${available} 条通道已就绪`;
-  $("#release-detail").textContent = "通用、macOS、Windows各自读取最近正式版本，版本不对称不会互相覆盖。";
+  $("#release-detail").textContent = "通用 Skills 与跨平台 WorkBuddy 保持两条独立内容通道；桌面客户端使用单独版本，不会推动 Skills 强制升级。";
+  renderNativeRelease();
+}
+
+function renderNativeRelease() {
+  const release = state.nativeRelease;
+  const container = $("#native-client-list");
+  const manualAction = $("#native-user-manual");
+  if (!release) {
+    manualAction.removeAttribute("href");
+    manualAction.classList.add("is-disabled");
+    manualAction.setAttribute("aria-disabled", "true");
+    manualAction.textContent = "暂时无法读取 Word 用户手册状态";
+    container.innerHTML = `
+      <article class="native-client-card is-pending">
+        <div class="native-platform-line"><span>桌面客户端</span><small>可选</small></div>
+        <h3>暂时无法读取候选包状态</h3>
+        <p>PWA 与 Skills 下载仍可继续使用；刷新页面后再检查桌面客户端下载。</p>
+        <span class="ghost native-download is-disabled" aria-disabled="true">候选包状态不可用</span>
+      </article>`;
+    return;
+  }
+  const manualAvailable = Boolean(
+    release.available
+    && release.user_manual?.available
+    && release.user_manual?.download_url,
+  );
+  manualAction.textContent = manualAvailable
+    ? "下载 Word 用户手册"
+    : "Word 用户手册随正式包发布";
+  manualAction.classList.toggle("is-disabled", !manualAvailable);
+  manualAction.setAttribute("aria-disabled", String(!manualAvailable));
+  if (manualAvailable) {
+    manualAction.href = release.user_manual.download_url;
+  } else {
+    manualAction.removeAttribute("href");
+  }
+  const labels = {
+    "macos-arm64": ["macOS", "Apple Silicon", "在“隐私与安全性”中确认打开"],
+    "macos-x64": ["macOS", "Intel", "在“隐私与安全性”中确认打开"],
+    "windows-x64": ["Windows", "64 位", "SmartScreen 或企业策略可能阻止"],
+  };
+  container.innerHTML = release.artifacts.map((artifact) => {
+    const [platform, architecture, guidance] = labels[artifact.id] || [
+      artifact.platform,
+      artifact.arch,
+      "按本机系统提示确认",
+    ];
+    const available = Boolean(release.available && artifact.available);
+    const digest = artifact.sha256
+      ? `${artifact.sha256.slice(0, 10)}…${artifact.sha256.slice(-6)}`
+      : "正式产物生成后公布";
+    const action = available
+      ? `<a class="primary native-download" href="${escapeHtml(artifact.download_url)}">下载本机授权版</a>`
+      : '<span class="ghost native-download is-disabled" aria-disabled="true">候选包待发布</span>';
+    return `
+      <article class="native-client-card ${available ? "is-ready" : "is-pending"}">
+        <div class="native-platform-line">
+          <span>${escapeHtml(platform)}</span>
+          <small>${escapeHtml(architecture)}</small>
+        </div>
+        <h3>${escapeHtml(artifact.file_name)}</h3>
+        <dl>
+          <div><dt>客户端版本</dt><dd>V${escapeHtml(release.version)}</dd></div>
+          <div><dt>SHA-256</dt><dd><code title="${escapeHtml(artifact.sha256)}">${escapeHtml(digest)}</code></dd></div>
+        </dl>
+        <p>${escapeHtml(guidance)}</p>
+        ${action}
+      </article>`;
+  }).join("");
 }
 
 function channel(id) {

@@ -102,6 +102,9 @@ INDEX_DIR = Path(
 CONTENT_DATABASE_PATH = INDEX_DIR / "knowledge_content.sqlite3"
 KNOWLEDGE_FILES_DIR = Path(os.environ.get("JIAOTANG_KNOWLEDGE_FILES_DIR", DATA_DIR / "knowledge-files"))
 SKILL_RELEASE_DIR = Path(os.environ.get("JIAOTANG_SKILL_RELEASE_DIR", DATA_DIR / "skill-releases"))
+SKILLS_MANAGER_NATIVE_RELEASE_PATH = (
+    BASE_DIR / "static" / "skills-manager" / "native-release.json"
+)
 FIRST_PUBLIC_SKILL_VERSION = os.environ.get("JIAOTANG_FIRST_PUBLIC_SKILL_VERSION", "1.0").strip()
 SECURE_COOKIES = os.environ.get("JIAOTANG_SECURE_COOKIES", "true").lower() == "true"
 TOKEN_DERIVATION_SECRET = os.environ.get("JIAOTANG_TOKEN_DERIVATION_SECRET", "").encode("utf-8")
@@ -5409,6 +5412,20 @@ def init_database() -> None:
                 PRIMARY KEY(release_id,target)
             );
 
+            CREATE TABLE IF NOT EXISTS skill_release_artifact_stages (
+                version TEXT NOT NULL,
+                target TEXT NOT NULL,
+                status TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                sha256 TEXT NOT NULL,
+                release_notes TEXT NOT NULL,
+                git_commit TEXT NOT NULL,
+                github_url TEXT NOT NULL,
+                staged_at TEXT NOT NULL,
+                promoted_at TEXT,
+                PRIMARY KEY(version,target)
+            );
+
             CREATE TABLE IF NOT EXISTS release_announcements (
                 release_id INTEGER PRIMARY KEY REFERENCES skill_releases(id) ON DELETE CASCADE,
                 title TEXT NOT NULL,
@@ -8090,6 +8107,121 @@ def skills_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_w
     return portal_page_response(request, user, "skills")
 
 
+def skills_manager_native_release_payload() -> dict[str, object]:
+    try:
+        payload = json.loads(
+            SKILLS_MANAGER_NATIVE_RELEASE_PATH.read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail="桌面客户端发布元数据暂不可用",
+        ) from error
+    if (
+        not isinstance(payload, dict)
+        or payload.get("schema") != "jiaotang-skills-manager-native-release/v1"
+        or payload.get("distribution") != "user_authorized_unsigned"
+        or payload.get("publication_policy")
+        != "release_then_reviewed_portal_backfill"
+    ):
+        raise HTTPException(status_code=503, detail="桌面客户端发布元数据无效")
+    version = str(payload.get("version") or "")
+    tag = str(payload.get("tag") or "")
+    state = str(payload.get("state") or "")
+    if (
+        not re.fullmatch(r"\d+\.\d+\.\d+", version)
+        or tag != f"skills-manager-v{version}"
+        or state not in {"pending", "published"}
+    ):
+        raise HTTPException(status_code=503, detail="桌面客户端发布版本或状态无效")
+    is_published = state == "published"
+    if payload.get("available") is not is_published:
+        raise HTTPException(status_code=503, detail="桌面客户端发布状态不一致")
+    published_at = payload.get("published_at")
+    if is_published:
+        try:
+            parsed_published_at = datetime.fromisoformat(
+                str(published_at).replace("Z", "+00:00")
+            )
+        except ValueError as error:
+            raise HTTPException(
+                status_code=503,
+                detail="桌面客户端发布时间无效",
+            ) from error
+        if parsed_published_at.tzinfo is None:
+            raise HTTPException(status_code=503, detail="桌面客户端发布时间缺少时区")
+    elif published_at is not None:
+        raise HTTPException(status_code=503, detail="候选发布清单不得提前填写发布时间")
+    release_base = (
+        "https://github.com/sakuruamayday-ops/"
+        "project-application-assistant/releases"
+    )
+    if payload.get("github_release_url") != f"{release_base}/tag/{tag}":
+        raise HTTPException(status_code=503, detail="桌面客户端 Release 地址无效")
+    expected = {
+        ("macos", "arm64"): (
+            "macos-arm64",
+            "/skills-manager/download/macos/arm64",
+            f"Jiaotang-Skills-Manager-{version}-unsigned-local-mac-arm64.dmg",
+        ),
+        ("macos", "x64"): (
+            "macos-x64",
+            "/skills-manager/download/macos/x64",
+            f"Jiaotang-Skills-Manager-{version}-unsigned-local-mac-x64.dmg",
+        ),
+        ("windows", "x64"): (
+            "windows-x64",
+            "/skills-manager/download/windows/x64",
+            f"Jiaotang-Skills-Manager-{version}-unsigned-local-win-x64.exe",
+        ),
+    }
+    artifacts = payload.get("artifacts")
+    if not isinstance(artifacts, list) or len(artifacts) != len(expected):
+        raise HTTPException(status_code=503, detail="桌面客户端发布产物清单无效")
+    seen: set[tuple[str, str]] = set()
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            raise HTTPException(status_code=503, detail="桌面客户端发布产物无效")
+        key = (str(artifact.get("platform") or ""), str(artifact.get("arch") or ""))
+        if key not in expected or key in seen:
+            raise HTTPException(status_code=503, detail="桌面客户端发布目标无效")
+        seen.add(key)
+        expected_id, expected_download, expected_file = expected[key]
+        if (
+            artifact.get("id") != expected_id
+            or artifact.get("download_url") != expected_download
+            or artifact.get("file_name") != expected_file
+            or artifact.get("available") is not is_published
+            or artifact.get("github_asset_url")
+            != f"{release_base}/download/{tag}/{expected_file}"
+        ):
+            raise HTTPException(status_code=503, detail="桌面客户端产物元数据无效")
+        digest = str(artifact.get("sha256") or "")
+        if is_published and not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise HTTPException(status_code=503, detail="桌面客户端产物哈希无效")
+        if not is_published and digest:
+            raise HTTPException(status_code=503, detail="候选产物不得提前填写哈希")
+    if seen != set(expected):
+        raise HTTPException(status_code=503, detail="桌面客户端发布目标不完整")
+    manual = payload.get("user_manual")
+    expected_manual_file = f"Jiaotang-Skills-Manager-{version}-User-Manual.docx"
+    if (
+        not isinstance(manual, dict)
+        or manual.get("file_name") != expected_manual_file
+        or manual.get("download_url") != "/skills-manager/download/user-manual"
+        or manual.get("available") is not is_published
+        or manual.get("github_asset_url")
+        != f"{release_base}/download/{tag}/{expected_manual_file}"
+    ):
+        raise HTTPException(status_code=503, detail="桌面客户端用户手册元数据无效")
+    manual_digest = str(manual.get("sha256") or "")
+    if is_published and not re.fullmatch(r"[0-9a-f]{64}", manual_digest):
+        raise HTTPException(status_code=503, detail="桌面客户端用户手册哈希无效")
+    if not is_published and manual_digest:
+        raise HTTPException(status_code=503, detail="候选用户手册不得提前填写哈希")
+    return payload
+
+
 @app.get("/skills-manager", response_class=HTMLResponse)
 def skills_manager_page(
     request: Request,
@@ -8123,6 +8255,72 @@ def skills_manager_service_worker():
             "Cache-Control": "no-cache",
             "Service-Worker-Allowed": "/skills-manager",
         },
+    )
+
+
+@app.get("/v1/web/skills-manager/native-release")
+def skills_manager_native_release(
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    return JSONResponse(
+        skills_manager_native_release_payload(),
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/skills-manager/download/{platform_name}/{architecture}")
+def download_skills_manager_native_client(
+    platform_name: str,
+    architecture: str,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    payload = skills_manager_native_release_payload()
+    artifact = next(
+        (
+            item
+            for item in payload["artifacts"]
+            if item["platform"] == platform_name and item["arch"] == architecture
+        ),
+        None,
+    )
+    if artifact is None:
+        raise HTTPException(
+            status_code=404,
+            detail="不支持的桌面客户端平台或架构",
+            headers={"Cache-Control": "no-store"},
+        )
+    if not payload.get("available") or not artifact.get("available"):
+        raise HTTPException(
+            status_code=404,
+            detail="该桌面客户端候选包尚未正式发布",
+            headers={"Cache-Control": "no-store"},
+        )
+    return RedirectResponse(
+        str(artifact["github_asset_url"]),
+        status_code=307,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/skills-manager/download/user-manual")
+def download_skills_manager_user_manual(
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    del user
+    payload = skills_manager_native_release_payload()
+    manual = payload["user_manual"]
+    if not payload.get("available") or not manual.get("available"):
+        raise HTTPException(
+            status_code=404,
+            detail="桌面客户端 Word 用户手册尚未正式发布",
+            headers={"Cache-Control": "no-store"},
+        )
+    return RedirectResponse(
+        str(manual["github_asset_url"]),
+        status_code=307,
+        headers={"Cache-Control": "no-store"},
     )
 
 
@@ -11866,7 +12064,7 @@ def web_download_historical_workbuddy_skills(
         ).fetchone()
     if release is None:
         raise HTTPException(status_code=404, detail="历史 Skills 版本不存在")
-    package_path = workbuddy_skill_package(str(release["version"]))
+    package_path = historical_workbuddy_skill_package(str(release["version"]))
     if not package_path.is_file():
         raise HTTPException(status_code=404, detail="该历史版本未发布 WorkBuddy 插件包")
     return FileResponse(package_path, filename=package_path.name, media_type="application/zip")
@@ -12272,31 +12470,24 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
     if target not in {"generic", "workbuddy", "macos", "windows"}:
         raise ValueError(f"未知发布目标：{target}")
     with closing(database()) as connection:
-        targets = (
-            ("workbuddy", "windows", "macos")
-            if target == "workbuddy"
-            else (target,)
-        )
-        placeholders = ",".join("?" for _ in targets)
         row = connection.execute(
-            f"""
+            """
             SELECT r.id,r.version,r.release_notes,r.published_at,
                    a.file_name,a.file_path,a.sha256,a.target
             FROM skill_release_artifacts a
             JOIN skill_releases r ON r.id=a.release_id
-            WHERE a.target IN ({placeholders})
-            ORDER BY r.published_at DESC,r.id DESC,
-                     CASE a.target
-                         WHEN 'workbuddy' THEN 0
-                         WHEN 'windows' THEN 1
-                         ELSE 2
-                     END
+            WHERE a.target=?
+            ORDER BY r.published_at DESC,r.id DESC
             LIMIT 1
             """,
-            targets,
+            (target,),
         ).fetchone()
         if row is not None:
             return dict(row)
+        if target == "workbuddy":
+            # 统一通道必须 fail-closed；旧 macOS/Windows 包只作历史证据，
+            # 不得在通用包缺失时被冒充为当前跨平台包。
+            return None
         releases = connection.execute(
             """
             SELECT id,version,file_name,file_path,sha256,release_notes,published_at,
@@ -12313,8 +12504,8 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
             continue
         if target == "generic" and Path(str(release["file_path"])).is_file():
             return {**dict(release), "target": "generic"}
-        if target in {"workbuddy", "macos", "windows"}:
-            legacy = workbuddy_skill_package(str(release["version"]))
+        if target in {"macos", "windows"}:
+            legacy = historical_workbuddy_skill_package(str(release["version"]))
             if legacy.is_file():
                 return {
                     **dict(release),
@@ -12327,6 +12518,24 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
 
 
 def workbuddy_skill_package(version: str) -> Path:
+    with closing(database()) as connection:
+        row = connection.execute(
+            """
+            SELECT a.file_path
+            FROM skill_release_artifacts a
+            JOIN skill_releases r ON r.id=a.release_id
+            WHERE r.version=? AND a.target='workbuddy'
+            LIMIT 1
+            """,
+            (version,),
+        ).fetchone()
+    if row is not None:
+        return Path(str(row["file_path"]))
+    return SKILL_RELEASE_DIR / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
+
+
+def historical_workbuddy_skill_package(version: str) -> Path:
+    """Resolve an immutable historical client asset without feeding the current channel."""
     with closing(database()) as connection:
         row = connection.execute(
             """
@@ -12357,6 +12566,21 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
                 names = set(archive.namelist())
         except zipfile.BadZipFile:
             names = set()
+    distribution_revision = None
+    try:
+        with closing(database()) as connection:
+            distribution_revision = connection.execute(
+                """
+                SELECT release_notes,github_url,staged_at,promoted_at
+                FROM skill_release_artifact_stages
+                WHERE version=? AND target='workbuddy' AND status='published'
+                ORDER BY promoted_at DESC
+                LIMIT 1
+                """,
+                (version,),
+            ).fetchone()
+    except sqlite3.OperationalError:
+        distribution_revision = None
     included = (
         any(name.endswith("/.codebuddy-plugin/marketplace.json") for name in names)
         and any(name.endswith("/.codebuddy-plugin/plugin.json") for name in names)
@@ -12367,6 +12591,26 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
         "version": version if included else None,
         "included": included,
         "download_url": "/skills/latest/workbuddy/download",
+        "distribution_notes_html": (
+            render_guide_markdown(str(distribution_revision["release_notes"]))
+            if distribution_revision is not None
+            else None
+        ),
+        "distribution_url": (
+            str(distribution_revision["github_url"])
+            if distribution_revision is not None
+            else None
+        ),
+        "distribution_published_at_display": (
+            format_chinese_datetime(
+                str(
+                    distribution_revision["promoted_at"]
+                    or distribution_revision["staged_at"]
+                )
+            )
+            if distribution_revision is not None
+            else None
+        ),
     }
 
 

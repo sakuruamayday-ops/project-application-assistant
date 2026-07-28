@@ -10,3 +10,234 @@ button:disabled {
   opacity: 0.45;
   filter: saturate(0.4);
 }
+
+.native-release-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(250px, 0.78fr) minmax(0, 1.6fr);
+  gap: 28px;
+  margin-top: 18px;
+  padding: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 178, 106, 0.24);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 5% 0%, rgba(212, 178, 106, 0.13), transparent 38%),
+    linear-gradient(128deg, #161711, #111513 62%);
+}
+
+.native-release-panel::after {
+  position: absolute;
+  top: -64px;
+  right: -64px;
+  width: 180px;
+  height: 180px;
+  border: 1px solid rgba(212, 178, 106, 0.15);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.native-release-copy,
+.native-client-list {
+  position: relative;
+  z-index: 1;
+}
+
+.native-kicker {
+  display: inline-flex;
+  padding: 6px 10px;
+  border: 1px solid rgba(236, 154, 88, 0.32);
+  border-radius: 999px;
+  color: #efb17d;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+.native-release-copy h2 {
+  margin: 19px 0 12px;
+  font-family: var(--serif);
+  font-size: clamp(26px, 3vw, 38px);
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+}
+
+.native-release-copy h2 em {
+  color: var(--gold2);
+  font-style: normal;
+}
+
+.native-release-copy > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.native-trust-note {
+  display: grid;
+  gap: 6px;
+  margin-top: 22px;
+  padding: 14px 15px;
+  border-left: 3px solid var(--orange);
+  background: rgba(236, 154, 88, 0.07);
+}
+
+.native-trust-note strong {
+  color: #f0c59d;
+  font-size: 11px;
+}
+
+.native-trust-note span {
+  color: #9d9d94;
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.native-manual-download {
+  display: inline-grid;
+  min-height: 38px;
+  margin-top: 14px;
+  place-items: center;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: #cdbb91;
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.native-manual-download.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.native-client-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+  align-items: stretch;
+}
+
+.native-client-card {
+  display: flex;
+  min-width: 0;
+  min-height: 268px;
+  flex-direction: column;
+  padding: 19px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(7, 10, 9, 0.48);
+}
+
+.native-client-card.is-ready {
+  border-color: rgba(104, 213, 154, 0.3);
+}
+
+.native-platform-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.native-platform-line span {
+  color: var(--gold2);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.native-platform-line small {
+  color: #777d76;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.native-client-card h3 {
+  min-height: 45px;
+  margin: 16px 0 12px;
+  overflow-wrap: anywhere;
+  color: #dcd5c4;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.native-client-card dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.native-client-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(239, 225, 190, 0.08);
+}
+
+.native-client-card dt,
+.native-client-card dd {
+  margin: 0;
+  font-size: 9px;
+}
+
+.native-client-card dt {
+  color: #747a73;
+}
+
+.native-client-card dd {
+  min-width: 0;
+  color: #b3b4aa;
+  text-align: right;
+}
+
+.native-client-card code {
+  color: #a7aaa2;
+  font-size: 8px;
+}
+
+.native-client-card > p {
+  margin: 13px 0 14px;
+  color: #858a83;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.native-download {
+  display: grid;
+  min-height: 38px;
+  margin-top: auto;
+  place-items: center;
+  padding: 0 11px;
+  border-radius: 10px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 10px;
+}
+
+.native-download.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+@media (max-width: 1180px) {
+  .native-release-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .native-release-panel {
+    padding: 23px;
+  }
+
+  .native-client-list {
+    grid-template-columns: 1fr;
+  }
+
+  .native-client-card {
+    min-height: 230px;
+  }
+}

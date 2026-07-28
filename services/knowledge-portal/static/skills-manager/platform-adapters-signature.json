@@ -1,0 +1,10 @@
+{
+  "schema": "jiaotang-skills-manager-adapter-signature/v1",
+  "sequence": 2026072801,
+  "revision": "2026.07.28.1",
+  "identity": "jiaotang-codex-skill-release",
+  "signature_namespace": "jiaotang-skills-manager-platform-adapters",
+  "public_key_fingerprint": "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI",
+  "manifest_sha256": "90234f7d56b57da5d269aa64d0dacfd3c8884586b1717b2eed4ce0adbfb9bdd6",
+  "signed_at": "2026-07-28T02:19:19.042Z"
+}

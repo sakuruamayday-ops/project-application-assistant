@@ -2,7 +2,7 @@ const bridge = window.jiaotang;
 
 const demoOverview = {
   os: { platform: navigator.platform.toLowerCase().includes("win") ? "win32" : "darwin", arch: "arm64", version: "preview" },
-  product: { name: "企业全生命周期助手", releaseTag: "V1.3.1.2", skillCount: 49, managerVersion: "0.1.0" },
+  product: { name: "企业全生命周期助手", releaseTag: "V1.3.1.2", skillCount: 49, managerVersion: "0.2.0" },
   settings: { portalUrl: "https://zshjiaotang.cn" },
   appTrust: {
     signed: false,
@@ -33,11 +33,21 @@ const demoOverview = {
     ],
   },
   registry: { targets: {}, backups: [] },
+  adapters: {
+    sequence: 2026072801,
+    revision: "2026.07.28.1",
+    publishedAt: "2026-07-28T10:30:00+08:00",
+    source: "built-in",
+  },
   scan: {
     scannedAt: new Date().toISOString(),
     durationMs: 86,
     searchedPlatformCount: 6,
     detectedPlatformCount: 3,
+  },
+  audit: {
+    status: "ready",
+    warning: null,
   },
 };
 
@@ -135,16 +145,24 @@ function navigate(view) {
 function renderTrust() {
   const trust = state.overview.appTrust;
   const passed = trust.signed && trust.trustedByOs;
-  document.querySelector("#trust-title").textContent = passed ? "系统信任链通过" : "当前构建需要发行签名";
+  const localAuthorization = trust.distributionMode === "local-user-authorization";
+  document.querySelector("#trust-title").textContent = passed ? "系统信任链通过" : "当前构建采用本地授权";
   const seal = document.querySelector("#trust-seal");
-  seal.textContent = passed ? "可信" : "开发版";
+  seal.textContent = passed ? "可信" : "本地授权";
   seal.className = `trust-seal ${passed ? "good" : "warn"}`;
-  document.querySelector("#trust-meter-fill").style.width = passed ? "100%" : "34%";
-  document.querySelector("#trust-summary").textContent = trust.summary;
+  document.querySelector("#trust-meter-fill").style.width = passed ? "100%" : "66%";
+  document.querySelector("#trust-summary").textContent = localAuthorization && !passed
+    ? "管理器自身不含 Developer ID 或 Authenticode 签名，需由用户在本机明确授权；下载的 Skills 仍独立执行签名与逐文件哈希验证。"
+    : trust.summary;
   const stateElement = document.querySelector("#app-signing-state");
-  stateElement.textContent = passed ? "操作系统验证通过" : "尚未通过正式发行验证";
+  stateElement.textContent = passed ? "操作系统验证通过" : "未建立系统发布者身份";
   stateElement.className = `security-state ${passed ? "good" : "warn"}`;
-  document.querySelector("#app-signing-detail").textContent = trust.details || trust.summary;
+  const applicationDetail = localAuthorization && !passed
+    ? "本地授权发行模式：应用未签名，系统可能显示未知开发者或未知发布者；企业策略可能不允许例外。"
+    : trust.details || trust.summary;
+  document.querySelector("#app-signing-detail").textContent = state.overview.audit?.warning
+    ? `${applicationDetail} ${state.overview.audit.warning}`
+    : applicationDetail;
 }
 
 function renderPlatformStrip() {
@@ -192,7 +210,7 @@ function renderPlatforms() {
     : "扫描范围包括系统应用目录、常见用户安装目录和已配置命令位置。";
   const scan = state.overview.scan;
   document.querySelector("#scan-meta").textContent = scan?.scannedAt
-    ? `最近扫描 ${new Date(scan.scannedAt).toLocaleTimeString("zh-CN", { hour12: false })} · ${scan.durationMs} ms · 未读取用户文档`
+    ? `最近扫描 ${new Date(scan.scannedAt).toLocaleTimeString("zh-CN", { hour12: false })} · ${scan.durationMs} ms · 适配器 ${state.overview.adapters?.revision || "内置"} / ${state.overview.adapters?.sequence || "—"} · 未读取用户文档`
     : "尚未执行本机扫描";
   document.querySelector("#platform-count-all").textContent = allPlatforms.length;
   document.querySelector("#platform-count-detected").textContent = detected.length;
@@ -392,12 +410,25 @@ async function connectPortal() {
   setBusy(button, true, "正在连接…");
   try {
     state.channels = await bridge.connectPortal({ portalUrl, authMode, accessToken });
+    const scanned = await bridge.scanPlatforms();
+    state.overview = { ...state.overview, ...scanned };
     document.querySelector("#access-token").value = "";
     document.querySelector("#connect-dialog").close();
     updateConnection(true);
+    renderPlatformStrip();
+    renderPlatforms();
+    renderTargets();
+    renderCompatibility();
     renderChannels();
     navigate("updates");
-    toast("发布门户已连接", `已读取 ${state.channels.channels.length} 个发布通道。`);
+    const adapter = state.channels.platform_adapter;
+    const adapterDetail = adapter?.status === "verified"
+      ? `平台适配器 ${adapter.revision} 已验签更新。`
+      : `平台适配器沿用 ${adapter?.revision || "内置版本"}。`;
+    toast(
+      "发布门户已连接",
+      `已读取 ${state.channels.channels.length} 个发布通道；${adapterDetail}`,
+    );
   } catch (error) {
     toast("连接失败", error.message, "error");
   } finally {
@@ -572,6 +603,10 @@ document.addEventListener("click", async (event) => {
   if (reveal && bridge) await bridge.revealPath(reveal.dataset.reveal);
   const rollback = event.target.closest("[data-rollback]");
   if (rollback) await handleRollback(rollback.dataset.rollback);
+  if (event.target.closest("#open-audit-log") && bridge) {
+    const result = await bridge.revealAuditLog();
+    if (result.status !== "shown") toast("无法打开审计日志", result.detail || "未知错误", "error");
+  }
   if (event.target.closest("[data-close-action]")) closeActionDialog();
   if (event.target.closest("#action-confirm") && state.action) {
     const confirm = document.querySelector("#action-confirm");

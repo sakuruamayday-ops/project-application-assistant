@@ -380,13 +380,18 @@ def main():
         raise SystemExit(f"缺少必需资源: {missing}")
     validate_release_source(args.root)
     files = sorted(path for path in (args.root / "skills").rglob("*") if path.is_file() and included(path.relative_to(args.root)))
-    companion_workspace = tempfile.TemporaryDirectory(
-        prefix="standard-package-release-companions-"
-    )
     companion_builder = load_release_companion_builder(args.root)
+    companion_root = companion_builder._recovery_root()
+    companion_root.mkdir(parents=True, exist_ok=True)
+    companion_workspace = Path(
+        tempfile.mkdtemp(
+            prefix="standard-package-release-companions-",
+            dir=companion_root,
+        )
+    )
     companion_result = companion_builder.generate(
         args.root,
-        Path(companion_workspace.name),
+        companion_workspace,
         apply_brand=True,
         render=True,
     )

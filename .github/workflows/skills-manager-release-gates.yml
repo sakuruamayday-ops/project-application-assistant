@@ -5,7 +5,12 @@ on:
     paths:
       - "apps/skills-manager/**"
       - "services/knowledge-portal/**"
+      - "docs/skills-manager-pwa.md"
+      - "docs/releases/skills-manager-v0.2.0.md"
+      - "docs/user-guide/企业全生命周期助手用户使用手册.docx"
+      - "docs/user-guide/企业全生命周期助手用户使用手册.md"
       - ".github/workflows/skills-manager-release-gates.yml"
+      - ".github/workflows/skills-manager-unsigned-release.yml"
   workflow_dispatch:
 
 jobs:
@@ -24,7 +29,9 @@ jobs:
       - run: node --check services/knowledge-portal/static/skills-manager/zip-reader.js
       - run: node --check services/knowledge-portal/static/skills-manager/sw.js
       - run: node services/knowledge-portal/scripts/check_skills_manager_pwa.mjs
-      - run: python -m pytest -q tests/test_portal.py -k legacy_client_artifacts_are_exposed_as_one_workbuddy_channel
+      - run: >-
+          python -m pytest -q tests/test_portal.py
+          -k "legacy_client_artifacts_do_not_feed_unified_workbuddy_channel or skills_manager_native"
         working-directory: services/knowledge-portal
 
   native-release-policy:
