@@ -5,27 +5,23 @@
       "id": "workbuddy",
       "name": "WorkBuddy",
       "vendor": "腾讯",
-      "support": "full",
+      "support": "adapter",
       "channel": "workbuddy",
-      "install_mode": "fixed-installer",
-      "notes": "使用签名包内固定安装器；运行前必须关闭 WorkBuddy，避免插件 CLI 端口冲突。",
+      "install_mode": "workbuddy-marketplace",
+      "notes": "下载并验签本地插件市场 ZIP；在 WorkBuddy 内通过 /plugin 添加市场并安装，不调用外部 CLI。",
       "darwin": {
         "applications": [
           "/Applications/WorkBuddy.app",
           "~/Applications/WorkBuddy.app"
         ],
-        "managed_roots": [
-          "~/.codebuddy/plugins"
-        ]
+        "managed_roots": []
       },
       "win32": {
         "applications": [
           "%LOCALAPPDATA%/Programs/WorkBuddy/WorkBuddy.exe",
           "%PROGRAMFILES%/WorkBuddy/WorkBuddy.exe"
         ],
-        "managed_roots": [
-          "%USERPROFILE%/.codebuddy/plugins"
-        ]
+        "managed_roots": []
       }
     },
     {

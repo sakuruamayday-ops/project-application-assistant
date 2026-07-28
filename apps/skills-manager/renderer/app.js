@@ -3,7 +3,6 @@ const bridge = window.jiaotang;
 const demoOverview = {
   os: { platform: navigator.platform.toLowerCase().includes("win") ? "win32" : "darwin", arch: "arm64", version: "preview" },
   product: { name: "企业全生命周期助手", releaseTag: "V1.3.1.2", skillCount: 49, managerVersion: "0.1.0" },
-  workBuddyRunning: false,
   settings: { portalUrl: "https://zshjiaotang.cn" },
   appTrust: {
     signed: false,
@@ -12,7 +11,7 @@ const demoOverview = {
     details: "请在 Electron 桌面进程中运行。",
   },
   platforms: [
-    { id: "workbuddy", name: "WorkBuddy", vendor: "腾讯", support: "full", detected: true, channel: "workbuddy", installMode: "fixed-installer", targetRoot: "~/.codebuddy/plugins", canInstallAutomatically: false, notes: "使用签名包内固定安装器。" },
+    { id: "workbuddy", name: "WorkBuddy", vendor: "腾讯", support: "adapter", detected: true, channel: "workbuddy", installMode: "workbuddy-marketplace", targetRoot: null, canInstallAutomatically: false, detectedPaths: ["/Applications/WorkBuddy.app"], notes: "下载本地插件市场 ZIP，在 WorkBuddy 内使用 /plugin 安装。" },
     { id: "trae", name: "TRAE", vendor: "字节跳动", support: "full", detected: true, channel: "generic", installMode: "managed-directory", targetRoot: "~/.trae-cn/skills", canInstallAutomatically: true, notes: "中国版使用用户级 .trae-cn/skills。" },
     { id: "kimi-code", name: "Kimi Code", vendor: "月之暗面", support: "full", detected: false, channel: "generic", installMode: "shared-agents-directory", targetRoot: "~/.agents/skills", canInstallAutomatically: true, notes: "与 TRAE 共用托管目录。" },
     { id: "lingma", name: "通义灵码", vendor: "阿里云", support: "guided", detected: false, channel: "generic", installMode: "guided-import", targetRoot: null, canInstallAutomatically: false, notes: "官方尚未公开稳定的用户级 Skills 导入接口。" },
@@ -159,7 +158,7 @@ function platformAction(platform) {
     return `<button class="button ghost" type="button" disabled>未发现</button>`;
   }
   if (platform.id === "workbuddy") {
-    return `<button class="button ghost" data-platform-action="workbuddy" data-platform-id="${platform.id}" type="button">一键启动安装</button>`;
+    return `<button class="button ghost" data-platform-action="workbuddy" data-platform-id="${platform.id}" type="button">下载插件市场</button>`;
   }
   if (platform.canInstallAutomatically) {
     return `<button class="button ghost" data-platform-action="generic" data-platform-id="${platform.id}" type="button">一键安装</button>`;
@@ -176,7 +175,7 @@ function renderPlatforms() {
     ? `已发现 ${detected.length} 个 Agent 平台`
     : "暂未发现已安装的 Agent 平台";
   document.querySelector("#discovery-detail").textContent = detected.length
-    ? `${automatic.length} 个可直接同步${workBuddy ? "，WorkBuddy 使用独立固定安装器" : ""}；其余平台按官方界面导入。`
+    ? `${automatic.length} 个可直接同步${workBuddy ? "，WorkBuddy 使用应用内插件市场" : ""}；其余平台按官方界面导入。`
     : "扫描范围包括系统应用目录、常见用户安装目录和已配置命令位置。";
   const installAll = document.querySelector("#install-detected-button");
   installAll.disabled = automatic.length === 0;
@@ -398,7 +397,7 @@ async function installToDetectedPlatforms(button) {
     openAction({
       kicker: "DISCOVERED AGENTS",
       title: conflicts.length ? "需要先处理目录冲突" : `安装到 ${batch.targets.length} 个已发现目标`,
-      html: `${conflictCopy}<ul class="install-target-list">${targetRows}</ul><p>WorkBuddy 如已发现，仍需使用该平台行内的固定安装器按钮。</p>`,
+      html: `${conflictCopy}<ul class="install-target-list">${targetRows}</ul><p>WorkBuddy 如已发现，使用该平台行内按钮下载插件市场包，然后在 WorkBuddy 内完成添加和安装。</p>`,
       confirmLabel: "确认一键安装",
       disabled: conflicts.length > 0,
       onConfirm: async () => {
@@ -419,23 +418,12 @@ async function handlePlatformAction(button) {
   try {
     if (button.dataset.platformAction === "workbuddy") {
       const channelId = state.overview.os.platform === "win32" ? "windows" : "macos";
-      await ensureArtifact(channelId, button);
-      const staged = await bridge.stageWorkBuddy(channelId);
-      openAction({
-        kicker: "FIXED INSTALLER",
-        title: `运行 ${platform.name} 固定安装器`,
-        html: `
-          <p>已完成门户同源、包 SHA、Ed25519 发布签名和逐文件哈希校验。</p>
-          <p><strong>执行前必须完全退出 WorkBuddy。</strong>管理器只运行签名包中的固定安装器，不执行门户返回的动态命令。</p>
-          <p class="path-value">${escapeHtml(staged.launcher)}</p>
-        `,
-        confirmLabel: "运行固定安装器",
-        onConfirm: async () => {
-          await bridge.launchWorkBuddy(staged);
-          closeActionDialog();
-          toast("固定安装器已启动", "请在终端窗口中完成安装并返回管理器验收。");
-        },
-      });
+      const artifact = await ensureArtifact(channelId, button);
+      await bridge.showItem(artifact.downloaded.path);
+      toast(
+        "WorkBuddy 插件市场包已就绪",
+        "解压 ZIP 后，在 WorkBuddy 内使用 /plugin marketplace add 添加目录，再安装 jiaotang-workbuddy-skills@jiaotang。",
+      );
       return;
     }
     const artifact = await ensureArtifact("generic", button);

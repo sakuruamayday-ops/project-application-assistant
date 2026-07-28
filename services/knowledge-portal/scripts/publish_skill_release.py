@@ -119,15 +119,11 @@ def validate_release_packages(
                     raise ValueError(
                         f"{target}包的WorkBuddy插件版本不一致"
                     )
-                if target == "macos" and not any(
-                    name.lower().endswith(".command") for name in names
+                if not any(
+                    name.endswith("/.codebuddy-plugin/marketplace.json")
+                    for name in names
                 ):
-                    raise ValueError("macOS包缺少.command固定安装器")
-                if target == "windows" and not (
-                    any(name.lower().endswith(".cmd") for name in names)
-                    and any(name.lower().endswith(".ps1") for name in names)
-                ):
-                    raise ValueError("Windows包缺少.cmd或.ps1固定安装器")
+                    raise ValueError(f"{target}包缺少WorkBuddy插件市场清单")
         hashes[target] = sha256(package)
 
     return {

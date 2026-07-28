@@ -36,8 +36,8 @@ export JIAOTANG_SECURE_COOKIES=false
 1. 在门户点击“复制给 Agent”。
 2. 把复制的文字粘贴到本地 Agent。
 3. 门户先向 Agent 提供 `jiaotang-agent-install/v1` 审查说明。审查阶段只包含签名 WorkBuddy 插件包、联网地址、本地改动、凭据保存方式和回滚方法，不包含 `bootstrap_url`，也不包含任何动态命令字段。
-4. 用户核对审查结果后，必须回到门户点击“我已审查，继续安装”；门户此时才开放一次性 `bootstrap_url`，并生成明确授权固定安装器的第二阶段提示。
-5. 用户可把第二阶段提示粘贴给同一个 Agent 完成一键安装，也可在“API 与用户”页面选择手工配置：下载签名包、核验 SHA-256 与 Ed25519 签名、运行固定安装器，并把一次性 `bootstrap_url` 仅填入 WorkBuddy 插件敏感配置。
+4. 用户核对审查结果后，必须回到门户点击“我已审查，继续安装”；门户此时才开放一次性 `bootstrap_url`，并生成明确授权 WorkBuddy 应用内市场安装的第二阶段提示。
+5. 用户下载签名包并核验 SHA-256 与 Ed25519 签名，解压后在 WorkBuddy 内通过 `/plugin marketplace add` 和 `/plugin install` 完成安装，再把一次性 `bootstrap_url` 仅填入 WorkBuddy 插件敏感配置。
 6. WorkBuddy 启用插件时按敏感配置读取一次性 `bootstrap_url`；插件内置的 `jiaotang-kb` 随插件自动启动，不写入宿主级 MCP 配置。
 7. 只有服务器记录到首次成功的签名 MCP 连接，门户和安装器才会报告“安装成功”；此前统一显示“安装未完成”。
 8. 同一引导码、同一设备公钥的重复登记必须幂等返回原凭据；同一引导码若换成另一组公钥则拒绝并要求重新生成，避免刚保存的 Token 被静默吊销。

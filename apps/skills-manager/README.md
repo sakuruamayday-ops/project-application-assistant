@@ -11,19 +11,19 @@
 - 运行时读取平台能力清单，先检查安全上下文、WebCrypto、ZIP 解压和目录授权，再决定是否开放写入。
 - 只写入发布清单列出的 49 项技能与共享路径，未托管同名内容会阻断安装。
 - 覆盖前保留目录内备份，回滚时当前版本先进入 displaced 恢复区，不永久删除用户文件。
-- WorkBuddy 只下载对应平台的既有签名包，仍由用户审查并运行包内固定 `.command` 或 `.cmd`。
+- WorkBuddy 只下载对应平台的签名插件市场包；用户解压后在 WorkBuddy 内添加本地市场并安装插件，不执行 `.command`、`.cmd` 或外部 CLI。
 
 实现位于 `services/knowledge-portal/static/skills-manager`，发布说明见 `docs/skills-manager-pwa.md`。
 
 ## 原生工程验证版已实现
 
 - 在 macOS 系统应用目录、Windows 常见程序目录和已配置命令位置进行有界扫描，自动识别 WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder 与 Cherry Studio；不递归读取用户文档。
-- 对已发现且有稳定用户级目录的平台提供“一键安装到已发现平台”，自动去重共享目录；WorkBuddy 继续使用独立固定安装器，引导型平台只打开已验签导入包。
+- 对已发现且有稳定用户级目录的平台提供“一键安装到已发现平台”，自动去重共享目录；WorkBuddy 下载已验签本地插件市场包，并在 WorkBuddy 内通过 `/plugin` 添加、安装和启用，引导型平台只打开已验签导入包。
 - 通用 Skills、WorkBuddy macOS、WorkBuddy Windows 三条独立更新通道。
 - 普通成员复用本机钥匙串或DPAPI中的既有设备凭据并逐请求签名，不重新绑定设备；管理员令牌只保存在当前进程内。
 - SHA-256、固定 Ed25519 公钥、OpenSSH 签名及逐文件哈希验证。
 - 对稳定目录采用“计划预览 → 冲突阻断 → 同盘备份 → 原子替换 → 可恢复回滚”。
-- WorkBuddy 仅启动签名包内固定 `.command` 或 `.cmd`，且要求先完全退出 WorkBuddy。
+- WorkBuddy 不启动外部安装器；安装动作由正在运行的 WorkBuddy 自己完成，因此没有端口冲突和退出运行锁。
 - 49 项技能与各平台的兼容性账本。
 - 应用自身的 Gatekeeper 或 Authenticode 状态展示与正式发布门禁。
 

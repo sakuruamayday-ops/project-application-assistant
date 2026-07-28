@@ -16,14 +16,10 @@ contextBridge.exposeInMainWorld("jiaotang", {
     batchId,
     confirmation: "INSTALL_ALL",
   }),
-  stageWorkBuddy: (channelId) => ipcRenderer.invoke("install:stage-workbuddy", { channelId }),
-  launchWorkBuddy: (staged) => ipcRenderer.invoke("install:launch-workbuddy", {
-    staged,
-    confirmation: "RUN_FIXED_INSTALLER",
-  }),
   rollback: (targetRoot) => ipcRenderer.invoke("install:rollback", {
     targetRoot,
     confirmation: "ROLLBACK",
   }),
   revealPath: (value) => ipcRenderer.invoke("path:reveal", value),
+  showItem: (value) => ipcRenderer.invoke("path:show-item", value),
 });

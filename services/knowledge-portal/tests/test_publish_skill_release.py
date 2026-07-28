@@ -38,9 +38,6 @@ def make_packages(
             json.dumps({"version": semantic_version}),
         )
         archive.writestr("jiaotang/plugins/plugin/skills/suite-manifest.json", json.dumps(suite))
-        archive.writestr("jiaotang/install-jiaotang-workbuddy.command", "#!/bin/zsh\n")
-        archive.writestr("jiaotang/install-jiaotang-workbuddy.cmd", "@echo off\r\n")
-        archive.writestr("jiaotang/install-jiaotang-workbuddy.ps1", "exit 0\r\n")
     return generic, workbuddy
 
 

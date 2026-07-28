@@ -130,7 +130,8 @@
           <ol>
             <li>下载门户为当前设备选择的签名 WorkBuddy 插件包。</li>
             <li>核对页面公布的 SHA-256 与包内 Ed25519 签名。</li>
-            <li>Windows 解压后直接双击 <code>install-jiaotang-workbuddy.cmd</code>；macOS 运行固定 <code>.command</code> 安装器。</li>
+            <li>解压 ZIP，在 WorkBuddy 对话中执行 <code>/plugin marketplace add &lt;解压后的 jiaotang 目录&gt;</code>。</li>
+            <li>继续执行 <code>/plugin install jiaotang-workbuddy-skills@jiaotang</code>，然后按提示启用插件。</li>
             <li>点击下方按钮生成并复制一次性引导地址，再填入插件敏感配置项 <code>bootstrap_url</code>。</li>
           </ol>
           <div class="endpoint-list">

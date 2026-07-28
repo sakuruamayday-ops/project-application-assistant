@@ -70,22 +70,22 @@ UAC 管理员授权只允许程序执行需要提升权限的操作，不会生�
 - 管理员权限适合安装系统级组件，不适合用来写入 `~/.agents/skills`、`~/.trae-cn/skills` 或 `%USERPROFILE%` 下的 Skills。此类用户级同步默认不提权。
 - 无证书原生包只允许受控工程测试，不进入公开下载页。公开正式入口继续使用 HTTPS PWA，直到双端发行信任链通过。
 
-## WorkBuddy 固定安装器
+## WorkBuddy 应用内插件市场
 
-管理器不会执行门户返回的任意命令。它只会：
+管理器不会执行门户返回的任意命令，也不启动 `.command`、`.cmd`、PowerShell 或 WorkBuddy 外部 CLI。它只会：
 
 1. 下载已声明的 macOS 或 Windows WorkBuddy 通道包。
 2. 完成 Ed25519 签名与清单内全部文件哈希校验。
-3. 从签名包中提取固定名称的 `.command` 或 `.cmd` 安装器。
-4. 在用户明确确认且 WorkBuddy 完全退出后启动固定安装器。
+3. 在文件管理器中定位已验证 ZIP。
+4. 用户解压后，在正在运行的 WorkBuddy 内执行 `/plugin marketplace add <解压后的市场目录>`，再安装并启用 `jiaotang-workbuddy-skills@jiaotang`。
 
-Windows 端使用 `.cmd` 直接安装；macOS 端继续使用 `.command`。平台包独立发布，Windows 热修复不会强制 macOS 更新。
+应用内命令由 WorkBuddy 自己处理，不占用第二个宿主进程，因此不再设置“完全退出 WorkBuddy”的运行锁。平台包仍可独立发布，Windows 热修复不会强制 macOS 更新。
 
 ## 发布阻断条件
 
 - 尚未取得相应平台发行证书，却准备把原生构建提供给终端用户。
 - 应用未签名、签名失效或公证未 staple。
-- 安装器的 Authenticode 状态不是 `Valid`。
+- Windows 原生管理器安装器的 Authenticode 状态不是 `Valid`。
 - 发布包 SHA-256 与门户元数据不一致。
 - Ed25519 公钥指纹不是信任清单中的固定值。
 - 签名清单缺文件、路径越界、重复路径或任一文件哈希不一致。

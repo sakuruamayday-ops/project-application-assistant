@@ -25,11 +25,6 @@ const {
   executeGenericInstall,
   rollbackLatest,
 } = require("../core/update-engine.cjs");
-const {
-  stageFixedInstaller,
-  launchFixedInstaller,
-  workBuddyRunning,
-} = require("../core/fixed-installer.cjs");
 
 const APP_ROOT = path.resolve(__dirname, "..");
 const platformConfigPath = path.join(APP_ROOT, "config", "platforms.json");
@@ -108,7 +103,6 @@ function platformSnapshot() {
     targets: uniqueManagedTargets(platforms),
     compatibility: buildCompatibilityReport(catalog, platforms),
     registry,
-    workBuddyRunning: workBuddyRunning(),
   };
 }
 
@@ -287,23 +281,6 @@ ipcMain.handle("install:execute-detected", (_event, payload) => {
   return { results };
 });
 
-ipcMain.handle("install:stage-workbuddy", (_event, payload) => {
-  const channelId = payload.channelId;
-  const artifact = state.verifiedArtifacts.get(channelId);
-  if (!artifact || !["macos", "windows"].includes(channelId)) {
-    throw new Error("请先下载并验证当前系统对应的 WorkBuddy 包");
-  }
-  return stageFixedInstaller({
-    archivePath: artifact.downloaded.path,
-    cacheRoot: managerPaths().cache,
-  });
-});
-
-ipcMain.handle("install:launch-workbuddy", (_event, payload) => {
-  if (payload.confirmation !== "RUN_FIXED_INSTALLER") throw new Error("安装确认无效");
-  return launchFixedInstaller(payload.staged);
-});
-
 ipcMain.handle("install:rollback", (_event, payload) => {
   if (payload.confirmation !== "ROLLBACK") throw new Error("回滚确认无效");
   return rollbackLatest({
@@ -315,6 +292,12 @@ ipcMain.handle("install:rollback", (_event, payload) => {
 ipcMain.handle("path:reveal", async (_event, value) => {
   if (!value || typeof value !== "string") throw new Error("路径无效");
   return shell.openPath(path.resolve(value));
+});
+
+ipcMain.handle("path:show-item", (_event, value) => {
+  if (!value || typeof value !== "string") throw new Error("路径无效");
+  shell.showItemInFolder(path.resolve(value));
+  return { status: "shown", path: path.resolve(value) };
 });
 
 app.whenReady().then(() => {
