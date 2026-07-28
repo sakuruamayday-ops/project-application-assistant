@@ -81,7 +81,14 @@ test("release workflow, portal manifest and Word manual share one immutable asse
     "https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/skills-manager-v0.2.0",
   );
   assert.match(workflow, /RELEASE_TAG: "skills-manager-v0\.2\.0"/);
-  assert.equal(nativeRelease.state, "pending");
+  assert.ok(["pending", "published"].includes(nativeRelease.state));
+  const isPublished = nativeRelease.state === "published";
+  assert.equal(nativeRelease.available, isPublished);
+  if (isPublished) {
+    assert.match(nativeRelease.published_at, /^\d{4}-\d{2}-\d{2}T.*Z$/);
+  } else {
+    assert.equal(nativeRelease.published_at, null);
+  }
   assert.equal(nativeRelease.publication_policy, "release_then_reviewed_portal_backfill");
   assert.deepEqual(
     nativeRelease.artifacts.map((artifact) => artifact.file_name),
@@ -91,10 +98,24 @@ test("release workflow, portal manifest and Word manual share one immutable asse
     assert.match(workflow, new RegExp(fileName));
     assert.ok(releaseNotes.includes(`\`${fileName}\``));
   }
+  for (const artifact of nativeRelease.artifacts) {
+    assert.equal(artifact.available, isPublished);
+    if (isPublished) {
+      assert.match(artifact.sha256, /^[0-9a-f]{64}$/);
+    } else {
+      assert.equal(artifact.sha256, "");
+    }
+  }
   assert.equal(
     nativeRelease.user_manual.file_name,
     "Jiaotang-Skills-Manager-0.2.0-User-Manual.docx",
   );
+  assert.equal(nativeRelease.user_manual.available, isPublished);
+  if (isPublished) {
+    assert.match(nativeRelease.user_manual.sha256, /^[0-9a-f]{64}$/);
+  } else {
+    assert.equal(nativeRelease.user_manual.sha256, "");
+  }
   assert.match(workflow, /USER_MANUAL_SOURCE:/);
   assert.match(workflow, /USER_MANUAL_ASSET:/);
   assert.match(workflow, /RELEASE_NOTES_SOURCE: "docs\/releases\/skills-manager-v0\.2\.0\.md"/);

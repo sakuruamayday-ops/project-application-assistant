@@ -3,10 +3,10 @@
   "version": "0.2.0",
   "tag": "skills-manager-v0.2.0",
   "distribution": "user_authorized_unsigned",
-  "state": "pending",
+  "state": "published",
   "publication_policy": "release_then_reviewed_portal_backfill",
-  "available": false,
-  "published_at": null,
+  "available": true,
+  "published_at": "2026-07-28T03:22:20Z",
   "github_release_url": "https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/skills-manager-v0.2.0",
   "artifacts": [
     {
@@ -14,8 +14,8 @@
       "platform": "macos",
       "arch": "arm64",
       "file_name": "Jiaotang-Skills-Manager-0.2.0-unsigned-local-mac-arm64.dmg",
-      "available": false,
-      "sha256": "",
+      "available": true,
+      "sha256": "45311c298833d68650d8f52f7069aaae157288db7366d1c8c65e2a0b935ca869",
       "download_url": "/skills-manager/download/macos/arm64",
       "github_asset_url": "https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/skills-manager-v0.2.0/Jiaotang-Skills-Manager-0.2.0-unsigned-local-mac-arm64.dmg"
     },
@@ -24,8 +24,8 @@
       "platform": "macos",
       "arch": "x64",
       "file_name": "Jiaotang-Skills-Manager-0.2.0-unsigned-local-mac-x64.dmg",
-      "available": false,
-      "sha256": "",
+      "available": true,
+      "sha256": "35433b834d60746f0328310bd9ba19e7c3470762ae9a591fb0eb59aed24953e7",
       "download_url": "/skills-manager/download/macos/x64",
       "github_asset_url": "https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/skills-manager-v0.2.0/Jiaotang-Skills-Manager-0.2.0-unsigned-local-mac-x64.dmg"
     },
@@ -34,16 +34,16 @@
       "platform": "windows",
       "arch": "x64",
       "file_name": "Jiaotang-Skills-Manager-0.2.0-unsigned-local-win-x64.exe",
-      "available": false,
-      "sha256": "",
+      "available": true,
+      "sha256": "b1c855432062ca90cb2a449186d335c57c0ca64d1143dc8197e9f40087fcb140",
       "download_url": "/skills-manager/download/windows/x64",
       "github_asset_url": "https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/skills-manager-v0.2.0/Jiaotang-Skills-Manager-0.2.0-unsigned-local-win-x64.exe"
     }
   ],
   "user_manual": {
     "file_name": "Jiaotang-Skills-Manager-0.2.0-User-Manual.docx",
-    "available": false,
-    "sha256": "",
+    "available": true,
+    "sha256": "5c85a052a0f73e87dc47a0460c56fe47b4a79d851e95c2b460a2b0468fb2bb9e",
     "download_url": "/skills-manager/download/user-manual",
     "github_asset_url": "https://github.com/sakuruamayday-ops/project-application-assistant/releases/download/skills-manager-v0.2.0/Jiaotang-Skills-Manager-0.2.0-User-Manual.docx"
   }
