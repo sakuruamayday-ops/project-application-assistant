@@ -19,7 +19,7 @@
 
 - 在 macOS 系统应用目录、Windows 常见程序目录和已配置命令位置进行有界扫描，自动识别 WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder 与 Cherry Studio；不递归读取用户文档。
 - 对已发现且有稳定用户级目录的平台提供“一键安装到已发现平台”，自动去重共享目录；WorkBuddy 下载已验签本地插件市场包，并在 WorkBuddy 内通过 `/plugin` 添加、安装和启用，引导型平台只打开已验签导入包。
-- 通用 Skills、WorkBuddy macOS、WorkBuddy Windows 三条独立更新通道。
+- 通用 Skills 与跨平台 WorkBuddy 插件市场包两条更新通道。
 - 普通成员复用本机钥匙串或DPAPI中的既有设备凭据并逐请求签名，不重新绑定设备；管理员令牌只保存在当前进程内。
 - SHA-256、固定 Ed25519 公钥、OpenSSH 签名及逐文件哈希验证。
 - 对稳定目录采用“计划预览 → 冲突阻断 → 同盘备份 → 原子替换 → 可恢复回滚”。

@@ -7219,11 +7219,8 @@ def portal_payload(
                 **dict(latest_release),
                 "published_at_display": format_chinese_datetime(latest_release["published_at"]),
                 "release_notes_html": render_guide_markdown(str(latest_release["release_notes"])),
-                "workbuddy_available": any(
-                    item["included"]
-                    for item in latest_workbuddy_platforms()
-                ),
-                "workbuddy_platforms": latest_workbuddy_platforms(),
+                "workbuddy_available": latest_workbuddy_artifact()["included"],
+                "workbuddy": latest_workbuddy_artifact(),
             }
             if latest_release
             else None
@@ -7248,11 +7245,8 @@ def portal_payload(
                 **dict(row),
                 "published_at_display": format_chinese_datetime(row["published_at"]),
                 "release_notes_html": render_guide_markdown(str(row["release_notes"])),
-                "workbuddy_available": any(
-                    item["included"]
-                    for item in workbuddy_platforms(str(row["version"]))
-                ),
-                "workbuddy_platforms": workbuddy_platforms(str(row["version"])),
+                "workbuddy_available": workbuddy_artifact(str(row["version"]))["included"],
+                "workbuddy": workbuddy_artifact(str(row["version"])),
             }
             for row in historical_release_rows
         ]
@@ -10355,17 +10349,7 @@ def create_agent_bootstrap_code(
         )
         connection.commit()
     public_endpoint = str(request.base_url).rstrip("/")
-    user_agent = request.headers.get("user-agent", "").lower()
-    platform_name = (
-        "windows"
-        if "windows" in user_agent
-        else "macos"
-        if "macintosh" in user_agent or "mac os" in user_agent
-        else ""
-    )
     install_protocol_url = f"{public_endpoint}/v1/agent-install/{quote(raw_code)}"
-    if platform_name:
-        install_protocol_url += f"?platform={platform_name}"
     return JSONResponse(
         {
             "prompt": build_agent_bootstrap_prompt(install_protocol_url),
@@ -10462,36 +10446,8 @@ def confirm_agent_bootstrap_code(
             )
         connection.commit()
     public_endpoint = str(request.base_url).rstrip("/")
-    platform_name = platform.strip().lower()
-    if platform_name not in {"macos", "windows"}:
-        user_agent = request.headers.get("user-agent", "").lower()
-        platform_name = (
-            "windows"
-            if "windows" in user_agent
-            else "macos"
-            if "macintosh" in user_agent or "mac os" in user_agent
-            else ""
-        )
-    if platform_name not in {"macos", "windows"}:
-        macos = latest_skill_artifact("macos")
-        windows = latest_skill_artifact("windows")
-        platform_name = (
-            "unified"
-            if (
-                (macos is None and windows is None)
-                or (
-                    macos is not None
-                    and windows is not None
-                    and macos["file_path"] == windows["file_path"]
-                )
-            )
-            else ""
-        )
-    if not platform_name:
-        raise HTTPException(
-            status_code=400,
-            detail="无法识别客户端平台，请重新从当前设备生成安装说明",
-        )
+    del platform
+    platform_name = "unified"
     install_protocol_url = (
         f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
         f"?platform={platform_name}"
@@ -10500,17 +10456,9 @@ def confirm_agent_bootstrap_code(
         f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
         f"?platform={platform_name}"
     )
-    artifact = (
-        latest_skill_artifact("windows")
-        if platform_name == "unified"
-        else latest_skill_artifact(platform_name)
-    )
+    artifact = latest_skill_artifact("workbuddy")
     package_path = Path(str(artifact["file_path"])) if artifact is not None else None
-    plugin_download_url = (
-        f"{public_endpoint}/skills/latest/workbuddy/download"
-        if platform_name == "unified"
-        else f"{public_endpoint}/skills/latest/workbuddy/{platform_name}/download"
-    )
+    plugin_download_url = f"{public_endpoint}/skills/latest/workbuddy/download"
     return JSONResponse(
         {
             "phase": "install_authorized",
@@ -10603,45 +10551,14 @@ def agent_install_protocol(
         raise HTTPException(status_code=410, detail="一次性安装协议已经过期，请回到门户重新复制。")
     public_endpoint = str(request.base_url).rstrip("/")
     install_authorized = bool(enrollment["confirmed_at"])
-    platform_name = platform.strip().lower()
-    if platform_name not in {"macos", "windows"}:
-        user_agent = request.headers.get("user-agent", "").lower()
-        platform_name = (
-            "windows"
-            if "windows" in user_agent
-            else "macos"
-            if "darwin" in user_agent
-            or "macintosh" in user_agent
-            or "mac os" in user_agent
-            else ""
-        )
-    if platform_name not in {"macos", "windows"}:
-        macos = latest_skill_artifact("macos")
-        windows = latest_skill_artifact("windows")
-        if (
-            (macos is None and windows is None)
-            or (
-                macos is not None
-                and windows is not None
-                and macos["file_path"] == windows["file_path"]
-            )
-        ):
-            platform_name = "unified"
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail="请在安装协议地址中指定platform=macos或platform=windows",
-            )
+    del platform
+    platform_name = "unified"
     bootstrap_url = (
         f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
         f"?platform={platform_name}"
     )
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
-    artifact = (
-        latest_skill_artifact("windows")
-        if platform_name == "unified"
-        else latest_skill_artifact(platform_name)
-    )
+    artifact = latest_skill_artifact("workbuddy")
     package_path = (
         Path(str(artifact["file_path"])) if artifact is not None else None
     )
@@ -10670,11 +10587,7 @@ def agent_install_protocol(
                 "purpose": "为当前本地 Agent 安装焦糖知识库签名 MCP 连接器",
             },
             "compatibility": {
-                "platforms": (
-                    ["darwin", "win32"]
-                    if platform_name == "unified"
-                    else ["darwin" if platform_name == "macos" else "win32"]
-                ),
+                "platforms": ["darwin", "win32"],
                 "agent_hosts": [
                     "workbuddy",
                 ],
@@ -10686,26 +10599,17 @@ def agent_install_protocol(
             },
             "review": {
                 "plugin_package": {
-                    "download_url": (
-                        f"{public_endpoint}/skills/latest/workbuddy/download"
-                        if platform_name == "unified"
-                        else f"{public_endpoint}/skills/latest/workbuddy/"
-                        f"{platform_name}/download"
-                    ),
+                    "download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
                     "media_type": "application/zip",
                     "sha256": package_sha256,
                     "signature_required": True,
-                    "contains_fixed_installers": (
-                        ["macos", "windows"]
-                        if platform_name == "unified"
-                        else [platform_name]
-                    ),
+                    "contains_fixed_installers": [],
                     "contains_mcp_server": "jiaotang-kb",
                 },
                 "network_access": [
                     {
                         "origin": public_endpoint,
-                        "purpose": "下载安装器、登记设备公钥、连接知识库 MCP、回传安装状态",
+                        "purpose": "下载签名插件包、登记设备公钥、连接知识库 MCP、回传安装状态",
                     }
                 ],
                 "local_changes": [
@@ -10742,12 +10646,7 @@ def agent_install_protocol(
                     "authorized": True,
                     "type": "signed_workbuddy_plugin",
                     "dynamic_command": False,
-                    "plugin_download_url": (
-                        f"{public_endpoint}/skills/latest/workbuddy/download"
-                        if platform_name == "unified"
-                        else f"{public_endpoint}/skills/latest/workbuddy/"
-                        f"{platform_name}/download"
-                    ),
+                    "plugin_download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
                     "bootstrap_url": bootstrap_url,
                     "steps": [
                         "从已登录门户下载签名 WorkBuddy 插件包。",
@@ -10830,14 +10729,8 @@ def agent_bootstrap_manifest(
             detail="安装说明尚未由用户确认，请回到门户点击“我已审查，继续安装”。",
         )
     public_endpoint = str(request.base_url).rstrip("/")
-    platform_name = platform.strip().lower()
-    if not platform_name:
-        platform_name = "unified"
-    if platform_name not in {"macos", "windows", "unified"}:
-        raise HTTPException(
-            status_code=400,
-            detail="请指定platform=macos或platform=windows",
-        )
+    del platform
+    platform_name = "unified"
     installer_path = BASE_DIR / "installers" / "jiaotang-agent.mjs"
     if not installer_path.is_file():
         raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
@@ -10857,11 +10750,7 @@ def agent_bootstrap_manifest(
             "installer_sha256": installer_sha256,
             "bootstrap_url": bootstrap_url,
             "result_url": result_url,
-            "supported_platforms": (
-                ["darwin", "win32"]
-                if platform_name == "unified"
-                else ["darwin" if platform_name == "macos" else "win32"]
-            ),
+            "supported_platforms": ["darwin", "win32"],
             "supported_hosts": ["workbuddy"],
             "instructions": [
                 "Install only the signed WorkBuddy plugin package downloaded from the authenticated portal.",
@@ -10871,12 +10760,7 @@ def agent_bootstrap_manifest(
                 "Report success only after the server confirms the signed MCP connection.",
             ],
             "workbuddy_plugin": {
-                "download_url": (
-                    f"{public_endpoint}/skills/latest/workbuddy/download"
-                    if platform_name == "unified"
-                    else f"{public_endpoint}/skills/latest/workbuddy/"
-                    f"{platform_name}/download"
-                ),
+                "download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
                 "mcp_server": "jiaotang-kb",
                 "configuration_key": "bootstrap_url",
                 "configuration_sensitive": True,
@@ -11919,26 +11803,16 @@ def web_download_latest_workbuddy_skills(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     del user
-    macos = latest_skill_artifact("macos")
-    windows = latest_skill_artifact("windows")
-    if (
-        macos is not None
-        and windows is not None
-        and macos["file_path"] == windows["file_path"]
-    ):
-        package_path = Path(str(macos["file_path"]))
-        return FileResponse(
-            package_path,
-            filename=str(macos["file_name"]),
-            media_type="application/zip",
-        )
-    raise HTTPException(
-        status_code=409,
-        detail=(
-            "WorkBuddy已按客户端独立发布，请使用"
-            "/skills/latest/workbuddy/macos/download或"
-            "/skills/latest/workbuddy/windows/download"
-        ),
+    release = latest_skill_artifact("workbuddy")
+    if release is None:
+        raise HTTPException(status_code=404, detail="尚未发布 WorkBuddy 版本")
+    package_path = Path(str(release["file_path"]))
+    if not package_path.is_file():
+        raise HTTPException(status_code=503, detail="最新版 WorkBuddy 文件暂不可用")
+    return FileResponse(
+        package_path,
+        filename=f"企业全生命周期助手-V{release['version']}-WorkBuddy.zip",
+        media_type="application/zip",
     )
 
 
@@ -11950,18 +11824,9 @@ def web_download_latest_workbuddy_platform(
     del user
     if platform_name not in {"macos", "windows"}:
         raise HTTPException(status_code=404, detail="不支持的 WorkBuddy 平台")
-    release = latest_skill_artifact(platform_name)
-    if release is None:
-        raise HTTPException(status_code=404, detail="该客户端尚未发布 Skills 版本")
-    version = str(release["version"])
-    platform = next(item for item in workbuddy_platforms(version) if item["id"] == platform_name)
-    if not platform["included"]:
-        raise HTTPException(status_code=404, detail=f"当前版本未包含 {platform['name']} 插件市场包")
-    package_path = Path(str(release["file_path"]))
-    return FileResponse(
-        package_path,
-        filename=f"企业全生命周期助手-V{version}-WorkBuddy-{platform['name']}.zip",
-        media_type="application/zip",
+    return RedirectResponse(
+        "/skills/latest/workbuddy/download",
+        status_code=307,
     )
 
 
@@ -12404,20 +12269,31 @@ def latest_skill_release() -> sqlite3.Row | None:
 
 
 def latest_skill_artifact(target: str) -> dict[str, object] | None:
-    if target not in {"generic", "macos", "windows"}:
+    if target not in {"generic", "workbuddy", "macos", "windows"}:
         raise ValueError(f"未知发布目标：{target}")
     with closing(database()) as connection:
+        targets = (
+            ("workbuddy", "windows", "macos")
+            if target == "workbuddy"
+            else (target,)
+        )
+        placeholders = ",".join("?" for _ in targets)
         row = connection.execute(
-            """
+            f"""
             SELECT r.id,r.version,r.release_notes,r.published_at,
                    a.file_name,a.file_path,a.sha256,a.target
             FROM skill_release_artifacts a
             JOIN skill_releases r ON r.id=a.release_id
-            WHERE a.target=?
-            ORDER BY r.published_at DESC,r.id DESC
+            WHERE a.target IN ({placeholders})
+            ORDER BY r.published_at DESC,r.id DESC,
+                     CASE a.target
+                         WHEN 'workbuddy' THEN 0
+                         WHEN 'windows' THEN 1
+                         ELSE 2
+                     END
             LIMIT 1
             """,
-            (target,),
+            targets,
         ).fetchone()
         if row is not None:
             return dict(row)
@@ -12437,7 +12313,7 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
             continue
         if target == "generic" and Path(str(release["file_path"])).is_file():
             return {**dict(release), "target": "generic"}
-        if target in {"macos", "windows"}:
+        if target in {"workbuddy", "macos", "windows"}:
             legacy = workbuddy_skill_package(str(release["version"]))
             if legacy.is_file():
                 return {
@@ -12450,88 +12326,55 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
     return None
 
 
-def workbuddy_skill_package(
-    version: str,
-    platform_name: str | None = None,
-) -> Path:
-    if platform_name in {"macos", "windows"}:
-        with closing(database()) as connection:
-            row = connection.execute(
-                """
-                SELECT a.file_path
-                FROM skill_release_artifacts a
-                JOIN skill_releases r ON r.id=a.release_id
-                WHERE r.version=? AND a.target=?
-                """,
-                (version, platform_name),
-            ).fetchone()
-        if row is not None:
-            return Path(str(row["file_path"]))
+def workbuddy_skill_package(version: str) -> Path:
+    with closing(database()) as connection:
+        row = connection.execute(
+            """
+            SELECT a.file_path
+            FROM skill_release_artifacts a
+            JOIN skill_releases r ON r.id=a.release_id
+            WHERE r.version=? AND a.target IN ('workbuddy','windows','macos')
+            ORDER BY CASE a.target
+                WHEN 'workbuddy' THEN 0
+                WHEN 'windows' THEN 1
+                ELSE 2
+            END
+            LIMIT 1
+            """,
+            (version,),
+        ).fetchone()
+    if row is not None:
+        return Path(str(row["file_path"]))
     return SKILL_RELEASE_DIR / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
 
 
-def workbuddy_platforms(version: str) -> list[dict[str, object]]:
-    definitions = [
-        {
-            "id": "macos",
-            "name": "macOS",
-            "detail": "解压后在 WorkBuddy 内添加本地插件市场",
-        },
-        {
-            "id": "windows",
-            "name": "Windows",
-            "detail": "解压后在 WorkBuddy 内添加本地插件市场",
-        },
-    ]
-    result = []
-    for definition in definitions:
-        host = definition["id"]
-        package_path = workbuddy_skill_package(version, str(host))
-        names: set[str] = set()
-        if package_path.is_file():
-            try:
-                with zipfile.ZipFile(package_path) as archive:
-                    names = set(archive.namelist())
-            except zipfile.BadZipFile:
-                names = set()
-        included = (
-            any(name.endswith("/.codebuddy-plugin/marketplace.json") for name in names)
-            and any(name.endswith("/.codebuddy-plugin/plugin.json") for name in names)
-        )
-        result.append(
-            {
-                **definition,
-                "included": included,
-                "download_url": f"/skills/latest/workbuddy/{host}/download",
-            }
-        )
-    return result
+def workbuddy_artifact(version: str) -> dict[str, object]:
+    package_path = workbuddy_skill_package(version)
+    names: set[str] = set()
+    if package_path.is_file():
+        try:
+            with zipfile.ZipFile(package_path) as archive:
+                names = set(archive.namelist())
+        except zipfile.BadZipFile:
+            names = set()
+    included = (
+        any(name.endswith("/.codebuddy-plugin/marketplace.json") for name in names)
+        and any(name.endswith("/.codebuddy-plugin/plugin.json") for name in names)
+    )
+    return {
+        "id": "workbuddy",
+        "name": "WorkBuddy",
+        "version": version if included else None,
+        "included": included,
+        "download_url": "/skills/latest/workbuddy/download",
+    }
 
 
-def latest_workbuddy_platforms() -> list[dict[str, object]]:
-    result = []
-    for platform_name in ("macos", "windows"):
-        artifact = latest_skill_artifact(platform_name)
-        if artifact is None:
-            platform = next(
-                item
-                for item in workbuddy_platforms("0.0.0")
-                if item["id"] == platform_name
-            )
-            result.append({**platform, "version": None})
-            continue
-        platform = next(
-            item
-            for item in workbuddy_platforms(str(artifact["version"]))
-            if item["id"] == platform_name
-        )
-        result.append(
-            {
-                **platform,
-                "version": str(artifact["version"]),
-            }
-        )
-    return result
+def latest_workbuddy_artifact() -> dict[str, object]:
+    artifact = latest_skill_artifact("workbuddy")
+    if artifact is None:
+        return workbuddy_artifact("0.0.0")
+    return workbuddy_artifact(str(artifact["version"]))
 
 
 @app.get("/v1/skills/latest", response_model=SkillLatestResponse)
@@ -12565,7 +12408,7 @@ def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
     download_url = (
         "/v1/skills/latest/download"
         if target == "generic"
-        else f"/v1/skills/latest/workbuddy/{target}/download"
+        else "/v1/skills/latest/workbuddy/download"
     )
     return SkillChannelArtifactResponse(
         id=target,
@@ -12588,8 +12431,7 @@ def latest_skill_channels(
     return SkillChannelsResponse(
         channels=[
             skill_channel_artifact("generic"),
-            skill_channel_artifact("macos"),
-            skill_channel_artifact("windows"),
+            skill_channel_artifact("workbuddy"),
         ]
     )
 
@@ -12601,8 +12443,7 @@ def web_skill_channels(
     del user
     channels = [
         skill_channel_artifact("generic"),
-        skill_channel_artifact("macos"),
-        skill_channel_artifact("windows"),
+        skill_channel_artifact("workbuddy"),
     ]
     for channel in channels:
         if not channel.available:
@@ -12610,7 +12451,7 @@ def web_skill_channels(
         channel.download_url = (
             "/skills/latest/download"
             if channel.id == "generic"
-            else f"/skills/latest/workbuddy/{channel.id}/download"
+            else "/skills/latest/workbuddy/download"
         )
     return SkillChannelsResponse(channels=channels)
 
@@ -12632,26 +12473,16 @@ def download_latest_workbuddy_skills(
     user: Annotated[sqlite3.Row, Depends(require_api_user)],
 ):
     del user
-    macos = latest_skill_artifact("macos")
-    windows = latest_skill_artifact("windows")
-    if (
-        macos is not None
-        and windows is not None
-        and macos["file_path"] == windows["file_path"]
-    ):
-        package_path = Path(str(macos["file_path"]))
-        return FileResponse(
-            package_path,
-            filename=str(macos["file_name"]),
-            media_type="application/zip",
-        )
-    raise HTTPException(
-        status_code=409,
-        detail=(
-            "WorkBuddy已按客户端独立发布，请使用"
-            "/skills/latest/workbuddy/macos/download或"
-            "/skills/latest/workbuddy/windows/download"
-        ),
+    release = latest_skill_artifact("workbuddy")
+    if release is None:
+        raise HTTPException(status_code=404, detail="尚未发布 WorkBuddy 版本")
+    package_path = Path(str(release["file_path"]))
+    if not package_path.is_file():
+        raise HTTPException(status_code=503, detail="最新版 WorkBuddy 文件暂不可用")
+    return FileResponse(
+        package_path,
+        filename=f"企业全生命周期助手-V{release['version']}-WorkBuddy.zip",
+        media_type="application/zip",
     )
 
 
@@ -12663,16 +12494,9 @@ def download_latest_workbuddy_platform_skills(
     del user
     if platform_name not in {"macos", "windows"}:
         raise HTTPException(status_code=404, detail="未知 WorkBuddy 客户端")
-    release = latest_skill_artifact(platform_name)
-    if release is None:
-        raise HTTPException(status_code=404, detail="当前客户端尚未发布 WorkBuddy 包")
-    package_path = Path(str(release["file_path"]))
-    if not package_path.is_file():
-        raise HTTPException(status_code=503, detail="最新版 WorkBuddy 文件暂不可用")
-    return FileResponse(
-        package_path,
-        filename=str(release["file_name"]),
-        media_type="application/zip",
+    return RedirectResponse(
+        "/v1/skills/latest/workbuddy/download",
+        status_code=307,
     )
 
 

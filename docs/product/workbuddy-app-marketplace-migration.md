@@ -5,6 +5,7 @@
 ## 决策
 
 - 用户安装包不再包含或启动 macOS `.command`、Windows `.cmd`、`.ps1` 固定安装器。
+- macOS 与 Windows 共用一个跨平台 WorkBuddy 插件市场 ZIP，不再生成或维护系统专用版本。
 - 客户端不调用 WorkBuddy 外部 CLI，不检测 WorkBuddy 进程，也不要求退出 WorkBuddy。
 - 用户下载并核验本地插件市场 ZIP，解压后在 WorkBuddy 内执行：
 
@@ -23,17 +24,22 @@
 
 1. 修改并重签 `skill-release-manager`，使 WorkBuddy 套件生成器只输出签名市场 ZIP，
    不生成旁车安装器及其签名文件。
-2. 重新生成 WorkBuddy macOS 与 Windows 候选包，确认归档中没有 `.command`、`.cmd`
-   或 `.ps1` 安装入口。
+2. 只生成一个 WorkBuddy 候选包，确认其同时声明 `darwin` 与 `win32` 兼容，并且归档中
+   没有 `.command`、`.cmd` 或 `.ps1` 安装入口。
 3. 保留 `.codebuddy-plugin/marketplace.json`、插件清单、MCP 连接器、Ed25519 签名清单
    和逐文件 SHA-256。
-4. 在 macOS 与 Windows WorkBuddy 内用斜杠命令完成真实安装、启用、更新、卸载和技能触发。
+4. 对同一个候选包分别在 macOS 与 Windows WorkBuddy 内用斜杠命令完成真实安装、启用、
+   更新、卸载和技能触发，并核对两端下载哈希完全一致。
 5. 只有正式发布指令到达后才能重签发布器、生成候选包、递增版本或部署生产。
 
 ## 兼容性
 
 既有 V1.3.1.2 包不会被远程修改。新版客户端即使下载到含旧安装器的历史包，也只定位 ZIP
 并显示 WorkBuddy 应用内市场指引，不会提取或执行旧安装器。
+
+历史数据库中的 `macos`、`windows` 目标只作为兼容来源保留；服务端将其中最新的
+WorkBuddy 签名包映射为统一 `workbuddy` 通道。旧平台下载 URL 使用临时兼容跳转，不再作为
+新发布目标，也不在页面和管理器中展示。
 
 ## 下载权限边界
 

@@ -151,21 +151,21 @@ def test_validate_packages_accepts_patch_release(tmp_path: Path) -> None:
     assert result["skill_count"] == 48
 
 
-def test_windows_only_hotfix_accepts_four_part_version(tmp_path: Path) -> None:
+def test_workbuddy_hotfix_accepts_four_part_version(tmp_path: Path) -> None:
     _, workbuddy = make_packages(
         tmp_path,
         tag="V1.3.1.1",
         semantic_version="1.3.1.1",
     )
     result = MODULE.validate_release_packages(
-        {"windows": workbuddy},
+        {"workbuddy": workbuddy},
         "1.3.1.1",
     )
-    assert result["targets"] == ["windows"]
+    assert result["targets"] == ["workbuddy"]
     assert result["skill_count"] == 48
 
 
-def test_selective_stage_and_promote_windows_only(tmp_path: Path) -> None:
+def test_selective_stage_and_promote_workbuddy_only(tmp_path: Path) -> None:
     database = tmp_path / "portal.db"
     release_dir = tmp_path / "releases"
     _, workbuddy = make_packages(
@@ -178,13 +178,13 @@ def test_selective_stage_and_promote_windows_only(tmp_path: Path) -> None:
     staged = MODULE.stage_selective(
         database,
         release_dir,
-        {"windows": workbuddy},
+        {"workbuddy": workbuddy},
         "1.3.1.1",
-        "Windows hotfix",
+        "WorkBuddy hotfix",
         "abc123",
         "https://github.example/releases/V1.3.1.1",
     )
-    assert staged["targets"] == ["windows"]
+    assert staged["targets"] == ["workbuddy"]
     assert staged["release_state"] == "releasing"
 
     promoted = MODULE.promote_selective(
@@ -195,9 +195,9 @@ def test_selective_stage_and_promote_windows_only(tmp_path: Path) -> None:
     assert promoted["release_state"] == "published"
     assert (
         release_dir
-        / "企业全生命周期助手-V1.3.1.1-WorkBuddy-Windows.zip"
+        / "企业全生命周期助手-V1.3.1.1-WorkBuddy.zip"
     ).is_file()
     with sqlite3.connect(database) as connection:
         assert connection.execute(
             "SELECT target FROM skill_release_artifacts"
-        ).fetchall() == [("windows",)]
+        ).fetchall() == [("workbuddy",)]

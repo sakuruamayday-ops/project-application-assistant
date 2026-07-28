@@ -3570,14 +3570,14 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         manual = confirmed.json()["manual_configuration"]
         assert manual["configuration_key"] == "bootstrap_url"
         assert manual["mcp_server"] == "jiaotang-kb"
-        assert manual["platform"] == "macos"
+        assert manual["platform"] == "unified"
         assert manual["plugin_download_url"].endswith(
-            "/skills/latest/workbuddy/macos/download"
+            "/skills/latest/workbuddy/download"
         )
         assert manual["bootstrap_url"].endswith(
-            f"/v1/agent-bootstrap/{enrollment_code}?platform=macos"
+            f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
         )
-        assert f"?platform=macos" in confirmed.json()["prompt"]
+        assert f"?platform=unified" in confirmed.json()["prompt"]
 
         authorized_protocol = client.get(
             f"/v1/agent-install/{enrollment_code}?platform=macos"
@@ -3590,7 +3590,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
             "signed_workbuddy_plugin"
         )
         assert authorized_protocol.json()["installation"]["bootstrap_url"].endswith(
-            f"/v1/agent-bootstrap/{enrollment_code}?platform=macos"
+            f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
         )
 
         installer = client.get("/install/jiaotang-agent.mjs")
@@ -4176,7 +4176,7 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
         page = client.get("/skills")
         assert "macOS" in page.text
         assert "Windows" in page.text
-        assert "macOS 与 Windows 下载通道独立维护" in page.text
+        assert "macOS 与 Windows 不再维护独立版本" in page.text
         assert "WorkBuddy 内添加本地插件市场" in page.text
         assert "等待人工反馈" not in page.text
         assert "人工反馈" not in page.text
@@ -4191,7 +4191,7 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
             assert download.content == package.read_bytes()
 
 
-def test_client_channels_keep_independent_latest_versions(tmp_path):
+def test_legacy_client_artifacts_are_exposed_as_one_workbuddy_channel(tmp_path):
     module = load_app(tmp_path)
     generic = tmp_path / "generic-v1.3.1.zip"
     generic.write_bytes(b"generic-v1.3.1")
@@ -4315,13 +4315,9 @@ def test_client_channels_keep_independent_latest_versions(tmp_path):
             item["id"]: item for item in web_channels.json()["channels"]
         }
         assert web_artifacts["generic"]["download_url"] == "/skills/latest/download"
-        assert (
-            web_artifacts["macos"]["download_url"]
-            == "/skills/latest/workbuddy/macos/download"
-        )
-        assert (
-            web_artifacts["windows"]["download_url"]
-            == "/skills/latest/workbuddy/windows/download"
+        assert set(web_artifacts) == {"generic", "workbuddy"}
+        assert web_artifacts["workbuddy"]["download_url"] == (
+            "/skills/latest/workbuddy/download"
         )
         pwa_manifest = client.get("/skills-manager/manifest.webmanifest")
         assert pwa_manifest.status_code == 200
@@ -4332,23 +4328,20 @@ def test_client_channels_keep_independent_latest_versions(tmp_path):
         assert client.get("/skills/latest/download").content == generic.read_bytes()
         assert (
             client.get("/skills/latest/workbuddy/macos/download").content
-            == macos.read_bytes()
+            == windows.read_bytes()
         )
         assert (
             client.get("/skills/latest/workbuddy/windows/download").content
             == windows.read_bytes()
         )
-        assert client.get("/skills/latest/workbuddy/download").status_code == 409
+        assert client.get("/skills/latest/workbuddy/download").content == windows.read_bytes()
         page = client.get("/skills")
         assert page.status_code == 200
         assert "打开双端管理器" in page.text
-        assert 'class="skill-platform-card is-macos" data-platform-version="1.3.1"' in page.text
-        assert (
-            'class="skill-platform-card is-windows" data-platform-version="1.3.1.1"'
-            in page.text
-        )
-        assert "下载 macOS 包" in page.text
-        assert "下载 Windows 包" in page.text
+        assert 'class="skill-platform-card is-workbuddy" data-platform-version="1.3.1.1"' in page.text
+        assert "下载 WorkBuddy 包" in page.text
+        assert "下载 macOS 包" not in page.text
+        assert "下载 Windows 包" not in page.text
         assert client.get("/v1/skills/channels").status_code == 401
         channels = client.get(
             "/v1/skills/channels",
@@ -4358,24 +4351,14 @@ def test_client_channels_keep_independent_latest_versions(tmp_path):
         assert channels.json()["schema"] == "jiaotang-skill-channels/v1"
         artifacts = {item["id"]: item for item in channels.json()["channels"]}
         assert artifacts["generic"]["version"] == "1.3.1"
-        assert artifacts["macos"]["version"] == "1.3.1"
-        assert artifacts["windows"]["version"] == "1.3.1.1"
-        assert artifacts["macos"]["download_url"].endswith(
-            "/v1/skills/latest/workbuddy/macos/download"
-        )
-        assert artifacts["windows"]["download_url"].endswith(
-            "/v1/skills/latest/workbuddy/windows/download"
+        assert set(artifacts) == {"generic", "workbuddy"}
+        assert artifacts["workbuddy"]["version"] == "1.3.1.1"
+        assert artifacts["workbuddy"]["download_url"].endswith(
+            "/v1/skills/latest/workbuddy/download"
         )
         assert (
             client.get(
-                artifacts["macos"]["download_url"],
-                headers=api_headers(raw_token),
-            ).content
-            == macos.read_bytes()
-        )
-        assert (
-            client.get(
-                artifacts["windows"]["download_url"],
+                artifacts["workbuddy"]["download_url"],
                 headers=api_headers(raw_token),
             ).content
             == windows.read_bytes()
@@ -4541,7 +4524,7 @@ def test_selective_macos_release_keeps_legacy_generic_and_windows_downloads(tmp_
         )
         assert (
             client.get("/skills/latest/workbuddy/windows/download").content
-            == old_workbuddy.read_bytes()
+            == new_macos.read_bytes()
         )
 
 

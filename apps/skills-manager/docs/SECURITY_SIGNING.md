@@ -74,12 +74,12 @@ UAC 管理员授权只允许程序执行需要提升权限的操作，不会生�
 
 管理器不会执行门户返回的任意命令，也不启动 `.command`、`.cmd`、PowerShell 或 WorkBuddy 外部 CLI。它只会：
 
-1. 下载已声明的 macOS 或 Windows WorkBuddy 通道包。
+1. 下载跨平台 WorkBuddy 插件市场包。
 2. 完成 Ed25519 签名与清单内全部文件哈希校验。
 3. 在文件管理器中定位已验证 ZIP。
 4. 用户解压后，在正在运行的 WorkBuddy 内执行 `/plugin marketplace add <解压后的市场目录>`，再安装并启用 `jiaotang-workbuddy-skills@jiaotang`。
 
-应用内命令由 WorkBuddy 自己处理，不占用第二个宿主进程，因此不再设置“完全退出 WorkBuddy”的运行锁。平台包仍可独立发布，Windows 热修复不会强制 macOS 更新。
+应用内命令由 WorkBuddy 自己处理，不占用第二个宿主进程，因此不再设置“完全退出 WorkBuddy”的运行锁。macOS 与 Windows 使用同一个候选包，并在发布前分别完成实机验收。
 
 ## 发布阻断条件
 

@@ -258,7 +258,7 @@ function renderChannels() {
     return;
   }
   empty.hidden = true;
-  const names = { generic: "通用 Skills", macos: "WorkBuddy macOS", windows: "WorkBuddy Windows" };
+  const names = { generic: "通用 Skills", workbuddy: "WorkBuddy 跨平台包" };
   grid.innerHTML = state.channels.channels.map((channel) => {
     const artifact = state.artifacts.get(channel.id);
     const verified = Boolean(artifact);
@@ -346,7 +346,7 @@ async function connectPortal() {
     updateConnection(true);
     renderChannels();
     navigate("updates");
-    toast("发布门户已连接", `已读取 ${state.channels.channels.length} 个独立发布通道。`);
+    toast("发布门户已连接", `已读取 ${state.channels.channels.length} 个发布通道。`);
   } catch (error) {
     toast("连接失败", error.message, "error");
   } finally {
@@ -417,8 +417,7 @@ async function handlePlatformAction(button) {
   if (!platform || !bridge) return;
   try {
     if (button.dataset.platformAction === "workbuddy") {
-      const channelId = state.overview.os.platform === "win32" ? "windows" : "macos";
-      const artifact = await ensureArtifact(channelId, button);
+      const artifact = await ensureArtifact("workbuddy", button);
       await bridge.showItem(artifact.downloaded.path);
       toast(
         "WorkBuddy 插件市场包已就绪",

@@ -48,7 +48,7 @@
               <p id="capability-detail">缺少必要能力时自动降级为只下载，不尝试写目录或替换旧版本。</p>
             </article>
           </div>
-          <div class="section-head"><div><p class="eyebrow">CHANNELS</p><h2>独立更新通道</h2></div><p>Windows 热修复不会推动 macOS 强制更新。</p></div>
+          <div class="section-head"><div><p class="eyebrow">CHANNELS</p><h2>更新通道</h2></div><p>通用 Skills 与跨平台 WorkBuddy 包分别更新。</p></div>
           <div class="channels" id="channels"></div>
           <div class="principles">
             <article><b>01</b><strong>证书缺口已绕开</strong><p>PWA由浏览器从HTTPS门户安装，不分发未知原生应用。</p></article>
@@ -60,7 +60,7 @@
         <section class="view" data-panel="platforms">
           <div class="section-head page"><div><p class="eyebrow">ADAPTERS</p><h2>平台能力分层</h2></div><p>“支持 Agent”不等于“有稳定外部 Skills 安装接口”。</p></div>
           <div class="platform-grid">
-            <article class="platform full"><span>签名包下载</span><h3>WorkBuddy</h3><p>下载当前系统的发布者签名包。Ed25519可验证内容来源，但不等于操作系统代码签名；系统拦截时不会引导绕过。</p><button class="ghost" data-workbuddy>下载当前系统包</button></article>
+            <article class="platform full"><span>签名包下载</span><h3>WorkBuddy</h3><p>macOS 与 Windows 共用同一个发布者签名插件市场包。Ed25519可验证内容来源，但不等于操作系统代码签名；系统拦截时不会引导绕过。</p><button class="ghost" data-workbuddy>下载 WorkBuddy 包</button></article>
             <article class="platform full"><span>完整同步</span><h3>TRAE 中国版</h3><p>授权并选择 ~/.trae-cn/skills 后同步49项正式技能。</p><button class="ghost" data-sync>选择目录</button></article>
             <article class="platform full"><span>完整同步</span><h3>Kimi Code</h3><p>授权并选择 ~/.agents/skills，更新后在Kimi中新建会话复验。</p><button class="ghost" data-sync>选择目录</button></article>
             <article class="platform guided"><span>引导导入</span><h3>通义灵码</h3><p>官方未公开稳定外部安装接口，不自动修改内部目录。</p><button class="ghost" data-generic-download>下载已验证包</button></article>
