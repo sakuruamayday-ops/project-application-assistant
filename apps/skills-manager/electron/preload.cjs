@@ -11,6 +11,11 @@ contextBridge.exposeInMainWorld("jiaotang", {
     planId,
     confirmation: "INSTALL",
   }),
+  planDetectedInstall: () => ipcRenderer.invoke("install:plan-detected"),
+  executeDetectedInstall: (batchId) => ipcRenderer.invoke("install:execute-detected", {
+    batchId,
+    confirmation: "INSTALL_ALL",
+  }),
   stageWorkBuddy: (channelId) => ipcRenderer.invoke("install:stage-workbuddy", { channelId }),
   launchWorkBuddy: (staged) => ipcRenderer.invoke("install:launch-workbuddy", {
     staged,

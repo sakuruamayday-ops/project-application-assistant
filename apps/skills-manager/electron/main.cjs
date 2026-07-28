@@ -9,7 +9,12 @@ const {
   ipcMain,
   shell,
 } = require("electron");
-const { readPlatformConfig, detectPlatforms, uniqueManagedTargets } = require("../core/platforms.cjs");
+const {
+  automaticDetectedTargets,
+  readPlatformConfig,
+  detectPlatforms,
+  uniqueManagedTargets,
+} = require("../core/platforms.cjs");
 const { readCatalog, buildCompatibilityReport } = require("../core/compatibility.cjs");
 const { fetchChannels, downloadArtifact, normalizedPortalUrl } = require("../core/portal-client.cjs");
 const { loadExistingDeviceCredentials } = require("../core/device-auth.cjs");
@@ -36,6 +41,7 @@ const state = {
   channels: null,
   verifiedArtifacts: new Map(),
   installPlans: new Map(),
+  installBatches: new Map(),
 };
 
 function managerPaths() {
@@ -232,6 +238,53 @@ ipcMain.handle("install:execute-generic", (_event, payload) => {
   });
   state.installPlans.delete(payload.planId);
   return result;
+});
+
+ipcMain.handle("install:plan-detected", () => {
+  const artifact = state.verifiedArtifacts.get("generic");
+  if (!artifact) throw new Error("请先下载并验证通用 Skills 包");
+  const platforms = detectPlatforms(readPlatformConfig(platformConfigPath));
+  const targets = automaticDetectedTargets(platforms);
+  if (!targets.length) throw new Error("没有发现可自动安装的 Agent 平台");
+  const plans = targets.map((target) => planGenericInstall({
+    archivePath: artifact.downloaded.path,
+    targetRoot: target.targetRoot,
+    registryPath: managerPaths().registry,
+    platformIds: target.platformIds,
+  }));
+  const batchId = crypto.randomUUID();
+  state.installBatches.set(batchId, plans);
+  return {
+    batchId,
+    targets: plans.map((plan) => ({
+      targetRoot: plan.targetRoot,
+      platformIds: plan.platformIds,
+      skillCount: plan.skillCount,
+      additions: plan.additions.length,
+      replacements: plan.replacements.length,
+      conflicts: plan.conflicts,
+    })),
+  };
+});
+
+ipcMain.handle("install:execute-detected", (_event, payload) => {
+  if (payload.confirmation !== "INSTALL_ALL") throw new Error("批量安装确认无效");
+  const plans = state.installBatches.get(payload.batchId);
+  const artifact = state.verifiedArtifacts.get("generic");
+  if (!plans || !artifact) throw new Error("批量安装计划已失效，请重新生成");
+  if (plans.some((plan) => plan.conflicts.length)) {
+    throw new Error("存在未登记的同名目录，已阻止批量覆盖");
+  }
+  const results = [];
+  for (const plan of plans) {
+    results.push(executeGenericInstall({
+      plan,
+      registryPath: managerPaths().registry,
+      artifactSha256: artifact.verification.archiveSha256,
+    }));
+  }
+  state.installBatches.delete(payload.batchId);
+  return { results };
 });
 
 ipcMain.handle("install:stage-workbuddy", (_event, payload) => {

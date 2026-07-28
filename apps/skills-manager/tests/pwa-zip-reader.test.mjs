@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pathToFileURL } from "node:url";
-
 import AdmZip from "adm-zip";
 
 globalThis.window = {};
@@ -9,7 +7,8 @@ const readerUrl = new URL(
   "../../../services/knowledge-portal/static/skills-manager/zip-reader.js",
   import.meta.url,
 );
-await import(`${pathToFileURL(readerUrl.pathname).href}?test=${Date.now()}`);
+readerUrl.searchParams.set("test", String(Date.now()));
+await import(readerUrl.href);
 
 function exactArrayBuffer(buffer) {
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);

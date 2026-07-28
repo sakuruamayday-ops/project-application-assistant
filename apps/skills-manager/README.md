@@ -17,7 +17,8 @@
 
 ## 原生工程验证版已实现
 
-- 自动识别 WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder 与 Cherry Studio，并按“完整同步、适配导入、引导导入”分级。
+- 在 macOS 系统应用目录、Windows 常见程序目录和已配置命令位置进行有界扫描，自动识别 WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder 与 Cherry Studio；不递归读取用户文档。
+- 对已发现且有稳定用户级目录的平台提供“一键安装到已发现平台”，自动去重共享目录；WorkBuddy 继续使用独立固定安装器，引导型平台只打开已验签导入包。
 - 通用 Skills、WorkBuddy macOS、WorkBuddy Windows 三条独立更新通道。
 - 普通成员复用本机钥匙串或DPAPI中的既有设备凭据并逐请求签名，不重新绑定设备；管理员令牌只保存在当前进程内。
 - SHA-256、固定 Ed25519 公钥、OpenSSH 签名及逐文件哈希验证。
@@ -39,6 +40,8 @@ npm start
 ```
 
 原生正式发行要求见 `docs/SECURITY_SIGNING.md`。未通过 Apple 公证或 Windows Authenticode 门禁的构建只能用于开发测试，不能用“右键打开”“仍要运行”或关闭系统防护作为发布说明。
+
+管理员授权不是代码签名。macOS 的“仍要打开”和 Windows 的 UAC/“仍要运行”只能让当前用户在特定策略下执行一次未签名程序，不能证明发布者身份、不能证明下载后未被篡改，也不能替代 Gatekeeper、Smart App Control 或 SmartScreen 的信任判断。Skills 写入用户目录本身不需要管理员权限，管理器不会为了掩盖证书缺失而申请提权。
 
 ## 数据边界
 

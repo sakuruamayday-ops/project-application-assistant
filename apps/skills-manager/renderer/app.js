@@ -155,17 +155,34 @@ function renderPlatformStrip() {
 }
 
 function platformAction(platform) {
+  if (!platform.detected) {
+    return `<button class="button ghost" type="button" disabled>未发现</button>`;
+  }
   if (platform.id === "workbuddy") {
-    return `<button class="button ghost" data-platform-action="workbuddy" data-platform-id="${platform.id}" type="button">准备安装</button>`;
+    return `<button class="button ghost" data-platform-action="workbuddy" data-platform-id="${platform.id}" type="button">一键启动安装</button>`;
   }
   if (platform.canInstallAutomatically) {
-    return `<button class="button ghost" data-platform-action="generic" data-platform-id="${platform.id}" type="button">准备同步</button>`;
+    return `<button class="button ghost" data-platform-action="generic" data-platform-id="${platform.id}" type="button">一键安装</button>`;
   }
-  return `<button class="button ghost" data-platform-action="guided" data-platform-id="${platform.id}" type="button">获取导入包</button>`;
+  return `<button class="button ghost" data-platform-action="guided" data-platform-id="${platform.id}" type="button">打开导入包</button>`;
 }
 
 function renderPlatforms() {
   const list = document.querySelector("#platform-list");
+  const detected = state.overview.platforms.filter((item) => item.detected);
+  const automatic = detected.filter((item) => item.canInstallAutomatically);
+  const workBuddy = detected.some((item) => item.id === "workbuddy");
+  document.querySelector("#discovery-title").textContent = detected.length
+    ? `已发现 ${detected.length} 个 Agent 平台`
+    : "暂未发现已安装的 Agent 平台";
+  document.querySelector("#discovery-detail").textContent = detected.length
+    ? `${automatic.length} 个可直接同步${workBuddy ? "，WorkBuddy 使用独立固定安装器" : ""}；其余平台按官方界面导入。`
+    : "扫描范围包括系统应用目录、常见用户安装目录和已配置命令位置。";
+  const installAll = document.querySelector("#install-detected-button");
+  installAll.disabled = automatic.length === 0;
+  installAll.textContent = automatic.length
+    ? `一键安装到 ${automatic.length} 个自动目标`
+    : "没有可自动安装的目标";
   list.innerHTML = state.overview.platforms.map((platform) => `
     <article class="platform-row">
       <div class="platform-monogram">${escapeHtml(monogram(platform.name))}</div>
@@ -175,7 +192,7 @@ function renderPlatforms() {
       </div>
       <div>
         <span class="support-badge ${platform.support}">${escapeHtml(supportLabels[platform.support] || "专用适配")}</span>
-        <small>${platform.detected ? "本机已发现客户端" : "本机暂未发现客户端"}</small>
+        <small>${platform.detected ? `已发现 · ${escapeHtml(platform.detectedPaths?.[0] || "已知入口")}` : "本机暂未发现客户端"}</small>
       </div>
       <div class="path-value" title="${escapeHtml(platform.targetRoot || "通过平台界面导入")}">
         ${escapeHtml(platform.targetRoot || "通过平台界面导入")}
@@ -359,6 +376,43 @@ async function ensureArtifact(channelId, button) {
   }
 }
 
+async function installToDetectedPlatforms(button) {
+  if (!bridge) {
+    toast("界面预览模式", "桌面进程启动后才能扫描和安装。");
+    return;
+  }
+  try {
+    await ensureArtifact("generic", button);
+    const batch = await bridge.planDetectedInstall();
+    const conflicts = batch.targets.flatMap((target) => target.conflicts || []);
+    const targetRows = batch.targets.map((target) => `
+      <li>
+        <strong>${escapeHtml(target.platformIds.join(" + "))}</strong>
+        <span class="path-value">${escapeHtml(target.targetRoot)}</span>
+        <small>${target.skillCount} 项技能 · 新增 ${target.additions} · 更新 ${target.replacements}</small>
+      </li>
+    `).join("");
+    const conflictCopy = conflicts.length
+      ? `<p><strong>发现 ${conflicts.length} 个未登记同名目录，已阻止覆盖。</strong></p>`
+      : "<p>每个目标独立执行原子更新并保留回滚副本；不会请求管理员权限。</p>";
+    openAction({
+      kicker: "DISCOVERED AGENTS",
+      title: conflicts.length ? "需要先处理目录冲突" : `安装到 ${batch.targets.length} 个已发现目标`,
+      html: `${conflictCopy}<ul class="install-target-list">${targetRows}</ul><p>WorkBuddy 如已发现，仍需使用该平台行内的固定安装器按钮。</p>`,
+      confirmLabel: "确认一键安装",
+      disabled: conflicts.length > 0,
+      onConfirm: async () => {
+        const result = await bridge.executeDetectedInstall(batch.batchId);
+        closeActionDialog();
+        await refreshOverview();
+        toast("多平台安装完成", `${result.results.length} 个 Skills 目录已更新并登记回滚点。`);
+      },
+    });
+  } catch (error) {
+    if (error.message !== "请先连接发布门户") toast("一键安装未完成", error.message, "error");
+  }
+}
+
 async function handlePlatformAction(button) {
   const platform = state.overview.platforms.find((item) => item.id === button.dataset.platformId);
   if (!platform || !bridge) return;
@@ -456,6 +510,12 @@ document.addEventListener("click", async (event) => {
     await refreshOverview();
     toast("本机扫描完成", "平台入口、托管目录和系统签名状态已刷新。");
   }
+  if (event.target.closest("#platform-rescan-button")) {
+    await refreshOverview();
+    toast("本机扫描完成", "只检查系统应用目录和常见安装位置，没有读取用户文档。");
+  }
+  const installDetected = event.target.closest("#install-detected-button");
+  if (installDetected) await installToDetectedPlatforms(installDetected);
   const channelButton = event.target.closest("[data-download-channel]");
   if (channelButton && bridge) {
     try {
@@ -495,4 +555,6 @@ document.querySelector("#connect-form").addEventListener("submit", (event) => {
   connectPortal();
 });
 
+const requestedView = new URLSearchParams(window.location.search).get("view");
+if (requestedView && viewMeta[requestedView]) navigate(requestedView);
 refreshOverview();
