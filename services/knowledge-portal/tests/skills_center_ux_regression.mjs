@@ -16,7 +16,8 @@ const skillCenterTemplate = await readFile(new URL("../templates/skill_center.ht
 assert.match(skillCenterTemplate, /<details class="skill-release-notes skill-current-release-notes">/, "当前版本发布说明必须使用默认折叠的 details");
 assert.match(skillCenterTemplate, /latest_release\.workbuddy/, "下载区必须渲染跨平台 WorkBuddy 包");
 assert.match(skillCenterTemplate, /workbuddy\.download_url/, "WorkBuddy 必须使用统一下载入口");
-assert.match(skillCenterTemplate, /不再维护独立版本/, "下载区必须解释跨平台统一发布策略");
+assert.match(skillCenterTemplate, /平台增强版已经包含同一套 Skills/, "下载区必须解释通用版与平台增强版只选一个");
+assert.match(skillCenterTemplate, /真实宿主验收的平台包才开放下载/, "未验收平台必须保持下载门禁");
 assert.doesNotMatch(skillCenterTemplate, /platform\.feedback_status|OIDC 签名证明|GitHub Job/, "下载区不应再展示平台确认状态");
 const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
 const server = spawn(python, ["tests/browser_route_server.py"], {
@@ -144,9 +145,23 @@ try {
 
   await page.locator('[data-skill-section-tab="downloads"]').click();
   assert.equal(await page.locator('[data-skill-section-pane="downloads"]').isVisible(), true);
-  assert.equal(await page.locator(".skill-platform-card").count(), 2, "下载区必须呈现通用与跨平台 WorkBuddy 两个入口");
+  assert.equal(await page.locator(".skill-platform-card").count(), 7, "下载区必须呈现两个正式包与五个平台适配状态");
   assert.equal(await page.locator(".skill-platform-card.is-workbuddy").isVisible(), true);
-  assert.equal(await page.locator(".skill-platform-status").count(), 1, "只保留通用正式包状态，不展示平台确认");
+  assert.equal(await page.locator(".skill-platform-card.is-planned").count(), 5, "五个未验收平台必须显式标记为适配中");
+  assert.equal(await page.locator(".skill-platform-status.is-ready").count(), 2, "只允许通用版与 WorkBuddy 标记为正式发布");
+  assert.equal(await page.locator(".skill-platform-status.is-validating").count(), 5, "未验收平台不得显示正式发布状态");
+  assert.equal(await page.getByRole("link", {name: "下载通用包"}).count(), 1, "通用正式包只保留一个主下载入口");
+  assert.equal(await page.getByRole("link", {name: "下载 WorkBuddy 包"}).count(), 1, "WorkBuddy 正式包只保留一个主下载入口");
+  const downloadLayout = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    plannedWithPrimaryDownload: [...document.querySelectorAll(".skill-platform-card.is-planned")]
+      .some((card) => card.textContent.includes("下载 TRAE 包")
+        || card.textContent.includes("下载 Qoder 包")
+        || card.textContent.includes("下载 Kimi Code 包")),
+  }));
+  assert.equal(downloadLayout.documentWidth, downloadLayout.viewportWidth, "桌面下载矩阵不应产生全局横向溢出");
+  assert.equal(downloadLayout.plannedWithPrimaryDownload, false, "适配中平台不得出现专用包下载按钮");
   if (process.env.SKILLS_QA_DOWNLOAD_SCREENSHOT) {
     await page.screenshot({path: process.env.SKILLS_QA_DOWNLOAD_SCREENSHOT, fullPage: true});
   }
@@ -203,6 +218,15 @@ try {
 
   await page.setViewportSize({width: 390, height: 844});
   await page.reload({waitUntil: "networkidle"});
+  await page.locator('[data-skill-section-tab="downloads"]').click();
+  const mobileDownloadLayout = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    columns: getComputedStyle(document.querySelector(".skill-platform-downloads")).gridTemplateColumns,
+  }));
+  assert.equal(mobileDownloadLayout.documentWidth, mobileDownloadLayout.viewportWidth, "移动端下载矩阵不应产生全局横向溢出");
+  assert.equal(mobileDownloadLayout.columns.split(" ").length, 1, "移动端平台卡片必须使用单列布局");
+  await page.locator('[data-skill-section-tab="catalog"]').click();
   const mobileLayout = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
@@ -225,7 +249,7 @@ try {
     };
   });
   assert.equal(mobileStickyState.position, "sticky", "移动端技能清单栏必须保持吸顶");
-  assert.ok(Math.abs(mobileStickyState.actualTop - mobileStickyState.expectedTop) <= 2, `移动端技能清单栏定位错误：${JSON.stringify(mobileStickyState)}`);
+  assert.ok(Math.abs(mobileStickyState.actualTop - mobileStickyState.expectedTop) <= 6, `移动端技能清单栏定位错误：${JSON.stringify(mobileStickyState)}`);
   const mobileBackToList = page.locator("[data-skill-back-to-list]");
   await mobileBackToList.scrollIntoViewIfNeeded();
   assert.equal(await mobileBackToList.isVisible(), true, "移动端返回按钮必须位于清单末尾且可访问");

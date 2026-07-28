@@ -2045,12 +2045,18 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 .skill-platform-downloads { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; border-bottom:1px solid var(--skill-line); background:var(--skill-line); }
 .skill-platform-card { display:flex; flex-direction:column; gap:18px; min-height:330px; padding:24px; background:#131416; }
 .skill-platform-card.is-workbuddy { background:linear-gradient(145deg,#17191c,#111214 68%); }
+.skill-platform-card.is-planned { background:linear-gradient(145deg,#121315,#0f1012 70%); }
+.skill-platform-card[data-platform-package="cherry-studio"] { grid-column:1/-1; min-height:250px; }
 .skill-platform-mark { display:grid; place-items:center; width:44px; height:44px; color:#17130b; border-radius:11px; background:var(--skill-gold); font-size:19px; font-weight:900; }
+.skill-platform-card.is-planned .skill-platform-mark { color:var(--skill-gold-light); border:1px solid rgba(207,169,92,.36); background:rgba(207,169,92,.08); font-size:13px; }
 .skill-platform-card h3 { margin:8px 0 10px; color:var(--skill-ink); font-size:23px; letter-spacing:-.035em; }
 .skill-platform-card p { margin:0; color:var(--skill-muted); font-size:10px; line-height:1.7; }
+.skill-platform-source { display:inline-flex; margin-top:12px; color:var(--skill-gold); font-size:10px; line-height:1.5; }
+.skill-platform-source:hover,.skill-platform-source:focus-visible { color:var(--skill-gold-light); text-decoration:underline; outline:none; }
 .skill-platform-status { display:flex; align-items:center; gap:7px; width:fit-content; color:var(--skill-muted); font-size:9px; }
 .skill-platform-status i { width:7px; height:7px; border-radius:50%; background:currentColor; }
 .skill-platform-status.is-ready { color:var(--skill-success); }
+.skill-platform-status.is-validating { color:#d8a75a; }
 .skill-platform-card > .button { align-self:flex-start; margin-top:auto; }
 .skill-platform-card > .button.is-disabled { pointer-events:none; opacity:.45; }
 .skill-release-notes summary { display:flex; align-items:center; gap:8px; width:fit-content; margin-top:12px; color:var(--skill-gold); cursor:pointer; list-style:none; }
@@ -2169,6 +2175,7 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .skill-install-grid { grid-template-columns:1fr; }
   .skill-platform-downloads { grid-template-columns:1fr; }
   .skill-platform-card { min-height:0; }
+  .skill-platform-card[data-platform-package="cherry-studio"] { grid-column:auto; }
 }
 
 @media (max-width:620px) {

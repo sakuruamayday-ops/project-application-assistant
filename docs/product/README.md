@@ -1,6 +1,6 @@
 # 企业全生命周期助手产品文档
 
-更新日期：2026年7月26日
+更新日期：2026年7月28日
 
 本目录是产品判断和版本规划的统一入口。发布说明、用户手册和技术文档继续保留在原目录，但产品定位、阶段目标、版本范围和优先级以本目录为准。
 
@@ -17,6 +17,7 @@
 - [产品基线与定位](product-brief.md)：回答产品为谁服务、解决什么问题、当前已经做到哪里，以及哪些边界不能突破。
 - [V1.2 PRD Lite](prd-v1.2.md)：V1.2 发布前形成的历史建议稿，仅用于追溯需求判断，不再代表当前待发布版本。
 - [产品路线图](roadmap.md)：明确当前阶段优先级、暂不推进项、发布节奏和评审条件。
+- [网站安装包分发策略](website-package-distribution.md)：定义通用版、平台增强版、开放下载门禁和原生客户端退役边界。
 - [外部产品与研发技能评估](external-tools-evaluation.md)：记录本轮对 pm-workbench、Spec Kit、UI UX Pro Max 及研发类 Skills 的核验与采用结论。
 
 ## 文档事实来源
@@ -25,7 +26,7 @@
 
 1. `skills/suite-manifest.json` 中的正式套件版本、Skill 数量和依赖关系。
 2. `docs/releases/` 中的正式发布说明。
-3. `docs/user-guide/企业全生命周期助手用户使用手册.docx` 中的用户可见能力。
+3. `docs/user-guide/企业全生命周期助手用户使用手册.md` 中的当前用户可见能力；历史客户端 Word 手册只作发行审计。
 4. `services/knowledge-portal/README.md` 中的门户、API、MCP 和安全边界。
 5. 代码、测试和生产验收记录。
 

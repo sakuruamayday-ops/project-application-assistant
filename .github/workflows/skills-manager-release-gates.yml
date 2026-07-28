@@ -1,20 +1,16 @@
-name: Skills Manager release gates
+name: Website package distribution gates
 
 on:
   pull_request:
     paths:
-      - "apps/skills-manager/**"
       - "services/knowledge-portal/**"
-      - "docs/skills-manager-pwa.md"
-      - "docs/releases/skills-manager-v0.2.0.md"
-      - "docs/user-guide/企业全生命周期助手用户使用手册.docx"
-      - "docs/user-guide/企业全生命周期助手用户使用手册.md"
+      - "docs/product/website-package-distribution.md"
+      - "docs/releases/website-package-center-2026-07-28.md"
       - ".github/workflows/skills-manager-release-gates.yml"
-      - ".github/workflows/skills-manager-unsigned-release.yml"
   workflow_dispatch:
 
 jobs:
-  pwa:
+  package-center:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,31 +21,9 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install -r services/knowledge-portal/requirements.txt pytest
-      - run: node --check services/knowledge-portal/static/skills-manager/app.js
-      - run: node --check services/knowledge-portal/static/skills-manager/zip-reader.js
       - run: node --check services/knowledge-portal/static/skills-manager/sw.js
-      - run: node services/knowledge-portal/scripts/check_skills_manager_pwa.mjs
+      - run: node services/knowledge-portal/scripts/check_website_package_center.mjs
       - run: >-
           python -m pytest -q tests/test_portal.py
-          -k "legacy_client_artifacts_do_not_feed_unified_workbuddy_channel or skills_manager_native"
+          -k "legacy_client_artifacts_do_not_feed_unified_workbuddy_channel or skills_manager_retirement"
         working-directory: services/knowledge-portal
-
-  native-release-policy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: apps/skills-manager/package-lock.json
-      - run: npm ci --omit=dev --ignore-scripts
-        working-directory: apps/skills-manager
-      - run: npm test
-        working-directory: apps/skills-manager
-      - run: npm run check
-        working-directory: apps/skills-manager
-      - run: |
-          test -f apps/skills-manager/docs/SECURITY_SIGNING.md
-          test -f apps/skills-manager/scripts/release-security-check.mjs
-          node --check apps/skills-manager/scripts/release-security-check.mjs

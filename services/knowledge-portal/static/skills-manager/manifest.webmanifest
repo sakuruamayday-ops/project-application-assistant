@@ -1,10 +1,10 @@
 {
-  "name": "焦糖 Skills 管理器",
-  "short_name": "焦糖 Skills",
-  "description": "企业全生命周期助手跨平台 Skills 管理器",
-  "start_url": "/skills-manager",
-  "scope": "/skills-manager",
-  "display": "standalone",
+  "name": "焦糖安装包下载中心",
+  "short_name": "安装包中心",
+  "description": "焦糖通用 Skills 与平台增强包下载中心",
+  "start_url": "/skills#skills-downloads",
+  "scope": "/skills",
+  "display": "browser",
   "background_color": "#0c0f0f",
   "theme_color": "#0c0f0f",
   "icons": [
