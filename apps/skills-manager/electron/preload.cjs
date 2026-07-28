@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("jiaotang", {
   overview: () => ipcRenderer.invoke("app:overview"),
+  scanPlatforms: () => ipcRenderer.invoke("platforms:scan"),
   connectPortal: (payload) => ipcRenderer.invoke("portal:connect", payload),
   disconnectPortal: () => ipcRenderer.invoke("portal:disconnect"),
   chooseDirectory: () => ipcRenderer.invoke("directory:choose"),

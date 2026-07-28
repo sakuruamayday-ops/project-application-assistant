@@ -11,14 +11,14 @@
 - 运行时读取平台能力清单，先检查安全上下文、WebCrypto、ZIP 解压和目录授权，再决定是否开放写入。
 - 只写入发布清单列出的 49 项技能与共享路径，未托管同名内容会阻断安装。
 - 覆盖前保留目录内备份，回滚时当前版本先进入 displaced 恢复区，不永久删除用户文件。
-- WorkBuddy 只下载对应平台的签名插件市场包；用户解压后在 WorkBuddy 内添加本地市场并安装插件，不执行 `.command`、`.cmd` 或外部 CLI。
+- WorkBuddy 下载跨平台签名插件市场包；用户解压后在 WorkBuddy 内添加本地市场并安装插件，不执行 `.command`、`.cmd` 或外部 CLI。
 
 实现位于 `services/knowledge-portal/static/skills-manager`，发布说明见 `docs/skills-manager-pwa.md`。
 
 ## 原生工程验证版已实现
 
-- 在 macOS 系统应用目录、Windows 常见程序目录和已配置命令位置进行有界扫描，自动识别 WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder 与 Cherry Studio；不递归读取用户文档。
-- 对已发现且有稳定用户级目录的平台提供“一键安装到已发现平台”，自动去重共享目录；WorkBuddy 下载已验签本地插件市场包，并在 WorkBuddy 内通过 `/plugin` 添加、安装和启用，引导型平台只打开已验签导入包。
+- 用户点击“扫描本机 Agent”后，在 macOS 系统应用目录、Windows 常见程序目录和已配置命令位置进行有界扫描，自动识别 WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder 与 Cherry Studio；不递归读取用户文档。
+- 主流平台始终显示，并可按“全部平台／本机已安装／可一键导入”筛选。对已发现且有稳定用户级目录的平台提供逐平台和批量一键导入，自动去重共享目录；WorkBuddy 下载已验签本地插件市场包，并在 WorkBuddy 内通过 `/plugin` 添加、安装和启用，引导型平台只定位已验签导入包。
 - 通用 Skills 与跨平台 WorkBuddy 插件市场包两条更新通道。
 - 普通成员复用本机钥匙串或DPAPI中的既有设备凭据并逐请求签名，不重新绑定设备；管理员令牌只保存在当前进程内。
 - SHA-256、固定 Ed25519 公钥、OpenSSH 签名及逐文件哈希验证。

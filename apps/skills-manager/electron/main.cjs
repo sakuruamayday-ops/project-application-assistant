@@ -83,6 +83,7 @@ function assertAllowedPortal(portalUrl) {
 }
 
 function platformSnapshot() {
+  const startedAt = Date.now();
   const platformConfig = readPlatformConfig(platformConfigPath);
   const platforms = detectPlatforms(platformConfig);
   const catalog = readCatalog(catalogPath);
@@ -100,9 +101,15 @@ function platformSnapshot() {
       managerVersion: app.getVersion(),
     },
     platforms,
-    targets: uniqueManagedTargets(platforms),
+    targets: uniqueManagedTargets(platforms.filter((item) => item.detected)),
     compatibility: buildCompatibilityReport(catalog, platforms),
     registry,
+    scan: {
+      scannedAt: new Date().toISOString(),
+      durationMs: Date.now() - startedAt,
+      searchedPlatformCount: platforms.length,
+      detectedPlatformCount: platforms.filter((item) => item.detected).length,
+    },
   };
 }
 
@@ -142,6 +149,17 @@ ipcMain.handle("app:overview", () => ({
   settings: loadSettings(),
   appTrust: inspectApplicationTrust(process.execPath),
 }));
+
+ipcMain.handle("platforms:scan", () => {
+  const snapshot = platformSnapshot();
+  return {
+    platforms: snapshot.platforms,
+    targets: snapshot.targets,
+    compatibility: snapshot.compatibility,
+    registry: snapshot.registry,
+    scan: snapshot.scan,
+  };
+});
 
 ipcMain.handle("portal:connect", async (_event, payload) => {
   const portalUrl = assertAllowedPortal(payload.portalUrl);
