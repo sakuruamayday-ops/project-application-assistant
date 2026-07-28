@@ -4354,11 +4354,12 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path)
             "jiaotang-skills-manager-native-release/v1"
         )
         assert native_release["version"] == "0.2.0"
-        assert native_release["state"] == "pending"
+        assert native_release["state"] in {"pending", "published"}
+        native_release_published = native_release["state"] == "published"
         assert native_release["publication_policy"] == (
             "release_then_reviewed_portal_backfill"
         )
-        assert native_release["available"] is False
+        assert native_release["available"] is native_release_published
         native_artifacts = {
             item["id"]: item for item in native_release["artifacts"]
         }
@@ -4368,22 +4369,48 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path)
             "windows-x64",
         }
         for artifact in native_artifacts.values():
-            assert artifact["available"] is False
-            assert artifact["sha256"] == ""
-            unavailable_download = client.get(
+            assert artifact["available"] is native_release_published
+            if native_release_published:
+                assert re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"])
+            else:
+                assert artifact["sha256"] == ""
+            native_download = client.get(
                 artifact["download_url"],
                 follow_redirects=False,
             )
-            assert unavailable_download.status_code == 404
-            assert unavailable_download.headers["cache-control"] == "no-store"
-        assert native_release["user_manual"]["available"] is False
-        assert native_release["user_manual"]["sha256"] == ""
-        unavailable_manual = client.get(
+            assert native_download.status_code == (
+                307 if native_release_published else 404
+            )
+            assert native_download.headers["cache-control"] == "no-store"
+            if native_release_published:
+                assert (
+                    native_download.headers["location"]
+                    == artifact["github_asset_url"]
+                )
+        assert (
+            native_release["user_manual"]["available"]
+            is native_release_published
+        )
+        if native_release_published:
+            assert re.fullmatch(
+                r"[0-9a-f]{64}",
+                native_release["user_manual"]["sha256"],
+            )
+        else:
+            assert native_release["user_manual"]["sha256"] == ""
+        native_manual = client.get(
             native_release["user_manual"]["download_url"],
             follow_redirects=False,
         )
-        assert unavailable_manual.status_code == 404
-        assert unavailable_manual.headers["cache-control"] == "no-store"
+        assert native_manual.status_code == (
+            307 if native_release_published else 404
+        )
+        assert native_manual.headers["cache-control"] == "no-store"
+        if native_release_published:
+            assert (
+                native_manual.headers["location"]
+                == native_release["user_manual"]["github_asset_url"]
+            )
         web_channels = client.get("/v1/web/skills/channels")
         assert web_channels.status_code == 200
         web_artifacts = {
