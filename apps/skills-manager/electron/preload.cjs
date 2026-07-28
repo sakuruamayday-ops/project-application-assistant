@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("jiaotang", {
   overview: () => ipcRenderer.invoke("app:overview"),
+  scanPlatforms: () => ipcRenderer.invoke("platforms:scan"),
   connectPortal: (payload) => ipcRenderer.invoke("portal:connect", payload),
   disconnectPortal: () => ipcRenderer.invoke("portal:disconnect"),
   chooseDirectory: () => ipcRenderer.invoke("directory:choose"),
@@ -11,14 +12,15 @@ contextBridge.exposeInMainWorld("jiaotang", {
     planId,
     confirmation: "INSTALL",
   }),
-  stageWorkBuddy: (channelId) => ipcRenderer.invoke("install:stage-workbuddy", { channelId }),
-  launchWorkBuddy: (staged) => ipcRenderer.invoke("install:launch-workbuddy", {
-    staged,
-    confirmation: "RUN_FIXED_INSTALLER",
+  planDetectedInstall: () => ipcRenderer.invoke("install:plan-detected"),
+  executeDetectedInstall: (batchId) => ipcRenderer.invoke("install:execute-detected", {
+    batchId,
+    confirmation: "INSTALL_ALL",
   }),
   rollback: (targetRoot) => ipcRenderer.invoke("install:rollback", {
     targetRoot,
     confirmation: "ROLLBACK",
   }),
   revealPath: (value) => ipcRenderer.invoke("path:reveal", value),
+  showItem: (value) => ipcRenderer.invoke("path:show-item", value),
 });

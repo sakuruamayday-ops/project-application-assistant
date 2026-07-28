@@ -1,3 +1,4 @@
+// 历史归档：2026-07-28 起不再进入客户端运行时或发布包。
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");

@@ -67,7 +67,7 @@
           <div class="topbar-actions">
             <button class="button ghost" id="rescan-button" type="button">
               <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v6h-6"/></svg>
-              重新扫描
+              扫描本机 Agent
             </button>
             <button class="button primary" id="connect-button" type="button">连接发布门户</button>
           </div>
@@ -87,6 +87,7 @@
                 </p>
                 <div class="hero-actions">
                   <button class="button primary" id="hero-connect" type="button">连接并检查更新</button>
+                  <button class="button ghost" data-go="platforms" type="button">扫描并导入 Agent</button>
                   <button class="button text-button" data-go="security" type="button">查看安全门禁 →</button>
                 </div>
               </div>
@@ -161,11 +162,39 @@
           <div class="section-heading page-heading">
             <div>
               <span class="kicker">ADAPTER CATALOG</span>
-              <h2>平台适配器</h2>
+              <h2>扫描本机并导入</h2>
             </div>
-            <p>检测只说明本机发现了入口；安装是否成功还要经过版本、签名和运行验收。</p>
+            <p>只扫描系统应用目录和常见安装位置，不读取文档。一键导入仅写入当前用户的 Skills 目录。</p>
+          </div>
+          <div class="discovery-panel">
+            <div>
+              <span class="kicker">LOCAL AGENT DISCOVERY</span>
+              <h3 id="discovery-title">正在读取本机 Agent…</h3>
+              <p id="discovery-detail">发现结果会区分目录同步、WorkBuddy 应用内市场和引导导入。</p>
+              <small class="scan-meta" id="scan-meta" aria-live="polite">等待扫描</small>
+            </div>
+            <div class="discovery-actions">
+              <button class="button ghost" id="platform-rescan-button" type="button">
+                <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v6h-6"/></svg>
+                扫描本机 Agent
+              </button>
+              <button class="button primary" id="install-detected-button" type="button">一键导入全部可写平台</button>
+            </div>
+          </div>
+          <div class="platform-catalog-toolbar">
+            <div class="platform-scan-metrics" aria-label="扫描结果">
+              <span><strong id="platform-count-all">0</strong>主流平台</span>
+              <span><strong id="platform-count-detected">0</strong>本机已发现</span>
+              <span><strong id="platform-count-automatic">0</strong>可一键写入</span>
+            </div>
+            <div class="platform-filters" role="group" aria-label="平台筛选">
+              <button class="filter-chip is-active" type="button" data-platform-filter="all" aria-pressed="true">全部平台</button>
+              <button class="filter-chip" type="button" data-platform-filter="detected" aria-pressed="false">本机已安装</button>
+              <button class="filter-chip" type="button" data-platform-filter="automatic" aria-pressed="false">可一键导入</button>
+            </div>
           </div>
           <div class="platform-list" id="platform-list"></div>
+          <div class="platform-list-empty" id="platform-list-empty" hidden>当前筛选条件下没有平台。</div>
           <div class="managed-targets">
             <div class="section-heading compact">
               <div>
@@ -181,9 +210,9 @@
           <div class="section-heading page-heading">
             <div>
               <span class="kicker">SIGNED CHANNELS</span>
-              <h2>独立发布通道</h2>
+              <h2>发布通道</h2>
             </div>
-            <p>通用、macOS 与 Windows 各自读取最近正式版本，不要求版本号同步。</p>
+            <p>通用 Skills 与跨平台 WorkBuddy 包分别读取最近正式版本。</p>
           </div>
           <div class="empty-state" id="channel-empty">
             <div class="empty-glyph">↗</div>
@@ -287,15 +316,15 @@
             <div class="guidance-columns">
               <div>
                 <strong>macOS</strong>
-                <p>开发版或未公证构建会被 Gatekeeper 拦截。正式版必须 Developer ID 签名、公证并将票据 staple 到 DMG。</p>
+                <p>开发版可由用户在“隐私与安全性”中单次授权运行，但这不会替代 Developer ID。正式直发仍需签名、公证并装订票据。</p>
               </div>
               <div>
                 <strong>Windows</strong>
-                <p>只有 Authenticode 合法并不保证 SmartScreen 立即积累信誉。正式发布建议使用硬件保护的 OV/EV 证书并保持稳定发布者名称。</p>
+                <p>UAC 管理员授权只负责提权，不会变成 Authenticode 签名。正式直发应使用稳定代码签名身份或 Microsoft Store；新签名仍可能经历 SmartScreen 信誉积累。</p>
               </div>
               <div>
                 <strong>焦糖策略</strong>
-                <p>系统信任未通过时仍可查看平台，但默认不允许静默安装；必须展示原因和人工确认路径。</p>
+                <p>用户级 Skills 安装不索要管理员权限。未签名客户端仅供受控测试，不作为面向公众的正式安装包。</p>
               </div>
             </div>
           </div>

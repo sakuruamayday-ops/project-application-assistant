@@ -49,9 +49,7 @@ def main() -> None:
         workbuddy = release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip"
         with zipfile.ZipFile(workbuddy, "w") as archive:
             archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
-            archive.writestr("jiaotang/install-jiaotang-workbuddy.command", "#!/bin/zsh\n")
-            archive.writestr("jiaotang/install-jiaotang-workbuddy.cmd", "@echo off\r\n")
-            archive.writestr("jiaotang/install-jiaotang-workbuddy.ps1", "exit 0\r\n")
+            archive.writestr("jiaotang/plugins/plugin/.codebuddy-plugin/plugin.json", "{}")
         with sqlite3.connect(data_dir / "knowledge.db") as connection:
             connection.execute(
                 """

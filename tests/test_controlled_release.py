@@ -36,13 +36,13 @@ def test_prepare_assets_contains_only_release_files(tmp_path) -> None:
     assets = MODULE.prepare_ascii_assets(
         tmp_path / "assets",
         "V1.3",
-        {"generic": generic, "windows": workbuddy},
+        {"generic": generic, "workbuddy": workbuddy},
         gate,
     )
 
     assert [path.name for path in assets] == [
         "jiaotang-skills-V1.3.zip",
-        "jiaotang-skills-V1.3-WorkBuddy-Windows.zip",
+        "jiaotang-skills-V1.3-WorkBuddy.zip",
         "jiaotang-skills-V1.3-release-gate.json",
     ]
 
@@ -71,9 +71,9 @@ def test_prepare_assets_includes_word_manual_and_companion_audit(tmp_path) -> No
     ]
 
 
-def test_prepare_assets_allows_one_or_three_release_targets(tmp_path) -> None:
+def test_prepare_assets_allows_one_or_two_release_targets(tmp_path) -> None:
     packages = {}
-    for target in ("generic", "macos", "windows"):
+    for target in ("generic", "workbuddy"):
         package = tmp_path / f"{target}.zip"
         package.write_text(target, encoding="utf-8")
         packages[target] = package
@@ -88,8 +88,7 @@ def test_prepare_assets_allows_one_or_three_release_targets(tmp_path) -> None:
     )
     assert [path.name for path in assets] == [
         "jiaotang-skills-V1.3.1.1.zip",
-        "jiaotang-skills-V1.3.1.1-WorkBuddy-macOS.zip",
-        "jiaotang-skills-V1.3.1.1-WorkBuddy-Windows.zip",
+        "jiaotang-skills-V1.3.1.1-WorkBuddy.zip",
         "jiaotang-skills-V1.3.1.1-release-gate.json",
     ]
 

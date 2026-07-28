@@ -9,7 +9,12 @@ const {
   ipcMain,
   shell,
 } = require("electron");
-const { readPlatformConfig, detectPlatforms, uniqueManagedTargets } = require("../core/platforms.cjs");
+const {
+  automaticDetectedTargets,
+  readPlatformConfig,
+  detectPlatforms,
+  uniqueManagedTargets,
+} = require("../core/platforms.cjs");
 const { readCatalog, buildCompatibilityReport } = require("../core/compatibility.cjs");
 const { fetchChannels, downloadArtifact, normalizedPortalUrl } = require("../core/portal-client.cjs");
 const { loadExistingDeviceCredentials } = require("../core/device-auth.cjs");
@@ -20,11 +25,6 @@ const {
   executeGenericInstall,
   rollbackLatest,
 } = require("../core/update-engine.cjs");
-const {
-  stageFixedInstaller,
-  launchFixedInstaller,
-  workBuddyRunning,
-} = require("../core/fixed-installer.cjs");
 
 const APP_ROOT = path.resolve(__dirname, "..");
 const platformConfigPath = path.join(APP_ROOT, "config", "platforms.json");
@@ -36,6 +36,7 @@ const state = {
   channels: null,
   verifiedArtifacts: new Map(),
   installPlans: new Map(),
+  installBatches: new Map(),
 };
 
 function managerPaths() {
@@ -82,6 +83,7 @@ function assertAllowedPortal(portalUrl) {
 }
 
 function platformSnapshot() {
+  const startedAt = Date.now();
   const platformConfig = readPlatformConfig(platformConfigPath);
   const platforms = detectPlatforms(platformConfig);
   const catalog = readCatalog(catalogPath);
@@ -99,10 +101,15 @@ function platformSnapshot() {
       managerVersion: app.getVersion(),
     },
     platforms,
-    targets: uniqueManagedTargets(platforms),
+    targets: uniqueManagedTargets(platforms.filter((item) => item.detected)),
     compatibility: buildCompatibilityReport(catalog, platforms),
     registry,
-    workBuddyRunning: workBuddyRunning(),
+    scan: {
+      scannedAt: new Date().toISOString(),
+      durationMs: Date.now() - startedAt,
+      searchedPlatformCount: platforms.length,
+      detectedPlatformCount: platforms.filter((item) => item.detected).length,
+    },
   };
 }
 
@@ -142,6 +149,17 @@ ipcMain.handle("app:overview", () => ({
   settings: loadSettings(),
   appTrust: inspectApplicationTrust(process.execPath),
 }));
+
+ipcMain.handle("platforms:scan", () => {
+  const snapshot = platformSnapshot();
+  return {
+    platforms: snapshot.platforms,
+    targets: snapshot.targets,
+    compatibility: snapshot.compatibility,
+    registry: snapshot.registry,
+    scan: snapshot.scan,
+  };
+});
 
 ipcMain.handle("portal:connect", async (_event, payload) => {
   const portalUrl = assertAllowedPortal(payload.portalUrl);
@@ -234,21 +252,51 @@ ipcMain.handle("install:execute-generic", (_event, payload) => {
   return result;
 });
 
-ipcMain.handle("install:stage-workbuddy", (_event, payload) => {
-  const channelId = payload.channelId;
-  const artifact = state.verifiedArtifacts.get(channelId);
-  if (!artifact || !["macos", "windows"].includes(channelId)) {
-    throw new Error("请先下载并验证当前系统对应的 WorkBuddy 包");
-  }
-  return stageFixedInstaller({
+ipcMain.handle("install:plan-detected", () => {
+  const artifact = state.verifiedArtifacts.get("generic");
+  if (!artifact) throw new Error("请先下载并验证通用 Skills 包");
+  const platforms = detectPlatforms(readPlatformConfig(platformConfigPath));
+  const targets = automaticDetectedTargets(platforms);
+  if (!targets.length) throw new Error("没有发现可自动安装的 Agent 平台");
+  const plans = targets.map((target) => planGenericInstall({
     archivePath: artifact.downloaded.path,
-    cacheRoot: managerPaths().cache,
-  });
+    targetRoot: target.targetRoot,
+    registryPath: managerPaths().registry,
+    platformIds: target.platformIds,
+  }));
+  const batchId = crypto.randomUUID();
+  state.installBatches.set(batchId, plans);
+  return {
+    batchId,
+    targets: plans.map((plan) => ({
+      targetRoot: plan.targetRoot,
+      platformIds: plan.platformIds,
+      skillCount: plan.skillCount,
+      additions: plan.additions.length,
+      replacements: plan.replacements.length,
+      conflicts: plan.conflicts,
+    })),
+  };
 });
 
-ipcMain.handle("install:launch-workbuddy", (_event, payload) => {
-  if (payload.confirmation !== "RUN_FIXED_INSTALLER") throw new Error("安装确认无效");
-  return launchFixedInstaller(payload.staged);
+ipcMain.handle("install:execute-detected", (_event, payload) => {
+  if (payload.confirmation !== "INSTALL_ALL") throw new Error("批量安装确认无效");
+  const plans = state.installBatches.get(payload.batchId);
+  const artifact = state.verifiedArtifacts.get("generic");
+  if (!plans || !artifact) throw new Error("批量安装计划已失效，请重新生成");
+  if (plans.some((plan) => plan.conflicts.length)) {
+    throw new Error("存在未登记的同名目录，已阻止批量覆盖");
+  }
+  const results = [];
+  for (const plan of plans) {
+    results.push(executeGenericInstall({
+      plan,
+      registryPath: managerPaths().registry,
+      artifactSha256: artifact.verification.archiveSha256,
+    }));
+  }
+  state.installBatches.delete(payload.batchId);
+  return { results };
 });
 
 ipcMain.handle("install:rollback", (_event, payload) => {
@@ -262,6 +310,12 @@ ipcMain.handle("install:rollback", (_event, payload) => {
 ipcMain.handle("path:reveal", async (_event, value) => {
   if (!value || typeof value !== "string") throw new Error("路径无效");
   return shell.openPath(path.resolve(value));
+});
+
+ipcMain.handle("path:show-item", (_event, value) => {
+  if (!value || typeof value !== "string") throw new Error("路径无效");
+  shell.showItemInFolder(path.resolve(value));
+  return { status: "shown", path: path.resolve(value) };
 });
 
 app.whenReady().then(() => {

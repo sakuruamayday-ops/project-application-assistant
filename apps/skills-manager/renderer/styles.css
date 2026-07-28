@@ -685,6 +685,135 @@ svg {
   gap: 12px;
 }
 
+.discovery-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 18px;
+  padding: 24px 26px;
+  border: 1px solid rgba(198, 166, 101, 0.28);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(110deg, rgba(198, 166, 101, 0.09), transparent 58%),
+    var(--ink-2);
+}
+
+.discovery-panel h3 {
+  margin: 7px 0 6px;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.discovery-panel p {
+  margin: 0;
+  color: #858a83;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.scan-meta {
+  display: block;
+  margin-top: 10px;
+  color: #626862;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+
+.discovery-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.platform-catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 22px 0 12px;
+  padding: 0 4px;
+}
+
+.platform-scan-metrics,
+.platform-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.platform-scan-metrics span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding-right: 14px;
+  border-right: 1px solid var(--line);
+  color: #6f756f;
+  font-size: 10px;
+}
+
+.platform-scan-metrics span:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.platform-scan-metrics strong {
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.filter-chip {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: #777d77;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.filter-chip:hover,
+.filter-chip.is-active {
+  border-color: rgba(212, 178, 106, 0.38);
+  color: var(--gold-bright);
+  background: rgba(212, 178, 106, 0.07);
+}
+
+.platform-list-empty {
+  padding: 34px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  color: #717771;
+  text-align: center;
+  font-size: 12px;
+}
+
+.install-target-list {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.install-target-list li {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.install-target-list small {
+  color: #777c76;
+}
+
 .platform-row {
   display: grid;
   grid-template-columns: 58px 1.3fr 0.9fr 0.72fr auto;
@@ -695,11 +824,40 @@ svg {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--ink-2);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.platform-row.is-detected {
+  border-color: rgba(104, 213, 154, 0.2);
+  background:
+    linear-gradient(90deg, rgba(104, 213, 154, 0.035), transparent 38%),
+    var(--ink-2);
+}
+
+.platform-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+}
+
+.platform-row.is-missing {
+  background: rgba(255, 255, 255, 0.012);
 }
 
 .platform-row h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0 0 5px;
   font-size: 16px;
+}
+
+.installed-mark {
+  padding: 3px 6px;
+  border-radius: 999px;
+  color: var(--green);
+  background: rgba(104, 213, 154, 0.08);
+  font-size: 8px;
+  font-weight: 600;
 }
 
 .platform-row p,
@@ -746,6 +904,12 @@ svg {
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.button.compact {
+  min-height: 36px;
+  padding-inline: 14px;
+  font-size: 11px;
 }
 
 .target-row {
@@ -1265,6 +1429,13 @@ td:first-child {
   .channel-grid { grid-template-columns: 1fr; }
   .hero-panel { grid-template-columns: 1fr; }
   .skill-orbit { display: none; }
+  .discovery-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .discovery-actions { flex-wrap: wrap; }
+  .platform-catalog-toolbar { align-items: stretch; flex-direction: column; }
+  .platform-filters { overflow-x: auto; padding-bottom: 2px; }
   .platform-row { grid-template-columns: 50px 1fr auto; }
   .platform-row > :nth-child(3),
   .platform-row > :nth-child(4) { display: none; }

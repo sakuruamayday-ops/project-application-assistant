@@ -4,7 +4,7 @@
 
 | 平台 | 当前等级 | 管理方式 | 依据与边界 |
 |---|---|---|---|
-| WorkBuddy | 完整同步 | 签名平台包内固定安装器 | 使用本项目现有插件、安装器与门户发布协议；macOS和Windows独立通道。 |
+| WorkBuddy | 适配导入 | WorkBuddy 应用内插件市场 | 下载并验签跨平台本地市场 ZIP，解压后在 WorkBuddy 内用 `/plugin marketplace add` 添加，再安装 `jiaotang-workbuddy-skills@jiaotang`；不调用外部 CLI。 |
 | TRAE中国版 | 完整同步 | `~/.trae-cn/skills` | TRAE官方中文社区技术支持说明项目级`.trae/skills`与全局`~/.trae-cn/skills`。国际版保留`~/.trae/skills`候选路径。 |
 | Kimi Code | 完整同步 | `~/.agents/skills` | Kimi Code官方文档明确把`~/.agents/skills`列为用户级扫描目录，也支持`$KIMI_CODE_HOME/skills`。 |
 | 通义灵码 | 引导导入 | 已验签包与人工指引 | 当前公开官方资料确认Agent和MCP能力，但本轮没有找到稳定的用户级`SKILL.md`目录或外部安装API，因此不自动写内部目录。 |

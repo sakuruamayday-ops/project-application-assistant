@@ -84,7 +84,7 @@
       {% endif %}
       <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
-      <div class="skill-platform-note"><strong>按宿主选择</strong><p>WorkBuddy 的 macOS 与 Windows 下载通道独立维护。没有发生变化的平台会继续提供最近一次正式版本，客户端热修复不再强制带动其他平台重新发布。</p></div>
+      <div class="skill-platform-note"><strong>按宿主选择</strong><p>WorkBuddy 使用同一个跨平台插件市场包，macOS 与 Windows 不再维护独立版本。其他 Agent 继续使用通用 Skills 包。</p></div>
       <div class="skill-platform-downloads">
         <article class="skill-platform-card is-generic">
           <span class="skill-platform-mark">通</span>
@@ -92,13 +92,12 @@
           <div class="skill-platform-status is-ready"><i></i>正式包已发布</div>
           <a class="button" href="/skills/latest/download">下载通用包</a>
         </article>
-        {% for platform in latest_release.workbuddy_platforms %}
-        <article class="skill-platform-card is-{{ platform.id }}" data-platform-version="{{ platform.version or '' }}">
-          <span class="skill-platform-mark">{{ '⌘' if platform.id == 'macos' else '⊞' }}</span>
-          <div><span class="skill-card-index">WorkBuddy</span><h3>{{ platform.name }}</h3>{% if platform.version %}<small>当前提供 V{{ platform.version }}</small>{% endif %}<p>{{ platform.detail }}。安装前展示来源、哈希、本机改动和撤销命令。</p></div>
-          {% if platform.included %}<a class="button" href="{{ platform.download_url }}">下载 {{ platform.name }} 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
+        {% set workbuddy = latest_release.workbuddy %}
+        <article class="skill-platform-card is-workbuddy" data-platform-version="{{ workbuddy.version or '' }}">
+          <span class="skill-platform-mark">WB</span>
+          <div><span class="skill-card-index">WorkBuddy</span><h3>macOS 与 Windows</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}</small>{% endif %}<p>同一个签名插件市场 ZIP 适用于两个系统。解压后在 WorkBuddy 内添加本地插件市场并安装。</p></div>
+          {% if workbuddy.included %}<a class="button" href="{{ workbuddy.download_url }}">下载 WorkBuddy 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
         </article>
-        {% endfor %}
       </div>
       {% endif %}
       {% for release in historical_releases %}<article><span class="download-icon">HIS</span><div><h3>企业全生命周期助手 V{{ release.version }}</h3><small>发布时间 {{ release.published_at_display }}</small><details class="skill-release-notes"><summary>查看发布说明</summary><div class="manual-content">{{ release.release_notes_html }}</div></details></div><div class="button-row"><a class="button secondary" href="/skills/releases/{{ release.id }}/download">下载 V{{ release.version }} 通用包</a>{% if release.workbuddy_available %}<a class="button secondary" href="/skills/releases/{{ release.id }}/workbuddy/download">WorkBuddy 包</a>{% endif %}</div></article>{% endfor %}
@@ -128,13 +127,14 @@
         <section class="manual-agent-config" data-manual-agent-config hidden>
           <h4>手工配置 WorkBuddy</h4>
           <ol>
-            <li>下载门户为当前设备选择的签名 WorkBuddy 插件包。</li>
+            <li>下载跨平台签名 WorkBuddy 插件市场包。</li>
             <li>核对页面公布的 SHA-256 与包内 Ed25519 签名。</li>
-            <li>Windows 解压后直接双击 <code>install-jiaotang-workbuddy.cmd</code>；macOS 运行固定 <code>.command</code> 安装器。</li>
+            <li>解压 ZIP，在 WorkBuddy 对话中执行 <code>/plugin marketplace add &lt;解压后的 jiaotang 目录&gt;</code>。</li>
+            <li>继续执行 <code>/plugin install jiaotang-workbuddy-skills@jiaotang</code>，然后按提示启用插件。</li>
             <li>点击下方按钮生成并复制一次性引导地址，再填入插件敏感配置项 <code>bootstrap_url</code>。</li>
           </ol>
           <div class="endpoint-list">
-            <div><span>插件包</span><code>当前平台签名 WorkBuddy ZIP</code><a class="button secondary" href="/skills" data-manual-package-download>下载</a></div>
+            <div><span>插件包</span><code>跨平台签名 WorkBuddy ZIP</code><a class="button secondary" href="/skills/latest/workbuddy/download" data-manual-package-download>下载</a></div>
             <div><span>MCP 服务名</span><code>jiaotang-kb</code><button type="button" data-copy-value="jiaotang-kb">复制</button></div>
             <div><span>敏感配置键</span><code>bootstrap_url</code><button type="button" data-copy-value="bootstrap_url">复制</button></div>
             <div data-manual-bootstrap-row hidden><span>一次性引导地址</span><code data-manual-bootstrap-value>确认审查后生成</code><button type="button" data-copy-manual-bootstrap>复制</button></div>

@@ -71,7 +71,7 @@ async function loadControlPlane() {
   if (!capabilityResponse.ok) throw new Error(`读取能力清单失败：HTTP ${capabilityResponse.status}`);
   state.channels = await channelResponse.json();
   evaluateCapabilities(await capabilityResponse.json());
-  const labels = { generic: "通用 Skills", macos: "WorkBuddy macOS", windows: "WorkBuddy Windows" };
+  const labels = { generic: "通用 Skills", workbuddy: "WorkBuddy 跨平台包" };
   $("#channels").innerHTML = state.channels.channels.map((item) => `
     <article class="channel">
       <small>${labels[item.id] || item.id}</small>
@@ -304,7 +304,7 @@ $("#refresh").addEventListener("click", () => loadControlPlane().then(() => toas
 $("#progress-close").addEventListener("click", () => $("#progress").close());
 $$("[data-sync]").forEach((button) => button.addEventListener("click", () => syncDirectory().catch((error) => finishProgress("同步已停止", error.message))));
 $$("[data-generic-download]").forEach((button) => button.addEventListener("click", () => downloadAsFile("generic").catch((error) => finishProgress("下载失败", error.message))));
-$("[data-workbuddy]").addEventListener("click", () => downloadAsFile(navigator.userAgent.includes("Windows") ? "windows" : "macos").catch((error) => finishProgress("下载失败", error.message)));
+$("[data-workbuddy]").addEventListener("click", () => downloadAsFile("workbuddy").catch((error) => finishProgress("下载失败", error.message)));
 $("#rollback").addEventListener("click", () => rollbackDirectory().catch((error) => finishProgress("回滚未执行", error.message)));
 $$(".nav").forEach((button) => button.addEventListener("click", () => navigate(button.dataset.view)));
 $$("[data-view-jump]").forEach((button) => button.addEventListener("click", () => navigate(button.dataset.viewJump)));

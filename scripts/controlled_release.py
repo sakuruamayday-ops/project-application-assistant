@@ -196,8 +196,7 @@ def prepare_ascii_assets(
     directory.mkdir(parents=True, exist_ok=True)
     names = {
         "generic": f"jiaotang-skills-{tag}.zip",
-        "macos": f"jiaotang-skills-{tag}-WorkBuddy-macOS.zip",
-        "windows": f"jiaotang-skills-{tag}-WorkBuddy-Windows.zip",
+        "workbuddy": f"jiaotang-skills-{tag}-WorkBuddy.zip",
     }
     targets: list[Path] = []
     for target_name, source in packages.items():
@@ -309,7 +308,7 @@ def stage_portal(
         ]
     )
     package_flags = " ".join(
-        f"--{target.replace('macos', 'workbuddy-macos').replace('windows', 'workbuddy-windows')}-package "
+        f"--workbuddy-package "
         f"{shlex.quote(f'{remote_stage}/{package.name}')}"
         if target != "generic"
         else f"--generic-package {shlex.quote(f'{remote_stage}/{package.name}')}"
@@ -358,10 +357,8 @@ def main() -> None:
     parser.add_argument(
         "--workbuddy-package",
         type=Path,
-        help="兼容旧流程：同一WorkBuddy包同时用于macOS和Windows",
+        help="同时适用于macOS和Windows的WorkBuddy插件市场包",
     )
-    parser.add_argument("--workbuddy-macos-package", type=Path)
-    parser.add_argument("--workbuddy-windows-package", type=Path)
     parser.add_argument("--gate-report", type=Path, required=True)
     parser.add_argument("--release-notes", type=Path, required=True)
     parser.add_argument(
@@ -394,16 +391,7 @@ def main() -> None:
         target: package.resolve()
         for target, package in (
             ("generic", arguments.generic_package),
-            (
-                "macos",
-                arguments.workbuddy_macos_package
-                or arguments.workbuddy_package,
-            ),
-            (
-                "windows",
-                arguments.workbuddy_windows_package
-                or arguments.workbuddy_package,
-            ),
+            ("workbuddy", arguments.workbuddy_package),
         )
         if package is not None
     }

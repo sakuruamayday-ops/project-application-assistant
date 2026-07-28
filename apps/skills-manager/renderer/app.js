@@ -3,7 +3,6 @@ const bridge = window.jiaotang;
 const demoOverview = {
   os: { platform: navigator.platform.toLowerCase().includes("win") ? "win32" : "darwin", arch: "arm64", version: "preview" },
   product: { name: "企业全生命周期助手", releaseTag: "V1.3.1.2", skillCount: 49, managerVersion: "0.1.0" },
-  workBuddyRunning: false,
   settings: { portalUrl: "https://zshjiaotang.cn" },
   appTrust: {
     signed: false,
@@ -12,7 +11,7 @@ const demoOverview = {
     details: "请在 Electron 桌面进程中运行。",
   },
   platforms: [
-    { id: "workbuddy", name: "WorkBuddy", vendor: "腾讯", support: "full", detected: true, channel: "workbuddy", installMode: "fixed-installer", targetRoot: "~/.codebuddy/plugins", canInstallAutomatically: false, notes: "使用签名包内固定安装器。" },
+    { id: "workbuddy", name: "WorkBuddy", vendor: "腾讯", support: "adapter", detected: true, channel: "workbuddy", installMode: "workbuddy-marketplace", targetRoot: null, canInstallAutomatically: false, detectedPaths: ["/Applications/WorkBuddy.app"], notes: "下载本地插件市场 ZIP，在 WorkBuddy 内使用 /plugin 安装。" },
     { id: "trae", name: "TRAE", vendor: "字节跳动", support: "full", detected: true, channel: "generic", installMode: "managed-directory", targetRoot: "~/.trae-cn/skills", canInstallAutomatically: true, notes: "中国版使用用户级 .trae-cn/skills。" },
     { id: "kimi-code", name: "Kimi Code", vendor: "月之暗面", support: "full", detected: false, channel: "generic", installMode: "shared-agents-directory", targetRoot: "~/.agents/skills", canInstallAutomatically: true, notes: "与 TRAE 共用托管目录。" },
     { id: "lingma", name: "通义灵码", vendor: "阿里云", support: "guided", detected: false, channel: "generic", installMode: "guided-import", targetRoot: null, canInstallAutomatically: false, notes: "官方尚未公开稳定的用户级 Skills 导入接口。" },
@@ -21,7 +20,6 @@ const demoOverview = {
   ],
   targets: [
     { targetRoot: "~/.trae-cn/skills", platformIds: ["trae"] },
-    { targetRoot: "~/.agents/skills", platformIds: ["kimi-code"] },
   ],
   compatibility: {
     skillCount: 49,
@@ -35,6 +33,12 @@ const demoOverview = {
     ],
   },
   registry: { targets: {}, backups: [] },
+  scan: {
+    scannedAt: new Date().toISOString(),
+    durationMs: 86,
+    searchedPlatformCount: 6,
+    detectedPlatformCount: 3,
+  },
 };
 
 const state = {
@@ -43,6 +47,7 @@ const state = {
   artifacts: new Map(),
   action: null,
   currentView: "overview",
+  platformFilter: "all",
 };
 
 const viewMeta = {
@@ -155,30 +160,62 @@ function renderPlatformStrip() {
 }
 
 function platformAction(platform) {
+  if (!platform.detected) {
+    return `<button class="button ghost" type="button" disabled>本机未安装</button>`;
+  }
   if (platform.id === "workbuddy") {
     return `<button class="button ghost" data-platform-action="workbuddy" data-platform-id="${platform.id}" type="button">准备安装</button>`;
   }
   if (platform.canInstallAutomatically) {
-    return `<button class="button ghost" data-platform-action="generic" data-platform-id="${platform.id}" type="button">准备同步</button>`;
+    return `<button class="button primary compact" data-platform-action="generic" data-platform-id="${platform.id}" type="button">一键导入</button>`;
   }
-  return `<button class="button ghost" data-platform-action="guided" data-platform-id="${platform.id}" type="button">获取导入包</button>`;
+  return `<button class="button ghost" data-platform-action="guided" data-platform-id="${platform.id}" type="button">准备导入</button>`;
 }
 
 function renderPlatforms() {
   const list = document.querySelector("#platform-list");
-  list.innerHTML = state.overview.platforms.map((platform) => `
-    <article class="platform-row">
+  const empty = document.querySelector("#platform-list-empty");
+  const allPlatforms = state.overview.platforms;
+  const detected = state.overview.platforms.filter((item) => item.detected);
+  const automatic = detected.filter((item) => item.canInstallAutomatically);
+  const workBuddy = detected.some((item) => item.id === "workbuddy");
+  const visible = allPlatforms.filter((platform) => {
+    if (state.platformFilter === "detected") return platform.detected;
+    if (state.platformFilter === "automatic") return platform.detected && platform.canInstallAutomatically;
+    return true;
+  });
+  document.querySelector("#discovery-title").textContent = detected.length
+    ? `已发现 ${detected.length} 个 Agent 平台`
+    : "暂未发现已安装的 Agent 平台";
+  document.querySelector("#discovery-detail").textContent = detected.length
+    ? `${automatic.length} 个可直接同步${workBuddy ? "，WorkBuddy 使用应用内插件市场" : ""}；其余平台按官方界面导入。`
+    : "扫描范围包括系统应用目录、常见用户安装目录和已配置命令位置。";
+  const scan = state.overview.scan;
+  document.querySelector("#scan-meta").textContent = scan?.scannedAt
+    ? `最近扫描 ${new Date(scan.scannedAt).toLocaleTimeString("zh-CN", { hour12: false })} · ${scan.durationMs} ms · 未读取用户文档`
+    : "尚未执行本机扫描";
+  document.querySelector("#platform-count-all").textContent = allPlatforms.length;
+  document.querySelector("#platform-count-detected").textContent = detected.length;
+  document.querySelector("#platform-count-automatic").textContent = automatic.length;
+  const installAll = document.querySelector("#install-detected-button");
+  installAll.disabled = automatic.length === 0;
+  installAll.textContent = automatic.length
+    ? `一键导入全部 ${automatic.length} 个平台`
+    : "没有可一键写入的平台";
+  empty.hidden = visible.length > 0;
+  list.innerHTML = visible.map((platform) => `
+    <article class="platform-row ${platform.detected ? "is-detected" : "is-missing"}">
       <div class="platform-monogram">${escapeHtml(monogram(platform.name))}</div>
       <div>
-        <h3>${escapeHtml(platform.name)}</h3>
+        <h3>${escapeHtml(platform.name)}${platform.detected ? '<span class="installed-mark">已安装</span>' : ""}</h3>
         <p>${escapeHtml(platform.vendor)} · ${escapeHtml(platform.notes)}</p>
       </div>
       <div>
         <span class="support-badge ${platform.support}">${escapeHtml(supportLabels[platform.support] || "专用适配")}</span>
-        <small>${platform.detected ? "本机已发现客户端" : "本机暂未发现客户端"}</small>
+        <small>${platform.detected ? `扫描命中 · ${escapeHtml(platform.detectedPaths?.[0] || "已知入口")}` : "支持导入，等待本机安装"}</small>
       </div>
       <div class="path-value" title="${escapeHtml(platform.targetRoot || "通过平台界面导入")}">
-        ${escapeHtml(platform.targetRoot || "通过平台界面导入")}
+        ${escapeHtml(platform.canInstallAutomatically ? platform.targetRoot : "通过平台官方界面完成")}
       </div>
       ${platformAction(platform)}
     </article>
@@ -242,7 +279,7 @@ function renderChannels() {
     return;
   }
   empty.hidden = true;
-  const names = { generic: "通用 Skills", macos: "WorkBuddy macOS", windows: "WorkBuddy Windows" };
+  const names = { generic: "通用 Skills", workbuddy: "WorkBuddy 跨平台包" };
   grid.innerHTML = state.channels.channels.map((channel) => {
     const artifact = state.artifacts.get(channel.id);
     const verified = Boolean(artifact);
@@ -292,6 +329,36 @@ async function refreshOverview() {
   }
 }
 
+async function scanLocalAgents(button) {
+  setBusy(button, true, "正在扫描…");
+  try {
+    if (bridge) {
+      const result = await bridge.scanPlatforms();
+      state.overview = { ...state.overview, ...result };
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 420));
+      state.overview = {
+        ...state.overview,
+        scan: {
+          ...state.overview.scan,
+          scannedAt: new Date().toISOString(),
+        },
+      };
+    }
+    renderPlatformStrip();
+    renderPlatforms();
+    renderTargets();
+    renderCompatibility();
+    navigate("platforms");
+    const found = state.overview.platforms.filter((item) => item.detected).length;
+    toast("本机 Agent 扫描完成", `共检查 ${state.overview.platforms.length} 个主流平台，发现 ${found} 个已安装平台。`);
+  } catch (error) {
+    toast("扫描未完成", error.message, "error");
+  } finally {
+    setBusy(button, false);
+  }
+}
+
 function openConnectDialog() {
   document.querySelector("#connect-dialog").showModal();
   setTimeout(() => document.querySelector("#access-token").focus(), 30);
@@ -330,7 +397,7 @@ async function connectPortal() {
     updateConnection(true);
     renderChannels();
     navigate("updates");
-    toast("发布门户已连接", `已读取 ${state.channels.channels.length} 个独立发布通道。`);
+    toast("发布门户已连接", `已读取 ${state.channels.channels.length} 个发布通道。`);
   } catch (error) {
     toast("连接失败", error.message, "error");
   } finally {
@@ -359,29 +426,54 @@ async function ensureArtifact(channelId, button) {
   }
 }
 
+async function installToDetectedPlatforms(button) {
+  if (!bridge) {
+    toast("界面预览模式", "桌面进程启动后才能扫描和安装。");
+    return;
+  }
+  try {
+    await ensureArtifact("generic", button);
+    const batch = await bridge.planDetectedInstall();
+    const conflicts = batch.targets.flatMap((target) => target.conflicts || []);
+    const targetRows = batch.targets.map((target) => `
+      <li>
+        <strong>${escapeHtml(target.platformIds.join(" + "))}</strong>
+        <span class="path-value">${escapeHtml(target.targetRoot)}</span>
+        <small>${target.skillCount} 项技能 · 新增 ${target.additions} · 更新 ${target.replacements}</small>
+      </li>
+    `).join("");
+    const conflictCopy = conflicts.length
+      ? `<p><strong>发现 ${conflicts.length} 个未登记同名目录，已阻止覆盖。</strong></p>`
+      : "<p>每个目标独立执行原子更新并保留回滚副本；不会请求管理员权限。</p>";
+    openAction({
+      kicker: "DISCOVERED AGENTS",
+      title: conflicts.length ? "需要先处理目录冲突" : `导入到 ${batch.targets.length} 个已发现目标`,
+      html: `${conflictCopy}<ul class="install-target-list">${targetRows}</ul><p>WorkBuddy 如已发现，使用该平台行内按钮下载插件市场包，然后在 WorkBuddy 内完成添加和安装。</p>`,
+      confirmLabel: "确认一键导入",
+      disabled: conflicts.length > 0,
+      onConfirm: async () => {
+        const result = await bridge.executeDetectedInstall(batch.batchId);
+        closeActionDialog();
+        await refreshOverview();
+        toast("多平台导入完成", `${result.results.length} 个 Skills 目录已更新并登记回滚点。`);
+      },
+    });
+  } catch (error) {
+    if (error.message !== "请先连接发布门户") toast("一键安装未完成", error.message, "error");
+  }
+}
+
 async function handlePlatformAction(button) {
   const platform = state.overview.platforms.find((item) => item.id === button.dataset.platformId);
   if (!platform || !bridge) return;
   try {
     if (button.dataset.platformAction === "workbuddy") {
-      const channelId = state.overview.os.platform === "win32" ? "windows" : "macos";
-      await ensureArtifact(channelId, button);
-      const staged = await bridge.stageWorkBuddy(channelId);
-      openAction({
-        kicker: "FIXED INSTALLER",
-        title: `运行 ${platform.name} 固定安装器`,
-        html: `
-          <p>已完成门户同源、包 SHA、Ed25519 发布签名和逐文件哈希校验。</p>
-          <p><strong>执行前必须完全退出 WorkBuddy。</strong>管理器只运行签名包中的固定安装器，不执行门户返回的动态命令。</p>
-          <p class="path-value">${escapeHtml(staged.launcher)}</p>
-        `,
-        confirmLabel: "运行固定安装器",
-        onConfirm: async () => {
-          await bridge.launchWorkBuddy(staged);
-          closeActionDialog();
-          toast("固定安装器已启动", "请在终端窗口中完成安装并返回管理器验收。");
-        },
-      });
+      const artifact = await ensureArtifact("workbuddy", button);
+      await bridge.showItem(artifact.downloaded.path);
+      toast(
+        "WorkBuddy 插件市场包已就绪",
+        "解压 ZIP 后，在 WorkBuddy 内使用 /plugin marketplace add 添加目录，再安装 jiaotang-workbuddy-skills@jiaotang。",
+      );
       return;
     }
     const artifact = await ensureArtifact("generic", button);
@@ -402,15 +494,15 @@ async function handlePlatformAction(button) {
       : `<p>将安装 ${plan.skillCount} 项技能，新增 ${plan.additions.length} 项，替换 ${plan.replacements.length} 项已登记内容。</p><p>当前内容将移动到同盘备份区，可从管理器回滚。</p>`;
     openAction({
       kicker: "ATOMIC INSTALL PLAN",
-      title: conflicts ? "需要处理同名冲突" : `同步到 ${platform.name}`,
+      title: conflicts ? "需要处理同名冲突" : `导入到 ${platform.name}`,
       html: conflicts,
-      confirmLabel: "执行签名更新",
+      confirmLabel: "确认一键导入",
       disabled: plan.conflicts.length > 0,
       onConfirm: async () => {
         const result = await bridge.executeGenericInstall(plan.planId);
         closeActionDialog();
         await refreshOverview();
-        toast("Skills 同步完成", `${result.skillCount} 项技能已更新到 ${result.targetRoot}`);
+        toast("Skills 导入完成", `${result.skillCount} 项技能已更新到 ${result.targetRoot}`);
       },
     });
   } catch (error) {
@@ -452,10 +544,20 @@ document.addEventListener("click", async (event) => {
       openConnectDialog();
     }
   }
-  if (event.target.closest("#rescan-button")) {
-    await refreshOverview();
-    toast("本机扫描完成", "平台入口、托管目录和系统签名状态已刷新。");
+  const scanButton = event.target.closest("#rescan-button, #platform-rescan-button");
+  if (scanButton) await scanLocalAgents(scanButton);
+  const platformFilter = event.target.closest("[data-platform-filter]");
+  if (platformFilter) {
+    state.platformFilter = platformFilter.dataset.platformFilter;
+    document.querySelectorAll("[data-platform-filter]").forEach((button) => {
+      const active = button === platformFilter;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    renderPlatforms();
   }
+  const installDetected = event.target.closest("#install-detected-button");
+  if (installDetected) await installToDetectedPlatforms(installDetected);
   const channelButton = event.target.closest("[data-download-channel]");
   if (channelButton && bridge) {
     try {
@@ -495,4 +597,6 @@ document.querySelector("#connect-form").addEventListener("submit", (event) => {
   connectPortal();
 });
 
+const requestedView = new URLSearchParams(window.location.search).get("view");
+if (requestedView && viewMeta[requestedView]) navigate(requestedView);
 refreshOverview();

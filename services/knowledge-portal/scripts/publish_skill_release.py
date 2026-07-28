@@ -56,14 +56,14 @@ def semantic_version(value: str) -> str:
     return f"{match.group(1)}.{match.group(2)}.{patch}{hotfix}"
 
 
-ARTIFACT_TARGETS = ("generic", "macos", "windows")
+ARTIFACT_TARGETS = ("generic", "workbuddy")
 
 
 def validate_release_packages(
     packages: dict[str, Path],
     version: str,
 ) -> dict[str, object]:
-    """Validate any non-empty combination of independently released clients."""
+    """Validate the generic Skills package and/or the cross-platform WorkBuddy package."""
     invalid = sorted(set(packages) - set(ARTIFACT_TARGETS))
     if invalid:
         raise ValueError("不支持的发布目标：" + "、".join(invalid))
@@ -119,15 +119,11 @@ def validate_release_packages(
                     raise ValueError(
                         f"{target}包的WorkBuddy插件版本不一致"
                     )
-                if target == "macos" and not any(
-                    name.lower().endswith(".command") for name in names
+                if not any(
+                    name.endswith("/.codebuddy-plugin/marketplace.json")
+                    for name in names
                 ):
-                    raise ValueError("macOS包缺少.command固定安装器")
-                if target == "windows" and not (
-                    any(name.lower().endswith(".cmd") for name in names)
-                    and any(name.lower().endswith(".ps1") for name in names)
-                ):
-                    raise ValueError("Windows包缺少.cmd或.ps1固定安装器")
+                    raise ValueError(f"{target}包缺少WorkBuddy插件市场清单")
         hashes[target] = sha256(package)
 
     return {
@@ -146,7 +142,7 @@ def validate_release_packages(
 
 def validate_packages(generic: Path, workbuddy: Path, version: str) -> dict[str, object]:
     validated = validate_release_packages(
-        {"generic": generic, "windows": workbuddy},
+        {"generic": generic, "workbuddy": workbuddy},
         version,
     )
     artifacts = validated["artifacts"]
@@ -154,7 +150,7 @@ def validate_packages(generic: Path, workbuddy: Path, version: str) -> dict[str,
         "version": version,
         "skill_count": validated["skill_count"],
         "generic_sha256": artifacts["generic"]["sha256"],
-        "workbuddy_sha256": artifacts["windows"]["sha256"],
+        "workbuddy_sha256": artifacts["workbuddy"]["sha256"],
     }
 
 
@@ -220,8 +216,7 @@ def _ensure_stage_table(connection: sqlite3.Connection) -> None:
 def _artifact_name(version: str, target: str) -> str:
     suffix = {
         "generic": "",
-        "macos": "-WorkBuddy-macOS",
-        "windows": "-WorkBuddy-Windows",
+        "workbuddy": "-WorkBuddy",
     }[target]
     return f"企业全生命周期助手-V{version}{suffix}.zip"
 
@@ -301,15 +296,8 @@ def stage_selective(
                 "releasing",
                 str(installed.get("generic", "")),
                 validation["artifacts"].get("generic", {}).get("sha256", ""),
-                str(
-                    installed.get("windows")
-                    or installed.get("macos")
-                    or ""
-                ),
-                validation["artifacts"].get(
-                    "windows",
-                    validation["artifacts"].get("macos", {}),
-                ).get("sha256", ""),
+                str(installed.get("workbuddy") or ""),
+                validation["artifacts"].get("workbuddy", {}).get("sha256", ""),
                 release_notes.strip(),
                 git_commit.strip(),
                 github_url.strip(),
@@ -399,7 +387,7 @@ def publish_selective(
             installed[target] = destination
         primary_target = next(
             target
-            for target in ("generic", "windows", "macos")
+            for target in ("generic", "workbuddy")
             if target in installed
         )
         primary = installed[primary_target]
@@ -467,20 +455,26 @@ def promote_selective(
         ).fetchall()
     if staged is None or str(staged["status"]) != "releasing" or not rows:
         raise RuntimeError(f"版本 {version} 未处于可提升的正式发布中")
-    packages = {
-        str(row["target"]): Path(str(row["file_path"])) for row in rows
-    }
     if any(
-        not path.is_file()
-        or sha256(path)
-        != next(
-            str(row["sha256"])
-            for row in rows
-            if str(row["target"]) == target
-        )
-        for target, path in packages.items()
+        not Path(str(row["file_path"])).is_file()
+        or sha256(Path(str(row["file_path"]))) != str(row["sha256"])
+        for row in rows
     ):
         raise RuntimeError("正式发布中的候选包缺失或哈希发生变化")
+    packages: dict[str, Path] = {}
+    for row in rows:
+        legacy_target = str(row["target"])
+        target = (
+            "workbuddy"
+            if legacy_target in {"macos", "windows"}
+            else legacy_target
+        )
+        path = Path(str(row["file_path"]))
+        if target in packages and packages[target] != path:
+            raise RuntimeError(
+                "发布中记录仍包含两个系统专用 WorkBuddy 包，请撤销后按统一包重新暂存"
+            )
+        packages[target] = path
     result = publish_selective(
         database_path,
         release_directory,
@@ -706,8 +700,6 @@ def main() -> None:
     parser.add_argument("--release-dir", type=Path, required=True)
     parser.add_argument("--generic-package", type=Path)
     parser.add_argument("--workbuddy-package", type=Path)
-    parser.add_argument("--workbuddy-macos-package", type=Path)
-    parser.add_argument("--workbuddy-windows-package", type=Path)
     parser.add_argument("--version", required=True)
     parser.add_argument("--release-notes-file", type=Path)
     parser.add_argument("--git-commit", default="")
@@ -718,16 +710,7 @@ def main() -> None:
             target: package
             for target, package in (
                 ("generic", arguments.generic_package),
-                (
-                    "macos",
-                    arguments.workbuddy_macos_package
-                    or arguments.workbuddy_package,
-                ),
-                (
-                    "windows",
-                    arguments.workbuddy_windows_package
-                    or arguments.workbuddy_package,
-                ),
+                ("workbuddy", arguments.workbuddy_package),
             )
             if package is not None
         }

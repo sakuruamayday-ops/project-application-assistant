@@ -45,7 +45,7 @@ npm run release:verify -- --artifact "Jiaotang-Skills-Manager-0.1.0-mac-arm64.dm
 
 正式安装器必须：
 
-- 使用受信 CA 签发的 OV 或 EV 代码签名证书，对主程序、辅助可执行文件和 NSIS 安装器签名。
+- 使用受信任的代码签名身份，例如受信 CA 证书或 Microsoft Artifact Signing，对主程序、辅助可执行文件和 NSIS 安装器签名；也可评估 Microsoft Store 分发。
 - 固定发布者名称，持续使用同一证书主体；证书轮换要保留可审计记录。
 - 使用 RFC 3161 时间戳，避免证书到期后历史签名失效。
 - 在 Windows 发布机上使用 `signtool verify /pa /all` 与 PowerShell 双重验证。
@@ -61,22 +61,31 @@ npm run release:verify -- --artifact .\Jiaotang-Skills-Manager-0.1.0-win-x64.exe
 
 `Status` 必须为 `Valid`。SmartScreen 还会参考发布者信誉；稳定的证书主体与持续签名发布有助于积累信誉，但不能承诺首次下载一定不出现提醒。不得把“关闭 Defender”或“忽略未知发布者”作为正式安装步骤。
 
-## WorkBuddy 固定安装器
+UAC 管理员授权只允许程序执行需要提升权限的操作，不会生成 Authenticode 签名，也不会建立 SmartScreen 发布者信誉。Windows 11 的 Smart App Control 当前不能为单个被阻止的未签名应用设置例外，因此“让用户点管理员同意”不能作为兼容所有 Windows 环境的发布方案。
 
-管理器不会执行门户返回的任意命令。它只会：
+## 无证书阶段的授权边界
 
-1. 下载已声明的 macOS 或 Windows WorkBuddy 通道包。
+- macOS 用户可以在“隐私与安全性”中对某个未知开发者应用选择“仍要打开”，该操作会保存本机例外，但应用依旧没有 Developer ID 和 Apple 公证。
+- Windows 在部分策略下允许用户从 SmartScreen 提示中选择继续运行；企业策略或 Smart App Control 可能完全禁止继续。
+- 管理员权限适合安装系统级组件，不适合用来写入 `~/.agents/skills`、`~/.trae-cn/skills` 或 `%USERPROFILE%` 下的 Skills。此类用户级同步默认不提权。
+- 无证书原生包只允许受控工程测试，不进入公开下载页。公开正式入口继续使用 HTTPS PWA，直到双端发行信任链通过。
+
+## WorkBuddy 应用内插件市场
+
+管理器不会执行门户返回的任意命令，也不启动 `.command`、`.cmd`、PowerShell 或 WorkBuddy 外部 CLI。它只会：
+
+1. 下载跨平台 WorkBuddy 插件市场包。
 2. 完成 Ed25519 签名与清单内全部文件哈希校验。
-3. 从签名包中提取固定名称的 `.command` 或 `.cmd` 安装器。
-4. 在用户明确确认且 WorkBuddy 完全退出后启动固定安装器。
+3. 在文件管理器中定位已验证 ZIP。
+4. 用户解压后，在正在运行的 WorkBuddy 内执行 `/plugin marketplace add <解压后的市场目录>`，再安装并启用 `jiaotang-workbuddy-skills@jiaotang`。
 
-Windows 端使用 `.cmd` 直接安装；macOS 端继续使用 `.command`。平台包独立发布，Windows 热修复不会强制 macOS 更新。
+应用内命令由 WorkBuddy 自己处理，不占用第二个宿主进程，因此不再设置“完全退出 WorkBuddy”的运行锁。macOS 与 Windows 使用同一个候选包，并在发布前分别完成实机验收。
 
 ## 发布阻断条件
 
 - 尚未取得相应平台发行证书，却准备把原生构建提供给终端用户。
 - 应用未签名、签名失效或公证未 staple。
-- 安装器的 Authenticode 状态不是 `Valid`。
+- Windows 原生管理器安装器的 Authenticode 状态不是 `Valid`。
 - 发布包 SHA-256 与门户元数据不一致。
 - Ed25519 公钥指纹不是信任清单中的固定值。
 - 签名清单缺文件、路径越界、重复路径或任一文件哈希不一致。

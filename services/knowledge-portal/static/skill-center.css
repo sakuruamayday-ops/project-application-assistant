@@ -145,10 +145,9 @@
 .skill-platform-note { display:grid; grid-template-columns:150px minmax(0,1fr); gap:18px; padding:20px 22px; border-bottom:1px solid var(--skill-line); background:#0d0e0f; }
 .skill-platform-note strong { color:var(--skill-gold-light); font-size:12px; }
 .skill-platform-note p { margin:0; color:var(--skill-muted); font-size:11px; line-height:1.7; }
-.skill-platform-downloads { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; border-bottom:1px solid var(--skill-line); background:var(--skill-line); }
+.skill-platform-downloads { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; border-bottom:1px solid var(--skill-line); background:var(--skill-line); }
 .skill-platform-card { display:flex; flex-direction:column; gap:18px; min-height:330px; padding:24px; background:#131416; }
-.skill-platform-card.is-macos { background:linear-gradient(145deg,#17181a,#111214 68%); }
-.skill-platform-card.is-windows { background:linear-gradient(145deg,#17191c,#111214 68%); }
+.skill-platform-card.is-workbuddy { background:linear-gradient(145deg,#17191c,#111214 68%); }
 .skill-platform-mark { display:grid; place-items:center; width:44px; height:44px; color:#17130b; border-radius:11px; background:var(--skill-gold); font-size:19px; font-weight:900; }
 .skill-platform-card h3 { margin:8px 0 10px; color:var(--skill-ink); font-size:23px; letter-spacing:-.035em; }
 .skill-platform-card p { margin:0; color:var(--skill-muted); font-size:10px; line-height:1.7; }

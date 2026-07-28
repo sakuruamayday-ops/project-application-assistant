@@ -49,19 +49,18 @@
 | 使用环境 | 下载 | 安装入口 |
 |---|---|---|
 | 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
-| WorkBuddy 5 或更高版本，macOS | WorkBuddy macOS 签名包 | 运行 `.command` 固定安装器 |
-| WorkBuddy 5 或更高版本，Windows | WorkBuddy Windows 签名包 | 运行 `.cmd`，再由固定 `.ps1` 安装 |
+| WorkBuddy 5 或更高版本，macOS 与 Windows | 跨平台 WorkBuddy 签名包 | 在 WorkBuddy 内添加本地插件市场并安装 |
 
-通用 Skills、WorkBuddy macOS、WorkBuddy Windows 是三个独立发布目标，可以同批发布，也可以只发布发生修复的客户端。各下载入口独立保留最近一次正式版本。
+发布目标只有两个：通用 Skills 与跨平台 WorkBuddy 插件市场包。WorkBuddy 的 macOS 和 Windows 使用同一个签名 ZIP，不再分别维护版本。
 
 ### WorkBuddy 平台说明
 
-WorkBuddy 的 macOS 与 Windows 下载通道独立维护，既可分别发布，也可在同一版本同时发布；未更新的平台继续保留最近一次正式版本。用户遇到需要适配的问题时，由维护者按具体环境单独处理。
+WorkBuddy 的系统差异由同一个插件包内的运行时适配处理。发布门禁会把同一候选包分别放到 macOS 与 Windows WorkBuddy 上验收，任一平台失败都不能发布该 WorkBuddy 包。
 
 ## 安全边界
 
 - 发布包使用 Ed25519 签名，并记录逐文件 SHA-256。
-- 安装器拒绝路径穿越、绝对路径、符号链接、重复条目和哈希不一致。
+- 安装与更新流程拒绝路径穿越、绝对路径、符号链接、重复条目和哈希不一致。
 - 安装前必须明确确认；不执行网页返回的动态命令。
 - WorkBuddy MCP 连接器随插件签名发布，不写入宿主级 MCP 配置。
 - 安装后执行真实 `marketplace add → install → enable → Skill 触发`，不把“已启用”冒充成功。
@@ -105,11 +104,12 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 受控命令只消费已经完成签名的候选包，不生成签名，也不会自动递增版本。先执行只读预检：
 
 ```bash
+RELEASE_VERSION=按正式发布指令填写
 python3 scripts/controlled_release.py \
-  --version 1.3.1.2 \
-  --workbuddy-windows-package dist/企业全生命周期助手-V1.3.1.2-WorkBuddy-Windows.zip \
-  --gate-report dist/企业全生命周期助手-V1.3.1.2-发布门禁.json \
-  --release-notes docs/releases/V1.3.1.2.md
+  --version "$RELEASE_VERSION" \
+  --workbuddy-package "dist/企业全生命周期助手-V${RELEASE_VERSION}-WorkBuddy.zip" \
+  --gate-report "dist/企业全生命周期助手-V${RELEASE_VERSION}-发布门禁.json" \
+  --release-notes "docs/releases/V${RELEASE_VERSION}.md"
 ```
 
 预检确认版本完全一致、默认分支干净、签名包与发布门禁全部通过后，先在同一命令末尾追加 `--stage`。系统创建 GitHub 预发布，并在知识门户登记“正式发布中”，随后强制暂停：
