@@ -4190,8 +4190,11 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
         page = client.get("/skills")
         assert "macOS" in page.text
         assert "Windows" in page.text
-        assert "macOS 与 Windows 不再维护独立版本" in page.text
+        assert "macOS 与 Windows 共用同一个插件市场 ZIP" in page.text
         assert "WorkBuddy 内添加本地插件市场" in page.text
+        assert "平台增强版 · TRAE" in page.text
+        assert "平台插件版 · Kimi Code" in page.text
+        assert "只有通过官方文档核对、结构校验和真实宿主验收的平台包才开放下载" in page.text
         assert "等待人工反馈" not in page.text
         assert "人工反馈" not in page.text
         assert "自动实机证据" not in page.text
@@ -4334,16 +4337,11 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path)
             follow_redirects=False,
         )
         client.cookies.update(login.cookies)
-        manager = client.get("/skills-manager")
-        assert manager.status_code == 200
+        manager = client.get("/skills-manager", follow_redirects=False)
+        assert manager.status_code == 303
         assert manager.headers["cache-control"] == "no-store"
-        assert "需要扫描本机 Agent？" in manager.text
-        assert "可选用桌面客户端。" in manager.text
-        assert "未签名，不等于不校验" in manager.text
-        assert "企业策略完全阻止" in manager.text
-        assert 'id="native-client-list"' in manager.text
-        assert 'id="native-user-manual"' in manager.text
-        assert "CAPABILITY NEGOTIATION" in manager.text
+        assert manager.headers["location"] == "/skills#skills-downloads"
+        assert manager.headers["x-jiaotang-client-status"] == "retired"
         native_release_response = client.get(
             "/v1/web/skills-manager/native-release"
         )
@@ -4354,12 +4352,13 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path)
             "jiaotang-skills-manager-native-release/v1"
         )
         assert native_release["version"] == "0.2.0"
-        assert native_release["state"] in {"pending", "published"}
-        native_release_published = native_release["state"] == "published"
+        assert native_release["state"] == "retired"
         assert native_release["publication_policy"] == (
             "release_then_reviewed_portal_backfill"
         )
-        assert native_release["available"] is native_release_published
+        assert native_release["available"] is False
+        assert native_release["replacement_url"] == "/skills#skills-downloads"
+        assert native_release["retired_at"]
         native_artifacts = {
             item["id"]: item for item in native_release["artifacts"]
         }
@@ -4369,48 +4368,29 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path)
             "windows-x64",
         }
         for artifact in native_artifacts.values():
-            assert artifact["available"] is native_release_published
-            if native_release_published:
-                assert re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"])
-            else:
-                assert artifact["sha256"] == ""
+            assert artifact["available"] is False
+            assert re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"])
             native_download = client.get(
                 artifact["download_url"],
                 follow_redirects=False,
             )
-            assert native_download.status_code == (
-                307 if native_release_published else 404
-            )
+            assert native_download.status_code == 303
             assert native_download.headers["cache-control"] == "no-store"
-            if native_release_published:
-                assert (
-                    native_download.headers["location"]
-                    == artifact["github_asset_url"]
-                )
-        assert (
-            native_release["user_manual"]["available"]
-            is native_release_published
+            assert native_download.headers["location"] == "/skills#skills-downloads"
+            assert native_download.headers["x-jiaotang-client-status"] == "retired"
+        assert native_release["user_manual"]["available"] is False
+        assert re.fullmatch(
+            r"[0-9a-f]{64}",
+            native_release["user_manual"]["sha256"],
         )
-        if native_release_published:
-            assert re.fullmatch(
-                r"[0-9a-f]{64}",
-                native_release["user_manual"]["sha256"],
-            )
-        else:
-            assert native_release["user_manual"]["sha256"] == ""
         native_manual = client.get(
             native_release["user_manual"]["download_url"],
             follow_redirects=False,
         )
-        assert native_manual.status_code == (
-            307 if native_release_published else 404
-        )
+        assert native_manual.status_code == 303
         assert native_manual.headers["cache-control"] == "no-store"
-        if native_release_published:
-            assert (
-                native_manual.headers["location"]
-                == native_release["user_manual"]["github_asset_url"]
-            )
+        assert native_manual.headers["location"] == "/skills#skills-downloads"
+        assert native_manual.headers["x-jiaotang-client-status"] == "retired"
         web_channels = client.get("/v1/web/skills/channels")
         assert web_channels.status_code == 200
         web_artifacts = {
@@ -4423,11 +4403,13 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path)
         assert web_artifacts["workbuddy"]["download_url"] is None
         pwa_manifest = client.get("/skills-manager/manifest.webmanifest")
         assert pwa_manifest.status_code == 200
-        assert pwa_manifest.json()["display"] == "standalone"
+        assert pwa_manifest.json()["display"] == "browser"
+        assert pwa_manifest.json()["start_url"] == "/skills#skills-downloads"
         service_worker = client.get("/skills-manager/sw.js")
         assert service_worker.status_code == 200
         assert service_worker.headers["service-worker-allowed"] == "/skills-manager"
-        assert "jiaotang-skills-manager-pwa-v2" in service_worker.text
+        assert "self.registration.unregister()" in service_worker.text
+        assert "cache.addAll" not in service_worker.text
         assert client.get("/skills/latest/download").content == generic.read_bytes()
         for path in (
             "/skills/latest/workbuddy/macos/download",
@@ -4442,7 +4424,12 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path)
         assert historical.content == windows.read_bytes()
         page = client.get("/skills")
         assert page.status_code == 200
-        assert "打开双端管理器" in page.text
+        assert "打开双端管理器" not in page.text
+        assert "平台增强版 · TRAE" in page.text
+        assert "平台增强版 · Qoder" in page.text
+        assert "平台增强版 · 通义灵码" in page.text
+        assert "平台插件版 · Kimi Code" in page.text
+        assert "平台增强版 · Cherry Studio" in page.text
         assert (
             'class="skill-platform-card is-workbuddy" data-platform-version=""'
             in page.text
@@ -4553,7 +4540,7 @@ def test_workbuddy_distribution_revision_is_visible_without_rewriting_content_no
         assert "初始 Windows 历史说明" in page.text
 
 
-def test_skills_manager_native_download_redirects_to_validated_release_assets(
+def test_skills_manager_retirement_redirects_historical_downloads_to_package_center(
     tmp_path,
 ):
     module = load_app(tmp_path)
@@ -4572,20 +4559,7 @@ def test_skills_manager_native_download_redirects_to_validated_release_assets(
     native_release = json.loads(
         module.SKILLS_MANAGER_NATIVE_RELEASE_PATH.read_text(encoding="utf-8")
     )
-    native_release["state"] = "published"
-    native_release["available"] = True
-    native_release["published_at"] = "2026-07-28T10:00:00Z"
-    for index, artifact in enumerate(native_release["artifacts"]):
-        artifact["available"] = True
-        artifact["sha256"] = f"{index + 1:064x}"
-    native_release["user_manual"]["available"] = True
-    native_release["user_manual"]["sha256"] = f"{4:064x}"
-    release_path = tmp_path / "native-release.json"
-    release_path.write_text(
-        json.dumps(native_release, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    module.SKILLS_MANAGER_NATIVE_RELEASE_PATH = release_path
+    assert native_release["state"] == "retired"
 
     with TestClient(module.app) as client:
         login = client.post(
@@ -4596,26 +4570,25 @@ def test_skills_manager_native_download_redirects_to_validated_release_assets(
         client.cookies.update(login.cookies)
         metadata = client.get("/v1/web/skills-manager/native-release")
         assert metadata.status_code == 200
-        assert metadata.json()["state"] == "published"
-        assert metadata.json()["available"] is True
+        assert metadata.json()["state"] == "retired"
+        assert metadata.json()["available"] is False
         for artifact in native_release["artifacts"]:
             download = client.get(
                 artifact["download_url"],
                 follow_redirects=False,
             )
-            assert download.status_code == 307
+            assert download.status_code == 303
             assert download.headers["cache-control"] == "no-store"
-            assert download.headers["location"] == artifact["github_asset_url"]
+            assert download.headers["location"] == "/skills#skills-downloads"
+            assert download.headers["x-jiaotang-client-status"] == "retired"
         manual = client.get(
             native_release["user_manual"]["download_url"],
             follow_redirects=False,
         )
-        assert manual.status_code == 307
+        assert manual.status_code == 303
         assert manual.headers["cache-control"] == "no-store"
-        assert (
-            manual.headers["location"]
-            == native_release["user_manual"]["github_asset_url"]
-        )
+        assert manual.headers["location"] == "/skills#skills-downloads"
+        assert manual.headers["x-jiaotang-client-status"] == "retired"
         unsupported_download = client.get(
             "/skills-manager/download/linux/x64",
             follow_redirects=False,

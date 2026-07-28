@@ -1,3 +1,5 @@
+# 已于 2026-07-28 停止作为 GitHub Actions 工作流运行。
+# 原文件从 .github/workflows 移入归档，保留 v0.2.0 发布审计过程。
 name: Skills Manager unsigned local-authorized release
 
 run-name: Skills Manager v0.2.0 unsigned local-authorized release by @${{ github.actor }}

@@ -51,7 +51,7 @@ def main() -> None:
             archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
             archive.writestr("jiaotang/plugins/plugin/.codebuddy-plugin/plugin.json", "{}")
         with sqlite3.connect(data_dir / "knowledge.db") as connection:
-            connection.execute(
+            release_cursor = connection.execute(
                 """
                 INSERT INTO skill_releases(
                     version,file_name,file_path,sha256,release_notes,published_at
@@ -64,6 +64,20 @@ def main() -> None:
                     hashlib.sha256(generic.read_bytes()).hexdigest(),
                     "## 浏览器回归版本\n\n验证 macOS 与 Windows 下载呈现。",
                     datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO skill_release_artifacts(
+                    release_id,target,file_name,file_path,sha256
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    release_cursor.lastrowid,
+                    "workbuddy",
+                    workbuddy.name,
+                    str(workbuddy),
+                    hashlib.sha256(workbuddy.read_bytes()).hexdigest(),
                 ),
             )
             connection.commit()

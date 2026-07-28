@@ -8131,14 +8131,15 @@ def skills_manager_native_release_payload() -> dict[str, object]:
     if (
         not re.fullmatch(r"\d+\.\d+\.\d+", version)
         or tag != f"skills-manager-v{version}"
-        or state not in {"pending", "published"}
+        or state not in {"pending", "published", "retired"}
     ):
         raise HTTPException(status_code=503, detail="桌面客户端发布版本或状态无效")
     is_published = state == "published"
+    is_historical_release = state in {"published", "retired"}
     if payload.get("available") is not is_published:
         raise HTTPException(status_code=503, detail="桌面客户端发布状态不一致")
     published_at = payload.get("published_at")
-    if is_published:
+    if is_historical_release:
         try:
             parsed_published_at = datetime.fromisoformat(
                 str(published_at).replace("Z", "+00:00")
@@ -8152,6 +8153,20 @@ def skills_manager_native_release_payload() -> dict[str, object]:
             raise HTTPException(status_code=503, detail="桌面客户端发布时间缺少时区")
     elif published_at is not None:
         raise HTTPException(status_code=503, detail="候选发布清单不得提前填写发布时间")
+    if state == "retired":
+        try:
+            retired_at = datetime.fromisoformat(
+                str(payload.get("retired_at")).replace("Z", "+00:00")
+            )
+        except ValueError as error:
+            raise HTTPException(
+                status_code=503,
+                detail="桌面客户端停用时间无效",
+            ) from error
+        if retired_at.tzinfo is None:
+            raise HTTPException(status_code=503, detail="桌面客户端停用时间缺少时区")
+        if payload.get("replacement_url") != "/skills#skills-downloads":
+            raise HTTPException(status_code=503, detail="桌面客户端替代入口无效")
     release_base = (
         "https://github.com/sakuruamayday-ops/"
         "project-application-assistant/releases"
@@ -8197,9 +8212,9 @@ def skills_manager_native_release_payload() -> dict[str, object]:
         ):
             raise HTTPException(status_code=503, detail="桌面客户端产物元数据无效")
         digest = str(artifact.get("sha256") or "")
-        if is_published and not re.fullmatch(r"[0-9a-f]{64}", digest):
+        if is_historical_release and not re.fullmatch(r"[0-9a-f]{64}", digest):
             raise HTTPException(status_code=503, detail="桌面客户端产物哈希无效")
-        if not is_published and digest:
+        if not is_historical_release and digest:
             raise HTTPException(status_code=503, detail="候选产物不得提前填写哈希")
     if seen != set(expected):
         raise HTTPException(status_code=503, detail="桌面客户端发布目标不完整")
@@ -8215,9 +8230,9 @@ def skills_manager_native_release_payload() -> dict[str, object]:
     ):
         raise HTTPException(status_code=503, detail="桌面客户端用户手册元数据无效")
     manual_digest = str(manual.get("sha256") or "")
-    if is_published and not re.fullmatch(r"[0-9a-f]{64}", manual_digest):
+    if is_historical_release and not re.fullmatch(r"[0-9a-f]{64}", manual_digest):
         raise HTTPException(status_code=503, detail="桌面客户端用户手册哈希无效")
-    if not is_published and manual_digest:
+    if not is_historical_release and manual_digest:
         raise HTTPException(status_code=503, detail="候选用户手册不得提前填写哈希")
     return payload
 
@@ -8227,14 +8242,15 @@ def skills_manager_page(
     request: Request,
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
-    response = templates.TemplateResponse(
-        request,
-        "skills_manager_pwa.html",
-        {"user": user},
+    del request, user
+    return RedirectResponse(
+        "/skills#skills-downloads",
+        status_code=303,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Jiaotang-Client-Status": "retired",
+        },
     )
-    response.headers["Cache-Control"] = "no-store"
-    response.headers["Pragma"] = "no-cache"
-    return response
 
 
 @app.get("/skills-manager/manifest.webmanifest")
@@ -8291,16 +8307,13 @@ def download_skills_manager_native_client(
             detail="不支持的桌面客户端平台或架构",
             headers={"Cache-Control": "no-store"},
         )
-    if not payload.get("available") or not artifact.get("available"):
-        raise HTTPException(
-            status_code=404,
-            detail="该桌面客户端候选包尚未正式发布",
-            headers={"Cache-Control": "no-store"},
-        )
     return RedirectResponse(
-        str(artifact["github_asset_url"]),
-        status_code=307,
-        headers={"Cache-Control": "no-store"},
+        str(payload.get("replacement_url") or "/skills#skills-downloads"),
+        status_code=303,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Jiaotang-Client-Status": "retired",
+        },
     )
 
 
@@ -8310,17 +8323,13 @@ def download_skills_manager_user_manual(
 ):
     del user
     payload = skills_manager_native_release_payload()
-    manual = payload["user_manual"]
-    if not payload.get("available") or not manual.get("available"):
-        raise HTTPException(
-            status_code=404,
-            detail="桌面客户端 Word 用户手册尚未正式发布",
-            headers={"Cache-Control": "no-store"},
-        )
     return RedirectResponse(
-        str(manual["github_asset_url"]),
-        status_code=307,
-        headers={"Cache-Control": "no-store"},
+        str(payload.get("replacement_url") or "/skills#skills-downloads"),
+        status_code=303,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Jiaotang-Client-Status": "retired",
+        },
     )
 
 

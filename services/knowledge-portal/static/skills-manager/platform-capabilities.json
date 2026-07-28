@@ -1,50 +1,35 @@
 {
   "schema": "jiaotang-skills-manager-capabilities/v1",
   "delivery": {
-    "primary": "https_pwa",
+    "primary": "website_package_center",
+    "skills_manager_status": "retired",
+    "replacement_url": "/skills#skills-downloads",
     "native_clients": {
       "macos": {
-        "status": "user_authorized_unsigned",
+        "status": "retired",
         "version": "0.2.0",
-        "local_authorization": "privacy_and_security_open_anyway",
-        "enterprise_policy_may_block": true,
-        "required": [
-          "explicit_user_download",
-          "published_sha256",
-          "macos_local_open_authorization"
-        ]
+        "available": false
       },
       "windows": {
-        "status": "user_authorized_unsigned",
+        "status": "retired",
         "version": "0.2.0",
-        "local_authorization": "smartscreen_more_info_run_anyway",
-        "enterprise_policy_may_block": true,
-        "required": [
-          "explicit_user_download",
-          "published_sha256",
-          "windows_local_run_authorization"
-        ]
+        "available": false
       }
     },
-    "unsigned_notice": "本机授权不等于 Developer ID 或 Authenticode 签名；Smart App Control、企业策略或安全软件可能阻止运行。"
+    "notice": "原生客户端停止分发；历史资产只保留审计记录。"
   },
   "directory_sync": {
-    "required_browser_capabilities": [
-      "secureContext",
-      "webCrypto",
-      "directoryPicker",
-      "directoryRemove",
-      "zipDeflate"
-    ],
-    "fallback": "verified_download_only",
+    "enabled": false,
+    "replacement": "verified_download_only",
     "managed_skill_count": 49
   },
   "platforms": {
-    "workbuddy": "signed_package_download",
-    "trae_cn": "directory_sync",
-    "kimi_code": "directory_sync",
-    "lingma": "guided_import",
-    "qoder": "adapter_import",
-    "cherry_studio": "guided_import"
+    "generic": "published",
+    "workbuddy": "published",
+    "trae_cn": "platform_package_validation",
+    "kimi_code": "platform_package_validation",
+    "lingma": "platform_package_validation",
+    "qoder": "platform_package_validation",
+    "cherry_studio": "platform_package_validation"
   }
 }
