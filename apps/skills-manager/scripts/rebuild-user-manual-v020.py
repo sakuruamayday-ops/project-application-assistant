@@ -532,7 +532,7 @@ def build_cover(document: Document) -> None:
     add_callout(
         document,
         "先记住三件事",
-        "管理器版本与 Skills 内容版本相互独立。当前管理器为 0.2.0，正式 Skills 为 V1.3.1.5，共 49 项。"
+        "管理器版本与 Skills 内容版本相互独立。当前管理器为 0.2.0，正式 Skills 为 V1.3.1.6，共 49 项。"
         "桌面客户端采用未签名本机授权分发；应用身份与 Skills 内容验真是两条独立信任链。"
         "系统或企业策略不允许未签名应用时，继续使用 HTTPS PWA，不关闭系统防护。",
         fill=LIGHT_GOLD,
@@ -666,22 +666,25 @@ def build_workbuddy_page(document: Document) -> None:
     add_body(
         document,
         "macOS 与 Windows 不再分别发布 WorkBuddy 安装包，也不再运行固定 .command、.cmd、PowerShell 或外部 CLI。"
-        "管理器只下载、验签并定位同一个跨平台插件市场 ZIP。",
+        "管理器只下载、验签并定位同一个跨平台插件市场 ZIP。V1.3.1.6 在签名 plugin.json 中内联声明 "
+        "jiaotang-kb，不依赖插件根目录 .mcp.json，也不写用户级、项目级或全局 MCP 配置。",
     )
     add_numbered_steps(
         document,
         [
             ("下载并验签。 ", "在平台页点击“准备安装”，等待签名与逐文件哈希通过。"),
-            ("定位并解压。 ", "打开 ZIP 位置，解压到可长期保留的本地目录。"),
-            ("添加本地市场。 ", "在 WorkBuddy 插件市场添加解压后的 jiaotang 目录。"),
+            ("定位并解压。 ", "打开 ZIP 位置，安全解压完整 jiaotang 市场。"),
+            ("持久保存。 ", "将完整市场保存到当前 WorkBuddy 实际用户目录的 plugins/marketplaces/jiaotang，不使用临时下载或临时解压目录。"),
+            ("添加本地市场。 ", "在 WorkBuddy 插件市场添加上述持久 jiaotang 目录；安装后不得清理该目录。"),
             ("安装并启用。 ", "安装 jiaotang-workbuddy-skills@jiaotang；不关闭 WorkBuddy，不运行包外脚本。"),
             ("填写 bootstrap。 ", "门户 API 页复制一次性地址并粘贴到敏感配置；同机已绑定时复用现有凭据。"),
-            ("完成验收。 ", "确认插件启用、49 项可见，并完成 MCP 工具列表与一次知识检索。"),
+            ("检查连接。 ", "让 Agent 检查知识库连接状态，确认 MCP 工具列表可见，并成功调用任一只读状态或检索工具。"),
+            ("完成验收。 ", "连接成功后再安装 OCR、PDF、Word、PPT、Excel 和联网检索 Skills；确认插件启用且 49 项可见。"),
         ],
     )
     add_code_line(
         document,
-        "/plugin marketplace add <解压后的 jiaotang 目录>    →    安装 jiaotang-workbuddy-skills@jiaotang",
+        "/plugin marketplace add <持久保存的 jiaotang 目录>    →    安装 jiaotang-workbuddy-skills@jiaotang",
     )
 
     add_heading(document, "远程适配器只更新数据，不下发命令", 2)
@@ -744,7 +747,7 @@ def build_security_page(document: Document) -> None:
     add_bullets(
         document,
         [
-            "管理器“关于”或安全中心显示版本 0.2.0，Skills 清单显示 V1.3.1.5 与 49 项。",
+            "管理器“关于”或安全中心显示版本 0.2.0，Skills 清单显示 V1.3.1.6 与 49 项。",
             "点击扫描后，平台数量、命中路径、耗时与适配器 revision 均有结果。",
             "通用版下载、解压和导入计划没有未处理冲突；导入后新建会话能识别 Skills。",
             "WorkBuddy 使用通用跨平台包，并在应用内完成市场添加、安装、启用与 bootstrap 配置。",
@@ -777,7 +780,7 @@ def build_document() -> Document:
     properties.author = "焦糖"
     properties.last_modified_by = "焦糖"
     properties.keywords = "Skills 管理器, Agent, WorkBuddy, macOS, Windows, 用户手册"
-    properties.comments = "正式用户手册，适用管理器 0.2.0 与 Skills V1.3.1.5"
+    properties.comments = "正式用户手册，适用管理器 0.2.0 与 Skills V1.3.1.6"
 
     build_cover(document)
     build_install_page(document)

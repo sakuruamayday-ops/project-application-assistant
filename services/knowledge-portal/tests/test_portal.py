@@ -3428,7 +3428,7 @@ def test_admin_uses_same_transactional_agent_onboarding_as_members(
                 "file_name": workbuddy_package.name,
                 "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
                 "target": "workbuddy",
-                "version": "1.3.1.5",
+                "version": "1.3.1.6",
             }
             if target == "workbuddy"
             else None
@@ -3756,6 +3756,8 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         ]
         assert "~/.workbuddy/plugins" in storage_layers[0]["path"]
         assert "~/.codebuddy/plugins" in storage_layers[0]["path"]
+        assert "plugins/marketplaces/jiaotang" in storage_layers[0]["path"]
+        assert "不得使用安装临时目录" in storage_layers[0]["purpose"]
         assert "~/.jiaotang/bin/jiaotang-kb-mcp.mjs" in storage_layers[1]["path"]
         assert storage_layers[1]["required_for_signed_plugin"] is False
         assert "cn.zshjiaotang.knowledge-device" in storage_layers[2]["path"]
@@ -3825,6 +3827,10 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "`jiaotang-kb`" in confirmed.json()["prompt"]
         assert "不是必须出现在 Agent 工具列表中的工具" in confirmed.json()["prompt"]
         assert "不要求存在某个固定工具名" in confirmed.json()["prompt"]
+        assert "MCP 声明已经内联在签名 plugin.json" in confirmed.json()["prompt"]
+        assert "不要另行创建或改写用户级、项目级" in confirmed.json()["prompt"]
+        assert "不得直接注册临时下载或临时解压目录" in confirmed.json()["prompt"]
+        assert "不得删除已注册的 jiaotang 市场" in confirmed.json()["prompt"]
         assert "knowledge_service_status" not in confirmed.json()["prompt"]
         assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
             confirmed.json()["prompt"]
@@ -3860,10 +3866,51 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert host_installation["agent_tool_named_plugin_required"] is False
         assert host_installation["agent_may_use_authorized_host_capabilities"] is True
         assert "safe_extract_without_execution" in host_installation["fixed_actions"]
+        assert "persist_declared_local_marketplace" in host_installation["fixed_actions"]
+        assert "register_persisted_local_marketplace" in (
+            host_installation["fixed_actions"]
+        )
+        assert "cleanup_download_and_staging_only" in (
+            host_installation["fixed_actions"]
+        )
+        persistent_marketplace = host_installation["persistent_marketplace"]
+        assert persistent_marketplace["name"] == "jiaotang"
+        assert persistent_marketplace["relative_path"] == (
+            "plugins/marketplaces/jiaotang"
+        )
+        assert persistent_marketplace["select_active_host_root"] is True
+        assert persistent_marketplace["register_from_temporary_path"] is False
+        assert persistent_marketplace["preserve_after_install"] is True
+        mcp_configuration = authorized_protocol.json()["installation"][
+            "mcp_configuration"
+        ]
+        assert mcp_configuration == {
+            "mode": "signed_inline_plugin_manifest",
+            "manifest": ".codebuddy-plugin/plugin.json",
+            "server": "jiaotang-kb",
+            "write_global_mcp_config": False,
+            "write_project_mcp_config": False,
+        }
         existing_install_policy = authorized_protocol.json()["installation"][
             "existing_install_policy"
         ]
-        assert "不重复下载" in existing_install_policy["same_package_sha256"]
+        assert "持久 jiaotang 市场目录" in (
+            existing_install_policy["same_package_sha256"]
+        )
+        assert "不得只凭 enabled 状态跳过" in (
+            existing_install_policy["same_package_sha256"]
+        )
+        cleanup = authorized_protocol.json()["installation"]["cleanup"]
+        assert cleanup["allowed"] == [
+            "downloaded_zip",
+            "unregistered_staging_directory",
+        ]
+        assert "registered_persistent_marketplace" in cleanup["preserve"]
+        assert cleanup["requires_runtime_connection_check"] is True
+        steps = authorized_protocol.json()["installation"]["steps"]
+        assert any("plugins/marketplaces/jiaotang" in step for step in steps)
+        assert any("不得直接从临时下载目录" in step for step in steps)
+        assert any("不得删除已注册的持久 jiaotang 市场" in step for step in steps)
         publisher_trust = authorized_protocol.json()["integrity"]["publisher_trust"]
         assert publisher_trust["fingerprint"] == (
             "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"

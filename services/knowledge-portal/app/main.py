@@ -10564,7 +10564,11 @@ def build_agent_install_prompt(install_protocol_url: str) -> str:
         "由 WorkBuddy 按已验签清单启动声明的 MCP 入口属于正常运行。协议中的 /plugin 只是 WorkBuddy"
         "宿主的插件管理入口，不是必须出现在 Agent 工具列表中的工具；不要仅因缺少同名工具而中止。"
         "当前会话如具备本地文件、插件管理或 WorkBuddy 配置能力，可以使用这些已授权能力完成协议"
-        "列出的固定步骤。bootstrap_url、安装码、API Token 与私钥均为敏感信息，"
+        "列出的固定步骤。安全解压后必须先把完整 jiaotang 市场持久保存到当前 WorkBuddy 实际使用的"
+        "用户插件市场目录，再从该持久目录注册；不得直接注册临时下载或临时解压目录，清理时也不得"
+        "删除已注册的 jiaotang 市场。jiaotang-kb 的 MCP 声明已经内联在签名 plugin.json 中，不要另行创建或"
+        "改写用户级、项目级 mcp.json 或 .mcp.json；宿主应从插件清单加载连接。"
+        "bootstrap_url、安装码、API Token 与私钥均为敏感信息，"
         "不要在普通回复中复述，不要写入 settings.json。安装后先检查 `jiaotang-kb` 是否出现在当前"
         "WorkBuddy 运行时连接列表；若已暴露只读状态或检索工具，任选一个实际调用验证，不要求存在"
         "某个固定工具名。未连接时先在当前 Agent 已获授权范围内完成连接刷新和必要配置。只有门户"
@@ -10585,12 +10589,15 @@ def workbuddy_storage_layers() -> list[dict[str, object]]:
             "label": "宿主插件文件",
             "scope": "workbuddy_managed",
             "path": (
-                "~/.workbuddy/plugins 下的 jiaotang 市场、插件副本与宿主登记；"
-                "兼容版本可能使用 ~/.codebuddy/plugins"
+                "当前 WorkBuddy 实际用户目录的 plugins/marketplaces/jiaotang；"
+                "WorkBuddy 5 通常为 ~/.workbuddy/plugins/marketplaces/jiaotang，"
+                "兼容版本可能为 ~/.codebuddy/plugins/marketplaces/jiaotang"
             ),
             "purpose": (
-                "由 WorkBuddy 管理本地市场、插件安装与启用状态；"
-                "插件内置模式下 jiaotang-kb MCP 运行文件也位于该插件目录"
+                "持久保存 WorkBuddy 本地市场、插件运行文件和启用状态；"
+                "不得使用安装临时目录替代，也不得在安装后清理；"
+                "插件内置模式下 jiaotang-kb MCP 声明内联于签名 plugin.json，"
+                "运行文件也位于该插件目录"
             ),
             "created_when": "安装或启用签名 WorkBuddy 插件时",
             "required_for_signed_plugin": True,
@@ -11062,14 +11069,33 @@ def agent_install_protocol(
                             "download_declared_plugin_package",
                             "verify_declared_package_and_signature",
                             "safe_extract_without_execution",
-                            "register_declared_local_marketplace",
+                            "persist_declared_local_marketplace",
+                            "register_persisted_local_marketplace",
                             "install_and_enable_declared_plugin",
                             "store_declared_sensitive_user_config",
+                            "cleanup_download_and_staging_only",
                         ],
+                        "persistent_marketplace": {
+                            "name": "jiaotang",
+                            "relative_path": "plugins/marketplaces/jiaotang",
+                            "select_active_host_root": True,
+                            "preferred_host_root": "~/.workbuddy",
+                            "compatibility_host_root": "~/.codebuddy",
+                            "register_from_temporary_path": False,
+                            "preserve_after_install": True,
+                        },
+                    },
+                    "mcp_configuration": {
+                        "mode": "signed_inline_plugin_manifest",
+                        "manifest": ".codebuddy-plugin/plugin.json",
+                        "server": "jiaotang-kb",
+                        "write_global_mcp_config": False,
+                        "write_project_mcp_config": False,
                     },
                     "existing_install_policy": {
                         "same_package_sha256": (
-                            "复用现有插件，只补齐敏感配置并刷新连接，不重复下载"
+                            "仅当已注册的持久 jiaotang 市场目录和签名插件文件仍实际存在时复用；"
+                            "否则按缺失安装处理，不得只凭 enabled 状态跳过"
                         ),
                         "missing_or_different_package_sha256": (
                             "从本次一次性受限地址下载、校验后安装"
@@ -11081,13 +11107,32 @@ def agent_install_protocol(
                         "从安装协议的一次性受限地址下载签名 WorkBuddy 插件包。",
                         "核对发布包 SHA-256、固定发布者指纹和 Ed25519 签名。",
                         "先拒绝绝对路径、父目录穿越、符号链接、重复路径和超限归档，再安全解压；不执行包内内容。",
-                        "使用 WorkBuddy 内置插件管理添加解压后的 jiaotang 本地市场；/plugin 是界面入口，不是 Agent 工具名。",
-                        "在 WorkBuddy 内安装并启用 jiaotang-workbuddy-skills@jiaotang。",
+                        "识别当前 WorkBuddy 实际用户目录；优先使用 ~/.workbuddy，兼容版本可能使用 ~/.codebuddy。",
+                        "把解压后的完整 jiaotang 目录持久保存到该宿主目录的 plugins/marketplaces/jiaotang；"
+                        "不得直接从临时下载目录或临时解压目录注册。",
+                        "使用 WorkBuddy 内置插件管理添加上述持久 jiaotang 本地市场；/plugin 是界面入口，不是 Agent 工具名。",
+                        "在 WorkBuddy 内安装并启用 jiaotang-workbuddy-skills@jiaotang；"
+                        "由宿主读取签名 plugin.json 中内联的 jiaotang-kb MCP 声明，"
+                        "不要另写用户级或项目级 MCP 配置。",
                         "WorkBuddy 提示插件配置时，将 bootstrap_url 填入敏感配置项。",
                         "插件先预登记，再将凭据写入系统安全存储并回读校验。",
                         "回读成功后由本机私钥签名激活，服务器再原子创建有效绑定。",
                         "由插件内置 jiaotang-kb MCP 完成首次签名连接。",
+                        "只清理下载 ZIP 和未注册的中转目录；不得删除已注册的持久 jiaotang 市场、"
+                        "插件运行文件或系统凭据。",
                     ],
+                    "cleanup": {
+                        "allowed": [
+                            "downloaded_zip",
+                            "unregistered_staging_directory",
+                        ],
+                        "preserve": [
+                            "registered_persistent_marketplace",
+                            "installed_plugin_runtime",
+                            "system_credentials",
+                        ],
+                        "requires_runtime_connection_check": True,
+                    },
                 }
                 if install_authorized
                 else {

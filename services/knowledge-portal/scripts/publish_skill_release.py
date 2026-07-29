@@ -382,6 +382,42 @@ def _validate_workbuddy_integrity(
     if plugin_json_name not in verified_files:
         raise ValueError("WorkBuddy plugin.json 未被签名清单覆盖")
     plugin = json.loads(archive.read(plugin_json_name).decode("utf-8"))
+    mcp_declaration = plugin.get("mcpServers")
+    if isinstance(mcp_declaration, str):
+        if mcp_declaration != "./.mcp.json":
+            raise ValueError("WorkBuddy 外置 MCP 清单路径不合规")
+        mcp_name = f"{plugin_prefix}.mcp.json"
+        if mcp_name not in verified_files:
+            raise ValueError("WorkBuddy 外置 .mcp.json 未被签名清单覆盖")
+        mcp_payload = json.loads(archive.read(mcp_name).decode("utf-8"))
+        mcp_servers = mcp_payload.get("mcpServers")
+        mcp_configuration_mode = "signed_external_plugin_mcp_file"
+    elif isinstance(mcp_declaration, dict):
+        mcp_servers = mcp_declaration
+        mcp_configuration_mode = "signed_inline_plugin_manifest"
+    else:
+        raise ValueError("WorkBuddy 插件缺少 MCP 声明")
+    expected_server = {
+        "command": "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
+        "args": [
+            "${CODEBUDDY_PLUGIN_ROOT}/mcp/jiaotang-agent.mjs",
+            "plugin-serve",
+        ],
+    }
+    if (
+        not isinstance(mcp_servers, dict)
+        or mcp_servers != {"jiaotang-kb": expected_server}
+    ):
+        raise ValueError("WorkBuddy jiaotang-kb MCP 声明不合规")
+    for required_runtime in (
+        "bin/run-node",
+        "bin/run-node.cmd",
+        "mcp/jiaotang-agent.mjs",
+    ):
+        if plugin_prefix + required_runtime not in verified_files:
+            raise ValueError(
+                f"WorkBuddy MCP 运行文件未被签名清单覆盖：{required_runtime}"
+            )
     allowed_marketplace = {"name", "description", "owner", "plugins"}
     allowed_owner = {"name"}
     allowed_plugin = {"name", "description", "version", "source"}
@@ -415,6 +451,7 @@ def _validate_workbuddy_integrity(
         "verified_files": len(verified_files),
         "archive_entries": len(file_names),
         "outer_fixed_installers": False,
+        "mcp_configuration_mode": mcp_configuration_mode,
     }
 
 
