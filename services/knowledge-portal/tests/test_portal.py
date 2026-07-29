@@ -3624,6 +3624,11 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert confirmed.status_code == 200
         assert confirmed.json()["phase"] == "install_authorized"
         assert "明确授权继续安装" in confirmed.json()["prompt"]
+        assert "`jiaotang-kb`" in confirmed.json()["prompt"]
+        assert "`knowledge_service_status`" in confirmed.json()["prompt"]
+        assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
+            confirmed.json()["prompt"]
+        )
         manual = confirmed.json()["manual_configuration"]
         assert manual["configuration_key"] == "bootstrap_url"
         assert manual["mcp_server"] == "jiaotang-kb"
