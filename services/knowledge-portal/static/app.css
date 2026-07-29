@@ -2032,16 +2032,31 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 .skill-pane-heading h2 { margin:10px 0; color:var(--skill-ink); font-size:clamp(34px,5vw,54px); letter-spacing:-.05em; }
 .skill-pane-heading p { margin:0; color:var(--skill-muted); line-height:1.75; }
 .skill-download-content { overflow:hidden; border-radius:15px; }
-.skill-download-content > article { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:start; gap:18px; padding:22px; border-bottom:1px solid var(--skill-line); }
+.skill-download-content > article,.skill-history-release { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:start; gap:18px; padding:22px; border-bottom:1px solid var(--skill-line); }
 .skill-download-content h3 { margin:0 0 6px; color:var(--skill-ink); }
 .skill-download-content small,.skill-download-content p { color:var(--skill-muted); }
 .skill-download-content .manual-content { margin-top:12px; padding:14px; color:var(--skill-ink); border:1px solid var(--skill-line); border-radius:9px; background:#0c0d0e; box-shadow:none; }
 .skill-download-content .manual-content * { color:var(--skill-muted); }
-.skill-download-content > article > .button-row { align-self:start !important; justify-self:end; align-items:flex-start; justify-content:flex-end; height:max-content; margin-top:0; }
-.skill-download-content > article > .button-row .button { flex:0 0 auto; align-self:flex-start; width:auto; height:auto; }
+.skill-download-content > article > .button-row,.skill-history-release > .button-row { align-self:start !important; justify-self:end; align-items:flex-start; justify-content:flex-end; height:max-content; margin-top:0; }
+.skill-download-content > article > .button-row .button,.skill-history-release > .button-row .button { flex:0 0 auto; align-self:flex-start; width:auto; height:auto; }
 .skill-current-release.is-releasing { border:1px solid rgba(207,169,92,.48); background:linear-gradient(120deg,rgba(207,169,92,.13),rgba(19,20,22,.96) 58%); }
 .skill-current-release.is-releasing .download-icon { color:#17130b; background:var(--skill-gold); }
 .skill-current-release.is-releasing .skill-status { margin-bottom:8px; }
+.skill-history-ledger { background:#111214; }
+.skill-history-heading { display:flex; align-items:end; justify-content:space-between; gap:18px; padding:20px 22px 16px; border-bottom:1px solid var(--skill-line); background:#0d0e0f; }
+.skill-history-heading h3 { margin:5px 0 0; font-size:20px; }
+.skill-history-heading > small { padding-bottom:2px; text-align:right; }
+.skill-history-release { background:#111214; }
+.skill-history-more > summary { display:flex; align-items:center; justify-content:center; gap:12px; min-height:54px; padding:10px 22px; color:var(--skill-gold-light); border-bottom:1px solid var(--skill-line); background:#0d0e0f; cursor:pointer; list-style:none; font-size:10px; font-weight:800; letter-spacing:.03em; transition:color .18s ease,background .18s ease; }
+.skill-history-more > summary::-webkit-details-marker { display:none; }
+.skill-history-more > summary::after { content:"⌄"; font-size:15px; line-height:1; transition:transform .18s ease; }
+.skill-history-more[open] > summary::after { transform:rotate(180deg); }
+.skill-history-more > summary:hover,.skill-history-more > summary:focus-visible { color:#17130b; background:var(--skill-gold-light); outline:none; }
+.skill-history-more > summary small { color:inherit; opacity:.72; font-weight:600; }
+.skill-history-summary-label .is-open { display:none; }
+.skill-history-more[open] .skill-history-summary-label .is-closed { display:none; }
+.skill-history-more[open] .skill-history-summary-label .is-open { display:inline; }
+.skill-history-list > .skill-history-release:last-child { border-bottom:0; }
 .skill-platform-note { display:grid; grid-template-columns:150px minmax(0,1fr); gap:18px; padding:20px 22px; border-bottom:1px solid var(--skill-line); background:#0d0e0f; }
 .skill-platform-note strong { color:var(--skill-gold-light); font-size:12px; }
 .skill-platform-note p { margin:0; color:var(--skill-muted); font-size:11px; line-height:1.7; }
@@ -2161,7 +2176,7 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 .skill-detail-card > footer { display:flex; justify-content:flex-end; gap:9px; padding:12px 16px; border-top:1px solid var(--skill-line); background:#0d0e0f; }
 
 @keyframes skill-pane-enter { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:none; } }
-@media (prefers-reduced-motion:reduce) { .skill-section-pane.is-active { animation:none; } .skill-group-button,.skill-row { transition:none; } }
+@media (prefers-reduced-motion:reduce) { .skill-section-pane.is-active { animation:none; } .skill-group-button,.skill-row,.skill-history-more > summary,.skill-history-more > summary::after { transition:none; } }
 
 @media (max-width:980px) {
   .skill-command-bar { align-items:flex-start; flex-direction:column; }
@@ -2201,8 +2216,11 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .skill-list-heading .skill-kicker { display:none; }
   .skill-catalog-footer { padding-top:14px; }
   .skill-row-group { display:none; }
-  .skill-download-content > article { grid-template-columns:auto 1fr; }
-  .skill-download-content > article > .button-row { grid-column:1/-1; justify-self:start; align-items:flex-start; flex-direction:row; width:auto; }
+  .skill-download-content > article,.skill-history-release { grid-template-columns:auto 1fr; }
+  .skill-download-content > article > .button-row,.skill-history-release > .button-row { grid-column:1/-1; justify-self:start; align-items:flex-start; flex-direction:row; width:auto; }
+  .skill-history-heading { align-items:start; flex-direction:column; gap:8px; }
+  .skill-history-heading > small { text-align:left; }
+  .skill-history-more > summary { justify-content:space-between; }
   .skill-platform-note { grid-template-columns:1fr; }
   .skill-install-plan,.skill-install-status { min-height:auto; padding:20px; }
   .skill-install-plan .agent-install-actions { grid-template-columns:1fr; width:100%; }

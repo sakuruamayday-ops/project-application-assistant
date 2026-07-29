@@ -1,3 +1,18 @@
+{% macro historical_release_card(release) -%}
+<article class="skill-history-release" data-skill-history-release>
+  <span class="download-icon">HIS</span>
+  <div>
+    <h3>企业全生命周期助手 V{{ release.version }}</h3>
+    <small>发布时间 {{ release.published_at_display }}</small>
+    <details class="skill-release-notes"><summary>查看发布说明</summary><div class="manual-content">{{ release.release_notes_html }}</div></details>
+  </div>
+  <div class="button-row">
+    <a class="button secondary" href="/skills/releases/{{ release.id }}/download">下载 V{{ release.version }} 通用包</a>
+    {% if release.workbuddy_available %}<a class="button secondary" href="/skills/releases/{{ release.id }}/workbuddy/download">WorkBuddy 包</a>{% endif %}
+  </div>
+</article>
+{%- endmacro %}
+
 <section id="skills" class="section-block skill-center" data-skill-center>
   <header class="skill-hero">
     <div class="skill-hero-copy">
@@ -100,7 +115,26 @@
         </article>
       </div>
       {% endif %}
-      {% for release in historical_releases %}<article><span class="download-icon">HIS</span><div><h3>企业全生命周期助手 V{{ release.version }}</h3><small>发布时间 {{ release.published_at_display }}</small><details class="skill-release-notes"><summary>查看发布说明</summary><div class="manual-content">{{ release.release_notes_html }}</div></details></div><div class="button-row"><a class="button secondary" href="/skills/releases/{{ release.id }}/download">下载 V{{ release.version }} 通用包</a>{% if release.workbuddy_available %}<a class="button secondary" href="/skills/releases/{{ release.id }}/workbuddy/download">WorkBuddy 包</a>{% endif %}</div></article>{% endfor %}
+      {% if historical_releases %}
+      <section class="skill-history-ledger" aria-labelledby="skill-history-title">
+        <header class="skill-history-heading">
+          <div><span class="skill-card-index">Release Archive</span><h3 id="skill-history-title">历史版本</h3></div>
+          <small>默认显示最近一次历史版本</small>
+        </header>
+        {{ historical_release_card(historical_releases[0]) }}
+        {% if historical_releases|length > 1 %}
+        <details class="skill-history-more" data-skill-history>
+          <summary data-skill-history-toggle>
+            <span class="skill-history-summary-label"><span class="is-closed">展开全部历史版本</span><span class="is-open">收起历史版本</span></span>
+            <small>另外 {{ historical_releases|length - 1 }} 个版本</small>
+          </summary>
+          <div class="skill-history-list">
+            {% for release in historical_releases[1:] %}{{ historical_release_card(release) }}{% endfor %}
+          </div>
+        </details>
+        {% endif %}
+      </section>
+      {% endif %}
     </div>
   </div>
 
