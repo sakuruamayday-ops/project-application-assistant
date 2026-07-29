@@ -31,7 +31,12 @@ const platformConfig = JSON.parse(fs.readFileSync(path.join(appRoot, "config/pla
 const securityConfig = JSON.parse(fs.readFileSync(path.join(appRoot, "config/security.json"), "utf8"));
 const catalog = JSON.parse(fs.readFileSync(path.join(appRoot, "data/skill-catalog.json"), "utf8"));
 if (catalog.count !== 49) throw new Error(`skill catalog count must be 49, got ${catalog.count}`);
-if (platformConfig.platforms.length < 6) throw new Error("platform adapter catalog is incomplete");
+if (
+  platformConfig.platforms.length !== 1
+  || platformConfig.platforms[0]?.id !== "workbuddy"
+) {
+  throw new Error("platform adapter catalog must only retain WorkBuddy");
+}
 if (
   !Number.isSafeInteger(platformConfig.sequence)
   || platformConfig.sequence < 1

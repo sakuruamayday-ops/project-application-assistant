@@ -2049,7 +2049,6 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 .skill-platform-card { display:flex; flex-direction:column; gap:18px; min-height:330px; padding:24px; background:#131416; }
 .skill-platform-card.is-workbuddy { background:linear-gradient(145deg,#17191c,#111214 68%); }
 .skill-platform-card.is-planned { background:linear-gradient(145deg,#121315,#0f1012 70%); }
-.skill-platform-card[data-platform-package="cherry-studio"] { grid-column:1/-1; min-height:250px; }
 .skill-platform-mark { display:grid; place-items:center; width:44px; height:44px; color:#17130b; border-radius:11px; background:var(--skill-gold); font-size:19px; font-weight:900; }
 .skill-platform-card.is-planned .skill-platform-mark { color:var(--skill-gold-light); border:1px solid rgba(207,169,92,.36); background:rgba(207,169,92,.08); font-size:13px; }
 .skill-platform-card h3 { margin:8px 0 10px; color:var(--skill-ink); font-size:23px; letter-spacing:-.035em; }
@@ -2178,7 +2177,6 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .skill-install-grid { grid-template-columns:1fr; }
   .skill-platform-downloads { grid-template-columns:1fr; }
   .skill-platform-card { min-height:0; }
-  .skill-platform-card[data-platform-package="cherry-studio"] { grid-column:auto; }
 }
 
 @media (max-width:620px) {

@@ -80,11 +80,7 @@
           <div class="section-head page"><div><p class="eyebrow">ADAPTERS</p><h2>平台能力分层</h2></div><p>“支持 Agent”不等于“有稳定外部 Skills 安装接口”。</p></div>
           <div class="platform-grid">
             <article class="platform full"><span>签名包下载</span><h3>WorkBuddy</h3><p>macOS 与 Windows 共用同一个发布者签名插件市场包。Ed25519可验证内容来源，但不等于操作系统代码签名；系统拦截时不会引导绕过。</p><button class="ghost" data-workbuddy>下载 WorkBuddy 包</button></article>
-            <article class="platform full"><span>完整同步</span><h3>TRAE 中国版</h3><p>授权并选择 ~/.trae-cn/skills 后同步49项正式技能。</p><button class="ghost" data-sync>选择目录</button></article>
-            <article class="platform full"><span>完整同步</span><h3>Kimi Code</h3><p>授权并选择 ~/.agents/skills，更新后在Kimi中新建会话复验。</p><button class="ghost" data-sync>选择目录</button></article>
-            <article class="platform guided"><span>引导导入</span><h3>通义灵码</h3><p>官方未公开稳定外部安装接口，不自动修改内部目录。</p><button class="ghost" data-generic-download>下载已验证包</button></article>
-            <article class="platform adapter"><span>适配导入</span><h3>Qoder</h3><p>提供通用包，由平台导入界面完成最终安装与复验。</p><button class="ghost" data-generic-download>下载通用包</button></article>
-            <article class="platform guided"><span>引导导入</span><h3>Cherry Studio</h3><p>不写平台数据库，只把已验证包交给官方导入界面。</p><button class="ghost" data-generic-download>下载通用包</button></article>
+            <article class="platform full"><span>标准 Skills</span><h3>通用版</h3><p>用于支持标准 Agent Skills 的宿主，不附加平台专用 Hooks、插件或 MCP 配置。</p><button class="ghost" data-generic-download>下载通用包</button></article>
           </div>
           <article class="rollback-card"><div><p class="eyebrow">RECOVERABLE</p><h3>目录内可恢复回滚</h3><p>再次选择已经由管理器接管的目录，即可恢复最近备份；当前版本会先进入 displaced 恢复区。</p></div><button class="danger" id="rollback">选择目录并回滚</button></article>
         </section>
