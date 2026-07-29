@@ -7,7 +7,7 @@
   "project_name": "国家绿色工厂",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-0f9bd42b6aea6776bd6f",
+  "policy_version_id": "policy-1523bea94dad3bd5fa62",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -30,9 +30,9 @@
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 5,
-    "confirmed_rules": 5,
-    "rule_layers": 1,
+    "fact_fields": 7,
+    "confirmed_rules": 8,
+    "rule_layers": 3,
     "gold_cases": 3
   },
   "explainability": {

@@ -7,7 +7,7 @@
   "project_name": "浙江省重点企业研究院",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-97b89e889387760206bf",
+  "policy_version_id": "policy-5bdf3d1bf9c50b9f6546",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -30,9 +30,9 @@
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 7,
-    "confirmed_rules": 7,
-    "rule_layers": 1,
+    "fact_fields": 9,
+    "confirmed_rules": 9,
+    "rule_layers": 2,
     "gold_cases": 3
   },
   "explainability": {

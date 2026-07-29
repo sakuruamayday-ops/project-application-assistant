@@ -78,6 +78,22 @@
         "official_registry",
         "compliance_statement"
       ]
+    },
+    {
+      "field": "mountain_island_relaxation_applicable",
+      "label": "山区海岛县放宽情形适用",
+      "aliases": [
+        "山区海岛县研究院放宽"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "research_institute_2026_data_cutoff_confirmed",
+      "label": "2026申报数据截止口径已确认",
+      "aliases": [
+        "重点研究院2026数据截止口径"
+      ],
+      "value_type": "boolean"
     }
   ],
   "rule_cards": [
@@ -97,12 +113,12 @@
     },
     {
       "rule_id": "zj-key-institute-platform",
-      "type": "hard-threshold",
+      "type": "competitive",
       "field": "key_institute_platform_basis_met",
       "operator": "truthy",
       "expected": true,
-      "source": "浙经信高新〔2025〕169号",
-      "source_quote": "原则上应建有规定的省级企业研发机构。",
+      "source": "浙经信高新〔2025〕169号第九条",
+      "source_quote": "依托企业申报省重点企业研究院，原则上应建有省企业研究院、省高新技术企业研究开发中心或省级企业技术中心。",
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -115,8 +131,8 @@
       "field": "key_institute_revenue_requirement_met",
       "operator": "truthy",
       "expected": true,
-      "source": "浙经信高新〔2025〕169号",
-      "source_quote": "营业收入须达到一般企业或农业企业对应标准。",
+      "source": "浙经信高新〔2025〕169号第九条",
+      "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。",
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -129,8 +145,8 @@
       "field": "key_institute_rnd_requirement_met",
       "operator": "truthy",
       "expected": true,
-      "source": "浙经信高新〔2025〕169号",
-      "source_quote": "研发强度或研发费用须达到相应标准。",
+      "source": "浙经信高新〔2025〕169号第九条",
+      "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。",
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -179,6 +195,20 @@
       "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
       "approved_at": "2026-07-27 16:30:00",
       "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+    },
+    {
+      "rule_id": "zj-key-institute-mountain-island-relaxation",
+      "type": "competitive",
+      "field": "mountain_island_relaxation_applicable",
+      "operator": "truthy",
+      "expected": true,
+      "source": "浙经信高新〔2025〕169号第九条",
+      "source_quote": "依托企业为山区海岛县的，可适当放宽上一年度营业收入、研发强度或研发费用等基本条件。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
+      "approved_at": "2026-07-27 16:30:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
     }
   ],
   "rule_layers": [
@@ -204,12 +234,12 @@
         },
         {
           "rule_id": "zj-key-institute-platform",
-          "type": "hard-threshold",
+          "type": "competitive",
           "field": "key_institute_platform_basis_met",
           "operator": "truthy",
           "expected": true,
-          "source": "浙经信高新〔2025〕169号",
-          "source_quote": "原则上应建有规定的省级企业研发机构。",
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "依托企业申报省重点企业研究院，原则上应建有省企业研究院、省高新技术企业研究开发中心或省级企业技术中心。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -222,8 +252,8 @@
           "field": "key_institute_revenue_requirement_met",
           "operator": "truthy",
           "expected": true,
-          "source": "浙经信高新〔2025〕169号",
-          "source_quote": "营业收入须达到一般企业或农业企业对应标准。",
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -236,8 +266,8 @@
           "field": "key_institute_rnd_requirement_met",
           "operator": "truthy",
           "expected": true,
-          "source": "浙经信高新〔2025〕169号",
-          "source_quote": "研发强度或研发费用须达到相应标准。",
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -286,6 +316,54 @@
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
           "approved_at": "2026-07-27 16:30:00",
           "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+        },
+        {
+          "rule_id": "zj-key-institute-mountain-island-relaxation",
+          "type": "competitive",
+          "field": "mountain_island_relaxation_applicable",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "依托企业为山区海岛县的，可适当放宽上一年度营业收入、研发强度或研发费用等基本条件。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+        }
+      ]
+    },
+    {
+      "layer_id": "zhejiang-key-enterprise-institute-2026",
+      "layer_type": "annual",
+      "label": "2026年度省重点企业研究院申报通知",
+      "applicability": {
+        "years": [
+          "2026"
+        ],
+        "regions": [
+          "浙江省"
+        ],
+        "application_types": [
+          "recognition"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "zhejiang-key-enterprise-institute-2026-data-cutoff",
+          "type": "submission",
+          "field": "research_institute_2026_data_cutoff_confirmed",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信高新便函〔2026〕79号",
+          "source_quote": "2026年度申报涉及的营业收入、研究开发费用及其他指标数据截止时间统一为2025年12月31日。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:40:00",
+          "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
+          "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9"
         }
       ]
     }
@@ -335,6 +413,12 @@
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
+        },
+        {
+          "field": "mountain_island_relaxation_applicable",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
         }
       ],
       "confirm_rule_ids": [
@@ -344,7 +428,8 @@
         "zj-key-institute-rnd",
         "zj-key-institute-score",
         "zj-key-institute-foundation",
-        "zj-key-institute-compliance"
+        "zj-key-institute-compliance",
+        "zj-key-institute-mountain-island-relaxation"
       ],
       "expected_conclusion": "eligible"
     },
@@ -392,6 +477,12 @@
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
+        },
+        {
+          "field": "mountain_island_relaxation_applicable",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
         }
       ],
       "confirm_rule_ids": [
@@ -401,7 +492,8 @@
         "zj-key-institute-rnd",
         "zj-key-institute-score",
         "zj-key-institute-foundation",
-        "zj-key-institute-compliance"
+        "zj-key-institute-compliance",
+        "zj-key-institute-mountain-island-relaxation"
       ],
       "expected_conclusion": "conditional"
     },
@@ -449,6 +541,12 @@
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
+        },
+        {
+          "field": "mountain_island_relaxation_applicable",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
         }
       ],
       "confirm_rule_ids": [
@@ -458,7 +556,8 @@
         "zj-key-institute-rnd",
         "zj-key-institute-score",
         "zj-key-institute-foundation",
-        "zj-key-institute-compliance"
+        "zj-key-institute-compliance",
+        "zj-key-institute-mountain-island-relaxation"
       ],
       "expected_conclusion": "ineligible"
     }

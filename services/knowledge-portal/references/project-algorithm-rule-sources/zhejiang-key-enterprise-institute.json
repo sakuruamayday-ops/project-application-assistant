@@ -14,15 +14,44 @@
     {"field": "key_institute_revenue_requirement_met", "label": "重点研究院营业收入要求", "aliases": ["重点研究院营业收入要求"], "value_type": "boolean"},
     {"field": "key_institute_rnd_requirement_met", "label": "重点研究院研发投入要求", "aliases": ["重点研究院研发投入要求"], "value_type": "boolean"},
     {"field": "innovation_score", "label": "创新能力评价得分", "aliases": ["创新能力评价得分"], "value_type": "number", "unit": "分"},
-    {"field": "core_ip_talent_rnd_foundation_met", "label": "核心知识产权人才与研发基础", "aliases": ["核心知识产权人才与研发基础"], "value_type": "boolean"}
+    {"field": "core_ip_talent_rnd_foundation_met", "label": "核心知识产权人才与研发基础", "aliases": ["核心知识产权人才与研发基础"], "value_type": "boolean"},
+    {"field": "mountain_island_relaxation_applicable", "label": "山区海岛县放宽情形适用", "aliases": ["山区海岛县研究院放宽"], "value_type": "boolean"},
+    {"field": "research_institute_2026_data_cutoff_confirmed", "label": "2026申报数据截止口径已确认", "aliases": ["重点研究院2026数据截止口径"], "value_type": "boolean"}
   ],
   "rules": [
     {"rule_id": "zj-key-institute-entity", "type": "hard-threshold", "field": "zhejiang_independent_legal_entity", "operator": "truthy", "expected": true, "source": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号", "source_quote": "依托企业须在浙江省注册并具有独立法人资格。"},
-    {"rule_id": "zj-key-institute-platform", "type": "hard-threshold", "field": "key_institute_platform_basis_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "原则上应建有规定的省级企业研发机构。"},
-    {"rule_id": "zj-key-institute-revenue", "type": "hard-threshold", "field": "key_institute_revenue_requirement_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "营业收入须达到一般企业或农业企业对应标准。"},
-    {"rule_id": "zj-key-institute-rnd", "type": "hard-threshold", "field": "key_institute_rnd_requirement_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "研发强度或研发费用须达到相应标准。"},
+    {"rule_id": "zj-key-institute-platform", "type": "competitive", "field": "key_institute_platform_basis_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "依托企业申报省重点企业研究院，原则上应建有省企业研究院、省高新技术企业研究开发中心或省级企业技术中心。"},
+    {"rule_id": "zj-key-institute-revenue", "type": "hard-threshold", "field": "key_institute_revenue_requirement_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。"},
+    {"rule_id": "zj-key-institute-rnd", "type": "hard-threshold", "field": "key_institute_rnd_requirement_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。"},
     {"rule_id": "zj-key-institute-score", "type": "hard-threshold", "field": "innovation_score", "operator": "gte", "expected": 60, "unit": "分", "source": "浙经信高新〔2025〕169号", "source_quote": "创新能力评价得分达到六十分以上。"},
     {"rule_id": "zj-key-institute-foundation", "type": "hard-threshold", "field": "core_ip_talent_rnd_foundation_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "须具备核心自主知识产权、人才队伍和研发基础条件。"},
-    {"rule_id": "zj-key-institute-compliance", "type": "hard-threshold", "field": "no_major_incident", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "规定期间内不得发生重大事故及严重违法失信行为。"}
+    {"rule_id": "zj-key-institute-compliance", "type": "hard-threshold", "field": "no_major_incident", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "规定期间内不得发生重大事故及严重违法失信行为。"},
+    {"rule_id": "zj-key-institute-mountain-island-relaxation", "type": "competitive", "field": "mountain_island_relaxation_applicable", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "依托企业为山区海岛县的，可适当放宽上一年度营业收入、研发强度或研发费用等基本条件。"}
+  ],
+  "annual_overlays": [
+    {
+      "overlay_id": "zhejiang-key-enterprise-institute-2026",
+      "label": "2026年度省重点企业研究院申报通知",
+      "year": 2026,
+      "regions": ["浙江省"],
+      "application_types": ["recognition"],
+      "policy_status": "current",
+      "approved_by": "Codex政策规则复盘",
+      "approved_at": "2026-07-30 00:40:00",
+      "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
+      "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9",
+      "rules": [
+        {
+          "rule_id": "zhejiang-key-enterprise-institute-2026-data-cutoff",
+          "type": "submission",
+          "field": "research_institute_2026_data_cutoff_confirmed",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信高新便函〔2026〕79号",
+          "source_quote": "2026年度申报涉及的营业收入、研究开发费用及其他指标数据截止时间统一为2025年12月31日。"
+        }
+      ]
+    }
   ]
 }

@@ -236,6 +236,137 @@ def test_generate_builds_stable_annual_and_jurisdiction_layers(tmp_path):
     assert not validate_project_algorithm_pack(pack)
 
 
+def test_generate_preserves_stable_application_type_branch(tmp_path):
+    input_path = tmp_path / "confirmed.json"
+    output_path = tmp_path / "packs" / "test-project.json"
+    fact_contract = tmp_path / "facts.json"
+    write_json(
+        fact_contract,
+        {
+            "fields": [
+                {
+                    "field": "status",
+                    "label": "状态",
+                    "aliases": ["状态"],
+                    "value_type": "boolean",
+                }
+            ]
+        },
+    )
+    write_json(
+        input_path,
+        {
+            "project_id": "test-project",
+            "project_name": "测试项目",
+            "policy_status": "current",
+            "approved_by": "审核人",
+            "approved_at": "2026-07-29 12:00:00",
+            "source_url": "https://example.gov.cn/method",
+            "stable_applicability": {
+                "application_types": ["recognition"],
+            },
+            "rules": [
+                {
+                    "rule_id": "status-rule",
+                    "type": "hard-threshold",
+                    "field": "status",
+                    "operator": "truthy",
+                    "expected": True,
+                    "source": "稳定管理办法",
+                    "source_quote": "新认定状态应符合要求。",
+                }
+            ],
+        },
+    )
+
+    MANAGER.generate_from_confirmed_rules(
+        input_path=input_path,
+        output_path=output_path,
+        fact_contract_path=fact_contract,
+    )
+    pack = json.loads(output_path.read_text(encoding="utf-8"))
+
+    assert pack["rule_layers"][0]["applicability"] == {
+        "application_types": ["recognition"]
+    }
+    assert not validate_project_algorithm_pack(pack)
+
+
+def test_generate_allows_confirmed_historical_annual_replay_layer(tmp_path):
+    input_path = tmp_path / "confirmed.json"
+    output_path = tmp_path / "packs" / "test-project.json"
+    fact_contract = tmp_path / "facts.json"
+    write_json(
+        fact_contract,
+        {
+            "fields": [
+                {
+                    "field": "status",
+                    "label": "状态",
+                    "aliases": ["状态"],
+                    "value_type": "boolean",
+                }
+            ]
+        },
+    )
+    write_json(
+        input_path,
+        {
+            "project_id": "test-project",
+            "project_name": "测试项目",
+            "policy_status": "current",
+            "approved_by": "审核人",
+            "approved_at": "2026-07-30 00:00:00",
+            "source_url": "https://example.gov.cn/method",
+            "rules": [
+                {
+                    "rule_id": "status-rule",
+                    "type": "hard-threshold",
+                    "field": "status",
+                    "operator": "truthy",
+                    "expected": True,
+                    "source": "稳定管理办法",
+                    "source_quote": "状态应符合要求。",
+                }
+            ],
+            "annual_overlays": [
+                {
+                    "overlay_id": "annual-2025",
+                    "year": 2025,
+                    "policy_status": "historical_reference",
+                    "approved_by": "审核人",
+                    "approved_at": "2026-07-30 00:00:00",
+                    "source_url": "https://example.gov.cn/2025-notice",
+                    "rules": [
+                        {
+                            "rule_id": "status-rule",
+                            "type": "hard-threshold",
+                            "field": "status",
+                            "operator": "falsy",
+                            "expected": False,
+                            "source": "2025年度通知",
+                            "source_quote": "2025年度状态不得为真。",
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+
+    MANAGER.generate_from_confirmed_rules(
+        input_path=input_path,
+        output_path=output_path,
+        fact_contract_path=fact_contract,
+    )
+    pack = json.loads(output_path.read_text(encoding="utf-8"))
+
+    assert (
+        pack["rule_layers"][1]["rules"][0]["policy_status"]
+        == "historical_reference"
+    )
+    assert not validate_project_algorithm_pack(pack)
+
+
 def test_generate_rejects_historical_policy(tmp_path):
     input_path = tmp_path / "historical.json"
     output_path = tmp_path / "pack.json"

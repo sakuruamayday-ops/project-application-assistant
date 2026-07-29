@@ -86,6 +86,15 @@
       "aliases": [
         "评价得分或直接确认条件"
       ],
+      "value_type": "boolean",
+      "derivation": "综合评价分值不低于60分且科技人员指标得分不为0，或在满足共同条件后命中四项直接确认条件之一。"
+    },
+    {
+      "field": "technology_sme_2026_platform_submission_complete",
+      "label": "2026年度平台提交完成",
+      "aliases": [
+        "2026科小平台提交"
+      ],
       "value_type": "boolean"
     }
   ],
@@ -102,7 +111,7 @@
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
       "approved_at": "2026-07-27 16:45:00",
-      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
     },
     {
       "rule_id": "technology-sme-employees",
@@ -117,7 +126,7 @@
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
       "approved_at": "2026-07-27 16:45:00",
-      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
     },
     {
       "rule_id": "technology-sme-revenue",
@@ -132,7 +141,7 @@
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
       "approved_at": "2026-07-27 16:45:00",
-      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
     },
     {
       "rule_id": "technology-sme-assets",
@@ -147,7 +156,7 @@
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
       "approved_at": "2026-07-27 16:45:00",
-      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
     },
     {
       "rule_id": "technology-sme-product-policy",
@@ -161,7 +170,7 @@
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
       "approved_at": "2026-07-27 16:45:00",
-      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
     },
     {
       "rule_id": "technology-sme-compliance",
@@ -175,7 +184,7 @@
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
       "approved_at": "2026-07-27 16:45:00",
-      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
     },
     {
       "rule_id": "technology-sme-registry-status",
@@ -189,7 +198,7 @@
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
       "approved_at": "2026-07-27 16:45:00",
-      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
     },
     {
       "rule_id": "technology-sme-score-or-direct",
@@ -197,13 +206,13 @@
       "field": "score_or_direct_confirmation_met",
       "operator": "truthy",
       "expected": true,
-      "source": "国科发政〔2017〕115号",
-      "source_quote": "须满足综合评价得分要求或规定的直接确认条件。",
+      "source": "国科发政〔2017〕115号第六条至第八条",
+      "source_quote": "综合评价分值不低于60分，且科技人员指标得分不得为0分；符合共同条件并命中有效高企、近五年国家科技奖励前三、省部级以上研发机构或近五年主导制定国际、国家、行业标准之一的，可直接确认。",
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
       "approved_at": "2026-07-27 16:45:00",
-      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
     }
   ],
   "rule_layers": [
@@ -225,7 +234,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-employees",
@@ -240,7 +249,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-revenue",
@@ -255,7 +264,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-assets",
@@ -270,7 +279,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-product-policy",
@@ -284,7 +293,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-compliance",
@@ -298,7 +307,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-registry-status",
@@ -312,7 +321,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-score-or-direct",
@@ -320,12 +329,42 @@
           "field": "score_or_direct_confirmation_met",
           "operator": "truthy",
           "expected": true,
-          "source": "国科发政〔2017〕115号",
-          "source_quote": "须满足综合评价得分要求或规定的直接确认条件。",
+          "source": "国科发政〔2017〕115号第六条至第八条",
+          "source_quote": "综合评价分值不低于60分，且科技人员指标得分不得为0分；符合共同条件并命中有效高企、近五年国家科技奖励前三、省部级以上研发机构或近五年主导制定国际、国家、行业标准之一的，可直接确认。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "technology-sme-2026",
+      "layer_type": "annual",
+      "label": "2026年度科技型中小企业评价通知",
+      "applicability": {
+        "years": [
+          "2026"
+        ],
+        "application_types": [
+          "recognition",
+          "annual-evaluation"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "technology-sme-2026-platform-submission",
+          "type": "submission",
+          "field": "technology_sme_2026_platform_submission_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工企业函〔2026〕160号",
+          "source_quote": "2026年度企业信息填报时间为6月1日至8月31日，企业应在优质中小企业梯度培育平台自主评价并提交信息。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:30:00",
           "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
         }
       ]

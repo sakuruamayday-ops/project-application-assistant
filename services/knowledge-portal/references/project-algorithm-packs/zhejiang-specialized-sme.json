@@ -99,6 +99,36 @@
       ],
       "value_type": "number",
       "unit": "%"
+    },
+    {
+      "field": "zhejiang_independent_legal_entity",
+      "label": "浙江省注册独立法人",
+      "aliases": [
+        "浙江独立法人"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "no_major_incident",
+      "label": "无重大事故及严重违法",
+      "aliases": [
+        "无重大事故",
+        "无严重违法",
+        "合规状态"
+      ],
+      "value_type": "boolean",
+      "trusted_document_types": [
+        "official_registry",
+        "compliance_statement"
+      ]
+    },
+    {
+      "field": "annual_info_update_compliant",
+      "label": "年度信息更新合规",
+      "aliases": [
+        "优质中小企业年度信息更新"
+      ],
+      "value_type": "boolean"
     }
   ],
   "rule_cards": [
@@ -399,6 +429,68 @@
           "approved_by": "主人授权；焦糖按工信部现行原文核验",
           "approved_at": "2026-07-27 16:30:00",
           "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "zhejiang-specialized-sme-2026",
+      "layer_type": "annual",
+      "label": "浙江省2026年认定和复核通知",
+      "applicability": {
+        "years": [
+          "2026"
+        ],
+        "regions": [
+          "浙江省"
+        ],
+        "application_types": [
+          "recognition",
+          "new-recognition",
+          "review"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "zhejiang-specialized-sme-entity",
+          "type": "hard-threshold",
+          "field": "zhejiang_independent_legal_entity",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信企业〔2026〕108号第一条第二项",
+          "source_quote": "申请企业应在浙江省工商注册登记、具有独立法人资格，且符合2026年印发的《办法》有关认定标准。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:20:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005"
+        },
+        {
+          "rule_id": "zhejiang-specialized-sme-compliance",
+          "type": "hard-threshold",
+          "field": "no_major_incident",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信企业〔2026〕108号第一条第三项",
+          "source_quote": "申请期间未列入经营异常名录或严重失信主体名单，产品服务不属于禁止、限制或淘汰类，近三年未发生通知列明的事故、重大违法或严重质量问题。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:20:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005"
+        },
+        {
+          "rule_id": "zhejiang-specialized-sme-annual-update",
+          "type": "hard-threshold",
+          "field": "annual_info_update_compliant",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信企业〔2026〕108号第一条第四项",
+          "source_quote": "有效期内企业须在每年5月31日前更新企业信息；同一有效期内累计两次未更新的，取消认定。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:20:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005"
         }
       ]
     }

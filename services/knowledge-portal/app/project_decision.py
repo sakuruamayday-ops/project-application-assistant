@@ -1329,9 +1329,15 @@ def validate_project_algorithm_pack(
                 errors.append(
                     f"rule_layers[{layer_index}].rules[{rule_index}]必须已确认"
                 )
-            if str(rule.get("policy_status") or "") != "current":
+            allowed_layer_statuses = {"current"}
+            if layer_type in {"annual", "jurisdiction"} and applicability.get(
+                "years"
+            ):
+                allowed_layer_statuses.add("historical_reference")
+            if str(rule.get("policy_status") or "") not in allowed_layer_statuses:
                 errors.append(
-                    f"rule_layers[{layer_index}].rules[{rule_index}]必须为current"
+                    f"rule_layers[{layer_index}].rules[{rule_index}]"
+                    "政策状态与规则层时间范围不匹配"
                 )
     if not pack.get("gold_cases"):
         errors.append("gold_cases不能为空")
@@ -1370,7 +1376,7 @@ def select_project_algorithm_rules(
         or ""
     ).strip()
     context_application_type = str(
-        project_context.get("application_type") or ""
+        project_context.get("application_type") or "recognition"
     ).strip()
     context_regions = unique_strings(
         [

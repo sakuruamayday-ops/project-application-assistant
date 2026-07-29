@@ -86,6 +86,29 @@ def test_rule_ir_changes_only_when_source_content_changes():
     )
 
 
+def test_rule_ir_matches_lifecycle_by_pack_alias():
+    pack = sample_pack()
+    pack["project_name"] = "高新技术企业"
+    pack["aliases"] = ["国家高新技术企业", "高企"]
+    lifecycle = {
+        "projects": [
+            {
+                "rule_id": "national-high-tech-enterprise",
+                "project_name": "国家高新技术企业",
+                "aliases": ["高新技术企业"],
+                "validity_years": 3,
+            }
+        ]
+    }
+
+    compiled = compile_rule_ir([pack], lifecycle, {"fields": []})
+
+    assert (
+        compiled["projects"]["sample"]["lifecycle_rule"]["rule_id"]
+        == "national-high-tech-enterprise"
+    )
+
+
 def test_rolling_policy_window_keeps_current_old_policy_as_exception():
     assert rolling_policy_window(2026) == {
         "start_year": 2022,

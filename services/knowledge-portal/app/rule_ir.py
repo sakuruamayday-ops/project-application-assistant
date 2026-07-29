@@ -54,11 +54,19 @@ def load_algorithm_packs(pack_dir: Path) -> list[dict[str, object]]:
 def lifecycle_rule_index(
     lifecycle_payload: Mapping[str, object],
 ) -> dict[str, dict[str, object]]:
-    return {
-        str(rule.get("project_name") or ""): dict(rule)
-        for rule in lifecycle_payload.get("projects", [])
-        if isinstance(rule, Mapping) and str(rule.get("project_name") or "")
-    }
+    index: dict[str, dict[str, object]] = {}
+    for raw_rule in lifecycle_payload.get("projects", []):
+        if not isinstance(raw_rule, Mapping):
+            continue
+        rule = dict(raw_rule)
+        project_name = str(rule.get("project_name") or "").strip()
+        if not project_name:
+            continue
+        for name in [project_name, *rule.get("aliases", [])]:
+            normalized_name = str(name or "").strip()
+            if normalized_name:
+                index.setdefault(normalized_name, rule)
+    return index
 
 
 def policy_version_id(
@@ -283,7 +291,17 @@ def compile_rule_ir(
             raise ValueError("项目算法包缺少project_id或project_name")
         if project_id in projects:
             raise ValueError(f"重复project_id：{project_id}")
-        lifecycle_rule = lifecycle_rules.get(project_name)
+        lifecycle_rule = next(
+            (
+                lifecycle_rules[candidate]
+                for candidate in [
+                    project_name,
+                    *pack.get("aliases", []),
+                ]
+                if str(candidate or "").strip() in lifecycle_rules
+            ),
+            None,
+        )
         version_id = policy_version_id(pack, lifecycle_rule)
         compiled_project = {
             **pack,

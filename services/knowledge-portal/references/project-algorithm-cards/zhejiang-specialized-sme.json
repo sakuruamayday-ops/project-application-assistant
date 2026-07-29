@@ -7,7 +7,7 @@
   "project_name": "专精特新中小企业",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-fca90b0f43a2df46a40e",
+  "policy_version_id": "policy-5f223932453fff68cb0c",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -30,9 +30,9 @@
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 10,
-    "confirmed_rules": 10,
-    "rule_layers": 1,
+    "fact_fields": 13,
+    "confirmed_rules": 13,
+    "rule_layers": 2,
     "gold_cases": 3
   },
   "explainability": {

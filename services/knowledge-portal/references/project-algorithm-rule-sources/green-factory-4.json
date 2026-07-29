@@ -13,7 +13,9 @@
     {"field": "green_factory_standard_met", "label": "绿色工厂评价标准符合性", "aliases": ["绿色工厂评价标准符合性"], "value_type": "boolean"},
     {"field": "provincial_green_factory_status", "label": "省级绿色工厂状态", "aliases": ["省级绿色工厂状态"], "value_type": "boolean"},
     {"field": "green_factory_exclusion_clear", "label": "绿色制造名单排除情形核验通过", "aliases": ["绿色工厂排除情形核验"], "value_type": "boolean"},
-    {"field": "green_evaluation_report_available", "label": "绿色工厂评价报告", "aliases": ["绿色工厂评价报告"], "value_type": "boolean"}
+    {"field": "green_evaluation_report_available", "label": "绿色工厂评价报告", "aliases": ["绿色工厂评价报告"], "value_type": "boolean"},
+    {"field": "green_self_evaluation_evidence_available", "label": "平台自评价及佐证材料完备", "aliases": ["绿色工厂自评价佐证"], "value_type": "boolean"},
+    {"field": "green_factory_three_year_bottom_five_percent", "label": "连续三年处于后百分之五", "aliases": ["绿色工厂连续三年后5%"], "value_type": "boolean"}
   ],
   "rules": [
     {"rule_id": "national-green-factory-entity", "type": "hard-threshold", "field": "manufacturing_independent_entity", "operator": "truthy", "expected": true, "source": "《绿色工厂梯度培育及管理暂行办法》工信部节〔2024〕13号第七条", "source_quote": "应为依法设立的独立法人或视同法人的独立核算制造型生产企业。"},
@@ -21,5 +23,58 @@
     {"rule_id": "national-green-factory-provincial-status", "type": "hard-threshold", "field": "provincial_green_factory_status", "operator": "truthy", "expected": true, "source": "工信部节〔2024〕13号第十一条、第十二条", "source_quote": "国家层面绿色工厂由省层面绿色工厂择优推荐。"},
     {"rule_id": "national-green-factory-exclusion", "type": "hard-threshold", "field": "green_factory_exclusion_clear", "operator": "truthy", "expected": true, "source": "工信部节〔2024〕13号第十五条", "source_quote": "近三年不得存在办法列明的经营、事故、违法、整改或失信情形。"},
     {"rule_id": "national-green-factory-report", "type": "submission", "field": "green_evaluation_report_available", "operator": "truthy", "expected": true, "source": "工信部节〔2024〕13号第十条", "source_quote": "企业应完成自评价或第三方评价并通过管理平台提交评价报告。"}
+  ],
+  "annual_overlays": [
+    {
+      "overlay_id": "national-green-factory-2025-recognition",
+      "label": "2025年度国家绿色工厂推荐通知",
+      "year": 2025,
+      "application_types": ["recognition", "new-recognition"],
+      "policy_status": "historical_reference",
+      "approved_by": "Codex政策规则复盘",
+      "approved_at": "2026-07-30 00:25:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
+      "rules": [
+        {
+          "rule_id": "national-green-factory-report",
+          "type": "submission",
+          "field": "green_self_evaluation_evidence_available",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅节函〔2025〕390号第二条第一项",
+          "source_quote": "企业登录管理平台，如实自主填报申报表完成自评价，并按要求提供有关佐证材料，不再需要提交第三方评价报告。"
+        }
+      ]
+    },
+    {
+      "overlay_id": "national-green-factory-2025-dynamic",
+      "label": "2025年度现有国家绿色工厂动态对标",
+      "year": 2025,
+      "application_types": ["annual-evaluation", "dynamic-review"],
+      "policy_status": "historical_reference",
+      "approved_by": "Codex政策规则复盘",
+      "approved_at": "2026-07-30 00:25:00",
+      "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
+      "rules": [
+        {
+          "rule_id": "national-green-factory-report",
+          "type": "submission",
+          "field": "green_self_evaluation_evidence_available",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅节函〔2025〕390号第二条第二项",
+          "source_quote": "现有国家绿色工厂登录管理平台，对照新的评价要求开展自评价对标，并按要求提供有关佐证材料。"
+        },
+        {
+          "rule_id": "national-green-factory-bottom-five-exit",
+          "type": "exclusion",
+          "field": "green_factory_three_year_bottom_five_percent",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅节函〔2025〕390号第二条第二项",
+          "source_quote": "现有国家绿色工厂得分连续三年处于后5%的，将从现有名单中移出。"
+        }
+      ]
+    }
   ]
 }

@@ -52,6 +52,22 @@
         "绿色工厂评价报告"
       ],
       "value_type": "boolean"
+    },
+    {
+      "field": "green_self_evaluation_evidence_available",
+      "label": "平台自评价及佐证材料完备",
+      "aliases": [
+        "绿色工厂自评价佐证"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_three_year_bottom_five_percent",
+      "label": "连续三年处于后百分之五",
+      "aliases": [
+        "绿色工厂连续三年后5%"
+      ],
+      "value_type": "boolean"
     }
   ],
   "rule_cards": [
@@ -202,6 +218,80 @@
           "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
           "approved_at": "2026-07-27 17:00:00",
           "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "national-green-factory-2025-recognition",
+      "layer_type": "annual",
+      "label": "2025年度国家绿色工厂推荐通知",
+      "applicability": {
+        "years": [
+          "2025"
+        ],
+        "application_types": [
+          "recognition",
+          "new-recognition"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "national-green-factory-report",
+          "type": "submission",
+          "field": "green_self_evaluation_evidence_available",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅节函〔2025〕390号第二条第一项",
+          "source_quote": "企业登录管理平台，如实自主填报申报表完成自评价，并按要求提供有关佐证材料，不再需要提交第三方评价报告。",
+          "policy_status": "historical_reference",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:25:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "national-green-factory-2025-dynamic",
+      "layer_type": "annual",
+      "label": "2025年度现有国家绿色工厂动态对标",
+      "applicability": {
+        "years": [
+          "2025"
+        ],
+        "application_types": [
+          "annual-evaluation",
+          "dynamic-review"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "national-green-factory-report",
+          "type": "submission",
+          "field": "green_self_evaluation_evidence_available",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅节函〔2025〕390号第二条第二项",
+          "source_quote": "现有国家绿色工厂登录管理平台，对照新的评价要求开展自评价对标，并按要求提供有关佐证材料。",
+          "policy_status": "historical_reference",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:25:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html"
+        },
+        {
+          "rule_id": "national-green-factory-bottom-five-exit",
+          "type": "exclusion",
+          "field": "green_factory_three_year_bottom_five_percent",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅节函〔2025〕390号第二条第二项",
+          "source_quote": "现有国家绿色工厂得分连续三年处于后5%的，将从现有名单中移出。",
+          "policy_status": "historical_reference",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:25:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html"
         }
       ]
     }

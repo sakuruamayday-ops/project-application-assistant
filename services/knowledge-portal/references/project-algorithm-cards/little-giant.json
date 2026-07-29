@@ -7,7 +7,7 @@
   "project_name": "专精特新小巨人",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-aea5603ee6143154b75c",
+  "policy_version_id": "policy-b42a23d97595171f3d21",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -30,9 +30,9 @@
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 12,
-    "confirmed_rules": 12,
-    "rule_layers": 1,
+    "fact_fields": 17,
+    "confirmed_rules": 26,
+    "rule_layers": 3,
     "gold_cases": 3
   },
   "explainability": {

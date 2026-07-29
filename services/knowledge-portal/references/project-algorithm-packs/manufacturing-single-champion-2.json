@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project_id": "manufacturing-single-champion-2",
   "project_name": "国家制造业单项冠军企业",
-  "version": "2023.138-current",
+  "version": "2023.138-current-20260730",
   "coverage_status": "rules-confirmed",
   "aliases": [
     "单项冠军",
@@ -31,12 +31,13 @@
       "value_type": "boolean"
     },
     {
-      "field": "average_main_revenue_or_little_giant_met",
-      "label": "主营收入或小巨人替代条件",
+      "field": "three_year_average_main_business_revenue",
+      "label": "近三年平均主营业务收入",
       "aliases": [
-        "主营收入或小巨人条件"
+        "近三年平均主营业务收入"
       ],
-      "value_type": "boolean"
+      "value_type": "number",
+      "unit": "万元"
     },
     {
       "field": "global_market_top_three_met",
@@ -111,11 +112,12 @@
     {
       "rule_id": "single-champion-revenue",
       "type": "hard-threshold",
-      "field": "average_main_revenue_or_little_giant_met",
-      "operator": "truthy",
-      "expected": true,
-      "source": "工信部政法〔2023〕138号",
-      "source_quote": "近三年平均主营业务收入或小巨人替代条件须符合规定。",
+      "field": "three_year_average_main_business_revenue",
+      "operator": "gte",
+      "expected": 40000,
+      "unit": "万元",
+      "source": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号附件1",
+      "source_quote": "企业发展稳中向好，近3年平均主营业务收入须达到4亿元及以上。工业和信息化部认定的专精特新“小巨人”企业、国务院国资委认定的创建世界一流专业领军示范企业，优先推荐。",
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
@@ -231,11 +233,12 @@
         {
           "rule_id": "single-champion-revenue",
           "type": "hard-threshold",
-          "field": "average_main_revenue_or_little_giant_met",
-          "operator": "truthy",
-          "expected": true,
-          "source": "工信部政法〔2023〕138号",
-          "source_quote": "近三年平均主营业务收入或小巨人替代条件须符合规定。",
+          "field": "three_year_average_main_business_revenue",
+          "operator": "gte",
+          "expected": 40000,
+          "unit": "万元",
+          "source": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号附件1",
+          "source_quote": "企业发展稳中向好，近3年平均主营业务收入须达到4亿元及以上。工业和信息化部认定的专精特新“小巨人”企业、国务院国资委认定的创建世界一流专业领军示范企业，优先推荐。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
@@ -332,8 +335,8 @@
           "source": "金标准事实"
         },
         {
-          "field": "average_main_revenue_or_little_giant_met",
-          "value": true,
+          "field": "three_year_average_main_business_revenue",
+          "value": 40000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -396,8 +399,8 @@
           "source": "金标准事实"
         },
         {
-          "field": "average_main_revenue_or_little_giant_met",
-          "value": true,
+          "field": "three_year_average_main_business_revenue",
+          "value": 40000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -460,8 +463,8 @@
           "source": "金标准事实"
         },
         {
-          "field": "average_main_revenue_or_little_giant_met",
-          "value": true,
+          "field": "three_year_average_main_business_revenue",
+          "value": 40000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },

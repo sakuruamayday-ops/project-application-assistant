@@ -115,6 +115,46 @@
       ],
       "value_type": "number",
       "unit": "%"
+    },
+    {
+      "field": "little_giant_disqualifying_relationship_clear",
+      "label": "单项冠军和关联企业排除核验通过",
+      "aliases": [
+        "小巨人关联关系排除核验"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_financial_audit_ready",
+      "label": "审计报告报备和编码符合要求",
+      "aliases": [
+        "小巨人审计报告报备"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_refined_management_met",
+      "label": "精细化管理要求",
+      "aliases": [
+        "小巨人精细化管理要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_independent_brand_met",
+      "label": "自主品牌要求",
+      "aliases": [
+        "小巨人自主品牌要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_leading_product_field_met",
+      "label": "主导产品重点领域要求",
+      "aliases": [
+        "小巨人主导产品领域要求"
+      ],
+      "value_type": "boolean"
     }
   ],
   "rule_cards": [
@@ -299,7 +339,12 @@
       "layer_id": "stable-management",
       "layer_type": "stable",
       "label": "稳定管理办法",
-      "applicability": {},
+      "applicability": {
+        "application_types": [
+          "recognition",
+          "new-recognition"
+        ]
+      },
       "rules": [
         {
           "rule_id": "little-giant-specialized-sme-status",
@@ -475,6 +520,237 @@
           "approved_by": "主人授权；焦糖按工信部现行原文核验",
           "approved_at": "2026-07-27 16:30:00",
           "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "little-giant-2026-recognition",
+      "layer_type": "annual",
+      "label": "2026年第八批小巨人认定通知",
+      "applicability": {
+        "years": [
+          "2026"
+        ],
+        "application_types": [
+          "recognition",
+          "new-recognition"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "little-giant-2026-relationship-exclusion",
+          "type": "hard-threshold",
+          "field": "little_giant_disqualifying_relationship_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅企业函〔2026〕117号第二条第四项",
+          "source_quote": "已成为制造业单项冠军示范企业或单项冠军产品的企业，不再推荐新申请第八批；与已认定小巨人存在控股关系的企业，以及同一集团内生产相似主导产品企业，不予推荐。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-2026-financial-audit",
+          "type": "submission",
+          "field": "little_giant_financial_audit_ready",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅企业函〔2026〕117号第一条第六项",
+          "source_quote": "财务数据依据会计师事务所出具的审计报告，并上传在财政部注册会计师行业统一监管平台完成报备后的已赋码电子原件；主营业务收入、主营业务成本应纳入审计报告。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "little-giant-2026-review",
+      "layer_type": "annual",
+      "label": "2026年小巨人复核过渡标准",
+      "applicability": {
+        "years": [
+          "2026"
+        ],
+        "application_types": [
+          "review"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "little-giant-review-market-years",
+          "type": "hard-threshold",
+          "field": "market_years",
+          "operator": "gte",
+          "expected": 3,
+          "unit": "年",
+          "source": "工信部企业〔2022〕63号附件3及工信厅企业函〔2026〕117号过渡条款",
+          "source_quote": "2026年度复核按2022年标准把握；截至上年末从事特定细分市场时间达到3年以上。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-main-business-ratio",
+          "type": "hard-threshold",
+          "field": "main_business_revenue_ratio",
+          "operator": "gte",
+          "expected": 70,
+          "unit": "%",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "主营业务收入总额占营业收入总额比重不低于70%。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-liability-ratio",
+          "type": "hard-threshold",
+          "field": "asset_liability_ratio",
+          "operator": "lte",
+          "expected": 70,
+          "unit": "%",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "截至上年末，企业资产负债率不高于70%。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-refined-management",
+          "type": "hard-threshold",
+          "field": "little_giant_refined_management_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "公司治理规范，至少1项核心业务采用信息系统支撑，并取得相关管理体系认证或产品认证。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-market-share",
+          "type": "hard-threshold",
+          "field": "market_share_requirement_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "主导产品在全国细分市场占有率达到10%以上，且享有较高知名度和影响力。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-brand",
+          "type": "hard-threshold",
+          "field": "little_giant_independent_brand_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "拥有直接面向市场并具有竞争优势的自主品牌。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-rnd",
+          "type": "hard-threshold",
+          "field": "little_giant_rnd_requirement_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "一般性条件按上年度营业收入分档核验近两年研发强度；收入低于5000万元的企业同时核验股权融资、研发费用和研发人员占比，创新直通条件另行核验。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-ip",
+          "type": "hard-threshold",
+          "field": "little_giant_ip_or_exemption_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "一般性条件要求拥有2项以上与主导产品相关的Ⅰ类知识产权，且实际应用并已产生经济效益；符合创新直通条件的按对应条款核验。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-industry-chain",
+          "type": "hard-threshold",
+          "field": "industry_chain_key_link_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "位于产业链关键环节，围绕重点产业链实现关键基础技术和产品的产业化应用，发挥补短板、锻长板、填空白等重要作用。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-product-field",
+          "type": "hard-threshold",
+          "field": "little_giant_leading_product_field_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "主导产品原则上属于制造业核心基础领域、制造强国重点产业领域，或网络强国建设相关重点领域。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-review-leading-product-ratio",
+          "type": "hard-threshold",
+          "field": "leading_product_revenue_ratio",
+          "operator": "gt",
+          "expected": 50,
+          "unit": "%",
+          "source": "工信部企业〔2022〕63号附件4",
+          "source_quote": "主导产品收入之和占企业同期营业收入比重超过50%。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        },
+        {
+          "rule_id": "little-giant-2026-review-financial-audit",
+          "type": "submission",
+          "field": "little_giant_financial_audit_ready",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅企业函〔2026〕117号第一条第六项",
+          "source_quote": "复核财务数据同样依据已报备赋码的审计报告，主营业务收入、主营业务成本应纳入审计报告。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "Codex政策规则复盘",
+          "approved_at": "2026-07-30 00:10:00",
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
         }
       ]
     }

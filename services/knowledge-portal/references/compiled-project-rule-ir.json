@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "ir_type": "jiaotang-unified-project-rule-ir",
-  "source_digest": "c0f6e39c6f1983fa8f1fc9d0e5f0f49c7032130b5cd21d8fe6ddc8ae82a6d37d",
+  "source_digest": "67a2bc9fb68c455e9a97d1287de97337f949aa2da4d2cc4507769a15ad1adfef",
   "shared_kernel": {
     "version": "1.0",
     "components": [
@@ -657,6 +657,22 @@
             "绿色工厂评价报告"
           ],
           "value_type": "boolean"
+        },
+        {
+          "field": "green_self_evaluation_evidence_available",
+          "label": "平台自评价及佐证材料完备",
+          "aliases": [
+            "绿色工厂自评价佐证"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "green_factory_three_year_bottom_five_percent",
+          "label": "连续三年处于后百分之五",
+          "aliases": [
+            "绿色工厂连续三年后5%"
+          ],
+          "value_type": "boolean"
         }
       ],
       "rule_cards": [
@@ -807,6 +823,80 @@
               "approved_by": "主人授权；焦糖按工业和信息化部现行原文核验",
               "approved_at": "2026-07-27 17:00:00",
               "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html"
+            }
+          ]
+        },
+        {
+          "layer_id": "national-green-factory-2025-recognition",
+          "layer_type": "annual",
+          "label": "2025年度国家绿色工厂推荐通知",
+          "applicability": {
+            "years": [
+              "2025"
+            ],
+            "application_types": [
+              "recognition",
+              "new-recognition"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "national-green-factory-report",
+              "type": "submission",
+              "field": "green_self_evaluation_evidence_available",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信厅节函〔2025〕390号第二条第一项",
+              "source_quote": "企业登录管理平台，如实自主填报申报表完成自评价，并按要求提供有关佐证材料，不再需要提交第三方评价报告。",
+              "policy_status": "historical_reference",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:25:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html"
+            }
+          ]
+        },
+        {
+          "layer_id": "national-green-factory-2025-dynamic",
+          "layer_type": "annual",
+          "label": "2025年度现有国家绿色工厂动态对标",
+          "applicability": {
+            "years": [
+              "2025"
+            ],
+            "application_types": [
+              "annual-evaluation",
+              "dynamic-review"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "national-green-factory-report",
+              "type": "submission",
+              "field": "green_self_evaluation_evidence_available",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信厅节函〔2025〕390号第二条第二项",
+              "source_quote": "现有国家绿色工厂登录管理平台，对照新的评价要求开展自评价对标，并按要求提供有关佐证材料。",
+              "policy_status": "historical_reference",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:25:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html"
+            },
+            {
+              "rule_id": "national-green-factory-bottom-five-exit",
+              "type": "exclusion",
+              "field": "green_factory_three_year_bottom_five_percent",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信厅节函〔2025〕390号第二条第二项",
+              "source_quote": "现有国家绿色工厂得分连续三年处于后5%的，将从现有名单中移出。",
+              "policy_status": "historical_reference",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:25:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html"
             }
           ]
         }
@@ -995,16 +1085,59 @@
             "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
             "relation": "governed-by",
             "current_upstream_basis": true
+          },
+          {
+            "document_id": "green-factory-4-confirmed-3e1339ca1fbd",
+            "title": "工信厅节函〔2025〕390号第二条第一项",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "green-factory-4-confirmed-bfcc47a315ca",
+            "title": "工信厅节函〔2025〕390号第二条第二项",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
           }
         ],
         "dependencies": [],
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:green-factory-4",
-      "policy_version_id": "policy-0f9bd42b6aea6776bd6f",
-      "source_content_hash": "abc3a33ac166f227b712fb81f1bcf872bf29966fa9138d52b0c1bf7ac41e0438",
+      "policy_version_id": "policy-1523bea94dad3bd5fa62",
+      "source_content_hash": "d3772a0aa5fa0870af9ac635b712cf7cd12278e4d3bb6ed82d9a23c696df036c",
       "shared_kernel_version": "1.0",
-      "lifecycle_rule": {}
+      "lifecycle_rule": {
+        "rule_id": "national-green-factory",
+        "project_name": "国家绿色工厂",
+        "aliases": [
+          "国家级绿色工厂"
+        ],
+        "cycle_type": "dynamic_registry",
+        "supported_event_types": [
+          "recognition",
+          "recognition_publicity",
+          "annual_evaluation",
+          "changed",
+          "revoked"
+        ],
+        "current_rule_state": "confirmed",
+        "local_rule_sources": [
+          "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-10-11__关于开展2025年度国家级绿色工厂推荐工作的通知__c1a926a7d4a4491cb8d6efaa76d83d0b/附件/附件5：工业和信息化部办公厅关于开展2025年度绿色工厂推荐工作的通知.md"
+        ],
+        "official_rule_urls": [
+          "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+          "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html"
+        ],
+        "rule_note": "国家绿色工厂实行动态名单管理，不虚构固定三年有效期。按年度自评价对标；现行年度规则明确连续三年得分处于后5%的从名单移出。"
+      }
     },
     "hangzhou-enterprise-institute": {
       "schema_version": 1,
@@ -1323,6 +1456,46 @@
           ],
           "value_type": "number",
           "unit": "%"
+        },
+        {
+          "field": "little_giant_disqualifying_relationship_clear",
+          "label": "单项冠军和关联企业排除核验通过",
+          "aliases": [
+            "小巨人关联关系排除核验"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "little_giant_financial_audit_ready",
+          "label": "审计报告报备和编码符合要求",
+          "aliases": [
+            "小巨人审计报告报备"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "little_giant_refined_management_met",
+          "label": "精细化管理要求",
+          "aliases": [
+            "小巨人精细化管理要求"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "little_giant_independent_brand_met",
+          "label": "自主品牌要求",
+          "aliases": [
+            "小巨人自主品牌要求"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "little_giant_leading_product_field_met",
+          "label": "主导产品重点领域要求",
+          "aliases": [
+            "小巨人主导产品领域要求"
+          ],
+          "value_type": "boolean"
         }
       ],
       "rule_cards": [
@@ -1507,7 +1680,12 @@
           "layer_id": "stable-management",
           "layer_type": "stable",
           "label": "稳定管理办法",
-          "applicability": {},
+          "applicability": {
+            "application_types": [
+              "recognition",
+              "new-recognition"
+            ]
+          },
           "rules": [
             {
               "rule_id": "little-giant-specialized-sme-status",
@@ -1683,6 +1861,237 @@
               "approved_by": "主人授权；焦糖按工信部现行原文核验",
               "approved_at": "2026-07-27 16:30:00",
               "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+            }
+          ]
+        },
+        {
+          "layer_id": "little-giant-2026-recognition",
+          "layer_type": "annual",
+          "label": "2026年第八批小巨人认定通知",
+          "applicability": {
+            "years": [
+              "2026"
+            ],
+            "application_types": [
+              "recognition",
+              "new-recognition"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "little-giant-2026-relationship-exclusion",
+              "type": "hard-threshold",
+              "field": "little_giant_disqualifying_relationship_clear",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信厅企业函〔2026〕117号第二条第四项",
+              "source_quote": "已成为制造业单项冠军示范企业或单项冠军产品的企业，不再推荐新申请第八批；与已认定小巨人存在控股关系的企业，以及同一集团内生产相似主导产品企业，不予推荐。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-2026-financial-audit",
+              "type": "submission",
+              "field": "little_giant_financial_audit_ready",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信厅企业函〔2026〕117号第一条第六项",
+              "source_quote": "财务数据依据会计师事务所出具的审计报告，并上传在财政部注册会计师行业统一监管平台完成报备后的已赋码电子原件；主营业务收入、主营业务成本应纳入审计报告。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            }
+          ]
+        },
+        {
+          "layer_id": "little-giant-2026-review",
+          "layer_type": "annual",
+          "label": "2026年小巨人复核过渡标准",
+          "applicability": {
+            "years": [
+              "2026"
+            ],
+            "application_types": [
+              "review"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "little-giant-review-market-years",
+              "type": "hard-threshold",
+              "field": "market_years",
+              "operator": "gte",
+              "expected": 3,
+              "unit": "年",
+              "source": "工信部企业〔2022〕63号附件3及工信厅企业函〔2026〕117号过渡条款",
+              "source_quote": "2026年度复核按2022年标准把握；截至上年末从事特定细分市场时间达到3年以上。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-main-business-ratio",
+              "type": "hard-threshold",
+              "field": "main_business_revenue_ratio",
+              "operator": "gte",
+              "expected": 70,
+              "unit": "%",
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "主营业务收入总额占营业收入总额比重不低于70%。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-liability-ratio",
+              "type": "hard-threshold",
+              "field": "asset_liability_ratio",
+              "operator": "lte",
+              "expected": 70,
+              "unit": "%",
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "截至上年末，企业资产负债率不高于70%。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-refined-management",
+              "type": "hard-threshold",
+              "field": "little_giant_refined_management_met",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "公司治理规范，至少1项核心业务采用信息系统支撑，并取得相关管理体系认证或产品认证。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-market-share",
+              "type": "hard-threshold",
+              "field": "market_share_requirement_met",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "主导产品在全国细分市场占有率达到10%以上，且享有较高知名度和影响力。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-brand",
+              "type": "hard-threshold",
+              "field": "little_giant_independent_brand_met",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "拥有直接面向市场并具有竞争优势的自主品牌。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-rnd",
+              "type": "hard-threshold",
+              "field": "little_giant_rnd_requirement_met",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "一般性条件按上年度营业收入分档核验近两年研发强度；收入低于5000万元的企业同时核验股权融资、研发费用和研发人员占比，创新直通条件另行核验。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-ip",
+              "type": "hard-threshold",
+              "field": "little_giant_ip_or_exemption_met",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "一般性条件要求拥有2项以上与主导产品相关的Ⅰ类知识产权，且实际应用并已产生经济效益；符合创新直通条件的按对应条款核验。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-industry-chain",
+              "type": "hard-threshold",
+              "field": "industry_chain_key_link_met",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "位于产业链关键环节，围绕重点产业链实现关键基础技术和产品的产业化应用，发挥补短板、锻长板、填空白等重要作用。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-product-field",
+              "type": "hard-threshold",
+              "field": "little_giant_leading_product_field_met",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信部企业〔2022〕63号附件3",
+              "source_quote": "主导产品原则上属于制造业核心基础领域、制造强国重点产业领域，或网络强国建设相关重点领域。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-review-leading-product-ratio",
+              "type": "hard-threshold",
+              "field": "leading_product_revenue_ratio",
+              "operator": "gt",
+              "expected": 50,
+              "unit": "%",
+              "source": "工信部企业〔2022〕63号附件4",
+              "source_quote": "主导产品收入之和占企业同期营业收入比重超过50%。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+            },
+            {
+              "rule_id": "little-giant-2026-review-financial-audit",
+              "type": "submission",
+              "field": "little_giant_financial_audit_ready",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工信厅企业函〔2026〕117号第一条第六项",
+              "source_quote": "复核财务数据同样依据已报备赋码的审计报告，主营业务收入、主营业务成本应纳入审计报告。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:10:00",
+              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
             }
           ]
         }
@@ -1988,16 +2397,95 @@
             "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
             "relation": "governed-by",
             "current_upstream_basis": true
+          },
+          {
+            "document_id": "little-giant-confirmed-12bcf014dbf2",
+            "title": "工信厅企业函〔2026〕117号第二条第四项",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "little-giant-confirmed-3179e2c83396",
+            "title": "工信厅企业函〔2026〕117号第一条第六项",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "little-giant-confirmed-caaea86d9d21",
+            "title": "工信部企业〔2022〕63号附件3及工信厅企业函〔2026〕117号过渡条款",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "little-giant-confirmed-93047dac8159",
+            "title": "工信部企业〔2022〕63号附件3",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "little-giant-confirmed-88bde39cb7d8",
+            "title": "工信部企业〔2022〕63号附件4",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
           }
         ],
         "dependencies": [],
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:little-giant",
-      "policy_version_id": "policy-aea5603ee6143154b75c",
-      "source_content_hash": "44e9799e1c5adf1c66f462517f4e88219d7379766f50241c122daf3ccb37b442",
+      "policy_version_id": "policy-b42a23d97595171f3d21",
+      "source_content_hash": "155cc5c66025afa986426069ab7ed7152126033d7556e6357a0829ddbc84f16a",
       "shared_kernel_version": "1.0",
-      "lifecycle_rule": {}
+      "lifecycle_rule": {
+        "rule_id": "national-little-giant",
+        "project_name": "国家专精特新“小巨人”企业",
+        "aliases": [
+          "专精特新小巨人",
+          "国家专精特新小巨人",
+          "小巨人"
+        ],
+        "cycle_type": "qualification_review",
+        "validity_years": 3,
+        "supported_event_types": [
+          "recognition",
+          "recognition_publicity",
+          "review_due",
+          "review_publicity",
+          "review_passed",
+          "continued_support",
+          "changed",
+          "revoked"
+        ],
+        "current_rule_state": "confirmed",
+        "local_rule_sources": [
+          "10_政策与目录/优质中小企业梯度培育/《优质中小企业梯度培育管理办法》（工信部企业〔2026〕2号）.md"
+        ],
+        "official_rule_urls": [
+          "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+          "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+        ],
+        "rule_note": "认定与复核名单分别建事件；财政继续支持属于支持生命周期，不得覆盖资格认定批次。"
+      }
     },
     "manufacturing-single-champion-1": {
       "schema_version": 1,
@@ -2074,7 +2562,7 @@
       "schema_version": 1,
       "project_id": "manufacturing-single-champion-2",
       "project_name": "国家制造业单项冠军企业",
-      "version": "2023.138-current",
+      "version": "2023.138-current-20260730",
       "coverage_status": "rules-confirmed",
       "aliases": [
         "单项冠军",
@@ -2103,12 +2591,13 @@
           "value_type": "boolean"
         },
         {
-          "field": "average_main_revenue_or_little_giant_met",
-          "label": "主营收入或小巨人替代条件",
+          "field": "three_year_average_main_business_revenue",
+          "label": "近三年平均主营业务收入",
           "aliases": [
-            "主营收入或小巨人条件"
+            "近三年平均主营业务收入"
           ],
-          "value_type": "boolean"
+          "value_type": "number",
+          "unit": "万元"
         },
         {
           "field": "global_market_top_three_met",
@@ -2183,11 +2672,12 @@
         {
           "rule_id": "single-champion-revenue",
           "type": "hard-threshold",
-          "field": "average_main_revenue_or_little_giant_met",
-          "operator": "truthy",
-          "expected": true,
-          "source": "工信部政法〔2023〕138号",
-          "source_quote": "近三年平均主营业务收入或小巨人替代条件须符合规定。",
+          "field": "three_year_average_main_business_revenue",
+          "operator": "gte",
+          "expected": 40000,
+          "unit": "万元",
+          "source": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号附件1",
+          "source_quote": "企业发展稳中向好，近3年平均主营业务收入须达到4亿元及以上。工业和信息化部认定的专精特新“小巨人”企业、国务院国资委认定的创建世界一流专业领军示范企业，优先推荐。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
@@ -2303,11 +2793,12 @@
             {
               "rule_id": "single-champion-revenue",
               "type": "hard-threshold",
-              "field": "average_main_revenue_or_little_giant_met",
-              "operator": "truthy",
-              "expected": true,
-              "source": "工信部政法〔2023〕138号",
-              "source_quote": "近三年平均主营业务收入或小巨人替代条件须符合规定。",
+              "field": "three_year_average_main_business_revenue",
+              "operator": "gte",
+              "expected": 40000,
+              "unit": "万元",
+              "source": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号附件1",
+              "source_quote": "企业发展稳中向好，近3年平均主营业务收入须达到4亿元及以上。工业和信息化部认定的专精特新“小巨人”企业、国务院国资委认定的创建世界一流专业领军示范企业，优先推荐。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工业和信息化部现行办法及申报通知核验",
@@ -2404,8 +2895,8 @@
               "source": "金标准事实"
             },
             {
-              "field": "average_main_revenue_or_little_giant_met",
-              "value": true,
+              "field": "three_year_average_main_business_revenue",
+              "value": 40000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -2468,8 +2959,8 @@
               "source": "金标准事实"
             },
             {
-              "field": "average_main_revenue_or_little_giant_met",
-              "value": true,
+              "field": "three_year_average_main_business_revenue",
+              "value": 40000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -2532,8 +3023,8 @@
               "source": "金标准事实"
             },
             {
-              "field": "average_main_revenue_or_little_giant_met",
-              "value": true,
+              "field": "three_year_average_main_business_revenue",
+              "value": 40000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -2604,14 +3095,24 @@
             "official_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
             "relation": "governed-by",
             "current_upstream_basis": true
+          },
+          {
+            "document_id": "manufacturing-single-champion-2-confirmed-ddb6734cba35",
+            "title": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号附件1",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
           }
         ],
         "dependencies": [],
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:manufacturing-single-champion-2",
-      "policy_version_id": "policy-113f26f2400a3ac384df",
-      "source_content_hash": "592686bd1b2f5d5ddb649fa39fe907738e733ebc5358bfd6734c24980008df6e",
+      "policy_version_id": "policy-28a53dceee1ee7f56801",
+      "source_content_hash": "6e3c7ee74ab3ec7e9d80ce90453c4053c88389a4b0d08d4f11559be28cd1b972",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {
         "rule_id": "national-manufacturing-single-champion",
@@ -2706,22 +3207,22 @@
       ],
       "fact_fields": [
         {
-          "field": "registration_years",
-          "label": "注册成立年限",
+          "field": "registration_days",
+          "label": "申请认定时注册成立天数",
           "aliases": [
-            "注册成立年限",
-            "成立年限"
+            "注册成立天数"
           ],
           "value_type": "number",
-          "unit": "年"
+          "unit": "天"
         },
         {
           "field": "core_ip_support_met",
-          "label": "核心知识产权支持要求",
+          "label": "知识产权所有权及核心支持要求",
           "aliases": [
             "核心知识产权支持要求"
           ],
-          "value_type": "boolean"
+          "value_type": "boolean",
+          "derivation": "企业须通过自主研发、受让、受赠、并购等方式取得在中国境内授权或审批审定、在有效保护期内的知识产权所有权，并对主要产品服务发挥核心支持作用。"
         },
         {
           "field": "high_tech_field_match",
@@ -2767,12 +3268,13 @@
           "unit": "%"
         },
         {
-          "field": "innovation_evaluation_met",
-          "label": "创新能力评价达到要求",
+          "field": "high_tech_innovation_score",
+          "label": "企业创新能力评价综合得分",
           "aliases": [
-            "创新能力评价达到要求"
+            "高企创新能力得分"
           ],
-          "value_type": "boolean"
+          "value_type": "number",
+          "unit": "分"
         },
         {
           "field": "no_major_incident",
@@ -2787,18 +3289,26 @@
             "official_registry",
             "compliance_statement"
           ]
+        },
+        {
+          "field": "high_tech_2025_submission_complete",
+          "label": "2025年度浙江高企申报提交完成",
+          "aliases": [
+            "2025浙江高企提交"
+          ],
+          "value_type": "boolean"
         }
       ],
       "rule_cards": [
         {
           "rule_id": "hte-registration-years",
           "type": "hard-threshold",
-          "field": "registration_years",
+          "field": "registration_days",
           "operator": "gte",
-          "expected": 1,
-          "unit": "年",
-          "source": "《高新技术企业认定管理办法》国科发火〔2016〕32号第十一条",
-          "source_quote": "申请认定时须注册成立一年以上。",
+          "expected": 365,
+          "unit": "天",
+          "source": "《高新技术企业认定管理工作指引》国科发火〔2016〕195号",
+          "source_quote": "注册成立一年以上是指企业须注册成立365个日历天数以上。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按科技部现行原文核验",
@@ -2811,8 +3321,8 @@
           "field": "core_ip_support_met",
           "operator": "truthy",
           "expected": true,
-          "source": "国科发火〔2016〕32号第十一条",
-          "source_quote": "知识产权须对主要产品或服务发挥核心支持作用。",
+          "source": "国科发火〔2016〕32号第十一条及国科发火〔2016〕195号",
+          "source_quote": "企业通过自主研发、受让、受赠、并购等方式，获得对其主要产品服务在技术上发挥核心支持作用的知识产权的所有权；知识产权须在中国境内授权或审批审定并在有效保护期内。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按科技部现行原文核验",
@@ -2895,11 +3405,12 @@
         {
           "rule_id": "hte-innovation-evaluation",
           "type": "hard-threshold",
-          "field": "innovation_evaluation_met",
-          "operator": "truthy",
-          "expected": true,
-          "source": "国科发火〔2016〕32号第十一条",
-          "source_quote": "企业创新能力评价应达到相应要求。",
+          "field": "high_tech_innovation_score",
+          "operator": "gt",
+          "expected": 70,
+          "unit": "分",
+          "source": "《高新技术企业认定管理工作指引》国科发火〔2016〕195号",
+          "source_quote": "企业创新能力主要从知识产权、科技成果转化能力、研究开发组织管理水平、企业成长性等四项指标进行评价；综合得分达到70分以上（不含70分）为符合认定要求。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按科技部现行原文核验",
@@ -2931,12 +3442,12 @@
             {
               "rule_id": "hte-registration-years",
               "type": "hard-threshold",
-              "field": "registration_years",
+              "field": "registration_days",
               "operator": "gte",
-              "expected": 1,
-              "unit": "年",
-              "source": "《高新技术企业认定管理办法》国科发火〔2016〕32号第十一条",
-              "source_quote": "申请认定时须注册成立一年以上。",
+              "expected": 365,
+              "unit": "天",
+              "source": "《高新技术企业认定管理工作指引》国科发火〔2016〕195号",
+              "source_quote": "注册成立一年以上是指企业须注册成立365个日历天数以上。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按科技部现行原文核验",
@@ -2949,8 +3460,8 @@
               "field": "core_ip_support_met",
               "operator": "truthy",
               "expected": true,
-              "source": "国科发火〔2016〕32号第十一条",
-              "source_quote": "知识产权须对主要产品或服务发挥核心支持作用。",
+              "source": "国科发火〔2016〕32号第十一条及国科发火〔2016〕195号",
+              "source_quote": "企业通过自主研发、受让、受赠、并购等方式，获得对其主要产品服务在技术上发挥核心支持作用的知识产权的所有权；知识产权须在中国境内授权或审批审定并在有效保护期内。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按科技部现行原文核验",
@@ -3033,11 +3544,12 @@
             {
               "rule_id": "hte-innovation-evaluation",
               "type": "hard-threshold",
-              "field": "innovation_evaluation_met",
-              "operator": "truthy",
-              "expected": true,
-              "source": "国科发火〔2016〕32号第十一条",
-              "source_quote": "企业创新能力评价应达到相应要求。",
+              "field": "high_tech_innovation_score",
+              "operator": "gt",
+              "expected": 70,
+              "unit": "分",
+              "source": "《高新技术企业认定管理工作指引》国科发火〔2016〕195号",
+              "source_quote": "企业创新能力主要从知识产权、科技成果转化能力、研究开发组织管理水平、企业成长性等四项指标进行评价；综合得分达到70分以上（不含70分）为符合认定要求。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按科技部现行原文核验",
@@ -3059,6 +3571,39 @@
               "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
             }
           ]
+        },
+        {
+          "layer_id": "zhejiang-high-tech-2025",
+          "layer_type": "annual",
+          "label": "浙江省2025年度高新技术企业认定通知",
+          "applicability": {
+            "years": [
+              "2025"
+            ],
+            "regions": [
+              "浙江省"
+            ],
+            "application_types": [
+              "recognition",
+              "re-recognition"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "zhejiang-high-tech-2025-submission",
+              "type": "submission",
+              "field": "high_tech_2025_submission_complete",
+              "operator": "truthy",
+              "expected": true,
+              "source": "浙江省2025年度高新技术企业认定管理工作通知",
+              "source_quote": "企业按照2025年度浙江省高新技术企业认定工作安排完成线上申报、材料提交和属地审核；该年度日程仅用于2025年度历史回放。",
+              "policy_status": "historical_reference",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:35:00",
+              "source_url": "https://jxt.zj.gov.cn/art/2025/6/5/art_1229886900_58935997.html"
+            }
+          ]
         }
       ],
       "gold_cases": [
@@ -3066,8 +3611,8 @@
           "case_id": "eligible-verified",
           "facts": [
             {
-              "field": "registration_years",
-              "value": 1,
+              "field": "registration_days",
+              "value": 365,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -3108,8 +3653,8 @@
               "source": "金标准事实"
             },
             {
-              "field": "innovation_evaluation_met",
-              "value": true,
+              "field": "high_tech_innovation_score",
+              "value": 70.7,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -3137,8 +3682,8 @@
           "case_id": "conditional-pending",
           "facts": [
             {
-              "field": "registration_years",
-              "value": 1,
+              "field": "registration_days",
+              "value": 365,
               "evidence_state": "claimed",
               "source": "金标准事实"
             },
@@ -3179,8 +3724,8 @@
               "source": "金标准事实"
             },
             {
-              "field": "innovation_evaluation_met",
-              "value": true,
+              "field": "high_tech_innovation_score",
+              "value": 70.7,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -3208,8 +3753,8 @@
           "case_id": "ineligible-failed",
           "facts": [
             {
-              "field": "registration_years",
-              "value": 0.99,
+              "field": "registration_days",
+              "value": 361.35,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -3250,8 +3795,8 @@
               "source": "金标准事实"
             },
             {
-              "field": "innovation_evaluation_met",
-              "value": true,
+              "field": "high_tech_innovation_score",
+              "value": 70.7,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -3281,8 +3826,18 @@
         "decision_mode": "confirmed-threshold-rules",
         "policy_documents": [
           {
-            "document_id": "national-high-tech-enterprise-confirmed-1b0e3079a65d",
-            "title": "《高新技术企业认定管理办法》国科发火〔2016〕32号第十一条",
+            "document_id": "national-high-tech-enterprise-confirmed-5a1551449e55",
+            "title": "《高新技术企业认定管理工作指引》国科发火〔2016〕195号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "national-high-tech-enterprise-confirmed-7392b1addf45",
+            "title": "国科发火〔2016〕32号第十一条及国科发火〔2016〕195号",
             "issued_year": 2026,
             "status": "current",
             "authority": "正式规则源所载主管部门",
@@ -3299,16 +3854,52 @@
             "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
             "relation": "governed-by",
             "current_upstream_basis": true
+          },
+          {
+            "document_id": "national-high-tech-enterprise-confirmed-27add3eeebd3",
+            "title": "浙江省2025年度高新技术企业认定管理工作通知",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://jxt.zj.gov.cn/art/2025/6/5/art_1229886900_58935997.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
           }
         ],
         "dependencies": [],
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:national-high-tech-enterprise",
-      "policy_version_id": "policy-c4e721ac67e1cf1b5406",
-      "source_content_hash": "00f15d9cd6f432ec5b830644fc68c218093ce6be2a0510b5da9eb168c06ff737",
+      "policy_version_id": "policy-ab89567939e140fc3f7e",
+      "source_content_hash": "76904828887a60c303a34cc3983806c1bde79b081ede18c7248dac09c8db2caf",
       "shared_kernel_version": "1.0",
-      "lifecycle_rule": {}
+      "lifecycle_rule": {
+        "rule_id": "national-high-tech-enterprise",
+        "project_name": "国家高新技术企业",
+        "aliases": [
+          "高新技术企业",
+          "国家高企",
+          "高企"
+        ],
+        "cycle_type": "re_recognition",
+        "validity_years": 3,
+        "supported_event_types": [
+          "recognition",
+          "recognition_publicity",
+          "re_recognition",
+          "changed",
+          "revoked"
+        ],
+        "current_rule_state": "confirmed",
+        "local_rule_sources": [
+          "10_政策与目录/综合政策/01-高新技术企业认定管理办法.doc",
+          "20_申报指南与规则/高新/高新技术企业认定管理办法.doc"
+        ],
+        "official_rule_urls": [
+          "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+        ],
+        "rule_note": "资格有效期三年；到期后是重新认定，不应写成定期复核。日常监督复核、取消资格、更名和迁移另建事件。"
+      }
     },
     "technology-sme-1": {
       "schema_version": 1,
@@ -3460,6 +4051,15 @@
           "aliases": [
             "评价得分或直接确认条件"
           ],
+          "value_type": "boolean",
+          "derivation": "综合评价分值不低于60分且科技人员指标得分不为0，或在满足共同条件后命中四项直接确认条件之一。"
+        },
+        {
+          "field": "technology_sme_2026_platform_submission_complete",
+          "label": "2026年度平台提交完成",
+          "aliases": [
+            "2026科小平台提交"
+          ],
           "value_type": "boolean"
         }
       ],
@@ -3476,7 +4076,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-employees",
@@ -3491,7 +4091,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-revenue",
@@ -3506,7 +4106,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-assets",
@@ -3521,7 +4121,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-product-policy",
@@ -3535,7 +4135,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-compliance",
@@ -3549,7 +4149,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-registry-status",
@@ -3563,7 +4163,7 @@
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         },
         {
           "rule_id": "technology-sme-score-or-direct",
@@ -3571,13 +4171,13 @@
           "field": "score_or_direct_confirmation_met",
           "operator": "truthy",
           "expected": true,
-          "source": "国科发政〔2017〕115号",
-          "source_quote": "须满足综合评价得分要求或规定的直接确认条件。",
+          "source": "国科发政〔2017〕115号第六条至第八条",
+          "source_quote": "综合评价分值不低于60分，且科技人员指标得分不得为0分；符合共同条件并命中有效高企、近五年国家科技奖励前三、省部级以上研发机构或近五年主导制定国际、国家、行业标准之一的，可直接确认。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
           "approved_at": "2026-07-27 16:45:00",
-          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
         }
       ],
       "rule_layers": [
@@ -3599,7 +4199,7 @@
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
               "approved_at": "2026-07-27 16:45:00",
-              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+              "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
             },
             {
               "rule_id": "technology-sme-employees",
@@ -3614,7 +4214,7 @@
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
               "approved_at": "2026-07-27 16:45:00",
-              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+              "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
             },
             {
               "rule_id": "technology-sme-revenue",
@@ -3629,7 +4229,7 @@
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
               "approved_at": "2026-07-27 16:45:00",
-              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+              "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
             },
             {
               "rule_id": "technology-sme-assets",
@@ -3644,7 +4244,7 @@
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
               "approved_at": "2026-07-27 16:45:00",
-              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+              "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
             },
             {
               "rule_id": "technology-sme-product-policy",
@@ -3658,7 +4258,7 @@
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
               "approved_at": "2026-07-27 16:45:00",
-              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+              "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
             },
             {
               "rule_id": "technology-sme-compliance",
@@ -3672,7 +4272,7 @@
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
               "approved_at": "2026-07-27 16:45:00",
-              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+              "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
             },
             {
               "rule_id": "technology-sme-registry-status",
@@ -3686,7 +4286,7 @@
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
               "approved_at": "2026-07-27 16:45:00",
-              "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+              "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
             },
             {
               "rule_id": "technology-sme-score-or-direct",
@@ -3694,12 +4294,42 @@
               "field": "score_or_direct_confirmation_met",
               "operator": "truthy",
               "expected": true,
-              "source": "国科发政〔2017〕115号",
-              "source_quote": "须满足综合评价得分要求或规定的直接确认条件。",
+              "source": "国科发政〔2017〕115号第六条至第八条",
+              "source_quote": "综合评价分值不低于60分，且科技人员指标得分不得为0分；符合共同条件并命中有效高企、近五年国家科技奖励前三、省部级以上研发机构或近五年主导制定国际、国家、行业标准之一的，可直接确认。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
               "approved_at": "2026-07-27 16:45:00",
+              "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html"
+            }
+          ]
+        },
+        {
+          "layer_id": "technology-sme-2026",
+          "layer_type": "annual",
+          "label": "2026年度科技型中小企业评价通知",
+          "applicability": {
+            "years": [
+              "2026"
+            ],
+            "application_types": [
+              "recognition",
+              "annual-evaluation"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "technology-sme-2026-platform-submission",
+              "type": "submission",
+              "field": "technology_sme_2026_platform_submission_complete",
+              "operator": "truthy",
+              "expected": true,
+              "source": "工企业函〔2026〕160号",
+              "source_quote": "2026年度企业信息填报时间为6月1日至8月31日，企业应在优质中小企业梯度培育平台自主评价并提交信息。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:30:00",
               "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
             }
           ]
@@ -3904,18 +4534,38 @@
         "decision_mode": "confirmed-threshold-rules",
         "policy_documents": [
           {
-            "document_id": "technology-sme-2-confirmed-cba724b9523e",
+            "document_id": "technology-sme-2-confirmed-5b833eb17879",
             "title": "《科技型中小企业评价办法》国科发政〔2017〕115号及2026年度评价通知",
             "issued_year": 2026,
             "status": "current",
             "authority": "正式规则源所载主管部门",
-            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
+            "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
             "relation": "governed-by",
             "current_upstream_basis": true
           },
           {
-            "document_id": "technology-sme-2-confirmed-511d20378f48",
+            "document_id": "technology-sme-2-confirmed-1f383b27450e",
             "title": "国科发政〔2017〕115号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "technology-sme-2-confirmed-60d211ae61dc",
+            "title": "国科发政〔2017〕115号第六条至第八条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "technology-sme-2-confirmed-6e8d6789f464",
+            "title": "工企业函〔2026〕160号",
             "issued_year": 2026,
             "status": "current",
             "authority": "正式规则源所载主管部门",
@@ -3928,8 +4578,8 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:technology-sme-2",
-      "policy_version_id": "policy-c5b7b368c64fb211113f",
-      "source_content_hash": "fc72b97bf0684df3dd9619c0ca0815863589ed9bccabaa21cad266b6d09525ba",
+      "policy_version_id": "policy-9d418843815558e97016",
+      "source_content_hash": "2549252d6f86d36c773c9e5070c00b40a07c9286b2b454f709e9b7b0e925a05c",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {
         "rule_id": "national-technology-sme",
@@ -3949,7 +4599,10 @@
         "local_rule_sources": [
           "10_政策与目录/综合政策/03.1-科技型中小企业评价办法.pdf"
         ],
-        "official_rule_urls": [],
+        "official_rule_urls": [
+          "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
+          "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html"
+        ],
         "rule_note": "评价入库按年度记录，同一企业跨年度入库不得合并成一次永久资格。"
       }
     },
@@ -4028,6 +4681,14 @@
             "official_registry",
             "compliance_statement"
           ]
+        },
+        {
+          "field": "research_institute_2026_data_cutoff_confirmed",
+          "label": "2026申报数据截止口径已确认",
+          "aliases": [
+            "研究院2026数据截止口径"
+          ],
+          "value_type": "boolean"
         }
       ],
       "rule_cards": [
@@ -4047,12 +4708,12 @@
         },
         {
           "rule_id": "zj-institute-platform",
-          "type": "hard-threshold",
+          "type": "competitive",
           "field": "municipal_rnd_platform_status",
           "operator": "truthy",
           "expected": true,
-          "source": "浙经信高新〔2025〕169号",
-          "source_quote": "原则上应建有市级企业研发机构。",
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "依托企业申报省企业研究院，原则上应建有市级企业研发机构。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4065,8 +4726,8 @@
           "field": "enterprise_institute_rnd_tier_met",
           "operator": "truthy",
           "expected": true,
-          "source": "浙经信高新〔2025〕169号",
-          "source_quote": "研发强度或研发费用须达到营业收入对应的分档要求。",
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "营业收入5000万元以下的，研发强度不低于5%且研发费用不低于100万元；5000万元至2亿元的，研发强度不低于4%或研发费用不低于250万元；2亿元以上的，研发强度不低于3%或研发费用不低于800万元。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4140,12 +4801,12 @@
             },
             {
               "rule_id": "zj-institute-platform",
-              "type": "hard-threshold",
+              "type": "competitive",
               "field": "municipal_rnd_platform_status",
               "operator": "truthy",
               "expected": true,
-              "source": "浙经信高新〔2025〕169号",
-              "source_quote": "原则上应建有市级企业研发机构。",
+              "source": "浙经信高新〔2025〕169号第九条",
+              "source_quote": "依托企业申报省企业研究院，原则上应建有市级企业研发机构。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4158,8 +4819,8 @@
               "field": "enterprise_institute_rnd_tier_met",
               "operator": "truthy",
               "expected": true,
-              "source": "浙经信高新〔2025〕169号",
-              "source_quote": "研发强度或研发费用须达到营业收入对应的分档要求。",
+              "source": "浙经信高新〔2025〕169号第九条",
+              "source_quote": "营业收入5000万元以下的，研发强度不低于5%且研发费用不低于100万元；5000万元至2亿元的，研发强度不低于4%或研发费用不低于250万元；2亿元以上的，研发强度不低于3%或研发费用不低于800万元。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4208,6 +4869,40 @@
               "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
               "approved_at": "2026-07-27 16:30:00",
               "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+            }
+          ]
+        },
+        {
+          "layer_id": "zhejiang-enterprise-institute-2026",
+          "layer_type": "annual",
+          "label": "2026年度省企业研究院申报通知",
+          "applicability": {
+            "years": [
+              "2026"
+            ],
+            "regions": [
+              "浙江省"
+            ],
+            "application_types": [
+              "recognition"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "zhejiang-enterprise-institute-2026-data-cutoff",
+              "type": "submission",
+              "field": "research_institute_2026_data_cutoff_confirmed",
+              "operator": "truthy",
+              "expected": true,
+              "source": "浙经信高新便函〔2026〕79号",
+              "source_quote": "2026年度申报涉及的营业收入、研究开发费用及其他指标数据截止时间统一为2025年12月31日。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:40:00",
+              "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+              "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
+              "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9"
             }
           ]
         }
@@ -4379,6 +5074,16 @@
             "current_upstream_basis": true
           },
           {
+            "document_id": "zhejiang-enterprise-institute-confirmed-310907da04eb",
+            "title": "浙经信高新〔2025〕169号第九条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
             "document_id": "zhejiang-enterprise-institute-confirmed-e5c39eb56b43",
             "title": "浙经信高新〔2025〕169号",
             "issued_year": 2026,
@@ -4387,16 +5092,48 @@
             "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
             "relation": "governed-by",
             "current_upstream_basis": true
+          },
+          {
+            "document_id": "zhejiang-enterprise-institute-confirmed-6b97e66c8de0",
+            "title": "浙经信高新便函〔2026〕79号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+            "relation": "governed-by",
+            "current_upstream_basis": true
           }
         ],
         "dependencies": [],
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:zhejiang-enterprise-institute",
-      "policy_version_id": "policy-797bb59c14b7fdbe5b31",
-      "source_content_hash": "bdd540073f3abdcabff9f1a0a90f6631a5fd6c3c0641f74494b7009ece083983",
+      "policy_version_id": "policy-ae244dc7807e027d1a31",
+      "source_content_hash": "db2c9772b0c73fbccea372384b9668053399203cdfc1422e5fc4fd5cee675546",
       "shared_kernel_version": "1.0",
-      "lifecycle_rule": {}
+      "lifecycle_rule": {
+        "rule_id": "zhejiang-enterprise-institute",
+        "project_name": "浙江省企业研究院",
+        "aliases": [
+          "省企业研究院",
+          "浙江企业研究院"
+        ],
+        "cycle_type": "dynamic_management",
+        "supported_event_types": [
+          "recognition",
+          "recognition_publicity",
+          "changed",
+          "revoked"
+        ],
+        "current_rule_state": "confirmed",
+        "local_rule_sources": [
+          "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf"
+        ],
+        "official_rule_urls": [
+          "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+        ],
+        "rule_note": "省企业研究院由设区市认定并实行日常动态管理；现行办法未规定固定有效期或三年复核，不得自动生成到期复核事件。取消资格后，其依托企业三年内不得再次申报。"
+      }
     },
     "zhejiang-enterprise-technology-center": {
       "schema_version": 1,
@@ -4674,6 +5411,22 @@
             "official_registry",
             "compliance_statement"
           ]
+        },
+        {
+          "field": "mountain_island_relaxation_applicable",
+          "label": "山区海岛县放宽情形适用",
+          "aliases": [
+            "山区海岛县研究院放宽"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "research_institute_2026_data_cutoff_confirmed",
+          "label": "2026申报数据截止口径已确认",
+          "aliases": [
+            "重点研究院2026数据截止口径"
+          ],
+          "value_type": "boolean"
         }
       ],
       "rule_cards": [
@@ -4693,12 +5446,12 @@
         },
         {
           "rule_id": "zj-key-institute-platform",
-          "type": "hard-threshold",
+          "type": "competitive",
           "field": "key_institute_platform_basis_met",
           "operator": "truthy",
           "expected": true,
-          "source": "浙经信高新〔2025〕169号",
-          "source_quote": "原则上应建有规定的省级企业研发机构。",
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "依托企业申报省重点企业研究院，原则上应建有省企业研究院、省高新技术企业研究开发中心或省级企业技术中心。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4711,8 +5464,8 @@
           "field": "key_institute_revenue_requirement_met",
           "operator": "truthy",
           "expected": true,
-          "source": "浙经信高新〔2025〕169号",
-          "source_quote": "营业收入须达到一般企业或农业企业对应标准。",
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4725,8 +5478,8 @@
           "field": "key_institute_rnd_requirement_met",
           "operator": "truthy",
           "expected": true,
-          "source": "浙经信高新〔2025〕169号",
-          "source_quote": "研发强度或研发费用须达到相应标准。",
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4775,6 +5528,20 @@
           "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
           "approved_at": "2026-07-27 16:30:00",
           "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+        },
+        {
+          "rule_id": "zj-key-institute-mountain-island-relaxation",
+          "type": "competitive",
+          "field": "mountain_island_relaxation_applicable",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信高新〔2025〕169号第九条",
+          "source_quote": "依托企业为山区海岛县的，可适当放宽上一年度营业收入、研发强度或研发费用等基本条件。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
+          "approved_at": "2026-07-27 16:30:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
         }
       ],
       "rule_layers": [
@@ -4800,12 +5567,12 @@
             },
             {
               "rule_id": "zj-key-institute-platform",
-              "type": "hard-threshold",
+              "type": "competitive",
               "field": "key_institute_platform_basis_met",
               "operator": "truthy",
               "expected": true,
-              "source": "浙经信高新〔2025〕169号",
-              "source_quote": "原则上应建有规定的省级企业研发机构。",
+              "source": "浙经信高新〔2025〕169号第九条",
+              "source_quote": "依托企业申报省重点企业研究院，原则上应建有省企业研究院、省高新技术企业研究开发中心或省级企业技术中心。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4818,8 +5585,8 @@
               "field": "key_institute_revenue_requirement_met",
               "operator": "truthy",
               "expected": true,
-              "source": "浙经信高新〔2025〕169号",
-              "source_quote": "营业收入须达到一般企业或农业企业对应标准。",
+              "source": "浙经信高新〔2025〕169号第九条",
+              "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4832,8 +5599,8 @@
               "field": "key_institute_rnd_requirement_met",
               "operator": "truthy",
               "expected": true,
-              "source": "浙经信高新〔2025〕169号",
-              "source_quote": "研发强度或研发费用须达到相应标准。",
+              "source": "浙经信高新〔2025〕169号第九条",
+              "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
@@ -4882,6 +5649,54 @@
               "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
               "approved_at": "2026-07-27 16:30:00",
               "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+            },
+            {
+              "rule_id": "zj-key-institute-mountain-island-relaxation",
+              "type": "competitive",
+              "field": "mountain_island_relaxation_applicable",
+              "operator": "truthy",
+              "expected": true,
+              "source": "浙经信高新〔2025〕169号第九条",
+              "source_quote": "依托企业为山区海岛县的，可适当放宽上一年度营业收入、研发强度或研发费用等基本条件。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
+              "approved_at": "2026-07-27 16:30:00",
+              "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+            }
+          ]
+        },
+        {
+          "layer_id": "zhejiang-key-enterprise-institute-2026",
+          "layer_type": "annual",
+          "label": "2026年度省重点企业研究院申报通知",
+          "applicability": {
+            "years": [
+              "2026"
+            ],
+            "regions": [
+              "浙江省"
+            ],
+            "application_types": [
+              "recognition"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "zhejiang-key-enterprise-institute-2026-data-cutoff",
+              "type": "submission",
+              "field": "research_institute_2026_data_cutoff_confirmed",
+              "operator": "truthy",
+              "expected": true,
+              "source": "浙经信高新便函〔2026〕79号",
+              "source_quote": "2026年度申报涉及的营业收入、研究开发费用及其他指标数据截止时间统一为2025年12月31日。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:40:00",
+              "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+              "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
+              "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9"
             }
           ]
         }
@@ -4931,6 +5746,12 @@
               "value": true,
               "evidence_state": "verified",
               "source": "金标准事实"
+            },
+            {
+              "field": "mountain_island_relaxation_applicable",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
             }
           ],
           "confirm_rule_ids": [
@@ -4940,7 +5761,8 @@
             "zj-key-institute-rnd",
             "zj-key-institute-score",
             "zj-key-institute-foundation",
-            "zj-key-institute-compliance"
+            "zj-key-institute-compliance",
+            "zj-key-institute-mountain-island-relaxation"
           ],
           "expected_conclusion": "eligible"
         },
@@ -4988,6 +5810,12 @@
               "value": true,
               "evidence_state": "verified",
               "source": "金标准事实"
+            },
+            {
+              "field": "mountain_island_relaxation_applicable",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
             }
           ],
           "confirm_rule_ids": [
@@ -4997,7 +5825,8 @@
             "zj-key-institute-rnd",
             "zj-key-institute-score",
             "zj-key-institute-foundation",
-            "zj-key-institute-compliance"
+            "zj-key-institute-compliance",
+            "zj-key-institute-mountain-island-relaxation"
           ],
           "expected_conclusion": "conditional"
         },
@@ -5045,6 +5874,12 @@
               "value": true,
               "evidence_state": "verified",
               "source": "金标准事实"
+            },
+            {
+              "field": "mountain_island_relaxation_applicable",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
             }
           ],
           "confirm_rule_ids": [
@@ -5054,7 +5889,8 @@
             "zj-key-institute-rnd",
             "zj-key-institute-score",
             "zj-key-institute-foundation",
-            "zj-key-institute-compliance"
+            "zj-key-institute-compliance",
+            "zj-key-institute-mountain-island-relaxation"
           ],
           "expected_conclusion": "ineligible"
         }
@@ -5074,6 +5910,16 @@
             "current_upstream_basis": true
           },
           {
+            "document_id": "zhejiang-key-enterprise-institute-confirmed-310907da04eb",
+            "title": "浙经信高新〔2025〕169号第九条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
             "document_id": "zhejiang-key-enterprise-institute-confirmed-e5c39eb56b43",
             "title": "浙经信高新〔2025〕169号",
             "issued_year": 2026,
@@ -5082,16 +5928,54 @@
             "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
             "relation": "governed-by",
             "current_upstream_basis": true
+          },
+          {
+            "document_id": "zhejiang-key-enterprise-institute-confirmed-6b97e66c8de0",
+            "title": "浙经信高新便函〔2026〕79号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+            "relation": "governed-by",
+            "current_upstream_basis": true
           }
         ],
         "dependencies": [],
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:zhejiang-key-enterprise-institute",
-      "policy_version_id": "policy-97b89e889387760206bf",
-      "source_content_hash": "23de223a4066186524d9f92d8a1ff2c0f12b1b7861fd3e54b094923f982c6f64",
+      "policy_version_id": "policy-5bdf3d1bf9c50b9f6546",
+      "source_content_hash": "5487820820256e24fb067cfbfd9ae044d982fccff195966265f0ffa31cae9d21",
       "shared_kernel_version": "1.0",
-      "lifecycle_rule": {}
+      "lifecycle_rule": {
+        "rule_id": "zhejiang-key-enterprise-institute",
+        "project_name": "浙江省重点企业研究院",
+        "aliases": [
+          "省重点企业研究院",
+          "省重点研究院"
+        ],
+        "cycle_type": "construction_and_performance",
+        "construction_years": 3,
+        "performance_cycle_years": 3,
+        "rectification_years": 1,
+        "supported_event_types": [
+          "recognition",
+          "recognition_publicity",
+          "construction_acceptance",
+          "performance_evaluation",
+          "rectification",
+          "changed",
+          "revoked"
+        ],
+        "current_rule_state": "confirmed",
+        "local_rule_sources": [
+          "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf"
+        ],
+        "official_rule_urls": [
+          "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
+        ],
+        "rule_note": "认定后建设期三年，期满三个月内申请验收；原则上每三年集中绩效评价，不合格给予一年整改。验收、绩效评价和资格取消必须分别建事件，不能写成资格到期复核。"
+      }
     },
     "zhejiang-key-specialized-sme": {
       "schema_version": 1,
@@ -5332,6 +6216,36 @@
           ],
           "value_type": "number",
           "unit": "%"
+        },
+        {
+          "field": "zhejiang_independent_legal_entity",
+          "label": "浙江省注册独立法人",
+          "aliases": [
+            "浙江独立法人"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "no_major_incident",
+          "label": "无重大事故及严重违法",
+          "aliases": [
+            "无重大事故",
+            "无严重违法",
+            "合规状态"
+          ],
+          "value_type": "boolean",
+          "trusted_document_types": [
+            "official_registry",
+            "compliance_statement"
+          ]
+        },
+        {
+          "field": "annual_info_update_compliant",
+          "label": "年度信息更新合规",
+          "aliases": [
+            "优质中小企业年度信息更新"
+          ],
+          "value_type": "boolean"
         }
       ],
       "rule_cards": [
@@ -5634,6 +6548,68 @@
               "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
             }
           ]
+        },
+        {
+          "layer_id": "zhejiang-specialized-sme-2026",
+          "layer_type": "annual",
+          "label": "浙江省2026年认定和复核通知",
+          "applicability": {
+            "years": [
+              "2026"
+            ],
+            "regions": [
+              "浙江省"
+            ],
+            "application_types": [
+              "recognition",
+              "new-recognition",
+              "review"
+            ]
+          },
+          "rules": [
+            {
+              "rule_id": "zhejiang-specialized-sme-entity",
+              "type": "hard-threshold",
+              "field": "zhejiang_independent_legal_entity",
+              "operator": "truthy",
+              "expected": true,
+              "source": "浙经信企业〔2026〕108号第一条第二项",
+              "source_quote": "申请企业应在浙江省工商注册登记、具有独立法人资格，且符合2026年印发的《办法》有关认定标准。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:20:00",
+              "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005"
+            },
+            {
+              "rule_id": "zhejiang-specialized-sme-compliance",
+              "type": "hard-threshold",
+              "field": "no_major_incident",
+              "operator": "truthy",
+              "expected": true,
+              "source": "浙经信企业〔2026〕108号第一条第三项",
+              "source_quote": "申请期间未列入经营异常名录或严重失信主体名单，产品服务不属于禁止、限制或淘汰类，近三年未发生通知列明的事故、重大违法或严重质量问题。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:20:00",
+              "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005"
+            },
+            {
+              "rule_id": "zhejiang-specialized-sme-annual-update",
+              "type": "hard-threshold",
+              "field": "annual_info_update_compliant",
+              "operator": "truthy",
+              "expected": true,
+              "source": "浙经信企业〔2026〕108号第一条第四项",
+              "source_quote": "有效期内企业须在每年5月31日前更新企业信息；同一有效期内累计两次未更新的，取消认定。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "Codex政策规则复盘",
+              "approved_at": "2026-07-30 00:20:00",
+              "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005"
+            }
+          ]
         }
       ],
       "gold_cases": [
@@ -5895,16 +6871,73 @@
             "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
             "relation": "governed-by",
             "current_upstream_basis": true
+          },
+          {
+            "document_id": "zhejiang-specialized-sme-confirmed-959da694403d",
+            "title": "浙经信企业〔2026〕108号第一条第二项",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "zhejiang-specialized-sme-confirmed-790be5436307",
+            "title": "浙经信企业〔2026〕108号第一条第三项",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "zhejiang-specialized-sme-confirmed-e938db961583",
+            "title": "浙经信企业〔2026〕108号第一条第四项",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
+            "relation": "governed-by",
+            "current_upstream_basis": true
           }
         ],
         "dependencies": [],
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:zhejiang-specialized-sme",
-      "policy_version_id": "policy-fca90b0f43a2df46a40e",
-      "source_content_hash": "d92e2c8d811333b19f0eab9725042ca31dd4f801a66cc2b629274a181308e60f",
+      "policy_version_id": "policy-5f223932453fff68cb0c",
+      "source_content_hash": "6f525833e7f49c8eda7b101b80531eaf6a50dd7558570dbf307ef970806cd030",
       "shared_kernel_version": "1.0",
-      "lifecycle_rule": {}
+      "lifecycle_rule": {
+        "rule_id": "zhejiang-specialized-sme",
+        "project_name": "浙江省专精特新中小企业",
+        "aliases": [
+          "专精特新中小企业",
+          "省级专精特新",
+          "省专精特新"
+        ],
+        "cycle_type": "qualification_review",
+        "validity_years": 3,
+        "supported_event_types": [
+          "recognition",
+          "recognition_publicity",
+          "review_due",
+          "review_publicity",
+          "review_passed",
+          "changed",
+          "revoked"
+        ],
+        "current_rule_state": "confirmed",
+        "local_rule_sources": [
+          "10_政策与目录/政策数据库/企策顾问/申报通知/绍兴市/优质中小企业梯度培育/2025-03-04__关于组织开展2025年创新型中小企业评价和专精特新中小企业申报认定（复核）工作的通知__37bd145c81554ff58803afc2aa67a6b3/通知原文.md"
+        ],
+        "official_rule_urls": [
+          "https://jxt.zj.gov.cn/art/2025/3/4/art_1582899_27945.html"
+        ],
+        "rule_note": "2022年度称号有效期至2025年7月；复核结果公布后原称号自动失效，复核通过的有效期重新计算。"
+      }
     }
   },
   "indexes": {
@@ -6260,27 +7293,27 @@
       "green-factory-1": "policy-074dead267b21a7561d7",
       "green-factory-2": "policy-ed00cd1663bc91692adf",
       "green-factory-3": "policy-3e07233cd1c73e666e3c",
-      "green-factory-4": "policy-0f9bd42b6aea6776bd6f",
+      "green-factory-4": "policy-1523bea94dad3bd5fa62",
       "hangzhou-enterprise-institute": "policy-52f16b46a6427c6aa534",
       "hangzhou-enterprise-technology-center": "policy-dd30d8df051bb3218405",
       "intelligent-factory": "policy-aa68482159b0630de6f9",
       "key-little-giant-support": "policy-ae6398073f38870a9d2d",
-      "little-giant": "policy-aea5603ee6143154b75c",
+      "little-giant": "policy-b42a23d97595171f3d21",
       "manufacturing-single-champion-1": "policy-812329d16784eae4627b",
-      "manufacturing-single-champion-2": "policy-113f26f2400a3ac384df",
+      "manufacturing-single-champion-2": "policy-28a53dceee1ee7f56801",
       "municipal-enterprise-technology-center": "policy-3f18c801bf65b05a79ca",
-      "national-high-tech-enterprise": "policy-c4e721ac67e1cf1b5406",
+      "national-high-tech-enterprise": "policy-ab89567939e140fc3f7e",
       "technology-sme-1": "policy-60bc9824b24f1bac00ad",
-      "technology-sme-2": "policy-c5b7b368c64fb211113f",
-      "zhejiang-enterprise-institute": "policy-797bb59c14b7fdbe5b31",
+      "technology-sme-2": "policy-9d418843815558e97016",
+      "zhejiang-enterprise-institute": "policy-ae244dc7807e027d1a31",
       "zhejiang-enterprise-technology-center": "policy-ff633dc05b45e4124c95",
       "zhejiang-hidden-champion": "policy-4725f5139cc2f7f49ed7",
       "zhejiang-industrial-new-product": "policy-294f3a0f60418cb971b9",
-      "zhejiang-key-enterprise-institute": "policy-97b89e889387760206bf",
+      "zhejiang-key-enterprise-institute": "policy-5bdf3d1bf9c50b9f6546",
       "zhejiang-key-specialized-sme": "policy-2165735fbec49ac3777d",
       "zhejiang-manufacturing-2": "policy-48a0206292292657ee2f",
       "zhejiang-manufacturing-quality": "policy-2b3113ac5b0f3f7d4b94",
-      "zhejiang-specialized-sme": "policy-fca90b0f43a2df46a40e"
+      "zhejiang-specialized-sme": "policy-5f223932453fff68cb0c"
     }
   },
   "algorithm_cards": {
@@ -6789,7 +7822,7 @@
       "project_name": "国家绿色工厂",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-0f9bd42b6aea6776bd6f",
+      "policy_version_id": "policy-1523bea94dad3bd5fa62",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -6812,9 +7845,9 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 5,
-        "confirmed_rules": 5,
-        "rule_layers": 1,
+        "fact_fields": 7,
+        "confirmed_rules": 8,
+        "rule_layers": 3,
         "gold_cases": 3
       },
       "explainability": {
@@ -7099,7 +8132,7 @@
       "project_name": "专精特新小巨人",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-aea5603ee6143154b75c",
+      "policy_version_id": "policy-b42a23d97595171f3d21",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -7122,9 +8155,9 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 12,
-        "confirmed_rules": 12,
-        "rule_layers": 1,
+        "fact_fields": 17,
+        "confirmed_rules": 26,
+        "rule_layers": 3,
         "gold_cases": 3
       },
       "explainability": {
@@ -7218,12 +8251,12 @@
       "schema_version": 1,
       "algorithm_id": "project-decision-manufacturing-single-champion-2",
       "algorithm_name": "国家制造业单项冠军企业项目决策算法",
-      "algorithm_version": "2023.138-current",
+      "algorithm_version": "2023.138-current-20260730",
       "project_id": "manufacturing-single-champion-2",
       "project_name": "国家制造业单项冠军企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-113f26f2400a3ac384df",
+      "policy_version_id": "policy-28a53dceee1ee7f56801",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -7347,7 +8380,7 @@
       "project_name": "高新技术企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-c4e721ac67e1cf1b5406",
+      "policy_version_id": "policy-ab89567939e140fc3f7e",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -7370,9 +8403,9 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 9,
-        "confirmed_rules": 9,
-        "rule_layers": 1,
+        "fact_fields": 10,
+        "confirmed_rules": 10,
+        "rule_layers": 2,
         "gold_cases": 3
       },
       "explainability": {
@@ -7471,7 +8504,7 @@
       "project_name": "国家科技型中小企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-c5b7b368c64fb211113f",
+      "policy_version_id": "policy-9d418843815558e97016",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -7494,9 +8527,9 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 8,
-        "confirmed_rules": 8,
-        "rule_layers": 1,
+        "fact_fields": 9,
+        "confirmed_rules": 9,
+        "rule_layers": 2,
         "gold_cases": 3
       },
       "explainability": {
@@ -7533,7 +8566,7 @@
       "project_name": "浙江省企业研究院",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-797bb59c14b7fdbe5b31",
+      "policy_version_id": "policy-ae244dc7807e027d1a31",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -7556,9 +8589,9 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 6,
-        "confirmed_rules": 6,
-        "rule_layers": 1,
+        "fact_fields": 7,
+        "confirmed_rules": 7,
+        "rule_layers": 2,
         "gold_cases": 3
       },
       "explainability": {
@@ -7781,7 +8814,7 @@
       "project_name": "浙江省重点企业研究院",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-97b89e889387760206bf",
+      "policy_version_id": "policy-5bdf3d1bf9c50b9f6546",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -7804,9 +8837,9 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 7,
-        "confirmed_rules": 7,
-        "rule_layers": 1,
+        "fact_fields": 9,
+        "confirmed_rules": 9,
+        "rule_layers": 2,
         "gold_cases": 3
       },
       "explainability": {
@@ -8029,7 +9062,7 @@
       "project_name": "专精特新中小企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-fca90b0f43a2df46a40e",
+      "policy_version_id": "policy-5f223932453fff68cb0c",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -8052,9 +9085,9 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 10,
-        "confirmed_rules": 10,
-        "rule_layers": 1,
+        "fact_fields": 13,
+        "confirmed_rules": 13,
+        "rule_layers": 2,
         "gold_cases": 3
       },
       "explainability": {
@@ -8122,6 +9155,20 @@
         "content_hash": "006c997f0aa2e60c611f334bbd1c5a8d911a0f1b9b5cf5ce5e0641ab99a36038"
       },
       {
+        "node_id": "policy:green-factory-4-confirmed-3e1339ca1fbd",
+        "node_type": "policy",
+        "document_id": "green-factory-4-confirmed-3e1339ca1fbd",
+        "title": "工信厅节函〔2025〕390号第二条第一项",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "68b2e631a21a85a7624e275d8c59bd95599806302b1defd75e811dea48152319"
+      },
+      {
         "node_id": "policy:green-factory-4-confirmed-576b02c3f5b9",
         "node_type": "policy",
         "document_id": "green-factory-4-confirmed-576b02c3f5b9",
@@ -8148,6 +9195,20 @@
         "current_upstream_basis": true,
         "selection_reason": "rolling-five-year-window",
         "content_hash": "c268cc8201b8cc43ca8ed2195a13afd8b2e8b8f38ad76bc4455d0ca600a2a2a8"
+      },
+      {
+        "node_id": "policy:green-factory-4-confirmed-bfcc47a315ca",
+        "node_type": "policy",
+        "document_id": "green-factory-4-confirmed-bfcc47a315ca",
+        "title": "工信厅节函〔2025〕390号第二条第二项",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "c574f3bf1f3aa7b47090ae0d2ad1e70f2a7f3b552276fa59c491a1d94aa8bd96"
       },
       {
         "node_id": "policy:green-factory-4-confirmed-ecd28bef0f3d",
@@ -8192,6 +9253,20 @@
         "content_hash": "03da2a7562bf2522cc927b3f00c0e68e402cf5279169632e330a19d077a4f18b"
       },
       {
+        "node_id": "policy:little-giant-confirmed-12bcf014dbf2",
+        "node_type": "policy",
+        "document_id": "little-giant-confirmed-12bcf014dbf2",
+        "title": "工信厅企业函〔2026〕117号第二条第四项",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "abe222ce8d16c56d07192c1303afe41fd5212ef2dc383856c62ffa5919d7171b"
+      },
+      {
         "node_id": "policy:little-giant-confirmed-1f636aee1e30",
         "node_type": "policy",
         "document_id": "little-giant-confirmed-1f636aee1e30",
@@ -8206,6 +9281,48 @@
         "content_hash": "210cbeaaefe83013a2285582cf4303fa4178e87115102395afad63af12838d3d"
       },
       {
+        "node_id": "policy:little-giant-confirmed-3179e2c83396",
+        "node_type": "policy",
+        "document_id": "little-giant-confirmed-3179e2c83396",
+        "title": "工信厅企业函〔2026〕117号第一条第六项",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "3fa18fd3d6ae0df8acefda3923a51a74881ec72f251e813599f15273916d689a"
+      },
+      {
+        "node_id": "policy:little-giant-confirmed-88bde39cb7d8",
+        "node_type": "policy",
+        "document_id": "little-giant-confirmed-88bde39cb7d8",
+        "title": "工信部企业〔2022〕63号附件4",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "860caaa5be7d239c04a07a7106f2da08859eb094778faa9c398ba86959c48d4f"
+      },
+      {
+        "node_id": "policy:little-giant-confirmed-93047dac8159",
+        "node_type": "policy",
+        "document_id": "little-giant-confirmed-93047dac8159",
+        "title": "工信部企业〔2022〕63号附件3",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "a55f9d94547145dd5b6671e10fad84fc82ab8314bcf5f5c274021b7fa573aa6e"
+      },
+      {
         "node_id": "policy:little-giant-confirmed-940f39f83868",
         "node_type": "policy",
         "document_id": "little-giant-confirmed-940f39f83868",
@@ -8218,6 +9335,20 @@
         "current_upstream_basis": true,
         "selection_reason": "rolling-five-year-window",
         "content_hash": "d2c1da82acbf359f58add3d8aba0f38e65ea6d0358a4c27988a4e4f630ff3686"
+      },
+      {
+        "node_id": "policy:little-giant-confirmed-caaea86d9d21",
+        "node_type": "policy",
+        "document_id": "little-giant-confirmed-caaea86d9d21",
+        "title": "工信部企业〔2022〕63号附件3及工信厅企业函〔2026〕117号过渡条款",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "f9917436d93757864e13a2af0850e61c09c23631e54bf7dd749329a970ad6c53"
       },
       {
         "node_id": "policy:manufacturing-single-champion-2-confirmed-89e6b409845b",
@@ -8248,10 +9379,38 @@
         "content_hash": "e236bfc5c46e470dd55a00ba14296dc248a183e93c1633a2124a908509c96edd"
       },
       {
-        "node_id": "policy:national-high-tech-enterprise-confirmed-1b0e3079a65d",
+        "node_id": "policy:manufacturing-single-champion-2-confirmed-ddb6734cba35",
         "node_type": "policy",
-        "document_id": "national-high-tech-enterprise-confirmed-1b0e3079a65d",
-        "title": "《高新技术企业认定管理办法》国科发火〔2016〕32号第十一条",
+        "document_id": "manufacturing-single-champion-2-confirmed-ddb6734cba35",
+        "title": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号附件1",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "ce4fe75d66c1dcd5d4aa39c989edf2ec7c43e2a8ac5856202bccbeadd43df350"
+      },
+      {
+        "node_id": "policy:national-high-tech-enterprise-confirmed-27add3eeebd3",
+        "node_type": "policy",
+        "document_id": "national-high-tech-enterprise-confirmed-27add3eeebd3",
+        "title": "浙江省2025年度高新技术企业认定管理工作通知",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://jxt.zj.gov.cn/art/2025/6/5/art_1229886900_58935997.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "9517eca95de4b9740d42bce43e107727f53d344a6d59f9918d35eb9740f83273"
+      },
+      {
+        "node_id": "policy:national-high-tech-enterprise-confirmed-5a1551449e55",
+        "node_type": "policy",
+        "document_id": "national-high-tech-enterprise-confirmed-5a1551449e55",
+        "title": "《高新技术企业认定管理工作指引》国科发火〔2016〕195号",
         "issued_year": 2026,
         "status": "current",
         "authority": "正式规则源所载主管部门",
@@ -8259,7 +9418,21 @@
         "relation": "governed-by",
         "current_upstream_basis": true,
         "selection_reason": "rolling-five-year-window",
-        "content_hash": "46cdb5b23627ab31aeefaef8b95c7359585111c9e70b571b3ee4722cc1d1cf79"
+        "content_hash": "c6bfebeba621ab3dc899a4a17ae23d1558bfea13c57cf965f83e102f1b5df49e"
+      },
+      {
+        "node_id": "policy:national-high-tech-enterprise-confirmed-7392b1addf45",
+        "node_type": "policy",
+        "document_id": "national-high-tech-enterprise-confirmed-7392b1addf45",
+        "title": "国科发火〔2016〕32号第十一条及国科发火〔2016〕195号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "4eaa0d9d2d4a56dfc6f6c84bc94e40de44f9ee790c47ec7a9cbd6faaa9f8b41d"
       },
       {
         "node_id": "policy:national-high-tech-enterprise-confirmed-e87f259ac1af",
@@ -8302,24 +9475,52 @@
         "content_hash": "a34804e30dc108daa3759776adefc34cbafa89c9534b2b92a3c2d42f3df544df"
       },
       {
-        "node_id": "policy:technology-sme-2-confirmed-511d20378f48",
+        "node_id": "policy:technology-sme-2-confirmed-1f383b27450e",
         "node_type": "policy",
-        "document_id": "technology-sme-2-confirmed-511d20378f48",
+        "document_id": "technology-sme-2-confirmed-1f383b27450e",
         "title": "国科发政〔2017〕115号",
         "issued_year": 2026,
         "status": "current",
         "authority": "正式规则源所载主管部门",
-        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
+        "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
         "relation": "governed-by",
         "current_upstream_basis": true,
         "selection_reason": "rolling-five-year-window",
-        "content_hash": "e3663499577ec15f93a6d9e2e0aee67ec59c9684a57600f99ee9d134c3e413b2"
+        "content_hash": "66b22225fb507481418a7877419b0a5f52c5131e698187363437612e201ba389"
       },
       {
-        "node_id": "policy:technology-sme-2-confirmed-cba724b9523e",
+        "node_id": "policy:technology-sme-2-confirmed-5b833eb17879",
         "node_type": "policy",
-        "document_id": "technology-sme-2-confirmed-cba724b9523e",
+        "document_id": "technology-sme-2-confirmed-5b833eb17879",
         "title": "《科技型中小企业评价办法》国科发政〔2017〕115号及2026年度评价通知",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "8288553d5dfb2c1f69d6a1cc53ec3858e6324d0afc67b7edbed10bdef814c760"
+      },
+      {
+        "node_id": "policy:technology-sme-2-confirmed-60d211ae61dc",
+        "node_type": "policy",
+        "document_id": "technology-sme-2-confirmed-60d211ae61dc",
+        "title": "国科发政〔2017〕115号第六条至第八条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "45034aabb8e36972c1851ae2433bd474fcfaad688ae022b80770196fa69effab"
+      },
+      {
+        "node_id": "policy:technology-sme-2-confirmed-6e8d6789f464",
+        "node_type": "policy",
+        "document_id": "technology-sme-2-confirmed-6e8d6789f464",
+        "title": "工企业函〔2026〕160号",
         "issued_year": 2026,
         "status": "current",
         "authority": "正式规则源所载主管部门",
@@ -8327,7 +9528,35 @@
         "relation": "governed-by",
         "current_upstream_basis": true,
         "selection_reason": "rolling-five-year-window",
-        "content_hash": "c9b16f68da305afeeb2227de9defd42e9e01e64fd0ff4ced51463ff41cbbc00b"
+        "content_hash": "a3f00f0a26945d0433430aea10d89884baf4249f5a98bb8f3f60f5430ae71d9c"
+      },
+      {
+        "node_id": "policy:zhejiang-enterprise-institute-confirmed-310907da04eb",
+        "node_type": "policy",
+        "document_id": "zhejiang-enterprise-institute-confirmed-310907da04eb",
+        "title": "浙经信高新〔2025〕169号第九条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "1694a1db504c4eece16d3910d857382dbba1d1aec9fca7b0e2497653e82d1cc5"
+      },
+      {
+        "node_id": "policy:zhejiang-enterprise-institute-confirmed-6b97e66c8de0",
+        "node_type": "policy",
+        "document_id": "zhejiang-enterprise-institute-confirmed-6b97e66c8de0",
+        "title": "浙经信高新便函〔2026〕79号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "3cc63d5897335516f4f372f9fbc3bb11b991dfe77a65985797a043d48fc58827"
       },
       {
         "node_id": "policy:zhejiang-enterprise-institute-confirmed-a0a0e12563d9",
@@ -8356,6 +9585,34 @@
         "current_upstream_basis": true,
         "selection_reason": "rolling-five-year-window",
         "content_hash": "006ea28c427e66cb0532cc06afc8d331df1dc7bc55deb51d345654097719b3a5"
+      },
+      {
+        "node_id": "policy:zhejiang-key-enterprise-institute-confirmed-310907da04eb",
+        "node_type": "policy",
+        "document_id": "zhejiang-key-enterprise-institute-confirmed-310907da04eb",
+        "title": "浙经信高新〔2025〕169号第九条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "363c1aa8b7b845e07b9b521138de888e42ccec2e16d322d1107d02a851af9361"
+      },
+      {
+        "node_id": "policy:zhejiang-key-enterprise-institute-confirmed-6b97e66c8de0",
+        "node_type": "policy",
+        "document_id": "zhejiang-key-enterprise-institute-confirmed-6b97e66c8de0",
+        "title": "浙经信高新便函〔2026〕79号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "8e031eff67283c0c936a08ccee92e75ebe5c4cd7ab62bb9b65a63dd40b3a55a7"
       },
       {
         "node_id": "policy:zhejiang-key-enterprise-institute-confirmed-a0a0e12563d9",
@@ -8400,6 +9657,20 @@
         "content_hash": "9b80ac873fe053f08feaf4c964b4f428b7b7557637ebd92b7ff6f1132557c5e0"
       },
       {
+        "node_id": "policy:zhejiang-specialized-sme-confirmed-790be5436307",
+        "node_type": "policy",
+        "document_id": "zhejiang-specialized-sme-confirmed-790be5436307",
+        "title": "浙经信企业〔2026〕108号第一条第三项",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "af5f43d7668b393ef648c5d6e807fd099da76baf4db565cc3599f6d6b5356a37"
+      },
+      {
         "node_id": "policy:zhejiang-specialized-sme-confirmed-940f39f83868",
         "node_type": "policy",
         "document_id": "zhejiang-specialized-sme-confirmed-940f39f83868",
@@ -8412,6 +9683,34 @@
         "current_upstream_basis": true,
         "selection_reason": "rolling-five-year-window",
         "content_hash": "6d6a8034b1d804c4ad4dea7eeb76d210e5fcdb67b1033ff622a68a2a589eb47f"
+      },
+      {
+        "node_id": "policy:zhejiang-specialized-sme-confirmed-959da694403d",
+        "node_type": "policy",
+        "document_id": "zhejiang-specialized-sme-confirmed-959da694403d",
+        "title": "浙经信企业〔2026〕108号第一条第二项",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "05969aea40474dd01ce0699a8d1a96167f8a987e33b38451eb0a5a86285d9ad7"
+      },
+      {
+        "node_id": "policy:zhejiang-specialized-sme-confirmed-e938db961583",
+        "node_type": "policy",
+        "document_id": "zhejiang-specialized-sme-confirmed-e938db961583",
+        "title": "浙经信企业〔2026〕108号第一条第四项",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "d810b78e6d1a795c35e8a844f5593001edbb65538ad033f8f5bd3aa17145842d"
       },
       {
         "node_id": "policy:zj-enterprise-tech-center-method-2019",
@@ -8880,12 +10179,22 @@
       },
       {
         "from": "project:green-factory-4",
+        "to": "policy:green-factory-4-confirmed-3e1339ca1fbd",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:green-factory-4",
         "to": "policy:green-factory-4-confirmed-576b02c3f5b9",
         "relation": "governed-by"
       },
       {
         "from": "project:green-factory-4",
         "to": "policy:green-factory-4-confirmed-7ce4edf533b9",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:green-factory-4",
+        "to": "policy:green-factory-4-confirmed-bfcc47a315ca",
         "relation": "governed-by"
       },
       {
@@ -8920,12 +10229,37 @@
       },
       {
         "from": "project:little-giant",
+        "to": "policy:little-giant-confirmed-12bcf014dbf2",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:little-giant",
         "to": "policy:little-giant-confirmed-1f636aee1e30",
         "relation": "governed-by"
       },
       {
         "from": "project:little-giant",
+        "to": "policy:little-giant-confirmed-3179e2c83396",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:little-giant",
+        "to": "policy:little-giant-confirmed-88bde39cb7d8",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:little-giant",
+        "to": "policy:little-giant-confirmed-93047dac8159",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:little-giant",
         "to": "policy:little-giant-confirmed-940f39f83868",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:little-giant",
+        "to": "policy:little-giant-confirmed-caaea86d9d21",
         "relation": "governed-by"
       },
       {
@@ -8944,13 +10278,28 @@
         "relation": "governed-by"
       },
       {
+        "from": "project:manufacturing-single-champion-2",
+        "to": "policy:manufacturing-single-champion-2-confirmed-ddb6734cba35",
+        "relation": "governed-by"
+      },
+      {
         "from": "project:municipal-enterprise-technology-center",
         "to": "policy:zj-enterprise-tech-center-method-2019",
         "relation": "upper-level-basis"
       },
       {
         "from": "project:national-high-tech-enterprise",
-        "to": "policy:national-high-tech-enterprise-confirmed-1b0e3079a65d",
+        "to": "policy:national-high-tech-enterprise-confirmed-27add3eeebd3",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:national-high-tech-enterprise",
+        "to": "policy:national-high-tech-enterprise-confirmed-5a1551449e55",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:national-high-tech-enterprise",
+        "to": "policy:national-high-tech-enterprise-confirmed-7392b1addf45",
         "relation": "governed-by"
       },
       {
@@ -8970,12 +10319,32 @@
       },
       {
         "from": "project:technology-sme-2",
-        "to": "policy:technology-sme-2-confirmed-511d20378f48",
+        "to": "policy:technology-sme-2-confirmed-1f383b27450e",
         "relation": "governed-by"
       },
       {
         "from": "project:technology-sme-2",
-        "to": "policy:technology-sme-2-confirmed-cba724b9523e",
+        "to": "policy:technology-sme-2-confirmed-5b833eb17879",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:technology-sme-2",
+        "to": "policy:technology-sme-2-confirmed-60d211ae61dc",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:technology-sme-2",
+        "to": "policy:technology-sme-2-confirmed-6e8d6789f464",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-enterprise-institute",
+        "to": "policy:zhejiang-enterprise-institute-confirmed-310907da04eb",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-enterprise-institute",
+        "to": "policy:zhejiang-enterprise-institute-confirmed-6b97e66c8de0",
         "relation": "governed-by"
       },
       {
@@ -9015,6 +10384,16 @@
       },
       {
         "from": "project:zhejiang-key-enterprise-institute",
+        "to": "policy:zhejiang-key-enterprise-institute-confirmed-310907da04eb",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-key-enterprise-institute",
+        "to": "policy:zhejiang-key-enterprise-institute-confirmed-6b97e66c8de0",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-key-enterprise-institute",
         "to": "policy:zhejiang-key-enterprise-institute-confirmed-a0a0e12563d9",
         "relation": "governed-by"
       },
@@ -9045,34 +10424,68 @@
       },
       {
         "from": "project:zhejiang-specialized-sme",
+        "to": "policy:zhejiang-specialized-sme-confirmed-790be5436307",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-specialized-sme",
         "to": "policy:zhejiang-specialized-sme-confirmed-940f39f83868",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-specialized-sme",
+        "to": "policy:zhejiang-specialized-sme-confirmed-959da694403d",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-specialized-sme",
+        "to": "policy:zhejiang-specialized-sme-confirmed-e938db961583",
         "relation": "governed-by"
       }
     ],
     "execution_document_ids": [
       "green-factory-4-confirmed-1719bb1fcf6b",
       "green-factory-4-confirmed-3bf386505031",
+      "green-factory-4-confirmed-3e1339ca1fbd",
       "green-factory-4-confirmed-576b02c3f5b9",
       "green-factory-4-confirmed-7ce4edf533b9",
+      "green-factory-4-confirmed-bfcc47a315ca",
       "green-factory-4-confirmed-ecd28bef0f3d",
       "hangzhou-enterprise-rd-center-2022",
       "hangzhou-enterprise-tech-center-2018",
+      "little-giant-confirmed-12bcf014dbf2",
       "little-giant-confirmed-1f636aee1e30",
+      "little-giant-confirmed-3179e2c83396",
+      "little-giant-confirmed-88bde39cb7d8",
+      "little-giant-confirmed-93047dac8159",
       "little-giant-confirmed-940f39f83868",
+      "little-giant-confirmed-caaea86d9d21",
       "manufacturing-single-champion-2-confirmed-89e6b409845b",
       "manufacturing-single-champion-2-confirmed-d5d9f4ac5d4b",
-      "national-high-tech-enterprise-confirmed-1b0e3079a65d",
+      "manufacturing-single-champion-2-confirmed-ddb6734cba35",
+      "national-high-tech-enterprise-confirmed-27add3eeebd3",
+      "national-high-tech-enterprise-confirmed-5a1551449e55",
+      "national-high-tech-enterprise-confirmed-7392b1addf45",
       "national-high-tech-enterprise-confirmed-e87f259ac1af",
       "national-key-little-giant-support-2024",
       "pin-zi-biao-authorization-current",
-      "technology-sme-2-confirmed-511d20378f48",
-      "technology-sme-2-confirmed-cba724b9523e",
+      "technology-sme-2-confirmed-1f383b27450e",
+      "technology-sme-2-confirmed-5b833eb17879",
+      "technology-sme-2-confirmed-60d211ae61dc",
+      "technology-sme-2-confirmed-6e8d6789f464",
+      "zhejiang-enterprise-institute-confirmed-310907da04eb",
+      "zhejiang-enterprise-institute-confirmed-6b97e66c8de0",
       "zhejiang-enterprise-institute-confirmed-a0a0e12563d9",
       "zhejiang-enterprise-institute-confirmed-e5c39eb56b43",
+      "zhejiang-key-enterprise-institute-confirmed-310907da04eb",
+      "zhejiang-key-enterprise-institute-confirmed-6b97e66c8de0",
       "zhejiang-key-enterprise-institute-confirmed-a0a0e12563d9",
       "zhejiang-key-enterprise-institute-confirmed-e5c39eb56b43",
       "zhejiang-specialized-sme-confirmed-1f636aee1e30",
+      "zhejiang-specialized-sme-confirmed-790be5436307",
       "zhejiang-specialized-sme-confirmed-940f39f83868",
+      "zhejiang-specialized-sme-confirmed-959da694403d",
+      "zhejiang-specialized-sme-confirmed-e938db961583",
       "zj-enterprise-tech-center-method-2019",
       "zj-enterprise-tech-center-result-2024",
       "zj-first-equipment-2025",
@@ -9090,7 +10503,7 @@
       "zj-technology-sme-method-2016"
     ],
     "cold_archive_document_ids": [],
-    "content_hash": "1ce8ce09f4ff48e31ea550ba48c3cfee0b1c782cf85a73d743075a03cc02454e"
+    "content_hash": "afa67783f25ea35bf4892798ad1b9621a758b356030b40a3e9c1ea953698b4bc"
   },
   "policy_execution_window": {
     "as_of_year": 2026,
@@ -9110,9 +10523,9 @@
     "policy_covered_count": 29,
     "routing_only_count": 0,
     "shared_kernel_count": 9,
-    "policy_dependency_nodes": 67,
-    "policy_dependency_edges": 52,
-    "execution_policy_documents": 38,
+    "policy_dependency_nodes": 86,
+    "policy_dependency_edges": 71,
+    "execution_policy_documents": 57,
     "cold_archive_policy_documents": 0
   }
 }

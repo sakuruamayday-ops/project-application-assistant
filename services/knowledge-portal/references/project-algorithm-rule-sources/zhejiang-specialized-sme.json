@@ -18,7 +18,9 @@
     {"field": "ip_or_exemption_requirement_met", "label": "知识产权或豁免要求", "aliases": ["知识产权或豁免要求"], "value_type": "boolean"},
     {"field": "market_influence_requirement_met", "label": "细分市场影响力要求", "aliases": ["细分市场影响力"], "value_type": "boolean"},
     {"field": "specialized_quality_score", "label": "专精特新发展质量评价得分", "aliases": ["发展质量评价得分"], "value_type": "number", "unit": "分"},
-    {"field": "leading_product_revenue_ratio", "label": "主导产品收入占比", "aliases": ["主导产品收入占比"], "value_type": "number", "unit": "%"}
+    {"field": "leading_product_revenue_ratio", "label": "主导产品收入占比", "aliases": ["主导产品收入占比"], "value_type": "number", "unit": "%"},
+    {"field": "zhejiang_independent_legal_entity", "label": "浙江省注册独立法人", "aliases": ["浙江独立法人"], "value_type": "boolean"},
+    {"field": "annual_info_update_compliant", "label": "年度信息更新合规", "aliases": ["优质中小企业年度信息更新"], "value_type": "boolean"}
   ],
   "rules": [
     {"rule_id": "specialized-sme-entry-status", "type": "hard-threshold", "field": "technology_and_innovative_sme_status_met", "operator": "truthy", "expected": true, "source": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号", "source_quote": "须满足科技型和创新型中小企业相关资格要求。"},
@@ -31,5 +33,47 @@
     {"rule_id": "specialized-sme-market-influence", "type": "hard-threshold", "field": "market_influence_requirement_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "主导产品细分市场占有率应较为靠前并具有一定影响力。"},
     {"rule_id": "specialized-sme-quality-score", "type": "hard-threshold", "field": "specialized_quality_score", "operator": "gte", "expected": 50, "unit": "分", "source": "工信部企业〔2026〕2号", "source_quote": "当年度专精特新发展质量评价得分达到五十分以上。"},
     {"rule_id": "specialized-sme-leading-product-ratio", "type": "hard-threshold", "field": "leading_product_revenue_ratio", "operator": "gt", "expected": 50, "unit": "%", "source": "工信部企业〔2026〕2号", "source_quote": "主导产品收入占同期营业收入比重超过百分之五十。"}
+  ],
+  "annual_overlays": [
+    {
+      "overlay_id": "zhejiang-specialized-sme-2026",
+      "label": "浙江省2026年认定和复核通知",
+      "year": 2026,
+      "regions": ["浙江省"],
+      "application_types": ["recognition", "new-recognition", "review"],
+      "policy_status": "current",
+      "approved_by": "Codex政策规则复盘",
+      "approved_at": "2026-07-30 00:20:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
+      "rules": [
+        {
+          "rule_id": "zhejiang-specialized-sme-entity",
+          "type": "hard-threshold",
+          "field": "zhejiang_independent_legal_entity",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信企业〔2026〕108号第一条第二项",
+          "source_quote": "申请企业应在浙江省工商注册登记、具有独立法人资格，且符合2026年印发的《办法》有关认定标准。"
+        },
+        {
+          "rule_id": "zhejiang-specialized-sme-compliance",
+          "type": "hard-threshold",
+          "field": "no_major_incident",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信企业〔2026〕108号第一条第三项",
+          "source_quote": "申请期间未列入经营异常名录或严重失信主体名单，产品服务不属于禁止、限制或淘汰类，近三年未发生通知列明的事故、重大违法或严重质量问题。"
+        },
+        {
+          "rule_id": "zhejiang-specialized-sme-annual-update",
+          "type": "hard-threshold",
+          "field": "annual_info_update_compliant",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙经信企业〔2026〕108号第一条第四项",
+          "source_quote": "有效期内企业须在每年5月31日前更新企业信息；同一有效期内累计两次未更新的，取消认定。"
+        }
+      ]
+    }
   ]
 }

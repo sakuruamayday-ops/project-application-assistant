@@ -277,8 +277,17 @@ def confirmed_rule_cards(
     if not isinstance(rules, list):
         raise ValueError("规则层rules必须为列表")
     audit_source = {**source, **(layer or {})}
-    if str(audit_source.get("policy_status") or "") != "current":
-        raise ValueError("仅允许从current政策生成正式算法包")
+    policy_status = str(audit_source.get("policy_status") or "")
+    allowed_statuses = {"current"}
+    if layer is not None and (
+        layer.get("year") or layer.get("years")
+    ):
+        allowed_statuses.add("historical_reference")
+    if policy_status not in allowed_statuses:
+        raise ValueError(
+            "稳定规则仅允许current；带明确年份的覆盖层可使用"
+            "current或historical_reference"
+        )
     for field in ("approved_by", "approved_at", "source_url"):
         if not str(audit_source.get(field) or "").strip():
             raise ValueError(f"确认规则层缺少{field}")
@@ -289,13 +298,19 @@ def confirmed_rule_cards(
         rule = dict(raw_rule)
         rule.update(
             {
-                "policy_status": "current",
+                "policy_status": policy_status,
                 "review_status": "confirmed",
                 "approved_by": audit_source["approved_by"],
                 "approved_at": audit_source["approved_at"],
                 "source_url": audit_source["source_url"],
             }
         )
+        for provenance_field in (
+            "source_archive_path",
+            "source_archive_sha256",
+        ):
+            if str(audit_source.get(provenance_field) or "").strip():
+                rule[provenance_field] = audit_source[provenance_field]
         cards.append(rule)
     return cards
 
@@ -304,12 +319,26 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
     stable_rules = source.get("rules", [])
     if not isinstance(stable_rules, list) or not stable_rules:
         raise ValueError("确认规则文件rules不能为空")
+    raw_stable_applicability = source.get("stable_applicability", {})
+    if not isinstance(raw_stable_applicability, dict):
+        raise ValueError("stable_applicability必须为对象")
+    stable_applicability = {
+        "years": unique(raw_stable_applicability.get("years", [])),
+        "regions": unique(raw_stable_applicability.get("regions", [])),
+        "application_types": unique(
+            raw_stable_applicability.get("application_types", [])
+        ),
+    }
     layers: list[dict[str, object]] = [
         {
             "layer_id": "stable-management",
             "layer_type": "stable",
             "label": "稳定管理办法",
-            "applicability": {},
+            "applicability": {
+                key: values
+                for key, values in stable_applicability.items()
+                if values
+            },
             "rules": confirmed_rule_cards(source=source, rules=stable_rules),
         }
     ]
@@ -585,6 +614,9 @@ def template_payload() -> dict[str, object]:
         "approved_by": "规则确认人",
         "approved_at": "YYYY-MM-DD HH:MM:SS",
         "source_url": "https://官方政策原文地址",
+        "stable_applicability": {
+            "application_types": []
+        },
         "fact_fields": [],
         "rules": [
             {
