@@ -214,6 +214,9 @@ LIFECYCLE_FACT_CONTRACT_PATH = (
     BASE_DIR / "references" / "lifecycle-fact-contract.json"
 )
 PROJECT_ALGORITHM_PACK_DIR = BASE_DIR / "references" / "project-algorithm-packs"
+COMPILED_PROJECT_RULE_IR_PATH = (
+    BASE_DIR / "references" / "compiled-project-rule-ir.json"
+)
 
 POLICY_INTENT_TERMS = (
     "条件",
@@ -1785,6 +1788,23 @@ def load_lifecycle_fact_contract() -> tuple[dict[str, object], ...]:
 
 @lru_cache(maxsize=1)
 def load_project_algorithm_packs() -> tuple[dict[str, object], ...]:
+    if COMPILED_PROJECT_RULE_IR_PATH.is_file():
+        try:
+            from app.rule_ir import compiled_projects
+
+            payload = json.loads(
+                COMPILED_PROJECT_RULE_IR_PATH.read_text(encoding="utf-8")
+            )
+        except (ImportError, OSError, json.JSONDecodeError):
+            payload = {}
+        if isinstance(payload, dict):
+            compiled = tuple(
+                pack
+                for pack in compiled_projects(payload)
+                if not validate_project_algorithm_pack(pack)
+            )
+            if compiled:
+                return compiled
     if not PROJECT_ALGORITHM_PACK_DIR.is_dir():
         return ()
     packs: list[dict[str, object]] = []

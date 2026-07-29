@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "algorithm_id": "project-decision-digital-workshop",
+  "algorithm_name": "浙江省数字化车间项目决策算法",
+  "algorithm_version": "1.0",
+  "project_id": "digital-workshop",
+  "project_name": "浙江省数字化车间",
+  "coverage_status": "routing-only",
+  "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+  "policy_version_id": "policy-a9e037b45d19ae9d3570",
+  "inputs": {
+    "project_context": "项目名称、年度、申请类型与属地",
+    "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
+    "as_of": "判断或回放的时间点"
+  },
+  "outputs": {
+    "conclusion": "eligible、conditional、ineligible或undetermined",
+    "rule_trace": "选中的规则层、逐规则比较和证据引用",
+    "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
+  },
+  "shared_execution_kernels": [
+    "project-router",
+    "policy-version-gate",
+    "fact-contract-normalizer",
+    "evidence-conflict-resolver",
+    "layer-selector",
+    "requirement-comparator",
+    "lifecycle-state-machine",
+    "coverage-hash-planner",
+    "explanation-trace"
+  ],
+  "project_specific_assets": {
+    "fact_fields": 0,
+    "confirmed_rules": 0,
+    "rule_layers": 0,
+    "gold_cases": 1
+  },
+  "explainability": {
+    "level": "field-and-source-trace",
+    "requirements": [
+      "结论必须回指规则ID和政策版本",
+      "事实必须保留证据状态与来源",
+      "未知或冲突事实不得静默转为满足"
+    ]
+  },
+  "incremental_update": {
+    "strategy": "content-addressed-compile",
+    "unchanged": "复用已编译项目节点和算法卡",
+    "changed": "仅重编译源内容哈希发生变化的项目节点"
+  },
+  "quality_gates": {
+    "pack_validation": true,
+    "gold_case_count": 1,
+    "formal_decision_enabled": false
+  },
+  "limitations": [
+    "routing-only项目尚未具备正式门槛规则",
+    "名单未披露或主体匹配冲突时只能输出待核验",
+    "算法不替代主管部门最终审核结论"
+  ]
+}

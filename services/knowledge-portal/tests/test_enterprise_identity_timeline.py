@@ -26,6 +26,49 @@ def test_first_year_uses_earliest_explicit_year():
     assert MODULE.first_year("2025年复核2022年名单") == 2022
 
 
+def test_numbered_organization_lines_accepts_markdown_and_official_text():
+    assert MODULE.numbered_organization_lines(
+        "1. 浙江示例科技有限公司\n2 浙江示例研究院\n3、非企业说明"
+    ) == [
+        ("浙江示例科技有限公司", "1"),
+        ("浙江示例研究院", "2"),
+    ]
+
+
+def test_identity_matched_aliases_collapse_to_one_project_event():
+    base = {
+        "identity_key": "91330000TEST000001",
+        "project_name": "国家专精特新“小巨人”企业",
+        "event_year": 2024,
+        "batch": "财政支持第一批第三年",
+        "status": "建议继续支持",
+        "event_type": "continued_support",
+        "source_urls": [],
+        "sequence_numbers": [],
+        "source_kinds": ["lifecycle_manifest"],
+    }
+    rows = MODULE.merge_identity_event_rows(
+        [
+            {
+                **base,
+                "enterprise_name_at_event": "浙江示例技术有限公司",
+                "normalized_name": "浙江示例技术有限公司",
+                "source_paths": ["名单.pdf"],
+            },
+            {
+                **base,
+                "enterprise_name_at_event": "浙江示例科技有限公司",
+                "normalized_name": "浙江示例科技有限公司",
+                "source_paths": ["名单.pdf", "名单镜像.pdf"],
+            },
+        ]
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["enterprise_name_at_event"] == "浙江示例技术有限公司"
+    assert rows[0]["source_paths"] == ["名单.pdf", "名单镜像.pdf"]
+
+
 def test_lifecycle_rules_cover_four_core_projects():
     rules_path = (
         Path(__file__).resolve().parents[1]
@@ -81,7 +124,9 @@ def test_document_prefecture_city_does_not_infer_city_from_enterprises():
     )
 
 
-def test_auto_discovers_only_city_specific_provincial_documents(tmp_path):
+def test_auto_discovers_provincial_city_files_and_independent_ningbo_files(
+    tmp_path,
+):
     database = tmp_path / "coverage.sqlite3"
     connection = sqlite3.connect(database)
     connection.executescript(
@@ -177,9 +222,10 @@ def test_auto_discovers_only_city_specific_provincial_documents(tmp_path):
         rules,
         aliases,
     )
-    assert len(sources) == 1
-    assert sources[0]["city"] == "杭州市"
-    assert sources[0]["entity_count"] == 2
+    assert {source["city"] for source in sources} == {"杭州市", "宁波市"}
+    assert next(
+        source for source in sources if source["city"] == "杭州市"
+    )["entity_count"] == 2
 
 
 def test_coverage_matrix_reuses_hash_and_queues_only_missing_or_changed(tmp_path):
@@ -247,6 +293,48 @@ def test_coverage_matrix_reuses_hash_and_queues_only_missing_or_changed(tmp_path
     assert next(
         row for row in changed["rows"] if row["city"] == "杭州市"
     )["coverage_state"] == "source_changed"
+
+
+def test_coverage_matrix_accepts_one_provincial_master_for_multiple_cities(
+    tmp_path,
+):
+    rules = {
+        "浙江省专精特新中小企业": {
+            "rule_id": "zhejiang-specialized-sme"
+        }
+    }
+    source = {
+        "source_id": "final-master",
+        "document_title": "全省正式名单",
+        "project_name": "浙江省专精特新中小企业",
+        "event_year": 2025,
+        "event_type": "recognition_publicity",
+        "batch": "第一批",
+        "city": "",
+        "covered_cities": list(MODULE.ZHEJIANG_PREFECTURE_CITIES),
+        "coverage_basis": "superseding_official_final_list",
+        "source_path": "全省正式名单.pdf",
+        "official_url": "https://example.gov.cn/final.pdf",
+        "evidence_archive_url": "",
+        "source_fingerprint": "d" * 64,
+        "entity_count": 100,
+        "coverage_confirmed_empty": False,
+        "registration_source": "configured_manifest",
+    }
+    result = MODULE.build_regional_coverage_matrix(
+        tmp_path,
+        rules,
+        [],
+        [],
+        [source],
+        {"expected_regions": list(MODULE.ZHEJIANG_PREFECTURE_CITIES)},
+    )
+
+    assert result["groups"][0]["complete"] is True
+    assert result["collection_queue"] == []
+    assert {
+        row["sources"][0]["coverage_basis"] for row in result["rows"]
+    } == {"superseding_official_final_list"}
 
 
 def test_manifest_lifecycle_source_splits_review_section(tmp_path):

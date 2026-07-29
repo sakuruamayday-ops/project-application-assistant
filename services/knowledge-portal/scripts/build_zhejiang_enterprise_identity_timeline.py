@@ -7,13 +7,24 @@ import hashlib
 import json
 import re
 import sqlite3
+import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
 
+PORTAL_DIR = Path(__file__).resolve().parents[1]
+if str(PORTAL_DIR) not in sys.path:
+    sys.path.insert(0, str(PORTAL_DIR))
+
+from app.project_identity_twin import build_project_identity_twins  # noqa: E402
+
+
 DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
+DEFAULT_POLICY_VERSION_DB = Path(
+    "/Users/zsh/JiaotangData/索引/current/policy_versions.sqlite3"
+)
 DEFAULT_SMALL_GIANT_MASTER = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/"
     "_全国小巨人批次主表/全国小巨人企业级主表.csv"
@@ -78,6 +89,7 @@ COVERAGE_MATRIX_JSON = "省级项目年度设区市覆盖矩阵.json"
 COVERAGE_MATRIX_CSV = "省级项目年度设区市覆盖矩阵.csv"
 COVERAGE_COLLECTION_QUEUE = "省级项目年度设区市增量采集队列.jsonl"
 EventKey = tuple[str, str, int | None, str, str, str]
+IdentityEventKey = tuple[str, str, int | None, str, str, str]
 
 
 def parse_args() -> argparse.Namespace:
@@ -88,6 +100,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--tyc-enrichment", type=Path, default=DEFAULT_TYC_ENRICHMENT)
     parser.add_argument("--lifecycle-rules", type=Path, default=DEFAULT_LIFECYCLE_RULES)
+    parser.add_argument(
+        "--policy-version-database",
+        type=Path,
+        default=DEFAULT_POLICY_VERSION_DB,
+    )
     return parser.parse_args()
 
 
@@ -119,6 +136,48 @@ def first_year(*values: Any) -> int | None:
     for value in values:
         years.extend(int(item) for item in YEAR_PATTERN.findall(str(value or "")))
     return min(years) if years else None
+
+
+def merge_identity_event_rows(
+    rows: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Collapse list-name aliases that resolve to the same legal entity event."""
+    merged: dict[IdentityEventKey, dict[str, Any]] = {}
+    collection_fields = (
+        "source_paths",
+        "source_urls",
+        "sequence_numbers",
+        "source_kinds",
+    )
+    for source_row in rows:
+        row = dict(source_row)
+        key: IdentityEventKey = (
+            str(row["identity_key"]),
+            str(row["project_name"]),
+            row.get("event_year"),
+            str(row.get("batch") or ""),
+            str(row.get("status") or ""),
+            str(row.get("event_type") or ""),
+        )
+        current = merged.get(key)
+        if current is None:
+            for field in collection_fields:
+                row[field] = sorted(set(row.get(field, [])))
+            merged[key] = row
+            continue
+        for field in collection_fields:
+            current[field] = sorted(
+                set(current.get(field, [])) | set(row.get(field, []))
+            )
+        if (
+            str(row.get("enterprise_name_at_event") or "")
+            < str(current.get("enterprise_name_at_event") or "")
+        ):
+            current["enterprise_name_at_event"] = row[
+                "enterprise_name_at_event"
+            ]
+            current["normalized_name"] = row["normalized_name"]
+    return list(merged.values())
 
 
 def load_lifecycle_config(
@@ -257,10 +316,21 @@ def discover_regional_coverage_sources(
     document_columns = {
         str(row["name"]) for row in connection.execute("PRAGMA table_info(documents)")
     }
+    table_names = {
+        str(row["name"])
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )
+    }
 
     def document_column(name: str, default: str = "''") -> str:
         return f"d.{name}" if name in document_columns else default
 
+    mention_count_expression = (
+        "(SELECT COUNT(*) FROM enterprise_mentions m WHERE m.document_id=d.id)"
+        if "enterprise_mentions" in table_names
+        else "0"
+    )
     rows = connection.execute(
         f"""
         SELECT d.id,
@@ -274,10 +344,18 @@ def discover_regional_coverage_sources(
                {document_column("document_stage")} AS document_stage,
                {document_column("sha256")} AS sha256,
                {document_column("updated_at")} AS updated_at,
-               COUNT(e.id) AS entity_count
+               COUNT(DISTINCT e.id) AS list_entity_count,
+               {mention_count_expression} AS mention_count
         FROM documents d
         LEFT JOIN public_list_entities e ON e.document_id=d.id
-        WHERE {document_column("document_role")}='50_名单与对标'
+        WHERE (
+            {document_column("document_role")}='50_名单与对标'
+            OR (
+                {document_column("document_role")}='10_政策与通知'
+                AND {document_column("document_stage")}
+                    IN ('公示名单','认定名单')
+            )
+        )
         GROUP BY d.id
         """
     ).fetchall()
@@ -297,17 +375,24 @@ def discover_regional_coverage_sources(
         if not project_name:
             continue
         document_project = str(row["document_project"] or "")
+        city = document_prefecture_city(title, region, source_path)
+        independent_ningbo_signal = (
+            project_name == "浙江省专精特新中小企业"
+            and city == "宁波市"
+            and "专精特新" in title
+            and "中小企业" in title
+        )
         provincial_signal = (
             "浙江" in f"{title}|{region}|{source_path}"
             or "省级" in title
             or "省专精特新" in title
-            or document_project.startswith("浙江省")
+            or project_name.startswith("浙江省")
+            or independent_ningbo_signal
         )
         if not provincial_signal:
             continue
         if re.search(r"(奖励|补助|兑付|用电成本|财政支持)", title):
             continue
-        city = document_prefecture_city(title, region, source_path)
         if not city:
             continue
         event_year = (
@@ -351,7 +436,10 @@ def discover_regional_coverage_sources(
                     "official_url": "",
                     "evidence_archive_url": "",
                     "source_fingerprint": source_fingerprint,
-                    "entity_count": int(row["entity_count"] or 0),
+                    "entity_count": max(
+                        int(row["list_entity_count"] or 0),
+                        int(row["mention_count"] or 0),
+                    ),
                     "coverage_confirmed_empty": False,
                     "registration_source": "knowledge_index_auto_discovery",
                 }
@@ -364,19 +452,44 @@ def _matrix_source_from_manifest(source: dict[str, Any]) -> dict[str, Any]:
         "source_id": str(source.get("source_id") or ""),
         "document_id": source.get("document_id"),
         "document_title": str(source.get("document_title") or ""),
-        "project_name": str(source.get("project_name") or ""),
-        "event_year": source.get("event_year"),
-        "event_type": str(source.get("event_type") or ""),
+        "project_name": str(
+            source.get("coverage_project_name")
+            or source.get("project_name")
+            or ""
+        ),
+        "event_year": (
+            source.get("coverage_event_year")
+            if source.get("coverage_event_year") is not None
+            else source.get("event_year")
+        ),
+        "event_type": str(
+            source.get("coverage_event_type")
+            or source.get("event_type")
+            or ""
+        ),
         "batch": normalized_coverage_batch(
-            str(source.get("batch") or ""),
+            str(source.get("coverage_batch") or source.get("batch") or ""),
             str(source.get("document_title") or ""),
         ),
         "city": str(source.get("city") or ""),
+        "covered_cities": [
+            str(city)
+            for city in source.get("covered_cities", [])
+            if str(city)
+        ],
+        "coverage_basis": str(
+            source.get("coverage_basis") or "direct_city_attachment"
+        ),
         "source_path": str(source.get("source_path") or ""),
         "official_url": str(source.get("official_url") or ""),
         "evidence_archive_url": str(source.get("evidence_archive_url") or ""),
         "source_fingerprint": str(source.get("source_fingerprint") or ""),
-        "entity_count": int(source.get("actual_count") or 0),
+        "entity_count": int(
+            source.get("actual_count")
+            if source.get("actual_count") is not None
+            else source.get("entity_count")
+            or 0
+        ),
         "coverage_confirmed_empty": bool(source.get("coverage_confirmed_empty")),
         "registration_source": str(
             source.get("registration_source") or "configured_manifest"
@@ -450,30 +563,86 @@ def build_regional_coverage_matrix(
         _matrix_source_from_manifest(source)
         for source in lifecycle_source_audits
         if not source.get("coverage_group_id")
-        and str(source.get("city") or "") in configured_regions
+        and (
+            str(source.get("city") or "") in configured_regions
+            or any(
+                str(city) in configured_regions
+                for city in source.get("covered_cities", [])
+            )
+        )
         and str(source.get("project_name") or "").startswith("浙江省")
     )
     auto_groups: dict[tuple[str, int, str, str], dict[str, Any]] = {}
+    included_projects = {
+        str(project)
+        for project in discovery_settings.get("included_projects", [])
+        if str(project)
+    }
+    included_event_years = {
+        int(year)
+        for year in discovery_settings.get("included_event_years", [])
+        if str(year).isdigit()
+    }
+    included_groups = {
+        (
+            str(group.get("project_name") or ""),
+            int(group["event_year"]),
+            normalized_coverage_batch(
+                str(group.get("batch") or ""),
+                str(group.get("project_name") or ""),
+            ),
+            str(group.get("event_type") or ""),
+        )
+        for group in discovery_settings.get("included_groups", [])
+        if isinstance(group, dict)
+        and str(group.get("event_year") or "").isdigit()
+    }
+    batch_aliases = {
+        str(key): str(value)
+        for key, value in discovery_settings.get("batch_aliases", {}).items()
+        if str(key) and str(value)
+    }
     for source in auto_sources:
         project_name = str(source.get("project_name") or "")
         event_type = str(source.get("event_type") or "")
         event_year_value = source.get("event_year")
-        city = str(source.get("city") or "")
+        source_regions = [
+            str(city)
+            for city in (
+                source.get("covered_cities", [])
+                or [source.get("city")]
+            )
+            if str(city)
+        ]
         if (
             project_name not in lifecycle_rules
             or not project_name.startswith("浙江省")
             or not event_type
             or event_year_value is None
-            or city not in configured_regions
+            or not any(city in configured_regions for city in source_regions)
         ):
             continue
         event_year = int(event_year_value)
+        if included_projects and project_name not in included_projects:
+            continue
+        if included_event_years and event_year not in included_event_years:
+            continue
         if (project_name, event_year, event_type) in explicit_keys:
             continue
         batch = normalized_coverage_batch(
             str(source.get("batch") or ""),
             str(source.get("document_title") or ""),
         )
+        batch = batch_aliases.get(
+            f"{event_year}|{event_type}|{batch}",
+            batch,
+        )
+        if (
+            included_groups
+            and (project_name, event_year, batch, event_type)
+            not in included_groups
+        ):
+            continue
         key = (project_name, event_year, batch, event_type)
         group = auto_groups.setdefault(
             key,
@@ -513,16 +682,25 @@ def build_regional_coverage_matrix(
     for group in groups:
         sources_by_city: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for source in group["sources"]:
-            city = str(source.get("city") or "")
             fingerprint = str(source.get("source_fingerprint") or "")
-            if not city or not fingerprint:
+            source_regions = [
+                str(city)
+                for city in (
+                    source.get("covered_cities", [])
+                    or [source.get("city")]
+                )
+                if str(city) in configured_regions
+            ]
+            if not source_regions or not fingerprint:
                 continue
-            if any(
-                str(existing.get("source_fingerprint") or "") == fingerprint
-                for existing in sources_by_city[city]
-            ):
-                continue
-            sources_by_city[city].append(source)
+            for city in source_regions:
+                city_source = {**source, "city": city}
+                if any(
+                    str(existing.get("source_fingerprint") or "") == fingerprint
+                    for existing in sources_by_city[city]
+                ):
+                    continue
+                sources_by_city[city].append(city_source)
         missing_cities: list[str] = []
         group_rows: list[dict[str, Any]] = []
         for city in configured_regions:
@@ -591,6 +769,10 @@ def build_regional_coverage_matrix(
                         ),
                         "registration_source": str(
                             source.get("registration_source") or ""
+                        ),
+                        "coverage_basis": str(
+                            source.get("coverage_basis")
+                            or "direct_city_attachment"
                         ),
                     }
                     for source in city_sources
@@ -859,6 +1041,24 @@ def lifecycle_section(content: str, start_pattern: str, end_pattern: str) -> str
     return content[start:end]
 
 
+def numbered_organization_lines(content: str) -> list[tuple[str, str]]:
+    rows: list[tuple[str, str]] = []
+    for line in content.splitlines():
+        # Official attachments are commonly extracted as ``1 企业名称`` while
+        # normalized evidence archives use Markdown's ``1. 企业名称`` form.
+        match = re.match(r"^\s*(\d+)(?:\s*[.．、）)]\s*|\s+)(.+?)\s*$", line)
+        if not match:
+            continue
+        name = match.group(2).strip()
+        if not re.search(
+            r"(公司|研究院|合作社|厂|中心|事务所|学院)$",
+            name,
+        ):
+            continue
+        rows.append((name, match.group(1)))
+    return rows
+
+
 def load_manifest_lifecycle_events(
     database: Path,
     sources: list[dict[str, Any]],
@@ -920,15 +1120,19 @@ def load_manifest_lifecycle_events(
                 str(source.get("start_pattern") or ""),
                 str(source.get("end_pattern") or ""),
             )
-            mentions = connection.execute(
-                """
-                SELECT enterprise_name,sequence_no
-                FROM enterprise_mentions
-                WHERE document_id=?
-                ORDER BY id
-                """,
-                (document_id,),
-            ).fetchall()
+            if source.get("entity_extraction") == "numbered_organization_lines":
+                names = numbered_organization_lines(section)
+                mentions = []
+            else:
+                mentions = connection.execute(
+                    """
+                    SELECT enterprise_name,sequence_no
+                    FROM enterprise_mentions
+                    WHERE document_id=?
+                    ORDER BY id
+                    """,
+                    (document_id,),
+                ).fetchall()
             seen: set[str] = set()
             for mention in mentions:
                 name = str(mention["enterprise_name"] or "").strip()
@@ -1017,6 +1221,22 @@ def load_manifest_lifecycle_events(
                 "batch": str(source.get("batch") or ""),
                 "coverage_group_id": str(source.get("coverage_group_id") or ""),
                 "city": str(source.get("city") or ""),
+                "covered_cities": [
+                    str(city)
+                    for city in source.get("covered_cities", [])
+                    if str(city)
+                ],
+                "coverage_project_name": str(
+                    source.get("coverage_project_name") or ""
+                ),
+                "coverage_event_year": source.get("coverage_event_year"),
+                "coverage_event_type": str(
+                    source.get("coverage_event_type") or ""
+                ),
+                "coverage_batch": str(source.get("coverage_batch") or ""),
+                "coverage_basis": str(
+                    source.get("coverage_basis") or ""
+                ),
                 "published_at": str(source.get("published_at") or ""),
                 "source_path": source_path,
                 "official_url": str(source.get("official_url") or ""),
@@ -1423,6 +1643,7 @@ def write_outputs(
     lifecycle_source_audits: list[dict[str, Any]],
     regional_coverage_audits: list[dict[str, Any]],
     regional_coverage_matrix: dict[str, Any],
+    policy_version_database: Path | None,
 ) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
@@ -1488,6 +1709,7 @@ def write_outputs(
             "valid_to": "",
             "source": str(item["source_title"]),
         }
+    event_rows = merge_identity_event_rows(event_rows)
     for enrichment in {id(value): value for value in tyc.values()}.values():
         code = str(enrichment.get("unified_social_credit_code") or "")
         current_name = str(enrichment.get("enterprise_name") or "")
@@ -1602,6 +1824,13 @@ def write_outputs(
         )
     )
     alias_rows = sorted(aliases.values(), key=lambda row: (row["identity_key"], row["alias_name"]))
+    project_twins, twin_steps = build_project_identity_twins(
+        profile_rows,
+        event_rows,
+        lifecycle_rules,
+        regional_coverage_matrix,
+        policy_version_database,
+    )
 
     with (output / "浙江省企业身份主表.csv").open("w", encoding="utf-8-sig", newline="") as handle:
         fields = [
@@ -1642,6 +1871,8 @@ def write_outputs(
         ("浙江省企业认定事件.jsonl", event_rows),
         ("浙江省企业名称历史.jsonl", alias_rows),
         ("浙江省企业身份档案.jsonl", profile_rows),
+        ("浙江省企业项目身份数字孪生.jsonl", project_twins),
+        ("浙江省企业项目身份回放步骤.jsonl", twin_steps),
     ):
         with (output / filename).open("w", encoding="utf-8") as handle:
             for item in rows:
@@ -1653,6 +1884,8 @@ def write_outputs(
         DROP TABLE IF EXISTS enterprise_identity_profiles;
         DROP TABLE IF EXISTS enterprise_identity_names;
         DROP TABLE IF EXISTS enterprise_recognition_events;
+        DROP TABLE IF EXISTS enterprise_project_identity_twins;
+        DROP TABLE IF EXISTS enterprise_project_identity_twin_steps;
         CREATE TABLE enterprise_identity_profiles(
             identity_key TEXT PRIMARY KEY,
             unified_social_credit_code TEXT NOT NULL DEFAULT '',
@@ -1710,10 +1943,46 @@ def write_outputs(
             source_kinds_json TEXT NOT NULL DEFAULT '[]',
             UNIQUE(identity_key,project_name,event_year,batch,status,event_type)
         );
+        CREATE TABLE enterprise_project_identity_twins(
+            twin_id TEXT PRIMARY KEY,
+            identity_key TEXT NOT NULL,
+            project_name TEXT NOT NULL,
+            lifecycle_rule_id TEXT NOT NULL,
+            policy_version_id TEXT NOT NULL,
+            current_state TEXT NOT NULL,
+            current_as_of_year INTEGER,
+            trace_hash TEXT NOT NULL,
+            identity_match_json TEXT NOT NULL,
+            policy_version_json TEXT NOT NULL,
+            list_attachment_trace_json TEXT NOT NULL,
+            coverage_trace_json TEXT NOT NULL,
+            lifecycle_trace_json TEXT NOT NULL,
+            replayable_years_json TEXT NOT NULL,
+            UNIQUE(identity_key,project_name)
+        );
+        CREATE TABLE enterprise_project_identity_twin_steps(
+            id INTEGER PRIMARY KEY,
+            twin_id TEXT NOT NULL,
+            identity_key TEXT NOT NULL,
+            project_name TEXT NOT NULL,
+            step INTEGER NOT NULL,
+            event_year INTEGER,
+            event_type TEXT NOT NULL,
+            previous_state TEXT NOT NULL,
+            next_state TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            evidence_hash TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            UNIQUE(twin_id,step)
+        );
         CREATE INDEX enterprise_identity_name_lookup_idx
         ON enterprise_identity_names(normalized_alias);
         CREATE INDEX enterprise_recognition_lookup_idx
         ON enterprise_recognition_events(normalized_name,project_name,recognition_year);
+        CREATE INDEX enterprise_project_twin_lookup_idx
+        ON enterprise_project_identity_twins(identity_key,project_name);
+        CREATE INDEX enterprise_project_twin_step_lookup_idx
+        ON enterprise_project_identity_twin_steps(twin_id,event_year,event_type);
         """
     )
     connection.executemany(
@@ -1741,6 +2010,56 @@ def write_outputs(
                 json.dumps(row["project_lifecycles"], ensure_ascii=False),
             )
             for row in profile_rows
+        ],
+    )
+    connection.executemany(
+        """
+        INSERT INTO enterprise_project_identity_twins VALUES(
+            ?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        )
+        """,
+        [
+            (
+                row["twin_id"],
+                row["identity_key"],
+                row["project_name"],
+                row["lifecycle_rule_id"],
+                row["policy_version"]["policy_version_id"],
+                row["current_replay"]["state"],
+                row["current_replay"]["as_of_year"],
+                row["trace_hash"],
+                json.dumps(row["identity_match"], ensure_ascii=False),
+                json.dumps(row["policy_version"], ensure_ascii=False),
+                json.dumps(row["list_attachment_trace"], ensure_ascii=False),
+                json.dumps(row["coverage_trace"], ensure_ascii=False),
+                json.dumps(row["lifecycle_trace"], ensure_ascii=False),
+                json.dumps(row["replayable_years"], ensure_ascii=False),
+            )
+            for row in project_twins
+        ],
+    )
+    connection.executemany(
+        """
+        INSERT INTO enterprise_project_identity_twin_steps(
+            twin_id,identity_key,project_name,step,event_year,event_type,
+            previous_state,next_state,reason,evidence_hash,payload_json
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        [
+            (
+                row["twin_id"],
+                row["identity_key"],
+                row["project_name"],
+                row["step"],
+                row["event_year"],
+                row["event_type"],
+                row["previous_state"],
+                row["next_state"],
+                row["reason"],
+                row["evidence_hash"],
+                json.dumps(row, ensure_ascii=False),
+            )
+            for row in twin_steps
         ],
     )
     connection.executemany(
@@ -1826,6 +2145,9 @@ def write_outputs(
         "recognition_events": len(event_rows),
         "lifecycle_events": sum(bool(row["lifecycle_rule_id"]) for row in event_rows),
         "lifecycle_projects": len(lifecycle_rules),
+        "enterprise_project_identity_twins": len(project_twins),
+        "enterprise_project_identity_twin_steps": len(twin_steps),
+        "policy_version_database": str(policy_version_database or ""),
         "lifecycle_source_audits": lifecycle_source_audits,
         "regional_coverage_audits": regional_coverage_audits,
         "regional_coverage_complete": all(
@@ -1840,6 +2162,10 @@ def write_outputs(
         ),
         "regional_coverage_matrix_incomplete_groups": sum(
             not bool(item["complete"])
+            for item in regional_coverage_matrix["groups"]
+        ),
+        "regional_coverage_matrix_complete": all(
+            bool(item["complete"])
             for item in regional_coverage_matrix["groups"]
         ),
         "regional_coverage_hash_reused_cities": sum(
@@ -1870,6 +2196,7 @@ def write_outputs(
             "省级名单未提供城市时保留城市待核验，不通过企业名称猜测城市。",
             "统一社会信用代码缺失时使用规范名称临时键，禁止自动推算信用代码。",
             "同名、迁址、合并和重组冲突必须进入人工核验。",
+            "企业项目身份数字孪生保留政策版本、名单附件、主体匹配和生命周期状态迁移，可按年份回放。",
         ],
     }
     (output / "浙江省企业身份时间轴构建报告.json").write_text(
@@ -1961,6 +2288,7 @@ def main() -> None:
         lifecycle_source_audits,
         regional_coverage_audits,
         regional_coverage_matrix,
+        args.policy_version_database,
     )
     print(json.dumps(report, ensure_ascii=False))
 
