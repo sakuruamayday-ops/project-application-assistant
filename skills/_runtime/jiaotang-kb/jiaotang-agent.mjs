@@ -617,6 +617,11 @@ async function install(argumentsValue) {
   if (new URL(manifest.installer_url).origin !== bootstrap.origin) {
     throw new Error("安装组件来源与引导服务不一致");
   }
+  const resultEndpoint = new URL(String(manifest.result_url || ""));
+  if (resultEndpoint.origin !== bootstrap.origin) {
+    throw new Error("安装结果回传地址与引导服务不一致");
+  }
+  argumentsValue["result-url"] = resultEndpoint.toString();
   installationStage = "integrity_verification";
   const runningInstaller = readFileSync(fileURLToPath(import.meta.url));
   const expectedSha256 = expectedInstallerSha256(manifest, pluginMode);
@@ -800,12 +805,26 @@ async function pluginServe(argumentsValue) {
     if (!bootstrapUrl) {
       throw new Error("插件尚未绑定，请重新启用插件并填写门户生成的一次性引导地址");
     }
-    await install({
+    const installationArguments = {
       ...argumentsValue,
       "bootstrap-url": bootstrapUrl,
       "plugin-mode": true,
       host: "workbuddy",
-    });
+    };
+    try {
+      const result = await install(installationArguments);
+      result.reported_to_portal = await reportInstallationResult(
+        installationArguments,
+        result,
+      );
+    } catch (error) {
+      const result = installationFailure(error, installationArguments);
+      result.reported_to_portal = await reportInstallationResult(
+        installationArguments,
+        result,
+      );
+      throw error;
+    }
     credentials = loadCredentials(platform, home);
   }
   if (credentials.activated !== true && credentials.activationUrl) {

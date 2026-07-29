@@ -194,7 +194,10 @@ PY
         chown jiaotang:jiaotang "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json"
         SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt '${remote_app_dir}/.venv/bin/pip' install -r '${remote_app_dir}/requirements.txt'
         '${remote_app_dir}/.venv/bin/python' -m py_compile '${remote_app_dir}/app/main.py'
+        set -a
         source /etc/jiaotang-kb.env
+        set +a
+        runuser --preserve-environment -u jiaotang -- /usr/local/sbin/jiaotang-kb-refresh-index
         if [ '${upgrade_index}' = 'true' ]; then
             cp --reflink=auto "\${JIAOTANG_INDEX_DIR}/knowledge_content.sqlite3" '${remote_index_snapshot}'
             '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/upgrade_structured_knowledge_index.py' \

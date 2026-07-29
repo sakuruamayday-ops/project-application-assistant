@@ -3260,6 +3260,63 @@ def test_admin_can_search_registered_members(tmp_path):
         assert "未找到匹配的账号" in no_match.text
 
 
+def test_admin_members_uses_confirmed_mcp_connection_as_install_success(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, real_name, company_name, password_hash, is_admin, created_at) VALUES (?, ?, ?, ?, 1, ?)",
+            ("owner", "管理员", "总部", module.password_hasher.hash("owner-password-123"), now),
+        )
+        member_id = int(
+            connection.execute(
+                "INSERT INTO users(username, real_name, company_name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)",
+                (
+                    "guoqingming",
+                    "郭庆明",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.commit()
+
+    _, key_id = provision_signed_device(module, member_id, agent_host="workbuddy")
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            UPDATE device_keys
+            SET credential_saved_at=?,first_verified_at=?,mcp_connected_at=?,
+                last_verified_at=?
+            WHERE user_id=? AND key_id=?
+            """,
+            (now, now, now, now, member_id, key_id),
+        )
+        assert connection.execute(
+            "SELECT COUNT(*) FROM agent_enrollment_codes WHERE user_id=?",
+            (member_id,),
+        ).fetchone()[0] == 0
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        members = client.get(
+            "/admin/members",
+            params={"member_query": "guoqingming"},
+        )
+        assert members.status_code == 200
+        assert "郭庆明" in members.text
+        assert "成功" in members.text
+        assert "未收到结果" not in members.text
+
+
 def test_admin_can_filter_feedback(tmp_path):
     module = load_app(tmp_path)
     now = module.isoformat(module.utc_now())

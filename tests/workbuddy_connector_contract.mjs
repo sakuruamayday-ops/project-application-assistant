@@ -56,5 +56,20 @@ const packagedConnector = await readFile(
   new URL("../skills/_runtime/jiaotang-kb/jiaotang-agent.mjs", import.meta.url),
 );
 assert.deepEqual(packagedConnector, portalConnector);
+const connectorSource = portalConnector.toString("utf8");
+assert.match(
+  connectorSource,
+  /argumentsValue\["result-url"\] = resultEndpoint\.toString\(\)/,
+);
+const pluginServeStart = connectorSource.indexOf("async function pluginServe");
+const pluginServeEnd = connectorSource.indexOf(
+  "function installationFailure",
+  pluginServeStart,
+);
+assert.ok(pluginServeStart >= 0 && pluginServeEnd > pluginServeStart);
+assert.match(
+  connectorSource.slice(pluginServeStart, pluginServeEnd),
+  /reportInstallationResult\(\s*installationArguments,/,
+);
 
 process.stdout.write("WorkBuddy connector contract passed.\n");
