@@ -4,20 +4,22 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.3.1.5",
-    "version": "1.3.1.5",
-    "summary": "修复 WorkBuddy 两步自动安装的受限下载校验，并将运行时知识库连接验证设为首次配置完成门槛。",
+    "tag": "V1.3.1.6",
+    "version": "1.3.1.6",
+    "summary": "修复 WorkBuddy 重启后插件运行文件丢失与 .mcp.json 完整性依赖导致的连接中断，要求持久保存本地市场并由签名插件清单内联声明 jiaotang-kb。",
     "changes": [
-      "第二阶段安装协议改用一次性受限下载地址，避免登录页 HTML 被误下载为插件包并触发 SHA-256 不一致。",
-      "协议、下载包和引导清单固定到同一已审查 WorkBuddy 发布资产，继续执行 SHA-256 与 Ed25519 双重完整性校验。",
-      "首次配置必须确认 jiaotang-kb 已进入当前 WorkBuddy 运行时并成功调用 knowledge_service_status，之后才提示安装 OCR、PDF、Word、PPT、Excel 和联网检索 Skills。",
-      "门户明确区分自动两步流程与手工配置：自动流程由 Agent 下载、校验并安装，无需用户预先下载插件包。"
+      "jiaotang-kb MCP 改由签名 .codebuddy-plugin/plugin.json 内联声明，正式包不再依赖插件根目录 .mcp.json。",
+      "UserPromptSubmit 钩子统一输出 ASCII 安全 JSON，避免 Windows 控制台编码破坏错误信息。",
+      "JIAOTANG_TEST_CREDENTIAL_FILE 仅在显式开启 JIAOTANG_ENABLE_TEST_CREDENTIAL_FILE=1 时生效，正式 Windows 路径继续使用当前用户 DPAPI。",
+      "门户明确禁止安装流程写入用户级、项目级或全局 MCP 配置；连接必须由已签名插件清单加载。",
+      "安装流程必须先把完整 jiaotang 市场保存到当前 WorkBuddy 的持久用户插件目录，再注册和启用；清理只覆盖下载包与未注册中转目录。",
+      "首次配置必须确认 jiaotang-kb 已进入当前 WorkBuddy 运行时并成功调用任一只读状态或检索工具，之后才提示安装 OCR、PDF、Word、PPT、Excel 和联网检索 Skills。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "通过门户两步流程时，第二步授权 Agent 自动下载、校验并安装 V1.3.1.5 WorkBuddy 包；选择手工配置时才需从 Skills 中心下载并在 WorkBuddy 中通过 /plugin 安装。",
+      "workbuddy": "通过门户两步流程时，第二步授权 Agent 自动下载、校验并安装 V1.3.1.6 WorkBuddy 包；选择手工配置时才需从 Skills 中心下载并在 WorkBuddy 中通过 /plugin 安装。",
       "manual_fallback": "手工配置只作为自动两步流程的替代路径；核验签名包后，将一次性 bootstrap_url 填入 WorkBuddy 插件敏感配置。",
-      "verification": "门户四阶段完成后还必须确认 jiaotang-kb 已进入当前运行时并成功调用 knowledge_service_status，之后首次配置才完成。"
+      "verification": "门户四阶段完成后还必须确认 jiaotang-kb 已进入当前运行时，并成功调用任一只读状态或检索工具；之后首次配置才完成。"
     },
     "compatibility": [
       {
@@ -28,12 +30,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.3.1.5 修复两步自动下载并闭合运行时连接验收；已正常连接的既有用户无需重新绑定。"
+        "note": "已发现临时市场在安装后被清理会导致 run-node ENOENT；V1.3.1.6 要求持久保存市场，并同步采用签名插件清单内联 MCP，已绑定设备无需重新登记。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "跨平台通用包",
-        "note": "V1.3.1.5 使用同一受限下载与运行时连接验收流程；正式包发布后由主人执行真实 WorkBuddy 验收。"
+        "status": "结构兼容，待主人实机验收",
+        "note": "V1.3.1.6 已移除导致 WorkBuddy 5.3.5 重启报错的 .mcp.json 运行时依赖，并通过包结构、签名与钩子回归；真实 Windows 升级和重启由主人验收。"
       }
     ],
     "rollback": [
@@ -292,6 +294,7 @@
   "workbuddy_plugin": {
     "mcp_connector": {
       "name": "jiaotang-kb",
+      "configuration_mode": "inline_plugin_manifest",
       "source": "_runtime/jiaotang-kb/jiaotang-agent.mjs",
       "entry_command": "plugin-serve",
       "bootstrap_option": "bootstrap_url",

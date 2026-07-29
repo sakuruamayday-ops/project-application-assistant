@@ -16,8 +16,11 @@ from pathlib import Path
 from unittest import mock
 
 
-RELEASE_MANAGER = (
-    Path.home() / ".codex/skills/skill-release-manager/scripts"
+RELEASE_MANAGER = Path(
+    os.environ.get(
+        "JIAOTANG_RELEASE_MANAGER_SCRIPTS",
+        Path.home() / ".codex/skills/skill-release-manager/scripts",
+    )
 )
 
 
@@ -215,6 +218,9 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertIn("WorkBuddy 应用内完成", guide)
             self.assertIn("不需要退出", guide)
             self.assertIn("/plugin", guide)
+            self.assertIn("plugins/marketplaces/jiaotang", guide)
+            self.assertIn("不得直接注册临时下载", guide)
+            self.assertIn("不得删除已注册的持久市场", guide)
 
     def test_signed_plugin_embeds_mcp_connector_and_sensitive_bootstrap(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -235,6 +241,9 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     "workbuddy_plugin": {
                         "mcp_connector": {
                             "name": "jiaotang-kb",
+                            "configuration_mode": (
+                                "inline_plugin_manifest"
+                            ),
                             "source": "_runtime/jiaotang-kb/jiaotang-agent.mjs",
                             "entry_command": "plugin-serve",
                             "bootstrap_option": "bootstrap_url",
@@ -244,14 +253,28 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 },
             )
 
-            self.assertEqual(manifest["mcpServers"], "./.mcp.json")
+            self.assertEqual(
+                manifest["mcpServers"],
+                {
+                    "jiaotang-kb": {
+                        "command": (
+                            "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node"
+                        ),
+                        "args": [
+                            (
+                                "${CODEBUDDY_PLUGIN_ROOT}/mcp/"
+                                "jiaotang-agent.mjs"
+                            ),
+                            "plugin-serve",
+                        ],
+                    }
+                },
+            )
             self.assertTrue(
                 manifest["userConfig"]["bootstrap_url"]["sensitive"]
             )
-            mcp = json.loads(
-                (plugin_root / ".mcp.json").read_text(encoding="utf-8")
-            )
-            server = mcp["mcpServers"]["jiaotang-kb"]
+            self.assertFalse((plugin_root / ".mcp.json").exists())
+            server = manifest["mcpServers"]["jiaotang-kb"]
             self.assertEqual(
                 server["command"],
                 "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
@@ -275,12 +298,26 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
+    def test_hook_json_transport_is_ascii_safe_on_windows(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            BRIDGE.hook_result(reason="缺少文件：.mcp.json")
+
+        raw = output.getvalue()
+        self.assertTrue(raw.isascii())
+        payload = json.loads(raw)
+        self.assertEqual(payload["reason"], "缺少文件：.mcp.json")
+
     def test_workbuddy_mcp_connector_has_only_one_packaged_runtime_copy(self):
         skills_root = Path(__file__).resolve().parents[1] / "skills"
         suite_manifest = json.loads(
             (skills_root / "suite-manifest.json").read_text(encoding="utf-8")
         )
         connector = suite_manifest["workbuddy_plugin"]["mcp_connector"]
+        self.assertEqual(
+            connector["configuration_mode"],
+            "inline_plugin_manifest",
+        )
         source = Path(connector["source"])
 
         self.assertTrue((skills_root / source).is_file())

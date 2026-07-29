@@ -5,6 +5,7 @@ import {
   activationCanonical,
   appendUrlPath,
   expectedInstallerSha256,
+  testCredentialPath,
 } from "../services/knowledge-portal/installers/jiaotang-agent.mjs";
 
 
@@ -15,6 +16,16 @@ const manifest = {
 
 assert.equal(expectedInstallerSha256(manifest, false), "a".repeat(64));
 assert.equal(expectedInstallerSha256(manifest, true), "b".repeat(64));
+process.env.JIAOTANG_TEST_CREDENTIAL_FILE = "C:\\temp\\jiaotang-test.json";
+delete process.env.JIAOTANG_ENABLE_TEST_CREDENTIAL_FILE;
+assert.equal(testCredentialPath(), "");
+process.env.JIAOTANG_ENABLE_TEST_CREDENTIAL_FILE = "1";
+assert.equal(
+  testCredentialPath(),
+  "C:\\temp\\jiaotang-test.json",
+);
+delete process.env.JIAOTANG_TEST_CREDENTIAL_FILE;
+delete process.env.JIAOTANG_ENABLE_TEST_CREDENTIAL_FILE;
 assert.equal(
   appendUrlPath(
     "https://zshjiaotang.cn/v1/agent-bootstrap/jbe_test?platform=unified",

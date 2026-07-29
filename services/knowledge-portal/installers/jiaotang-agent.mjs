@@ -122,6 +122,7 @@ function installedScriptPath(home = homedir()) {
 
 
 function testCredentialPath() {
+  if (process.env.JIAOTANG_ENABLE_TEST_CREDENTIAL_FILE !== "1") return "";
   return process.env.JIAOTANG_TEST_CREDENTIAL_FILE || "";
 }
 
@@ -1009,6 +1010,7 @@ export {
   requestCanonical,
   reportInstallationResult,
   signedHeaders,
+  testCredentialPath,
 };
 
 

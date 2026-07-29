@@ -100,8 +100,23 @@ def make_packages(
             {
                 "name": "jiaotang-workbuddy-skills",
                 "version": semantic_version,
+                "mcpServers": {
+                    "jiaotang-kb": {
+                        "command": "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
+                        "args": [
+                            (
+                                "${CODEBUDDY_PLUGIN_ROOT}/mcp/"
+                                "jiaotang-agent.mjs"
+                            ),
+                            "plugin-serve",
+                        ],
+                    }
+                },
             }
         ).encode("utf-8"),
+        "bin/run-node": b"#!/bin/sh\n",
+        "bin/run-node.cmd": b"@echo off\r\n",
+        "mcp/jiaotang-agent.mjs": b"#!/usr/bin/env node\n",
         "skills/suite-manifest.json": json.dumps(suite).encode("utf-8"),
     }
     plugin_manifest = {
@@ -317,6 +332,12 @@ def test_workbuddy_hotfix_accepts_four_part_version(tmp_path: Path) -> None:
     assert (
         result["artifacts"]["workbuddy"]["integrity"]["status"]
         == "verified"
+    )
+    assert (
+        result["artifacts"]["workbuddy"]["integrity"][
+            "mcp_configuration_mode"
+        ]
+        == "signed_inline_plugin_manifest"
     )
 
 
