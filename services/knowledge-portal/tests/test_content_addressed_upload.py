@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.upload_manifest_to_oss import load_allowed_paths, object_key_for
+import scripts.upload_manifest_to_oss as upload_module
+from scripts.upload_manifest_to_oss import (
+    head_object_with_network_retry,
+    load_allowed_paths,
+    object_key_for,
+)
 
 
 def test_sha256_layout_uses_one_content_addressed_key(monkeypatch) -> None:
@@ -38,3 +43,26 @@ def test_allowlist_only_returns_object_storage_rows(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert load_allowed_paths(allowlist) == {("允许.pdf", "abc")}
+
+
+def test_verify_head_retries_transient_network_error(monkeypatch) -> None:
+    class FakeBucket:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def head_object(self, object_key: str) -> object:
+            self.calls += 1
+            if self.calls < 3:
+                raise upload_module.oss2.exceptions.RequestError(
+                    RuntimeError("temporary proxy disconnect")
+                )
+            return {"object_key": object_key}
+
+    fake_bucket = FakeBucket()
+    monkeypatch.setattr(upload_module, "bucket", lambda: fake_bucket)
+    monkeypatch.setattr(upload_module.time, "sleep", lambda _: None)
+
+    assert head_object_with_network_retry("production/object", attempts=3) == {
+        "object_key": "production/object"
+    }
+    assert fake_bucket.calls == 3

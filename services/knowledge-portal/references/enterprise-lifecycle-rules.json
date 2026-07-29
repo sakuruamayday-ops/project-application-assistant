@@ -1,0 +1,716 @@
+{
+  "schema_version": 1,
+  "generated_basis_date": "2026-07-29",
+  "event_types": {
+    "recognition": "正式认定或正式名单",
+    "recognition_publicity": "拟认定、公示或推荐阶段",
+    "review_due": "进入到期复核范围",
+    "review_publicity": "拟复核通过、公示或推荐阶段",
+    "review_passed": "复核通过并延续资格",
+    "re_recognition": "到期后重新认定",
+    "continued_support": "财政支持或继续支持，不改变原认定批次",
+    "changed": "更名、迁移、合并、重组等资格变更",
+    "revoked": "撤销、取消或复核未通过",
+    "annual_evaluation": "按年度重新评价或入库"
+  },
+  "projects": [
+    {
+      "rule_id": "national-little-giant",
+      "project_name": "国家专精特新“小巨人”企业",
+      "aliases": [
+        "专精特新小巨人",
+        "国家专精特新小巨人",
+        "小巨人"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 3,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "continued_support",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [
+        "10_政策与目录/优质中小企业梯度培育/《优质中小企业梯度培育管理办法》（工信部企业〔2026〕2号）.md"
+      ],
+      "official_rule_urls": [
+        "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+        "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+      ],
+      "rule_note": "认定与复核名单分别建事件；财政继续支持属于支持生命周期，不得覆盖资格认定批次。"
+    },
+    {
+      "rule_id": "zhejiang-specialized-sme",
+      "project_name": "浙江省专精特新中小企业",
+      "aliases": [
+        "专精特新中小企业",
+        "省级专精特新",
+        "省专精特新"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 3,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [
+        "10_政策与目录/政策数据库/企策顾问/申报通知/绍兴市/优质中小企业梯度培育/2025-03-04__关于组织开展2025年创新型中小企业评价和专精特新中小企业申报认定（复核）工作的通知__37bd145c81554ff58803afc2aa67a6b3/通知原文.md"
+      ],
+      "official_rule_urls": [
+        "https://jxt.zj.gov.cn/art/2025/3/4/art_1582899_27945.html"
+      ],
+      "rule_note": "2022年度称号有效期至2025年7月；复核结果公布后原称号自动失效，复核通过的有效期重新计算。"
+    },
+    {
+      "rule_id": "national-high-tech-enterprise",
+      "project_name": "国家高新技术企业",
+      "aliases": [
+        "高新技术企业",
+        "国家高企",
+        "高企"
+      ],
+      "cycle_type": "re_recognition",
+      "validity_years": 3,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "re_recognition",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [
+        "10_政策与目录/综合政策/01-高新技术企业认定管理办法.doc",
+        "20_申报指南与规则/高新/高新技术企业认定管理办法.doc"
+      ],
+      "official_rule_urls": [
+        "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html"
+      ],
+      "rule_note": "资格有效期三年；到期后是重新认定，不应写成定期复核。日常监督复核、取消资格、更名和迁移另建事件。"
+    },
+    {
+      "rule_id": "zhejiang-hidden-champion",
+      "project_name": "浙江省隐形冠军企业",
+      "aliases": [
+        "浙江隐形冠军",
+        "隐形冠军",
+        "浙江省隐形冠军企业申报遴选和认定、复核通过的隐形冠军企业复核"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 3,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [
+        "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2025-09-04__关于开展2025年浙江省隐形冠军企业认定和复核工作的通知__87307695916342d9bfb99bf28ee24ace/附件/2025年省隐形冠军企业认定和复核通知.pdf"
+      ],
+      "official_rule_urls": [
+        "https://zj87.jxt.zj.gov.cn/upload/rest/oss/upload/kindeditor04918ed98215489e9ba435571051c1c9.pdf",
+        "https://jxt.zj.gov.cn/art/2021/1/14/art_1582899_22582.html"
+      ],
+      "rule_note": "按三年周期复核；新复核通过名单印发后，原批次称号自动失效，以新名单为准。"
+    },
+    {
+      "rule_id": "zhejiang-innovative-sme",
+      "project_name": "浙江省创新型中小企业",
+      "aliases": [
+        "创新型中小企业评价",
+        "创新型中小企业"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 3,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "revoked"
+      ],
+      "current_rule_state": "transition_confirmed",
+      "local_rule_sources": [
+        "10_政策与目录/政策数据库/企策顾问/申报通知/绍兴市/优质中小企业梯度培育/2025-03-04__关于组织开展2025年创新型中小企业评价和专精特新中小企业申报认定（复核）工作的通知__37bd145c81554ff58803afc2aa67a6b3/通知原文.md"
+      ],
+      "official_rule_urls": [
+        "https://jxt.zj.gov.cn/art/2025/3/4/art_1582899_27945.html"
+      ],
+      "rule_note": "现有三年周期继续作为历史事件口径；2026年新办法下科技和创新型中小企业的新要求发布后需复核规则版本。"
+    },
+    {
+      "rule_id": "national-manufacturing-single-champion",
+      "project_name": "国家制造业单项冠军企业",
+      "aliases": [
+        "国家级制造业单项冠军",
+        "制造业单项冠军"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 3,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [
+        "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2026-03-25__关于开展2026年宁波市制造业单项冠军培育企业申报遴选和国家级制造业单项冠军企业推荐复核工作的通知__224e232c20444dc4a47642a2de11598b/通知原文.md"
+      ],
+      "official_rule_urls": [
+        "https://www.miit.gov.cn/jgsj/zfs/gzdt/art/2024/art_4e7b22db20ee42d9b143ada1a84ee760.html"
+      ],
+      "rule_note": "认定和复核评价分开记录；未参加复核、复核未通过或被撤销均不得保留为当前有效资格。"
+    },
+    {
+      "rule_id": "zhejiang-manufacturing-single-champion",
+      "project_name": "浙江省制造业单项冠军企业",
+      "aliases": [
+        "省制造业单项冠军",
+        "省单项冠军"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 3,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [
+        "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2025-07-11__关于开展首批浙江省制造业单项冠军企业遴选认定工作的通知__db026b9ab6e549b5a5760af01ad35dd4/通知原文.md"
+      ],
+      "official_rule_urls": [
+        "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+      ],
+      "rule_note": "证书到期后组织复核，复核通过有效期延长三年，未通过取消称号。"
+    },
+    {
+      "rule_id": "national-technology-sme",
+      "project_name": "国家科技型中小企业",
+      "aliases": [
+        "科技型中小企业评价",
+        "科技型中小企业",
+        "国科小"
+      ],
+      "cycle_type": "annual_evaluation",
+      "validity_years": 1,
+      "supported_event_types": [
+        "annual_evaluation",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [
+        "10_政策与目录/综合政策/03.1-科技型中小企业评价办法.pdf"
+      ],
+      "official_rule_urls": [],
+      "rule_note": "评价入库按年度记录，同一企业跨年度入库不得合并成一次永久资格。"
+    }
+  ],
+  "candidate_projects": [
+    {
+      "project_name": "国家级工业设计中心",
+      "reason": "政策库中大量出现复核与动态管理，需要确认现行复核周期和名单数据后接入。"
+    },
+    {
+      "project_name": "国家绿色工厂",
+      "reason": "存在动态管理和退出机制，但不等同固定有效期复核。"
+    },
+    {
+      "project_name": "浙江省企业研究院",
+      "reason": "存在年度绩效评价或动态管理文件，需区分资格事件与绩效事件。"
+    },
+    {
+      "project_name": "浙江省重点企业研究院",
+      "reason": "存在绩效评价和调整机制，需核对是否改变资格状态。"
+    },
+    {
+      "project_name": "国家级、省级和市级企业技术中心",
+      "reason": "存在周期评价与撤销机制，需按行政层级分别建规则。"
+    },
+    {
+      "project_name": "未来工厂、智能工厂和数字化车间",
+      "reason": "存在评估、复评和动态调整文件，需避免把绩效监测误写成重新认定。"
+    }
+  ],
+  "regional_coverage_discovery": {
+    "enabled": true,
+    "scope": "浙江省省级资格项目分市名单附件",
+    "expected_regions": [
+      "杭州市",
+      "宁波市",
+      "温州市",
+      "湖州市",
+      "嘉兴市",
+      "绍兴市",
+      "金华市",
+      "衢州市",
+      "舟山市",
+      "台州市",
+      "丽水市"
+    ],
+    "incomplete_group_policy": "register_pending_and_forbid_province_complete_claim",
+    "incremental_policy": "reuse_unchanged_content_hash_and_collect_only_missing_or_changed"
+  },
+  "regional_coverage_rules": [
+    {
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "event_type": "review_publicity",
+      "scope": "浙江省11个设区市",
+      "expected_regions": [
+        "杭州市",
+        "宁波市",
+        "温州市",
+        "湖州市",
+        "嘉兴市",
+        "绍兴市",
+        "金华市",
+        "衢州市",
+        "舟山市",
+        "台州市",
+        "丽水市"
+      ],
+      "strict": true,
+      "rule_note": "任一设区市出现该项目分市名单时，构建必须同时核对其余设区市附件；缺少城市、重复城市、附件条数不符或空名单未经确认，均停止构建和发布。"
+    }
+  ],
+  "local_event_sources": [
+    {
+      "source_id": "little-giant-support-2024-first-cohort-third-year",
+      "document_title": "1.建议继续支持的专精特新“小巨人”企业名单（第一批第三年）.pdf",
+      "project_name": "国家专精特新“小巨人”企业",
+      "event_year": 2024,
+      "cohort_year": null,
+      "batch": "财政支持第一批第三年",
+      "status": "建议继续支持",
+      "event_type": "continued_support",
+      "event_scope": "fiscal_support",
+      "evidence_status": "official_final_list",
+      "expected_count": 408,
+      "official_url": "https://www.miit.gov.cn/cms_files/filemanager/1226211233/attach/20244/bc918b07c4064658955a97246d069c8b.pdf"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2022-recognition",
+      "document_title": "关于开展2025年浙江省隐形冠军企业认定和复核工作的通知—2025年省隐形冠军企业认定和复核通知.pdf",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2022,
+      "cohort_year": 2022,
+      "batch": "2022年度认定",
+      "status": "认定",
+      "event_type": "recognition",
+      "event_scope": "qualification",
+      "evidence_status": "official_final_list",
+      "start_pattern": "附件\\s*5\\s*2022\\s*年度浙江省隐形冠军企业名单",
+      "end_pattern": "附件\\s*6\\s*2022\\s*年度复核通过浙江省",
+      "expected_count": 62,
+      "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/oss/upload/kindeditor04918ed98215489e9ba435571051c1c9.pdf"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2022-review",
+      "document_title": "关于开展2025年浙江省隐形冠军企业认定和复核工作的通知—2025年省隐形冠军企业认定和复核通知.pdf",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2022,
+      "cohort_year": null,
+      "batch": "2022年度复核",
+      "status": "复核通过",
+      "event_type": "review_passed",
+      "event_scope": "qualification",
+      "evidence_status": "official_final_list",
+      "start_pattern": "附件\\s*6\\s*2022\\s*年度复核通过浙江省\\s*隐形冠军企业名单",
+      "end_pattern": "附件\\s*7\\s*2025\\s*年浙江省隐形冠军企业复核情况汇总表",
+      "expected_count": 69,
+      "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/oss/upload/kindeditor04918ed98215489e9ba435571051c1c9.pdf"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-hangzhou",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "杭州市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—附件2拟复核通过企业名单",
+      "source_path": "10_政策与目录/政策数据库/企策顾问/公示公告/杭州市/优质中小企业梯度培育/2026-01-09__关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示__7649181f98ac45cf8eedd2833ae51631/附件/附件2-拟复核通过企业名单.xls",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "杭州市",
+      "batch": "2025年度杭州市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity",
+      "expected_count": 22,
+      "entities": [
+        "杭州东信北邮信息技术有限公司",
+        "浙江中控技术股份有限公司",
+        "杭州迪普科技股份有限公司",
+        "杭州中科微电子有限公司",
+        "杭州哲达科技股份有限公司",
+        "创业慧康科技股份有限公司",
+        "浙江邦盛科技股份有限公司",
+        "浙江中控自动化仪表有限公司",
+        "杭州凯龙医疗器械有限公司",
+        "杭州富春弹簧有限公司",
+        "杭州华普永明光电股份有限公司",
+        "利尔达科技集团股份有限公司",
+        "杭州科汀光学技术有限公司",
+        "杭州海的动力机械股份有限公司",
+        "杭州中为光电技术有限公司",
+        "杭州康基医疗器械有限公司",
+        "浙江铖昌科技股份有限公司",
+        "浙江亚通新材料股份有限公司",
+        "杭州新坐标科技股份有限公司",
+        "杭州申昊科技股份有限公司",
+        "浙江华是科技股份有限公司",
+        "浙江厚达智能科技股份有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q0.itc.cn/q_70/images03/20260113/3d24599a3b6f44078ef4a5d9ad99c6d7.png"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-ningbo",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "宁波市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—拟复核通过企业名单",
+      "source_path": "10_政策与目录/政策数据库/企策顾问/公示公告/宁波市/优质中小企业梯度培育/2026-01-09__关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示__af77d2c1fab547e5aa31297cca28fc08/附件/附件.wps",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "宁波市",
+      "batch": "2025年度宁波市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity",
+      "expected_count": 9,
+      "entities": [
+        "宁波艾谱实业有限公司",
+        "宁波慈北医疗器械有限公司",
+        "慈溪市天行电器有限公司",
+        "宁波信远炭材料有限公司",
+        "宁波鲍斯能源装备股份有限公司",
+        "赛克思液压科技股份有限公司",
+        "浙江金瑞泓科技股份有限公司",
+        "宁波凯驰胶带有限公司",
+        "宁波昌扬机械工业有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q0.itc.cn/q_70/images03/20260113/e883afe434884015af3b61e84808b26a.jpeg"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-wenzhou",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "温州市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—拟复核通过企业名单",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "温州市",
+      "batch": "2025年度温州市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity_attachment_archive",
+      "expected_count": 17,
+      "entities": [
+        "熊猫乳品集团股份有限公司",
+        "乐清市嘉得电子有限公司",
+        "浙江强力控股有限公司",
+        "金卡智能集团股份有限公司",
+        "慎江阀门有限公司",
+        "温州市康尔微晶器皿有限公司",
+        "温兄控股集团股份有限公司",
+        "温州聚星科技股份有限公司",
+        "兴机电器有限公司",
+        "浙江中立集团有限公司",
+        "浙江威欧希科技股份有限公司",
+        "八达机电有限公司",
+        "浙江戈尔德智能悬架股份有限公司",
+        "浙江华邦物联技术股份有限公司",
+        "立信阀门集团有限公司",
+        "方圆阀门集团有限公司",
+        "奔腾激光（温州）有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q3.itc.cn/q_70/images03/20260113/24e59d610c3e4fd0adb61bda1e5cad0d.png"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-huzhou",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "湖州市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—拟复核通过企业名单",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "湖州市",
+      "batch": "2025年度湖州市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity",
+      "expected_count": 14,
+      "entities": [
+        "浙江洁美电子科技股份有限公司",
+        "安吉长虹制链有限公司",
+        "浙江华特新材料有限公司",
+        "浙江盛发纺织印染有限公司",
+        "诺力智能装备股份有限公司",
+        "浙江万享科技股份有限公司",
+        "长兴华强电子股份有限公司",
+        "浙江加力仓储设备股份有限公司",
+        "浙江我武生物科技股份有限公司",
+        "浙江安美德汽车配件有限公司",
+        "湖州太平微特电机有限公司",
+        "浙江东尼电子股份有限公司",
+        "湖州久鼎电子有限公司",
+        "浙江日创机电科技有限公司"
+      ],
+      "official_url": "http://hzjx.huzhou.gov.cn/col/col1229208168/art/2026/art_03a1bc22e2e747c58e1462f4fd07f3ea.html",
+      "evidence_archive_url": "https://q0.itc.cn/q_70/images03/20260113/23b518a4956840debedff99f985b5671.png"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-jiaxing",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "嘉兴市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—拟复核通过企业名单",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "嘉兴市",
+      "batch": "2025年度嘉兴市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity_attachment_archive",
+      "expected_count": 13,
+      "entities": [
+        "浙江信达可恩消防股份有限公司",
+        "浙江欣兴工具有限公司",
+        "浙江海盐力源环保科技股份有限公司",
+        "浙江宇龙生物科技股份有限公司",
+        "嘉兴五丰生态环境科技股份有限公司",
+        "海盐管件制造有限公司",
+        "浙江涵普电力科技有限公司",
+        "浙江荣泰电工器材股份有限公司",
+        "浙江亚特电器股份有限公司",
+        "浙江晨光电缆股份有限公司",
+        "浙江耀阳新材料科技有限公司",
+        "浙江台玖精密机械股份有限公司",
+        "浙江台华新材料股份有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q6.itc.cn/q_70/images03/20260113/89539d17ece44c34bd1f64de44d550aa.png"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-shaoxing",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "绍兴市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—拟复核通过企业名单",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "绍兴市",
+      "batch": "2025年度绍兴市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity_attachment_archive",
+      "expected_count": 13,
+      "entities": [
+        "绍兴兴欣新材料股份有限公司",
+        "浙江春晖仪表股份有限公司",
+        "浙江万丰科技开发股份有限公司",
+        "浙江龙威机械制造有限公司",
+        "浙江华发生态科技有限公司",
+        "浙江新涛智控科技股份有限公司",
+        "浙江五洲新春集团股份有限公司",
+        "万丰镁瑞丁新材料科技有限公司",
+        "绍兴东湖高科股份有限公司",
+        "绍兴市岭峰气枪制造有限公司",
+        "浙江海圣医疗器械股份有限公司",
+        "浙江东大环境工程有限公司",
+        "浙江圣翔航空科技有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q4.itc.cn/q_70/images03/20260113/45316ce2a7cd41a6bcda16dd42f6a1d4.png"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-jinhua",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "金华市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—附件2拟复核通过企业名单",
+      "source_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/优质中小企业梯度培育/2026-01-09__关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示__96208919a7f545e9934fe81334999d8c/附件/附件2.拟复核通过企业名单.xls",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "金华市",
+      "batch": "2025年度金华市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity",
+      "expected_count": 10,
+      "entities": [
+        "浙江大众齿轮有限公司",
+        "浙江大维高新技术股份有限公司",
+        "浙江金华天开电子材料有限公司",
+        "金华市亚轮化纤有限公司",
+        "浙江银瑜新材料股份有限公司",
+        "金华春光橡塑科技股份有限公司",
+        "浙江浦江伯虎链条股份有限公司",
+        "武义西林德机械制造有限公司",
+        "浙江箭环电气有限公司",
+        "道明光学股份有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q0.itc.cn/q_70/images03/20260113/be48bf5ef12744ba9a53daa36de4d3c9.png"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-quzhou",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "衢州市经信局关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—附件2拟复核通过企业名单",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "衢州市",
+      "batch": "2025年度衢州市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity",
+      "expected_count": 6,
+      "entities": [
+        "江山欧派门业股份有限公司",
+        "浙江贝尔轨道装备有限公司",
+        "浙江禾川科技股份有限公司",
+        "浙江凯丰新材料股份有限公司",
+        "浙江日新电气有限公司",
+        "浙江锦华新材料股份有限公司"
+      ],
+      "official_url": "https://www.qz.gov.cn/col/col1229047611/art/2026/art_e2521d7d753a4f9f80631ae54ce133d7.html",
+      "evidence_archive_url": "https://q7.itc.cn/q_70/images03/20260113/08330adf51244c3faa4b99db1e61ed77.png"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-zhoushan",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "舟山市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—拟复核通过企业名单",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "舟山市",
+      "batch": "2025年度舟山市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity_attachment_archive",
+      "expected_count": 2,
+      "entities": [
+        "舟山海山机械密封材料股份有限公司",
+        "浙江精劲机械有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q0.itc.cn/q_70/images03/20260113/b002f430161e43e0b353e4133755af42.png"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-taizhou",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "台州市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—拟复核通过企业名单",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "台州市",
+      "batch": "2025年度台州市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity_attachment_archive",
+      "expected_count": 12,
+      "entities": [
+        "汇宝科技集团有限公司",
+        "精细化学品集团有限公司",
+        "浙江水晶光电科技股份有限公司",
+        "浙江海翔药业股份有限公司",
+        "拓卡奔马机电科技有限公司",
+        "浙江高宇液压机电有限公司",
+        "浙江肯得机电股份有限公司",
+        "浙江德斯泰新材料股份有限公司",
+        "浙江飞越机电有限公司",
+        "浙江铭振电子股份有限公司",
+        "迈得医疗工业设备股份有限公司",
+        "琦星智能科技股份有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q5.itc.cn/q_70/images03/20260113/234bb27e777f4fd291148c25f34f2d12.jpeg"
+    },
+    {
+      "source_id": "zhejiang-hidden-champion-2025-review-publicity-lishui",
+      "coverage_group_id": "zhejiang-hidden-champion-2025-review-publicity-11-cities",
+      "document_title": "丽水市关于2025年度浙江省隐形冠军企业认定和复核通过名单的公示—拟复核通过企业名单",
+      "project_name": "浙江省隐形冠军企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "published_at": "2026-01-09",
+      "city": "丽水市",
+      "batch": "2025年度丽水市公示",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity_attachment_archive",
+      "expected_count": 9,
+      "entities": [
+        "浙江畅尔智能装备股份有限公司",
+        "浙江大喜厨电股份有限公司",
+        "浙江金马逊智能制造股份有限公司",
+        "浙江东瓯过滤机制造有限公司",
+        "浙江乾麟缝制设备有限公司",
+        "浙江创新汽车空调有限公司",
+        "浙江兰通空调设备有限公司",
+        "绿水股份有限公司",
+        "浙江双枪竹木有限公司"
+      ],
+      "official_url": "",
+      "evidence_archive_url": "https://q1.itc.cn/q_70/images03/20260113/4824376ad5354fd9a7fd4e2a9e248db3.png"
+    },
+    {
+      "source_id": "zhejiang-specialized-sme-2025-review-publicity-jiaxing",
+      "document_title": "附件：2025年第一批浙江省专精特新中小企业（嘉兴市）拟认定名单、2022年度第一批浙江省专精特新中小企业（嘉兴市）拟复核通过名单.xls",
+      "project_name": "浙江省专精特新中小企业",
+      "event_year": 2025,
+      "cohort_year": 2022,
+      "batch": "2022年度第一批",
+      "status": "拟复核通过",
+      "event_type": "review_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity",
+      "start_pattern": "工作表：拟复核通过（31家）",
+      "end_pattern": "工作表：Sheet3",
+      "expected_count": 31,
+      "official_url": ""
+    }
+  ]
+}

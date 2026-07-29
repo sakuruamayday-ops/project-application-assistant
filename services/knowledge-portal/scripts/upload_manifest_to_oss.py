@@ -141,6 +141,32 @@ def upload(row: dict[str, object], layout: str) -> tuple[str, int]:
     raise error
 
 
+def head_object_with_network_retry(
+    object_key: str,
+    *,
+    attempts: int | None = None,
+) -> object:
+    retry_attempts = max(
+        1,
+        attempts
+        if attempts is not None
+        else int(os.environ.get("JIAOTANG_OSS_VERIFY_RETRIES", "5")),
+    )
+    error: oss2.exceptions.RequestError | None = None
+    for attempt in range(1, retry_attempts + 1):
+        try:
+            return bucket().head_object(object_key)
+        except oss2.exceptions.NoSuchKey:
+            raise
+        except oss2.exceptions.RequestError as caught:
+            error = caught
+            THREAD_LOCAL.bucket = None
+            if attempt < retry_attempts:
+                time.sleep(min(2 ** (attempt - 1), 8))
+    assert error is not None
+    raise error
+
+
 def verify_row(row: dict[str, object], layout: str) -> str | None:
     source = Path(str(row["source_path"]))
     expected_digest = str(row.get("sha256") or "")
@@ -151,7 +177,7 @@ def verify_row(row: dict[str, object], layout: str) -> str | None:
         return f"冻结后本地内容变化：{source}"
     expected_size = source.stat().st_size
     try:
-        remote = bucket().head_object(object_key_for(row, layout))
+        remote = head_object_with_network_retry(object_key_for(row, layout))
     except Exception as error:
         return f"OSS读取失败：{object_key_for(row, layout)}：{type(error).__name__}:{error}"
     if int(remote.content_length) != expected_size:
