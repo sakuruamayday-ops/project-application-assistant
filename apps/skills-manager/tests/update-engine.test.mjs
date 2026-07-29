@@ -58,7 +58,7 @@ test("generic update blocks unmanaged conflicts and preserves rollback", () => {
     archivePath: firstArchive,
     targetRoot: target,
     registryPath: registry,
-    platformIds: ["trae"],
+    platformIds: ["generic-host-a"],
     verification: firstVerification,
   });
   assert.equal(blocked.ready, false);
@@ -69,7 +69,7 @@ test("generic update blocks unmanaged conflicts and preserves rollback", () => {
     archivePath: firstArchive,
     targetRoot: cleanTarget,
     registryPath: registry,
-    platformIds: ["trae", "kimi-code"],
+    platformIds: ["generic-host-a", "generic-host-b"],
     verification: firstVerification,
   });
   const first = executeGenericInstall({
@@ -87,7 +87,7 @@ test("generic update blocks unmanaged conflicts and preserves rollback", () => {
     archivePath: secondArchive,
     targetRoot: cleanTarget,
     registryPath: registry,
-    platformIds: ["trae", "kimi-code"],
+    platformIds: ["generic-host-a", "generic-host-b"],
     verification: secondVerification,
   });
   assert.equal(secondPlan.ready, true);

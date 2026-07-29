@@ -1,3 +1,18 @@
+{% macro historical_release_card(release) -%}
+<article class="skill-history-release" data-skill-history-release>
+  <span class="download-icon">HIS</span>
+  <div>
+    <h3>企业全生命周期助手 V{{ release.version }}</h3>
+    <small>发布时间 {{ release.published_at_display }}</small>
+    <details class="skill-release-notes"><summary>查看发布说明</summary><div class="manual-content">{{ release.release_notes_html }}</div></details>
+  </div>
+  <div class="button-row">
+    <a class="button secondary" href="/skills/releases/{{ release.id }}/download">下载 V{{ release.version }} 通用包</a>
+    {% if release.workbuddy_available %}<a class="button secondary" href="/skills/releases/{{ release.id }}/workbuddy/download">WorkBuddy 包</a>{% endif %}
+  </div>
+</article>
+{%- endmacro %}
+
 <section id="skills" class="section-block skill-center" data-skill-center>
   <header class="skill-hero">
     <div class="skill-hero-copy">
@@ -20,7 +35,7 @@
     <div class="skill-command-bar">
       <div class="skill-scan-state"><span class="skill-live-dot"></span><div><strong>官方技能目录已就绪</strong><small>{{ skill_center.release_tag }} · {{ skill_center.summary.total }} 项能力已载入</small></div></div>
       <div class="skill-command-actions">
-        {% if latest_release %}<button class="button skill-primary-action" type="button" data-skill-tab-target="downloads">选择安装平台</button>{% endif %}
+        {% if latest_release %}<button class="button skill-primary-action" type="button" data-skill-tab-target="downloads">选择安装包</button>{% endif %}
         <button class="button secondary" type="button" data-skill-rescan>刷新目录</button>
         <button class="button skill-dark-action" type="button" data-skill-tab-target="install">{{ 'Agent 接入说明' if user.is_admin else '生成安全安装计划' }} <span>→</span></button>
       </div>
@@ -30,7 +45,7 @@
   <nav class="skill-section-tabs" role="tablist" aria-label="Skills 页面内容">
     <button class="is-active" type="button" role="tab" data-skill-section-tab="catalog" aria-selected="true">技能目录 <small>{{ skill_center.summary.total }}</small></button>
     <button type="button" role="tab" data-skill-section-tab="downloads" aria-selected="false">版本与下载 <small>{{ 'V' ~ latest_release.version if latest_release else '—' }}</small></button>
-    <button type="button" role="tab" data-skill-section-tab="install" aria-selected="false">安装与设备 <small>{{ '已连接' if active_device_binding and active_device_binding.mcp_connected_at else ('管理员' if user.is_admin else '待配置') }}</small></button>
+    <button type="button" role="tab" data-skill-section-tab="install" aria-selected="false">安装与设备 <small>{{ '已连接' if active_device_binding and active_device_binding.mcp_connected_at else '待配置' }}</small></button>
   </nav>
 
   <div class="skill-section-pane is-active" data-skill-section-pane="catalog" role="tabpanel">
@@ -83,7 +98,7 @@
       {% endif %}
       <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
-      <div class="skill-platform-note"><strong>只选一个包</strong><p>通用版适用于支持标准 Agent Skills 的平台。平台增强版已经包含同一套 Skills，并增加该宿主官方支持的 Hooks、插件或 MCP 配置，不需要再重复安装通用版。只有通过官方文档核对、结构校验和真实宿主验收的平台包才开放下载。</p></div>
+      <div class="skill-platform-note"><strong>固定双产物</strong><p>正式发布只保留通用版与 WorkBuddy 跨平台版。通用版适用于支持标准 Agent Skills 的宿主；WorkBuddy 版已经包含同一套 Skills、Hooks 与 MCP 配置，不需要重复安装通用版。其他宿主不再规划或展示平台专用版本。</p></div>
       <div class="skill-platform-downloads">
         <article class="skill-platform-card is-generic">
           <span class="skill-platform-mark">通</span>
@@ -98,39 +113,28 @@
           <div class="skill-platform-status {{ 'is-ready' if workbuddy.included else 'is-validating' }}"><i></i>{{ '正式包已发布' if workbuddy.included else '尚未发布' }}</div>
           {% if workbuddy.included %}<a class="button" href="{{ workbuddy.download_url }}">下载 WorkBuddy 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
         </article>
-        <article class="skill-platform-card is-planned" data-platform-package="trae">
-          <span class="skill-platform-mark">TR</span>
-          <div><span class="skill-card-index">平台增强版 · TRAE</span><h3>TRAE</h3><p>官方已公开 Skills 导入与 Hooks 能力。专用包仍需完成 Hooks 映射、安全门禁和真实宿主验收，因此当前不冒充正式安装包。</p><a class="skill-platform-source" href="https://docs.trae.ai/ide/skills" target="_blank" rel="noreferrer">查看官方 Skills 文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>专用包适配中</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="qoder">
-          <span class="skill-platform-mark">QD</span>
-          <div><span class="skill-card-index">平台增强版 · Qoder</span><h3>Qoder</h3><p>官方已公开用户级 Skills 目录和 IDE、CLI Hooks。专用包尚未完成安装、升级、回滚与真实宿主验收。</p><a class="skill-platform-source" href="https://docs.qoder.com/extensions/hooks" target="_blank" rel="noreferrer">查看官方 Hooks 文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>专用包适配中</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="lingma">
-          <span class="skill-platform-mark">灵</span>
-          <div><span class="skill-card-index">平台增强版 · 通义灵码</span><h3>通义灵码</h3><p>官方已公开 Skills 目录和 Qoder CN Hooks。专用包需要增加客户端版本门禁并完成实机验收后才能发布。</p><a class="skill-platform-source" href="https://help.aliyun.com/zh/lingma/qoder-cn/user-guide/hooks" target="_blank" rel="noreferrer">查看官方 Hooks 文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>等待版本门禁与实机验收</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="kimi-code">
-          <span class="skill-platform-mark">KM</span>
-          <div><span class="skill-card-index">平台插件版 · Kimi Code</span><h3>Kimi Code</h3><p>官方插件可声明 Skills、Hooks 与 MCP。我们仍需按其插件结构生成独立包，并验证 Hooks 的 fail-open 边界。</p><a class="skill-platform-source" href="https://www.kimi.com/code/docs/en/kimi-code-cli/customization/plugins.html" target="_blank" rel="noreferrer">查看官方插件文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>专用包适配中</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="cherry-studio">
-          <span class="skill-platform-mark">CS</span>
-          <div><span class="skill-card-index">平台增强版 · Cherry Studio</span><h3>Cherry Studio</h3><p>官方已有 Skills 与 MCP 能力，但专用包的导入、启用和生命周期约束尚未完成实机验证。当前只提供通用版。</p><a class="skill-platform-source" href="https://docs.cherry-ai.com/docs/en-us/advanced-basic/skills" target="_blank" rel="noreferrer">查看官方 Skills 文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>专用包适配中</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
       </div>
       {% endif %}
-      {% for release in historical_releases %}<article><span class="download-icon">HIS</span><div><h3>企业全生命周期助手 V{{ release.version }}</h3><small>发布时间 {{ release.published_at_display }}</small><details class="skill-release-notes"><summary>查看发布说明</summary><div class="manual-content">{{ release.release_notes_html }}</div></details></div><div class="button-row"><a class="button secondary" href="/skills/releases/{{ release.id }}/download">下载 V{{ release.version }} 通用包</a>{% if release.workbuddy_available %}<a class="button secondary" href="/skills/releases/{{ release.id }}/workbuddy/download">WorkBuddy 包</a>{% endif %}</div></article>{% endfor %}
+      {% if historical_releases %}
+      <section class="skill-history-ledger" aria-labelledby="skill-history-title">
+        <header class="skill-history-heading">
+          <div><span class="skill-card-index">Release Archive</span><h3 id="skill-history-title">历史版本</h3></div>
+          <small>默认显示最近一次历史版本</small>
+        </header>
+        {{ historical_release_card(historical_releases[0]) }}
+        {% if historical_releases|length > 1 %}
+        <details class="skill-history-more" data-skill-history>
+          <summary data-skill-history-toggle>
+            <span class="skill-history-summary-label"><span class="is-closed">展开全部历史版本</span><span class="is-open">收起历史版本</span></span>
+            <small>另外 {{ historical_releases|length - 1 }} 个版本</small>
+          </summary>
+          <div class="skill-history-list">
+            {% for release in historical_releases[1:] %}{{ historical_release_card(release) }}{% endfor %}
+          </div>
+        </details>
+        {% endif %}
+      </section>
+      {% endif %}
     </div>
   </div>
 
@@ -139,11 +143,8 @@
     <div class="skill-install-grid">
       <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
         <span class="skill-card-index">01 / 安装计划</span>
-        <h3>{{ '管理员接入方式' if user.is_admin else '生成一次性安全安装指令' }}</h3>
-        {% if user.is_admin %}
-        <p>管理员账号不执行单设备公钥绑定，可继续使用现有管理员凭据连接受信 Agent。此处不会伪装成自动拉起客户端。</p>
-        <a class="button" href="/access">管理管理员连接凭据</a>
-        {% elif active_device_binding and active_device_binding.mcp_connected_at %}
+        <h3>生成一次性安全安装指令</h3>
+        {% if active_device_binding and active_device_binding.mcp_connected_at %}
         <p>当前账号已有通过服务器验收的本地 Agent。需要更换电脑时，请先在“API 与用户”撤销原设备，再生成新计划。</p>
         <a class="button" href="/access">查看已连接设备</a>
         {% else %}

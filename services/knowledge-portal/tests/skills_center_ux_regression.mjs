@@ -16,8 +16,10 @@ const skillCenterTemplate = await readFile(new URL("../templates/skill_center.ht
 assert.match(skillCenterTemplate, /<details class="skill-release-notes skill-current-release-notes">/, "当前版本发布说明必须使用默认折叠的 details");
 assert.match(skillCenterTemplate, /latest_release\.workbuddy/, "下载区必须渲染跨平台 WorkBuddy 包");
 assert.match(skillCenterTemplate, /workbuddy\.download_url/, "WorkBuddy 必须使用统一下载入口");
-assert.match(skillCenterTemplate, /平台增强版已经包含同一套 Skills/, "下载区必须解释通用版与平台增强版只选一个");
-assert.match(skillCenterTemplate, /真实宿主验收的平台包才开放下载/, "未验收平台必须保持下载门禁");
+assert.match(skillCenterTemplate, /固定双产物/, "下载区必须声明只保留两个正式产物");
+assert.match(skillCenterTemplate, /其他宿主不再规划或展示平台专用版本/, "下载区必须移除其他平台专用版本");
+assert.match(skillCenterTemplate, /data-skill-history-toggle/, "历史版本必须提供展开与收起控件");
+assert.match(skillCenterTemplate, /historical_releases\[1:\]/, "历史版本默认只应在折叠区渲染较早版本");
 assert.doesNotMatch(skillCenterTemplate, /platform\.feedback_status|OIDC 签名证明|GitHub Job/, "下载区不应再展示平台确认状态");
 const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
 const server = spawn(python, ["tests/browser_route_server.py"], {
@@ -145,23 +147,30 @@ try {
 
   await page.locator('[data-skill-section-tab="downloads"]').click();
   assert.equal(await page.locator('[data-skill-section-pane="downloads"]').isVisible(), true);
-  assert.equal(await page.locator(".skill-platform-card").count(), 7, "下载区必须呈现两个正式包与五个平台适配状态");
+  assert.equal(await page.locator(".skill-platform-card").count(), 2, "下载区只能呈现通用版与 WorkBuddy 版");
   assert.equal(await page.locator(".skill-platform-card.is-workbuddy").isVisible(), true);
-  assert.equal(await page.locator(".skill-platform-card.is-planned").count(), 5, "五个未验收平台必须显式标记为适配中");
+  assert.equal(await page.locator(".skill-platform-card.is-planned").count(), 0, "不得展示其他平台专用版本");
   assert.equal(await page.locator(".skill-platform-status.is-ready").count(), 2, "只允许通用版与 WorkBuddy 标记为正式发布");
-  assert.equal(await page.locator(".skill-platform-status.is-validating").count(), 5, "未验收平台不得显示正式发布状态");
+  assert.equal(await page.locator(".skill-platform-status.is-validating").count(), 0, "下载区不保留其他平台适配状态");
   assert.equal(await page.getByRole("link", {name: "下载通用包"}).count(), 1, "通用正式包只保留一个主下载入口");
   assert.equal(await page.getByRole("link", {name: "下载 WorkBuddy 包"}).count(), 1, "WorkBuddy 正式包只保留一个主下载入口");
+  const historyReleases = page.locator("[data-skill-history-release]");
+  const historyToggle = page.locator("[data-skill-history-toggle]");
+  assert.equal(await historyReleases.count(), 2, "浏览器回归数据应包含两个历史版本");
+  assert.equal(await historyReleases.nth(0).isVisible(), true, "默认必须显示最近一次历史版本");
+  assert.equal(await historyReleases.nth(1).isVisible(), false, "更早历史版本默认必须折叠");
+  assert.match(await historyToggle.innerText(), /展开全部历史版本/, "折叠按钮应明确提示展开全部");
+  await historyToggle.click();
+  assert.equal(await historyReleases.nth(1).isVisible(), true, "展开后必须显示全部历史版本");
+  assert.match(await historyToggle.innerText(), /收起历史版本/, "展开后按钮应明确提示收起");
+  await historyToggle.focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await historyReleases.nth(1).isVisible(), false, "键盘操作必须能够再次收起历史版本");
   const downloadLayout = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
-    plannedWithPrimaryDownload: [...document.querySelectorAll(".skill-platform-card.is-planned")]
-      .some((card) => card.textContent.includes("下载 TRAE 包")
-        || card.textContent.includes("下载 Qoder 包")
-        || card.textContent.includes("下载 Kimi Code 包")),
   }));
   assert.equal(downloadLayout.documentWidth, downloadLayout.viewportWidth, "桌面下载矩阵不应产生全局横向溢出");
-  assert.equal(downloadLayout.plannedWithPrimaryDownload, false, "适配中平台不得出现专用包下载按钮");
   if (process.env.SKILLS_QA_DOWNLOAD_SCREENSHOT) {
     await page.screenshot({path: process.env.SKILLS_QA_DOWNLOAD_SCREENSHOT, fullPage: true});
   }
