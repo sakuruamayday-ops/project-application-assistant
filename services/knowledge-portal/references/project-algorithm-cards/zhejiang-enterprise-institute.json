@@ -51,10 +51,11 @@
   "quality_gates": {
     "pack_validation": true,
     "gold_case_count": 3,
-    "formal_decision_enabled": true
+    "formal_decision_enabled": true,
+    "policy_baseline_complete": true
   },
   "limitations": [
-    "routing-only项目尚未具备正式门槛规则",
+    "年度通知与属地覆盖仍须按查询时点选择",
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ]

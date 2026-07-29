@@ -5,8 +5,8 @@
   "algorithm_version": "1.0",
   "project_id": "first-equipment",
   "project_name": "首台（套）装备",
-  "coverage_status": "routing-only",
-  "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+  "coverage_status": "policy-baseline-confirmed",
+  "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
   "policy_version_id": "policy-65ce45505736f363a394",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
@@ -51,10 +51,11 @@
   "quality_gates": {
     "pack_validation": true,
     "gold_case_count": 1,
-    "formal_decision_enabled": false
+    "formal_decision_enabled": false,
+    "policy_baseline_complete": true
   },
   "limitations": [
-    "routing-only项目尚未具备正式门槛规则",
+    "政策基线完整但尚未编译全部门槛规则",
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ]

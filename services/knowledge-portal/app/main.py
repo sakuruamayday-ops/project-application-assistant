@@ -1823,7 +1823,12 @@ def project_algorithm_catalog_payload(
 ) -> dict[str, object]:
     normalized_filter = (
         coverage_filter
-        if coverage_filter in {"rules-confirmed", "routing-only"}
+        if coverage_filter
+        in {
+            "rules-confirmed",
+            "policy-baseline-confirmed",
+            "routing-only",
+        }
         else ""
     )
     usage_metrics = project_algorithm_usage_metrics()
@@ -1867,21 +1872,36 @@ def project_algorithm_catalog_payload(
                 "coverage_label": (
                     "正式规则"
                     if coverage_status == "rules-confirmed"
+                    else "政策基线"
+                    if coverage_status == "policy-baseline-confirmed"
                     else "检索路由"
                 ),
                 "decision_scope": (
                     "可按已确认规则判断门槛，并继续核验年度通知和属地要求。"
                     if coverage_status == "rules-confirmed"
-                    else "可识别项目并检索政策；现阶段不直接输出符合或不符合。"
+                    else (
+                        "已核验最新有效办法、最近年度通知和属地规则需求；"
+                        "可用于政策查询、预测准备和历史回放，尚不直接输出符合或不符合。"
+                        if coverage_status == "policy-baseline-confirmed"
+                        else "可识别项目并检索政策；现阶段不直接输出符合或不符合。"
+                    )
                 ),
                 "rule_count": len(confirmed_rules),
                 "usage_7d": usage_7d,
                 "users_7d": users_7d,
                 "priority_rank": None,
-                "priority_label": "已完成" if coverage_status == "rules-confirmed" else "",
+                "priority_label": (
+                    "门槛已编译"
+                    if coverage_status == "rules-confirmed"
+                    else "基线已补齐"
+                    if coverage_status == "policy-baseline-confirmed"
+                    else ""
+                ),
                 "priority_reason": (
                     "已具备正式门槛规则"
                     if coverage_status == "rules-confirmed"
+                    else "最新有效政策基线和依赖关系已补齐"
+                    if coverage_status == "policy-baseline-confirmed"
                     else (
                         f"近7日命中{usage_7d}次，覆盖{users_7d}名成员"
                         if usage_7d
@@ -1908,13 +1928,17 @@ def project_algorithm_catalog_payload(
     items.sort(
         key=lambda item: (
             item["coverage_status"] != "rules-confirmed",
+            item["coverage_status"] != "policy-baseline-confirmed",
             -int(item["usage_7d"]),
             item["project_name"],
         )
     )
     routing_rank = 0
     for item in items:
-        if item["coverage_status"] == "rules-confirmed":
+        if item["coverage_status"] in {
+            "rules-confirmed",
+            "policy-baseline-confirmed",
+        }:
             continue
         if int(item["usage_7d"]) <= 0:
             item["priority_label"] = "待积累"
@@ -1930,11 +1954,19 @@ def project_algorithm_catalog_payload(
         item["coverage_status"] == "rules-confirmed"
         for item in items
     )
+    baselines = sum(
+        item["coverage_status"] == "policy-baseline-confirmed"
+        for item in items
+    )
+    routing_only = sum(
+        item["coverage_status"] == "routing-only"
+        for item in items
+    )
     top_priority = next(
         (
             item
             for item in items
-            if item["coverage_status"] != "rules-confirmed"
+            if item["coverage_status"] == "routing-only"
             and int(item["usage_7d"]) > 0
         ),
         None,
@@ -1948,11 +1980,15 @@ def project_algorithm_catalog_payload(
     return {
         "total": len(items),
         "confirmed": confirmed,
-        "routing_only": len(items) - confirmed,
+        "policy_baselines": baselines,
+        "policy_covered": confirmed + baselines,
+        "routing_only": routing_only,
         "coverage_filter": normalized_filter,
         "coverage_filter_label": (
             "正式规则包"
             if normalized_filter == "rules-confirmed"
+            else "政策基线包"
+            if normalized_filter == "policy-baseline-confirmed"
             else "检索路由包"
             if normalized_filter == "routing-only"
             else "全部算法包"
@@ -1963,15 +1999,15 @@ def project_algorithm_catalog_payload(
             str(top_priority["project_name"])
             if top_priority
             else "等待真实查询样本"
-            if len(items) - confirmed
+            if routing_only
             else "已全部完成"
         ),
         "priority_detail": (
             str(top_priority["priority_reason"])
             if top_priority
             else "近7日暂无可识别项目查询，暂不人为指定优先级"
-            if len(items) - confirmed
-            else "全部项目已有正式规则"
+            if routing_only
+            else "29个项目均已有政策基线，其中正式门槛规则继续独立标识"
         ),
         "items": visible_items,
     }
@@ -2027,6 +2063,28 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
                 "status": rule["policy_status"],
             }
         )
+    baseline = (
+        pack.get("policy_baseline")
+        if isinstance(pack.get("policy_baseline"), dict)
+        else {}
+    )
+    for document in baseline.get("policy_documents", []):
+        if not isinstance(document, dict):
+            continue
+        source_key = (
+            str(document.get("title") or ""),
+            str(document.get("official_url") or ""),
+        )
+        if not any(source_key) or source_key in seen_sources:
+            continue
+        seen_sources.add(source_key)
+        sources.append(
+            {
+                "title": source_key[0] or source_key[1],
+                "url": source_key[1],
+                "status": str(document.get("status") or ""),
+            }
+        )
     return {
         "project_id": normalized_project_id,
         "project_name": str(pack.get("project_name") or normalized_project_id),
@@ -2035,15 +2093,23 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
         "coverage_label": (
             "正式规则包"
             if coverage_status == "rules-confirmed"
+            else "政策基线包"
+            if coverage_status == "policy-baseline-confirmed"
             else "检索路由包"
         ),
         "purpose": (
             "把企业事实字段与已确认政策门槛逐项比对，形成可追溯的符合、"
             "不符合或待补资料结论；年度通知和属地要求仍会继续核验。"
             if coverage_status == "rules-confirmed"
-            else "负责识别项目名称、简称和检索范围，避免跨项目串项。"
-            "正式门槛尚未逐项确认，因此只返回政策证据和待核验项，"
-            "不直接判断企业符合或不符合。"
+            else (
+                "已建立最新有效办法、最近年度通知、属地规则需求和政策依赖关系。"
+                "可用于查询日政策解释、下一年度准备方向和历史身份回放；"
+                "尚未编译完整门槛时不直接判断企业符合或不符合。"
+                if coverage_status == "policy-baseline-confirmed"
+                else "负责识别项目名称、简称和检索范围，避免跨项目串项。"
+                "正式门槛尚未逐项确认，因此只返回政策证据和待核验项，"
+                "不直接判断企业符合或不符合。"
+            )
         ),
         "aliases": [str(alias) for alias in pack.get("aliases", []) if str(alias)],
         "fact_fields": [
@@ -2066,6 +2132,7 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
         ],
         "rules": rules,
         "sources": sources,
+        "policy_baseline": baseline,
         "raw_json": json.dumps(pack, ensure_ascii=False, indent=2),
     }
 

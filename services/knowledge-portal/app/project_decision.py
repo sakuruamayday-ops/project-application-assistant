@@ -1172,6 +1172,7 @@ def validate_project_algorithm_pack(
     )
     if coverage_status not in {
         "routing-only",
+        "policy-baseline-confirmed",
         "rules-candidate",
         "rules-confirmed",
     }:
@@ -1257,6 +1258,36 @@ def validate_project_algorithm_pack(
             errors.append(f"rule_cards[{index}]缺少source_quote")
     if coverage_status == "routing-only" and pack.get("rule_cards"):
         errors.append("routing-only算法包不得包含规则卡")
+    if coverage_status == "policy-baseline-confirmed":
+        baseline = pack.get("policy_baseline")
+        if not isinstance(baseline, Mapping):
+            errors.append("policy-baseline-confirmed算法包缺少policy_baseline")
+        else:
+            if str(baseline.get("baseline_status") or "") != "complete":
+                errors.append("policy_baseline.baseline_status必须为complete")
+            documents = baseline.get("policy_documents")
+            if not isinstance(documents, list) or not documents:
+                errors.append("policy_baseline.policy_documents不能为空")
+            else:
+                for document_index, document in enumerate(documents):
+                    if not isinstance(document, Mapping):
+                        errors.append(
+                            "policy_baseline.policy_documents"
+                            f"[{document_index}]必须为对象"
+                        )
+                        continue
+                    for field_name in (
+                        "document_id",
+                        "title",
+                        "status",
+                        "authority",
+                        "official_url",
+                    ):
+                        if not str(document.get(field_name) or "").strip():
+                            errors.append(
+                                "policy_baseline.policy_documents"
+                                f"[{document_index}]缺少{field_name}"
+                            )
     if coverage_status == "rules-confirmed" and any(
         str(rule.get("review_status") or "candidate") != "confirmed"
         for rule in pack.get("rule_cards", [])

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "ir_type": "jiaotang-unified-project-rule-ir",
-  "source_digest": "a6a2c5c0ff5773907803c9bc5f337a8303c6d5b7f94b9ab3b604bfda86433b46",
+  "source_digest": "c0f6e39c6f1983fa8f1fc9d0e5f0f49c7032130b5cd21d8fe6ddc8ae82a6d37d",
   "shared_kernel": {
     "version": "1.0",
     "components": [
@@ -216,7 +216,7 @@
       "project_id": "digital-workshop",
       "project_name": "浙江省数字化车间",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "数字化车间"
       ],
@@ -233,9 +233,42 @@
       "source_retrieval_rule_ids": [
         "digital-workshop"
       ],
+      "policy_baseline": {
+        "project_id": "digital-workshop",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-annual-overlay",
+        "inception_year": 2020,
+        "policy_documents": [
+          {
+            "document_id": "zj-future-factory-guide-2025",
+            "title": "未来工厂梯度培育工作实施指南（试行）",
+            "issued_year": 2025,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
+            "relation": "governed-by"
+          },
+          {
+            "document_id": "zj-future-factory-assessment-2025",
+            "title": "关于开展2025年浙江省未来工厂和智能工厂、数字化车间评定工作的通知",
+            "issued_year": 2025,
+            "status": "latest-complete-cycle",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288615",
+            "relation": "announced-by"
+          }
+        ],
+        "dependencies": [
+          {
+            "from_document_id": "zj-future-factory-assessment-2025",
+            "to_document_id": "zj-future-factory-guide-2025",
+            "relation": "cites"
+          }
+        ]
+      },
       "ir_node_id": "project:digital-workshop",
       "policy_version_id": "policy-a9e037b45d19ae9d3570",
-      "source_content_hash": "b5cae6f5289634d3a6d4bc7eeda25580d4a5de9b12cf15db4270add61a3f2fe7",
+      "source_content_hash": "a747cfadd32f06d546627dd753c7c3d347963af3e51f2fb54e84273ea2f1416d",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -244,7 +277,7 @@
       "project_id": "first-equipment",
       "project_name": "首台（套）装备",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "首台套"
       ],
@@ -261,9 +294,26 @@
       "source_retrieval_rule_ids": [
         "first-equipment"
       ],
+      "policy_baseline": {
+        "project_id": "first-equipment",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-annual-overlay",
+        "policy_documents": [
+          {
+            "document_id": "zj-first-equipment-2025",
+            "title": "浙江省经济和信息化厅 浙江省财政厅关于组织2025年度浙江省首台（套）装备认定工作的通知",
+            "issued_year": 2025,
+            "status": "latest-complete-cycle",
+            "authority": "浙江省经济和信息化厅、浙江省财政厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=290239",
+            "relation": "announced-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:first-equipment",
       "policy_version_id": "policy-65ce45505736f363a394",
-      "source_content_hash": "66e40eb97d7dbdbfa9e84b28ead69afbe95de2773fda7a1030b172b0a01504f3",
+      "source_content_hash": "86f639218fceb169ec721a78d86b0568a671c5508d28b240e55109ed03f1e68b",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -272,7 +322,7 @@
       "project_id": "first-material-batch",
       "project_name": "重点新材料首批次",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "首批次"
       ],
@@ -289,9 +339,26 @@
       "source_retrieval_rule_ids": [
         "first-material-batch"
       ],
+      "policy_baseline": {
+        "project_id": "first-material-batch",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-directory-branch",
+        "policy_documents": [
+          {
+            "document_id": "zj-first-material-2025",
+            "title": "关于开展2025年度浙江省首批次新材料认定工作的通知",
+            "issued_year": 2025,
+            "status": "latest-complete-cycle",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3499/site/attach/0/6922fc25da0e4fde84582f6d7a3d9ff1.pdf",
+            "relation": "announced-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:first-material-batch",
       "policy_version_id": "policy-646e3c160acc379e3611",
-      "source_content_hash": "9b2a2f522fef0e3dc5626633c44767584f541939d79701f259db1793fb9824c5",
+      "source_content_hash": "934a43797f3e7d267e2a27167199bf50e265813d4125365d5a502d9bfe4745cc",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -300,7 +367,7 @@
       "project_id": "first-software-version",
       "project_name": "首版次软件",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "首版次"
       ],
@@ -317,9 +384,26 @@
       "source_retrieval_rule_ids": [
         "first-software-version"
       ],
+      "policy_baseline": {
+        "project_id": "first-software-version",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-directory-branch",
+        "policy_documents": [
+          {
+            "document_id": "zj-first-software-directory-2025",
+            "title": "浙江省经济和信息化厅关于公布《2025年浙江省首版次软件产品应用推广指导目录》的通知",
+            "issued_year": 2025,
+            "status": "current-directory",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293873",
+            "relation": "governed-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:first-software-version",
       "policy_version_id": "policy-938e19d76ed4027dc99b",
-      "source_content_hash": "b8e4640cd6830d2f47a400b21e07219dd293223a21b49d17eb526c0e3376f769",
+      "source_content_hash": "701dfff607563b4c0ff85160fce61751b07042eadabbd0fa07200cd1f61b8504",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -328,7 +412,7 @@
       "project_id": "future-factory",
       "project_name": "浙江省未来工厂",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "未来工厂"
       ],
@@ -345,9 +429,42 @@
       "source_retrieval_rule_ids": [
         "future-factory"
       ],
+      "policy_baseline": {
+        "project_id": "future-factory",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-annual-overlay",
+        "inception_year": 2020,
+        "policy_documents": [
+          {
+            "document_id": "zj-future-factory-guide-2025",
+            "title": "未来工厂梯度培育工作实施指南（试行）",
+            "issued_year": 2025,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
+            "relation": "governed-by"
+          },
+          {
+            "document_id": "zj-future-factory-assessment-2025",
+            "title": "关于开展2025年浙江省未来工厂和智能工厂、数字化车间评定工作的通知",
+            "issued_year": 2025,
+            "status": "latest-complete-cycle",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288615",
+            "relation": "announced-by"
+          }
+        ],
+        "dependencies": [
+          {
+            "from_document_id": "zj-future-factory-assessment-2025",
+            "to_document_id": "zj-future-factory-guide-2025",
+            "relation": "cites"
+          }
+        ]
+      },
       "ir_node_id": "project:future-factory",
       "policy_version_id": "policy-7a2340c21ccfd9029e0f",
-      "source_content_hash": "079aa449736d9221e9ba789ef0c139776eb2798b2e6e8488a7e454c5cd6df643",
+      "source_content_hash": "c0b1dd20b6ca28a2e828bc9f6777408925ec4249c358a058efe944b61af645a6",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -356,7 +473,7 @@
       "project_id": "green-factory-1",
       "project_name": "区级绿色工厂",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "绿色工厂"
       ],
@@ -373,9 +490,26 @@
       "source_retrieval_rule_ids": [
         "green-factory"
       ],
+      "policy_baseline": {
+        "project_id": "green-factory-1",
+        "baseline_status": "complete",
+        "decision_mode": "jurisdiction-required",
+        "policy_documents": [
+          {
+            "document_id": "zj-green-low-carbon-guide-2024",
+            "title": "浙江省绿色低碳工业园区、工厂建设评价导则（2024版）",
+            "issued_year": 2024,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+            "relation": "upper-level-basis"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:green-factory-1",
       "policy_version_id": "policy-074dead267b21a7561d7",
-      "source_content_hash": "df5bef7c5944298af0af5bfac4834504f11cbd00c8943468ea728ee212c9e7ec",
+      "source_content_hash": "f8f59de70e151e86fcbc377b1022d1b1ad2aff5eee09ec2630b8d074a0e634bd",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -384,7 +518,7 @@
       "project_id": "green-factory-2",
       "project_name": "市级绿色工厂",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "绿色工厂"
       ],
@@ -401,9 +535,26 @@
       "source_retrieval_rule_ids": [
         "green-factory"
       ],
+      "policy_baseline": {
+        "project_id": "green-factory-2",
+        "baseline_status": "complete",
+        "decision_mode": "jurisdiction-required",
+        "policy_documents": [
+          {
+            "document_id": "zj-green-low-carbon-guide-2024",
+            "title": "浙江省绿色低碳工业园区、工厂建设评价导则（2024版）",
+            "issued_year": 2024,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+            "relation": "upper-level-basis"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:green-factory-2",
       "policy_version_id": "policy-ed00cd1663bc91692adf",
-      "source_content_hash": "7c2316f2aa1f464127ecd68f23603e6b4fb6fc72672cda2a36a1f44cce2c3c1c",
+      "source_content_hash": "7f1f6f733dd7d48c9ffcce21879638b294132f67e4f5a3ba2a693b760df56caf",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -412,7 +563,7 @@
       "project_id": "green-factory-3",
       "project_name": "浙江省绿色低碳工厂",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "绿色工厂"
       ],
@@ -429,9 +580,26 @@
       "source_retrieval_rule_ids": [
         "green-factory"
       ],
+      "policy_baseline": {
+        "project_id": "green-factory-3",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-jurisdiction-overlay",
+        "policy_documents": [
+          {
+            "document_id": "zj-green-low-carbon-guide-2024",
+            "title": "浙江省绿色低碳工业园区、工厂建设评价导则（2024版）",
+            "issued_year": 2024,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+            "relation": "governed-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:green-factory-3",
       "policy_version_id": "policy-3e07233cd1c73e666e3c",
-      "source_content_hash": "9e8c85935382a8b79c2b32b38f717197827c5bef96e7a511dc62cc53a9750ac0",
+      "source_content_hash": "37a0159ed76f7d23a5967f87e4a5252e7920b23e1cb21945cc9de27d86470b57",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -774,9 +942,67 @@
           "expected_conclusion": "ineligible"
         }
       ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "green-factory-4-confirmed-1719bb1fcf6b",
+            "title": "《绿色工厂梯度培育及管理暂行办法》工信部节〔2024〕13号第七条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "green-factory-4-confirmed-ecd28bef0f3d",
+            "title": "工信部节〔2024〕13号第七条、第十四条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "green-factory-4-confirmed-576b02c3f5b9",
+            "title": "工信部节〔2024〕13号第十一条、第十二条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "green-factory-4-confirmed-3bf386505031",
+            "title": "工信部节〔2024〕13号第十五条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "green-factory-4-confirmed-7ce4edf533b9",
+            "title": "工信部节〔2024〕13号第十条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
       "ir_node_id": "project:green-factory-4",
       "policy_version_id": "policy-0f9bd42b6aea6776bd6f",
-      "source_content_hash": "4bc35b049c315fccbe3d5e38bd02b88c9287a12cca6a539d0e6561bcb1fcc683",
+      "source_content_hash": "abc3a33ac166f227b712fb81f1bcf872bf29966fa9138d52b0c1bf7ac41e0438",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -785,7 +1011,7 @@
       "project_id": "hangzhou-enterprise-institute",
       "project_name": "杭州市企业研究院",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "杭州研发中心",
         "杭州市研发中心",
@@ -804,9 +1030,26 @@
       "source_retrieval_rule_ids": [
         "hangzhou-enterprise-institute"
       ],
+      "policy_baseline": {
+        "project_id": "hangzhou-enterprise-institute",
+        "baseline_status": "complete",
+        "decision_mode": "current-local-rule",
+        "policy_documents": [
+          {
+            "document_id": "hangzhou-enterprise-rd-center-2022",
+            "title": "杭州市企业高新技术研究开发中心管理办法",
+            "issued_year": 2022,
+            "status": "current",
+            "authority": "杭州市科学技术局",
+            "official_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
+            "relation": "canonical-project-correction"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:hangzhou-enterprise-institute",
       "policy_version_id": "policy-52f16b46a6427c6aa534",
-      "source_content_hash": "5f4e4bfe5ec15bcc995f8c572ca12d63d3da4ab45bcfbb40399ded5e2e58ba70",
+      "source_content_hash": "ca0634849be0ef19b2c3b6f96da4ede73184cda1a949041976fc78428ee539e9",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -815,7 +1058,7 @@
       "project_id": "hangzhou-enterprise-technology-center",
       "project_name": "杭州市企业技术中心",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "杭州企业技术中心"
       ],
@@ -832,9 +1075,28 @@
       "source_retrieval_rule_ids": [
         "hangzhou-enterprise-technology-center"
       ],
+      "policy_baseline": {
+        "project_id": "hangzhou-enterprise-technology-center",
+        "baseline_status": "complete",
+        "decision_mode": "current-local-rule-with-annual-overlay",
+        "policy_documents": [
+          {
+            "document_id": "hangzhou-enterprise-tech-center-2018",
+            "title": "杭州市企业技术中心管理办法",
+            "issued_year": 2018,
+            "status": "current",
+            "authority": "杭州市经济和信息化局",
+            "official_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
+            "relation": "governed-by",
+            "still_effective": true,
+            "cited_by_current_notice": true
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:hangzhou-enterprise-technology-center",
       "policy_version_id": "policy-dd30d8df051bb3218405",
-      "source_content_hash": "a566c9b6fd8fb9795c3f67c0af699cee835e5d0a97d42ea977e739c264b50d6f",
+      "source_content_hash": "487e8127d69970c28564bd4ffa4857ab4063783f7a3620e3abdd5844dfaf20dc",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -843,7 +1105,7 @@
       "project_id": "intelligent-factory",
       "project_name": "浙江省智能工厂",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "智能工厂"
       ],
@@ -860,9 +1122,42 @@
       "source_retrieval_rule_ids": [
         "intelligent-factory"
       ],
+      "policy_baseline": {
+        "project_id": "intelligent-factory",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-annual-overlay",
+        "inception_year": 2020,
+        "policy_documents": [
+          {
+            "document_id": "zj-future-factory-guide-2025",
+            "title": "未来工厂梯度培育工作实施指南（试行）",
+            "issued_year": 2025,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
+            "relation": "governed-by"
+          },
+          {
+            "document_id": "zj-future-factory-assessment-2025",
+            "title": "关于开展2025年浙江省未来工厂和智能工厂、数字化车间评定工作的通知",
+            "issued_year": 2025,
+            "status": "latest-complete-cycle",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288615",
+            "relation": "announced-by"
+          }
+        ],
+        "dependencies": [
+          {
+            "from_document_id": "zj-future-factory-assessment-2025",
+            "to_document_id": "zj-future-factory-guide-2025",
+            "relation": "cites"
+          }
+        ]
+      },
       "ir_node_id": "project:intelligent-factory",
       "policy_version_id": "policy-aa68482159b0630de6f9",
-      "source_content_hash": "5f2fcfdb760dee80c59e41660753afe6b4506019c9467f19a48e0f11f03120c3",
+      "source_content_hash": "704574ac322e0dfa7f509e978c7fc7bc056e84fc3feefa08058ecdc5e903e106",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -871,7 +1166,7 @@
       "project_id": "key-little-giant-support",
       "project_name": "重点小巨人企业高质量发展奖补项目",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "重点小巨人"
       ],
@@ -888,9 +1183,26 @@
       "source_retrieval_rule_ids": [
         "key-little-giant-support"
       ],
+      "policy_baseline": {
+        "project_id": "key-little-giant-support",
+        "baseline_status": "complete",
+        "decision_mode": "current-central-support-cycle",
+        "policy_documents": [
+          {
+            "document_id": "national-key-little-giant-support-2024",
+            "title": "财政部 工业和信息化部关于进一步支持专精特新中小企业高质量发展的通知",
+            "issued_year": 2024,
+            "status": "current-2024-2026",
+            "authority": "财政部、工业和信息化部",
+            "official_url": "https://www.miit.gov.cn/xwdt/gxdt/art/2024/art_8df1cf7787fb4e3589bd5233022a51e7.html",
+            "relation": "governed-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:key-little-giant-support",
       "policy_version_id": "policy-ae6398073f38870a9d2d",
-      "source_content_hash": "ad9868987ca61c5f76470b958211d0a2245b12a3a04b9b93a66f12fa1f8ced6e",
+      "source_content_hash": "4593b0d3a1f0f40d5774d2897e99c65deae54a7c8fd50fa246a64f95c92911b9",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -1653,9 +1965,37 @@
           "expected_conclusion": "ineligible"
         }
       ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "little-giant-confirmed-940f39f83868",
+            "title": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "little-giant-confirmed-1f636aee1e30",
+            "title": "工信部企业〔2026〕2号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
       "ir_node_id": "project:little-giant",
       "policy_version_id": "policy-aea5603ee6143154b75c",
-      "source_content_hash": "55b97684a8d6fd87bbe02c3ce35e78587c085b27a88f62020165071340111b02",
+      "source_content_hash": "44e9799e1c5adf1c66f462517f4e88219d7379766f50241c122daf3ccb37b442",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -1664,7 +2004,7 @@
       "project_id": "manufacturing-single-champion-1",
       "project_name": "浙江省制造业单项冠军企业",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "单项冠军"
       ],
@@ -1681,9 +2021,26 @@
       "source_retrieval_rule_ids": [
         "manufacturing-single-champion"
       ],
+      "policy_baseline": {
+        "project_id": "manufacturing-single-champion-1",
+        "baseline_status": "complete",
+        "decision_mode": "current-provincial-rule",
+        "policy_documents": [
+          {
+            "document_id": "zj-single-champion-method-2025",
+            "title": "浙江省制造业单项冠军企业认定管理办法（试行）",
+            "issued_year": 2025,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363",
+            "relation": "governed-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:manufacturing-single-champion-1",
       "policy_version_id": "policy-812329d16784eae4627b",
-      "source_content_hash": "db1384f3410d1ca72977f6f1c40c33eb1a1d1855e3178c651e09ae71cceadc2f",
+      "source_content_hash": "e09a1b67740cbf2a74398cb95b2e122ef8ed12daf84603d01f4f6e7c074f7455",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {
         "rule_id": "zhejiang-manufacturing-single-champion",
@@ -2224,9 +2581,37 @@
           "expected_conclusion": "ineligible"
         }
       ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "manufacturing-single-champion-2-confirmed-89e6b409845b",
+            "title": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "manufacturing-single-champion-2-confirmed-d5d9f4ac5d4b",
+            "title": "工信部政法〔2023〕138号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
       "ir_node_id": "project:manufacturing-single-champion-2",
       "policy_version_id": "policy-113f26f2400a3ac384df",
-      "source_content_hash": "7d651d024eb7819700909af764e638592d6ee6113b940c004c6b025d61c51845",
+      "source_content_hash": "592686bd1b2f5d5ddb649fa39fe907738e733ebc5358bfd6734c24980008df6e",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {
         "rule_id": "national-manufacturing-single-champion",
@@ -2261,7 +2646,7 @@
       "project_id": "municipal-enterprise-technology-center",
       "project_name": "市级企业技术中心",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "市企业技术中心"
       ],
@@ -2278,9 +2663,28 @@
       "source_retrieval_rule_ids": [
         "municipal-enterprise-technology-center"
       ],
+      "policy_baseline": {
+        "project_id": "municipal-enterprise-technology-center",
+        "baseline_status": "complete",
+        "decision_mode": "jurisdiction-required",
+        "policy_documents": [
+          {
+            "document_id": "zj-enterprise-tech-center-method-2019",
+            "title": "浙江省企业技术中心管理办法",
+            "issued_year": 2019,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+            "relation": "upper-level-basis",
+            "still_effective": true,
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:municipal-enterprise-technology-center",
       "policy_version_id": "policy-3f18c801bf65b05a79ca",
-      "source_content_hash": "1eb9fe0329984a8712fb41fbb14f158e4795ca1a73056abec39b042d6addb024",
+      "source_content_hash": "e730f736ad80cd4c7fac7b9ffc42cf68ff28d0f11ab87d4d52dcec37c5784074",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -2872,9 +3276,37 @@
           "expected_conclusion": "ineligible"
         }
       ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "national-high-tech-enterprise-confirmed-1b0e3079a65d",
+            "title": "《高新技术企业认定管理办法》国科发火〔2016〕32号第十一条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "national-high-tech-enterprise-confirmed-e87f259ac1af",
+            "title": "国科发火〔2016〕32号第十一条",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
       "ir_node_id": "project:national-high-tech-enterprise",
       "policy_version_id": "policy-c4e721ac67e1cf1b5406",
-      "source_content_hash": "26f279c354a6fd2e02a75e78916eb093e2142fd3a09caae0db8c89eb50e53fac",
+      "source_content_hash": "00f15d9cd6f432ec5b830644fc68c218093ce6be2a0510b5da9eb168c06ff737",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -2883,7 +3315,7 @@
       "project_id": "technology-sme-1",
       "project_name": "浙江省科技型中小企业",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "科小"
       ],
@@ -2900,9 +3332,43 @@
       "source_retrieval_rule_ids": [
         "technology-sme"
       ],
+      "policy_baseline": {
+        "project_id": "technology-sme-1",
+        "baseline_status": "complete",
+        "decision_mode": "still-effective-rule-with-current-evidence",
+        "policy_documents": [
+          {
+            "document_id": "zj-technology-sme-method-2016",
+            "title": "浙江省科技型中小企业认定管理办法",
+            "issued_year": 2016,
+            "status": "current",
+            "authority": "浙江省科学技术厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/extSmeCustBaseSearch.do?ID=70350&action=custServDetail&sid=",
+            "relation": "governed-by",
+            "still_effective": true,
+            "cited_by_current_notice": true
+          },
+          {
+            "document_id": "zj-technology-sme-list-2025",
+            "title": "关于公布2025年度浙江省科技型中小企业备案名单的通告",
+            "issued_year": 2025,
+            "status": "current-evidence",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=294092",
+            "relation": "current-citation-evidence"
+          }
+        ],
+        "dependencies": [
+          {
+            "from_document_id": "zj-technology-sme-list-2025",
+            "to_document_id": "zj-technology-sme-method-2016",
+            "relation": "cites"
+          }
+        ]
+      },
       "ir_node_id": "project:technology-sme-1",
       "policy_version_id": "policy-60bc9824b24f1bac00ad",
-      "source_content_hash": "4bbddda3d45d374bf626b2065d622bc0a8276b4689ce3ca23bc4629acbd00ece",
+      "source_content_hash": "935bccb524f69e9f4ffb5497b93ec91d53de127b937a1d4729de016633011483",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -3433,9 +3899,37 @@
           "expected_conclusion": "ineligible"
         }
       ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "technology-sme-2-confirmed-cba724b9523e",
+            "title": "《科技型中小企业评价办法》国科发政〔2017〕115号及2026年度评价通知",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "technology-sme-2-confirmed-511d20378f48",
+            "title": "国科发政〔2017〕115号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
       "ir_node_id": "project:technology-sme-2",
       "policy_version_id": "policy-c5b7b368c64fb211113f",
-      "source_content_hash": "19751b7aeef1b10f3ab33ec6e066ed772cc1b7fb6084475408f6af45e3ac00e5",
+      "source_content_hash": "fc72b97bf0684df3dd9619c0ca0815863589ed9bccabaa21cad266b6d09525ba",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {
         "rule_id": "national-technology-sme",
@@ -3870,9 +4364,37 @@
           "expected_conclusion": "ineligible"
         }
       ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "zhejiang-enterprise-institute-confirmed-a0a0e12563d9",
+            "title": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "zhejiang-enterprise-institute-confirmed-e5c39eb56b43",
+            "title": "浙经信高新〔2025〕169号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
       "ir_node_id": "project:zhejiang-enterprise-institute",
       "policy_version_id": "policy-797bb59c14b7fdbe5b31",
-      "source_content_hash": "c55ca354915da1649f0d95ee74ac86e5594739cd96a15919046d6eaa7876e246",
+      "source_content_hash": "bdd540073f3abdcabff9f1a0a90f6631a5fd6c3c0641f74494b7009ece083983",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -3881,7 +4403,7 @@
       "project_id": "zhejiang-enterprise-technology-center",
       "project_name": "浙江省企业技术中心",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "省技中心",
         "省企业技术中心"
@@ -3899,9 +4421,43 @@
       "source_retrieval_rule_ids": [
         "zhejiang-enterprise-technology-center"
       ],
+      "policy_baseline": {
+        "project_id": "zhejiang-enterprise-technology-center",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-annual-overlay",
+        "policy_documents": [
+          {
+            "document_id": "zj-enterprise-tech-center-method-2019",
+            "title": "浙江省企业技术中心管理办法",
+            "issued_year": 2019,
+            "status": "current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+            "relation": "governed-by",
+            "still_effective": true,
+            "cited_by_current_notice": true
+          },
+          {
+            "document_id": "zj-enterprise-tech-center-result-2024",
+            "title": "关于公布制造业和高技术服务业领域2024年浙江省企业技术中心名单的通知",
+            "issued_year": 2025,
+            "status": "current-evidence",
+            "authority": "浙江省经济和信息化厅等四部门",
+            "official_url": "https://jxt.zj.gov.cn/art/2025/1/8/art_1582899_27830.html",
+            "relation": "current-citation-evidence"
+          }
+        ],
+        "dependencies": [
+          {
+            "from_document_id": "zj-enterprise-tech-center-result-2024",
+            "to_document_id": "zj-enterprise-tech-center-method-2019",
+            "relation": "cites"
+          }
+        ]
+      },
       "ir_node_id": "project:zhejiang-enterprise-technology-center",
       "policy_version_id": "policy-ff633dc05b45e4124c95",
-      "source_content_hash": "53c31cb9615ae45eb29e6c05c049d7160fadbe4602c3fe4a5d4cefa6c8a822ef",
+      "source_content_hash": "bdcd8b3b4906a0b5322c14d485549dedbf26c974c045d65879605685ac0130ed",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -3910,7 +4466,7 @@
       "project_id": "zhejiang-hidden-champion",
       "project_name": "浙江省隐形冠军企业",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "隐形冠军"
       ],
@@ -3927,9 +4483,26 @@
       "source_retrieval_rule_ids": [
         "zhejiang-hidden-champion"
       ],
+      "policy_baseline": {
+        "project_id": "zhejiang-hidden-champion",
+        "baseline_status": "complete",
+        "decision_mode": "latest-rule-with-review-cycle",
+        "policy_documents": [
+          {
+            "document_id": "zj-hidden-champion-2025",
+            "title": "关于开展2025年浙江省隐形冠军企业认定和复核工作的通知",
+            "issued_year": 2025,
+            "status": "latest-complete-cycle",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6181240",
+            "relation": "announced-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:zhejiang-hidden-champion",
       "policy_version_id": "policy-4725f5139cc2f7f49ed7",
-      "source_content_hash": "534ff878f9f4c23b23eab01e08a6b03f24efde719cda4b11b58393763c2326d7",
+      "source_content_hash": "e422c6c45ee0ee0c91af7f07992690765a2c7f563f8b6076166a21eb6bce1ba1",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {
         "rule_id": "zhejiang-hidden-champion",
@@ -3966,7 +4539,7 @@
       "project_id": "zhejiang-industrial-new-product",
       "project_name": "浙江省工业新产品",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "工业新产品"
       ],
@@ -3983,9 +4556,41 @@
       "source_retrieval_rule_ids": [
         "zhejiang-industrial-new-product"
       ],
+      "policy_baseline": {
+        "project_id": "zhejiang-industrial-new-product",
+        "baseline_status": "complete",
+        "decision_mode": "historical-replay-with-successor-routing",
+        "policy_documents": [
+          {
+            "document_id": "zj-industrial-new-product-result-2023",
+            "title": "2023年度省优秀工业新产品拟认定名单",
+            "issued_year": 2023,
+            "status": "historical-last-confirmed",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=490d5583993f405a92d0cbdee4b69f0c.pdf",
+            "relation": "historical-evidence"
+          },
+          {
+            "document_id": "zj-manufacturing-quality-2025",
+            "title": "关于组织开展2025年“浙江制造精品”遴选工作的通知",
+            "issued_year": 2025,
+            "status": "successor-current",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
+            "relation": "successor-route"
+          }
+        ],
+        "dependencies": [
+          {
+            "from_document_id": "zj-industrial-new-product-result-2023",
+            "to_document_id": "zj-manufacturing-quality-2025",
+            "relation": "followed-by"
+          }
+        ]
+      },
       "ir_node_id": "project:zhejiang-industrial-new-product",
       "policy_version_id": "policy-294f3a0f60418cb971b9",
-      "source_content_hash": "dc6a4c12adfba6563f0afd706fe466f86aeacf973305d08d6387c75c5f9ad548",
+      "source_content_hash": "563554563ed3060b9787dbd7b92ab5ebe88992fa4cb4d548caf6e8c620ba5d6f",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -4454,9 +5059,37 @@
           "expected_conclusion": "ineligible"
         }
       ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "zhejiang-key-enterprise-institute-confirmed-a0a0e12563d9",
+            "title": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "zhejiang-key-enterprise-institute-confirmed-e5c39eb56b43",
+            "title": "浙经信高新〔2025〕169号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
       "ir_node_id": "project:zhejiang-key-enterprise-institute",
       "policy_version_id": "policy-97b89e889387760206bf",
-      "source_content_hash": "741a7bac94ee98d5fe6d454231ddf54d0abf52ebf4eeeff92f1b42d86d7726cb",
+      "source_content_hash": "23de223a4066186524d9f92d8a1ff2c0f12b1b7861fd3e54b094923f982c6f64",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -4465,7 +5098,7 @@
       "project_id": "zhejiang-key-specialized-sme",
       "project_name": "浙江省重点专精特新中小企业",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "重点省专",
         "重专"
@@ -4483,9 +5116,26 @@
       "source_retrieval_rule_ids": [
         "zhejiang-key-specialized-sme"
       ],
+      "policy_baseline": {
+        "project_id": "zhejiang-key-specialized-sme",
+        "baseline_status": "complete",
+        "decision_mode": "latest-provincial-support-cycle",
+        "policy_documents": [
+          {
+            "document_id": "zj-key-specialized-sme-2026",
+            "title": "关于组织实施2026年度支持专精特新中小企业高质量发展项目的通知",
+            "issued_year": 2025,
+            "status": "current-2026-cycle",
+            "authority": "浙江省经济和信息化厅、浙江省财政厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293014",
+            "relation": "announced-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:zhejiang-key-specialized-sme",
       "policy_version_id": "policy-2165735fbec49ac3777d",
-      "source_content_hash": "d3a771d0549eb3d5fe2ed20efa1adae6c6664dfc46dca7e2099b1b9d7997a1d7",
+      "source_content_hash": "8c40174d725cba9d73180d25b3b612b92c4117d99602721ca55abe8e8df0d455",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -4494,7 +5144,7 @@
       "project_id": "zhejiang-manufacturing-2",
       "project_name": "品字标浙江制造",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "浙江制造"
       ],
@@ -4511,9 +5161,26 @@
       "source_retrieval_rule_ids": [
         "zhejiang-manufacturing"
       ],
+      "policy_baseline": {
+        "project_id": "zhejiang-manufacturing-2",
+        "baseline_status": "complete",
+        "decision_mode": "certification-or-self-declaration",
+        "policy_documents": [
+          {
+            "document_id": "pin-zi-biao-authorization-current",
+            "title": "品字标浙江制造品牌标识使用授权申报要求",
+            "issued_year": 2025,
+            "status": "current",
+            "authority": "浙江省市场监督管理局指导、浙江省品牌建设联合会实施",
+            "official_url": "https://zhejiangmade.zjamr.zj.gov.cn/Web/Apply/ProductLooked/ProductDoc.aspx",
+            "relation": "governed-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:zhejiang-manufacturing-2",
       "policy_version_id": "policy-48a0206292292657ee2f",
-      "source_content_hash": "dc55ae1121c214e472f845ab6a690e2d1168afa28f8ef587cebfa62cd87e5950",
+      "source_content_hash": "b62922ca3fd77acd48f30a11e37f76d46ced0bd27852fa93d8ff466468fbe61a",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -4522,7 +5189,7 @@
       "project_id": "zhejiang-manufacturing-quality",
       "project_name": "浙江制造精品",
       "version": "1.0",
-      "coverage_status": "routing-only",
+      "coverage_status": "policy-baseline-confirmed",
       "aliases": [
         "制造精品",
         "浙江制造"
@@ -4541,9 +5208,26 @@
         "zhejiang-manufacturing-quality",
         "zhejiang-manufacturing"
       ],
+      "policy_baseline": {
+        "project_id": "zhejiang-manufacturing-quality",
+        "baseline_status": "complete",
+        "decision_mode": "latest-annual-rule",
+        "policy_documents": [
+          {
+            "document_id": "zj-manufacturing-quality-2025",
+            "title": "关于组织开展2025年“浙江制造精品”遴选工作的通知",
+            "issued_year": 2025,
+            "status": "latest-complete-cycle",
+            "authority": "浙江省经济和信息化厅",
+            "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
+            "relation": "announced-by"
+          }
+        ],
+        "dependencies": []
+      },
       "ir_node_id": "project:zhejiang-manufacturing-quality",
       "policy_version_id": "policy-2b3113ac5b0f3f7d4b94",
-      "source_content_hash": "a4d1eaef3b90885b8aa263b01c47fa52378ad1b58ad0bf9a18536714aee591a7",
+      "source_content_hash": "5c05a972fcc906915d5e7711bf5a4f3d993ddff5c792493b0a4ad99432245c75",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     },
@@ -5188,9 +5872,37 @@
           "expected_conclusion": "ineligible"
         }
       ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "zhejiang-specialized-sme-confirmed-940f39f83868",
+            "title": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "zhejiang-specialized-sme-confirmed-1f636aee1e30",
+            "title": "工信部企业〔2026〕2号",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
       "ir_node_id": "project:zhejiang-specialized-sme",
       "policy_version_id": "policy-fca90b0f43a2df46a40e",
-      "source_content_hash": "cf48315cdbf811608458a5feabb8461d8b33e87034c0a7f3066e90557c211c60",
+      "source_content_hash": "d92e2c8d811333b19f0eab9725042ca31dd4f801a66cc2b629274a181308e60f",
       "shared_kernel_version": "1.0",
       "lifecycle_rule": {}
     }
@@ -5579,8 +6291,8 @@
       "algorithm_version": "1.0",
       "project_id": "digital-workshop",
       "project_name": "浙江省数字化车间",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-a9e037b45d19ae9d3570",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -5625,10 +6337,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -5640,8 +6353,8 @@
       "algorithm_version": "1.0",
       "project_id": "first-equipment",
       "project_name": "首台（套）装备",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-65ce45505736f363a394",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -5686,10 +6399,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -5701,8 +6415,8 @@
       "algorithm_version": "1.0",
       "project_id": "first-material-batch",
       "project_name": "重点新材料首批次",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-646e3c160acc379e3611",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -5747,10 +6461,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -5762,8 +6477,8 @@
       "algorithm_version": "1.0",
       "project_id": "first-software-version",
       "project_name": "首版次软件",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-938e19d76ed4027dc99b",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -5808,10 +6523,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -5823,8 +6539,8 @@
       "algorithm_version": "1.0",
       "project_id": "future-factory",
       "project_name": "浙江省未来工厂",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-7a2340c21ccfd9029e0f",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -5869,10 +6585,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -5884,8 +6601,8 @@
       "algorithm_version": "1.0",
       "project_id": "green-factory-1",
       "project_name": "区级绿色工厂",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-074dead267b21a7561d7",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -5930,10 +6647,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -5945,8 +6663,8 @@
       "algorithm_version": "1.0",
       "project_id": "green-factory-2",
       "project_name": "市级绿色工厂",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-ed00cd1663bc91692adf",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -5991,10 +6709,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6006,8 +6725,8 @@
       "algorithm_version": "1.0",
       "project_id": "green-factory-3",
       "project_name": "浙江省绿色低碳工厂",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-3e07233cd1c73e666e3c",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6052,10 +6771,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6113,10 +6833,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 3,
-        "formal_decision_enabled": true
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "年度通知与属地覆盖仍须按查询时点选择",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6128,8 +6849,8 @@
       "algorithm_version": "1.0",
       "project_id": "hangzhou-enterprise-institute",
       "project_name": "杭州市企业研究院",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-52f16b46a6427c6aa534",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6174,10 +6895,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6189,8 +6911,8 @@
       "algorithm_version": "1.0",
       "project_id": "hangzhou-enterprise-technology-center",
       "project_name": "杭州市企业技术中心",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-dd30d8df051bb3218405",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6235,10 +6957,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6250,8 +6973,8 @@
       "algorithm_version": "1.0",
       "project_id": "intelligent-factory",
       "project_name": "浙江省智能工厂",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-aa68482159b0630de6f9",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6296,10 +7019,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6311,8 +7035,8 @@
       "algorithm_version": "1.0",
       "project_id": "key-little-giant-support",
       "project_name": "重点小巨人企业高质量发展奖补项目",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-ae6398073f38870a9d2d",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6357,10 +7081,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6418,10 +7143,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 3,
-        "formal_decision_enabled": true
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "年度通知与属地覆盖仍须按查询时点选择",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6433,8 +7159,8 @@
       "algorithm_version": "1.0",
       "project_id": "manufacturing-single-champion-1",
       "project_name": "浙江省制造业单项冠军企业",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-812329d16784eae4627b",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6479,10 +7205,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6540,10 +7267,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 3,
-        "formal_decision_enabled": true
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "年度通知与属地覆盖仍须按查询时点选择",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6555,8 +7283,8 @@
       "algorithm_version": "1.0",
       "project_id": "municipal-enterprise-technology-center",
       "project_name": "市级企业技术中心",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-3f18c801bf65b05a79ca",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6601,10 +7329,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6662,10 +7391,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 3,
-        "formal_decision_enabled": true
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "年度通知与属地覆盖仍须按查询时点选择",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6677,8 +7407,8 @@
       "algorithm_version": "1.0",
       "project_id": "technology-sme-1",
       "project_name": "浙江省科技型中小企业",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-60bc9824b24f1bac00ad",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6723,10 +7453,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6784,10 +7515,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 3,
-        "formal_decision_enabled": true
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "年度通知与属地覆盖仍须按查询时点选择",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6845,10 +7577,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 3,
-        "formal_decision_enabled": true
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "年度通知与属地覆盖仍须按查询时点选择",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6860,8 +7593,8 @@
       "algorithm_version": "1.0",
       "project_id": "zhejiang-enterprise-technology-center",
       "project_name": "浙江省企业技术中心",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-ff633dc05b45e4124c95",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6906,10 +7639,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6921,8 +7655,8 @@
       "algorithm_version": "1.0",
       "project_id": "zhejiang-hidden-champion",
       "project_name": "浙江省隐形冠军企业",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-4725f5139cc2f7f49ed7",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -6967,10 +7701,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -6982,8 +7717,8 @@
       "algorithm_version": "1.0",
       "project_id": "zhejiang-industrial-new-product",
       "project_name": "浙江省工业新产品",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-294f3a0f60418cb971b9",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -7028,10 +7763,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -7089,10 +7825,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 3,
-        "formal_decision_enabled": true
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "年度通知与属地覆盖仍须按查询时点选择",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -7104,8 +7841,8 @@
       "algorithm_version": "1.0",
       "project_id": "zhejiang-key-specialized-sme",
       "project_name": "浙江省重点专精特新中小企业",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-2165735fbec49ac3777d",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -7150,10 +7887,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -7165,8 +7903,8 @@
       "algorithm_version": "1.0",
       "project_id": "zhejiang-manufacturing-2",
       "project_name": "品字标浙江制造",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-48a0206292292657ee2f",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -7211,10 +7949,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -7226,8 +7965,8 @@
       "algorithm_version": "1.0",
       "project_id": "zhejiang-manufacturing-quality",
       "project_name": "浙江制造精品",
-      "coverage_status": "routing-only",
-      "decision_boundary": "仅识别项目并路由政策证据，不直接形成符合或不符合结论。",
+      "coverage_status": "policy-baseline-confirmed",
+      "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
       "policy_version_id": "policy-2b3113ac5b0f3f7d4b94",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
@@ -7272,10 +8011,11 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 1,
-        "formal_decision_enabled": false
+        "formal_decision_enabled": false,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "政策基线完整但尚未编译全部门槛规则",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
@@ -7333,19 +8073,1046 @@
       "quality_gates": {
         "pack_validation": true,
         "gold_case_count": 3,
-        "formal_decision_enabled": true
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
       },
       "limitations": [
-        "routing-only项目尚未具备正式门槛规则",
+        "年度通知与属地覆盖仍须按查询时点选择",
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ]
     }
   },
+  "policy_dependency_graph": {
+    "schema_version": 1,
+    "graph_type": "project-policy-dependency-graph",
+    "as_of_year": 2026,
+    "window": {
+      "start_year": 2022,
+      "end_year": 2026,
+      "window_years": 5
+    },
+    "nodes": [
+      {
+        "node_id": "policy:green-factory-4-confirmed-1719bb1fcf6b",
+        "node_type": "policy",
+        "document_id": "green-factory-4-confirmed-1719bb1fcf6b",
+        "title": "《绿色工厂梯度培育及管理暂行办法》工信部节〔2024〕13号第七条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "2bec7fd5c51567833ae970ec12c8b5209739006454b7c352e2b2c4d99218d96d"
+      },
+      {
+        "node_id": "policy:green-factory-4-confirmed-3bf386505031",
+        "node_type": "policy",
+        "document_id": "green-factory-4-confirmed-3bf386505031",
+        "title": "工信部节〔2024〕13号第十五条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "006c997f0aa2e60c611f334bbd1c5a8d911a0f1b9b5cf5ce5e0641ab99a36038"
+      },
+      {
+        "node_id": "policy:green-factory-4-confirmed-576b02c3f5b9",
+        "node_type": "policy",
+        "document_id": "green-factory-4-confirmed-576b02c3f5b9",
+        "title": "工信部节〔2024〕13号第十一条、第十二条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "a4bfe78dc519208c1205019d8a715a0e8ba7aa244f518bfda1eb2cbc2ff35c63"
+      },
+      {
+        "node_id": "policy:green-factory-4-confirmed-7ce4edf533b9",
+        "node_type": "policy",
+        "document_id": "green-factory-4-confirmed-7ce4edf533b9",
+        "title": "工信部节〔2024〕13号第十条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "c268cc8201b8cc43ca8ed2195a13afd8b2e8b8f38ad76bc4455d0ca600a2a2a8"
+      },
+      {
+        "node_id": "policy:green-factory-4-confirmed-ecd28bef0f3d",
+        "node_type": "policy",
+        "document_id": "green-factory-4-confirmed-ecd28bef0f3d",
+        "title": "工信部节〔2024〕13号第七条、第十四条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "5445b676f8df6006b183f11d1dd696d716764540a916b6b81ebc1d76d065096c"
+      },
+      {
+        "node_id": "policy:hangzhou-enterprise-rd-center-2022",
+        "node_type": "policy",
+        "document_id": "hangzhou-enterprise-rd-center-2022",
+        "title": "杭州市企业高新技术研究开发中心管理办法",
+        "issued_year": 2022,
+        "status": "current",
+        "authority": "杭州市科学技术局",
+        "official_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
+        "relation": "canonical-project-correction",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "6661bc238588004a9e2701c3a9c106d3019236313563b086ccda6cbfc38aa06f"
+      },
+      {
+        "node_id": "policy:hangzhou-enterprise-tech-center-2018",
+        "node_type": "policy",
+        "document_id": "hangzhou-enterprise-tech-center-2018",
+        "title": "杭州市企业技术中心管理办法",
+        "issued_year": 2018,
+        "status": "current",
+        "authority": "杭州市经济和信息化局",
+        "official_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
+        "relation": "governed-by",
+        "still_effective": true,
+        "cited_by_current_notice": true,
+        "selection_reason": "still-effective",
+        "content_hash": "03da2a7562bf2522cc927b3f00c0e68e402cf5279169632e330a19d077a4f18b"
+      },
+      {
+        "node_id": "policy:little-giant-confirmed-1f636aee1e30",
+        "node_type": "policy",
+        "document_id": "little-giant-confirmed-1f636aee1e30",
+        "title": "工信部企业〔2026〕2号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "210cbeaaefe83013a2285582cf4303fa4178e87115102395afad63af12838d3d"
+      },
+      {
+        "node_id": "policy:little-giant-confirmed-940f39f83868",
+        "node_type": "policy",
+        "document_id": "little-giant-confirmed-940f39f83868",
+        "title": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "d2c1da82acbf359f58add3d8aba0f38e65ea6d0358a4c27988a4e4f630ff3686"
+      },
+      {
+        "node_id": "policy:manufacturing-single-champion-2-confirmed-89e6b409845b",
+        "node_type": "policy",
+        "document_id": "manufacturing-single-champion-2-confirmed-89e6b409845b",
+        "title": "《制造业单项冠军企业认定管理办法》工信部政法〔2023〕138号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "78416c75a5fe10560566f57cd51f6cd2e053b81e39fcbdfee683f91d36aae7c9"
+      },
+      {
+        "node_id": "policy:manufacturing-single-champion-2-confirmed-d5d9f4ac5d4b",
+        "node_type": "policy",
+        "document_id": "manufacturing-single-champion-2-confirmed-d5d9f4ac5d4b",
+        "title": "工信部政法〔2023〕138号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "e236bfc5c46e470dd55a00ba14296dc248a183e93c1633a2124a908509c96edd"
+      },
+      {
+        "node_id": "policy:national-high-tech-enterprise-confirmed-1b0e3079a65d",
+        "node_type": "policy",
+        "document_id": "national-high-tech-enterprise-confirmed-1b0e3079a65d",
+        "title": "《高新技术企业认定管理办法》国科发火〔2016〕32号第十一条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "46cdb5b23627ab31aeefaef8b95c7359585111c9e70b571b3ee4722cc1d1cf79"
+      },
+      {
+        "node_id": "policy:national-high-tech-enterprise-confirmed-e87f259ac1af",
+        "node_type": "policy",
+        "document_id": "national-high-tech-enterprise-confirmed-e87f259ac1af",
+        "title": "国科发火〔2016〕32号第十一条",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "d9f5cc36634bef397e3b8637b3a787767899d2933ae1c1be7d6fd33d76fb3fc3"
+      },
+      {
+        "node_id": "policy:national-key-little-giant-support-2024",
+        "node_type": "policy",
+        "document_id": "national-key-little-giant-support-2024",
+        "title": "财政部 工业和信息化部关于进一步支持专精特新中小企业高质量发展的通知",
+        "issued_year": 2024,
+        "status": "current-2024-2026",
+        "authority": "财政部、工业和信息化部",
+        "official_url": "https://www.miit.gov.cn/xwdt/gxdt/art/2024/art_8df1cf7787fb4e3589bd5233022a51e7.html",
+        "relation": "governed-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "0beb61b89de61f89279b0a5493a72a0c4216e98fdb652c74347a43837cd50fa0"
+      },
+      {
+        "node_id": "policy:pin-zi-biao-authorization-current",
+        "node_type": "policy",
+        "document_id": "pin-zi-biao-authorization-current",
+        "title": "品字标浙江制造品牌标识使用授权申报要求",
+        "issued_year": 2025,
+        "status": "current",
+        "authority": "浙江省市场监督管理局指导、浙江省品牌建设联合会实施",
+        "official_url": "https://zhejiangmade.zjamr.zj.gov.cn/Web/Apply/ProductLooked/ProductDoc.aspx",
+        "relation": "governed-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "a34804e30dc108daa3759776adefc34cbafa89c9534b2b92a3c2d42f3df544df"
+      },
+      {
+        "node_id": "policy:technology-sme-2-confirmed-511d20378f48",
+        "node_type": "policy",
+        "document_id": "technology-sme-2-confirmed-511d20378f48",
+        "title": "国科发政〔2017〕115号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "e3663499577ec15f93a6d9e2e0aee67ec59c9684a57600f99ee9d134c3e413b2"
+      },
+      {
+        "node_id": "policy:technology-sme-2-confirmed-cba724b9523e",
+        "node_type": "policy",
+        "document_id": "technology-sme-2-confirmed-cba724b9523e",
+        "title": "《科技型中小企业评价办法》国科发政〔2017〕115号及2026年度评价通知",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "c9b16f68da305afeeb2227de9defd42e9e01e64fd0ff4ced51463ff41cbbc00b"
+      },
+      {
+        "node_id": "policy:zhejiang-enterprise-institute-confirmed-a0a0e12563d9",
+        "node_type": "policy",
+        "document_id": "zhejiang-enterprise-institute-confirmed-a0a0e12563d9",
+        "title": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "6f105d2dd3c57b4b86a6957ff7bca3d7b6ef1673e8b01ec8715a36c8d02f7b74"
+      },
+      {
+        "node_id": "policy:zhejiang-enterprise-institute-confirmed-e5c39eb56b43",
+        "node_type": "policy",
+        "document_id": "zhejiang-enterprise-institute-confirmed-e5c39eb56b43",
+        "title": "浙经信高新〔2025〕169号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "006ea28c427e66cb0532cc06afc8d331df1dc7bc55deb51d345654097719b3a5"
+      },
+      {
+        "node_id": "policy:zhejiang-key-enterprise-institute-confirmed-a0a0e12563d9",
+        "node_type": "policy",
+        "document_id": "zhejiang-key-enterprise-institute-confirmed-a0a0e12563d9",
+        "title": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "4023699136345f20af41e8390c203a1ef1e75b7beb72c9cc485915e17d606077"
+      },
+      {
+        "node_id": "policy:zhejiang-key-enterprise-institute-confirmed-e5c39eb56b43",
+        "node_type": "policy",
+        "document_id": "zhejiang-key-enterprise-institute-confirmed-e5c39eb56b43",
+        "title": "浙经信高新〔2025〕169号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "165a86c571f93ee38cf4077890a78d982f2959b8afa0df61700ff9802b2a1bce"
+      },
+      {
+        "node_id": "policy:zhejiang-specialized-sme-confirmed-1f636aee1e30",
+        "node_type": "policy",
+        "document_id": "zhejiang-specialized-sme-confirmed-1f636aee1e30",
+        "title": "工信部企业〔2026〕2号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "9b80ac873fe053f08feaf4c964b4f428b7b7557637ebd92b7ff6f1132557c5e0"
+      },
+      {
+        "node_id": "policy:zhejiang-specialized-sme-confirmed-940f39f83868",
+        "node_type": "policy",
+        "document_id": "zhejiang-specialized-sme-confirmed-940f39f83868",
+        "title": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "6d6a8034b1d804c4ad4dea7eeb76d210e5fcdb67b1033ff622a68a2a589eb47f"
+      },
+      {
+        "node_id": "policy:zj-enterprise-tech-center-method-2019",
+        "node_type": "policy",
+        "document_id": "zj-enterprise-tech-center-method-2019",
+        "title": "浙江省企业技术中心管理办法",
+        "issued_year": 2019,
+        "status": "current",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+        "relation": "governed-by",
+        "still_effective": true,
+        "cited_by_current_notice": true,
+        "selection_reason": "still-effective",
+        "content_hash": "1864597cb9f1ee893bd073fc12c5ae11409a0d768bfb676b92968bca42ea7cd0"
+      },
+      {
+        "node_id": "policy:zj-enterprise-tech-center-result-2024",
+        "node_type": "policy",
+        "document_id": "zj-enterprise-tech-center-result-2024",
+        "title": "关于公布制造业和高技术服务业领域2024年浙江省企业技术中心名单的通知",
+        "issued_year": 2025,
+        "status": "current-evidence",
+        "authority": "浙江省经济和信息化厅等四部门",
+        "official_url": "https://jxt.zj.gov.cn/art/2025/1/8/art_1582899_27830.html",
+        "relation": "current-citation-evidence",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "066fc6722b79b8cc71efc99fa9cab7c9deab79c016e374130400339482b3f728"
+      },
+      {
+        "node_id": "policy:zj-first-equipment-2025",
+        "node_type": "policy",
+        "document_id": "zj-first-equipment-2025",
+        "title": "浙江省经济和信息化厅 浙江省财政厅关于组织2025年度浙江省首台（套）装备认定工作的通知",
+        "issued_year": 2025,
+        "status": "latest-complete-cycle",
+        "authority": "浙江省经济和信息化厅、浙江省财政厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=290239",
+        "relation": "announced-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "9fc028ec4b0783e39076e4b784c21ba4a5226b283c7f6dd39f7801ee99053704"
+      },
+      {
+        "node_id": "policy:zj-first-material-2025",
+        "node_type": "policy",
+        "document_id": "zj-first-material-2025",
+        "title": "关于开展2025年度浙江省首批次新材料认定工作的通知",
+        "issued_year": 2025,
+        "status": "latest-complete-cycle",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3499/site/attach/0/6922fc25da0e4fde84582f6d7a3d9ff1.pdf",
+        "relation": "announced-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "2417d4cb9276911a53bcd99e69a7f3310bce1e6be4209038f761b9a9fac268c2"
+      },
+      {
+        "node_id": "policy:zj-first-software-directory-2025",
+        "node_type": "policy",
+        "document_id": "zj-first-software-directory-2025",
+        "title": "浙江省经济和信息化厅关于公布《2025年浙江省首版次软件产品应用推广指导目录》的通知",
+        "issued_year": 2025,
+        "status": "current-directory",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293873",
+        "relation": "governed-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "e5cc5dc97ced5f5a7292fdc0231b1e5408d27362b5f1eaf154e12722bdf363b1"
+      },
+      {
+        "node_id": "policy:zj-future-factory-assessment-2025",
+        "node_type": "policy",
+        "document_id": "zj-future-factory-assessment-2025",
+        "title": "关于开展2025年浙江省未来工厂和智能工厂、数字化车间评定工作的通知",
+        "issued_year": 2025,
+        "status": "latest-complete-cycle",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288615",
+        "relation": "announced-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "edec6c9aa0355942e5265d3d859a3e792bdad51c40092db9b55404e115037f5f"
+      },
+      {
+        "node_id": "policy:zj-future-factory-guide-2025",
+        "node_type": "policy",
+        "document_id": "zj-future-factory-guide-2025",
+        "title": "未来工厂梯度培育工作实施指南（试行）",
+        "issued_year": 2025,
+        "status": "current",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
+        "relation": "governed-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "72c71147df6a26756f91f4d5ed82d2da78713adddc15674ebf0d3ec37e792165"
+      },
+      {
+        "node_id": "policy:zj-green-low-carbon-guide-2024",
+        "node_type": "policy",
+        "document_id": "zj-green-low-carbon-guide-2024",
+        "title": "浙江省绿色低碳工业园区、工厂建设评价导则（2024版）",
+        "issued_year": 2024,
+        "status": "current",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+        "relation": "governed-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "c26ce930600a0468251f9b96b0ac99086c1f95b04fd2a35bc0cda4951e3e480e"
+      },
+      {
+        "node_id": "policy:zj-hidden-champion-2025",
+        "node_type": "policy",
+        "document_id": "zj-hidden-champion-2025",
+        "title": "关于开展2025年浙江省隐形冠军企业认定和复核工作的通知",
+        "issued_year": 2025,
+        "status": "latest-complete-cycle",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6181240",
+        "relation": "announced-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "6b7da47822f8dab804f92ab608996553bb146404b4ccd6c427ec9993172a7ffb"
+      },
+      {
+        "node_id": "policy:zj-industrial-new-product-result-2023",
+        "node_type": "policy",
+        "document_id": "zj-industrial-new-product-result-2023",
+        "title": "2023年度省优秀工业新产品拟认定名单",
+        "issued_year": 2023,
+        "status": "historical-last-confirmed",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=490d5583993f405a92d0cbdee4b69f0c.pdf",
+        "relation": "historical-evidence",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "b5619ad9d3ce5ac24973da78b4ea770bf1cee41f2ebaffa5f4d2c871785fc6b5"
+      },
+      {
+        "node_id": "policy:zj-key-specialized-sme-2026",
+        "node_type": "policy",
+        "document_id": "zj-key-specialized-sme-2026",
+        "title": "关于组织实施2026年度支持专精特新中小企业高质量发展项目的通知",
+        "issued_year": 2025,
+        "status": "current-2026-cycle",
+        "authority": "浙江省经济和信息化厅、浙江省财政厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293014",
+        "relation": "announced-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "29e2bc7feb4f680450c99291c43cd5b9a3489af1ea523d6e359d82e9c80fa783"
+      },
+      {
+        "node_id": "policy:zj-manufacturing-quality-2025",
+        "node_type": "policy",
+        "document_id": "zj-manufacturing-quality-2025",
+        "title": "关于组织开展2025年“浙江制造精品”遴选工作的通知",
+        "issued_year": 2025,
+        "status": "latest-complete-cycle",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
+        "relation": "announced-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "7c4d797f5a66d0d80845be25fcf52e20af777990d906dbf97b51bfc69596e94b"
+      },
+      {
+        "node_id": "policy:zj-single-champion-method-2025",
+        "node_type": "policy",
+        "document_id": "zj-single-champion-method-2025",
+        "title": "浙江省制造业单项冠军企业认定管理办法（试行）",
+        "issued_year": 2025,
+        "status": "current",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363",
+        "relation": "governed-by",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "5058c7f534baa229f578cd50520ede657f4e19d3fcabc72a2e00681c6066dced"
+      },
+      {
+        "node_id": "policy:zj-technology-sme-list-2025",
+        "node_type": "policy",
+        "document_id": "zj-technology-sme-list-2025",
+        "title": "关于公布2025年度浙江省科技型中小企业备案名单的通告",
+        "issued_year": 2025,
+        "status": "current-evidence",
+        "authority": "浙江省经济和信息化厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=294092",
+        "relation": "current-citation-evidence",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "a46dd712b7e4dd5ad997b4a9e35ea50b98b1c003df2a231062b2451548dcbe1e"
+      },
+      {
+        "node_id": "policy:zj-technology-sme-method-2016",
+        "node_type": "policy",
+        "document_id": "zj-technology-sme-method-2016",
+        "title": "浙江省科技型中小企业认定管理办法",
+        "issued_year": 2016,
+        "status": "current",
+        "authority": "浙江省科学技术厅",
+        "official_url": "https://zj87.jxt.zj.gov.cn/extSmeCustBaseSearch.do?ID=70350&action=custServDetail&sid=",
+        "relation": "governed-by",
+        "still_effective": true,
+        "cited_by_current_notice": true,
+        "selection_reason": "still-effective",
+        "content_hash": "9f96ff65e7c26418800b569829b4da6aa577851f3e5dc359e1839bb5342073bf"
+      },
+      {
+        "node_id": "project:digital-workshop",
+        "node_type": "project",
+        "project_id": "digital-workshop",
+        "title": "浙江省数字化车间"
+      },
+      {
+        "node_id": "project:first-equipment",
+        "node_type": "project",
+        "project_id": "first-equipment",
+        "title": "首台（套）装备"
+      },
+      {
+        "node_id": "project:first-material-batch",
+        "node_type": "project",
+        "project_id": "first-material-batch",
+        "title": "重点新材料首批次"
+      },
+      {
+        "node_id": "project:first-software-version",
+        "node_type": "project",
+        "project_id": "first-software-version",
+        "title": "首版次软件"
+      },
+      {
+        "node_id": "project:future-factory",
+        "node_type": "project",
+        "project_id": "future-factory",
+        "title": "浙江省未来工厂"
+      },
+      {
+        "node_id": "project:green-factory-1",
+        "node_type": "project",
+        "project_id": "green-factory-1",
+        "title": "区级绿色工厂"
+      },
+      {
+        "node_id": "project:green-factory-2",
+        "node_type": "project",
+        "project_id": "green-factory-2",
+        "title": "市级绿色工厂"
+      },
+      {
+        "node_id": "project:green-factory-3",
+        "node_type": "project",
+        "project_id": "green-factory-3",
+        "title": "浙江省绿色低碳工厂"
+      },
+      {
+        "node_id": "project:green-factory-4",
+        "node_type": "project",
+        "project_id": "green-factory-4",
+        "title": "国家绿色工厂"
+      },
+      {
+        "node_id": "project:hangzhou-enterprise-institute",
+        "node_type": "project",
+        "project_id": "hangzhou-enterprise-institute",
+        "title": "杭州市企业研究院"
+      },
+      {
+        "node_id": "project:hangzhou-enterprise-technology-center",
+        "node_type": "project",
+        "project_id": "hangzhou-enterprise-technology-center",
+        "title": "杭州市企业技术中心"
+      },
+      {
+        "node_id": "project:intelligent-factory",
+        "node_type": "project",
+        "project_id": "intelligent-factory",
+        "title": "浙江省智能工厂"
+      },
+      {
+        "node_id": "project:key-little-giant-support",
+        "node_type": "project",
+        "project_id": "key-little-giant-support",
+        "title": "重点小巨人企业高质量发展奖补项目"
+      },
+      {
+        "node_id": "project:little-giant",
+        "node_type": "project",
+        "project_id": "little-giant",
+        "title": "专精特新小巨人"
+      },
+      {
+        "node_id": "project:manufacturing-single-champion-1",
+        "node_type": "project",
+        "project_id": "manufacturing-single-champion-1",
+        "title": "浙江省制造业单项冠军企业"
+      },
+      {
+        "node_id": "project:manufacturing-single-champion-2",
+        "node_type": "project",
+        "project_id": "manufacturing-single-champion-2",
+        "title": "国家制造业单项冠军企业"
+      },
+      {
+        "node_id": "project:municipal-enterprise-technology-center",
+        "node_type": "project",
+        "project_id": "municipal-enterprise-technology-center",
+        "title": "市级企业技术中心"
+      },
+      {
+        "node_id": "project:national-high-tech-enterprise",
+        "node_type": "project",
+        "project_id": "national-high-tech-enterprise",
+        "title": "高新技术企业"
+      },
+      {
+        "node_id": "project:technology-sme-1",
+        "node_type": "project",
+        "project_id": "technology-sme-1",
+        "title": "浙江省科技型中小企业"
+      },
+      {
+        "node_id": "project:technology-sme-2",
+        "node_type": "project",
+        "project_id": "technology-sme-2",
+        "title": "国家科技型中小企业"
+      },
+      {
+        "node_id": "project:zhejiang-enterprise-institute",
+        "node_type": "project",
+        "project_id": "zhejiang-enterprise-institute",
+        "title": "浙江省企业研究院"
+      },
+      {
+        "node_id": "project:zhejiang-enterprise-technology-center",
+        "node_type": "project",
+        "project_id": "zhejiang-enterprise-technology-center",
+        "title": "浙江省企业技术中心"
+      },
+      {
+        "node_id": "project:zhejiang-hidden-champion",
+        "node_type": "project",
+        "project_id": "zhejiang-hidden-champion",
+        "title": "浙江省隐形冠军企业"
+      },
+      {
+        "node_id": "project:zhejiang-industrial-new-product",
+        "node_type": "project",
+        "project_id": "zhejiang-industrial-new-product",
+        "title": "浙江省工业新产品"
+      },
+      {
+        "node_id": "project:zhejiang-key-enterprise-institute",
+        "node_type": "project",
+        "project_id": "zhejiang-key-enterprise-institute",
+        "title": "浙江省重点企业研究院"
+      },
+      {
+        "node_id": "project:zhejiang-key-specialized-sme",
+        "node_type": "project",
+        "project_id": "zhejiang-key-specialized-sme",
+        "title": "浙江省重点专精特新中小企业"
+      },
+      {
+        "node_id": "project:zhejiang-manufacturing-2",
+        "node_type": "project",
+        "project_id": "zhejiang-manufacturing-2",
+        "title": "品字标浙江制造"
+      },
+      {
+        "node_id": "project:zhejiang-manufacturing-quality",
+        "node_type": "project",
+        "project_id": "zhejiang-manufacturing-quality",
+        "title": "浙江制造精品"
+      },
+      {
+        "node_id": "project:zhejiang-specialized-sme",
+        "node_type": "project",
+        "project_id": "zhejiang-specialized-sme",
+        "title": "专精特新中小企业"
+      }
+    ],
+    "edges": [
+      {
+        "from": "policy:zj-enterprise-tech-center-result-2024",
+        "to": "policy:zj-enterprise-tech-center-method-2019",
+        "relation": "cites"
+      },
+      {
+        "from": "policy:zj-future-factory-assessment-2025",
+        "to": "policy:zj-future-factory-guide-2025",
+        "relation": "cites"
+      },
+      {
+        "from": "policy:zj-future-factory-assessment-2025",
+        "to": "policy:zj-future-factory-guide-2025",
+        "relation": "cites"
+      },
+      {
+        "from": "policy:zj-future-factory-assessment-2025",
+        "to": "policy:zj-future-factory-guide-2025",
+        "relation": "cites"
+      },
+      {
+        "from": "policy:zj-industrial-new-product-result-2023",
+        "to": "policy:zj-manufacturing-quality-2025",
+        "relation": "followed-by"
+      },
+      {
+        "from": "policy:zj-technology-sme-list-2025",
+        "to": "policy:zj-technology-sme-method-2016",
+        "relation": "cites"
+      },
+      {
+        "from": "project:digital-workshop",
+        "to": "policy:zj-future-factory-assessment-2025",
+        "relation": "announced-by"
+      },
+      {
+        "from": "project:digital-workshop",
+        "to": "policy:zj-future-factory-guide-2025",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:first-equipment",
+        "to": "policy:zj-first-equipment-2025",
+        "relation": "announced-by"
+      },
+      {
+        "from": "project:first-material-batch",
+        "to": "policy:zj-first-material-2025",
+        "relation": "announced-by"
+      },
+      {
+        "from": "project:first-software-version",
+        "to": "policy:zj-first-software-directory-2025",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:future-factory",
+        "to": "policy:zj-future-factory-assessment-2025",
+        "relation": "announced-by"
+      },
+      {
+        "from": "project:future-factory",
+        "to": "policy:zj-future-factory-guide-2025",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:green-factory-1",
+        "to": "policy:zj-green-low-carbon-guide-2024",
+        "relation": "upper-level-basis"
+      },
+      {
+        "from": "project:green-factory-2",
+        "to": "policy:zj-green-low-carbon-guide-2024",
+        "relation": "upper-level-basis"
+      },
+      {
+        "from": "project:green-factory-3",
+        "to": "policy:zj-green-low-carbon-guide-2024",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:green-factory-4",
+        "to": "policy:green-factory-4-confirmed-1719bb1fcf6b",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:green-factory-4",
+        "to": "policy:green-factory-4-confirmed-3bf386505031",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:green-factory-4",
+        "to": "policy:green-factory-4-confirmed-576b02c3f5b9",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:green-factory-4",
+        "to": "policy:green-factory-4-confirmed-7ce4edf533b9",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:green-factory-4",
+        "to": "policy:green-factory-4-confirmed-ecd28bef0f3d",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:hangzhou-enterprise-institute",
+        "to": "policy:hangzhou-enterprise-rd-center-2022",
+        "relation": "canonical-project-correction"
+      },
+      {
+        "from": "project:hangzhou-enterprise-technology-center",
+        "to": "policy:hangzhou-enterprise-tech-center-2018",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:intelligent-factory",
+        "to": "policy:zj-future-factory-assessment-2025",
+        "relation": "announced-by"
+      },
+      {
+        "from": "project:intelligent-factory",
+        "to": "policy:zj-future-factory-guide-2025",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:key-little-giant-support",
+        "to": "policy:national-key-little-giant-support-2024",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:little-giant",
+        "to": "policy:little-giant-confirmed-1f636aee1e30",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:little-giant",
+        "to": "policy:little-giant-confirmed-940f39f83868",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:manufacturing-single-champion-1",
+        "to": "policy:zj-single-champion-method-2025",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:manufacturing-single-champion-2",
+        "to": "policy:manufacturing-single-champion-2-confirmed-89e6b409845b",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:manufacturing-single-champion-2",
+        "to": "policy:manufacturing-single-champion-2-confirmed-d5d9f4ac5d4b",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:municipal-enterprise-technology-center",
+        "to": "policy:zj-enterprise-tech-center-method-2019",
+        "relation": "upper-level-basis"
+      },
+      {
+        "from": "project:national-high-tech-enterprise",
+        "to": "policy:national-high-tech-enterprise-confirmed-1b0e3079a65d",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:national-high-tech-enterprise",
+        "to": "policy:national-high-tech-enterprise-confirmed-e87f259ac1af",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:technology-sme-1",
+        "to": "policy:zj-technology-sme-list-2025",
+        "relation": "current-citation-evidence"
+      },
+      {
+        "from": "project:technology-sme-1",
+        "to": "policy:zj-technology-sme-method-2016",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:technology-sme-2",
+        "to": "policy:technology-sme-2-confirmed-511d20378f48",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:technology-sme-2",
+        "to": "policy:technology-sme-2-confirmed-cba724b9523e",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-enterprise-institute",
+        "to": "policy:zhejiang-enterprise-institute-confirmed-a0a0e12563d9",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-enterprise-institute",
+        "to": "policy:zhejiang-enterprise-institute-confirmed-e5c39eb56b43",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-enterprise-technology-center",
+        "to": "policy:zj-enterprise-tech-center-method-2019",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-enterprise-technology-center",
+        "to": "policy:zj-enterprise-tech-center-result-2024",
+        "relation": "current-citation-evidence"
+      },
+      {
+        "from": "project:zhejiang-hidden-champion",
+        "to": "policy:zj-hidden-champion-2025",
+        "relation": "announced-by"
+      },
+      {
+        "from": "project:zhejiang-industrial-new-product",
+        "to": "policy:zj-industrial-new-product-result-2023",
+        "relation": "historical-evidence"
+      },
+      {
+        "from": "project:zhejiang-industrial-new-product",
+        "to": "policy:zj-manufacturing-quality-2025",
+        "relation": "successor-route"
+      },
+      {
+        "from": "project:zhejiang-key-enterprise-institute",
+        "to": "policy:zhejiang-key-enterprise-institute-confirmed-a0a0e12563d9",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-key-enterprise-institute",
+        "to": "policy:zhejiang-key-enterprise-institute-confirmed-e5c39eb56b43",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-key-specialized-sme",
+        "to": "policy:zj-key-specialized-sme-2026",
+        "relation": "announced-by"
+      },
+      {
+        "from": "project:zhejiang-manufacturing-2",
+        "to": "policy:pin-zi-biao-authorization-current",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-manufacturing-quality",
+        "to": "policy:zj-manufacturing-quality-2025",
+        "relation": "announced-by"
+      },
+      {
+        "from": "project:zhejiang-specialized-sme",
+        "to": "policy:zhejiang-specialized-sme-confirmed-1f636aee1e30",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:zhejiang-specialized-sme",
+        "to": "policy:zhejiang-specialized-sme-confirmed-940f39f83868",
+        "relation": "governed-by"
+      }
+    ],
+    "execution_document_ids": [
+      "green-factory-4-confirmed-1719bb1fcf6b",
+      "green-factory-4-confirmed-3bf386505031",
+      "green-factory-4-confirmed-576b02c3f5b9",
+      "green-factory-4-confirmed-7ce4edf533b9",
+      "green-factory-4-confirmed-ecd28bef0f3d",
+      "hangzhou-enterprise-rd-center-2022",
+      "hangzhou-enterprise-tech-center-2018",
+      "little-giant-confirmed-1f636aee1e30",
+      "little-giant-confirmed-940f39f83868",
+      "manufacturing-single-champion-2-confirmed-89e6b409845b",
+      "manufacturing-single-champion-2-confirmed-d5d9f4ac5d4b",
+      "national-high-tech-enterprise-confirmed-1b0e3079a65d",
+      "national-high-tech-enterprise-confirmed-e87f259ac1af",
+      "national-key-little-giant-support-2024",
+      "pin-zi-biao-authorization-current",
+      "technology-sme-2-confirmed-511d20378f48",
+      "technology-sme-2-confirmed-cba724b9523e",
+      "zhejiang-enterprise-institute-confirmed-a0a0e12563d9",
+      "zhejiang-enterprise-institute-confirmed-e5c39eb56b43",
+      "zhejiang-key-enterprise-institute-confirmed-a0a0e12563d9",
+      "zhejiang-key-enterprise-institute-confirmed-e5c39eb56b43",
+      "zhejiang-specialized-sme-confirmed-1f636aee1e30",
+      "zhejiang-specialized-sme-confirmed-940f39f83868",
+      "zj-enterprise-tech-center-method-2019",
+      "zj-enterprise-tech-center-result-2024",
+      "zj-first-equipment-2025",
+      "zj-first-material-2025",
+      "zj-first-software-directory-2025",
+      "zj-future-factory-assessment-2025",
+      "zj-future-factory-guide-2025",
+      "zj-green-low-carbon-guide-2024",
+      "zj-hidden-champion-2025",
+      "zj-industrial-new-product-result-2023",
+      "zj-key-specialized-sme-2026",
+      "zj-manufacturing-quality-2025",
+      "zj-single-champion-method-2025",
+      "zj-technology-sme-list-2025",
+      "zj-technology-sme-method-2016"
+    ],
+    "cold_archive_document_ids": [],
+    "content_hash": "1ce8ce09f4ff48e31ea550ba48c3cfee0b1c782cf85a73d743075a03cc02454e"
+  },
+  "policy_execution_window": {
+    "as_of_year": 2026,
+    "window_years": 5,
+    "start_year": 2022,
+    "end_year": 2026,
+    "exception_flags": [
+      "still_effective",
+      "cited_by_current_notice",
+      "current_upstream_basis"
+    ]
+  },
   "metrics": {
     "project_count": 29,
     "rules_confirmed_count": 8,
-    "routing_only_count": 21,
-    "shared_kernel_count": 9
+    "policy_baseline_count": 21,
+    "policy_covered_count": 29,
+    "routing_only_count": 0,
+    "shared_kernel_count": 9,
+    "policy_dependency_nodes": 67,
+    "policy_dependency_edges": 52,
+    "execution_policy_documents": 38,
+    "cold_archive_policy_documents": 0
   }
 }

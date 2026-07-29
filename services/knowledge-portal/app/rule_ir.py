@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Mapping, Sequence
+
+from app.policy_lifecycle import build_policy_dependency_graph
 
 
 RULE_IR_SCHEMA_VERSION = 1
@@ -73,6 +76,85 @@ def policy_version_id(
     return f"policy-{content_digest(basis)[:20]}"
 
 
+def _derived_confirmed_rule_baseline(
+    project: Mapping[str, object],
+) -> dict[str, object]:
+    documents: list[dict[str, object]] = []
+    seen: set[tuple[str, str]] = set()
+    layers = [
+        layer
+        for layer in project.get("rule_layers", [])
+        if isinstance(layer, Mapping)
+    ]
+    rules = [
+        rule
+        for layer in layers
+        for rule in layer.get("rules", [])
+        if isinstance(rule, Mapping)
+    ] or [
+        rule
+        for rule in project.get("rule_cards", [])
+        if isinstance(rule, Mapping)
+    ]
+    for rule in rules:
+        title = str(rule.get("source") or "").strip()
+        url = str(rule.get("source_url") or "").strip()
+        if not title and not url:
+            continue
+        source_key = (title, url)
+        if source_key in seen:
+            continue
+        seen.add(source_key)
+        approved_at = str(rule.get("approved_at") or "")
+        year_match = re.search(r"(20\d{2})", approved_at + title)
+        documents.append(
+            {
+                "document_id": (
+                    f"{project.get('project_id')}-confirmed-"
+                    f"{content_digest(source_key)[:12]}"
+                ),
+                "title": title or url,
+                "issued_year": int(year_match.group(1)) if year_match else 0,
+                "status": "current",
+                "authority": "正式规则源所载主管部门",
+                "official_url": url,
+                "relation": "governed-by",
+                "current_upstream_basis": True,
+            }
+        )
+    return {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": documents,
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards",
+    }
+
+
+def apply_policy_baselines(
+    packs: Sequence[Mapping[str, object]],
+    baseline_registry: Mapping[str, object] | None,
+) -> list[dict[str, object]]:
+    registry_by_project = {
+        str(item.get("project_id") or ""): dict(item)
+        for item in (baseline_registry or {}).get("baselines", [])
+        if isinstance(item, Mapping) and str(item.get("project_id") or "")
+    }
+    enriched: list[dict[str, object]] = []
+    for raw_pack in packs:
+        pack = dict(raw_pack)
+        project_id = str(pack.get("project_id") or "")
+        baseline = registry_by_project.get(project_id)
+        if baseline:
+            pack["policy_baseline"] = baseline
+            if str(pack.get("coverage_status") or "") == "routing-only":
+                pack["coverage_status"] = "policy-baseline-confirmed"
+        elif str(pack.get("coverage_status") or "") == "rules-confirmed":
+            pack["policy_baseline"] = _derived_confirmed_rule_baseline(pack)
+        enriched.append(pack)
+    return enriched
+
+
 def build_algorithm_card(
     project: Mapping[str, object],
     lifecycle_rule: Mapping[str, object] | None = None,
@@ -109,7 +191,12 @@ def build_algorithm_card(
         "decision_boundary": (
             "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。"
             if coverage_status == "rules-confirmed"
-            else "仅识别项目并路由政策证据，不直接形成符合或不符合结论。"
+            else (
+                "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，"
+                "仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。"
+                if coverage_status == "policy-baseline-confirmed"
+                else "仅识别项目并路由政策证据，不直接形成符合或不符合结论。"
+            )
         ),
         "policy_version_id": policy_version_id(project, lifecycle_rule),
         "inputs": {
@@ -146,9 +233,19 @@ def build_algorithm_card(
             "pack_validation": True,
             "gold_case_count": len(project.get("gold_cases", [])),
             "formal_decision_enabled": coverage_status == "rules-confirmed",
+            "policy_baseline_complete": coverage_status in {
+                "rules-confirmed",
+                "policy-baseline-confirmed",
+            },
         },
         "limitations": [
-            "routing-only项目尚未具备正式门槛规则",
+            (
+                "政策基线完整但尚未编译全部门槛规则"
+                if coverage_status == "policy-baseline-confirmed"
+                else "routing-only项目尚未具备正式门槛规则"
+                if coverage_status == "routing-only"
+                else "年度通知与属地覆盖仍须按查询时点选择"
+            ),
             "名单未披露或主体匹配冲突时只能输出待核验",
             "算法不替代主管部门最终审核结论",
         ],
@@ -159,10 +256,11 @@ def compile_rule_ir(
     packs: Sequence[Mapping[str, object]],
     lifecycle_payload: Mapping[str, object],
     fact_contract: Mapping[str, object],
+    baseline_registry: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     lifecycle_rules = lifecycle_rule_index(lifecycle_payload)
     sorted_packs = sorted(
-        (dict(pack) for pack in packs),
+        apply_policy_baselines(packs, baseline_registry),
         key=lambda item: str(item.get("project_id") or ""),
     )
     source_basis = {
@@ -171,6 +269,7 @@ def compile_rule_ir(
         "fact_contract": fact_contract,
         "compiler_schema": RULE_IR_SCHEMA_VERSION,
         "kernel_version": SHARED_KERNEL_VERSION,
+        "policy_baseline_registry": dict(baseline_registry or {}),
     }
     source_digest = content_digest(source_basis)
     projects: dict[str, dict[str, object]] = {}
@@ -209,6 +308,25 @@ def compile_rule_ir(
             )
             if normalized:
                 alias_index.setdefault(normalized, []).append(project_id)
+    as_of_year = int((baseline_registry or {}).get("as_of_year") or 2026)
+    window_years = int((baseline_registry or {}).get("window_years") or 5)
+    dependency_graph = build_policy_dependency_graph(
+        sorted_packs,
+        as_of_year=as_of_year,
+        window_years=window_years,
+    )
+    rules_confirmed_count = sum(
+        str(pack.get("coverage_status") or "") == "rules-confirmed"
+        for pack in sorted_packs
+    )
+    policy_baseline_count = sum(
+        str(pack.get("coverage_status") or "") == "policy-baseline-confirmed"
+        for pack in sorted_packs
+    )
+    routing_only_count = sum(
+        str(pack.get("coverage_status") or "") == "routing-only"
+        for pack in sorted_packs
+    )
     return {
         "schema_version": RULE_IR_SCHEMA_VERSION,
         "ir_type": "jiaotang-unified-project-rule-ir",
@@ -227,17 +345,33 @@ def compile_rule_ir(
             "project_to_policy_version": policy_index,
         },
         "algorithm_cards": algorithm_cards,
+        "policy_dependency_graph": dependency_graph,
+        "policy_execution_window": {
+            "as_of_year": as_of_year,
+            "window_years": window_years,
+            "start_year": as_of_year - window_years + 1,
+            "end_year": as_of_year,
+            "exception_flags": [
+                "still_effective",
+                "cited_by_current_notice",
+                "current_upstream_basis",
+            ],
+        },
         "metrics": {
             "project_count": len(projects),
-            "rules_confirmed_count": sum(
-                str(pack.get("coverage_status") or "") == "rules-confirmed"
-                for pack in sorted_packs
-            ),
-            "routing_only_count": sum(
-                str(pack.get("coverage_status") or "") != "rules-confirmed"
-                for pack in sorted_packs
-            ),
+            "rules_confirmed_count": rules_confirmed_count,
+            "policy_baseline_count": policy_baseline_count,
+            "policy_covered_count": rules_confirmed_count + policy_baseline_count,
+            "routing_only_count": routing_only_count,
             "shared_kernel_count": len(SHARED_EXECUTION_KERNELS),
+            "policy_dependency_nodes": len(dependency_graph["nodes"]),
+            "policy_dependency_edges": len(dependency_graph["edges"]),
+            "execution_policy_documents": len(
+                dependency_graph["execution_document_ids"]
+            ),
+            "cold_archive_policy_documents": len(
+                dependency_graph["cold_archive_document_ids"]
+            ),
         },
     }
 

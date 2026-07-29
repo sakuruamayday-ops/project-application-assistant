@@ -1,0 +1,468 @@
+{
+  "schema_version": 1,
+  "as_of_date": "2026-07-29",
+  "as_of_year": 2026,
+  "window_years": 5,
+  "selection_rule": "默认执行当前年度及前4年政策；仍然有效、被最新通知明确引用或属于现行上位依据的早期文件继续进入执行集；其余文件进入冷归档。",
+  "discovery_rule": "企策顾问仅用于标题、时间、附件和检索线索发现；正式基线以政府或主管机构原文核验结果为准。",
+  "baselines": [
+    {
+      "project_id": "digital-workshop",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-annual-overlay",
+      "inception_year": 2020,
+      "policy_documents": [
+        {
+          "document_id": "zj-future-factory-guide-2025",
+          "title": "未来工厂梯度培育工作实施指南（试行）",
+          "issued_year": 2025,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
+          "relation": "governed-by"
+        },
+        {
+          "document_id": "zj-future-factory-assessment-2025",
+          "title": "关于开展2025年浙江省未来工厂和智能工厂、数字化车间评定工作的通知",
+          "issued_year": 2025,
+          "status": "latest-complete-cycle",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288615",
+          "relation": "announced-by"
+        }
+      ],
+      "dependencies": [
+        {
+          "from_document_id": "zj-future-factory-assessment-2025",
+          "to_document_id": "zj-future-factory-guide-2025",
+          "relation": "cites"
+        }
+      ]
+    },
+    {
+      "project_id": "intelligent-factory",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-annual-overlay",
+      "inception_year": 2020,
+      "policy_documents": [
+        {
+          "document_id": "zj-future-factory-guide-2025",
+          "title": "未来工厂梯度培育工作实施指南（试行）",
+          "issued_year": 2025,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
+          "relation": "governed-by"
+        },
+        {
+          "document_id": "zj-future-factory-assessment-2025",
+          "title": "关于开展2025年浙江省未来工厂和智能工厂、数字化车间评定工作的通知",
+          "issued_year": 2025,
+          "status": "latest-complete-cycle",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288615",
+          "relation": "announced-by"
+        }
+      ],
+      "dependencies": [
+        {
+          "from_document_id": "zj-future-factory-assessment-2025",
+          "to_document_id": "zj-future-factory-guide-2025",
+          "relation": "cites"
+        }
+      ]
+    },
+    {
+      "project_id": "future-factory",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-annual-overlay",
+      "inception_year": 2020,
+      "policy_documents": [
+        {
+          "document_id": "zj-future-factory-guide-2025",
+          "title": "未来工厂梯度培育工作实施指南（试行）",
+          "issued_year": 2025,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
+          "relation": "governed-by"
+        },
+        {
+          "document_id": "zj-future-factory-assessment-2025",
+          "title": "关于开展2025年浙江省未来工厂和智能工厂、数字化车间评定工作的通知",
+          "issued_year": 2025,
+          "status": "latest-complete-cycle",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288615",
+          "relation": "announced-by"
+        }
+      ],
+      "dependencies": [
+        {
+          "from_document_id": "zj-future-factory-assessment-2025",
+          "to_document_id": "zj-future-factory-guide-2025",
+          "relation": "cites"
+        }
+      ]
+    },
+    {
+      "project_id": "first-equipment",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-annual-overlay",
+      "policy_documents": [
+        {
+          "document_id": "zj-first-equipment-2025",
+          "title": "浙江省经济和信息化厅 浙江省财政厅关于组织2025年度浙江省首台（套）装备认定工作的通知",
+          "issued_year": 2025,
+          "status": "latest-complete-cycle",
+          "authority": "浙江省经济和信息化厅、浙江省财政厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=290239",
+          "relation": "announced-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "first-material-batch",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-directory-branch",
+      "policy_documents": [
+        {
+          "document_id": "zj-first-material-2025",
+          "title": "关于开展2025年度浙江省首批次新材料认定工作的通知",
+          "issued_year": 2025,
+          "status": "latest-complete-cycle",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3499/site/attach/0/6922fc25da0e4fde84582f6d7a3d9ff1.pdf",
+          "relation": "announced-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "first-software-version",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-directory-branch",
+      "policy_documents": [
+        {
+          "document_id": "zj-first-software-directory-2025",
+          "title": "浙江省经济和信息化厅关于公布《2025年浙江省首版次软件产品应用推广指导目录》的通知",
+          "issued_year": 2025,
+          "status": "current-directory",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293873",
+          "relation": "governed-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "green-factory-1",
+      "baseline_status": "complete",
+      "decision_mode": "jurisdiction-required",
+      "policy_documents": [
+        {
+          "document_id": "zj-green-low-carbon-guide-2024",
+          "title": "浙江省绿色低碳工业园区、工厂建设评价导则（2024版）",
+          "issued_year": 2024,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+          "relation": "upper-level-basis"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "green-factory-2",
+      "baseline_status": "complete",
+      "decision_mode": "jurisdiction-required",
+      "policy_documents": [
+        {
+          "document_id": "zj-green-low-carbon-guide-2024",
+          "title": "浙江省绿色低碳工业园区、工厂建设评价导则（2024版）",
+          "issued_year": 2024,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+          "relation": "upper-level-basis"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "green-factory-3",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-jurisdiction-overlay",
+      "policy_documents": [
+        {
+          "document_id": "zj-green-low-carbon-guide-2024",
+          "title": "浙江省绿色低碳工业园区、工厂建设评价导则（2024版）",
+          "issued_year": 2024,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+          "relation": "governed-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "hangzhou-enterprise-institute",
+      "baseline_status": "complete",
+      "decision_mode": "current-local-rule",
+      "policy_documents": [
+        {
+          "document_id": "hangzhou-enterprise-rd-center-2022",
+          "title": "杭州市企业高新技术研究开发中心管理办法",
+          "issued_year": 2022,
+          "status": "current",
+          "authority": "杭州市科学技术局",
+          "official_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
+          "relation": "canonical-project-correction"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "hangzhou-enterprise-technology-center",
+      "baseline_status": "complete",
+      "decision_mode": "current-local-rule-with-annual-overlay",
+      "policy_documents": [
+        {
+          "document_id": "hangzhou-enterprise-tech-center-2018",
+          "title": "杭州市企业技术中心管理办法",
+          "issued_year": 2018,
+          "status": "current",
+          "authority": "杭州市经济和信息化局",
+          "official_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
+          "relation": "governed-by",
+          "still_effective": true,
+          "cited_by_current_notice": true
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "municipal-enterprise-technology-center",
+      "baseline_status": "complete",
+      "decision_mode": "jurisdiction-required",
+      "policy_documents": [
+        {
+          "document_id": "zj-enterprise-tech-center-method-2019",
+          "title": "浙江省企业技术中心管理办法",
+          "issued_year": 2019,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+          "relation": "upper-level-basis",
+          "still_effective": true,
+          "current_upstream_basis": true
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "zhejiang-enterprise-technology-center",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-annual-overlay",
+      "policy_documents": [
+        {
+          "document_id": "zj-enterprise-tech-center-method-2019",
+          "title": "浙江省企业技术中心管理办法",
+          "issued_year": 2019,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+          "relation": "governed-by",
+          "still_effective": true,
+          "cited_by_current_notice": true
+        },
+        {
+          "document_id": "zj-enterprise-tech-center-result-2024",
+          "title": "关于公布制造业和高技术服务业领域2024年浙江省企业技术中心名单的通知",
+          "issued_year": 2025,
+          "status": "current-evidence",
+          "authority": "浙江省经济和信息化厅等四部门",
+          "official_url": "https://jxt.zj.gov.cn/art/2025/1/8/art_1582899_27830.html",
+          "relation": "current-citation-evidence"
+        }
+      ],
+      "dependencies": [
+        {
+          "from_document_id": "zj-enterprise-tech-center-result-2024",
+          "to_document_id": "zj-enterprise-tech-center-method-2019",
+          "relation": "cites"
+        }
+      ]
+    },
+    {
+      "project_id": "key-little-giant-support",
+      "baseline_status": "complete",
+      "decision_mode": "current-central-support-cycle",
+      "policy_documents": [
+        {
+          "document_id": "national-key-little-giant-support-2024",
+          "title": "财政部 工业和信息化部关于进一步支持专精特新中小企业高质量发展的通知",
+          "issued_year": 2024,
+          "status": "current-2024-2026",
+          "authority": "财政部、工业和信息化部",
+          "official_url": "https://www.miit.gov.cn/xwdt/gxdt/art/2024/art_8df1cf7787fb4e3589bd5233022a51e7.html",
+          "relation": "governed-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "manufacturing-single-champion-1",
+      "baseline_status": "complete",
+      "decision_mode": "current-provincial-rule",
+      "policy_documents": [
+        {
+          "document_id": "zj-single-champion-method-2025",
+          "title": "浙江省制造业单项冠军企业认定管理办法（试行）",
+          "issued_year": 2025,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363",
+          "relation": "governed-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "technology-sme-1",
+      "baseline_status": "complete",
+      "decision_mode": "still-effective-rule-with-current-evidence",
+      "policy_documents": [
+        {
+          "document_id": "zj-technology-sme-method-2016",
+          "title": "浙江省科技型中小企业认定管理办法",
+          "issued_year": 2016,
+          "status": "current",
+          "authority": "浙江省科学技术厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/extSmeCustBaseSearch.do?ID=70350&action=custServDetail&sid=",
+          "relation": "governed-by",
+          "still_effective": true,
+          "cited_by_current_notice": true
+        },
+        {
+          "document_id": "zj-technology-sme-list-2025",
+          "title": "关于公布2025年度浙江省科技型中小企业备案名单的通告",
+          "issued_year": 2025,
+          "status": "current-evidence",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=294092",
+          "relation": "current-citation-evidence"
+        }
+      ],
+      "dependencies": [
+        {
+          "from_document_id": "zj-technology-sme-list-2025",
+          "to_document_id": "zj-technology-sme-method-2016",
+          "relation": "cites"
+        }
+      ]
+    },
+    {
+      "project_id": "zhejiang-hidden-champion",
+      "baseline_status": "complete",
+      "decision_mode": "latest-rule-with-review-cycle",
+      "policy_documents": [
+        {
+          "document_id": "zj-hidden-champion-2025",
+          "title": "关于开展2025年浙江省隐形冠军企业认定和复核工作的通知",
+          "issued_year": 2025,
+          "status": "latest-complete-cycle",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6181240",
+          "relation": "announced-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "zhejiang-industrial-new-product",
+      "baseline_status": "complete",
+      "decision_mode": "historical-replay-with-successor-routing",
+      "policy_documents": [
+        {
+          "document_id": "zj-industrial-new-product-result-2023",
+          "title": "2023年度省优秀工业新产品拟认定名单",
+          "issued_year": 2023,
+          "status": "historical-last-confirmed",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=490d5583993f405a92d0cbdee4b69f0c.pdf",
+          "relation": "historical-evidence"
+        },
+        {
+          "document_id": "zj-manufacturing-quality-2025",
+          "title": "关于组织开展2025年“浙江制造精品”遴选工作的通知",
+          "issued_year": 2025,
+          "status": "successor-current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
+          "relation": "successor-route"
+        }
+      ],
+      "dependencies": [
+        {
+          "from_document_id": "zj-industrial-new-product-result-2023",
+          "to_document_id": "zj-manufacturing-quality-2025",
+          "relation": "followed-by"
+        }
+      ]
+    },
+    {
+      "project_id": "zhejiang-key-specialized-sme",
+      "baseline_status": "complete",
+      "decision_mode": "latest-provincial-support-cycle",
+      "policy_documents": [
+        {
+          "document_id": "zj-key-specialized-sme-2026",
+          "title": "关于组织实施2026年度支持专精特新中小企业高质量发展项目的通知",
+          "issued_year": 2025,
+          "status": "current-2026-cycle",
+          "authority": "浙江省经济和信息化厅、浙江省财政厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293014",
+          "relation": "announced-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "zhejiang-manufacturing-2",
+      "baseline_status": "complete",
+      "decision_mode": "certification-or-self-declaration",
+      "policy_documents": [
+        {
+          "document_id": "pin-zi-biao-authorization-current",
+          "title": "品字标浙江制造品牌标识使用授权申报要求",
+          "issued_year": 2025,
+          "status": "current",
+          "authority": "浙江省市场监督管理局指导、浙江省品牌建设联合会实施",
+          "official_url": "https://zhejiangmade.zjamr.zj.gov.cn/Web/Apply/ProductLooked/ProductDoc.aspx",
+          "relation": "governed-by"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "project_id": "zhejiang-manufacturing-quality",
+      "baseline_status": "complete",
+      "decision_mode": "latest-annual-rule",
+      "policy_documents": [
+        {
+          "document_id": "zj-manufacturing-quality-2025",
+          "title": "关于组织开展2025年“浙江制造精品”遴选工作的通知",
+          "issued_year": 2025,
+          "status": "latest-complete-cycle",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
+          "relation": "announced-by"
+        }
+      ],
+      "dependencies": []
+    }
+  ]
+}

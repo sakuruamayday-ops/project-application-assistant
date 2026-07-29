@@ -729,7 +729,9 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
         client.cookies.update(login.cookies)
         response = client.get("/algorithms")
         confirmed_response = client.get("/algorithms?coverage=rules-confirmed")
-        routing_catalog_response = client.get("/algorithms?coverage=routing-only")
+        baseline_catalog_response = client.get(
+            "/algorithms?coverage=policy-baseline-confirmed"
+        )
         detail_response = client.get("/algorithms?project=little-giant")
         routing_response = client.get("/algorithms?project=first-equipment")
 
@@ -738,10 +740,10 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "项目算法包" in response.text
     assert "显示 29 / 29 个项目" in response.text
     assert "正式规则包" in response.text
-    assert "检索路由包" in response.text
+    assert "政策基线包" in response.text
     assert "近7日查询" in response.text
-    assert "当前首要补齐" in response.text
-    assert "只检索与核验，不直接下结论" in response.text
+    assert "纯检索路由" in response.text
+    assert "最新办法、年度通知与依赖关系已补齐" in response.text
     assert "稳定管理办法" in response.text
     assert "点击清单中的项目" in response.text
     assert 'href="/algorithms?coverage=rules-confirmed#algorithm-catalog"' in response.text
@@ -750,10 +752,10 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "显示 8 / 29 个项目" in confirmed_response.text
     assert "专精特新小巨人" in confirmed_response.text
     assert "区级绿色工厂" not in confirmed_response.text
-    assert routing_catalog_response.status_code == 200
-    assert "显示 21 / 29 个项目" in routing_catalog_response.text
-    assert "区级绿色工厂" in routing_catalog_response.text
-    assert 'href="/algorithms?project=little-giant#algorithm-detail"' not in routing_catalog_response.text
+    assert baseline_catalog_response.status_code == 200
+    assert "显示 21 / 29 个项目" in baseline_catalog_response.text
+    assert "区级绿色工厂" in baseline_catalog_response.text
+    assert 'href="/algorithms?project=little-giant#algorithm-detail"' not in baseline_catalog_response.text
     assert detail_response.status_code == 200
     assert 'href="/algorithms#algorithm-catalog" data-force-navigation' in detail_response.text
     assert "用途说明" in detail_response.text
@@ -761,8 +763,9 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "little-giant-revenue" in detail_response.text
     assert "查看官方原文" in detail_response.text
     assert routing_response.status_code == 200
-    assert "为什么暂时没有门槛源代码" in routing_response.text
-    assert "正式门槛尚未逐项确认" in routing_response.text
+    assert "为什么尚不直接给出符合或不符合" in routing_response.text
+    assert "完整门槛尚未全部编译" in routing_response.text
+    assert "组织2025年度浙江省首台（套）装备认定" in routing_response.text
 
 
 def test_project_usage_metadata_covers_rest_and_mcp_searches(tmp_path):

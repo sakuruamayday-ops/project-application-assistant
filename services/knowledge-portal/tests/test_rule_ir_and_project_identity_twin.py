@@ -8,9 +8,15 @@ from app.project_identity_twin import (
     replay_twin,
 )
 from app.rule_ir import (
+    apply_policy_baselines,
     compile_rule_ir,
     compiled_projects,
     write_compiled_rule_ir,
+)
+from app.policy_lifecycle import (
+    build_policy_dependency_graph,
+    policy_document_in_execution_window,
+    rolling_policy_window,
 )
 
 
@@ -77,6 +83,116 @@ def test_rule_ir_changes_only_when_source_content_changes():
     assert (
         first["projects"]["sample"]["source_content_hash"]
         != changed["projects"]["sample"]["source_content_hash"]
+    )
+
+
+def test_rolling_policy_window_keeps_current_old_policy_as_exception():
+    assert rolling_policy_window(2026) == {
+        "start_year": 2022,
+        "end_year": 2026,
+        "window_years": 5,
+    }
+    included, reason = policy_document_in_execution_window(
+        {
+            "issued_year": 2019,
+            "status": "current",
+            "cited_by_current_notice": True,
+        },
+        as_of_year=2026,
+    )
+    assert included is True
+    assert reason == "cited-by-current-notice"
+    archived, archive_reason = policy_document_in_execution_window(
+        {"issued_year": 2019, "status": "historical"},
+        as_of_year=2026,
+    )
+    assert archived is False
+    assert archive_reason == "cold-archive"
+
+
+def test_policy_baseline_enrichment_and_dependency_graph():
+    baseline = {
+        "as_of_year": 2026,
+        "window_years": 5,
+        "baselines": [
+            {
+                "project_id": "sample",
+                "baseline_status": "complete",
+                "decision_mode": "latest-rule",
+                "policy_documents": [
+                    {
+                        "document_id": "sample-method",
+                        "title": "示例管理办法",
+                        "issued_year": 2021,
+                        "status": "current",
+                        "authority": "示例主管部门",
+                        "official_url": "https://example.gov.cn/method",
+                        "relation": "governed-by",
+                        "still_effective": True,
+                    },
+                    {
+                        "document_id": "sample-notice",
+                        "title": "2025年度通知",
+                        "issued_year": 2025,
+                        "status": "latest-complete-cycle",
+                        "authority": "示例主管部门",
+                        "official_url": "https://example.gov.cn/notice",
+                        "relation": "announced-by",
+                    },
+                ],
+                "dependencies": [
+                    {
+                        "from_document_id": "sample-notice",
+                        "to_document_id": "sample-method",
+                        "relation": "cites",
+                    }
+                ],
+            }
+        ],
+    }
+    routing_pack = sample_pack()
+    routing_pack["coverage_status"] = "routing-only"
+    routing_pack["rule_cards"] = []
+    routing_pack["rule_layers"] = []
+    enriched = apply_policy_baselines([routing_pack], baseline)
+    assert enriched[0]["coverage_status"] == "policy-baseline-confirmed"
+    graph = build_policy_dependency_graph(enriched, as_of_year=2026)
+    assert len(graph["nodes"]) == 3
+    assert any(edge["relation"] == "cites" for edge in graph["edges"])
+    assert graph["cold_archive_document_ids"] == []
+
+
+def test_repository_policy_baselines_cover_every_nonformal_project():
+    portal_dir = Path(__file__).resolve().parents[1]
+    baseline_registry = json.loads(
+        (
+            portal_dir / "references" / "project-policy-baselines.json"
+        ).read_text(encoding="utf-8")
+    )
+    packs = [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in sorted(
+            (
+                portal_dir / "references" / "project-algorithm-packs"
+            ).glob("*.json")
+        )
+    ]
+    routing_ids = {
+        str(pack["project_id"])
+        for pack in packs
+        if pack.get("coverage_status") == "routing-only"
+    }
+    baseline_ids = {
+        str(item["project_id"])
+        for item in baseline_registry["baselines"]
+        if item.get("baseline_status") == "complete"
+    }
+    assert len(routing_ids) == 21
+    assert baseline_ids == routing_ids
+    assert all(
+        str(document.get("official_url") or "").startswith("https://")
+        for item in baseline_registry["baselines"]
+        for document in item["policy_documents"]
     )
 
 

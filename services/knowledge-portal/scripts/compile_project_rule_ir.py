@@ -48,6 +48,11 @@ def main() -> int:
         default=PORTAL_DIR / "references" / "lifecycle-fact-contract.json",
     )
     parser.add_argument(
+        "--policy-baselines",
+        type=Path,
+        default=PORTAL_DIR / "references" / "project-policy-baselines.json",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=PORTAL_DIR / "references" / "compiled-project-rule-ir.json",
@@ -61,9 +66,19 @@ def main() -> int:
     packs = load_algorithm_packs(arguments.packs_dir)
     lifecycle_payload = read_json(arguments.lifecycle_rules)
     fact_contract = read_json(arguments.fact_contract)
-    if not isinstance(lifecycle_payload, dict) or not isinstance(fact_contract, dict):
-        raise ValueError("生命周期规则和事实契约顶层必须为对象")
-    payload = compile_rule_ir(packs, lifecycle_payload, fact_contract)
+    baseline_registry = read_json(arguments.policy_baselines)
+    if (
+        not isinstance(lifecycle_payload, dict)
+        or not isinstance(fact_contract, dict)
+        or not isinstance(baseline_registry, dict)
+    ):
+        raise ValueError("生命周期规则、事实契约和政策基线顶层必须为对象")
+    payload = compile_rule_ir(
+        packs,
+        lifecycle_payload,
+        fact_contract,
+        baseline_registry,
+    )
     bundle_status = write_compiled_rule_ir(arguments.output, payload)
     card_statuses = {
         project_id: write_card(
@@ -78,6 +93,16 @@ def main() -> int:
         "source_digest": payload["source_digest"],
         "project_count": payload["metrics"]["project_count"],
         "shared_kernel_count": payload["metrics"]["shared_kernel_count"],
+        "rules_confirmed_count": payload["metrics"]["rules_confirmed_count"],
+        "policy_baseline_count": payload["metrics"]["policy_baseline_count"],
+        "policy_covered_count": payload["metrics"]["policy_covered_count"],
+        "routing_only_count": payload["metrics"]["routing_only_count"],
+        "policy_dependency_nodes": payload["metrics"][
+            "policy_dependency_nodes"
+        ],
+        "policy_dependency_edges": payload["metrics"][
+            "policy_dependency_edges"
+        ],
         "cards_compiled": sum(status == "compiled" for status in card_statuses.values()),
         "cards_reused": sum(status == "hash_reused" for status in card_statuses.values()),
         "output": str(arguments.output),

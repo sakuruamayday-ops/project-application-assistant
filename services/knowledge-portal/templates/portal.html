@@ -81,7 +81,7 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
         <div class="section-heading"><div><p class="eyebrow">Decision Registry</p><h2>项目算法包</h2></div><p>算法包把项目识别、稳定管理办法、年度通知和属地要求组织为统一决策规则。规则更新由服务端完成，现有 Skills 与 MCP 无需重复配置。</p></div>
         <article class="panel algorithm-introduction">
           <div><span class="eyebrow">它解决什么问题</span><h3>让网站、API、MCP 和 Skills 使用同一套项目判断口径</h3></div>
-          <p>正式规则包会读取企业事实字段并逐项核对政策门槛；检索路由包只负责识别项目、限定检索范围和防止串项。点击清单中的项目，可以查看适用场景、企业字段、规则层、政策来源和实际运行配置。</p>
+          <p>正式规则包会读取企业事实字段并逐项核对政策门槛；政策基线包已经补齐最新办法、年度通知、属地规则需求和依赖关系，可用于查询、预测准备与历史回放；纯检索路由包只负责识别项目。点击清单中的项目，可以查看适用场景、企业字段、规则层、政策来源和实际运行配置。</p>
         </article>
         <nav class="algorithm-metrics" aria-label="算法包分类">
           <a class="algorithm-stat-card {{ 'is-active' if not project_algorithms.coverage_filter else '' }}" href="/algorithms#algorithm-catalog" data-force-navigation>
@@ -90,8 +90,8 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           <a class="algorithm-stat-card {{ 'is-active' if project_algorithms.coverage_filter == 'rules-confirmed' else '' }}" href="/algorithms?coverage=rules-confirmed#algorithm-catalog" data-force-navigation>
             <span>正式规则包</span><strong>{{ project_algorithms.confirmed }}</strong><small>可执行已确认门槛判断</small><em>筛选项目 →</em>
           </a>
-          <a class="algorithm-stat-card {{ 'is-active' if project_algorithms.coverage_filter == 'routing-only' else '' }}" href="/algorithms?coverage=routing-only#algorithm-catalog" data-force-navigation>
-            <span>检索路由包</span><strong>{{ project_algorithms.routing_only }}</strong><small>只检索与核验，不直接下结论</small><em>筛选项目 →</em>
+          <a class="algorithm-stat-card {{ 'is-active' if project_algorithms.coverage_filter == 'policy-baseline-confirmed' else '' }}" href="/algorithms?coverage=policy-baseline-confirmed#algorithm-catalog" data-force-navigation>
+            <span>政策基线包</span><strong>{{ project_algorithms.policy_baselines }}</strong><small>最新办法、年度通知与依赖关系已补齐</small><em>筛选项目 →</em>
           </a>
           {% if project_algorithms.top_priority %}
           <a class="algorithm-stat-card algorithm-priority-card" href="/algorithms?project={{ project_algorithms.top_priority.project_id }}#algorithm-detail" data-force-navigation>
@@ -99,7 +99,7 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           </a>
           {% else %}
           <div class="algorithm-stat-card algorithm-priority-card">
-            <span>当前首要补齐</span><strong>{{ project_algorithms.priority_title }}</strong><small>{{ project_algorithms.priority_detail }}</small>
+            <span>纯检索路由</span><strong>{{ project_algorithms.routing_only }}</strong><small>29 个项目均已有可追溯政策基线</small>
           </div>
           {% endif %}
         </nav>
@@ -122,7 +122,11 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           {% if project_algorithm_detail.rules %}
           <div class="algorithm-detail-section"><h4>正式判断规则</h4><div class="table-wrap"><table><thead><tr><th>规则字段</th><th>判断</th><th>规则层</th><th>政策依据</th></tr></thead><tbody>{% for rule in project_algorithm_detail.rules %}<tr><td><strong>{{ rule.field }}</strong><small>{{ rule.rule_id }}</small></td><td>{{ rule.operator }} {{ rule.expected }} {{ rule.unit }}</td><td>{{ rule.layer_label }}</td><td><strong>{{ rule.source }}</strong>{% if rule.source_quote %}<small>{{ rule.source_quote }}</small>{% endif %}{% if rule.source_url %}<a href="{{ rule.source_url }}" target="_blank" rel="noreferrer">查看官方原文 →</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div>
           {% else %}
+          {% if project_algorithm_detail.coverage_status == 'policy-baseline-confirmed' %}
+          <div class="algorithm-routing-notice"><strong>为什么尚不直接给出符合或不符合</strong><p>该项目的最新有效办法、最近年度通知、属地规则需求和政策依赖已经核验入库，但完整门槛尚未全部编译为企业事实比较规则。系统可以查询现行政策、形成下一年度准备建议和回放历史身份，不会把政策基线误当作自动审批结论。</p></div>
+          {% else %}
           <div class="algorithm-routing-notice"><strong>为什么暂时没有门槛源代码</strong><p>该项目目前只有识别与检索配置。待稳定管理办法、年度通知和属地覆盖规则逐项确认后，才会升级为正式规则包，避免把未经确认的条件用于企业判断。</p></div>
+          {% endif %}
           {% endif %}
           {% if project_algorithm_detail.sources %}<div class="algorithm-detail-section"><h4>规则来源</h4><ul class="algorithm-source-list">{% for source in project_algorithm_detail.sources %}<li>{% if source.url %}<a href="{{ source.url }}" target="_blank" rel="noreferrer">{{ source.title }}</a>{% else %}<span>{{ source.title }}</span>{% endif %}<span>{{ source.status or '待标记状态' }}</span></li>{% endfor %}</ul></div>{% endif %}
           <details class="algorithm-source-code"><summary>查看算法包源配置 JSON</summary><pre>{{ project_algorithm_detail.raw_json }}</pre></details>
