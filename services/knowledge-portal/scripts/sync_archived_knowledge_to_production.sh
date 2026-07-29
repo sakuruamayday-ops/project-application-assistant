@@ -259,7 +259,7 @@ python3 "${script_dir}/audit_oss_orphans.py" \
   --manifest-history-dir "${index_dir}" \
   --cleanup-audit-root "${JIAOTANG_INDEX_ROOT:-/Users/zsh/JiaotangData/索引}/audits" \
   --output-dir "${orphan_audit_dir}" \
-  --require-no-orphans
+  --require-no-unmapped-orphans
 
 echo "[发布3/5] 复核冻结集合未变化且对象二次校验已经通过"
 [[ "$(shasum -a 256 "${manifest}" | awk '{print $1}')" == "${frozen_manifest_sha}" ]] \

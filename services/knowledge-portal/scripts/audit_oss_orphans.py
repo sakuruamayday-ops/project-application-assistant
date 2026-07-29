@@ -4,11 +4,15 @@ import argparse
 import csv
 import json
 import os
+import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
 import oss2
+
+
+UNMAPPED_ORPHAN_LABEL = "仅OSS可见，现有本地审计资料未映射"
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,6 +37,11 @@ def parse_args() -> argparse.Namespace:
         "--require-no-orphans",
         action="store_true",
         help="写完完整明细后，若仍有孤立对象则退出失败",
+    )
+    parser.add_argument(
+        "--require-no-unmapped-orphans",
+        action="store_true",
+        help="允许保留可由历史manifest追溯的旧对象，但来源未映射的孤立对象仍退出失败",
     )
     return parser.parse_args()
 
@@ -64,6 +73,54 @@ def oss_bucket() -> oss2.Bucket:
         os.environ["JIAOTANG_OSS_ENDPOINT"].rstrip("/"),
         os.environ["JIAOTANG_OSS_BUCKET"],
     )
+
+
+def list_objects_page_with_network_retry(
+    prefix: str,
+    marker: str,
+    *,
+    attempts: int | None = None,
+) -> object:
+    max_attempts = attempts or int(
+        os.environ.get("JIAOTANG_OSS_AUDIT_RETRIES", "5")
+    )
+    last_error: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return oss_bucket().list_objects(
+                prefix=prefix,
+                marker=marker,
+                max_keys=1000,
+            )
+        except oss2.exceptions.RequestError as exc:
+            last_error = exc
+            if attempt >= max_attempts:
+                raise
+            time.sleep(min(2 ** (attempt - 1), 8))
+    assert last_error is not None
+    raise last_error
+
+
+def list_remote_objects(prefix: str) -> list[dict[str, object]]:
+    marker = ""
+    remote_objects: list[dict[str, object]] = []
+    while True:
+        result = list_objects_page_with_network_retry(prefix, marker)
+        for item in result.object_list:
+            remote_objects.append(
+                {
+                    "object_key": item.key,
+                    "sha256": item.key.rsplit("/", 1)[-1],
+                    "size_bytes": int(item.size),
+                    "last_modified_epoch": int(item.last_modified),
+                }
+            )
+        if not result.is_truncated:
+            break
+        marker = str(result.next_marker or "")
+        if not marker:
+            raise RuntimeError("OSS对象清单仍有下一页，但未返回next_marker")
+    return remote_objects
 
 
 def load_history(
@@ -139,7 +196,7 @@ def classify(
         return "当前文件的旧内容版本"
     if known_paths:
         return "历史清单路径已退出当前版本"
-    return "仅OSS可见，现有本地审计资料未映射"
+    return UNMAPPED_ORPHAN_LABEL
 
 
 def main() -> None:
@@ -156,17 +213,7 @@ def main() -> None:
 
     prefix = os.environ.get("JIAOTANG_OSS_PREFIX", "production").strip("/")
     object_prefix = f"{prefix}/knowledge/objects/"
-    remote_objects = []
-    for item in oss2.ObjectIterator(oss_bucket(), prefix=object_prefix):
-        digest = item.key.rsplit("/", 1)[-1]
-        remote_objects.append(
-            {
-                "object_key": item.key,
-                "sha256": digest,
-                "size_bytes": int(item.size),
-                "last_modified_epoch": int(item.last_modified),
-            }
-        )
+    remote_objects = list_remote_objects(object_prefix)
     orphan_objects = [
         row for row in remote_objects
         if row["sha256"] not in expected_shas
@@ -286,6 +333,10 @@ def main() -> None:
             reason_counts[reason] += 1
             reason_bytes[reason] += size
     total_bytes = sum(int(row["大小_字节"]) for row in records)
+    unmapped_records = [
+        row for row in records
+        if str(row["判定"]) == UNMAPPED_ORPHAN_LABEL
+    ]
     lines = [
         "# OSS 孤立知识对象审计",
         "",
@@ -293,6 +344,7 @@ def main() -> None:
         f"- 当前白名单唯一对象：{len(expected_shas):,}",
         f"- OSS 知识对象：{len(remote_objects):,}",
         f"- 孤立对象：{len(records):,}",
+        f"- 来源未映射孤立对象：{len(unmapped_records):,}",
         f"- 孤立对象容量：{total_bytes:,} 字节，{total_bytes / 1_000_000_000:.3f} GB",
         f"- 历史 manifest 样本：{len(manifest_files)} 份",
         "",
@@ -336,6 +388,7 @@ def main() -> None:
                 "expected_unique_objects": len(expected_shas),
                 "remote_objects": len(remote_objects),
                 "orphan_objects": len(records),
+                "unmapped_orphan_objects": len(unmapped_records),
                 "orphan_bytes": total_bytes,
                 "csv": str(csv_path),
                 "jsonl": str(jsonl_path),
@@ -348,6 +401,16 @@ def main() -> None:
     if args.require_no_orphans and records:
         raise SystemExit(
             f"发现{len(records)}个孤立对象；完整待确认名单：{csv_path}"
+        )
+    if args.require_no_unmapped_orphans and unmapped_records:
+        raise SystemExit(
+            f"发现{len(unmapped_records)}个来源未映射孤立对象；"
+            f"完整待确认名单：{csv_path}"
+        )
+    if args.require_no_unmapped_orphans and records:
+        print(
+            f"历史可追溯对象保留：{len(records)}，来源未映射：0；"
+            "未执行任何删除。"
         )
 
 
