@@ -3697,6 +3697,10 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "本阶段不包含 bootstrap_url" in prompt
         assert "签名插件包" in prompt
         assert "不包含动态命令字段" in prompt
+        assert "宿主插件文件" in prompt
+        assert "焦糖运行文件" in prompt
+        assert "系统凭据" in prompt
+        assert "/plugin 是宿主界面入口" in prompt
         assert "execution.command" not in prompt
         assert "安装说明读取失败" in prompt
         assert "node -e" not in prompt
@@ -3740,8 +3744,24 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert review["credential_handling"][
             "activation_requires_secure_store_readback"
         ] is True
-        assert review["local_changes"]
+        storage_model = review["storage_model"]
+        assert storage_model["name"] == "three_layer_local_storage"
+        assert storage_model["layer_count"] == 3
+        storage_layers = storage_model["layers"]
+        assert review["local_changes"] == storage_layers
+        assert [layer["layer"] for layer in storage_layers] == [
+            "host_plugin_files",
+            "jiaotang_runtime_files",
+            "system_credentials",
+        ]
+        assert "~/.workbuddy/plugins" in storage_layers[0]["path"]
+        assert "~/.codebuddy/plugins" in storage_layers[0]["path"]
+        assert "~/.jiaotang/bin/jiaotang-kb-mcp.mjs" in storage_layers[1]["path"]
+        assert storage_layers[1]["required_for_signed_plugin"] is False
+        assert "cn.zshjiaotang.knowledge-device" in storage_layers[2]["path"]
+        assert "device-credential.dpapi" in storage_layers[2]["path"]
         assert review["rollback"]
+        assert "不要把 ~/.workbuddy、~/.codebuddy" in review["rollback"][-1]
         assert "execution" not in protocol.json()
         assert protocol.json()["installation"]["authorized"] is False
         assert protocol.json()["installation"]["dynamic_command"] is False
@@ -3803,7 +3823,9 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert confirmed.json()["phase"] == "install_authorized"
         assert "明确授权继续安装" in confirmed.json()["prompt"]
         assert "`jiaotang-kb`" in confirmed.json()["prompt"]
-        assert "`knowledge_service_status`" in confirmed.json()["prompt"]
+        assert "不是必须出现在 Agent 工具列表中的工具" in confirmed.json()["prompt"]
+        assert "不要求存在某个固定工具名" in confirmed.json()["prompt"]
+        assert "knowledge_service_status" not in confirmed.json()["prompt"]
         assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
             confirmed.json()["prompt"]
         )
@@ -3830,6 +3852,34 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert authorized_protocol.json()["installation"]["type"] == (
             "signed_workbuddy_plugin"
         )
+        host_installation = authorized_protocol.json()["installation"][
+            "host_installation"
+        ]
+        assert host_installation["entry_label"] == "/plugin"
+        assert host_installation["entry_is_agent_tool"] is False
+        assert host_installation["agent_tool_named_plugin_required"] is False
+        assert host_installation["agent_may_use_authorized_host_capabilities"] is True
+        assert "safe_extract_without_execution" in host_installation["fixed_actions"]
+        existing_install_policy = authorized_protocol.json()["installation"][
+            "existing_install_policy"
+        ]
+        assert "不重复下载" in existing_install_policy["same_package_sha256"]
+        publisher_trust = authorized_protocol.json()["integrity"]["publisher_trust"]
+        assert publisher_trust["fingerprint"] == (
+            "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
+        )
+        assert publisher_trust["package_embedded_public_key_must_match"] is True
+        assert publisher_trust["package_self_report_is_not_sufficient"] is True
+        safe_extract = authorized_protocol.json()["integrity"]["safe_extract"]
+        assert safe_extract["execute_archive_content"] is False
+        assert safe_extract["reject_parent_traversal"] is True
+        assert safe_extract["reject_symbolic_links"] is True
+        workbuddy_instruction = authorized_protocol.json()["completion"][
+            "result_handling"
+        ]["workbuddy_instruction"]
+        assert "任一只读知识库工具" in workbuddy_instruction
+        assert "不绑定固定工具名" in workbuddy_instruction
+        assert "knowledge_service_status" not in workbuddy_instruction
         assert (
             authorized_protocol.json()["installation"]["plugin_download_url"]
             == scoped_download_url
