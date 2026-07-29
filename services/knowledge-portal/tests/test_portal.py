@@ -3421,18 +3421,17 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
                 sort_keys=True,
             ),
         )
+    artifact_state = {
+        "file_path": str(workbuddy_package),
+        "file_name": workbuddy_package.name,
+        "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
+        "target": "workbuddy",
+        "version": "",
+    }
     monkeypatch.setattr(
         module,
         "latest_skill_artifact",
-        lambda target: (
-            {
-                "file_path": str(workbuddy_package),
-                "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
-                "target": "workbuddy",
-            }
-            if target == "workbuddy"
-            else None
-        ),
+        lambda target: dict(artifact_state) if target == "workbuddy" else None,
     )
     password = "member-password-123"
     with closing(module.database()) as connection:
@@ -3549,9 +3548,11 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert protocol.json()["review_required"] is True
         assert protocol.json()["user_confirmation_required"] is True
         review = protocol.json()["review"]
-        assert review["plugin_package"]["download_url"].endswith(
-            "/skills/latest/workbuddy/download"
+        scoped_download_url = (
+            f"http://testserver/v1/agent-install/{enrollment_code}"
+            "/workbuddy/download"
         )
+        assert review["plugin_package"]["download_url"] == scoped_download_url
         assert review["plugin_package"]["signature_required"] is True
         assert review["plugin_package"]["contains_mcp_server"] == "jiaotang-kb"
         assert review["credential_handling"]["private_key_uploaded"] is False
@@ -3589,11 +3590,28 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert {"workbuddy"} <= set(
             protocol.json()["compatibility"]["agent_hosts"]
         )
+        anonymous_client = TestClient(module.app)
+        unauthorized_download = anonymous_client.get(
+            f"/v1/agent-install/{enrollment_code}/workbuddy/download"
+        )
+        anonymous_client.close()
+        assert unauthorized_download.status_code == 403
         unconfirmed_manifest = client.get(
             f"/v1/agent-bootstrap/{enrollment_code}"
         )
         assert unconfirmed_manifest.status_code == 403
         assert "尚未由用户确认" in unconfirmed_manifest.json()["detail"]
+
+        newer_package = tmp_path / "workbuddy-newer.zip"
+        newer_package.write_bytes(b"newer-release-must-not-replace-pinned-package")
+        artifact_state.update(
+            {
+                "file_path": str(newer_package),
+                "file_name": newer_package.name,
+                "sha256": hashlib.sha256(newer_package.read_bytes()).hexdigest(),
+                "version": "",
+            }
+        )
 
         confirmed = client.post(
             "/agent-bootstrap-codes/confirm",
@@ -3610,9 +3628,10 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert manual["configuration_key"] == "bootstrap_url"
         assert manual["mcp_server"] == "jiaotang-kb"
         assert manual["platform"] == "unified"
-        assert manual["plugin_download_url"].endswith(
-            "/skills/latest/workbuddy/download"
-        )
+        assert manual["plugin_download_url"] == scoped_download_url
+        assert manual["plugin_sha256"] == hashlib.sha256(
+            workbuddy_package.read_bytes()
+        ).hexdigest()
         assert manual["bootstrap_url"].endswith(
             f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
         )
@@ -3628,9 +3647,27 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert authorized_protocol.json()["installation"]["type"] == (
             "signed_workbuddy_plugin"
         )
+        assert (
+            authorized_protocol.json()["installation"]["plugin_download_url"]
+            == scoped_download_url
+        )
         assert authorized_protocol.json()["installation"]["bootstrap_url"].endswith(
             f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
         )
+        anonymous_client = TestClient(module.app)
+        authorized_download = anonymous_client.get(
+            f"/v1/agent-install/{enrollment_code}/workbuddy/download"
+        )
+        anonymous_client.close()
+        assert authorized_download.status_code == 200
+        assert authorized_download.headers["content-type"] == "application/zip"
+        assert authorized_download.content == workbuddy_package.read_bytes()
+        assert authorized_download.headers["x-jiaotang-package-sha256"] == (
+            hashlib.sha256(authorized_download.content).hexdigest()
+        )
+        assert authorized_protocol.json()["integrity"][
+            "plugin_package_sha256"
+        ] == hashlib.sha256(authorized_download.content).hexdigest()
 
         installer = client.get("/install/jiaotang-agent.mjs")
         assert installer.status_code == 200
@@ -3668,9 +3705,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert manifest.json()["workbuddy_plugin"]["configuration_sensitive"] is True
         connector_sha256 = manifest.json()["workbuddy_plugin"]["connector_sha256"]
         assert re.fullmatch(r"[a-f0-9]{64}", connector_sha256)
-        assert connector_sha256 == module.workbuddy_connector_sha256(
-            module.latest_skill_artifact("workbuddy")
-        )
+        assert connector_sha256 == hashlib.sha256(connector.read_bytes()).hexdigest()
 
         failed_report = client.post(
             f"/v1/agent-install-result/{enrollment_code}",
@@ -4345,8 +4380,25 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
         assert page.headers["cache-control"] == "private, no-store"
 
 
-def test_bootstrap_recovers_unverified_partial_installation(tmp_path):
+def test_bootstrap_recovers_unverified_partial_installation(tmp_path, monkeypatch):
     module = load_app(tmp_path)
+    workbuddy_package = tmp_path / "workbuddy-recovery-fixture.zip"
+    workbuddy_package.write_bytes(b"signed-workbuddy-recovery-fixture")
+    monkeypatch.setattr(
+        module,
+        "latest_skill_artifact",
+        lambda target: (
+            {
+                "file_path": str(workbuddy_package),
+                "file_name": workbuddy_package.name,
+                "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
+                "target": "workbuddy",
+                "version": "",
+            }
+            if target == "workbuddy"
+            else None
+        ),
+    )
     password = "member-password-123"
     with closing(module.database()) as connection:
         connection.execute(
