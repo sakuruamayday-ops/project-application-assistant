@@ -5949,7 +5949,16 @@ def enforce_device_binding(
     user_agent: str,
 ) -> sqlite3.Row | None:
     if bool(authentication_value(user, "is_admin", 0)):
-        return None
+        legacy_binding = connection.execute(
+            """
+            SELECT id FROM device_bindings
+            WHERE user_id=? AND revoked_at IS NULL
+            ORDER BY id DESC LIMIT 1
+            """,
+            (int(authentication_value(user, "id", 0)),),
+        ).fetchone()
+        if legacy_binding is None:
+            return None
     normalized_device_id = str(device_id or "").strip()
     if not normalized_device_id:
         raise access_error(
@@ -6640,7 +6649,6 @@ class MCPBearerMiddleware:
                 and not message.get("more_body", False)
                 and response_status < 400
                 and activity_type == "mcp_connection"
-                and not bool(authentication_value(user, "is_admin", 0))
             ):
                 mark_mcp_connected(
                     int(user["id"]),
@@ -6656,7 +6664,6 @@ class MCPBearerMiddleware:
                 not mcp_connection_recorded
                 and response_status < 400
                 and activity_type == "mcp_connection"
-                and not bool(authentication_value(user, "is_admin", 0))
             ):
                 mark_mcp_connected(
                     int(user["id"]),
@@ -6926,11 +6933,6 @@ def portal_payload(
         ).fetchall()
         active_device_token = next(
             (row for row in device_tokens if not row["revoked_at"]), None
-        )
-        reusable_token = (
-            user_access_token(int(user["id"]), str(active_device_token["token_seed"]))
-            if user["is_admin"] and active_device_token and active_device_token["token_seed"]
-            else None
         )
         active_device_binding = connection.execute(
             """
@@ -7336,7 +7338,6 @@ def portal_payload(
         "user": user,
         "device_tokens": device_tokens,
         "active_device_token": active_device_token,
-        "reusable_token": reusable_token,
         "active_device_binding": active_device_binding_payload,
         "latest_agent_install_result": latest_agent_install_result,
         "device_binding_history": device_binding_history,
@@ -10562,14 +10563,6 @@ def create_agent_bootstrap_code(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
-    if user["is_admin"]:
-        return JSONResponse(
-            {
-                "detail": "管理员账号已豁免设备限制，可继续使用管理员 API Key。",
-                "exempt": True,
-            },
-            headers={"Cache-Control": "no-store"},
-        )
     now_value = utc_now()
     now = isoformat(now_value)
     raw_code = "jbe_" + secrets.token_urlsafe(32)
@@ -10639,8 +10632,6 @@ def confirm_agent_bootstrap_code(
     platform: Annotated[str, Form()] = "",
 ):
     validate_csrf(user, csrf_token)
-    if user["is_admin"]:
-        raise HTTPException(status_code=403, detail="管理员账号不需要设备安装确认")
     now = isoformat(utc_now())
     client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
     if not client_ip and request.client:
@@ -11252,9 +11243,9 @@ def register_agent_device(
             "SELECT * FROM users WHERE id=? AND active=1",
             (int(enrollment["user_id"]),),
         ).fetchone()
-        if user is None or user["is_admin"]:
+        if user is None:
             connection.rollback()
-            raise HTTPException(status_code=403, detail="该账号不需要设备注册")
+            raise HTTPException(status_code=403, detail="该账号不可用于设备注册")
         if enrollment["registered_at"]:
             registered = connection.execute(
                 """
@@ -11911,17 +11902,6 @@ def replace_device_binding(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
-    if user["is_admin"]:
-        return templates.TemplateResponse(
-            request,
-            "portal.html",
-            portal_payload(
-                request,
-                user,
-                message="管理员账号已豁免设备限制，无需更换绑定设备。",
-                active_page="access",
-            ),
-        )
     now = isoformat(utc_now())
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
@@ -12598,8 +12578,6 @@ def report_device_credential_saved(
     request: Request,
     user: Annotated[sqlite3.Row, Depends(require_api_user)],
 ):
-    if user["is_admin"]:
-        return {"status": "exempt", "configured": True, "stages": {}}
     key_id = str(request.headers.get(DEVICE_KEY_ID_HEADER, "")).strip()
     now = isoformat(utc_now())
     with closing(database()) as connection:
@@ -12622,8 +12600,6 @@ def get_device_installation_status(
     request: Request,
     user: Annotated[sqlite3.Row, Depends(require_api_user)],
 ):
-    if user["is_admin"]:
-        return {"status": "exempt", "configured": True, "stages": {}}
     return device_installation_status(
         int(user["id"]),
         str(request.headers.get(DEVICE_KEY_ID_HEADER, "")).strip(),
