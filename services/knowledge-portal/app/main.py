@@ -91,6 +91,15 @@ from app.project_decision import (
 )
 from app.three_first_routing import plan_three_first_analysis
 
+# Production may supply this private extension as a server-managed overlay.
+try:
+    from app.kindle_library import init_kindle_database, register_kindle_routes
+except ModuleNotFoundError as error:
+    if error.name != "app.kindle_library":
+        raise
+    init_kindle_database = None
+    register_kindle_routes = None
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("JIAOTANG_DATA_DIR", BASE_DIR / "data"))
@@ -5846,6 +5855,8 @@ def init_database() -> None:
             DROP TABLE IF EXISTS oauth_clients;
             """
         )
+        if init_kindle_database is not None:
+            init_kindle_database(connection, DATA_DIR)
         connection.commit()
 
 
@@ -13553,6 +13564,18 @@ def three_first_analysis(
 def knowledge_service_status() -> dict[str, object]:
     """查看知识库连接状态、文档总数与最近索引时间。"""
     return knowledge_index_stats()
+
+
+if register_kindle_routes is not None:
+    register_kindle_routes(
+        app=app,
+        templates=templates,
+        database=database,
+        require_web_user=require_web_user,
+        require_admin=require_admin,
+        validate_csrf=validate_csrf,
+        data_dir=DATA_DIR,
+    )
 
 
 app.mount("/mcp", MCPBearerMiddleware(knowledge_mcp.streamable_http_app()))
