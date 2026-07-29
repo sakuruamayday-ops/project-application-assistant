@@ -532,7 +532,7 @@ def build_cover(document: Document) -> None:
     add_callout(
         document,
         "先记住三件事",
-        "管理器版本与 Skills 内容版本相互独立。当前管理器为 0.2.0，正式 Skills 为 V1.3.1.3，共 49 项。"
+        "管理器版本与 Skills 内容版本相互独立。当前管理器为 0.2.0，正式 Skills 为 V1.3.1.4，共 49 项。"
         "桌面客户端采用未签名本机授权分发；应用身份与 Skills 内容验真是两条独立信任链。"
         "系统或企业策略不允许未签名应用时，继续使用 HTTPS PWA，不关闭系统防护。",
         fill=LIGHT_GOLD,
@@ -748,7 +748,7 @@ def build_security_page(document: Document) -> None:
     add_bullets(
         document,
         [
-            "管理器“关于”或安全中心显示版本 0.2.0，Skills 清单显示 V1.3.1.3 与 49 项。",
+            "管理器“关于”或安全中心显示版本 0.2.0，Skills 清单显示 V1.3.1.4 与 49 项。",
             "点击扫描后，平台数量、命中路径、耗时与适配器 revision 均有结果。",
             "TRAE 或 Kimi Code 的导入计划没有未处理冲突；导入后新建会话能识别 Skills。",
             "WorkBuddy 使用通用跨平台包，并在应用内完成市场添加、安装、启用与 bootstrap 配置。",
@@ -781,7 +781,7 @@ def build_document() -> Document:
     properties.author = "焦糖"
     properties.last_modified_by = "焦糖"
     properties.keywords = "Skills 管理器, Agent, WorkBuddy, macOS, Windows, 用户手册"
-    properties.comments = "正式用户手册，适用管理器 0.2.0 与 Skills V1.3.1.3"
+    properties.comments = "正式用户手册，适用管理器 0.2.0 与 Skills V1.3.1.4"
 
     build_cover(document)
     build_install_page(document)

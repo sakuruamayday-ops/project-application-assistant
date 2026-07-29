@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import html
+import importlib.util
 import ipaddress
 import csv
 import io
@@ -54,6 +55,7 @@ from app.assistant_runtime import (
     skill_guidance,
 )
 from app.device_security import (
+    activation_canonical_value,
     DeviceSignature,
     DeviceSignatureError,
     KEY_ID_PATTERN,
@@ -591,6 +593,14 @@ class AgentDeviceRegistrationRequest(BaseModel):
     device_name: str = Field(min_length=1, max_length=100)
     platform: str = Field(min_length=2, max_length=40)
     agent_host: str = Field(min_length=2, max_length=60)
+    transaction_mode: str = Field(default="legacy_v1", max_length=40)
+
+
+class AgentDeviceActivationRequest(BaseModel):
+    device_id: str = Field(min_length=16, max_length=128)
+    key_id: str = Field(min_length=20, max_length=80)
+    token: str = Field(min_length=24, max_length=512)
+    proof: str = Field(min_length=40, max_length=512)
 
 
 class PublicListSearchRequest(BaseModel):
@@ -5254,6 +5264,29 @@ def init_database() -> None:
             CREATE INDEX IF NOT EXISTS agent_enrollment_codes_user_idx
             ON agent_enrollment_codes(user_id, id DESC);
 
+            CREATE TABLE IF NOT EXISTS device_registration_intents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                enrollment_id INTEGER NOT NULL UNIQUE
+                    REFERENCES agent_enrollment_codes(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                device_id_hash TEXT NOT NULL,
+                device_id_prefix TEXT NOT NULL,
+                device_name TEXT NOT NULL,
+                key_id TEXT NOT NULL,
+                public_key TEXT NOT NULL,
+                platform TEXT NOT NULL,
+                agent_host TEXT NOT NULL,
+                token_prefix TEXT NOT NULL,
+                token_hash TEXT NOT NULL,
+                token_seed TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                activated_at TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS device_registration_intents_user_idx
+            ON device_registration_intents(user_id, id DESC);
+
             CREATE TABLE IF NOT EXISTS device_keys (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -8107,6 +8140,23 @@ def skills_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_w
     return portal_page_response(request, user, "skills")
 
 
+@app.get("/skills/diagnostics", response_class=HTMLResponse)
+def skills_diagnostics_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    response = templates.TemplateResponse(
+        request,
+        "agent_diagnostics.html",
+        {
+            "user": user,
+            "diagnostics": agent_diagnostics_payload(request, int(user["id"])),
+        },
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
 def skills_manager_native_release_payload() -> dict[str, object]:
     try:
         payload = json.loads(
@@ -10777,7 +10827,7 @@ def agent_install_protocol(
     return JSONResponse(
         {
             "schema": "jiaotang-agent-install/v1",
-            "protocol_version": 4,
+            "protocol_version": 5,
             "phase": "install_authorized" if install_authorized else "review",
             "action": (
                 "install_confirmed_signed_plugin"
@@ -10840,6 +10890,8 @@ def agent_install_protocol(
                     "creates_device_key_pair_locally": True,
                     "private_key_uploaded": False,
                     "stores": ["个人访问凭据", "设备私钥", "设备标识"],
+                    "registration_transaction": "prepare_store_activate",
+                    "activation_requires_secure_store_readback": True,
                     "never_display_secret_values": True,
                 },
                 "rollback": [
@@ -10861,7 +10913,9 @@ def agent_install_protocol(
                         "解压插件市场包，在 WorkBuddy 内使用 /plugin marketplace add 添加市场。",
                         "在 WorkBuddy 内安装并启用 jiaotang-workbuddy-skills@jiaotang。",
                         "WorkBuddy 提示插件配置时，将 bootstrap_url 填入敏感配置项。",
-                        "由插件内置 jiaotang-kb MCP 完成设备登记和首次签名连接。",
+                        "插件先预登记，再将凭据写入系统安全存储并回读校验。",
+                        "回读成功后由本机私钥签名激活，服务器再原子创建有效绑定。",
+                        "由插件内置 jiaotang-kb MCP 完成首次签名连接。",
                     ],
                 }
                 if install_authorized
@@ -10903,7 +10957,8 @@ def agent_install_protocol(
         media_type="application/vnd.jiaotang.agent-install+json",
         headers={
             "Cache-Control": "no-store",
-            "X-Jiaotang-Install-Protocol": "4",
+            "X-Jiaotang-Install-Protocol": "5",
+            "X-Jiaotang-Registration-Transaction": "prepare-store-activate",
         },
     )
 
@@ -11099,6 +11154,30 @@ def register_agent_device(
 ):
     if not DEVICE_ID_PATTERN.fullmatch(payload.device_id):
         raise HTTPException(status_code=400, detail="设备安装标识格式无效")
+    if payload.transaction_mode not in {"legacy_v1", "credential_activation_v1"}:
+        raise HTTPException(status_code=400, detail="设备登记事务模式无效")
+    if payload.transaction_mode == "legacy_v1":
+        current_workbuddy = latest_skill_artifact("workbuddy")
+        current_version = str(
+            current_workbuddy.get("version") or ""
+        ) if current_workbuddy else ""
+        version_match = re.fullmatch(
+            r"(\d+)\.(\d+)(?:\.(\d+))?(?:\.(\d+))?",
+            current_version,
+        )
+        if version_match:
+            version_parts = tuple(
+                int(part or 0) for part in version_match.groups()
+            )
+            if version_parts >= (1, 3, 1, 4):
+                raise HTTPException(
+                    status_code=426,
+                    detail=(
+                        "当前正式版本要求凭据保存后再激活。"
+                        "请更新到 V1.3.1.4 或更高版本的 WorkBuddy 插件后重试。"
+                    ),
+                    headers={"Upgrade": "jiaotang-registration-transaction-v1"},
+                )
     platform_name = re.sub(r"[^A-Za-z0-9._-]+", "-", payload.platform.strip())[:40]
     agent_host = re.sub(r"[^A-Za-z0-9._-]+", "-", payload.agent_host.strip())[:60]
     device_name = normalize_device_name(payload.device_name, f"{platform_name} Agent")
@@ -11113,6 +11192,7 @@ def register_agent_device(
                 platform=platform_name,
                 agent_host=agent_host,
                 public_key=payload.public_key,
+                transaction_mode=payload.transaction_mode,
             ),
         )
         key_id = device_key_id(payload.public_key)
@@ -11195,13 +11275,21 @@ def register_agent_device(
                 connection.commit()
                 return JSONResponse(
                     {
-                        "status": "registered",
+                        "status": (
+                            "activated"
+                            if payload.transaction_mode == "credential_activation_v1"
+                            else "registered"
+                        ),
                         "idempotent": True,
                         "key_id": key_id,
                         "token": raw_token,
                         "token_id": int(registered["token_id"]),
                         "api_base_url": f"{str(request.base_url).rstrip('/')}/v1",
                         "mcp_url": f"{str(request.base_url).rstrip('/')}/mcp/",
+                        "activation_url": (
+                            f"{str(request.base_url).rstrip('/')}"
+                            f"/v1/agent-bootstrap/{quote(enrollment_code)}/activate"
+                        ),
                     },
                     headers={"Cache-Control": "no-store"},
                 )
@@ -11230,6 +11318,107 @@ def register_agent_device(
             raise HTTPException(
                 status_code=409,
                 detail="账号已绑定其他设备，请先在门户执行更换绑定设备。",
+            )
+        if payload.transaction_mode == "credential_activation_v1":
+            submitted_device_hash = hashlib.sha256(
+                payload.device_id.encode("utf-8")
+            ).hexdigest()
+            intent = connection.execute(
+                """
+                SELECT * FROM device_registration_intents
+                WHERE enrollment_id=?
+                """,
+                (int(enrollment["id"]),),
+            ).fetchone()
+            intent_matches = bool(
+                intent
+                and not intent["activated_at"]
+                and str(intent["expires_at"]) > now
+                and secrets.compare_digest(
+                    str(intent["device_id_hash"]), submitted_device_hash
+                )
+                and secrets.compare_digest(str(intent["key_id"]), key_id)
+                and secrets.compare_digest(
+                    str(intent["public_key"]), payload.public_key
+                )
+            )
+            if intent_matches:
+                seed = str(intent["token_seed"])
+                raw_token = user_access_token(int(user["id"]), seed)
+                connection.commit()
+                return JSONResponse(
+                    {
+                        "status": "prepared",
+                        "idempotent": True,
+                        "key_id": key_id,
+                        "token": raw_token,
+                        "api_base_url": f"{str(request.base_url).rstrip('/')}/v1",
+                        "mcp_url": f"{str(request.base_url).rstrip('/')}/mcp/",
+                        "activation_url": (
+                            f"{str(request.base_url).rstrip('/')}"
+                            f"/v1/agent-bootstrap/{quote(enrollment_code)}/activate"
+                        ),
+                    },
+                    headers={"Cache-Control": "no-store"},
+                )
+            seed = secrets.token_urlsafe(24)
+            raw_token = user_access_token(int(user["id"]), seed)
+            connection.execute(
+                """
+                INSERT INTO device_registration_intents(
+                    enrollment_id,user_id,device_id_hash,device_id_prefix,
+                    device_name,key_id,public_key,platform,agent_host,
+                    token_prefix,token_hash,token_seed,created_at,expires_at,
+                    activated_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)
+                ON CONFLICT(enrollment_id) DO UPDATE SET
+                    user_id=excluded.user_id,
+                    device_id_hash=excluded.device_id_hash,
+                    device_id_prefix=excluded.device_id_prefix,
+                    device_name=excluded.device_name,
+                    key_id=excluded.key_id,
+                    public_key=excluded.public_key,
+                    platform=excluded.platform,
+                    agent_host=excluded.agent_host,
+                    token_prefix=excluded.token_prefix,
+                    token_hash=excluded.token_hash,
+                    token_seed=excluded.token_seed,
+                    created_at=excluded.created_at,
+                    expires_at=excluded.expires_at,
+                    activated_at=NULL
+                """,
+                (
+                    int(enrollment["id"]),
+                    int(user["id"]),
+                    submitted_device_hash,
+                    payload.device_id[:12],
+                    device_name,
+                    key_id,
+                    payload.public_key,
+                    platform_name,
+                    agent_host,
+                    raw_token[:12],
+                    token_hash(raw_token),
+                    seed,
+                    now,
+                    str(enrollment["expires_at"]),
+                ),
+            )
+            connection.commit()
+            return JSONResponse(
+                {
+                    "status": "prepared",
+                    "idempotent": False,
+                    "key_id": key_id,
+                    "token": raw_token,
+                    "api_base_url": f"{str(request.base_url).rstrip('/')}/v1",
+                    "mcp_url": f"{str(request.base_url).rstrip('/')}/mcp/",
+                    "activation_url": (
+                        f"{str(request.base_url).rstrip('/')}"
+                        f"/v1/agent-bootstrap/{quote(enrollment_code)}/activate"
+                    ),
+                },
+                headers={"Cache-Control": "no-store"},
             )
         if active_binding:
             connection.execute(
@@ -11332,6 +11521,267 @@ def register_agent_device(
             "token_id": int(token_cursor.lastrowid),
             "api_base_url": f"{str(request.base_url).rstrip('/')}/v1",
             "mcp_url": f"{str(request.base_url).rstrip('/')}/mcp/",
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.post("/v1/agent-bootstrap/{enrollment_code}/activate")
+def activate_agent_device(
+    enrollment_code: str,
+    payload: AgentDeviceActivationRequest,
+    request: Request,
+):
+    if not DEVICE_ID_PATTERN.fullmatch(payload.device_id):
+        raise HTTPException(status_code=400, detail="设备安装标识格式无效")
+    if not KEY_ID_PATTERN.fullmatch(payload.key_id):
+        raise HTTPException(status_code=400, detail="设备公钥标识格式无效")
+    now_value = utc_now()
+    now = isoformat(now_value)
+    device_hash = hashlib.sha256(payload.device_id.encode("utf-8")).hexdigest()
+    credential_hash = token_hash(payload.token)
+    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
+    if not client_ip and request.client:
+        client_ip = request.client.host
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        enrollment = connection.execute(
+            """
+            SELECT * FROM agent_enrollment_codes
+            WHERE code_hash=?
+            """,
+            (token_hash(enrollment_code),),
+        ).fetchone()
+        if enrollment is None:
+            connection.rollback()
+            raise HTTPException(
+                status_code=410,
+                detail="一次性配置不存在或已清理，请回到门户重新复制。",
+            )
+        if enrollment["consumed_at"] and not enrollment["registered_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=410,
+                detail="一次性配置已经失效，请回到门户重新复制。",
+            )
+        if str(enrollment["expires_at"]) <= now:
+            connection.rollback()
+            raise HTTPException(
+                status_code=410,
+                detail="一次性配置已经过期，请回到门户重新复制。",
+            )
+        if not enrollment["confirmed_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=403,
+                detail="安装说明尚未由用户确认，请回到门户点击“我已审查，继续安装”。",
+            )
+        intent = connection.execute(
+            """
+            SELECT * FROM device_registration_intents
+            WHERE enrollment_id=?
+            """,
+            (int(enrollment["id"]),),
+        ).fetchone()
+        if intent is None:
+            connection.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="设备尚未完成预登记，请重新执行安装。",
+            )
+        if (
+            int(intent["user_id"]) != int(enrollment["user_id"])
+            or not secrets.compare_digest(str(intent["device_id_hash"]), device_hash)
+            or not secrets.compare_digest(str(intent["key_id"]), payload.key_id)
+            or not secrets.compare_digest(str(intent["token_hash"]), credential_hash)
+        ):
+            connection.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="本地凭据与预登记事务不一致，请重新执行安装。",
+            )
+        try:
+            verify_ed25519_signature(
+                str(intent["public_key"]),
+                payload.proof,
+                activation_canonical_value(
+                    enrollment_code=enrollment_code,
+                    device_id=payload.device_id,
+                    key_id=payload.key_id,
+                    token_fingerprint=credential_hash,
+                ),
+            )
+        except DeviceSignatureError as exc:
+            connection.rollback()
+            raise HTTPException(status_code=403, detail=str(exc)) from None
+
+        active = connection.execute(
+            """
+            SELECT device_keys.key_id,device_bindings.device_id_hash,
+                   device_tokens.id AS token_id,device_tokens.token_hash
+            FROM device_keys
+            JOIN device_bindings ON device_bindings.id=device_keys.binding_id
+            JOIN device_tokens ON device_tokens.user_id=device_keys.user_id
+            WHERE device_keys.user_id=?
+              AND device_keys.key_id=?
+              AND device_keys.revoked_at IS NULL
+              AND device_bindings.revoked_at IS NULL
+              AND device_tokens.revoked_at IS NULL
+              AND device_tokens.token_hash=?
+            ORDER BY device_tokens.id DESC LIMIT 1
+            """,
+            (int(enrollment["user_id"]), payload.key_id, credential_hash),
+        ).fetchone()
+        if enrollment["registered_at"]:
+            if (
+                active
+                and secrets.compare_digest(
+                    str(active["device_id_hash"]), device_hash
+                )
+            ):
+                connection.commit()
+                return JSONResponse(
+                    {
+                        "status": "activated",
+                        "idempotent": True,
+                        "key_id": payload.key_id,
+                        "token_id": int(active["token_id"]),
+                    },
+                    headers={"Cache-Control": "no-store"},
+                )
+            connection.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="该一次性配置已经激活到另一组设备凭据。",
+            )
+
+        existing_binding = connection.execute(
+            """
+            SELECT device_bindings.id,device_keys.mcp_connected_at
+            FROM device_bindings
+            LEFT JOIN device_keys
+              ON device_keys.binding_id=device_bindings.id
+             AND device_keys.revoked_at IS NULL
+            WHERE device_bindings.user_id=?
+              AND device_bindings.revoked_at IS NULL
+            LIMIT 1
+            """,
+            (int(enrollment["user_id"]),),
+        ).fetchone()
+        if existing_binding and existing_binding["mcp_connected_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="账号已绑定其他设备，请先在门户执行更换绑定设备。",
+            )
+        if existing_binding:
+            connection.execute(
+                """
+                UPDATE device_bindings
+                SET revoked_at=?,revoked_reason='transactional_activation'
+                WHERE id=? AND revoked_at IS NULL
+                """,
+                (now, int(existing_binding["id"])),
+            )
+            connection.execute(
+                """
+                UPDATE device_keys
+                SET revoked_at=?,revoked_reason='transactional_activation'
+                WHERE binding_id=? AND revoked_at IS NULL
+                """,
+                (now, int(existing_binding["id"])),
+            )
+        connection.execute(
+            """
+            UPDATE device_tokens
+            SET revoked_at=COALESCE(revoked_at,?)
+            WHERE user_id=? AND revoked_at IS NULL
+            """,
+            (now, int(enrollment["user_id"])),
+        )
+        token_cursor = connection.execute(
+            """
+            INSERT INTO device_tokens(
+                user_id,label,token_prefix,token_hash,token_seed,created_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                int(enrollment["user_id"]),
+                str(intent["device_name"]),
+                str(intent["token_prefix"]),
+                credential_hash,
+                str(intent["token_seed"]),
+                now,
+            ),
+        )
+        binding_cursor = connection.execute(
+            """
+            INSERT INTO device_bindings(
+                user_id,device_id_hash,device_id_prefix,device_name,auth_method,
+                first_bound_at,last_seen_at,last_ip,user_agent
+            ) VALUES (?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                int(enrollment["user_id"]),
+                device_hash,
+                str(intent["device_id_prefix"]),
+                str(intent["device_name"]),
+                "device_signature",
+                now,
+                now,
+                (client_ip or "unknown")[:100],
+                request.headers.get("user-agent", "")[:300],
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO device_keys(
+                user_id,binding_id,key_id,public_key,platform,agent_host,
+                created_at,credential_saved_at,first_verified_at,last_verified_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                int(enrollment["user_id"]),
+                int(binding_cursor.lastrowid),
+                payload.key_id,
+                str(intent["public_key"]),
+                str(intent["platform"]),
+                str(intent["agent_host"]),
+                now,
+                now,
+                now,
+                now,
+            ),
+        )
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET registered_at=?,registered_key_id=?,registered_ip=?,
+                consumed_at=NULL,consumed_ip=''
+            WHERE id=?
+            """,
+            (
+                now,
+                payload.key_id,
+                (client_ip or "unknown")[:100],
+                int(enrollment["id"]),
+            ),
+        )
+        connection.execute(
+            """
+            UPDATE device_registration_intents
+            SET activated_at=COALESCE(activated_at,?)
+            WHERE id=?
+            """,
+            (now, int(intent["id"])),
+        )
+        connection.commit()
+    return JSONResponse(
+        {
+            "status": "activated",
+            "idempotent": False,
+            "key_id": payload.key_id,
+            "token_id": int(token_cursor.lastrowid),
         },
         headers={"Cache-Control": "no-store"},
     )
@@ -12566,6 +13016,201 @@ def workbuddy_connector_sha256(artifact: dict[str, object]) -> str:
         ):
             raise ValueError("WorkBuddy 连接器与插件签名清单不一致")
     return connector_sha256
+
+
+@lru_cache(maxsize=8)
+def validate_workbuddy_artifact_for_diagnostics(
+    package_path_value: str,
+    version: str,
+    expected_sha256: str,
+    size: int,
+    modified_ns: int,
+) -> dict[str, object]:
+    del expected_sha256, size, modified_ns
+    validator_path = BASE_DIR / "scripts" / "publish_skill_release.py"
+    if not validator_path.is_file():
+        raise ValueError("正式发布验签器不存在")
+    spec = importlib.util.spec_from_file_location(
+        "jiaotang_release_diagnostics_validator",
+        validator_path,
+    )
+    if spec is None or spec.loader is None:
+        raise ValueError("正式发布验签器无法加载")
+    validator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(validator)
+    result = validator.validate_release_packages(
+        {"workbuddy": Path(package_path_value)},
+        version,
+    )
+    artifact = result.get("artifacts", {}).get("workbuddy", {})
+    integrity = artifact.get("integrity")
+    if not isinstance(integrity, dict):
+        raise ValueError("正式包未返回签名验证结果")
+    return {
+        "status": str(integrity.get("status") or ""),
+        "publisher_fingerprint": str(
+            integrity.get("publisher_fingerprint") or ""
+        ),
+        "signature_namespace": str(integrity.get("signature_namespace") or ""),
+        "verified_files": int(integrity.get("verified_files") or 0),
+        "archive_entries": int(integrity.get("archive_entries") or 0),
+    }
+
+
+def agent_diagnostics_payload(
+    request: Request,
+    user_id: int,
+) -> dict[str, object]:
+    artifact = latest_skill_artifact("workbuddy")
+    expected_sha256 = str(artifact.get("sha256") or "") if artifact else ""
+    package_path = (
+        Path(str(artifact.get("file_path") or "")) if artifact else None
+    )
+    actual_sha256 = ""
+    connector_sha256 = ""
+    signature: dict[str, object] = {
+        "status": "unavailable",
+        "label": "无法验证",
+        "detail": "当前没有可验签的 WorkBuddy 正式包。",
+        "publisher_fingerprint": "",
+        "verified_files": 0,
+        "archive_entries": 0,
+    }
+    package_exists = bool(package_path and package_path.is_file())
+    if package_exists and package_path is not None:
+        actual_sha256 = sha256_file(package_path)
+        try:
+            connector_sha256 = workbuddy_connector_sha256(artifact or {})
+            stat = package_path.stat()
+            integrity = validate_workbuddy_artifact_for_diagnostics(
+                str(package_path),
+                str(artifact.get("version") or ""),
+                expected_sha256,
+                int(stat.st_size),
+                int(stat.st_mtime_ns),
+            )
+            signature = {
+                **integrity,
+                "label": "Ed25519 签名有效",
+                "detail": (
+                    f"已验证 {integrity['verified_files']} 个签名文件，"
+                    f"归档共 {integrity['archive_entries']} 个文件。"
+                ),
+            }
+        except (OSError, ValueError, zipfile.BadZipFile):
+            signature = {
+                **signature,
+                "status": "invalid",
+                "label": "签名验证失败",
+                "detail": "正式包验签未通过，请联系管理员查看服务器端发布门禁。",
+            }
+
+    with closing(database()) as connection:
+        enrollment = connection.execute(
+            """
+            SELECT codes.created_at,codes.expires_at,codes.confirmed_at,
+                   codes.registered_at,codes.consumed_at,
+                   intents.created_at AS prepared_at,
+                   intents.activated_at AS intent_activated_at
+            FROM agent_enrollment_codes codes
+            LEFT JOIN device_registration_intents intents
+              ON intents.enrollment_id=codes.id
+            WHERE codes.user_id=?
+            ORDER BY codes.id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        binding = connection.execute(
+            """
+            SELECT device_bindings.first_bound_at,
+                   device_keys.credential_saved_at,
+                   device_keys.first_verified_at,
+                   device_keys.mcp_connected_at
+            FROM device_bindings
+            JOIN device_keys ON device_keys.binding_id=device_bindings.id
+            WHERE device_bindings.user_id=?
+              AND device_bindings.revoked_at IS NULL
+              AND device_keys.revoked_at IS NULL
+            ORDER BY device_bindings.id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+
+    now = isoformat(utc_now())
+    enrollment_status = "none"
+    enrollment_label = "尚未生成"
+    if enrollment is not None:
+        if binding and binding["mcp_connected_at"]:
+            enrollment_status, enrollment_label = "connected", "四阶段已完成"
+        elif enrollment["registered_at"] or enrollment["intent_activated_at"]:
+            enrollment_status, enrollment_label = "activated", "凭据已激活"
+        elif str(enrollment["expires_at"]) <= now:
+            enrollment_status, enrollment_label = "expired", "已过期"
+        elif enrollment["prepared_at"]:
+            enrollment_status, enrollment_label = (
+                "credential_pending",
+                "等待本地凭据保存并激活",
+            )
+        elif enrollment["confirmed_at"]:
+            enrollment_status, enrollment_label = "ready", "已确认，等待预登记"
+        else:
+            enrollment_status, enrollment_label = "review", "等待用户审查确认"
+
+    stage_specs = (
+        ("registration", "设备登记", "first_bound_at"),
+        ("credential_saved", "凭据安全保存", "credential_saved_at"),
+        ("first_signature", "设备签名验证", "first_verified_at"),
+        ("mcp_connection", "MCP 首次连接", "mcp_connected_at"),
+    )
+    stages = [
+        {
+            "id": stage_id,
+            "label": label,
+            "complete": bool(binding and binding[field]),
+            "completed_at": (
+                format_chinese_datetime(binding[field])
+                if binding and binding[field]
+                else ""
+            ),
+        }
+        for stage_id, label, field in stage_specs
+    ]
+    public_endpoint = str(request.base_url).rstrip("/")
+    return {
+        "generated_at": format_chinese_datetime(now),
+        "package": {
+            "version": str(artifact.get("version") or "") if artifact else "",
+            "available": package_exists,
+            "expected_sha256": expected_sha256,
+            "actual_sha256": actual_sha256,
+            "digest_matches": bool(
+                expected_sha256
+                and actual_sha256
+                and secrets.compare_digest(expected_sha256, actual_sha256)
+            ),
+            "connector_sha256": connector_sha256,
+        },
+        "signature": signature,
+        "enrollment": {
+            "status": enrollment_status,
+            "label": enrollment_label,
+            "url": (
+                f"{public_endpoint}/v1/agent-bootstrap/"
+                "[一次性安装码已隐藏]?platform=unified"
+                if enrollment is not None
+                else "尚未生成一次性登记 URL"
+            ),
+            "expires_at": (
+                format_chinese_datetime(enrollment["expires_at"])
+                if enrollment is not None
+                else ""
+            ),
+        },
+        "stages": stages,
+        "configured": bool(binding and binding["mcp_connected_at"]),
+    }
 
 
 def workbuddy_skill_package(version: str) -> Path:
