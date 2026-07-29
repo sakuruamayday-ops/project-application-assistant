@@ -51,6 +51,14 @@ for command in ssh tar; do
 done
 
 python3 "${service_dir}/scripts/build_static_assets.py"
+platform_capabilities_sha="$(
+    python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' \
+        "${service_dir}/static/skills-manager/platform-capabilities.json"
+)"
+platform_adapters_sha="$(
+    python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' \
+        "${service_dir}/static/skills-manager/platform-adapters.json"
+)"
 
 echo "[1/7] 校验本地正式技能签名覆盖率"
 python3 "${service_dir}/scripts/verify_skill_signature_coverage.py" \
@@ -166,6 +174,21 @@ PY
         mv '/usr/local/sbin/jiaotang-kb-smoke-test.${timestamp}' /usr/local/sbin/jiaotang-kb-smoke-test
         cp '${remote_app_dir}/deploy/jiaotang-kb.service' '${remote_app_dir}/deploy/jiaotang-kb-health.service' '${remote_app_dir}/deploy/jiaotang-kb-backup.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.timer' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.path' /etc/systemd/system/
         chown -R jiaotang:jiaotang '${remote_app_dir}/app' '${remote_app_dir}/references' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/installers' '${remote_app_dir}/docs' '${remote_app_dir}/skills' '${remote_app_dir}/scripts'
+        EXPECTED_PLATFORM_CAPABILITIES_SHA='${platform_capabilities_sha}' EXPECTED_PLATFORM_ADAPTERS_SHA='${platform_adapters_sha}' REMOTE_APP_DIR='${remote_app_dir}' python3 - <<'PY'
+import hashlib
+import os
+from pathlib import Path
+
+root = Path(os.environ['REMOTE_APP_DIR']) / 'static' / 'skills-manager'
+checks = {
+    'platform-capabilities.json': os.environ['EXPECTED_PLATFORM_CAPABILITIES_SHA'],
+    'platform-adapters.json': os.environ['EXPECTED_PLATFORM_ADAPTERS_SHA'],
+}
+for name, expected in checks.items():
+    actual = hashlib.sha256((root / name).read_bytes()).hexdigest()
+    if actual != expected:
+        raise SystemExit(f'生产静态清单未与部署源同步：{name}')
+PY
         source /etc/jiaotang-kb.env
         '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/verify_skill_signature_coverage.py' --skills-root '${remote_app_dir}/skills' --output "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json" --deployment-id '${timestamp}' --scope production
         chown jiaotang:jiaotang "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json"
