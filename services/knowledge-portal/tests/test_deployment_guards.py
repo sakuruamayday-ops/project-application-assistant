@@ -8,6 +8,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
 TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates"
+DEPLOY_DIR = Path(__file__).resolve().parents[1] / "deploy"
 
 
 def load_script(name: str):
@@ -57,6 +58,26 @@ def test_server_managed_private_template_hooks_survive_public_deploys():
     )
     assert portal_html.index(private_nav_hook) < portal_html.index(
         'href="/admin/knowledge"'
+    )
+
+
+def test_deploy_refreshes_index_before_restart_and_startup_only_repairs_missing_cache():
+    service = (DEPLOY_DIR / "jiaotang-kb.service").read_text(encoding="utf-8")
+    refresh_wrapper = (DEPLOY_DIR / "refresh-index.sh").read_text(encoding="utf-8")
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+
+    assert (
+        "ExecStartPre=/usr/local/sbin/jiaotang-kb-refresh-index --if-missing"
+        in service
+    )
+    assert 'if [[ "${mode}" == "--if-missing" ]]' in refresh_wrapper
+    refresh_command = (
+        "runuser --preserve-environment -u jiaotang -- "
+        "/usr/local/sbin/jiaotang-kb-refresh-index"
+    )
+    assert refresh_command in deploy_script
+    assert deploy_script.index(refresh_command) < deploy_script.index(
+        "systemctl restart jiaotang-kb"
     )
 
 

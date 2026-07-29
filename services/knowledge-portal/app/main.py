@@ -7071,9 +7071,18 @@ def portal_payload(
                 """
                 SELECT users.id,users.username,users.real_name,users.company_name,
                        users.is_admin,users.active,users.created_at,
-                       latest_result.result_status AS install_result_status,
-                       latest_result.result_error_stage AS install_error_stage,
-                       latest_result.result_reported_at AS install_reported_at
+                       CASE
+                         WHEN connected_key.mcp_connected_at IS NOT NULL THEN 'configured'
+                         ELSE latest_result.result_status
+                       END AS install_result_status,
+                       CASE
+                         WHEN connected_key.mcp_connected_at IS NOT NULL THEN NULL
+                         ELSE latest_result.result_error_stage
+                       END AS install_error_stage,
+                       COALESCE(
+                         connected_key.mcp_connected_at,
+                         latest_result.result_reported_at
+                       ) AS install_reported_at
                 FROM users
                 LEFT JOIN agent_enrollment_codes latest_result
                   ON latest_result.id=(
@@ -7082,6 +7091,16 @@ def portal_payload(
                     WHERE result_codes.user_id=users.id
                       AND result_codes.result_reported_at IS NOT NULL
                     ORDER BY result_codes.result_reported_at DESC,result_codes.id DESC
+                    LIMIT 1
+                  )
+                LEFT JOIN device_keys connected_key
+                  ON connected_key.id=(
+                    SELECT active_keys.id
+                    FROM device_keys active_keys
+                    WHERE active_keys.user_id=users.id
+                      AND active_keys.revoked_at IS NULL
+                      AND active_keys.mcp_connected_at IS NOT NULL
+                    ORDER BY active_keys.mcp_connected_at DESC,active_keys.id DESC
                     LIMIT 1
                   )
                 WHERE users.deleted_at IS NULL
