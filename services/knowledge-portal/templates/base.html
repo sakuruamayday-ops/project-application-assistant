@@ -7,6 +7,7 @@
   <title>{% block title %}知识产权大脑{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   {% include "_static_assets.html" %}
+  {% block head_extra %}{% endblock %}
 </head>
 <body class="{% block body_class %}auth-body{% endblock %}">
   {% block content %}{% endblock %}

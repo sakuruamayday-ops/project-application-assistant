@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
+TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates"
 
 
 def load_script(name: str):
@@ -40,6 +41,23 @@ def test_authenticated_portal_validators_accept_current_contract():
     """
     assert module.validate_portal_html(html) == "/static/app.css?v=abc123"
     module.validate_stylesheet(css)
+
+
+def test_server_managed_private_template_hooks_survive_public_deploys():
+    base_html = (TEMPLATE_DIR / "base.html").read_text(encoding="utf-8")
+    portal_html = (TEMPLATE_DIR / "portal.html").read_text(encoding="utf-8")
+    private_nav_hook = (
+        '{% include "_private_admin_nav.html" ignore missing %}'
+    )
+
+    assert "{% block head_extra %}{% endblock %}" in base_html
+    assert private_nav_hook in portal_html
+    assert portal_html.index('data-section-link="health-admin"') < (
+        portal_html.index(private_nav_hook)
+    )
+    assert portal_html.index(private_nav_hook) < portal_html.index(
+        'href="/admin/knowledge"'
+    )
 
 
 def test_deployment_lock_rejects_second_process(tmp_path: Path):

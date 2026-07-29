@@ -29,7 +29,15 @@
     </nav>
     {% if user.is_admin %}
     <p class="nav-label">管理员</p>
-    <nav class="side-nav"><a href="#health-admin" data-section-link="health-admin">健康看板</a><a href="/admin/knowledge">知识库管理</a><a href="/admin/metadata-review">知识校准</a><a href="#knowledge-admin" data-section-link="knowledge-admin">知识库更新</a><a href="#skill-admin" data-section-link="skill-admin">版本发布</a><a href="#members" data-section-link="members">成员管理</a></nav>
+    <nav class="side-nav">
+      <a href="#health-admin" data-section-link="health-admin">健康看板</a>
+      {% include "_private_admin_nav.html" ignore missing %}
+      <a href="/admin/knowledge">知识库管理</a>
+      <a href="/admin/metadata-review">知识校准</a>
+      <a href="#knowledge-admin" data-section-link="knowledge-admin">知识库更新</a>
+      <a href="#skill-admin" data-section-link="skill-admin">版本发布</a>
+      <a href="#members" data-section-link="members">成员管理</a>
+    </nav>
     {% endif %}
     <div class="service-state"><span class="live-dot"></span><div><strong>{{ "知识服务在线" if knowledge_stats.connected else "索引未连接" }}</strong><small>{{ (knowledge_stats.documents ~ ' 份全文资料') if user.is_admin else '统一知识服务已连接' }}</small></div></div>
   </aside>
