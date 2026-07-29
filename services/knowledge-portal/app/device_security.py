@@ -12,6 +12,8 @@ from cryptography.hazmat.primitives.serialization import load_der_public_key
 
 SIGNATURE_VERSION = "JIAOTANG-SIGNATURE-V1"
 ENROLLMENT_VERSION = "JIAOTANG-ENROLLMENT-V1"
+TRANSACTIONAL_ENROLLMENT_VERSION = "JIAOTANG-ENROLLMENT-TRANSACTION-V1"
+ACTIVATION_VERSION = "JIAOTANG-ACTIVATION-V1"
 KEY_ID_PATTERN = re.compile(r"^jdk_[A-Za-z0-9_-]{20,64}$")
 NONCE_PATTERN = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
 
@@ -76,7 +78,21 @@ def enrollment_canonical_value(
     platform: str,
     agent_host: str,
     public_key: str,
+    transaction_mode: str = "legacy_v1",
 ) -> bytes:
+    if transaction_mode == "credential_activation_v1":
+        return "\n".join(
+            (
+                TRANSACTIONAL_ENROLLMENT_VERSION,
+                enrollment_code,
+                device_id,
+                device_name,
+                platform,
+                agent_host,
+                public_key,
+                transaction_mode,
+            )
+        ).encode("utf-8")
     return "\n".join(
         (
             ENROLLMENT_VERSION,
@@ -86,6 +102,24 @@ def enrollment_canonical_value(
             platform,
             agent_host,
             public_key,
+        )
+    ).encode("utf-8")
+
+
+def activation_canonical_value(
+    *,
+    enrollment_code: str,
+    device_id: str,
+    key_id: str,
+    token_fingerprint: str,
+) -> bytes:
+    return "\n".join(
+        (
+            ACTIVATION_VERSION,
+            enrollment_code,
+            device_id,
+            key_id,
+            token_fingerprint,
         )
     ).encode("utf-8")
 

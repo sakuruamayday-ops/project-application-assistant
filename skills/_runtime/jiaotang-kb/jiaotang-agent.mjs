@@ -23,9 +23,12 @@ import {fileURLToPath} from "node:url";
 import readline from "node:readline";
 
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const SIGNATURE_VERSION = "JIAOTANG-SIGNATURE-V1";
 const ENROLLMENT_VERSION = "JIAOTANG-ENROLLMENT-V1";
+const TRANSACTIONAL_ENROLLMENT_VERSION = "JIAOTANG-ENROLLMENT-TRANSACTION-V1";
+const ACTIVATION_VERSION = "JIAOTANG-ACTIVATION-V1";
+const TRANSACTION_MODE = "credential_activation_v1";
 const KEYCHAIN_SERVICE = "cn.zshjiaotang.knowledge-device";
 const KEYCHAIN_ACCOUNT = "jiaotang-kb";
 const MAC_SECURITY_COMMAND = "/usr/bin/security";
@@ -344,7 +347,23 @@ function enrollmentCanonical({
   platform,
   agentHost,
   publicKey,
+  transactionMode = "legacy_v1",
 }) {
+  if (transactionMode === TRANSACTION_MODE) {
+    return Buffer.from(
+      [
+        TRANSACTIONAL_ENROLLMENT_VERSION,
+        enrollmentCode,
+        deviceId,
+        deviceName,
+        platform,
+        agentHost,
+        publicKey,
+        transactionMode,
+      ].join("\n"),
+      "utf8",
+    );
+  }
   return Buffer.from(
     [
       ENROLLMENT_VERSION,
@@ -354,6 +373,25 @@ function enrollmentCanonical({
       platform,
       agentHost,
       publicKey,
+    ].join("\n"),
+    "utf8",
+  );
+}
+
+
+function activationCanonical({
+  enrollmentCode,
+  deviceId,
+  keyId,
+  token,
+}) {
+  return Buffer.from(
+    [
+      ACTIVATION_VERSION,
+      enrollmentCode,
+      deviceId,
+      keyId,
+      sha256(token),
     ].join("\n"),
     "utf8",
   );
@@ -424,6 +462,63 @@ async function signedFetch(credentials, url, options = {}) {
     ...signedHeaders(credentials, method, url, body),
   };
   return fetch(url, {...options, method, body: body.length ? body : undefined, headers});
+}
+
+
+async function activateStoredCredentials(credentials) {
+  if (credentials.activated === true) {
+    const {
+      activationUrl: _activationUrl,
+      enrollmentCode: _enrollmentCode,
+      ...activatedCredentials
+    } = credentials;
+    return {...activatedCredentials, activated: true};
+  }
+  if (!credentials.activationUrl) {
+    return credentials;
+  }
+  if (!credentials.enrollmentCode) {
+    throw new Error("待激活凭据缺少一次性登记上下文");
+  }
+  const proof = base64url(
+    signMessage(
+      null,
+      activationCanonical({
+        enrollmentCode: credentials.enrollmentCode,
+        deviceId: credentials.deviceId,
+        keyId: credentials.keyId,
+        token: credentials.token,
+      }),
+      credentials.privateKey,
+    ),
+  );
+  const response = await fetch(credentials.activationUrl, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      device_id: credentials.deviceId,
+      key_id: credentials.keyId,
+      token: credentials.token,
+      proof,
+    }),
+  });
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      detail = (await response.json()).detail || detail;
+    } catch {}
+    throw new Error(`设备激活失败：${detail}`);
+  }
+  const activation = await response.json();
+  if (activation.status !== "activated" || activation.key_id !== credentials.keyId) {
+    throw new Error("设备激活响应无效");
+  }
+  const {
+    activationUrl: _activationUrl,
+    enrollmentCode: _enrollmentCode,
+    ...activatedCredentials
+  } = credentials;
+  return {...activatedCredentials, activated: true};
 }
 
 
@@ -550,6 +645,7 @@ async function install(argumentsValue) {
         platform: platformName,
         agentHost: host,
         publicKey: publicKeyValue,
+        transactionMode: TRANSACTION_MODE,
       }),
       privateKey,
     ),
@@ -565,6 +661,7 @@ async function install(argumentsValue) {
       device_name: deviceName,
       platform: platformName,
       agent_host: host,
+      transaction_mode: TRANSACTION_MODE,
     }),
   });
   if (!registrationResponse.ok) {
@@ -575,6 +672,15 @@ async function install(argumentsValue) {
     throw new Error(`设备登记失败：${detail}`);
   }
   const registration = await registrationResponse.json();
+  if (
+    !["prepared", "activated"].includes(registration.status)
+    || !registration.key_id
+    || !registration.token
+    || !registration.activation_url
+    || new URL(registration.activation_url).origin !== bootstrap.origin
+  ) {
+    throw new Error("设备预登记响应无效");
+  }
   const credentials = {
     version: 1,
     keyId: registration.key_id,
@@ -586,6 +692,9 @@ async function install(argumentsValue) {
     agentHost: host,
     apiBaseUrl: registration.api_base_url,
     mcpUrl: registration.mcp_url,
+    activationUrl: registration.activation_url,
+    enrollmentCode,
+    activated: registration.status === "activated",
   };
 
   installationStage = "credential_storage";
@@ -605,13 +714,16 @@ async function install(argumentsValue) {
   ) {
     throw new Error("系统凭据库回读校验失败");
   }
-  const credentialSavedResponse = await signedFetch(
-    storedCredentials,
-    `${credentials.apiBaseUrl}/device-installation/credential-saved`,
-    {method: "POST"},
-  );
-  if (!credentialSavedResponse.ok) {
-    throw new Error(`凭据保存上报失败：HTTP ${credentialSavedResponse.status}`);
+  installationStage = "device_activation";
+  const activatedCredentials = await activateStoredCredentials(storedCredentials);
+  storeCredentials(activatedCredentials, platform, home);
+  const finalCredentials = loadCredentials(platform, home);
+  if (
+    finalCredentials.keyId !== credentials.keyId
+    || finalCredentials.token !== credentials.token
+    || finalCredentials.activated !== true
+  ) {
+    throw new Error("激活凭据回写校验失败");
   }
   installationStage = "host_configuration";
   const configPath = pluginMode
@@ -621,7 +733,7 @@ async function install(argumentsValue) {
   await testStdioMcpConnection(targetScript, platform, home);
   installationStage = "server_verification";
   const statusResponse = await signedFetch(
-    storedCredentials,
+    finalCredentials,
     `${credentials.apiBaseUrl}/device-installation/status`,
   );
   if (!statusResponse.ok) {
@@ -668,8 +780,9 @@ async function pluginServe(argumentsValue) {
   const enrollmentMarker = pluginData
     ? join(pluginData, "jiaotang-kb-enrollment.json")
     : "";
+  let credentials;
   try {
-    loadCredentials(platform, home);
+    credentials = loadCredentials(platform, home);
   } catch (credentialError) {
     if (enrollmentMarker && existsSync(enrollmentMarker)) {
       throw new Error(
@@ -692,13 +805,26 @@ async function pluginServe(argumentsValue) {
       "plugin-mode": true,
       host: "workbuddy",
     });
-    if (enrollmentMarker) {
-      atomicWrite(
-        enrollmentMarker,
-        `${JSON.stringify({version: 1, enrolled: true})}\n`,
-        0o600,
+    credentials = loadCredentials(platform, home);
+  }
+  if (credentials.activated !== true && credentials.activationUrl) {
+    try {
+      const activatedCredentials = await activateStoredCredentials(credentials);
+      storeCredentials(activatedCredentials, platform, home);
+      credentials = loadCredentials(platform, home);
+    } catch (error) {
+      throw new Error(
+        "本地凭据已保存，但设备激活尚未完成；请保留插件配置并重试",
+        {cause: error},
       );
     }
+  }
+  if (enrollmentMarker) {
+    atomicWrite(
+      enrollmentMarker,
+      `${JSON.stringify({version: 2, enrolled: true, activated: true})}\n`,
+      0o600,
+    );
   }
   await serve(argumentsValue);
 }
@@ -713,6 +839,7 @@ function installationFailure(error, argumentsValue = {}) {
     integrity_verification: "请停止使用当前安装文件，回到门户重新复制安装配置。",
     device_registration: "请稍后重试；若仍失败，请回到门户点击“更换绑定设备”后重新复制安装配置。",
     credential_storage: "请允许 Agent 使用系统钥匙串或 Windows 凭据管理器，然后重新执行安装。",
+    device_activation: "本地凭据已安全保存，请保持同一插件配置并重试，系统会继续激活而不会重复绑定。",
     host_configuration: "请确认 Agent 有权写入本机 MCP 配置目录，然后重新执行安装。",
     mcp_connection: "请重新执行安装；若仍失败，请检查本机 Agent 是否允许启动 stdio MCP 连接器。",
     server_verification: "请重新执行安装，让服务器完成首次签名与 MCP 连接确认。",
@@ -869,7 +996,9 @@ async function main() {
 
 
 export {
+  activationCanonical,
   appendUrlPath,
+  activateStoredCredentials,
   configureHost,
   detectHost,
   enrollmentCanonical,

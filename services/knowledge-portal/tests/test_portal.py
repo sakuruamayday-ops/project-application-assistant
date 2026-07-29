@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from fastapi.testclient import TestClient
 
 from app.device_security import (
+    activation_canonical_value,
     base64url_encode,
     device_key_id,
     enrollment_canonical_value,
@@ -3536,9 +3537,12 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert protocol.headers["content-type"].startswith(
             "application/vnd.jiaotang.agent-install+json"
         )
-        assert protocol.headers["x-jiaotang-install-protocol"] == "4"
+        assert protocol.headers["x-jiaotang-install-protocol"] == "5"
+        assert protocol.headers["x-jiaotang-registration-transaction"] == (
+            "prepare-store-activate"
+        )
         assert protocol.json()["schema"] == "jiaotang-agent-install/v1"
-        assert protocol.json()["protocol_version"] == 4
+        assert protocol.json()["protocol_version"] == 5
         assert protocol.json()["phase"] == "review"
         assert protocol.json()["action"] == "review_signed_plugin"
         assert protocol.json()["opaque"] is False
@@ -3551,6 +3555,12 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert review["plugin_package"]["signature_required"] is True
         assert review["plugin_package"]["contains_mcp_server"] == "jiaotang-kb"
         assert review["credential_handling"]["private_key_uploaded"] is False
+        assert review["credential_handling"]["registration_transaction"] == (
+            "prepare_store_activate"
+        )
+        assert review["credential_handling"][
+            "activation_requires_secure_store_readback"
+        ] is True
         assert review["local_changes"]
         assert review["rollback"]
         assert "execution" not in protocol.json()
@@ -3945,6 +3955,394 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         )
         assert expired_registration.status_code == 410
         assert "已经过期" in expired_registration.json()["detail"]
+
+
+def test_transactional_device_registration_activates_only_after_saved_credential_proof(
+    tmp_path,
+):
+    module = load_app(tmp_path)
+    enrollment_code = "jbe_transactional-test-0001"
+    now = module.isoformat(module.utc_now())
+    expires_at = module.isoformat(module.utc_now() + timedelta(minutes=30))
+    with closing(module.database()) as connection:
+        user_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(username,real_name,password_hash,created_at)
+                VALUES (?,?,?,?)
+                """,
+                (
+                    "member",
+                    "王小明",
+                    module.password_hasher.hash("member-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?,'registered',?,?,?)
+            """,
+            ("王小明", "0826", user_id, now, now),
+        )
+        connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                user_id,code_hash,created_at,expires_at,confirmed_at
+            ) VALUES (?,?,?,?,?)
+            """,
+            (
+                user_id,
+                module.token_hash(enrollment_code),
+                now,
+                expires_at,
+                now,
+            ),
+        )
+        connection.commit()
+
+    private_key = Ed25519PrivateKey.generate()
+    public_key = base64url_encode(
+        private_key.public_key().public_bytes(
+            Encoding.DER,
+            PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+    registration = {
+        "device_id": TEST_DEVICE_ID,
+        "device_name": TEST_DEVICE_NAME,
+        "platform": "win32-x64",
+        "agent_host": "workbuddy",
+        "public_key": public_key,
+        "transaction_mode": "credential_activation_v1",
+    }
+    registration["proof"] = base64url_encode(
+        private_key.sign(
+            enrollment_canonical_value(
+                enrollment_code=enrollment_code,
+                **registration,
+            )
+        )
+    )
+
+    with TestClient(module.app) as client:
+        prepared = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/register",
+            json=registration,
+        )
+        assert prepared.status_code == 200
+        assert prepared.json()["status"] == "prepared"
+        assert prepared.json()["idempotent"] is False
+        assert prepared.json()["activation_url"].endswith(
+            f"/v1/agent-bootstrap/{enrollment_code}/activate"
+        )
+        token = prepared.json()["token"]
+        key_id = prepared.json()["key_id"]
+
+        with closing(module.database()) as connection:
+            assert connection.execute("SELECT COUNT(*) FROM device_tokens").fetchone()[0] == 0
+            assert connection.execute("SELECT COUNT(*) FROM device_bindings").fetchone()[0] == 0
+            assert connection.execute("SELECT COUNT(*) FROM device_keys").fetchone()[0] == 0
+            intent = connection.execute(
+                """
+                SELECT activated_at FROM device_registration_intents
+                WHERE user_id=?
+                """,
+                (user_id,),
+            ).fetchone()
+            enrollment = connection.execute(
+                """
+                SELECT registered_at FROM agent_enrollment_codes
+                WHERE user_id=?
+                """,
+                (user_id,),
+            ).fetchone()
+        assert intent is not None
+        assert intent["activated_at"] is None
+        assert enrollment["registered_at"] is None
+        assert client.get(
+            "/v1/me",
+            headers=signed_api_headers(
+                module,
+                token,
+                private_key,
+                key_id,
+                method="GET",
+                request_target="/v1/me",
+            ),
+        ).status_code == 401
+
+        invalid_activation = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/activate",
+            json={
+                "device_id": TEST_DEVICE_ID,
+                "key_id": key_id,
+                "token": token,
+                "proof": base64url_encode(Ed25519PrivateKey.generate().sign(b"invalid")),
+            },
+        )
+        assert invalid_activation.status_code == 403
+        with closing(module.database()) as connection:
+            assert connection.execute("SELECT COUNT(*) FROM device_tokens").fetchone()[0] == 0
+            assert connection.execute("SELECT COUNT(*) FROM device_bindings").fetchone()[0] == 0
+            assert connection.execute("SELECT COUNT(*) FROM device_keys").fetchone()[0] == 0
+
+        activation_proof = base64url_encode(
+            private_key.sign(
+                activation_canonical_value(
+                    enrollment_code=enrollment_code,
+                    device_id=TEST_DEVICE_ID,
+                    key_id=key_id,
+                    token_fingerprint=module.token_hash(token),
+                )
+            )
+        )
+        activation_payload = {
+            "device_id": TEST_DEVICE_ID,
+            "key_id": key_id,
+            "token": token,
+            "proof": activation_proof,
+        }
+        activated = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/activate",
+            json=activation_payload,
+        )
+        assert activated.status_code == 200
+        assert activated.json()["status"] == "activated"
+        assert activated.json()["idempotent"] is False
+        idempotent = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/activate",
+            json=activation_payload,
+        )
+        assert idempotent.status_code == 200
+        assert idempotent.json()["idempotent"] is True
+
+        status_response = client.get(
+            "/v1/device-installation/status",
+            headers=signed_api_headers(
+                module,
+                token,
+                private_key,
+                key_id,
+                method="GET",
+                request_target="/v1/device-installation/status",
+            ),
+        )
+        assert status_response.status_code == 200
+        stages = status_response.json()["stages"]
+        assert stages["registration"]["completed"]
+        assert stages["credential_saved"]["completed"]
+        assert stages["first_signature"]["completed"]
+        assert not stages["mcp_connection"]["completed"]
+
+    with closing(module.database()) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM device_tokens").fetchone()[0] == 1
+        assert connection.execute("SELECT COUNT(*) FROM device_bindings").fetchone()[0] == 1
+        key = connection.execute(
+            """
+            SELECT credential_saved_at,first_verified_at
+            FROM device_keys WHERE user_id=?
+            """,
+            (user_id,),
+        ).fetchone()
+        enrollment = connection.execute(
+            """
+            SELECT registered_at,registered_key_id
+            FROM agent_enrollment_codes WHERE user_id=?
+            """,
+            (user_id,),
+        ).fetchone()
+    assert key["credential_saved_at"]
+    assert key["first_verified_at"]
+    assert enrollment["registered_at"]
+    assert enrollment["registered_key_id"] == key_id
+
+
+def test_legacy_device_registration_is_blocked_after_transactional_release(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    monkeypatch.setattr(
+        module,
+        "latest_skill_artifact",
+        lambda target: (
+            {"version": "1.3.1.4", "target": "workbuddy"}
+            if target == "workbuddy"
+            else None
+        ),
+    )
+    private_key = Ed25519PrivateKey.generate()
+    public_key = base64url_encode(
+        private_key.public_key().public_bytes(
+            Encoding.DER,
+            PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+    registration = {
+        "device_id": TEST_DEVICE_ID,
+        "device_name": TEST_DEVICE_NAME,
+        "platform": "win32-x64",
+        "agent_host": "workbuddy",
+        "public_key": public_key,
+    }
+    registration["proof"] = base64url_encode(
+        private_key.sign(
+            enrollment_canonical_value(
+                enrollment_code="jbe_legacy-block-test",
+                **registration,
+            )
+        )
+    )
+    with TestClient(module.app) as client:
+        response = client.post(
+            "/v1/agent-bootstrap/jbe_legacy-block-test/register",
+            json=registration,
+        )
+    assert response.status_code == 426
+    assert response.headers["upgrade"] == "jiaotang-registration-transaction-v1"
+    assert "V1.3.1.4" in response.json()["detail"]
+    with closing(module.database()) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM device_tokens").fetchone()[0] == 0
+        assert connection.execute("SELECT COUNT(*) FROM device_bindings").fetchone()[0] == 0
+        assert connection.execute("SELECT COUNT(*) FROM device_keys").fetchone()[0] == 0
+
+
+def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    package = tmp_path / "workbuddy-diagnostics.zip"
+    package.write_bytes(b"diagnostic-package")
+    package_sha256 = hashlib.sha256(package.read_bytes()).hexdigest()
+    now = module.isoformat(module.utc_now())
+    expires_at = module.isoformat(module.utc_now() + timedelta(minutes=30))
+    with closing(module.database()) as connection:
+        user_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(username,real_name,password_hash,created_at)
+                VALUES (?,?,?,?)
+                """,
+                (
+                    "member",
+                    "王小明",
+                    module.password_hasher.hash("member-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?,'registered',?,?,?)
+            """,
+            ("王小明", "0826", user_id, now, now),
+        )
+        enrollment_id = int(
+            connection.execute(
+                """
+                INSERT INTO agent_enrollment_codes(
+                    user_id,code_hash,created_at,expires_at,confirmed_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    user_id,
+                    module.token_hash("jbe_supersecret-code"),
+                    now,
+                    expires_at,
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO device_registration_intents(
+                enrollment_id,user_id,device_id_hash,device_id_prefix,
+                device_name,key_id,public_key,platform,agent_host,
+                token_prefix,token_hash,token_seed,created_at,expires_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                enrollment_id,
+                user_id,
+                hashlib.sha256(TEST_DEVICE_ID.encode()).hexdigest(),
+                TEST_DEVICE_ID[:12],
+                TEST_DEVICE_NAME,
+                "jdk_012345678901234567890123",
+                "PUBLIC-SENSITIVE",
+                "win32-x64",
+                "workbuddy",
+                "jtk_secret",
+                module.token_hash("jtk_supersecret-token"),
+                "SEED-SENSITIVE",
+                now,
+                expires_at,
+            ),
+        )
+        connection.commit()
+
+    monkeypatch.setattr(
+        module,
+        "latest_skill_artifact",
+        lambda target: (
+            {
+                "file_path": str(package),
+                "sha256": package_sha256,
+                "target": "workbuddy",
+                "version": "1.3.1.4",
+            }
+            if target == "workbuddy"
+            else None
+        ),
+    )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_connector_sha256",
+        lambda artifact: "a" * 64,
+    )
+    monkeypatch.setattr(
+        module,
+        "validate_workbuddy_artifact_for_diagnostics",
+        lambda *args: {
+            "status": "verified",
+            "publisher_fingerprint": (
+                "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
+            ),
+            "signature_namespace": "codex-workbuddy-plugin-manifest",
+            "verified_files": 57,
+            "archive_entries": 61,
+        },
+    )
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "member", "password": "member-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        page = client.get("/skills/diagnostics")
+        assert page.status_code == 200
+        assert "WorkBuddy 一键诊断" in page.text
+        assert package_sha256 in page.text
+        assert "Ed25519 签名有效" in page.text
+        assert "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI" in page.text
+        assert "[一次性安装码已隐藏]" in page.text
+        assert "四阶段连接状态" in page.text
+        assert "等待本地凭据保存并激活" in page.text
+        for sensitive in (
+            "jbe_supersecret-code",
+            "jtk_supersecret-token",
+            "PUBLIC-SENSITIVE",
+            "SEED-SENSITIVE",
+        ):
+            assert sensitive not in page.text
+        assert page.headers["cache-control"] == "private, no-store"
 
 
 def test_bootstrap_recovers_unverified_partial_installation(tmp_path):

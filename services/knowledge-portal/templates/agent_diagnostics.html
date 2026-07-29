@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}WorkBuddy 一键诊断｜知识产权大脑{% endblock %}
+{% block body_class %}app-body diagnostics-body{% endblock %}
+{% block content %}
+<main class="diagnostics-page">
+  <header class="diagnostics-header">
+    <div>
+      <span class="eyebrow">Safe Connection Diagnostics</span>
+      <h1>WorkBuddy 一键诊断</h1>
+      <p>只展示可公开核验的摘要和连接状态，不读取或显示安装码、访问凭据、私钥与完整设备公钥。</p>
+    </div>
+    <div class="button-row">
+      <a class="button secondary" href="/skills">返回 Skills 中心</a>
+      <a class="button" href="/skills/diagnostics">重新诊断</a>
+    </div>
+  </header>
+
+  <section class="diagnostics-summary">
+    <article class="{{ 'is-ok' if diagnostics.package.digest_matches else 'is-alert' }}">
+      <span>包摘要</span>
+      <strong>{{ '一致' if diagnostics.package.digest_matches else '需检查' }}</strong>
+      <small>WorkBuddy V{{ diagnostics.package.version or '—' }}</small>
+    </article>
+    <article class="{{ 'is-ok' if diagnostics.signature.status == 'verified' else 'is-alert' }}">
+      <span>签名状态</span>
+      <strong>{{ diagnostics.signature.label }}</strong>
+      <small>{{ diagnostics.signature.verified_files }} 个文件已核验</small>
+    </article>
+    <article class="{{ 'is-ok' if diagnostics.configured else 'is-pending' }}">
+      <span>连接状态</span>
+      <strong>{{ '已完成' if diagnostics.configured else '进行中' }}</strong>
+      <small>{{ diagnostics.enrollment.label }}</small>
+    </article>
+  </section>
+
+  <section class="diagnostics-grid">
+    <article class="panel diagnostics-card">
+      <div class="panel-head"><div><span class="file-tab">PACKAGE DIGEST</span><h2>正式包摘要</h2></div></div>
+      <dl class="diagnostics-values">
+        <div><dt>发布记录 SHA-256</dt><dd><code>{{ diagnostics.package.expected_sha256 or '未发布' }}</code></dd></div>
+        <div><dt>服务器文件 SHA-256</dt><dd><code>{{ diagnostics.package.actual_sha256 or '文件不可用' }}</code></dd></div>
+        <div><dt>连接器 SHA-256</dt><dd><code>{{ diagnostics.package.connector_sha256 or '无法读取' }}</code></dd></div>
+      </dl>
+    </article>
+
+    <article class="panel diagnostics-card">
+      <div class="panel-head"><div><span class="file-tab">ED25519 SIGNATURE</span><h2>发布签名</h2></div></div>
+      <p class="diagnostics-state {{ 'is-ok' if diagnostics.signature.status == 'verified' else 'is-alert' }}">{{ diagnostics.signature.label }}</p>
+      <p>{{ diagnostics.signature.detail }}</p>
+      <dl class="diagnostics-values">
+        <div><dt>发布者公钥指纹</dt><dd><code>{{ diagnostics.signature.publisher_fingerprint or '无法验证' }}</code></dd></div>
+      </dl>
+    </article>
+
+    <article class="panel diagnostics-card diagnostics-enrollment">
+      <div class="panel-head"><div><span class="file-tab">REDACTED ENROLLMENT</span><h2>设备登记 URL</h2></div></div>
+      <p class="diagnostics-state is-pending">{{ diagnostics.enrollment.label }}</p>
+      <code class="diagnostics-url">{{ diagnostics.enrollment.url }}</code>
+      {% if diagnostics.enrollment.expires_at %}<small>有效期至 {{ diagnostics.enrollment.expires_at }}</small>{% endif %}
+      <p class="muted">一次性安装码已在服务器端脱敏，页面源代码中也不包含原值。</p>
+    </article>
+
+    <article class="panel diagnostics-card">
+      <div class="panel-head"><div><span class="file-tab">FOUR STAGES</span><h2>四阶段连接状态</h2></div></div>
+      <ol class="diagnostics-stages">
+        {% for stage in diagnostics.stages %}
+        <li class="{{ 'is-complete' if stage.complete else 'is-pending' }}">
+          <i></i><span><strong>{{ loop.index }}. {{ stage.label }}</strong><small>{{ stage.completed_at if stage.complete else '尚未完成' }}</small></span>
+        </li>
+        {% endfor %}
+      </ol>
+    </article>
+  </section>
+  <footer class="diagnostics-footnote">诊断生成时间：{{ diagnostics.generated_at }}。本页不执行设备变更，也不回传任何本地敏感信息。</footer>
+</main>
+{% endblock %}

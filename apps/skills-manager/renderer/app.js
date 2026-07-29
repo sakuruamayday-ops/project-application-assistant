@@ -2,7 +2,7 @@ const bridge = window.jiaotang;
 
 const demoOverview = {
   os: { platform: navigator.platform.toLowerCase().includes("win") ? "win32" : "darwin", arch: "arm64", version: "preview" },
-  product: { name: "企业全生命周期助手", releaseTag: "V1.3.1.3", skillCount: 49, managerVersion: "0.2.0" },
+  product: { name: "企业全生命周期助手", releaseTag: "V1.3.1.4", skillCount: 49, managerVersion: "0.2.0" },
   settings: { portalUrl: "https://zshjiaotang.cn" },
   appTrust: {
     signed: false,

@@ -2218,4 +2218,186 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .skill-detail-tabs { overflow-x:auto; }
   .skill-detail-card > footer { flex-wrap:wrap; }
 }
+.diagnostics-body {
+  min-height: 100vh;
+  background: #f4f2ed;
+}
+
+.diagnostics-page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 52px 0 72px;
+}
+
+.diagnostics-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 30px;
+}
+
+.diagnostics-header h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(34px, 5vw, 58px);
+}
+
+.diagnostics-header p {
+  max-width: 760px;
+  color: var(--muted);
+}
+
+.diagnostics-summary,
+.diagnostics-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.diagnostics-summary {
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 18px;
+}
+
+.diagnostics-summary article {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-top: 4px solid #b59c77;
+  background: #fff;
+}
+
+.diagnostics-summary article.is-ok {
+  border-top-color: #28765a;
+}
+
+.diagnostics-summary article.is-alert {
+  border-top-color: #8a6a2f;
+}
+
+.diagnostics-summary span,
+.diagnostics-summary small {
+  display: block;
+  color: var(--muted);
+}
+
+.diagnostics-summary strong {
+  display: block;
+  margin: 7px 0;
+  font-size: 22px;
+}
+
+.diagnostics-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.diagnostics-card {
+  min-width: 0;
+}
+
+.diagnostics-values {
+  display: grid;
+  gap: 16px;
+}
+
+.diagnostics-values div {
+  min-width: 0;
+}
+
+.diagnostics-values dt {
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+.diagnostics-values dd {
+  margin: 0;
+}
+
+.diagnostics-values code,
+.diagnostics-url {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.diagnostics-state {
+  display: inline-flex;
+  margin: 0 0 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eee8dc;
+  color: #745d3d;
+  font-weight: 700;
+}
+
+.diagnostics-state.is-ok {
+  background: #e4f2ea;
+  color: #216247;
+}
+
+.diagnostics-state.is-alert {
+  background: #f1eadb;
+  color: #74561f;
+}
+
+.diagnostics-enrollment small,
+.diagnostics-enrollment .muted {
+  display: block;
+  margin-top: 12px;
+}
+
+.diagnostics-stages {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.diagnostics-stages li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.diagnostics-stages i {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 50%;
+  background: #c5b89f;
+}
+
+.diagnostics-stages li.is-complete i {
+  background: #28765a;
+  box-shadow: 0 0 0 5px #e4f2ea;
+}
+
+.diagnostics-stages span,
+.diagnostics-stages small {
+  display: block;
+}
+
+.diagnostics-stages small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.diagnostics-footnote {
+  margin-top: 22px;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .diagnostics-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .diagnostics-summary,
+  .diagnostics-grid {
+    grid-template-columns: 1fr;
+  }
+}
 }

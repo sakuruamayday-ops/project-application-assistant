@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
 
 import {
+  activationCanonical,
   appendUrlPath,
   expectedInstallerSha256,
 } from "../services/knowledge-portal/installers/jiaotang-agent.mjs";
@@ -20,6 +21,21 @@ assert.equal(
     "register",
   ).toString(),
   "https://zshjiaotang.cn/v1/agent-bootstrap/jbe_test/register?platform=unified",
+);
+assert.equal(
+  activationCanonical({
+    enrollmentCode: "jbe_test",
+    deviceId: "device:test-installation",
+    keyId: "jdk_test-key-identifier-1234",
+    token: "jtk_test-token",
+  }).toString("utf8"),
+  [
+    "JIAOTANG-ACTIVATION-V1",
+    "jbe_test",
+    "device:test-installation",
+    "jdk_test-key-identifier-1234",
+    "0a71f0ef9d9862e9273b2898c42371d5ad4d0cd30a396567550fa68f53e43255",
+  ].join("\n"),
 );
 
 const portalConnector = await readFile(
