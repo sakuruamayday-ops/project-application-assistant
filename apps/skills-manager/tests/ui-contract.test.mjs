@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-test("desktop UI exposes explicit Agent scan and per-platform import actions", () => {
+test("desktop UI exposes WorkBuddy scan and the two release channels", () => {
   const html = fs.readFileSync(path.join(appRoot, "renderer", "index.html"), "utf8");
   const renderer = fs.readFileSync(path.join(appRoot, "renderer", "app.js"), "utf8");
   const preload = fs.readFileSync(path.join(appRoot, "electron", "preload.cjs"), "utf8");
@@ -16,29 +16,21 @@ test("desktop UI exposes explicit Agent scan and per-platform import actions", (
   assert.match(html, /data-platform-filter="all"/);
   assert.match(html, /data-platform-filter="detected"/);
   assert.match(html, /data-platform-filter="automatic"/);
-  assert.match(renderer, /data-platform-action="generic"[\s\S]*一键导入/);
   assert.match(renderer, /data-platform-action="workbuddy"[\s\S]*准备安装/);
-  assert.match(renderer, /data-platform-action="guided"[\s\S]*准备导入/);
+  assert.match(renderer, /generic: "通用 Skills", workbuddy: "WorkBuddy 跨平台包"/);
   assert.match(preload, /scanPlatforms: \(\) => ipcRenderer\.invoke\("platforms:scan"\)/);
   assert.match(main, /ipcMain\.handle\("platforms:scan"/);
   assert.match(preload, /revealAuditLog: \(\) => ipcRenderer\.invoke\("audit:reveal"\)/);
   assert.match(main, /ipcMain\.handle\("audit:reveal"/);
 });
 
-test("mainstream platform catalog remains visible even when clients are absent", () => {
+test("platform catalog only retains WorkBuddy", () => {
   const config = JSON.parse(
     fs.readFileSync(path.join(appRoot, "config", "platforms.json"), "utf8"),
   );
   assert.deepEqual(
     config.platforms.map((platform) => platform.id),
-    [
-      "workbuddy",
-      "trae",
-      "kimi-code",
-      "lingma",
-      "qoder",
-      "cherry-studio",
-    ],
+    ["workbuddy"],
   );
   for (const platform of config.platforms) {
     assert.ok(platform.darwin?.applications?.length, `${platform.id} 缺少 macOS 扫描入口`);

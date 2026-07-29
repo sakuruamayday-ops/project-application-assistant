@@ -9,15 +9,22 @@ const template = read("templates/skill_center.html");
 for (const required of [
   "下载通用包",
   "下载 WorkBuddy 包",
+  "固定双产物",
+  "其他宿主不再规划或展示平台专用版本",
+]) {
+  if (!template.includes(required)) {
+    throw new Error(`网站安装包下载中心缺少必要内容：${required}`);
+  }
+}
+for (const forbidden of [
   'data-platform-package="trae"',
   'data-platform-package="qoder"',
   'data-platform-package="lingma"',
   'data-platform-package="kimi-code"',
   'data-platform-package="cherry-studio"',
-  "只有通过官方文档核对、结构校验和真实宿主验收的平台包才开放下载",
 ]) {
-  if (!template.includes(required)) {
-    throw new Error(`网站安装包下载中心缺少必要内容：${required}`);
+  if (template.includes(forbidden)) {
+    throw new Error(`网站安装包下载中心仍包含已停用的平台入口：${forbidden}`);
   }
 }
 if (template.includes('href="/skills-manager"')) {
@@ -50,8 +57,10 @@ if (
   capabilities.delivery?.primary !== "website_package_center"
   || capabilities.delivery?.skills_manager_status !== "retired"
   || capabilities.directory_sync?.enabled !== false
+  || JSON.stringify(Object.keys(capabilities.platforms || {}).sort())
+    !== JSON.stringify(["generic", "workbuddy"])
 ) {
-  throw new Error("平台能力清单仍把客户端或目录同步标记为正式入口");
+  throw new Error("平台能力清单未固定为通用版与 WorkBuddy 版");
 }
 
 const serviceWorker = read("static/skills-manager/sw.js");
@@ -69,6 +78,6 @@ if (serviceWorker.includes("cache.addAll") || serviceWorker.includes("cache.put"
 }
 
 console.log(
-  "Website package center gate: generic + WorkBuddy available, "
-  + "five platform packages visibly gated, native client retired",
+  "Website package center gate: only generic + WorkBuddy available, "
+  + "other platform packages absent, native client retired",
 );

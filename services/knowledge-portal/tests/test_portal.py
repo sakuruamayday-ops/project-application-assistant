@@ -4627,9 +4627,10 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
         assert "Windows" in page.text
         assert "macOS 与 Windows 共用同一个插件市场 ZIP" in page.text
         assert "WorkBuddy 内添加本地插件市场" in page.text
-        assert "平台增强版 · TRAE" in page.text
-        assert "平台插件版 · Kimi Code" in page.text
-        assert "只有通过官方文档核对、结构校验和真实宿主验收的平台包才开放下载" in page.text
+        assert "固定双产物" in page.text
+        assert "其他宿主不再规划或展示平台专用版本" in page.text
+        assert "平台增强版 · TRAE" not in page.text
+        assert "平台插件版 · Kimi Code" not in page.text
         assert "等待人工反馈" not in page.text
         assert "人工反馈" not in page.text
         assert "自动实机证据" not in page.text
@@ -4860,11 +4861,12 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path)
         page = client.get("/skills")
         assert page.status_code == 200
         assert "打开双端管理器" not in page.text
-        assert "平台增强版 · TRAE" in page.text
-        assert "平台增强版 · Qoder" in page.text
-        assert "平台增强版 · 通义灵码" in page.text
-        assert "平台插件版 · Kimi Code" in page.text
-        assert "平台增强版 · Cherry Studio" in page.text
+        assert "固定双产物" in page.text
+        assert "平台增强版 · TRAE" not in page.text
+        assert "平台增强版 · Qoder" not in page.text
+        assert "平台增强版 · 通义灵码" not in page.text
+        assert "平台插件版 · Kimi Code" not in page.text
+        assert "平台增强版 · Cherry Studio" not in page.text
         assert (
             'class="skill-platform-card is-workbuddy" data-platform-version=""'
             in page.text

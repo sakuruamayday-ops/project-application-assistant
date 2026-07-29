@@ -25,11 +25,6 @@
   },
   "platforms": {
     "generic": "published",
-    "workbuddy": "published",
-    "trae_cn": "platform_package_validation",
-    "kimi_code": "platform_package_validation",
-    "lingma": "platform_package_validation",
-    "qoder": "platform_package_validation",
-    "cherry_studio": "platform_package_validation"
+    "workbuddy": "published"
   }
 }

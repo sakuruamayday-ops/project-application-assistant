@@ -20,7 +20,7 @@
     <div class="skill-command-bar">
       <div class="skill-scan-state"><span class="skill-live-dot"></span><div><strong>官方技能目录已就绪</strong><small>{{ skill_center.release_tag }} · {{ skill_center.summary.total }} 项能力已载入</small></div></div>
       <div class="skill-command-actions">
-        {% if latest_release %}<button class="button skill-primary-action" type="button" data-skill-tab-target="downloads">选择安装平台</button>{% endif %}
+        {% if latest_release %}<button class="button skill-primary-action" type="button" data-skill-tab-target="downloads">选择安装包</button>{% endif %}
         <button class="button secondary" type="button" data-skill-rescan>刷新目录</button>
         <button class="button skill-dark-action" type="button" data-skill-tab-target="install">{{ 'Agent 接入说明' if user.is_admin else '生成安全安装计划' }} <span>→</span></button>
       </div>
@@ -83,7 +83,7 @@
       {% endif %}
       <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
-      <div class="skill-platform-note"><strong>只选一个包</strong><p>通用版适用于支持标准 Agent Skills 的平台。平台增强版已经包含同一套 Skills，并增加该宿主官方支持的 Hooks、插件或 MCP 配置，不需要再重复安装通用版。只有通过官方文档核对、结构校验和真实宿主验收的平台包才开放下载。</p></div>
+      <div class="skill-platform-note"><strong>固定双产物</strong><p>正式发布只保留通用版与 WorkBuddy 跨平台版。通用版适用于支持标准 Agent Skills 的宿主；WorkBuddy 版已经包含同一套 Skills、Hooks 与 MCP 配置，不需要重复安装通用版。其他宿主不再规划或展示平台专用版本。</p></div>
       <div class="skill-platform-downloads">
         <article class="skill-platform-card is-generic">
           <span class="skill-platform-mark">通</span>
@@ -97,36 +97,6 @@
           <div><span class="skill-card-index">平台增强版 · WorkBuddy</span><h3>WorkBuddy</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% endif %}<p>macOS 与 Windows 共用同一个插件市场 ZIP，包含通用 Skills、Hooks 和 jiaotang-kb MCP 声明。解压后在 WorkBuddy 内添加本地插件市场并安装。</p>{% if workbuddy.distribution_notes_html %}<details class="skill-release-notes"><summary>查看 WorkBuddy 分发修订说明</summary><div class="manual-content">{{ workbuddy.distribution_notes_html }}</div>{% if workbuddy.distribution_url %}<a href="{{ workbuddy.distribution_url }}" target="_blank" rel="noreferrer">查看不可变发行记录</a>{% endif %}</details>{% endif %}</div>
           <div class="skill-platform-status {{ 'is-ready' if workbuddy.included else 'is-validating' }}"><i></i>{{ '正式包已发布' if workbuddy.included else '尚未发布' }}</div>
           {% if workbuddy.included %}<a class="button" href="{{ workbuddy.download_url }}">下载 WorkBuddy 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="trae">
-          <span class="skill-platform-mark">TR</span>
-          <div><span class="skill-card-index">平台增强版 · TRAE</span><h3>TRAE</h3><p>官方已公开 Skills 导入与 Hooks 能力。专用包仍需完成 Hooks 映射、安全门禁和真实宿主验收，因此当前不冒充正式安装包。</p><a class="skill-platform-source" href="https://docs.trae.ai/ide/skills" target="_blank" rel="noreferrer">查看官方 Skills 文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>专用包适配中</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="qoder">
-          <span class="skill-platform-mark">QD</span>
-          <div><span class="skill-card-index">平台增强版 · Qoder</span><h3>Qoder</h3><p>官方已公开用户级 Skills 目录和 IDE、CLI Hooks。专用包尚未完成安装、升级、回滚与真实宿主验收。</p><a class="skill-platform-source" href="https://docs.qoder.com/extensions/hooks" target="_blank" rel="noreferrer">查看官方 Hooks 文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>专用包适配中</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="lingma">
-          <span class="skill-platform-mark">灵</span>
-          <div><span class="skill-card-index">平台增强版 · 通义灵码</span><h3>通义灵码</h3><p>官方已公开 Skills 目录和 Qoder CN Hooks。专用包需要增加客户端版本门禁并完成实机验收后才能发布。</p><a class="skill-platform-source" href="https://help.aliyun.com/zh/lingma/qoder-cn/user-guide/hooks" target="_blank" rel="noreferrer">查看官方 Hooks 文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>等待版本门禁与实机验收</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="kimi-code">
-          <span class="skill-platform-mark">KM</span>
-          <div><span class="skill-card-index">平台插件版 · Kimi Code</span><h3>Kimi Code</h3><p>官方插件可声明 Skills、Hooks 与 MCP。我们仍需按其插件结构生成独立包，并验证 Hooks 的 fail-open 边界。</p><a class="skill-platform-source" href="https://www.kimi.com/code/docs/en/kimi-code-cli/customization/plugins.html" target="_blank" rel="noreferrer">查看官方插件文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>专用包适配中</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
-        </article>
-        <article class="skill-platform-card is-planned" data-platform-package="cherry-studio">
-          <span class="skill-platform-mark">CS</span>
-          <div><span class="skill-card-index">平台增强版 · Cherry Studio</span><h3>Cherry Studio</h3><p>官方已有 Skills 与 MCP 能力，但专用包的导入、启用和生命周期约束尚未完成实机验证。当前只提供通用版。</p><a class="skill-platform-source" href="https://docs.cherry-ai.com/docs/en-us/advanced-basic/skills" target="_blank" rel="noreferrer">查看官方 Skills 文档 ↗</a></div>
-          <div class="skill-platform-status is-validating"><i></i>专用包适配中</div>
-          <a class="button secondary" href="/skills/latest/download">先用通用版</a>
         </article>
       </div>
       {% endif %}

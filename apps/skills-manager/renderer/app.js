@@ -12,24 +12,12 @@ const demoOverview = {
   },
   platforms: [
     { id: "workbuddy", name: "WorkBuddy", vendor: "腾讯", support: "adapter", detected: true, channel: "workbuddy", installMode: "workbuddy-marketplace", targetRoot: null, canInstallAutomatically: false, detectedPaths: ["/Applications/WorkBuddy.app"], notes: "下载本地插件市场 ZIP，在 WorkBuddy 内使用 /plugin 安装。" },
-    { id: "trae", name: "TRAE", vendor: "字节跳动", support: "full", detected: true, channel: "generic", installMode: "managed-directory", targetRoot: "~/.trae-cn/skills", canInstallAutomatically: true, notes: "中国版使用用户级 .trae-cn/skills。" },
-    { id: "kimi-code", name: "Kimi Code", vendor: "月之暗面", support: "full", detected: false, channel: "generic", installMode: "shared-agents-directory", targetRoot: "~/.agents/skills", canInstallAutomatically: true, notes: "与 TRAE 共用托管目录。" },
-    { id: "lingma", name: "通义灵码", vendor: "阿里云", support: "guided", detected: false, channel: "generic", installMode: "guided-import", targetRoot: null, canInstallAutomatically: false, notes: "官方尚未公开稳定的用户级 Skills 导入接口。" },
-    { id: "qoder", name: "Qoder", vendor: "阿里云", support: "adapter", detected: false, channel: "generic", installMode: "plugin-or-project", targetRoot: null, canInstallAutomatically: false, notes: "首版生成已验证导入包。" },
-    { id: "cherry-studio", name: "Cherry Studio", vendor: "CherryHQ", support: "guided", detected: true, channel: "generic", installMode: "guided-import", targetRoot: null, canInstallAutomatically: false, notes: "通过官方界面导入 ZIP。" },
   ],
-  targets: [
-    { targetRoot: "~/.trae-cn/skills", platformIds: ["trae"] },
-  ],
+  targets: [],
   compatibility: {
     skillCount: 49,
     platforms: [
       { platformId: "workbuddy", platformName: "WorkBuddy", support: "full", label: "完整同步", compatible: 49, review: 0, total: 49 },
-      { platformId: "trae", platformName: "TRAE", support: "full", label: "完整同步", compatible: 49, review: 0, total: 49 },
-      { platformId: "kimi-code", platformName: "Kimi Code", support: "full", label: "完整同步", compatible: 49, review: 0, total: 49 },
-      { platformId: "lingma", platformName: "通义灵码", support: "guided", label: "引导导入", compatible: 49, review: 49, total: 49 },
-      { platformId: "qoder", platformName: "Qoder", support: "adapter", label: "适配导入", compatible: 49, review: 49, total: 49 },
-      { platformId: "cherry-studio", platformName: "Cherry Studio", support: "guided", label: "引导导入", compatible: 49, review: 49, total: 49 },
     ],
   },
   registry: { targets: {}, backups: [] },
@@ -42,8 +30,8 @@ const demoOverview = {
   scan: {
     scannedAt: new Date().toISOString(),
     durationMs: 86,
-    searchedPlatformCount: 6,
-    detectedPlatformCount: 3,
+    searchedPlatformCount: 1,
+    detectedPlatformCount: 1,
   },
   audit: {
     status: "ready",
@@ -99,11 +87,6 @@ function formatBytes(value) {
 function monogram(name) {
   const known = {
     WorkBuddy: "W",
-    TRAE: "T",
-    "Kimi Code": "K",
-    通义灵码: "灵",
-    Qoder: "Q",
-    "Cherry Studio": "C",
   };
   return known[name] || name.slice(0, 1);
 }
@@ -281,7 +264,7 @@ function renderCompatibility() {
         <td class="${platform?.detected ? "cell-good" : "cell-muted"}">${platform?.detected ? "已发现" : "未发现"}</td>
         <td class="${full ? "cell-good" : "cell-review"}">${escapeHtml(row.label)}</td>
         <td class="${full ? "cell-good" : "cell-review"}">${full ? "随包校验" : "需平台复验"}</td>
-        <td class="${row.platformId === "cherry-studio" ? "cell-review" : "cell-good"}">${row.platformId === "cherry-studio" ? "单独配置" : "可接入"}</td>
+        <td class="cell-good">可接入</td>
         <td>${escapeHtml(platform?.installMode || "—")}</td>
       </tr>
     `;

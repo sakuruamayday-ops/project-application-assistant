@@ -7,7 +7,7 @@
 - `signed`：未来取得 Developer ID、Apple 公证和 Windows Authenticode 后使用的平台签名发行。
 - `unsigned-local-authorization`：文件名带 `unsigned-local`，不声明操作系统发布者身份，由用户在自己的机器上明确授权运行。该模式不保证在启用 Smart App Control 或组织强制策略的 Windows 设备上可安装。
 
-知识门户中的 HTTPS PWA `/skills-manager` 继续作为无需安装桌面程序的备用入口。
+原生客户端与 HTTPS PWA 已停止正式分发，旧入口统一跳转到知识门户“Skills → 版本与下载”。
 
 ## PWA 路线
 
@@ -20,21 +20,21 @@
 
 实现位于 `services/knowledge-portal/static/skills-manager`，发布说明见 `docs/skills-manager-pwa.md`。
 
-## 原生客户端已实现
+## 历史客户端能力
 
-- 用户点击“扫描本机 Agent”后，在 macOS 系统应用目录、Windows 常见程序目录和已配置命令位置进行有界扫描，自动识别 WorkBuddy、TRAE、Kimi Code、通义灵码、Qoder 与 Cherry Studio；不递归读取用户文档。
-- 主流平台始终显示，并可按“全部平台／本机已安装／可一键导入”筛选。对已发现且有稳定用户级目录的平台提供逐平台和批量一键导入，自动去重共享目录；WorkBuddy 下载已验签本地插件市场包，并在 WorkBuddy 内通过 `/plugin` 添加、安装和启用，引导型平台只定位已验签导入包。
+- 用户点击“扫描本机 Agent”后，只在 macOS 与 Windows 的已知应用位置识别 WorkBuddy；不递归读取用户文档。
+- WorkBuddy 下载已验签本地插件市场包，并在 WorkBuddy 内通过 `/plugin` 添加、安装和启用。
 - 通用 Skills 与跨平台 WorkBuddy 插件市场包两条更新通道。
 - 普通成员复用本机钥匙串或DPAPI中的既有设备凭据并逐请求签名，不重新绑定设备；管理员令牌只保存在当前进程内。
 - SHA-256、固定 Ed25519 公钥、OpenSSH 签名及逐文件哈希验证。
 - 对稳定目录采用“计划预览 → 冲突阻断 → 同盘备份 → 原子替换 → 可恢复回滚”。
 - WorkBuddy 不启动外部安装器；安装动作由正在运行的 WorkBuddy 自己完成，因此没有端口冲突和退出运行锁。
-- 49 项技能与各平台的兼容性账本。
+- 49 项技能与 WorkBuddy 的兼容性账本。
 - 平台适配器通过门户独立验签更新；失败时回退内置版本，不接受远程命令或脚本。
 - 扫描、验签、导入、回滚和适配器更新写入本机追加式审计日志，敏感字段自动脱敏。
 - 应用显示自身的平台信任状态；本地授权版明确显示“未建立系统发布者身份”，不伪装成 Gatekeeper 或 Authenticode 已验证。
 
-通义灵码、Qoder 与 Cherry Studio 当前采用适配导入或引导导入，不写入尚未由官方公开稳定的内部目录。所谓“同步”是同一签名版本的分发与状态管理，不同步各 Agent 的聊天记录、模型记忆、账号状态或平台私有配置。
+正式分发不再维护其他宿主的专用适配器、安装计划或兼容性声明。
 
 ## 开发
 
