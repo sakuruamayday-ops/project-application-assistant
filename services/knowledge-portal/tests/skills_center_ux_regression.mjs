@@ -18,6 +18,8 @@ assert.match(skillCenterTemplate, /latest_release\.workbuddy/, "下载区必须�
 assert.match(skillCenterTemplate, /workbuddy\.download_url/, "WorkBuddy 必须使用统一下载入口");
 assert.match(skillCenterTemplate, /固定双产物/, "下载区必须声明只保留两个正式产物");
 assert.match(skillCenterTemplate, /其他宿主不再规划或展示平台专用版本/, "下载区必须移除其他平台专用版本");
+assert.match(skillCenterTemplate, /data-skill-history-toggle/, "历史版本必须提供展开与收起控件");
+assert.match(skillCenterTemplate, /historical_releases\[1:\]/, "历史版本默认只应在折叠区渲染较早版本");
 assert.doesNotMatch(skillCenterTemplate, /platform\.feedback_status|OIDC 签名证明|GitHub Job/, "下载区不应再展示平台确认状态");
 const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
 const server = spawn(python, ["tests/browser_route_server.py"], {
@@ -152,6 +154,18 @@ try {
   assert.equal(await page.locator(".skill-platform-status.is-validating").count(), 0, "下载区不保留其他平台适配状态");
   assert.equal(await page.getByRole("link", {name: "下载通用包"}).count(), 1, "通用正式包只保留一个主下载入口");
   assert.equal(await page.getByRole("link", {name: "下载 WorkBuddy 包"}).count(), 1, "WorkBuddy 正式包只保留一个主下载入口");
+  const historyReleases = page.locator("[data-skill-history-release]");
+  const historyToggle = page.locator("[data-skill-history-toggle]");
+  assert.equal(await historyReleases.count(), 2, "浏览器回归数据应包含两个历史版本");
+  assert.equal(await historyReleases.nth(0).isVisible(), true, "默认必须显示最近一次历史版本");
+  assert.equal(await historyReleases.nth(1).isVisible(), false, "更早历史版本默认必须折叠");
+  assert.match(await historyToggle.innerText(), /展开全部历史版本/, "折叠按钮应明确提示展开全部");
+  await historyToggle.click();
+  assert.equal(await historyReleases.nth(1).isVisible(), true, "展开后必须显示全部历史版本");
+  assert.match(await historyToggle.innerText(), /收起历史版本/, "展开后按钮应明确提示收起");
+  await historyToggle.focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await historyReleases.nth(1).isVisible(), false, "键盘操作必须能够再次收起历史版本");
   const downloadLayout = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,

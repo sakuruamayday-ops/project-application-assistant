@@ -46,6 +46,11 @@ def main() -> None:
         release_dir.mkdir(parents=True, exist_ok=True)
         generic = release_dir / "企业全生命周期助手-V1.2.zip"
         generic.write_bytes(b"browser-release-fixture")
+        historical_generics = []
+        for version in ("1.1", "1.0"):
+            archive_path = release_dir / f"企业全生命周期助手-V{version}.zip"
+            archive_path.write_bytes(f"browser-release-fixture-{version}".encode())
+            historical_generics.append((version, archive_path))
         workbuddy = release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip"
         with zipfile.ZipFile(workbuddy, "w") as archive:
             archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
@@ -80,6 +85,22 @@ def main() -> None:
                     hashlib.sha256(workbuddy.read_bytes()).hexdigest(),
                 ),
             )
+            for offset, (version, archive_path) in enumerate(historical_generics, start=1):
+                connection.execute(
+                    """
+                    INSERT INTO skill_releases(
+                        version,file_name,file_path,sha256,release_notes,published_at
+                    ) VALUES (?,?,?,?,?,datetime('now', ?))
+                    """,
+                    (
+                        version,
+                        archive_path.name,
+                        str(archive_path),
+                        hashlib.sha256(archive_path.read_bytes()).hexdigest(),
+                        f"## 历史版本 {version}\n\n验证历史版本折叠。",
+                        f"-{offset} day",
+                    ),
+                )
             connection.commit()
     uvicorn.run(portal.app, host="127.0.0.1", port=int(os.environ["JIAOTANG_BROWSER_TEST_PORT"]))
 
