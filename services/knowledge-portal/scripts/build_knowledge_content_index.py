@@ -36,8 +36,8 @@ LEGACY_CONVERSION_ROOT = Path(
 )
 SOFFICE = Path(os.environ.get("SOFFICE_PATH") or shutil.which("soffice") or "soffice")
 ENTERPRISE_PATTERN = re.compile(
-    r"[\u4e00-\u9fffA-Za-z0-9（）()·—\-]{2,80}?"
-    r"(?:股份有限公司|有限责任公司|集团有限公司|有限公司)"
+    r"[\u4e00-\u9fffA-Za-z0-9（）()·—\-\u0020\u3000]{2,80}?"
+    r"(?:股份有限公司|有限责任公司|集团有限公司|有限公司|厂)"
 )
 LIST_ENTITY_LINE_PATTERN = re.compile(
     r"[\u4e00-\u9fffA-Za-z0-9（）()·—\-]{2,100}"

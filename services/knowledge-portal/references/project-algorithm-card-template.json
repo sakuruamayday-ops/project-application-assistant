@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "algorithm_id": "project-decision-stable-project-id",
+  "algorithm_name": "项目正式名称项目决策算法",
+  "algorithm_version": "1.0",
+  "project_id": "stable-project-id",
+  "project_name": "项目正式名称",
+  "coverage_status": "routing-only或rules-confirmed",
+  "decision_boundary": "明确算法能判断什么、不能判断什么",
+  "policy_version_id": "policy-content-hash",
+  "inputs": {
+    "project_context": "项目年度、类型和属地",
+    "enterprise_facts": "统一事实契约",
+    "as_of": "判断或回放时间点"
+  },
+  "outputs": {
+    "conclusion": "eligible、conditional、ineligible或undetermined",
+    "rule_trace": "规则、事实和来源轨迹",
+    "lifecycle_trace": "资格状态迁移轨迹"
+  },
+  "shared_execution_kernels": [],
+  "project_specific_assets": {
+    "fact_fields": 0,
+    "confirmed_rules": 0,
+    "rule_layers": 0,
+    "gold_cases": 0
+  },
+  "explainability": {
+    "level": "field-and-source-trace",
+    "requirements": []
+  },
+  "incremental_update": {
+    "strategy": "content-addressed-compile",
+    "unchanged": "复用",
+    "changed": "仅重编译变化节点"
+  },
+  "quality_gates": {},
+  "limitations": []
+}

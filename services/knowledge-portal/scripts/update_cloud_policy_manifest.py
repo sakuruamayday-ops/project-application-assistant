@@ -21,6 +21,7 @@ SUPPLEMENTARY_ROOTS = (
     KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/_省级专精特新",
     KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/_覆盖矩阵",
     KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/_全国小巨人批次主表",
+    KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/来源归档",
     KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/企策顾问动态索引",
     KNOWLEDGE_ROOT / "50_名单与对标/三首项目/_结构化数据",
     KNOWLEDGE_ROOT / "50_名单与对标/企业身份时间轴",
@@ -96,6 +97,10 @@ def manifest_row(path: Path, previous: dict[str, object] | None = None) -> dict[
     is_team_list_data = relative.startswith("50_名单与对标/")
     document_role = "50_名单与对标" if is_team_list_data else "10_政策与通知"
     cloud_path = relative if is_team_list_data else f"10_政策与通知/{relative}"
+    # Files suffixed with ``.source.*`` are immutable evidence snapshots for
+    # provenance replay. Their normalized Markdown companion is the searchable
+    # representation; indexing both would emit duplicate lifecycle events.
+    is_source_snapshot = ".source." in path.name.lower()
     return {
         "source_path": str(path),
         "relative_path": relative,
@@ -111,7 +116,11 @@ def manifest_row(path: Path, previous: dict[str, object] | None = None) -> dict[
         "top_category": "50_名单与对标" if is_team_list_data else "10_政策与目录",
         "document_role": document_role,
         "sensitivity": "internal" if is_team_list_data else "public_reference",
-        "index_mode": "extract_text" if extension in EXTRACT_EXTENSIONS else "archive_only",
+        "index_mode": (
+            "archive_only"
+            if is_source_snapshot
+            else ("extract_text" if extension in EXTRACT_EXTENSIONS else "archive_only")
+        ),
         "upload_priority": 1,
         "upload_action": "upload",
         "canonical_path": relative,
