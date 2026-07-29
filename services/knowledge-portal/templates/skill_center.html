@@ -45,7 +45,7 @@
   <nav class="skill-section-tabs" role="tablist" aria-label="Skills 页面内容">
     <button class="is-active" type="button" role="tab" data-skill-section-tab="catalog" aria-selected="true">技能目录 <small>{{ skill_center.summary.total }}</small></button>
     <button type="button" role="tab" data-skill-section-tab="downloads" aria-selected="false">版本与下载 <small>{{ 'V' ~ latest_release.version if latest_release else '—' }}</small></button>
-    <button type="button" role="tab" data-skill-section-tab="install" aria-selected="false">安装与设备 <small>{{ '已连接' if active_device_binding and active_device_binding.mcp_connected_at else ('管理员' if user.is_admin else '待配置') }}</small></button>
+    <button type="button" role="tab" data-skill-section-tab="install" aria-selected="false">安装与设备 <small>{{ '已连接' if active_device_binding and active_device_binding.mcp_connected_at else '待配置' }}</small></button>
   </nav>
 
   <div class="skill-section-pane is-active" data-skill-section-pane="catalog" role="tabpanel">
@@ -143,11 +143,8 @@
     <div class="skill-install-grid">
       <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
         <span class="skill-card-index">01 / 安装计划</span>
-        <h3>{{ '管理员接入方式' if user.is_admin else '生成一次性安全安装指令' }}</h3>
-        {% if user.is_admin %}
-        <p>管理员账号不执行单设备公钥绑定，可继续使用现有管理员凭据连接受信 Agent。此处不会伪装成自动拉起客户端。</p>
-        <a class="button" href="/access">管理管理员连接凭据</a>
-        {% elif active_device_binding and active_device_binding.mcp_connected_at %}
+        <h3>生成一次性安全安装指令</h3>
+        {% if active_device_binding and active_device_binding.mcp_connected_at %}
         <p>当前账号已有通过服务器验收的本地 Agent。需要更换电脑时，请先在“API 与用户”撤销原设备，再生成新计划。</p>
         <a class="button" href="/access">查看已连接设备</a>
         {% else %}

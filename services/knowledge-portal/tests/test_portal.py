@@ -108,6 +108,20 @@ def provision_signed_device(module, user_id: int, *, agent_host: str = "pytest")
     return private_key, key_id
 
 
+def active_user_token(module, user_id: int) -> str:
+    with closing(module.database()) as connection:
+        row = connection.execute(
+            """
+            SELECT token_seed FROM device_tokens
+            WHERE user_id=? AND revoked_at IS NULL
+            ORDER BY id DESC LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+    assert row is not None
+    return module.user_access_token(user_id, str(row["token_seed"]))
+
+
 def signed_api_headers(
     module,
     token: str,
@@ -481,7 +495,7 @@ def test_personal_preferences_api_sync_history_undo_and_reset(tmp_path):
                 "csrf_token": user["csrf_token"],
             },
         )
-        token = re.search(r"jtk_[A-Za-z0-9_-]+", token_page.text).group(0)
+        token = active_user_token(module, int(user["id"]))
         headers = api_headers(token)
 
         initial = client.get("/v1/preferences", headers=headers)
@@ -884,8 +898,10 @@ def test_setup_login_and_device_token(tmp_path):
         assert 'id="skills"' in portal.text
         assert 'class="page-continuation"' not in portal.text
         access_page = client.get("/access")
-        assert "管理员 API Key" in access_page.text
-        assert "管理员豁免" in access_page.text
+        assert "连接焦糖知识库" in access_page.text
+        assert "管理员 API Key" not in access_page.text
+        assert "管理员豁免" not in access_page.text
+        assert "data-copy-agent-bootstrap" in access_page.text
         assert 'data-skill-open="first-run-configuration"' in access_page.text
         cockpit_page = client.get("/cockpit")
         assert "驾驶舱智能看板" in cockpit_page.text
@@ -989,26 +1005,19 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert token_page.status_code == 200
-        assert "复制完整手工配置" in token_page.text
-        assert "高级配置与手工接入" in token_page.text
-        assert "知识库 API URL" in token_page.text
-        assert "http://testserver/v1" in token_page.text
-        assert "http://testserver/mcp/" in token_page.text
-        assert "管理员凭据" in token_page.text
-        assert 'data-toggle-secret="personal-access"' in token_page.text
-        assert "••••••••••••••••••••" in token_page.text
+        assert "连接焦糖知识库" in token_page.text
+        assert "管理员凭据" not in token_page.text
+        assert 'data-toggle-secret="personal-access"' not in token_page.text
         with closing(module.database()) as connection:
             assert connection.execute("SELECT label FROM device_tokens").fetchone()["label"] == "王小明"
-        token_match = re.search(r"jtk_[A-Za-z0-9_-]+", token_page.text)
-        assert token_match is not None
-        token = token_match.group(0)
+        token = active_user_token(module, int(user["id"]))
 
         access_page = client.get("/access")
         assert access_page.status_code == 200
         assert "page-access" in access_page.text
         assert 'class="page-continuation"' not in access_page.text
         assert 'class="page-step' not in access_page.text
-        assert token in access_page.text
+        assert token not in access_page.text
         assert "REST Base URL、MCP URL 与个人访问凭据缺一不可" not in access_page.text
         assert "当前唯一访问凭据" not in access_page.text
         repeat_page = client.post(
@@ -1020,7 +1029,7 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert repeat_page.status_code == 200
-        assert token in repeat_page.text
+        assert token not in repeat_page.text
         with closing(module.database()) as connection:
             assert connection.execute(
                 "SELECT COUNT(*) FROM device_tokens WHERE user_id=? AND revoked_at IS NULL",
@@ -1104,8 +1113,8 @@ def test_setup_login_and_device_token(tmp_path):
         }
 
         bound_page = client.get("/access")
-        assert "管理员豁免" in bound_page.text
-        assert "当前账号不执行单设备公钥绑定" in bound_page.text
+        assert "管理员豁免" not in bound_page.text
+        assert "当前尚未绑定" in bound_page.text
         second_device = client.get(
             "/v1/me",
             headers=api_headers(token, "device:test-installation-0002"),
@@ -1117,8 +1126,8 @@ def test_setup_login_and_device_token(tmp_path):
             data={"csrf_token": user["csrf_token"]},
         )
         assert replaced.status_code == 200
-        assert "管理员账号已豁免设备限制" in replaced.text
-        assert client.get("/v1/me", headers=api_headers(token)).status_code == 200
+        assert "旧设备、公钥和访问凭据已失效" in replaced.text
+        assert client.get("/v1/me", headers=api_headers(token)).status_code == 401
         with closing(module.database()) as connection:
             bindings = connection.execute(
                 """
@@ -3401,6 +3410,155 @@ def test_api_rejects_missing_token(tmp_path):
     with TestClient(module.app) as client:
         response = client.get("/v1/me")
         assert response.status_code == 401
+
+
+def test_admin_uses_same_transactional_agent_onboarding_as_members(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        access = client.get("/access")
+        assert "连接焦糖知识库" in access.text
+        assert "data-copy-agent-bootstrap" in access.text
+        assert "管理员 API Key" not in access.text
+        assert "管理员豁免" not in access.text
+        skills = client.get("/skills")
+        assert "生成一次性安全安装指令" in skills.text
+        assert "管理员接入方式" not in skills.text
+
+        review = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        assert review.status_code == 200
+        assert review.json()["phase"] == "review"
+        assert "exempt" not in review.json()
+        enrollment_code = review.json()["review_code"]
+        confirmed = client.post(
+            "/agent-bootstrap-codes/confirm",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+                "platform": "unified",
+            },
+        )
+        assert confirmed.status_code == 200
+        assert confirmed.json()["phase"] == "install_authorized"
+
+        private_key = Ed25519PrivateKey.generate()
+        public_key = base64url_encode(
+            private_key.public_key().public_bytes(
+                Encoding.DER,
+                PublicFormat.SubjectPublicKeyInfo,
+            )
+        )
+        registration = {
+            "device_id": TEST_DEVICE_ID,
+            "device_name": TEST_DEVICE_NAME,
+            "platform": "darwin-arm64",
+            "agent_host": "workbuddy",
+            "public_key": public_key,
+            "transaction_mode": "credential_activation_v1",
+        }
+        registration["proof"] = base64url_encode(
+            private_key.sign(
+                enrollment_canonical_value(
+                    enrollment_code=enrollment_code,
+                    **registration,
+                )
+            )
+        )
+        prepared = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/register",
+            json=registration,
+        )
+        assert prepared.status_code == 200
+        assert prepared.json()["status"] == "prepared"
+        token = prepared.json()["token"]
+        key_id = prepared.json()["key_id"]
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT COUNT(*) FROM device_bindings WHERE user_id=?",
+                (int(user["id"]),),
+            ).fetchone()[0] == 0
+
+        activation_payload = {
+            "device_id": TEST_DEVICE_ID,
+            "key_id": key_id,
+            "token": token,
+            "proof": base64url_encode(
+                private_key.sign(
+                    activation_canonical_value(
+                        enrollment_code=enrollment_code,
+                        device_id=TEST_DEVICE_ID,
+                        key_id=key_id,
+                        token_fingerprint=module.token_hash(token),
+                    )
+                )
+            ),
+        }
+        activated = client.post(
+            f"/v1/agent-bootstrap/{enrollment_code}/activate",
+            json=activation_payload,
+        )
+        assert activated.status_code == 200
+        assert activated.json()["status"] == "activated"
+
+        unsigned = client.get("/v1/me", headers=api_headers(token))
+        assert unsigned.status_code == 428
+        signed = client.get(
+            "/v1/me",
+            headers=signed_api_headers(
+                module,
+                token,
+                private_key,
+                key_id,
+                method="GET",
+                request_target="/v1/me",
+            ),
+        )
+        assert signed.status_code == 200
+        assert signed.json()["username"] == "owner"
+
+        mcp_body = json.dumps(
+            {"jsonrpc": "2.0", "id": 1, "method": "ping", "params": {}},
+            separators=(",", ":"),
+        ).encode()
+        connected = client.post(
+            "/mcp/",
+            headers={
+                **signed_api_headers(
+                    module,
+                    token,
+                    private_key,
+                    key_id,
+                    method="POST",
+                    request_target="/mcp/",
+                    body=mcp_body,
+                ),
+                "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+            },
+            content=mcp_body,
+        )
+        assert connected.status_code == 200
+        status = client.get("/agent-installation-status").json()
+        assert status["configured"] is True
+        assert all(stage["complete"] for stage in status["stages"].values())
 
 
 def test_member_agent_bootstrap_device_signature_and_replacement(
