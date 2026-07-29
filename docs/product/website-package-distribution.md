@@ -63,7 +63,7 @@
 
 - 本次只改变网站分发入口，不修改现有用户机器上的任何 Skills、插件、Hooks、MCP、
   设备绑定或系统凭据。
-- WorkBuddy 仍使用 V1.3.1.2 的跨平台统一包，不新增内容版本。
+- WorkBuddy 使用 V1.3.1.3 跨平台统一包；本次只修复 MCP 首次连接与半绑定恢复，不改变 49 项业务技能内容。
 - 原生客户端 v0.2.0 的 GitHub Release 不删除、不替换，只停止门户转发。
 - 旧 `/skills-manager`、原生客户端下载和客户端手册地址统一跳转到
   `/skills#skills-downloads`。

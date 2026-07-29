@@ -41,6 +41,38 @@ function sha256(value) {
 }
 
 
+function appendUrlPath(value, segment) {
+  const endpoint = new URL(value);
+  endpoint.pathname = `${endpoint.pathname.replace(/\/+$/, "")}/${segment.replace(/^\/+/, "")}`;
+  return endpoint;
+}
+
+
+function expectedInstallerSha256(manifest, pluginMode) {
+  return String(
+    pluginMode
+      ? manifest.workbuddy_plugin?.connector_sha256 || ""
+      : manifest.installer_sha256 || "",
+  );
+}
+
+
+function redactSensitiveText(value) {
+  return String(value || "")
+    .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, "Bearer [已隐藏凭据]")
+    .replace(/jbe_[A-Za-z0-9_-]+/g, "[已隐藏安装码]")
+    .replace(/jtk_[A-Za-z0-9_-]+/g, "[已隐藏凭据]")
+    .replace(
+      /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g,
+      "[已隐藏私钥]",
+    )
+    .replace(
+      /([?&](?:token|key|secret|code|bootstrap_url)=)[^&#\s]+/gi,
+      "$1[已隐藏]",
+    );
+}
+
+
 function parseArguments(argv) {
   const values = {_: []};
   for (let index = 0; index < argv.length; index += 1) {
@@ -491,9 +523,10 @@ async function install(argumentsValue) {
   }
   installationStage = "integrity_verification";
   const runningInstaller = readFileSync(fileURLToPath(import.meta.url));
+  const expectedSha256 = expectedInstallerSha256(manifest, pluginMode);
   if (
-    !/^[a-f0-9]{64}$/.test(String(manifest.installer_sha256 || ""))
-    || sha256(runningInstaller) !== manifest.installer_sha256
+    !/^[a-f0-9]{64}$/.test(expectedSha256)
+    || sha256(runningInstaller) !== expectedSha256
   ) {
     throw new Error("安装组件完整性校验失败");
   }
@@ -521,7 +554,8 @@ async function install(argumentsValue) {
       privateKey,
     ),
   );
-  const registrationResponse = await fetch(`${bootstrapUrl}/register`, {
+  const registrationUrl = appendUrlPath(bootstrap, "register");
+  const registrationResponse = await fetch(registrationUrl, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
@@ -672,9 +706,7 @@ async function pluginServe(argumentsValue) {
 
 function installationFailure(error, argumentsValue = {}) {
   const stage = String(error?.installationStage || "unknown");
-  const message = String(error?.message || error || "未知错误")
-    .replace(/jbe_[A-Za-z0-9_-]+/g, "[已隐藏安装码]")
-    .replace(/jtk_[A-Za-z0-9_-]+/g, "[已隐藏凭据]");
+  const message = redactSensitiveText(error?.message || error || "未知错误");
   const nextActions = {
     validation: "请确认当前 Agent 在 macOS 或 Windows 本地运行，然后回到门户重新复制安装配置。",
     bootstrap_manifest: "请回到门户重新复制新的安装配置，并让 Agent 只执行一次。",
@@ -763,7 +795,9 @@ async function serve(argumentsValue) {
       if (returnedSession) mcpSessionId = returnedSession;
       const responseText = await response.text();
       if (!response.ok) {
-        throw new Error(`upstream HTTP ${response.status}: ${responseText.slice(0, 300)}`);
+        throw new Error(
+          `upstream HTTP ${response.status}: ${redactSensitiveText(responseText).slice(0, 300)}`,
+        );
       }
       const messages = response.headers.get("content-type")?.includes("text/event-stream")
         ? parseSsePayload(responseText)
@@ -835,9 +869,11 @@ async function main() {
 
 
 export {
+  appendUrlPath,
   configureHost,
   detectHost,
   enrollmentCanonical,
+  expectedInstallerSha256,
   installationFailure,
   mergeCodexConfig,
   mergeJsonMcpConfig,

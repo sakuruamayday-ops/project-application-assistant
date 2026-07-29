@@ -189,6 +189,12 @@
           <p data-agent-result-message>{{ latest_agent_install_result.result_user_message if latest_agent_install_result else '生成安装计划后，本页会自动刷新设备登记、签名和 MCP 连接结果。' }}</p>
           <small data-agent-result-next>{{ latest_agent_install_result.result_next_action if latest_agent_install_result and latest_agent_install_result.result_next_action else (latest_agent_install_result.result_reported_at_display if latest_agent_install_result else '') }}</small>
         </div>
+        {% if active_device_binding and not active_device_binding.mcp_connected_at %}
+        <form method="post" action="/device-binding/replace" onsubmit="return confirm('确认撤销这次未完成的设备登记？撤销后需要重新生成一次性配置。')">
+          <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
+          <button class="button danger" type="submit">撤销未完成登记</button>
+        </form>
+        {% endif %}
       </article>
     </div>
     <div class="skill-install-safety"><span>安全边界</span><p>安装器必须先校验 SHA-256；私钥只在本机生成且不上传；凭据进入系统安全存储；失败时回传阶段和下一步，但不回传密钥。</p></div>

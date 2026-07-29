@@ -50,7 +50,13 @@ test("unsigned-local packaging is explicit and versioned independently", () => {
 
 test("release workflow, portal manifest and Word manual share one immutable asset contract", () => {
   const workflow = fs.readFileSync(
-    path.join(repoRoot, ".github", "workflows", "skills-manager-unsigned-release.yml"),
+    path.join(
+      repoRoot,
+      "docs",
+      "archive",
+      "workflows",
+      "skills-manager-unsigned-release-v0.2.0.yml",
+    ),
     "utf8",
   );
   const releaseNotes = fs.readFileSync(
@@ -81,10 +87,11 @@ test("release workflow, portal manifest and Word manual share one immutable asse
     "https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/skills-manager-v0.2.0",
   );
   assert.match(workflow, /RELEASE_TAG: "skills-manager-v0\.2\.0"/);
-  assert.ok(["pending", "published"].includes(nativeRelease.state));
+  assert.ok(["pending", "published", "retired"].includes(nativeRelease.state));
   const isPublished = nativeRelease.state === "published";
+  const isHistorical = ["published", "retired"].includes(nativeRelease.state);
   assert.equal(nativeRelease.available, isPublished);
-  if (isPublished) {
+  if (isHistorical) {
     assert.match(nativeRelease.published_at, /^\d{4}-\d{2}-\d{2}T.*Z$/);
   } else {
     assert.equal(nativeRelease.published_at, null);
@@ -100,7 +107,7 @@ test("release workflow, portal manifest and Word manual share one immutable asse
   }
   for (const artifact of nativeRelease.artifacts) {
     assert.equal(artifact.available, isPublished);
-    if (isPublished) {
+    if (isHistorical) {
       assert.match(artifact.sha256, /^[0-9a-f]{64}$/);
     } else {
       assert.equal(artifact.sha256, "");
@@ -111,7 +118,7 @@ test("release workflow, portal manifest and Word manual share one immutable asse
     "Jiaotang-Skills-Manager-0.2.0-User-Manual.docx",
   );
   assert.equal(nativeRelease.user_manual.available, isPublished);
-  if (isPublished) {
+  if (isHistorical) {
     assert.match(nativeRelease.user_manual.sha256, /^[0-9a-f]{64}$/);
   } else {
     assert.equal(nativeRelease.user_manual.sha256, "");

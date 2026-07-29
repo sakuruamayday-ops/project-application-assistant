@@ -292,6 +292,52 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             "MCP连接器已由打包器复制到mcp/，不得再作为shared_path重复入包",
         )
 
+    def test_workbuddy_connector_matches_portal_installer_and_preserves_query(self):
+        root = Path(__file__).resolve().parents[1]
+        connector = root / "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs"
+        installer = (
+            root
+            / "services/knowledge-portal/installers/jiaotang-agent.mjs"
+        )
+        self.assertEqual(connector.read_bytes(), installer.read_bytes())
+        script = "\n".join(
+            (
+                (
+                    "import {appendUrlPath, expectedInstallerSha256} from "
+                    f"{json.dumps(installer.as_uri())};"
+                ),
+                (
+                    "const manifest = {installer_sha256: 'a'.repeat(64), "
+                    "workbuddy_plugin: {connector_sha256: 'b'.repeat(64)}};"
+                ),
+                (
+                    "if (expectedInstallerSha256(manifest, false) !== "
+                    "'a'.repeat(64)) process.exit(1);"
+                ),
+                (
+                    "if (expectedInstallerSha256(manifest, true) !== "
+                    "'b'.repeat(64)) process.exit(1);"
+                ),
+                (
+                    "const endpoint = appendUrlPath("
+                    "'https://zshjiaotang.cn/v1/agent-bootstrap/jbe_test"
+                    "?platform=unified', 'register');"
+                ),
+                (
+                    "if (endpoint.toString() !== "
+                    "'https://zshjiaotang.cn/v1/agent-bootstrap/jbe_test/"
+                    "register?platform=unified') process.exit(1);"
+                ),
+            )
+        )
+        completed = subprocess.run(
+            ["node", "--input-type=module", "-e", script],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
     def test_source_use_license_is_packaged_but_not_rendered_on_website(self):
         root = Path(__file__).resolve().parents[1]
         skills_root = root / "skills"
