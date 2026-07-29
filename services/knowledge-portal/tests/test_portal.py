@@ -3402,8 +3402,37 @@ def test_api_rejects_missing_token(tmp_path):
         assert response.status_code == 401
 
 
-def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
+def test_member_agent_bootstrap_device_signature_and_replacement(
+    tmp_path,
+    monkeypatch,
+):
     module = load_app(tmp_path)
+    connector = module.BASE_DIR / "installers/jiaotang-agent.mjs"
+    connector_sha256 = hashlib.sha256(connector.read_bytes()).hexdigest()
+    workbuddy_package = tmp_path / "workbuddy-fixture.zip"
+    with zipfile.ZipFile(workbuddy_package, "w") as archive:
+        prefix = "jiaotang/plugins/jiaotang-workbuddy-skills/"
+        archive.write(connector, prefix + "mcp/jiaotang-agent.mjs")
+        archive.writestr(
+            prefix + "plugin-release-manifest.json",
+            json.dumps(
+                {"files": {"mcp/jiaotang-agent.mjs": connector_sha256}},
+                sort_keys=True,
+            ),
+        )
+    monkeypatch.setattr(
+        module,
+        "latest_skill_artifact",
+        lambda target: (
+            {
+                "file_path": str(workbuddy_package),
+                "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
+                "target": "workbuddy",
+            }
+            if target == "workbuddy"
+            else None
+        ),
+    )
     password = "member-password-123"
     with closing(module.database()) as connection:
         connection.execute(
@@ -3627,6 +3656,11 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         assert manifest.json()["workbuddy_plugin"]["dynamic_command"] is False
         assert manifest.json()["workbuddy_plugin"]["configuration_key"] == "bootstrap_url"
         assert manifest.json()["workbuddy_plugin"]["configuration_sensitive"] is True
+        connector_sha256 = manifest.json()["workbuddy_plugin"]["connector_sha256"]
+        assert re.fullmatch(r"[a-f0-9]{64}", connector_sha256)
+        assert connector_sha256 == module.workbuddy_connector_sha256(
+            module.latest_skill_artifact("workbuddy")
+        )
 
         failed_report = client.post(
             f"/v1/agent-install-result/{enrollment_code}",
@@ -3678,6 +3712,9 @@ def test_member_agent_bootstrap_device_signature_and_replacement(tmp_path):
         )
         assert enrolled.status_code == 200
         old_token = enrolled.json()["token"]
+        incomplete_skills_page = client.get("/skills")
+        assert incomplete_skills_page.status_code == 200
+        assert "撤销未完成登记" in incomplete_skills_page.text
 
         assert client.get(f"/v1/agent-bootstrap/{enrollment_code}").status_code == 200
         assert client.get(f"/v1/agent-install/{enrollment_code}").status_code == 200

@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "services/knowledge-portal/**"
+      - "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs"
+      - "tests/workbuddy_connector_contract.mjs"
       - "docs/product/website-package-distribution.md"
       - "docs/releases/website-package-center-2026-07-28.md"
       - ".github/workflows/skills-manager-release-gates.yml"
@@ -27,3 +29,19 @@ jobs:
           python -m pytest -q tests/test_portal.py
           -k "legacy_client_artifacts_do_not_feed_unified_workbuddy_channel or skills_manager_retirement"
         working-directory: services/knowledge-portal
+
+  workbuddy-connector:
+    name: WorkBuddy connector (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/workbuddy_connector_contract.mjs

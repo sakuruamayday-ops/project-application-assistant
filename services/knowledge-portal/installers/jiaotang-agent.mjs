@@ -41,6 +41,22 @@ function sha256(value) {
 }
 
 
+function appendUrlPath(value, segment) {
+  const endpoint = new URL(value);
+  endpoint.pathname = `${endpoint.pathname.replace(/\/+$/, "")}/${segment.replace(/^\/+/, "")}`;
+  return endpoint;
+}
+
+
+function expectedInstallerSha256(manifest, pluginMode) {
+  return String(
+    pluginMode
+      ? manifest.workbuddy_plugin?.connector_sha256 || ""
+      : manifest.installer_sha256 || "",
+  );
+}
+
+
 function redactSensitiveText(value) {
   return String(value || "")
     .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, "Bearer [已隐藏凭据]")
@@ -507,9 +523,10 @@ async function install(argumentsValue) {
   }
   installationStage = "integrity_verification";
   const runningInstaller = readFileSync(fileURLToPath(import.meta.url));
+  const expectedSha256 = expectedInstallerSha256(manifest, pluginMode);
   if (
-    !/^[a-f0-9]{64}$/.test(String(manifest.installer_sha256 || ""))
-    || sha256(runningInstaller) !== manifest.installer_sha256
+    !/^[a-f0-9]{64}$/.test(expectedSha256)
+    || sha256(runningInstaller) !== expectedSha256
   ) {
     throw new Error("安装组件完整性校验失败");
   }
@@ -537,7 +554,8 @@ async function install(argumentsValue) {
       privateKey,
     ),
   );
-  const registrationResponse = await fetch(`${bootstrapUrl}/register`, {
+  const registrationUrl = appendUrlPath(bootstrap, "register");
+  const registrationResponse = await fetch(registrationUrl, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({
@@ -851,9 +869,11 @@ async function main() {
 
 
 export {
+  appendUrlPath,
   configureHost,
   detectHost,
   enrollmentCanonical,
+  expectedInstallerSha256,
   installationFailure,
   mergeCodexConfig,
   mergeJsonMcpConfig,

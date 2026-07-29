@@ -4,18 +4,18 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.3.1.2",
-    "version": "1.3.1.2",
-    "summary": "统一 WorkBuddy 跨平台本地市场包，移除外层固定安装器与运行锁，并保留 bootstrap_url 一键复制。",
+    "tag": "V1.3.1.3",
+    "version": "1.3.1.3",
+    "summary": "修复 Windows WorkBuddy MCP 首次连接的连接器摘要、登记 URL 与半绑定恢复链路。",
     "changes": [
-      "macOS 与 Windows 使用同一个 WorkBuddy 本地插件市场 ZIP；包外不再包含 .command、.cmd 或 .ps1 固定安装器。",
-      "安装只在正在运行的 WorkBuddy 中通过 /plugin 完成，不调用外部 CLI、不要求退出 WorkBuddy，也不建立运行锁。",
-      "API 与用户页、Skills 管理中心的手工配置确认按钮会生成并复制一次性 bootstrap_url；浏览器拒绝剪贴板权限时保留下方手工复制兜底。",
-      "本次是同一 Skills 版本的分发方式修复；49 项业务技能内容不变，既有安装、设备绑定、系统凭据与 MCP 接入不受影响。"
+      "插件模式改为校验当前正式 WorkBuddy 包内连接器摘要，独立安装器仍校验网站安装器摘要，避免两类产物交叉校验。",
+      "设备登记使用 URL 对象追加 register 路径，完整保留 platform=unified 查询参数，修复 Windows 首次登记 HTTP 405。",
+      "Skills 管理中心在设备已登记但 MCP 尚未连接时显示撤销入口，可安全清理未完成绑定后重新配置。",
+      "新增连接器源码一致性、签名清单摘要、查询参数登记 URL 和半绑定门户入口回归门禁；49 项业务技能内容不变。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "下载并验签 V1.3.1.2 跨平台 WorkBuddy ZIP，解压后在 WorkBuddy 中输入 /plugin，添加解压后的 jiaotang 本地市场目录，再安装并启用 jiaotang-workbuddy-skills@jiaotang。",
+      "workbuddy": "下载并验签 V1.3.1.3 跨平台 WorkBuddy ZIP，解压后在 WorkBuddy 中输入 /plugin，添加解压后的 jiaotang 本地市场目录，再安装并启用 jiaotang-workbuddy-skills@jiaotang。",
       "manual_fallback": "从 API 与用户页或 Skills 管理中心完成公开说明审查后，点击生成并复制 bootstrap_url，再粘贴到 WorkBuddy 插件敏感配置。",
       "verification": "安装后必须核对技能清单，并完成身份、检索、文档读取、用量和 MCP 工具调用验收。"
     },
@@ -28,12 +28,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "可选使用 V1.3.1.2 通用本地市场包；既有 V1.3.1.1 用户无需强制更新。"
+        "note": "V1.3.1.3 修复连接器摘要与登记 URL 状态机；已正常连接的既有用户无需重新绑定。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "跨平台通用包",
-        "note": "已移除导致端口冲突的外部安装器链路；包结构、签名和逐文件哈希已验证，真实 Windows 宿主仍需发布后按应用内流程复验。"
+        "status": "修复候选",
+        "note": "V1.3.1.3 修复首次连接的摘要错配、HTTP 405 和半绑定恢复；正式发布前必须通过 Windows runner 与真实宿主复验。"
       }
     ],
     "rollback": [
@@ -53,7 +53,7 @@
     "manual_profile": "skills-manager-guide",
     "manual_required_markers": [
       "Skills 管理器 0.2.0 用户手册",
-      "正式 Skills 仍为 {tag}，共 {skill_count} 项",
+      "正式 Skills 为 {tag}，共 {skill_count} 项",
       "同一个跨平台包",
       "不再运行固定 .command、.cmd、PowerShell 或外部 CLI",
       "bootstrap",

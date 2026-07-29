@@ -10943,6 +10943,16 @@ def agent_bootstrap_manifest(
         raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
     installer_url = f"{public_endpoint}/install/jiaotang-agent.mjs"
     installer_sha256 = sha256_file(installer_path)
+    workbuddy_artifact = latest_skill_artifact("workbuddy")
+    if workbuddy_artifact is None:
+        raise HTTPException(status_code=503, detail="WorkBuddy 正式连接器尚未发布")
+    try:
+        connector_sha256 = workbuddy_connector_sha256(workbuddy_artifact)
+    except (OSError, ValueError, zipfile.BadZipFile, json.JSONDecodeError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail="WorkBuddy 正式连接器完整性校验失败",
+        ) from error
     bootstrap_url = (
         f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
         f"?platform={platform_name}"
@@ -10969,6 +10979,7 @@ def agent_bootstrap_manifest(
             "workbuddy_plugin": {
                 "download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
                 "mcp_server": "jiaotang-kb",
+                "connector_sha256": connector_sha256,
                 "configuration_key": "bootstrap_url",
                 "configuration_sensitive": True,
                 "dynamic_command": False,
@@ -12524,6 +12535,37 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
                     "sha256": sha256_file(legacy),
                 }
     return None
+
+
+def workbuddy_connector_sha256(artifact: dict[str, object]) -> str:
+    package_path = Path(str(artifact.get("file_path") or ""))
+    if not package_path.is_file():
+        raise ValueError("WorkBuddy 正式发布包不存在")
+    with zipfile.ZipFile(package_path) as archive:
+        files = [
+            name
+            for name in archive.namelist()
+            if name.endswith("/mcp/jiaotang-agent.mjs")
+            and not name.endswith("/")
+        ]
+        manifests = [
+            name
+            for name in archive.namelist()
+            if name.endswith("/plugin-release-manifest.json")
+            and not name.endswith("/")
+        ]
+        if len(files) != 1 or len(manifests) != 1:
+            raise ValueError("WorkBuddy 连接器或签名清单数量不正确")
+        connector_bytes = archive.read(files[0])
+        connector_sha256 = hashlib.sha256(connector_bytes).hexdigest()
+        manifest = json.loads(archive.read(manifests[0]).decode("utf-8"))
+        manifest_files = manifest.get("files")
+        if (
+            not isinstance(manifest_files, dict)
+            or manifest_files.get("mcp/jiaotang-agent.mjs") != connector_sha256
+        ):
+            raise ValueError("WorkBuddy 连接器与插件签名清单不一致")
+    return connector_sha256
 
 
 def workbuddy_skill_package(version: str) -> Path:
