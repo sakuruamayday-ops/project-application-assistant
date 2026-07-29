@@ -23,8 +23,9 @@ from typing import Callable
 
 DEFAULT_ENDPOINT = ""
 DEFAULT_CONFIG_DIR = Path.home() / ".config" / "project-assistant"
-STARTUP_PROTOCOL_VERSION = 1
+STARTUP_PROTOCOL_VERSION = 2
 PREFERENCE_PROTOCOL_VERSION = 1
+KNOWLEDGE_CONNECTION_CHECK_PROMPT = "检查下知识库连接状态"
 HOST_SKILL_INSTALL_PROMPT = "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
 SECRET_NAMES = {
     "JIAOTANG_KB_TOKEN",
@@ -37,6 +38,7 @@ SYSTEM_CREDENTIAL_ONLY_NAMES = {
 }
 PLAINTEXT_CREDENTIAL_NAMES = SECRET_NAMES - SYSTEM_CREDENTIAL_ONLY_NAMES
 BOOLEAN_NAMES = {
+    "JIAOTANG_KB_MCP_READY",
     "TYC_MCP_READY",
     "QCC_MCP_READY",
     "PATENT_MCP_READY",
@@ -223,7 +225,10 @@ def capability_report(
     token = values.get("JIAOTANG_KB_TOKEN", "").strip()
     device_id = values.get("JIAOTANG_KB_DEVICE_ID", "").strip()
     device_name = values.get("JIAOTANG_KB_DEVICE_NAME", "").strip()
-    if network and token:
+    knowledge_mcp_ready = truthy(values.get("JIAOTANG_KB_MCP_READY"))
+    if knowledge_mcp_ready:
+        cloud_status, cloud_detail = "ready", "jiaotang-kb MCP运行时连接已验证"
+    elif network and token:
         cloud_status, cloud_detail = probe_cloud(endpoint, token, device_id, device_name)
     elif token:
         cloud_status, cloud_detail = "configured", "已配置，尚未联网验证"
@@ -248,6 +253,8 @@ def capability_report(
         or shutil.which("libreoffice") is not None
     )
 
+    knowledge_connection_verified = knowledge_mcp_ready
+    show_host_skill_prompt = startup_required and knowledge_connection_verified
     return {
         "schema_version": 1,
         "checked_at": datetime.now(timezone.utc).isoformat(),
@@ -255,10 +262,21 @@ def capability_report(
             "startup_protocol_version": STARTUP_PROTOCOL_VERSION,
             "preference_protocol_version": PREFERENCE_PROTOCOL_VERSION,
             "startup_protocol_executed": True,
+            "startup_protocol_completed": knowledge_connection_verified,
             "startup_prompt_required": startup_required,
             "controlled_evolution_enabled": True,
             "four_question_review_enabled": True,
-            "host_skill_install_prompt": HOST_SKILL_INSTALL_PROMPT,
+            "knowledge_connection_check_required": (
+                startup_required and not knowledge_connection_verified
+            ),
+            "knowledge_connection_check_prompt": (
+                KNOWLEDGE_CONNECTION_CHECK_PROMPT
+                if startup_required and not knowledge_connection_verified
+                else ""
+            ),
+            "host_skill_install_prompt": (
+                HOST_SKILL_INSTALL_PROMPT if show_host_skill_prompt else ""
+            ),
         },
         "credentials": {
             "stored_values_are_redacted": True,
@@ -340,7 +358,24 @@ def render_markdown(report: dict[str, object], credentials_file: Path) -> str:
             "",
         ]
     onboarding = report.get("onboarding", {})
-    if isinstance(onboarding, dict) and onboarding.get("startup_prompt_required"):
+    if (
+        isinstance(onboarding, dict)
+        and onboarding.get("knowledge_connection_check_required")
+    ):
+        lines.extend(
+            [
+                "## 请先完成知识库连接检查",
+                "",
+                f"`{KNOWLEDGE_CONNECTION_CHECK_PROMPT}`",
+                "",
+                "当前首次配置尚未结束。请先让当前Agent检查并完成 `jiaotang-kb` 运行时连接；只有知识库状态工具调用成功后，才继续安装通用能力。",
+                "",
+            ]
+        )
+    elif (
+        isinstance(onboarding, dict)
+        and onboarding.get("host_skill_install_prompt")
+    ):
         lines.extend(
             [
                 "## 请在当前Agent对话框继续输入",
@@ -364,7 +399,9 @@ def startup_protocol_required(profile_file: Path) -> bool:
     onboarding = profile.get("onboarding", {})
     if not isinstance(onboarding, dict):
         return True
-    return int(onboarding.get("startup_protocol_version", 0)) < STARTUP_PROTOCOL_VERSION
+    if int(onboarding.get("startup_protocol_version", 0)) < STARTUP_PROTOCOL_VERSION:
+        return True
+    return not bool(onboarding.get("startup_protocol_completed"))
 
 
 def ask(prompt: str, default: str = "") -> str:
@@ -521,7 +558,15 @@ def main() -> int:
     if isinstance(preferences, dict):
         print(f"个人偏好：{preferences.get('detail', '已初始化')}")
     onboarding = report.get("onboarding", {})
-    if isinstance(onboarding, dict) and onboarding.get("startup_prompt_required"):
+    if (
+        isinstance(onboarding, dict)
+        and onboarding.get("knowledge_connection_check_required")
+    ):
+        print(f"请先在当前Agent中执行：{KNOWLEDGE_CONNECTION_CHECK_PROMPT}")
+    elif (
+        isinstance(onboarding, dict)
+        and onboarding.get("host_skill_install_prompt")
+    ):
         print(f"请在当前Agent对话框输入：{HOST_SKILL_INSTALL_PROMPT}")
     if missing_required:
         print("仍需配置：" + "、".join(missing_required))

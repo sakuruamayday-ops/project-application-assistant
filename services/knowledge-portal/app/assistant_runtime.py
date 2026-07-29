@@ -68,16 +68,17 @@ def quick_guide_answer(question: str, public_endpoint: str) -> tuple[str, str] |
             "二、导入Agent\n"
             "将 skills 文件夹导入Agent支持的Skills目录或当前工作区，刷新技能列表并重新打开会话。\n\n"
             "三、日常使用\n"
-            "不需要记 Skill 名称，直接说明企业名称、地区、拟申报项目、已有资料和希望输出的结果。首次安装后，再输入：帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills。",
+            "不需要记 Skill 名称，直接说明企业名称、地区、拟申报项目、已有资料和希望输出的结果。首次安装应先检查并完成 jiaotang-kb 知识库连接；连接验证成功后，再输入：帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills。",
             "first-run-configuration",
         )
 
     if matched == "api_mcp_import":
         return (
             "普通成员无需填写 API、Token 或 MCP 请求头。\n\n"
-            "一、打开网站的“连接我的 Agent”页面，点击“复制给 Agent”。\n"
-            "二、把复制的整段文字粘贴到当前本地 Agent 对话框。\n"
-            "三、Agent 会自动识别 macOS 或 Windows，以及 WorkBuddy、Codex、Claude Code 或通用 MCP 宿主，完成设备公钥登记、系统安全存储、MCP 配置和连接验证。\n\n"
+            "一、打开网站的“连接我的 Agent”页面，点击第一步“复制给 Agent”，把审查说明粘贴到当前本地 Agent 对话框。\n"
+            "二、核对后回到网站点击第二步“我已审查，复制安装确认”，再粘贴给同一个 Agent。自动两步流程无需提前手工下载插件包。\n"
+            "三、Agent 会自动识别 macOS 或 Windows 和当前宿主，下载安装包并完成设备公钥登记、系统安全存储、MCP 配置和连接验证。\n"
+            "四、让当前 Agent 检查知识库连接状态；实际调用知识库状态工具成功后，首次配置才结束。\n\n"
             "配置成功后直接使用 jiaotang-kb 工具。普通成员同一时间只能绑定一台设备；换机时先在门户点击“更换绑定设备”，再把新的配置发送给新设备 Agent。管理员账号不执行单设备限制，可继续使用管理员接入配置。",
             "first-run-configuration",
         )

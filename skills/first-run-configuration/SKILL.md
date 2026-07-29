@@ -28,11 +28,12 @@ python3 scripts/configure.py
 
 向导统一处理团队云端知识API、天眼查、企查查、专利数据、浏览器MCP、本地OCR和Agent文档能力。凭据写入Agent的安全配置位置，能力报告只记录连接状态和配置项名称。
 
-首次配置完成后立即执行三项初始化：
+首次配置按以下顺序完成：
 
 1. 将 `experience-recorder`、`skill-curator`、`skill-evolution` 和 `evolution-governance` 标记为已启用。日常任务自动记录脱敏经验并执行四问复盘；只生成改进候选，不自动改写或发布正式Skill。
-2. 在对话框中明确提醒用户输入：`帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills`。这些通用能力由当前Agent安装，本技能包不重复打包。
-3. 创建统一个人覆盖层 `~/.config/project-assistant/preferences.json`。已有云端凭据时先运行 `scripts/manage_preferences.py sync`，没有凭据时创建本地空覆盖层。正式Skill保持只读，后续用户调校只写结构化偏好。
+2. 立即检查 `jiaotang-kb` 是否出现在当前宿主的 MCP 连接列表，并实际调用 `knowledge_service_status` 或等价状态工具。未连接时在当前 Agent 已获授权的范围内完成连接刷新和必要配置，不要求用户另行打开连接器页面；连接仍失败时明确报告原因，不得把配置写入或四阶段登记完成等同于运行时已连接。
+3. 只有知识库状态工具调用成功后，才在对话框中明确提醒用户输入：`帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills`。这些通用能力由当前Agent安装，本技能包不重复打包。
+4. 创建统一个人覆盖层 `~/.config/project-assistant/preferences.json`。已有云端凭据时先运行 `scripts/manage_preferences.py sync`，没有凭据时创建本地空覆盖层。正式Skill保持只读，后续用户调校只写结构化偏好。
 
 具体检测顺序、一次性提示和协议升级规则见 `references/first-startup-protocol.md`；三层继承、直接修改识别和升级报告见 `references/preference-inheritance.md`，首次安装时必须读取并执行。
 
@@ -46,7 +47,7 @@ python3 scripts/configure.py
 6. 其他Skill先读取能力报告。只有报告不存在、过期或对应能力未配置时，才回到本向导，不得分别重复询问同一凭据。
 7. 供应商不可用时执行各Skill的降级路径，不补造企业、政策或专利数据。
 8. 首次配置报告不存在时视为首次安装，自动启用受控自进化；不得等待用户再次说“开启自进化”。
-9. 首次配置结束时只提示一次通用能力安装指令；用户已经确认这些能力可用时不重复提醒。
+9. 知识库连接尚未通过运行时工具验证时，首次配置保持未完成并优先执行连接检查，不显示通用能力安装指令。连接验证成功后只提示一次；用户已经确认这些能力可用时不重复提醒。
 10. 用户表达“以后都这样”“默认按这个格式”“记住我的习惯”时，先确认这是个人习惯还是通用质量规则。个人习惯写入偏好文件并同步，绝不直接修改正式 `SKILL.md`。
 11. 升级前运行 `scripts/upgrade_inheritance.py`。它以旧官方哈希、当前文件哈希和新官方哈希识别直接修改，保存旧目录、安装新版核心并生成升级继承报告。
 12. 用户说“迁移我的旧版Skills个人习惯”时，运行 `scripts/migrate_skill_preferences.py --sync`。只自动迁移地区、格式、语气、归档方式和安全的个人写作习惯；涉及凭据、权限、来源核验或获批承诺的内容不得自动接收，必须写入迁移报告等待确认。

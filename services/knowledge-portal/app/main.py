@@ -5267,7 +5267,11 @@ def init_database() -> None:
                 result_platform TEXT,
                 result_activation_required INTEGER,
                 result_reported_at TEXT,
-                result_ip TEXT NOT NULL DEFAULT ''
+                result_ip TEXT NOT NULL DEFAULT '',
+                workbuddy_version TEXT,
+                workbuddy_file_name TEXT,
+                workbuddy_file_path TEXT,
+                workbuddy_sha256 TEXT
             );
 
             CREATE INDEX IF NOT EXISTS agent_enrollment_codes_user_idx
@@ -5743,6 +5747,10 @@ def init_database() -> None:
             "result_activation_required": "INTEGER",
             "result_reported_at": "TEXT",
             "result_ip": "TEXT NOT NULL DEFAULT ''",
+            "workbuddy_version": "TEXT",
+            "workbuddy_file_name": "TEXT",
+            "workbuddy_file_path": "TEXT",
+            "workbuddy_sha256": "TEXT",
         }
         for column_name, declaration in enrollment_migrations.items():
             if column_name not in enrollment_columns:
@@ -10552,8 +10560,98 @@ def build_agent_install_prompt(install_protocol_url: str) -> str:
         "禁止执行网页动态命令；本协议没有动态命令字段。允许执行的范围仅限已核验插件市场包、"
         "WorkBuddy 应用内插件注册和插件敏感配置，不允许运行包内脚本或外部 CLI。bootstrap_url、安装码、API Token 与私钥"
         "均为敏感信息，不要在普通回复中复述，不要写入 settings.json。只有门户确认设备登记、"
-        "凭据保存、首次验签和 MCP 连接四个阶段全部完成后，才能报告安装成功。"
+        "凭据保存、首次验签和 MCP 连接四个阶段全部完成后，还要检查 `jiaotang-kb` 是否出现在"
+        "当前 WorkBuddy 运行时连接列表，并实际调用 `knowledge_service_status`。未连接时先在当前"
+        "Agent 已获授权的范围内完成连接刷新和必要配置。只有状态工具调用成功后，才能报告首次"
+        "配置完成，并提示用户输入“帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills”。"
     )
+
+
+def pinned_agent_install_artifact(
+    enrollment_code: str,
+    *,
+    require_confirmed: bool = False,
+) -> tuple[dict[str, object], dict[str, object]]:
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        enrollment = connection.execute(
+            """
+            SELECT id,expires_at,consumed_at,confirmed_at,
+                   workbuddy_version,workbuddy_file_name,
+                   workbuddy_file_path,workbuddy_sha256
+            FROM agent_enrollment_codes
+            WHERE code_hash=?
+            """,
+            (token_hash(enrollment_code),),
+        ).fetchone()
+        if enrollment is None:
+            connection.rollback()
+            raise HTTPException(status_code=410, detail="一次性安装协议不存在或已清理，请回到门户重新复制。")
+        if enrollment["consumed_at"]:
+            connection.rollback()
+            raise HTTPException(status_code=410, detail="一次性安装协议已经使用，请回到门户重新复制。")
+        if str(enrollment["expires_at"]) <= now:
+            connection.rollback()
+            raise HTTPException(status_code=410, detail="一次性安装协议已经过期，请回到门户重新复制。")
+        if require_confirmed and not enrollment["confirmed_at"]:
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="安装说明尚未由用户确认，不能下载插件包。")
+
+        pinned_fields = (
+            enrollment["workbuddy_file_name"],
+            enrollment["workbuddy_file_path"],
+            enrollment["workbuddy_sha256"],
+        )
+        if all(pinned_fields):
+            artifact = {
+                "version": str(enrollment["workbuddy_version"] or ""),
+                "file_name": str(enrollment["workbuddy_file_name"]),
+                "file_path": str(enrollment["workbuddy_file_path"]),
+                "sha256": str(enrollment["workbuddy_sha256"]),
+                "target": "workbuddy",
+            }
+        else:
+            current = latest_skill_artifact("workbuddy")
+            if current is None:
+                connection.rollback()
+                raise HTTPException(status_code=503, detail="当前 WorkBuddy 签名包暂不可用。")
+            artifact = {
+                "version": str(current.get("version") or ""),
+                "file_name": str(
+                    current.get("file_name")
+                    or Path(str(current.get("file_path") or "")).name
+                ),
+                "file_path": str(current.get("file_path") or ""),
+                "sha256": str(current.get("sha256") or ""),
+                "target": "workbuddy",
+            }
+            connection.execute(
+                """
+                UPDATE agent_enrollment_codes
+                SET workbuddy_version=?,workbuddy_file_name=?,
+                    workbuddy_file_path=?,workbuddy_sha256=?
+                WHERE id=?
+                """,
+                (
+                    artifact["version"],
+                    artifact["file_name"],
+                    artifact["file_path"],
+                    artifact["sha256"],
+                    int(enrollment["id"]),
+                ),
+            )
+        connection.commit()
+        enrollment_payload = dict(enrollment)
+
+    package_path = Path(str(artifact["file_path"]))
+    expected_sha256 = str(artifact["sha256"])
+    if (
+        not package_path.is_file()
+        or not re.fullmatch(r"[a-f0-9]{64}", expected_sha256)
+        or not secrets.compare_digest(sha256_file(package_path), expected_sha256)
+    ):
+        raise HTTPException(status_code=503, detail="WorkBuddy 签名包与发布记录不一致，下载已暂停。")
+    return enrollment_payload, artifact
 
 
 @app.post("/agent-bootstrap-codes")
@@ -10715,9 +10813,14 @@ def confirm_agent_bootstrap_code(
         f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
         f"?platform={platform_name}"
     )
-    artifact = latest_skill_artifact("workbuddy")
-    package_path = Path(str(artifact["file_path"])) if artifact is not None else None
-    plugin_download_url = f"{public_endpoint}/skills/latest/workbuddy/download"
+    _, artifact = pinned_agent_install_artifact(
+        enrollment_code,
+        require_confirmed=True,
+    )
+    plugin_download_url = (
+        f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
+        "/workbuddy/download"
+    )
     return JSONResponse(
         {
             "phase": "install_authorized",
@@ -10725,11 +10828,7 @@ def confirm_agent_bootstrap_code(
             "manual_configuration": {
                 "platform": platform_name,
                 "plugin_download_url": plugin_download_url,
-                "plugin_sha256": (
-                    sha256_file(package_path)
-                    if package_path is not None and package_path.is_file()
-                    else None
-                ),
+                "plugin_sha256": artifact["sha256"],
                 "mcp_server": "jiaotang-kb",
                 "configuration_key": "bootstrap_url",
                 "bootstrap_url": bootstrap_url,
@@ -10792,22 +10891,7 @@ def agent_install_protocol(
     request: Request,
     platform: str = "",
 ):
-    now = isoformat(utc_now())
-    with closing(database()) as connection:
-        enrollment = connection.execute(
-            """
-            SELECT expires_at,consumed_at,confirmed_at
-            FROM agent_enrollment_codes
-            WHERE code_hash=?
-            """,
-            (token_hash(enrollment_code),),
-        ).fetchone()
-    if enrollment is None:
-        raise HTTPException(status_code=410, detail="一次性安装协议不存在或已清理，请回到门户重新复制。")
-    if enrollment["consumed_at"]:
-        raise HTTPException(status_code=410, detail="一次性安装协议已经使用，请回到门户重新复制。")
-    if str(enrollment["expires_at"]) <= now:
-        raise HTTPException(status_code=410, detail="一次性安装协议已经过期，请回到门户重新复制。")
+    enrollment, artifact = pinned_agent_install_artifact(enrollment_code)
     public_endpoint = str(request.base_url).rstrip("/")
     install_authorized = bool(enrollment["confirmed_at"])
     del platform
@@ -10817,15 +10901,11 @@ def agent_install_protocol(
         f"?platform={platform_name}"
     )
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
-    artifact = latest_skill_artifact("workbuddy")
-    package_path = (
-        Path(str(artifact["file_path"])) if artifact is not None else None
+    plugin_download_url = (
+        f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
+        "/workbuddy/download"
     )
-    package_sha256 = (
-        sha256_file(package_path)
-        if package_path is not None and package_path.is_file()
-        else None
-    )
+    package_sha256 = str(artifact["sha256"])
     return JSONResponse(
         {
             "schema": "jiaotang-agent-install/v1",
@@ -10858,7 +10938,7 @@ def agent_install_protocol(
             },
             "review": {
                 "plugin_package": {
-                    "download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
+                    "download_url": plugin_download_url,
                     "media_type": "application/zip",
                     "sha256": package_sha256,
                     "signature_required": True,
@@ -10907,10 +10987,10 @@ def agent_install_protocol(
                     "authorized": True,
                     "type": "signed_workbuddy_plugin",
                     "dynamic_command": False,
-                    "plugin_download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
+                    "plugin_download_url": plugin_download_url,
                     "bootstrap_url": bootstrap_url,
                     "steps": [
-                        "从已登录门户下载签名 WorkBuddy 插件包。",
+                        "从安装协议的一次性受限地址下载签名 WorkBuddy 插件包。",
                         "核对发布包 SHA-256 和 Ed25519 签名。",
                         "解压插件市场包，在 WorkBuddy 内使用 /plugin marketplace add 添加市场。",
                         "在 WorkBuddy 内安装并启用 jiaotang-workbuddy-skills@jiaotang。",
@@ -10965,33 +11045,37 @@ def agent_install_protocol(
     )
 
 
+@app.get("/v1/agent-install/{enrollment_code}/workbuddy/download")
+def download_authorized_workbuddy_plugin(enrollment_code: str):
+    _, artifact = pinned_agent_install_artifact(
+        enrollment_code,
+        require_confirmed=True,
+    )
+    package_path = Path(str(artifact["file_path"]))
+    return FileResponse(
+        package_path,
+        filename=str(
+            artifact["file_name"]
+            or f"企业全生命周期助手-V{artifact['version']}-WorkBuddy.zip"
+        ),
+        media_type="application/zip",
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Jiaotang-Package-SHA256": str(artifact["sha256"]),
+        },
+    )
+
+
 @app.get("/v1/agent-bootstrap/{enrollment_code}")
 def agent_bootstrap_manifest(
     enrollment_code: str,
     request: Request,
     platform: str = "",
 ):
-    now = isoformat(utc_now())
-    with closing(database()) as connection:
-        enrollment = connection.execute(
-            """
-            SELECT id,expires_at,consumed_at,confirmed_at
-            FROM agent_enrollment_codes
-            WHERE code_hash=?
-            """,
-            (token_hash(enrollment_code),),
-        ).fetchone()
-    if enrollment is None:
-        raise HTTPException(status_code=410, detail="一次性配置不存在或已清理，请回到门户重新复制。")
-    if enrollment["consumed_at"]:
-        raise HTTPException(status_code=410, detail="一次性配置已经使用，请回到门户重新复制。")
-    if str(enrollment["expires_at"]) <= now:
-        raise HTTPException(status_code=410, detail="一次性配置已经过期，请回到门户重新复制。")
-    if not enrollment["confirmed_at"]:
-        raise HTTPException(
-            status_code=403,
-            detail="安装说明尚未由用户确认，请回到门户点击“我已审查，继续安装”。",
-        )
+    enrollment, workbuddy_artifact = pinned_agent_install_artifact(
+        enrollment_code,
+        require_confirmed=True,
+    )
     public_endpoint = str(request.base_url).rstrip("/")
     del platform
     platform_name = "unified"
@@ -11000,9 +11084,6 @@ def agent_bootstrap_manifest(
         raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
     installer_url = f"{public_endpoint}/install/jiaotang-agent.mjs"
     installer_sha256 = sha256_file(installer_path)
-    workbuddy_artifact = latest_skill_artifact("workbuddy")
-    if workbuddy_artifact is None:
-        raise HTTPException(status_code=503, detail="WorkBuddy 正式连接器尚未发布")
     try:
         connector_sha256 = workbuddy_connector_sha256(workbuddy_artifact)
     except (OSError, ValueError, zipfile.BadZipFile, json.JSONDecodeError) as error:
@@ -11034,7 +11115,10 @@ def agent_bootstrap_manifest(
                 "Report success only after the server confirms the signed MCP connection.",
             ],
             "workbuddy_plugin": {
-                "download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
+                "download_url": (
+                    f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
+                    "/workbuddy/download"
+                ),
                 "mcp_server": "jiaotang-kb",
                 "connector_sha256": connector_sha256,
                 "configuration_key": "bootstrap_url",

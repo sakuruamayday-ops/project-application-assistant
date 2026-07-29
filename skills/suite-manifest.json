@@ -4,20 +4,20 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.3.1.4",
-    "version": "1.3.1.4",
-    "summary": "设备登记升级为凭据保存后再激活的两阶段事务，并增加无敏感信息的一键诊断页。",
+    "tag": "V1.3.1.5",
+    "version": "1.3.1.5",
+    "summary": "修复 WorkBuddy 两步自动安装的受限下载校验，并将运行时知识库连接验证设为首次配置完成门槛。",
     "changes": [
-      "设备登记改为预登记、系统凭据保存与回读、本机签名激活；预登记阶段不创建有效 Token、设备绑定或设备公钥。",
-      "激活阶段在单个数据库事务内创建凭据、绑定和公钥，并支持激活响应丢失后的幂等续跑，根除凭据未落盘造成的半绑定。",
-      "Skills 中心新增无敏感信息一键诊断页，展示正式包 SHA-256、Ed25519 签名状态、脱敏登记 URL 和四阶段连接状态。",
-      "正式提升前保留 V1.3.1.3 滚动升级兼容路径；V1.3.1.4 成为当前包后阻断旧的一阶段登记请求，49 项业务技能内容不变。"
+      "第二阶段安装协议改用一次性受限下载地址，避免登录页 HTML 被误下载为插件包并触发 SHA-256 不一致。",
+      "协议、下载包和引导清单固定到同一已审查 WorkBuddy 发布资产，继续执行 SHA-256 与 Ed25519 双重完整性校验。",
+      "首次配置必须确认 jiaotang-kb 已进入当前 WorkBuddy 运行时并成功调用 knowledge_service_status，之后才提示安装 OCR、PDF、Word、PPT、Excel 和联网检索 Skills。",
+      "门户明确区分自动两步流程与手工配置：自动流程由 Agent 下载、校验并安装，无需用户预先下载插件包。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "下载并验签 V1.3.1.4 跨平台 WorkBuddy ZIP，解压后在 WorkBuddy 中输入 /plugin，添加解压后的 jiaotang 本地市场目录，再安装并启用 jiaotang-workbuddy-skills@jiaotang。",
-      "manual_fallback": "从 API 与用户页或 Skills 管理中心完成公开说明审查后，点击生成并复制 bootstrap_url，再粘贴到 WorkBuddy 插件敏感配置。",
-      "verification": "安装后必须核对技能清单，并完成身份、检索、文档读取、用量和 MCP 工具调用验收。"
+      "workbuddy": "通过门户两步流程时，第二步授权 Agent 自动下载、校验并安装 V1.3.1.5 WorkBuddy 包；选择手工配置时才需从 Skills 中心下载并在 WorkBuddy 中通过 /plugin 安装。",
+      "manual_fallback": "手工配置只作为自动两步流程的替代路径；核验签名包后，将一次性 bootstrap_url 填入 WorkBuddy 插件敏感配置。",
+      "verification": "门户四阶段完成后还必须确认 jiaotang-kb 已进入当前运行时并成功调用 knowledge_service_status，之后首次配置才完成。"
     },
     "compatibility": [
       {
@@ -28,12 +28,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.3.1.4 使用凭据保存后再激活的两阶段登记事务；已正常连接的既有用户无需重新绑定。"
+        "note": "V1.3.1.5 修复两步自动下载并闭合运行时连接验收；已正常连接的既有用户无需重新绑定。"
       },
       {
         "target": "Windows WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.3.1.4 根除凭据未保存造成的半绑定，并提供脱敏一键诊断；正式发布前必须通过 Windows runner 与真实宿主复验。"
+        "note": "V1.3.1.5 使用同一受限下载与运行时连接验收流程；正式包发布后由主人执行真实 WorkBuddy 验收。"
       }
     ],
     "rollback": [

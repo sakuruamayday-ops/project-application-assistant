@@ -2,7 +2,7 @@
   "schema": "jiaotang-skill-catalog/v1",
   "product": "企业全生命周期助手",
   "generatedFrom": "skills/suite-manifest.json",
-  "releaseTag": "V1.3.1.4",
+  "releaseTag": "V1.3.1.5",
   "count": 49,
   "skills": [
     {
