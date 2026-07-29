@@ -16,6 +16,8 @@ def test_public_demo_requires_no_registration_or_session(tmp_path):
     assert 'href="/login"' in response.text
     assert "jtk_" not in response.text
     assert "/v1/search" not in response.text
+    assert "冀ICP备2026028214号-1" in response.text
+    assert 'href="https://beian.miit.gov.cn/"' in response.text
     assert response.headers["cache-control"] == "public, max-age=300"
 
 
@@ -37,3 +39,5 @@ def test_login_links_to_public_demo(tmp_path):
 
     assert response.status_code == 200
     assert 'href="/demo"' in response.text
+    assert "冀ICP备2026028214号-1" in response.text
+    assert 'href="https://beian.miit.gov.cn/"' in response.text
