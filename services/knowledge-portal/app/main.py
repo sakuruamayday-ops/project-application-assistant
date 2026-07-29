@@ -11110,7 +11110,10 @@ def agent_bootstrap_manifest(
                 "Report success only after the server confirms the signed MCP connection.",
             ],
             "workbuddy_plugin": {
-                "download_url": f"{public_endpoint}/skills/latest/workbuddy/download",
+                "download_url": (
+                    f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
+                    "/workbuddy/download"
+                ),
                 "mcp_server": "jiaotang-kb",
                 "connector_sha256": connector_sha256,
                 "configuration_key": "bootstrap_url",

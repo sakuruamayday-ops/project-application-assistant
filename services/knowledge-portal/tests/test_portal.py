@@ -3701,6 +3701,10 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         )
         assert "commands" not in manifest.json()
         assert manifest.json()["workbuddy_plugin"]["dynamic_command"] is False
+        assert (
+            manifest.json()["workbuddy_plugin"]["download_url"]
+            == scoped_download_url
+        )
         assert manifest.json()["workbuddy_plugin"]["configuration_key"] == "bootstrap_url"
         assert manifest.json()["workbuddy_plugin"]["configuration_sensitive"] is True
         connector_sha256 = manifest.json()["workbuddy_plugin"]["connector_sha256"]
