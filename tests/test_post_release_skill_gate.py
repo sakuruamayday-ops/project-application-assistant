@@ -22,6 +22,14 @@ MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
 
+MANAGED_RUNTIME_START = "<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->"
+MANAGED_RUNTIME_END = "<!-- END MANAGED PORTABLE SKILL RUNTIME -->"
+PACKAGER_MANAGED_PATHS = [
+    "references/portable-runtime-protocol.md",
+    "scripts/portable_skill_runtime.py",
+    "scripts/verify_skill_installation.py",
+]
+
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -76,9 +84,22 @@ def test_post_release_gate_installs_and_audits_three_layers(tmp_path) -> None:
         "---\n"
         f"name: {skill_name}\n"
         "description: signed test skill\n"
-        "---\n",
+        "---\n"
+        "\n"
+        "# Business instructions\n"
+        "\n"
+        f"{MANAGED_RUNTIME_START}\n"
+        "old development runtime\n"
+        f"{MANAGED_RUNTIME_END}\n",
         encoding="utf-8",
     )
+    for relative in PACKAGER_MANAGED_PATHS:
+        managed_path = development_skill / relative
+        managed_path.parent.mkdir(parents=True, exist_ok=True)
+        managed_path.write_text(
+            f"old development managed content: {relative}\n",
+            encoding="utf-8",
+        )
     skill_manifest_path = development_skill / "release-manifest.json"
     skill_manifest_path.write_text(
         json.dumps(
@@ -89,7 +110,8 @@ def test_post_release_gate_installs_and_audits_three_layers(tmp_path) -> None:
                 "required_paths": ["SKILL.md"],
                 "mutable_paths": ["local-overrides"],
                 "files": {
-                    "SKILL.md": sha256(development_skill / "SKILL.md")
+                    relative: sha256(development_skill / relative)
+                    for relative in ["SKILL.md", *PACKAGER_MANAGED_PATHS]
                 },
                 "integrity_excludes": [
                     "publisher-ed25519.pub",
@@ -157,6 +179,59 @@ def test_post_release_gate_installs_and_audits_three_layers(tmp_path) -> None:
     bundle_root = tmp_path / "bundle" / "test-suite"
     release_root = bundle_root / "skills"
     shutil.copytree(development_root, release_root)
+    release_skill = release_root / skill_name
+    (release_skill / "SKILL.md").write_text(
+        "---\n"
+        f"name: {skill_name}\n"
+        "description: signed test skill\n"
+        "---\n"
+        "\n"
+        "# Business instructions\n"
+        "\n"
+        f"{MANAGED_RUNTIME_START}\n"
+        "new packaged runtime\n"
+        f"{MANAGED_RUNTIME_END}\n",
+        encoding="utf-8",
+    )
+    for relative in PACKAGER_MANAGED_PATHS:
+        (release_skill / relative).write_text(
+            f"new packaged managed content: {relative}\n",
+            encoding="utf-8",
+        )
+    release_skill_manifest = release_skill / "release-manifest.json"
+    release_manifest_payload = json.loads(
+        release_skill_manifest.read_text(encoding="utf-8")
+    )
+    release_manifest_payload["files"] = {
+        relative: sha256(release_skill / relative)
+        for relative in ["SKILL.md", *PACKAGER_MANAGED_PATHS]
+    }
+    release_skill_manifest.write_text(
+        json.dumps(
+            release_manifest_payload,
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    release_signature = release_skill / "release-manifest.json.sig"
+    release_signature.unlink()
+    subprocess.run(
+        [
+            "ssh-keygen",
+            "-Y",
+            "sign",
+            "-f",
+            str(signing_key),
+            "-n",
+            "codex-skill-manifest",
+            str(release_skill_manifest),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
     files = {
         path.relative_to(bundle_root).as_posix(): sha256(path)
         for path in sorted(bundle_root.rglob("*"))
@@ -232,6 +307,13 @@ def test_post_release_gate_installs_and_audits_three_layers(tmp_path) -> None:
         assert result["summary"]["release_skill_signatures_verified"] == 1
         assert result["summary"]["installed_skill_signatures_verified"] == 1
         assert result["summary"]["development_release_install_match"] is True
+        pre_deploy = result["stages"]["pre_deploy_three_way"]
+        assert pre_deploy["development_comparison_mode"] == (
+            "business-source-with-managed-runtime-normalization"
+        )
+        assert pre_deploy["packager_managed_paths"] == (
+            PACKAGER_MANAGED_PATHS
+        )
         assert report_path.is_file()
         assert (
             install_root / skill_name / "SKILL.md"
