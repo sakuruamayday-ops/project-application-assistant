@@ -38,17 +38,6 @@
       ]
     },
     {
-      "field": "municipal_tc_local_thresholds_met",
-      "label": "属地全部硬门槛符合",
-      "aliases": [
-        "属地全部硬门槛符合"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。"
-      ]
-    },
-    {
       "field": "municipal_tc_local_compliance_clear",
       "label": "属地排除项核验",
       "aliases": [
@@ -69,6 +58,15 @@
       "derivation_requirements": [
         "申请报告、评价表及属地通知要求的证明材料须完整。"
       ]
+    },
+    {
+      "field": "municipal_tc_applicable_local_threshold_assessment_passed",
+      "label": "按属地现行办法适用的收入研发人员设备组织及资质门槛评价通过",
+      "aliases": [
+        "按属地现行办法适用的收入研发人员设备组织及资质门槛评价通过"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
     }
   ],
   "rules": [
@@ -92,10 +90,10 @@
     },
     {
       "rule_id": "municipal-tech-center-3",
-      "type": "hard-threshold",
-      "field": "municipal_tc_local_thresholds_met",
+      "field": "municipal_tc_applicable_local_threshold_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
       "source_quote": "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。"
     },
@@ -146,5 +144,12 @@
         }
       ]
     }
-  ]
+  ],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "municipal-tech-center-3"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

@@ -38,17 +38,6 @@
       ]
     },
     {
-      "field": "pin_zhejiang_manufacturing_conformity_met",
-      "label": "产品符合性评价通过",
-      "aliases": [
-        "产品符合性评价通过"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "产品、生产过程、质量保证和检验能力应满足适用标准及评价细则。"
-      ]
-    },
-    {
       "field": "pin_zhejiang_manufacturing_authorization_complete",
       "label": "品牌授权材料完整",
       "aliases": [
@@ -69,6 +58,38 @@
       "derivation_requirements": [
         "获授权后应在证书或声明有效期内规范使用标识并接受监督。"
       ]
+    },
+    {
+      "field": "pin_zhejiang_manufacturing_product_standard_passed",
+      "label": "产品满足适用标准和评价细则",
+      "aliases": [
+        "产品满足适用标准和评价细则"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "pin_zhejiang_manufacturing_process_standard_passed",
+      "label": "生产过程满足适用标准和评价细则",
+      "aliases": [
+        "生产过程满足适用标准和评价细则"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "pin_zhejiang_manufacturing_quality_assurance_passed",
+      "label": "质量保证能力满足适用标准和评价细则",
+      "aliases": [
+        "质量保证能力满足适用标准和评价细则"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "pin_zhejiang_manufacturing_inspection_capability_passed",
+      "label": "检验能力满足适用标准和评价细则",
+      "aliases": [
+        "检验能力满足适用标准和评价细则"
+      ],
+      "value_type": "boolean"
     }
   ],
   "rules": [
@@ -92,10 +113,34 @@
     },
     {
       "rule_id": "pin-zhejiang-manufacturing-3",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "pin-zhejiang-manufacturing-product",
+          "field": "pin_zhejiang_manufacturing_product_standard_passed",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "pin-zhejiang-manufacturing-process",
+          "field": "pin_zhejiang_manufacturing_process_standard_passed",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "pin-zhejiang-manufacturing-quality",
+          "field": "pin_zhejiang_manufacturing_quality_assurance_passed",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "pin-zhejiang-manufacturing-inspection",
+          "field": "pin_zhejiang_manufacturing_inspection_capability_passed",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "pin_zhejiang_manufacturing_conformity_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "品字标浙江制造认证、自我声明和品牌授权现行规则",
       "source_quote": "产品、生产过程、质量保证和检验能力应满足适用标准及评价细则。"
     },
@@ -119,5 +164,12 @@
     }
   ],
   "annual_overlays": [],
-  "jurisdiction_overlays": []
+  "jurisdiction_overlays": [],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "pin-zhejiang-manufacturing-3"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

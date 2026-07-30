@@ -34,15 +34,13 @@
       ]
     },
     {
-      "field": "municipal_tc_local_thresholds_met",
-      "label": "属地全部硬门槛符合",
+      "field": "municipal_tc_applicable_local_threshold_assessment_passed",
+      "label": "按属地现行办法适用的收入研发人员设备组织及资质门槛评价通过",
       "aliases": [
-        "属地全部硬门槛符合"
+        "按属地现行办法适用的收入研发人员设备组织及资质门槛评价通过"
       ],
       "value_type": "boolean",
-      "derivation_requirements": [
-        "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。"
-      ]
+      "fact_semantics": "assessment-conclusion"
     },
     {
       "field": "municipal_tc_local_compliance_clear",
@@ -98,10 +96,10 @@
     },
     {
       "rule_id": "municipal-tech-center-3",
-      "type": "hard-threshold",
-      "field": "municipal_tc_local_thresholds_met",
+      "field": "municipal_tc_applicable_local_threshold_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
       "source_quote": "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。",
       "policy_status": "current",
@@ -178,10 +176,10 @@
         },
         {
           "rule_id": "municipal-tech-center-3",
-          "type": "hard-threshold",
-          "field": "municipal_tc_local_thresholds_met",
+          "field": "municipal_tc_applicable_local_threshold_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。",
           "policy_status": "current",
@@ -235,6 +233,7 @@
         ]
       },
       "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "municipal-tech-center-runtime-gate",
@@ -270,7 +269,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "municipal_tc_local_thresholds_met",
+          "field": "municipal_tc_applicable_local_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -313,7 +312,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "municipal_tc_local_thresholds_met",
+          "field": "municipal_tc_applicable_local_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -356,7 +355,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "municipal_tc_local_thresholds_met",
+          "field": "municipal_tc_applicable_local_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

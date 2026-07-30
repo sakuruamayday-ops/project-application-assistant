@@ -12,48 +12,126 @@
   ],
   "fact_fields": [
     {
-      "field": "zj_tech_sme_entity_met",
-      "label": "浙江注册一年以上并独立核算",
+      "field": "zj_tech_sme_registered_in_zhejiang",
+      "label": "企业在浙江省登记注册",
       "aliases": [
-        "浙江注册一年以上并独立核算"
+        "企业在浙江省登记注册"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "在本省登记注册成立一年以上，产权明晰，实行独立核算、自主经营、自负盈亏。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "zj_tech_sme_ip_product_met",
-      "label": "知识产权及对应产品服务",
+      "field": "zj_tech_sme_registration_days",
+      "label": "企业成立时间",
       "aliases": [
-        "知识产权及对应产品服务"
+        "企业成立时间"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "拥有专利、标准、商标、科技成果或其他专有技术，并形成相应产品或服务。"
-      ]
+      "value_type": "number",
+      "unit": "天"
     },
     {
-      "field": "zj_tech_sme_innovation_investment_met",
-      "label": "持续科技创新投入",
+      "field": "zj_tech_sme_property_rights_clear",
+      "label": "企业产权明晰",
       "aliases": [
-        "持续科技创新投入"
+        "企业产权明晰"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "企业具有科技创新经费投入并具备持续开展科技创新活动的能力。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "zj_tech_sme_size_standard_met",
-      "label": "中小企业划型符合",
+      "field": "zj_tech_sme_independent_accounting",
+      "label": "企业实行独立核算",
       "aliases": [
-        "中小企业划型符合"
+        "企业实行独立核算"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_independent_operation",
+      "label": "企业自主经营",
+      "aliases": [
+        "企业自主经营"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_self_responsible_profit_loss",
+      "label": "企业自负盈亏",
+      "aliases": [
+        "企业自负盈亏"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_patent_present",
+      "label": "拥有专利",
+      "aliases": [
+        "拥有专利"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_standard_present",
+      "label": "拥有标准",
+      "aliases": [
+        "拥有标准"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_trademark_present",
+      "label": "拥有商标",
+      "aliases": [
+        "拥有商标"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_scientific_achievement_present",
+      "label": "拥有科技成果",
+      "aliases": [
+        "拥有科技成果"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_proprietary_technology_present",
+      "label": "拥有其他专有技术",
+      "aliases": [
+        "拥有其他专有技术"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_corresponding_product_or_service_formed",
+      "label": "已形成对应产品或服务",
+      "aliases": [
+        "已形成对应产品或服务"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_has_innovation_investment",
+      "label": "企业具有科技创新经费投入",
+      "aliases": [
+        "企业具有科技创新经费投入"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_continuous_innovation_capability",
+      "label": "企业具备持续科技创新活动能力",
+      "aliases": [
+        "企业具备持续科技创新活动能力"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_sme_size_standard_confirmed",
+      "label": "企业符合中小企业划型标准",
+      "aliases": [
+        "企业符合中小企业划型标准"
       ],
       "value_type": "boolean",
-      "derivation_requirements": [
-        "企业规模符合中小企业划型标准。"
-      ]
+      "fact_semantics": "atomic-policy-assertion"
     },
     {
       "field": "zj_tech_sme_materials_complete",
@@ -79,10 +157,47 @@
   "rule_cards": [
     {
       "rule_id": "zj-tech-sme-1",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-tech-sme-zhejiang",
+          "field": "zj_tech_sme_registered_in_zhejiang",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-tech-sme-age",
+          "field": "zj_tech_sme_registration_days",
+          "operator": "gte",
+          "expected": 365,
+          "unit": "天"
+        },
+        {
+          "rule_id": "zj-tech-sme-property",
+          "field": "zj_tech_sme_property_rights_clear",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-tech-sme-accounting",
+          "field": "zj_tech_sme_independent_accounting",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-tech-sme-operation",
+          "field": "zj_tech_sme_independent_operation",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-tech-sme-risk",
+          "field": "zj_tech_sme_self_responsible_profit_loss",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_tech_sme_entity_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
       "source_quote": "在本省登记注册成立一年以上，产权明晰，实行独立核算、自主经营、自负盈亏。",
       "policy_status": "current",
@@ -93,10 +208,52 @@
     },
     {
       "rule_id": "zj-tech-sme-2",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-tech-sme-ip-route",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-tech-sme-patent",
+              "field": "zj_tech_sme_patent_present",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-standard",
+              "field": "zj_tech_sme_standard_present",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-trademark",
+              "field": "zj_tech_sme_trademark_present",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-achievement",
+              "field": "zj_tech_sme_scientific_achievement_present",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-proprietary",
+              "field": "zj_tech_sme_proprietary_technology_present",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-sme-product",
+          "field": "zj_tech_sme_corresponding_product_or_service_formed",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_tech_sme_ip_product_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
       "source_quote": "拥有专利、标准、商标、科技成果或其他专有技术，并形成相应产品或服务。",
       "policy_status": "current",
@@ -107,10 +264,22 @@
     },
     {
       "rule_id": "zj-tech-sme-3",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-tech-sme-investment",
+          "field": "zj_tech_sme_has_innovation_investment",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-tech-sme-continuity",
+          "field": "zj_tech_sme_continuous_innovation_capability",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_tech_sme_innovation_investment_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
       "source_quote": "企业具有科技创新经费投入并具备持续开展科技创新活动的能力。",
       "policy_status": "current",
@@ -121,10 +290,10 @@
     },
     {
       "rule_id": "zj-tech-sme-4",
-      "type": "hard-threshold",
-      "field": "zj_tech_sme_size_standard_met",
+      "field": "zj_tech_sme_size_standard_confirmed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
       "source_quote": "企业规模符合中小企业划型标准。",
       "policy_status": "current",
@@ -174,10 +343,47 @@
       "rules": [
         {
           "rule_id": "zj-tech-sme-1",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-sme-zhejiang",
+              "field": "zj_tech_sme_registered_in_zhejiang",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-age",
+              "field": "zj_tech_sme_registration_days",
+              "operator": "gte",
+              "expected": 365,
+              "unit": "天"
+            },
+            {
+              "rule_id": "zj-tech-sme-property",
+              "field": "zj_tech_sme_property_rights_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-accounting",
+              "field": "zj_tech_sme_independent_accounting",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-operation",
+              "field": "zj_tech_sme_independent_operation",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-risk",
+              "field": "zj_tech_sme_self_responsible_profit_loss",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "zj_tech_sme_entity_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
           "source_quote": "在本省登记注册成立一年以上，产权明晰，实行独立核算、自主经营、自负盈亏。",
           "policy_status": "current",
@@ -188,10 +394,52 @@
         },
         {
           "rule_id": "zj-tech-sme-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-sme-ip-route",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "zj-tech-sme-patent",
+                  "field": "zj_tech_sme_patent_present",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-tech-sme-standard",
+                  "field": "zj_tech_sme_standard_present",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-tech-sme-trademark",
+                  "field": "zj_tech_sme_trademark_present",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-tech-sme-achievement",
+                  "field": "zj_tech_sme_scientific_achievement_present",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-tech-sme-proprietary",
+                  "field": "zj_tech_sme_proprietary_technology_present",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-sme-product",
+              "field": "zj_tech_sme_corresponding_product_or_service_formed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "zj_tech_sme_ip_product_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
           "source_quote": "拥有专利、标准、商标、科技成果或其他专有技术，并形成相应产品或服务。",
           "policy_status": "current",
@@ -202,10 +450,22 @@
         },
         {
           "rule_id": "zj-tech-sme-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-sme-investment",
+              "field": "zj_tech_sme_has_innovation_investment",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-sme-continuity",
+              "field": "zj_tech_sme_continuous_innovation_capability",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "zj_tech_sme_innovation_investment_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
           "source_quote": "企业具有科技创新经费投入并具备持续开展科技创新活动的能力。",
           "policy_status": "current",
@@ -216,10 +476,10 @@
         },
         {
           "rule_id": "zj-tech-sme-4",
-          "type": "hard-threshold",
-          "field": "zj_tech_sme_size_standard_met",
+          "field": "zj_tech_sme_size_standard_confirmed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
           "source_quote": "企业规模符合中小企业划型标准。",
           "policy_status": "current",
@@ -265,25 +525,67 @@
       "case_id": "eligible-verified",
       "facts": [
         {
-          "field": "zj_tech_sme_entity_met",
+          "field": "zj_tech_sme_registered_in_zhejiang",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_ip_product_met",
+          "field": "zj_tech_sme_registration_days",
+          "value": 365,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_property_rights_clear",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_innovation_investment_met",
+          "field": "zj_tech_sme_independent_accounting",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_size_standard_met",
+          "field": "zj_tech_sme_independent_operation",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_self_responsible_profit_loss",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_patent_present",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_corresponding_product_or_service_formed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_has_innovation_investment",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_continuous_innovation_capability",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_size_standard_confirmed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -315,25 +617,67 @@
       "case_id": "conditional-pending",
       "facts": [
         {
-          "field": "zj_tech_sme_entity_met",
+          "field": "zj_tech_sme_registered_in_zhejiang",
           "value": true,
           "evidence_state": "claimed",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_ip_product_met",
+          "field": "zj_tech_sme_registration_days",
+          "value": 365,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_property_rights_clear",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_innovation_investment_met",
+          "field": "zj_tech_sme_independent_accounting",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_size_standard_met",
+          "field": "zj_tech_sme_independent_operation",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_self_responsible_profit_loss",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_patent_present",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_corresponding_product_or_service_formed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_has_innovation_investment",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_continuous_innovation_capability",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_size_standard_confirmed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -365,25 +709,67 @@
       "case_id": "ineligible-failed",
       "facts": [
         {
-          "field": "zj_tech_sme_entity_met",
+          "field": "zj_tech_sme_registered_in_zhejiang",
           "value": false,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_ip_product_met",
+          "field": "zj_tech_sme_registration_days",
+          "value": 365,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_property_rights_clear",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_innovation_investment_met",
+          "field": "zj_tech_sme_independent_accounting",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_sme_size_standard_met",
+          "field": "zj_tech_sme_independent_operation",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_self_responsible_profit_loss",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_patent_present",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_corresponding_product_or_service_formed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_has_innovation_investment",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_continuous_innovation_capability",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_sme_size_standard_confirmed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

@@ -1,7 +1,7 @@
 {
   "project_id": "national-high-tech-enterprise",
   "project_name": "高新技术企业",
-  "version": "2016-current-20260727",
+  "version": "2016-management-2026-zhejiang-notice",
   "aliases": ["国家高新技术企业", "高企", "高新"],
   "source_retrieval_rule_ids": ["national-high-tech-enterprise"],
   "policy_status": "current",
@@ -10,27 +10,81 @@
   "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
   "fact_fields": [
     {"field": "registration_days", "label": "申请认定时注册成立天数", "aliases": ["注册成立天数"], "value_type": "number", "unit": "天"},
-    {
-      "field": "core_ip_support_met",
-      "label": "知识产权所有权及核心支持要求",
-      "aliases": ["核心知识产权支持要求"],
-      "value_type": "boolean",
-      "derivation": "企业须通过自主研发、受让、受赠、并购等方式取得在中国境内授权或审批审定、在有效保护期内的知识产权所有权，并对主要产品服务发挥核心支持作用。"
-    },
+    {"field": "core_ip_acquisition_method_allowed", "label": "知识产权取得方式符合", "aliases": ["知识产权取得方式"], "value_type": "boolean"},
+    {"field": "core_ip_owned_by_applicant", "label": "申请企业拥有知识产权所有权", "aliases": ["知识产权所有权"], "value_type": "boolean"},
+    {"field": "core_ip_china_authorized_or_approved", "label": "知识产权在中国境内授权或审批审定", "aliases": ["中国境内授权"], "value_type": "boolean"},
+    {"field": "core_ip_protection_period_valid", "label": "知识产权处于有效保护期", "aliases": ["知识产权有效期"], "value_type": "boolean"},
+    {"field": "core_ip_supports_main_product", "label": "知识产权对主要产品服务发挥核心支持作用", "aliases": ["知识产权核心支持"], "value_type": "boolean"},
     {"field": "high_tech_field_match", "label": "核心技术领域匹配", "aliases": ["高新技术领域匹配"], "value_type": "boolean"},
     {"field": "technology_personnel_ratio", "label": "科技人员占比", "aliases": ["科技人员占比"], "value_type": "number", "unit": "%"},
-    {"field": "rnd_ratio_tier_requirement_met", "label": "研发费用比例分档要求", "aliases": ["研发费用比例分档要求"], "value_type": "boolean"},
+    {"field": "latest_sales_revenue", "label": "最近一年销售收入", "aliases": ["最近一年销售收入"], "value_type": "number", "unit": "万元"},
+    {"field": "rd_expense_ratio", "label": "研究开发费用占销售收入比例", "aliases": ["研发费用比例"], "value_type": "number", "unit": "%"},
     {"field": "domestic_rnd_ratio", "label": "境内研发费用占比", "aliases": ["境内研发费用占比"], "value_type": "number", "unit": "%"},
     {"field": "high_tech_revenue_ratio", "label": "高新技术产品服务收入占比", "aliases": ["高新收入占比"], "value_type": "number", "unit": "%"},
     {"field": "high_tech_innovation_score", "label": "企业创新能力评价综合得分", "aliases": ["高企创新能力得分"], "value_type": "number", "unit": "分"},
-    {"field": "high_tech_2025_submission_complete", "label": "2025年度浙江高企申报提交完成", "aliases": ["2025浙江高企提交"], "value_type": "boolean"}
+    {"field": "high_tech_online_application_submitted", "label": "高企线上申请已提交", "aliases": ["高企线上提交"], "value_type": "boolean"},
+    {"field": "high_tech_application_materials_submitted", "label": "高企申报材料已提交", "aliases": ["高企材料提交"], "value_type": "boolean"},
+    {"field": "high_tech_local_review_passed", "label": "高企属地审核已通过", "aliases": ["高企属地审核"], "value_type": "boolean"},
+    {"field": "high_tech_2026_rd_2023_data_ready", "label": "2023年度研发数据已准备", "aliases": ["2023研发数据"], "value_type": "boolean"},
+    {"field": "high_tech_2026_rd_2024_data_ready", "label": "2024年度研发数据已准备", "aliases": ["2024研发数据"], "value_type": "boolean"},
+    {"field": "high_tech_2026_rd_2025_data_ready", "label": "2025年度研发数据已准备", "aliases": ["2025研发数据"], "value_type": "boolean"},
+    {"field": "high_tech_2026_audit_report_code_valid", "label": "2026新申请审计报告统一监管平台编码有效", "aliases": ["高企审计报告编码"], "value_type": "boolean"},
+    {"field": "effective_ip_all_obtained_in_application_year", "label": "有效知识产权是否全部在申报当年取得", "aliases": ["知识产权全部当年取得"], "value_type": "boolean"},
+    {"field": "main_product_high_tech_revenue_ratio", "label": "主要产品服务收入占高新技术产品服务收入比例", "aliases": ["主要产品高新收入占比"], "value_type": "number", "unit": "%"},
+    {"field": "high_tech_local_notice_deadline_followed", "label": "企业已按属地通知截止时间提交", "aliases": ["高企属地截止时间"], "value_type": "boolean"}
   ],
   "rules": [
     {"rule_id": "hte-registration-years", "type": "hard-threshold", "field": "registration_days", "operator": "gte", "expected": 365, "unit": "天", "source": "《高新技术企业认定管理工作指引》国科发火〔2016〕195号", "source_quote": "注册成立一年以上是指企业须注册成立365个日历天数以上。"},
-    {"rule_id": "hte-core-ip-support", "type": "hard-threshold", "field": "core_ip_support_met", "operator": "truthy", "expected": true, "source": "国科发火〔2016〕32号第十一条及国科发火〔2016〕195号", "source_quote": "企业通过自主研发、受让、受赠、并购等方式，获得对其主要产品服务在技术上发挥核心支持作用的知识产权的所有权；知识产权须在中国境内授权或审批审定并在有效保护期内。"},
+    {
+      "rule_id": "hte-core-ip-support",
+      "type": "hard-threshold",
+      "logic": "all",
+      "children": [
+        {"rule_id": "hte-core-ip-acquisition", "field": "core_ip_acquisition_method_allowed", "operator": "truthy", "expected": true},
+        {"rule_id": "hte-core-ip-ownership", "field": "core_ip_owned_by_applicant", "operator": "truthy", "expected": true},
+        {"rule_id": "hte-core-ip-china-validity", "field": "core_ip_china_authorized_or_approved", "operator": "truthy", "expected": true},
+        {"rule_id": "hte-core-ip-protection-period", "field": "core_ip_protection_period_valid", "operator": "truthy", "expected": true},
+        {"rule_id": "hte-core-ip-main-product-support", "field": "core_ip_supports_main_product", "operator": "truthy", "expected": true}
+      ],
+      "source": "国科发火〔2016〕32号第十一条及国科发火〔2016〕195号",
+      "source_quote": "企业通过自主研发、受让、受赠、并购等方式，获得对其主要产品服务在技术上发挥核心支持作用的知识产权的所有权；知识产权须在中国境内授权或审批审定并在有效保护期内。"
+    },
     {"rule_id": "hte-field-match", "type": "hard-threshold", "field": "high_tech_field_match", "operator": "truthy", "expected": true, "source": "国科发火〔2016〕32号第十一条", "source_quote": "核心技术属于国家重点支持的高新技术领域。"},
     {"rule_id": "hte-technology-personnel-ratio", "type": "hard-threshold", "field": "technology_personnel_ratio", "operator": "gte", "expected": 10, "unit": "%", "source": "国科发火〔2016〕32号第十一条", "source_quote": "科技人员占当年职工总数的比例不低于百分之十。"},
-    {"rule_id": "hte-rnd-tier", "type": "hard-threshold", "field": "rnd_ratio_tier_requirement_met", "operator": "truthy", "expected": true, "source": "国科发火〔2016〕32号第十一条", "source_quote": "研发费用比例须达到与最近一年销售收入对应的分档要求。"},
+    {
+      "rule_id": "hte-rnd-tier",
+      "type": "hard-threshold",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "hte-rnd-tier-low",
+          "logic": "all",
+          "children": [
+            {"rule_id": "hte-rnd-tier-low-revenue", "field": "latest_sales_revenue", "operator": "lte", "expected": 5000, "unit": "万元"},
+            {"rule_id": "hte-rnd-tier-low-ratio", "field": "rd_expense_ratio", "operator": "gte", "expected": 5, "unit": "%"}
+          ]
+        },
+        {
+          "rule_id": "hte-rnd-tier-middle",
+          "logic": "all",
+          "children": [
+            {"rule_id": "hte-rnd-tier-middle-floor", "field": "latest_sales_revenue", "operator": "gt", "expected": 5000, "unit": "万元"},
+            {"rule_id": "hte-rnd-tier-middle-ceiling", "field": "latest_sales_revenue", "operator": "lte", "expected": 20000, "unit": "万元"},
+            {"rule_id": "hte-rnd-tier-middle-ratio", "field": "rd_expense_ratio", "operator": "gte", "expected": 4, "unit": "%"}
+          ]
+        },
+        {
+          "rule_id": "hte-rnd-tier-high",
+          "logic": "all",
+          "children": [
+            {"rule_id": "hte-rnd-tier-high-revenue", "field": "latest_sales_revenue", "operator": "gt", "expected": 20000, "unit": "万元"},
+            {"rule_id": "hte-rnd-tier-high-ratio", "field": "rd_expense_ratio", "operator": "gte", "expected": 3, "unit": "%"}
+          ]
+        }
+      ],
+      "source": "国科发火〔2016〕32号第十一条",
+      "source_quote": "最近一年销售收入不超过5000万元的研发费用比例不低于5%；5000万元至2亿元的不低于4%；2亿元以上的不低于3%。"
+    },
     {"rule_id": "hte-domestic-rnd", "type": "hard-threshold", "field": "domestic_rnd_ratio", "operator": "gte", "expected": 60, "unit": "%", "source": "国科发火〔2016〕32号第十一条", "source_quote": "境内研发费用占全部研发费用的比例不低于百分之六十。"},
     {"rule_id": "hte-high-tech-revenue", "type": "hard-threshold", "field": "high_tech_revenue_ratio", "operator": "gte", "expected": 60, "unit": "%", "source": "国科发火〔2016〕32号第十一条", "source_quote": "高新技术产品或服务收入占同期总收入的比例不低于百分之六十。"},
     {"rule_id": "hte-innovation-evaluation", "type": "hard-threshold", "field": "high_tech_innovation_score", "operator": "gt", "expected": 70, "unit": "分", "source": "《高新技术企业认定管理工作指引》国科发火〔2016〕195号", "source_quote": "企业创新能力主要从知识产权、科技成果转化能力、研究开发组织管理水平、企业成长性等四项指标进行评价；综合得分达到70分以上（不含70分）为符合认定要求。"},
@@ -47,15 +101,91 @@
       "approved_by": "Codex政策规则复盘",
       "approved_at": "2026-07-30 00:35:00",
       "source_url": "https://jxt.zj.gov.cn/art/2025/6/5/art_1229886900_58935997.html",
+      "source_role": "issuing-authority-original",
+      "retrieval_channel": "issuing-authority-listing",
       "rules": [
         {
           "rule_id": "zhejiang-high-tech-2025-submission",
           "type": "submission",
-          "field": "high_tech_2025_submission_complete",
-          "operator": "truthy",
-          "expected": true,
+          "logic": "all",
+          "children": [
+            {"rule_id": "zhejiang-high-tech-2025-online", "field": "high_tech_online_application_submitted", "operator": "truthy", "expected": true},
+            {"rule_id": "zhejiang-high-tech-2025-materials", "field": "high_tech_application_materials_submitted", "operator": "truthy", "expected": true},
+            {"rule_id": "zhejiang-high-tech-2025-local-review", "field": "high_tech_local_review_passed", "operator": "truthy", "expected": true}
+          ],
           "source": "浙江省2025年度高新技术企业认定管理工作通知",
           "source_quote": "企业按照2025年度浙江省高新技术企业认定工作安排完成线上申报、材料提交和属地审核；该年度日程仅用于2025年度历史回放。"
+        }
+      ]
+    },
+    {
+      "overlay_id": "zhejiang-high-tech-2026",
+      "label": "浙江省经济和信息化厅 浙江省财政厅 国家税务总局浙江省税务局关于组织开展2026年度高新技术企业申报认定工作的通知",
+      "year": 2026,
+      "regions": ["浙江省"],
+      "application_types": ["recognition", "re-recognition"],
+      "policy_status": "current",
+      "approved_by": "主人提供官方原文；焦糖按浙江省经信厅页面核验",
+      "approved_at": "2026-07-30 15:20:00",
+      "source_url": "https://jxt.zj.gov.cn/col/col1229886900/art/2026/art_7ecbc859150f48e499725022aeb5880c.html",
+      "source_role": "issuing-authority-original",
+      "retrieval_channel": "direct-url",
+      "published_at": "2026-07-07 08:57:00",
+      "issued_at": "2026-06-26",
+      "application_open_date": "2026-07-07",
+      "authority_recommendation_deadline": "2026-08-31",
+      "enterprise_deadline": null,
+      "enterprise_deadline_note": "以各地方高新技术企业管理主管部门通知为准",
+      "provincial_review_schedule": ["2026年9月评审", "2026年9月下旬复评", "2026年10月异议处理"],
+      "rules": [
+        {
+          "rule_id": "zhejiang-high-tech-2026-rd-data-years",
+          "type": "submission",
+          "logic": "all",
+          "children": [
+            {"rule_id": "zhejiang-high-tech-2026-rd-2023", "field": "high_tech_2026_rd_2023_data_ready", "operator": "truthy", "expected": true},
+            {"rule_id": "zhejiang-high-tech-2026-rd-2024", "field": "high_tech_2026_rd_2024_data_ready", "operator": "truthy", "expected": true},
+            {"rule_id": "zhejiang-high-tech-2026-rd-2025", "field": "high_tech_2026_rd_2025_data_ready", "operator": "truthy", "expected": true}
+          ],
+          "source": "浙江省2026年度高新技术企业申报认定工作通知",
+          "source_quote": "2026年度申报的研究开发费用归集年度为2023年至2025年。"
+        },
+        {
+          "rule_id": "zhejiang-high-tech-2026-main-product-ratio",
+          "type": "hard-threshold",
+          "field": "main_product_high_tech_revenue_ratio",
+          "operator": "gt",
+          "expected": 50,
+          "unit": "%",
+          "source": "浙江省2026年度高新技术企业申报认定工作通知",
+          "source_quote": "主要产品服务收入之和在企业同期高新技术产品服务收入中超过百分之五十。"
+        },
+        {
+          "rule_id": "zhejiang-high-tech-2026-new-applicant-audit-code",
+          "type": "submission",
+          "field": "high_tech_2026_audit_report_code_valid",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙江省2026年度高新技术企业申报认定工作通知",
+          "source_quote": "2026年新申请认定企业须上传从注册会计师行业统一监管平台下载的带赋码审计报告。"
+        },
+        {
+          "rule_id": "zhejiang-high-tech-2026-ip-acquisition-spread",
+          "type": "hard-threshold",
+          "field": "effective_ip_all_obtained_in_application_year",
+          "operator": "falsy",
+          "expected": false,
+          "source": "浙江省2026年度高新技术企业申报认定工作通知",
+          "source_quote": "企业有效知识产权不能全部在2026年取得。"
+        },
+        {
+          "rule_id": "zhejiang-high-tech-2026-local-deadline",
+          "type": "submission",
+          "field": "high_tech_local_notice_deadline_followed",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙江省2026年度高新技术企业申报认定工作通知",
+          "source_quote": "企业申报截止时间以各地方高新技术企业管理主管部门通知为准；地方主管部门推荐截止时间为2026年8月31日。"
         }
       ]
     }

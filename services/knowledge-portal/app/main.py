@@ -89,6 +89,11 @@ from app.project_decision import (
     small_giant_recognition_batch as decide_small_giant_recognition_batch,
     validate_project_algorithm_pack,
 )
+from app.deliverable_contract import (
+    build_delivery_contract,
+    validate_delivery_contract,
+)
+from app.policy_retrieval import select_policy_evidence
 from app.policy_time import enrich_policy_time_context
 from app.three_first_routing import plan_three_first_analysis
 
@@ -2272,6 +2277,7 @@ def enterprise_lifecycle_decision(
             "policy_time_audits": selected_algorithm_rules[
                 "policy_time_audits"
             ],
+            "rule_structure": selected_algorithm_rules.get("rule_structure"),
         }
         if selected_pack
         else None
@@ -4581,6 +4587,25 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
     if name == "skill_guidance":
         skill_name = str(arguments.get("skill_name") or "")
         return {"skill_name": skill_name, "guidance": skill_guidance(skill_name, SKILL_SOURCE_DIR)}, []
+    if name == "policy_evidence_select":
+        candidates = arguments.get("candidates")
+        claims = arguments.get("requested_claims")
+        if not isinstance(candidates, list) or not isinstance(claims, list):
+            raise ValueError("candidates和requested_claims必须为数组")
+        result = select_policy_evidence(
+            [item for item in candidates if isinstance(item, dict)],
+            target_year=int(arguments.get("target_year") or 0),
+            requested_claims=[str(item) for item in claims],
+        )
+        return result, []
+    if name == "delivery_contract_audit":
+        query = str(arguments.get("query") or "")[:500]
+        deliverable = arguments.get("deliverable")
+        if not isinstance(deliverable, dict):
+            raise ValueError("deliverable必须为对象")
+        contract = build_delivery_contract(query, deliverable)
+        audit = validate_delivery_contract(deliverable, contract)
+        return {"contract": contract, "audit": audit}, []
     raise ValueError("不允许调用未登记工具")
 
 
@@ -4763,6 +4788,10 @@ def answer_with_knowledge(
                     "你是企业全生命周期助手网站答疑员。只能使用本轮加载的专业Skill规则、团队知识片段和只读工具结果。"
                     "先给结论，再给依据和资料缺口；精确政策、企业、专利和财务事实必须可追溯。"
                     "资料不足时明确说明，不承诺企业一定符合或项目一定获批。禁止调用写入、上传、删除、提交或外部联络能力。"
+                    "政策任务取得候选原文后必须调用policy_evidence_select，"
+                    "不得用管理办法生成当年度截止时间、批次或材料结论。"
+                    "分析报告或复杂任务结束前必须调用delivery_contract_audit；"
+                    "completion_allowed为false时先补齐，不得直接结束。"
                     f"\n\n现行政策硬门禁：{policy_guardrail or '按知识库政策版本字段和当期官方通知核验。'}"
                     f"\n\n本轮已加载Skills：{', '.join(routed_skills)}\n\n{skill_context(routed_skills, SKILL_SOURCE_DIR)}"
                 ),

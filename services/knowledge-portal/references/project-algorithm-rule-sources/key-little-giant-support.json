@@ -44,50 +44,6 @@
       ]
     },
     {
-      "field": "key_lg_three_transformations_plan_met",
-      "label": "三新一强项目计划",
-      "aliases": [
-        "三新一强项目计划"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "企业应围绕打造新动能、攻坚新技术、开发新产品和强化产业链配套能力提出实施计划。"
-      ]
-    },
-    {
-      "field": "key_lg_project_investment_met",
-      "label": "项目投资及资金用途",
-      "aliases": [
-        "项目投资及资金用途"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "实施项目、投资计划和资金用途应符合支持通知和地方实施方案。"
-      ]
-    },
-    {
-      "field": "key_lg_performance_targets_met",
-      "label": "绩效目标可量化",
-      "aliases": [
-        "绩效目标可量化"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "应设置可量化、可考核的阶段性绩效目标。"
-      ]
-    },
-    {
-      "field": "key_lg_local_recommendation_met",
-      "label": "地方择优推荐",
-      "aliases": [
-        "地方择优推荐"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "企业须经地方中小企业主管部门、财政部门按名额和程序择优推荐。"
-      ]
-    },
-    {
       "field": "key_lg_compliance_clear",
       "label": "合规核验",
       "aliases": [
@@ -97,6 +53,102 @@
       "derivation_requirements": [
         "不得存在重大事故、严重失信、违法违规、弄虚作假等不予支持情形。"
       ]
+    },
+    {
+      "field": "key_lg_plan_covers_new_momentum",
+      "label": "实施计划覆盖打造新动能",
+      "aliases": [
+        "实施计划覆盖打造新动能"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_plan_covers_technology_breakthrough",
+      "label": "实施计划覆盖攻坚新技术",
+      "aliases": [
+        "实施计划覆盖攻坚新技术"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_plan_covers_new_product",
+      "label": "实施计划覆盖开发新产品",
+      "aliases": [
+        "实施计划覆盖开发新产品"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_plan_covers_supply_chain_capability",
+      "label": "实施计划覆盖强化产业链配套能力",
+      "aliases": [
+        "实施计划覆盖强化产业链配套能力"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_project_scope_complies",
+      "label": "实施项目符合支持范围",
+      "aliases": [
+        "实施项目符合支持范围"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_investment_plan_complies",
+      "label": "投资计划符合支持通知和实施方案",
+      "aliases": [
+        "投资计划符合支持通知和实施方案"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_fund_use_complies",
+      "label": "资金用途符合支持通知和实施方案",
+      "aliases": [
+        "资金用途符合支持通知和实施方案"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_performance_targets_quantifiable",
+      "label": "阶段性绩效目标可量化",
+      "aliases": [
+        "阶段性绩效目标可量化"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_performance_targets_assessable",
+      "label": "阶段性绩效目标可考核",
+      "aliases": [
+        "阶段性绩效目标可考核"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_recommended_by_local_sme_authority",
+      "label": "经地方中小企业主管部门推荐",
+      "aliases": [
+        "经地方中小企业主管部门推荐"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_recommended_by_local_finance_authority",
+      "label": "经地方财政部门推荐",
+      "aliases": [
+        "经地方财政部门推荐"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_lg_recommendation_quota_and_procedure_complies",
+      "label": "推荐名额和程序符合要求",
+      "aliases": [
+        "推荐名额和程序符合要求"
+      ],
+      "value_type": "boolean"
     }
   ],
   "rules": [
@@ -120,37 +172,109 @@
     },
     {
       "rule_id": "key-little-giant-3",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "key-lg-plan-momentum",
+          "field": "key_lg_plan_covers_new_momentum",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-lg-plan-technology",
+          "field": "key_lg_plan_covers_technology_breakthrough",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-lg-plan-product",
+          "field": "key_lg_plan_covers_new_product",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-lg-plan-chain",
+          "field": "key_lg_plan_covers_supply_chain_capability",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "key_lg_three_transformations_plan_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
       "source_quote": "企业应围绕打造新动能、攻坚新技术、开发新产品和强化产业链配套能力提出实施计划。"
     },
     {
       "rule_id": "key-little-giant-4",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "key-lg-project-scope",
+          "field": "key_lg_project_scope_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-lg-investment-plan",
+          "field": "key_lg_investment_plan_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-lg-fund-use",
+          "field": "key_lg_fund_use_complies",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "key_lg_project_investment_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
       "source_quote": "实施项目、投资计划和资金用途应符合支持通知和地方实施方案。"
     },
     {
       "rule_id": "key-little-giant-5",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "key-lg-target-quantifiable",
+          "field": "key_lg_performance_targets_quantifiable",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-lg-target-assessable",
+          "field": "key_lg_performance_targets_assessable",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "key_lg_performance_targets_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
       "source_quote": "应设置可量化、可考核的阶段性绩效目标。"
     },
     {
       "rule_id": "key-little-giant-6",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "key-lg-sme-recommendation",
+          "field": "key_lg_recommended_by_local_sme_authority",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-lg-finance-recommendation",
+          "field": "key_lg_recommended_by_local_finance_authority",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-lg-quota-procedure",
+          "field": "key_lg_recommendation_quota_and_procedure_complies",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "key_lg_local_recommendation_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
       "source_quote": "企业须经地方中小企业主管部门、财政部门按名额和程序择优推荐。"
     },
@@ -165,5 +289,15 @@
     }
   ],
   "annual_overlays": [],
-  "jurisdiction_overlays": []
+  "jurisdiction_overlays": [],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "key-little-giant-3",
+      "key-little-giant-4",
+      "key-little-giant-5",
+      "key-little-giant-6"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

@@ -2,54 +2,433 @@
   "project_id": "little-giant",
   "project_name": "专精特新小巨人",
   "version": "2026.1",
-  "aliases": ["国家专精特新小巨人", "国家专精特新“小巨人”企业", "小巨人"],
-  "source_retrieval_rule_ids": ["little-giant"],
+  "aliases": [
+    "国家专精特新小巨人",
+    "国家专精特新“小巨人”企业",
+    "小巨人"
+  ],
+  "source_retrieval_rule_ids": [
+    "little-giant"
+  ],
   "policy_status": "current",
   "approved_by": "主人授权；焦糖按工信部现行原文核验",
   "approved_at": "2026-07-27 16:30:00",
   "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
   "stable_applicability": {
-    "application_types": ["recognition", "new-recognition"]
+    "application_types": [
+      "recognition",
+      "new-recognition"
+    ]
   },
   "fact_fields": [
-    {"field": "specialized_sme_status", "label": "专精特新中小企业状态", "aliases": ["专精特新中小企业状态"], "value_type": "boolean"},
-    {"field": "market_years", "label": "从事特定细分市场年限", "aliases": ["细分市场年限"], "value_type": "number", "unit": "年"},
-    {"field": "revenue", "label": "上年度营业收入", "aliases": ["上年度营业收入"], "value_type": "number", "unit": "万元"},
-    {"field": "main_business_revenue_ratio", "label": "主营业务收入占比", "aliases": ["主营业务收入占比"], "value_type": "number", "unit": "%"},
-    {"field": "two_year_revenue_cagr", "label": "近两年营业收入复合增长率", "aliases": ["近两年营收复合增长率"], "value_type": "number", "unit": "%"},
-    {"field": "asset_liability_ratio", "label": "资产负债率", "aliases": ["资产负债率"], "value_type": "number", "unit": "%"},
-    {"field": "little_giant_rnd_requirement_met", "label": "近两年研发投入要求", "aliases": ["小巨人研发投入要求"], "value_type": "boolean"},
-    {"field": "little_giant_ip_or_exemption_met", "label": "知识产权或豁免要求", "aliases": ["小巨人知识产权要求"], "value_type": "boolean"},
-    {"field": "market_share_requirement_met", "label": "市场占有率要求", "aliases": ["市场占有率要求"], "value_type": "boolean"},
-    {"field": "industry_chain_key_link_met", "label": "产业链关键环节要求", "aliases": ["产业链关键环节要求"], "value_type": "boolean"},
-    {"field": "specialized_quality_score", "label": "专精特新发展质量评价得分", "aliases": ["发展质量评价得分"], "value_type": "number", "unit": "分"},
-    {"field": "leading_product_revenue_ratio", "label": "主导产品收入占比", "aliases": ["主导产品收入占比"], "value_type": "number", "unit": "%"},
-    {"field": "little_giant_refined_management_met", "label": "精细化管理要求", "aliases": ["小巨人精细化管理要求"], "value_type": "boolean"},
-    {"field": "little_giant_independent_brand_met", "label": "自主品牌要求", "aliases": ["小巨人自主品牌要求"], "value_type": "boolean"},
-    {"field": "little_giant_leading_product_field_met", "label": "主导产品重点领域要求", "aliases": ["小巨人主导产品领域要求"], "value_type": "boolean"},
-    {"field": "little_giant_disqualifying_relationship_clear", "label": "单项冠军和关联企业排除核验通过", "aliases": ["小巨人关联关系排除核验"], "value_type": "boolean"},
-    {"field": "little_giant_financial_audit_ready", "label": "审计报告报备和编码符合要求", "aliases": ["小巨人审计报告报备"], "value_type": "boolean"}
+    {
+      "field": "specialized_sme_status",
+      "label": "专精特新中小企业状态",
+      "aliases": [
+        "专精特新中小企业状态"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "market_years",
+      "label": "从事特定细分市场年限",
+      "aliases": [
+        "细分市场年限"
+      ],
+      "value_type": "number",
+      "unit": "年"
+    },
+    {
+      "field": "revenue",
+      "label": "上年度营业收入",
+      "aliases": [
+        "上年度营业收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "main_business_revenue_ratio",
+      "label": "主营业务收入占比",
+      "aliases": [
+        "主营业务收入占比"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "two_year_revenue_cagr",
+      "label": "近两年营业收入复合增长率",
+      "aliases": [
+        "近两年营收复合增长率"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "asset_liability_ratio",
+      "label": "资产负债率",
+      "aliases": [
+        "资产负债率"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "specialized_quality_score",
+      "label": "专精特新发展质量评价得分",
+      "aliases": [
+        "发展质量评价得分"
+      ],
+      "value_type": "number",
+      "unit": "分"
+    },
+    {
+      "field": "leading_product_revenue_ratio",
+      "label": "主导产品收入占比",
+      "aliases": [
+        "主导产品收入占比"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "little_giant_disqualifying_relationship_clear",
+      "label": "单项冠军和关联企业排除核验通过",
+      "aliases": [
+        "小巨人关联关系排除核验"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_financial_audit_ready",
+      "label": "审计报告报备和编码符合要求",
+      "aliases": [
+        "小巨人审计报告报备"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_relevant_class_i_ip_count",
+      "label": "主导产品相关I类知识产权",
+      "aliases": [
+        "主导产品相关I类知识产权"
+      ],
+      "value_type": "number",
+      "unit": "项"
+    },
+    {
+      "field": "little_giant_class_i_ip_applied",
+      "label": "I类知识产权已实际应用",
+      "aliases": [
+        "I类知识产权已实际应用"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_class_i_ip_economic_benefit",
+      "label": "I类知识产权已产生经济效益",
+      "aliases": [
+        "I类知识产权已产生经济效益"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_ip_exemption_route_confirmed",
+      "label": "小巨人知识产权豁免路径经政策条款确认",
+      "aliases": [
+        "小巨人知识产权豁免路径经政策条款确认"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "little_giant_market_share_ratio",
+      "label": "主导产品全国细分市场占有率",
+      "aliases": [
+        "主导产品全国细分市场占有率"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "little_giant_domestic_market_rank",
+      "label": "主导产品国内细分市场排名",
+      "aliases": [
+        "主导产品国内细分市场排名"
+      ],
+      "value_type": "number",
+      "unit": "名"
+    },
+    {
+      "field": "little_giant_governance_standardized",
+      "label": "公司治理规范",
+      "aliases": [
+        "公司治理规范"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_core_business_information_system_count",
+      "label": "采用信息系统的核心业务",
+      "aliases": [
+        "采用信息系统的核心业务"
+      ],
+      "value_type": "number",
+      "unit": "项"
+    },
+    {
+      "field": "little_giant_management_or_product_certification_count",
+      "label": "管理体系或产品认证",
+      "aliases": [
+        "管理体系或产品认证"
+      ],
+      "value_type": "number",
+      "unit": "项"
+    },
+    {
+      "field": "little_giant_market_influence_confirmed",
+      "label": "主导产品具有较高知名度和影响力",
+      "aliases": [
+        "主导产品具有较高知名度和影响力"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "little_giant_review_applicable_rnd_route_assessment_passed",
+      "label": "按2022复核过渡标准适用收入分档或创新直通研发路线通过",
+      "aliases": [
+        "按2022复核过渡标准适用收入分档或创新直通研发路线通过"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "little_giant_innovation_direct_route_confirmed",
+      "label": "创新直通条件经政策条款确认",
+      "aliases": [
+        "创新直通条件经政策条款确认"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "little_giant_leading_product_field_match",
+      "label": "主导产品属于规定重点领域",
+      "aliases": [
+        "主导产品属于规定重点领域"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "little_giant_applicable_rnd_assessment_passed",
+      "label": "近两年研发费用合计和逐年研发强度适用门槛评价通过",
+      "aliases": [
+        "近两年研发费用合计和逐年研发强度适用门槛评价通过"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "little_giant_industry_chain_role_assessment_passed",
+      "label": "主导产品产业链关键环节与作用评价通过",
+      "aliases": [
+        "主导产品产业链关键环节与作用评价通过"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "little_giant_independent_brand_assessment_passed",
+      "label": "自主品牌及市场竞争优势评价通过",
+      "aliases": [
+        "自主品牌及市场竞争优势评价通过"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "little_giant_review_industry_chain_role_assessment_passed",
+      "label": "复核产业链关键环节与补短板作用评价通过",
+      "aliases": [
+        "复核产业链关键环节与补短板作用评价通过"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
+    }
   ],
   "rules": [
-    {"rule_id": "little-giant-specialized-sme-status", "type": "hard-threshold", "field": "specialized_sme_status", "operator": "truthy", "expected": true, "source": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号", "source_quote": "申请企业须已获得专精特新中小企业称号。"},
-    {"rule_id": "little-giant-market-years", "type": "hard-threshold", "field": "market_years", "operator": "gte", "expected": 3, "unit": "年", "source": "工信部企业〔2026〕2号", "source_quote": "截至上年末从事特定细分市场满三年。"},
-    {"rule_id": "little-giant-revenue", "type": "hard-threshold", "field": "revenue", "operator": "gte", "expected": 5000, "unit": "万元", "source": "工信部企业〔2026〕2号", "source_quote": "上年度营业收入达到五千万元以上。"},
-    {"rule_id": "little-giant-main-business-ratio", "type": "hard-threshold", "field": "main_business_revenue_ratio", "operator": "gte", "expected": 90, "unit": "%", "source": "工信部企业〔2026〕2号", "source_quote": "主营业务收入占营业收入比重不低于百分之九十。"},
-    {"rule_id": "little-giant-revenue-cagr", "type": "hard-threshold", "field": "two_year_revenue_cagr", "operator": "gte", "expected": 5, "unit": "%", "source": "工信部企业〔2026〕2号", "source_quote": "近两年营业收入复合增长率不低于百分之五。"},
-    {"rule_id": "little-giant-liability-ratio", "type": "hard-threshold", "field": "asset_liability_ratio", "operator": "lte", "expected": 75, "unit": "%", "source": "工信部企业〔2026〕2号", "source_quote": "资产负债率不超过百分之七十五。"},
-    {"rule_id": "little-giant-rnd", "type": "hard-threshold", "field": "little_giant_rnd_requirement_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "近两年研发费用合计和逐年研发强度须达到规定标准。"},
-    {"rule_id": "little-giant-ip", "type": "hard-threshold", "field": "little_giant_ip_or_exemption_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "须满足主导产品相关Ⅰ类知识产权要求或规定的豁免条件。"},
-    {"rule_id": "little-giant-market-share", "type": "hard-threshold", "field": "market_share_requirement_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "主导产品市场占有率须达到规定比例或国内排名要求。"},
-    {"rule_id": "little-giant-industry-chain", "type": "hard-threshold", "field": "industry_chain_key_link_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2026〕2号", "source_quote": "主导产品应位于规定产业链关键环节并发挥重要作用。"},
-    {"rule_id": "little-giant-quality-score", "type": "hard-threshold", "field": "specialized_quality_score", "operator": "gte", "expected": 60, "unit": "分", "source": "工信部企业〔2026〕2号", "source_quote": "当年度专精特新发展质量评价得分达到六十分以上。"},
-    {"rule_id": "little-giant-leading-product-ratio", "type": "hard-threshold", "field": "leading_product_revenue_ratio", "operator": "gt", "expected": 50, "unit": "%", "source": "工信部企业〔2026〕2号", "source_quote": "主导产品收入占同期营业收入比重超过百分之五十。"}
+    {
+      "rule_id": "little-giant-specialized-sme-status",
+      "type": "hard-threshold",
+      "field": "specialized_sme_status",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
+      "source_quote": "申请企业须已获得专精特新中小企业称号。"
+    },
+    {
+      "rule_id": "little-giant-market-years",
+      "type": "hard-threshold",
+      "field": "market_years",
+      "operator": "gte",
+      "expected": 3,
+      "unit": "年",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "截至上年末从事特定细分市场满三年。"
+    },
+    {
+      "rule_id": "little-giant-revenue",
+      "type": "hard-threshold",
+      "field": "revenue",
+      "operator": "gte",
+      "expected": 5000,
+      "unit": "万元",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "上年度营业收入达到五千万元以上。"
+    },
+    {
+      "rule_id": "little-giant-main-business-ratio",
+      "type": "hard-threshold",
+      "field": "main_business_revenue_ratio",
+      "operator": "gte",
+      "expected": 90,
+      "unit": "%",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "主营业务收入占营业收入比重不低于百分之九十。"
+    },
+    {
+      "rule_id": "little-giant-revenue-cagr",
+      "type": "hard-threshold",
+      "field": "two_year_revenue_cagr",
+      "operator": "gte",
+      "expected": 5,
+      "unit": "%",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "近两年营业收入复合增长率不低于百分之五。"
+    },
+    {
+      "rule_id": "little-giant-liability-ratio",
+      "type": "hard-threshold",
+      "field": "asset_liability_ratio",
+      "operator": "lte",
+      "expected": 75,
+      "unit": "%",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "资产负债率不超过百分之七十五。"
+    },
+    {
+      "rule_id": "little-giant-rnd",
+      "field": "little_giant_applicable_rnd_assessment_passed",
+      "operator": "truthy",
+      "expected": true,
+      "type": "hard-threshold",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "近两年研发费用合计和逐年研发强度须达到规定标准。"
+    },
+    {
+      "rule_id": "little-giant-ip",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "little-giant-ip-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "little-giant-ip-count",
+              "field": "little_giant_relevant_class_i_ip_count",
+              "operator": "gte",
+              "expected": 4,
+              "unit": "项"
+            },
+            {
+              "rule_id": "little-giant-ip-applied",
+              "field": "little_giant_class_i_ip_applied",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "little-giant-ip-benefit",
+              "field": "little_giant_class_i_ip_economic_benefit",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "little-giant-ip-exemption",
+          "field": "little_giant_ip_exemption_route_confirmed",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
+      "type": "hard-threshold",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "须满足主导产品相关Ⅰ类知识产权要求或规定的豁免条件。"
+    },
+    {
+      "rule_id": "little-giant-market-share",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "little-giant-market-share-ratio",
+          "field": "little_giant_market_share_ratio",
+          "operator": "gte",
+          "expected": 10,
+          "unit": "%"
+        },
+        {
+          "rule_id": "little-giant-market-rank",
+          "field": "little_giant_domestic_market_rank",
+          "operator": "lte",
+          "expected": 3,
+          "unit": "名"
+        }
+      ],
+      "type": "hard-threshold",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "主导产品市场占有率须达到规定比例或国内排名要求。"
+    },
+    {
+      "rule_id": "little-giant-industry-chain",
+      "field": "little_giant_industry_chain_role_assessment_passed",
+      "operator": "truthy",
+      "expected": true,
+      "type": "hard-threshold",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "主导产品应位于规定产业链关键环节并发挥重要作用。"
+    },
+    {
+      "rule_id": "little-giant-quality-score",
+      "type": "hard-threshold",
+      "field": "specialized_quality_score",
+      "operator": "gte",
+      "expected": 60,
+      "unit": "分",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "当年度专精特新发展质量评价得分达到六十分以上。"
+    },
+    {
+      "rule_id": "little-giant-leading-product-ratio",
+      "type": "hard-threshold",
+      "field": "leading_product_revenue_ratio",
+      "operator": "gt",
+      "expected": 50,
+      "unit": "%",
+      "source": "工信部企业〔2026〕2号",
+      "source_quote": "主导产品收入占同期营业收入比重超过百分之五十。"
+    }
   ],
   "annual_overlays": [
     {
       "overlay_id": "little-giant-2026-recognition",
       "label": "2026年第八批小巨人认定通知",
       "year": 2026,
-      "application_types": ["recognition", "new-recognition"],
+      "application_types": [
+        "recognition",
+        "new-recognition"
+      ],
       "policy_status": "current",
       "approved_by": "Codex政策规则复盘",
       "approved_at": "2026-07-30 00:10:00",
@@ -79,25 +458,208 @@
       "overlay_id": "little-giant-2026-review",
       "label": "2026年小巨人复核过渡标准",
       "year": 2026,
-      "application_types": ["review"],
+      "application_types": [
+        "review"
+      ],
       "policy_status": "current",
       "approved_by": "Codex政策规则复盘",
       "approved_at": "2026-07-30 00:10:00",
       "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
       "rules": [
-        {"rule_id": "little-giant-review-market-years", "type": "hard-threshold", "field": "market_years", "operator": "gte", "expected": 3, "unit": "年", "source": "工信部企业〔2022〕63号附件3及工信厅企业函〔2026〕117号过渡条款", "source_quote": "2026年度复核按2022年标准把握；截至上年末从事特定细分市场时间达到3年以上。"},
-        {"rule_id": "little-giant-review-main-business-ratio", "type": "hard-threshold", "field": "main_business_revenue_ratio", "operator": "gte", "expected": 70, "unit": "%", "source": "工信部企业〔2022〕63号附件3", "source_quote": "主营业务收入总额占营业收入总额比重不低于70%。"},
-        {"rule_id": "little-giant-review-liability-ratio", "type": "hard-threshold", "field": "asset_liability_ratio", "operator": "lte", "expected": 70, "unit": "%", "source": "工信部企业〔2022〕63号附件3", "source_quote": "截至上年末，企业资产负债率不高于70%。"},
-        {"rule_id": "little-giant-review-refined-management", "type": "hard-threshold", "field": "little_giant_refined_management_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2022〕63号附件3", "source_quote": "公司治理规范，至少1项核心业务采用信息系统支撑，并取得相关管理体系认证或产品认证。"},
-        {"rule_id": "little-giant-review-market-share", "type": "hard-threshold", "field": "market_share_requirement_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2022〕63号附件3", "source_quote": "主导产品在全国细分市场占有率达到10%以上，且享有较高知名度和影响力。"},
-        {"rule_id": "little-giant-review-brand", "type": "hard-threshold", "field": "little_giant_independent_brand_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2022〕63号附件3", "source_quote": "拥有直接面向市场并具有竞争优势的自主品牌。"},
-        {"rule_id": "little-giant-review-rnd", "type": "hard-threshold", "field": "little_giant_rnd_requirement_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2022〕63号附件3", "source_quote": "一般性条件按上年度营业收入分档核验近两年研发强度；收入低于5000万元的企业同时核验股权融资、研发费用和研发人员占比，创新直通条件另行核验。"},
-        {"rule_id": "little-giant-review-ip", "type": "hard-threshold", "field": "little_giant_ip_or_exemption_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2022〕63号附件3", "source_quote": "一般性条件要求拥有2项以上与主导产品相关的Ⅰ类知识产权，且实际应用并已产生经济效益；符合创新直通条件的按对应条款核验。"},
-        {"rule_id": "little-giant-review-industry-chain", "type": "hard-threshold", "field": "industry_chain_key_link_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2022〕63号附件3", "source_quote": "位于产业链关键环节，围绕重点产业链实现关键基础技术和产品的产业化应用，发挥补短板、锻长板、填空白等重要作用。"},
-        {"rule_id": "little-giant-review-product-field", "type": "hard-threshold", "field": "little_giant_leading_product_field_met", "operator": "truthy", "expected": true, "source": "工信部企业〔2022〕63号附件3", "source_quote": "主导产品原则上属于制造业核心基础领域、制造强国重点产业领域，或网络强国建设相关重点领域。"},
-        {"rule_id": "little-giant-review-leading-product-ratio", "type": "hard-threshold", "field": "leading_product_revenue_ratio", "operator": "gt", "expected": 50, "unit": "%", "source": "工信部企业〔2022〕63号附件4", "source_quote": "主导产品收入之和占企业同期营业收入比重超过50%。"},
-        {"rule_id": "little-giant-2026-review-financial-audit", "type": "submission", "field": "little_giant_financial_audit_ready", "operator": "truthy", "expected": true, "source": "工信厅企业函〔2026〕117号第一条第六项", "source_quote": "复核财务数据同样依据已报备赋码的审计报告，主营业务收入、主营业务成本应纳入审计报告。"}
+        {
+          "rule_id": "little-giant-review-market-years",
+          "type": "hard-threshold",
+          "field": "market_years",
+          "operator": "gte",
+          "expected": 3,
+          "unit": "年",
+          "source": "工信部企业〔2022〕63号附件3及工信厅企业函〔2026〕117号过渡条款",
+          "source_quote": "2026年度复核按2022年标准把握；截至上年末从事特定细分市场时间达到3年以上。"
+        },
+        {
+          "rule_id": "little-giant-review-main-business-ratio",
+          "type": "hard-threshold",
+          "field": "main_business_revenue_ratio",
+          "operator": "gte",
+          "expected": 70,
+          "unit": "%",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "主营业务收入总额占营业收入总额比重不低于70%。"
+        },
+        {
+          "rule_id": "little-giant-review-liability-ratio",
+          "type": "hard-threshold",
+          "field": "asset_liability_ratio",
+          "operator": "lte",
+          "expected": 70,
+          "unit": "%",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "截至上年末，企业资产负债率不高于70%。"
+        },
+        {
+          "rule_id": "little-giant-review-refined-management",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "little-giant-review-governance",
+              "field": "little_giant_governance_standardized",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "little-giant-review-it",
+              "field": "little_giant_core_business_information_system_count",
+              "operator": "gte",
+              "expected": 1,
+              "unit": "项"
+            },
+            {
+              "rule_id": "little-giant-review-certification",
+              "field": "little_giant_management_or_product_certification_count",
+              "operator": "gte",
+              "expected": 1,
+              "unit": "项"
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "公司治理规范，至少1项核心业务采用信息系统支撑，并取得相关管理体系认证或产品认证。"
+        },
+        {
+          "rule_id": "little-giant-review-market-share",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "little-giant-review-share",
+              "field": "little_giant_market_share_ratio",
+              "operator": "gte",
+              "expected": 10,
+              "unit": "%"
+            },
+            {
+              "rule_id": "little-giant-review-influence",
+              "field": "little_giant_market_influence_confirmed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "主导产品在全国细分市场占有率达到10%以上，且享有较高知名度和影响力。"
+        },
+        {
+          "rule_id": "little-giant-review-brand",
+          "field": "little_giant_independent_brand_assessment_passed",
+          "operator": "truthy",
+          "expected": true,
+          "type": "hard-threshold",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "拥有直接面向市场并具有竞争优势的自主品牌。"
+        },
+        {
+          "rule_id": "little-giant-review-rnd",
+          "field": "little_giant_review_applicable_rnd_route_assessment_passed",
+          "operator": "truthy",
+          "expected": true,
+          "type": "hard-threshold",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "一般性条件按上年度营业收入分档核验近两年研发强度；收入低于5000万元的企业同时核验股权融资、研发费用和研发人员占比，创新直通条件另行核验。"
+        },
+        {
+          "rule_id": "little-giant-review-ip",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "little-giant-review-ip-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "little-giant-review-ip-count",
+                  "field": "little_giant_relevant_class_i_ip_count",
+                  "operator": "gte",
+                  "expected": 2,
+                  "unit": "项"
+                },
+                {
+                  "rule_id": "little-giant-review-ip-applied",
+                  "field": "little_giant_class_i_ip_applied",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "little-giant-review-ip-benefit",
+                  "field": "little_giant_class_i_ip_economic_benefit",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "little-giant-review-ip-direct",
+              "field": "little_giant_innovation_direct_route_confirmed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "一般性条件要求拥有2项以上与主导产品相关的Ⅰ类知识产权，且实际应用并已产生经济效益；符合创新直通条件的按对应条款核验。"
+        },
+        {
+          "rule_id": "little-giant-review-industry-chain",
+          "field": "little_giant_review_industry_chain_role_assessment_passed",
+          "operator": "truthy",
+          "expected": true,
+          "type": "hard-threshold",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "位于产业链关键环节，围绕重点产业链实现关键基础技术和产品的产业化应用，发挥补短板、锻长板、填空白等重要作用。"
+        },
+        {
+          "rule_id": "little-giant-review-product-field",
+          "field": "little_giant_leading_product_field_match",
+          "operator": "truthy",
+          "expected": true,
+          "type": "hard-threshold",
+          "source": "工信部企业〔2022〕63号附件3",
+          "source_quote": "主导产品原则上属于制造业核心基础领域、制造强国重点产业领域，或网络强国建设相关重点领域。"
+        },
+        {
+          "rule_id": "little-giant-review-leading-product-ratio",
+          "type": "hard-threshold",
+          "field": "leading_product_revenue_ratio",
+          "operator": "gt",
+          "expected": 50,
+          "unit": "%",
+          "source": "工信部企业〔2022〕63号附件4",
+          "source_quote": "主导产品收入之和占企业同期营业收入比重超过50%。"
+        },
+        {
+          "rule_id": "little-giant-2026-review-financial-audit",
+          "type": "submission",
+          "field": "little_giant_financial_audit_ready",
+          "operator": "truthy",
+          "expected": true,
+          "source": "工信厅企业函〔2026〕117号第一条第六项",
+          "source_quote": "复核财务数据同样依据已报备赋码的审计报告，主营业务收入、主营业务成本应纳入审计报告。"
+        }
       ]
     }
-  ]
+  ],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "little-giant-industry-chain",
+      "little-giant-ip",
+      "little-giant-market-share",
+      "little-giant-review-brand",
+      "little-giant-review-industry-chain",
+      "little-giant-review-ip",
+      "little-giant-review-market-share",
+      "little-giant-review-product-field",
+      "little-giant-review-refined-management",
+      "little-giant-review-rnd",
+      "little-giant-rnd"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

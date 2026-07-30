@@ -7,7 +7,7 @@
   "project_name": "专精特新小巨人",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-2581eb4b5fdfb4457987",
+  "policy_version_id": "policy-56caea550262ec7c9ac6",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -25,18 +25,21 @@
     "project-router",
     "policy-version-gate",
     "policy-time-type-checker",
+    "policy-retrieval-cascade",
     "fact-contract-normalizer",
     "evidence-conflict-resolver",
     "layer-selector",
     "native-rule-combinator",
+    "composite-rule-structure-gate",
     "requirement-comparator",
     "lifecycle-state-machine",
     "coverage-hash-planner",
     "policy-change-impact-simulator",
+    "deliverable-contract-gate",
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 17,
+    "fact_fields": 27,
     "confirmed_rules": 26,
     "rule_layers": 3,
     "gold_cases": 3
@@ -58,6 +61,16 @@
     "task_preflight_required": true,
     "policy_time_checked": true,
     "native_rule_combinator": true,
+    "composite_rule_structure": {
+      "status": "passed",
+      "formal_decision_allowed": true,
+      "unresolved_composite_leaves": [],
+      "unresolved_count": 0,
+      "declared_atomic_fields": [],
+      "rule": "综合条件必须拆为原生all/any叶节点；只有证书状态、评价结论或单一证据断言可显式声明为原子事实"
+    },
+    "deliverable_contract_required": true,
+    "policy_retrieval_cascade_required": true,
     "pack_validation": true,
     "gold_case_count": 3,
     "formal_decision_enabled": true,
@@ -68,5 +81,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "dfc44b33a79eb0114353979722c4ca812260839e11c40d8f58ae1e6556e6dd8b"
+  "compile_input_hash": "72bd211b4d8e5f914c932f93c34c39227de1196f3197e44c8ccbd5f609fbe0bc"
 }

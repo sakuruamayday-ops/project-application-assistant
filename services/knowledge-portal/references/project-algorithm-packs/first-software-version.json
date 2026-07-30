@@ -34,37 +34,69 @@
       ]
     },
     {
-      "field": "first_software_environment_talent_met",
-      "label": "软件开发环境及人才",
+      "field": "first_software_development_premises_available",
+      "label": "具有与软件开发相适应的经营场所",
       "aliases": [
-        "软件开发环境及人才"
+        "具有与软件开发相适应的经营场所"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "应具有与软件开发相适应的经营场所、合法软硬件开发环境和人才支撑。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "first_software_catalog_met",
-      "label": "指导目录范围",
+      "field": "first_software_legal_hardware_software_environment_available",
+      "label": "具有合法软硬件开发环境",
       "aliases": [
-        "指导目录范围"
+        "具有合法软硬件开发环境"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "申报软件产品应属于当年度浙江省首版次软件产品申报指导目录范围。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "first_software_copyright_met",
-      "label": "著作权时间及第一作者",
+      "field": "first_software_development_talent_support_available",
+      "label": "具有软件开发人才支撑",
       "aliases": [
-        "著作权时间及第一作者"
+        "具有软件开发人才支撑"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_in_current_guidance_catalog",
+      "label": "软件产品属于当年度首版次申报指导目录",
+      "aliases": [
+        "软件产品属于当年度首版次申报指导目录"
       ],
       "value_type": "boolean",
-      "derivation_requirements": [
-        "应在通知规定时间后取得软件著作权，申报单位为第一著作权人；共有权须取得同意。"
-      ]
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "first_software_copyright_after_notice_cutoff",
+      "label": "软件著作权取得时间符合通知要求",
+      "aliases": [
+        "软件著作权取得时间符合通知要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_applicant_is_first_copyright_owner",
+      "label": "申报单位为第一著作权人",
+      "aliases": [
+        "申报单位为第一著作权人"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_copyright_is_co_owned",
+      "label": "软件著作权为共有权",
+      "aliases": [
+        "软件著作权为共有权"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_co_owner_consent_obtained",
+      "label": "已取得其他共有人同意",
+      "aliases": [
+        "已取得其他共有人同意"
+      ],
+      "value_type": "boolean"
     },
     {
       "field": "first_software_first_release_sale",
@@ -78,26 +110,84 @@
       ]
     },
     {
-      "field": "first_software_cnas_cma_test_met",
-      "label": "CNAS与CMA检测",
+      "field": "first_software_test_agency_cnas_capability_valid",
+      "label": "检测机构CNAS能力有效",
       "aliases": [
-        "CNAS与CMA检测"
+        "检测机构CNAS能力有效"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "产品功能、性能指标应通过同时具备相应CNAS和CMA能力的第三方机构检测。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "first_software_domestic_tier_met",
-      "label": "国内首版次附加条件",
+      "field": "first_software_test_agency_cma_capability_valid",
+      "label": "检测机构CMA能力有效",
       "aliases": [
-        "国内首版次附加条件"
+        "检测机构CMA能力有效"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "申报国内首版次的，须在技术突破、国产替代、奖项课题、信创适配、发明专利或标准等七项中至少满足两项。"
-      ]
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_test_result_passed",
+      "label": "首版次软件功能性能检测通过",
+      "aliases": [
+        "首版次软件功能性能检测通过"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_domestic_technical_breakthrough",
+      "label": "国内首版次技术突破条件",
+      "aliases": [
+        "国内首版次技术突破条件"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_domestic_substitution",
+      "label": "国内首版次国产替代条件",
+      "aliases": [
+        "国内首版次国产替代条件"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_domestic_award_or_project",
+      "label": "国内首版次奖项课题条件",
+      "aliases": [
+        "国内首版次奖项课题条件"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_domestic_xinchuang_adaptation",
+      "label": "国内首版次信创适配条件",
+      "aliases": [
+        "国内首版次信创适配条件"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_domestic_invention_patent",
+      "label": "国内首版次发明专利条件",
+      "aliases": [
+        "国内首版次发明专利条件"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_domestic_standard",
+      "label": "国内首版次标准条件",
+      "aliases": [
+        "国内首版次标准条件"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_software_domestic_other_notice_condition",
+      "label": "国内首版次通知列明其他条件",
+      "aliases": [
+        "国内首版次通知列明其他条件"
+      ],
+      "value_type": "boolean"
     },
     {
       "field": "first_software_exclusions_clear",
@@ -151,10 +241,28 @@
     },
     {
       "rule_id": "first-software-3",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "first-software-premises",
+          "field": "first_software_development_premises_available",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "first-software-environment",
+          "field": "first_software_legal_hardware_software_environment_available",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "first-software-talent",
+          "field": "first_software_development_talent_support_available",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "first_software_environment_talent_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
       "source_quote": "应具有与软件开发相适应的经营场所、合法软硬件开发环境和人才支撑。",
       "policy_status": "current",
@@ -165,10 +273,10 @@
     },
     {
       "rule_id": "first-software-4",
-      "type": "hard-threshold",
-      "field": "first_software_catalog_met",
+      "field": "first_software_in_current_guidance_catalog",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
       "source_quote": "申报软件产品应属于当年度浙江省首版次软件产品申报指导目录范围。",
       "policy_status": "current",
@@ -179,10 +287,46 @@
     },
     {
       "rule_id": "first-software-5",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "first-software-copyright-date",
+          "field": "first_software_copyright_after_notice_cutoff",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "first-software-copyright-owner-route",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "first-software-first-owner",
+              "field": "first_software_applicant_is_first_copyright_owner",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-co-owner-route",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-co-owned",
+                  "field": "first_software_copyright_is_co_owned",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-co-owner-consent",
+                  "field": "first_software_co_owner_consent_obtained",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "first_software_copyright_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
       "source_quote": "应在通知规定时间后取得软件著作权，申报单位为第一著作权人；共有权须取得同意。",
       "policy_status": "current",
@@ -207,10 +351,28 @@
     },
     {
       "rule_id": "first-software-7",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "first-software-cnas",
+          "field": "first_software_test_agency_cnas_capability_valid",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "first-software-cma",
+          "field": "first_software_test_agency_cma_capability_valid",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "first-software-test-result",
+          "field": "first_software_test_result_passed",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "first_software_cnas_cma_test_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
       "source_quote": "产品功能、性能指标应通过同时具备相应CNAS和CMA能力的第三方机构检测。",
       "policy_status": "current",
@@ -221,10 +383,388 @@
     },
     {
       "rule_id": "first-software-8",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "first-software-8-pair-1",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-1-a",
+              "field": "first_software_domestic_technical_breakthrough",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-1-b",
+              "field": "first_software_domestic_substitution",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-2-a",
+              "field": "first_software_domestic_technical_breakthrough",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-2-b",
+              "field": "first_software_domestic_award_or_project",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-3-a",
+              "field": "first_software_domestic_technical_breakthrough",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-3-b",
+              "field": "first_software_domestic_xinchuang_adaptation",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-4",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-4-a",
+              "field": "first_software_domestic_technical_breakthrough",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-4-b",
+              "field": "first_software_domestic_invention_patent",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-5",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-5-a",
+              "field": "first_software_domestic_technical_breakthrough",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-5-b",
+              "field": "first_software_domestic_standard",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-6",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-6-a",
+              "field": "first_software_domestic_technical_breakthrough",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-6-b",
+              "field": "first_software_domestic_other_notice_condition",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-7",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-7-a",
+              "field": "first_software_domestic_substitution",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-7-b",
+              "field": "first_software_domestic_award_or_project",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-8",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-8-a",
+              "field": "first_software_domestic_substitution",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-8-b",
+              "field": "first_software_domestic_xinchuang_adaptation",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-9",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-9-a",
+              "field": "first_software_domestic_substitution",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-9-b",
+              "field": "first_software_domestic_invention_patent",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-10",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-10-a",
+              "field": "first_software_domestic_substitution",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-10-b",
+              "field": "first_software_domestic_standard",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-11",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-11-a",
+              "field": "first_software_domestic_substitution",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-11-b",
+              "field": "first_software_domestic_other_notice_condition",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-12",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-12-a",
+              "field": "first_software_domestic_award_or_project",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-12-b",
+              "field": "first_software_domestic_xinchuang_adaptation",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-13",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-13-a",
+              "field": "first_software_domestic_award_or_project",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-13-b",
+              "field": "first_software_domestic_invention_patent",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-14",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-14-a",
+              "field": "first_software_domestic_award_or_project",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-14-b",
+              "field": "first_software_domestic_standard",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-15",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-15-a",
+              "field": "first_software_domestic_award_or_project",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-15-b",
+              "field": "first_software_domestic_other_notice_condition",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-16",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-16-a",
+              "field": "first_software_domestic_xinchuang_adaptation",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-16-b",
+              "field": "first_software_domestic_invention_patent",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-17",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-17-a",
+              "field": "first_software_domestic_xinchuang_adaptation",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-17-b",
+              "field": "first_software_domestic_standard",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-18",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-18-a",
+              "field": "first_software_domestic_xinchuang_adaptation",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-18-b",
+              "field": "first_software_domestic_other_notice_condition",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-19",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-19-a",
+              "field": "first_software_domestic_invention_patent",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-19-b",
+              "field": "first_software_domestic_standard",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-20",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-20-a",
+              "field": "first_software_domestic_invention_patent",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-20-b",
+              "field": "first_software_domestic_other_notice_condition",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "first-software-8-pair-21",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-21-a",
+              "field": "first_software_domestic_standard",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-8-pair-21-b",
+              "field": "first_software_domestic_other_notice_condition",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "first_software_domestic_tier_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
       "source_quote": "申报国内首版次的，须在技术突破、国产替代、奖项课题、信创适配、发明专利或标准等七项中至少满足两项。",
       "policy_status": "current",
@@ -306,10 +846,28 @@
         },
         {
           "rule_id": "first-software-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-premises",
+              "field": "first_software_development_premises_available",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-environment",
+              "field": "first_software_legal_hardware_software_environment_available",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-talent",
+              "field": "first_software_development_talent_support_available",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "first_software_environment_talent_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
           "source_quote": "应具有与软件开发相适应的经营场所、合法软硬件开发环境和人才支撑。",
           "policy_status": "current",
@@ -320,10 +878,10 @@
         },
         {
           "rule_id": "first-software-4",
-          "type": "hard-threshold",
-          "field": "first_software_catalog_met",
+          "field": "first_software_in_current_guidance_catalog",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
           "source_quote": "申报软件产品应属于当年度浙江省首版次软件产品申报指导目录范围。",
           "policy_status": "current",
@@ -334,10 +892,46 @@
         },
         {
           "rule_id": "first-software-5",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-copyright-date",
+              "field": "first_software_copyright_after_notice_cutoff",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-copyright-owner-route",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "first-software-first-owner",
+                  "field": "first_software_applicant_is_first_copyright_owner",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-co-owner-route",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "first-software-co-owned",
+                      "field": "first_software_copyright_is_co_owned",
+                      "operator": "truthy",
+                      "expected": true
+                    },
+                    {
+                      "rule_id": "first-software-co-owner-consent",
+                      "field": "first_software_co_owner_consent_obtained",
+                      "operator": "truthy",
+                      "expected": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
           "type": "hard-threshold",
-          "field": "first_software_copyright_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
           "source_quote": "应在通知规定时间后取得软件著作权，申报单位为第一著作权人；共有权须取得同意。",
           "policy_status": "current",
@@ -362,10 +956,28 @@
         },
         {
           "rule_id": "first-software-7",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-software-cnas",
+              "field": "first_software_test_agency_cnas_capability_valid",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-cma",
+              "field": "first_software_test_agency_cma_capability_valid",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-software-test-result",
+              "field": "first_software_test_result_passed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "first_software_cnas_cma_test_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
           "source_quote": "产品功能、性能指标应通过同时具备相应CNAS和CMA能力的第三方机构检测。",
           "policy_status": "current",
@@ -376,10 +988,388 @@
         },
         {
           "rule_id": "first-software-8",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "first-software-8-pair-1",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-1-a",
+                  "field": "first_software_domestic_technical_breakthrough",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-1-b",
+                  "field": "first_software_domestic_substitution",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-2",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-2-a",
+                  "field": "first_software_domestic_technical_breakthrough",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-2-b",
+                  "field": "first_software_domestic_award_or_project",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-3",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-3-a",
+                  "field": "first_software_domestic_technical_breakthrough",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-3-b",
+                  "field": "first_software_domestic_xinchuang_adaptation",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-4",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-4-a",
+                  "field": "first_software_domestic_technical_breakthrough",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-4-b",
+                  "field": "first_software_domestic_invention_patent",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-5",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-5-a",
+                  "field": "first_software_domestic_technical_breakthrough",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-5-b",
+                  "field": "first_software_domestic_standard",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-6",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-6-a",
+                  "field": "first_software_domestic_technical_breakthrough",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-6-b",
+                  "field": "first_software_domestic_other_notice_condition",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-7",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-7-a",
+                  "field": "first_software_domestic_substitution",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-7-b",
+                  "field": "first_software_domestic_award_or_project",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-8",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-8-a",
+                  "field": "first_software_domestic_substitution",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-8-b",
+                  "field": "first_software_domestic_xinchuang_adaptation",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-9",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-9-a",
+                  "field": "first_software_domestic_substitution",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-9-b",
+                  "field": "first_software_domestic_invention_patent",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-10",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-10-a",
+                  "field": "first_software_domestic_substitution",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-10-b",
+                  "field": "first_software_domestic_standard",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-11",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-11-a",
+                  "field": "first_software_domestic_substitution",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-11-b",
+                  "field": "first_software_domestic_other_notice_condition",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-12",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-12-a",
+                  "field": "first_software_domestic_award_or_project",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-12-b",
+                  "field": "first_software_domestic_xinchuang_adaptation",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-13",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-13-a",
+                  "field": "first_software_domestic_award_or_project",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-13-b",
+                  "field": "first_software_domestic_invention_patent",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-14",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-14-a",
+                  "field": "first_software_domestic_award_or_project",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-14-b",
+                  "field": "first_software_domestic_standard",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-15",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-15-a",
+                  "field": "first_software_domestic_award_or_project",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-15-b",
+                  "field": "first_software_domestic_other_notice_condition",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-16",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-16-a",
+                  "field": "first_software_domestic_xinchuang_adaptation",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-16-b",
+                  "field": "first_software_domestic_invention_patent",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-17",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-17-a",
+                  "field": "first_software_domestic_xinchuang_adaptation",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-17-b",
+                  "field": "first_software_domestic_standard",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-18",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-18-a",
+                  "field": "first_software_domestic_xinchuang_adaptation",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-18-b",
+                  "field": "first_software_domestic_other_notice_condition",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-19",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-19-a",
+                  "field": "first_software_domestic_invention_patent",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-19-b",
+                  "field": "first_software_domestic_standard",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-20",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-20-a",
+                  "field": "first_software_domestic_invention_patent",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-20-b",
+                  "field": "first_software_domestic_other_notice_condition",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "first-software-8-pair-21",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-software-8-pair-21-a",
+                  "field": "first_software_domestic_standard",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-software-8-pair-21-b",
+                  "field": "first_software_domestic_other_notice_condition",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            }
+          ],
           "type": "hard-threshold",
-          "field": "first_software_domestic_tier_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
           "source_quote": "申报国内首版次的，须在技术突破、国产替代、奖项课题、信创适配、发明专利或标准等七项中至少满足两项。",
           "policy_status": "current",
@@ -437,19 +1427,37 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_software_environment_talent_met",
+          "field": "first_software_development_premises_available",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_catalog_met",
+          "field": "first_software_legal_hardware_software_environment_available",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_copyright_met",
+          "field": "first_software_development_talent_support_available",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_in_current_guidance_catalog",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_copyright_after_notice_cutoff",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_applicant_is_first_copyright_owner",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -461,13 +1469,31 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_software_cnas_cma_test_met",
+          "field": "first_software_test_agency_cnas_capability_valid",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_domestic_tier_met",
+          "field": "first_software_test_agency_cma_capability_valid",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_test_result_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_domestic_technical_breakthrough",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_domestic_substitution",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -515,19 +1541,37 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_software_environment_talent_met",
+          "field": "first_software_development_premises_available",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_catalog_met",
+          "field": "first_software_legal_hardware_software_environment_available",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_copyright_met",
+          "field": "first_software_development_talent_support_available",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_in_current_guidance_catalog",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_copyright_after_notice_cutoff",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_applicant_is_first_copyright_owner",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -539,13 +1583,31 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_software_cnas_cma_test_met",
+          "field": "first_software_test_agency_cnas_capability_valid",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_domestic_tier_met",
+          "field": "first_software_test_agency_cma_capability_valid",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_test_result_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_domestic_technical_breakthrough",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_domestic_substitution",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -593,19 +1655,37 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_software_environment_talent_met",
+          "field": "first_software_development_premises_available",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_catalog_met",
+          "field": "first_software_legal_hardware_software_environment_available",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_copyright_met",
+          "field": "first_software_development_talent_support_available",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_in_current_guidance_catalog",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_copyright_after_notice_cutoff",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_applicant_is_first_copyright_owner",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -617,13 +1697,31 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_software_cnas_cma_test_met",
+          "field": "first_software_test_agency_cnas_capability_valid",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_software_domestic_tier_met",
+          "field": "first_software_test_agency_cma_capability_valid",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_test_result_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_domestic_technical_breakthrough",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_software_domestic_substitution",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

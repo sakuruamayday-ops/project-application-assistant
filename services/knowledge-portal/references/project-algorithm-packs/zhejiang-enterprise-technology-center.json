@@ -13,59 +13,80 @@
   ],
   "fact_fields": [
     {
-      "field": "zj_tech_center_competitive_met",
-      "label": "行业竞争和创新能力",
+      "field": "zj_tech_center_economic_technical_indicators_comply",
+      "label": "综合经济技术指标符合要求",
       "aliases": [
-        "行业竞争和创新能力"
+        "综合经济技术指标符合要求"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "企业综合经济技术指标、技术开发能力及产品附加值应符合第五条第一项。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "zj_tech_center_revenue_branch_met",
-      "label": "行业收入分支要求",
+      "field": "zj_tech_center_technical_development_capability_complies",
+      "label": "技术开发能力符合要求",
       "aliases": [
-        "行业收入分支要求"
+        "技术开发能力符合要求"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "制造业一般2亿元、加快发展县1亿元；建筑业结算收入15亿元；高技术服务业主营收入5000万元。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "zj_tech_center_equipment_branch_met",
-      "label": "设备原值分支要求",
+      "field": "zj_tech_center_product_added_value_complies",
+      "label": "产品附加值符合要求",
       "aliases": [
-        "设备原值分支要求"
+        "产品附加值符合要求"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "制造业一般1200万元、加快发展县800万元；建筑业800万元；高技术服务业1000万元。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "zj_tech_center_rnd_ratio_branch_met",
-      "label": "研发经费比例分支要求",
+      "field": "zj_tech_center_industry_type",
+      "label": "企业行业类型",
       "aliases": [
-        "研发经费比例分支要求"
+        "企业行业类型"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "制造业按主营收入规模适用1.5%、2%或3%；建筑业0.5%；高技术服务业2.5%。"
-      ]
+      "value_type": "string"
     },
     {
-      "field": "zj_tech_center_staff_branch_met",
-      "label": "创新人员分支要求",
+      "field": "zj_tech_center_accelerated_development_county",
+      "label": "加快发展县企业",
       "aliases": [
-        "创新人员分支要求"
+        "加快发展县企业"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_tech_center_revenue_value",
+      "label": "营业收入或结算收入",
+      "aliases": [
+        "营业收入或结算收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "zj_tech_center_equipment_value",
+      "label": "科研仪器设备原值",
+      "aliases": [
+        "科研仪器设备原值"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "zj_tech_center_applicable_rnd_ratio_assessment_passed",
+      "label": "按行业和收入规模适用的研发经费比例评价通过",
+      "aliases": [
+        "按行业和收入规模适用的研发经费比例评价通过"
       ],
       "value_type": "boolean",
-      "derivation_requirements": [
-        "制造业一般50人、加快发展县30人；建筑业一级注册人员50人；高技术服务业开发人员50人。"
-      ]
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "zj_tech_center_staff_value",
+      "label": "研发或开发人员数量",
+      "aliases": [
+        "研发或开发人员数量"
+      ],
+      "value_type": "number",
+      "unit": "人"
     },
     {
       "field": "zj_tech_center_municipal_one_year",
@@ -104,10 +125,28 @@
   "rule_cards": [
     {
       "rule_id": "zj-tech-center-1",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-tech-center-economic",
+          "field": "zj_tech_center_economic_technical_indicators_comply",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-tech-center-development",
+          "field": "zj_tech_center_technical_development_capability_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-tech-center-value",
+          "field": "zj_tech_center_product_added_value_complies",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_tech_center_competitive_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
       "source_quote": "企业综合经济技术指标、技术开发能力及产品附加值应符合第五条第一项。",
       "policy_status": "current",
@@ -118,10 +157,98 @@
     },
     {
       "rule_id": "zj-tech-center-2",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-tech-center-2-manufacturing-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-2-manufacturing-general-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "制造业"
+            },
+            {
+              "rule_id": "zj-tech-center-2-manufacturing-general-county",
+              "field": "zj_tech_center_accelerated_development_county",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "zj-tech-center-2-manufacturing-general-value",
+              "field": "zj_tech_center_revenue_value",
+              "operator": "gte",
+              "expected": 20000,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-2-manufacturing-county",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-2-manufacturing-county-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "制造业"
+            },
+            {
+              "rule_id": "zj-tech-center-2-manufacturing-county-county",
+              "field": "zj_tech_center_accelerated_development_county",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-center-2-manufacturing-county-value",
+              "field": "zj_tech_center_revenue_value",
+              "operator": "gte",
+              "expected": 10000,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-2-construction",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-2-construction-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "建筑业"
+            },
+            {
+              "rule_id": "zj-tech-center-2-construction-value",
+              "field": "zj_tech_center_revenue_value",
+              "operator": "gte",
+              "expected": 150000,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-2-high-tech-service",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-2-high-tech-service-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "高技术服务业"
+            },
+            {
+              "rule_id": "zj-tech-center-2-high-tech-service-value",
+              "field": "zj_tech_center_revenue_value",
+              "operator": "gte",
+              "expected": 5000,
+              "unit": "万元"
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_tech_center_revenue_branch_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
       "source_quote": "制造业一般2亿元、加快发展县1亿元；建筑业结算收入15亿元；高技术服务业主营收入5000万元。",
       "policy_status": "current",
@@ -132,10 +259,98 @@
     },
     {
       "rule_id": "zj-tech-center-3",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-tech-center-3-manufacturing-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-3-manufacturing-general-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "制造业"
+            },
+            {
+              "rule_id": "zj-tech-center-3-manufacturing-general-county",
+              "field": "zj_tech_center_accelerated_development_county",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "zj-tech-center-3-manufacturing-general-value",
+              "field": "zj_tech_center_equipment_value",
+              "operator": "gte",
+              "expected": 1200,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-3-manufacturing-county",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-3-manufacturing-county-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "制造业"
+            },
+            {
+              "rule_id": "zj-tech-center-3-manufacturing-county-county",
+              "field": "zj_tech_center_accelerated_development_county",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-center-3-manufacturing-county-value",
+              "field": "zj_tech_center_equipment_value",
+              "operator": "gte",
+              "expected": 800,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-3-construction",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-3-construction-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "建筑业"
+            },
+            {
+              "rule_id": "zj-tech-center-3-construction-value",
+              "field": "zj_tech_center_equipment_value",
+              "operator": "gte",
+              "expected": 800,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-3-high-tech-service",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-3-high-tech-service-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "高技术服务业"
+            },
+            {
+              "rule_id": "zj-tech-center-3-high-tech-service-value",
+              "field": "zj_tech_center_equipment_value",
+              "operator": "gte",
+              "expected": 1000,
+              "unit": "万元"
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_tech_center_equipment_branch_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
       "source_quote": "制造业一般1200万元、加快发展县800万元；建筑业800万元；高技术服务业1000万元。",
       "policy_status": "current",
@@ -146,10 +361,10 @@
     },
     {
       "rule_id": "zj-tech-center-4",
-      "type": "hard-threshold",
-      "field": "zj_tech_center_rnd_ratio_branch_met",
+      "field": "zj_tech_center_applicable_rnd_ratio_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
       "source_quote": "制造业按主营收入规模适用1.5%、2%或3%；建筑业0.5%；高技术服务业2.5%。",
       "policy_status": "current",
@@ -160,10 +375,98 @@
     },
     {
       "rule_id": "zj-tech-center-5",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-tech-center-5-manufacturing-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-5-manufacturing-general-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "制造业"
+            },
+            {
+              "rule_id": "zj-tech-center-5-manufacturing-general-county",
+              "field": "zj_tech_center_accelerated_development_county",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "zj-tech-center-5-manufacturing-general-value",
+              "field": "zj_tech_center_staff_value",
+              "operator": "gte",
+              "expected": 50,
+              "unit": "人"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-5-manufacturing-county",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-5-manufacturing-county-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "制造业"
+            },
+            {
+              "rule_id": "zj-tech-center-5-manufacturing-county-county",
+              "field": "zj_tech_center_accelerated_development_county",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-center-5-manufacturing-county-value",
+              "field": "zj_tech_center_staff_value",
+              "operator": "gte",
+              "expected": 30,
+              "unit": "人"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-5-construction",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-5-construction-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "建筑业"
+            },
+            {
+              "rule_id": "zj-tech-center-5-construction-value",
+              "field": "zj_tech_center_staff_value",
+              "operator": "gte",
+              "expected": 50,
+              "unit": "人"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-tech-center-5-high-tech-service",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-5-high-tech-service-industry",
+              "field": "zj_tech_center_industry_type",
+              "operator": "equals",
+              "expected": "高技术服务业"
+            },
+            {
+              "rule_id": "zj-tech-center-5-high-tech-service-value",
+              "field": "zj_tech_center_staff_value",
+              "operator": "gte",
+              "expected": 50,
+              "unit": "人"
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_tech_center_staff_branch_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
       "source_quote": "制造业一般50人、加快发展县30人；建筑业一级注册人员50人；高技术服务业开发人员50人。",
       "policy_status": "current",
@@ -226,10 +529,28 @@
       "rules": [
         {
           "rule_id": "zj-tech-center-1",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-economic",
+              "field": "zj_tech_center_economic_technical_indicators_comply",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-center-development",
+              "field": "zj_tech_center_technical_development_capability_complies",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-tech-center-value",
+              "field": "zj_tech_center_product_added_value_complies",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "zj_tech_center_competitive_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
           "source_quote": "企业综合经济技术指标、技术开发能力及产品附加值应符合第五条第一项。",
           "policy_status": "current",
@@ -240,10 +561,98 @@
         },
         {
           "rule_id": "zj-tech-center-2",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-2-manufacturing-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-2-manufacturing-general-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "制造业"
+                },
+                {
+                  "rule_id": "zj-tech-center-2-manufacturing-general-county",
+                  "field": "zj_tech_center_accelerated_development_county",
+                  "operator": "falsy",
+                  "expected": false
+                },
+                {
+                  "rule_id": "zj-tech-center-2-manufacturing-general-value",
+                  "field": "zj_tech_center_revenue_value",
+                  "operator": "gte",
+                  "expected": 20000,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-2-manufacturing-county",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-2-manufacturing-county-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "制造业"
+                },
+                {
+                  "rule_id": "zj-tech-center-2-manufacturing-county-county",
+                  "field": "zj_tech_center_accelerated_development_county",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-tech-center-2-manufacturing-county-value",
+                  "field": "zj_tech_center_revenue_value",
+                  "operator": "gte",
+                  "expected": 10000,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-2-construction",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-2-construction-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "建筑业"
+                },
+                {
+                  "rule_id": "zj-tech-center-2-construction-value",
+                  "field": "zj_tech_center_revenue_value",
+                  "operator": "gte",
+                  "expected": 150000,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-2-high-tech-service",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-2-high-tech-service-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "高技术服务业"
+                },
+                {
+                  "rule_id": "zj-tech-center-2-high-tech-service-value",
+                  "field": "zj_tech_center_revenue_value",
+                  "operator": "gte",
+                  "expected": 5000,
+                  "unit": "万元"
+                }
+              ]
+            }
+          ],
           "type": "hard-threshold",
-          "field": "zj_tech_center_revenue_branch_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
           "source_quote": "制造业一般2亿元、加快发展县1亿元；建筑业结算收入15亿元；高技术服务业主营收入5000万元。",
           "policy_status": "current",
@@ -254,10 +663,98 @@
         },
         {
           "rule_id": "zj-tech-center-3",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-3-manufacturing-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-3-manufacturing-general-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "制造业"
+                },
+                {
+                  "rule_id": "zj-tech-center-3-manufacturing-general-county",
+                  "field": "zj_tech_center_accelerated_development_county",
+                  "operator": "falsy",
+                  "expected": false
+                },
+                {
+                  "rule_id": "zj-tech-center-3-manufacturing-general-value",
+                  "field": "zj_tech_center_equipment_value",
+                  "operator": "gte",
+                  "expected": 1200,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-3-manufacturing-county",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-3-manufacturing-county-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "制造业"
+                },
+                {
+                  "rule_id": "zj-tech-center-3-manufacturing-county-county",
+                  "field": "zj_tech_center_accelerated_development_county",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-tech-center-3-manufacturing-county-value",
+                  "field": "zj_tech_center_equipment_value",
+                  "operator": "gte",
+                  "expected": 800,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-3-construction",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-3-construction-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "建筑业"
+                },
+                {
+                  "rule_id": "zj-tech-center-3-construction-value",
+                  "field": "zj_tech_center_equipment_value",
+                  "operator": "gte",
+                  "expected": 800,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-3-high-tech-service",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-3-high-tech-service-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "高技术服务业"
+                },
+                {
+                  "rule_id": "zj-tech-center-3-high-tech-service-value",
+                  "field": "zj_tech_center_equipment_value",
+                  "operator": "gte",
+                  "expected": 1000,
+                  "unit": "万元"
+                }
+              ]
+            }
+          ],
           "type": "hard-threshold",
-          "field": "zj_tech_center_equipment_branch_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
           "source_quote": "制造业一般1200万元、加快发展县800万元；建筑业800万元；高技术服务业1000万元。",
           "policy_status": "current",
@@ -268,10 +765,10 @@
         },
         {
           "rule_id": "zj-tech-center-4",
-          "type": "hard-threshold",
-          "field": "zj_tech_center_rnd_ratio_branch_met",
+          "field": "zj_tech_center_applicable_rnd_ratio_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
           "source_quote": "制造业按主营收入规模适用1.5%、2%或3%；建筑业0.5%；高技术服务业2.5%。",
           "policy_status": "current",
@@ -282,10 +779,98 @@
         },
         {
           "rule_id": "zj-tech-center-5",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-tech-center-5-manufacturing-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-5-manufacturing-general-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "制造业"
+                },
+                {
+                  "rule_id": "zj-tech-center-5-manufacturing-general-county",
+                  "field": "zj_tech_center_accelerated_development_county",
+                  "operator": "falsy",
+                  "expected": false
+                },
+                {
+                  "rule_id": "zj-tech-center-5-manufacturing-general-value",
+                  "field": "zj_tech_center_staff_value",
+                  "operator": "gte",
+                  "expected": 50,
+                  "unit": "人"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-5-manufacturing-county",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-5-manufacturing-county-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "制造业"
+                },
+                {
+                  "rule_id": "zj-tech-center-5-manufacturing-county-county",
+                  "field": "zj_tech_center_accelerated_development_county",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-tech-center-5-manufacturing-county-value",
+                  "field": "zj_tech_center_staff_value",
+                  "operator": "gte",
+                  "expected": 30,
+                  "unit": "人"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-5-construction",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-5-construction-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "建筑业"
+                },
+                {
+                  "rule_id": "zj-tech-center-5-construction-value",
+                  "field": "zj_tech_center_staff_value",
+                  "operator": "gte",
+                  "expected": 50,
+                  "unit": "人"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-tech-center-5-high-tech-service",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-tech-center-5-high-tech-service-industry",
+                  "field": "zj_tech_center_industry_type",
+                  "operator": "equals",
+                  "expected": "高技术服务业"
+                },
+                {
+                  "rule_id": "zj-tech-center-5-high-tech-service-value",
+                  "field": "zj_tech_center_staff_value",
+                  "operator": "gte",
+                  "expected": 50,
+                  "unit": "人"
+                }
+              ]
+            }
+          ],
           "type": "hard-threshold",
-          "field": "zj_tech_center_staff_branch_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
           "source_quote": "制造业一般50人、加快发展县30人；建筑业一级注册人员50人；高技术服务业开发人员50人。",
           "policy_status": "current",
@@ -344,32 +929,56 @@
       "case_id": "eligible-verified",
       "facts": [
         {
-          "field": "zj_tech_center_competitive_met",
+          "field": "zj_tech_center_economic_technical_indicators_comply",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_revenue_branch_met",
+          "field": "zj_tech_center_technical_development_capability_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_equipment_branch_met",
+          "field": "zj_tech_center_product_added_value_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_rnd_ratio_branch_met",
+          "field": "zj_tech_center_industry_type",
+          "value": "制造业",
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_accelerated_development_county",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_revenue_value",
+          "value": 20000,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_equipment_value",
+          "value": 1200,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_applicable_rnd_ratio_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_staff_branch_met",
-          "value": true,
+          "field": "zj_tech_center_staff_value",
+          "value": 50,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -408,32 +1017,56 @@
       "case_id": "conditional-pending",
       "facts": [
         {
-          "field": "zj_tech_center_competitive_met",
+          "field": "zj_tech_center_economic_technical_indicators_comply",
           "value": true,
           "evidence_state": "claimed",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_revenue_branch_met",
+          "field": "zj_tech_center_technical_development_capability_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_equipment_branch_met",
+          "field": "zj_tech_center_product_added_value_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_rnd_ratio_branch_met",
+          "field": "zj_tech_center_industry_type",
+          "value": "制造业",
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_accelerated_development_county",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_revenue_value",
+          "value": 20000,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_equipment_value",
+          "value": 1200,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_applicable_rnd_ratio_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_staff_branch_met",
-          "value": true,
+          "field": "zj_tech_center_staff_value",
+          "value": 50,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -472,32 +1105,56 @@
       "case_id": "ineligible-failed",
       "facts": [
         {
-          "field": "zj_tech_center_competitive_met",
+          "field": "zj_tech_center_economic_technical_indicators_comply",
           "value": false,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_revenue_branch_met",
+          "field": "zj_tech_center_technical_development_capability_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_equipment_branch_met",
+          "field": "zj_tech_center_product_added_value_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_rnd_ratio_branch_met",
+          "field": "zj_tech_center_industry_type",
+          "value": "制造业",
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_accelerated_development_county",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_revenue_value",
+          "value": 20000,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_equipment_value",
+          "value": 1200,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_tech_center_applicable_rnd_ratio_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "zj_tech_center_staff_branch_met",
-          "value": true,
+          "field": "zj_tech_center_staff_value",
+          "value": 50,
           "evidence_state": "verified",
           "source": "金标准事实"
         },

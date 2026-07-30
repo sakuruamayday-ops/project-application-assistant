@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from migrate_composite_rule_leaves import normalize_source_payload
+
 
 PORTAL_DIR = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PORTAL_DIR / "references" / "project-algorithm-rule-sources"
@@ -851,6 +853,7 @@ def main() -> int:
     if len(sources) != 21:
         raise ValueError(f"预期21个规则源，实际{len(sources)}")
     for payload in sources:
+        payload = normalize_source_payload(payload)
         write_json(
             OUTPUT_DIR / f"{payload['project_id']}.json",
             payload,

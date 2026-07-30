@@ -81,13 +81,54 @@
       "value_type": "boolean"
     },
     {
-      "field": "score_or_direct_confirmation_met",
-      "label": "评价得分或直接确认条件",
+      "field": "technology_sme_evaluation_score",
+      "label": "科技型中小企业综合评价分值",
       "aliases": [
-        "评价得分或直接确认条件"
+        "科技型中小企业综合评价分值"
       ],
-      "value_type": "boolean",
-      "derivation": "综合评价分值不低于60分且科技人员指标得分不为0，或在满足共同条件后命中四项直接确认条件之一。"
+      "value_type": "number",
+      "unit": "分"
+    },
+    {
+      "field": "technology_sme_personnel_indicator_score",
+      "label": "科技人员指标得分",
+      "aliases": [
+        "科技人员指标得分"
+      ],
+      "value_type": "number",
+      "unit": "分"
+    },
+    {
+      "field": "technology_sme_valid_high_tech_enterprise",
+      "label": "有效期内高新技术企业",
+      "aliases": [
+        "有效期内高新技术企业"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_sme_national_award_top_three_within_five_years",
+      "label": "近五年国家科技奖励前三完成单位",
+      "aliases": [
+        "近五年国家科技奖励前三完成单位"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_sme_provincial_or_above_rd_platform",
+      "label": "省部级以上研发机构",
+      "aliases": [
+        "省部级以上研发机构"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_sme_led_standard_within_five_years",
+      "label": "近五年主导制定国际国家或行业标准",
+      "aliases": [
+        "近五年主导制定国际国家或行业标准"
+      ],
+      "value_type": "boolean"
     },
     {
       "field": "technology_sme_2026_platform_submission_complete",
@@ -202,10 +243,54 @@
     },
     {
       "rule_id": "technology-sme-score-or-direct",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "technology-sme-score-route",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "technology-sme-score",
+              "field": "technology_sme_evaluation_score",
+              "operator": "gte",
+              "expected": 60,
+              "unit": "分"
+            },
+            {
+              "rule_id": "technology-sme-personnel-score",
+              "field": "technology_sme_personnel_indicator_score",
+              "operator": "gt",
+              "expected": 0,
+              "unit": "分"
+            }
+          ]
+        },
+        {
+          "rule_id": "technology-sme-direct-hte",
+          "field": "technology_sme_valid_high_tech_enterprise",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "technology-sme-direct-award",
+          "field": "technology_sme_national_award_top_three_within_five_years",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "technology-sme-direct-platform",
+          "field": "technology_sme_provincial_or_above_rd_platform",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "technology-sme-direct-standard",
+          "field": "technology_sme_led_standard_within_five_years",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "score_or_direct_confirmation_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "国科发政〔2017〕115号第六条至第八条",
       "source_quote": "综合评价分值不低于60分，且科技人员指标得分不得为0分；符合共同条件并命中有效高企、近五年国家科技奖励前三、省部级以上研发机构或近五年主导制定国际、国家、行业标准之一的，可直接确认。",
       "policy_status": "current",
@@ -327,10 +412,54 @@
         },
         {
           "rule_id": "technology-sme-score-or-direct",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "technology-sme-score-route",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "technology-sme-score",
+                  "field": "technology_sme_evaluation_score",
+                  "operator": "gte",
+                  "expected": 60,
+                  "unit": "分"
+                },
+                {
+                  "rule_id": "technology-sme-personnel-score",
+                  "field": "technology_sme_personnel_indicator_score",
+                  "operator": "gt",
+                  "expected": 0,
+                  "unit": "分"
+                }
+              ]
+            },
+            {
+              "rule_id": "technology-sme-direct-hte",
+              "field": "technology_sme_valid_high_tech_enterprise",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "technology-sme-direct-award",
+              "field": "technology_sme_national_award_top_three_within_five_years",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "technology-sme-direct-platform",
+              "field": "technology_sme_provincial_or_above_rd_platform",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "technology-sme-direct-standard",
+              "field": "technology_sme_led_standard_within_five_years",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "score_or_direct_confirmation_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "国科发政〔2017〕115号第六条至第八条",
           "source_quote": "综合评价分值不低于60分，且科技人员指标得分不得为0分；符合共同条件并命中有效高企、近五年国家科技奖励前三、省部级以上研发机构或近五年主导制定国际、国家、行业标准之一的，可直接确认。",
           "policy_status": "current",
@@ -356,6 +485,7 @@
         ]
       },
       "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "technology-sme-2026-platform-submission",
@@ -421,8 +551,14 @@
           "source": "金标准事实"
         },
         {
-          "field": "score_or_direct_confirmation_met",
-          "value": true,
+          "field": "technology_sme_evaluation_score",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "technology_sme_personnel_indicator_score",
+          "value": 1,
           "evidence_state": "verified",
           "source": "金标准事实"
         }
@@ -485,8 +621,14 @@
           "source": "金标准事实"
         },
         {
-          "field": "score_or_direct_confirmation_met",
-          "value": true,
+          "field": "technology_sme_evaluation_score",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "technology_sme_personnel_indicator_score",
+          "value": 1,
           "evidence_state": "verified",
           "source": "金标准事实"
         }
@@ -549,8 +691,14 @@
           "source": "金标准事实"
         },
         {
-          "field": "score_or_direct_confirmation_met",
-          "value": true,
+          "field": "technology_sme_evaluation_score",
+          "value": 60,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "technology_sme_personnel_indicator_score",
+          "value": 1,
           "evidence_state": "verified",
           "source": "金标准事实"
         }

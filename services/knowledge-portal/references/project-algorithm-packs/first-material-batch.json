@@ -23,26 +23,37 @@
       ]
     },
     {
-      "field": "first_material_maturity_sales_met",
-      "label": "技术成熟度及商业销售",
+      "field": "first_material_technology_readiness_level",
+      "label": "新材料技术成熟度",
       "aliases": [
-        "技术成熟度及商业销售"
+        "新材料技术成熟度"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "产品技术成熟度达到7级及以上且已实现商业销售。"
-      ]
+      "value_type": "number",
+      "unit": "级"
     },
     {
-      "field": "first_material_test_and_license_met",
-      "label": "检测及许可",
+      "field": "first_material_commercial_sales_realized",
+      "label": "新材料已经实现商业销售",
       "aliases": [
-        "检测及许可"
+        "新材料已经实现商业销售"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "产品应具有符合要求的第三方检测报告；存在特殊许可或强制认证要求的须取得资质。"
-      ]
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_material_third_party_test_report_valid",
+      "label": "首批次新材料第三方检测报告有效",
+      "aliases": [
+        "首批次新材料第三方检测报告有效"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_material_mandatory_license_obtained_or_not_required",
+      "label": "特殊许可或强制认证已取得或确认不适用",
+      "aliases": [
+        "特殊许可或强制认证已取得或确认不适用"
+      ],
+      "value_type": "boolean"
     },
     {
       "field": "first_material_novelty_valid",
@@ -78,15 +89,37 @@
       ]
     },
     {
-      "field": "first_material_route_met",
-      "label": "目录或推荐认定路径",
+      "field": "first_material_catalog_listing_valid",
+      "label": "已进入国家或浙江省重点新材料目录",
       "aliases": [
-        "目录或推荐认定路径"
+        "已进入国家或浙江省重点新材料目录"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "应进入国家或浙江省重点新材料目录，或由院士、三名以上正高级专家推荐并满足通知列明的推荐条件。"
-      ]
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_material_senior_expert_recommendation_count",
+      "label": "符合条件的推荐专家人数",
+      "aliases": [
+        "符合条件的推荐专家人数"
+      ],
+      "value_type": "number",
+      "unit": "人"
+    },
+    {
+      "field": "first_material_expert_title_requirement_satisfied",
+      "label": "推荐专家职称或院士身份符合",
+      "aliases": [
+        "推荐专家职称或院士身份符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "first_material_expert_route_other_conditions_satisfied",
+      "label": "专家推荐路径其他条件符合",
+      "aliases": [
+        "专家推荐路径其他条件符合"
+      ],
+      "value_type": "boolean"
     },
     {
       "field": "first_material_exclusions_clear",
@@ -100,15 +133,13 @@
       ]
     },
     {
-      "field": "first_material_tier_requirement_met",
-      "label": "国际或国内首批次附加条件",
+      "field": "first_material_applicable_tier_assessment_passed",
+      "label": "国际或国内首批次适用技术与应用层级评价通过",
       "aliases": [
-        "国际或国内首批次附加条件"
+        "国际或国内首批次适用技术与应用层级评价通过"
       ],
       "value_type": "boolean",
-      "derivation_requirements": [
-        "申报国际或国内首批次的，应达到相应技术水平、进口替代和知名用户或重大工程销售要求。"
-      ]
+      "fact_semantics": "assessment-conclusion"
     }
   ],
   "rule_cards": [
@@ -128,10 +159,23 @@
     },
     {
       "rule_id": "first-material-2",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "first-material-trl",
+          "field": "first_material_technology_readiness_level",
+          "operator": "gte",
+          "expected": 7,
+          "unit": "级"
+        },
+        {
+          "rule_id": "first-material-sales",
+          "field": "first_material_commercial_sales_realized",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "first_material_maturity_sales_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
       "source_quote": "产品技术成熟度达到7级及以上且已实现商业销售。",
       "policy_status": "current",
@@ -142,10 +186,22 @@
     },
     {
       "rule_id": "first-material-3",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "first-material-test",
+          "field": "first_material_third_party_test_report_valid",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "first-material-license",
+          "field": "first_material_mandatory_license_obtained_or_not_required",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "first_material_test_and_license_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
       "source_quote": "产品应具有符合要求的第三方检测报告；存在特殊许可或强制认证要求的须取得资质。",
       "policy_status": "current",
@@ -198,10 +254,41 @@
     },
     {
       "rule_id": "first-material-7",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "first-material-catalog-route",
+          "field": "first_material_catalog_listing_valid",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "first-material-expert-route",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-material-expert-count",
+              "field": "first_material_senior_expert_recommendation_count",
+              "operator": "gte",
+              "expected": 3,
+              "unit": "人"
+            },
+            {
+              "rule_id": "first-material-expert-title",
+              "field": "first_material_expert_title_requirement_satisfied",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-material-expert-other",
+              "field": "first_material_expert_route_other_conditions_satisfied",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "first_material_route_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
       "source_quote": "应进入国家或浙江省重点新材料目录，或由院士、三名以上正高级专家推荐并满足通知列明的推荐条件。",
       "policy_status": "current",
@@ -226,10 +313,10 @@
     },
     {
       "rule_id": "first-material-9",
-      "type": "hard-threshold",
-      "field": "first_material_tier_requirement_met",
+      "field": "first_material_applicable_tier_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
       "source_quote": "申报国际或国内首批次的，应达到相应技术水平、进口替代和知名用户或重大工程销售要求。",
       "policy_status": "current",
@@ -268,10 +355,23 @@
         },
         {
           "rule_id": "first-material-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-material-trl",
+              "field": "first_material_technology_readiness_level",
+              "operator": "gte",
+              "expected": 7,
+              "unit": "级"
+            },
+            {
+              "rule_id": "first-material-sales",
+              "field": "first_material_commercial_sales_realized",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "first_material_maturity_sales_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
           "source_quote": "产品技术成熟度达到7级及以上且已实现商业销售。",
           "policy_status": "current",
@@ -282,10 +382,22 @@
         },
         {
           "rule_id": "first-material-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "first-material-test",
+              "field": "first_material_third_party_test_report_valid",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-material-license",
+              "field": "first_material_mandatory_license_obtained_or_not_required",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "first_material_test_and_license_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
           "source_quote": "产品应具有符合要求的第三方检测报告；存在特殊许可或强制认证要求的须取得资质。",
           "policy_status": "current",
@@ -338,10 +450,41 @@
         },
         {
           "rule_id": "first-material-7",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "first-material-catalog-route",
+              "field": "first_material_catalog_listing_valid",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "first-material-expert-route",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "first-material-expert-count",
+                  "field": "first_material_senior_expert_recommendation_count",
+                  "operator": "gte",
+                  "expected": 3,
+                  "unit": "人"
+                },
+                {
+                  "rule_id": "first-material-expert-title",
+                  "field": "first_material_expert_title_requirement_satisfied",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "first-material-expert-other",
+                  "field": "first_material_expert_route_other_conditions_satisfied",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            }
+          ],
           "type": "hard-threshold",
-          "field": "first_material_route_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
           "source_quote": "应进入国家或浙江省重点新材料目录，或由院士、三名以上正高级专家推荐并满足通知列明的推荐条件。",
           "policy_status": "current",
@@ -366,10 +509,10 @@
         },
         {
           "rule_id": "first-material-9",
-          "type": "hard-threshold",
-          "field": "first_material_tier_requirement_met",
+          "field": "first_material_applicable_tier_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
           "source_quote": "申报国际或国内首批次的，应达到相应技术水平、进口替代和知名用户或重大工程销售要求。",
           "policy_status": "current",
@@ -392,13 +535,25 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_maturity_sales_met",
+          "field": "first_material_technology_readiness_level",
+          "value": 7,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_material_commercial_sales_realized",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_material_test_and_license_met",
+          "field": "first_material_third_party_test_report_valid",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_material_mandatory_license_obtained_or_not_required",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -422,7 +577,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_route_met",
+          "field": "first_material_catalog_listing_valid",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -434,7 +589,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_tier_requirement_met",
+          "field": "first_material_applicable_tier_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -463,13 +618,25 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_maturity_sales_met",
+          "field": "first_material_technology_readiness_level",
+          "value": 7,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_material_commercial_sales_realized",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_material_test_and_license_met",
+          "field": "first_material_third_party_test_report_valid",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_material_mandatory_license_obtained_or_not_required",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -493,7 +660,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_route_met",
+          "field": "first_material_catalog_listing_valid",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -505,7 +672,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_tier_requirement_met",
+          "field": "first_material_applicable_tier_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -534,13 +701,25 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_maturity_sales_met",
+          "field": "first_material_technology_readiness_level",
+          "value": 7,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_material_commercial_sales_realized",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "first_material_test_and_license_met",
+          "field": "first_material_third_party_test_report_valid",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "first_material_mandatory_license_obtained_or_not_required",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -564,7 +743,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_route_met",
+          "field": "first_material_catalog_listing_valid",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -576,7 +755,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "first_material_tier_requirement_met",
+          "field": "first_material_applicable_tier_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

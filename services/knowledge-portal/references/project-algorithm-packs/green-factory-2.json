@@ -23,37 +23,132 @@
       ]
     },
     {
-      "field": "green_factory_2_basic_compliance_met",
-      "label": "绿色工厂基本合规",
+      "field": "green_factory_2_legally_established",
+      "label": "企业依法设立",
       "aliases": [
-        "绿色工厂基本合规"
+        "企业依法设立"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "green_factory_2_management_system_met",
-      "label": "绿色管理体系",
+      "field": "green_factory_2_construction_compliance_clear",
+      "label": "建设活动合规",
       "aliases": [
-        "绿色管理体系"
+        "建设活动合规"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "green_factory_2_mandatory_indicators_met",
-      "label": "评价必选及门槛指标",
+      "field": "green_factory_2_production_compliance_clear",
+      "label": "生产活动合规",
       "aliases": [
-        "评价必选及门槛指标"
+        "生产活动合规"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。"
-      ]
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_quality_compliance_clear",
+      "label": "质量合规",
+      "aliases": [
+        "质量合规"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_safety_compliance_clear",
+      "label": "安全合规",
+      "aliases": [
+        "安全合规"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_environmental_compliance_clear",
+      "label": "环保合规",
+      "aliases": [
+        "环保合规"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_energy_compliance_clear",
+      "label": "节能合规",
+      "aliases": [
+        "节能合规"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_green_development_system_established",
+      "label": "绿色发展制度已建立",
+      "aliases": [
+        "绿色发展制度已建立"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_energy_management_system_established",
+      "label": "能源管理体系已建立",
+      "aliases": [
+        "能源管理体系已建立"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_resource_management_system_established",
+      "label": "资源管理体系已建立",
+      "aliases": [
+        "资源管理体系已建立"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_environment_management_system_established",
+      "label": "环境管理体系已建立",
+      "aliases": [
+        "环境管理体系已建立"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_quality_management_system_established",
+      "label": "质量管理体系已建立",
+      "aliases": [
+        "质量管理体系已建立"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_safety_management_system_established",
+      "label": "安全管理体系已建立",
+      "aliases": [
+        "安全管理体系已建立"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_evaluation_basic_requirements_passed",
+      "label": "适用评价标准基本要求通过",
+      "aliases": [
+        "适用评价标准基本要求通过"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_mandatory_indicators_passed",
+      "label": "适用评价标准必选指标通过",
+      "aliases": [
+        "适用评价标准必选指标通过"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "green_factory_2_local_score_threshold_passed",
+      "label": "属地评分门槛通过",
+      "aliases": [
+        "属地评分门槛通过"
+      ],
+      "value_type": "boolean"
     },
     {
       "field": "green_factory_2_self_evaluation_complete",
@@ -95,10 +190,52 @@
     },
     {
       "rule_id": "green-factory-2-2",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "green-factory-2-legal",
+          "field": "green_factory_2_legally_established",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-construction",
+          "field": "green_factory_2_construction_compliance_clear",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-production",
+          "field": "green_factory_2_production_compliance_clear",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-quality",
+          "field": "green_factory_2_quality_compliance_clear",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-safety",
+          "field": "green_factory_2_safety_compliance_clear",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-environment",
+          "field": "green_factory_2_environmental_compliance_clear",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-energy",
+          "field": "green_factory_2_energy_compliance_clear",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "green_factory_2_basic_compliance_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
       "source_quote": "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。",
       "policy_status": "current",
@@ -109,10 +246,46 @@
     },
     {
       "rule_id": "green-factory-2-3",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "green-factory-2-green-system",
+          "field": "green_factory_2_green_development_system_established",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-energy-system",
+          "field": "green_factory_2_energy_management_system_established",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-resource-system",
+          "field": "green_factory_2_resource_management_system_established",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-environment-system",
+          "field": "green_factory_2_environment_management_system_established",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-quality-system",
+          "field": "green_factory_2_quality_management_system_established",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-safety-system",
+          "field": "green_factory_2_safety_management_system_established",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "green_factory_2_management_system_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
       "source_quote": "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。",
       "policy_status": "current",
@@ -123,10 +296,28 @@
     },
     {
       "rule_id": "green-factory-2-4",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "green-factory-2-basic-requirements",
+          "field": "green_factory_2_evaluation_basic_requirements_passed",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-mandatory-indicators",
+          "field": "green_factory_2_mandatory_indicators_passed",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "green-factory-2-local-score",
+          "field": "green_factory_2_local_score_threshold_passed",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "green_factory_2_mandatory_indicators_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
       "source_quote": "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。",
       "policy_status": "current",
@@ -189,10 +380,52 @@
         },
         {
           "rule_id": "green-factory-2-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-legal",
+              "field": "green_factory_2_legally_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-construction",
+              "field": "green_factory_2_construction_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-production",
+              "field": "green_factory_2_production_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality",
+              "field": "green_factory_2_quality_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety",
+              "field": "green_factory_2_safety_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment",
+              "field": "green_factory_2_environmental_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy",
+              "field": "green_factory_2_energy_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "green_factory_2_basic_compliance_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
           "source_quote": "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。",
           "policy_status": "current",
@@ -203,10 +436,46 @@
         },
         {
           "rule_id": "green-factory-2-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-green-system",
+              "field": "green_factory_2_green_development_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy-system",
+              "field": "green_factory_2_energy_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-resource-system",
+              "field": "green_factory_2_resource_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment-system",
+              "field": "green_factory_2_environment_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality-system",
+              "field": "green_factory_2_quality_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety-system",
+              "field": "green_factory_2_safety_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "green_factory_2_management_system_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
           "source_quote": "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。",
           "policy_status": "current",
@@ -217,10 +486,28 @@
         },
         {
           "rule_id": "green-factory-2-4",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-basic-requirements",
+              "field": "green_factory_2_evaluation_basic_requirements_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-mandatory-indicators",
+              "field": "green_factory_2_mandatory_indicators_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-local-score",
+              "field": "green_factory_2_local_score_threshold_passed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "green_factory_2_mandatory_indicators_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
           "source_quote": "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。",
           "policy_status": "current",
@@ -274,6 +561,7 @@
         ]
       },
       "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "green-factory-2-local-thresholds",
@@ -303,19 +591,97 @@
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_basic_compliance_met",
+          "field": "green_factory_2_legally_established",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_management_system_met",
+          "field": "green_factory_2_construction_compliance_clear",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_mandatory_indicators_met",
+          "field": "green_factory_2_production_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_quality_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_safety_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_environmental_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_energy_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_green_development_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_energy_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_resource_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_environment_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_quality_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_safety_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_evaluation_basic_requirements_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_mandatory_indicators_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_local_score_threshold_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -353,19 +719,97 @@
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_basic_compliance_met",
+          "field": "green_factory_2_legally_established",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_management_system_met",
+          "field": "green_factory_2_construction_compliance_clear",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_mandatory_indicators_met",
+          "field": "green_factory_2_production_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_quality_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_safety_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_environmental_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_energy_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_green_development_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_energy_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_resource_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_environment_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_quality_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_safety_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_evaluation_basic_requirements_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_mandatory_indicators_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_local_score_threshold_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -403,19 +847,97 @@
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_basic_compliance_met",
+          "field": "green_factory_2_legally_established",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_management_system_met",
+          "field": "green_factory_2_construction_compliance_clear",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_2_mandatory_indicators_met",
+          "field": "green_factory_2_production_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_quality_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_safety_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_environmental_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_energy_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_green_development_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_energy_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_resource_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_environment_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_quality_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_safety_management_system_established",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_evaluation_basic_requirements_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_mandatory_indicators_passed",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_local_score_threshold_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

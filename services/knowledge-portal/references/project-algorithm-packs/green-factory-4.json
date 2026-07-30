@@ -22,12 +22,13 @@
       "value_type": "boolean"
     },
     {
-      "field": "green_factory_standard_met",
-      "label": "绿色工厂评价标准符合性",
+      "field": "green_factory_applicable_standard_assessment_passed",
+      "label": "适用行业标准或绿色工厂评价通则结论通过",
       "aliases": [
-        "绿色工厂评价标准符合性"
+        "适用行业标准或绿色工厂评价通则结论通过"
       ],
-      "value_type": "boolean"
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
     },
     {
       "field": "provincial_green_factory_status",
@@ -87,10 +88,10 @@
     },
     {
       "rule_id": "national-green-factory-standard",
-      "type": "hard-threshold",
-      "field": "green_factory_standard_met",
+      "field": "green_factory_applicable_standard_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "工信部节〔2024〕13号第七条、第十四条",
       "source_quote": "须符合适用行业标准或绿色工厂评价通则要求。",
       "policy_status": "current",
@@ -167,10 +168,10 @@
         },
         {
           "rule_id": "national-green-factory-standard",
-          "type": "hard-threshold",
-          "field": "green_factory_standard_met",
+          "field": "green_factory_applicable_standard_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "工信部节〔2024〕13号第七条、第十四条",
           "source_quote": "须符合适用行业标准或绿色工厂评价通则要求。",
           "policy_status": "current",
@@ -238,6 +239,7 @@
         ]
       },
       "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "national-green-factory-report",
@@ -270,6 +272,7 @@
         ]
       },
       "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "national-green-factory-report",
@@ -313,7 +316,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_standard_met",
+          "field": "green_factory_applicable_standard_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -356,7 +359,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_standard_met",
+          "field": "green_factory_applicable_standard_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -399,7 +402,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "green_factory_standard_met",
+          "field": "green_factory_applicable_standard_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

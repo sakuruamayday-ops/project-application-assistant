@@ -12,6 +12,12 @@ from pathlib import Path
 
 PORTAL_DIR = Path(__file__).resolve().parents[1]
 ROOT_DIR = PORTAL_DIR.parents[1]
+if str(PORTAL_DIR) not in sys.path:
+    sys.path.insert(0, str(PORTAL_DIR))
+
+from app.rule_structure import audit_composite_rule_structure
+
+
 DEFAULT_RULES = (
     ROOT_DIR
     / "skills"
@@ -212,39 +218,106 @@ def generated_gold_cases(rules: list[dict[str, object]]) -> list[dict[str, objec
         return scaffold_pack(
             {"project_id": "placeholder", "project_name": "placeholder", "aliases": []}
         )["gold_cases"]
-    eligible_facts: list[dict[str, object]] = []
-    failed_facts: list[dict[str, object]] = []
-    pending_facts: list[dict[str, object]] = []
-    for index, rule in enumerate(rules):
-        positive, negative = rule_values(rule)
-        exclusion = str(rule.get("type")) == "exclusion"
+    def assignments(
+        requirement: dict[str, object],
+        *,
+        passing: bool,
+        known: dict[str, object] | None = None,
+    ) -> list[tuple[str, object]]:
+        known = dict(known or {})
+
+        def compatible(values: list[tuple[str, object]]) -> bool:
+            return all(
+                not field or field not in known or known[field] == value
+                for field, value in values
+            )
+
+        def extend_known(values: list[tuple[str, object]]) -> None:
+            for field, value in values:
+                if field:
+                    known.setdefault(field, value)
+
+        children = requirement.get("children")
+        if isinstance(children, list) and children:
+            valid_children = [
+                child for child in children if isinstance(child, dict)
+            ]
+            logic = str(requirement.get("logic") or "")
+            if passing and logic == "any":
+                for child in valid_children:
+                    candidate = assignments(child, passing=True, known=known)
+                    if compatible(candidate):
+                        return candidate
+                return []
+            if not passing and logic == "all":
+                selected: list[tuple[str, object]] = []
+                for index, child in enumerate(valid_children):
+                    candidate = assignments(
+                        child,
+                        passing=index != 0,
+                        known=known,
+                    )
+                    if compatible(candidate):
+                        selected.extend(candidate)
+                        extend_known(candidate)
+                return selected
+            selected = []
+            for child in valid_children:
+                candidate = assignments(child, passing=passing, known=known)
+                if not compatible(candidate):
+                    return [*selected, *candidate]
+                selected.extend(candidate)
+                extend_known(candidate)
+            return selected
+        positive, negative = rule_values(requirement)
+        exclusion = str(requirement.get("type")) == "exclusion"
         pass_value = negative if exclusion else positive
         fail_value = positive if exclusion else negative
-        field = str(rule.get("field") or "")
-        eligible_facts.append(
+        return [(str(requirement.get("field") or ""), pass_value if passing else fail_value)]
+
+    def fact_rows(
+        values: list[tuple[str, object]],
+        *,
+        pending_field: str = "",
+    ) -> list[dict[str, object]]:
+        by_field: dict[str, object] = {}
+        for field, value in values:
+            if field:
+                by_field.setdefault(field, value)
+        return [
             {
                 "field": field,
-                "value": pass_value,
-                "evidence_state": "verified",
+                "value": value,
+                "evidence_state": (
+                    "claimed" if field == pending_field else "verified"
+                ),
                 "source": "金标准事实",
             }
-        )
-        failed_facts.append(
-            {
-                "field": field,
-                "value": fail_value if index == 0 else pass_value,
-                "evidence_state": "verified",
-                "source": "金标准事实",
-            }
-        )
-        pending_facts.append(
-            {
-                "field": field,
-                "value": pass_value,
-                "evidence_state": "claimed" if index == 0 else "verified",
-                "source": "金标准事实",
-            }
-        )
+            for field, value in by_field.items()
+        ]
+
+    def scenario_values(
+        scenario_rules: list[tuple[dict[str, object], bool]],
+    ) -> list[tuple[str, object]]:
+        values: list[tuple[str, object]] = []
+        known: dict[str, object] = {}
+        for rule, passing in scenario_rules:
+            candidate = assignments(rule, passing=passing, known=known)
+            values.extend(candidate)
+            for field, value in candidate:
+                if field:
+                    known.setdefault(field, value)
+        return values
+
+    eligible_values = scenario_values([(rule, True) for rule in rules])
+    failed_values = scenario_values(
+        [(rules[0], False), *[(rule, True) for rule in rules[1:]]]
+    )
+    first_positive = assignments(rules[0], passing=True)
+    pending_field = first_positive[0][0] if first_positive else ""
+    eligible_facts = fact_rows(eligible_values)
+    failed_facts = fact_rows(failed_values)
+    pending_facts = fact_rows(eligible_values, pending_field=pending_field)
     rule_ids = [str(rule["rule_id"]) for rule in rules]
     return [
         {
@@ -416,15 +489,31 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                         if values
                     },
                     **{
-                        key: raw_layer[key]
+                        key: raw_layer.get(key)
                         for key in (
                             "effective_from",
                             "effective_to",
                             "source_url",
                             "source_archive_path",
                             "source_archive_sha256",
+                            "source_role",
+                            "retrieval_channel",
+                            "published_at",
+                            "issued_at",
+                            "application_open_date",
+                            "authority_recommendation_deadline",
+                            "enterprise_deadline",
+                            "enterprise_deadline_note",
+                            "provincial_review_schedule",
                         )
-                        if str(raw_layer.get(key) or "").strip()
+                        if key == "enterprise_deadline"
+                        or (
+                            raw_layer.get(key) is not None
+                            and (
+                            not isinstance(raw_layer.get(key), str)
+                            or str(raw_layer.get(key) or "").strip()
+                            )
+                        )
                     },
                     "rules": confirmed_rule_cards(
                         source=source,
@@ -450,6 +539,16 @@ def generate_from_confirmed_rules(
     for field in ("approved_by", "approved_at", "source_url"):
         if not str(source.get(field) or "").strip():
             raise ValueError(f"确认规则文件缺少{field}")
+    structure_audit = audit_composite_rule_structure(source)
+    if not structure_audit["formal_decision_allowed"]:
+        unresolved = "、".join(
+            str(item.get("field") or "")
+            for item in structure_audit["unresolved_composite_leaves"]
+        )
+        raise ValueError(
+            "确认规则仍含未分类综合布尔叶子，禁止生成正式算法包："
+            + unresolved
+        )
     rule_layers = build_rule_layers(source)
     rules = [
         rule

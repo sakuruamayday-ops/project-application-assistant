@@ -9,7 +9,12 @@ from app.policy_time import (
     assess_policy_layer_time,
     summarize_policy_time_selection,
 )
+from app.deliverable_contract import (
+    build_delivery_contract,
+    validate_delivery_contract,
+)
 from app.task_preflight import assess_task_preflight
+from app.rule_structure import audit_composite_rule_structure
 
 
 POLICY_INTENT_TERMS = (
@@ -1433,6 +1438,26 @@ def select_project_algorithm_rules(
     pack: Mapping[str, object],
     project_context: Mapping[str, object],
 ) -> dict[str, object]:
+    structure_audit = audit_composite_rule_structure(pack)
+    if not structure_audit["formal_decision_allowed"]:
+        return {
+            "rules": [],
+            "selected_layers": [],
+            "rule_structure": structure_audit,
+            "policy_time_audits": [],
+            "policy_time": {
+                "evaluation_mode": "current-assessment",
+                "output_label": "规则结构待补",
+                "status": "blocked",
+                "formal_conclusion_allowed": False,
+                "reason": (
+                    "规则仍含未拆分的综合布尔字段，必须先迁移为原生"
+                    "all/any叶节点"
+                ),
+                "selected_layer_ids": [],
+                "blocked_layers": [],
+            },
+        }
     layers = pack.get("rule_layers")
     if not isinstance(layers, list) or not layers:
         return {
@@ -2103,13 +2128,17 @@ def audit_delivery_quality(
     deliverable: Mapping[str, object] | None,
     *,
     feasibility: Mapping[str, object],
+    query: str = "",
 ) -> dict[str, object]:
-    if not deliverable:
+    contract = build_delivery_contract(query, deliverable)
+    if not deliverable and contract["task_type"] == "general-response":
         return {
             "status": "not-run",
             "blocking_issues": [],
             "warnings": [],
+            "contract": contract,
         }
+    contract_audit = validate_delivery_contract(deliverable, contract)
     sections = deliverable.get("sections", {})
     required_sections = unique_strings(deliverable.get("required_sections", []))
     if isinstance(sections, Mapping):
@@ -2147,10 +2176,18 @@ def audit_delivery_quality(
         warnings.append("项目结论仍有待补证或待核验事项，正式交付不得写成确定达标")
     if feasibility.get("overall_conclusion") == "ineligible":
         blocking_issues.append("存在明确硬门槛失败，交付结论不得写成可申报")
+    blocking_issues.extend(
+        str(item.get("message") or "")
+        for item in contract_audit["failures"]
+        if str(item.get("message") or "") not in blocking_issues
+    )
     return {
         "status": "blocked" if blocking_issues else ("warning" if warnings else "passed"),
         "blocking_issues": blocking_issues,
         "warnings": warnings,
+        "contract": contract,
+        "contract_audit": contract_audit,
+        "completion_allowed": not blocking_issues,
     }
 
 
@@ -2240,6 +2277,7 @@ def build_lifecycle_decision(
         "delivery_quality": audit_delivery_quality(
             deliverable,
             feasibility=feasibility,
+            query=query,
         ),
         "scoring": {
             "enabled": False,

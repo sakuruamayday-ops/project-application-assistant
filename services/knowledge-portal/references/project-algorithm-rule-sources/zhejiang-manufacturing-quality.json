@@ -30,14 +30,6 @@
       "value_type": "boolean"
     },
     {
-      "field": "quality_product_competitiveness_met",
-      "label": "细分市场和核心技术符合",
-      "aliases": [
-        "细分市场和核心技术符合"
-      ],
-      "value_type": "boolean"
-    },
-    {
       "field": "quality_product_category",
       "label": "申报产品类别",
       "aliases": [
@@ -63,14 +55,6 @@
       "unit": "万元"
     },
     {
-      "field": "quality_sales_branch_met",
-      "label": "类别与山区销售收入分支要求",
-      "aliases": [
-        "类别与山区销售收入分支要求"
-      ],
-      "value_type": "boolean"
-    },
-    {
       "field": "quality_three_year_avg_rnd_ratio",
       "label": "近三年平均研发投入占主营收入",
       "aliases": [
@@ -80,28 +64,62 @@
       "unit": "%"
     },
     {
-      "field": "quality_listing_period_met",
-      "label": "产品上市时间符合",
-      "aliases": [
-        "产品上市时间符合"
-      ],
-      "value_type": "boolean"
-    },
-    {
-      "field": "quality_one_product_limit_met",
-      "label": "企业申报产品数量符合",
-      "aliases": [
-        "企业申报产品数量符合"
-      ],
-      "value_type": "boolean"
-    },
-    {
       "field": "quality_materials_complete",
       "label": "申报及佐证材料完整",
       "aliases": [
         "申报及佐证材料完整"
       ],
       "value_type": "boolean"
+    },
+    {
+      "field": "quality_product_focuses_niche_market",
+      "label": "产品聚焦细分市场",
+      "aliases": [
+        "产品聚焦细分市场"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_product_market_share_high",
+      "label": "产品市场占有率较高",
+      "aliases": [
+        "产品市场占有率较高"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_product_technology_leading",
+      "label": "产品技术领先",
+      "aliases": [
+        "产品技术领先"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_product_core_technology_and_ip_owned",
+      "label": "产品具有关键核心技术和自主知识产权",
+      "aliases": [
+        "产品具有关键核心技术和自主知识产权"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_product_current_notice_listing_period_assessment_passed",
+      "label": "产品上市时间符合当年度通知规定范围",
+      "aliases": [
+        "产品上市时间符合当年度通知规定范围"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "quality_product_submission_count",
+      "label": "企业本次申报浙江制造精品数量",
+      "aliases": [
+        "企业本次申报浙江制造精品数量"
+      ],
+      "value_type": "number",
+      "unit": "个"
     }
   ],
   "rules": [
@@ -116,10 +134,34 @@
     },
     {
       "rule_id": "quality-product",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "quality-product-focus",
+          "field": "quality_product_focuses_niche_market",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "quality-product-market",
+          "field": "quality_product_market_share_high",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "quality-product-technology",
+          "field": "quality_product_technology_leading",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "quality-product-ip",
+          "field": "quality_product_core_technology_and_ip_owned",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "quality_product_competitiveness_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
       "source_quote": "产品应聚焦细分市场，市场占有率高、技术领先并具有关键核心技术和自主知识产权。"
     },
@@ -138,19 +180,169 @@
     },
     {
       "rule_id": "quality-listing-period",
-      "type": "hard-threshold",
-      "field": "quality_listing_period_met",
+      "field": "quality_product_current_notice_listing_period_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
       "source_quote": "申报产品须符合通知规定的近三年上市产品时间范围。"
     },
     {
       "rule_id": "quality-sales-branch",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "quality-sales-1-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "quality-category-1-general",
+              "field": "quality_product_category",
+              "operator": "equals",
+              "expected": "先进制造类"
+            },
+            {
+              "rule_id": "quality-mountain-1-general",
+              "field": "quality_mountain_county",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "quality-sales-1-general-amount",
+              "field": "quality_annual_product_sales",
+              "operator": "gte",
+              "expected": 800,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "quality-sales-1-mountain",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "quality-category-1-mountain",
+              "field": "quality_product_category",
+              "operator": "equals",
+              "expected": "先进制造类"
+            },
+            {
+              "rule_id": "quality-mountain-1-mountain",
+              "field": "quality_mountain_county",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "quality-sales-1-mountain-amount",
+              "field": "quality_annual_product_sales",
+              "operator": "gte",
+              "expected": 500,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "quality-sales-2-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "quality-category-2-general",
+              "field": "quality_product_category",
+              "operator": "equals",
+              "expected": "数字技术融合类"
+            },
+            {
+              "rule_id": "quality-mountain-2-general",
+              "field": "quality_mountain_county",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "quality-sales-2-general-amount",
+              "field": "quality_annual_product_sales",
+              "operator": "gte",
+              "expected": 600,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "quality-sales-2-mountain",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "quality-category-2-mountain",
+              "field": "quality_product_category",
+              "operator": "equals",
+              "expected": "数字技术融合类"
+            },
+            {
+              "rule_id": "quality-mountain-2-mountain",
+              "field": "quality_mountain_county",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "quality-sales-2-mountain-amount",
+              "field": "quality_annual_product_sales",
+              "operator": "gte",
+              "expected": 300,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "quality-sales-3-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "quality-category-3-general",
+              "field": "quality_product_category",
+              "operator": "equals",
+              "expected": "特色（消费品）类"
+            },
+            {
+              "rule_id": "quality-mountain-3-general",
+              "field": "quality_mountain_county",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "quality-sales-3-general-amount",
+              "field": "quality_annual_product_sales",
+              "operator": "gte",
+              "expected": 600,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "quality-sales-3-mountain",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "quality-category-3-mountain",
+              "field": "quality_product_category",
+              "operator": "equals",
+              "expected": "特色（消费品）类"
+            },
+            {
+              "rule_id": "quality-mountain-3-mountain",
+              "field": "quality_mountain_county",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "quality-sales-3-mountain-amount",
+              "field": "quality_annual_product_sales",
+              "operator": "gte",
+              "expected": 300,
+              "unit": "万元"
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "quality_sales_branch_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
       "source_quote": "先进制造、数字技术融合、特色消费品三类每年销售收入一般分别不低于800、600、600万元；山区26县适用500、300、300万元分支，须按类别和地区逐项选择。"
     },
@@ -166,10 +358,11 @@
     },
     {
       "rule_id": "quality-one-product",
+      "field": "quality_product_submission_count",
+      "operator": "lte",
+      "expected": 1,
+      "unit": "个",
       "type": "hard-threshold",
-      "field": "quality_one_product_limit_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
       "source_quote": "原则上每家企业申报浙江制造精品数量不超过1个。"
     },
@@ -184,5 +377,15 @@
     }
   ],
   "annual_overlays": [],
-  "jurisdiction_overlays": []
+  "jurisdiction_overlays": [],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "quality-listing-period",
+      "quality-one-product",
+      "quality-product",
+      "quality-sales-branch"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

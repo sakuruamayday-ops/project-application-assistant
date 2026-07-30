@@ -23,12 +23,13 @@
       "value_type": "boolean"
     },
     {
-      "field": "single_champion_specialization_years_met",
-      "label": "专业化发展年限要求",
+      "field": "single_champion_applicable_specialization_years_assessment_passed",
+      "label": "一般产品或新产品适用专业化年限评价通过",
       "aliases": [
-        "单项冠军专业化年限"
+        "一般产品或新产品适用专业化年限评价通过"
       ],
-      "value_type": "boolean"
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
     },
     {
       "field": "three_year_average_main_business_revenue",
@@ -40,34 +41,91 @@
       "unit": "万元"
     },
     {
-      "field": "global_market_top_three_met",
-      "label": "全球市场占有率前三",
+      "field": "single_champion_global_market_rank",
+      "label": "申请产品全球市场占有率排名",
       "aliases": [
-        "全球市场前三"
+        "申请产品全球市场占有率排名"
+      ],
+      "value_type": "number",
+      "unit": "名"
+    },
+    {
+      "field": "single_champion_product_quality_leading",
+      "label": "产品质量达到领先标准",
+      "aliases": [
+        "产品质量达到领先标准"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "product_quality_performance_energy_met",
-      "label": "产品质量性能与能耗要求",
+      "field": "single_champion_key_performance_leading",
+      "label": "关键性能达到领先标准",
       "aliases": [
-        "产品质量性能与能耗要求"
+        "关键性能达到领先标准"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "single_champion_innovation_met",
-      "label": "创新能力要求",
+      "field": "single_champion_energy_level_leading",
+      "label": "能耗水平达到领先标准",
       "aliases": [
-        "单项冠军创新能力"
+        "能耗水平达到领先标准"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "single_champion_management_met",
-      "label": "经营效益与管理要求",
+      "field": "single_champion_high_level_rd_institution",
+      "label": "具备高水平研发机构",
       "aliases": [
-        "单项冠军经营管理要求"
+        "具备高水平研发机构"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_rd_investment_complies",
+      "label": "研发投入符合要求",
+      "aliases": [
+        "研发投入符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_core_independent_ip_owned",
+      "label": "拥有核心自主知识产权",
+      "aliases": [
+        "拥有核心自主知识产权"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_operating_benefit_complies",
+      "label": "经营效益符合要求",
+      "aliases": [
+        "经营效益符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_management_system_complies",
+      "label": "管理体系符合要求",
+      "aliases": [
+        "管理体系符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_talent_team_complies",
+      "label": "人才队伍符合要求",
+      "aliases": [
+        "人才队伍符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "single_champion_brand_internationalization_complies",
+      "label": "品牌国际化能力符合要求",
+      "aliases": [
+        "品牌国际化能力符合要求"
       ],
       "value_type": "boolean"
     },
@@ -97,10 +155,10 @@
     },
     {
       "rule_id": "single-champion-specialization",
-      "type": "hard-threshold",
-      "field": "single_champion_specialization_years_met",
+      "field": "single_champion_applicable_specialization_years_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "工信部政法〔2023〕138号",
       "source_quote": "长期专注细分领域并达到一般产品或新产品对应的从业年限。",
       "policy_status": "current",
@@ -126,10 +184,11 @@
     },
     {
       "rule_id": "single-champion-market",
+      "field": "single_champion_global_market_rank",
+      "operator": "lte",
+      "expected": 3,
+      "unit": "名",
       "type": "hard-threshold",
-      "field": "global_market_top_three_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "工信部政法〔2023〕138号",
       "source_quote": "申请产品市场占有率应位居全球前三。",
       "policy_status": "current",
@@ -140,10 +199,28 @@
     },
     {
       "rule_id": "single-champion-product",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "single-champion-product-quality",
+          "field": "single_champion_product_quality_leading",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "single-champion-product-performance",
+          "field": "single_champion_key_performance_leading",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "single-champion-product-energy",
+          "field": "single_champion_energy_level_leading",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "product_quality_performance_energy_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "工信部政法〔2023〕138号",
       "source_quote": "产品质量、关键性能和能耗水平须达到规定的领先标准。",
       "policy_status": "current",
@@ -154,10 +231,28 @@
     },
     {
       "rule_id": "single-champion-innovation",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "single-champion-rd-institution",
+          "field": "single_champion_high_level_rd_institution",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "single-champion-rd-investment",
+          "field": "single_champion_rd_investment_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "single-champion-core-ip",
+          "field": "single_champion_core_independent_ip_owned",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "single_champion_innovation_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "工信部政法〔2023〕138号",
       "source_quote": "须具备高水平研发机构、研发投入和核心自主知识产权等创新能力。",
       "policy_status": "current",
@@ -168,10 +263,34 @@
     },
     {
       "rule_id": "single-champion-management",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "single-champion-benefit",
+          "field": "single_champion_operating_benefit_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "single-champion-system",
+          "field": "single_champion_management_system_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "single-champion-talent",
+          "field": "single_champion_talent_team_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "single-champion-brand",
+          "field": "single_champion_brand_internationalization_complies",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "single_champion_management_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "工信部政法〔2023〕138号",
       "source_quote": "经营效益、管理体系、人才队伍和品牌国际化能力须符合要求。",
       "policy_status": "current",
@@ -220,10 +339,10 @@
         },
         {
           "rule_id": "single-champion-specialization",
-          "type": "hard-threshold",
-          "field": "single_champion_specialization_years_met",
+          "field": "single_champion_applicable_specialization_years_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "工信部政法〔2023〕138号",
           "source_quote": "长期专注细分领域并达到一般产品或新产品对应的从业年限。",
           "policy_status": "current",
@@ -249,10 +368,11 @@
         },
         {
           "rule_id": "single-champion-market",
+          "field": "single_champion_global_market_rank",
+          "operator": "lte",
+          "expected": 3,
+          "unit": "名",
           "type": "hard-threshold",
-          "field": "global_market_top_three_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "工信部政法〔2023〕138号",
           "source_quote": "申请产品市场占有率应位居全球前三。",
           "policy_status": "current",
@@ -263,10 +383,28 @@
         },
         {
           "rule_id": "single-champion-product",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "single-champion-product-quality",
+              "field": "single_champion_product_quality_leading",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "single-champion-product-performance",
+              "field": "single_champion_key_performance_leading",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "single-champion-product-energy",
+              "field": "single_champion_energy_level_leading",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "product_quality_performance_energy_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "工信部政法〔2023〕138号",
           "source_quote": "产品质量、关键性能和能耗水平须达到规定的领先标准。",
           "policy_status": "current",
@@ -277,10 +415,28 @@
         },
         {
           "rule_id": "single-champion-innovation",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "single-champion-rd-institution",
+              "field": "single_champion_high_level_rd_institution",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "single-champion-rd-investment",
+              "field": "single_champion_rd_investment_complies",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "single-champion-core-ip",
+              "field": "single_champion_core_independent_ip_owned",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "single_champion_innovation_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "工信部政法〔2023〕138号",
           "source_quote": "须具备高水平研发机构、研发投入和核心自主知识产权等创新能力。",
           "policy_status": "current",
@@ -291,10 +447,34 @@
         },
         {
           "rule_id": "single-champion-management",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "single-champion-benefit",
+              "field": "single_champion_operating_benefit_complies",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "single-champion-system",
+              "field": "single_champion_management_system_complies",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "single-champion-talent",
+              "field": "single_champion_talent_team_complies",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "single-champion-brand",
+              "field": "single_champion_brand_internationalization_complies",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "single_champion_management_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "工信部政法〔2023〕138号",
           "source_quote": "经营效益、管理体系、人才队伍和品牌国际化能力须符合要求。",
           "policy_status": "current",
@@ -331,7 +511,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_specialization_years_met",
+          "field": "single_champion_applicable_specialization_years_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -343,25 +523,67 @@
           "source": "金标准事实"
         },
         {
-          "field": "global_market_top_three_met",
+          "field": "single_champion_global_market_rank",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_product_quality_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "product_quality_performance_energy_met",
+          "field": "single_champion_key_performance_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_innovation_met",
+          "field": "single_champion_energy_level_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_management_met",
+          "field": "single_champion_high_level_rd_institution",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_rd_investment_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_core_independent_ip_owned",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_operating_benefit_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_management_system_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_talent_team_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_brand_internationalization_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -395,7 +617,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_specialization_years_met",
+          "field": "single_champion_applicable_specialization_years_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -407,25 +629,67 @@
           "source": "金标准事实"
         },
         {
-          "field": "global_market_top_three_met",
+          "field": "single_champion_global_market_rank",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_product_quality_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "product_quality_performance_energy_met",
+          "field": "single_champion_key_performance_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_innovation_met",
+          "field": "single_champion_energy_level_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_management_met",
+          "field": "single_champion_high_level_rd_institution",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_rd_investment_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_core_independent_ip_owned",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_operating_benefit_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_management_system_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_talent_team_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_brand_internationalization_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -459,7 +723,7 @@
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_specialization_years_met",
+          "field": "single_champion_applicable_specialization_years_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -471,25 +735,67 @@
           "source": "金标准事实"
         },
         {
-          "field": "global_market_top_three_met",
+          "field": "single_champion_global_market_rank",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_product_quality_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "product_quality_performance_energy_met",
+          "field": "single_champion_key_performance_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_innovation_met",
+          "field": "single_champion_energy_level_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "single_champion_management_met",
+          "field": "single_champion_high_level_rd_institution",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_rd_investment_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_core_independent_ip_owned",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_operating_benefit_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_management_system_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_talent_team_complies",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "single_champion_brand_internationalization_complies",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

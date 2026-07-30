@@ -55,28 +55,65 @@
       "unit": "%"
     },
     {
-      "field": "hidden_champion_credit_met",
-      "label": "A级资信或征信无不良",
+      "field": "hidden_champion_bank_credit_grade_a_or_above",
+      "label": "银行资信等级A级以上",
       "aliases": [
-        "A级资信或征信无不良"
+        "银行资信等级A级以上"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "hidden_champion_specialization_met",
-      "label": "细分领域年限与主导产品结构",
+      "field": "hidden_champion_pbc_credit_no_adverse_record",
+      "label": "人民银行征信无不良记录",
       "aliases": [
-        "细分领域年限与主导产品结构"
+        "人民银行征信无不良记录"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "hidden_champion_market_rank_met",
-      "label": "细分市场排名",
+      "field": "hidden_champion_specialization_years",
+      "label": "持续深耕细分领域年限",
       "aliases": [
-        "细分市场排名"
+        "持续深耕细分领域年限"
       ],
-      "value_type": "boolean"
+      "value_type": "number",
+      "unit": "年"
+    },
+    {
+      "field": "hidden_champion_leading_product_count",
+      "label": "主导产品数量",
+      "aliases": [
+        "主导产品数量"
+      ],
+      "value_type": "number",
+      "unit": "个"
+    },
+    {
+      "field": "hidden_champion_main_business_revenue_ratio",
+      "label": "主营业务收入占营业收入比例",
+      "aliases": [
+        "主营业务收入占营业收入比例"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "hidden_champion_global_market_rank",
+      "label": "主导产品全球细分市场排名",
+      "aliases": [
+        "主导产品全球细分市场排名"
+      ],
+      "value_type": "number",
+      "unit": "名"
+    },
+    {
+      "field": "hidden_champion_national_market_rank",
+      "label": "主导产品全国细分市场排名",
+      "aliases": [
+        "主导产品全国细分市场排名"
+      ],
+      "value_type": "number",
+      "unit": "名"
     },
     {
       "field": "hidden_champion_rnd_ratio_two_years",
@@ -96,20 +133,62 @@
       "unit": "项"
     },
     {
-      "field": "hidden_champion_rd_it_met",
-      "label": "研发机构和信息系统",
+      "field": "hidden_champion_rd_institution_established",
+      "label": "已自建或联合建立研发机构",
       "aliases": [
-        "研发机构和信息系统"
+        "已自建或联合建立研发机构"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "hidden_champion_standard_brand_cert_met",
-      "label": "标准品牌和国际认证",
+      "field": "hidden_champion_rd_information_system_used",
+      "label": "研发核心业务采用信息系统",
       "aliases": [
-        "标准品牌和国际认证"
+        "研发核心业务采用信息系统"
       ],
       "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_production_information_system_used",
+      "label": "生产核心业务采用信息系统",
+      "aliases": [
+        "生产核心业务采用信息系统"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_supply_information_system_used",
+      "label": "供应核心业务采用信息系统",
+      "aliases": [
+        "供应核心业务采用信息系统"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_standard_participation_count",
+      "label": "主导或参与国际国家或行业标准",
+      "aliases": [
+        "主导或参与国际国家或行业标准"
+      ],
+      "value_type": "number",
+      "unit": "项"
+    },
+    {
+      "field": "hidden_champion_independent_brand_owned",
+      "label": "拥有自主品牌",
+      "aliases": [
+        "拥有自主品牌"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_international_certification_count",
+      "label": "国际相关认证",
+      "aliases": [
+        "国际相关认证"
+      ],
+      "value_type": "number",
+      "unit": "项"
     },
     {
       "field": "hidden_champion_compliance_clear",
@@ -230,10 +309,22 @@
     },
     {
       "rule_id": "hidden-credit",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "hidden-credit-bank",
+          "field": "hidden_champion_bank_credit_grade_a_or_above",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hidden-credit-pbc",
+          "field": "hidden_champion_pbc_credit_no_adverse_record",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "hidden_champion_credit_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
       "source_quote": "银行资信等级A级以上或人行征信报告无不良记录。",
       "policy_status": "current",
@@ -246,10 +337,31 @@
     },
     {
       "rule_id": "hidden-specialization",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "hidden-specialization-years",
+          "field": "hidden_champion_specialization_years",
+          "operator": "gte",
+          "expected": 10,
+          "unit": "年"
+        },
+        {
+          "rule_id": "hidden-specialization-products",
+          "field": "hidden_champion_leading_product_count",
+          "operator": "lte",
+          "expected": 3,
+          "unit": "个"
+        },
+        {
+          "rule_id": "hidden-specialization-ratio",
+          "field": "hidden_champion_main_business_revenue_ratio",
+          "operator": "gte",
+          "expected": 70,
+          "unit": "%"
+        }
+      ],
       "type": "hard-threshold",
-      "field": "hidden_champion_specialization_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
       "source_quote": "细分领域10年以上，主导产品不超过3个，主营业务收入占营业收入70%以上。",
       "policy_status": "current",
@@ -262,10 +374,24 @@
     },
     {
       "rule_id": "hidden-market-rank",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "hidden-market-rank-global",
+          "field": "hidden_champion_global_market_rank",
+          "operator": "lte",
+          "expected": 10,
+          "unit": "名"
+        },
+        {
+          "rule_id": "hidden-market-rank-national",
+          "field": "hidden_champion_national_market_rank",
+          "operator": "lte",
+          "expected": 3,
+          "unit": "名"
+        }
+      ],
       "type": "hard-threshold",
-      "field": "hidden_champion_market_rank_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
       "source_quote": "主导产品细分市场占有率位于全球前10或全国前3。",
       "policy_status": "current",
@@ -311,10 +437,40 @@
     },
     {
       "rule_id": "hidden-rd-it",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "hidden-rd-institution",
+          "field": "hidden_champion_rd_institution_established",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hidden-core-it",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hidden-rd-system",
+              "field": "hidden_champion_rd_information_system_used",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hidden-production-system",
+              "field": "hidden_champion_production_information_system_used",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hidden-supply-system",
+              "field": "hidden_champion_supply_information_system_used",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "hidden_champion_rd_it_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
       "source_quote": "自建或联合建立研发机构，研发、生产、供应等至少一项核心业务采用信息系统。",
       "policy_status": "current",
@@ -327,10 +483,30 @@
     },
     {
       "rule_id": "hidden-standard-brand",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "hidden-standard-count",
+          "field": "hidden_champion_standard_participation_count",
+          "operator": "gte",
+          "expected": 1,
+          "unit": "项"
+        },
+        {
+          "rule_id": "hidden-brand",
+          "field": "hidden_champion_independent_brand_owned",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hidden-certification",
+          "field": "hidden_champion_international_certification_count",
+          "operator": "gte",
+          "expected": 1,
+          "unit": "项"
+        }
+      ],
       "type": "hard-threshold",
-      "field": "hidden_champion_standard_brand_cert_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
       "source_quote": "主导或参与国际、国家或行业标准1项以上，拥有自主品牌并取得国际相关认证1项以上。",
       "policy_status": "current",
@@ -477,10 +653,22 @@
         },
         {
           "rule_id": "hidden-credit",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hidden-credit-bank",
+              "field": "hidden_champion_bank_credit_grade_a_or_above",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hidden-credit-pbc",
+              "field": "hidden_champion_pbc_credit_no_adverse_record",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hidden_champion_credit_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
           "source_quote": "银行资信等级A级以上或人行征信报告无不良记录。",
           "policy_status": "current",
@@ -493,10 +681,31 @@
         },
         {
           "rule_id": "hidden-specialization",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "hidden-specialization-years",
+              "field": "hidden_champion_specialization_years",
+              "operator": "gte",
+              "expected": 10,
+              "unit": "年"
+            },
+            {
+              "rule_id": "hidden-specialization-products",
+              "field": "hidden_champion_leading_product_count",
+              "operator": "lte",
+              "expected": 3,
+              "unit": "个"
+            },
+            {
+              "rule_id": "hidden-specialization-ratio",
+              "field": "hidden_champion_main_business_revenue_ratio",
+              "operator": "gte",
+              "expected": 70,
+              "unit": "%"
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hidden_champion_specialization_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
           "source_quote": "细分领域10年以上，主导产品不超过3个，主营业务收入占营业收入70%以上。",
           "policy_status": "current",
@@ -509,10 +718,24 @@
         },
         {
           "rule_id": "hidden-market-rank",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hidden-market-rank-global",
+              "field": "hidden_champion_global_market_rank",
+              "operator": "lte",
+              "expected": 10,
+              "unit": "名"
+            },
+            {
+              "rule_id": "hidden-market-rank-national",
+              "field": "hidden_champion_national_market_rank",
+              "operator": "lte",
+              "expected": 3,
+              "unit": "名"
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hidden_champion_market_rank_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
           "source_quote": "主导产品细分市场占有率位于全球前10或全国前3。",
           "policy_status": "current",
@@ -558,10 +781,40 @@
         },
         {
           "rule_id": "hidden-rd-it",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "hidden-rd-institution",
+              "field": "hidden_champion_rd_institution_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hidden-core-it",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hidden-rd-system",
+                  "field": "hidden_champion_rd_information_system_used",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "hidden-production-system",
+                  "field": "hidden_champion_production_information_system_used",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "hidden-supply-system",
+                  "field": "hidden_champion_supply_information_system_used",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hidden_champion_rd_it_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
           "source_quote": "自建或联合建立研发机构，研发、生产、供应等至少一项核心业务采用信息系统。",
           "policy_status": "current",
@@ -574,10 +827,30 @@
         },
         {
           "rule_id": "hidden-standard-brand",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "hidden-standard-count",
+              "field": "hidden_champion_standard_participation_count",
+              "operator": "gte",
+              "expected": 1,
+              "unit": "项"
+            },
+            {
+              "rule_id": "hidden-brand",
+              "field": "hidden_champion_independent_brand_owned",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hidden-certification",
+              "field": "hidden_champion_international_certification_count",
+              "operator": "gte",
+              "expected": 1,
+              "unit": "项"
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hidden_champion_standard_brand_cert_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
           "source_quote": "主导或参与国际、国家或行业标准1项以上，拥有自主品牌并取得国际相关认证1项以上。",
           "policy_status": "current",
@@ -638,6 +911,7 @@
       "source_url": "https://aiqice.cn/policyDetail?id=13128837&indexId=8c65d358e6284a548ccb3f9726c51729",
       "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2026-03-26__关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知__8c65d358e6284a548ccb3f9726c51729/附件/5.浙江省隐形冠军企业复核条件和要求.doc",
       "source_archive_sha256": "c3d0734c2e17f0bd083d8dca1c67eff50728a8c23cdc3537a732fef098a7864c",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "hidden-review-operation",
@@ -690,10 +964,31 @@
         },
         {
           "rule_id": "hidden-review-specialization",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "hidden-review-specialization-years",
+              "field": "hidden_champion_specialization_years",
+              "operator": "gte",
+              "expected": 10,
+              "unit": "年"
+            },
+            {
+              "rule_id": "hidden-review-specialization-products",
+              "field": "hidden_champion_leading_product_count",
+              "operator": "lte",
+              "expected": 3,
+              "unit": "个"
+            },
+            {
+              "rule_id": "hidden-review-specialization-ratio",
+              "field": "hidden_champion_main_business_revenue_ratio",
+              "operator": "gte",
+              "expected": 70,
+              "unit": "%"
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hidden_champion_specialization_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
           "source_quote": "复核继续满足细分领域、主导产品数量和主营占比要求。",
           "policy_status": "current",
@@ -706,10 +1001,24 @@
         },
         {
           "rule_id": "hidden-review-market",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hidden-review-market-global",
+              "field": "hidden_champion_global_market_rank",
+              "operator": "lte",
+              "expected": 10,
+              "unit": "名"
+            },
+            {
+              "rule_id": "hidden-review-market-national",
+              "field": "hidden_champion_national_market_rank",
+              "operator": "lte",
+              "expected": 3,
+              "unit": "名"
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hidden_champion_market_rank_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
           "source_quote": "复核继续满足全球前10或全国前3市场排名要求。",
           "policy_status": "current",
@@ -807,20 +1116,32 @@
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_credit_met",
+          "field": "hidden_champion_bank_credit_grade_a_or_above",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_specialization_met",
-          "value": true,
+          "field": "hidden_champion_specialization_years",
+          "value": 10,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_market_rank_met",
-          "value": true,
+          "field": "hidden_champion_leading_product_count",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_main_business_revenue_ratio",
+          "value": 70,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_global_market_rank",
+          "value": 10,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -837,14 +1158,32 @@
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_rd_it_met",
+          "field": "hidden_champion_rd_institution_established",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_standard_brand_cert_met",
+          "field": "hidden_champion_rd_information_system_used",
           "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_standard_participation_count",
+          "value": 1,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_independent_brand_owned",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_international_certification_count",
+          "value": 1,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -913,20 +1252,32 @@
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_credit_met",
+          "field": "hidden_champion_bank_credit_grade_a_or_above",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_specialization_met",
-          "value": true,
+          "field": "hidden_champion_specialization_years",
+          "value": 10,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_market_rank_met",
-          "value": true,
+          "field": "hidden_champion_leading_product_count",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_main_business_revenue_ratio",
+          "value": 70,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_global_market_rank",
+          "value": 10,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -943,14 +1294,32 @@
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_rd_it_met",
+          "field": "hidden_champion_rd_institution_established",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_standard_brand_cert_met",
+          "field": "hidden_champion_rd_information_system_used",
           "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_standard_participation_count",
+          "value": 1,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_independent_brand_owned",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_international_certification_count",
+          "value": 1,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -1019,20 +1388,32 @@
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_credit_met",
+          "field": "hidden_champion_bank_credit_grade_a_or_above",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_specialization_met",
-          "value": true,
+          "field": "hidden_champion_specialization_years",
+          "value": 10,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_market_rank_met",
-          "value": true,
+          "field": "hidden_champion_leading_product_count",
+          "value": 3,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_main_business_revenue_ratio",
+          "value": 70,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_global_market_rank",
+          "value": 10,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -1049,14 +1430,32 @@
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_rd_it_met",
+          "field": "hidden_champion_rd_institution_established",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hidden_champion_standard_brand_cert_met",
+          "field": "hidden_champion_rd_information_system_used",
           "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_standard_participation_count",
+          "value": 1,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_independent_brand_owned",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hidden_champion_international_certification_count",
+          "value": 1,
           "evidence_state": "verified",
           "source": "金标准事实"
         },

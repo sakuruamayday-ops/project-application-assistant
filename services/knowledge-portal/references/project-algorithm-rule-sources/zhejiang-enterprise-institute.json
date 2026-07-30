@@ -2,25 +2,122 @@
   "project_id": "zhejiang-enterprise-institute",
   "project_name": "浙江省企业研究院",
   "version": "2025.169-current",
-  "aliases": ["省企业研究院", "浙江企业研究院"],
-  "source_retrieval_rule_ids": ["zhejiang-enterprise-institute"],
+  "aliases": [
+    "省企业研究院",
+    "浙江企业研究院"
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-enterprise-institute"
+  ],
   "policy_status": "current",
   "approved_by": "主人授权；焦糖按浙江省经信厅正式原文核验",
   "approved_at": "2026-07-27 16:30:00",
   "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
   "fact_fields": [
-    {"field": "zhejiang_independent_legal_entity", "label": "浙江省注册独立法人", "aliases": ["浙江省注册独立法人"], "value_type": "boolean"},
-    {"field": "municipal_rnd_platform_status", "label": "市级企业研发机构基础", "aliases": ["市级企业研发机构"], "value_type": "boolean"},
-    {"field": "revenue", "label": "上一年度营业收入", "aliases": ["营业收入"], "value_type": "number", "unit": "万元"},
-    {"field": "rnd_ratio", "label": "上一年度研发费用占营业收入比例", "aliases": ["研发强度"], "value_type": "number", "unit": "%"},
-    {"field": "rnd_expense", "label": "上一年度研发费用", "aliases": ["研发费用"], "value_type": "number", "unit": "万元"},
-    {"field": "innovation_score", "label": "创新能力评价得分", "aliases": ["创新能力评价得分"], "value_type": "number", "unit": "分"},
-    {"field": "talent_ip_rnd_foundation_met", "label": "人才知识产权与研发基础", "aliases": ["人才知识产权与研发基础"], "value_type": "boolean"},
-    {"field": "research_institute_2026_data_cutoff_confirmed", "label": "2026申报数据截止口径已确认", "aliases": ["研究院2026数据截止口径"], "value_type": "boolean"}
+    {
+      "field": "zhejiang_independent_legal_entity",
+      "label": "浙江省注册独立法人",
+      "aliases": [
+        "浙江省注册独立法人"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "municipal_rnd_platform_status",
+      "label": "市级企业研发机构基础",
+      "aliases": [
+        "市级企业研发机构"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "revenue",
+      "label": "上一年度营业收入",
+      "aliases": [
+        "营业收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "rnd_ratio",
+      "label": "上一年度研发费用占营业收入比例",
+      "aliases": [
+        "研发强度"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "rnd_expense",
+      "label": "上一年度研发费用",
+      "aliases": [
+        "研发费用"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "innovation_score",
+      "label": "创新能力评价得分",
+      "aliases": [
+        "创新能力评价得分"
+      ],
+      "value_type": "number",
+      "unit": "分"
+    },
+    {
+      "field": "research_institute_2026_data_cutoff_confirmed",
+      "label": "2026申报数据截止口径已确认",
+      "aliases": [
+        "研究院2026数据截止口径"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_institute_talent_team_satisfied",
+      "label": "人才队伍条件符合",
+      "aliases": [
+        "人才队伍条件符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_institute_independent_ip_satisfied",
+      "label": "自主知识产权条件符合",
+      "aliases": [
+        "自主知识产权条件符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_institute_rd_foundation_satisfied",
+      "label": "研发基础条件符合",
+      "aliases": [
+        "研发基础条件符合"
+      ],
+      "value_type": "boolean"
+    }
   ],
   "rules": [
-    {"rule_id": "zj-institute-entity", "type": "hard-threshold", "field": "zhejiang_independent_legal_entity", "operator": "truthy", "expected": true, "source": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号", "source_quote": "依托企业须在浙江省注册并具有独立法人资格。"},
-    {"rule_id": "zj-institute-platform", "type": "competitive", "field": "municipal_rnd_platform_status", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "依托企业申报省企业研究院，原则上应建有市级企业研发机构。"},
+    {
+      "rule_id": "zj-institute-entity",
+      "type": "hard-threshold",
+      "field": "zhejiang_independent_legal_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号",
+      "source_quote": "依托企业须在浙江省注册并具有独立法人资格。"
+    },
+    {
+      "rule_id": "zj-institute-platform",
+      "type": "competitive",
+      "field": "municipal_rnd_platform_status",
+      "operator": "truthy",
+      "expected": true,
+      "source": "浙经信高新〔2025〕169号第九条",
+      "source_quote": "依托企业申报省企业研究院，原则上应建有市级企业研发机构。"
+    },
     {
       "rule_id": "zj-institute-rnd",
       "type": "hard-threshold",
@@ -30,23 +127,65 @@
           "rule_id": "zj-institute-rnd-low-revenue",
           "logic": "all",
           "children": [
-            {"rule_id": "zj-institute-rnd-low-revenue-band", "field": "revenue", "operator": "lt", "expected": 5000, "unit": "万元"},
-            {"rule_id": "zj-institute-rnd-low-ratio", "field": "rnd_ratio", "operator": "gte", "expected": 5, "unit": "%"},
-            {"rule_id": "zj-institute-rnd-low-expense", "field": "rnd_expense", "operator": "gte", "expected": 100, "unit": "万元"}
+            {
+              "rule_id": "zj-institute-rnd-low-revenue-band",
+              "field": "revenue",
+              "operator": "lt",
+              "expected": 5000,
+              "unit": "万元"
+            },
+            {
+              "rule_id": "zj-institute-rnd-low-ratio",
+              "field": "rnd_ratio",
+              "operator": "gte",
+              "expected": 5,
+              "unit": "%"
+            },
+            {
+              "rule_id": "zj-institute-rnd-low-expense",
+              "field": "rnd_expense",
+              "operator": "gte",
+              "expected": 100,
+              "unit": "万元"
+            }
           ]
         },
         {
           "rule_id": "zj-institute-rnd-middle-revenue",
           "logic": "all",
           "children": [
-            {"rule_id": "zj-institute-rnd-middle-floor", "field": "revenue", "operator": "gte", "expected": 5000, "unit": "万元"},
-            {"rule_id": "zj-institute-rnd-middle-ceiling", "field": "revenue", "operator": "lt", "expected": 20000, "unit": "万元"},
+            {
+              "rule_id": "zj-institute-rnd-middle-floor",
+              "field": "revenue",
+              "operator": "gte",
+              "expected": 5000,
+              "unit": "万元"
+            },
+            {
+              "rule_id": "zj-institute-rnd-middle-ceiling",
+              "field": "revenue",
+              "operator": "lt",
+              "expected": 20000,
+              "unit": "万元"
+            },
             {
               "rule_id": "zj-institute-rnd-middle-route",
               "logic": "any",
               "children": [
-                {"rule_id": "zj-institute-rnd-middle-ratio", "field": "rnd_ratio", "operator": "gte", "expected": 4, "unit": "%"},
-                {"rule_id": "zj-institute-rnd-middle-expense", "field": "rnd_expense", "operator": "gte", "expected": 250, "unit": "万元"}
+                {
+                  "rule_id": "zj-institute-rnd-middle-ratio",
+                  "field": "rnd_ratio",
+                  "operator": "gte",
+                  "expected": 4,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-middle-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 250,
+                  "unit": "万元"
+                }
               ]
             }
           ]
@@ -55,13 +194,31 @@
           "rule_id": "zj-institute-rnd-high-revenue",
           "logic": "all",
           "children": [
-            {"rule_id": "zj-institute-rnd-high-floor", "field": "revenue", "operator": "gte", "expected": 20000, "unit": "万元"},
+            {
+              "rule_id": "zj-institute-rnd-high-floor",
+              "field": "revenue",
+              "operator": "gte",
+              "expected": 20000,
+              "unit": "万元"
+            },
             {
               "rule_id": "zj-institute-rnd-high-route",
               "logic": "any",
               "children": [
-                {"rule_id": "zj-institute-rnd-high-ratio", "field": "rnd_ratio", "operator": "gte", "expected": 3, "unit": "%"},
-                {"rule_id": "zj-institute-rnd-high-expense", "field": "rnd_expense", "operator": "gte", "expected": 800, "unit": "万元"}
+                {
+                  "rule_id": "zj-institute-rnd-high-ratio",
+                  "field": "rnd_ratio",
+                  "operator": "gte",
+                  "expected": 3,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-high-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 800,
+                  "unit": "万元"
+                }
               ]
             }
           ]
@@ -70,52 +227,51 @@
       "source": "浙经信高新〔2025〕169号第九条",
       "source_quote": "营业收入5000万元以下的，研发强度不低于5%且研发费用不低于100万元；5000万元至2亿元的，研发强度不低于4%或研发费用不低于250万元；2亿元以上的，研发强度不低于3%或研发费用不低于800万元。"
     },
-    {"rule_id": "zj-institute-score", "type": "hard-threshold", "field": "innovation_score", "operator": "gte", "expected": 60, "unit": "分", "source": "浙经信高新〔2025〕169号", "source_quote": "创新能力评价得分达到六十分以上。"},
-    {"rule_id": "zj-institute-foundation", "type": "hard-threshold", "field": "talent_ip_rnd_foundation_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "须具备相应人才队伍、自主知识产权和研发基础条件。"},
-    {"rule_id": "zj-institute-compliance", "type": "hard-threshold", "field": "no_major_incident", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "规定期间内不得发生重大事故及严重违法失信行为。"}
-  ],
-  "gold_cases": [
     {
-      "case_id": "eligible-verified",
-      "facts": [
-        {"field": "zhejiang_independent_legal_entity", "value": true, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "revenue", "value": 4000, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "rnd_ratio", "value": 5, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "rnd_expense", "value": 100, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "innovation_score", "value": 60, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "talent_ip_rnd_foundation_met", "value": true, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "no_major_incident", "value": true, "evidence_state": "verified", "source": "金标准事实"}
-      ],
-      "confirm_rule_ids": ["zj-institute-entity", "zj-institute-platform", "zj-institute-rnd", "zj-institute-score", "zj-institute-foundation", "zj-institute-compliance"],
-      "expected_conclusion": "eligible"
+      "rule_id": "zj-institute-score",
+      "type": "hard-threshold",
+      "field": "innovation_score",
+      "operator": "gte",
+      "expected": 60,
+      "unit": "分",
+      "source": "浙经信高新〔2025〕169号",
+      "source_quote": "创新能力评价得分达到六十分以上。"
     },
     {
-      "case_id": "conditional-pending",
-      "facts": [
-        {"field": "zhejiang_independent_legal_entity", "value": true, "evidence_state": "claimed", "source": "金标准事实"},
-        {"field": "revenue", "value": 4000, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "rnd_ratio", "value": 5, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "rnd_expense", "value": 100, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "innovation_score", "value": 60, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "talent_ip_rnd_foundation_met", "value": true, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "no_major_incident", "value": true, "evidence_state": "verified", "source": "金标准事实"}
+      "rule_id": "zj-institute-foundation",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-institute-talent",
+          "field": "zj_institute_talent_team_satisfied",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-institute-ip",
+          "field": "zj_institute_independent_ip_satisfied",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-institute-rd",
+          "field": "zj_institute_rd_foundation_satisfied",
+          "operator": "truthy",
+          "expected": true
+        }
       ],
-      "confirm_rule_ids": ["zj-institute-entity", "zj-institute-platform", "zj-institute-rnd", "zj-institute-score", "zj-institute-foundation", "zj-institute-compliance"],
-      "expected_conclusion": "conditional"
+      "type": "hard-threshold",
+      "source": "浙经信高新〔2025〕169号",
+      "source_quote": "须具备相应人才队伍、自主知识产权和研发基础条件。"
     },
     {
-      "case_id": "ineligible-failed",
-      "facts": [
-        {"field": "zhejiang_independent_legal_entity", "value": false, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "revenue", "value": 4000, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "rnd_ratio", "value": 5, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "rnd_expense", "value": 100, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "innovation_score", "value": 60, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "talent_ip_rnd_foundation_met", "value": true, "evidence_state": "verified", "source": "金标准事实"},
-        {"field": "no_major_incident", "value": true, "evidence_state": "verified", "source": "金标准事实"}
-      ],
-      "confirm_rule_ids": ["zj-institute-entity", "zj-institute-platform", "zj-institute-rnd", "zj-institute-score", "zj-institute-foundation", "zj-institute-compliance"],
-      "expected_conclusion": "ineligible"
+      "rule_id": "zj-institute-compliance",
+      "type": "hard-threshold",
+      "field": "no_major_incident",
+      "operator": "truthy",
+      "expected": true,
+      "source": "浙经信高新〔2025〕169号",
+      "source_quote": "规定期间内不得发生重大事故及严重违法失信行为。"
     }
   ],
   "annual_overlays": [
@@ -123,8 +279,12 @@
       "overlay_id": "zhejiang-enterprise-institute-2026",
       "label": "2026年度省企业研究院申报通知",
       "year": 2026,
-      "regions": ["浙江省"],
-      "application_types": ["recognition"],
+      "regions": [
+        "浙江省"
+      ],
+      "application_types": [
+        "recognition"
+      ],
       "policy_status": "current",
       "approved_by": "Codex政策规则复盘",
       "approved_at": "2026-07-30 00:40:00",
@@ -143,5 +303,12 @@
         }
       ]
     }
-  ]
+  ],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "zj-institute-foundation"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

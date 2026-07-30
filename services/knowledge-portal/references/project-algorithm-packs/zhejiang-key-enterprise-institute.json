@@ -25,10 +25,26 @@
       "value_type": "boolean"
     },
     {
-      "field": "key_institute_platform_basis_met",
-      "label": "省级研发平台前置条件",
+      "field": "key_institute_has_zhejiang_enterprise_institute",
+      "label": "已建省企业研究院",
       "aliases": [
-        "省级研发平台前置条件"
+        "已建省企业研究院"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_institute_has_zhejiang_high_tech_rd_center",
+      "label": "已建省高新技术企业研究开发中心",
+      "aliases": [
+        "已建省高新技术企业研究开发中心"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_institute_has_provincial_technology_center",
+      "label": "已建省级企业技术中心",
+      "aliases": [
+        "已建省级企业技术中心"
       ],
       "value_type": "boolean"
     },
@@ -77,10 +93,26 @@
       "unit": "分"
     },
     {
-      "field": "core_ip_talent_rnd_foundation_met",
-      "label": "核心知识产权人才与研发基础",
+      "field": "zj_key_institute_core_independent_ip_satisfied",
+      "label": "核心自主知识产权条件符合",
       "aliases": [
-        "核心知识产权人才与研发基础"
+        "核心自主知识产权条件符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_key_institute_talent_team_satisfied",
+      "label": "人才队伍条件符合",
+      "aliases": [
+        "人才队伍条件符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_key_institute_rd_foundation_satisfied",
+      "label": "研发基础条件符合",
+      "aliases": [
+        "研发基础条件符合"
       ],
       "value_type": "boolean"
     },
@@ -132,10 +164,28 @@
     },
     {
       "rule_id": "zj-key-institute-platform",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-key-platform-enterprise-institute",
+          "field": "key_institute_has_zhejiang_enterprise_institute",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-key-platform-rd-center",
+          "field": "key_institute_has_zhejiang_high_tech_rd_center",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-key-platform-tech-center",
+          "field": "key_institute_has_provincial_technology_center",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "competitive",
-      "field": "key_institute_platform_basis_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "浙经信高新〔2025〕169号第九条",
       "source_quote": "依托企业申报省重点企业研究院，原则上应建有省企业研究院、省高新技术企业研究开发中心或省级企业技术中心。",
       "policy_status": "current",
@@ -278,10 +328,28 @@
     },
     {
       "rule_id": "zj-key-institute-foundation",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-key-institute-core-ip",
+          "field": "zj_key_institute_core_independent_ip_satisfied",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-key-institute-talent",
+          "field": "zj_key_institute_talent_team_satisfied",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-key-institute-rd",
+          "field": "zj_key_institute_rd_foundation_satisfied",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "core_ip_talent_rnd_foundation_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "浙经信高新〔2025〕169号",
       "source_quote": "须具备核心自主知识产权、人才队伍和研发基础条件。",
       "policy_status": "current",
@@ -344,10 +412,28 @@
         },
         {
           "rule_id": "zj-key-institute-platform",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-key-platform-enterprise-institute",
+              "field": "key_institute_has_zhejiang_enterprise_institute",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-key-platform-rd-center",
+              "field": "key_institute_has_zhejiang_high_tech_rd_center",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-key-platform-tech-center",
+              "field": "key_institute_has_provincial_technology_center",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "competitive",
-          "field": "key_institute_platform_basis_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "浙经信高新〔2025〕169号第九条",
           "source_quote": "依托企业申报省重点企业研究院，原则上应建有省企业研究院、省高新技术企业研究开发中心或省级企业技术中心。",
           "policy_status": "current",
@@ -490,10 +576,28 @@
         },
         {
           "rule_id": "zj-key-institute-foundation",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-core-ip",
+              "field": "zj_key_institute_core_independent_ip_satisfied",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-key-institute-talent",
+              "field": "zj_key_institute_talent_team_satisfied",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-key-institute-rd",
+              "field": "zj_key_institute_rd_foundation_satisfied",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "core_ip_talent_rnd_foundation_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "浙经信高新〔2025〕169号",
           "source_quote": "须具备核心自主知识产权、人才队伍和研发基础条件。",
           "policy_status": "current",
@@ -551,6 +655,7 @@
       "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
       "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
       "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "zhejiang-key-enterprise-institute-2026-data-cutoff",
@@ -582,6 +687,12 @@
           "source": "金标准事实"
         },
         {
+          "field": "key_institute_has_zhejiang_enterprise_institute",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
           "field": "is_agricultural_enterprise",
           "value": false,
           "evidence_state": "verified",
@@ -600,25 +711,37 @@
           "source": "金标准事实"
         },
         {
-          "field": "rnd_expense",
-          "value": 1000,
-          "evidence_state": "verified",
-          "source": "金标准事实"
-        },
-        {
           "field": "innovation_score",
           "value": 60,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "core_ip_talent_rnd_foundation_met",
+          "field": "zj_key_institute_core_independent_ip_satisfied",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_key_institute_talent_team_satisfied",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_key_institute_rd_foundation_satisfied",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
           "field": "no_major_incident",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "mountain_island_relaxation_applicable",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -646,6 +769,12 @@
           "source": "金标准事实"
         },
         {
+          "field": "key_institute_has_zhejiang_enterprise_institute",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
           "field": "is_agricultural_enterprise",
           "value": false,
           "evidence_state": "verified",
@@ -664,25 +793,37 @@
           "source": "金标准事实"
         },
         {
-          "field": "rnd_expense",
-          "value": 1000,
-          "evidence_state": "verified",
-          "source": "金标准事实"
-        },
-        {
           "field": "innovation_score",
           "value": 60,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "core_ip_talent_rnd_foundation_met",
+          "field": "zj_key_institute_core_independent_ip_satisfied",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_key_institute_talent_team_satisfied",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_key_institute_rd_foundation_satisfied",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
           "field": "no_major_incident",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "mountain_island_relaxation_applicable",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -710,6 +851,12 @@
           "source": "金标准事实"
         },
         {
+          "field": "key_institute_has_zhejiang_enterprise_institute",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
           "field": "is_agricultural_enterprise",
           "value": false,
           "evidence_state": "verified",
@@ -728,25 +875,37 @@
           "source": "金标准事实"
         },
         {
-          "field": "rnd_expense",
-          "value": 1000,
-          "evidence_state": "verified",
-          "source": "金标准事实"
-        },
-        {
           "field": "innovation_score",
           "value": 60,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "core_ip_talent_rnd_foundation_met",
+          "field": "zj_key_institute_core_independent_ip_satisfied",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_key_institute_talent_team_satisfied",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_key_institute_rd_foundation_satisfied",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
           "field": "no_major_incident",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "mountain_island_relaxation_applicable",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

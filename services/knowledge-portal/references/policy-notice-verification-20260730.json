@@ -10,23 +10,35 @@
       "jurisdiction": "浙江省",
       "target_year": 2026,
       "document_type": "annual-notice",
-      "retrieval_status": "current-official-retrieval-not-hit",
-      "formal_notice_verified": false,
-      "deadline": null,
-      "deadline_reuse_forbidden": true,
+      "retrieval_status": "official-direct-page-verified-after-search-index-miss",
+      "formal_notice_verified": true,
+      "search_index_hit": false,
+      "direct_page_hit": true,
+      "source_url": "https://jxt.zj.gov.cn/col/col1229886900/art/2026/art_7ecbc859150f48e499725022aeb5880c.html",
+      "published_at": "2026-07-07 08:57:00",
+      "issued_at": "2026-06-26",
+      "application_open_date": "2026-07-07",
+      "authority_recommendation_deadline": "2026-08-31",
+      "enterprise_deadline": null,
+      "enterprise_deadline_note": "以各地方高新技术企业管理主管部门通知为准",
+      "deadline_reuse_forbidden": false,
       "searched_official_sources": [
         "https://jxt.zj.gov.cn/",
         "https://kjt.zj.gov.cn/",
         "https://www.zj.gov.cn/",
         "https://ds.kjt.zj.gov.cn/"
       ],
-      "latest_verified_annual_notice": {
-        "year": 2025,
-        "title": "浙江省经济和信息化厅 浙江省财政厅 国家税务总局浙江省税务局关于组织开展2025年度高新技术企业申报认定工作的通知",
-        "source_url": "https://jxt.zj.gov.cn/art/2025/6/5/art_1229886900_58935997.html",
-        "usage": "仅用于2025年度历史回放，不得作为2026年度截止日期"
+      "verified_annual_notice": {
+        "year": 2026,
+        "title": "浙江省经济和信息化厅 浙江省财政厅 国家税务总局浙江省税务局关于组织开展2026年度高新技术企业申报认定工作的通知",
+        "source_url": "https://jxt.zj.gov.cn/col/col1229886900/art/2026/art_7ecbc859150f48e499725022aeb5880c.html",
+        "usage": "用于2026年度浙江高企当前申报判断；企业截止时间仍以属地主管部门通知为准"
       },
-      "decision": "2026年度只执行当前有效稳定管理规则；年度批次、申报截止时间和年度特有材料保持待核验"
+      "management_basis": [
+        "《高新技术企业认定管理办法》国科发火〔2016〕32号",
+        "《高新技术企业认定管理工作指引》国科发火〔2016〕195号"
+      ],
+      "decision": "2026年度正式通知已核验；省级推荐截止为2026年8月31日，企业提交截止按属地通知，不得把省级推荐截止误写为企业截止"
     },
     {
       "project_id": "manufacturing-single-champion-2",

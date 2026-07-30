@@ -1473,6 +1473,8 @@ def test_structured_list_policy_and_project_tools(tmp_path):
         "public_list_search",
         "policy_search",
         "project_catalog_match",
+        "policy_evidence_select",
+        "delivery_contract_audit",
     }.issubset(tool_names)
 
 

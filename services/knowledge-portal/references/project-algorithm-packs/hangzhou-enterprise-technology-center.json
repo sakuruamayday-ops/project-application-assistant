@@ -12,26 +12,68 @@
   ],
   "fact_fields": [
     {
-      "field": "hz_tech_center_innovation_system_met",
-      "label": "创新机制与知识产权管理",
+      "field": "hz_tech_center_innovation_operation_mechanism_sound",
+      "label": "创新运行机制健全",
       "aliases": [
-        "创新机制与知识产权管理"
+        "创新运行机制健全"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "企业创新运行、投入、激励机制及战略、计划和知识产权管理能力应健全。"
-      ]
+      "value_type": "boolean"
     },
     {
-      "field": "hz_tech_center_competitive_met",
-      "label": "行业竞争和创新能力",
+      "field": "hz_tech_center_innovation_investment_mechanism_sound",
+      "label": "创新投入机制健全",
       "aliases": [
-        "行业竞争和创新能力"
+        "创新投入机制健全"
       ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "综合经济技术指标和技术开发能力应处于本市同行业前列。"
-      ]
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_tech_center_innovation_incentive_mechanism_sound",
+      "label": "创新激励机制健全",
+      "aliases": [
+        "创新激励机制健全"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_tech_center_innovation_strategy_sound",
+      "label": "创新战略健全",
+      "aliases": [
+        "创新战略健全"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_tech_center_innovation_plan_sound",
+      "label": "创新计划健全",
+      "aliases": [
+        "创新计划健全"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_tech_center_ip_management_capability_sound",
+      "label": "知识产权管理能力健全",
+      "aliases": [
+        "知识产权管理能力健全"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_tech_center_economic_technical_indicators_city_leading",
+      "label": "综合经济技术指标处于本市同行业前列",
+      "aliases": [
+        "综合经济技术指标处于本市同行业前列"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_tech_center_technical_development_capability_city_leading",
+      "label": "技术开发能力处于本市同行业前列",
+      "aliases": [
+        "技术开发能力处于本市同行业前列"
+      ],
+      "value_type": "boolean"
     },
     {
       "field": "hz_tech_center_independent_accounting",
@@ -45,37 +87,31 @@
       ]
     },
     {
-      "field": "hz_tech_center_staff_branch_met",
-      "label": "研发人员队伍分支要求",
+      "field": "hz_tech_center_applicable_staff_threshold_assessment_passed",
+      "label": "企业类型适用人员门槛评价通过",
       "aliases": [
-        "研发人员队伍分支要求"
+        "企业类型适用人员门槛评价通过"
       ],
       "value_type": "boolean",
-      "derivation_requirements": [
-        "制造业、高技术服务业科技活动人员占比、学历职称结构和研发人数，或建筑业执业人员数须达到对应标准。"
-      ]
+      "fact_semantics": "assessment-conclusion"
     },
     {
-      "field": "hz_tech_center_revenue_branch_met",
-      "label": "主营收入分支要求",
+      "field": "hz_tech_center_applicable_revenue_threshold_assessment_passed",
+      "label": "企业类型适用收入门槛评价通过",
       "aliases": [
-        "主营收入分支要求"
+        "企业类型适用收入门槛评价通过"
       ],
       "value_type": "boolean",
-      "derivation_requirements": [
-        "制造业、高技术服务业、高新技术企业、建筑房地产或勘察设计企业须达到各自收入门槛。"
-      ]
+      "fact_semantics": "assessment-conclusion"
     },
     {
-      "field": "hz_tech_center_equipment_branch_met",
-      "label": "技术开发设备分支要求",
+      "field": "hz_tech_center_applicable_equipment_threshold_assessment_passed",
+      "label": "企业类型适用设备门槛评价通过",
       "aliases": [
-        "技术开发设备分支要求"
+        "企业类型适用设备门槛评价通过"
       ],
       "value_type": "boolean",
-      "derivation_requirements": [
-        "制造业、高技术服务业或建设行业须达到对应技术开发仪器设备原值门槛。"
-      ]
+      "fact_semantics": "assessment-conclusion"
     },
     {
       "field": "hz_tech_center_credit_clear",
@@ -101,10 +137,46 @@
   "rule_cards": [
     {
       "rule_id": "hz-tech-center-1",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "hz-tech-center-operation",
+          "field": "hz_tech_center_innovation_operation_mechanism_sound",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hz-tech-center-investment",
+          "field": "hz_tech_center_innovation_investment_mechanism_sound",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hz-tech-center-incentive",
+          "field": "hz_tech_center_innovation_incentive_mechanism_sound",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hz-tech-center-strategy",
+          "field": "hz_tech_center_innovation_strategy_sound",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hz-tech-center-plan",
+          "field": "hz_tech_center_innovation_plan_sound",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hz-tech-center-ip-management",
+          "field": "hz_tech_center_ip_management_capability_sound",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "hz_tech_center_innovation_system_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《杭州市企业技术中心管理办法》",
       "source_quote": "企业创新运行、投入、激励机制及战略、计划和知识产权管理能力应健全。",
       "policy_status": "current",
@@ -115,10 +187,22 @@
     },
     {
       "rule_id": "hz-tech-center-2",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "hz-tech-center-economic-leading",
+          "field": "hz_tech_center_economic_technical_indicators_city_leading",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "hz-tech-center-development-leading",
+          "field": "hz_tech_center_technical_development_capability_city_leading",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "hz_tech_center_competitive_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《杭州市企业技术中心管理办法》",
       "source_quote": "综合经济技术指标和技术开发能力应处于本市同行业前列。",
       "policy_status": "current",
@@ -143,10 +227,10 @@
     },
     {
       "rule_id": "hz-tech-center-4",
-      "type": "hard-threshold",
-      "field": "hz_tech_center_staff_branch_met",
+      "field": "hz_tech_center_applicable_staff_threshold_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《杭州市企业技术中心管理办法》",
       "source_quote": "制造业、高技术服务业科技活动人员占比、学历职称结构和研发人数，或建筑业执业人员数须达到对应标准。",
       "policy_status": "current",
@@ -157,10 +241,10 @@
     },
     {
       "rule_id": "hz-tech-center-5",
-      "type": "hard-threshold",
-      "field": "hz_tech_center_revenue_branch_met",
+      "field": "hz_tech_center_applicable_revenue_threshold_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《杭州市企业技术中心管理办法》",
       "source_quote": "制造业、高技术服务业、高新技术企业、建筑房地产或勘察设计企业须达到各自收入门槛。",
       "policy_status": "current",
@@ -171,10 +255,10 @@
     },
     {
       "rule_id": "hz-tech-center-6",
-      "type": "hard-threshold",
-      "field": "hz_tech_center_equipment_branch_met",
+      "field": "hz_tech_center_applicable_equipment_threshold_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《杭州市企业技术中心管理办法》",
       "source_quote": "制造业、高技术服务业或建设行业须达到对应技术开发仪器设备原值门槛。",
       "policy_status": "current",
@@ -224,10 +308,46 @@
       "rules": [
         {
           "rule_id": "hz-tech-center-1",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "hz-tech-center-operation",
+              "field": "hz_tech_center_innovation_operation_mechanism_sound",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hz-tech-center-investment",
+              "field": "hz_tech_center_innovation_investment_mechanism_sound",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hz-tech-center-incentive",
+              "field": "hz_tech_center_innovation_incentive_mechanism_sound",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hz-tech-center-strategy",
+              "field": "hz_tech_center_innovation_strategy_sound",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hz-tech-center-plan",
+              "field": "hz_tech_center_innovation_plan_sound",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hz-tech-center-ip-management",
+              "field": "hz_tech_center_ip_management_capability_sound",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hz_tech_center_innovation_system_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《杭州市企业技术中心管理办法》",
           "source_quote": "企业创新运行、投入、激励机制及战略、计划和知识产权管理能力应健全。",
           "policy_status": "current",
@@ -238,10 +358,22 @@
         },
         {
           "rule_id": "hz-tech-center-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "hz-tech-center-economic-leading",
+              "field": "hz_tech_center_economic_technical_indicators_city_leading",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hz-tech-center-development-leading",
+              "field": "hz_tech_center_technical_development_capability_city_leading",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "hz_tech_center_competitive_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《杭州市企业技术中心管理办法》",
           "source_quote": "综合经济技术指标和技术开发能力应处于本市同行业前列。",
           "policy_status": "current",
@@ -266,10 +398,10 @@
         },
         {
           "rule_id": "hz-tech-center-4",
-          "type": "hard-threshold",
-          "field": "hz_tech_center_staff_branch_met",
+          "field": "hz_tech_center_applicable_staff_threshold_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "《杭州市企业技术中心管理办法》",
           "source_quote": "制造业、高技术服务业科技活动人员占比、学历职称结构和研发人数，或建筑业执业人员数须达到对应标准。",
           "policy_status": "current",
@@ -280,10 +412,10 @@
         },
         {
           "rule_id": "hz-tech-center-5",
-          "type": "hard-threshold",
-          "field": "hz_tech_center_revenue_branch_met",
+          "field": "hz_tech_center_applicable_revenue_threshold_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "《杭州市企业技术中心管理办法》",
           "source_quote": "制造业、高技术服务业、高新技术企业、建筑房地产或勘察设计企业须达到各自收入门槛。",
           "policy_status": "current",
@@ -294,10 +426,10 @@
         },
         {
           "rule_id": "hz-tech-center-6",
-          "type": "hard-threshold",
-          "field": "hz_tech_center_equipment_branch_met",
+          "field": "hz_tech_center_applicable_equipment_threshold_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "《杭州市企业技术中心管理办法》",
           "source_quote": "制造业、高技术服务业或建设行业须达到对应技术开发仪器设备原值门槛。",
           "policy_status": "current",
@@ -343,13 +475,49 @@
       "case_id": "eligible-verified",
       "facts": [
         {
-          "field": "hz_tech_center_innovation_system_met",
+          "field": "hz_tech_center_innovation_operation_mechanism_sound",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_competitive_met",
+          "field": "hz_tech_center_innovation_investment_mechanism_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_incentive_mechanism_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_strategy_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_plan_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_ip_management_capability_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_economic_technical_indicators_city_leading",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_technical_development_capability_city_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -361,19 +529,19 @@
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_staff_branch_met",
+          "field": "hz_tech_center_applicable_staff_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_revenue_branch_met",
+          "field": "hz_tech_center_applicable_revenue_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_equipment_branch_met",
+          "field": "hz_tech_center_applicable_equipment_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -407,13 +575,49 @@
       "case_id": "conditional-pending",
       "facts": [
         {
-          "field": "hz_tech_center_innovation_system_met",
+          "field": "hz_tech_center_innovation_operation_mechanism_sound",
           "value": true,
           "evidence_state": "claimed",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_competitive_met",
+          "field": "hz_tech_center_innovation_investment_mechanism_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_incentive_mechanism_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_strategy_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_plan_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_ip_management_capability_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_economic_technical_indicators_city_leading",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_technical_development_capability_city_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -425,19 +629,19 @@
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_staff_branch_met",
+          "field": "hz_tech_center_applicable_staff_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_revenue_branch_met",
+          "field": "hz_tech_center_applicable_revenue_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_equipment_branch_met",
+          "field": "hz_tech_center_applicable_equipment_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -471,13 +675,49 @@
       "case_id": "ineligible-failed",
       "facts": [
         {
-          "field": "hz_tech_center_innovation_system_met",
+          "field": "hz_tech_center_innovation_operation_mechanism_sound",
           "value": false,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_competitive_met",
+          "field": "hz_tech_center_innovation_investment_mechanism_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_incentive_mechanism_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_strategy_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_innovation_plan_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_ip_management_capability_sound",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_economic_technical_indicators_city_leading",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_tech_center_technical_development_capability_city_leading",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -489,19 +729,19 @@
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_staff_branch_met",
+          "field": "hz_tech_center_applicable_staff_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_revenue_branch_met",
+          "field": "hz_tech_center_applicable_revenue_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "hz_tech_center_equipment_branch_met",
+          "field": "hz_tech_center_applicable_equipment_threshold_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

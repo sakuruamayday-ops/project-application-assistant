@@ -7,23 +7,27 @@ from pathlib import Path
 from typing import Mapping, Sequence
 
 from app.policy_lifecycle import build_policy_dependency_graph
+from app.rule_structure import audit_composite_rule_structure
 
 
 RULE_IR_SCHEMA_VERSION = 1
-SHARED_KERNEL_VERSION = "1.2"
+SHARED_KERNEL_VERSION = "1.3"
 SHARED_EXECUTION_KERNELS = (
     "task-omission-preflight",
     "project-router",
     "policy-version-gate",
     "policy-time-type-checker",
+    "policy-retrieval-cascade",
     "fact-contract-normalizer",
     "evidence-conflict-resolver",
     "layer-selector",
     "native-rule-combinator",
+    "composite-rule-structure-gate",
     "requirement-comparator",
     "lifecycle-state-machine",
     "coverage-hash-planner",
     "policy-change-impact-simulator",
+    "deliverable-contract-gate",
     "explanation-trace",
 )
 
@@ -192,6 +196,7 @@ def build_algorithm_card(
             if isinstance(rule, Mapping)
             and str(rule.get("review_status") or "") == "confirmed"
         ]
+    structure_audit = audit_composite_rule_structure(project)
     return {
         "schema_version": 1,
         "algorithm_id": f"project-decision-{project_id}",
@@ -247,9 +252,15 @@ def build_algorithm_card(
             "task_preflight_required": True,
             "policy_time_checked": True,
             "native_rule_combinator": True,
+            "composite_rule_structure": structure_audit,
+            "deliverable_contract_required": True,
+            "policy_retrieval_cascade_required": True,
             "pack_validation": True,
             "gold_case_count": len(project.get("gold_cases", [])),
-            "formal_decision_enabled": coverage_status == "rules-confirmed",
+            "formal_decision_enabled": (
+                coverage_status == "rules-confirmed"
+                and structure_audit["formal_decision_allowed"]
+            ),
             "policy_baseline_complete": coverage_status in {
                 "rules-confirmed",
                 "policy-baseline-confirmed",

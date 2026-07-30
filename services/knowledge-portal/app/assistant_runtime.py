@@ -220,4 +220,62 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                 },
             },
         },
+        {
+            "type": "function",
+            "function": {
+                "name": "policy_evidence_select",
+                "description": (
+                    "按发文机关原文、下级政府官网明确引用、现行管理办法"
+                    "三级证据链选择政策，并限制各证据层可生成的年度结论。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_year": {"type": "integer"},
+                        "requested_claims": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "candidates": {
+                            "type": "array",
+                            "items": {"type": "object"},
+                            "description": (
+                                "候选政策，需包含source_url、source_role、"
+                                "retrieval_channel、year和verification_status"
+                            ),
+                        },
+                    },
+                    "required": [
+                        "target_year",
+                        "requested_claims",
+                        "candidates",
+                    ],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "delivery_contract_audit",
+                "description": (
+                    "在完成分析报告或复杂任务前检查模板章节、政策选择链、"
+                    "同行对比和四问复盘；completion_allowed为false时必须修订。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "deliverable": {
+                            "type": "object",
+                            "description": (
+                                "结构化交付内容，包含task_type、sections、"
+                                "skill_template、policy_selection、"
+                                "peer_comparison和four_question_review"
+                            ),
+                        },
+                    },
+                    "required": ["query", "deliverable"],
+                },
+            },
+        },
     ]

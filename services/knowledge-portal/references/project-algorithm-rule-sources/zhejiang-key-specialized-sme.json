@@ -45,14 +45,6 @@
       "value_type": "boolean"
     },
     {
-      "field": "key_zj_sme_four_improvements_plan_met",
-      "label": "四提一强计划符合",
-      "aliases": [
-        "四提一强计划符合"
-      ],
-      "value_type": "boolean"
-    },
-    {
       "field": "investment_amount",
       "label": "推进计划投资总额",
       "aliases": [
@@ -60,14 +52,6 @@
       ],
       "value_type": "number",
       "unit": "万元"
-    },
-    {
-      "field": "key_zj_sme_project_scope_met",
-      "label": "拟实施项目范围符合",
-      "aliases": [
-        "拟实施项目范围符合"
-      ],
-      "value_type": "boolean"
     },
     {
       "field": "key_zj_sme_no_duplicate_funding",
@@ -85,14 +69,6 @@
       ],
       "value_type": "number",
       "unit": "万元"
-    },
-    {
-      "field": "key_zj_sme_size_standard_met",
-      "label": "中小企业划型符合",
-      "aliases": [
-        "中小企业划型符合"
-      ],
-      "value_type": "boolean"
     },
     {
       "field": "key_zj_sme_debt_ratio",
@@ -131,14 +107,6 @@
       "unit": "项"
     },
     {
-      "field": "key_zj_sme_priority_industry_met",
-      "label": "重点产业领域符合",
-      "aliases": [
-        "重点产业领域符合"
-      ],
-      "value_type": "boolean"
-    },
-    {
       "field": "key_zj_sme_review_failure_clear",
       "label": "非复核未通过小巨人",
       "aliases": [
@@ -153,6 +121,73 @@
         "经营异常失信及近三年事故违法核验"
       ],
       "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_plan_has_specific_projects",
+      "label": "推进计划包含具体项目",
+      "aliases": [
+        "推进计划包含具体项目"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_plan_has_performance_targets",
+      "label": "推进计划包含绩效目标",
+      "aliases": [
+        "推进计划包含绩效目标"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_plan_matches_four_improvements_one_strength",
+      "label": "推进计划符合融通入链四提一强方向",
+      "aliases": [
+        "推进计划符合融通入链四提一强方向"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "key_zj_sme_project_is_technical_renovation",
+      "label": "拟实施项目属于技术改造项目",
+      "aliases": [
+        "拟实施项目属于技术改造项目"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_project_is_digital_network_intelligent_renovation",
+      "label": "拟实施项目属于数字化网络化智能化改造",
+      "aliases": [
+        "拟实施项目属于数字化网络化智能化改造"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_project_is_basic_research",
+      "label": "拟实施项目属于基础研究项目",
+      "aliases": [
+        "拟实施项目属于基础研究项目"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_size_standard_confirmed",
+      "label": "企业符合中小企业划型标准",
+      "aliases": [
+        "企业符合中小企业划型标准"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "key_zj_sme_in_priority_industry",
+      "label": "企业属于重点产业领域",
+      "aliases": [
+        "企业属于重点产业领域"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
     }
   ],
   "rules": [
@@ -185,10 +220,28 @@
     },
     {
       "rule_id": "key-zj-sme-plan",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "key-zj-sme-plan-project",
+          "field": "key_zj_sme_plan_has_specific_projects",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-zj-sme-plan-target",
+          "field": "key_zj_sme_plan_has_performance_targets",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "key-zj-sme-plan-theme",
+          "field": "key_zj_sme_plan_matches_four_improvements_one_strength",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "key_zj_sme_four_improvements_plan_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
       "source_quote": "须提出有具体项目和绩效目标支撑的融通入链四提一强推进计划。"
     },
@@ -204,10 +257,28 @@
     },
     {
       "rule_id": "key-zj-sme-project-scope",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "key-zj-sme-not-technical-renovation",
+          "field": "key_zj_sme_project_is_technical_renovation",
+          "operator": "falsy",
+          "expected": false
+        },
+        {
+          "rule_id": "key-zj-sme-not-digital-renovation",
+          "field": "key_zj_sme_project_is_digital_network_intelligent_renovation",
+          "operator": "falsy",
+          "expected": false
+        },
+        {
+          "rule_id": "key-zj-sme-not-basic-research",
+          "field": "key_zj_sme_project_is_basic_research",
+          "operator": "falsy",
+          "expected": false
+        }
+      ],
       "type": "hard-threshold",
-      "field": "key_zj_sme_project_scope_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
       "source_quote": "技术改造、数字化网络化智能化改造、基础研究项目不在拟实施项目支持范围。"
     },
@@ -232,10 +303,10 @@
     },
     {
       "rule_id": "key-zj-sme-size",
-      "type": "hard-threshold",
-      "field": "key_zj_sme_size_standard_met",
+      "field": "key_zj_sme_size_standard_confirmed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
       "source_quote": "企业须符合中小企业划型标准。"
     },
@@ -281,10 +352,10 @@
     },
     {
       "rule_id": "key-zj-sme-industry",
-      "type": "hard-threshold",
-      "field": "key_zj_sme_priority_industry_met",
+      "field": "key_zj_sme_in_priority_industry",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
       "source_quote": "企业应属于重点产业领域。"
     },
@@ -308,5 +379,15 @@
     }
   ],
   "annual_overlays": [],
-  "jurisdiction_overlays": []
+  "jurisdiction_overlays": [],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "key-zj-sme-industry",
+      "key-zj-sme-plan",
+      "key-zj-sme-project-scope",
+      "key-zj-sme-size"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

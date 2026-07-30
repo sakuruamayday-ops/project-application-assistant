@@ -692,12 +692,17 @@ def test_policy_time_query_intent_requires_annual_notice_for_deadline():
     assert backtest["evaluation_mode"] == "backtest-simulation"
 
 
-def test_unverified_2026_notices_do_not_reuse_prior_year_deadlines():
+def test_2026_notice_selection_distinguishes_verified_high_tech_from_missing_champion():
     portal_dir = Path(__file__).resolve().parents[1]
     pack_dir = portal_dir / "references" / "project-algorithm-packs"
-    cases = [
-        (
-            "national-high-tech-enterprise.json",
+    high_tech = json.loads(
+        (pack_dir / "national-high-tech-enterprise.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    selected_high_tech = select_project_algorithm_rules(
+        high_tech,
+        enrich_policy_time_context(
             "浙江省高企2026年度申报截止时间",
             {
                 "project_name": "高新技术企业",
@@ -705,28 +710,38 @@ def test_unverified_2026_notices_do_not_reuse_prior_year_deadlines():
                 "year": 2026,
             },
         ),
-        (
-            "manufacturing-single-champion-2.json",
+    )
+    assert selected_high_tech["policy_time"]["status"] == "allowed"
+    annual_layer = next(
+        layer
+        for layer in high_tech["rule_layers"]
+        if layer["layer_id"] == "zhejiang-high-tech-2026"
+    )
+    assert annual_layer["authority_recommendation_deadline"] == "2026-08-31"
+    assert annual_layer["enterprise_deadline"] is None
+    assert "地方" in annual_layer["enterprise_deadline_note"]
+
+    champion = json.loads(
+        (pack_dir / "manufacturing-single-champion-2.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    selected_champion = select_project_algorithm_rules(
+        champion,
+        enrich_policy_time_context(
             "国家制造业单项冠军2026年度申报通知和截止时间",
             {
                 "project_name": "国家制造业单项冠军企业",
                 "year": 2026,
             },
         ),
-    ]
-
-    for file_name, query, context in cases:
-        pack = json.loads((pack_dir / file_name).read_text(encoding="utf-8"))
-        selected = select_project_algorithm_rules(
-            pack,
-            enrich_policy_time_context(query, context),
-        )
-        assert selected["policy_time"]["status"] == "blocked"
-        assert selected["policy_time"]["formal_conclusion_allowed"] is False
-        assert all(
-            "2025" not in layer_id
-            for layer_id in selected["selected_layers"]
-        )
+    )
+    assert selected_champion["policy_time"]["status"] == "blocked"
+    assert selected_champion["policy_time"]["formal_conclusion_allowed"] is False
+    assert all(
+        "2025" not in layer_id
+        for layer_id in selected_champion["selected_layers"]
+    )
 
 
 def test_project_algorithm_pack_gate_runs_all_gold_cases():

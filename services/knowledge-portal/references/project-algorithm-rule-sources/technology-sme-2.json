@@ -2,44 +2,259 @@
   "project_id": "technology-sme-2",
   "project_name": "国家科技型中小企业",
   "version": "2017-method-2026-notice",
-  "aliases": ["国家科小", "国科小", "科技型中小企业"],
-  "source_retrieval_rule_ids": ["technology-sme"],
+  "aliases": [
+    "国家科小",
+    "国科小",
+    "科技型中小企业"
+  ],
+  "source_retrieval_rule_ids": [
+    "technology-sme"
+  ],
   "policy_status": "current",
   "approved_by": "主人授权；焦糖按工信部2026年度通知及现行评价办法核验",
   "approved_at": "2026-07-27 16:45:00",
   "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
   "fact_fields": [
-    {"field": "china_resident_enterprise", "label": "中国境内居民企业", "aliases": ["中国境内居民企业"], "value_type": "boolean"},
-    {"field": "employee_count", "label": "职工总数", "aliases": ["职工总数"], "value_type": "number", "unit": "人"},
-    {"field": "revenue", "label": "年销售收入", "aliases": ["年销售收入"], "value_type": "number", "unit": "万元"},
-    {"field": "total_assets", "label": "资产总额", "aliases": ["资产总额"], "value_type": "number", "unit": "万元"},
-    {"field": "product_policy_compliant", "label": "产品服务符合产业政策", "aliases": ["产品服务符合产业政策"], "value_type": "boolean"},
-    {"field": "not_abnormal_or_seriously_dishonest", "label": "未列入经营异常或严重违法失信名单", "aliases": ["未列入异常失信名单"], "value_type": "boolean"},
     {
-      "field": "score_or_direct_confirmation_met",
-      "label": "评价得分或直接确认条件",
-      "aliases": ["评价得分或直接确认条件"],
-      "value_type": "boolean",
-      "derivation": "综合评价分值不低于60分且科技人员指标得分不为0，或在满足共同条件后命中四项直接确认条件之一。"
+      "field": "china_resident_enterprise",
+      "label": "中国境内居民企业",
+      "aliases": [
+        "中国境内居民企业"
+      ],
+      "value_type": "boolean"
     },
-    {"field": "technology_sme_2026_platform_submission_complete", "label": "2026年度平台提交完成", "aliases": ["2026科小平台提交"], "value_type": "boolean"}
+    {
+      "field": "employee_count",
+      "label": "职工总数",
+      "aliases": [
+        "职工总数"
+      ],
+      "value_type": "number",
+      "unit": "人"
+    },
+    {
+      "field": "revenue",
+      "label": "年销售收入",
+      "aliases": [
+        "年销售收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "total_assets",
+      "label": "资产总额",
+      "aliases": [
+        "资产总额"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "product_policy_compliant",
+      "label": "产品服务符合产业政策",
+      "aliases": [
+        "产品服务符合产业政策"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "not_abnormal_or_seriously_dishonest",
+      "label": "未列入经营异常或严重违法失信名单",
+      "aliases": [
+        "未列入异常失信名单"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_sme_2026_platform_submission_complete",
+      "label": "2026年度平台提交完成",
+      "aliases": [
+        "2026科小平台提交"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_sme_evaluation_score",
+      "label": "科技型中小企业综合评价分值",
+      "aliases": [
+        "科技型中小企业综合评价分值"
+      ],
+      "value_type": "number",
+      "unit": "分"
+    },
+    {
+      "field": "technology_sme_personnel_indicator_score",
+      "label": "科技人员指标得分",
+      "aliases": [
+        "科技人员指标得分"
+      ],
+      "value_type": "number",
+      "unit": "分"
+    },
+    {
+      "field": "technology_sme_valid_high_tech_enterprise",
+      "label": "有效期内高新技术企业",
+      "aliases": [
+        "有效期内高新技术企业"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_sme_national_award_top_three_within_five_years",
+      "label": "近五年国家科技奖励前三完成单位",
+      "aliases": [
+        "近五年国家科技奖励前三完成单位"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_sme_provincial_or_above_rd_platform",
+      "label": "省部级以上研发机构",
+      "aliases": [
+        "省部级以上研发机构"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "technology_sme_led_standard_within_five_years",
+      "label": "近五年主导制定国际国家或行业标准",
+      "aliases": [
+        "近五年主导制定国际国家或行业标准"
+      ],
+      "value_type": "boolean"
+    }
   ],
   "rules": [
-    {"rule_id": "technology-sme-resident-enterprise", "type": "hard-threshold", "field": "china_resident_enterprise", "operator": "truthy", "expected": true, "source": "《科技型中小企业评价办法》国科发政〔2017〕115号及2026年度评价通知", "source_quote": "申请主体应为在中国境内注册的居民企业。"},
-    {"rule_id": "technology-sme-employees", "type": "hard-threshold", "field": "employee_count", "operator": "lte", "expected": 500, "unit": "人", "source": "国科发政〔2017〕115号", "source_quote": "职工总数不超过五百人。"},
-    {"rule_id": "technology-sme-revenue", "type": "hard-threshold", "field": "revenue", "operator": "lte", "expected": 20000, "unit": "万元", "source": "国科发政〔2017〕115号", "source_quote": "年销售收入不超过二亿元。"},
-    {"rule_id": "technology-sme-assets", "type": "hard-threshold", "field": "total_assets", "operator": "lte", "expected": 20000, "unit": "万元", "source": "国科发政〔2017〕115号", "source_quote": "资产总额不超过二亿元。"},
-    {"rule_id": "technology-sme-product-policy", "type": "hard-threshold", "field": "product_policy_compliant", "operator": "truthy", "expected": true, "source": "国科发政〔2017〕115号", "source_quote": "产品和服务不得属于国家规定的禁止、限制和淘汰类。"},
-    {"rule_id": "technology-sme-compliance", "type": "hard-threshold", "field": "no_major_incident", "operator": "truthy", "expected": true, "source": "国科发政〔2017〕115号", "source_quote": "规定期间内不得发生重大事故、严重环境违法或科研严重失信行为。"},
-    {"rule_id": "technology-sme-registry-status", "type": "hard-threshold", "field": "not_abnormal_or_seriously_dishonest", "operator": "truthy", "expected": true, "source": "国科发政〔2017〕115号", "source_quote": "企业不得列入经营异常名录和严重违法失信企业名单。"},
-    {"rule_id": "technology-sme-score-or-direct", "type": "hard-threshold", "field": "score_or_direct_confirmation_met", "operator": "truthy", "expected": true, "source": "国科发政〔2017〕115号第六条至第八条", "source_quote": "综合评价分值不低于60分，且科技人员指标得分不得为0分；符合共同条件并命中有效高企、近五年国家科技奖励前三、省部级以上研发机构或近五年主导制定国际、国家、行业标准之一的，可直接确认。"}
+    {
+      "rule_id": "technology-sme-resident-enterprise",
+      "type": "hard-threshold",
+      "field": "china_resident_enterprise",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《科技型中小企业评价办法》国科发政〔2017〕115号及2026年度评价通知",
+      "source_quote": "申请主体应为在中国境内注册的居民企业。"
+    },
+    {
+      "rule_id": "technology-sme-employees",
+      "type": "hard-threshold",
+      "field": "employee_count",
+      "operator": "lte",
+      "expected": 500,
+      "unit": "人",
+      "source": "国科发政〔2017〕115号",
+      "source_quote": "职工总数不超过五百人。"
+    },
+    {
+      "rule_id": "technology-sme-revenue",
+      "type": "hard-threshold",
+      "field": "revenue",
+      "operator": "lte",
+      "expected": 20000,
+      "unit": "万元",
+      "source": "国科发政〔2017〕115号",
+      "source_quote": "年销售收入不超过二亿元。"
+    },
+    {
+      "rule_id": "technology-sme-assets",
+      "type": "hard-threshold",
+      "field": "total_assets",
+      "operator": "lte",
+      "expected": 20000,
+      "unit": "万元",
+      "source": "国科发政〔2017〕115号",
+      "source_quote": "资产总额不超过二亿元。"
+    },
+    {
+      "rule_id": "technology-sme-product-policy",
+      "type": "hard-threshold",
+      "field": "product_policy_compliant",
+      "operator": "truthy",
+      "expected": true,
+      "source": "国科发政〔2017〕115号",
+      "source_quote": "产品和服务不得属于国家规定的禁止、限制和淘汰类。"
+    },
+    {
+      "rule_id": "technology-sme-compliance",
+      "type": "hard-threshold",
+      "field": "no_major_incident",
+      "operator": "truthy",
+      "expected": true,
+      "source": "国科发政〔2017〕115号",
+      "source_quote": "规定期间内不得发生重大事故、严重环境违法或科研严重失信行为。"
+    },
+    {
+      "rule_id": "technology-sme-registry-status",
+      "type": "hard-threshold",
+      "field": "not_abnormal_or_seriously_dishonest",
+      "operator": "truthy",
+      "expected": true,
+      "source": "国科发政〔2017〕115号",
+      "source_quote": "企业不得列入经营异常名录和严重违法失信企业名单。"
+    },
+    {
+      "rule_id": "technology-sme-score-or-direct",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "technology-sme-score-route",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "technology-sme-score",
+              "field": "technology_sme_evaluation_score",
+              "operator": "gte",
+              "expected": 60,
+              "unit": "分"
+            },
+            {
+              "rule_id": "technology-sme-personnel-score",
+              "field": "technology_sme_personnel_indicator_score",
+              "operator": "gt",
+              "expected": 0,
+              "unit": "分"
+            }
+          ]
+        },
+        {
+          "rule_id": "technology-sme-direct-hte",
+          "field": "technology_sme_valid_high_tech_enterprise",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "technology-sme-direct-award",
+          "field": "technology_sme_national_award_top_three_within_five_years",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "technology-sme-direct-platform",
+          "field": "technology_sme_provincial_or_above_rd_platform",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "technology-sme-direct-standard",
+          "field": "technology_sme_led_standard_within_five_years",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
+      "type": "hard-threshold",
+      "source": "国科发政〔2017〕115号第六条至第八条",
+      "source_quote": "综合评价分值不低于60分，且科技人员指标得分不得为0分；符合共同条件并命中有效高企、近五年国家科技奖励前三、省部级以上研发机构或近五年主导制定国际、国家、行业标准之一的，可直接确认。"
+    }
   ],
   "annual_overlays": [
     {
       "overlay_id": "technology-sme-2026",
       "label": "2026年度科技型中小企业评价通知",
       "year": 2026,
-      "application_types": ["recognition", "annual-evaluation"],
+      "application_types": [
+        "recognition",
+        "annual-evaluation"
+      ],
       "policy_status": "current",
       "approved_by": "Codex政策规则复盘",
       "approved_at": "2026-07-30 00:30:00",
@@ -56,5 +271,12 @@
         }
       ]
     }
-  ]
+  ],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "technology-sme-score-or-direct"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

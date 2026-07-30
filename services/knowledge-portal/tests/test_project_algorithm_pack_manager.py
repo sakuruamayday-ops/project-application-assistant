@@ -397,6 +397,62 @@ def test_generate_rejects_historical_policy(tmp_path):
         raise AssertionError("历史政策不得生成正式算法包")
 
 
+def test_generate_rejects_unclassified_composite_met_leaf(tmp_path):
+    input_path = tmp_path / "composite.json"
+    output_path = tmp_path / "pack.json"
+    fact_contract = tmp_path / "facts.json"
+    write_json(
+        fact_contract,
+        {
+            "fields": [
+                {
+                    "field": "revenue_or_investment_met",
+                    "label": "收入或投资达标",
+                    "value_type": "boolean",
+                }
+            ]
+        },
+    )
+    write_json(
+        input_path,
+        {
+            "project_id": "composite-project",
+            "project_name": "复合规则项目",
+            "policy_status": "current",
+            "approved_by": "审核人",
+            "approved_at": "2026-07-30 12:00:00",
+            "source_url": "https://example.gov.cn/current",
+            "fact_fields": [
+                {
+                    "field": "revenue_or_investment_met",
+                    "label": "收入或投资达标",
+                    "value_type": "boolean",
+                }
+            ],
+            "rules": [
+                {
+                    "rule_id": "composite-rule",
+                    "field": "revenue_or_investment_met",
+                    "operator": "truthy",
+                    "expected": True,
+                    "source_quote": "营业收入达标或投资达到规定条件。",
+                }
+            ],
+        },
+    )
+
+    try:
+        MANAGER.generate_from_confirmed_rules(
+            input_path=input_path,
+            output_path=output_path,
+            fact_contract_path=fact_contract,
+        )
+    except ValueError as error:
+        assert "未分类综合布尔叶子" in str(error)
+    else:
+        raise AssertionError("未分类复合规则不得生成正式算法包")
+
+
 def test_generate_all_rebuilds_each_confirmed_source(tmp_path):
     sources_dir = tmp_path / "sources"
     packs_dir = tmp_path / "packs"

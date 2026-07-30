@@ -16,10 +16,18 @@
   ],
   "fact_fields": [
     {
-      "field": "technology_and_innovative_sme_status_met",
-      "label": "科技型和创新型中小企业资格要求",
+      "field": "technology_sme_status",
+      "label": "科技型中小企业资格有效",
       "aliases": [
-        "科技型和创新型中小企业资格要求"
+        "科技型中小企业资格有效"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "innovative_sme_status",
+      "label": "创新型中小企业资格有效",
+      "aliases": [
+        "创新型中小企业资格有效"
       ],
       "value_type": "boolean"
     },
@@ -33,12 +41,22 @@
       "unit": "年"
     },
     {
-      "field": "revenue_or_equity_investment_met",
-      "label": "营收或股权投资替代条件",
+      "field": "revenue",
+      "label": "上年度营业收入",
       "aliases": [
-        "营收或股权投资条件"
+        "上年度营业收入"
       ],
-      "value_type": "boolean"
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "qualified_equity_investment_two_years",
+      "label": "近两年合格机构投资者实缴股权投资",
+      "aliases": [
+        "近两年合格机构投资者实缴股权投资"
+      ],
+      "value_type": "number",
+      "unit": "万元"
     },
     {
       "field": "main_business_revenue_ratio",
@@ -59,28 +77,56 @@
       "unit": "%"
     },
     {
-      "field": "rnd_each_year_requirement_met",
-      "label": "近两年研发费用与强度要求",
+      "field": "specialized_sme_two_year_rd_assessment_passed",
+      "label": "近两年研发费用和逐年研发强度适用门槛评价通过",
       "aliases": [
-        "近两年研发要求"
+        "近两年研发费用和逐年研发强度适用门槛评价通过"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "specialized_sme_relevant_class_i_ip_count",
+      "label": "主导产品相关I类知识产权",
+      "aliases": [
+        "主导产品相关I类知识产权"
+      ],
+      "value_type": "number",
+      "unit": "项"
+    },
+    {
+      "field": "specialized_sme_class_i_ip_applied",
+      "label": "I类知识产权已实际应用",
+      "aliases": [
+        "I类知识产权已实际应用"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "ip_or_exemption_requirement_met",
-      "label": "知识产权或豁免要求",
+      "field": "specialized_sme_class_i_ip_economic_benefit",
+      "label": "I类知识产权已产生经济效益",
       "aliases": [
-        "知识产权或豁免要求"
+        "I类知识产权已产生经济效益"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "market_influence_requirement_met",
-      "label": "细分市场影响力要求",
+      "field": "specialized_sme_ip_exemption_route_confirmed",
+      "label": "专精特新知识产权豁免路径经政策条款确认",
       "aliases": [
-        "细分市场影响力"
+        "专精特新知识产权豁免路径经政策条款确认"
       ],
-      "value_type": "boolean"
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "specialized_sme_market_influence_assessment_passed",
+      "label": "主导产品细分市场占有率与影响力评价通过",
+      "aliases": [
+        "主导产品细分市场占有率与影响力评价通过"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
     },
     {
       "field": "specialized_quality_score",
@@ -134,10 +180,22 @@
   "rule_cards": [
     {
       "rule_id": "specialized-sme-entry-status",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "specialized-sme-technology-status",
+          "field": "technology_sme_status",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "specialized-sme-innovative-status",
+          "field": "innovative_sme_status",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "technology_and_innovative_sme_status_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
       "source_quote": "须满足科技型和创新型中小企业相关资格要求。",
       "policy_status": "current",
@@ -163,10 +221,24 @@
     },
     {
       "rule_id": "specialized-sme-revenue-or-investment",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "specialized-sme-revenue",
+          "field": "revenue",
+          "operator": "gte",
+          "expected": 1500,
+          "unit": "万元"
+        },
+        {
+          "rule_id": "specialized-sme-equity-investment",
+          "field": "qualified_equity_investment_two_years",
+          "operator": "gte",
+          "expected": 2000,
+          "unit": "万元"
+        }
+      ],
       "type": "hard-threshold",
-      "field": "revenue_or_equity_investment_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "工信部企业〔2026〕2号",
       "source_quote": "营业收入或合格机构投资者实缴股权投资须满足规定条件。",
       "policy_status": "current",
@@ -207,10 +279,10 @@
     },
     {
       "rule_id": "specialized-sme-rnd",
-      "type": "hard-threshold",
-      "field": "rnd_each_year_requirement_met",
+      "field": "specialized_sme_two_year_rd_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "工信部企业〔2026〕2号",
       "source_quote": "近两年研发费用和研发强度须逐年达到规定标准。",
       "policy_status": "current",
@@ -221,10 +293,41 @@
     },
     {
       "rule_id": "specialized-sme-ip",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "specialized-sme-ip-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "specialized-sme-ip-count",
+              "field": "specialized_sme_relevant_class_i_ip_count",
+              "operator": "gte",
+              "expected": 1,
+              "unit": "项"
+            },
+            {
+              "rule_id": "specialized-sme-ip-applied",
+              "field": "specialized_sme_class_i_ip_applied",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "specialized-sme-ip-benefit",
+              "field": "specialized_sme_class_i_ip_economic_benefit",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "specialized-sme-ip-exemption",
+          "field": "specialized_sme_ip_exemption_route_confirmed",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "ip_or_exemption_requirement_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "工信部企业〔2026〕2号",
       "source_quote": "须满足主导产品相关知识产权要求或规定的豁免条件。",
       "policy_status": "current",
@@ -235,10 +338,10 @@
     },
     {
       "rule_id": "specialized-sme-market-influence",
-      "type": "hard-threshold",
-      "field": "market_influence_requirement_met",
+      "field": "specialized_sme_market_influence_assessment_passed",
       "operator": "truthy",
       "expected": true,
+      "type": "hard-threshold",
       "source": "工信部企业〔2026〕2号",
       "source_quote": "主导产品细分市场占有率应较为靠前并具有一定影响力。",
       "policy_status": "current",
@@ -289,10 +392,22 @@
       "rules": [
         {
           "rule_id": "specialized-sme-entry-status",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "specialized-sme-technology-status",
+              "field": "technology_sme_status",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "specialized-sme-innovative-status",
+              "field": "innovative_sme_status",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "technology_and_innovative_sme_status_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "《优质中小企业梯度培育管理办法》工信部企业〔2026〕2号",
           "source_quote": "须满足科技型和创新型中小企业相关资格要求。",
           "policy_status": "current",
@@ -318,10 +433,24 @@
         },
         {
           "rule_id": "specialized-sme-revenue-or-investment",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "specialized-sme-revenue",
+              "field": "revenue",
+              "operator": "gte",
+              "expected": 1500,
+              "unit": "万元"
+            },
+            {
+              "rule_id": "specialized-sme-equity-investment",
+              "field": "qualified_equity_investment_two_years",
+              "operator": "gte",
+              "expected": 2000,
+              "unit": "万元"
+            }
+          ],
           "type": "hard-threshold",
-          "field": "revenue_or_equity_investment_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "工信部企业〔2026〕2号",
           "source_quote": "营业收入或合格机构投资者实缴股权投资须满足规定条件。",
           "policy_status": "current",
@@ -362,10 +491,10 @@
         },
         {
           "rule_id": "specialized-sme-rnd",
-          "type": "hard-threshold",
-          "field": "rnd_each_year_requirement_met",
+          "field": "specialized_sme_two_year_rd_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "工信部企业〔2026〕2号",
           "source_quote": "近两年研发费用和研发强度须逐年达到规定标准。",
           "policy_status": "current",
@@ -376,10 +505,41 @@
         },
         {
           "rule_id": "specialized-sme-ip",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "specialized-sme-ip-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "specialized-sme-ip-count",
+                  "field": "specialized_sme_relevant_class_i_ip_count",
+                  "operator": "gte",
+                  "expected": 1,
+                  "unit": "项"
+                },
+                {
+                  "rule_id": "specialized-sme-ip-applied",
+                  "field": "specialized_sme_class_i_ip_applied",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "specialized-sme-ip-benefit",
+                  "field": "specialized_sme_class_i_ip_economic_benefit",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "specialized-sme-ip-exemption",
+              "field": "specialized_sme_ip_exemption_route_confirmed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
           "type": "hard-threshold",
-          "field": "ip_or_exemption_requirement_met",
-          "operator": "truthy",
-          "expected": true,
           "source": "工信部企业〔2026〕2号",
           "source_quote": "须满足主导产品相关知识产权要求或规定的豁免条件。",
           "policy_status": "current",
@@ -390,10 +550,10 @@
         },
         {
           "rule_id": "specialized-sme-market-influence",
-          "type": "hard-threshold",
-          "field": "market_influence_requirement_met",
+          "field": "specialized_sme_market_influence_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "工信部企业〔2026〕2号",
           "source_quote": "主导产品细分市场占有率应较为靠前并具有一定影响力。",
           "policy_status": "current",
@@ -453,6 +613,7 @@
         ]
       },
       "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "zhejiang-specialized-sme-entity",
@@ -504,7 +665,13 @@
       "case_id": "eligible-verified",
       "facts": [
         {
-          "field": "technology_and_innovative_sme_status_met",
+          "field": "technology_sme_status",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "innovative_sme_status",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -516,8 +683,8 @@
           "source": "金标准事实"
         },
         {
-          "field": "revenue_or_equity_investment_met",
-          "value": true,
+          "field": "revenue",
+          "value": 1500,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -534,19 +701,31 @@
           "source": "金标准事实"
         },
         {
-          "field": "rnd_each_year_requirement_met",
+          "field": "specialized_sme_two_year_rd_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "ip_or_exemption_requirement_met",
+          "field": "specialized_sme_relevant_class_i_ip_count",
+          "value": 1,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_sme_class_i_ip_applied",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "market_influence_requirement_met",
+          "field": "specialized_sme_class_i_ip_economic_benefit",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_sme_market_influence_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -582,9 +761,15 @@
       "case_id": "conditional-pending",
       "facts": [
         {
-          "field": "technology_and_innovative_sme_status_met",
+          "field": "technology_sme_status",
           "value": true,
           "evidence_state": "claimed",
+          "source": "金标准事实"
+        },
+        {
+          "field": "innovative_sme_status",
+          "value": true,
+          "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
@@ -594,8 +779,8 @@
           "source": "金标准事实"
         },
         {
-          "field": "revenue_or_equity_investment_met",
-          "value": true,
+          "field": "revenue",
+          "value": 1500,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -612,19 +797,31 @@
           "source": "金标准事实"
         },
         {
-          "field": "rnd_each_year_requirement_met",
+          "field": "specialized_sme_two_year_rd_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "ip_or_exemption_requirement_met",
+          "field": "specialized_sme_relevant_class_i_ip_count",
+          "value": 1,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_sme_class_i_ip_applied",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "market_influence_requirement_met",
+          "field": "specialized_sme_class_i_ip_economic_benefit",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_sme_market_influence_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -660,8 +857,14 @@
       "case_id": "ineligible-failed",
       "facts": [
         {
-          "field": "technology_and_innovative_sme_status_met",
+          "field": "technology_sme_status",
           "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "innovative_sme_status",
+          "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -672,8 +875,8 @@
           "source": "金标准事实"
         },
         {
-          "field": "revenue_or_equity_investment_met",
-          "value": true,
+          "field": "revenue",
+          "value": 1500,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -690,19 +893,31 @@
           "source": "金标准事实"
         },
         {
-          "field": "rnd_each_year_requirement_met",
+          "field": "specialized_sme_two_year_rd_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "ip_or_exemption_requirement_met",
+          "field": "specialized_sme_relevant_class_i_ip_count",
+          "value": 1,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_sme_class_i_ip_applied",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "market_influence_requirement_met",
+          "field": "specialized_sme_class_i_ip_economic_benefit",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "specialized_sme_market_influence_assessment_passed",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

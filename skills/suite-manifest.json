@@ -119,6 +119,7 @@
   ],
   "shared_paths": [
     "_runtime/jiaotang-branding",
+    "delivery-contracts.json",
     "SOURCE-USE-LICENSE.txt",
     "policy-freshness-manifest.json",
     "policy-freshness-manifest.md",

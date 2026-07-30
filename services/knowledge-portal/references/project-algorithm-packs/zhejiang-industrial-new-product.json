@@ -28,12 +28,13 @@
       "value_type": "boolean"
     },
     {
-      "field": "industrial_new_product_historical_thresholds_met",
-      "label": "历史年度工业新产品条件符合",
+      "field": "industrial_new_product_2023_policy_assessment_passed",
+      "label": "按2023年度有效政策完成历史资格评价",
       "aliases": [
-        "历史年度工业新产品条件符合"
+        "按2023年度有效政策完成历史资格评价"
       ],
-      "value_type": "boolean"
+      "value_type": "boolean",
+      "fact_semantics": "assessment-conclusion"
     },
     {
       "field": "industrial_new_product_materials_complete",
@@ -127,13 +128,14 @@
         ]
       },
       "source_url": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=490d5583993f405a92d0cbdee4b69f0c.pdf",
+      "enterprise_deadline": null,
       "rules": [
         {
           "rule_id": "industrial-new-product-2023-thresholds",
-          "type": "hard-threshold",
-          "field": "industrial_new_product_historical_thresholds_met",
+          "field": "industrial_new_product_2023_policy_assessment_passed",
           "operator": "truthy",
           "expected": true,
+          "type": "hard-threshold",
           "source": "浙江省工业新产品历史认定证据及浙江制造精品后续项目",
           "source_quote": "仅按2023年度有效政策和名单附件回放当年资格与认定事实。",
           "policy_status": "historical_reference",

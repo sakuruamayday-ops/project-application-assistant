@@ -27,72 +27,6 @@
       ]
     },
     {
-      "field": "zj_single_champion_specialization_branch_met",
-      "label": "专业化年限分支",
-      "aliases": [
-        "专业化年限分支"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "一般产品从事相关领域6年以上、新产品3年以上；山区海岛县一般产品5年以上、新产品2年以上。"
-      ]
-    },
-    {
-      "field": "zj_single_champion_market_rank_met",
-      "label": "市场占有率排名",
-      "aliases": [
-        "市场占有率排名"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "申请产品市场占有率位居全球前5或全国前3。"
-      ]
-    },
-    {
-      "field": "zj_single_champion_revenue_branch_met",
-      "label": "主营收入分支",
-      "aliases": [
-        "主营收入分支"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "近三年其中一年主营业务收入原则上达到4亿元；有效小巨人、山区海岛县及特定排名或历史经典产业适用豁免或降低分支。"
-      ]
-    },
-    {
-      "field": "zj_single_champion_innovation_met",
-      "label": "创新能力",
-      "aliases": [
-        "创新能力"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "原则上具有省级以上研发平台，研发强度达到3%或行业领先，并拥有实际应用、产生效益的核心知识产权和标准成果。"
-      ]
-    },
-    {
-      "field": "zj_single_champion_quality_energy_met",
-      "label": "质量性能能耗",
-      "aliases": [
-        "质量性能能耗"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "产品质量、工艺和关键性能国内领先，能耗达到行业先进值，绿色低碳水平较高。"
-      ]
-    },
-    {
-      "field": "zj_single_champion_management_met",
-      "label": "经营管理和国际化",
-      "aliases": [
-        "经营管理和国际化"
-      ],
-      "value_type": "boolean",
-      "derivation_requirements": [
-        "盈利、精益管理、数字化、人才、品牌和国际化能力应符合管理办法。"
-      ]
-    },
-    {
       "field": "zj_single_champion_compliance_clear",
       "label": "近三年合规",
       "aliases": [
@@ -102,6 +36,205 @@
       "derivation_requirements": [
         "不得列入经营异常或严重失信，产品不属于禁止限制淘汰类，近三年无重大事故、偷漏税、数据造假等违法违规。"
       ]
+    },
+    {
+      "field": "zj_single_champion_global_market_rank",
+      "label": "全球市场占有率排名",
+      "aliases": [
+        "全球市场占有率排名"
+      ],
+      "value_type": "number",
+      "unit": "名"
+    },
+    {
+      "field": "zj_single_champion_national_market_rank",
+      "label": "全国市场占有率排名",
+      "aliases": [
+        "全国市场占有率排名"
+      ],
+      "value_type": "number",
+      "unit": "名"
+    },
+    {
+      "field": "zj_single_champion_max_main_business_revenue_three_years",
+      "label": "近三年单年最高主营业务收入",
+      "aliases": [
+        "近三年单年最高主营业务收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "zj_single_champion_revenue_exception_confirmed",
+      "label": "收入豁免或降低路径经政策条款确认",
+      "aliases": [
+        "收入豁免或降低路径经政策条款确认"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "zj_single_champion_provincial_rd_platform",
+      "label": "省级以上研发平台",
+      "aliases": [
+        "省级以上研发平台"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_rd_platform_exception_confirmed",
+      "label": "研发平台例外经政策条款确认",
+      "aliases": [
+        "研发平台例外经政策条款确认"
+      ],
+      "value_type": "boolean",
+      "fact_semantics": "atomic-policy-assertion"
+    },
+    {
+      "field": "zj_single_champion_rnd_ratio",
+      "label": "研发强度",
+      "aliases": [
+        "研发强度"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "zj_single_champion_rnd_industry_leading",
+      "label": "研发强度处于行业领先",
+      "aliases": [
+        "研发强度处于行业领先"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_core_ip_applied_and_benefited",
+      "label": "核心知识产权已应用并产生效益",
+      "aliases": [
+        "核心知识产权已应用并产生效益"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_standard_achievement_present",
+      "label": "标准成果有效",
+      "aliases": [
+        "标准成果有效"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_product_type",
+      "label": "产品类型",
+      "aliases": [
+        "产品类型"
+      ],
+      "value_type": "string"
+    },
+    {
+      "field": "zj_single_champion_mountain_island_county",
+      "label": "山区海岛县企业",
+      "aliases": [
+        "山区海岛县企业"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_specialization_years",
+      "label": "从事相关领域年限",
+      "aliases": [
+        "从事相关领域年限"
+      ],
+      "value_type": "number",
+      "unit": "年"
+    },
+    {
+      "field": "zj_single_champion_product_quality_domestic_leading",
+      "label": "产品质量国内领先",
+      "aliases": [
+        "产品质量国内领先"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_process_domestic_leading",
+      "label": "生产工艺国内领先",
+      "aliases": [
+        "生产工艺国内领先"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_key_performance_domestic_leading",
+      "label": "关键性能国内领先",
+      "aliases": [
+        "关键性能国内领先"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_energy_use_industry_advanced",
+      "label": "能耗达到行业先进值",
+      "aliases": [
+        "能耗达到行业先进值"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_green_low_carbon_level_high",
+      "label": "绿色低碳水平较高",
+      "aliases": [
+        "绿色低碳水平较高"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_profitability_complies",
+      "label": "盈利能力符合要求",
+      "aliases": [
+        "盈利能力符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_lean_management_complies",
+      "label": "精益管理能力符合要求",
+      "aliases": [
+        "精益管理能力符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_digital_capability_complies",
+      "label": "数字化能力符合要求",
+      "aliases": [
+        "数字化能力符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_talent_capability_complies",
+      "label": "人才能力符合要求",
+      "aliases": [
+        "人才能力符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_brand_capability_complies",
+      "label": "品牌能力符合要求",
+      "aliases": [
+        "品牌能力符合要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "zj_single_champion_internationalization_complies",
+      "label": "国际化能力符合要求",
+      "aliases": [
+        "国际化能力符合要求"
+      ],
+      "value_type": "boolean"
     }
   ],
   "rules": [
@@ -116,55 +249,297 @@
     },
     {
       "rule_id": "zj-single-champion-2",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-single-champion-specialization-general-normal",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-single-champion-product-type-general-normal",
+              "field": "zj_single_champion_product_type",
+              "operator": "equals",
+              "expected": "一般产品"
+            },
+            {
+              "rule_id": "zj-single-champion-mountain-general-normal",
+              "field": "zj_single_champion_mountain_island_county",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "zj-single-champion-years-general-normal",
+              "field": "zj_single_champion_specialization_years",
+              "operator": "gte",
+              "expected": 6,
+              "unit": "年"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-single-champion-specialization-new-normal",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-single-champion-product-type-new-normal",
+              "field": "zj_single_champion_product_type",
+              "operator": "equals",
+              "expected": "新产品"
+            },
+            {
+              "rule_id": "zj-single-champion-mountain-new-normal",
+              "field": "zj_single_champion_mountain_island_county",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "zj-single-champion-years-new-normal",
+              "field": "zj_single_champion_specialization_years",
+              "operator": "gte",
+              "expected": 3,
+              "unit": "年"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-single-champion-specialization-general-mountain",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-single-champion-product-type-general-mountain",
+              "field": "zj_single_champion_product_type",
+              "operator": "equals",
+              "expected": "一般产品"
+            },
+            {
+              "rule_id": "zj-single-champion-mountain-general-mountain",
+              "field": "zj_single_champion_mountain_island_county",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-single-champion-years-general-mountain",
+              "field": "zj_single_champion_specialization_years",
+              "operator": "gte",
+              "expected": 5,
+              "unit": "年"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-single-champion-specialization-new-mountain",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-single-champion-product-type-new-mountain",
+              "field": "zj_single_champion_product_type",
+              "operator": "equals",
+              "expected": "新产品"
+            },
+            {
+              "rule_id": "zj-single-champion-mountain-new-mountain",
+              "field": "zj_single_champion_mountain_island_county",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-single-champion-years-new-mountain",
+              "field": "zj_single_champion_specialization_years",
+              "operator": "gte",
+              "expected": 2,
+              "unit": "年"
+            }
+          ]
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_single_champion_specialization_branch_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
       "source_quote": "一般产品从事相关领域6年以上、新产品3年以上；山区海岛县一般产品5年以上、新产品2年以上。"
     },
     {
       "rule_id": "zj-single-champion-3",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-single-champion-global-rank",
+          "field": "zj_single_champion_global_market_rank",
+          "operator": "lte",
+          "expected": 5,
+          "unit": "名"
+        },
+        {
+          "rule_id": "zj-single-champion-national-rank",
+          "field": "zj_single_champion_national_market_rank",
+          "operator": "lte",
+          "expected": 3,
+          "unit": "名"
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_single_champion_market_rank_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
       "source_quote": "申请产品市场占有率位居全球前5或全国前3。"
     },
     {
       "rule_id": "zj-single-champion-4",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-single-champion-revenue",
+          "field": "zj_single_champion_max_main_business_revenue_three_years",
+          "operator": "gte",
+          "expected": 40000,
+          "unit": "万元"
+        },
+        {
+          "rule_id": "zj-single-champion-revenue-exception",
+          "field": "zj_single_champion_revenue_exception_confirmed",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_single_champion_revenue_branch_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
       "source_quote": "近三年其中一年主营业务收入原则上达到4亿元；有效小巨人、山区海岛县及特定排名或历史经典产业适用豁免或降低分支。"
     },
     {
       "rule_id": "zj-single-champion-5",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-single-champion-rd-platform",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-single-champion-platform",
+              "field": "zj_single_champion_provincial_rd_platform",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-single-champion-platform-exception",
+              "field": "zj_single_champion_rd_platform_exception_confirmed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-single-champion-rnd",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-single-champion-rnd-ratio",
+              "field": "zj_single_champion_rnd_ratio",
+              "operator": "gte",
+              "expected": 3,
+              "unit": "%"
+            },
+            {
+              "rule_id": "zj-single-champion-rnd-leading",
+              "field": "zj_single_champion_rnd_industry_leading",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-single-champion-ip",
+          "field": "zj_single_champion_core_ip_applied_and_benefited",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-standard",
+          "field": "zj_single_champion_standard_achievement_present",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_single_champion_innovation_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
       "source_quote": "原则上具有省级以上研发平台，研发强度达到3%或行业领先，并拥有实际应用、产生效益的核心知识产权和标准成果。"
     },
     {
       "rule_id": "zj-single-champion-6",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-single-champion-quality",
+          "field": "zj_single_champion_product_quality_domestic_leading",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-process",
+          "field": "zj_single_champion_process_domestic_leading",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-performance",
+          "field": "zj_single_champion_key_performance_domestic_leading",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-energy",
+          "field": "zj_single_champion_energy_use_industry_advanced",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-green",
+          "field": "zj_single_champion_green_low_carbon_level_high",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_single_champion_quality_energy_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
       "source_quote": "产品质量、工艺和关键性能国内领先，能耗达到行业先进值，绿色低碳水平较高。"
     },
     {
       "rule_id": "zj-single-champion-7",
+      "logic": "all",
+      "children": [
+        {
+          "rule_id": "zj-single-champion-profit",
+          "field": "zj_single_champion_profitability_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-lean",
+          "field": "zj_single_champion_lean_management_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-digital",
+          "field": "zj_single_champion_digital_capability_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-talent",
+          "field": "zj_single_champion_talent_capability_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-brand",
+          "field": "zj_single_champion_brand_capability_complies",
+          "operator": "truthy",
+          "expected": true
+        },
+        {
+          "rule_id": "zj-single-champion-international",
+          "field": "zj_single_champion_internationalization_complies",
+          "operator": "truthy",
+          "expected": true
+        }
+      ],
       "type": "hard-threshold",
-      "field": "zj_single_champion_management_met",
-      "operator": "truthy",
-      "expected": true,
       "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
       "source_quote": "盈利、精益管理、数字化、人才、品牌和国际化能力应符合管理办法。"
     },
@@ -204,5 +579,17 @@
       ]
     }
   ],
-  "jurisdiction_overlays": []
+  "jurisdiction_overlays": [],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "zj-single-champion-2",
+      "zj-single-champion-3",
+      "zj-single-champion-4",
+      "zj-single-champion-5",
+      "zj-single-champion-6",
+      "zj-single-champion-7"
+    ],
+    "legacy_rollup_inputs_removed": true
+  }
 }

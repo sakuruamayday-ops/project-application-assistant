@@ -308,6 +308,105 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         payload = json.loads(raw)
         self.assertEqual(payload["reason"], "缺少文件：.mcp.json")
 
+    def test_delivery_contract_blocks_omitted_policy_peer_and_four_question_parts(self):
+        contract = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "skills/delivery-contracts.json"
+            ).read_text(encoding="utf-8")
+        )
+        missing = BRIDGE.audit_delivery_completion(
+            prompt="请形成企业分析报告，核对政策并做同行对标。",
+            answer="总体结论：企业可以继续准备。",
+            active_skills=[
+                {"skill": "project-application-assistant"},
+                {"skill": "enterprise-panorama-analysis"},
+            ],
+            contract=contract,
+        )
+
+        self.assertTrue(any("四问复盘缺项" in item for item in missing))
+        self.assertTrue(any("政策选择缺项" in item for item in missing))
+        self.assertTrue(any("同行对比缺项" in item for item in missing))
+        self.assertTrue(
+            any("enterprise-panorama-analysis模板缺项" in item for item in missing)
+        )
+
+    def test_delivery_contract_accepts_complete_workbuddy_answer(self):
+        contract = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "skills/delivery-contracts.json"
+            ).read_text(encoding="utf-8")
+        )
+        answer = """
+        完成结果与结论：已形成企业全景分析。
+        企业主体与工商信息已经锚定。事实数据与判断建议分开列示。
+        政策选择与适用版本：以现行管理办法和当期年度通知为依据；
+        当期通知尚未命中的字段保持未知，来源均回指政府官网官方原文。
+        同行对比：选择官方公示名单中的可比企业，按技术和市场比较维度
+        给出可比性评分；同时列明口径差异、不可比较项和数据缺口。
+        风险与下一步行动已经列示。
+        最没有把握：同行未公开指标。
+        最大遗漏：企业研发台账尚未取得。
+        最有价值的创新改进：增加政策变化影响模拟器。
+        提高本次任务效率：复用政策内容哈希。
+        """
+        missing = BRIDGE.audit_delivery_completion(
+            prompt="请形成企业分析报告，核对政策并做同行对标。",
+            answer=answer,
+            active_skills=[
+                {"skill": "project-application-assistant"},
+                {"skill": "enterprise-panorama-analysis"},
+            ],
+            contract=contract,
+        )
+
+        self.assertEqual(missing, [])
+
+    def test_stop_hook_keeps_blocking_after_repeated_quality_failures(self):
+        contract_path = (
+            Path(__file__).resolve().parents[1]
+            / "skills/delivery-contracts.json"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            data_dir = root / "data"
+            plugin_root.mkdir()
+            (plugin_root / "delivery-contracts.json").write_bytes(
+                contract_path.read_bytes()
+            )
+            state_path, _ = BRIDGE.state_paths(data_dir, "session-quality")
+            BRIDGE.atomic_json(
+                state_path,
+                {
+                    "status": "active",
+                    "prompt": "请形成企业分析报告，核对政策并做同行对标。",
+                    "active_skills": [
+                        {"skill": "project-application-assistant"},
+                        {"skill": "enterprise-panorama-analysis"},
+                    ],
+                },
+            )
+            payload = {
+                "session_id": "session-quality",
+                "last_assistant_message": "总体结论：企业可以继续准备。",
+            }
+
+            for attempt in range(1, 5):
+                output = io.StringIO()
+                with mock.patch.object(BRIDGE, "read_stdin", return_value=payload):
+                    with contextlib.redirect_stdout(output):
+                        code = BRIDGE.stop_event(data_dir, plugin_root)
+                result = json.loads(output.getvalue())
+                self.assertEqual(code, 2)
+                self.assertIn(f"第{attempt}次校验", result["reason"])
+
+            state = BRIDGE.load_state(state_path)
+            self.assertEqual(state["quality_retry_count"], 4)
+            self.assertEqual(state["status"], "quality-blocked")
+
     def test_workbuddy_mcp_connector_has_only_one_packaged_runtime_copy(self):
         skills_root = Path(__file__).resolve().parents[1] / "skills"
         suite_manifest = json.loads(

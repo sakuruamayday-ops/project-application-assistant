@@ -84,20 +84,24 @@ def test_annual_only_2025_rules_do_not_leak_into_2026_current_decisions():
     assert rule_map("zhejiang-manufacturing-quality", year=2025)
 
 
-def test_zhejiang_enterprise_technology_center_keeps_branch_thresholds_atomic():
+def test_zhejiang_enterprise_technology_center_uses_native_branch_rules():
     rules = rule_map("zhejiang-enterprise-technology-center", year=2026)
 
-    assert rules["zj-tech-center-2"]["field"] == (
-        "zj_tech_center_revenue_branch_met"
-    )
-    assert rules["zj-tech-center-3"]["field"] == (
-        "zj_tech_center_equipment_branch_met"
-    )
+    for rule_id, fact_field in (
+        ("zj-tech-center-2", "zj_tech_center_revenue_value"),
+        ("zj-tech-center-3", "zj_tech_center_equipment_value"),
+        ("zj-tech-center-5", "zj_tech_center_staff_value"),
+    ):
+        rule = rules[rule_id]
+        assert rule["logic"] == "any"
+        assert len(rule["children"]) == 4
+        assert any(
+            child.get("field") == fact_field
+            for branch in rule["children"]
+            for child in branch["children"]
+        )
     assert rules["zj-tech-center-4"]["field"] == (
-        "zj_tech_center_rnd_ratio_branch_met"
-    )
-    assert rules["zj-tech-center-5"]["field"] == (
-        "zj_tech_center_staff_branch_met"
+        "zj_tech_center_applicable_rnd_ratio_assessment_passed"
     )
 
 
