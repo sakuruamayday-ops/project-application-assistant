@@ -81,7 +81,11 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
         <div class="section-heading"><div><p class="eyebrow">Decision Registry</p><h2>项目算法包</h2></div><p>算法包把项目识别、稳定管理办法、年度通知和属地要求组织为统一决策规则。规则更新由服务端完成，现有 Skills 与 MCP 无需重复配置。</p></div>
         <article class="panel algorithm-introduction">
           <div><span class="eyebrow">它解决什么问题</span><h3>让网站、API、MCP 和 Skills 使用同一套项目判断口径</h3></div>
-          <p>正式规则包会读取企业事实字段并逐项核对政策门槛；政策基线包已经补齐最新办法、年度通知、属地规则需求和依赖关系，可用于查询、预测准备与历史回放；纯检索路由包只负责识别项目。点击清单中的项目，可以查看适用场景、企业字段、规则层、政策来源和实际运行配置。</p>
+          <p>29 个项目均已形成正式阈值规则包。系统会读取企业事实字段，按稳定管理办法、年度通知和属地规则逐项核对门槛；年度通知型项目只在对应年度生效，不能拿上一年度规则冒充当前结论。点击清单中的项目，可以查看企业字段、规则层、政策来源和实际运行配置。</p>
+        </article>
+        <article class="panel algorithm-introduction">
+          <div><span class="eyebrow">Policy Impact</span><h3>政策变化只重编受影响项目</h3></div>
+          <p>新政策进入后，系统先比较内容哈希，再沿政策依赖图定位受影响项目。未变化的算法包直接复用；变化项目会重算当前判断、预测和历史回测。官方名单形成的企业认定、复核和撤销事实不会被后续政策改写。</p>
         </article>
         <nav class="algorithm-metrics" aria-label="算法包分类">
           <a class="algorithm-stat-card {{ 'is-active' if not project_algorithms.coverage_filter else '' }}" href="/algorithms#algorithm-catalog" data-force-navigation>
@@ -99,7 +103,7 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           </a>
           {% else %}
           <div class="algorithm-stat-card algorithm-priority-card">
-            <span>纯检索路由</span><strong>{{ project_algorithms.routing_only }}</strong><small>29 个项目均已有可追溯政策基线</small>
+            <span>纯检索路由</span><strong>{{ project_algorithms.routing_only }}</strong><small>29 个项目均已编译正式阈值规则</small>
           </div>
           {% endif %}
         </nav>

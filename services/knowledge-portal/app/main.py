@@ -2007,7 +2007,7 @@ def project_algorithm_catalog_payload(
             if top_priority
             else "近7日暂无可识别项目查询，暂不人为指定优先级"
             if routing_only
-            else "29个项目均已有政策基线，其中正式门槛规则继续独立标识"
+            else "29个项目均已编译正式阈值规则包"
         ),
         "items": visible_items,
     }
