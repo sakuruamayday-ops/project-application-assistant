@@ -41,19 +41,19 @@ export JIAOTANG_SECURE_COOKIES=false
 
 1. 在门户点击“复制给 Agent”。
 2. 把复制的文字粘贴到本地 Agent。
-3. 门户先向 Agent 提供 `jiaotang-agent-install/v1` 审查说明。审查阶段只包含签名 WorkBuddy 插件包、联网地址、本地改动、凭据保存方式和回滚方法，不包含 `bootstrap_url`，也不包含任何动态命令字段。
+3. 门户先向 Agent 提供 `jiaotang-agent-install/v1` 审查说明。Agent 必须先确认当前宿主是 WorkBuddy 5 或更高版本。审查阶段只包含签名 WorkBuddy 插件包、联网地址、本地改动、凭据保存方式和回滚方法，不包含 `bootstrap_url`，也不包含任何动态命令字段。
 4. 用户核对审查结果后，必须回到门户点击“我已审查，继续安装”；门户此时才开放一次性 `bootstrap_url`，并生成明确授权 WorkBuddy 应用内市场安装的第二阶段提示。
-5. 第二阶段协议提供与本次安装码及已审查发布包绑定的一次性受限下载地址，无需复用浏览器 Cookie；用户核验 SHA-256 与 Ed25519 签名，解压后在 WorkBuddy 内通过 `/plugin marketplace add` 和 `/plugin install` 完成安装，再把一次性 `bootstrap_url` 仅填入 WorkBuddy 插件敏感配置。
-6. WorkBuddy 启用插件时按敏感配置读取一次性 `bootstrap_url`；插件内置的 `jiaotang-kb` 随插件自动启动，不写入宿主级 MCP 配置。
+5. 第二阶段协议提供与本次安装码及已审查发布包绑定的一次性受限下载地址，无需复用浏览器 Cookie；用户核验 SHA-256 与 Ed25519 签名，解压后在 WorkBuddy 内通过 `/plugin marketplace add` 和 `/plugin install` 完成安装。
+6. WorkBuddy 5.3.5 从签名插件根目录 `.mcp.json` 加载 `jiaotang-kb`。未绑定时本地 MCP 只暴露 `jiaotang_kb_setup` 与无敏感信息状态工具；一次性 `bootstrap_url` 仅作为 setup 工具参数使用，不写入普通配置。成功后长期凭据进入系统安全存储，插件切换为远端知识库代理。
 7. 只有服务器记录到首次成功的签名 MCP 连接，门户和安装器才会报告“安装成功”；此前统一显示“安装未完成”。
 8. 设备登记使用“预登记—系统凭据保存与回读—本机签名激活”两阶段事务。预登记不创建有效 Token、设备绑定或公钥；只有凭据回读成功后，服务器才在单个事务中激活。
 9. 同一预登记和激活请求必须幂等；凭据保存失败只留下会过期的预登记意图，不形成半绑定。
 10. 安装码、API Token 和设备私钥不得显示、复制到普通聊天回复或写入普通配置；设备私钥只在本机生成并进入系统凭据存储。
-11. 插件启用后会自动启动 `jiaotang-kb`；门户登记、凭据保存、首次验签和 MCP 连接四个阶段都完成后，才算真实接入。
+11. 插件启用后会自动启动 `jiaotang-kb`；门户登记、凭据保存、首次验签和 MCP 连接四个阶段都完成，且 `tools/list` 实际枚举出 `knowledge_search`、`knowledge_document` 和 `knowledge_service_status` 并成功调用任一只读工具后，才算真实接入。
 12. 登录用户可在 Skills 中心打开一键诊断页，查看正式包摘要、Ed25519 签名状态、脱敏登记 URL 与四阶段状态；诊断页不包含安装码、Token、私钥或完整设备公钥。
-11. 管理员可在“成员管理”查看安装阶段和最近结果；若安装说明未读到，门户显示“未收到结果”。
+13. 管理员可在“成员管理”查看安装阶段和最近结果；若安装说明未读到，门户显示“未收到结果”。
 
-本流程支持 WorkBuddy 的 macOS 与 Windows 宿主。其他本地 Agent 不再使用网站动态安装命令；需要接入时必须采用该宿主原生、可审查并签名的扩展机制。
+自动两步安装只适配 WorkBuddy 5 的 macOS 与 Windows 宿主。其他 Agent 不进入本流程，也不得使用 WorkBuddy 插件包。
 
 管理员可在门户生成管理员 API Key：
 

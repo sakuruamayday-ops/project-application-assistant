@@ -3888,7 +3888,8 @@ def test_connected_device_cross_version_upgrade_reuses_identity(
             "reuse_existing_device_binding": True,
             "reuse_existing_device_key": True,
             "reuse_existing_api_token": True,
-            "reuse_existing_bootstrap_url": True,
+            "reuse_existing_bootstrap_url": False,
+            "bootstrap_url_required_for_bound_upgrade": False,
             "device_reregistration": False,
             "credential_rotation": False,
         }
@@ -4118,6 +4119,9 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         prompt = bootstrap.json()["prompt"]
         assert "不要开始安装" in prompt
         assert "本阶段不包含 bootstrap_url" in prompt
+        assert "先确认当前宿主是 WorkBuddy 5" in prompt
+        assert "本安装计划只适配 WorkBuddy" in prompt
+        assert "不是 WorkBuddy 5 或更高版本" in prompt
         assert "签名插件包" in prompt
         assert "不包含动态命令字段" in prompt
         assert "宿主插件文件" in prompt
@@ -4141,17 +4145,26 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert protocol.headers["content-type"].startswith(
             "application/vnd.jiaotang.agent-install+json"
         )
-        assert protocol.headers["x-jiaotang-install-protocol"] == "5"
+        assert protocol.headers["x-jiaotang-install-protocol"] == "6"
         assert protocol.headers["x-jiaotang-registration-transaction"] == (
             "prepare-store-activate"
         )
         assert protocol.json()["schema"] == "jiaotang-agent-install/v1"
-        assert protocol.json()["protocol_version"] == 5
+        assert protocol.json()["protocol_version"] == 6
         assert protocol.json()["phase"] == "review"
         assert protocol.json()["action"] == "review_signed_plugin"
         assert protocol.json()["opaque"] is False
         assert protocol.json()["review_required"] is True
         assert protocol.json()["user_confirmation_required"] is True
+        host_preflight = protocol.json()["compatibility"]["host_preflight"]
+        assert host_preflight["required_before_confirmation"] is True
+        assert host_preflight["workbuddy_only"] is True
+        assert {
+            adapter["host"]: adapter["status"]
+            for adapter in host_preflight["adapters"]
+        } == {
+            "workbuddy": "released",
+        }
         review = protocol.json()["review"]
         scoped_download_url = (
             f"http://testserver/v1/agent-install/{enrollment_code}"
@@ -4247,20 +4260,24 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert confirmed.status_code == 200
         assert confirmed.json()["phase"] == "install_authorized"
         assert "明确授权继续安装" in confirmed.json()["prompt"]
+        assert "当前宿主仍是 WorkBuddy 5" in confirmed.json()["prompt"]
         assert "`jiaotang-kb`" in confirmed.json()["prompt"]
         assert "不是必须出现在 Agent 工具列表中的工具" in confirmed.json()["prompt"]
-        assert "不要求存在某个固定工具名" in confirmed.json()["prompt"]
-        assert "MCP 声明已经内联在签名 plugin.json" in confirmed.json()["prompt"]
+        assert "`jiaotang_kb_setup`" in confirmed.json()["prompt"]
+        assert "签名插件根目录 .mcp.json" in confirmed.json()["prompt"]
         assert "不要另行创建或改写用户级、项目级" in confirmed.json()["prompt"]
         assert "不得直接注册临时下载或临时解压目录" in confirmed.json()["prompt"]
         assert "不得删除已注册的 jiaotang 市场" in confirmed.json()["prompt"]
-        assert "knowledge_service_status" not in confirmed.json()["prompt"]
+        assert "`knowledge_service_status`" in confirmed.json()["prompt"]
+        assert "no connector owns resource URI" in confirmed.json()["prompt"]
         assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
             confirmed.json()["prompt"]
         )
         manual = confirmed.json()["manual_configuration"]
         assert manual["configuration_key"] == "bootstrap_url"
         assert manual["mcp_server"] == "jiaotang-kb"
+        assert manual["setup_tool"] == "jiaotang_kb_setup"
+        assert manual["configuration_transport"] == "local_mcp_tool_argument"
         assert manual["platform"] == "unified"
         assert manual["plugin_download_url"] == scoped_download_url
         assert manual["plugin_sha256"] == hashlib.sha256(
@@ -4281,6 +4298,12 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert authorized_protocol.json()["installation"]["type"] == (
             "signed_workbuddy_plugin"
         )
+        assert authorized_protocol.json()["installation"]["preflight_recheck"] == {
+            "host": "workbuddy",
+            "minimum_major_version": 5,
+            "artifact_type": "signed_workbuddy_plugin",
+            "must_match_review": True,
+        }
         host_installation = authorized_protocol.json()["installation"][
             "host_installation"
         ]
@@ -4308,9 +4331,13 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
             "mcp_configuration"
         ]
         assert mcp_configuration == {
-            "mode": "signed_inline_plugin_manifest",
-            "manifest": ".codebuddy-plugin/plugin.json",
+            "mode": "signed_external_plugin_mcp_file",
+            "manifest": ".mcp.json",
+            "plugin_manifest_reference": (
+                ".codebuddy-plugin/plugin.json#mcpServers"
+            ),
             "server": "jiaotang-kb",
+            "setup_tool": "jiaotang_kb_setup",
             "write_global_mcp_config": False,
             "write_project_mcp_config": False,
         }
@@ -4347,9 +4374,9 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         workbuddy_instruction = authorized_protocol.json()["completion"][
             "result_handling"
         ]["workbuddy_instruction"]
-        assert "任一只读知识库工具" in workbuddy_instruction
-        assert "不绑定固定工具名" in workbuddy_instruction
-        assert "knowledge_service_status" not in workbuddy_instruction
+        assert "`jiaotang_kb_setup`" in workbuddy_instruction
+        assert "`knowledge_search`" in workbuddy_instruction
+        assert "`knowledge_service_status`" in workbuddy_instruction
         assert (
             authorized_protocol.json()["installation"]["plugin_download_url"]
             == scoped_download_url
@@ -4407,6 +4434,13 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert (
             manifest.json()["workbuddy_plugin"]["download_url"]
             == scoped_download_url
+        )
+        assert manifest.json()["workbuddy_plugin"]["mcp_manifest"] == ".mcp.json"
+        assert manifest.json()["workbuddy_plugin"]["setup_tool"] == (
+            "jiaotang_kb_setup"
+        )
+        assert manifest.json()["workbuddy_plugin"]["configuration_transport"] == (
+            "local_mcp_tool_argument"
         )
         assert manifest.json()["workbuddy_plugin"]["configuration_key"] == "bootstrap_url"
         assert manifest.json()["workbuddy_plugin"]["configuration_sensitive"] is True

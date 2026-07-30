@@ -222,7 +222,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertIn("不得直接注册临时下载", guide)
             self.assertIn("不得删除已注册的持久市场", guide)
 
-    def test_signed_plugin_embeds_mcp_connector_and_sensitive_bootstrap(self):
+    def test_signed_plugin_uses_workbuddy_root_mcp_file_and_local_setup(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             skills_root = root / "skills"
@@ -242,7 +242,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                         "mcp_connector": {
                             "name": "jiaotang-kb",
                             "configuration_mode": (
-                                "inline_plugin_manifest"
+                                "plugin_root_mcp_file"
                             ),
                             "source": "_runtime/jiaotang-kb/jiaotang-agent.mjs",
                             "entry_command": "plugin-serve",
@@ -253,28 +253,12 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 },
             )
 
-            self.assertEqual(
-                manifest["mcpServers"],
-                {
-                    "jiaotang-kb": {
-                        "command": (
-                            "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node"
-                        ),
-                        "args": [
-                            (
-                                "${CODEBUDDY_PLUGIN_ROOT}/mcp/"
-                                "jiaotang-agent.mjs"
-                            ),
-                            "plugin-serve",
-                        ],
-                    }
-                },
-            )
-            self.assertTrue(
-                manifest["userConfig"]["bootstrap_url"]["sensitive"]
-            )
-            self.assertFalse((plugin_root / ".mcp.json").exists())
-            server = manifest["mcpServers"]["jiaotang-kb"]
+            self.assertEqual(manifest["mcpServers"], "./.mcp.json")
+            self.assertNotIn("userConfig", manifest)
+            mcp_path = plugin_root / ".mcp.json"
+            self.assertTrue(mcp_path.is_file())
+            mcp = json.loads(mcp_path.read_text(encoding="utf-8"))
+            server = mcp["mcpServers"]["jiaotang-kb"]
             self.assertEqual(
                 server["command"],
                 "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
@@ -476,7 +460,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         connector = suite_manifest["workbuddy_plugin"]["mcp_connector"]
         self.assertEqual(
             connector["configuration_mode"],
-            "inline_plugin_manifest",
+            "plugin_root_mcp_file",
         )
         source = Path(connector["source"])
 
@@ -534,6 +518,93 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_unbound_workbuddy_plugin_exposes_local_setup_tools(self):
+        root = Path(__file__).resolve().parents[1]
+        connector = root / "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs"
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            credential_file = temporary / "missing-credential"
+            plugin_data = temporary / "plugin-data"
+            requests = "\n".join(
+                json.dumps(payload)
+                for payload in (
+                    {
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2025-06-18",
+                            "capabilities": {},
+                            "clientInfo": {
+                                "name": "workbuddy-regression",
+                                "version": "1.0.0",
+                            },
+                        },
+                    },
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "notifications/initialized",
+                    },
+                    {
+                        "jsonrpc": "2.0",
+                        "id": 2,
+                        "method": "tools/list",
+                        "params": {},
+                    },
+                    {
+                        "jsonrpc": "2.0",
+                        "id": 3,
+                        "method": "tools/call",
+                        "params": {
+                            "name": "jiaotang_kb_setup_status",
+                            "arguments": {},
+                        },
+                    },
+                )
+            )
+            completed = subprocess.run(
+                [
+                    "node",
+                    str(connector),
+                    "plugin-serve",
+                    "--platform",
+                    "darwin",
+                    "--home",
+                    str(temporary),
+                ],
+                input=f"{requests}\n",
+                capture_output=True,
+                check=False,
+                text=True,
+                env={
+                    **os.environ,
+                    "JIAOTANG_TEST_CREDENTIAL_FILE": str(credential_file),
+                    "CODEBUDDY_PLUGIN_DATA": str(plugin_data),
+                },
+            )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        responses = {
+            payload["id"]: payload
+            for line in completed.stdout.splitlines()
+            if line.strip()
+            for payload in [json.loads(line)]
+            if "id" in payload
+        }
+        self.assertEqual(responses[1]["result"]["serverInfo"]["name"], "jiaotang-kb")
+        tools = {
+            item["name"] for item in responses[2]["result"]["tools"]
+        }
+        self.assertEqual(
+            tools,
+            {"jiaotang_kb_setup", "jiaotang_kb_setup_status"},
+        )
+        status = responses[3]["result"]["structuredContent"]
+        self.assertEqual(status["status"], "setup_required")
+        self.assertFalse(status["configured"])
+        self.assertNotIn("jbe_", completed.stdout)
+        self.assertNotIn("jtk_", completed.stdout)
 
     def test_source_use_license_is_packaged_but_not_rendered_on_website(self):
         root = Path(__file__).resolve().parents[1]

@@ -100,6 +100,11 @@ def make_packages(
             {
                 "name": "jiaotang-workbuddy-skills",
                 "version": semantic_version,
+                "mcpServers": "./.mcp.json",
+            }
+        ).encode("utf-8"),
+        ".mcp.json": json.dumps(
+            {
                 "mcpServers": {
                     "jiaotang-kb": {
                         "command": "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
@@ -337,7 +342,7 @@ def test_workbuddy_hotfix_accepts_four_part_version(tmp_path: Path) -> None:
         result["artifacts"]["workbuddy"]["integrity"][
             "mcp_configuration_mode"
         ]
-        == "signed_inline_plugin_manifest"
+        == "signed_external_plugin_mcp_file"
     )
 
 
