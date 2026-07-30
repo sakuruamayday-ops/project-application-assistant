@@ -1,0 +1,10 @@
+{
+  "schema_version": "patent-task-header/v1",
+  "case_id": "fixture-case",
+  "case_revision": 1,
+  "jurisdiction": "中国",
+  "cutoff_date": "2099-01-01",
+  "primary_intent": "验证案卷结构",
+  "confidentiality": "匿名测试夹具",
+  "evidence_sources": ["tests/fixtures/patent-case-delivery"]
+}

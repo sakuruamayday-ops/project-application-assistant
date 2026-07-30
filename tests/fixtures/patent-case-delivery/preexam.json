@@ -1,0 +1,8 @@
+{
+  "schema_version": "patent-preexam-recommendation/v1",
+  "case_id": "fixture-case",
+  "case_revision": 1,
+  "primary_target_center": null,
+  "recommendation": "匿名夹具不作真实预审推荐",
+  "status": "fixture"
+}

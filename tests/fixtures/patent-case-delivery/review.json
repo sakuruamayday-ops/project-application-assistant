@@ -1,0 +1,8 @@
+{
+  "schema_version": "patent-review-record/v1",
+  "case_id": "fixture-case",
+  "case_revision": 1,
+  "review_scope": "匿名结构夹具",
+  "findings": [],
+  "status": "pass"
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": "claim-prior-art-matrix/v1",
+  "case_id": "fixture-case",
+  "case_revision": 1,
+  "claims": [],
+  "evidence_status": "fixture-no-prior-art",
+  "validation_gate": "claim-prior-art-matrix/v1"
+}

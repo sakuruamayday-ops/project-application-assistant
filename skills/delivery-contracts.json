@@ -61,6 +61,11 @@
     },
     "sme-development-projects": {
       "default": "sme-application-checkup-report"
+    },
+    "jiaotang-patent-router": {
+      "by_case_mode": {
+        "filing-ready": "patent-application-case"
+      }
     }
   },
   "delivery_profiles": {
@@ -417,6 +422,63 @@
           "artifact_roles": ["checkup_report"]
         }
       ]
+    },
+    "patent-application-case": {
+      "skill_id": "jiaotang-patent-router",
+      "case_mode": "filing-ready",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": false,
+      "requires_policy_selection_trace": false,
+      "requires_four_question_review": true,
+      "required_sections": [
+        "申请主题与事实锁",
+        "检索范围与现有技术",
+        "权利要求策略",
+        "预审与提交策略",
+        "待确认事项"
+      ],
+      "required_tables": [
+        {
+          "id": "权利要求现有技术矩阵",
+          "required_columns": [
+            "权利要求",
+            "必要技术特征",
+            "对比文件",
+            "原文定位",
+            "判断",
+            "证据状态"
+          ],
+          "min_rows": 1
+        }
+      ],
+      "required_artifacts": [
+        {
+          "role": "patent_case_manifest",
+          "formats": ["json"],
+          "requires_sha256": true,
+          "validation_gate": "patent-case-manifest/v1"
+        },
+        {
+          "role": "patent_application_docx",
+          "formats": ["docx"],
+          "requires_sha256": true,
+          "validation_gate": "patent-application-docx/v1"
+        },
+        {
+          "role": "claim_prior_art_matrix",
+          "formats": ["json"],
+          "requires_sha256": true,
+          "validation_gate": "claim-prior-art-matrix/v1"
+        },
+        {
+          "role": "submission_checklist",
+          "formats": ["md", "json"],
+          "requires_sha256": true,
+          "validation_gate": "patent-submission-checklist/v1"
+        }
+      ],
+      "branding_contracts": []
     }
   },
   "skills": {
@@ -495,6 +557,25 @@
         ["来源清单", "证据台账"],
         ["checkup_report", "后期体检报告"],
         ["品牌审计通过", "报告水印审计通过"]
+      ]
+    },
+    "jiaotang-patent-router": {
+      "applies_when_prompt_contains": [
+        "撰写专利",
+        "发明专利申请",
+        "申新专利",
+        "完整申请文件",
+        "形成专利申请"
+      ],
+      "required_marker_groups": [
+        ["全案唯一清单", "patent-case-manifest"],
+        ["事实锁", "技术交底"],
+        ["检索计划", "现有技术"],
+        ["申请文件", "权利要求书"],
+        ["权利要求现有技术矩阵", "claim_prior_art_matrix"],
+        ["核稿验证", "结构验证"],
+        ["预审推荐", "提交通道"],
+        ["提交清单", "SHA-256"]
       ]
     },
     "peer-benchmarking": {

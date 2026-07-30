@@ -1,0 +1,8 @@
+{
+  "schema_version": "patent-prior-art-evidence/v1",
+  "case_id": "fixture-case",
+  "case_revision": 1,
+  "documents": [],
+  "search_scope_statement": "匿名夹具不执行真实现有技术检索",
+  "status": "fixture"
+}

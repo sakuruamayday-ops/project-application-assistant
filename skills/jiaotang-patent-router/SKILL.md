@@ -30,6 +30,40 @@ description: 焦糖公司级专利工作的唯一综合入口。用户提出“�
 
 缺少法域、基准日或证据来源时，不得给出“现行、有效、最新、无现有技术、可授权、可预审”类确定结论。用 `scripts/patent_route.py` 生成并校验任务头。
 
+## 完整申请案卷的唯一清单
+
+用户要求撰写、形成或交付完整专利申请时，案件模式锁定为 `filing-ready`，并在第一个阶段文件形成前执行：
+
+```bash
+python3 scripts/patent_case_manifest.py init \
+  --case-dir <案卷目录> \
+  --case-id <不含技术秘密的案件标识>
+```
+
+本案只维护一份 `patent-case-manifest.json`。任务头、交底、检索计划、现有技术证据、申请文件输入、申请文件、附图规范、权利要求现有技术矩阵、核稿、核稿验证、预审建议和提交清单，必须以唯一角色登记文件路径、SHA-256、案件版本和上游依赖哈希。底稿或检索证据更新后，所有仍引用旧哈希的下游文件均为错版，不能靠文件名或“已完成”说明放行。
+
+正式成文前先锁定事实，再使用唯一生成器：
+
+```bash
+python3 scripts/build_patent_application.py \
+  --input <案卷目录>/application-input.json \
+  --output <案卷目录>/application.docx \
+  --drawing-spec <案卷目录>/drawing-spec.json \
+  --audit-json <案卷目录>/application-audit.json \
+  --case-dir <案卷目录>
+```
+
+生成器只消费 `patent-application-input/v1`，`fact_lock.status` 必须为 `confirmed`。正式案卷发现待补、占位或模板变量时停止；不补造实施例、参数、效果、申请人或发明人。申请 Word 仍须交给独立核稿技能检查。提交前生成清单并执行：
+
+```bash
+python3 scripts/patent_case_manifest.py checklist --case-dir <案卷目录>
+python3 scripts/patent_case_manifest.py validate \
+  --case-dir <案卷目录> \
+  --milestone filing-ready
+```
+
+只有 `completion_allowed=true` 才能标记为可提交。门禁逐项返回缺失角色、错版依赖、哈希变化及精确重建任务。契约原文见 [专利申请交付契约](references/patent-application-delivery-contract.json)。
+
 ## 两条互斥路径
 
 ### A. 公司级综合审查：本技能
@@ -118,6 +152,8 @@ description: 焦糖公司级专利工作的唯一综合入口。用户提出“�
 - 全页渲染检查；批注另做 OOXML 结构检查。
 
 用 `scripts/build_anonymized_fixture.py` 生成不含原技术内容的结构保持样例，用 `scripts/docx_structure_audit.py` 对比结构。详细验收项见 [references/regression-gates.md](references/regression-gates.md)。
+
+完整申请案卷另使用仓库内 `tests/fixtures/patent-case-delivery` 匿名夹具。该夹具只保留角色、依赖和章节结构，不含真实企业、发明人、技术方案、参数、效果或专利编号；`fixture` 可通过回归里程碑，但永远不能通过 `filing-ready`。
 
 ## 证据分级
 
