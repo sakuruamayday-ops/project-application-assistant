@@ -1,5 +1,6 @@
 import importlib.util
 import sqlite3
+import zipfile
 from pathlib import Path
 
 
@@ -32,6 +33,38 @@ def test_numbered_organization_lines_accepts_markdown_and_official_text():
     ) == [
         ("浙江示例科技有限公司", "1"),
         ("浙江示例研究院", "2"),
+    ]
+
+
+def test_xlsx_enterprise_column_reads_unindexed_official_attachment(
+    tmp_path: Path,
+):
+    workbook = tmp_path / "名单.xlsx"
+    with zipfile.ZipFile(workbook, "w") as archive:
+        archive.writestr(
+            "xl/sharedStrings.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+              <si><t>序号</t></si><si><t>企业名称</t></si>
+              <si><t>浙江示例科技有限公司</t></si>
+              <si><t>嘉兴示例制造厂</t></si>
+            </sst>""",
+        )
+        archive.writestr(
+            "xl/worksheets/sheet1.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+              <sheetData>
+                <row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>
+                <row r="2"><c r="A2"><v>1</v></c><c r="B2" t="s"><v>2</v></c></row>
+                <row r="3"><c r="A3"><v>2</v></c><c r="B3" t="s"><v>3</v></c></row>
+              </sheetData>
+            </worksheet>""",
+        )
+
+    assert MODULE.xlsx_enterprise_column(workbook) == [
+        ("浙江示例科技有限公司", "1"),
+        ("嘉兴示例制造厂", "2"),
     ]
 
 
@@ -81,6 +114,11 @@ def test_lifecycle_rules_cover_four_core_projects():
         "浙江省专精特新中小企业",
         "国家高新技术企业",
         "浙江省隐形冠军企业",
+        "国家级工业设计中心",
+        "浙江省工业设计中心",
+        "浙江省绿色低碳工业园区和工厂",
+        "杭州老字号",
+        "杭州市企业技术中心",
     }.issubset(rules)
     assert (
         MODULE.canonical_lifecycle_project("高企", aliases)

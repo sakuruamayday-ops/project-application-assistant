@@ -1,16 +1,18 @@
 {
   "schema_version": 1,
   "ir_type": "jiaotang-unified-project-rule-ir",
-  "source_digest": "84206f6486c92e73231c4e232f071b11ac3363d809836b46ebb24dc181943a86",
+  "source_digest": "c5cde883f9f85af33d74dc77b1f7c84d023848648f6950c98856806d70a4ffb8",
   "shared_kernel": {
-    "version": "1.1",
+    "version": "1.2",
     "components": [
       "task-omission-preflight",
       "project-router",
       "policy-version-gate",
+      "policy-time-type-checker",
       "fact-contract-normalizer",
       "evidence-conflict-resolver",
       "layer-selector",
+      "native-rule-combinator",
       "requirement-comparator",
       "lifecycle-state-machine",
       "coverage-hash-planner",
@@ -383,8 +385,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
           "rules": [
             {
               "rule_id": "digital_workshop-1",
@@ -659,10 +663,10 @@
         ]
       },
       "ir_node_id": "project:digital-workshop",
-      "policy_version_id": "policy-3d446b9ad127bbada34f",
-      "source_content_hash": "26391db6ec61222aa5d7e19b6a9490d5ff6f4311cddb8496274a3c645d77c6ce",
-      "compile_input_hash": "fa37326d2f994cb44290a23a472ef9308a1b624c0b0fe678f2fec325c9afbdd4",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-0f4db5b5c37d30502fee",
+      "source_content_hash": "6b8b63d1fc378a10ab033c56c2deda77780a3f410a68b0ebc616f86489dbca5c",
+      "compile_input_hash": "fd8fb4f2873f482a2786858884fd261b615e2f275b94d6232dbd5396aca345dc",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "first-equipment": {
@@ -910,8 +914,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=290239",
           "rules": [
             {
               "rule_id": "first-equipment-1",
@@ -1275,10 +1281,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:first-equipment",
-      "policy_version_id": "policy-cd15edcc6d23cb112b9c",
-      "source_content_hash": "109e07fd7b74e44921e509d2328bc357e387125cb09d72f2bd21fdda445754f0",
-      "compile_input_hash": "575b0cfa5478ee71581b3ec836087643a169d952d5fc707c47e0183caca747bf",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-949275dab657169234f9",
+      "source_content_hash": "5ab2873366c4c60f24d35008bd062e0c3c91e240a063ea961c1e80a449e667a3",
+      "compile_input_hash": "3f4d28fd683f8ed232c979bcd00203d785edc5244ae9880bc38ada2b5dcb4b82",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "first-material-batch": {
@@ -1526,12 +1532,14 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {
             "years": [
               "2025"
             ]
           },
+          "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3499/site/attach/0/6922fc25da0e4fde84582f6d7a3d9ff1.pdf",
           "rules": [
             {
               "rule_id": "first-material-1",
@@ -1895,10 +1903,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:first-material-batch",
-      "policy_version_id": "policy-e62afb6c344a3e37355f",
-      "source_content_hash": "3bccfb4e8a743a4d633fda7fc56902a0603d8889f9b77bb01457da2b7f57e213",
-      "compile_input_hash": "b97004fffe05c40bb474370d4894f467f3ca1508e5e311b1c13026197f1bc37a",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-e01e9dcd13e4e208bb31",
+      "source_content_hash": "bcfa67fc06684ccd5968744b59c789b0eb7a50fb996afd38a7418f78c9b21164",
+      "compile_input_hash": "32af0cabd1778a73c789fc2d7a5650e3c77ea614165c02b37f5d82f976de3ae6",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "first-software-version": {
@@ -2170,12 +2178,14 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {
             "years": [
               "2025"
             ]
           },
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293873",
           "rules": [
             {
               "rule_id": "first-software-1",
@@ -2575,10 +2585,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:first-software-version",
-      "policy_version_id": "policy-2448fa908b4807b977a7",
-      "source_content_hash": "fbc78561995e08801a99cba21b2d1d669363292ec9a3020dba56ddb6e1d1e68c",
-      "compile_input_hash": "5d0de525029b23a5c0e090bdacb055e862ba976083d6dfd45f8ae769f11f95a2",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-a022f95605102c12ef01",
+      "source_content_hash": "6b98e160bbe59d3f9c52baa76f11957437f98882dcefd760f1c2164628507bda",
+      "compile_input_hash": "23597c9d4f79e105646322ce474f13b4c912e2bcb509759d573a046f53054a58",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "future-factory": {
@@ -2751,8 +2761,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
           "rules": [
             {
               "rule_id": "future_factory-1",
@@ -3027,10 +3039,10 @@
         ]
       },
       "ir_node_id": "project:future-factory",
-      "policy_version_id": "policy-cfe721c7a33e492ef583",
-      "source_content_hash": "ec2034c3439174a285f400b4b31f4683f5af57e27fe35f61121d18e11ea3057a",
-      "compile_input_hash": "aeb370477fae12cc79ed62b5d25344babc83b1ba09df34494078d76cc19d2702",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-6b589f17c0f3c98b2efc",
+      "source_content_hash": "44664840711282a2e2444ee41327c45afdcc08651b33da3d2f2c72afba58e24f",
+      "compile_input_hash": "5147842fbb3cf1f55f9075251f76e6d6d4977851b81a2d3639f5ae5094510a1e",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "green-factory-1": {
@@ -3203,8 +3215,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
           "rules": [
             {
               "rule_id": "green-factory-1-1",
@@ -3295,6 +3309,7 @@
         {
           "layer_id": "green-factory-1-jurisdiction",
           "layer_type": "jurisdiction",
+          "policy_time_type": "jurisdiction-detail",
           "label": "区级绿色工厂属地实施细则",
           "applicability": {
             "regions": [
@@ -3305,6 +3320,7 @@
               "evaluation"
             ]
           },
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
           "rules": [
             {
               "rule_id": "green-factory-1-local-thresholds",
@@ -3493,10 +3509,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:green-factory-1",
-      "policy_version_id": "policy-c3b697cc449e79056b84",
-      "source_content_hash": "03a9d5e1dbd75faa691281ca816f94dbda296a47ce8997c62a3702afc5654b46",
-      "compile_input_hash": "1e0abff6a76b30ef9c9bb058344d83be0bcc600543c3b24707ced6674e82cf15",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-7da0fa28a885defe0b96",
+      "source_content_hash": "f996644a8d3fd47387212ea9dba40f43da6ec2d0372b6aaf510a46116c17bef2",
+      "compile_input_hash": "1fe05e0f83bc6a1c8e1e803776c698d3574ef7ee7afcd2d3a9b72eb78d1c40fc",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "green-factory-2": {
@@ -3669,8 +3685,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
           "rules": [
             {
               "rule_id": "green-factory-2-1",
@@ -3761,6 +3779,7 @@
         {
           "layer_id": "green-factory-2-jurisdiction",
           "layer_type": "jurisdiction",
+          "policy_time_type": "jurisdiction-detail",
           "label": "市级绿色工厂属地实施细则",
           "applicability": {
             "regions": [
@@ -3771,6 +3790,7 @@
               "evaluation"
             ]
           },
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
           "rules": [
             {
               "rule_id": "green-factory-2-local-thresholds",
@@ -3959,10 +3979,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:green-factory-2",
-      "policy_version_id": "policy-41a5305cf925167c717c",
-      "source_content_hash": "70a08d20d43d00c3ef15e6e2eb7a588632bed3104807ec0d470aa959357bd073",
-      "compile_input_hash": "0f91dbcbbc74d0944d37ec75638dc084e0ef4a5d9bff139c5c3612b2b73cc9f3",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-a1798c32772ca24595c3",
+      "source_content_hash": "520362027f75fa0467fe74f0269b5c5ac2013670f3d69bf070b7d8d1eefecd6b",
+      "compile_input_hash": "66b922c0f67986a7e79f5a5da9d37ab4e45ba6fd0a390692597be2f2eb1f89da",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "green-factory-3": {
@@ -4135,8 +4155,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
           "rules": [
             {
               "rule_id": "green-factory-3-1",
@@ -4227,6 +4249,7 @@
         {
           "layer_id": "green-factory-3-jurisdiction",
           "layer_type": "jurisdiction",
+          "policy_time_type": "jurisdiction-detail",
           "label": "浙江省绿色低碳工厂属地实施细则",
           "applicability": {
             "regions": [
@@ -4237,6 +4260,7 @@
               "evaluation"
             ]
           },
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
           "rules": [
             {
               "rule_id": "green-factory-3-local-thresholds",
@@ -4425,10 +4449,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:green-factory-3",
-      "policy_version_id": "policy-ba0052fbed6767e53ea2",
-      "source_content_hash": "3366cb86c02d0f5bf6ce163395eaa4ed5cd3deeab042f198377e30640eddcb03",
-      "compile_input_hash": "deb61b67c7439dee96e859f840625bb258aac04a38bc55ca9beb05ccd28dec2b",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-c887d9b2b571b7a0fe39",
+      "source_content_hash": "a73d7678e505171a05cff2cd6a7e631b93ef7ba64725accd3ece003122d8464d",
+      "compile_input_hash": "5f4f09d88c821dc375970ede90a44dbec455c4db70c285b9b85093bf5a1e4181",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "green-factory-4": {
@@ -4579,8 +4603,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
           "rules": [
             {
               "rule_id": "national-green-factory-entity",
@@ -4657,6 +4683,7 @@
         {
           "layer_id": "national-green-factory-2025-recognition",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2025年度国家绿色工厂推荐通知",
           "applicability": {
             "years": [
@@ -4667,6 +4694,7 @@
               "new-recognition"
             ]
           },
+          "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
           "rules": [
             {
               "rule_id": "national-green-factory-report",
@@ -4687,6 +4715,7 @@
         {
           "layer_id": "national-green-factory-2025-dynamic",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2025年度现有国家绿色工厂动态对标",
           "applicability": {
             "years": [
@@ -4697,6 +4726,7 @@
               "dynamic-review"
             ]
           },
+          "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
           "rules": [
             {
               "rule_id": "national-green-factory-report",
@@ -4939,10 +4969,10 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:green-factory-4",
-      "policy_version_id": "policy-1523bea94dad3bd5fa62",
-      "source_content_hash": "d3772a0aa5fa0870af9ac635b712cf7cd12278e4d3bb6ed82d9a23c696df036c",
-      "compile_input_hash": "52731e2535b9b0d3056bf97781f22579213ad0301566f8237ddf3c64873ae5e0",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-2065a9625471a0c659fb",
+      "source_content_hash": "aec45a9cb280a99ac6efcba6fbaddc7aab01ac60e42db84a24d548595721c427",
+      "compile_input_hash": "6dfa73a433f0098fe2e1984cbfeafb73603544241e782895c6eb34e04d908202",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "national-green-factory",
         "project_name": "国家绿色工厂",
@@ -5212,8 +5242,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
           "rules": [
             {
               "rule_id": "hz-rd-entity",
@@ -5613,10 +5645,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:hangzhou-enterprise-institute",
-      "policy_version_id": "policy-076cf26e661e815a9e5b",
-      "source_content_hash": "412aec3d3c7ba49dcb0c594aeb285ca69d1385221dd0dbd686322e1b8fd34ffe",
-      "compile_input_hash": "58ca80b6a830eaad6c08f11d510d3a120098656b8c393ba6a777674260206d9c",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-5cd5e6813dc09479ff18",
+      "source_content_hash": "7575279725b50434374c50ef53f3d7a2a1ad303523943051f8c9e04c3f87afed",
+      "compile_input_hash": "8dd8d4c304aa5fb165541a01cf20a7bf431d886e57f718fdeaf8ce72e2047313",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "hangzhou-enterprise-technology-center": {
@@ -5838,8 +5870,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
           "rules": [
             {
               "rule_id": "hz-tech-center-1",
@@ -6171,11 +6205,32 @@
         "dependencies": []
       },
       "ir_node_id": "project:hangzhou-enterprise-technology-center",
-      "policy_version_id": "policy-3ab1743ea30263b64d68",
-      "source_content_hash": "21ddb01e70f3d0bc823fec70855b49c7708a629420703597306a08a1e2ec6dc8",
-      "compile_input_hash": "daf3600ceea4c36394505aaa30a5acf6a55dba4140feb5e3e5feb808f2d93411",
-      "shared_kernel_version": "1.1",
-      "lifecycle_rule": {}
+      "policy_version_id": "policy-a24d93c2ed0618770841",
+      "source_content_hash": "a330fe8100f7a1aecba6820b63dd07f487524100bdebcb23353f37b30cab438b",
+      "compile_input_hash": "e9447f726b6e29beb5f76b2516f270b7590e80385c5c4ea628961afa8c0aa1f7",
+      "shared_kernel_version": "1.2",
+      "lifecycle_rule": {
+        "rule_id": "hangzhou-enterprise-technology-center-lifecycle",
+        "project_name": "杭州市企业技术中心",
+        "aliases": [
+          "杭州市建设行业企业技术中心认定和评价"
+        ],
+        "cycle_type": "dynamic_evaluation",
+        "supported_event_types": [
+          "recognition",
+          "recognition_publicity",
+          "annual_evaluation",
+          "performance_evaluation",
+          "changed",
+          "revoked"
+        ],
+        "current_rule_state": "confirmed",
+        "local_rule_sources": [],
+        "official_rule_urls": [
+          "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml"
+        ],
+        "rule_note": "认定与后续评价分别建事件；当前检索层未确认固定资格年限，因此不自动生成到期复核。建设行业标题归入同一市级项目并保留来源子类型。"
+      }
     },
     "intelligent-factory": {
       "schema_version": 1,
@@ -6347,8 +6402,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
           "rules": [
             {
               "rule_id": "intelligent_factory-1",
@@ -6623,10 +6680,10 @@
         ]
       },
       "ir_node_id": "project:intelligent-factory",
-      "policy_version_id": "policy-bf78fa7bb4f3b84a2319",
-      "source_content_hash": "cb8e1ee6c0819a45955c084e080927795637d41cc8f747195f93ff7d926c3b5f",
-      "compile_input_hash": "bf1be1d5ff6c3e7b319615647b926edd9c8cd53053cfe86aad705475d905d123",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-b96c3e5c5ca902bf9294",
+      "source_content_hash": "2fa836564538333134065ad22aae0646787b3e49eba8dd5eb1eb1081df7fe836",
+      "compile_input_hash": "197d4859d08cb898efb9b1f246a2e7a66a16ef56804b6ff5cf32f3a1e6cd6e24",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "key-little-giant-support": {
@@ -6824,6 +6881,7 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {
             "years": [
@@ -6832,6 +6890,7 @@
               "2026"
             ]
           },
+          "source_url": "https://www.miit.gov.cn/xwdt/gxdt/art/2024/art_8df1cf7787fb4e3589bd5233022a51e7.html",
           "rules": [
             {
               "rule_id": "key-little-giant-1",
@@ -7125,10 +7184,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:key-little-giant-support",
-      "policy_version_id": "policy-5e4574e9b5177c898d74",
-      "source_content_hash": "6fc2e79af0024dc402e9069b6dcc0a1750171db2925658c49c5b186e524df858",
-      "compile_input_hash": "488b45cfad7217dc2ec19dfc171ac4e6b58f57b5e3f2351cdd3887ed062e5e64",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-3485b2b54b211c599208",
+      "source_content_hash": "9633cd3ade460ef3908055ab793357efbbaa6021453e37737cfabf9fe126b492",
+      "compile_input_hash": "2c8b5c9ce6c3421976f27ef54022b4b1451b5c248dda2a3de17eb2adf5117ae7",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "little-giant": {
@@ -7471,6 +7530,7 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {
             "application_types": [
@@ -7478,6 +7538,7 @@
               "new-recognition"
             ]
           },
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
           "rules": [
             {
               "rule_id": "little-giant-specialized-sme-status",
@@ -7659,6 +7720,7 @@
         {
           "layer_id": "little-giant-2026-recognition",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2026年第八批小巨人认定通知",
           "applicability": {
             "years": [
@@ -7669,6 +7731,7 @@
               "new-recognition"
             ]
           },
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
           "rules": [
             {
               "rule_id": "little-giant-2026-relationship-exclusion",
@@ -7703,6 +7766,7 @@
         {
           "layer_id": "little-giant-2026-review",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2026年小巨人复核过渡标准",
           "applicability": {
             "years": [
@@ -7712,6 +7776,7 @@
               "review"
             ]
           },
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html",
           "rules": [
             {
               "rule_id": "little-giant-review-market-years",
@@ -8245,10 +8310,10 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:little-giant",
-      "policy_version_id": "policy-b42a23d97595171f3d21",
-      "source_content_hash": "155cc5c66025afa986426069ab7ed7152126033d7556e6357a0829ddbc84f16a",
-      "compile_input_hash": "217a342ae03ed05e9a0ad016b87af4bc5fa37cdc7f913757ec166081c9a538d3",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-2581eb4b5fdfb4457987",
+      "source_content_hash": "c3b9e3f5da71bc2331be5e48ad2022880ebd50aad2c8764f0466e54ab456979f",
+      "compile_input_hash": "dfc44b33a79eb0114353979722c4ca812260839e11c40d8f58ae1e6556e6dd8b",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "national-little-giant",
         "project_name": "国家专精特新“小巨人”企业",
@@ -8500,8 +8565,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363",
           "rules": [
             {
               "rule_id": "zj-single-champion-1",
@@ -8620,6 +8687,7 @@
         {
           "layer_id": "zj-single-champion-2026",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2026年度浙江省制造业单项冠军遴选",
           "applicability": {
             "years": [
@@ -8629,6 +8697,7 @@
               "recognition"
             ]
           },
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/article/news/detail.html?id=287115",
           "rules": [
             {
               "rule_id": "zj-single-champion-2026-one-product",
@@ -8875,10 +8944,10 @@
         ]
       },
       "ir_node_id": "project:manufacturing-single-champion-1",
-      "policy_version_id": "policy-cec55042ebc033576e37",
-      "source_content_hash": "9af44770ac9996877121f177a8407a96e26eaf966c91e4bac97bef99a34dfda9",
-      "compile_input_hash": "f0efae275f62f235b9b523ce8001bb610cf1a0eeceb8ee2a4ca612cc22d76d9d",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-ee46689d63eae6dd46b7",
+      "source_content_hash": "00f14d2b3c79e285d9f394d7c6fd989d5302a4c44f1cffbd0f7bc7cbb460baa2",
+      "compile_input_hash": "069536643a1cda30f478b06bb10b28a268ac8a1bed9b5ac48e66a3490157c86e",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "zhejiang-manufacturing-single-champion",
         "project_name": "浙江省制造业单项冠军企业",
@@ -9108,8 +9177,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
           "rules": [
             {
               "rule_id": "single-champion-entity",
@@ -9460,10 +9531,10 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:manufacturing-single-champion-2",
-      "policy_version_id": "policy-28a53dceee1ee7f56801",
-      "source_content_hash": "6e3c7ee74ab3ec7e9d80ce90453c4053c88389a4b0d08d4f11559be28cd1b972",
-      "compile_input_hash": "ab4b9578994438219fbc03019172c54d8606e18c838a5990c2cf835b8afb9662",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-675d50437b0f2980eea4",
+      "source_content_hash": "34d206a7c1ba430d73b701c6eaf7be25349318c91c69c63dacad5fceb2cf1237",
+      "compile_input_hash": "9b0b541cb7c20789b6ba9beb13835f50116caf3a81fe54f8b297975edc75dfba",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "national-manufacturing-single-champion",
         "project_name": "国家制造业单项冠军企业",
@@ -9637,8 +9708,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
           "rules": [
             {
               "rule_id": "municipal-tech-center-1",
@@ -9715,6 +9788,7 @@
         {
           "layer_id": "municipal-tech-center-11-city-runtime",
           "layer_type": "jurisdiction",
+          "policy_time_type": "jurisdiction-detail",
           "label": "浙江11个设区市动态阈值层",
           "applicability": {
             "regions": [
@@ -9725,6 +9799,7 @@
               "evaluation"
             ]
           },
+          "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
           "rules": [
             {
               "rule_id": "municipal-tech-center-runtime-gate",
@@ -9894,10 +9969,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:municipal-enterprise-technology-center",
-      "policy_version_id": "policy-b035f8b1fbc44e5ce1f6",
-      "source_content_hash": "c7731e7f50cdc437b2d6aaed894228feac3900060d3b063fe12e17a6ba1b8f71",
-      "compile_input_hash": "cf1a04a2b383aac9845fdd2be691a23dbf7bb17a49027b90ab40250a16e3a3e4",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-9da657872110a0c711b4",
+      "source_content_hash": "7e678a2326a81c5e4b28a771c83fb983d3fd32b2ac8d301eb537bbb8fab62ce5",
+      "compile_input_hash": "94b52756d69515c88c93af0eeb78a134e27b47410ed0aa76b96a4308842353fc",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "national-high-tech-enterprise": {
@@ -10147,8 +10222,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
           "rules": [
             {
               "rule_id": "hte-registration-years",
@@ -10286,6 +10363,7 @@
         {
           "layer_id": "zhejiang-high-tech-2025",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "浙江省2025年度高新技术企业认定通知",
           "applicability": {
             "years": [
@@ -10299,6 +10377,7 @@
               "re-recognition"
             ]
           },
+          "source_url": "https://jxt.zj.gov.cn/art/2025/6/5/art_1229886900_58935997.html",
           "rules": [
             {
               "rule_id": "zhejiang-high-tech-2025-submission",
@@ -10581,10 +10660,10 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:national-high-tech-enterprise",
-      "policy_version_id": "policy-ab89567939e140fc3f7e",
-      "source_content_hash": "76904828887a60c303a34cc3983806c1bde79b081ede18c7248dac09c8db2caf",
-      "compile_input_hash": "85f1151bfc2cb38dad7d1b12df1eeac4edfd8be39f0073b19079c825399f8728",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-820104456c372cb24ffe",
+      "source_content_hash": "0ec09dfb932a878e08d5270967eb59cb8e52eaf4f86aa5c9cc091781f3481674",
+      "compile_input_hash": "c4a359fe0741aa9f81f19a1200686509b6b69ec394dcdc399aac84ee54759a05",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "national-high-tech-enterprise",
         "project_name": "国家高新技术企业",
@@ -10782,8 +10861,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/extSmeCustBaseSearch.do?ID=70350&action=custServDetail&sid=",
           "rules": [
             {
               "rule_id": "zj-tech-sme-1",
@@ -11060,10 +11141,10 @@
         ]
       },
       "ir_node_id": "project:technology-sme-1",
-      "policy_version_id": "policy-f4b31fb0508369fb9d1a",
-      "source_content_hash": "fd0c6a2a155d20a9a3bd58ec0a5bb79072d3c0fef286f39888268782e356eb47",
-      "compile_input_hash": "211b6516b63dea2bbebe037ba0a3020b89bd99e12e0e3d0aa11344f5a51c9044",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-86878d2ff7184f1dc8a2",
+      "source_content_hash": "e111610bd369cbce47718e94a47790bf87aa3527ad5277ace2116b6b1646c5b0",
+      "compile_input_hash": "48f5b434465fc704789cc47265521b3e982efb9631904921d993e831d6142cca",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "technology-sme-2": {
@@ -11287,8 +11368,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
           "rules": [
             {
               "rule_id": "technology-sme-resident-enterprise",
@@ -11410,6 +11493,7 @@
         {
           "layer_id": "technology-sme-2026",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2026年度科技型中小企业评价通知",
           "applicability": {
             "years": [
@@ -11420,6 +11504,7 @@
               "annual-evaluation"
             ]
           },
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
           "rules": [
             {
               "rule_id": "technology-sme-2026-platform-submission",
@@ -11681,10 +11766,10 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:technology-sme-2",
-      "policy_version_id": "policy-9d418843815558e97016",
-      "source_content_hash": "2549252d6f86d36c773c9e5070c00b40a07c9286b2b454f709e9b7b0e925a05c",
-      "compile_input_hash": "c87843bdf5fd196e3b937512b22f8318c2fac1f23aec23010f2310582095b514",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-f9f8a711c7e060e4df9e",
+      "source_content_hash": "8cbce4f175e2eda140fdf0d482cfd6ed725df42f85da3c055dae40c0bc2d746b",
+      "compile_input_hash": "a4c5b6cc6531dcda4b894bab37f6705f718e6dec14730f5915395944038a181b",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "national-technology-sme",
         "project_name": "国家科技型中小企业",
@@ -11748,12 +11833,31 @@
           "value_type": "boolean"
         },
         {
-          "field": "enterprise_institute_rnd_tier_met",
-          "label": "分档研发投入要求",
+          "field": "revenue",
+          "label": "上一年度营业收入",
           "aliases": [
-            "企业研究院分档研发要求"
+            "营业收入"
           ],
-          "value_type": "boolean"
+          "value_type": "number",
+          "unit": "万元"
+        },
+        {
+          "field": "rnd_ratio",
+          "label": "上一年度研发费用占营业收入比例",
+          "aliases": [
+            "研发强度"
+          ],
+          "value_type": "number",
+          "unit": "%"
+        },
+        {
+          "field": "rnd_expense",
+          "label": "上一年度研发费用",
+          "aliases": [
+            "研发费用"
+          ],
+          "value_type": "number",
+          "unit": "万元"
         },
         {
           "field": "innovation_score",
@@ -11827,9 +11931,109 @@
         {
           "rule_id": "zj-institute-rnd",
           "type": "hard-threshold",
-          "field": "enterprise_institute_rnd_tier_met",
-          "operator": "truthy",
-          "expected": true,
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-institute-rnd-low-revenue",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-low-revenue-band",
+                  "field": "revenue",
+                  "operator": "lt",
+                  "expected": 5000,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-low-ratio",
+                  "field": "rnd_ratio",
+                  "operator": "gte",
+                  "expected": 5,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-low-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 100,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-institute-rnd-middle-revenue",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-middle-floor",
+                  "field": "revenue",
+                  "operator": "gte",
+                  "expected": 5000,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-middle-ceiling",
+                  "field": "revenue",
+                  "operator": "lt",
+                  "expected": 20000,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-middle-route",
+                  "logic": "any",
+                  "children": [
+                    {
+                      "rule_id": "zj-institute-rnd-middle-ratio",
+                      "field": "rnd_ratio",
+                      "operator": "gte",
+                      "expected": 4,
+                      "unit": "%"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-middle-expense",
+                      "field": "rnd_expense",
+                      "operator": "gte",
+                      "expected": 250,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-institute-rnd-high-revenue",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-high-floor",
+                  "field": "revenue",
+                  "operator": "gte",
+                  "expected": 20000,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-high-route",
+                  "logic": "any",
+                  "children": [
+                    {
+                      "rule_id": "zj-institute-rnd-high-ratio",
+                      "field": "rnd_ratio",
+                      "operator": "gte",
+                      "expected": 3,
+                      "unit": "%"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-high-expense",
+                      "field": "rnd_expense",
+                      "operator": "gte",
+                      "expected": 800,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
           "source": "浙经信高新〔2025〕169号第九条",
           "source_quote": "营业收入5000万元以下的，研发强度不低于5%且研发费用不低于100万元；5000万元至2亿元的，研发强度不低于4%或研发费用不低于250万元；2亿元以上的，研发强度不低于3%或研发费用不低于800万元。",
           "policy_status": "current",
@@ -11886,8 +12090,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
           "rules": [
             {
               "rule_id": "zj-institute-entity",
@@ -11920,9 +12126,109 @@
             {
               "rule_id": "zj-institute-rnd",
               "type": "hard-threshold",
-              "field": "enterprise_institute_rnd_tier_met",
-              "operator": "truthy",
-              "expected": true,
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-low-revenue",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "zj-institute-rnd-low-revenue-band",
+                      "field": "revenue",
+                      "operator": "lt",
+                      "expected": 5000,
+                      "unit": "万元"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-low-ratio",
+                      "field": "rnd_ratio",
+                      "operator": "gte",
+                      "expected": 5,
+                      "unit": "%"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-low-expense",
+                      "field": "rnd_expense",
+                      "operator": "gte",
+                      "expected": 100,
+                      "unit": "万元"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "zj-institute-rnd-middle-revenue",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "zj-institute-rnd-middle-floor",
+                      "field": "revenue",
+                      "operator": "gte",
+                      "expected": 5000,
+                      "unit": "万元"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-middle-ceiling",
+                      "field": "revenue",
+                      "operator": "lt",
+                      "expected": 20000,
+                      "unit": "万元"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-middle-route",
+                      "logic": "any",
+                      "children": [
+                        {
+                          "rule_id": "zj-institute-rnd-middle-ratio",
+                          "field": "rnd_ratio",
+                          "operator": "gte",
+                          "expected": 4,
+                          "unit": "%"
+                        },
+                        {
+                          "rule_id": "zj-institute-rnd-middle-expense",
+                          "field": "rnd_expense",
+                          "operator": "gte",
+                          "expected": 250,
+                          "unit": "万元"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "zj-institute-rnd-high-revenue",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "zj-institute-rnd-high-floor",
+                      "field": "revenue",
+                      "operator": "gte",
+                      "expected": 20000,
+                      "unit": "万元"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-high-route",
+                      "logic": "any",
+                      "children": [
+                        {
+                          "rule_id": "zj-institute-rnd-high-ratio",
+                          "field": "rnd_ratio",
+                          "operator": "gte",
+                          "expected": 3,
+                          "unit": "%"
+                        },
+                        {
+                          "rule_id": "zj-institute-rnd-high-expense",
+                          "field": "rnd_expense",
+                          "operator": "gte",
+                          "expected": 800,
+                          "unit": "万元"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
               "source": "浙经信高新〔2025〕169号第九条",
               "source_quote": "营业收入5000万元以下的，研发强度不低于5%且研发费用不低于100万元；5000万元至2亿元的，研发强度不低于4%或研发费用不低于250万元；2亿元以上的，研发强度不低于3%或研发费用不低于800万元。",
               "policy_status": "current",
@@ -11979,6 +12285,7 @@
         {
           "layer_id": "zhejiang-enterprise-institute-2026",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2026年度省企业研究院申报通知",
           "applicability": {
             "years": [
@@ -11991,6 +12298,9 @@
               "recognition"
             ]
           },
+          "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
+          "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9",
           "rules": [
             {
               "rule_id": "zhejiang-enterprise-institute-2026-data-cutoff",
@@ -12022,14 +12332,20 @@
               "source": "金标准事实"
             },
             {
-              "field": "municipal_rnd_platform_status",
-              "value": true,
+              "field": "revenue",
+              "value": 4000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "enterprise_institute_rnd_tier_met",
-              "value": true,
+              "field": "rnd_ratio",
+              "value": 5,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "rnd_expense",
+              "value": 100,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -12072,14 +12388,20 @@
               "source": "金标准事实"
             },
             {
-              "field": "municipal_rnd_platform_status",
-              "value": true,
+              "field": "revenue",
+              "value": 4000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "enterprise_institute_rnd_tier_met",
-              "value": true,
+              "field": "rnd_ratio",
+              "value": 5,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "rnd_expense",
+              "value": 100,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -12122,14 +12444,20 @@
               "source": "金标准事实"
             },
             {
-              "field": "municipal_rnd_platform_status",
-              "value": true,
+              "field": "revenue",
+              "value": 4000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "enterprise_institute_rnd_tier_met",
-              "value": true,
+              "field": "rnd_ratio",
+              "value": 5,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "rnd_expense",
+              "value": 100,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -12212,10 +12540,10 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:zhejiang-enterprise-institute",
-      "policy_version_id": "policy-ae244dc7807e027d1a31",
-      "source_content_hash": "db2c9772b0c73fbccea372384b9668053399203cdfc1422e5fc4fd5cee675546",
-      "compile_input_hash": "55b735ea0119be2be788d66ba78a9a55a800d04fbc4c5331b99dd5c90a07115e",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-0bc34a9a1ad185aaeb13",
+      "source_content_hash": "ba82f7f3b0fec97f3b66a5d9a70860aabed866656c8ba8da93110c96e0d1f22b",
+      "compile_input_hash": "1405580b7f98a49afed4f06e06a50bd3d8723a9497c9fa7d5fabdd759d0de678",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "zhejiang-enterprise-institute",
         "project_name": "浙江省企业研究院",
@@ -12461,8 +12789,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
           "rules": [
             {
               "rule_id": "zj-tech-center-1",
@@ -12808,10 +13138,10 @@
         ]
       },
       "ir_node_id": "project:zhejiang-enterprise-technology-center",
-      "policy_version_id": "policy-2c2c9cc2adf4a0b704ed",
-      "source_content_hash": "95cceb9c6edf072e724e5b9d1c29b9a2b179a909fca068068e1958f10b68aed6",
-      "compile_input_hash": "d6f9eea7ceaea4e9862f4dca0b2f5d293c50b4a4535edcda11fd1bbd7e4049f1",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-0fa7a696783210b49496",
+      "source_content_hash": "3f13736d64d336b959b3dc9f4c4d469b09e83f799bdd98c51f60599a0c891868",
+      "compile_input_hash": "ceb4c77a30bdd01fac502016690b116ff85c7828b0fc6e7c81df04340efb30df",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "zhejiang-hidden-champion": {
@@ -13194,6 +13524,7 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {
             "years": [
@@ -13203,6 +13534,9 @@
               "recognition"
             ]
           },
+          "source_url": "https://aiqice.cn/policyDetail?id=13128837&indexId=8c65d358e6284a548ccb3f9726c51729",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2026-03-26__关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知__8c65d358e6284a548ccb3f9726c51729/附件/4.浙江省隐形冠军企业申请条件和要求.doc",
+          "source_archive_sha256": "2c2212e47b2952085b1e49d622a4fbdcb5b5065eb7476340c4295027042a17fe",
           "rules": [
             {
               "rule_id": "hidden-entity",
@@ -13437,6 +13771,7 @@
         {
           "layer_id": "hidden-champion-review-2026",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2026年度隐形冠军复核",
           "applicability": {
             "years": [
@@ -13446,6 +13781,9 @@
               "review"
             ]
           },
+          "source_url": "https://aiqice.cn/policyDetail?id=13128837&indexId=8c65d358e6284a548ccb3f9726c51729",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2026-03-26__关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知__8c65d358e6284a548ccb3f9726c51729/附件/5.浙江省隐形冠军企业复核条件和要求.doc",
+          "source_archive_sha256": "c3d0734c2e17f0bd083d8dca1c67eff50728a8c23cdc3537a732fef098a7864c",
           "rules": [
             {
               "rule_id": "hidden-review-operation",
@@ -13918,10 +14256,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:zhejiang-hidden-champion",
-      "policy_version_id": "policy-b575c6a8e7131d2373bd",
-      "source_content_hash": "5684d5351f2e6aa8abcf27e955992653dd6866e19e336abda4507a0191ddfa94",
-      "compile_input_hash": "1bac9348a38c41bd28ca296a80110ea4c3ade351eda79a997b26b4db8b87735e",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-a0c1e25bdc0f9d47c107",
+      "source_content_hash": "d9dd7105ece662081a1ef3bb20700a76657660de7e53d836ca169df3d36f84e9",
+      "compile_input_hash": "d8dc0dd4bca2c1127005e3b9d617ffd26a3e2dd9bdcdfefcb14e244424646bec",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "zhejiang-hidden-champion",
         "project_name": "浙江省隐形冠军企业",
@@ -14032,8 +14370,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
           "rules": [
             {
               "rule_id": "industrial-new-product-current-open",
@@ -14068,6 +14408,7 @@
         {
           "layer_id": "industrial-new-product-2023-history",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2023年度工业新产品历史回放",
           "applicability": {
             "years": [
@@ -14077,6 +14418,7 @@
               "historical-replay"
             ]
           },
+          "source_url": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=490d5583993f405a92d0cbdee4b69f0c.pdf",
           "rules": [
             {
               "rule_id": "industrial-new-product-2023-thresholds",
@@ -14210,10 +14552,10 @@
         ]
       },
       "ir_node_id": "project:zhejiang-industrial-new-product",
-      "policy_version_id": "policy-af0948effac1d289f4a1",
-      "source_content_hash": "9dc1fa8582ed76dfb8b9e15ae1db71fe26c7e4792fae3ccd0daf84a1564515ca",
-      "compile_input_hash": "ead860ac118c58fc973cab529bd6949c64c8c2bfd434a49a86dc17137b5d4309",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-c9f063f6c7fe5c6de555",
+      "source_content_hash": "acf8991832232ca54e69dc70be630f515686ae6288e27cdf26707be3311f672d",
+      "compile_input_hash": "e9a8ab39a05ef535b05db300fca3b56a6aad34c874b0ab5fbf20c14d669ccf7b",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "zhejiang-key-enterprise-institute": {
@@ -14251,20 +14593,39 @@
           "value_type": "boolean"
         },
         {
-          "field": "key_institute_revenue_requirement_met",
-          "label": "重点研究院营业收入要求",
+          "field": "is_agricultural_enterprise",
+          "label": "农业企业属性",
           "aliases": [
-            "重点研究院营业收入要求"
+            "是否农业企业"
           ],
           "value_type": "boolean"
         },
         {
-          "field": "key_institute_rnd_requirement_met",
-          "label": "重点研究院研发投入要求",
+          "field": "revenue",
+          "label": "上一年度营业收入",
           "aliases": [
-            "重点研究院研发投入要求"
+            "营业收入"
           ],
-          "value_type": "boolean"
+          "value_type": "number",
+          "unit": "万元"
+        },
+        {
+          "field": "rnd_expense",
+          "label": "上一年度研发费用",
+          "aliases": [
+            "研发费用"
+          ],
+          "value_type": "number",
+          "unit": "万元"
+        },
+        {
+          "field": "rnd_ratio",
+          "label": "上一年度研发费用占营业收入比例",
+          "aliases": [
+            "研发强度"
+          ],
+          "value_type": "number",
+          "unit": "%"
         },
         {
           "field": "innovation_score",
@@ -14346,9 +14707,47 @@
         {
           "rule_id": "zj-key-institute-revenue",
           "type": "hard-threshold",
-          "field": "key_institute_revenue_requirement_met",
-          "operator": "truthy",
-          "expected": true,
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-revenue-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-revenue-general-type",
+                  "field": "is_agricultural_enterprise",
+                  "operator": "falsy",
+                  "expected": false
+                },
+                {
+                  "rule_id": "zj-key-institute-revenue-general-value",
+                  "field": "revenue",
+                  "operator": "gte",
+                  "expected": 20000,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-key-institute-revenue-agriculture",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-revenue-agriculture-type",
+                  "field": "is_agricultural_enterprise",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-key-institute-revenue-agriculture-value",
+                  "field": "revenue",
+                  "operator": "gte",
+                  "expected": 5000,
+                  "unit": "万元"
+                }
+              ]
+            }
+          ],
           "source": "浙经信高新〔2025〕169号第九条",
           "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。",
           "policy_status": "current",
@@ -14360,9 +14759,60 @@
         {
           "rule_id": "zj-key-institute-rnd",
           "type": "hard-threshold",
-          "field": "key_institute_rnd_requirement_met",
-          "operator": "truthy",
-          "expected": true,
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-rnd-agriculture",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-rnd-agriculture-type",
+                  "field": "is_agricultural_enterprise",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-key-institute-rnd-agriculture-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 800,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-key-institute-rnd-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-rnd-general-type",
+                  "field": "is_agricultural_enterprise",
+                  "operator": "falsy",
+                  "expected": false
+                },
+                {
+                  "rule_id": "zj-key-institute-rnd-general-route",
+                  "logic": "any",
+                  "children": [
+                    {
+                      "rule_id": "zj-key-institute-rnd-general-ratio",
+                      "field": "rnd_ratio",
+                      "operator": "gte",
+                      "expected": 4,
+                      "unit": "%"
+                    },
+                    {
+                      "rule_id": "zj-key-institute-rnd-general-expense",
+                      "field": "rnd_expense",
+                      "operator": "gte",
+                      "expected": 5000,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
           "source": "浙经信高新〔2025〕169号第九条",
           "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。",
           "policy_status": "current",
@@ -14433,8 +14883,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
           "rules": [
             {
               "rule_id": "zj-key-institute-entity",
@@ -14467,9 +14919,47 @@
             {
               "rule_id": "zj-key-institute-revenue",
               "type": "hard-threshold",
-              "field": "key_institute_revenue_requirement_met",
-              "operator": "truthy",
-              "expected": true,
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-revenue-general",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "zj-key-institute-revenue-general-type",
+                      "field": "is_agricultural_enterprise",
+                      "operator": "falsy",
+                      "expected": false
+                    },
+                    {
+                      "rule_id": "zj-key-institute-revenue-general-value",
+                      "field": "revenue",
+                      "operator": "gte",
+                      "expected": 20000,
+                      "unit": "万元"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "zj-key-institute-revenue-agriculture",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "zj-key-institute-revenue-agriculture-type",
+                      "field": "is_agricultural_enterprise",
+                      "operator": "truthy",
+                      "expected": true
+                    },
+                    {
+                      "rule_id": "zj-key-institute-revenue-agriculture-value",
+                      "field": "revenue",
+                      "operator": "gte",
+                      "expected": 5000,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ],
               "source": "浙经信高新〔2025〕169号第九条",
               "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。",
               "policy_status": "current",
@@ -14481,9 +14971,60 @@
             {
               "rule_id": "zj-key-institute-rnd",
               "type": "hard-threshold",
-              "field": "key_institute_rnd_requirement_met",
-              "operator": "truthy",
-              "expected": true,
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-rnd-agriculture",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "zj-key-institute-rnd-agriculture-type",
+                      "field": "is_agricultural_enterprise",
+                      "operator": "truthy",
+                      "expected": true
+                    },
+                    {
+                      "rule_id": "zj-key-institute-rnd-agriculture-expense",
+                      "field": "rnd_expense",
+                      "operator": "gte",
+                      "expected": 800,
+                      "unit": "万元"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "zj-key-institute-rnd-general",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "zj-key-institute-rnd-general-type",
+                      "field": "is_agricultural_enterprise",
+                      "operator": "falsy",
+                      "expected": false
+                    },
+                    {
+                      "rule_id": "zj-key-institute-rnd-general-route",
+                      "logic": "any",
+                      "children": [
+                        {
+                          "rule_id": "zj-key-institute-rnd-general-ratio",
+                          "field": "rnd_ratio",
+                          "operator": "gte",
+                          "expected": 4,
+                          "unit": "%"
+                        },
+                        {
+                          "rule_id": "zj-key-institute-rnd-general-expense",
+                          "field": "rnd_expense",
+                          "operator": "gte",
+                          "expected": 5000,
+                          "unit": "万元"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
               "source": "浙经信高新〔2025〕169号第九条",
               "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。",
               "policy_status": "current",
@@ -14554,6 +15095,7 @@
         {
           "layer_id": "zhejiang-key-enterprise-institute-2026",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "2026年度省重点企业研究院申报通知",
           "applicability": {
             "years": [
@@ -14566,6 +15108,9 @@
               "recognition"
             ]
           },
+          "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
+          "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9",
           "rules": [
             {
               "rule_id": "zhejiang-key-enterprise-institute-2026-data-cutoff",
@@ -14597,20 +15142,26 @@
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_platform_basis_met",
-              "value": true,
+              "field": "is_agricultural_enterprise",
+              "value": false,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_revenue_requirement_met",
-              "value": true,
+              "field": "revenue",
+              "value": 20000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_rnd_requirement_met",
-              "value": true,
+              "field": "rnd_ratio",
+              "value": 4,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "rnd_expense",
+              "value": 1000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -14628,12 +15179,6 @@
             },
             {
               "field": "no_major_incident",
-              "value": true,
-              "evidence_state": "verified",
-              "source": "金标准事实"
-            },
-            {
-              "field": "mountain_island_relaxation_applicable",
               "value": true,
               "evidence_state": "verified",
               "source": "金标准事实"
@@ -14661,20 +15206,26 @@
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_platform_basis_met",
-              "value": true,
+              "field": "is_agricultural_enterprise",
+              "value": false,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_revenue_requirement_met",
-              "value": true,
+              "field": "revenue",
+              "value": 20000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_rnd_requirement_met",
-              "value": true,
+              "field": "rnd_ratio",
+              "value": 4,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "rnd_expense",
+              "value": 1000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -14692,12 +15243,6 @@
             },
             {
               "field": "no_major_incident",
-              "value": true,
-              "evidence_state": "verified",
-              "source": "金标准事实"
-            },
-            {
-              "field": "mountain_island_relaxation_applicable",
               "value": true,
               "evidence_state": "verified",
               "source": "金标准事实"
@@ -14725,20 +15270,26 @@
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_platform_basis_met",
-              "value": true,
+              "field": "is_agricultural_enterprise",
+              "value": false,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_revenue_requirement_met",
-              "value": true,
+              "field": "revenue",
+              "value": 20000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
             {
-              "field": "key_institute_rnd_requirement_met",
-              "value": true,
+              "field": "rnd_ratio",
+              "value": 4,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "rnd_expense",
+              "value": 1000,
               "evidence_state": "verified",
               "source": "金标准事实"
             },
@@ -14756,12 +15307,6 @@
             },
             {
               "field": "no_major_incident",
-              "value": true,
-              "evidence_state": "verified",
-              "source": "金标准事实"
-            },
-            {
-              "field": "mountain_island_relaxation_applicable",
               "value": true,
               "evidence_state": "verified",
               "source": "金标准事实"
@@ -14829,10 +15374,10 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:zhejiang-key-enterprise-institute",
-      "policy_version_id": "policy-5bdf3d1bf9c50b9f6546",
-      "source_content_hash": "5487820820256e24fb067cfbfd9ae044d982fccff195966265f0ffa31cae9d21",
-      "compile_input_hash": "b9ed4298e0bb5a9298bf3c3956c230770d6f8a9e1808aee1c961ffd39166c20d",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-46cd7e45fb4cb2bf2e18",
+      "source_content_hash": "0ae8d2a754446cfc11904e5df4729b9d9cce49ddfaf110de4d79ec1860e80199",
+      "compile_input_hash": "a99a094ad5c58f196c83f70d45b7ad334d3729c48924794234077127c67bec9b",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "zhejiang-key-enterprise-institute",
         "project_name": "浙江省重点企业研究院",
@@ -15248,12 +15793,14 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {
             "years": [
               "2026"
             ]
           },
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293014",
           "rules": [
             {
               "rule_id": "key-zj-sme-valid",
@@ -15868,10 +16415,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:zhejiang-key-specialized-sme",
-      "policy_version_id": "policy-a05eab4a7977cf5832da",
-      "source_content_hash": "b22ffafcd17c8d90bdb4e67918ce793c26f1080f6b865526e5481c78a1892bb4",
-      "compile_input_hash": "ef39181da9d2640b61aa7048475220c05c7ffdabb87988c6fcda6778f4ed5ff6",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-bf0b0c9bb2fcc59afc59",
+      "source_content_hash": "76f3d2533b8e7a6dcd0d316682b16bcb4ade989bf1bb69fe419cb84f9802c648",
+      "compile_input_hash": "c2304a7c4d390a592d36d017c921d94868b04859ed1454c2b399277a9f462e78",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "zhejiang-manufacturing-2": {
@@ -16019,8 +16566,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://zhejiangmade.zjamr.zj.gov.cn/Web/Apply/ProductLooked/ProductDoc.aspx",
           "rules": [
             {
               "rule_id": "pin-zhejiang-manufacturing-1",
@@ -16244,10 +16793,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:zhejiang-manufacturing-2",
-      "policy_version_id": "policy-53e8a4102404c12894b4",
-      "source_content_hash": "e53f85d04f3a5a15a69a421297122537c9af25a3944235267a0a0a14407bc653",
-      "compile_input_hash": "a40c4ddb5cc714313762dbcac7fcd8738f85d4e23f546544acc33c60bbe1494f",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-d866cf590d154599dcb6",
+      "source_content_hash": "0f76a2de3ee6bc980bff1d32f46086d7edf30982d7bd64251da6ae38865cc88e",
+      "compile_input_hash": "023bd98c6871253cc7c50acaa90cb7516a2159a7b5eb3cb80124e7b0f42450dc",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "zhejiang-manufacturing-quality": {
@@ -16454,12 +17003,14 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {
             "years": [
               "2025"
             ]
           },
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
           "rules": [
             {
               "rule_id": "quality-entity",
@@ -16793,10 +17344,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:zhejiang-manufacturing-quality",
-      "policy_version_id": "policy-7127f3432e76907ae754",
-      "source_content_hash": "bc6e9b6bd20bc511e55b944e3e2084488b2704c5329801bba8baf5d339b9d423",
-      "compile_input_hash": "0a7cf399ce6d368f2f32bc6556014869b3e1804c2ecbff0f18f7024909848b43",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-2588f9f3bdf4b71a6590",
+      "source_content_hash": "9af63a6ba042671d3fc339e90ba6b8c940587e56df5c7cc990f026f1a3ee97cd",
+      "compile_input_hash": "b816452f3b3cddbba571e761915653bd94734a8094b41dd0d46a32355427e2c2",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {}
     },
     "zhejiang-specialized-sme": {
@@ -17083,8 +17634,10 @@
         {
           "layer_id": "stable-management",
           "layer_type": "stable",
+          "policy_time_type": "stable-management",
           "label": "稳定管理办法",
           "applicability": {},
+          "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
           "rules": [
             {
               "rule_id": "specialized-sme-entry-status",
@@ -17236,6 +17789,7 @@
         {
           "layer_id": "zhejiang-specialized-sme-2026",
           "layer_type": "annual",
+          "policy_time_type": "annual-notice",
           "label": "浙江省2026年认定和复核通知",
           "applicability": {
             "years": [
@@ -17250,6 +17804,7 @@
               "review"
             ]
           },
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
           "rules": [
             {
               "rule_id": "zhejiang-specialized-sme-entity",
@@ -17591,10 +18146,10 @@
         "provenance": "derived-from-confirmed-rule-cards"
       },
       "ir_node_id": "project:zhejiang-specialized-sme",
-      "policy_version_id": "policy-5f223932453fff68cb0c",
-      "source_content_hash": "6f525833e7f49c8eda7b101b80531eaf6a50dd7558570dbf307ef970806cd030",
-      "compile_input_hash": "f5918871c3925830a2395cc460134fac33461688731f771ab7aa624b03a4b884",
-      "shared_kernel_version": "1.1",
+      "policy_version_id": "policy-17faaa9161a2e81b870d",
+      "source_content_hash": "db02e857490f5e1dd3e84948b8717d100a192615985a4578dbaacb4059d7e73e",
+      "compile_input_hash": "ffb1daf95d4e8a4fc29f572252f71e3bc989a9b9837fbd3ccb26dbd541004a66",
+      "shared_kernel_version": "1.2",
       "lifecycle_rule": {
         "rule_id": "zhejiang-specialized-sme",
         "project_name": "浙江省专精特新中小企业",
@@ -17970,35 +18525,35 @@
       ]
     },
     "project_to_policy_version": {
-      "digital-workshop": "policy-3d446b9ad127bbada34f",
-      "first-equipment": "policy-cd15edcc6d23cb112b9c",
-      "first-material-batch": "policy-e62afb6c344a3e37355f",
-      "first-software-version": "policy-2448fa908b4807b977a7",
-      "future-factory": "policy-cfe721c7a33e492ef583",
-      "green-factory-1": "policy-c3b697cc449e79056b84",
-      "green-factory-2": "policy-41a5305cf925167c717c",
-      "green-factory-3": "policy-ba0052fbed6767e53ea2",
-      "green-factory-4": "policy-1523bea94dad3bd5fa62",
-      "hangzhou-enterprise-institute": "policy-076cf26e661e815a9e5b",
-      "hangzhou-enterprise-technology-center": "policy-3ab1743ea30263b64d68",
-      "intelligent-factory": "policy-bf78fa7bb4f3b84a2319",
-      "key-little-giant-support": "policy-5e4574e9b5177c898d74",
-      "little-giant": "policy-b42a23d97595171f3d21",
-      "manufacturing-single-champion-1": "policy-cec55042ebc033576e37",
-      "manufacturing-single-champion-2": "policy-28a53dceee1ee7f56801",
-      "municipal-enterprise-technology-center": "policy-b035f8b1fbc44e5ce1f6",
-      "national-high-tech-enterprise": "policy-ab89567939e140fc3f7e",
-      "technology-sme-1": "policy-f4b31fb0508369fb9d1a",
-      "technology-sme-2": "policy-9d418843815558e97016",
-      "zhejiang-enterprise-institute": "policy-ae244dc7807e027d1a31",
-      "zhejiang-enterprise-technology-center": "policy-2c2c9cc2adf4a0b704ed",
-      "zhejiang-hidden-champion": "policy-b575c6a8e7131d2373bd",
-      "zhejiang-industrial-new-product": "policy-af0948effac1d289f4a1",
-      "zhejiang-key-enterprise-institute": "policy-5bdf3d1bf9c50b9f6546",
-      "zhejiang-key-specialized-sme": "policy-a05eab4a7977cf5832da",
-      "zhejiang-manufacturing-2": "policy-53e8a4102404c12894b4",
-      "zhejiang-manufacturing-quality": "policy-7127f3432e76907ae754",
-      "zhejiang-specialized-sme": "policy-5f223932453fff68cb0c"
+      "digital-workshop": "policy-0f4db5b5c37d30502fee",
+      "first-equipment": "policy-949275dab657169234f9",
+      "first-material-batch": "policy-e01e9dcd13e4e208bb31",
+      "first-software-version": "policy-a022f95605102c12ef01",
+      "future-factory": "policy-6b589f17c0f3c98b2efc",
+      "green-factory-1": "policy-7da0fa28a885defe0b96",
+      "green-factory-2": "policy-a1798c32772ca24595c3",
+      "green-factory-3": "policy-c887d9b2b571b7a0fe39",
+      "green-factory-4": "policy-2065a9625471a0c659fb",
+      "hangzhou-enterprise-institute": "policy-5cd5e6813dc09479ff18",
+      "hangzhou-enterprise-technology-center": "policy-a24d93c2ed0618770841",
+      "intelligent-factory": "policy-b96c3e5c5ca902bf9294",
+      "key-little-giant-support": "policy-3485b2b54b211c599208",
+      "little-giant": "policy-2581eb4b5fdfb4457987",
+      "manufacturing-single-champion-1": "policy-ee46689d63eae6dd46b7",
+      "manufacturing-single-champion-2": "policy-675d50437b0f2980eea4",
+      "municipal-enterprise-technology-center": "policy-9da657872110a0c711b4",
+      "national-high-tech-enterprise": "policy-820104456c372cb24ffe",
+      "technology-sme-1": "policy-86878d2ff7184f1dc8a2",
+      "technology-sme-2": "policy-f9f8a711c7e060e4df9e",
+      "zhejiang-enterprise-institute": "policy-0bc34a9a1ad185aaeb13",
+      "zhejiang-enterprise-technology-center": "policy-0fa7a696783210b49496",
+      "zhejiang-hidden-champion": "policy-a0c1e25bdc0f9d47c107",
+      "zhejiang-industrial-new-product": "policy-c9f063f6c7fe5c6de555",
+      "zhejiang-key-enterprise-institute": "policy-46cd7e45fb4cb2bf2e18",
+      "zhejiang-key-specialized-sme": "policy-bf0b0c9bb2fcc59afc59",
+      "zhejiang-manufacturing-2": "policy-d866cf590d154599dcb6",
+      "zhejiang-manufacturing-quality": "policy-2588f9f3bdf4b71a6590",
+      "zhejiang-specialized-sme": "policy-17faaa9161a2e81b870d"
     }
   },
   "algorithm_cards": {
@@ -18011,7 +18566,7 @@
       "project_name": "浙江省数字化车间",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-3d446b9ad127bbada34f",
+      "policy_version_id": "policy-0f4db5b5c37d30502fee",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18020,6 +18575,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18027,9 +18583,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18057,6 +18615,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18067,7 +18627,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "fa37326d2f994cb44290a23a472ef9308a1b624c0b0fe678f2fec325c9afbdd4"
+      "compile_input_hash": "fd8fb4f2873f482a2786858884fd261b615e2f275b94d6232dbd5396aca345dc"
     },
     "first-equipment": {
       "schema_version": 1,
@@ -18078,7 +18638,7 @@
       "project_name": "首台（套）装备",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-cd15edcc6d23cb112b9c",
+      "policy_version_id": "policy-949275dab657169234f9",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18087,6 +18647,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18094,9 +18655,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18124,6 +18687,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18134,7 +18699,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "575b0cfa5478ee71581b3ec836087643a169d952d5fc707c47e0183caca747bf"
+      "compile_input_hash": "3f4d28fd683f8ed232c979bcd00203d785edc5244ae9880bc38ada2b5dcb4b82"
     },
     "first-material-batch": {
       "schema_version": 1,
@@ -18145,7 +18710,7 @@
       "project_name": "重点新材料首批次",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-e62afb6c344a3e37355f",
+      "policy_version_id": "policy-e01e9dcd13e4e208bb31",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18154,6 +18719,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18161,9 +18727,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18191,6 +18759,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18201,7 +18771,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "b97004fffe05c40bb474370d4894f467f3ca1508e5e311b1c13026197f1bc37a"
+      "compile_input_hash": "32af0cabd1778a73c789fc2d7a5650e3c77ea614165c02b37f5d82f976de3ae6"
     },
     "first-software-version": {
       "schema_version": 1,
@@ -18212,7 +18782,7 @@
       "project_name": "首版次软件",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-2448fa908b4807b977a7",
+      "policy_version_id": "policy-a022f95605102c12ef01",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18221,6 +18791,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18228,9 +18799,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18258,6 +18831,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18268,7 +18843,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "5d0de525029b23a5c0e090bdacb055e862ba976083d6dfd45f8ae769f11f95a2"
+      "compile_input_hash": "23597c9d4f79e105646322ce474f13b4c912e2bcb509759d573a046f53054a58"
     },
     "future-factory": {
       "schema_version": 1,
@@ -18279,7 +18854,7 @@
       "project_name": "浙江省未来工厂",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-cfe721c7a33e492ef583",
+      "policy_version_id": "policy-6b589f17c0f3c98b2efc",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18288,6 +18863,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18295,9 +18871,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18325,6 +18903,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18335,7 +18915,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "aeb370477fae12cc79ed62b5d25344babc83b1ba09df34494078d76cc19d2702"
+      "compile_input_hash": "5147842fbb3cf1f55f9075251f76e6d6d4977851b81a2d3639f5ae5094510a1e"
     },
     "green-factory-1": {
       "schema_version": 1,
@@ -18346,7 +18926,7 @@
       "project_name": "区级绿色工厂",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-c3b697cc449e79056b84",
+      "policy_version_id": "policy-7da0fa28a885defe0b96",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18355,6 +18935,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18362,9 +18943,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18392,6 +18975,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18402,7 +18987,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "1e0abff6a76b30ef9c9bb058344d83be0bcc600543c3b24707ced6674e82cf15"
+      "compile_input_hash": "1fe05e0f83bc6a1c8e1e803776c698d3574ef7ee7afcd2d3a9b72eb78d1c40fc"
     },
     "green-factory-2": {
       "schema_version": 1,
@@ -18413,7 +18998,7 @@
       "project_name": "市级绿色工厂",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-41a5305cf925167c717c",
+      "policy_version_id": "policy-a1798c32772ca24595c3",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18422,6 +19007,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18429,9 +19015,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18459,6 +19047,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18469,7 +19059,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "0f91dbcbbc74d0944d37ec75638dc084e0ef4a5d9bff139c5c3612b2b73cc9f3"
+      "compile_input_hash": "66b922c0f67986a7e79f5a5da9d37ab4e45ba6fd0a390692597be2f2eb1f89da"
     },
     "green-factory-3": {
       "schema_version": 1,
@@ -18480,7 +19070,7 @@
       "project_name": "浙江省绿色低碳工厂",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-ba0052fbed6767e53ea2",
+      "policy_version_id": "policy-c887d9b2b571b7a0fe39",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18489,6 +19079,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18496,9 +19087,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18526,6 +19119,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18536,7 +19131,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "deb61b67c7439dee96e859f840625bb258aac04a38bc55ca9beb05ccd28dec2b"
+      "compile_input_hash": "5f4f09d88c821dc375970ede90a44dbec455c4db70c285b9b85093bf5a1e4181"
     },
     "green-factory-4": {
       "schema_version": 1,
@@ -18547,7 +19142,7 @@
       "project_name": "国家绿色工厂",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-1523bea94dad3bd5fa62",
+      "policy_version_id": "policy-2065a9625471a0c659fb",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18556,6 +19151,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18563,9 +19159,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18593,6 +19191,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18603,7 +19203,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "52731e2535b9b0d3056bf97781f22579213ad0301566f8237ddf3c64873ae5e0"
+      "compile_input_hash": "6dfa73a433f0098fe2e1984cbfeafb73603544241e782895c6eb34e04d908202"
     },
     "hangzhou-enterprise-institute": {
       "schema_version": 1,
@@ -18614,7 +19214,7 @@
       "project_name": "杭州市企业研究院",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-076cf26e661e815a9e5b",
+      "policy_version_id": "policy-5cd5e6813dc09479ff18",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18623,6 +19223,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18630,9 +19231,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18660,6 +19263,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18670,7 +19275,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "58ca80b6a830eaad6c08f11d510d3a120098656b8c393ba6a777674260206d9c"
+      "compile_input_hash": "8dd8d4c304aa5fb165541a01cf20a7bf431d886e57f718fdeaf8ce72e2047313"
     },
     "hangzhou-enterprise-technology-center": {
       "schema_version": 1,
@@ -18681,7 +19286,7 @@
       "project_name": "杭州市企业技术中心",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-3ab1743ea30263b64d68",
+      "policy_version_id": "policy-a24d93c2ed0618770841",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18690,6 +19295,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18697,9 +19303,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18727,6 +19335,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18737,7 +19347,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "daf3600ceea4c36394505aaa30a5acf6a55dba4140feb5e3e5feb808f2d93411"
+      "compile_input_hash": "e9447f726b6e29beb5f76b2516f270b7590e80385c5c4ea628961afa8c0aa1f7"
     },
     "intelligent-factory": {
       "schema_version": 1,
@@ -18748,7 +19358,7 @@
       "project_name": "浙江省智能工厂",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-bf78fa7bb4f3b84a2319",
+      "policy_version_id": "policy-b96c3e5c5ca902bf9294",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18757,6 +19367,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18764,9 +19375,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18794,6 +19407,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18804,7 +19419,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "bf1be1d5ff6c3e7b319615647b926edd9c8cd53053cfe86aad705475d905d123"
+      "compile_input_hash": "197d4859d08cb898efb9b1f246a2e7a66a16ef56804b6ff5cf32f3a1e6cd6e24"
     },
     "key-little-giant-support": {
       "schema_version": 1,
@@ -18815,7 +19430,7 @@
       "project_name": "重点小巨人企业高质量发展奖补项目",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-5e4574e9b5177c898d74",
+      "policy_version_id": "policy-3485b2b54b211c599208",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18824,6 +19439,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18831,9 +19447,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18861,6 +19479,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18871,7 +19491,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "488b45cfad7217dc2ec19dfc171ac4e6b58f57b5e3f2351cdd3887ed062e5e64"
+      "compile_input_hash": "2c8b5c9ce6c3421976f27ef54022b4b1451b5c248dda2a3de17eb2adf5117ae7"
     },
     "little-giant": {
       "schema_version": 1,
@@ -18882,7 +19502,7 @@
       "project_name": "专精特新小巨人",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-b42a23d97595171f3d21",
+      "policy_version_id": "policy-2581eb4b5fdfb4457987",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18891,6 +19511,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18898,9 +19519,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18928,6 +19551,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -18938,7 +19563,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "217a342ae03ed05e9a0ad016b87af4bc5fa37cdc7f913757ec166081c9a538d3"
+      "compile_input_hash": "dfc44b33a79eb0114353979722c4ca812260839e11c40d8f58ae1e6556e6dd8b"
     },
     "manufacturing-single-champion-1": {
       "schema_version": 1,
@@ -18949,7 +19574,7 @@
       "project_name": "浙江省制造业单项冠军企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-cec55042ebc033576e37",
+      "policy_version_id": "policy-ee46689d63eae6dd46b7",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -18958,6 +19583,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -18965,9 +19591,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -18995,6 +19623,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19005,7 +19635,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "f0efae275f62f235b9b523ce8001bb610cf1a0eeceb8ee2a4ca612cc22d76d9d"
+      "compile_input_hash": "069536643a1cda30f478b06bb10b28a268ac8a1bed9b5ac48e66a3490157c86e"
     },
     "manufacturing-single-champion-2": {
       "schema_version": 1,
@@ -19016,7 +19646,7 @@
       "project_name": "国家制造业单项冠军企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-28a53dceee1ee7f56801",
+      "policy_version_id": "policy-675d50437b0f2980eea4",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19025,6 +19655,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19032,9 +19663,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19062,6 +19695,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19072,7 +19707,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "ab4b9578994438219fbc03019172c54d8606e18c838a5990c2cf835b8afb9662"
+      "compile_input_hash": "9b0b541cb7c20789b6ba9beb13835f50116caf3a81fe54f8b297975edc75dfba"
     },
     "municipal-enterprise-technology-center": {
       "schema_version": 1,
@@ -19083,7 +19718,7 @@
       "project_name": "市级企业技术中心",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-b035f8b1fbc44e5ce1f6",
+      "policy_version_id": "policy-9da657872110a0c711b4",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19092,6 +19727,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19099,9 +19735,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19129,6 +19767,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19139,7 +19779,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "cf1a04a2b383aac9845fdd2be691a23dbf7bb17a49027b90ab40250a16e3a3e4"
+      "compile_input_hash": "94b52756d69515c88c93af0eeb78a134e27b47410ed0aa76b96a4308842353fc"
     },
     "national-high-tech-enterprise": {
       "schema_version": 1,
@@ -19150,7 +19790,7 @@
       "project_name": "高新技术企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-ab89567939e140fc3f7e",
+      "policy_version_id": "policy-820104456c372cb24ffe",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19159,6 +19799,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19166,9 +19807,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19196,6 +19839,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19206,7 +19851,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "85f1151bfc2cb38dad7d1b12df1eeac4edfd8be39f0073b19079c825399f8728"
+      "compile_input_hash": "c4a359fe0741aa9f81f19a1200686509b6b69ec394dcdc399aac84ee54759a05"
     },
     "technology-sme-1": {
       "schema_version": 1,
@@ -19217,7 +19862,7 @@
       "project_name": "浙江省科技型中小企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-f4b31fb0508369fb9d1a",
+      "policy_version_id": "policy-86878d2ff7184f1dc8a2",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19226,6 +19871,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19233,9 +19879,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19263,6 +19911,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19273,7 +19923,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "211b6516b63dea2bbebe037ba0a3020b89bd99e12e0e3d0aa11344f5a51c9044"
+      "compile_input_hash": "48f5b434465fc704789cc47265521b3e982efb9631904921d993e831d6142cca"
     },
     "technology-sme-2": {
       "schema_version": 1,
@@ -19284,7 +19934,7 @@
       "project_name": "国家科技型中小企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-9d418843815558e97016",
+      "policy_version_id": "policy-f9f8a711c7e060e4df9e",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19293,6 +19943,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19300,9 +19951,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19330,6 +19983,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19340,7 +19995,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "c87843bdf5fd196e3b937512b22f8318c2fac1f23aec23010f2310582095b514"
+      "compile_input_hash": "a4c5b6cc6531dcda4b894bab37f6705f718e6dec14730f5915395944038a181b"
     },
     "zhejiang-enterprise-institute": {
       "schema_version": 1,
@@ -19351,7 +20006,7 @@
       "project_name": "浙江省企业研究院",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-ae244dc7807e027d1a31",
+      "policy_version_id": "policy-0bc34a9a1ad185aaeb13",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19360,6 +20015,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19367,9 +20023,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19377,7 +20035,7 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 7,
+        "fact_fields": 9,
         "confirmed_rules": 7,
         "rule_layers": 2,
         "gold_cases": 3
@@ -19397,6 +20055,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19407,7 +20067,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "55b735ea0119be2be788d66ba78a9a55a800d04fbc4c5331b99dd5c90a07115e"
+      "compile_input_hash": "1405580b7f98a49afed4f06e06a50bd3d8723a9497c9fa7d5fabdd759d0de678"
     },
     "zhejiang-enterprise-technology-center": {
       "schema_version": 1,
@@ -19418,7 +20078,7 @@
       "project_name": "浙江省企业技术中心",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-2c2c9cc2adf4a0b704ed",
+      "policy_version_id": "policy-0fa7a696783210b49496",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19427,6 +20087,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19434,9 +20095,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19464,6 +20127,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19474,7 +20139,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "d6f9eea7ceaea4e9862f4dca0b2f5d293c50b4a4535edcda11fd1bbd7e4049f1"
+      "compile_input_hash": "ceb4c77a30bdd01fac502016690b116ff85c7828b0fc6e7c81df04340efb30df"
     },
     "zhejiang-hidden-champion": {
       "schema_version": 1,
@@ -19485,7 +20150,7 @@
       "project_name": "浙江省隐形冠军企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-b575c6a8e7131d2373bd",
+      "policy_version_id": "policy-a0c1e25bdc0f9d47c107",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19494,6 +20159,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19501,9 +20167,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19531,6 +20199,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19541,7 +20211,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "1bac9348a38c41bd28ca296a80110ea4c3ade351eda79a997b26b4db8b87735e"
+      "compile_input_hash": "d8dc0dd4bca2c1127005e3b9d617ffd26a3e2dd9bdcdfefcb14e244424646bec"
     },
     "zhejiang-industrial-new-product": {
       "schema_version": 1,
@@ -19552,7 +20222,7 @@
       "project_name": "浙江省工业新产品",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-af0948effac1d289f4a1",
+      "policy_version_id": "policy-c9f063f6c7fe5c6de555",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19561,6 +20231,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19568,9 +20239,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19598,6 +20271,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19608,7 +20283,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "ead860ac118c58fc973cab529bd6949c64c8c2bfd434a49a86dc17137b5d4309"
+      "compile_input_hash": "e9a8ab39a05ef535b05db300fca3b56a6aad34c874b0ab5fbf20c14d669ccf7b"
     },
     "zhejiang-key-enterprise-institute": {
       "schema_version": 1,
@@ -19619,7 +20294,7 @@
       "project_name": "浙江省重点企业研究院",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-5bdf3d1bf9c50b9f6546",
+      "policy_version_id": "policy-46cd7e45fb4cb2bf2e18",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19628,6 +20303,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19635,9 +20311,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19645,7 +20323,7 @@
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 9,
+        "fact_fields": 11,
         "confirmed_rules": 9,
         "rule_layers": 2,
         "gold_cases": 3
@@ -19665,6 +20343,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19675,7 +20355,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "b9ed4298e0bb5a9298bf3c3956c230770d6f8a9e1808aee1c961ffd39166c20d"
+      "compile_input_hash": "a99a094ad5c58f196c83f70d45b7ad334d3729c48924794234077127c67bec9b"
     },
     "zhejiang-key-specialized-sme": {
       "schema_version": 1,
@@ -19686,7 +20366,7 @@
       "project_name": "浙江省重点专精特新中小企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-a05eab4a7977cf5832da",
+      "policy_version_id": "policy-bf0b0c9bb2fcc59afc59",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19695,6 +20375,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19702,9 +20383,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19732,6 +20415,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19742,7 +20427,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "ef39181da9d2640b61aa7048475220c05c7ffdabb87988c6fcda6778f4ed5ff6"
+      "compile_input_hash": "c2304a7c4d390a592d36d017c921d94868b04859ed1454c2b399277a9f462e78"
     },
     "zhejiang-manufacturing-2": {
       "schema_version": 1,
@@ -19753,7 +20438,7 @@
       "project_name": "品字标浙江制造",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-53e8a4102404c12894b4",
+      "policy_version_id": "policy-d866cf590d154599dcb6",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19762,6 +20447,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19769,9 +20455,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19799,6 +20487,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19809,7 +20499,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "a40c4ddb5cc714313762dbcac7fcd8738f85d4e23f546544acc33c60bbe1494f"
+      "compile_input_hash": "023bd98c6871253cc7c50acaa90cb7516a2159a7b5eb3cb80124e7b0f42450dc"
     },
     "zhejiang-manufacturing-quality": {
       "schema_version": 1,
@@ -19820,7 +20510,7 @@
       "project_name": "浙江制造精品",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-7127f3432e76907ae754",
+      "policy_version_id": "policy-2588f9f3bdf4b71a6590",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19829,6 +20519,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19836,9 +20527,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19866,6 +20559,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19876,7 +20571,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "0a7cf399ce6d368f2f32bc6556014869b3e1804c2ecbff0f18f7024909848b43"
+      "compile_input_hash": "b816452f3b3cddbba571e761915653bd94734a8094b41dd0d46a32355427e2c2"
     },
     "zhejiang-specialized-sme": {
       "schema_version": 1,
@@ -19887,7 +20582,7 @@
       "project_name": "专精特新中小企业",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-5f223932453fff68cb0c",
+      "policy_version_id": "policy-17faaa9161a2e81b870d",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -19896,6 +20591,7 @@
       "outputs": {
         "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
         "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
         "rule_trace": "选中的规则层、逐规则比较和证据引用",
         "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
       },
@@ -19903,9 +20599,11 @@
         "task-omission-preflight",
         "project-router",
         "policy-version-gate",
+        "policy-time-type-checker",
         "fact-contract-normalizer",
         "evidence-conflict-resolver",
         "layer-selector",
+        "native-rule-combinator",
         "requirement-comparator",
         "lifecycle-state-machine",
         "coverage-hash-planner",
@@ -19933,6 +20631,8 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
         "pack_validation": true,
         "gold_case_count": 3,
         "formal_decision_enabled": true,
@@ -19943,7 +20643,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "f5918871c3925830a2395cc460134fac33461688731f771ab7aa624b03a4b884"
+      "compile_input_hash": "ffb1daf95d4e8a4fc29f572252f71e3bc989a9b9837fbd3ccb26dbd541004a66"
     }
   },
   "policy_dependency_graph": {
@@ -21416,7 +22116,7 @@
     "policy_baseline_count": 0,
     "policy_covered_count": 29,
     "routing_only_count": 0,
-    "shared_kernel_count": 11,
+    "shared_kernel_count": 13,
     "policy_dependency_nodes": 87,
     "policy_dependency_edges": 73,
     "execution_policy_documents": 58,

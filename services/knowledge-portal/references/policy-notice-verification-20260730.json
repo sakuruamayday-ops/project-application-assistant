@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-07-30T11:30:00+08:00",
+  "timezone": "Asia/Shanghai",
+  "scope": "2026年度通知官方源核验",
+  "records": [
+    {
+      "project_id": "national-high-tech-enterprise",
+      "project_name": "高新技术企业",
+      "jurisdiction": "浙江省",
+      "target_year": 2026,
+      "document_type": "annual-notice",
+      "retrieval_status": "current-official-retrieval-not-hit",
+      "formal_notice_verified": false,
+      "deadline": null,
+      "deadline_reuse_forbidden": true,
+      "searched_official_sources": [
+        "https://jxt.zj.gov.cn/",
+        "https://kjt.zj.gov.cn/",
+        "https://www.zj.gov.cn/",
+        "https://ds.kjt.zj.gov.cn/"
+      ],
+      "latest_verified_annual_notice": {
+        "year": 2025,
+        "title": "浙江省经济和信息化厅 浙江省财政厅 国家税务总局浙江省税务局关于组织开展2025年度高新技术企业申报认定工作的通知",
+        "source_url": "https://jxt.zj.gov.cn/art/2025/6/5/art_1229886900_58935997.html",
+        "usage": "仅用于2025年度历史回放，不得作为2026年度截止日期"
+      },
+      "decision": "2026年度只执行当前有效稳定管理规则；年度批次、申报截止时间和年度特有材料保持待核验"
+    },
+    {
+      "project_id": "manufacturing-single-champion-2",
+      "project_name": "国家制造业单项冠军企业",
+      "jurisdiction": "国家",
+      "target_year": 2026,
+      "document_type": "central-annual-notice",
+      "retrieval_status": "current-official-retrieval-not-hit",
+      "formal_notice_verified": false,
+      "deadline": null,
+      "deadline_reuse_forbidden": true,
+      "searched_official_sources": [
+        "https://www.miit.gov.cn/",
+        "https://www.miit.gov.cn/jgsj/zfs/wjfb/index.html"
+      ],
+      "latest_verified_central_annual_notice": {
+        "year": 2024,
+        "title": "工业和信息化部办公厅关于开展2024年制造业单项冠军企业遴选认定和复核评价工作的通知",
+        "document_number": "工信厅政法函〔2024〕328号",
+        "source_url": "https://www.miit.gov.cn/zwgk/zcwj/wjfb/tz/art/2024/art_af92d3d91e2342cd91b2221c9348580b.html",
+        "usage": "仅用于2024年度历史回放，不得作为2026年度中央申报批次或截止日期"
+      },
+      "related_but_not_substitutable": [
+        {
+          "project_id": "manufacturing-single-champion-1",
+          "title": "2026年度浙江省制造业单项冠军遴选",
+          "level": "浙江省级",
+          "reason": "省级遴选通知不能替代国家制造业单项冠军中央年度通知"
+        }
+      ],
+      "decision": "可按现行国家管理办法进行准备方向判断；不得虚构2026年度中央申报批次和截止时间"
+    }
+  ]
+}

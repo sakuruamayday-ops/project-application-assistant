@@ -10,14 +10,16 @@ from app.policy_lifecycle import build_policy_dependency_graph
 
 
 RULE_IR_SCHEMA_VERSION = 1
-SHARED_KERNEL_VERSION = "1.1"
+SHARED_KERNEL_VERSION = "1.2"
 SHARED_EXECUTION_KERNELS = (
     "task-omission-preflight",
     "project-router",
     "policy-version-gate",
+    "policy-time-type-checker",
     "fact-contract-normalizer",
     "evidence-conflict-resolver",
     "layer-selector",
+    "native-rule-combinator",
     "requirement-comparator",
     "lifecycle-state-machine",
     "coverage-hash-planner",
@@ -217,6 +219,7 @@ def build_algorithm_card(
         "outputs": {
             "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
             "conclusion": "eligible、conditional、ineligible或undetermined",
+            "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
             "rule_trace": "选中的规则层、逐规则比较和证据引用",
             "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移",
         },
@@ -242,6 +245,8 @@ def build_algorithm_card(
         },
         "quality_gates": {
             "task_preflight_required": True,
+            "policy_time_checked": True,
+            "native_rule_combinator": True,
             "pack_validation": True,
             "gold_case_count": len(project.get("gold_cases", [])),
             "formal_decision_enabled": coverage_status == "rules-confirmed",

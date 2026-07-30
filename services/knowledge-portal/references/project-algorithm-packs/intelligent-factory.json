@@ -168,8 +168,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
       "rules": [
         {
           "rule_id": "intelligent_factory-1",

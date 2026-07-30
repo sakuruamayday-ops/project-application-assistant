@@ -7,7 +7,7 @@
   "project_name": "国家制造业单项冠军企业",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-28a53dceee1ee7f56801",
+  "policy_version_id": "policy-675d50437b0f2980eea4",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -16,6 +16,7 @@
   "outputs": {
     "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
     "conclusion": "eligible、conditional、ineligible或undetermined",
+    "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
     "rule_trace": "选中的规则层、逐规则比较和证据引用",
     "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
   },
@@ -23,9 +24,11 @@
     "task-omission-preflight",
     "project-router",
     "policy-version-gate",
+    "policy-time-type-checker",
     "fact-contract-normalizer",
     "evidence-conflict-resolver",
     "layer-selector",
+    "native-rule-combinator",
     "requirement-comparator",
     "lifecycle-state-machine",
     "coverage-hash-planner",
@@ -53,6 +56,8 @@
   },
   "quality_gates": {
     "task_preflight_required": true,
+    "policy_time_checked": true,
+    "native_rule_combinator": true,
     "pack_validation": true,
     "gold_case_count": 3,
     "formal_decision_enabled": true,
@@ -63,5 +68,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "ab4b9578994438219fbc03019172c54d8606e18c838a5990c2cf835b8afb9662"
+  "compile_input_hash": "9b0b541cb7c20789b6ba9beb13835f50116caf3a81fe54f8b297975edc75dfba"
 }

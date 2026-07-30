@@ -245,8 +245,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2016/201602/t20160205_123998.html",
       "rules": [
         {
           "rule_id": "hte-registration-years",
@@ -384,6 +386,7 @@
     {
       "layer_id": "zhejiang-high-tech-2025",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "浙江省2025年度高新技术企业认定通知",
       "applicability": {
         "years": [
@@ -397,6 +400,7 @@
           "re-recognition"
         ]
       },
+      "source_url": "https://jxt.zj.gov.cn/art/2025/6/5/art_1229886900_58935997.html",
       "rules": [
         {
           "rule_id": "zhejiang-high-tech-2025-submission",

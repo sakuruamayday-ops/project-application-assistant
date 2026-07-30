@@ -89,6 +89,7 @@ from app.project_decision import (
     small_giant_recognition_batch as decide_small_giant_recognition_batch,
     validate_project_algorithm_pack,
 )
+from app.policy_time import enrich_policy_time_context
 from app.three_first_routing import plan_three_first_analysis
 
 # Production may supply this private extension as a server-managed overlay.
@@ -2198,11 +2199,15 @@ def enterprise_lifecycle_decision(
     host_extractions: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     host_conversion = convert_host_extractions_to_materials(host_extractions or [])
+    time_aware_project_context = enrich_policy_time_context(
+        query,
+        project_context,
+    )
     selected_pack = next(
         (
             pack
             for pack in load_project_algorithm_packs()
-            if project_algorithm_pack_matches(pack, project_context)
+            if project_algorithm_pack_matches(pack, time_aware_project_context)
         ),
         None,
     )
@@ -2211,17 +2216,37 @@ def enterprise_lifecycle_decision(
         selected_pack.get("fact_fields", []) if selected_pack else [],
     )
     selected_algorithm_rules = (
-        select_project_algorithm_rules(selected_pack, project_context)
+        select_project_algorithm_rules(
+            selected_pack,
+            time_aware_project_context,
+        )
         if selected_pack
-        else {"rules": [], "selected_layers": []}
+        else {
+            "rules": [],
+            "selected_layers": [],
+            "policy_time": {
+                "evaluation_mode": "current-assessment",
+                "output_label": "查询日有效规则判断",
+                "status": "allowed",
+                "formal_conclusion_allowed": True,
+                "reason": "",
+                "selected_layer_ids": [],
+                "blocked_layers": [],
+            },
+            "policy_time_audits": [],
+        }
     )
+    effective_project_context = {
+        **time_aware_project_context,
+        "policy_time": selected_algorithm_rules["policy_time"],
+    }
     result = build_lifecycle_decision(
         query,
         rules=load_project_retrieval_rules(),
         project_records=load_project_index_records(),
         configured_aliases=load_project_query_aliases(),
         enterprise_facts=enterprise_facts,
-        project_context=project_context,
+        project_context=effective_project_context,
         requirements=requirements,
         growth_projects=growth_projects or [],
         deliverable=deliverable,
@@ -2243,6 +2268,10 @@ def enterprise_lifecycle_decision(
             "project_name": selected_pack.get("project_name"),
             "version": selected_pack.get("version"),
             "selected_layers": selected_algorithm_rules["selected_layers"],
+            "policy_time": selected_algorithm_rules["policy_time"],
+            "policy_time_audits": selected_algorithm_rules[
+                "policy_time_audits"
+            ],
         }
         if selected_pack
         else None

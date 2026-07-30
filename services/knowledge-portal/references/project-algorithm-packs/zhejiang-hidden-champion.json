@@ -378,6 +378,7 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {
         "years": [
@@ -387,6 +388,9 @@
           "recognition"
         ]
       },
+      "source_url": "https://aiqice.cn/policyDetail?id=13128837&indexId=8c65d358e6284a548ccb3f9726c51729",
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2026-03-26__关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知__8c65d358e6284a548ccb3f9726c51729/附件/4.浙江省隐形冠军企业申请条件和要求.doc",
+      "source_archive_sha256": "2c2212e47b2952085b1e49d622a4fbdcb5b5065eb7476340c4295027042a17fe",
       "rules": [
         {
           "rule_id": "hidden-entity",
@@ -621,6 +625,7 @@
     {
       "layer_id": "hidden-champion-review-2026",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "2026年度隐形冠军复核",
       "applicability": {
         "years": [
@@ -630,6 +635,9 @@
           "review"
         ]
       },
+      "source_url": "https://aiqice.cn/policyDetail?id=13128837&indexId=8c65d358e6284a548ccb3f9726c51729",
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2026-03-26__关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知__8c65d358e6284a548ccb3f9726c51729/附件/5.浙江省隐形冠军企业复核条件和要求.doc",
+      "source_archive_sha256": "c3d0734c2e17f0bd083d8dca1c67eff50728a8c23cdc3537a732fef098a7864c",
       "rules": [
         {
           "rule_id": "hidden-review-operation",

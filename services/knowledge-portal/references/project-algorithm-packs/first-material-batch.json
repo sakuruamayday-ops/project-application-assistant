@@ -243,12 +243,14 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {
         "years": [
           "2025"
         ]
       },
+      "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3499/site/attach/0/6922fc25da0e4fde84582f6d7a3d9ff1.pdf",
       "rules": [
         {
           "rule_id": "first-material-1",

@@ -5,6 +5,10 @@ import re
 from datetime import datetime
 from typing import Mapping, Sequence
 
+from app.policy_time import (
+    assess_policy_layer_time,
+    summarize_policy_time_selection,
+)
 from app.task_preflight import assess_task_preflight
 
 
@@ -59,6 +63,7 @@ GATE_STATES = frozenset(
     {"passed", "failed", "pending", "unknown", "not-applicable"}
 )
 RULE_LAYER_TYPES = frozenset({"stable", "annual", "jurisdiction"})
+RULE_LOGICS = frozenset({"all", "any"})
 
 DEADLINE_DATE_PATTERN = re.compile(
     r"(?:(?P<year>20\d{2})年)?"
@@ -1225,6 +1230,47 @@ def validate_project_algorithm_pack(
                 scan(item, f"{path}[{index}]")
 
     scan(pack, "pack")
+
+    def validate_requirement_spec(
+        rule: Mapping[str, object],
+        path: str,
+        *,
+        require_audit: bool,
+    ) -> None:
+        rule_id = str(rule.get("rule_id") or "").strip()
+        if not rule_id:
+            errors.append(f"{path}缺少rule_id")
+        logic = str(rule.get("logic") or "").strip()
+        if logic:
+            if logic not in RULE_LOGICS:
+                errors.append(f"{path}.logic无效")
+            children = rule.get("children")
+            if not isinstance(children, list) or not children:
+                errors.append(f"{path}.children必须为非空列表")
+            else:
+                for child_index, child in enumerate(children):
+                    if not isinstance(child, Mapping):
+                        errors.append(
+                            f"{path}.children[{child_index}]必须为对象"
+                        )
+                        continue
+                    validate_requirement_spec(
+                        child,
+                        f"{path}.children[{child_index}]",
+                        require_audit=False,
+                    )
+        else:
+            for required_field in ("field", "operator"):
+                if not str(rule.get(required_field) or "").strip():
+                    errors.append(f"{path}缺少{required_field}")
+        if str(rule.get("type") or "hard-threshold") not in RULE_TYPES:
+            errors.append(f"{path}.type无效")
+        if require_audit:
+            if not str(rule.get("source") or "").strip():
+                errors.append(f"{path}缺少source")
+            if not str(rule.get("source_quote") or "").strip():
+                errors.append(f"{path}缺少source_quote")
+
     seen_fields: set[str] = set()
     for index, field_spec in enumerate(pack.get("fact_fields", [])):
         if not isinstance(field_spec, Mapping):
@@ -1247,18 +1293,14 @@ def validate_project_algorithm_pack(
         elif rule_id in seen_rules:
             errors.append(f"rule_cards重复：{rule_id}")
         seen_rules.add(rule_id)
+        validate_requirement_spec(
+            rule,
+            f"rule_cards[{index}]",
+            require_audit=True,
+        )
         review_status = str(rule.get("review_status") or "candidate")
         if review_status not in {"candidate", "confirmed"}:
             errors.append(f"rule_cards[{index}].review_status无效")
-        for required_field in (
-            "field",
-            "operator",
-            "source",
-        ):
-            if not str(rule.get(required_field) or "").strip():
-                errors.append(
-                    f"rule_cards[{index}]缺少{required_field}"
-                )
         if review_status == "confirmed":
             for audit_field in (
                 "approved_by",
@@ -1273,10 +1315,6 @@ def validate_project_algorithm_pack(
                 errors.append(
                     f"rule_cards[{index}]已确认规则的policy_status必须为current"
                 )
-        if str(rule.get("type") or "") not in RULE_TYPES:
-            errors.append(f"rule_cards[{index}].type无效")
-        if not str(rule.get("source_quote") or "").strip():
-            errors.append(f"rule_cards[{index}]缺少source_quote")
     if coverage_status == "routing-only" and pack.get("rule_cards"):
         errors.append("routing-only算法包不得包含规则卡")
     if coverage_status == "policy-baseline-confirmed":
@@ -1329,6 +1367,16 @@ def validate_project_algorithm_pack(
         seen_layers.add(layer_id)
         if layer_type not in RULE_LAYER_TYPES:
             errors.append(f"rule_layers[{layer_index}].layer_type无效")
+        expected_time_type = {
+            "stable": "stable-management",
+            "annual": "annual-notice",
+            "jurisdiction": "jurisdiction-detail",
+        }.get(layer_type)
+        actual_time_type = str(layer.get("policy_time_type") or "")
+        if actual_time_type and actual_time_type != expected_time_type:
+            errors.append(
+                f"rule_layers[{layer_index}].policy_time_type与layer_type不匹配"
+            )
         applicability = layer.get("applicability", {})
         if not isinstance(applicability, Mapping):
             errors.append(f"rule_layers[{layer_index}].applicability必须为对象")
@@ -1346,6 +1394,11 @@ def validate_project_algorithm_pack(
                     f"rule_layers[{layer_index}].rules[{rule_index}]必须为对象"
                 )
                 continue
+            validate_requirement_spec(
+                rule,
+                f"rule_layers[{layer_index}].rules[{rule_index}]",
+                require_audit=True,
+            )
             if str(rule.get("review_status") or "") != "confirmed":
                 errors.append(
                     f"rule_layers[{layer_index}].rules[{rule_index}]必须已确认"
@@ -1389,6 +1442,15 @@ def select_project_algorithm_rules(
                 if isinstance(rule, Mapping)
             ],
             "selected_layers": ["legacy-rule-cards"],
+            "policy_time": {
+                "evaluation_mode": "current-assessment",
+                "output_label": "查询日有效规则判断",
+                "status": "allowed",
+                "formal_conclusion_allowed": True,
+                "reason": "",
+                "selected_layer_ids": ["legacy-rule-cards"],
+                "blocked_layers": [],
+            },
         }
     context_year = str(
         project_context.get("year")
@@ -1431,6 +1493,7 @@ def select_project_algorithm_rules(
 
     selected_layers: list[str] = []
     selected_rules: dict[str, dict[str, object]] = {}
+    time_audits: list[dict[str, object]] = []
     for layer_type in ("stable", "annual", "jurisdiction"):
         for layer in layers:
             if not isinstance(layer, Mapping):
@@ -1449,16 +1512,28 @@ def select_project_algorithm_rules(
                 continue
             if not regions_match(applicability.get("regions", [])):
                 continue
+            time_audit = assess_policy_layer_time(layer, project_context)
+            time_audits.append(time_audit)
+            if not time_audit["allowed"]:
+                continue
             selected_layers.append(str(layer.get("layer_id") or layer_type))
             for rule in layer.get("rules", []):
                 if not isinstance(rule, Mapping):
                     continue
                 rule_id = str(rule.get("rule_id") or "").strip()
                 if rule_id:
-                    selected_rules[rule_id] = dict(rule)
+                    selected_rules[rule_id] = {
+                        **dict(rule),
+                        "_policy_time_type": time_audit["policy_time_type"],
+                        "_policy_time_label": time_audit["output_label"],
+                        "_policy_layer_id": time_audit["layer_id"],
+                    }
+    policy_time = summarize_policy_time_selection(time_audits, project_context)
     return {
         "rules": list(selected_rules.values()),
         "selected_layers": selected_layers,
+        "policy_time": policy_time,
+        "policy_time_audits": time_audits,
     }
 
 
@@ -1624,6 +1699,123 @@ def evaluate_requirement(
 ) -> dict[str, object]:
     rule_id = str(requirement.get("rule_id") or "").strip()
     rule_type = str(requirement.get("type") or "hard-threshold").strip()
+    logic = str(requirement.get("logic") or "").strip()
+    if logic:
+        raw_children = requirement.get("children")
+        if logic not in RULE_LOGICS or not isinstance(raw_children, list) or not raw_children:
+            return {
+                "rule_id": rule_id,
+                "type": rule_type,
+                "field": "",
+                "logic": logic,
+                "status": "unknown",
+                "evidence_state": "missing",
+                "source": str(requirement.get("source") or ""),
+                "reason": "组合规则结构无效",
+                "children": [],
+            }
+        children = [
+            evaluate_requirement(
+                {
+                    **dict(child),
+                    "type": str(child.get("type") or "hard-threshold"),
+                    "source": str(
+                        child.get("source")
+                        or requirement.get("source")
+                        or ""
+                    ),
+                },
+                fact_ledger,
+            )
+            for child in raw_children
+            if isinstance(child, Mapping)
+        ]
+        effective = [
+            child
+            for child in children
+            if child.get("status") != "not-applicable"
+        ]
+        statuses = {str(child.get("status") or "unknown") for child in effective}
+        if not effective:
+            combined_status = "not-applicable"
+        elif logic == "all":
+            if "failed" in statuses:
+                combined_status = "failed"
+            elif "pending" in statuses:
+                combined_status = "pending"
+            elif "unknown" in statuses:
+                combined_status = "unknown"
+            else:
+                combined_status = "passed"
+        else:
+            if "passed" in statuses:
+                combined_status = "passed"
+            elif "pending" in statuses:
+                combined_status = "pending"
+            elif "unknown" in statuses:
+                combined_status = "unknown"
+            else:
+                combined_status = "failed"
+        if rule_type == "exclusion" and combined_status in {"passed", "failed"}:
+            combined_status = (
+                "failed" if combined_status == "passed" else "passed"
+            )
+        decisive_children = effective
+        if logic == "any" and combined_status == "passed":
+            decisive_children = [
+                child for child in effective if child.get("status") == "passed"
+            ]
+        elif logic == "all" and combined_status == "failed":
+            decisive_children = [
+                child for child in effective if child.get("status") == "failed"
+            ]
+        evidence_states = {
+            str(child.get("evidence_state") or "missing")
+            for child in decisive_children
+        }
+        if "conflicting" in evidence_states:
+            evidence_state = "conflicting"
+        elif "claimed" in evidence_states:
+            evidence_state = "claimed"
+        elif "missing" in evidence_states:
+            evidence_state = "missing"
+        elif effective and evidence_states <= SUPPORTING_EVIDENCE_STATES:
+            evidence_state = "verified"
+        else:
+            evidence_state = next(iter(evidence_states), "not-applicable")
+        fields = unique_strings(
+            field
+            for child in children
+            for field in (
+                child.get("fields", [])
+                if isinstance(child.get("fields"), list)
+                else [child.get("field")]
+            )
+            if field
+        )
+        return {
+            "rule_id": rule_id,
+            "type": rule_type,
+            "field": " | ".join(fields),
+            "fields": fields,
+            "logic": logic,
+            "status": combined_status,
+            "evidence_state": evidence_state,
+            "source": str(requirement.get("source") or ""),
+            "reason": (
+                f"组合规则{logic}已满足"
+                if combined_status == "passed"
+                else f"组合规则{logic}未满足"
+                if combined_status == "failed"
+                else f"组合规则{logic}仍有待核验分支"
+            ),
+            "children": children,
+            "fact_ids": unique_strings(
+                fact_id
+                for child in children
+                for fact_id in child.get("fact_ids", [])
+            ),
+        }
     field = str(requirement.get("field") or "").strip()
     operator = str(requirement.get("operator") or "exists").strip()
     expected = requirement.get("expected")
@@ -1769,7 +1961,12 @@ def evaluate_project_feasibility(
     ]
     statuses = {str(gate["status"]) for gate in decisive_gates}
     policy_status = str(project_context.get("policy_status") or "unknown")
-    if "failed" in statuses:
+    policy_time = project_context.get("policy_time")
+    if not isinstance(policy_time, Mapping):
+        policy_time = {}
+    if str(policy_time.get("status") or "") == "blocked":
+        conclusion = "undetermined"
+    elif "failed" in statuses:
         conclusion = "ineligible"
     elif policy_status != "current":
         conclusion = "undetermined"
@@ -1797,6 +1994,10 @@ def evaluate_project_feasibility(
     return {
         "project_context": dict(project_context),
         "overall_conclusion": conclusion,
+        "conclusion_semantics": str(
+            policy_time.get("output_label") or "查询日有效规则判断"
+        ),
+        "policy_time": dict(policy_time),
         "hard_gates": gates,
         "evidence_gaps": evidence_gaps,
         "uncertainties": [
@@ -1823,6 +2024,11 @@ def evaluate_project_feasibility(
 
 
 def _requirement_evidence_description(gate: Mapping[str, object]) -> str:
+    if gate.get("logic") in RULE_LOGICS:
+        return (
+            f"按{gate['logic']}组合关系补齐并核验分支字段："
+            + "、".join(str(field) for field in gate.get("fields", []))
+        )
     operator = str(gate.get("operator") or "exists")
     expected = gate.get("expected")
     if operator == "exists":

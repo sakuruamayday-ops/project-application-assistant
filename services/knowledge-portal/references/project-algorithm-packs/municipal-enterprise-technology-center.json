@@ -143,8 +143,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
       "rules": [
         {
           "rule_id": "municipal-tech-center-1",
@@ -221,6 +223,7 @@
     {
       "layer_id": "municipal-tech-center-11-city-runtime",
       "layer_type": "jurisdiction",
+      "policy_time_type": "jurisdiction-detail",
       "label": "浙江11个设区市动态阈值层",
       "applicability": {
         "regions": [
@@ -231,6 +234,7 @@
           "evaluation"
         ]
       },
+      "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
       "rules": [
         {
           "rule_id": "municipal-tech-center-runtime-gate",

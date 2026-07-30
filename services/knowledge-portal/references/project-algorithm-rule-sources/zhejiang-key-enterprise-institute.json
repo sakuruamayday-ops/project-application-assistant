@@ -11,8 +11,10 @@
   "fact_fields": [
     {"field": "zhejiang_independent_legal_entity", "label": "浙江省注册独立法人", "aliases": ["浙江省注册独立法人"], "value_type": "boolean"},
     {"field": "key_institute_platform_basis_met", "label": "省级研发平台前置条件", "aliases": ["省级研发平台前置条件"], "value_type": "boolean"},
-    {"field": "key_institute_revenue_requirement_met", "label": "重点研究院营业收入要求", "aliases": ["重点研究院营业收入要求"], "value_type": "boolean"},
-    {"field": "key_institute_rnd_requirement_met", "label": "重点研究院研发投入要求", "aliases": ["重点研究院研发投入要求"], "value_type": "boolean"},
+    {"field": "is_agricultural_enterprise", "label": "农业企业属性", "aliases": ["是否农业企业"], "value_type": "boolean"},
+    {"field": "revenue", "label": "上一年度营业收入", "aliases": ["营业收入"], "value_type": "number", "unit": "万元"},
+    {"field": "rnd_ratio", "label": "上一年度研发费用占营业收入比例", "aliases": ["研发强度"], "value_type": "number", "unit": "%"},
+    {"field": "rnd_expense", "label": "上一年度研发费用", "aliases": ["研发费用"], "value_type": "number", "unit": "万元"},
     {"field": "innovation_score", "label": "创新能力评价得分", "aliases": ["创新能力评价得分"], "value_type": "number", "unit": "分"},
     {"field": "core_ip_talent_rnd_foundation_met", "label": "核心知识产权人才与研发基础", "aliases": ["核心知识产权人才与研发基础"], "value_type": "boolean"},
     {"field": "mountain_island_relaxation_applicable", "label": "山区海岛县放宽情形适用", "aliases": ["山区海岛县研究院放宽"], "value_type": "boolean"},
@@ -21,12 +23,114 @@
   "rules": [
     {"rule_id": "zj-key-institute-entity", "type": "hard-threshold", "field": "zhejiang_independent_legal_entity", "operator": "truthy", "expected": true, "source": "《浙江省重点企业研究院、企业研究院建设与管理办法》浙经信高新〔2025〕169号", "source_quote": "依托企业须在浙江省注册并具有独立法人资格。"},
     {"rule_id": "zj-key-institute-platform", "type": "competitive", "field": "key_institute_platform_basis_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "依托企业申报省重点企业研究院，原则上应建有省企业研究院、省高新技术企业研究开发中心或省级企业技术中心。"},
-    {"rule_id": "zj-key-institute-revenue", "type": "hard-threshold", "field": "key_institute_revenue_requirement_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。"},
-    {"rule_id": "zj-key-institute-rnd", "type": "hard-threshold", "field": "key_institute_rnd_requirement_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。"},
+    {
+      "rule_id": "zj-key-institute-revenue",
+      "type": "hard-threshold",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-key-institute-revenue-general",
+          "logic": "all",
+          "children": [
+            {"rule_id": "zj-key-institute-revenue-general-type", "field": "is_agricultural_enterprise", "operator": "falsy", "expected": false},
+            {"rule_id": "zj-key-institute-revenue-general-value", "field": "revenue", "operator": "gte", "expected": 20000, "unit": "万元"}
+          ]
+        },
+        {
+          "rule_id": "zj-key-institute-revenue-agriculture",
+          "logic": "all",
+          "children": [
+            {"rule_id": "zj-key-institute-revenue-agriculture-type", "field": "is_agricultural_enterprise", "operator": "truthy", "expected": true},
+            {"rule_id": "zj-key-institute-revenue-agriculture-value", "field": "revenue", "operator": "gte", "expected": 5000, "unit": "万元"}
+          ]
+        }
+      ],
+      "source": "浙经信高新〔2025〕169号第九条",
+      "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。"
+    },
+    {
+      "rule_id": "zj-key-institute-rnd",
+      "type": "hard-threshold",
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-key-institute-rnd-agriculture",
+          "logic": "all",
+          "children": [
+            {"rule_id": "zj-key-institute-rnd-agriculture-type", "field": "is_agricultural_enterprise", "operator": "truthy", "expected": true},
+            {"rule_id": "zj-key-institute-rnd-agriculture-expense", "field": "rnd_expense", "operator": "gte", "expected": 800, "unit": "万元"}
+          ]
+        },
+        {
+          "rule_id": "zj-key-institute-rnd-general",
+          "logic": "all",
+          "children": [
+            {"rule_id": "zj-key-institute-rnd-general-type", "field": "is_agricultural_enterprise", "operator": "falsy", "expected": false},
+            {
+              "rule_id": "zj-key-institute-rnd-general-route",
+              "logic": "any",
+              "children": [
+                {"rule_id": "zj-key-institute-rnd-general-ratio", "field": "rnd_ratio", "operator": "gte", "expected": 4, "unit": "%"},
+                {"rule_id": "zj-key-institute-rnd-general-expense", "field": "rnd_expense", "operator": "gte", "expected": 5000, "unit": "万元"}
+              ]
+            }
+          ]
+        }
+      ],
+      "source": "浙经信高新〔2025〕169号第九条",
+      "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。"
+    },
     {"rule_id": "zj-key-institute-score", "type": "hard-threshold", "field": "innovation_score", "operator": "gte", "expected": 60, "unit": "分", "source": "浙经信高新〔2025〕169号", "source_quote": "创新能力评价得分达到六十分以上。"},
     {"rule_id": "zj-key-institute-foundation", "type": "hard-threshold", "field": "core_ip_talent_rnd_foundation_met", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "须具备核心自主知识产权、人才队伍和研发基础条件。"},
     {"rule_id": "zj-key-institute-compliance", "type": "hard-threshold", "field": "no_major_incident", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号", "source_quote": "规定期间内不得发生重大事故及严重违法失信行为。"},
     {"rule_id": "zj-key-institute-mountain-island-relaxation", "type": "competitive", "field": "mountain_island_relaxation_applicable", "operator": "truthy", "expected": true, "source": "浙经信高新〔2025〕169号第九条", "source_quote": "依托企业为山区海岛县的，可适当放宽上一年度营业收入、研发强度或研发费用等基本条件。"}
+  ],
+  "gold_cases": [
+    {
+      "case_id": "eligible-verified",
+      "facts": [
+        {"field": "zhejiang_independent_legal_entity", "value": true, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "is_agricultural_enterprise", "value": false, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "revenue", "value": 20000, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "rnd_ratio", "value": 4, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "rnd_expense", "value": 1000, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "innovation_score", "value": 60, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "core_ip_talent_rnd_foundation_met", "value": true, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "no_major_incident", "value": true, "evidence_state": "verified", "source": "金标准事实"}
+      ],
+      "confirm_rule_ids": ["zj-key-institute-entity", "zj-key-institute-platform", "zj-key-institute-revenue", "zj-key-institute-rnd", "zj-key-institute-score", "zj-key-institute-foundation", "zj-key-institute-compliance", "zj-key-institute-mountain-island-relaxation"],
+      "expected_conclusion": "eligible"
+    },
+    {
+      "case_id": "conditional-pending",
+      "facts": [
+        {"field": "zhejiang_independent_legal_entity", "value": true, "evidence_state": "claimed", "source": "金标准事实"},
+        {"field": "is_agricultural_enterprise", "value": false, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "revenue", "value": 20000, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "rnd_ratio", "value": 4, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "rnd_expense", "value": 1000, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "innovation_score", "value": 60, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "core_ip_talent_rnd_foundation_met", "value": true, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "no_major_incident", "value": true, "evidence_state": "verified", "source": "金标准事实"}
+      ],
+      "confirm_rule_ids": ["zj-key-institute-entity", "zj-key-institute-platform", "zj-key-institute-revenue", "zj-key-institute-rnd", "zj-key-institute-score", "zj-key-institute-foundation", "zj-key-institute-compliance", "zj-key-institute-mountain-island-relaxation"],
+      "expected_conclusion": "conditional"
+    },
+    {
+      "case_id": "ineligible-failed",
+      "facts": [
+        {"field": "zhejiang_independent_legal_entity", "value": false, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "is_agricultural_enterprise", "value": false, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "revenue", "value": 20000, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "rnd_ratio", "value": 4, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "rnd_expense", "value": 1000, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "innovation_score", "value": 60, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "core_ip_talent_rnd_foundation_met", "value": true, "evidence_state": "verified", "source": "金标准事实"},
+        {"field": "no_major_incident", "value": true, "evidence_state": "verified", "source": "金标准事实"}
+      ],
+      "confirm_rule_ids": ["zj-key-institute-entity", "zj-key-institute-platform", "zj-key-institute-revenue", "zj-key-institute-rnd", "zj-key-institute-score", "zj-key-institute-foundation", "zj-key-institute-compliance", "zj-key-institute-mountain-island-relaxation"],
+      "expected_conclusion": "ineligible"
+    }
   ],
   "annual_overlays": [
     {

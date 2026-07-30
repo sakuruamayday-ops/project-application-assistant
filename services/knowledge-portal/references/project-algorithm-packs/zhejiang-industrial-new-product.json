@@ -78,8 +78,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
       "rules": [
         {
           "rule_id": "industrial-new-product-current-open",
@@ -114,6 +116,7 @@
     {
       "layer_id": "industrial-new-product-2023-history",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "2023年度工业新产品历史回放",
       "applicability": {
         "years": [
@@ -123,6 +126,7 @@
           "historical-replay"
         ]
       },
+      "source_url": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=490d5583993f405a92d0cbdee4b69f0c.pdf",
       "rules": [
         {
           "rule_id": "industrial-new-product-2023-thresholds",

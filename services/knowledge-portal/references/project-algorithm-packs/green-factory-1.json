@@ -168,8 +168,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
       "rules": [
         {
           "rule_id": "green-factory-1-1",
@@ -260,6 +262,7 @@
     {
       "layer_id": "green-factory-1-jurisdiction",
       "layer_type": "jurisdiction",
+      "policy_time_type": "jurisdiction-detail",
       "label": "区级绿色工厂属地实施细则",
       "applicability": {
         "regions": [
@@ -270,6 +273,7 @@
           "evaluation"
         ]
       },
+      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
       "rules": [
         {
           "rule_id": "green-factory-1-local-thresholds",

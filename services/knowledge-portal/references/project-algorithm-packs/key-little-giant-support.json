@@ -193,6 +193,7 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {
         "years": [
@@ -201,6 +202,7 @@
           "2026"
         ]
       },
+      "source_url": "https://www.miit.gov.cn/xwdt/gxdt/art/2024/art_8df1cf7787fb4e3589bd5233022a51e7.html",
       "rules": [
         {
           "rule_id": "key-little-giant-1",

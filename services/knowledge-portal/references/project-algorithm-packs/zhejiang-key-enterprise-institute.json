@@ -33,20 +33,39 @@
       "value_type": "boolean"
     },
     {
-      "field": "key_institute_revenue_requirement_met",
-      "label": "重点研究院营业收入要求",
+      "field": "is_agricultural_enterprise",
+      "label": "农业企业属性",
       "aliases": [
-        "重点研究院营业收入要求"
+        "是否农业企业"
       ],
       "value_type": "boolean"
     },
     {
-      "field": "key_institute_rnd_requirement_met",
-      "label": "重点研究院研发投入要求",
+      "field": "revenue",
+      "label": "上一年度营业收入",
       "aliases": [
-        "重点研究院研发投入要求"
+        "营业收入"
       ],
-      "value_type": "boolean"
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "rnd_expense",
+      "label": "上一年度研发费用",
+      "aliases": [
+        "研发费用"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "rnd_ratio",
+      "label": "上一年度研发费用占营业收入比例",
+      "aliases": [
+        "研发强度"
+      ],
+      "value_type": "number",
+      "unit": "%"
     },
     {
       "field": "innovation_score",
@@ -128,9 +147,47 @@
     {
       "rule_id": "zj-key-institute-revenue",
       "type": "hard-threshold",
-      "field": "key_institute_revenue_requirement_met",
-      "operator": "truthy",
-      "expected": true,
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-key-institute-revenue-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-revenue-general-type",
+              "field": "is_agricultural_enterprise",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "zj-key-institute-revenue-general-value",
+              "field": "revenue",
+              "operator": "gte",
+              "expected": 20000,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-key-institute-revenue-agriculture",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-revenue-agriculture-type",
+              "field": "is_agricultural_enterprise",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-key-institute-revenue-agriculture-value",
+              "field": "revenue",
+              "operator": "gte",
+              "expected": 5000,
+              "unit": "万元"
+            }
+          ]
+        }
+      ],
       "source": "浙经信高新〔2025〕169号第九条",
       "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。",
       "policy_status": "current",
@@ -142,9 +199,60 @@
     {
       "rule_id": "zj-key-institute-rnd",
       "type": "hard-threshold",
-      "field": "key_institute_rnd_requirement_met",
-      "operator": "truthy",
-      "expected": true,
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-key-institute-rnd-agriculture",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-rnd-agriculture-type",
+              "field": "is_agricultural_enterprise",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "zj-key-institute-rnd-agriculture-expense",
+              "field": "rnd_expense",
+              "operator": "gte",
+              "expected": 800,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-key-institute-rnd-general",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-rnd-general-type",
+              "field": "is_agricultural_enterprise",
+              "operator": "falsy",
+              "expected": false
+            },
+            {
+              "rule_id": "zj-key-institute-rnd-general-route",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-rnd-general-ratio",
+                  "field": "rnd_ratio",
+                  "operator": "gte",
+                  "expected": 4,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "zj-key-institute-rnd-general-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 5000,
+                  "unit": "万元"
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "source": "浙经信高新〔2025〕169号第九条",
       "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。",
       "policy_status": "current",
@@ -215,8 +323,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
       "rules": [
         {
           "rule_id": "zj-key-institute-entity",
@@ -249,9 +359,47 @@
         {
           "rule_id": "zj-key-institute-revenue",
           "type": "hard-threshold",
-          "field": "key_institute_revenue_requirement_met",
-          "operator": "truthy",
-          "expected": true,
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-revenue-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-revenue-general-type",
+                  "field": "is_agricultural_enterprise",
+                  "operator": "falsy",
+                  "expected": false
+                },
+                {
+                  "rule_id": "zj-key-institute-revenue-general-value",
+                  "field": "revenue",
+                  "operator": "gte",
+                  "expected": 20000,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-key-institute-revenue-agriculture",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-revenue-agriculture-type",
+                  "field": "is_agricultural_enterprise",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-key-institute-revenue-agriculture-value",
+                  "field": "revenue",
+                  "operator": "gte",
+                  "expected": 5000,
+                  "unit": "万元"
+                }
+              ]
+            }
+          ],
           "source": "浙经信高新〔2025〕169号第九条",
           "source_quote": "上一年度营业收入2亿元以上，其中农业企业不低于5000万元。",
           "policy_status": "current",
@@ -263,9 +411,60 @@
         {
           "rule_id": "zj-key-institute-rnd",
           "type": "hard-threshold",
-          "field": "key_institute_rnd_requirement_met",
-          "operator": "truthy",
-          "expected": true,
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-key-institute-rnd-agriculture",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-rnd-agriculture-type",
+                  "field": "is_agricultural_enterprise",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "zj-key-institute-rnd-agriculture-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 800,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-key-institute-rnd-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-key-institute-rnd-general-type",
+                  "field": "is_agricultural_enterprise",
+                  "operator": "falsy",
+                  "expected": false
+                },
+                {
+                  "rule_id": "zj-key-institute-rnd-general-route",
+                  "logic": "any",
+                  "children": [
+                    {
+                      "rule_id": "zj-key-institute-rnd-general-ratio",
+                      "field": "rnd_ratio",
+                      "operator": "gte",
+                      "expected": 4,
+                      "unit": "%"
+                    },
+                    {
+                      "rule_id": "zj-key-institute-rnd-general-expense",
+                      "field": "rnd_expense",
+                      "operator": "gte",
+                      "expected": 5000,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
           "source": "浙经信高新〔2025〕169号第九条",
           "source_quote": "上一年度研究开发费用占同期营业收入的比例不低于4%，或研究开发费用不低于5000万元；农业企业研究开发费用不低于800万元。",
           "policy_status": "current",
@@ -336,6 +535,7 @@
     {
       "layer_id": "zhejiang-key-enterprise-institute-2026",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "2026年度省重点企业研究院申报通知",
       "applicability": {
         "years": [
@@ -348,6 +548,9 @@
           "recognition"
         ]
       },
+      "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
+      "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9",
       "rules": [
         {
           "rule_id": "zhejiang-key-enterprise-institute-2026-data-cutoff",
@@ -379,20 +582,26 @@
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_platform_basis_met",
-          "value": true,
+          "field": "is_agricultural_enterprise",
+          "value": false,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_revenue_requirement_met",
-          "value": true,
+          "field": "revenue",
+          "value": 20000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_rnd_requirement_met",
-          "value": true,
+          "field": "rnd_ratio",
+          "value": 4,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_expense",
+          "value": 1000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -410,12 +619,6 @@
         },
         {
           "field": "no_major_incident",
-          "value": true,
-          "evidence_state": "verified",
-          "source": "金标准事实"
-        },
-        {
-          "field": "mountain_island_relaxation_applicable",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -443,20 +646,26 @@
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_platform_basis_met",
-          "value": true,
+          "field": "is_agricultural_enterprise",
+          "value": false,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_revenue_requirement_met",
-          "value": true,
+          "field": "revenue",
+          "value": 20000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_rnd_requirement_met",
-          "value": true,
+          "field": "rnd_ratio",
+          "value": 4,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_expense",
+          "value": 1000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -474,12 +683,6 @@
         },
         {
           "field": "no_major_incident",
-          "value": true,
-          "evidence_state": "verified",
-          "source": "金标准事实"
-        },
-        {
-          "field": "mountain_island_relaxation_applicable",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"
@@ -507,20 +710,26 @@
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_platform_basis_met",
-          "value": true,
+          "field": "is_agricultural_enterprise",
+          "value": false,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_revenue_requirement_met",
-          "value": true,
+          "field": "revenue",
+          "value": 20000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "key_institute_rnd_requirement_met",
-          "value": true,
+          "field": "rnd_ratio",
+          "value": 4,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_expense",
+          "value": 1000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -538,12 +747,6 @@
         },
         {
           "field": "no_major_incident",
-          "value": true,
-          "evidence_state": "verified",
-          "source": "金标准事实"
-        },
-        {
-          "field": "mountain_island_relaxation_applicable",
           "value": true,
           "evidence_state": "verified",
           "source": "金标准事实"

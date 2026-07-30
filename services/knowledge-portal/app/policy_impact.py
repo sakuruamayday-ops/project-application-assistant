@@ -36,6 +36,54 @@ def _rule_index(project: Mapping[str, object]) -> dict[str, dict[str, object]]:
     return rules
 
 
+def _requirement_leaf_fields(requirement: Mapping[str, object]) -> set[str]:
+    children = requirement.get("children")
+    if isinstance(children, Sequence) and not isinstance(children, (str, bytes)):
+        return {
+            field
+            for child in children
+            if isinstance(child, Mapping)
+            for field in _requirement_leaf_fields(child)
+        }
+    field = str(requirement.get("field") or "").strip()
+    return {field} if field else set()
+
+
+def _policy_time_index(
+    project: Mapping[str, object],
+) -> dict[str, dict[str, object]]:
+    return {
+        str(layer.get("layer_id") or ""): {
+            "layer_type": layer.get("layer_type"),
+            "policy_time_type": layer.get("policy_time_type"),
+            "effective_from": layer.get("effective_from"),
+            "effective_to": layer.get("effective_to"),
+            "applicability": layer.get("applicability", {}),
+        }
+        for layer in project.get("rule_layers", [])
+        if isinstance(layer, Mapping) and str(layer.get("layer_id") or "")
+    }
+
+
+def _policy_time_delta(
+    before: Mapping[str, object],
+    after: Mapping[str, object],
+) -> dict[str, object]:
+    before_layers = _policy_time_index(before)
+    after_layers = _policy_time_index(after)
+    changed = sorted(
+        layer_id
+        for layer_id in set(before_layers) & set(after_layers)
+        if content_digest(before_layers[layer_id])
+        != content_digest(after_layers[layer_id])
+    )
+    return {
+        "added_layer_ids": sorted(set(after_layers) - set(before_layers)),
+        "removed_layer_ids": sorted(set(before_layers) - set(after_layers)),
+        "changed_layer_ids": changed,
+    }
+
+
 def _rule_delta(
     before: Mapping[str, object],
     after: Mapping[str, object],
@@ -51,18 +99,18 @@ def _rule_delta(
     )
     changed_fields = sorted(
         {
-            str(rule.get("field") or "")
+            field
             for rule_id in (
                 set(after_rules) - set(before_rules)
             ) | set(changed)
             for rule in [after_rules[rule_id]]
-            if str(rule.get("field") or "")
+            for field in _requirement_leaf_fields(rule)
         }
         | {
-            str(rule.get("field") or "")
+            field
             for rule_id in set(before_rules) - set(after_rules)
             for rule in [before_rules[rule_id]]
-            if str(rule.get("field") or "")
+            for field in _requirement_leaf_fields(rule)
         }
     )
     return {
@@ -221,10 +269,14 @@ def simulate_policy_change_impact(
         before_project = _mapping(before_projects.get(project_id))
         after_project = _mapping(after_projects.get(project_id))
         delta = _rule_delta(before_project, after_project)
+        policy_time_delta = _policy_time_delta(before_project, after_project)
         lifecycle_changed = content_digest(
             _mapping(before_project.get("lifecycle_rule"))
         ) != content_digest(_mapping(after_project.get("lifecycle_rule")))
         has_rule_delta = any(delta[key] for key in delta)
+        has_policy_time_delta = any(
+            policy_time_delta[key] for key in policy_time_delta
+        )
         changed_fact_fields = list(delta["changed_fact_fields"])
         preflight_requirements = [
             {
@@ -249,27 +301,36 @@ def simulate_policy_change_impact(
                     else "modified"
                 ),
                 "rule_delta": delta,
+                "policy_time_delta": policy_time_delta,
                 "lifecycle_rule_changed": lifecycle_changed,
                 "identity_impact": {
                     "official_list_facts_mutated": False,
                     "derived_lifecycle_requires_replay": lifecycle_changed
                     or has_rule_delta,
+                    "policy_trace_requires_relink": has_policy_time_delta,
                     **database_counts[project_name],
                 },
                 "prediction_impact": {
                     "requires_recompute": True,
+                    "time_window_changed": has_policy_time_delta,
                     "invalidation_key": (
                         _mapping(after_project).get("policy_version_id")
                         or _mapping(before_project).get("policy_version_id")
                     ),
                 },
                 "historical_backtest_impact": {
-                    "requires_recompute": has_rule_delta or lifecycle_changed,
+                    "requires_recompute": (
+                        has_rule_delta
+                        or lifecycle_changed
+                        or has_policy_time_delta
+                    ),
                     "historical_facts_mutated": False,
+                    "historical_fact_guard_changed": has_policy_time_delta,
                 },
                 "preflight_impact": {
                     "requires_reassessment": has_rule_delta
-                    or lifecycle_changed,
+                    or lifecycle_changed
+                    or has_policy_time_delta,
                     "policy_version_id": (
                         _mapping(after_project).get("policy_version_id")
                         or _mapping(before_project).get("policy_version_id")
@@ -323,5 +384,6 @@ def simulate_policy_change_impact(
             "官方名单形成的认定、复核、撤销等历史事实不因政策变化被改写",
             "仅重算政策解释、生命周期派生状态、预测结果和历史回测",
             "所有影响均可回指变更政策节点、项目规则差异和版本哈希",
+            "政策生效窗口变化只重连政策时间语义，不把新规则冒充历史事实",
         ],
     }

@@ -217,8 +217,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
       "rules": [
         {
           "rule_id": "hz-tech-center-1",

@@ -383,12 +383,14 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {
         "years": [
           "2026"
         ]
       },
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293014",
       "rules": [
         {
           "rule_id": "key-zj-sme-valid",

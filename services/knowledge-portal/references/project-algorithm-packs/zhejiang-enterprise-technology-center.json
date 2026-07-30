@@ -219,8 +219,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
       "rules": [
         {
           "rule_id": "zj-tech-center-1",

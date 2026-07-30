@@ -7,7 +7,7 @@
   "project_name": "浙江省重点企业研究院",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-5bdf3d1bf9c50b9f6546",
+  "policy_version_id": "policy-46cd7e45fb4cb2bf2e18",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -16,6 +16,7 @@
   "outputs": {
     "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
     "conclusion": "eligible、conditional、ineligible或undetermined",
+    "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
     "rule_trace": "选中的规则层、逐规则比较和证据引用",
     "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
   },
@@ -23,9 +24,11 @@
     "task-omission-preflight",
     "project-router",
     "policy-version-gate",
+    "policy-time-type-checker",
     "fact-contract-normalizer",
     "evidence-conflict-resolver",
     "layer-selector",
+    "native-rule-combinator",
     "requirement-comparator",
     "lifecycle-state-machine",
     "coverage-hash-planner",
@@ -33,7 +36,7 @@
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 9,
+    "fact_fields": 11,
     "confirmed_rules": 9,
     "rule_layers": 2,
     "gold_cases": 3
@@ -53,6 +56,8 @@
   },
   "quality_gates": {
     "task_preflight_required": true,
+    "policy_time_checked": true,
+    "native_rule_combinator": true,
     "pack_validation": true,
     "gold_case_count": 3,
     "formal_decision_enabled": true,
@@ -63,5 +68,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "b9ed4298e0bb5a9298bf3c3956c230770d6f8a9e1808aee1c961ffd39166c20d"
+  "compile_input_hash": "a99a094ad5c58f196c83f70d45b7ad334d3729c48924794234077127c67bec9b"
 }

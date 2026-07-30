@@ -7,7 +7,7 @@
   "project_name": "杭州市企业技术中心",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-3ab1743ea30263b64d68",
+  "policy_version_id": "policy-a24d93c2ed0618770841",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -16,6 +16,7 @@
   "outputs": {
     "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
     "conclusion": "eligible、conditional、ineligible或undetermined",
+    "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
     "rule_trace": "选中的规则层、逐规则比较和证据引用",
     "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
   },
@@ -23,9 +24,11 @@
     "task-omission-preflight",
     "project-router",
     "policy-version-gate",
+    "policy-time-type-checker",
     "fact-contract-normalizer",
     "evidence-conflict-resolver",
     "layer-selector",
+    "native-rule-combinator",
     "requirement-comparator",
     "lifecycle-state-machine",
     "coverage-hash-planner",
@@ -53,6 +56,8 @@
   },
   "quality_gates": {
     "task_preflight_required": true,
+    "policy_time_checked": true,
+    "native_rule_combinator": true,
     "pack_validation": true,
     "gold_case_count": 3,
     "formal_decision_enabled": true,
@@ -63,5 +68,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "daf3600ceea4c36394505aaa30a5acf6a55dba4140feb5e3e5feb808f2d93411"
+  "compile_input_hash": "e9447f726b6e29beb5f76b2516f270b7590e80385c5c4ea628961afa8c0aa1f7"
 }

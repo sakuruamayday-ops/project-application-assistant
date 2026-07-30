@@ -36,12 +36,31 @@
       "value_type": "boolean"
     },
     {
-      "field": "enterprise_institute_rnd_tier_met",
-      "label": "分档研发投入要求",
+      "field": "revenue",
+      "label": "上一年度营业收入",
       "aliases": [
-        "企业研究院分档研发要求"
+        "营业收入"
       ],
-      "value_type": "boolean"
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "rnd_ratio",
+      "label": "上一年度研发费用占营业收入比例",
+      "aliases": [
+        "研发强度"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "rnd_expense",
+      "label": "上一年度研发费用",
+      "aliases": [
+        "研发费用"
+      ],
+      "value_type": "number",
+      "unit": "万元"
     },
     {
       "field": "innovation_score",
@@ -115,9 +134,109 @@
     {
       "rule_id": "zj-institute-rnd",
       "type": "hard-threshold",
-      "field": "enterprise_institute_rnd_tier_met",
-      "operator": "truthy",
-      "expected": true,
+      "logic": "any",
+      "children": [
+        {
+          "rule_id": "zj-institute-rnd-low-revenue",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-institute-rnd-low-revenue-band",
+              "field": "revenue",
+              "operator": "lt",
+              "expected": 5000,
+              "unit": "万元"
+            },
+            {
+              "rule_id": "zj-institute-rnd-low-ratio",
+              "field": "rnd_ratio",
+              "operator": "gte",
+              "expected": 5,
+              "unit": "%"
+            },
+            {
+              "rule_id": "zj-institute-rnd-low-expense",
+              "field": "rnd_expense",
+              "operator": "gte",
+              "expected": 100,
+              "unit": "万元"
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-institute-rnd-middle-revenue",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-institute-rnd-middle-floor",
+              "field": "revenue",
+              "operator": "gte",
+              "expected": 5000,
+              "unit": "万元"
+            },
+            {
+              "rule_id": "zj-institute-rnd-middle-ceiling",
+              "field": "revenue",
+              "operator": "lt",
+              "expected": 20000,
+              "unit": "万元"
+            },
+            {
+              "rule_id": "zj-institute-rnd-middle-route",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-middle-ratio",
+                  "field": "rnd_ratio",
+                  "operator": "gte",
+                  "expected": 4,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-middle-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 250,
+                  "unit": "万元"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "rule_id": "zj-institute-rnd-high-revenue",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "zj-institute-rnd-high-floor",
+              "field": "revenue",
+              "operator": "gte",
+              "expected": 20000,
+              "unit": "万元"
+            },
+            {
+              "rule_id": "zj-institute-rnd-high-route",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-high-ratio",
+                  "field": "rnd_ratio",
+                  "operator": "gte",
+                  "expected": 3,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-high-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 800,
+                  "unit": "万元"
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "source": "浙经信高新〔2025〕169号第九条",
       "source_quote": "营业收入5000万元以下的，研发强度不低于5%且研发费用不低于100万元；5000万元至2亿元的，研发强度不低于4%或研发费用不低于250万元；2亿元以上的，研发强度不低于3%或研发费用不低于800万元。",
       "policy_status": "current",
@@ -174,8 +293,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535",
       "rules": [
         {
           "rule_id": "zj-institute-entity",
@@ -208,9 +329,109 @@
         {
           "rule_id": "zj-institute-rnd",
           "type": "hard-threshold",
-          "field": "enterprise_institute_rnd_tier_met",
-          "operator": "truthy",
-          "expected": true,
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "zj-institute-rnd-low-revenue",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-low-revenue-band",
+                  "field": "revenue",
+                  "operator": "lt",
+                  "expected": 5000,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-low-ratio",
+                  "field": "rnd_ratio",
+                  "operator": "gte",
+                  "expected": 5,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-low-expense",
+                  "field": "rnd_expense",
+                  "operator": "gte",
+                  "expected": 100,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-institute-rnd-middle-revenue",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-middle-floor",
+                  "field": "revenue",
+                  "operator": "gte",
+                  "expected": 5000,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-middle-ceiling",
+                  "field": "revenue",
+                  "operator": "lt",
+                  "expected": 20000,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-middle-route",
+                  "logic": "any",
+                  "children": [
+                    {
+                      "rule_id": "zj-institute-rnd-middle-ratio",
+                      "field": "rnd_ratio",
+                      "operator": "gte",
+                      "expected": 4,
+                      "unit": "%"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-middle-expense",
+                      "field": "rnd_expense",
+                      "operator": "gte",
+                      "expected": 250,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "rule_id": "zj-institute-rnd-high-revenue",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "zj-institute-rnd-high-floor",
+                  "field": "revenue",
+                  "operator": "gte",
+                  "expected": 20000,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "zj-institute-rnd-high-route",
+                  "logic": "any",
+                  "children": [
+                    {
+                      "rule_id": "zj-institute-rnd-high-ratio",
+                      "field": "rnd_ratio",
+                      "operator": "gte",
+                      "expected": 3,
+                      "unit": "%"
+                    },
+                    {
+                      "rule_id": "zj-institute-rnd-high-expense",
+                      "field": "rnd_expense",
+                      "operator": "gte",
+                      "expected": 800,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
           "source": "浙经信高新〔2025〕169号第九条",
           "source_quote": "营业收入5000万元以下的，研发强度不低于5%且研发费用不低于100万元；5000万元至2亿元的，研发强度不低于4%或研发费用不低于250万元；2亿元以上的，研发强度不低于3%或研发费用不低于800万元。",
           "policy_status": "current",
@@ -267,6 +488,7 @@
     {
       "layer_id": "zhejiang-enterprise-institute-2026",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "2026年度省企业研究院申报通知",
       "applicability": {
         "years": [
@@ -279,6 +501,9 @@
           "recognition"
         ]
       },
+      "source_url": "https://aiqice.cn/policyDetail?id=13511805&indexId=5b46c42f833c4dd4841a374cb773509f",
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/研究院/2026-06-16__关于组织开展2026年度省重点企业研究院和省企业研究院申报工作的通知__5b46c42f833c4dd4841a374cb773509f/附件/附件：浙江省经济和信息化厅关于组织开展2026年度省重点企业研究院、省企业研究院申报建设工作的通知.pdf",
+      "source_archive_sha256": "b6b766c57e82ff71faa83301c3acf194a7f8a8c14063a4ae7b1a389e2abb28f9",
       "rules": [
         {
           "rule_id": "zhejiang-enterprise-institute-2026-data-cutoff",
@@ -310,14 +535,20 @@
           "source": "金标准事实"
         },
         {
-          "field": "municipal_rnd_platform_status",
-          "value": true,
+          "field": "revenue",
+          "value": 4000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "enterprise_institute_rnd_tier_met",
-          "value": true,
+          "field": "rnd_ratio",
+          "value": 5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_expense",
+          "value": 100,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -360,14 +591,20 @@
           "source": "金标准事实"
         },
         {
-          "field": "municipal_rnd_platform_status",
-          "value": true,
+          "field": "revenue",
+          "value": 4000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "enterprise_institute_rnd_tier_met",
-          "value": true,
+          "field": "rnd_ratio",
+          "value": 5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_expense",
+          "value": 100,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
@@ -410,14 +647,20 @@
           "source": "金标准事实"
         },
         {
-          "field": "municipal_rnd_platform_status",
-          "value": true,
+          "field": "revenue",
+          "value": 4000,
           "evidence_state": "verified",
           "source": "金标准事实"
         },
         {
-          "field": "enterprise_institute_rnd_tier_met",
-          "value": true,
+          "field": "rnd_ratio",
+          "value": 5,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "rnd_expense",
+          "value": 100,
           "evidence_state": "verified",
           "source": "金标准事实"
         },

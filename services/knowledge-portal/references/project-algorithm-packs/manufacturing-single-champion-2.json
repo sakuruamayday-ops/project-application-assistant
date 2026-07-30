@@ -199,8 +199,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://www.miit.gov.cn/jgsj/zfs/qypy/art/2023/art_735d091e943449a4a34453b4426c939a.html",
       "rules": [
         {
           "rule_id": "single-champion-entity",

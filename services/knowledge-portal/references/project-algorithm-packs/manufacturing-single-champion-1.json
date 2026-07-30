@@ -218,8 +218,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363",
       "rules": [
         {
           "rule_id": "zj-single-champion-1",
@@ -338,6 +340,7 @@
     {
       "layer_id": "zj-single-champion-2026",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "2026年度浙江省制造业单项冠军遴选",
       "applicability": {
         "years": [
@@ -347,6 +350,7 @@
           "recognition"
         ]
       },
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/article/news/detail.html?id=287115",
       "rules": [
         {
           "rule_id": "zj-single-champion-2026-one-product",

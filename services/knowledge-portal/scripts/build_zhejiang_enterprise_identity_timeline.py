@@ -8,6 +8,8 @@ import json
 import re
 import sqlite3
 import sys
+import xml.etree.ElementTree as ET
+import zipfile
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -1059,6 +1061,85 @@ def numbered_organization_lines(content: str) -> list[tuple[str, str]]:
     return rows
 
 
+def xlsx_enterprise_column(path: Path) -> list[tuple[str, str]]:
+    """Read an enterprise-name column without depending on a workbook runtime."""
+    if not path.is_file():
+        raise ValueError(f"spreadsheet lifecycle source not found: {path}")
+    namespace = {"a": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    with zipfile.ZipFile(path) as archive:
+        shared_strings: list[str] = []
+        if "xl/sharedStrings.xml" in archive.namelist():
+            shared_root = ET.fromstring(archive.read("xl/sharedStrings.xml"))
+            shared_strings = [
+                "".join(node.itertext()).strip()
+                for node in shared_root.findall("a:si", namespace)
+            ]
+        worksheet_paths = sorted(
+            name
+            for name in archive.namelist()
+            if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", name)
+        )
+        for worksheet_path in worksheet_paths:
+            root = ET.fromstring(archive.read(worksheet_path))
+            parsed_rows: list[dict[int, str]] = []
+            for row in root.findall(".//a:sheetData/a:row", namespace):
+                parsed: dict[int, str] = {}
+                for cell in row.findall("a:c", namespace):
+                    reference = str(cell.get("r") or "")
+                    column_letters = re.match(r"[A-Z]+", reference)
+                    if not column_letters:
+                        continue
+                    column_index = 0
+                    for character in column_letters.group(0):
+                        column_index = column_index * 26 + ord(character) - 64
+                    cell_type = str(cell.get("t") or "")
+                    value_node = cell.find("a:v", namespace)
+                    if cell_type == "inlineStr":
+                        inline = cell.find("a:is", namespace)
+                        value = "".join(inline.itertext()) if inline is not None else ""
+                    elif value_node is None:
+                        value = ""
+                    elif cell_type == "s":
+                        shared_index = int(value_node.text or 0)
+                        value = (
+                            shared_strings[shared_index]
+                            if 0 <= shared_index < len(shared_strings)
+                            else ""
+                        )
+                    else:
+                        value = str(value_node.text or "")
+                    parsed[column_index] = value.strip()
+                if parsed:
+                    parsed_rows.append(parsed)
+            header_position: tuple[int, int] | None = None
+            for row_index, parsed in enumerate(parsed_rows):
+                for column_index, value in parsed.items():
+                    if normalize_name(value) in {"企业名称", "企业名单"}:
+                        header_position = (row_index, column_index)
+                        break
+                if header_position:
+                    break
+            if not header_position:
+                continue
+            header_row, enterprise_column = header_position
+            names: list[tuple[str, str]] = []
+            for sequence, parsed in enumerate(
+                parsed_rows[header_row + 1 :],
+                start=1,
+            ):
+                name = str(parsed.get(enterprise_column) or "").strip()
+                if not name or not re.search(
+                    r"(公司|研究院|合作社|厂|中心|事务所|学院)$",
+                    name,
+                ):
+                    continue
+                sequence_no = str(parsed.get(enterprise_column - 1) or sequence)
+                names.append((name, sequence_no))
+            if names:
+                return names
+    raise ValueError(f"spreadsheet enterprise-name column not found: {path}")
+
+
 def load_manifest_lifecycle_events(
     database: Path,
     sources: list[dict[str, Any]],
@@ -1081,6 +1162,9 @@ def load_manifest_lifecycle_events(
         source_title = str(source["document_title"])
         source_path = str(source.get("source_path") or "")
         has_inline_entities = "entities" in source
+        has_spreadsheet_entities = (
+            source.get("entity_extraction") == "spreadsheet_enterprise_column"
+        )
         inline_entities = list(source.get("entities") or [])
         if has_inline_entities:
             for index, entity in enumerate(inline_entities, start=1):
@@ -1092,6 +1176,12 @@ def load_manifest_lifecycle_events(
                     sequence_no = str(index)
                 if name:
                     names.append((name, sequence_no))
+        elif has_spreadsheet_entities:
+            spreadsheet_path = Path(source_path).expanduser()
+            names = xlsx_enterprise_column(spreadsheet_path)
+            document_sha256 = hashlib.sha256(
+                spreadsheet_path.read_bytes()
+            ).hexdigest()
         else:
             documents = connection.execute(
                 f"""
@@ -1442,7 +1532,7 @@ def load_list_events(
         project_name = canonical_lifecycle_project(project_name, lifecycle_aliases)
         if project_name == "国家专精特新“小巨人”企业":
             continue
-        if project_name not in TARGET_PROJECTS:
+        if project_name not in TARGET_PROJECTS and project_name not in rules:
             continue
         if (int(row["document_id"]), normalize_name(str(row["enterprise_name"]))) in exclusions:
             continue

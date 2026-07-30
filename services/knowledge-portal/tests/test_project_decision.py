@@ -16,11 +16,13 @@ from app.project_decision import (
     convert_host_extractions_to_materials,
     evaluate_policy_evidence,
     evaluate_project_feasibility,
+    evaluate_requirement,
     extract_enterprise_fact_candidates,
     parse_deadline_candidates,
     select_project_algorithm_rules,
     validate_project_algorithm_pack,
 )
+from app.policy_time import enrich_policy_time_context
 
 
 RULES = [
@@ -513,6 +515,218 @@ def test_three_layer_algorithm_ignores_nonmatching_overlays():
 
     assert selected["selected_layers"] == ["stable-management"]
     assert [rule["rule_id"] for rule in selected["rules"]] == ["stable"]
+
+
+def test_native_all_any_combinator_supports_nested_tier_rule():
+    rule = {
+        "rule_id": "research-institute-rnd-tier",
+        "type": "hard-threshold",
+        "source": "正式管理办法",
+        "logic": "any",
+        "children": [
+            {
+                "rule_id": "low-revenue",
+                "logic": "all",
+                "children": [
+                    {
+                        "rule_id": "low-band",
+                        "field": "revenue",
+                        "operator": "lt",
+                        "expected": 5000,
+                    },
+                    {
+                        "rule_id": "low-ratio",
+                        "field": "rnd_ratio",
+                        "operator": "gte",
+                        "expected": 5,
+                    },
+                ],
+            },
+            {
+                "rule_id": "high-revenue",
+                "logic": "all",
+                "children": [
+                    {
+                        "rule_id": "high-band",
+                        "field": "revenue",
+                        "operator": "gte",
+                        "expected": 5000,
+                    },
+                    {
+                        "rule_id": "high-route",
+                        "logic": "any",
+                        "children": [
+                            {
+                                "rule_id": "high-ratio",
+                                "field": "rnd_ratio",
+                                "operator": "gte",
+                                "expected": 4,
+                            },
+                            {
+                                "rule_id": "high-expense",
+                                "field": "rnd_expense",
+                                "operator": "gte",
+                                "expected": 250,
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    }
+    ledger = build_enterprise_fact_ledger(
+        [
+            {
+                "field": "revenue",
+                "value": 6000,
+                "evidence_state": "verified",
+                "source": "审计报告",
+            },
+            {
+                "field": "rnd_ratio",
+                "value": 3,
+                "evidence_state": "verified",
+                "source": "专项审计",
+            },
+            {
+                "field": "rnd_expense",
+                "value": 250,
+                "evidence_state": "verified",
+                "source": "专项审计",
+            },
+        ]
+    )
+
+    evaluated = evaluate_requirement(rule, ledger)
+
+    assert evaluated["status"] == "passed"
+    assert evaluated["evidence_state"] == "verified"
+    assert evaluated["fields"] == ["revenue", "rnd_ratio", "rnd_expense"]
+
+
+def test_policy_time_checker_blocks_current_rule_from_historical_fact():
+    pack = {
+        "rule_cards": [],
+        "rule_layers": [
+            {
+                "layer_id": "stable-2025",
+                "layer_type": "stable",
+                "policy_time_type": "stable-management",
+                "effective_from": "2025-01-01",
+                "applicability": {},
+                "rules": [
+                    {
+                        "rule_id": "current-rule",
+                        "policy_status": "current",
+                        "source": "2025年管理办法",
+                    }
+                ],
+            }
+        ],
+    }
+
+    selected = select_project_algorithm_rules(
+        pack,
+        {
+            "year": 2023,
+            "evaluation_mode": "historical-fact",
+        },
+    )
+
+    assert selected["rules"] == []
+    assert selected["policy_time"]["status"] == "blocked"
+    assert selected["policy_time"]["formal_conclusion_allowed"] is False
+
+
+def test_policy_time_checker_labels_current_rule_history_test_as_simulation():
+    pack = {
+        "rule_cards": [],
+        "rule_layers": [
+            {
+                "layer_id": "stable-2025",
+                "layer_type": "stable",
+                "policy_time_type": "stable-management",
+                "effective_from": "2025-01-01",
+                "applicability": {},
+                "rules": [
+                    {
+                        "rule_id": "current-rule",
+                        "policy_status": "current",
+                        "source": "2025年管理办法",
+                    }
+                ],
+            }
+        ],
+    }
+
+    selected = select_project_algorithm_rules(
+        pack,
+        {
+            "year": 2023,
+            "evaluation_mode": "backtest-simulation",
+        },
+    )
+
+    assert [rule["rule_id"] for rule in selected["rules"]] == ["current-rule"]
+    assert selected["policy_time"]["status"] == "simulation-only"
+    assert selected["policy_time"]["output_label"] == "回测模拟"
+    assert selected["policy_time"]["formal_conclusion_allowed"] is False
+
+
+def test_policy_time_query_intent_requires_annual_notice_for_deadline():
+    current = enrich_policy_time_context(
+        "浙江省高企2026年度申报截止时间是什么时候",
+        {"project_name": "高新技术企业", "year": 2026},
+    )
+    forecast = enrich_policy_time_context(
+        "预测下一年度省研究院准备方向",
+        {"project_name": "浙江省企业研究院", "year": 2027},
+    )
+    backtest = enrich_policy_time_context(
+        "按最新规则回测2024年的企业数据",
+        {"project_name": "浙江省企业研究院", "year": 2024},
+    )
+
+    assert current["annual_notice_required"] is True
+    assert forecast["evaluation_mode"] == "forecast"
+    assert backtest["evaluation_mode"] == "backtest-simulation"
+
+
+def test_unverified_2026_notices_do_not_reuse_prior_year_deadlines():
+    portal_dir = Path(__file__).resolve().parents[1]
+    pack_dir = portal_dir / "references" / "project-algorithm-packs"
+    cases = [
+        (
+            "national-high-tech-enterprise.json",
+            "浙江省高企2026年度申报截止时间",
+            {
+                "project_name": "高新技术企业",
+                "region": "浙江省",
+                "year": 2026,
+            },
+        ),
+        (
+            "manufacturing-single-champion-2.json",
+            "国家制造业单项冠军2026年度申报通知和截止时间",
+            {
+                "project_name": "国家制造业单项冠军企业",
+                "year": 2026,
+            },
+        ),
+    ]
+
+    for file_name, query, context in cases:
+        pack = json.loads((pack_dir / file_name).read_text(encoding="utf-8"))
+        selected = select_project_algorithm_rules(
+            pack,
+            enrich_policy_time_context(query, context),
+        )
+        assert selected["policy_time"]["status"] == "blocked"
+        assert selected["policy_time"]["formal_conclusion_allowed"] is False
+        assert all(
+            "2025" not in layer_id
+            for layer_id in selected["selected_layers"]
+        )
 
 
 def test_project_algorithm_pack_gate_runs_all_gold_cases():

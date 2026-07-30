@@ -146,8 +146,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://www.miit.gov.cn/threestrategy/zcgh/zcfg/art/2024/art_94a3c71e903b49b79923e4df397c31ab.html",
       "rules": [
         {
           "rule_id": "national-green-factory-entity",
@@ -224,6 +226,7 @@
     {
       "layer_id": "national-green-factory-2025-recognition",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "2025年度国家绿色工厂推荐通知",
       "applicability": {
         "years": [
@@ -234,6 +237,7 @@
           "new-recognition"
         ]
       },
+      "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
       "rules": [
         {
           "rule_id": "national-green-factory-report",
@@ -254,6 +258,7 @@
     {
       "layer_id": "national-green-factory-2025-dynamic",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "2025年度现有国家绿色工厂动态对标",
       "applicability": {
         "years": [
@@ -264,6 +269,7 @@
           "dynamic-review"
         ]
       },
+      "source_url": "https://www.miit.gov.cn/jgsj/jns/gzdt/art/2025/art_70128f2cf9a240498feefeb9566ab824.html",
       "rules": [
         {
           "rule_id": "national-green-factory-report",

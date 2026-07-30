@@ -268,6 +268,25 @@ def generated_gold_cases(rules: list[dict[str, object]]) -> list[dict[str, objec
     ]
 
 
+def requirement_leaf_fields(
+    requirements: list[dict[str, object]],
+) -> list[str]:
+    fields: list[str] = []
+    for requirement in requirements:
+        children = requirement.get("children")
+        if isinstance(children, list):
+            fields.extend(
+                requirement_leaf_fields(
+                    [child for child in children if isinstance(child, dict)]
+                )
+            )
+            continue
+        field = str(requirement.get("field") or "").strip()
+        if field:
+            fields.append(field)
+    return unique(fields)
+
+
 def confirmed_rule_cards(
     *,
     source: dict[str, object],
@@ -333,11 +352,23 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
         {
             "layer_id": "stable-management",
             "layer_type": "stable",
+            "policy_time_type": "stable-management",
             "label": "稳定管理办法",
             "applicability": {
                 key: values
                 for key, values in stable_applicability.items()
                 if values
+            },
+            **{
+                key: source[key]
+                for key in (
+                    "effective_from",
+                    "effective_to",
+                    "source_url",
+                    "source_archive_path",
+                    "source_archive_sha256",
+                )
+                if str(source.get(key) or "").strip()
             },
             "rules": confirmed_rule_cards(source=source, rules=stable_rules),
         }
@@ -373,11 +404,27 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                 {
                     "layer_id": layer_id,
                     "layer_type": layer_type,
+                    "policy_time_type": (
+                        "annual-notice"
+                        if layer_type == "annual"
+                        else "jurisdiction-detail"
+                    ),
                     "label": str(raw_layer.get("label") or label),
                     "applicability": {
                         key: values
                         for key, values in applicability.items()
                         if values
+                    },
+                    **{
+                        key: raw_layer[key]
+                        for key in (
+                            "effective_from",
+                            "effective_to",
+                            "source_url",
+                            "source_archive_path",
+                            "source_archive_sha256",
+                        )
+                        if str(raw_layer.get(key) or "").strip()
                     },
                     "rules": confirmed_rule_cards(
                         source=source,
@@ -418,8 +465,7 @@ def generate_from_confirmed_rules(
     }
     rule_cards: list[dict[str, object]] = list(rule_layers[0]["rules"])
     fact_fields: list[dict[str, object]] = []
-    for rule in rules:
-        field = str(rule.get("field") or "")
+    for field in requirement_leaf_fields(rules):
         field_spec = explicit_fields.get(field) or base_fields.get(field)
         if not field_spec:
             raise ValueError(f"规则字段未进入事实契约：{field}")
@@ -449,7 +495,12 @@ def generate_from_confirmed_rules(
         ),
         "rule_cards": rule_cards,
         "rule_layers": rule_layers,
-        "gold_cases": generated_gold_cases(rule_cards),
+        "gold_cases": (
+            source["gold_cases"]
+            if isinstance(source.get("gold_cases"), list)
+            and source["gold_cases"]
+            else generated_gold_cases(rule_cards)
+        ),
     }
     write_json(output_path, pack)
     return {

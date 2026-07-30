@@ -72,11 +72,13 @@ def test_rule_ir_compiles_once_and_reuses_source_digest(tmp_path: Path):
     assert write_compiled_rule_ir(output, payload) == "compiled"
     assert write_compiled_rule_ir(output, payload) == "hash_reused"
     assert payload["metrics"]["project_count"] == 1
-    assert payload["metrics"]["shared_kernel_count"] == 11
+    assert payload["metrics"]["shared_kernel_count"] == 13
     assert payload["shared_kernel"]["components"][0] == "task-omission-preflight"
     assert "policy-change-impact-simulator" in payload["shared_kernel"][
         "components"
     ]
+    assert "policy-time-type-checker" in payload["shared_kernel"]["components"]
+    assert "native-rule-combinator" in payload["shared_kernel"]["components"]
     assert payload["algorithm_cards"]["sample"]["quality_gates"][
         "task_preflight_required"
     ] is True
@@ -154,6 +156,89 @@ def test_policy_change_impact_preserves_historical_facts_and_invalidates_derivat
             "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛",
         }
     ]
+
+
+def test_policy_change_impact_tracks_time_window_without_rewriting_history():
+    before_pack = sample_pack()
+    before_pack["rule_layers"][0].update(
+        {
+            "policy_time_type": "stable-management",
+            "effective_from": "2024-01-01",
+        }
+    )
+    before = compile_rule_ir(
+        [before_pack],
+        {"projects": []},
+        {"fields": []},
+    )
+    after_pack = sample_pack()
+    after_pack["rule_layers"][0].update(
+        {
+            "policy_time_type": "stable-management",
+            "effective_from": "2026-01-01",
+        }
+    )
+    after = compile_rule_ir(
+        [after_pack],
+        {"projects": []},
+        {"fields": []},
+        previous_payload=before,
+    )
+
+    impact = simulate_policy_change_impact(before, after)
+    affected = impact["affected_projects"][0]
+
+    assert affected["policy_time_delta"]["changed_layer_ids"] == ["stable"]
+    assert affected["identity_impact"]["official_list_facts_mutated"] is False
+    assert affected["identity_impact"]["policy_trace_requires_relink"] is True
+    assert affected["prediction_impact"]["time_window_changed"] is True
+    assert affected["historical_backtest_impact"][
+        "historical_fact_guard_changed"
+    ] is True
+
+
+def test_policy_change_impact_extracts_nested_all_any_fact_fields():
+    before_pack = sample_pack()
+    before_pack["rule_layers"][0]["rules"] = [
+        {
+            "rule_id": "research-investment",
+            "logic": "any",
+            "review_status": "confirmed",
+            "children": [
+                {
+                    "rule_id": "research-ratio",
+                    "field": "rnd_ratio",
+                    "operator": "gte",
+                    "expected": 3,
+                },
+                {
+                    "rule_id": "research-expense",
+                    "field": "rnd_expense",
+                    "operator": "gte",
+                    "expected": 800,
+                },
+            ],
+        }
+    ]
+    after_pack = json.loads(json.dumps(before_pack))
+    after_pack["rule_layers"][0]["rules"][0]["children"][0]["expected"] = 4
+    before = compile_rule_ir(
+        [before_pack],
+        {"projects": []},
+        {"fields": []},
+    )
+    after = compile_rule_ir(
+        [after_pack],
+        {"projects": []},
+        {"fields": []},
+        previous_payload=before,
+    )
+
+    impact = simulate_policy_change_impact(before, after)
+
+    assert impact["affected_projects"][0]["rule_delta"][
+        "changed_fact_fields"
+    ] == ["rnd_expense", "rnd_ratio"]
 
 
 def test_rule_ir_matches_lifecycle_by_pack_alias():
@@ -307,6 +392,40 @@ def test_repository_policy_baselines_are_compiled_into_formal_rule_sources():
         str(document.get("official_url") or "").startswith("https://")
         for item in baseline_registry["baselines"]
         for document in item["policy_documents"]
+    )
+
+
+def test_research_institute_tier_rules_use_native_combinators():
+    portal_dir = Path(__file__).resolve().parents[1]
+    source_dir = (
+        portal_dir / "references" / "project-algorithm-rule-sources"
+    )
+    provincial = json.loads(
+        (source_dir / "zhejiang-enterprise-institute.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    key = json.loads(
+        (source_dir / "zhejiang-key-enterprise-institute.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    serialized = json.dumps([provincial, key], ensure_ascii=False)
+
+    assert "enterprise_institute_rnd_tier_met" not in serialized
+    assert "key_institute_revenue_requirement_met" not in serialized
+    assert "key_institute_rnd_requirement_met" not in serialized
+    assert any(
+        rule.get("logic") == "any"
+        for payload in (provincial, key)
+        for rule in payload["rules"]
+    )
+    assert any(
+        child.get("logic") == "all"
+        for payload in (provincial, key)
+        for rule in payload["rules"]
+        for child in rule.get("children", [])
+        if isinstance(child, dict)
     )
 
 

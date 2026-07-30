@@ -310,6 +310,129 @@
         "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=280535"
       ],
       "rule_note": "认定后建设期三年，期满三个月内申请验收；原则上每三年集中绩效评价，不合格给予一年整改。验收、绩效评价和资格取消必须分别建事件，不能写成资格到期复核。"
+    },
+    {
+      "rule_id": "national-industrial-design-center",
+      "project_name": "国家级工业设计中心",
+      "aliases": [
+        "国家工业设计中心"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 4,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [],
+      "official_rule_urls": [
+        "https://www.miit.gov.cn/zwgk/zcjd/art/2023/art_55e42566e7af4878af4f797f174e41d6.html"
+      ],
+      "rule_note": "认定有效期四年，期满按现行办法复核；认定、复核、变更和撤销分别建事件。"
+    },
+    {
+      "rule_id": "zhejiang-industrial-design-center",
+      "project_name": "浙江省工业设计中心",
+      "aliases": [
+        "省级工业设计中心",
+        "浙江省组织开展省级工业设计中心认定和"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 4,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [],
+      "official_rule_urls": [
+        "https://www.pj.gov.cn/art/2024/7/9/art_1229430232_1806495.html",
+        "https://jxt.zj.gov.cn/art/2025/5/29/art_1229567696_28077.html"
+      ],
+      "rule_note": "省级工业设计中心有效期四年并按期复核；历史库中的截断项目名作为别名归一，不另造项目。"
+    },
+    {
+      "rule_id": "zhejiang-green-low-carbon-park-factory",
+      "project_name": "浙江省绿色低碳工业园区和工厂",
+      "aliases": [
+        "浙江省绿色(低碳)工业园区",
+        "省级绿色低碳工业园区和工厂推荐工作及绿色制造名单动态管理"
+      ],
+      "cycle_type": "dynamic_registry",
+      "subject_types": [
+        "enterprise",
+        "industrial_park"
+      ],
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "annual_evaluation",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [],
+      "official_rule_urls": [
+        "https://jxt.zj.gov.cn/art/2023/9/14/art_1229567697_25732.html",
+        "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+      ],
+      "rule_note": "实行动态管理和有进有出，不虚构固定有效期；园区与企业主体类型保留区分。"
+    },
+    {
+      "rule_id": "hangzhou-time-honored-brand",
+      "project_name": "杭州老字号",
+      "aliases": [
+        "杭州市老字号"
+      ],
+      "cycle_type": "qualification_review",
+      "validity_years": 3,
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_due",
+        "review_publicity",
+        "review_passed",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [],
+      "official_rule_urls": [
+        "https://zfgb.hangzhou.gov.cn/11/105220253/t117220253054/518573.shtml"
+      ],
+      "rule_note": "按现行办法每三年组织认定和复核；退出、撤销和复核通过分别建事件。"
+    },
+    {
+      "rule_id": "hangzhou-enterprise-technology-center-lifecycle",
+      "project_name": "杭州市企业技术中心",
+      "aliases": [
+        "杭州市建设行业企业技术中心认定和评价"
+      ],
+      "cycle_type": "dynamic_evaluation",
+      "supported_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "annual_evaluation",
+        "performance_evaluation",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "confirmed",
+      "local_rule_sources": [],
+      "official_rule_urls": [
+        "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml"
+      ],
+      "rule_note": "认定与后续评价分别建事件；当前检索层未确认固定资格年限，因此不自动生成到期复核。建设行业标题归入同一市级项目并保留来源子类型。"
     }
   ],
   "candidate_projects": [
@@ -1109,6 +1232,23 @@
       "end_pattern": "工作表：Sheet3",
       "expected_count": 31,
       "official_url": ""
+    },
+    {
+      "source_id": "zhejiang-specialized-sme-2024-second-recognition-publicity-jiaxing",
+      "document_title": "2024年第二批省专拟认定企业名单（嘉兴市）.xlsx",
+      "source_path": "/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/2024年第二批省专拟认定企业名单（嘉兴市）.xlsx",
+      "project_name": "浙江省专精特新中小企业",
+      "event_year": 2024,
+      "published_at": "2025-01-21",
+      "city": "嘉兴市",
+      "batch": "第二批",
+      "status": "拟认定",
+      "event_type": "recognition_publicity",
+      "event_scope": "qualification",
+      "evidence_status": "official_publicity_local_attachment",
+      "entity_extraction": "spreadsheet_enterprise_column",
+      "expected_count": 117,
+      "official_url": "https://jxj.jiaxing.gov.cn/art/2025/1/21/art_1229399350_5447751.html"
     }
   ]
 }

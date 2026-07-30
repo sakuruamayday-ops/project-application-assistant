@@ -282,8 +282,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html",
       "rules": [
         {
           "rule_id": "specialized-sme-entry-status",
@@ -435,6 +437,7 @@
     {
       "layer_id": "zhejiang-specialized-sme-2026",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "浙江省2026年认定和复核通知",
       "applicability": {
         "years": [
@@ -449,6 +452,7 @@
           "review"
         ]
       },
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005",
       "rules": [
         {
           "rule_id": "zhejiang-specialized-sme-entity",

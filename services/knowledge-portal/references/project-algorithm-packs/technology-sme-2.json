@@ -219,8 +219,10 @@
     {
       "layer_id": "stable-management",
       "layer_type": "stable",
+      "policy_time_type": "stable-management",
       "label": "稳定管理办法",
       "applicability": {},
+      "source_url": "https://www.most.gov.cn/xxgk/xinxifenlei/fdzdgknr/fgzc/gfxwj/gfxwj2017/201705/t20170510_132709.html",
       "rules": [
         {
           "rule_id": "technology-sme-resident-enterprise",
@@ -342,6 +344,7 @@
     {
       "layer_id": "technology-sme-2026",
       "layer_type": "annual",
+      "policy_time_type": "annual-notice",
       "label": "2026年度科技型中小企业评价通知",
       "applicability": {
         "years": [
@@ -352,6 +355,7 @@
           "annual-evaluation"
         ]
       },
+      "source_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_92fae9ab4aba4b44a1ab2e7233c48a54.html",
       "rules": [
         {
           "rule_id": "technology-sme-2026-platform-submission",
