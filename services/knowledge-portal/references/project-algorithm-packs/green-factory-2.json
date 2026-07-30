@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project_id": "green-factory-2",
   "project_name": "市级绿色工厂",
-  "version": "2024-guide-dynamic-jurisdiction-20260730",
+  "version": "four-city-municipal-route-20260730",
   "coverage_status": "rules-confirmed",
   "aliases": [
     "绿色工厂"
@@ -10,6 +10,20 @@
   "source_retrieval_rule_ids": [
     "green-factory"
   ],
+  "jurisdiction_source_contract": {
+    "required_for_formal_decision": true,
+    "required_scope_levels": [
+      "city"
+    ],
+    "forbidden_scope_levels": [
+      "province"
+    ],
+    "unresolved_status": "unresolved-jurisdiction-policy",
+    "unresolved_reason": "市级绿色工厂必须命中企业所在设区市的正式评价办法或年度通知；省级梯度培育细则只能作为上位依赖。",
+    "coverage_registry_path": "references/four-city-green-factory-policy-registry.json",
+    "registered_city_count": 4,
+    "registered_administrative_unit_count": 38
+  },
   "fact_fields": [
     {
       "field": "green_factory_2_jurisdiction_rule_resolved",
@@ -363,6 +377,8 @@
       "label": "稳定管理办法",
       "applicability": {},
       "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+      "source_scope_level": "province",
+      "source_scope_region": "浙江省",
       "rules": [
         {
           "rule_id": "green-factory-2-1",
@@ -547,35 +563,876 @@
       ]
     },
     {
-      "layer_id": "green-factory-2-jurisdiction",
+      "layer_id": "green-factory-2-hangzhou",
       "layer_type": "jurisdiction",
       "policy_time_type": "jurisdiction-detail",
-      "label": "市级绿色工厂属地实施细则",
+      "label": "杭州市绿色低碳工厂正式评价规则",
       "applicability": {
         "regions": [
-          "设区市"
+          "杭州市"
         ],
         "application_types": [
           "recognition",
           "evaluation"
         ]
       },
-      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+      "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_606ff164ab84496faa597bfb58bb835a.html",
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/杭州市/软件与数字经济/2026-05-26__杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知__bf934b95737f460eb97c573a1eb7eb2e/通知原文.md",
+      "source_archive_sha256": "51e1b94202c50cfe05356c6f9c0d26897e654d26d0a9047dd384f68602ec7f0e",
+      "source_title": "《杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知》及附件",
       "enterprise_deadline": null,
+      "replaces_rule_ids": [
+        "green-factory-2-1"
+      ],
+      "source_scope_level": "city",
+      "source_scope_region": "杭州市",
+      "route_status": "active-municipal-evaluation",
+      "formal_level": "city",
+      "inherit_stable_rules": true,
       "rules": [
         {
-          "rule_id": "green-factory-2-local-thresholds",
+          "rule_id": "green-factory-2-1",
           "type": "hard-threshold",
           "field": "green_factory_2_jurisdiction_rule_resolved",
           "operator": "truthy",
           "expected": true,
-          "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
-          "source_quote": "运行时必须选择对应层级与属地规则版本；未解析时只能输出待补政策，不能判定符合。",
+          "source": "《杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知》及附件",
+          "source_quote": "应先解析申报企业所在地、申报层级及对应主管部门现行实施细则。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
-          "approved_at": "2026-07-30 09:00:00",
-          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_606ff164ab84496faa597bfb58bb835a.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/杭州市/软件与数字经济/2026-05-26__杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知__bf934b95737f460eb97c573a1eb7eb2e/通知原文.md",
+          "source_archive_sha256": "51e1b94202c50cfe05356c6f9c0d26897e654d26d0a9047dd384f68602ec7f0e"
+        },
+        {
+          "rule_id": "green-factory-2-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-legal",
+              "field": "green_factory_2_legally_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-construction",
+              "field": "green_factory_2_construction_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-production",
+              "field": "green_factory_2_production_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality",
+              "field": "green_factory_2_quality_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety",
+              "field": "green_factory_2_safety_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment",
+              "field": "green_factory_2_environmental_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy",
+              "field": "green_factory_2_energy_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知》及附件",
+          "source_quote": "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_606ff164ab84496faa597bfb58bb835a.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/杭州市/软件与数字经济/2026-05-26__杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知__bf934b95737f460eb97c573a1eb7eb2e/通知原文.md",
+          "source_archive_sha256": "51e1b94202c50cfe05356c6f9c0d26897e654d26d0a9047dd384f68602ec7f0e"
+        },
+        {
+          "rule_id": "green-factory-2-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-green-system",
+              "field": "green_factory_2_green_development_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy-system",
+              "field": "green_factory_2_energy_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-resource-system",
+              "field": "green_factory_2_resource_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment-system",
+              "field": "green_factory_2_environment_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality-system",
+              "field": "green_factory_2_quality_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety-system",
+              "field": "green_factory_2_safety_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知》及附件",
+          "source_quote": "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_606ff164ab84496faa597bfb58bb835a.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/杭州市/软件与数字经济/2026-05-26__杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知__bf934b95737f460eb97c573a1eb7eb2e/通知原文.md",
+          "source_archive_sha256": "51e1b94202c50cfe05356c6f9c0d26897e654d26d0a9047dd384f68602ec7f0e"
+        },
+        {
+          "rule_id": "green-factory-2-4",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-basic-requirements",
+              "field": "green_factory_2_evaluation_basic_requirements_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-mandatory-indicators",
+              "field": "green_factory_2_mandatory_indicators_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-local-score",
+              "field": "green_factory_2_local_score_threshold_passed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知》及附件",
+          "source_quote": "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_606ff164ab84496faa597bfb58bb835a.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/杭州市/软件与数字经济/2026-05-26__杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知__bf934b95737f460eb97c573a1eb7eb2e/通知原文.md",
+          "source_archive_sha256": "51e1b94202c50cfe05356c6f9c0d26897e654d26d0a9047dd384f68602ec7f0e"
+        },
+        {
+          "rule_id": "green-factory-2-5",
+          "type": "hard-threshold",
+          "field": "green_factory_2_self_evaluation_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知》及附件",
+          "source_quote": "应按适用标准完成自评价报告，并提供能源资源、排放、绩效和证明材料。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_606ff164ab84496faa597bfb58bb835a.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/杭州市/软件与数字经济/2026-05-26__杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知__bf934b95737f460eb97c573a1eb7eb2e/通知原文.md",
+          "source_archive_sha256": "51e1b94202c50cfe05356c6f9c0d26897e654d26d0a9047dd384f68602ec7f0e"
+        },
+        {
+          "rule_id": "green-factory-2-6",
+          "type": "hard-threshold",
+          "field": "green_factory_2_dynamic_management_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知》及附件",
+          "source_quote": "不得存在应移出梯度培育名单的重大违法、事故、失信、弄虚作假或停产注销等情形。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_606ff164ab84496faa597bfb58bb835a.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/杭州市/软件与数字经济/2026-05-26__杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知__bf934b95737f460eb97c573a1eb7eb2e/通知原文.md",
+          "source_archive_sha256": "51e1b94202c50cfe05356c6f9c0d26897e654d26d0a9047dd384f68602ec7f0e"
+        }
+      ]
+    },
+    {
+      "layer_id": "green-factory-2-ningbo",
+      "layer_type": "jurisdiction",
+      "policy_time_type": "jurisdiction-detail",
+      "label": "宁波市星级绿色工厂正式评价规则",
+      "applicability": {
+        "regions": [
+          "宁波市"
+        ],
+        "application_types": [
+          "recognition",
+          "evaluation"
+        ]
+      },
+      "source_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-06-12__关于开展2025年度绿色工厂创建及绿色化改造认定工作的通知__bdb3cedec9fb4c449c5f4181a6c33c6b/附件/附件4：宁波市星级绿色工厂评价办法（2024版）.md",
+      "source_archive_sha256": "d2ea1ce67eb4cde99800291c43a8b765c30a82f04f3caaf84f8e59e9e02ae957",
+      "source_title": "《宁波市星级绿色工厂评价办法（2024版）》及2026年度市级绿色制造名单申报通知",
+      "enterprise_deadline": null,
+      "replaces_rule_ids": [
+        "green-factory-2-1"
+      ],
+      "source_scope_level": "city",
+      "source_scope_region": "宁波市",
+      "route_status": "active-municipal-evaluation",
+      "formal_level": "city",
+      "inherit_stable_rules": true,
+      "rules": [
+        {
+          "rule_id": "green-factory-2-1",
+          "type": "hard-threshold",
+          "field": "green_factory_2_jurisdiction_rule_resolved",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《宁波市星级绿色工厂评价办法（2024版）》及2026年度市级绿色制造名单申报通知",
+          "source_quote": "应先解析申报企业所在地、申报层级及对应主管部门现行实施细则。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-06-12__关于开展2025年度绿色工厂创建及绿色化改造认定工作的通知__bdb3cedec9fb4c449c5f4181a6c33c6b/附件/附件4：宁波市星级绿色工厂评价办法（2024版）.md",
+          "source_archive_sha256": "d2ea1ce67eb4cde99800291c43a8b765c30a82f04f3caaf84f8e59e9e02ae957"
+        },
+        {
+          "rule_id": "green-factory-2-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-legal",
+              "field": "green_factory_2_legally_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-construction",
+              "field": "green_factory_2_construction_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-production",
+              "field": "green_factory_2_production_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality",
+              "field": "green_factory_2_quality_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety",
+              "field": "green_factory_2_safety_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment",
+              "field": "green_factory_2_environmental_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy",
+              "field": "green_factory_2_energy_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《宁波市星级绿色工厂评价办法（2024版）》及2026年度市级绿色制造名单申报通知",
+          "source_quote": "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-06-12__关于开展2025年度绿色工厂创建及绿色化改造认定工作的通知__bdb3cedec9fb4c449c5f4181a6c33c6b/附件/附件4：宁波市星级绿色工厂评价办法（2024版）.md",
+          "source_archive_sha256": "d2ea1ce67eb4cde99800291c43a8b765c30a82f04f3caaf84f8e59e9e02ae957"
+        },
+        {
+          "rule_id": "green-factory-2-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-green-system",
+              "field": "green_factory_2_green_development_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy-system",
+              "field": "green_factory_2_energy_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-resource-system",
+              "field": "green_factory_2_resource_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment-system",
+              "field": "green_factory_2_environment_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality-system",
+              "field": "green_factory_2_quality_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety-system",
+              "field": "green_factory_2_safety_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《宁波市星级绿色工厂评价办法（2024版）》及2026年度市级绿色制造名单申报通知",
+          "source_quote": "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-06-12__关于开展2025年度绿色工厂创建及绿色化改造认定工作的通知__bdb3cedec9fb4c449c5f4181a6c33c6b/附件/附件4：宁波市星级绿色工厂评价办法（2024版）.md",
+          "source_archive_sha256": "d2ea1ce67eb4cde99800291c43a8b765c30a82f04f3caaf84f8e59e9e02ae957"
+        },
+        {
+          "rule_id": "green-factory-2-4",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-basic-requirements",
+              "field": "green_factory_2_evaluation_basic_requirements_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-mandatory-indicators",
+              "field": "green_factory_2_mandatory_indicators_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-local-score",
+              "field": "green_factory_2_local_score_threshold_passed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《宁波市星级绿色工厂评价办法（2024版）》及2026年度市级绿色制造名单申报通知",
+          "source_quote": "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-06-12__关于开展2025年度绿色工厂创建及绿色化改造认定工作的通知__bdb3cedec9fb4c449c5f4181a6c33c6b/附件/附件4：宁波市星级绿色工厂评价办法（2024版）.md",
+          "source_archive_sha256": "d2ea1ce67eb4cde99800291c43a8b765c30a82f04f3caaf84f8e59e9e02ae957"
+        },
+        {
+          "rule_id": "green-factory-2-5",
+          "type": "hard-threshold",
+          "field": "green_factory_2_self_evaluation_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《宁波市星级绿色工厂评价办法（2024版）》及2026年度市级绿色制造名单申报通知",
+          "source_quote": "应按适用标准完成自评价报告，并提供能源资源、排放、绩效和证明材料。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-06-12__关于开展2025年度绿色工厂创建及绿色化改造认定工作的通知__bdb3cedec9fb4c449c5f4181a6c33c6b/附件/附件4：宁波市星级绿色工厂评价办法（2024版）.md",
+          "source_archive_sha256": "d2ea1ce67eb4cde99800291c43a8b765c30a82f04f3caaf84f8e59e9e02ae957"
+        },
+        {
+          "rule_id": "green-factory-2-6",
+          "type": "hard-threshold",
+          "field": "green_factory_2_dynamic_management_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《宁波市星级绿色工厂评价办法（2024版）》及2026年度市级绿色制造名单申报通知",
+          "source_quote": "不得存在应移出梯度培育名单的重大违法、事故、失信、弄虚作假或停产注销等情形。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-06-12__关于开展2025年度绿色工厂创建及绿色化改造认定工作的通知__bdb3cedec9fb4c449c5f4181a6c33c6b/附件/附件4：宁波市星级绿色工厂评价办法（2024版）.md",
+          "source_archive_sha256": "d2ea1ce67eb4cde99800291c43a8b765c30a82f04f3caaf84f8e59e9e02ae957"
+        }
+      ]
+    },
+    {
+      "layer_id": "green-factory-2-shaoxing",
+      "layer_type": "jurisdiction",
+      "policy_time_type": "jurisdiction-detail",
+      "label": "绍兴市绿色低碳工厂正式评价规则",
+      "applicability": {
+        "regions": [
+          "绍兴市"
+        ],
+        "application_types": [
+          "recognition",
+          "evaluation"
+        ]
+      },
+      "source_url": "https://sxjxw.sx.gov.cn/art/2022/6/15/art_1229641804_1869194.html",
+      "source_title": "《绍兴市绿色低碳工厂（园区）评价办法》（绍市经信〔2022〕36号）",
+      "enterprise_deadline": null,
+      "replaces_rule_ids": [
+        "green-factory-2-1"
+      ],
+      "source_scope_level": "city",
+      "source_scope_region": "绍兴市",
+      "route_status": "active-municipal-evaluation",
+      "formal_level": "city",
+      "inherit_stable_rules": true,
+      "rules": [
+        {
+          "rule_id": "green-factory-2-1",
+          "type": "hard-threshold",
+          "field": "green_factory_2_jurisdiction_rule_resolved",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《绍兴市绿色低碳工厂（园区）评价办法》（绍市经信〔2022〕36号）",
+          "source_quote": "应先解析申报企业所在地、申报层级及对应主管部门现行实施细则。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://sxjxw.sx.gov.cn/art/2022/6/15/art_1229641804_1869194.html"
+        },
+        {
+          "rule_id": "green-factory-2-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-legal",
+              "field": "green_factory_2_legally_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-construction",
+              "field": "green_factory_2_construction_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-production",
+              "field": "green_factory_2_production_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality",
+              "field": "green_factory_2_quality_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety",
+              "field": "green_factory_2_safety_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment",
+              "field": "green_factory_2_environmental_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy",
+              "field": "green_factory_2_energy_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《绍兴市绿色低碳工厂（园区）评价办法》（绍市经信〔2022〕36号）",
+          "source_quote": "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://sxjxw.sx.gov.cn/art/2022/6/15/art_1229641804_1869194.html"
+        },
+        {
+          "rule_id": "green-factory-2-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-green-system",
+              "field": "green_factory_2_green_development_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy-system",
+              "field": "green_factory_2_energy_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-resource-system",
+              "field": "green_factory_2_resource_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment-system",
+              "field": "green_factory_2_environment_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality-system",
+              "field": "green_factory_2_quality_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety-system",
+              "field": "green_factory_2_safety_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《绍兴市绿色低碳工厂（园区）评价办法》（绍市经信〔2022〕36号）",
+          "source_quote": "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://sxjxw.sx.gov.cn/art/2022/6/15/art_1229641804_1869194.html"
+        },
+        {
+          "rule_id": "green-factory-2-4",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-basic-requirements",
+              "field": "green_factory_2_evaluation_basic_requirements_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-mandatory-indicators",
+              "field": "green_factory_2_mandatory_indicators_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-local-score",
+              "field": "green_factory_2_local_score_threshold_passed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《绍兴市绿色低碳工厂（园区）评价办法》（绍市经信〔2022〕36号）",
+          "source_quote": "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://sxjxw.sx.gov.cn/art/2022/6/15/art_1229641804_1869194.html"
+        },
+        {
+          "rule_id": "green-factory-2-5",
+          "type": "hard-threshold",
+          "field": "green_factory_2_self_evaluation_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《绍兴市绿色低碳工厂（园区）评价办法》（绍市经信〔2022〕36号）",
+          "source_quote": "应按适用标准完成自评价报告，并提供能源资源、排放、绩效和证明材料。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://sxjxw.sx.gov.cn/art/2022/6/15/art_1229641804_1869194.html"
+        },
+        {
+          "rule_id": "green-factory-2-6",
+          "type": "hard-threshold",
+          "field": "green_factory_2_dynamic_management_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《绍兴市绿色低碳工厂（园区）评价办法》（绍市经信〔2022〕36号）",
+          "source_quote": "不得存在应移出梯度培育名单的重大违法、事故、失信、弄虚作假或停产注销等情形。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://sxjxw.sx.gov.cn/art/2022/6/15/art_1229641804_1869194.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "green-factory-2-jinhua",
+      "layer_type": "jurisdiction",
+      "policy_time_type": "jurisdiction-detail",
+      "label": "金华市绿色工厂正式评价规则",
+      "applicability": {
+        "regions": [
+          "金华市"
+        ],
+        "application_types": [
+          "recognition",
+          "evaluation"
+        ]
+      },
+      "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3551/site/attach/0/4c629eeb78a949889b692901697ab3ad.pdf",
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/技术改造和未来工厂/2025-12-04__关于2025年度金华市级绿色工厂、园区名单的公示__7db9812f57cb417691e44fa6d4aee512/通知原文.md",
+      "source_archive_sha256": "2e6d224499234b42d96e52244a2ceedabd56504fdf45f3cd442d5fb5fac4ada9",
+      "source_title": "《金华市绿色工业园区、绿色工厂建设评价导则》（金经信装备〔2021〕36号）及现行申报附件",
+      "enterprise_deadline": null,
+      "replaces_rule_ids": [
+        "green-factory-2-1"
+      ],
+      "source_scope_level": "city",
+      "source_scope_region": "金华市",
+      "route_status": "active-municipal-evaluation",
+      "formal_level": "city",
+      "inherit_stable_rules": true,
+      "rules": [
+        {
+          "rule_id": "green-factory-2-1",
+          "type": "hard-threshold",
+          "field": "green_factory_2_jurisdiction_rule_resolved",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《金华市绿色工业园区、绿色工厂建设评价导则》（金经信装备〔2021〕36号）及现行申报附件",
+          "source_quote": "应先解析申报企业所在地、申报层级及对应主管部门现行实施细则。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3551/site/attach/0/4c629eeb78a949889b692901697ab3ad.pdf",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/技术改造和未来工厂/2025-12-04__关于2025年度金华市级绿色工厂、园区名单的公示__7db9812f57cb417691e44fa6d4aee512/通知原文.md",
+          "source_archive_sha256": "2e6d224499234b42d96e52244a2ceedabd56504fdf45f3cd442d5fb5fac4ada9"
+        },
+        {
+          "rule_id": "green-factory-2-2",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-legal",
+              "field": "green_factory_2_legally_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-construction",
+              "field": "green_factory_2_construction_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-production",
+              "field": "green_factory_2_production_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality",
+              "field": "green_factory_2_quality_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety",
+              "field": "green_factory_2_safety_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment",
+              "field": "green_factory_2_environmental_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy",
+              "field": "green_factory_2_energy_compliance_clear",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《金华市绿色工业园区、绿色工厂建设评价导则》（金经信装备〔2021〕36号）及现行申报附件",
+          "source_quote": "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3551/site/attach/0/4c629eeb78a949889b692901697ab3ad.pdf",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/技术改造和未来工厂/2025-12-04__关于2025年度金华市级绿色工厂、园区名单的公示__7db9812f57cb417691e44fa6d4aee512/通知原文.md",
+          "source_archive_sha256": "2e6d224499234b42d96e52244a2ceedabd56504fdf45f3cd442d5fb5fac4ada9"
+        },
+        {
+          "rule_id": "green-factory-2-3",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-green-system",
+              "field": "green_factory_2_green_development_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-energy-system",
+              "field": "green_factory_2_energy_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-resource-system",
+              "field": "green_factory_2_resource_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-environment-system",
+              "field": "green_factory_2_environment_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-quality-system",
+              "field": "green_factory_2_quality_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-safety-system",
+              "field": "green_factory_2_safety_management_system_established",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《金华市绿色工业园区、绿色工厂建设评价导则》（金经信装备〔2021〕36号）及现行申报附件",
+          "source_quote": "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3551/site/attach/0/4c629eeb78a949889b692901697ab3ad.pdf",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/技术改造和未来工厂/2025-12-04__关于2025年度金华市级绿色工厂、园区名单的公示__7db9812f57cb417691e44fa6d4aee512/通知原文.md",
+          "source_archive_sha256": "2e6d224499234b42d96e52244a2ceedabd56504fdf45f3cd442d5fb5fac4ada9"
+        },
+        {
+          "rule_id": "green-factory-2-4",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "green-factory-2-basic-requirements",
+              "field": "green_factory_2_evaluation_basic_requirements_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-mandatory-indicators",
+              "field": "green_factory_2_mandatory_indicators_passed",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "green-factory-2-local-score",
+              "field": "green_factory_2_local_score_threshold_passed",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《金华市绿色工业园区、绿色工厂建设评价导则》（金经信装备〔2021〕36号）及现行申报附件",
+          "source_quote": "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3551/site/attach/0/4c629eeb78a949889b692901697ab3ad.pdf",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/技术改造和未来工厂/2025-12-04__关于2025年度金华市级绿色工厂、园区名单的公示__7db9812f57cb417691e44fa6d4aee512/通知原文.md",
+          "source_archive_sha256": "2e6d224499234b42d96e52244a2ceedabd56504fdf45f3cd442d5fb5fac4ada9"
+        },
+        {
+          "rule_id": "green-factory-2-5",
+          "type": "hard-threshold",
+          "field": "green_factory_2_self_evaluation_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《金华市绿色工业园区、绿色工厂建设评价导则》（金经信装备〔2021〕36号）及现行申报附件",
+          "source_quote": "应按适用标准完成自评价报告，并提供能源资源、排放、绩效和证明材料。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3551/site/attach/0/4c629eeb78a949889b692901697ab3ad.pdf",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/技术改造和未来工厂/2025-12-04__关于2025年度金华市级绿色工厂、园区名单的公示__7db9812f57cb417691e44fa6d4aee512/通知原文.md",
+          "source_archive_sha256": "2e6d224499234b42d96e52244a2ceedabd56504fdf45f3cd442d5fb5fac4ada9"
+        },
+        {
+          "rule_id": "green-factory-2-6",
+          "type": "hard-threshold",
+          "field": "green_factory_2_dynamic_management_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《金华市绿色工业园区、绿色工厂建设评价导则》（金经信装备〔2021〕36号）及现行申报附件",
+          "source_quote": "不得存在应移出梯度培育名单的重大违法、事故、失信、弄虚作假或停产注销等情形。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 16:00:00",
+          "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3551/site/attach/0/4c629eeb78a949889b692901697ab3ad.pdf",
+          "source_archive_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/技术改造和未来工厂/2025-12-04__关于2025年度金华市级绿色工厂、园区名单的公示__7db9812f57cb417691e44fa6d4aee512/通知原文.md",
+          "source_archive_sha256": "2e6d224499234b42d96e52244a2ceedabd56504fdf45f3cd442d5fb5fac4ada9"
         }
       ]
     }

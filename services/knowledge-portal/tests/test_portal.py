@@ -744,17 +744,17 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     )
     assert district_green_detail is not None
     assert district_green_detail["jurisdiction_resolution"]["status"] == (
-        "unresolved"
+        "resolved"
     )
     assert district_green_detail["jurisdiction_resolution"][
         "formal_conclusion_allowed"
-    ] is False
+    ] is True
     assert all(
         source["role"] == "上位依赖/非区级门槛"
         for source in district_green_detail["sources"]
         if "浙江省绿色" in source["title"]
     )
-    assert "unresolved-jurisdiction-policy" in (
+    assert '"registered_administrative_unit_count": 38' in (
         district_green_detail["raw_json"]
     )
     with closing(module.database()) as connection:

@@ -1,287 +1,244 @@
 {
   "schema_version": 1,
   "report_type": "policy-change-impact-simulation",
-  "before_source_digest": "81a0b024f23ccb3f00ba2c895485e228c3853c1e461fc7e386103a4d88074302",
-  "after_source_digest": "3318407e599dede706ff303758f4b2df4fde81fa1915b22d57b6bc859fe71640",
+  "before_source_digest": "3318407e599dede706ff303758f4b2df4fde81fa1915b22d57b6bc859fe71640",
+  "after_source_digest": "d4c13611ebdf48fcd564738c633da5b7e985e3f2d29a19f21ba610d8dcb6936f",
   "changed_policy_node_ids": [],
   "added_policy_node_ids": [],
   "removed_policy_node_ids": [],
   "affected_project_ids": [
-    "digital-workshop",
-    "first-equipment",
-    "first-material-batch",
-    "first-software-version",
-    "future-factory",
     "green-factory-1",
-    "green-factory-2",
-    "green-factory-3",
-    "green-factory-4",
-    "hangzhou-enterprise-institute",
-    "hangzhou-enterprise-technology-center",
-    "intelligent-factory",
-    "key-little-giant-support",
-    "little-giant",
-    "manufacturing-single-champion-1",
-    "manufacturing-single-champion-2",
-    "municipal-enterprise-technology-center",
-    "national-high-tech-enterprise",
-    "technology-sme-1",
-    "technology-sme-2",
-    "zhejiang-enterprise-institute",
-    "zhejiang-enterprise-technology-center",
-    "zhejiang-hidden-champion",
-    "zhejiang-industrial-new-product",
-    "zhejiang-key-enterprise-institute",
-    "zhejiang-key-specialized-sme",
-    "zhejiang-manufacturing-2",
-    "zhejiang-manufacturing-quality",
-    "zhejiang-specialized-sme"
+    "green-factory-2"
   ],
   "affected_projects": [
-    {
-      "project_id": "digital-workshop",
-      "project_name": "浙江省数字化车间",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-9bc60a71033accfd80d2"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-9bc60a71033accfd80d2",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "first-equipment",
-      "project_name": "首台（套）装备",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-5df6d2e04bd0b44961ba"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-5df6d2e04bd0b44961ba",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "first-material-batch",
-      "project_name": "重点新材料首批次",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-b7a024455875df3701bc"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-b7a024455875df3701bc",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "first-software-version",
-      "project_name": "首版次软件",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-90fe31e34830d4ea3815"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-90fe31e34830d4ea3815",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "future-factory",
-      "project_name": "浙江省未来工厂",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-e0c8a5842e026406ed97"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-e0c8a5842e026406ed97",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
     {
       "project_id": "green-factory-1",
       "project_name": "区级绿色工厂",
       "change_type": "modified",
       "rule_delta": {
         "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
+        "removed_rule_ids": [
+          "green-factory-1-local-thresholds"
+        ],
+        "changed_rule_ids": [
+          "green-factory-1-1",
+          "green-factory-1-2",
+          "green-factory-1-3",
+          "green-factory-1-4",
+          "green-factory-1-5",
+          "green-factory-1-6"
+        ],
+        "changed_fact_fields": [
+          "green_factory_1_construction_compliance_clear",
+          "green_factory_1_dynamic_management_clear",
+          "green_factory_1_energy_compliance_clear",
+          "green_factory_1_energy_management_system_established",
+          "green_factory_1_environment_management_system_established",
+          "green_factory_1_environmental_compliance_clear",
+          "green_factory_1_evaluation_basic_requirements_passed",
+          "green_factory_1_green_development_system_established",
+          "green_factory_1_jurisdiction_rule_resolved",
+          "green_factory_1_legally_established",
+          "green_factory_1_local_score_threshold_passed",
+          "green_factory_1_mandatory_indicators_passed",
+          "green_factory_1_production_compliance_clear",
+          "green_factory_1_quality_compliance_clear",
+          "green_factory_1_quality_management_system_established",
+          "green_factory_1_resource_management_system_established",
+          "green_factory_1_safety_compliance_clear",
+          "green_factory_1_safety_management_system_established",
+          "green_factory_1_self_evaluation_complete"
+        ]
       },
       "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
+        "added_layer_ids": [
+          "green-factory-1-hangzhou-district-route",
+          "green-factory-1-jinhua-municipal-redirect",
+          "green-factory-1-ningbo-district-route",
+          "green-factory-1-shaoxing-municipal-redirect"
+        ],
+        "removed_layer_ids": [
+          "green-factory-1-jurisdiction"
+        ],
         "changed_layer_ids": []
       },
       "lifecycle_rule_changed": false,
       "identity_impact": {
         "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
+        "derived_lifecycle_requires_replay": true,
+        "policy_trace_requires_relink": true,
         "identity_events": 0,
         "identity_twins": 0
       },
       "prediction_impact": {
         "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-8f939e90f37ceb8b22e3"
+        "time_window_changed": true,
+        "invalidation_key": "policy-278cc33c7a8a4ae43c6d"
       },
       "historical_backtest_impact": {
-        "requires_recompute": false,
+        "requires_recompute": true,
         "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
+        "historical_fact_guard_changed": true
       },
       "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-8f939e90f37ceb8b22e3",
-        "new_high_impact_requirements": [],
+        "requires_reassessment": true,
+        "policy_version_id": "policy-278cc33c7a8a4ae43c6d",
+        "new_high_impact_requirements": [
+          {
+            "key": "green_factory_1_construction_compliance_clear",
+            "label": "green_factory_1_construction_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_dynamic_management_clear",
+            "label": "green_factory_1_dynamic_management_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_energy_compliance_clear",
+            "label": "green_factory_1_energy_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_energy_management_system_established",
+            "label": "green_factory_1_energy_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_environment_management_system_established",
+            "label": "green_factory_1_environment_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_environmental_compliance_clear",
+            "label": "green_factory_1_environmental_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_evaluation_basic_requirements_passed",
+            "label": "green_factory_1_evaluation_basic_requirements_passed",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_green_development_system_established",
+            "label": "green_factory_1_green_development_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_jurisdiction_rule_resolved",
+            "label": "green_factory_1_jurisdiction_rule_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_legally_established",
+            "label": "green_factory_1_legally_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_local_score_threshold_passed",
+            "label": "green_factory_1_local_score_threshold_passed",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_mandatory_indicators_passed",
+            "label": "green_factory_1_mandatory_indicators_passed",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_production_compliance_clear",
+            "label": "green_factory_1_production_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_quality_compliance_clear",
+            "label": "green_factory_1_quality_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_quality_management_system_established",
+            "label": "green_factory_1_quality_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_resource_management_system_established",
+            "label": "green_factory_1_resource_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_safety_compliance_clear",
+            "label": "green_factory_1_safety_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_safety_management_system_established",
+            "label": "green_factory_1_safety_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_self_evaluation_complete",
+            "label": "green_factory_1_self_evaluation_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
         "ask_user_only_after_discovery": true,
-        "single_question_template": null
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：green_factory_1_construction_compliance_clear、green_factory_1_dynamic_management_clear、green_factory_1_energy_compliance_clear、green_factory_1_energy_management_system_established、green_factory_1_environment_management_system_established、green_factory_1_environmental_compliance_clear、green_factory_1_evaluation_basic_requirements_passed、green_factory_1_green_development_system_established、green_factory_1_jurisdiction_rule_resolved、green_factory_1_legally_established、green_factory_1_local_score_threshold_passed、green_factory_1_mandatory_indicators_passed、green_factory_1_production_compliance_clear、green_factory_1_quality_compliance_clear、green_factory_1_quality_management_system_established、green_factory_1_resource_management_system_established、green_factory_1_safety_compliance_clear、green_factory_1_safety_management_system_established、green_factory_1_self_evaluation_complete。"
       }
     },
     {
@@ -290,951 +247,238 @@
       "change_type": "modified",
       "rule_delta": {
         "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
+        "removed_rule_ids": [
+          "green-factory-2-local-thresholds"
+        ],
+        "changed_rule_ids": [
+          "green-factory-2-1",
+          "green-factory-2-2",
+          "green-factory-2-3",
+          "green-factory-2-4",
+          "green-factory-2-5",
+          "green-factory-2-6"
+        ],
+        "changed_fact_fields": [
+          "green_factory_2_construction_compliance_clear",
+          "green_factory_2_dynamic_management_clear",
+          "green_factory_2_energy_compliance_clear",
+          "green_factory_2_energy_management_system_established",
+          "green_factory_2_environment_management_system_established",
+          "green_factory_2_environmental_compliance_clear",
+          "green_factory_2_evaluation_basic_requirements_passed",
+          "green_factory_2_green_development_system_established",
+          "green_factory_2_jurisdiction_rule_resolved",
+          "green_factory_2_legally_established",
+          "green_factory_2_local_score_threshold_passed",
+          "green_factory_2_mandatory_indicators_passed",
+          "green_factory_2_production_compliance_clear",
+          "green_factory_2_quality_compliance_clear",
+          "green_factory_2_quality_management_system_established",
+          "green_factory_2_resource_management_system_established",
+          "green_factory_2_safety_compliance_clear",
+          "green_factory_2_safety_management_system_established",
+          "green_factory_2_self_evaluation_complete"
+        ]
       },
       "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
+        "added_layer_ids": [
+          "green-factory-2-hangzhou",
+          "green-factory-2-jinhua",
+          "green-factory-2-ningbo",
+          "green-factory-2-shaoxing"
+        ],
+        "removed_layer_ids": [
+          "green-factory-2-jurisdiction"
+        ],
         "changed_layer_ids": []
       },
       "lifecycle_rule_changed": false,
       "identity_impact": {
         "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
+        "derived_lifecycle_requires_replay": true,
+        "policy_trace_requires_relink": true,
         "identity_events": 0,
         "identity_twins": 0
       },
       "prediction_impact": {
         "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-3e0fae449f99284812aa"
+        "time_window_changed": true,
+        "invalidation_key": "policy-57b81a993ca5570174af"
       },
       "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-3e0fae449f99284812aa",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "green-factory-3",
-      "project_name": "浙江省绿色低碳工厂",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
         "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-014872608585cd65cdb3"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
         "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
+        "historical_fact_guard_changed": true
       },
       "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-014872608585cd65cdb3",
-        "new_high_impact_requirements": [],
+        "requires_reassessment": true,
+        "policy_version_id": "policy-57b81a993ca5570174af",
+        "new_high_impact_requirements": [
+          {
+            "key": "green_factory_2_construction_compliance_clear",
+            "label": "green_factory_2_construction_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_dynamic_management_clear",
+            "label": "green_factory_2_dynamic_management_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_energy_compliance_clear",
+            "label": "green_factory_2_energy_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_energy_management_system_established",
+            "label": "green_factory_2_energy_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_environment_management_system_established",
+            "label": "green_factory_2_environment_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_environmental_compliance_clear",
+            "label": "green_factory_2_environmental_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_evaluation_basic_requirements_passed",
+            "label": "green_factory_2_evaluation_basic_requirements_passed",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_green_development_system_established",
+            "label": "green_factory_2_green_development_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_jurisdiction_rule_resolved",
+            "label": "green_factory_2_jurisdiction_rule_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_legally_established",
+            "label": "green_factory_2_legally_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_local_score_threshold_passed",
+            "label": "green_factory_2_local_score_threshold_passed",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_mandatory_indicators_passed",
+            "label": "green_factory_2_mandatory_indicators_passed",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_production_compliance_clear",
+            "label": "green_factory_2_production_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_quality_compliance_clear",
+            "label": "green_factory_2_quality_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_quality_management_system_established",
+            "label": "green_factory_2_quality_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_resource_management_system_established",
+            "label": "green_factory_2_resource_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_safety_compliance_clear",
+            "label": "green_factory_2_safety_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_safety_management_system_established",
+            "label": "green_factory_2_safety_management_system_established",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_self_evaluation_complete",
+            "label": "green_factory_2_self_evaluation_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
         "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "green-factory-4",
-      "project_name": "国家绿色工厂",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-7511e12cda0ed8abda6e"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-7511e12cda0ed8abda6e",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "hangzhou-enterprise-institute",
-      "project_name": "市级研发中心（四市属地版）",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-6bd992eca402dca35b23"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-6bd992eca402dca35b23",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "hangzhou-enterprise-technology-center",
-      "project_name": "杭州市企业技术中心",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-c98e4015479d64be728c"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-c98e4015479d64be728c",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "intelligent-factory",
-      "project_name": "浙江省智能工厂",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-b47c249c68eed5649684"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-b47c249c68eed5649684",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "key-little-giant-support",
-      "project_name": "重点小巨人企业高质量发展奖补项目",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-f1dc8f9b27fcd1870c93"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-f1dc8f9b27fcd1870c93",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "little-giant",
-      "project_name": "专精特新小巨人",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-56caea550262ec7c9ac6"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-56caea550262ec7c9ac6",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "manufacturing-single-champion-1",
-      "project_name": "浙江省制造业单项冠军企业",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-b6def70071a088cbb1ee"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-b6def70071a088cbb1ee",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "manufacturing-single-champion-2",
-      "project_name": "国家制造业单项冠军企业",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-b04ece5c1477acd1efe5"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-b04ece5c1477acd1efe5",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "municipal-enterprise-technology-center",
-      "project_name": "市级企业技术中心（四市属地版）",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-16e247b21fc4f3b4edd9"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-16e247b21fc4f3b4edd9",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "national-high-tech-enterprise",
-      "project_name": "高新技术企业",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-90a54326e73196ab0260"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-90a54326e73196ab0260",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "technology-sme-1",
-      "project_name": "浙江省科技型中小企业",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-446163e9745a87780eb5"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-446163e9745a87780eb5",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "technology-sme-2",
-      "project_name": "国家科技型中小企业",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-0fe5e158d608e38cfc07"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-0fe5e158d608e38cfc07",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-enterprise-institute",
-      "project_name": "浙江省企业研究院",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-2adbb6c7293e900cc6b9"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-2adbb6c7293e900cc6b9",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-enterprise-technology-center",
-      "project_name": "浙江省企业技术中心",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-0a49f94464d73e70eccc"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-0a49f94464d73e70eccc",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-hidden-champion",
-      "project_name": "浙江省隐形冠军企业",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-a27400b330359ae77e3e"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-a27400b330359ae77e3e",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-industrial-new-product",
-      "project_name": "浙江省工业新产品",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-3175adfdfb96ec7f0488"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-3175adfdfb96ec7f0488",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-key-enterprise-institute",
-      "project_name": "浙江省重点企业研究院",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-1ddf328a212fab8d5ff2"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-1ddf328a212fab8d5ff2",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-key-specialized-sme",
-      "project_name": "浙江省重点专精特新中小企业",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-c794ae0e49f663ca709a"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-c794ae0e49f663ca709a",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-manufacturing-2",
-      "project_name": "品字标浙江制造",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-25e8d7b1b9c9bbf0dd58"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-25e8d7b1b9c9bbf0dd58",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-manufacturing-quality",
-      "project_name": "浙江制造精品",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-54fbcedf13401c12ad1e"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-54fbcedf13401c12ad1e",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
-      }
-    },
-    {
-      "project_id": "zhejiang-specialized-sme",
-      "project_name": "专精特新中小企业",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [],
-        "changed_fact_fields": []
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": false,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-a17575d282319cc1d52b"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": false,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": false,
-        "policy_version_id": "policy-a17575d282319cc1d52b",
-        "new_high_impact_requirements": [],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": null
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：green_factory_2_construction_compliance_clear、green_factory_2_dynamic_management_clear、green_factory_2_energy_compliance_clear、green_factory_2_energy_management_system_established、green_factory_2_environment_management_system_established、green_factory_2_environmental_compliance_clear、green_factory_2_evaluation_basic_requirements_passed、green_factory_2_green_development_system_established、green_factory_2_jurisdiction_rule_resolved、green_factory_2_legally_established、green_factory_2_local_score_threshold_passed、green_factory_2_mandatory_indicators_passed、green_factory_2_production_compliance_clear、green_factory_2_quality_compliance_clear、green_factory_2_quality_management_system_established、green_factory_2_resource_management_system_established、green_factory_2_safety_compliance_clear、green_factory_2_safety_management_system_established、green_factory_2_self_evaluation_complete。"
       }
     }
   ],
   "summary": {
-    "affected_projects": 29,
+    "affected_projects": 2,
     "identity_events_replayed": 0,
     "identity_twins_replayed": 0,
-    "prediction_project_invalidations": 29,
-    "historical_backtest_project_invalidations": 0,
-    "preflight_project_reassessments": 0
+    "prediction_project_invalidations": 2,
+    "historical_backtest_project_invalidations": 2,
+    "preflight_project_reassessments": 2
   },
   "invariants": [
     "官方名单形成的认定、复核、撤销等历史事实不因政策变化被改写",

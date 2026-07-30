@@ -9,6 +9,7 @@ from app.policy_time import (
     assess_policy_layer_time,
     summarize_policy_time_selection,
 )
+from app.green_factory_policy import expand_green_factory_context_regions
 from app.deliverable_contract import (
     build_delivery_contract,
     validate_delivery_contract,
@@ -1525,6 +1526,13 @@ def select_project_algorithm_rules(
             project_context.get("jurisdiction"),
         ]
     )
+    if str(pack.get("project_id") or "") in {
+        "green-factory-1",
+        "green-factory-2",
+    }:
+        context_regions = expand_green_factory_context_regions(
+            context_regions
+        )
 
     def values_match(expected: Sequence[object], actual: str) -> bool:
         normalized_expected = {str(value).strip() for value in expected if str(value).strip()}
@@ -1614,6 +1622,11 @@ def select_project_algorithm_rules(
                     }
     policy_time = summarize_policy_time_selection(time_audits, project_context)
     jurisdiction_contract = jurisdiction_source_contract_for_pack(pack)
+    project_route: dict[str, object] = {
+        "status": "direct",
+        "target_project_id": str(pack.get("project_id") or ""),
+        "target_project_name": str(pack.get("project_name") or ""),
+    }
     if (
         jurisdiction_contract.get("required_for_formal_decision") is True
     ):
@@ -1712,11 +1725,47 @@ def select_project_algorithm_rules(
                     if layer_id not in forbidden_layer_ids
                 ],
             }
+            redirect = next(
+                (
+                    audit
+                    for audit in resolved_jurisdiction_sources
+                    if str(audit.get("route_status") or "")
+                    == "redirect-to-municipal-evaluation"
+                ),
+                None,
+            )
+            if redirect is not None:
+                selected_rules.clear()
+                selected_layers = [
+                    str(redirect.get("layer_id") or "")
+                ]
+                project_route = {
+                    "status": "redirect",
+                    "route_status": redirect.get("route_status"),
+                    "target_project_id": redirect.get("target_project_id"),
+                    "target_project_name": redirect.get(
+                        "target_project_name"
+                    ),
+                    "formal_level": redirect.get("formal_level"),
+                    "reason": redirect.get("route_reason"),
+                    "source_scope_region": redirect.get(
+                        "source_scope_region"
+                    ),
+                }
+                policy_time = {
+                    **policy_time,
+                    "status": "jurisdiction-project-redirect",
+                    "formal_conclusion_allowed": False,
+                    "reason": str(redirect.get("route_reason") or ""),
+                    "selected_layer_ids": selected_layers,
+                    "project_route": project_route,
+                }
     return {
         "rules": list(selected_rules.values()),
         "selected_layers": selected_layers,
         "policy_time": policy_time,
         "policy_time_audits": time_audits,
+        "project_route": project_route,
     }
 
 

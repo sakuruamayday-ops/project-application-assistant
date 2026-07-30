@@ -1,0 +1,369 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-07-30",
+  "project_family": "绿色工厂四市属地路由",
+  "registration_contract": {
+    "administrative_unit_scope": "四市现行县级行政区划，共38个区、县、县级市",
+    "formal_source_rule": "每个区县必须绑定政府官网正式文件或带SHA-256的已审计官方原文归档",
+    "no_fabricated_local_measure": "市级统一评价、区县初审的城市，不虚构区级管理办法，直接登记为市级项目路由",
+    "province_rule_role": "浙江省梯度培育细则仅作为上位依赖，不得替代四市属地正式规则",
+    "functional_zone_rule": "高新区、开发区、滨海新区等功能区另行登记，不计入38个县级行政区划闭环数"
+  },
+  "coverage_summary": {
+    "city_count": 4,
+    "administrative_unit_count": 38,
+    "district_recognition_units": 13,
+    "district_three_star_units": 10,
+    "municipal_redirect_units": 15,
+    "unresolved_units": 0
+  },
+  "city_registrations": [
+    {
+      "city": "杭州市",
+      "city_route_status": "district-recognition-under-city-rule",
+      "formal_level": "district",
+      "district_role": "各区、县（市）经信部门组织评价认定区县级绿色低碳工厂，公布名单并向市级备案、推荐",
+      "formal_sources": [
+        {
+          "source_id": "hangzhou-green-factory-2026-notice",
+          "title": "杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知",
+          "document_status": "current-annual-notice",
+          "published_at": "2026-05-26",
+          "official_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_606ff164ab84496faa597bfb58bb835a.html",
+          "source_role": "明确区县评价认定、名单公布备案及市级推荐程序；市级评价总分门槛为85分",
+          "knowledge_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/杭州市/软件与数字经济/2026-05-26__杭州市经信局（市数字经济局）关于开展2026年度市级绿色低碳工业园区及工厂推荐工作的通知__bf934b95737f460eb97c573a1eb7eb2e/通知原文.md",
+          "archive_sha256": "51e1b94202c50cfe05356c6f9c0d26897e654d26d0a9047dd384f68602ec7f0e"
+        }
+      ],
+      "district_registrations": [
+        {
+          "district": "上城区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "拱墅区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "西湖区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "滨江区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "萧山区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "余杭区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "临平区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "钱塘区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "富阳区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "临安区",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "桐庐县",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "淳安县",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        },
+        {
+          "district": "建德市",
+          "route_status": "district-recognition-under-city-rule",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["hangzhou-green-factory-2026-notice"]
+        }
+      ]
+    },
+    {
+      "city": "宁波市",
+      "city_route_status": "district-three-star-recognition",
+      "formal_level": "district",
+      "district_role": "区县（市）认定三星级绿色工厂并形成正式文件，市级在此基础上评价四星级绿色工厂",
+      "formal_sources": [
+        {
+          "source_id": "ningbo-green-factory-2024-star-method",
+          "title": "宁波市星级绿色工厂评价办法（2024版）",
+          "document_status": "current-cited-by-2026-notice",
+          "official_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+          "source_role": "三星级为区县级评价，评价得分达到75分；2026年度市级通知继续援引该办法",
+          "knowledge_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/技术改造和未来工厂/2025-06-12__关于开展2025年度绿色工厂创建及绿色化改造认定工作的通知__bdb3cedec9fb4c449c5f4181a6c33c6b/附件/附件4：宁波市星级绿色工厂评价办法（2024版）.md",
+          "archive_sha256": "d2ea1ce67eb4cde99800291c43a8b765c30a82f04f3caaf84f8e59e9e02ae957"
+        },
+        {
+          "source_id": "ningbo-green-factory-2026-notice",
+          "title": "关于组织开展2026年度市级绿色制造名单申报工作的通知",
+          "document_status": "current-annual-notice",
+          "published_at": "2026-06-22",
+          "official_url": "https://jxj.ningbo.gov.cn/col/col1229561613/art/2026/art_719899399b2245328aa5dcef8de5d582.html",
+          "source_role": "要求各区县（市）提交2026年度三星级绿色工厂正式认定文件，并明确市级评价入口"
+        }
+      ],
+      "district_registrations": [
+        {
+          "district": "海曙区",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "江北区",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "镇海区",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "北仑区",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "鄞州区",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "奉化区",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "余姚市",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "慈溪市",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "宁海县",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        },
+        {
+          "district": "象山县",
+          "route_status": "district-three-star-recognition",
+          "target_project_id": "green-factory-1",
+          "formal_source_ids": ["ningbo-green-factory-2024-star-method", "ningbo-green-factory-2026-notice"]
+        }
+      ]
+    },
+    {
+      "city": "绍兴市",
+      "city_route_status": "redirect-to-municipal-evaluation",
+      "formal_level": "city",
+      "district_role": "区县（市）经信部门初审推荐，绍兴市按统一评价办法组织市级绿色低碳工厂评价",
+      "formal_sources": [
+        {
+          "source_id": "shaoxing-green-factory-2022-method",
+          "title": "绍兴市绿色低碳工厂（园区）评价办法",
+          "document_status": "current",
+          "document_number": "绍市经信〔2022〕36号",
+          "published_at": "2022-06-15",
+          "official_url": "https://sxjxw.sx.gov.cn/art/2022/6/15/art_1229641804_1869194.html",
+          "source_role": "绍兴市统一评价办法，区县承担初审推荐，不另造区级项目门槛"
+        },
+        {
+          "source_id": "shaoxing-green-factory-2026-publicity",
+          "title": "2026年绍兴市绿色低碳工厂公示",
+          "document_status": "current-execution-evidence",
+          "published_at": "2026-06-30",
+          "official_url": "https://sxjxw.sx.gov.cn/col/col1229313645/art/2026/art_c48da5889fcc4553a36fae51bf0220b2.html",
+          "source_role": "证明2026年度仍按市级统一口径覆盖六个行政区县及功能区"
+        }
+      ],
+      "district_registrations": [
+        {
+          "district": "越城区",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["shaoxing-green-factory-2022-method", "shaoxing-green-factory-2026-publicity"]
+        },
+        {
+          "district": "柯桥区",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["shaoxing-green-factory-2022-method", "shaoxing-green-factory-2026-publicity"]
+        },
+        {
+          "district": "上虞区",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["shaoxing-green-factory-2022-method", "shaoxing-green-factory-2026-publicity"]
+        },
+        {
+          "district": "诸暨市",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["shaoxing-green-factory-2022-method", "shaoxing-green-factory-2026-publicity"]
+        },
+        {
+          "district": "嵊州市",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["shaoxing-green-factory-2022-method", "shaoxing-green-factory-2026-publicity"]
+        },
+        {
+          "district": "新昌县",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["shaoxing-green-factory-2022-method", "shaoxing-green-factory-2026-publicity"]
+        }
+      ]
+    },
+    {
+      "city": "金华市",
+      "city_route_status": "redirect-to-municipal-evaluation",
+      "formal_level": "city",
+      "district_role": "县（市、区）经信部门初审推荐，金华市按统一建设评价导则组织市级绿色工厂评价",
+      "formal_sources": [
+        {
+          "source_id": "jinhua-green-factory-2021-guide",
+          "title": "金华市绿色工业园区、绿色工厂建设评价导则",
+          "document_status": "current-cited-by-2025-publicity",
+          "document_number": "金经信装备〔2021〕36号",
+          "official_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3551/site/attach/0/4c629eeb78a949889b692901697ab3ad.pdf",
+          "source_role": "金华市级统一建设评价导则及正式申报评价附件"
+        },
+        {
+          "source_id": "jinhua-green-factory-2025-publicity",
+          "title": "关于2025年度金华市级绿色工厂、园区名单的公示",
+          "document_status": "current-execution-evidence",
+          "published_at": "2025-12-04",
+          "official_url": "http://jxj.jinhua.gov.cn/col/col1229165187/art/2025/art_2bd40e300e8e4302bd51c8aedff0e3c5.html",
+          "source_role": "2025年度市级统一评价执行证据；原部门网页已迁移，保留已审计官方原文归档",
+          "knowledge_archive_path": "10_政策与目录/政策数据库/企策顾问/公示公告/金华市/技术改造和未来工厂/2025-12-04__关于2025年度金华市级绿色工厂、园区名单的公示__7db9812f57cb417691e44fa6d4aee512/通知原文.md",
+          "archive_sha256": "2e6d224499234b42d96e52244a2ceedabd56504fdf45f3cd442d5fb5fac4ada9"
+        }
+      ],
+      "district_registrations": [
+        {
+          "district": "婺城区",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        },
+        {
+          "district": "金东区",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        },
+        {
+          "district": "兰溪市",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        },
+        {
+          "district": "义乌市",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        },
+        {
+          "district": "东阳市",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        },
+        {
+          "district": "永康市",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        },
+        {
+          "district": "武义县",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        },
+        {
+          "district": "浦江县",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        },
+        {
+          "district": "磐安县",
+          "route_status": "redirect-to-municipal-evaluation",
+          "target_project_id": "green-factory-2",
+          "formal_source_ids": ["jinhua-green-factory-2021-guide", "jinhua-green-factory-2025-publicity"]
+        }
+      ]
+    }
+  ],
+  "functional_zone_registrations": [
+    {
+      "city": "宁波市",
+      "zone": "宁波高新区",
+      "note": "功能区追加项，不计入县级行政区划38单元"
+    },
+    {
+      "city": "宁波市",
+      "zone": "前湾新区",
+      "note": "功能区追加项，不计入县级行政区划38单元"
+    },
+    {
+      "city": "绍兴市",
+      "zone": "滨海新区",
+      "note": "功能区追加项，不计入县级行政区划38单元"
+    }
+  ]
+}

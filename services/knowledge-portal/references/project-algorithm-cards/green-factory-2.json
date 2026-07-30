@@ -2,12 +2,12 @@
   "schema_version": 1,
   "algorithm_id": "project-decision-green-factory-2",
   "algorithm_name": "市级绿色工厂项目决策算法",
-  "algorithm_version": "2024-guide-dynamic-jurisdiction-20260730",
+  "algorithm_version": "four-city-municipal-route-20260730",
   "project_id": "green-factory-2",
   "project_name": "市级绿色工厂",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-3e0fae449f99284812aa",
+  "policy_version_id": "policy-57b81a993ca5570174af",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -43,8 +43,8 @@
   ],
   "project_specific_assets": {
     "fact_fields": 19,
-    "confirmed_rules": 7,
-    "rule_layers": 2,
+    "confirmed_rules": 30,
+    "rule_layers": 5,
     "gold_cases": 3
   },
   "explainability": {
@@ -85,5 +85,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "5e9c54d7f540ac4017c25d709ae4c6f053a8ce730120ff3ed4ca44f1bf9ec5e5"
+  "compile_input_hash": "d6cbf41cf75866a3ff37b04d4ba03b5b112c11cae024fa6aa24a5cf0c9fc1049"
 }

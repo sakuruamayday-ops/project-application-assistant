@@ -399,6 +399,12 @@ def confirmed_rule_cards(
                 "source_url": audit_source["source_url"],
             }
         )
+        if (
+            layer is not None
+            and layer.get("inherit_stable_rules") is True
+            and str(layer.get("source_title") or "").strip()
+        ):
+            rule["source"] = str(layer["source_title"])
         for provenance_field in (
             "source_archive_path",
             "source_archive_sha256",
@@ -479,6 +485,22 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
             if layer_type == "jurisdiction" and not applicability["regions"]:
                 raise ValueError(f"{source_key}[{index}]缺少regions")
             raw_layer = {**raw_layer, "layer_type": layer_type}
+            layer_rules = raw_layer.get("rules", [])
+            if raw_layer.get("inherit_stable_rules") is True:
+                if layer_type != "jurisdiction":
+                    raise ValueError(
+                        "inherit_stable_rules仅允许用于属地正式规则层"
+                    )
+                if layer_rules:
+                    raise ValueError(
+                        "inherit_stable_rules启用时rules必须为空，"
+                        "避免同一规则重复登记"
+                    )
+                layer_rules = [
+                    dict(rule)
+                    for rule in stable_rules
+                    if isinstance(rule, dict)
+                ]
             layers.append(
                 {
                     "layer_id": layer_id,
@@ -505,6 +527,7 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                             "source_archive_path",
                             "source_archive_sha256",
                             "source_role",
+                            "source_title",
                             "retrieval_channel",
                             "published_at",
                             "issued_at",
@@ -519,6 +542,12 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                             "transition_notice",
                             "source_scope_level",
                             "source_scope_region",
+                            "route_status",
+                            "target_project_id",
+                            "target_project_name",
+                            "formal_level",
+                            "route_reason",
+                            "inherit_stable_rules",
                         )
                         if key == "enterprise_deadline"
                         or (
@@ -532,7 +561,7 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                     "rules": confirmed_rule_cards(
                         source=source,
                         layer=raw_layer,
-                        rules=raw_layer.get("rules", []),
+                        rules=layer_rules,
                     ),
                 }
             )

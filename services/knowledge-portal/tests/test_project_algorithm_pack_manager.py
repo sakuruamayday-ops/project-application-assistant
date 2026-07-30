@@ -185,10 +185,15 @@ def test_generate_preserves_rd_family_name_and_jurisdiction_source_contract(
             "jurisdiction": "滨江区",
         },
     )
-    assert selected["policy_time"]["status"] == (
-        "unresolved-jurisdiction-policy"
-    )
-    assert selected["rules"] == []
+    assert selected["policy_time"]["status"] == "allowed"
+    assert selected["selected_layers"] == [
+        "green-factory-1-hangzhou-district-route"
+    ]
+    assert len(selected["rules"]) == 6
+    assert {
+        rule["_policy_source_scope_level"]
+        for rule in selected["rules"]
+    } == {"city"}
 
 
 def test_generate_builds_stable_annual_and_jurisdiction_layers(tmp_path):

@@ -232,6 +232,9 @@ FOUR_CITY_RD_PLATFORM_POLICY_REGISTRY_PATH = (
 FOUR_CITY_RD_PLATFORM_THRESHOLD_PACKS_PATH = (
     BASE_DIR / "references" / "four-city-rd-platform-threshold-packs.json"
 )
+FOUR_CITY_GREEN_FACTORY_POLICY_REGISTRY_PATH = (
+    BASE_DIR / "references" / "four-city-green-factory-policy-registry.json"
+)
 COMPILED_PROJECT_RULE_IR_PATH = (
     BASE_DIR / "references" / "compiled-project-rule-ir.json"
 )
@@ -1872,6 +1875,21 @@ def load_four_city_rd_platform_threshold_packs() -> dict[str, object]:
     try:
         payload = json.loads(
             FOUR_CITY_RD_PLATFORM_THRESHOLD_PACKS_PATH.read_text(
+                encoding="utf-8"
+            )
+        )
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+@lru_cache(maxsize=1)
+def load_four_city_green_factory_policy_registry() -> dict[str, object]:
+    if not FOUR_CITY_GREEN_FACTORY_POLICY_REGISTRY_PATH.is_file():
+        return {}
+    try:
+        payload = json.loads(
+            FOUR_CITY_GREEN_FACTORY_POLICY_REGISTRY_PATH.read_text(
                 encoding="utf-8"
             )
         )
@@ -7772,6 +7790,9 @@ def portal_payload(
         ),
         "four_city_rd_platform_threshold_packs": (
             load_four_city_rd_platform_threshold_packs()
+        ),
+        "four_city_green_factory_policy_registry": (
+            load_four_city_green_factory_policy_registry()
         ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_announcement": announcement_payload,

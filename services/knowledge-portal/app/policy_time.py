@@ -362,6 +362,11 @@ def assess_policy_layer_time(
         "source_evidence_level": source_level,
         "source_scope_level": str(layer.get("source_scope_level") or ""),
         "source_scope_region": str(layer.get("source_scope_region") or ""),
+        "route_status": str(layer.get("route_status") or ""),
+        "target_project_id": str(layer.get("target_project_id") or ""),
+        "target_project_name": str(layer.get("target_project_name") or ""),
+        "formal_level": str(layer.get("formal_level") or ""),
+        "route_reason": str(layer.get("route_reason") or ""),
         "policy_legal_status": (
             "draft" if time_type == "consultation-draft" else ""
         ),
