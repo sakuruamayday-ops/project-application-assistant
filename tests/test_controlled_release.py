@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import stat
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -99,22 +100,46 @@ def test_prepare_assets_allows_one_or_two_release_targets(tmp_path) -> None:
 
 def test_release_action_blocks_one_step_and_requires_exact_confirmation() -> None:
     assert MODULE.release_action(
-        stage=False, promote=False, execute=False, confirm_text=""
+        stage=False,
+        promote=False,
+        monitor=False,
+        execute=False,
+        confirm_text="",
     ) == "preflight"
     assert MODULE.release_action(
-        stage=True, promote=False, execute=False, confirm_text=""
+        stage=True,
+        promote=False,
+        monitor=False,
+        execute=False,
+        confirm_text="",
     ) == "stage"
+    assert MODULE.release_action(
+        stage=False,
+        promote=False,
+        monitor=True,
+        execute=False,
+        confirm_text="",
+    ) == "monitor"
     with pytest.raises(RuntimeError, match="一步直发已停用"):
         MODULE.release_action(
-            stage=False, promote=False, execute=True, confirm_text=""
+            stage=False,
+            promote=False,
+            monitor=False,
+            execute=True,
+            confirm_text="",
         )
     with pytest.raises(RuntimeError, match="缺少独立确认"):
         MODULE.release_action(
-            stage=False, promote=True, execute=False, confirm_text=""
+            stage=False,
+            promote=True,
+            monitor=False,
+            execute=False,
+            confirm_text="",
         )
     assert MODULE.release_action(
         stage=False,
         promote=True,
+        monitor=False,
         execute=False,
         confirm_text="确认正式发布",
     ) == "promote"
@@ -212,3 +237,86 @@ def test_controlled_release_requires_generic_package(
         MODULE.main()
     assert raised.value.code == 2
     assert "--generic-package" in capsys.readouterr().err
+
+
+def test_transaction_manifest_binds_all_three_release_participants(
+    tmp_path,
+) -> None:
+    generic = tmp_path / "generic.zip"
+    workbuddy = tmp_path / "workbuddy.zip"
+    release_notes = tmp_path / "notes.md"
+    generic.write_bytes(b"generic")
+    workbuddy.write_bytes(b"workbuddy")
+    release_notes.write_text("notes", encoding="utf-8")
+    validation = {
+        "short_version": "1.4.1",
+        "semantic_version": "1.4.1",
+        "tag": "V1.4.1",
+        "skill_total": 49,
+        "artifacts": {
+            "generic": {"sha256": MODULE.sha256(generic)},
+            "workbuddy": {"sha256": MODULE.sha256(workbuddy)},
+        },
+    }
+    manifest = MODULE.build_release_transaction_manifest(
+        repository="owner/repository",
+        commit="abc123",
+        validation=validation,
+        release_assets=[release_notes, workbuddy, generic],
+        publisher_fingerprint="SHA256:publisher",
+    )
+    repeated = MODULE.build_release_transaction_manifest(
+        repository="owner/repository",
+        commit="abc123",
+        validation=validation,
+        release_assets=[generic, release_notes, workbuddy],
+        publisher_fingerprint="SHA256:publisher",
+    )
+
+    assert manifest == repeated
+    assert set(manifest["participants"]) == {
+        "github",
+        "portal",
+        "installation",
+    }
+    assert (
+        manifest["participants"]["portal"]["package_sha256"]["generic"]
+        == MODULE.sha256(generic)
+    )
+    assert manifest["lease_policy"]["single_writer"] is True
+    assert (
+        manifest["lease_policy"]["non_holder_mode"]
+        == "read-only-monitor"
+    )
+
+
+def test_release_lease_checkpoint_is_owner_scoped_and_secret(tmp_path) -> None:
+    path_a = MODULE.lease_checkpoint_path(
+        config_dir=tmp_path,
+        tag="V1.4.1",
+        holder_id="thread-a",
+    )
+    path_b = MODULE.lease_checkpoint_path(
+        config_dir=tmp_path,
+        tag="V1.4.1",
+        holder_id="thread-b",
+    )
+    assert path_a != path_b
+
+    credential = MODULE.load_or_create_lease_credential(
+        path=path_a,
+        holder_id="thread-a",
+        transaction_sha256="a" * 64,
+        create=True,
+    )
+    assert credential["holder_id"] == "thread-a"
+    assert len(credential["lease_token"]) >= 32
+    assert stat.S_IMODE(path_a.stat().st_mode) == 0o600
+
+    with pytest.raises(RuntimeError, match="凭证与当前签名事务不一致"):
+        MODULE.load_or_create_lease_credential(
+            path=path_a,
+            holder_id="thread-b",
+            transaction_sha256="a" * 64,
+            create=False,
+        )

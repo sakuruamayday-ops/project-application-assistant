@@ -126,6 +126,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/project_catalog_matching.py \
     scripts/migrate_first_public_release.py \
     scripts/publish_skill_release.py \
+    scripts/release_transaction.py \
     tests/fixtures/structured_knowledge_gold.jsonl \
     scripts/smoke_test_production.sh requirements.txt \
     -C "${repository_dir}" docs/user-guide/企业全生命周期助手用户使用手册.md skills \

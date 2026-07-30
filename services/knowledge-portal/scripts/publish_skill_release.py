@@ -13,6 +13,7 @@ import shutil
 import sqlite3
 import stat
 import struct
+import sys
 import tempfile
 import zipfile
 from datetime import datetime, timezone
@@ -20,6 +21,19 @@ from pathlib import Path, PurePosixPath
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+SCRIPT_DIRECTORY = Path(__file__).resolve().parent
+if str(SCRIPT_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIRECTORY))
+
+from release_transaction import (  # noqa: E402
+    DEFAULT_LEASE_TTL_SECONDS,
+    STATE_RANK,
+    acquire_release_lease,
+    monitor_release_transaction,
+    transition_release_transaction,
+    verify_transaction_files,
+)
 
 
 TRUSTED_PUBLISHER_PUBLIC_KEY = (
@@ -34,6 +48,74 @@ WORKBUDDY_SIGNATURE_NAMESPACE = "codex-workbuddy-plugin-manifest"
 SSHSIG_MAGIC = b"SSHSIG"
 SSH_ED25519 = b"ssh-ed25519"
 MAX_EXPANDED_BYTES = 1024 * 1024 * 1024
+
+
+def _parse_lease_credential(payload: object) -> tuple[str, str]:
+    if not isinstance(payload, dict):
+        raise RuntimeError("发布租约凭证根节点必须是对象")
+    owner = str(payload.get("holder_id") or "")
+    token = str(payload.get("lease_token") or "")
+    if not owner or not token:
+        raise RuntimeError("发布租约凭证缺少holder_id或lease_token")
+    return owner, token
+
+
+def _load_lease_credential(arguments) -> tuple[str, str]:
+    if arguments.lease_credential_stdin:
+        return _parse_lease_credential(json.loads(sys.stdin.read()))
+    if arguments.lease_credential_file is None:
+        raise RuntimeError("发布写操作必须提供租约凭证")
+    return _parse_lease_credential(
+        json.loads(
+            arguments.lease_credential_file.read_text(encoding="utf-8")
+        )
+    )
+
+
+def _load_verified_transaction(arguments) -> tuple[dict[str, object], dict[str, object], str]:
+    required = (
+        arguments.transaction_manifest,
+        arguments.transaction_signature,
+        arguments.publisher_public_key,
+    )
+    if any(path is None for path in required):
+        raise RuntimeError("发布写操作必须提供签名事务清单、签名和发布公钥")
+    verification = verify_transaction_files(
+        manifest_path=arguments.transaction_manifest,
+        signature_path=arguments.transaction_signature,
+        public_key_path=arguments.publisher_public_key,
+        expected_fingerprint=TRUSTED_PUBLISHER_FINGERPRINT,
+    )
+    signature_payload = json.loads(
+        arguments.transaction_signature.read_text(encoding="utf-8")
+    )
+    public_key_text = arguments.publisher_public_key.read_text(encoding="utf-8")
+    manifest = verification["manifest"]
+    if str(manifest.get("version") or "") != arguments.version:
+        raise RuntimeError("发布事务版本与门户操作版本不一致")
+    return verification, signature_payload, public_key_text
+
+
+def _validate_transaction_artifacts(
+    manifest: dict[str, object],
+    artifacts: dict[str, object],
+) -> None:
+    participants = manifest.get("participants")
+    if not isinstance(participants, dict):
+        raise RuntimeError("发布事务清单缺少participants")
+    portal = participants.get("portal")
+    if not isinstance(portal, dict):
+        raise RuntimeError("发布事务清单缺少portal参与方")
+    expected = portal.get("package_sha256")
+    if not isinstance(expected, dict):
+        raise RuntimeError("发布事务清单缺少门户包哈希")
+    actual = {
+        target: str(data["sha256"])
+        for target, data in artifacts.items()
+        if isinstance(data, dict) and data.get("sha256")
+    }
+    if {str(key): str(value) for key, value in expected.items()} != actual:
+        raise RuntimeError("门户候选包与签名发布事务清单不一致")
 
 
 def sha256(path: Path) -> str:
@@ -1094,7 +1176,11 @@ def promote_selective(
             """,
             (version,),
         ).fetchall()
-    if staged is None or str(staged["status"]) != "releasing" or not rows:
+    if (
+        staged is None
+        or str(staged["status"]) not in {"releasing", "published"}
+        or not rows
+    ):
         raise RuntimeError(f"版本 {version} 未处于可提升的正式发布中")
     if any(
         not Path(str(row["file_path"])).is_file()
@@ -1123,6 +1209,12 @@ def promote_selective(
         version,
         str(staged["release_notes"]),
     )
+    if str(staged["status"]) == "published":
+        return {
+            **result,
+            "release_state": "published",
+            "promoted_at": staged["promoted_at"],
+        }
     promoted_at = datetime.now(timezone.utc).isoformat()
     with sqlite3.connect(database_path) as connection:
         connection.execute(
@@ -1343,6 +1435,9 @@ def main() -> None:
             "promote",
             "stage-artifact",
             "promote-artifact",
+            "lease-acquire",
+            "lease-monitor",
+            "lease-transition",
         ),
         required=True,
     )
@@ -1355,8 +1450,95 @@ def main() -> None:
     parser.add_argument("--git-commit", default="")
     parser.add_argument("--github-url", default="")
     parser.add_argument("--target", choices=ARTIFACT_TARGETS)
+    parser.add_argument("--transaction-manifest", type=Path)
+    parser.add_argument("--transaction-signature", type=Path)
+    parser.add_argument("--publisher-public-key", type=Path)
+    parser.add_argument("--lease-credential-file", type=Path)
+    parser.add_argument("--lease-credential-stdin", action="store_true")
+    parser.add_argument("--transaction-sha256", default="")
+    parser.add_argument("--transaction-state", default="")
+    parser.add_argument("--transaction-evidence-file", type=Path)
+    parser.add_argument(
+        "--lease-ttl-seconds",
+        type=int,
+        default=DEFAULT_LEASE_TTL_SECONDS,
+    )
     arguments = parser.parse_args()
-    if arguments.mode in {"stage", "stage-artifact"}:
+    if (
+        arguments.lease_credential_file is not None
+        and arguments.lease_credential_stdin
+    ):
+        parser.error("租约凭证文件与标准输入不能同时提供")
+    if arguments.mode in {"stage-artifact", "promote-artifact"}:
+        raise RuntimeError(
+            "全局发布事务已启用，禁止对同一版本绕过签名事务补发单个通道；"
+            "请生成新的补丁版本并走完整stage/promote发布事务。"
+        )
+    if arguments.mode == "lease-monitor":
+        with sqlite3.connect(arguments.database) as connection:
+            connection.row_factory = sqlite3.Row
+            result = monitor_release_transaction(
+                connection,
+                version=arguments.version,
+            )
+    elif arguments.mode == "lease-acquire":
+        if (
+            arguments.lease_credential_file is None
+            and not arguments.lease_credential_stdin
+        ):
+            parser.error("lease-acquire必须提供租约凭证")
+        verification, signature_payload, public_key_text = (
+            _load_verified_transaction(arguments)
+        )
+        holder_id, lease_token = _load_lease_credential(arguments)
+        with sqlite3.connect(arguments.database) as connection:
+            connection.row_factory = sqlite3.Row
+            result = acquire_release_lease(
+                connection,
+                verification=verification,
+                signature_payload=signature_payload,
+                public_key_text=public_key_text,
+                holder_id=holder_id,
+                lease_token=lease_token,
+                ttl_seconds=arguments.lease_ttl_seconds,
+            )
+    elif arguments.mode == "lease-transition":
+        if (
+            (
+                arguments.lease_credential_file is None
+                and not arguments.lease_credential_stdin
+            )
+            or not arguments.transaction_sha256
+            or not arguments.transaction_state
+        ):
+            parser.error(
+                "lease-transition必须提供租约凭证、事务哈希和目标状态"
+            )
+        holder_id, lease_token = _load_lease_credential(arguments)
+        evidence = (
+            json.loads(
+                arguments.transaction_evidence_file.read_text(
+                    encoding="utf-8"
+                )
+            )
+            if arguments.transaction_evidence_file
+            else {}
+        )
+        if not isinstance(evidence, dict):
+            raise RuntimeError("发布事务证据根节点必须是对象")
+        with sqlite3.connect(arguments.database) as connection:
+            connection.row_factory = sqlite3.Row
+            result = transition_release_transaction(
+                connection,
+                version=arguments.version,
+                transaction_sha256=arguments.transaction_sha256,
+                holder_id=holder_id,
+                lease_token=lease_token,
+                target_state=arguments.transaction_state,
+                evidence=evidence,
+                ttl_seconds=arguments.lease_ttl_seconds,
+            )
+    elif arguments.mode in {"stage", "stage-artifact"}:
         packages = {
             target: package
             for target, package in (
@@ -1375,6 +1557,44 @@ def main() -> None:
                 "stage模式必须至少提供一个客户端包，并提供发布说明、"
                 "git提交和GitHub预发布地址"
             )
+        if arguments.mode == "stage":
+            if (
+                arguments.lease_credential_file is None
+                and not arguments.lease_credential_stdin
+            ):
+                parser.error("stage必须提供租约凭证")
+            verification, signature_payload, public_key_text = (
+                _load_verified_transaction(arguments)
+            )
+            holder_id, lease_token = _load_lease_credential(arguments)
+            validation = validate_release_packages(
+                packages,
+                arguments.version,
+            )
+            _validate_transaction_artifacts(
+                verification["manifest"],
+                validation["artifacts"],
+            )
+            with sqlite3.connect(arguments.database) as connection:
+                connection.row_factory = sqlite3.Row
+                lease = acquire_release_lease(
+                    connection,
+                    verification=verification,
+                    signature_payload=signature_payload,
+                    public_key_text=public_key_text,
+                    holder_id=holder_id,
+                    lease_token=lease_token,
+                    ttl_seconds=arguments.lease_ttl_seconds,
+                )
+            if lease.get("mode") != "writer":
+                print(json.dumps(lease, ensure_ascii=False, indent=2))
+                return
+            if STATE_RANK.get(str(lease.get("state")), -1) < STATE_RANK[
+                "github_staged"
+            ]:
+                raise RuntimeError(
+                    "GitHub尚未在签名发布事务中完成预发布，禁止门户暂存"
+                )
         if arguments.mode == "stage-artifact":
             if arguments.target is None or set(packages) != {arguments.target}:
                 parser.error(
@@ -1400,6 +1620,25 @@ def main() -> None:
                 arguments.git_commit,
                 arguments.github_url,
             )
+            with sqlite3.connect(arguments.database) as connection:
+                connection.row_factory = sqlite3.Row
+                transaction = transition_release_transaction(
+                    connection,
+                    version=arguments.version,
+                    transaction_sha256=str(
+                        verification["manifest_sha256"]
+                    ),
+                    holder_id=holder_id,
+                    lease_token=lease_token,
+                    target_state="portal_staged",
+                    evidence={
+                        "status": result.get("status"),
+                        "artifacts": result.get("artifacts"),
+                        "github_url": result.get("github_url"),
+                    },
+                    ttl_seconds=arguments.lease_ttl_seconds,
+                )
+            result["release_transaction"] = transaction
     elif arguments.mode == "promote-artifact":
         if arguments.target is None:
             parser.error("promote-artifact 必须提供 --target")
@@ -1410,11 +1649,84 @@ def main() -> None:
             arguments.target,
         )
     else:
+        if (
+            arguments.lease_credential_file is None
+            and not arguments.lease_credential_stdin
+        ):
+            parser.error("promote必须提供租约凭证")
+        verification, signature_payload, public_key_text = (
+            _load_verified_transaction(arguments)
+        )
+        holder_id, lease_token = _load_lease_credential(arguments)
+        with sqlite3.connect(arguments.database) as connection:
+            connection.row_factory = sqlite3.Row
+            lease = acquire_release_lease(
+                connection,
+                verification=verification,
+                signature_payload=signature_payload,
+                public_key_text=public_key_text,
+                holder_id=holder_id,
+                lease_token=lease_token,
+                ttl_seconds=arguments.lease_ttl_seconds,
+            )
+        if lease.get("mode") != "writer":
+            print(json.dumps(lease, ensure_ascii=False, indent=2))
+            return
+        if STATE_RANK.get(str(lease.get("state")), -1) < STATE_RANK[
+            "installed"
+        ]:
+            raise RuntimeError(
+                "本机安装端尚未在签名发布事务中完成验签，禁止门户提升"
+            )
+        participants = verification["manifest"].get("participants")
+        portal_contract = (
+            participants.get("portal")
+            if isinstance(participants, dict)
+            else None
+        )
+        if not isinstance(portal_contract, dict):
+            raise RuntimeError("发布事务清单缺少portal参与方")
+        with sqlite3.connect(arguments.database) as connection:
+            connection.row_factory = sqlite3.Row
+            rows = connection.execute(
+                """
+                SELECT target,sha256 FROM skill_release_stage_artifacts
+                WHERE version=? ORDER BY target
+                """,
+                (arguments.version,),
+            ).fetchall()
+        staged_artifacts = {
+            str(row["target"]): {"sha256": str(row["sha256"])}
+            for row in rows
+        }
+        _validate_transaction_artifacts(
+            verification["manifest"],
+            staged_artifacts,
+        )
         result = promote_selective(
             arguments.database,
             arguments.release_dir,
             arguments.version,
         )
+        with sqlite3.connect(arguments.database) as connection:
+            connection.row_factory = sqlite3.Row
+            transaction = transition_release_transaction(
+                connection,
+                version=arguments.version,
+                transaction_sha256=str(
+                    verification["manifest_sha256"]
+                ),
+                holder_id=holder_id,
+                lease_token=lease_token,
+                target_state="portal_published",
+                evidence={
+                    "release_id": result.get("release_id"),
+                    "artifacts": result.get("artifacts"),
+                    "promoted_at": result.get("promoted_at"),
+                },
+                ttl_seconds=arguments.lease_ttl_seconds,
+            )
+        result["release_transaction"] = transaction
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
