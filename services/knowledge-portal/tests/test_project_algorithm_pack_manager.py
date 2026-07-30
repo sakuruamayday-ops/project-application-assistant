@@ -5,7 +5,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from app.project_decision import validate_project_algorithm_pack
+from app.project_decision import (
+    select_project_algorithm_rules,
+    validate_project_algorithm_pack,
+)
 
 
 SCRIPT_PATH = (
@@ -135,6 +138,57 @@ def test_generate_requires_audited_current_rules_and_builds_gold_cases(tmp_path)
         "ineligible",
     ]
     assert not validate_project_algorithm_pack(pack)
+
+
+def test_generate_preserves_rd_family_name_and_jurisdiction_source_contract(
+    tmp_path,
+):
+    portal_dir = Path(__file__).resolve().parents[1]
+    sources = portal_dir / "references" / "project-algorithm-rule-sources"
+    fact_contract = portal_dir / "references" / "lifecycle-fact-contract.json"
+
+    rd_output = tmp_path / "hangzhou-enterprise-institute.json"
+    MANAGER.generate_from_confirmed_rules(
+        input_path=sources / "hangzhou-enterprise-institute.json",
+        output_path=rd_output,
+        fact_contract_path=fact_contract,
+    )
+    rd_pack = json.loads(rd_output.read_text(encoding="utf-8"))
+    assert rd_pack["project_name"] == "市级研发中心（四市属地版）"
+    assert "杭州市企业研究院" in rd_pack["aliases"]
+    prospective = next(
+        layer
+        for layer in rd_pack["rule_layers"]
+        if layer["layer_type"] == "prospective"
+    )
+    assert prospective["replacement_signal"] == "explicit-replacement"
+    assert prospective["replaces_policy_title"].startswith(
+        "《杭州市企业高新技术研究开发中心管理办法》"
+    )
+
+    green_output = tmp_path / "green-factory-1.json"
+    MANAGER.generate_from_confirmed_rules(
+        input_path=sources / "green-factory-1.json",
+        output_path=green_output,
+        fact_contract_path=fact_contract,
+    )
+    green_pack = json.loads(green_output.read_text(encoding="utf-8"))
+    assert green_pack["jurisdiction_source_contract"][
+        "required_for_formal_decision"
+    ] is True
+    assert green_pack["rule_layers"][0]["source_scope_level"] == "province"
+    selected = select_project_algorithm_rules(
+        green_pack,
+        {
+            "evaluation_mode": "current-assessment",
+            "city": "杭州市",
+            "jurisdiction": "滨江区",
+        },
+    )
+    assert selected["policy_time"]["status"] == (
+        "unresolved-jurisdiction-policy"
+    )
+    assert selected["rules"] == []
 
 
 def test_generate_builds_stable_annual_and_jurisdiction_layers(tmp_path):
@@ -599,6 +653,73 @@ def test_release_validator_blocks_missing_high_frequency_pack(tmp_path):
     assert result.returncode == 2
     assert report["coverage"] == "incomplete"
     assert report["missing_projects"] == ["必须覆盖的项目"]
+
+
+def test_release_validator_accepts_renamed_project_through_registered_alias(tmp_path):
+    rules_path = tmp_path / "rules.json"
+    pack_dir = tmp_path / "packs"
+    fact_contract = tmp_path / "facts.json"
+    write_json(
+        rules_path,
+        {
+            "rules": [
+                {
+                    "id": "renamed-project",
+                    "aliases": [],
+                    "targets": ["旧项目名称"],
+                }
+            ]
+        },
+    )
+    write_json(fact_contract, {"fields": []})
+    pack_dir.mkdir()
+    write_json(
+        pack_dir / "renamed-project.json",
+        {
+            "schema_version": 1,
+            "project_id": "renamed-project",
+            "project_name": "新项目族名称",
+            "version": "1.0",
+            "coverage_status": "routing-only",
+            "aliases": ["旧项目名称"],
+            "source_retrieval_rule_ids": ["renamed-project"],
+            "fact_fields": [],
+            "rule_cards": [],
+            "gold_cases": [
+                {
+                    "case_id": "rules-pending",
+                    "facts": [],
+                    "confirm_rule_ids": [],
+                    "expected_conclusion": "undetermined",
+                }
+            ],
+        },
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(
+                Path(__file__).resolve().parents[1]
+                / "scripts"
+                / "validate_project_algorithm_packs.py"
+            ),
+            "--packs-dir",
+            str(pack_dir),
+            "--fact-contract",
+            str(fact_contract),
+            "--retrieval-rules",
+            str(rules_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    report = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert report["coverage"] == "100%"
+    assert report["missing_projects"] == []
 
 
 def test_production_deployment_includes_algorithm_references_and_rollback():

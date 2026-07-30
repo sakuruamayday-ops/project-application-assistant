@@ -442,6 +442,8 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                     "source_url",
                     "source_archive_path",
                     "source_archive_sha256",
+                    "source_scope_level",
+                    "source_scope_region",
                 )
                 if str(source.get(key) or "").strip()
             },
@@ -512,7 +514,11 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                             "enterprise_deadline_note",
                             "provincial_review_schedule",
                             "replaces_rule_ids",
+                            "replacement_signal",
+                            "replaces_policy_title",
                             "transition_notice",
+                            "source_scope_level",
+                            "source_scope_region",
                         )
                         if key == "enterprise_deadline"
                         or (
@@ -604,6 +610,7 @@ def generate_from_confirmed_rules(
                 "variant_of",
                 "ui_hidden",
                 "policy_transition",
+                "jurisdiction_source_contract",
             )
             if key in source
         },

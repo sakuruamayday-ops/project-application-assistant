@@ -22,6 +22,7 @@
   },
   "shared_execution_kernels": [
     "task-omission-preflight",
+    "conversation-continuity-preflight",
     "project-router",
     "policy-version-gate",
     "policy-time-type-checker",
@@ -61,6 +62,7 @@
   },
   "quality_gates": {
     "task_preflight_required": true,
+    "conversation_continuity_required": true,
     "policy_time_checked": true,
     "native_rule_combinator": true,
     "composite_rule_structure": {
@@ -83,5 +85,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "f0a07beee44143a8b7fdad9f4290d0e6d2acc5eca74195cba09dcae5b1b41534"
+  "compile_input_hash": "3b8bed86d2fb9c47e9d564ec2d0925536b9d9c7605d8577b2106b4fd0fa1083b"
 }

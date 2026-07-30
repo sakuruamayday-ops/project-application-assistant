@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
   "ir_type": "jiaotang-unified-project-rule-ir",
-  "source_digest": "1a3388f0fee5f05a51e14fd88ba72e15f8c7fc73bee7720ef30849b6e99697b8",
+  "source_digest": "3318407e599dede706ff303758f4b2df4fde81fa1915b22d57b6bc859fe71640",
   "shared_kernel": {
-    "version": "1.4",
+    "version": "1.5",
     "components": [
       "task-omission-preflight",
+      "conversation-continuity-preflight",
       "project-router",
       "policy-version-gate",
       "policy-time-type-checker",
@@ -713,8 +714,8 @@
       "ir_node_id": "project:digital-workshop",
       "policy_version_id": "policy-9bc60a71033accfd80d2",
       "source_content_hash": "8d6b6e1fddc6fbe741d01db39da56628739f28b02e6e4b1e971fe56d4fc617cc",
-      "compile_input_hash": "5ea98c303eadd5afbc5712751986e9ca2ce881655cea1c831df3a9c2b9a47b0d",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "e1741e32cb2f27f8c25d31070ffa5d181060074e59996c2a15cb76a3603204c3",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "first-equipment": {
@@ -1543,8 +1544,8 @@
       "ir_node_id": "project:first-equipment",
       "policy_version_id": "policy-5df6d2e04bd0b44961ba",
       "source_content_hash": "f1993aacad460a9f8ba34bf15c55e495845e9c53feb6acfa76b537741d9240aa",
-      "compile_input_hash": "5856b25eaa04578183f9ce97eb278b8180b1fa5d9bd098d2e8ffac9e43ac88e8",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "2716bf0e02ace8e4e26a30f156adfd73c26549310af2e939fca80d65e43ff2ae",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "first-material-batch": {
@@ -2344,8 +2345,8 @@
       "ir_node_id": "project:first-material-batch",
       "policy_version_id": "policy-b7a024455875df3701bc",
       "source_content_hash": "bb7b928a899eae85e244e2ada1e61657ed6f9f3ef47907819b99d3ebf79a8a71",
-      "compile_input_hash": "e3cf5f085220fb283b5ef232c5279385802b439ab74c3cbcb97de861b0ca8159",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "7201426ee907f462cf4c6f1b4215833571c4aad16c1ec25ade38252064d3d55d",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "first-software-version": {
@@ -4124,8 +4125,8 @@
       "ir_node_id": "project:first-software-version",
       "policy_version_id": "policy-90fe31e34830d4ea3815",
       "source_content_hash": "bdad0a2ec9845a9c94ce1a79e5fca1ae490ed45060c2f75d9c4eb711be9f3ec6",
-      "compile_input_hash": "b5c13aab07441961e09ce1f95629954d5dff871b6c6339ff48912e5d68545eac",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "e0a53f207680bf8ada0aa4af31303639b7c127b48a292d95396a938b1f4c8c68",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "future-factory": {
@@ -4621,8 +4622,8 @@
       "ir_node_id": "project:future-factory",
       "policy_version_id": "policy-e0c8a5842e026406ed97",
       "source_content_hash": "a9fa5e5559fcd4ead339038be6b06173ebfe2cac649e79fce7dba646941883dd",
-      "compile_input_hash": "baa8693774ccc566a21a5615b2a1f8d2061f35cf5ac2018d86abf69771544ce0",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "4a3075c4cbe14957bb0ce44667b6ee72246cafe3bf9d456d69f113d0ffcbd206",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "green-factory-1": {
@@ -4637,6 +4638,18 @@
       "source_retrieval_rule_ids": [
         "green-factory"
       ],
+      "jurisdiction_source_contract": {
+        "required_for_formal_decision": true,
+        "required_scope_levels": [
+          "city",
+          "district"
+        ],
+        "forbidden_scope_levels": [
+          "province"
+        ],
+        "unresolved_status": "unresolved-jurisdiction-policy",
+        "unresolved_reason": "区级绿色工厂必须命中企业所在设区市或区县的正式项目规则；省级绿色低碳工厂规则只能作为检索线索，不能替代区级项目门槛。"
+      },
       "fact_fields": [
         {
           "field": "green_factory_1_jurisdiction_rule_resolved",
@@ -4990,6 +5003,8 @@
           "label": "稳定管理办法",
           "applicability": {},
           "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+          "source_scope_level": "province",
+          "source_scope_region": "浙江省",
           "rules": [
             {
               "rule_id": "green-factory-1-1",
@@ -5189,6 +5204,8 @@
           },
           "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
           "enterprise_deadline": null,
+          "source_scope_level": "province",
+          "source_scope_region": "浙江省",
           "rules": [
             {
               "rule_id": "green-factory-1-local-thresholds",
@@ -5611,10 +5628,10 @@
         "dependencies": []
       },
       "ir_node_id": "project:green-factory-1",
-      "policy_version_id": "policy-09bf8be2b8c3b630f46f",
-      "source_content_hash": "1d9b06331099bd9452608ce640fa8da0fc132cc20857211942e9a83e5459c569",
-      "compile_input_hash": "b31765345bf7f9badd8179c2173f8c57e27e840456bda63e31c481093028052c",
-      "shared_kernel_version": "1.4",
+      "policy_version_id": "policy-8f939e90f37ceb8b22e3",
+      "source_content_hash": "d6dbb1ac2ba4e8167c0d00a9072a6b1dc43436b7fe3409e754fef49d62cf0e82",
+      "compile_input_hash": "409bc117f5a8168150b1d4ed1c5f59fa96df1968cef7404d5f84cd7cf0ff0fe6",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "green-factory-2": {
@@ -6605,8 +6622,8 @@
       "ir_node_id": "project:green-factory-2",
       "policy_version_id": "policy-3e0fae449f99284812aa",
       "source_content_hash": "d0bd9b8849f2a2767e792cd7e97ada1106ef9f1256e3d6416caac307cf0d26b4",
-      "compile_input_hash": "1db10fc9f0d462541af122b946b5cb5a57b027d2a3a02c74801fbbc1f0f8029f",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "5e9c54d7f540ac4017c25d709ae4c6f053a8ce730120ff3ed4ca44f1bf9ec5e5",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "green-factory-3": {
@@ -7597,8 +7614,8 @@
       "ir_node_id": "project:green-factory-3",
       "policy_version_id": "policy-014872608585cd65cdb3",
       "source_content_hash": "493acf7b514e9ea6d7b6be238b0cd42990a7bfa7c1861e58ae73f1e59e6c6d06",
-      "compile_input_hash": "b2bdef0f294d104fb0fdab16a90d06dfd87cb9b51df3447f01e2d4c8f4788241",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "5efdc94abe5fd9b3d160e024ec128730128b23c293e0321ae79dca912e67d0c5",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "green-factory-4": {
@@ -8120,8 +8137,8 @@
       "ir_node_id": "project:green-factory-4",
       "policy_version_id": "policy-7511e12cda0ed8abda6e",
       "source_content_hash": "79be760cc98ee47e11f8e4d18b7d571db4c674e2392df5f7989b73d01f2f8f85",
-      "compile_input_hash": "aad28fb363f11bb832e1506be9ccfb77a5dec2d3a597dbe5ab58e89138168db2",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "ead395b9c6cfa5c36a10c36b3ebd10f902b85da8110f0baab3b63580a7906b26",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "national-green-factory",
         "project_name": "国家绿色工厂",
@@ -8150,13 +8167,20 @@
     "hangzhou-enterprise-institute": {
       "schema_version": 1,
       "project_id": "hangzhou-enterprise-institute",
-      "project_name": "杭州市企业研究院",
+      "project_name": "市级研发中心（四市属地版）",
       "version": "2022-formal-plus-2026-consultation-transition-20260730",
       "coverage_status": "rules-confirmed",
       "aliases": [
         "杭州研发中心",
         "杭州市研发中心",
-        "市高企研发中心"
+        "市高企研发中心",
+        "杭州市企业研究院",
+        "杭州市重点企业研究院",
+        "杭州市企业高新技术研究开发中心",
+        "宁波市重点企业研究院",
+        "宁波市企业技术研发中心",
+        "绍兴市企业研究开发中心",
+        "金华市科学技术研究开发中心"
       ],
       "source_retrieval_rule_ids": [
         "hangzhou-enterprise-institute"
@@ -8867,6 +8891,8 @@
             "hz-rd-compliance",
             "hz-rd-materials"
           ],
+          "replacement_signal": "explicit-replacement",
+          "replaces_policy_title": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
           "transition_notice": "市企业高新技术研究开发中心拟停止认定，相关资质拟迁移为市企业研究院；正式发布前仅作前瞻准备和差距评估。",
           "rules": [
             {
@@ -9504,10 +9530,10 @@
         ]
       },
       "ir_node_id": "project:hangzhou-enterprise-institute",
-      "policy_version_id": "policy-033c259e32559434fe49",
-      "source_content_hash": "50f2075938b70739add932010c6b3d89f6acf80ea7a13bc56eb42fd914f3bdbe",
-      "compile_input_hash": "63f2a1602476f9b17178cf152714660ea369db8df3333cab65bf900bef4d729e",
-      "shared_kernel_version": "1.4",
+      "policy_version_id": "policy-6bd992eca402dca35b23",
+      "source_content_hash": "a0ac1d4a5d481a522f16291e6173b95e957f739dd18b202bc745faa0f205a27b",
+      "compile_input_hash": "73697697ed59b88550b6cbc4f91281fc86590a8366c238b81c53c83445287d5e",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "hangzhou-enterprise-technology-center": {
@@ -10309,8 +10335,8 @@
       "ir_node_id": "project:hangzhou-enterprise-technology-center",
       "policy_version_id": "policy-c98e4015479d64be728c",
       "source_content_hash": "37e5db20e130e581443d7cb0b42604e856ace205ecc5632f84fbb22f595bb805",
-      "compile_input_hash": "82c5b6da7eea923389eb014b18d22b398b3e4baf88ec080c786ef7c48752809f",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "fd5d652c7e5bff663b1d0be9ae996e16bb1dea548dd68a8009d04436725f6e04",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "hangzhou-enterprise-technology-center-lifecycle",
         "project_name": "杭州市企业技术中心",
@@ -10827,8 +10853,8 @@
       "ir_node_id": "project:intelligent-factory",
       "policy_version_id": "policy-b47c249c68eed5649684",
       "source_content_hash": "ffa64ef3d7ecaaa6e76b18650b482395677a51e2402143e945003a340021e0cb",
-      "compile_input_hash": "713a00da2a869feb95c696d0b05e8b4588803bac9c7af7d9187209c7047aa1e3",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "7d230d8a7514b6d4ff5b3e99c1881acc27f3c138314a3ff4a587cdfc29678437",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "key-little-giant-support": {
@@ -11671,8 +11697,8 @@
       "ir_node_id": "project:key-little-giant-support",
       "policy_version_id": "policy-f1dc8f9b27fcd1870c93",
       "source_content_hash": "9493518c0007e55ee8c14f5b0cb373cfb57fa6fcf587fb51197d5010169e4deb",
-      "compile_input_hash": "868c55423a3fd19e485bf6159eaa7b9e6a4e0952b65eba920c8656011b0d48c4",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "4ae6b74997dc1448122dc552401ffff80b0b12831143198f1e3d1e7528764a6c",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "little-giant": {
@@ -13082,8 +13108,8 @@
       "ir_node_id": "project:little-giant",
       "policy_version_id": "policy-56caea550262ec7c9ac6",
       "source_content_hash": "52c3156b8a5994d5952ce81f8198e4808b0835169edc4b74a88cd96d02b06d15",
-      "compile_input_hash": "8a46e9922be7e694d8633e7b623bbda938536f915d8e2f266b9f4a2b79c19662",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "b8a4254331e1d13312af49057c49c417dc6021a0febefae588e502410447c25c",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "national-little-giant",
         "project_name": "国家专精特新“小巨人”企业",
@@ -14586,8 +14612,8 @@
       "ir_node_id": "project:manufacturing-single-champion-1",
       "policy_version_id": "policy-b6def70071a088cbb1ee",
       "source_content_hash": "c6c1de281dd10c61b9a2ff764669edf28e534dd2641f066a1ee1991388a5e985",
-      "compile_input_hash": "add2e98aa5a18d89fe1baa03bd9a6ae8567ba4b7703881caa70f39e05283c46b",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "230c65f42811b395f10ba1b2edbcea6823ee9ee82d8fc452b18a2feefb02a5e2",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "zhejiang-manufacturing-single-champion",
         "project_name": "浙江省制造业单项冠军企业",
@@ -15479,8 +15505,8 @@
       "ir_node_id": "project:manufacturing-single-champion-2",
       "policy_version_id": "policy-b04ece5c1477acd1efe5",
       "source_content_hash": "0b02e6a350cea9c4f09587b0756f44fe86a644ca1a9f033882b6d89a22cbfd70",
-      "compile_input_hash": "1eddbb57592ebcc25d61403294621706920baa77fb8b57205ef060f296cdc8cc",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "3e189e5b728976d059ec9f52ec308263727994cea01ea30a00e7ce0d646ff1c5",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "national-manufacturing-single-champion",
         "project_name": "国家制造业单项冠军企业",
@@ -16083,8 +16109,8 @@
       "ir_node_id": "project:municipal-enterprise-technology-center",
       "policy_version_id": "policy-16e247b21fc4f3b4edd9",
       "source_content_hash": "05a2a1ac26f39c924817d6de7fa1aaf88e5e85714a07a10a0bb1764b80651ead",
-      "compile_input_hash": "41fc54c1eabf20deb21367f3c5c9309e9ba06b066df33116ca61fdbedc2690ec",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "f8471d05067b4ac0143a3b7c57d9bc118596a25e5cf2416b82f0ecfdee18e82e",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "hangzhou-enterprise-technology-center-lifecycle",
         "project_name": "杭州市企业技术中心",
@@ -17347,8 +17373,8 @@
       "ir_node_id": "project:national-high-tech-enterprise",
       "policy_version_id": "policy-90a54326e73196ab0260",
       "source_content_hash": "ec23e0b920182ffd4eb7fce9f0344cd00ebdb9b632aa135d05e313747916eda2",
-      "compile_input_hash": "d51697dbf5df716adc63a8f66c2ae5b57362c8e65cb6fa8bcfcff6f6c264bb42",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "1747b19c856072d5ee467b4e5d168906c02236506d20e066eaf4a9b8f373df8f",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "national-high-tech-enterprise",
         "project_name": "国家高新技术企业",
@@ -18214,8 +18240,8 @@
       "ir_node_id": "project:technology-sme-1",
       "policy_version_id": "policy-446163e9745a87780eb5",
       "source_content_hash": "1415d76ac82c3266883ee8bea2ca77be1344746eb4c7c2797c0c41d0dc97648f",
-      "compile_input_hash": "a83ede39d4b11a03e1efcc730111e1d6f724189950c2d89000d979d49f70cfee",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "eff0cd3f59aa6ac34754389506f93d1d00cc591369e96b3de52bfce877e00b5f",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "technology-sme-2": {
@@ -18987,8 +19013,8 @@
       "ir_node_id": "project:technology-sme-2",
       "policy_version_id": "policy-0fe5e158d608e38cfc07",
       "source_content_hash": "6b124cef92c3f67ab9acaf54e629efead5be6291f7700a1f4130b6a50fcc9578",
-      "compile_input_hash": "da6f0a7bc912c5489e176907ec9ffc8c8a773ae1c16605437b391368bd05f406",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "4bc438117f8bbd9616e74c2538c853deee6fde1501a2a0268f654ec1ae9f5281",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "national-technology-sme",
         "project_name": "国家科技型中小企业",
@@ -19868,8 +19894,8 @@
       "ir_node_id": "project:zhejiang-enterprise-institute",
       "policy_version_id": "policy-2adbb6c7293e900cc6b9",
       "source_content_hash": "f38eb1323a6eb37e608f0536fd13fb06e0d9d88eca634d8821a2d7a5a95ae868",
-      "compile_input_hash": "fa84022eebe3db60a4c9fc2f5d52ca2236eee0edbc9d4e68a0d2a13c39bdb3dd",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "8eaf9fc11c791e3dff5e2567019612a7aa4e3685b49bd720119b6b829582026b",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "zhejiang-enterprise-institute",
         "project_name": "浙江省企业研究院",
@@ -21123,8 +21149,8 @@
       "ir_node_id": "project:zhejiang-enterprise-technology-center",
       "policy_version_id": "policy-0a49f94464d73e70eccc",
       "source_content_hash": "088e1acde1a9066f7d5ced07924560d63df983e65a11214e6aa9c791ebc2159d",
-      "compile_input_hash": "2a466b39a5743ef832510a3c738156b434d8451a6f782fce089d14c8794d0c15",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "704109d16870da84e238adb49290e97cdb771e31120399198dc0315f2c0b7e5f",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "zhejiang-hidden-champion": {
@@ -22640,8 +22666,8 @@
       "ir_node_id": "project:zhejiang-hidden-champion",
       "policy_version_id": "policy-a27400b330359ae77e3e",
       "source_content_hash": "e1a24824bc316aceb349a7952ae742f11386f9ce51adf8cda55351c0a1f4228a",
-      "compile_input_hash": "b28c850c5d615a710989d4bf5dcfd56e9ca287154d2e76986685c7dfbe1630bb",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "5a10225574502f5fe620f02a90184905aba056f7c08055dbaf410791664fba68",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "zhejiang-hidden-champion",
         "project_name": "浙江省隐形冠军企业",
@@ -22938,8 +22964,8 @@
       "ir_node_id": "project:zhejiang-industrial-new-product",
       "policy_version_id": "policy-3175adfdfb96ec7f0488",
       "source_content_hash": "50eb9c641edad43e65c93d63252bdd9a47b9516bb16b6ea7c3390ebc67b19ae4",
-      "compile_input_hash": "cfac82ca961e48e6cfb0535e74e0878e7542f1161bbd579576c522f7276edda9",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "3aaa6e938e845d49ae715e471a8640daac659231081a8ae89eb2dc5447f828a8",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "zhejiang-key-enterprise-institute": {
@@ -23919,8 +23945,8 @@
       "ir_node_id": "project:zhejiang-key-enterprise-institute",
       "policy_version_id": "policy-1ddf328a212fab8d5ff2",
       "source_content_hash": "1ee980d7eda569f468a98c54db9827375ab61bc92c22167ec39377f66b0cc554",
-      "compile_input_hash": "f0a07beee44143a8b7fdad9f4290d0e6d2acc5eca74195cba09dcae5b1b41534",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "3b8bed86d2fb9c47e9d564ec2d0925536b9d9c7605d8577b2106b4fd0fa1083b",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "zhejiang-key-enterprise-institute",
         "project_name": "浙江省重点企业研究院",
@@ -25139,8 +25165,8 @@
       "ir_node_id": "project:zhejiang-key-specialized-sme",
       "policy_version_id": "policy-c794ae0e49f663ca709a",
       "source_content_hash": "f530e8fc0569aab10065206e284e73e1ccbd37167a6ff8fdf8e1431f22562c64",
-      "compile_input_hash": "fcc60a0a0ca196dcd4ebd29d48604ba3976b7c447d600bbbddb38670d709cfcc",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "02b9200b65bf7455e0bff652d3cd048cdf65d1126c27b5045cc213108e77b51d",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "zhejiang-manufacturing-2": {
@@ -25640,8 +25666,8 @@
       "ir_node_id": "project:zhejiang-manufacturing-2",
       "policy_version_id": "policy-25e8d7b1b9c9bbf0dd58",
       "source_content_hash": "70c5e6d77a1e15d136166b7375eda8ada18548f34eea02cdbac99f6a799bb65b",
-      "compile_input_hash": "b3d8dc5b00a5f51bbc693d5dcfbebe75e12c5948fa7dc66378a9148692321c7c",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "20f93806379d3f88018d7d236c529674dfc6d9fa18fec610fcdf83c319bfd726",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "zhejiang-manufacturing-quality": {
@@ -26648,8 +26674,8 @@
       "ir_node_id": "project:zhejiang-manufacturing-quality",
       "policy_version_id": "policy-54fbcedf13401c12ad1e",
       "source_content_hash": "8fc6a6f84859b89b1ce7107ea6b95e8fcbba2c8b4aea0e9f2f10194f69515051",
-      "compile_input_hash": "061aeb612fcd38ac933e663ef40701dfcbf197f9fa542508013c36c9cdb2ae49",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "60cae5beda2484491e723ec4f17f4b8ad1b0f1e1885068a15762d03ea54d1238",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {}
     },
     "zhejiang-specialized-sme": {
@@ -27665,8 +27691,8 @@
       "ir_node_id": "project:zhejiang-specialized-sme",
       "policy_version_id": "policy-a17575d282319cc1d52b",
       "source_content_hash": "d1599e98fe4bf2ecbbd2fc83623d3933f59c6283642738b6e353e6d905230b5c",
-      "compile_input_hash": "bacbefff282cb58cefd5bffd89cc601c7b5b261df5393f8bb54fe529c1d372f0",
-      "shared_kernel_version": "1.4",
+      "compile_input_hash": "2d0e43415d83eac0fcbe3041d9834a0ca0bd43bf61e471487b4816288a42f6a2",
+      "shared_kernel_version": "1.5",
       "lifecycle_rule": {
         "rule_id": "zhejiang-specialized-sme",
         "project_name": "浙江省专精特新中小企业",
@@ -27853,6 +27879,12 @@
       "宁波市企业技术中心": [
         "municipal-enterprise-technology-center"
       ],
+      "宁波市企业技术研发中心": [
+        "hangzhou-enterprise-institute"
+      ],
+      "宁波市重点企业研究院": [
+        "hangzhou-enterprise-institute"
+      ],
       "小巨人": [
         "little-giant"
       ],
@@ -27867,6 +27899,9 @@
       ],
       "市级企业技术中心四市属地版": [
         "municipal-enterprise-technology-center"
+      ],
+      "市级研发中心四市属地版": [
+        "hangzhou-enterprise-institute"
       ],
       "市级绿色工厂": [
         "green-factory-2"
@@ -27894,7 +27929,13 @@
       "杭州市企业研究院": [
         "hangzhou-enterprise-institute"
       ],
+      "杭州市企业高新技术研究开发中心": [
+        "hangzhou-enterprise-institute"
+      ],
       "杭州市研发中心": [
+        "hangzhou-enterprise-institute"
+      ],
+      "杭州市重点企业研究院": [
         "hangzhou-enterprise-institute"
       ],
       "杭州研发中心": [
@@ -28003,6 +28044,9 @@
       "绍兴市企业技术中心": [
         "municipal-enterprise-technology-center"
       ],
+      "绍兴市企业研究开发中心": [
+        "hangzhou-enterprise-institute"
+      ],
       "绍兴市市级企业技术中心": [
         "municipal-enterprise-technology-center"
       ],
@@ -28029,6 +28073,9 @@
       ],
       "金华市企业技术中心": [
         "municipal-enterprise-technology-center"
+      ],
+      "金华市科学技术研究开发中心": [
+        "hangzhou-enterprise-institute"
       ],
       "隐形冠军": [
         "zhejiang-hidden-champion"
@@ -28064,11 +28111,11 @@
       "first-material-batch": "policy-b7a024455875df3701bc",
       "first-software-version": "policy-90fe31e34830d4ea3815",
       "future-factory": "policy-e0c8a5842e026406ed97",
-      "green-factory-1": "policy-09bf8be2b8c3b630f46f",
+      "green-factory-1": "policy-8f939e90f37ceb8b22e3",
       "green-factory-2": "policy-3e0fae449f99284812aa",
       "green-factory-3": "policy-014872608585cd65cdb3",
       "green-factory-4": "policy-7511e12cda0ed8abda6e",
-      "hangzhou-enterprise-institute": "policy-033c259e32559434fe49",
+      "hangzhou-enterprise-institute": "policy-6bd992eca402dca35b23",
       "hangzhou-enterprise-technology-center": "policy-c98e4015479d64be728c",
       "intelligent-factory": "policy-b47c249c68eed5649684",
       "key-little-giant-support": "policy-f1dc8f9b27fcd1870c93",
@@ -28115,6 +28162,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28154,6 +28202,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28176,7 +28225,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "5ea98c303eadd5afbc5712751986e9ca2ce881655cea1c831df3a9c2b9a47b0d"
+      "compile_input_hash": "e1741e32cb2f27f8c25d31070ffa5d181060074e59996c2a15cb76a3603204c3"
     },
     "first-equipment": {
       "schema_version": 1,
@@ -28202,6 +28251,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28241,6 +28291,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28263,7 +28314,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "5856b25eaa04578183f9ce97eb278b8180b1fa5d9bd098d2e8ffac9e43ac88e8"
+      "compile_input_hash": "2716bf0e02ace8e4e26a30f156adfd73c26549310af2e939fca80d65e43ff2ae"
     },
     "first-material-batch": {
       "schema_version": 1,
@@ -28289,6 +28340,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28328,6 +28380,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28350,7 +28403,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "e3cf5f085220fb283b5ef232c5279385802b439ab74c3cbcb97de861b0ca8159"
+      "compile_input_hash": "7201426ee907f462cf4c6f1b4215833571c4aad16c1ec25ade38252064d3d55d"
     },
     "first-software-version": {
       "schema_version": 1,
@@ -28376,6 +28429,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28415,6 +28469,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28437,7 +28492,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "b5c13aab07441961e09ce1f95629954d5dff871b6c6339ff48912e5d68545eac"
+      "compile_input_hash": "e0a53f207680bf8ada0aa4af31303639b7c127b48a292d95396a938b1f4c8c68"
     },
     "future-factory": {
       "schema_version": 1,
@@ -28463,6 +28518,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28502,6 +28558,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28524,7 +28581,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "baa8693774ccc566a21a5615b2a1f8d2061f35cf5ac2018d86abf69771544ce0"
+      "compile_input_hash": "4a3075c4cbe14957bb0ce44667b6ee72246cafe3bf9d456d69f113d0ffcbd206"
     },
     "green-factory-1": {
       "schema_version": 1,
@@ -28535,7 +28592,7 @@
       "project_name": "区级绿色工厂",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-09bf8be2b8c3b630f46f",
+      "policy_version_id": "policy-8f939e90f37ceb8b22e3",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -28550,6 +28607,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28589,6 +28647,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28611,7 +28670,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "b31765345bf7f9badd8179c2173f8c57e27e840456bda63e31c481093028052c"
+      "compile_input_hash": "409bc117f5a8168150b1d4ed1c5f59fa96df1968cef7404d5f84cd7cf0ff0fe6"
     },
     "green-factory-2": {
       "schema_version": 1,
@@ -28637,6 +28696,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28676,6 +28736,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28698,7 +28759,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "1db10fc9f0d462541af122b946b5cb5a57b027d2a3a02c74801fbbc1f0f8029f"
+      "compile_input_hash": "5e9c54d7f540ac4017c25d709ae4c6f053a8ce730120ff3ed4ca44f1bf9ec5e5"
     },
     "green-factory-3": {
       "schema_version": 1,
@@ -28724,6 +28785,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28763,6 +28825,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28785,7 +28848,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "b2bdef0f294d104fb0fdab16a90d06dfd87cb9b51df3447f01e2d4c8f4788241"
+      "compile_input_hash": "5efdc94abe5fd9b3d160e024ec128730128b23c293e0321ae79dca912e67d0c5"
     },
     "green-factory-4": {
       "schema_version": 1,
@@ -28811,6 +28874,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28850,6 +28914,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28872,18 +28937,18 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "aad28fb363f11bb832e1506be9ccfb77a5dec2d3a597dbe5ab58e89138168db2"
+      "compile_input_hash": "ead395b9c6cfa5c36a10c36b3ebd10f902b85da8110f0baab3b63580a7906b26"
     },
     "hangzhou-enterprise-institute": {
       "schema_version": 1,
       "algorithm_id": "project-decision-hangzhou-enterprise-institute",
-      "algorithm_name": "杭州市企业研究院项目决策算法",
+      "algorithm_name": "市级研发中心（四市属地版）项目决策算法",
       "algorithm_version": "2022-formal-plus-2026-consultation-transition-20260730",
       "project_id": "hangzhou-enterprise-institute",
-      "project_name": "杭州市企业研究院",
+      "project_name": "市级研发中心（四市属地版）",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-033c259e32559434fe49",
+      "policy_version_id": "policy-6bd992eca402dca35b23",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -28898,6 +28963,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -28937,6 +29003,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -28959,7 +29026,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "63f2a1602476f9b17178cf152714660ea369db8df3333cab65bf900bef4d729e"
+      "compile_input_hash": "73697697ed59b88550b6cbc4f91281fc86590a8366c238b81c53c83445287d5e"
     },
     "hangzhou-enterprise-technology-center": {
       "schema_version": 1,
@@ -28985,6 +29052,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29024,6 +29092,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29046,7 +29115,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "82c5b6da7eea923389eb014b18d22b398b3e4baf88ec080c786ef7c48752809f"
+      "compile_input_hash": "fd5d652c7e5bff663b1d0be9ae996e16bb1dea548dd68a8009d04436725f6e04"
     },
     "intelligent-factory": {
       "schema_version": 1,
@@ -29072,6 +29141,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29111,6 +29181,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29133,7 +29204,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "713a00da2a869feb95c696d0b05e8b4588803bac9c7af7d9187209c7047aa1e3"
+      "compile_input_hash": "7d230d8a7514b6d4ff5b3e99c1881acc27f3c138314a3ff4a587cdfc29678437"
     },
     "key-little-giant-support": {
       "schema_version": 1,
@@ -29159,6 +29230,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29198,6 +29270,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29220,7 +29293,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "868c55423a3fd19e485bf6159eaa7b9e6a4e0952b65eba920c8656011b0d48c4"
+      "compile_input_hash": "4ae6b74997dc1448122dc552401ffff80b0b12831143198f1e3d1e7528764a6c"
     },
     "little-giant": {
       "schema_version": 1,
@@ -29246,6 +29319,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29285,6 +29359,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29307,7 +29382,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "8a46e9922be7e694d8633e7b623bbda938536f915d8e2f266b9f4a2b79c19662"
+      "compile_input_hash": "b8a4254331e1d13312af49057c49c417dc6021a0febefae588e502410447c25c"
     },
     "manufacturing-single-champion-1": {
       "schema_version": 1,
@@ -29333,6 +29408,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29372,6 +29448,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29394,7 +29471,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "add2e98aa5a18d89fe1baa03bd9a6ae8567ba4b7703881caa70f39e05283c46b"
+      "compile_input_hash": "230c65f42811b395f10ba1b2edbcea6823ee9ee82d8fc452b18a2feefb02a5e2"
     },
     "manufacturing-single-champion-2": {
       "schema_version": 1,
@@ -29420,6 +29497,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29459,6 +29537,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29481,7 +29560,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "1eddbb57592ebcc25d61403294621706920baa77fb8b57205ef060f296cdc8cc"
+      "compile_input_hash": "3e189e5b728976d059ec9f52ec308263727994cea01ea30a00e7ce0d646ff1c5"
     },
     "municipal-enterprise-technology-center": {
       "schema_version": 1,
@@ -29507,6 +29586,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29546,6 +29626,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29568,7 +29649,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "41fc54c1eabf20deb21367f3c5c9309e9ba06b066df33116ca61fdbedc2690ec"
+      "compile_input_hash": "f8471d05067b4ac0143a3b7c57d9bc118596a25e5cf2416b82f0ecfdee18e82e"
     },
     "national-high-tech-enterprise": {
       "schema_version": 1,
@@ -29594,6 +29675,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29633,6 +29715,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29655,7 +29738,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "d51697dbf5df716adc63a8f66c2ae5b57362c8e65cb6fa8bcfcff6f6c264bb42"
+      "compile_input_hash": "1747b19c856072d5ee467b4e5d168906c02236506d20e066eaf4a9b8f373df8f"
     },
     "technology-sme-1": {
       "schema_version": 1,
@@ -29681,6 +29764,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29720,6 +29804,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29742,7 +29827,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "a83ede39d4b11a03e1efcc730111e1d6f724189950c2d89000d979d49f70cfee"
+      "compile_input_hash": "eff0cd3f59aa6ac34754389506f93d1d00cc591369e96b3de52bfce877e00b5f"
     },
     "technology-sme-2": {
       "schema_version": 1,
@@ -29768,6 +29853,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29807,6 +29893,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29829,7 +29916,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "da6f0a7bc912c5489e176907ec9ffc8c8a773ae1c16605437b391368bd05f406"
+      "compile_input_hash": "4bc438117f8bbd9616e74c2538c853deee6fde1501a2a0268f654ec1ae9f5281"
     },
     "zhejiang-enterprise-institute": {
       "schema_version": 1,
@@ -29855,6 +29942,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29894,6 +29982,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -29916,7 +30005,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "fa84022eebe3db60a4c9fc2f5d52ca2236eee0edbc9d4e68a0d2a13c39bdb3dd"
+      "compile_input_hash": "8eaf9fc11c791e3dff5e2567019612a7aa4e3685b49bd720119b6b829582026b"
     },
     "zhejiang-enterprise-technology-center": {
       "schema_version": 1,
@@ -29942,6 +30031,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -29981,6 +30071,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -30003,7 +30094,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "2a466b39a5743ef832510a3c738156b434d8451a6f782fce089d14c8794d0c15"
+      "compile_input_hash": "704109d16870da84e238adb49290e97cdb771e31120399198dc0315f2c0b7e5f"
     },
     "zhejiang-hidden-champion": {
       "schema_version": 1,
@@ -30029,6 +30120,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -30068,6 +30160,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -30090,7 +30183,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "b28c850c5d615a710989d4bf5dcfd56e9ca287154d2e76986685c7dfbe1630bb"
+      "compile_input_hash": "5a10225574502f5fe620f02a90184905aba056f7c08055dbaf410791664fba68"
     },
     "zhejiang-industrial-new-product": {
       "schema_version": 1,
@@ -30116,6 +30209,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -30155,6 +30249,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -30177,7 +30272,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "cfac82ca961e48e6cfb0535e74e0878e7542f1161bbd579576c522f7276edda9"
+      "compile_input_hash": "3aaa6e938e845d49ae715e471a8640daac659231081a8ae89eb2dc5447f828a8"
     },
     "zhejiang-key-enterprise-institute": {
       "schema_version": 1,
@@ -30203,6 +30298,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -30242,6 +30338,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -30264,7 +30361,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "f0a07beee44143a8b7fdad9f4290d0e6d2acc5eca74195cba09dcae5b1b41534"
+      "compile_input_hash": "3b8bed86d2fb9c47e9d564ec2d0925536b9d9c7605d8577b2106b4fd0fa1083b"
     },
     "zhejiang-key-specialized-sme": {
       "schema_version": 1,
@@ -30290,6 +30387,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -30329,6 +30427,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -30351,7 +30450,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "fcc60a0a0ca196dcd4ebd29d48604ba3976b7c447d600bbbddb38670d709cfcc"
+      "compile_input_hash": "02b9200b65bf7455e0bff652d3cd048cdf65d1126c27b5045cc213108e77b51d"
     },
     "zhejiang-manufacturing-2": {
       "schema_version": 1,
@@ -30377,6 +30476,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -30416,6 +30516,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -30438,7 +30539,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "b3d8dc5b00a5f51bbc693d5dcfbebe75e12c5948fa7dc66378a9148692321c7c"
+      "compile_input_hash": "20f93806379d3f88018d7d236c529674dfc6d9fa18fec610fcdf83c319bfd726"
     },
     "zhejiang-manufacturing-quality": {
       "schema_version": 1,
@@ -30464,6 +30565,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -30503,6 +30605,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -30525,7 +30628,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "061aeb612fcd38ac933e663ef40701dfcbf197f9fa542508013c36c9cdb2ae49"
+      "compile_input_hash": "60cae5beda2484491e723ec4f17f4b8ad1b0f1e1885068a15762d03ea54d1238"
     },
     "zhejiang-specialized-sme": {
       "schema_version": 1,
@@ -30551,6 +30654,7 @@
       },
       "shared_execution_kernels": [
         "task-omission-preflight",
+        "conversation-continuity-preflight",
         "project-router",
         "policy-version-gate",
         "policy-time-type-checker",
@@ -30590,6 +30694,7 @@
       },
       "quality_gates": {
         "task_preflight_required": true,
+        "conversation_continuity_required": true,
         "policy_time_checked": true,
         "native_rule_combinator": true,
         "composite_rule_structure": {
@@ -30612,7 +30717,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "bacbefff282cb58cefd5bffd89cc601c7b5b261df5393f8bb54fe529c1d372f0"
+      "compile_input_hash": "2d0e43415d83eac0fcbe3041d9834a0ca0bd43bf61e471487b4816288a42f6a2"
     }
   },
   "policy_dependency_graph": {
@@ -31647,7 +31752,7 @@
         "node_id": "project:hangzhou-enterprise-institute",
         "node_type": "project",
         "project_id": "hangzhou-enterprise-institute",
-        "title": "杭州市企业研究院"
+        "title": "市级研发中心（四市属地版）"
       },
       {
         "node_id": "project:hangzhou-enterprise-technology-center",
@@ -32278,14 +32383,11 @@
       "zj-technology-sme-method-2016"
     ],
     "cold_archive_document_ids": [],
-    "content_hash": "3be58b42659044b444433e64aed9100e926cb568d273fc780c31f26551e7185b"
+    "content_hash": "028288f8fe8d014a0cf5fc6bdf1adb35c25346dec23f5e5ccad850cdd92c87d9"
   },
   "incremental_compilation": {
     "strategy": "project-dependency-content-hash",
     "compiled_project_ids": [
-      "hangzhou-enterprise-institute"
-    ],
-    "reused_project_ids": [
       "digital-workshop",
       "first-equipment",
       "first-material-batch",
@@ -32295,6 +32397,7 @@
       "green-factory-2",
       "green-factory-3",
       "green-factory-4",
+      "hangzhou-enterprise-institute",
       "hangzhou-enterprise-technology-center",
       "intelligent-factory",
       "key-little-giant-support",
@@ -32315,9 +32418,10 @@
       "zhejiang-manufacturing-quality",
       "zhejiang-specialized-sme"
     ],
+    "reused_project_ids": [],
     "removed_project_ids": [],
-    "compiled_count": 1,
-    "reused_count": 28,
+    "compiled_count": 29,
+    "reused_count": 0,
     "removed_count": 0
   },
   "policy_execution_window": {
@@ -32337,12 +32441,12 @@
     "policy_baseline_count": 0,
     "policy_covered_count": 29,
     "routing_only_count": 0,
-    "shared_kernel_count": 18,
+    "shared_kernel_count": 19,
     "policy_dependency_nodes": 98,
     "policy_dependency_edges": 88,
     "execution_policy_documents": 69,
     "cold_archive_policy_documents": 0,
-    "compiled_projects": 1,
-    "reused_projects": 28
+    "compiled_projects": 29,
+    "reused_projects": 0
   }
 }

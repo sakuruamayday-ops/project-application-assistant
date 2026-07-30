@@ -10,6 +10,18 @@
   "source_retrieval_rule_ids": [
     "green-factory"
   ],
+  "jurisdiction_source_contract": {
+    "required_for_formal_decision": true,
+    "required_scope_levels": [
+      "city",
+      "district"
+    ],
+    "forbidden_scope_levels": [
+      "province"
+    ],
+    "unresolved_status": "unresolved-jurisdiction-policy",
+    "unresolved_reason": "区级绿色工厂必须命中企业所在设区市或区县的正式项目规则；省级绿色低碳工厂规则只能作为检索线索，不能替代区级项目门槛。"
+  },
   "fact_fields": [
     {
       "field": "green_factory_1_jurisdiction_rule_resolved",
@@ -363,6 +375,8 @@
       "label": "稳定管理办法",
       "applicability": {},
       "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+      "source_scope_level": "province",
+      "source_scope_region": "浙江省",
       "rules": [
         {
           "rule_id": "green-factory-1-1",
@@ -562,6 +576,8 @@
       },
       "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
       "enterprise_deadline": null,
+      "source_scope_level": "province",
+      "source_scope_region": "浙江省",
       "rules": [
         {
           "rule_id": "green-factory-1-local-thresholds",

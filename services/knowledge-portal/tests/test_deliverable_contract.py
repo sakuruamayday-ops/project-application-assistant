@@ -98,3 +98,261 @@ def test_formal_application_omits_peer_gate_unless_explicitly_requested():
     assert validate_delivery_contract(deliverable, contract)[
         "completion_allowed"
     ] is True
+
+
+def _review() -> dict[str, str]:
+    return {
+        "least_certain": "部分企业内部指标仍待原始材料核对。",
+        "largest_omission": "尚未取得客户补充附件。",
+        "most_valuable_innovation": "把交付物、表格和品牌审计绑定到同一哈希。",
+        "efficiency_improvement": "复用已验证模板和生成器。",
+    }
+
+
+def _trace() -> tuple[list[dict[str, str]], list[dict[str, object]]]:
+    sources = [
+        {
+            "id": "source-1",
+            "title": "企业材料",
+            "path": "inputs/enterprise-material.pdf",
+        }
+    ]
+    evidence = [
+        {
+            "claim_id": "enterprise-name",
+            "status": "verified",
+            "source_ids": ["source-1"],
+        }
+    ]
+    return sources, evidence
+
+
+def _tables(contract: dict[str, object]) -> dict[str, dict[str, object]]:
+    return {
+        specification["id"]: {
+            "columns": list(specification.get("required_columns") or []),
+            "row_count": int(specification.get("min_rows") or 1),
+        }
+        for specification in contract["required_tables"]
+    }
+
+
+def _artifact(
+    *,
+    role: str,
+    artifact_format: str,
+    gate: str,
+    digest: str,
+) -> dict[str, object]:
+    return {
+        "role": role,
+        "format": artifact_format,
+        "path": f"artifacts/{role}.{artifact_format}",
+        "sha256": digest,
+        "validation": {
+            "status": "passed",
+            "gate": gate,
+            "artifact_sha256": digest,
+        },
+    }
+
+
+def test_panorama_standard_profile_blocks_missing_tables_artifacts_and_brand_audit():
+    deliverable = {
+        "task_type": "analysis-report",
+        "skill_id": "enterprise-panorama-analysis",
+        "report_variant": "A",
+        "sections": {},
+        "four_question_review": _review(),
+    }
+    contract = build_delivery_contract("生成A标准销售版企业全景报告", deliverable)
+    audit = validate_delivery_contract(deliverable, contract)
+
+    assert contract["delivery_profile"] == "enterprise-panorama-standard"
+    assert contract["branding_contracts"][0]["mode"] == "forbidden"
+    assert "同行竞品与行业定位" in contract["required_sections"]
+    assert "风险整改表" in audit["missing_items"]
+    assert "standard_report_pdf" in audit["missing_items"]
+    assert any(
+        task["target_path"] == "branding_audits.standard_report_pdf"
+        for task in audit["repair_plan"]["tasks"]
+    )
+    assert any(
+        "不用模型临时重建近似表格" in task["action"]
+        for task in audit["repair_plan"]["tasks"]
+        if task["target_path"] == "tables.风险整改表"
+    )
+
+
+def test_panorama_standard_profile_accepts_structured_same_hash_proof():
+    digest = "a" * 64
+    base = {
+        "task_type": "analysis-report",
+        "skill_id": "enterprise-panorama-analysis",
+        "report_variant": "A",
+        "four_question_review": _review(),
+        "peer_comparison": {
+            "peers": [{"name": "同行A", "source_url": "https://gov.cn/a"}],
+            "dimensions": ["研发创新", "项目资质"],
+        },
+    }
+    contract = build_delivery_contract("生成A标准销售版企业全景报告", base)
+    sources, evidence = _trace()
+    deliverable = {
+        **base,
+        "sections": {
+            name: "已按模板生成" for name in contract["required_sections"]
+        },
+        "sources": sources,
+        "evidence_items": evidence,
+        "tables": _tables(contract),
+        "artifacts": [
+            _artifact(
+                role="standard_report_pdf",
+                artifact_format="pdf",
+                gate="render_sales_pdf.py",
+                digest=digest,
+            )
+        ],
+        "branding_audits": [
+            {
+                "artifact_role": "standard_report_pdf",
+                "status": "passed",
+                "pages": 18,
+                "watermarks": 0,
+                "artifact_sha256": digest,
+            }
+        ],
+    }
+
+    audit = validate_delivery_contract(deliverable, contract)
+    assert audit["completion_allowed"] is True
+
+
+def test_tax_report_profile_requires_four_artifacts_and_gold_branding():
+    digest = "b" * 64
+    base = {
+        "task_type": "analysis-report",
+        "skill_id": "manufacturing-tax-risk-analysis",
+        "four_question_review": _review(),
+        "policy_selection": {
+            "status": "official-original",
+            "selected_documents": [{"title": "现行税收政策"}],
+            "prohibited_claims": [],
+        },
+    }
+    contract = build_delivery_contract("生成金税四期分析报告", base)
+    sources, evidence = _trace()
+    formats = {
+        "tax_report_pdf": ("pdf", "delivery_gate.py"),
+        "editable_html": ("html", "generate_report_html.py"),
+        "metrics_json": ("json", "calculate_metrics.py"),
+        "enterprise_financial_facts": (
+            "json",
+            "enterprise-financial-facts/v1",
+        ),
+    }
+    deliverable = {
+        **base,
+        "sections": {
+            name: "已完成" for name in contract["required_sections"]
+        },
+        "sources": sources,
+        "evidence_items": evidence,
+        "tables": _tables(contract),
+        "artifacts": [
+            _artifact(
+                role=role,
+                artifact_format=artifact_format,
+                gate=gate,
+                digest=digest,
+            )
+            for role, (artifact_format, gate) in formats.items()
+        ],
+        "branding_audits": [
+            {
+                "artifact_role": "tax_report_pdf",
+                "status": "passed",
+                "variant": "gold",
+                "pages": 17,
+                "watermarks": 17,
+                "centered": True,
+                "artifact_sha256": digest,
+            }
+        ],
+    }
+    audit = validate_delivery_contract(deliverable, contract)
+
+    assert contract["delivery_profile"] == "manufacturing-tax-risk-report"
+    assert audit["completion_allowed"] is True
+
+    deliverable["branding_audits"][0]["watermarks"] = 16
+    blocked = validate_delivery_contract(deliverable, contract)
+    assert "tax_report_pdf" in blocked["missing_items"]
+    assert any(
+        item["code"] == "branding-audit-not-passed"
+        for item in blocked["failures"]
+    )
+
+
+def test_sme_pre_and_post_profiles_bind_builtin_tables_and_validators():
+    preflight = build_delivery_contract(
+        "生成专精特新前期评分报告",
+        {
+            "skill_id": "sme-score-preassessment",
+            "task_type": "analysis-report",
+        },
+    )
+    postflight = build_delivery_contract(
+        "生成专精特新后期体检报告",
+        {
+            "skill_id": "sme-development-projects",
+            "task_type": "analysis-report",
+        },
+    )
+
+    assert preflight["delivery_profile"] == "sme-score-preassessment-workbook"
+    assert [item["id"] for item in preflight["required_tables"]] == [
+        "评分总览",
+        "三年财务底表",
+        "行业映射",
+        "统计局行业基准",
+        "八项对标评分",
+        "全指标评分底稿",
+        "目标反推",
+        "三档总分",
+        "数据源与校验",
+    ]
+    assert preflight["required_artifacts"][0]["validation_gate"] == "run_score.sh"
+    assert (
+        postflight["delivery_profile"]
+        == "sme-application-checkup-report"
+    )
+    assert {
+        item["validation_gate"] for item in postflight["required_artifacts"]
+    } == {
+        "validate_sme_assessment.py",
+        "document-render-and-structure-gate",
+    }
+
+
+def test_panorama_profile_refuses_to_guess_a_or_b():
+    deliverable = {
+        "task_type": "analysis-report",
+        "skill_id": "enterprise-panorama-analysis",
+    }
+    audit = validate_delivery_contract(
+        deliverable,
+        build_delivery_contract("生成企业全景报告", deliverable),
+    )
+
+    assert any(
+        item["code"] == "missing-delivery-profile"
+        for item in audit["failures"]
+    )
+    task = next(
+        item
+        for item in audit["repair_plan"]["tasks"]
+        if item["failure_code"] == "missing-delivery-profile"
+    )
+    assert "不得由模型自行替用户选择" in task["acceptance_criteria"][1]

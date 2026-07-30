@@ -1,9 +1,59 @@
 from __future__ import annotations
 
 from typing import Mapping, Sequence
+from urllib.parse import urlparse
 
 
-FUTURE_MODES = frozenset({"forecast", "future-preparation", "prediction"})
+PREPARATION_MODES = frozenset(
+    {
+        "forecast",
+        "future-preparation",
+        "prediction",
+        "current-year-preparation",
+        "current-pre-application",
+        "pre-application",
+    }
+)
+VERIFIED_DRAFT_STATUSES = frozenset(
+    {"official-verified", "audited-official-archive"}
+)
+
+
+def _is_sha256(value: object) -> bool:
+    normalized = str(value or "").strip().lower()
+    return len(normalized) == 64 and all(
+        character in "0123456789abcdef" for character in normalized
+    )
+
+
+def _official_url(value: object) -> bool:
+    host = (urlparse(str(value or "")).hostname or "").lower()
+    return host == "gov.cn" or host.endswith(".gov.cn")
+
+
+def _verified_replacement_draft(variant: Mapping[str, object]) -> bool:
+    if str(variant.get("prospective_policy_status") or "") not in {
+        "draft",
+        "active_candidate",
+    }:
+        return False
+    verification_status = str(
+        variant.get("prospective_verification_status") or ""
+    )
+    archive_hash = str(variant.get("prospective_archive_sha256") or "")
+    verified_source = (
+        verification_status in VERIFIED_DRAFT_STATUSES
+        and (
+            _official_url(variant.get("prospective_url"))
+            or _is_sha256(archive_hash)
+        )
+    )
+    explicit_replacement = (
+        str(variant.get("replacement_signal") or "")
+        in {"explicit", "explicit-replacement", "replacement-announced"}
+        or bool(str(variant.get("replaces_formal_policy") or "").strip())
+    )
+    return verified_source and explicit_replacement
 
 
 def _variants(
@@ -63,6 +113,12 @@ def validate_four_city_policy_registry(
                     continue
                 if not str(item.get(key) or "").strip():
                     errors.append(f"{family_id}/{city}缺少{key}")
+            if str(item.get("prospective_policy") or "").strip():
+                if not _verified_replacement_draft(item):
+                    errors.append(
+                        f"{family_id}/{city}征求意见稿缺少"
+                        "已核验来源或明确替代关系"
+                    )
     required_families = {
         "municipal-enterprise-technology-center",
         "municipal-enterprise-rd-platform",
@@ -98,16 +154,26 @@ def resolve_policy_transition(
         }
 
     prospective = str(variant.get("prospective_policy") or "").strip()
-    future_mode = evaluation_mode in FUTURE_MODES
-    if prospective and future_mode:
+    preparation_mode = evaluation_mode in PREPARATION_MODES
+    verified_replacement = _verified_replacement_draft(variant)
+    if prospective and preparation_mode and verified_replacement:
         primary_policy = prospective
         primary_status = str(
             variant.get("prospective_policy_status") or "draft"
         )
         formal_allowed = False
-        output_label = "前瞻准备（征求意见稿）"
+        output_label = (
+            "当年申报前准备（征求意见稿）"
+            if evaluation_mode
+            in {
+                "current-year-preparation",
+                "current-pre-application",
+                "pre-application",
+            }
+            else "前瞻准备（征求意见稿）"
+        )
         reason = (
-            "征求意见稿已成为未来准备主基线；"
+            "已核验且明确替代旧政策的征求意见稿已成为准备主基线；"
             "正式文件发布前不得输出正式资格结论"
         )
         old_policy_role = "current-formal-and-historical-only"
@@ -119,13 +185,33 @@ def resolve_policy_transition(
             or ""
         )
         formal_allowed = not primary_status.startswith(("draft", "invalid"))
-        output_label = "查询日正式政策"
+        if evaluation_mode == "historical-fact":
+            formal_allowed = False
+            output_label = "历史时点规则待核验"
+        else:
+            output_label = "查询日正式政策"
         reason = (
-            "当前正式判断仍使用现行文件，同时必须披露已发布的征求意见稿"
-            if prospective
-            else "按目标城市查询日现行政策判断"
+            (
+                "当前正式判断或历史回放不得使用征求意见稿；"
+                "应按对应时点有效文件判断"
+            )
+            if prospective and evaluation_mode == "historical-fact"
+            else (
+                "当前正式判断仍使用现行文件，同时必须披露已发布的征求意见稿"
+                if prospective
+                else "按目标城市查询日现行政策判断"
+            )
         )
-        old_policy_role = "current-formal"
+        if prospective and preparation_mode and not verified_replacement:
+            reason = (
+                "征求意见稿尚未同时满足来源核验与明确替代门禁，"
+                "暂不切换准备基线"
+            )
+        old_policy_role = (
+            "historical-time-point-only"
+            if evaluation_mode == "historical-fact"
+            else "current-formal"
+        )
 
     return {
         "status": "resolved",
@@ -149,6 +235,13 @@ def resolve_policy_transition(
         "formal_policy": variant.get("formal_policy"),
         "prospective_policy": variant.get("prospective_policy"),
         "prospective_policy_status": variant.get("prospective_policy_status"),
+        "prospective_verification_status": variant.get(
+            "prospective_verification_status"
+        ),
+        "replacement_signal": variant.get("replacement_signal"),
+        "draft_used_as_preparation_baseline": bool(
+            prospective and preparation_mode and verified_replacement
+        ),
         "consultation_period": variant.get("consultation_period"),
         "transition": variant.get("transition"),
         "old_policy_role": old_policy_role,
@@ -158,6 +251,11 @@ def resolve_policy_transition(
             disclosure
             for disclosure in (
                 "征求意见稿尚未正式生效" if prospective else "",
+                (
+                    "历史回放必须核验目标年度当时有效文件及有效期"
+                    if evaluation_mode == "historical-fact"
+                    else ""
+                ),
                 str(variant.get("transition") or ""),
                 str(variant.get("exception") or ""),
                 str(variant.get("note") or ""),

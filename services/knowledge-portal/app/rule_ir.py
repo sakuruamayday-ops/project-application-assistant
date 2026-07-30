@@ -11,9 +11,10 @@ from app.rule_structure import audit_composite_rule_structure
 
 
 RULE_IR_SCHEMA_VERSION = 1
-SHARED_KERNEL_VERSION = "1.4"
+SHARED_KERNEL_VERSION = "1.5"
 SHARED_EXECUTION_KERNELS = (
     "task-omission-preflight",
+    "conversation-continuity-preflight",
     "project-router",
     "policy-version-gate",
     "policy-time-type-checker",
@@ -254,6 +255,7 @@ def build_algorithm_card(
         },
         "quality_gates": {
             "task_preflight_required": True,
+            "conversation_continuity_required": True,
             "policy_time_checked": True,
             "native_rule_combinator": True,
             "composite_rule_structure": structure_audit,

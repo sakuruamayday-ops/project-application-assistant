@@ -72,8 +72,11 @@ def test_rule_ir_compiles_once_and_reuses_source_digest(tmp_path: Path):
     assert write_compiled_rule_ir(output, payload) == "compiled"
     assert write_compiled_rule_ir(output, payload) == "hash_reused"
     assert payload["metrics"]["project_count"] == 1
-    assert payload["metrics"]["shared_kernel_count"] == 18
+    assert payload["metrics"]["shared_kernel_count"] == 19
     assert payload["shared_kernel"]["components"][0] == "task-omission-preflight"
+    assert "conversation-continuity-preflight" in payload["shared_kernel"][
+        "components"
+    ]
     assert "policy-change-impact-simulator" in payload["shared_kernel"][
         "components"
     ]
@@ -86,6 +89,9 @@ def test_rule_ir_compiles_once_and_reuses_source_digest(tmp_path: Path):
     assert "deliverable-contract-gate" in payload["shared_kernel"]["components"]
     assert payload["algorithm_cards"]["sample"]["quality_gates"][
         "task_preflight_required"
+    ] is True
+    assert payload["algorithm_cards"]["sample"]["quality_gates"][
+        "conversation_continuity_required"
     ] is True
     assert compiled_projects(payload)[0]["policy_version_id"].startswith("policy-")
 

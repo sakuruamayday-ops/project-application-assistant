@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "contract_id": "jiaotang-workbuddy-delivery-contract-v1",
   "complex_task_markers": [
     "客户项目分析",
@@ -45,6 +45,380 @@
     ["来源", "公示名单", "官方名单"],
     ["不可比较", "口径差异", "数据缺口"]
   ],
+  "profile_selectors": {
+    "enterprise-panorama-analysis": {
+      "by_report_variant": {
+        "A": "enterprise-panorama-standard",
+        "B": "enterprise-panorama-professional",
+        "C": "enterprise-panorama-dual"
+      }
+    },
+    "manufacturing-tax-risk-analysis": {
+      "default": "manufacturing-tax-risk-report"
+    },
+    "sme-score-preassessment": {
+      "default": "sme-score-preassessment-workbook"
+    },
+    "sme-development-projects": {
+      "default": "sme-application-checkup-report"
+    }
+  },
+  "delivery_profiles": {
+    "enterprise-panorama-standard": {
+      "skill_id": "enterprise-panorama-analysis",
+      "report_variant": "A",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": true,
+      "requires_four_question_review": true,
+      "required_sections": [
+        "工商基本信息",
+        "股权结构与管理层",
+        "主营业务与战略布局",
+        "资质荣誉与知识产权",
+        "土地、资产与投资",
+        "经营风险深度分析",
+        "母版第七章",
+        "同行竞品与行业定位",
+        "已做项目与资质复盘",
+        "可申报项目",
+        "未来五年发展与项目规划",
+        "综合评价与风险等级",
+        "结论与建议"
+      ],
+      "required_tables": [
+        {
+          "id": "风险整改表",
+          "required_columns": ["事实或信号", "实际影响", "解决动作", "关联项目", "完成时间"],
+          "min_rows": 1
+        },
+        {
+          "id": "同行项目对比表",
+          "required_columns": ["企业", "已有荣誉资质及项目", "差距", "可复制动作", "来源"],
+          "min_rows": 1
+        },
+        {
+          "id": "可申报项目表",
+          "required_columns": ["项目", "现有基础", "还缺什么"],
+          "min_rows": 1
+        },
+        {
+          "id": "五年规划表",
+          "required_columns": ["年度", "行动", "启动条件", "所需资料"],
+          "min_rows": 1
+        }
+      ],
+      "required_artifacts": [
+        {
+          "role": "standard_report_pdf",
+          "formats": ["pdf"],
+          "requires_sha256": true,
+          "validation_gate": "render_sales_pdf.py"
+        }
+      ],
+      "branding_contracts": [
+        {
+          "mode": "forbidden",
+          "artifact_roles": ["standard_report_pdf"],
+          "exception_id": "enterprise-panorama-a-permanent-no-watermark"
+        }
+      ]
+    },
+    "enterprise-panorama-professional": {
+      "skill_id": "enterprise-panorama-analysis",
+      "report_variant": "B",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": true,
+      "requires_four_question_review": true,
+      "required_sections": [
+        "决策摘要",
+        "主体事实核验",
+        "股权、核心人员与关联企业",
+        "战略布局",
+        "同行竞争与行业定位",
+        "土地、厂房、设备融资与投资",
+        "企业风控与90天整改",
+        "股权、资金与财税一致性核验",
+        "科技与项目基础",
+        "已做项目与资质复盘",
+        "可申报项目矩阵",
+        "未来五年发展与申报规划",
+        "最终客户沟通结论"
+      ],
+      "required_tables": [
+        {
+          "id": "同行项目对比表",
+          "required_columns": ["企业", "已有荣誉资质及项目", "差距", "来源"],
+          "min_rows": 1
+        },
+        {
+          "id": "90天整改表",
+          "required_columns": ["事实", "影响", "处理动作", "关联项目", "完成时间"],
+          "min_rows": 1
+        },
+        {
+          "id": "可申报项目矩阵",
+          "required_columns": ["项目", "现有基础", "前置条件", "所需资料"],
+          "min_rows": 1
+        },
+        {
+          "id": "顾问机会表",
+          "required_columns": ["业务机会", "触发信号", "当前判断", "请企业提供的资料", "建议服务", "合规边界"],
+          "min_rows": 1
+        },
+        {
+          "id": "五年规划表",
+          "required_columns": ["年度", "行动", "启动条件", "所需资料"],
+          "min_rows": 1
+        }
+      ],
+      "required_artifacts": [
+        {
+          "role": "professional_report_pdf",
+          "formats": ["pdf"],
+          "requires_sha256": true,
+          "validation_gate": "validate_report_pdf.py"
+        }
+      ],
+      "branding_contracts": [
+        {
+          "mode": "required",
+          "variant": "gold",
+          "artifact_roles": ["professional_report_pdf"]
+        }
+      ]
+    },
+    "enterprise-panorama-dual": {
+      "skill_id": "enterprise-panorama-analysis",
+      "report_variant": "C",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": true,
+      "requires_four_question_review": true,
+      "required_sections": ["A标准销售版", "B深度顾问版"],
+      "required_tables": [
+        {
+          "id": "共同事实底稿",
+          "required_columns": ["事实字段", "值", "证据状态", "来源"],
+          "min_rows": 1
+        },
+        {
+          "id": "同行项目对比表",
+          "required_columns": ["企业", "已有荣誉资质及项目", "差距", "来源"],
+          "min_rows": 1
+        }
+      ],
+      "required_artifacts": [
+        {
+          "role": "standard_report_pdf",
+          "formats": ["pdf"],
+          "requires_sha256": true,
+          "validation_gate": "render_sales_pdf.py"
+        },
+        {
+          "role": "professional_report_pdf",
+          "formats": ["pdf"],
+          "requires_sha256": true,
+          "validation_gate": "validate_report_pdf.py"
+        }
+      ],
+      "branding_contracts": [
+        {
+          "mode": "forbidden",
+          "artifact_roles": ["standard_report_pdf"],
+          "exception_id": "enterprise-panorama-a-permanent-no-watermark"
+        },
+        {
+          "mode": "required",
+          "variant": "gold",
+          "artifact_roles": ["professional_report_pdf"]
+        }
+      ]
+    },
+    "manufacturing-tax-risk-report": {
+      "skill_id": "manufacturing-tax-risk-analysis",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": false,
+      "requires_policy_selection_trace": true,
+      "requires_four_question_review": true,
+      "required_sections": [
+        "profitability",
+        "cash_flow",
+        "solvency",
+        "asset_quality",
+        "bills_deposits",
+        "related_parties",
+        "guarantees",
+        "income_tax_rd",
+        "accrual_revenue"
+      ],
+      "required_tables": [
+        {
+          "id": "财务总览",
+          "required_columns": ["指标", "年度值", "来源页码", "公式"],
+          "min_rows": 1
+        },
+        {
+          "id": "风险地图",
+          "required_columns": ["风险链", "事实", "替代解释", "缺失证据", "动作", "等级"],
+          "min_rows": 1
+        },
+        {
+          "id": "90天整改路线",
+          "required_columns": ["阶段", "动作", "责任岗位", "完成条件"],
+          "min_rows": 1
+        },
+        {
+          "id": "计算过程与来源",
+          "required_columns": ["指标", "公式", "结果", "来源"],
+          "min_rows": 1
+        }
+      ],
+      "required_artifacts": [
+        {
+          "role": "tax_report_pdf",
+          "formats": ["pdf"],
+          "requires_sha256": true,
+          "validation_gate": "delivery_gate.py"
+        },
+        {
+          "role": "editable_html",
+          "formats": ["html"],
+          "requires_sha256": true,
+          "validation_gate": "generate_report_html.py"
+        },
+        {
+          "role": "metrics_json",
+          "formats": ["json"],
+          "requires_sha256": true,
+          "validation_gate": "calculate_metrics.py"
+        },
+        {
+          "role": "enterprise_financial_facts",
+          "formats": ["json"],
+          "requires_sha256": true,
+          "validation_gate": "enterprise-financial-facts/v1"
+        }
+      ],
+      "branding_contracts": [
+        {
+          "mode": "required",
+          "variant": "gold",
+          "artifact_roles": ["tax_report_pdf"]
+        }
+      ]
+    },
+    "sme-score-preassessment-workbook": {
+      "skill_id": "sme-score-preassessment",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": false,
+      "requires_policy_selection_trace": true,
+      "requires_four_question_review": true,
+      "required_sections": [
+        "结论",
+        "保守分",
+        "基准粗评分",
+        "条件情景分",
+        "待系统评价项",
+        "前三项行动",
+        "数据缺口"
+      ],
+      "required_tables": [
+        {"id": "评分总览", "required_columns": ["关键结果", "数值"], "min_rows": 1},
+        {"id": "三年财务底表", "required_columns": ["指标", "单位", "近三年", "近两年", "近一年", "口径"], "min_rows": 1},
+        {"id": "行业映射", "required_columns": ["项目", "结果"], "min_rows": 1},
+        {"id": "统计局行业基准", "required_columns": ["年份", "数据层级", "来源"], "min_rows": 1},
+        {"id": "八项对标评分", "required_columns": ["指标", "满分", "企业值", "行业采用值", "档位", "得分"], "min_rows": 8},
+        {
+          "id": "全指标评分底稿",
+          "required_columns": ["序号", "维度", "指标", "满分", "企业值", "评分规则", "保守档", "基准档", "条件档", "证据来源", "证据状态", "缺口及提升动作"],
+          "min_rows": 22
+        },
+        {"id": "目标反推", "required_columns": ["指标", "当前档位", "下一目标", "当前值", "目标值", "需改善金额"], "min_rows": 3},
+        {"id": "三档总分", "required_columns": ["评分层", "全指标总分", "状态", "说明"], "min_rows": 3},
+        {"id": "数据源与校验", "required_columns": ["检查项", "实际值", "预期", "状态", "修复位置"], "min_rows": 1}
+      ],
+      "required_artifacts": [
+        {
+          "role": "score_workbook",
+          "formats": ["xlsx"],
+          "requires_sha256": true,
+          "validation_gate": "run_score.sh"
+        }
+      ],
+      "branding_contracts": [
+        {
+          "mode": "required",
+          "variant": "default",
+          "artifact_roles": ["score_workbook"]
+        }
+      ]
+    },
+    "sme-application-checkup-report": {
+      "skill_id": "sme-development-projects",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": false,
+      "requires_policy_selection_trace": true,
+      "requires_four_question_review": true,
+      "required_sections": [
+        "申请版本与政策口径",
+        "总体结论",
+        "硬门槛",
+        "评价指标",
+        "四项独立判断",
+        "证据缺口",
+        "风险",
+        "行动清单"
+      ],
+      "required_tables": [
+        {
+          "id": "硬门槛表",
+          "required_columns": ["门槛", "企业事实", "证据状态", "结论", "来源"],
+          "min_rows": 1
+        },
+        {
+          "id": "四项独立判断表",
+          "required_columns": ["判断项", "结论", "对象", "理由", "证据状态", "联动修改"],
+          "min_rows": 4
+        },
+        {
+          "id": "证据缺口表",
+          "required_columns": ["缺口", "影响章节", "所需证据", "责任岗位", "完成时间"],
+          "min_rows": 1
+        },
+        {
+          "id": "整改行动表",
+          "required_columns": ["问题", "动作", "所需证据", "责任岗位", "完成时间"],
+          "min_rows": 1
+        }
+      ],
+      "required_artifacts": [
+        {
+          "role": "assessment_json",
+          "formats": ["json"],
+          "requires_sha256": true,
+          "validation_gate": "validate_sme_assessment.py"
+        },
+        {
+          "role": "checkup_report",
+          "formats": ["pdf", "docx"],
+          "requires_sha256": true,
+          "validation_gate": "document-render-and-structure-gate"
+        }
+      ],
+      "branding_contracts": [
+        {
+          "mode": "required",
+          "variant": "default",
+          "artifact_roles": ["checkup_report"]
+        }
+      ]
+    }
+  },
   "skills": {
     "project-feasibility": {
       "applies_when_prompt_contains": ["报告", "分析", "可行性", "能不能报", "差距"],
@@ -61,11 +435,66 @@
     "enterprise-panorama-analysis": {
       "applies_when_prompt_contains": ["报告", "分析", "尽调", "合作"],
       "required_marker_groups": [
+        ["A标准销售版", "B深度顾问版", "C两版", "标准销售版", "GCIP深度顾问版"],
         ["企业主体", "工商信息", "主体锚定"],
-        ["同行对比", "同行对标", "可比企业"],
-        ["事实数据", "事实层"],
-        ["判断建议", "推理结论"],
-        ["来源", "证据"]
+        ["共同事实底稿", "事实数据", "事实层"],
+        ["同行项目对比表", "同行竞品与行业定位", "同行竞争与行业定位"],
+        ["风险整改表", "90天整改表", "企业风控与90天整改"],
+        ["可申报项目表", "可申报项目矩阵"],
+        ["五年规划表", "未来五年发展与申报规划"],
+        ["来源清单", "证据台账"],
+        ["standard_report_pdf", "professional_report_pdf", "交付PDF"],
+        ["免水印审计通过", "金色居中水印审计通过", "品牌审计通过"]
+      ]
+    },
+    "manufacturing-tax-risk-analysis": {
+      "applies_when_prompt_contains": ["报告", "分析", "金税四期", "税务", "财务"],
+      "required_marker_groups": [
+        ["enterprise-financial-facts/v1", "共享财务事实"],
+        ["九个固定专题", "profitability"],
+        ["财务总览"],
+        ["风险地图"],
+        ["90天整改路线"],
+        ["计算过程与来源"],
+        ["PDF、可编辑HTML、指标JSON和共享事实文件", "四项交付产物"],
+        ["delivery_gate.py通过", "每页恰有一个居中金色水印"],
+        ["数据缺口", "OCR不确定性"],
+        ["来源页码", "计算公式"]
+      ]
+    },
+    "sme-score-preassessment": {
+      "applies_when_prompt_contains": ["评分", "测分", "差距", "分析", "报告"],
+      "required_marker_groups": [
+        ["项目层级", "省级专精特新", "专精特新小巨人"],
+        ["申请类型", "新申报", "复核"],
+        ["评分总览"],
+        ["三年财务底表"],
+        ["行业映射"],
+        ["统计局行业基准"],
+        ["八项对标评分"],
+        ["全指标评分底稿"],
+        ["目标反推"],
+        ["三档总分"],
+        ["数据源与校验"],
+        ["证据来源", "证据状态"],
+        ["run_score.sh通过", "工作簿校验通过"],
+        ["品牌审计通过", "工作簿水印审计通过"]
+      ]
+    },
+    "sme-development-projects": {
+      "applies_when_prompt_contains": ["体检", "审核", "核对", "分析", "报告", "专精特新", "小巨人"],
+      "required_marker_groups": [
+        ["申请版本与政策口径", "申请书版本已确认"],
+        ["总体结论"],
+        ["硬门槛表"],
+        ["评价指标"],
+        ["四项独立判断表"],
+        ["证据缺口表"],
+        ["整改行动表"],
+        ["validate_sme_assessment.py通过", "结构化诊断校验通过"],
+        ["来源清单", "证据台账"],
+        ["checkup_report", "后期体检报告"],
+        ["品牌审计通过", "报告水印审计通过"]
       ]
     },
     "peer-benchmarking": {

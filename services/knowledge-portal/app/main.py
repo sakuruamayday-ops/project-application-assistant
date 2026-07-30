@@ -81,6 +81,7 @@ from app.project_decision import (
     project_query_variants as decide_project_query_variants,
     project_selection_prompt as decide_project_selection_prompt,
     project_algorithm_pack_matches,
+    jurisdiction_source_contract_for_pack,
     select_project_algorithm_rules,
     requires_current_policy_sources as decide_requires_current_policy_sources,
     requires_current_sme_policy_sources as decide_requires_current_sme_policy_sources,
@@ -2103,40 +2104,90 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
     layers = [
         layer for layer in pack.get("rule_layers", []) if isinstance(layer, dict)
     ]
-    rules = [
-        {
-            "rule_id": str(rule.get("rule_id") or ""),
-            "field": str(rule.get("field") or ""),
-            "operator": str(rule.get("operator") or ""),
-            "expected": rule.get("expected"),
-            "unit": str(rule.get("unit") or ""),
-            "source": str(rule.get("source") or ""),
-            "source_quote": str(rule.get("source_quote") or ""),
-            "source_url": str(rule.get("source_url") or ""),
-            "policy_status": str(rule.get("policy_status") or ""),
-            "review_status": str(rule.get("review_status") or ""),
-            "layer_label": str(layer.get("label") or ""),
-            "source_display": rule.get("source_display", True),
-        }
-        for layer in layers
-        for rule in layer.get("rules", [])
-        if isinstance(rule, dict)
-        and rule.get("source_display") is not False
-    ]
-    sources: list[dict[str, str]] = []
-    seen_sources: set[tuple[str, str]] = set()
+    jurisdiction_contract = jurisdiction_source_contract_for_pack(pack)
+    required_scope_levels = {
+        str(value)
+        for value in jurisdiction_contract.get("required_scope_levels", [])
+        if str(value)
+    }
+    forbidden_scope_levels = {
+        str(value)
+        for value in jurisdiction_contract.get("forbidden_scope_levels", [])
+        if str(value)
+    }
+    rules: list[dict[str, object]] = []
+    for layer in layers:
+        source_scope_level = str(layer.get("source_scope_level") or "")
+        if (
+            not source_scope_level
+            and str(pack.get("project_id") or "") == "green-factory-1"
+            and (
+                str(layer.get("layer_type") or "") == "stable"
+                or any(
+                    "浙江省" in str(rule.get("source") or "")
+                    or "jxt.zj.gov.cn"
+                    in str(rule.get("source_url") or "")
+                    for rule in layer.get("rules", [])
+                    if isinstance(rule, dict)
+                )
+            )
+        ):
+            source_scope_level = "province"
+        source_role = (
+            "上位依赖/非区级门槛"
+            if source_scope_level in forbidden_scope_levels
+            else "城市或区县正式门槛"
+            if source_scope_level in required_scope_levels
+            else ""
+        )
+        for rule in layer.get("rules", []):
+            if not isinstance(rule, dict) or rule.get("source_display") is False:
+                continue
+            rules.append(
+                {
+                    "rule_id": str(rule.get("rule_id") or ""),
+                    "field": str(rule.get("field") or ""),
+                    "operator": str(rule.get("operator") or ""),
+                    "expected": rule.get("expected"),
+                    "unit": str(rule.get("unit") or ""),
+                    "source": str(rule.get("source") or ""),
+                    "source_quote": str(rule.get("source_quote") or ""),
+                    "source_url": str(rule.get("source_url") or ""),
+                    "policy_status": str(rule.get("policy_status") or ""),
+                    "review_status": str(rule.get("review_status") or ""),
+                    "layer_label": str(layer.get("label") or ""),
+                    "layer_type": str(layer.get("layer_type") or ""),
+                    "source_scope_level": source_scope_level,
+                    "source_scope_region": str(
+                        layer.get("source_scope_region") or ""
+                    ),
+                    "source_role": source_role,
+                    "source_display": rule.get("source_display", True),
+                }
+            )
+    sources: list[dict[str, object]] = []
+    seen_sources: set[tuple[str, str, str]] = set()
     for rule in rules:
         if rule.get("source_display") is False:
             continue
-        source_key = (rule["source"], rule["source_url"])
+        source_key = (
+            str(rule["source"]),
+            str(rule["source_url"]),
+            str(rule["source_role"]),
+        )
         if not any(source_key) or source_key in seen_sources:
             continue
         seen_sources.add(source_key)
+        display_title = str(rule["source"] or rule["source_url"])
+        if rule["source_role"]:
+            display_title += f"（{rule['source_role']}）"
         sources.append(
             {
-                "title": rule["source"] or rule["source_url"],
+                "title": display_title,
                 "url": rule["source_url"],
                 "status": rule["policy_status"],
+                "role": rule["source_role"],
+                "scope_level": rule["source_scope_level"],
             }
         )
     baseline = (
@@ -2147,19 +2198,70 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
     for document in baseline.get("policy_documents", []):
         if not isinstance(document, dict):
             continue
-        source_key = (
+        baseline_key = (
             str(document.get("title") or ""),
             str(document.get("official_url") or ""),
         )
+        baseline_scope_level = str(
+            document.get("source_scope_level") or ""
+        )
+        baseline_role = str(document.get("relation") or "")
+        if (
+            str(pack.get("project_id") or "") == "green-factory-1"
+            and "浙江省绿色" in baseline_key[0]
+        ):
+            baseline_scope_level = "province"
+            baseline_role = "上位依赖/非区级门槛"
+        source_key = (*baseline_key, baseline_role)
         if not any(source_key) or source_key in seen_sources:
             continue
         seen_sources.add(source_key)
+        baseline_title = baseline_key[0] or baseline_key[1]
+        if baseline_role == "上位依赖/非区级门槛":
+            baseline_title += f"（{baseline_role}）"
         sources.append(
             {
-                "title": source_key[0] or source_key[1],
-                "url": source_key[1],
+                "title": baseline_title,
+                "url": baseline_key[1],
                 "status": str(document.get("status") or ""),
+                "role": baseline_role,
+                "scope_level": baseline_scope_level,
             }
+        )
+    resolved_jurisdiction_sources = [
+        source
+        for source in sources
+        if source.get("scope_level") in required_scope_levels
+        and source.get("status") in {"current", "current-annual-notice"}
+    ]
+    jurisdiction_resolution = {
+        "required": bool(
+            jurisdiction_contract.get("required_for_formal_decision")
+        ),
+        "status": (
+            "resolved"
+            if resolved_jurisdiction_sources
+            else "unresolved"
+            if jurisdiction_contract.get("required_for_formal_decision")
+            else "not-required"
+        ),
+        "formal_conclusion_allowed": bool(resolved_jurisdiction_sources)
+        if jurisdiction_contract.get("required_for_formal_decision")
+        else True,
+        "reason": (
+            ""
+            if resolved_jurisdiction_sources
+            else str(jurisdiction_contract.get("unresolved_reason") or "")
+        ),
+        "required_scope_levels": sorted(required_scope_levels),
+    }
+    raw_pack = dict(pack)
+    if jurisdiction_contract:
+        raw_pack["_runtime_jurisdiction_source_contract"] = (
+            jurisdiction_contract
+        )
+        raw_pack["_runtime_jurisdiction_resolution"] = (
+            jurisdiction_resolution
         )
     return {
         "project_id": normalized_project_id,
@@ -2225,8 +2327,9 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
         ),
         "rules": rules,
         "sources": sources,
+        "jurisdiction_resolution": jurisdiction_resolution,
         "policy_baseline": baseline,
-        "raw_json": json.dumps(pack, ensure_ascii=False, indent=2),
+        "raw_json": json.dumps(raw_pack, ensure_ascii=False, indent=2),
     }
 
 
@@ -4774,8 +4877,10 @@ def current_policy_guardrail(question: str) -> str:
         )
     if "杭州市" in question and "研发中心" in question:
         notices.append(
-            "杭州研发机构门禁：正式项目名称为杭州市企业高新技术研究开发中心。杭科高〔2022〕39号"
-            "在2025年杭州市科技局清理结果中继续有效；旧培训简称和旧讲义只能作历史参考。"
+            "杭州研发机构门禁：统一路由到“市级研发中心（四市属地版）”的杭州属地版本。"
+            "当年申报尚未开放或评估未来年度时，已核验且明确拟替代旧项目的2026年征求意见稿"
+            "作为准备和差距评估主基线；法律状态必须始终标为draft（尚未正式生效），"
+            "不得写成现行正式政策。历史回放只使用目标年度当时有效规则。"
         )
     if any(term in question for term in ("浙江省研发中心", "省级研发中心", "省高企研发中心")):
         notices.append(
@@ -4827,8 +4932,11 @@ def current_policy_fallback(question: str) -> str:
         )
     if "杭州市" in question and "研发中心" in question:
         sections.append(
-            "杭州市现行项目名称为“杭州市企业高新技术研究开发中心”。杭科高〔2022〕39号仍继续有效，"
-            "旧培训简称和旧材料清单仅作历史参考。"
+            "“杭州市研发中心”统一进入“市级研发中心（四市属地版）”的杭州属地路由。"
+            "在本年度申报尚未开放或进行未来年度预测时，使用已核验的2026年"
+            "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》作为准备主基线。"
+            "该文件法律状态仍为draft（尚未正式生效），只能输出预评估和差距清单，不能宣称正式符合；"
+            "历史事项继续按目标年度当时有效文件回放。"
         )
     if any(term in question for term in ("浙江省研发中心", "省级研发中心", "省高企研发中心")):
         sections.append(

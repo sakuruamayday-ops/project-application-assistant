@@ -280,6 +280,7 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                             "type": "string",
                             "enum": [
                                 "current-assessment",
+                                "current-year-preparation",
                                 "future-preparation",
                                 "forecast",
                                 "historical-fact",
@@ -334,9 +335,10 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
             "function": {
                 "name": "delivery_contract_audit",
                 "description": (
-                    "在完成分析报告或复杂任务前检查模板章节、政策选择链、"
-                    "同行对比和四问复盘；失败时直接返回含补写位置、证据、"
-                    "来源和验收条件的repair_plan。"
+                    "在完成分析报告或复杂任务前检查交付profile、模板章节、"
+                    "政策选择链、来源与证据台账、同行对比、内置表格、"
+                    "产物哈希与验证器、品牌审计和四问复盘；失败时直接返回"
+                    "含补写位置、证据、来源、重跑验证器和验收条件的repair_plan。"
                 ),
                 "parameters": {
                     "type": "object",
@@ -347,7 +349,9 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                             "description": (
                                 "结构化交付内容，包含task_type、sections、"
                                 "skill_template、policy_selection、"
-                                "peer_comparison和four_question_review"
+                                "peer_comparison、sources、evidence_items、"
+                                "tables、artifacts、branding_audits和"
+                                "four_question_review"
                             ),
                         },
                     },

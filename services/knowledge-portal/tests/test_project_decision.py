@@ -799,6 +799,163 @@ def test_consultation_draft_is_selected_only_for_forecast():
     ]
 
 
+def test_verified_replacement_draft_is_selected_for_current_year_not_open_preassessment():
+    pack = {
+        "rule_layers": [
+            {
+                "layer_id": "stable",
+                "layer_type": "stable",
+                "policy_time_type": "stable-management",
+                "rules": [
+                    {
+                        "rule_id": "old-threshold",
+                        "field": "old_value",
+                        "operator": "gte",
+                        "expected": 200,
+                        "policy_status": "current",
+                    }
+                ],
+            },
+            {
+                "layer_id": "consultation",
+                "layer_type": "prospective",
+                "policy_time_type": "consultation-draft",
+                "source_archive_sha256": "b" * 64,
+                "replacement_signal": "explicit-replacement",
+                "replaces_rule_ids": ["old-threshold"],
+                "rules": [
+                    {
+                        "rule_id": "draft-threshold",
+                        "field": "new_value",
+                        "operator": "gte",
+                        "expected": 100,
+                        "policy_status": "draft",
+                    }
+                ],
+            },
+        ]
+    }
+    context = enrich_policy_time_context(
+        "今年能不能报杭州市研发中心？目前申报尚未开始",
+        {
+            "project_name": "市级研发中心（四市属地版）",
+            "application_status": "not-open",
+            "annual_notice_required": True,
+        },
+    )
+
+    assert context["evaluation_mode"] == "current-year-preparation"
+    selected = select_project_algorithm_rules(pack, context)
+    assert [rule["rule_id"] for rule in selected["rules"]] == [
+        "draft-threshold"
+    ]
+    assert selected["policy_time"]["status"] == (
+        "preapplication-draft-baseline"
+    )
+    assert selected["policy_time"]["baseline_policy_status"] == "draft"
+    assert selected["policy_time"]["formal_conclusion_allowed"] is False
+
+
+def test_district_green_factory_without_city_or_district_policy_is_unresolved():
+    pack = {
+        "project_id": "green-factory-1",
+        "rule_layers": [
+            {
+                "layer_id": "provincial-stable",
+                "layer_type": "stable",
+                "policy_time_type": "stable-management",
+                "source_scope_level": "province",
+                "rules": [
+                    {
+                        "rule_id": "provincial-rule",
+                        "field": "provincial_value",
+                        "operator": "truthy",
+                        "policy_status": "current",
+                        "source_url": "https://jxt.zj.gov.cn/policy",
+                    }
+                ],
+            }
+        ],
+    }
+
+    selected = select_project_algorithm_rules(
+        pack,
+        {
+            "evaluation_mode": "current-assessment",
+            "city": "杭州市",
+            "jurisdiction": "滨江区",
+        },
+    )
+
+    assert selected["rules"] == []
+    assert selected["selected_layers"] == []
+    assert selected["policy_time"]["status"] == (
+        "unresolved-jurisdiction-policy"
+    )
+    assert selected["policy_time"]["formal_conclusion_allowed"] is False
+    assert "省级绿色低碳工厂规则只能作为上位依赖" in selected[
+        "policy_time"
+    ]["reason"]
+
+
+def test_district_green_factory_uses_matching_local_source_not_provincial_rules():
+    pack = {
+        "project_id": "green-factory-1",
+        "rule_layers": [
+            {
+                "layer_id": "provincial-stable",
+                "layer_type": "stable",
+                "policy_time_type": "stable-management",
+                "source_scope_level": "province",
+                "source_scope_region": "浙江省",
+                "rules": [
+                    {
+                        "rule_id": "provincial-rule",
+                        "field": "provincial_value",
+                        "operator": "truthy",
+                        "policy_status": "current",
+                        "source_url": "https://jxt.zj.gov.cn/policy",
+                    }
+                ],
+            },
+            {
+                "layer_id": "binjiang-district",
+                "layer_type": "jurisdiction",
+                "policy_time_type": "jurisdiction-detail",
+                "source_scope_level": "district",
+                "source_scope_region": "滨江区",
+                "source_url": "https://www.hhtz.gov.cn/green-factory",
+                "applicability": {"regions": ["滨江区"]},
+                "rules": [
+                    {
+                        "rule_id": "binjiang-rule",
+                        "field": "binjiang_value",
+                        "operator": "truthy",
+                        "policy_status": "current",
+                        "source_url": "https://www.hhtz.gov.cn/green-factory",
+                    }
+                ],
+            },
+        ],
+    }
+
+    selected = select_project_algorithm_rules(
+        pack,
+        {
+            "evaluation_mode": "current-assessment",
+            "city": "杭州市",
+            "jurisdiction": "滨江区",
+        },
+    )
+
+    assert [rule["rule_id"] for rule in selected["rules"]] == [
+        "binjiang-rule"
+    ]
+    assert selected["selected_layers"] == ["binjiang-district"]
+    assert selected["policy_time"]["status"] == "allowed"
+    assert selected["policy_time"]["formal_conclusion_allowed"] is True
+
+
 def test_project_algorithm_pack_gate_runs_all_gold_cases():
     script = (
         Path(__file__).resolve().parents[1]

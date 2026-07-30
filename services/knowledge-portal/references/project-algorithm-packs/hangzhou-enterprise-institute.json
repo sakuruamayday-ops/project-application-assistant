@@ -1,13 +1,20 @@
 {
   "schema_version": 1,
   "project_id": "hangzhou-enterprise-institute",
-  "project_name": "杭州市企业研究院",
+  "project_name": "市级研发中心（四市属地版）",
   "version": "2022-formal-plus-2026-consultation-transition-20260730",
   "coverage_status": "rules-confirmed",
   "aliases": [
     "杭州研发中心",
     "杭州市研发中心",
-    "市高企研发中心"
+    "市高企研发中心",
+    "杭州市企业研究院",
+    "杭州市重点企业研究院",
+    "杭州市企业高新技术研究开发中心",
+    "宁波市重点企业研究院",
+    "宁波市企业技术研发中心",
+    "绍兴市企业研究开发中心",
+    "金华市科学技术研究开发中心"
   ],
   "source_retrieval_rule_ids": [
     "hangzhou-enterprise-institute"
@@ -718,6 +725,8 @@
         "hz-rd-compliance",
         "hz-rd-materials"
       ],
+      "replacement_signal": "explicit-replacement",
+      "replaces_policy_title": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
       "transition_notice": "市企业高新技术研究开发中心拟停止认定，相关资质拟迁移为市企业研究院；正式发布前仅作前瞻准备和差距评估。",
       "rules": [
         {

@@ -16,6 +16,7 @@ POLICY_TIME_TYPES = frozenset(
 EVALUATION_MODES = frozenset(
     {
         "current-assessment",
+        "current-year-preparation",
         "historical-fact",
         "forecast",
         "backtest-simulation",
@@ -23,11 +24,20 @@ EVALUATION_MODES = frozenset(
 )
 OUTPUT_LABELS = {
     "current-assessment": "查询日有效规则判断",
+    "current-year-preparation": "当年申报前准备（征求意见稿）",
     "historical-fact": "历史事实回放",
     "forecast": "预测",
     "backtest-simulation": "回测模拟",
 }
 PROSPECTIVE_POLICY_STATUSES = frozenset({"draft", "active_candidate"})
+PREPARATION_MODES = frozenset({"current-year-preparation", "forecast"})
+
+
+def _is_sha256(value: object) -> bool:
+    normalized = str(value or "").strip().lower()
+    return len(normalized) == 64 and all(
+        character in "0123456789abcdef" for character in normalized
+    )
 
 
 def enrich_policy_time_context(
@@ -40,7 +50,36 @@ def enrich_policy_time_context(
         enriched.get("evaluation_mode")
         or enriched.get("policy_evaluation_mode")
     ):
-        if "回测" in query or (
+        application_phase = str(
+            enriched.get("application_phase")
+            or enriched.get("application_status")
+            or ""
+        ).strip()
+        pre_application = application_phase in {
+            "not-open",
+            "not-started",
+            "pre-application",
+            "preparation",
+            "尚未开放",
+            "尚未开始",
+        } or any(
+            term in query
+            for term in (
+                "尚未开始申报",
+                "还没开始申报",
+                "尚未开放申报",
+                "申报尚未开始",
+                "申报还没开始",
+                "申报未启动",
+            )
+        )
+        current_year_question = (
+            any(term in query for term in ("今年", "本年度", "当年"))
+            or _year(enriched.get("year")) == date.today().year
+        )
+        if pre_application and current_year_question:
+            enriched["evaluation_mode"] = "current-year-preparation"
+        elif "回测" in query or (
             "最新规则" in query
             and any(term in query for term in ("历史", "过去", "当年"))
         ):
@@ -95,6 +134,10 @@ def normalize_evaluation_mode(project_context: Mapping[str, object]) -> str:
     aliases = {
         "current": "current-assessment",
         "current-assessment": "current-assessment",
+        "current-year-preparation": "current-year-preparation",
+        "current-pre-application": "current-year-preparation",
+        "pre-application": "current-year-preparation",
+        "当年申报前准备": "current-year-preparation",
         "historical": "historical-fact",
         "historical-fact": "historical-fact",
         "replay": "historical-fact",
@@ -146,7 +189,7 @@ def source_evidence_level(
         str(layer.get("source_archive_sha256") or ""),
         *[str(rule.get("source_archive_sha256") or "") for rule in rules],
     ]
-    if any(len(value) == 64 for value in archive_hashes):
+    if any(_is_sha256(value) for value in archive_hashes):
         return "audited-official-archive"
     return "unverified-source"
 
@@ -222,16 +265,25 @@ def assess_policy_layer_time(
         verified_draft = bool(
             statuses & PROSPECTIVE_POLICY_STATUSES
         ) and source_level in {"official-online", "audited-official-archive"}
+        explicit_replacement = (
+            str(layer.get("replacement_signal") or "")
+            in {"explicit", "explicit-replacement", "replacement-announced"}
+            or bool(layer.get("replaces_rule_ids"))
+            or bool(str(layer.get("replaces_policy_title") or "").strip())
+        )
         if not verified_draft:
             allowed = False
             reason = (
                 "前瞻规则层必须同时具备征求意见稿状态和"
                 "政府官网原文或已审计原文归档"
             )
-        elif mode == "forecast":
+        elif not explicit_replacement:
+            allowed = False
+            reason = "征求意见稿未明确替代既有政策，不得切换为准备主基线"
+        elif mode in PREPARATION_MODES:
             allowed = True
             reason = (
-                "已核验征求意见稿，作为前瞻准备主基线；"
+                "已核验且明确替代旧政策的征求意见稿，作为申报准备主基线；"
                 "结果必须标明尚未正式生效"
             )
         else:
@@ -308,6 +360,11 @@ def assess_policy_layer_time(
         "output_label": OUTPUT_LABELS[mode],
         "target_year": target_year,
         "source_evidence_level": source_level,
+        "source_scope_level": str(layer.get("source_scope_level") or ""),
+        "source_scope_region": str(layer.get("source_scope_region") or ""),
+        "policy_legal_status": (
+            "draft" if time_type == "consultation-draft" else ""
+        ),
         "allowed": allowed,
         "reason": reason,
     }
@@ -335,22 +392,33 @@ def summarize_policy_time_selection(
     )
     status = "allowed"
     reason = ""
-    if requires_annual and not has_selected_annual:
+    if mode in PREPARATION_MODES and not has_selected_annual:
+        if has_selected_consultation:
+            status = (
+                "preapplication-draft-baseline"
+                if mode == "current-year-preparation"
+                else "forecast-draft-baseline"
+            )
+            reason = (
+                "采用已核验且明确替代旧政策的征求意见稿形成准备基线；"
+                "法律状态仍为征求意见稿，不生成正式资格结论或旧通知截止日期"
+            )
+        else:
+            status = (
+                "preapplication-baseline-only"
+                if mode == "current-year-preparation"
+                else "forecast-baseline-only"
+            )
+            reason = (
+                "未取得可切换的已核验替代草案，仅以查询日最新有效管理规则"
+                "形成准备方向，不预测旧通知截止日期"
+            )
+    elif requires_annual and not has_selected_annual:
         status = "blocked"
         reason = "当年度通知尚未核验，不沿用旧年度截止日期"
     elif mode == "historical-fact" and not historical_has_basis:
         status = "blocked"
         reason = "当年有效规则暂缺，只保留名单身份和生命周期，不判断当年是否符合"
-    elif mode == "forecast" and not has_selected_annual:
-        if has_selected_consultation:
-            status = "forecast-draft-baseline"
-            reason = (
-                "采用已核验征求意见稿形成前瞻准备；"
-                "尚未正式生效，不生成正式资格结论或旧通知截止日期"
-            )
-        else:
-            status = "forecast-baseline-only"
-            reason = "仅以查询日最新有效管理规则形成准备方向，不预测旧通知截止日期"
     elif mode == "backtest-simulation":
         status = "simulation-only"
         reason = "结果属于回测模拟，不得写成历史事实"
@@ -359,6 +427,9 @@ def summarize_policy_time_selection(
         "output_label": OUTPUT_LABELS[mode],
         "status": status,
         "formal_conclusion_allowed": status == "allowed",
+        "baseline_policy_status": (
+            "draft" if has_selected_consultation else "current"
+        ),
         "reason": reason,
         "selected_layer_ids": [
             str(audit.get("layer_id") or "") for audit in selected

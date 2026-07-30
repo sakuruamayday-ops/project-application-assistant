@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from app.task_preflight import assess_task_preflight
+from app.task_preflight import (
+    assess_conversation_continuity,
+    assess_task_preflight,
+)
 
 
 def scoring_requirements() -> list[dict[str, object]]:
@@ -120,3 +123,133 @@ def test_high_impact_field_cannot_be_silently_assumed():
             ],
             supplied={},
         )
+
+
+def conversation_state() -> dict[str, object]:
+    return {
+        "current_topic": "讨论会话防遗漏机制",
+        "objective": "避免遗忘既有决定和未决事项",
+        "confirmed_facts": ["任务前置复盘已经生效"],
+        "confirmed_decisions": ["普通闲聊不永久归档"],
+        "rejected_options": ["每轮机械输出完整会议纪要"],
+        "open_loops": ["WorkBuddy签名包尚未发布"],
+        "constraints": ["只有重要决定经确认后才持久保存"],
+        "assumptions": ["当前只修改源码，不部署生产"],
+        "next_actions": ["加入会话连续性门禁"],
+    }
+
+
+def test_conversation_without_signal_continues_silently():
+    result = assess_conversation_continuity(state=conversation_state())
+
+    assert result["status"] == "silent"
+    assert result["reminder_required"] is False
+    assert result["checkpoint_required"] is False
+    assert result["can_form_dependent_conclusion"] is True
+
+
+def test_reintroduced_rejected_option_triggers_visible_reminder():
+    result = assess_conversation_continuity(
+        state=conversation_state(),
+        signals=[
+            {
+                "type": "rejected-option-reintroduced",
+                "summary": "当前建议重新采用了已否决的逐轮完整纪要",
+                "impact": "low",
+            }
+        ],
+    )
+
+    assert result["status"] == "reminder"
+    assert result["reminder"].startswith("连续性提醒：")
+    assert result["requires_user_resolution"] is False
+    assert result["next_action"] == "remind-and-continue"
+
+
+def test_high_impact_conflict_blocks_dependent_conclusion_once():
+    result = assess_conversation_continuity(
+        state=conversation_state(),
+        signals=[
+            {
+                "type": "decision-conflict",
+                "summary": "是否静默归档与既有隐私决定冲突",
+                "impact": "high",
+            },
+            {
+                "type": "constraint-omission",
+                "summary": "当前方案遗漏了主人确认门禁",
+                "impact": "high",
+            },
+        ],
+    )
+
+    assert result["requires_user_resolution"] is True
+    assert result["can_form_dependent_conclusion"] is False
+    assert result["blocking_question"].count("请主人一次确认") == 1
+    assert "既有隐私决定冲突" in result["blocking_question"]
+
+
+def test_topic_switch_with_open_loops_emits_four_field_checkpoint():
+    result = assess_conversation_continuity(
+        state=conversation_state(),
+        signals=[
+            {
+                "type": "topic-shift-with-open-loops",
+                "summary": "切换话题前仍有WorkBuddy发布事项未闭环",
+                "impact": "low",
+            }
+        ],
+    )
+
+    assert result["status"] == "reminder-and-checkpoint"
+    assert result["checkpoint_required"] is True
+    assert result["checkpoint_reasons"] == ["topic-switch"]
+    assert list(result["checkpoint"]) == [
+        "已确认",
+        "尚未确认",
+        "关键限制",
+        "下一步",
+    ]
+    assert "已否决：每轮机械输出完整会议纪要" in result["checkpoint"][
+        "关键限制"
+    ]
+
+
+def test_three_open_loops_trigger_checkpoint_without_visible_reminder():
+    state = conversation_state()
+    state["open_loops"] = ["事项一", "事项二", "事项三"]
+    result = assess_conversation_continuity(state=state)
+
+    assert result["status"] == "checkpoint"
+    assert result["reminder_required"] is False
+    assert result["checkpoint_reasons"] == ["open-loop-threshold"]
+
+
+def test_durable_memory_requires_confirmation_and_sensitive_text_is_blocked():
+    result = assess_conversation_continuity(
+        state=conversation_state(),
+        persistence_candidates=[
+            {
+                "summary": "主人确认会话连续性为长期规则",
+                "scope": "durable",
+                "kind": "decision",
+            },
+            {
+                "summary": "客户原始聊天记录",
+                "scope": "durable",
+                "sensitive": True,
+            },
+            {
+                "summary": "临时脑暴想法",
+                "scope": "session",
+            },
+        ],
+    )
+
+    assert result["persistence_action"] == "ask-before-persisting"
+    assert [item["summary"] for item in result["durable_candidates"]] == [
+        "主人确认会话连续性为长期规则"
+    ]
+    assert [
+        item["summary"] for item in result["blocked_sensitive_candidates"]
+    ] == ["客户原始聊天记录"]

@@ -9,6 +9,7 @@
   ],
   "selection_contract": {
     "current_formal_assessment": "现行正式办法加当年度通知",
+    "current_year_pre_application": "当年申报尚未开放且已核验征求意见稿明确替代旧政策时，征求意见稿作为准备和差距评估主基线；法律状态仍为draft",
     "future_preparation": "已核验征求意见稿优先；没有征求意见稿时使用查询日最新有效办法",
     "historical_replay": "只使用目标年度当时有效规则；缺失时保留身份事件但不判断当年是否符合",
     "draft_disclosure": "所有征求意见稿必须显示尚未正式生效、公开征求意见时间和拟替代文件",
@@ -75,7 +76,7 @@
     },
     {
       "family_id": "municipal-enterprise-rd-platform",
-      "family_name": "市级企业研发机构",
+      "family_name": "市级研发中心（四市属地版）",
       "city_variants": [
         {
           "city": "杭州市",
@@ -91,10 +92,14 @@
           "formal_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
           "prospective_policy": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
           "prospective_policy_status": "draft",
+          "prospective_verification_status": "audited-official-archive",
+          "prospective_archive_sha256": "9897f4ebd4e4f48f1234a78bb0d434f5f27dec45b537f6925fd2d48869927372",
+          "replacement_signal": "explicit-replacement",
+          "replaces_formal_policy": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
           "consultation_period": "2026-05-29/2026-06-27",
           "prospective_url": "https://www.xclcy.com/8955.html",
           "transition": "拟停止认定市企业高新技术研究开发中心，相关资质拟迁移为市企业研究院。",
-          "evaluation_rule": "未来准备使用征求意见稿；正式资格结论仍标明待正式文件发布。",
+          "evaluation_rule": "当年申报尚未开放的预评估和未来准备使用征求意见稿；法律状态保持draft，正式资格结论仍标明待正式文件发布。",
           "monitor": {
             "status": "awaiting-formal-publication",
             "keywords": [

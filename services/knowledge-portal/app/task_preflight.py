@@ -14,6 +14,33 @@ PREFLIGHT_DIMENSIONS = (
 )
 VALID_IMPACTS = {"high", "low"}
 VALID_RESOLUTIONS = {"ask-user", "discover", "assume"}
+CONTINUITY_LIST_FIELDS = (
+    "confirmed_facts",
+    "confirmed_decisions",
+    "rejected_options",
+    "open_loops",
+    "constraints",
+    "assumptions",
+    "next_actions",
+)
+CONTINUITY_SIGNAL_TYPES = {
+    "decision-conflict",
+    "topic-shift-with-open-loops",
+    "constraint-omission",
+    "rejected-option-reintroduced",
+    "assumption-promoted-to-fact",
+    "important-decision-unconfirmed",
+}
+CHECKPOINT_TRIGGERS = {
+    "topic-switch",
+    "important-decision",
+    "open-loop-threshold",
+    "pause-marker",
+    "before-execution",
+    "context-compaction",
+    "explicit-request",
+}
+VALID_PERSISTENCE_SCOPES = {"session", "durable"}
 
 
 def _has_value(value: object) -> bool:
@@ -53,6 +80,65 @@ def _normalized_requirement(raw: Mapping[str, object]) -> dict[str, object]:
         "reason": str(raw.get("reason") or "").strip(),
         "allowed_values": list(raw.get("allowed_values") or []),
         **({"default": raw["default"]} if "default" in raw else {}),
+    }
+
+
+def _normalized_text_list(value: object, *, field: str) -> list[str]:
+    if value is None:
+        return []
+    raw_items = [value] if isinstance(value, str) else value
+    if not isinstance(raw_items, (list, tuple, set)):
+        raise ValueError(f"会话状态字段{field}必须是文本或文本列表")
+    normalized = [str(item).strip() for item in raw_items if str(item).strip()]
+    return list(dict.fromkeys(normalized))
+
+
+def _normalized_conversation_state(
+    raw: Mapping[str, object],
+) -> dict[str, object]:
+    state = {
+        "current_topic": str(raw.get("current_topic") or "").strip(),
+        "objective": str(raw.get("objective") or "").strip(),
+    }
+    for field in CONTINUITY_LIST_FIELDS:
+        state[field] = _normalized_text_list(raw.get(field), field=field)
+    return state
+
+
+def _normalized_continuity_signal(
+    raw: Mapping[str, object],
+) -> dict[str, str]:
+    signal_type = str(raw.get("type") or "").strip()
+    summary = str(raw.get("summary") or "").strip()
+    impact = str(raw.get("impact") or "low").strip()
+    if signal_type not in CONTINUITY_SIGNAL_TYPES:
+        raise ValueError(f"未知会话连续性信号：{signal_type}")
+    if not summary:
+        raise ValueError("会话连续性信号必须包含summary")
+    if impact not in VALID_IMPACTS:
+        raise ValueError(f"未知影响级别：{impact}")
+    return {
+        "type": signal_type,
+        "summary": summary,
+        "impact": impact,
+        "source": str(raw.get("source") or "").strip(),
+    }
+
+
+def _normalized_persistence_candidate(
+    raw: Mapping[str, object],
+) -> dict[str, object]:
+    summary = str(raw.get("summary") or "").strip()
+    scope = str(raw.get("scope") or "session").strip()
+    if not summary:
+        raise ValueError("会话持久化候选必须包含summary")
+    if scope not in VALID_PERSISTENCE_SCOPES:
+        raise ValueError(f"未知会话持久化范围：{scope}")
+    return {
+        "summary": summary,
+        "scope": scope,
+        "sensitive": bool(raw.get("sensitive", False)),
+        "kind": str(raw.get("kind") or "discussion").strip(),
     }
 
 
@@ -132,4 +218,147 @@ def assess_task_preflight(
         "low_impact_assumptions": low_impact_assumptions,
         "blocking_question": blocking_question,
         "next_action": next_action,
+    }
+
+
+def assess_conversation_continuity(
+    *,
+    state: Mapping[str, object],
+    signals: Sequence[Mapping[str, object]] = (),
+    checkpoint_triggers: Sequence[str] = (),
+    persistence_candidates: Sequence[Mapping[str, object]] = (),
+) -> dict[str, object]:
+    """Enforce continuity without turning every reply into a meeting record.
+
+    Upstream language reasoning extracts structured state and signals. This
+    function deterministically decides when to remind, checkpoint, block a
+    dependent conclusion, or request permission before durable persistence.
+    """
+
+    normalized_state = _normalized_conversation_state(state)
+    normalized_signals = [
+        _normalized_continuity_signal(signal) for signal in signals
+    ]
+    normalized_triggers = list(
+        dict.fromkeys(str(trigger).strip() for trigger in checkpoint_triggers)
+    )
+    unknown_triggers = [
+        trigger
+        for trigger in normalized_triggers
+        if trigger not in CHECKPOINT_TRIGGERS
+    ]
+    if unknown_triggers:
+        raise ValueError(
+            "未知会话检查点触发器：" + "、".join(unknown_triggers)
+        )
+
+    open_loops = list(normalized_state["open_loops"])
+    if len(open_loops) >= 3 and "open-loop-threshold" not in normalized_triggers:
+        normalized_triggers.append("open-loop-threshold")
+    if any(
+        signal["type"] == "topic-shift-with-open-loops"
+        for signal in normalized_signals
+    ) and "topic-switch" not in normalized_triggers:
+        normalized_triggers.append("topic-switch")
+    if any(
+        signal["type"] == "important-decision-unconfirmed"
+        for signal in normalized_signals
+    ) and "important-decision" not in normalized_triggers:
+        normalized_triggers.append("important-decision")
+
+    reminder_required = bool(normalized_signals)
+    high_impact_signals = [
+        signal
+        for signal in normalized_signals
+        if signal["impact"] == "high"
+    ]
+    reminder = None
+    if reminder_required:
+        reminder = "连续性提醒：" + "；".join(
+            signal["summary"] for signal in normalized_signals
+        ) + "。"
+
+    blocking_question = None
+    if high_impact_signals:
+        blocking_question = (
+            "继续形成依赖性结论前，请主人一次确认："
+            + "；".join(signal["summary"] for signal in high_impact_signals)
+            + "。"
+        )
+
+    checkpoint = {
+        "已确认": [
+            *normalized_state["confirmed_facts"],
+            *normalized_state["confirmed_decisions"],
+        ],
+        "尚未确认": [
+            *normalized_state["open_loops"],
+            *[
+                f"假设：{item}"
+                for item in normalized_state["assumptions"]
+            ],
+        ],
+        "关键限制": [
+            *normalized_state["constraints"],
+            *[
+                f"已否决：{item}"
+                for item in normalized_state["rejected_options"]
+            ],
+        ],
+        "下一步": list(normalized_state["next_actions"]),
+    }
+    checkpoint_required = bool(normalized_triggers)
+
+    candidates = [
+        _normalized_persistence_candidate(candidate)
+        for candidate in persistence_candidates
+    ]
+    durable_candidates = [
+        candidate
+        for candidate in candidates
+        if candidate["scope"] == "durable" and not candidate["sensitive"]
+    ]
+    blocked_sensitive_candidates = [
+        candidate for candidate in candidates if candidate["sensitive"]
+    ]
+    persistence_action = (
+        "ask-before-persisting"
+        if durable_candidates
+        else "do-not-persist"
+    )
+
+    if reminder_required and checkpoint_required:
+        status = "reminder-and-checkpoint"
+    elif reminder_required:
+        status = "reminder"
+    elif checkpoint_required:
+        status = "checkpoint"
+    else:
+        status = "silent"
+
+    return {
+        "schema_version": 1,
+        "status": status,
+        "state": normalized_state,
+        "reminder_required": reminder_required,
+        "reminder": reminder,
+        "signals": normalized_signals,
+        "requires_user_resolution": bool(high_impact_signals),
+        "can_form_dependent_conclusion": not high_impact_signals,
+        "blocking_question": blocking_question,
+        "checkpoint_required": checkpoint_required,
+        "checkpoint_reasons": normalized_triggers,
+        "checkpoint": checkpoint,
+        "persistence_action": persistence_action,
+        "durable_candidates": durable_candidates,
+        "blocked_sensitive_candidates": blocked_sensitive_candidates,
+        "next_action": (
+            "resolve-high-impact-continuity-conflict"
+            if high_impact_signals
+            else "remind-and-continue"
+            if reminder_required
+            else "emit-checkpoint"
+            if checkpoint_required
+            else "continue-silently"
+        ),
     }

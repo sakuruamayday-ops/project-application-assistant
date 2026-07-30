@@ -7,7 +7,7 @@
   "project_name": "区级绿色工厂",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-09bf8be2b8c3b630f46f",
+  "policy_version_id": "policy-8f939e90f37ceb8b22e3",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -22,6 +22,7 @@
   },
   "shared_execution_kernels": [
     "task-omission-preflight",
+    "conversation-continuity-preflight",
     "project-router",
     "policy-version-gate",
     "policy-time-type-checker",
@@ -61,6 +62,7 @@
   },
   "quality_gates": {
     "task_preflight_required": true,
+    "conversation_continuity_required": true,
     "policy_time_checked": true,
     "native_rule_combinator": true,
     "composite_rule_structure": {
@@ -83,5 +85,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "b31765345bf7f9badd8179c2173f8c57e27e840456bda63e31c481093028052c"
+  "compile_input_hash": "409bc117f5a8168150b1d4ed1c5f59fa96df1968cef7404d5f84cd7cf0ff0fe6"
 }

@@ -16,12 +16,12 @@
     {
       "id": "hangzhou-zhejiang-rd-platform-2026",
       "path": "technology-innovation-projects/references/current-rd-platform-baseline-2026.md",
-      "verified_at": "2026-07-24",
+      "verified_at": "2026-07-30",
       "effective_from": "2026-05-29",
       "effective_until": null,
       "next_review_at": "2026-08-31",
-      "source_locator": "杭州市与浙江省研发机构政策本地核验基线，含征求意见稿状态",
-      "source_sha256": "7d696b927b399c884f232043168dd35a9b857ead5c3238e718ed0971a435b067",
+      "source_locator": "杭州市与浙江省研发机构政策本地核验基线，含征求意见稿状态、明确替代关系和当年申报前准备口径",
+      "source_sha256": "a006640da35bbf5c78f810cb73b7e4e0c7a8582397a1f4f06797bca3f1ce0b67",
       "block_after_next_review": true
     },
     {

@@ -101,6 +101,7 @@ def main() -> int:
     base_contract = fact_payload.get("fields", [])
     errors: list[str] = []
     validated = 0
+    canonical_project_names: set[str] = set()
     covered_projects: set[str] = set()
     for path in sorted(arguments.packs_dir.glob("*.json")):
         try:
@@ -116,9 +117,15 @@ def main() -> int:
         errors.extend(f"{path.name}: {error}" for error in pack_errors)
         project_name = str(pack.get("project_name") or "").strip()
         if project_name:
-            if project_name in covered_projects:
+            if project_name in canonical_project_names:
                 errors.append(f"{path.name}: project_name重复：{project_name}")
+            canonical_project_names.add(project_name)
             covered_projects.add(project_name)
+        covered_projects.update(
+            str(alias).strip()
+            for alias in pack.get("aliases", [])
+            if str(alias).strip()
+        )
         validated += 1
     if validated == 0:
         errors.append("没有发现项目算法包")

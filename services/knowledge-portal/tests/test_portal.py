@@ -699,6 +699,22 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
 
 def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     module = load_app(tmp_path)
+    hangzhou_guardrail = module.current_policy_guardrail(
+        "今年杭州市研发中心还没开始申报，企业能不能报？"
+    )
+    assert "市级研发中心（四市属地版）" in hangzhou_guardrail
+    assert "作为准备和差距评估主基线" in hangzhou_guardrail
+    assert "draft（尚未正式生效）" in hangzhou_guardrail
+    assert "正式项目名称为杭州市企业高新技术研究开发中心" not in (
+        hangzhou_guardrail
+    )
+    hangzhou_fallback = module.current_policy_fallback(
+        "今年杭州市研发中心还没开始申报，企业能不能报？"
+    )
+    assert "2026年《杭州市重点企业研究院、企业研究院建设管理办法" in (
+        hangzhou_fallback
+    )
+    assert "不能宣称正式符合" in hangzhou_fallback
     municipal_detail = module.project_algorithm_detail_payload(
         "municipal-enterprise-technology-center"
     )
@@ -723,6 +739,24 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert institute_detail is not None
     assert institute_detail["has_prospective_layer"] is True
     assert institute_detail["transition_notices"]
+    district_green_detail = module.project_algorithm_detail_payload(
+        "green-factory-1"
+    )
+    assert district_green_detail is not None
+    assert district_green_detail["jurisdiction_resolution"]["status"] == (
+        "unresolved"
+    )
+    assert district_green_detail["jurisdiction_resolution"][
+        "formal_conclusion_allowed"
+    ] is False
+    assert all(
+        source["role"] == "上位依赖/非区级门槛"
+        for source in district_green_detail["sources"]
+        if "浙江省绿色" in source["title"]
+    )
+    assert "unresolved-jurisdiction-policy" in (
+        district_green_detail["raw_json"]
+    )
     with closing(module.database()) as connection:
         connection.execute(
             """
@@ -774,15 +808,17 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "政策基线包" in response.text
     assert "近7日查询" in response.text
     assert "纯检索路由" in response.text
-    assert "29 个编译单元均已形成正式阈值规则包" in response.text
+    assert (
+        "28 类常规项目均已形成正式阈值规则包。系统会读取企业事实字段，"
+        "按稳定管理办法、年度通知、属地规则和已核验征求意见前瞻层逐项核对。"
+        in response.text
+    )
     assert "政策变化只重编受影响项目" in response.text
-    assert "四市研发平台与企业技术中心版本" in response.text
-    assert "宁波市重点企业研究院、企业技术研发中心" in response.text
-    assert "绍兴市企业研究开发中心建设与管理办法" in response.text
-    assert "2026年修订" in response.text
-    assert "金华市科学技术研究开发中心" in response.text
+    assert "Four-city Policy Router" not in response.text
+    assert "四市研发平台与企业技术中心版本" not in response.text
+    assert "宁波市重点企业研究院、企业技术研发中心" not in response.text
+    assert "市级研发中心（四市属地版）" in response.text
     assert "稳定管理办法" in response.text
-    assert "点击清单中的项目" in response.text
     assert 'href="/algorithms?coverage=rules-confirmed#algorithm-catalog"' in response.text
     assert 'href="/algorithms#algorithm-catalog" data-force-navigation' in response.text
     assert confirmed_response.status_code == 200
@@ -808,8 +844,10 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "杭州市企业技术中心管理办法" in municipal_response.text
     assert "金华市企业技术中心管理办法（2024年版）" in municipal_response.text
     assert institute_response.status_code == 200
+    assert "市级研发中心（四市属地版）" in institute_response.text
     assert "政策过渡提示" in institute_response.text
-    assert "征求意见稿尚未正式生效" in institute_response.text
+    assert "当年尚未开放申报的准备评估与下一年度预测" in institute_response.text
+    assert "征求意见稿的法律状态仍为草案" in institute_response.text
 
 
 def test_project_usage_metadata_covers_rest_and_mcp_searches(tmp_path):

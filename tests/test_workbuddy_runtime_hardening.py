@@ -341,12 +341,15 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         )
         answer = """
         完成结果与结论：已形成企业全景分析。
-        企业主体与工商信息已经锚定。事实数据与判断建议分开列示。
+        报告版本：B深度顾问版。企业主体与工商信息已经锚定。
+        共同事实底稿中的事实数据与判断建议分开列示。
         政策选择与适用版本：以现行管理办法和当期年度通知为依据；
         当期通知尚未命中的字段保持未知，来源均回指政府官网官方原文。
-        同行对比：选择官方公示名单中的可比企业，按技术和市场比较维度
+        同行对比与同行项目对比表：选择官方公示名单中的可比企业，按技术和市场比较维度
         给出可比性评分；同时列明口径差异、不可比较项和数据缺口。
-        风险与下一步行动已经列示。
+        风险与下一步行动已进入90天整改表，可申报项目矩阵和五年规划表均已生成。
+        来源清单和证据台账已经绑定；professional_report_pdf交付PDF
+        已通过金色居中水印审计通过。
         最没有把握：同行未公开指标。
         最大遗漏：企业研发台账尚未取得。
         最有价值的创新改进：增加政策变化影响模拟器。
@@ -363,6 +366,44 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         )
 
         self.assertEqual(missing, [])
+
+    def test_delivery_contract_covers_report_branding_tables_and_artifacts(self):
+        contract = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "skills/delivery-contracts.json"
+            ).read_text(encoding="utf-8")
+        )
+        scenarios = {
+            "enterprise-panorama-analysis": (
+                "请生成专业版企业全景分析报告。",
+                ("同行项目对比表", "交付PDF", "水印审计"),
+            ),
+            "manufacturing-tax-risk-analysis": (
+                "请生成金税四期分析报告。",
+                ("财务总览", "四项交付产物", "居中金色水印"),
+            ),
+            "sme-score-preassessment": (
+                "请生成专精特新前期评分报告。",
+                ("全指标评分底稿", "run_score.sh", "工作簿水印"),
+            ),
+            "sme-development-projects": (
+                "请生成专精特新后期体检报告。",
+                ("四项独立判断表", "validate_sme_assessment.py", "报告水印"),
+            ),
+        }
+
+        for skill_name, (prompt, expected_markers) in scenarios.items():
+            with self.subTest(skill=skill_name):
+                missing = BRIDGE.audit_delivery_completion(
+                    prompt=prompt,
+                    answer="总体结论：已完成。",
+                    active_skills=[{"skill": skill_name}],
+                    contract=contract,
+                )
+                joined = "；".join(missing)
+                for marker in expected_markers:
+                    self.assertIn(marker, joined)
 
     def test_stop_hook_keeps_blocking_after_repeated_quality_failures(self):
         contract_path = (

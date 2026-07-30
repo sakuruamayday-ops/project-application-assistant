@@ -69,6 +69,16 @@ GATE_STATES = frozenset(
 )
 RULE_LAYER_TYPES = frozenset({"stable", "annual", "jurisdiction", "prospective"})
 RULE_LOGICS = frozenset({"all", "any"})
+DISTRICT_GREEN_FACTORY_JURISDICTION_CONTRACT = {
+    "required_for_formal_decision": True,
+    "required_scope_levels": ["city", "district"],
+    "forbidden_scope_levels": ["province"],
+    "unresolved_status": "unresolved-jurisdiction-policy",
+    "unresolved_reason": (
+        "区级绿色工厂必须命中企业所在设区市或区县的正式项目规则；"
+        "省级绿色低碳工厂规则只能作为上位依赖，不能替代区级项目门槛。"
+    ),
+}
 
 DEADLINE_DATE_PATTERN = re.compile(
     r"(?:(?P<year>20\d{2})年)?"
@@ -86,6 +96,17 @@ def unique_strings(values: Sequence[object]) -> list[str]:
     return list(
         dict.fromkeys(str(value).strip() for value in values if str(value).strip())
     )
+
+
+def jurisdiction_source_contract_for_pack(
+    pack: Mapping[str, object],
+) -> dict[str, object]:
+    configured = pack.get("jurisdiction_source_contract")
+    if isinstance(configured, Mapping):
+        return dict(configured)
+    if str(pack.get("project_id") or "") == "green-factory-1":
+        return dict(DISTRICT_GREEN_FACTORY_JURISDICTION_CONTRACT)
+    return {}
 
 
 def normalize_search_text(value: object) -> str:
@@ -1542,7 +1563,30 @@ def select_project_algorithm_rules(
                 continue
             if not regions_match(applicability.get("regions", [])):
                 continue
-            time_audit = assess_policy_layer_time(layer, project_context)
+            runtime_layer: Mapping[str, object] = layer
+            if (
+                str(pack.get("project_id") or "") == "green-factory-1"
+                and not str(layer.get("source_scope_level") or "")
+                and (
+                    "jxt.zj.gov.cn" in str(layer.get("source_url") or "")
+                    or any(
+                        "浙江省" in str(rule.get("source") or "")
+                        or "jxt.zj.gov.cn"
+                        in str(rule.get("source_url") or "")
+                        for rule in layer.get("rules", [])
+                        if isinstance(rule, Mapping)
+                    )
+                )
+            ):
+                runtime_layer = {
+                    **dict(layer),
+                    "source_scope_level": "province",
+                    "source_scope_region": "浙江省",
+                }
+            time_audit = assess_policy_layer_time(
+                runtime_layer,
+                project_context,
+            )
             time_audits.append(time_audit)
             if not time_audit["allowed"]:
                 continue
@@ -1561,8 +1605,113 @@ def select_project_algorithm_rules(
                         "_policy_time_type": time_audit["policy_time_type"],
                         "_policy_time_label": time_audit["output_label"],
                         "_policy_layer_id": time_audit["layer_id"],
+                        "_policy_source_scope_level": time_audit[
+                            "source_scope_level"
+                        ],
+                        "_policy_source_scope_region": time_audit[
+                            "source_scope_region"
+                        ],
                     }
     policy_time = summarize_policy_time_selection(time_audits, project_context)
+    jurisdiction_contract = jurisdiction_source_contract_for_pack(pack)
+    if (
+        jurisdiction_contract.get("required_for_formal_decision") is True
+    ):
+        required_scope_levels = set(
+            unique_strings(
+                jurisdiction_contract.get("required_scope_levels", [])
+            )
+        )
+        resolved_jurisdiction_sources = [
+            audit
+            for audit in time_audits
+            if audit.get("layer_type") == "jurisdiction"
+            and audit.get("allowed") is True
+            and audit.get("source_evidence_level")
+            in {"official-online", "audited-official-archive"}
+            and (
+                not required_scope_levels
+                or str(audit.get("source_scope_level") or "")
+                in required_scope_levels
+            )
+            and bool(str(audit.get("source_scope_region") or "").strip())
+            and any(
+                str(audit.get("source_scope_region") or "")
+                == actual_region
+                or str(audit.get("source_scope_region") or "")
+                in actual_region
+                or actual_region
+                in str(audit.get("source_scope_region") or "")
+                for actual_region in context_regions
+            )
+        ]
+        if not resolved_jurisdiction_sources:
+            unresolved_status = str(
+                jurisdiction_contract.get("unresolved_status")
+                or "unresolved-jurisdiction-policy"
+            )
+            unresolved_reason = str(
+                jurisdiction_contract.get("unresolved_reason")
+                or "目标属地正式项目规则尚未解析，不能形成资格结论"
+            )
+            selected_rules.clear()
+            selected_layers.clear()
+            policy_time = {
+                **policy_time,
+                "status": unresolved_status,
+                "formal_conclusion_allowed": False,
+                "reason": unresolved_reason,
+                "selected_layer_ids": [],
+                "blocked_layers": [
+                    *policy_time.get("blocked_layers", []),
+                    {
+                        "layer_type": "jurisdiction",
+                        "policy_time_type": "jurisdiction-detail",
+                        "allowed": False,
+                        "reason": unresolved_reason,
+                        "required_scope_levels": sorted(
+                            required_scope_levels
+                        ),
+                    },
+                ],
+            }
+        else:
+            forbidden_scope_levels = set(
+                unique_strings(
+                    jurisdiction_contract.get(
+                        "forbidden_scope_levels",
+                        [],
+                    )
+                )
+            )
+            selected_rules = {
+                rule_id: rule
+                for rule_id, rule in selected_rules.items()
+                if str(rule.get("_policy_source_scope_level") or "")
+                not in forbidden_scope_levels
+            }
+            forbidden_layer_ids = {
+                str(audit.get("layer_id") or "")
+                for audit in time_audits
+                if str(audit.get("source_scope_level") or "")
+                in forbidden_scope_levels
+            }
+            selected_layers = [
+                layer_id
+                for layer_id in selected_layers
+                if layer_id not in forbidden_layer_ids
+            ]
+            policy_time = {
+                **policy_time,
+                "selected_layer_ids": [
+                    layer_id
+                    for layer_id in policy_time.get(
+                        "selected_layer_ids",
+                        [],
+                    )
+                    if layer_id not in forbidden_layer_ids
+                ],
+            }
     return {
         "rules": list(selected_rules.values()),
         "selected_layers": selected_layers,

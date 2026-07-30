@@ -13,7 +13,21 @@
   "approved_at": "2026-07-30 09:00:00",
   "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
   "source_title": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+  "source_scope_level": "province",
+  "source_scope_region": "浙江省",
   "stable_applicability": {},
+  "jurisdiction_source_contract": {
+    "required_for_formal_decision": true,
+    "required_scope_levels": [
+      "city",
+      "district"
+    ],
+    "forbidden_scope_levels": [
+      "province"
+    ],
+    "unresolved_status": "unresolved-jurisdiction-policy",
+    "unresolved_reason": "区级绿色工厂必须命中企业所在设区市或区县的正式项目规则；省级绿色低碳工厂规则只能作为检索线索，不能替代区级项目门槛。"
+  },
   "fact_fields": [
     {
       "field": "green_factory_1_jurisdiction_rule_resolved",
@@ -341,6 +355,8 @@
       "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
       "approved_at": "2026-07-30 09:00:00",
       "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html",
+      "source_scope_level": "province",
+      "source_scope_region": "浙江省",
       "application_types": [
         "recognition",
         "evaluation"
