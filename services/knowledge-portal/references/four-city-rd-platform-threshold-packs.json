@@ -1,0 +1,1588 @@
+{
+  "schema_version": 1,
+  "family_id": "municipal-enterprise-rd-platform",
+  "family_name": "市级企业研发平台",
+  "algorithm_project_id": "hangzhou-enterprise-institute",
+  "as_of": "2026-07-30",
+  "selection_contract": {
+    "hard_gate": "只将政策原文明确规定的必备条件作为硬门槛",
+    "score_gate": "评分附件逐叶计算；任何必需叶节点缺失时不得猜测总分",
+    "reviewed_score": "专家判断项读取人工确认分值并校验上下界",
+    "non_scoring_city": "政策没有评分表时只执行硬门槛和材料完整性判断"
+  },
+  "city_variants": [
+    {
+      "city": "杭州市",
+      "canonical_name": "杭州市企业研究院",
+      "content_scope": "existing-project-rule-layers",
+      "tracks": [
+        {
+          "track_id": "hangzhou-current-rd-center",
+          "track_name": "杭州市企业高新技术研究开发中心",
+          "execution_mode": "project-rule-layer",
+          "project_id": "hangzhou-enterprise-institute",
+          "rule_layer_id": "stable-management",
+          "policy_status": "current",
+          "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/现行正式/2022-04-20_杭州市企业高新技术研究开发中心管理办法_杭科高2022-39号.pdf",
+          "source_archive_sha256": "d8f450768ca15004cc023ef29fbf08785ae5fcfabeaff5a42d09966fb88ac7ec"
+        },
+        {
+          "track_id": "hangzhou-prospective-enterprise-institute",
+          "track_name": "杭州市企业研究院",
+          "execution_mode": "project-rule-layer",
+          "project_id": "hangzhou-enterprise-institute",
+          "rule_layer_id": "hangzhou-enterprise-institute-2026-consultation",
+          "policy_status": "draft",
+          "formal_conclusion_allowed": false,
+          "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/前瞻征求意见/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法_征求意见稿.docx",
+          "source_archive_sha256": "9897f4ebd4e4f48f1234a78bb0d434f5f27dec45b537f6925fd2d48869927372"
+        }
+      ]
+    },
+    {
+      "city": "宁波市",
+      "canonical_name": "宁波市重点企业研究院、企业技术研发中心",
+      "content_scope": "2026-formal-notice-and-score-attachments",
+      "source_documents": [
+        {
+          "title": "关于组织申报2026年度宁波市重点企业研究院和企业技术研发中心的通知",
+          "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+          "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/2026-05-09_关于组织申报2026年度宁波市重点企业研究院和企业技术研发中心的通知.pdf",
+          "source_archive_sha256": "67c0bb3ce799799df583664aade89d7d973a78e0297706fb61734c02aac78908"
+        },
+        {
+          "title": "宁波市重点企业研究院创新能力评价指标",
+          "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+          "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/附件1_宁波市重点企业研究院创新能力评价指标.doc",
+          "source_archive_sha256": "c419a176014483a5dabfcb8acef914670ad2862cbfc3acd18141bf14ebff4403"
+        },
+        {
+          "title": "宁波市企业技术研发中心创新能力评价指标",
+          "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+          "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/附件2_宁波市企业技术研发中心创新能力评价指标.doc",
+          "source_archive_sha256": "cb3bf4eee945e64c4fd4f5b12a1b19db3aed72f8a110b89b2c7107047551e162"
+        }
+      ],
+      "tracks": [
+        {
+          "track_id": "ningbo-key-enterprise-institute",
+          "track_name": "宁波市重点企业研究院",
+          "execution_mode": "leaf-threshold-and-score",
+          "policy_status": "current",
+          "score_threshold": 60,
+          "base_score_cap": 100,
+          "bonus_score_cap": 10,
+          "formal_conclusion_allowed": true,
+          "preference_rules": [
+            {
+              "rule_id": "nb-key-existing-rd-platform",
+              "field": "nb_has_municipal_rd_platform",
+              "operator": "truthy",
+              "expected": true,
+              "label": "原则上已建有市企业技术研发中心、市企业工程技术中心或市企业研究院"
+            }
+          ],
+          "manual_exceptions": [
+            {
+              "exception_id": "nb-key-talent-founded-enterprise",
+              "field": "nb_key_talent_relaxation_requested",
+              "effect": "营业收入、研发费用比例或研发费用基本条件可适当放宽",
+              "decision": "manual-review-required"
+            }
+          ],
+          "hard_rules": [
+            {
+              "rule_id": "nb-key-revenue-gate",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "nb-key-revenue-agriculture",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "nb-key-agriculture-type",
+                      "field": "enterprise_is_agricultural",
+                      "operator": "truthy",
+                      "expected": true
+                    },
+                    {
+                      "rule_id": "nb-key-agriculture-revenue",
+                      "field": "annual_revenue_wan",
+                      "operator": "gte",
+                      "expected": 2000,
+                      "unit": "万元"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "nb-key-revenue-general",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "nb-key-nonagriculture-type",
+                      "field": "enterprise_is_agricultural",
+                      "operator": "falsy",
+                      "expected": false
+                    },
+                    {
+                      "rule_id": "nb-key-general-revenue",
+                      "field": "annual_revenue_wan",
+                      "operator": "gte",
+                      "expected": 10000,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "rule_id": "nb-key-rd-investment-gate",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "nb-key-rd-ratio",
+                  "field": "annual_rd_expense_ratio",
+                  "operator": "gte",
+                  "expected": 4,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "nb-key-rd-amount-agriculture",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "nb-key-rd-amount-agriculture-type",
+                      "field": "enterprise_is_agricultural",
+                      "operator": "truthy",
+                      "expected": true
+                    },
+                    {
+                      "rule_id": "nb-key-rd-amount-agriculture-value",
+                      "field": "annual_rd_expense_wan",
+                      "operator": "gte",
+                      "expected": 500,
+                      "unit": "万元"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "nb-key-rd-amount-general",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "nb-key-rd-amount-general-type",
+                      "field": "enterprise_is_agricultural",
+                      "operator": "falsy",
+                      "expected": false
+                    },
+                    {
+                      "rule_id": "nb-key-rd-amount-general-value",
+                      "field": "annual_rd_expense_wan",
+                      "operator": "gte",
+                      "expected": 3000,
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "rule_id": "nb-key-score-gate",
+              "field": "$computed_score",
+              "operator": "gte",
+              "expected": 60,
+              "unit": "分"
+            },
+            {
+              "rule_id": "nb-key-compliance",
+              "field": "compliance_clear_from_previous_year",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "score_groups": [
+            {
+              "group_id": "nb-key-basic",
+              "label": "基本条件",
+              "cap": 25,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-revenue",
+                  "label": "上一年度营业收入",
+                  "method": "band",
+                  "field": "annual_revenue_yi",
+                  "threshold_multiplier": {
+                    "when_field": "enterprise_is_agricultural",
+                    "when_value": true,
+                    "multiplier": 0.5
+                  },
+                  "bands": [
+                    {
+                      "min": 1,
+                      "score": 6
+                    },
+                    {
+                      "min": 2,
+                      "score": 8
+                    },
+                    {
+                      "min": 5,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "nb-key-score-rd-ratio",
+                  "label": "上一年度研发费用占营业收入比例",
+                  "method": "band",
+                  "field": "annual_rd_expense_ratio",
+                  "bands": [
+                    {
+                      "min": 3,
+                      "score": 2
+                    },
+                    {
+                      "min": 4,
+                      "score": 3
+                    },
+                    {
+                      "min": 5,
+                      "score": 4
+                    },
+                    {
+                      "min": 6,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-key-score-rd-expense",
+                  "label": "上一年度研发费用",
+                  "method": "band",
+                  "field": "annual_rd_expense_wan",
+                  "threshold_multiplier": {
+                    "when_field": "enterprise_is_agricultural",
+                    "when_value": true,
+                    "multiplier": 0.5
+                  },
+                  "bands": [
+                    {
+                      "min": 500,
+                      "score": 2
+                    },
+                    {
+                      "min": 1000,
+                      "score": 4
+                    },
+                    {
+                      "min": 3000,
+                      "score": 6
+                    },
+                    {
+                      "min": 5000,
+                      "score": 8
+                    },
+                    {
+                      "min": 8000,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                }
+              ]
+            },
+            {
+              "group_id": "nb-key-ip",
+              "label": "知识产权",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-class-i-ip",
+                  "label": "近三年自主研发I类知识产权授权数量",
+                  "method": "count-step",
+                  "field": "class_i_ip_count_last_3_years",
+                  "base_min": 3,
+                  "base_score": 6,
+                  "increment_every": 1,
+                  "increment_score": 1,
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "nb-key-score-ip-advanced",
+                  "label": "知识产权先进程度",
+                  "method": "reviewed",
+                  "field": "ip_advanced_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-key-rd-conditions",
+              "label": "研发条件",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-equipment",
+                  "label": "科研设备原值总额",
+                  "method": "band",
+                  "field": "research_equipment_original_value_wan",
+                  "bands": [
+                    {
+                      "min": 1000,
+                      "score": 6
+                    },
+                    {
+                      "min": 1500,
+                      "score": 8
+                    },
+                    {
+                      "min": 3000,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "nb-key-score-site",
+                  "label": "相对集中研发场地面积",
+                  "method": "band",
+                  "field": "concentrated_rd_site_area_sqm",
+                  "bands": [
+                    {
+                      "min": 1000,
+                      "score": 3
+                    },
+                    {
+                      "min": 1500,
+                      "score": 4
+                    },
+                    {
+                      "min": 3000,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-key-talent",
+              "label": "人才队伍",
+              "cap": 20,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-rd-staff",
+                  "label": "上一年度研发人员数量",
+                  "method": "band",
+                  "field": "annual_rd_staff_count",
+                  "threshold_multiplier": {
+                    "when_field": "enterprise_is_agricultural",
+                    "when_value": true,
+                    "multiplier": 0.5
+                  },
+                  "bands": [
+                    {
+                      "min": 40,
+                      "score": 3
+                    },
+                    {
+                      "min": 80,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-key-score-rd-staff-ratio",
+                  "label": "研发人员占职工总数比例",
+                  "method": "band",
+                  "field": "annual_rd_staff_ratio",
+                  "bands": [
+                    {
+                      "min": 10,
+                      "score": 3
+                    },
+                    {
+                      "min": 15,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-key-score-qualified-staff-ratio",
+                  "label": "本科以上学历或中级以上职称研发人员比例",
+                  "method": "band",
+                  "field": "qualified_rd_staff_ratio",
+                  "bands": [
+                    {
+                      "min": 60,
+                      "score": 3
+                    },
+                    {
+                      "min": 80,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-key-score-high-level-talent",
+                  "label": "累计高层次人才",
+                  "method": "reviewed",
+                  "field": "high_level_talent_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-key-innovation-cooperation",
+              "label": "创新合作",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-industry-academia",
+                  "label": "近五年产学研合作",
+                  "method": "reviewed",
+                  "field": "industry_academia_review_score",
+                  "min_score": 0,
+                  "max_score": 10
+                }
+              ]
+            },
+            {
+              "group_id": "nb-key-local-support",
+              "label": "地方支持",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-local-support",
+                  "label": "当地政府建设支持",
+                  "method": "reviewed",
+                  "field": "local_support_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-key-management",
+              "label": "管理制度",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-management",
+                  "label": "科技创新管理制度",
+                  "method": "reviewed",
+                  "field": "management_system_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-key-construction-plan",
+              "label": "建设方案",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-plan",
+                  "label": "建设实施方案科学性合理性可行性",
+                  "method": "reviewed",
+                  "field": "construction_plan_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-key-bonus",
+              "label": "加分项",
+              "cap": 10,
+              "bonus": true,
+              "leaves": [
+                {
+                  "leaf_id": "nb-key-score-bonus-projects",
+                  "label": "近五年承担市级以上科技计划项目",
+                  "method": "reviewed",
+                  "field": "bonus_technology_projects_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-key-score-bonus-awards",
+                  "label": "近五年获得市级以上科技奖项",
+                  "method": "reviewed",
+                  "field": "bonus_technology_awards_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-key-score-bonus-standards",
+                  "label": "近五年制订标准",
+                  "method": "reviewed",
+                  "field": "bonus_standards_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-key-score-bonus-professors",
+                  "label": "产业教授或科技副总合作",
+                  "method": "reviewed",
+                  "field": "bonus_industry_professor_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "track_id": "ningbo-enterprise-technology-rd-center",
+          "track_name": "宁波市企业技术研发中心",
+          "execution_mode": "leaf-threshold-and-score",
+          "policy_status": "current",
+          "score_threshold": 60,
+          "base_score_cap": 100,
+          "bonus_score_cap": 10,
+          "formal_conclusion_allowed": true,
+          "hard_rules": [
+            {
+              "rule_id": "nb-center-qualification",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "nb-center-tech-sme",
+                  "field": "has_municipal_or_above_technology_sme_status",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "nb-center-high-tech",
+                  "field": "has_high_tech_enterprise_status",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "nb-center-gazelle",
+                  "field": "has_gazelle_star_status",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "nb-center-little-giant",
+                  "field": "has_little_giant_status",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "nb-center-single-champion",
+                  "field": "has_manufacturing_single_champion_status",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "nb-center-rd-investment",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "nb-center-rd-amount",
+                  "field": "annual_rd_expense_wan",
+                  "operator": "gte",
+                  "expected": 300,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "nb-center-rd-ratio-general",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "nb-center-rd-ratio-general-type",
+                      "field": "enterprise_industry_type",
+                      "operator": "not-in",
+                      "expected": [
+                        "软件和信息技术服务业",
+                        "医药制造业",
+                        "农业"
+                      ]
+                    },
+                    {
+                      "rule_id": "nb-center-rd-ratio-general-value",
+                      "field": "annual_rd_expense_ratio",
+                      "operator": "gte",
+                      "expected": 5,
+                      "unit": "%"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "nb-center-rd-ratio-software-medicine",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "nb-center-rd-ratio-software-medicine-type",
+                      "field": "enterprise_industry_type",
+                      "operator": "in",
+                      "expected": [
+                        "软件和信息技术服务业",
+                        "医药制造业"
+                      ]
+                    },
+                    {
+                      "rule_id": "nb-center-rd-ratio-software-medicine-value",
+                      "field": "annual_rd_expense_ratio",
+                      "operator": "gte",
+                      "expected": 6,
+                      "unit": "%"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "nb-center-rd-ratio-agriculture",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "nb-center-rd-ratio-agriculture-type",
+                      "field": "enterprise_industry_type",
+                      "operator": "equals",
+                      "expected": "农业"
+                    },
+                    {
+                      "rule_id": "nb-center-rd-ratio-agriculture-value",
+                      "field": "annual_rd_expense_ratio",
+                      "operator": "gte",
+                      "expected": 3,
+                      "unit": "%"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "rule_id": "nb-center-score-gate",
+              "field": "$computed_score",
+              "operator": "gte",
+              "expected": 60,
+              "unit": "分"
+            },
+            {
+              "rule_id": "nb-center-compliance",
+              "field": "compliance_clear_from_previous_year",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "score_groups": [
+            {
+              "group_id": "nb-center-basic",
+              "label": "基本条件",
+              "cap": 25,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-revenue",
+                  "label": "上一年度营业收入",
+                  "method": "band",
+                  "field": "annual_revenue_yi",
+                  "bands": [
+                    {
+                      "min": 0.1,
+                      "score": 6
+                    },
+                    {
+                      "min": 0.5,
+                      "score": 8
+                    },
+                    {
+                      "min": 1,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "nb-center-score-rd-ratio",
+                  "label": "上一年度研发费用占营业收入比例",
+                  "method": "band",
+                  "field": "annual_rd_expense_ratio",
+                  "bands": [
+                    {
+                      "min": 3,
+                      "score": 3
+                    },
+                    {
+                      "min": 4,
+                      "score": 4
+                    },
+                    {
+                      "min": 5,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-center-score-rd-expense",
+                  "label": "上一年度研发费用",
+                  "method": "band",
+                  "field": "annual_rd_expense_wan",
+                  "bands": [
+                    {
+                      "min": 50,
+                      "score": 2
+                    },
+                    {
+                      "min": 100,
+                      "score": 4
+                    },
+                    {
+                      "min": 200,
+                      "score": 6
+                    },
+                    {
+                      "min": 300,
+                      "score": 8
+                    },
+                    {
+                      "min": 500,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                }
+              ]
+            },
+            {
+              "group_id": "nb-center-ip",
+              "label": "知识产权",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-ip-count",
+                  "label": "近三年核心自主知识产权授权数量",
+                  "method": "alternative-count-step",
+                  "fields": {
+                    "class_i": "class_i_ip_count_last_3_years",
+                    "class_ii": "class_ii_ip_count_last_3_years"
+                  },
+                  "routes": [
+                    {
+                      "base_field": "class_i",
+                      "base_min": 1,
+                      "base_score": 6,
+                      "increment_weights": {
+                        "class_i": 1,
+                        "class_ii": 0.5
+                      }
+                    },
+                    {
+                      "base_field": "class_ii",
+                      "base_min": 3,
+                      "base_score": 6,
+                      "increment_weights": {
+                        "class_i": 1,
+                        "class_ii": 0.5
+                      }
+                    }
+                  ],
+                  "rounding": "floor",
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "nb-center-score-ip-advanced",
+                  "label": "知识产权先进程度",
+                  "method": "reviewed",
+                  "field": "ip_advanced_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-center-rd-conditions",
+              "label": "研发条件",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-equipment",
+                  "label": "科研设备原值总额",
+                  "method": "band",
+                  "field": "research_equipment_original_value_wan",
+                  "threshold_multiplier": {
+                    "when_field": "enterprise_industry_type",
+                    "when_values": [
+                      "农业",
+                      "软件和信息技术服务业"
+                    ],
+                    "multiplier": 0.5
+                  },
+                  "bands": [
+                    {
+                      "min": 200,
+                      "score": 6
+                    },
+                    {
+                      "min": 400,
+                      "score": 8
+                    },
+                    {
+                      "min": 800,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "nb-center-score-site",
+                  "label": "相对集中研发场地面积",
+                  "method": "band",
+                  "field": "concentrated_rd_site_area_sqm",
+                  "bands": [
+                    {
+                      "min": 300,
+                      "score": 3
+                    },
+                    {
+                      "min": 500,
+                      "score": 4
+                    },
+                    {
+                      "min": 800,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-center-talent",
+              "label": "人才队伍",
+              "cap": 20,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-rd-staff",
+                  "label": "上一年度研发人员数量",
+                  "method": "band",
+                  "field": "annual_rd_staff_count",
+                  "threshold_multiplier": {
+                    "when_field": "enterprise_industry_type",
+                    "when_value": "农业",
+                    "multiplier": 0.5
+                  },
+                  "bands": [
+                    {
+                      "min": 10,
+                      "score": 3
+                    },
+                    {
+                      "min": 15,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-center-score-rd-staff-ratio",
+                  "label": "研发人员占职工总数比例",
+                  "method": "band",
+                  "field": "annual_rd_staff_ratio",
+                  "bands": [
+                    {
+                      "min": 10,
+                      "score": 3
+                    },
+                    {
+                      "min": 15,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-center-score-qualified-staff-ratio",
+                  "label": "专科以上学历或中级以上职称研发人员比例",
+                  "method": "band",
+                  "field": "qualified_rd_staff_ratio",
+                  "bands": [
+                    {
+                      "min": 50,
+                      "score": 3
+                    },
+                    {
+                      "min": 70,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-center-score-high-level-talent",
+                  "label": "累计高层次人才",
+                  "method": "reviewed",
+                  "field": "high_level_talent_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-center-innovation-cooperation",
+              "label": "创新合作",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-industry-academia",
+                  "label": "近五年产学研合作",
+                  "method": "reviewed",
+                  "field": "industry_academia_review_score",
+                  "min_score": 0,
+                  "max_score": 10
+                }
+              ]
+            },
+            {
+              "group_id": "nb-center-local-support",
+              "label": "地方支持",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-local-support",
+                  "label": "当地政府建设支持",
+                  "method": "reviewed",
+                  "field": "local_support_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-center-management",
+              "label": "管理制度",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-management",
+                  "label": "科技创新管理制度",
+                  "method": "reviewed",
+                  "field": "management_system_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-center-construction-plan",
+              "label": "建设方案",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-plan",
+                  "label": "建设实施方案科学性合理性可行性",
+                  "method": "reviewed",
+                  "field": "construction_plan_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "nb-center-bonus",
+              "label": "加分项",
+              "cap": 10,
+              "bonus": true,
+              "leaves": [
+                {
+                  "leaf_id": "nb-center-score-bonus-projects",
+                  "label": "近五年承担市级以上科技计划项目",
+                  "method": "reviewed",
+                  "field": "bonus_technology_projects_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-center-score-bonus-awards",
+                  "label": "近五年获得市级以上科技奖项",
+                  "method": "reviewed",
+                  "field": "bonus_technology_awards_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-center-score-bonus-standards",
+                  "label": "近五年制订标准",
+                  "method": "reviewed",
+                  "field": "bonus_standards_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "nb-center-score-bonus-professors",
+                  "label": "产业教授或科技副总合作",
+                  "method": "reviewed",
+                  "field": "bonus_industry_professor_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "city": "绍兴市",
+      "canonical_name": "绍兴市企业研究开发中心",
+      "content_scope": "2026-formal-measure-and-score-attachment",
+      "source_documents": [
+        {
+          "title": "绍兴市企业研究开发中心建设与管理办法",
+          "official_url": "https://kjj.sx.gov.cn/col/col1229459336/art/2026/art_ebccf9f535264ce4a46f41f8bbff8dc1.html",
+          "source_archive_path": "10_政策与目录/研究院/四市研发平台/绍兴市/2026现行正式/2026-03-30_绍兴市企业研究开发中心建设与管理办法.html",
+          "source_archive_sha256": "0673794bec33ac1ae0f5bec66074400fc597b8fac3d446405901a9706483ab9a"
+        },
+        {
+          "title": "绍兴市企业研究开发中心创新能力评价指标",
+          "official_url": "https://kjj.sx.gov.cn/col/col1229459336/art/2026/art_ebccf9f535264ce4a46f41f8bbff8dc1.html",
+          "source_archive_path": "10_政策与目录/研究院/四市研发平台/绍兴市/2026现行正式/附件_绍兴市企业研究开发中心创新能力评价指标.wps",
+          "source_archive_sha256": "644cadd8dbf9a937335bcc06720e930a53775e3f71f646a1442c7d16c6fcd7de"
+        }
+      ],
+      "tracks": [
+        {
+          "track_id": "shaoxing-enterprise-rd-center",
+          "track_name": "绍兴市企业研究开发中心",
+          "execution_mode": "leaf-threshold-and-score",
+          "policy_status": "current",
+          "score_threshold": 60,
+          "base_score_cap": 100,
+          "bonus_score_cap": 10,
+          "formal_conclusion_allowed": true,
+          "hard_rules": [
+            {
+              "rule_id": "sx-rd-independent-legal-person",
+              "field": "has_independent_legal_person_status",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "sx-rd-investment",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "sx-rd-ratio",
+                  "field": "annual_rd_expense_ratio",
+                  "operator": "gte",
+                  "expected": 3,
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "sx-rd-amount",
+                  "field": "annual_rd_expense_wan",
+                  "operator": "gte",
+                  "expected": 150,
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "sx-rd-score-gate",
+              "field": "$computed_score",
+              "operator": "gte",
+              "expected": 60,
+              "unit": "分"
+            },
+            {
+              "rule_id": "sx-rd-compliance",
+              "field": "compliance_clear_from_previous_year",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "score_groups": [
+            {
+              "group_id": "sx-rd-basic",
+              "label": "基本条件",
+              "cap": 25,
+              "leaves": [
+                {
+                  "leaf_id": "sx-rd-score-revenue",
+                  "label": "上一年度营业收入",
+                  "method": "band",
+                  "field": "annual_revenue_wan",
+                  "bands": [
+                    {
+                      "min": 1000,
+                      "score": 6
+                    },
+                    {
+                      "min": 2000,
+                      "score": 8
+                    },
+                    {
+                      "min": 5000,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "sx-rd-score-rd-ratio",
+                  "label": "上一年度研发费用占营业收入比例",
+                  "method": "band",
+                  "field": "annual_rd_expense_ratio",
+                  "bands": [
+                    {
+                      "min": 3,
+                      "score": 6
+                    },
+                    {
+                      "min": 4,
+                      "score": 8
+                    },
+                    {
+                      "min": 5,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "sx-rd-score-rd-expense",
+                  "label": "上一年度研发费用",
+                  "method": "band",
+                  "field": "annual_rd_expense_wan",
+                  "bands": [
+                    {
+                      "min": 50,
+                      "score": 3
+                    },
+                    {
+                      "min": 100,
+                      "score": 4
+                    },
+                    {
+                      "min": 400,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "sx-rd-ip",
+              "label": "知识产权",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "sx-rd-score-ip-count",
+                  "label": "近三年核心自主知识产权授权数量",
+                  "method": "alternative-count-step",
+                  "fields": {
+                    "class_i": "class_i_ip_count_last_3_years",
+                    "class_ii": "class_ii_ip_count_last_3_years"
+                  },
+                  "routes": [
+                    {
+                      "base_field": "class_i",
+                      "base_min": 1,
+                      "base_score": 9,
+                      "increment_weights": {
+                        "class_i": 3,
+                        "class_ii": 1
+                      }
+                    },
+                    {
+                      "base_field": "class_ii",
+                      "base_min": 3,
+                      "base_score": 9,
+                      "increment_weights": {
+                        "class_i": 3,
+                        "class_ii": 1
+                      }
+                    }
+                  ],
+                  "rounding": "floor",
+                  "max_score": 15
+                }
+              ]
+            },
+            {
+              "group_id": "sx-rd-conditions",
+              "label": "研发条件",
+              "cap": 20,
+              "leaves": [
+                {
+                  "leaf_id": "sx-rd-score-equipment",
+                  "label": "科研设备原值总额",
+                  "method": "band",
+                  "field": "research_equipment_original_value_wan",
+                  "threshold_multiplier": {
+                    "when_field": "enterprise_industry_type",
+                    "when_values": [
+                      "农业",
+                      "软件和信息技术服务业"
+                    ],
+                    "multiplier": 0.3333333333333333,
+                    "explicit_profile": [
+                      {
+                        "min": 50,
+                        "score": 6
+                      },
+                      {
+                        "min": 150,
+                        "score": 8
+                      },
+                      {
+                        "min": 250,
+                        "score": 10
+                      }
+                    ]
+                  },
+                  "bands": [
+                    {
+                      "min": 150,
+                      "score": 6
+                    },
+                    {
+                      "min": 250,
+                      "score": 8
+                    },
+                    {
+                      "min": 500,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "sx-rd-score-site",
+                  "label": "相对集中研发场地面积",
+                  "method": "band",
+                  "field": "concentrated_rd_site_area_sqm",
+                  "bands": [
+                    {
+                      "min": 150,
+                      "score": 6
+                    },
+                    {
+                      "min": 250,
+                      "score": 8
+                    },
+                    {
+                      "min": 500,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                }
+              ]
+            },
+            {
+              "group_id": "sx-rd-talent",
+              "label": "人才队伍",
+              "cap": 20,
+              "leaves": [
+                {
+                  "leaf_id": "sx-rd-score-rd-staff",
+                  "label": "上一年度研发人员数量",
+                  "method": "band",
+                  "field": "annual_rd_staff_count",
+                  "bands": [
+                    {
+                      "min": 8,
+                      "score": 6
+                    },
+                    {
+                      "min": 10,
+                      "score": 8
+                    },
+                    {
+                      "min": 15,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10
+                },
+                {
+                  "leaf_id": "sx-rd-score-rd-staff-ratio",
+                  "label": "研发人员占职工总数比例",
+                  "method": "band",
+                  "field": "annual_rd_staff_ratio",
+                  "bands": [
+                    {
+                      "min": 8,
+                      "score": 3
+                    },
+                    {
+                      "min": 10,
+                      "score": 4
+                    },
+                    {
+                      "min": 15,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "sx-rd-score-qualified-staff-ratio",
+                  "label": "专科以上学历和中级以上职称研发人员比例",
+                  "method": "band",
+                  "field": "qualified_rd_staff_ratio",
+                  "bands": [
+                    {
+                      "min": 50,
+                      "score": 3
+                    },
+                    {
+                      "min": 70,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "sx-rd-innovation-cooperation",
+              "label": "创新合作",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "sx-rd-score-industry-academia",
+                  "label": "近五年国际国内产学研合作",
+                  "method": "reviewed",
+                  "field": "industry_academia_review_score",
+                  "min_score": 0,
+                  "max_score": 10
+                }
+              ]
+            },
+            {
+              "group_id": "sx-rd-local-support",
+              "label": "地方支持",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "sx-rd-score-local-support",
+                  "label": "当地政府建设支持",
+                  "method": "reviewed",
+                  "field": "local_support_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "sx-rd-management",
+              "label": "管理制度",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "sx-rd-score-management",
+                  "label": "科技创新管理制度",
+                  "method": "reviewed",
+                  "field": "management_system_review_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            },
+            {
+              "group_id": "sx-rd-bonus",
+              "label": "加分项",
+              "cap": 10,
+              "bonus": true,
+              "leaves": [
+                {
+                  "leaf_id": "sx-rd-score-bonus-projects",
+                  "label": "近五年市级以上科技计划项目",
+                  "method": "reviewed",
+                  "field": "bonus_technology_projects_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "sx-rd-score-bonus-awards",
+                  "label": "近五年省级以上科技奖项",
+                  "method": "reviewed",
+                  "field": "bonus_technology_awards_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "sx-rd-score-bonus-standards",
+                  "label": "近五年制定标准",
+                  "method": "reviewed",
+                  "field": "bonus_standards_score",
+                  "min_score": 0,
+                  "max_score": 5
+                },
+                {
+                  "leaf_id": "sx-rd-score-bonus-talents",
+                  "label": "累计高层次人才",
+                  "method": "reviewed",
+                  "field": "bonus_high_level_talent_score",
+                  "min_score": 0,
+                  "max_score": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "city": "金华市",
+      "canonical_name": "金华市科学技术研究开发中心",
+      "content_scope": "2024-formal-filing-measure-and-application-form",
+      "source_documents": [
+        {
+          "title": "金华市科学技术研究开发中心管理办法",
+          "official_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3539/site/attach/0/f00cfd9976d14688b7cbf89d10f6f102.pdf",
+          "source_archive_path": "10_政策与目录/研究院/四市研发平台/金华市/2024现行正式/2024-09-10_金华市科学技术研究开发中心管理办法_金市科2024-47号.pdf",
+          "source_archive_sha256": "44f900a157820374cd8268d5baf6d70e094b4349ab9afa9f6a2f57733d3175cd"
+        }
+      ],
+      "tracks": [
+        {
+          "track_id": "jinhua-science-technology-rd-center",
+          "track_name": "金华市科学技术研究开发中心",
+          "execution_mode": "leaf-threshold-no-score",
+          "policy_status": "current",
+          "formal_conclusion_allowed": true,
+          "score_model": "none",
+          "score_reason": "金市科〔2024〕47号实行备案管理，附件为申请表，未设置评分表或60分门槛。",
+          "hard_rules": [
+            {
+              "rule_id": "jh-rd-registration-years",
+              "field": "registered_in_jinhua_years",
+              "operator": "gte",
+              "expected": 1,
+              "unit": "年"
+            },
+            {
+              "rule_id": "jh-rd-entity-type",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "jh-rd-high-tech-enterprise",
+                  "field": "has_high_tech_enterprise_status",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "jh-rd-above-scale-enterprise",
+                  "field": "has_above_scale_enterprise_status",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "jh-rd-technology-sme",
+                  "field": "has_technology_sme_status",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "jh-rd-university",
+                  "field": "is_university",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "jh-rd-research-institute",
+                  "field": "is_research_institute",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "jh-rd-medical-institution",
+                  "field": "is_medical_institution",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            },
+            {
+              "rule_id": "jh-rd-management-systems",
+              "field": "research_and_financial_systems_sound",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "jh-rd-experiment-conditions",
+              "field": "has_experiment_and_pilot_conditions",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "jh-rd-concentrated-site",
+              "field": "has_relatively_concentrated_rd_site",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "jh-rd-autonomous-ip",
+              "field": "has_autonomous_intellectual_property",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "jh-rd-staff",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "jh-rd-staff-count",
+                  "field": "full_time_technology_staff_count",
+                  "operator": "gte",
+                  "expected": 5,
+                  "unit": "人"
+                },
+                {
+                  "rule_id": "jh-rd-staff-ratio",
+                  "field": "full_time_technology_staff_ratio",
+                  "operator": "gte",
+                  "expected": 20,
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "rule_id": "jh-rd-compliance",
+              "field": "compliance_clear_last_year",
+              "operator": "truthy",
+              "expected": true
+            }
+          ],
+          "submission_rules": [
+            {
+              "rule_id": "jh-rd-application-form",
+              "field": "filing_application_form_complete",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "jh-rd-construction-plan",
+              "field": "construction_plan_complete",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "jh-rd-management-documents",
+              "field": "research_and_financial_system_documents_complete",
+              "operator": "truthy",
+              "expected": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "ir_type": "jiaotang-unified-project-rule-ir",
-  "source_digest": "d2f3e8e64588e4e454d841e42bbe642fad87f713dfcd4787cc34c34fc2482862",
+  "source_digest": "1a3388f0fee5f05a51e14fd88ba72e15f8c7fc73bee7720ef30849b6e99697b8",
   "shared_kernel": {
     "version": "1.4",
     "components": [
@@ -9388,7 +9388,7 @@
       "policy_baseline": {
         "project_id": "hangzhou-enterprise-institute",
         "baseline_status": "complete",
-        "decision_mode": "current-local-rule",
+        "decision_mode": "four-city-local-rule-with-draft-monitor",
         "policy_documents": [
           {
             "document_id": "hangzhou-enterprise-rd-center-2022",
@@ -9397,7 +9397,9 @@
             "status": "current",
             "authority": "杭州市科学技术局",
             "official_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
-            "relation": "canonical-project-correction"
+            "relation": "hangzhou-current-formal",
+            "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/现行正式/2022-04-20_杭州市企业高新技术研究开发中心管理办法_杭科高2022-39号.pdf",
+            "source_archive_sha256": "d8f450768ca15004cc023ef29fbf08785ae5fcfabeaff5a42d09966fb88ac7ec"
           },
           {
             "document_id": "hangzhou-enterprise-institute-consultation-2026",
@@ -9407,17 +9409,104 @@
             "authority": "杭州市科学技术局",
             "official_url": "https://www.xclcy.com/8955.html",
             "relation": "prospective-replacement",
-            "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
-            "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f",
+            "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/前瞻征求意见/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法_征求意见稿.docx",
+            "source_archive_sha256": "9897f4ebd4e4f48f1234a78bb0d434f5f27dec45b537f6925fd2d48869927372",
             "mandatory_disclosure": "尚未正式生效；仅作未来准备和预测基线"
+          },
+          {
+            "document_id": "ningbo-rd-platform-application-2026",
+            "title": "关于组织申报2026年度宁波市重点企业研究院和企业技术研发中心的通知",
+            "issued_year": 2026,
+            "status": "current-annual-notice",
+            "authority": "宁波市科学技术局",
+            "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+            "relation": "ningbo-current-annual-notice",
+            "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/2026-05-09_关于组织申报2026年度宁波市重点企业研究院和企业技术研发中心的通知.pdf",
+            "source_archive_sha256": "67c0bb3ce799799df583664aade89d7d973a78e0297706fb61734c02aac78908"
+          },
+          {
+            "document_id": "ningbo-key-institute-score-2026",
+            "title": "宁波市重点企业研究院创新能力评价指标",
+            "issued_year": 2026,
+            "status": "current-attachment",
+            "authority": "宁波市科学技术局",
+            "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+            "relation": "ningbo-score-attachment",
+            "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/附件1_宁波市重点企业研究院创新能力评价指标.doc",
+            "source_archive_sha256": "c419a176014483a5dabfcb8acef914670ad2862cbfc3acd18141bf14ebff4403"
+          },
+          {
+            "document_id": "ningbo-rd-center-score-2026",
+            "title": "宁波市企业技术研发中心创新能力评价指标",
+            "issued_year": 2026,
+            "status": "current-attachment",
+            "authority": "宁波市科学技术局",
+            "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+            "relation": "ningbo-score-attachment",
+            "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/附件2_宁波市企业技术研发中心创新能力评价指标.doc",
+            "source_archive_sha256": "cb3bf4eee945e64c4fd4f5b12a1b19db3aed72f8a110b89b2c7107047551e162"
+          },
+          {
+            "document_id": "shaoxing-rd-center-measure-2026",
+            "title": "绍兴市企业研究开发中心建设与管理办法（2026年修订）",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "绍兴市科学技术局",
+            "official_url": "https://kjj.sx.gov.cn/col/col1229459336/art/2026/art_ebccf9f535264ce4a46f41f8bbff8dc1.html",
+            "relation": "shaoxing-current-formal",
+            "source_archive_path": "10_政策与目录/研究院/四市研发平台/绍兴市/2026现行正式/2026-03-30_绍兴市企业研究开发中心建设与管理办法.html",
+            "source_archive_sha256": "0673794bec33ac1ae0f5bec66074400fc597b8fac3d446405901a9706483ab9a"
+          },
+          {
+            "document_id": "shaoxing-rd-center-score-2026",
+            "title": "绍兴市企业研究开发中心创新能力评价指标",
+            "issued_year": 2026,
+            "status": "current-attachment",
+            "authority": "绍兴市科学技术局",
+            "official_url": "https://kjj.sx.gov.cn/col/col1229459336/art/2026/art_ebccf9f535264ce4a46f41f8bbff8dc1.html",
+            "relation": "shaoxing-score-attachment",
+            "source_archive_path": "10_政策与目录/研究院/四市研发平台/绍兴市/2026现行正式/附件_绍兴市企业研究开发中心创新能力评价指标.wps",
+            "source_archive_sha256": "644cadd8dbf9a937335bcc06720e930a53775e3f71f646a1442c7d16c6fcd7de"
+          },
+          {
+            "document_id": "jinhua-rd-center-measure-2024",
+            "title": "金华市科学技术研究开发中心管理办法",
+            "issued_year": 2024,
+            "status": "current",
+            "authority": "金华市科学技术局",
+            "official_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3539/site/attach/0/f00cfd9976d14688b7cbf89d10f6f102.pdf",
+            "relation": "jinhua-current-filing",
+            "source_archive_path": "10_政策与目录/研究院/四市研发平台/金华市/2024现行正式/2024-09-10_金华市科学技术研究开发中心管理办法_金市科2024-47号.pdf",
+            "source_archive_sha256": "44f900a157820374cd8268d5baf6d70e094b4349ab9afa9f6a2f57733d3175cd"
           }
         ],
-        "dependencies": []
+        "dependencies": [
+          {
+            "from_document_id": "hangzhou-enterprise-institute-consultation-2026",
+            "to_document_id": "hangzhou-enterprise-rd-center-2022",
+            "relation": "prospective-replaces"
+          },
+          {
+            "from_document_id": "ningbo-key-institute-score-2026",
+            "to_document_id": "ningbo-rd-platform-application-2026",
+            "relation": "attachment-of"
+          },
+          {
+            "from_document_id": "ningbo-rd-center-score-2026",
+            "to_document_id": "ningbo-rd-platform-application-2026",
+            "relation": "attachment-of"
+          },
+          {
+            "from_document_id": "shaoxing-rd-center-score-2026",
+            "to_document_id": "shaoxing-rd-center-measure-2026",
+            "relation": "attachment-of"
+          }
+        ]
       },
       "ir_node_id": "project:hangzhou-enterprise-institute",
       "policy_version_id": "policy-033c259e32559434fe49",
-      "source_content_hash": "8a34e9ea00897e26d151319f0d43b74ca3b4bd76968da71b4b06723b00d2804a",
-      "compile_input_hash": "a6ff7438577fce7e5b612fd02f4334d6c50876e5a1ff483dd632aaedd8c08fac",
+      "source_content_hash": "50f2075938b70739add932010c6b3d89f6acf80ea7a13bc56eb42fd914f3bdbe",
+      "compile_input_hash": "63f2a1602476f9b17178cf152714660ea369db8df3333cab65bf900bef4d729e",
       "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
@@ -28870,7 +28959,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "a6ff7438577fce7e5b612fd02f4334d6c50876e5a1ff483dd632aaedd8c08fac"
+      "compile_input_hash": "63f2a1602476f9b17178cf152714660ea369db8df3333cab65bf900bef4d729e"
     },
     "hangzhou-enterprise-technology-center": {
       "schema_version": 1,
@@ -30644,11 +30733,11 @@
         "authority": "杭州市科学技术局",
         "official_url": "https://www.xclcy.com/8955.html",
         "relation": "prospective-replacement",
-        "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
-        "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f",
+        "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/前瞻征求意见/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法_征求意见稿.docx",
+        "source_archive_sha256": "9897f4ebd4e4f48f1234a78bb0d434f5f27dec45b537f6925fd2d48869927372",
         "mandatory_disclosure": "尚未正式生效；仅作未来准备和预测基线",
         "selection_reason": "rolling-five-year-window",
-        "content_hash": "41b56d19cd015d6af3c56f7d4cb4b58dc266623379bf1937b8d14f050bc369e4"
+        "content_hash": "7200fa4e546e73b4118607a4fcb749f68dd94b586a0ea55168cf5a703bae8273"
       },
       {
         "node_id": "policy:hangzhou-enterprise-rd-center-2022",
@@ -30659,9 +30748,11 @@
         "status": "current",
         "authority": "杭州市科学技术局",
         "official_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
-        "relation": "canonical-project-correction",
+        "relation": "hangzhou-current-formal",
+        "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/现行正式/2022-04-20_杭州市企业高新技术研究开发中心管理办法_杭科高2022-39号.pdf",
+        "source_archive_sha256": "d8f450768ca15004cc023ef29fbf08785ae5fcfabeaff5a42d09966fb88ac7ec",
         "selection_reason": "rolling-five-year-window",
-        "content_hash": "6661bc238588004a9e2701c3a9c106d3019236313563b086ccda6cbfc38aa06f"
+        "content_hash": "b7180ffc5c649a364569a8cf3b8cc23b7f60f329d57d8a0bee9ac40b1bbf8901"
       },
       {
         "node_id": "policy:hangzhou-enterprise-tech-center-2018",
@@ -30692,6 +30783,21 @@
         "still_effective": true,
         "selection_reason": "rolling-five-year-window",
         "content_hash": "85db4d984add1e54d26173df3d364a97ebf25999f27caf55c74e801b3fd300d5"
+      },
+      {
+        "node_id": "policy:jinhua-rd-center-measure-2024",
+        "node_type": "policy",
+        "document_id": "jinhua-rd-center-measure-2024",
+        "title": "金华市科学技术研究开发中心管理办法",
+        "issued_year": 2024,
+        "status": "current",
+        "authority": "金华市科学技术局",
+        "official_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3539/site/attach/0/f00cfd9976d14688b7cbf89d10f6f102.pdf",
+        "relation": "jinhua-current-filing",
+        "source_archive_path": "10_政策与目录/研究院/四市研发平台/金华市/2024现行正式/2024-09-10_金华市科学技术研究开发中心管理办法_金市科2024-47号.pdf",
+        "source_archive_sha256": "44f900a157820374cd8268d5baf6d70e094b4349ab9afa9f6a2f57733d3175cd",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "a4fc1b96b0248bf29805ff96cbb7d9f2777656cfd7fdeaaa66794e9d676716f3"
       },
       {
         "node_id": "policy:little-giant-confirmed-12bcf014dbf2",
@@ -30931,6 +31037,51 @@
         "content_hash": "9704c22f33ee3fe32f0ee97ccf065d2397e66bd003915db445308bc2e8479e84"
       },
       {
+        "node_id": "policy:ningbo-key-institute-score-2026",
+        "node_type": "policy",
+        "document_id": "ningbo-key-institute-score-2026",
+        "title": "宁波市重点企业研究院创新能力评价指标",
+        "issued_year": 2026,
+        "status": "current-attachment",
+        "authority": "宁波市科学技术局",
+        "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+        "relation": "ningbo-score-attachment",
+        "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/附件1_宁波市重点企业研究院创新能力评价指标.doc",
+        "source_archive_sha256": "c419a176014483a5dabfcb8acef914670ad2862cbfc3acd18141bf14ebff4403",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "27870851f6a59b3f0c9700fb9c7c1e340376070e2ff09572515bc633774af266"
+      },
+      {
+        "node_id": "policy:ningbo-rd-center-score-2026",
+        "node_type": "policy",
+        "document_id": "ningbo-rd-center-score-2026",
+        "title": "宁波市企业技术研发中心创新能力评价指标",
+        "issued_year": 2026,
+        "status": "current-attachment",
+        "authority": "宁波市科学技术局",
+        "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+        "relation": "ningbo-score-attachment",
+        "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/附件2_宁波市企业技术研发中心创新能力评价指标.doc",
+        "source_archive_sha256": "cb3bf4eee945e64c4fd4f5b12a1b19db3aed72f8a110b89b2c7107047551e162",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "7fd31d066f0a5ee7312c32a6e3e2cce60293e82e1a70e3adf1bb2ab9236fa477"
+      },
+      {
+        "node_id": "policy:ningbo-rd-platform-application-2026",
+        "node_type": "policy",
+        "document_id": "ningbo-rd-platform-application-2026",
+        "title": "关于组织申报2026年度宁波市重点企业研究院和企业技术研发中心的通知",
+        "issued_year": 2026,
+        "status": "current-annual-notice",
+        "authority": "宁波市科学技术局",
+        "official_url": "https://www.yy.gov.cn/col/col1229136657/art/2026/art_63333c1db3b149e6928527454211df38.html",
+        "relation": "ningbo-current-annual-notice",
+        "source_archive_path": "10_政策与目录/研究院/四市研发平台/宁波市/2026年度/2026-05-09_关于组织申报2026年度宁波市重点企业研究院和企业技术研发中心的通知.pdf",
+        "source_archive_sha256": "67c0bb3ce799799df583664aade89d7d973a78e0297706fb61734c02aac78908",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "331dd52d716a9b9fa90966d2170e8e5ce45120c0b26bf1711600ed932b9cb389"
+      },
+      {
         "node_id": "policy:pin-zi-biao-authorization-current",
         "node_type": "policy",
         "document_id": "pin-zi-biao-authorization-current",
@@ -30956,6 +31107,36 @@
         "cited_by_current_notice": true,
         "selection_reason": "cited-by-current-notice",
         "content_hash": "4ad981764d62b68ceb6fc4385e90fdeec8dd78f355ed5285171139bc4c236c24"
+      },
+      {
+        "node_id": "policy:shaoxing-rd-center-measure-2026",
+        "node_type": "policy",
+        "document_id": "shaoxing-rd-center-measure-2026",
+        "title": "绍兴市企业研究开发中心建设与管理办法（2026年修订）",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "绍兴市科学技术局",
+        "official_url": "https://kjj.sx.gov.cn/col/col1229459336/art/2026/art_ebccf9f535264ce4a46f41f8bbff8dc1.html",
+        "relation": "shaoxing-current-formal",
+        "source_archive_path": "10_政策与目录/研究院/四市研发平台/绍兴市/2026现行正式/2026-03-30_绍兴市企业研究开发中心建设与管理办法.html",
+        "source_archive_sha256": "0673794bec33ac1ae0f5bec66074400fc597b8fac3d446405901a9706483ab9a",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "449481f1b4822966290dcc4de504778936cf3a43cbc81c5953cd194805b48d3b"
+      },
+      {
+        "node_id": "policy:shaoxing-rd-center-score-2026",
+        "node_type": "policy",
+        "document_id": "shaoxing-rd-center-score-2026",
+        "title": "绍兴市企业研究开发中心创新能力评价指标",
+        "issued_year": 2026,
+        "status": "current-attachment",
+        "authority": "绍兴市科学技术局",
+        "official_url": "https://kjj.sx.gov.cn/col/col1229459336/art/2026/art_ebccf9f535264ce4a46f41f8bbff8dc1.html",
+        "relation": "shaoxing-score-attachment",
+        "source_archive_path": "10_政策与目录/研究院/四市研发平台/绍兴市/2026现行正式/附件_绍兴市企业研究开发中心创新能力评价指标.wps",
+        "source_archive_sha256": "644cadd8dbf9a937335bcc06720e930a53775e3f71f646a1442c7d16c6fcd7de",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "b427f9efeacbcd597cf13733d2ef9dbf514bddb1a4362639b2eda0e423ecec12"
       },
       {
         "node_id": "policy:technology-sme-2-confirmed-1f383b27450e",
@@ -31585,6 +31766,26 @@
     ],
     "edges": [
       {
+        "from": "policy:hangzhou-enterprise-institute-consultation-2026",
+        "to": "policy:hangzhou-enterprise-rd-center-2022",
+        "relation": "prospective-replaces"
+      },
+      {
+        "from": "policy:ningbo-key-institute-score-2026",
+        "to": "policy:ningbo-rd-platform-application-2026",
+        "relation": "attachment-of"
+      },
+      {
+        "from": "policy:ningbo-rd-center-score-2026",
+        "to": "policy:ningbo-rd-platform-application-2026",
+        "relation": "attachment-of"
+      },
+      {
+        "from": "policy:shaoxing-rd-center-score-2026",
+        "to": "policy:shaoxing-rd-center-measure-2026",
+        "relation": "attachment-of"
+      },
+      {
         "from": "policy:zj-enterprise-tech-center-result-2024",
         "to": "policy:zj-enterprise-tech-center-method-2019",
         "relation": "cites"
@@ -31712,7 +31913,37 @@
       {
         "from": "project:hangzhou-enterprise-institute",
         "to": "policy:hangzhou-enterprise-rd-center-2022",
-        "relation": "canonical-project-correction"
+        "relation": "hangzhou-current-formal"
+      },
+      {
+        "from": "project:hangzhou-enterprise-institute",
+        "to": "policy:jinhua-rd-center-measure-2024",
+        "relation": "jinhua-current-filing"
+      },
+      {
+        "from": "project:hangzhou-enterprise-institute",
+        "to": "policy:ningbo-key-institute-score-2026",
+        "relation": "ningbo-score-attachment"
+      },
+      {
+        "from": "project:hangzhou-enterprise-institute",
+        "to": "policy:ningbo-rd-center-score-2026",
+        "relation": "ningbo-score-attachment"
+      },
+      {
+        "from": "project:hangzhou-enterprise-institute",
+        "to": "policy:ningbo-rd-platform-application-2026",
+        "relation": "ningbo-current-annual-notice"
+      },
+      {
+        "from": "project:hangzhou-enterprise-institute",
+        "to": "policy:shaoxing-rd-center-measure-2026",
+        "relation": "shaoxing-current-formal"
+      },
+      {
+        "from": "project:hangzhou-enterprise-institute",
+        "to": "policy:shaoxing-rd-center-score-2026",
+        "relation": "shaoxing-score-attachment"
       },
       {
         "from": "project:hangzhou-enterprise-technology-center",
@@ -31987,6 +32218,7 @@
       "hangzhou-enterprise-rd-center-2022",
       "hangzhou-enterprise-tech-center-2018",
       "jinhua-enterprise-tech-center-2024",
+      "jinhua-rd-center-measure-2024",
       "little-giant-confirmed-12bcf014dbf2",
       "little-giant-confirmed-1f636aee1e30",
       "little-giant-confirmed-3179e2c83396",
@@ -32004,8 +32236,13 @@
       "national-high-tech-enterprise-confirmed-e87f259ac1af",
       "national-key-little-giant-support-2024",
       "ningbo-enterprise-tech-center-route",
+      "ningbo-key-institute-score-2026",
+      "ningbo-rd-center-score-2026",
+      "ningbo-rd-platform-application-2026",
       "pin-zi-biao-authorization-current",
       "shaoxing-enterprise-tech-center-2018",
+      "shaoxing-rd-center-measure-2026",
+      "shaoxing-rd-center-score-2026",
       "technology-sme-2-confirmed-1f383b27450e",
       "technology-sme-2-confirmed-5b833eb17879",
       "technology-sme-2-confirmed-60d211ae61dc",
@@ -32041,11 +32278,14 @@
       "zj-technology-sme-method-2016"
     ],
     "cold_archive_document_ids": [],
-    "content_hash": "df35e6cc3c70fe81c2c23d9a7af0c56b1cbb04fe04e41de36e7ae18a6c82b368"
+    "content_hash": "3be58b42659044b444433e64aed9100e926cb568d273fc780c31f26551e7185b"
   },
   "incremental_compilation": {
     "strategy": "project-dependency-content-hash",
     "compiled_project_ids": [
+      "hangzhou-enterprise-institute"
+    ],
+    "reused_project_ids": [
       "digital-workshop",
       "first-equipment",
       "first-material-batch",
@@ -32055,7 +32295,6 @@
       "green-factory-2",
       "green-factory-3",
       "green-factory-4",
-      "hangzhou-enterprise-institute",
       "hangzhou-enterprise-technology-center",
       "intelligent-factory",
       "key-little-giant-support",
@@ -32076,10 +32315,9 @@
       "zhejiang-manufacturing-quality",
       "zhejiang-specialized-sme"
     ],
-    "reused_project_ids": [],
     "removed_project_ids": [],
-    "compiled_count": 29,
-    "reused_count": 0,
+    "compiled_count": 1,
+    "reused_count": 28,
     "removed_count": 0
   },
   "policy_execution_window": {
@@ -32100,11 +32338,11 @@
     "policy_covered_count": 29,
     "routing_only_count": 0,
     "shared_kernel_count": 18,
-    "policy_dependency_nodes": 92,
-    "policy_dependency_edges": 78,
-    "execution_policy_documents": 63,
+    "policy_dependency_nodes": 98,
+    "policy_dependency_edges": 88,
+    "execution_policy_documents": 69,
     "cold_archive_policy_documents": 0,
-    "compiled_projects": 29,
-    "reused_projects": 0
+    "compiled_projects": 1,
+    "reused_projects": 28
   }
 }

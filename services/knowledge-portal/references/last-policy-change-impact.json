@@ -2,17 +2,71 @@
   "schema_version": 1,
   "report_type": "policy-change-impact-simulation",
   "before_source_digest": "d2f3e8e64588e4e454d841e42bbe642fad87f713dfcd4787cc34c34fc2482862",
-  "after_source_digest": "d2f3e8e64588e4e454d841e42bbe642fad87f713dfcd4787cc34c34fc2482862",
-  "changed_policy_node_ids": [],
-  "added_policy_node_ids": [],
+  "after_source_digest": "1a3388f0fee5f05a51e14fd88ba72e15f8c7fc73bee7720ef30849b6e99697b8",
+  "changed_policy_node_ids": [
+    "policy:hangzhou-enterprise-institute-consultation-2026",
+    "policy:hangzhou-enterprise-rd-center-2022"
+  ],
+  "added_policy_node_ids": [
+    "policy:jinhua-rd-center-measure-2024",
+    "policy:ningbo-key-institute-score-2026",
+    "policy:ningbo-rd-center-score-2026",
+    "policy:ningbo-rd-platform-application-2026",
+    "policy:shaoxing-rd-center-measure-2026",
+    "policy:shaoxing-rd-center-score-2026"
+  ],
   "removed_policy_node_ids": [],
-  "affected_project_ids": [],
-  "affected_projects": [],
+  "affected_project_ids": [
+    "hangzhou-enterprise-institute"
+  ],
+  "affected_projects": [
+    {
+      "project_id": "hangzhou-enterprise-institute",
+      "project_name": "杭州市企业研究院",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "policy_time_delta": {
+        "added_layer_ids": [],
+        "removed_layer_ids": [],
+        "changed_layer_ids": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "policy_trace_requires_relink": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "time_window_changed": false,
+        "invalidation_key": "policy-033c259e32559434fe49"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false,
+        "historical_fact_guard_changed": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-033c259e32559434fe49",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    }
+  ],
   "summary": {
-    "affected_projects": 0,
+    "affected_projects": 1,
     "identity_events_replayed": 0,
     "identity_twins_replayed": 0,
-    "prediction_project_invalidations": 0,
+    "prediction_project_invalidations": 1,
     "historical_backtest_project_invalidations": 0,
     "preflight_project_reassessments": 0
   },

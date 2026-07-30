@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "as_of": "2026-07-30",
   "cities": [
     "杭州市",
@@ -13,6 +13,17 @@
     "historical_replay": "只使用目标年度当时有效规则；缺失时保留身份事件但不判断当年是否符合",
     "draft_disclosure": "所有征求意见稿必须显示尚未正式生效、公开征求意见时间和拟替代文件",
     "old_rule_after_draft": "旧规则仅保留现行正式判断和历史回放价值，不再作为未来准备主基线"
+  },
+  "incremental_contract": {
+    "cell_key": "family_id+city",
+    "content_hash": "政策路由、阈值轨道及归档原件哈希的规范化SHA-256",
+    "compile_scope": "只重编内容哈希变化的城市项目族单元及其依赖项目",
+    "unchanged_reuse": "未变化单元复用既有阈值包、政策依赖节点和算法卡"
+  },
+  "draft_monitoring_contract": {
+    "promotion_gate": "正式文件必须来自登记的政府域名，已核验为正式现行，并携带通过校验的叶节点阈值包",
+    "promotion_action": "正式文件替换前瞻主层；征求意见稿转入历史草案；重新计算受影响城市项目族哈希",
+    "impact_action": "列出受影响项目、企业身份事件、预测与历史回测，不改写官方名单事实"
   },
   "project_families": [
     {
@@ -69,19 +80,44 @@
         {
           "city": "杭州市",
           "canonical_name": "杭州市企业研究院",
+          "algorithm_project_id": "hangzhou-enterprise-institute",
+          "threshold_track_ids": [
+            "hangzhou-current-rd-center",
+            "hangzhou-prospective-enterprise-institute"
+          ],
           "route_status": "consultation-transition",
           "formal_policy": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
           "formal_policy_status": "current-until-repealed",
+          "formal_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
           "prospective_policy": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
           "prospective_policy_status": "draft",
           "consultation_period": "2026-05-29/2026-06-27",
           "prospective_url": "https://www.xclcy.com/8955.html",
           "transition": "拟停止认定市企业高新技术研究开发中心，相关资质拟迁移为市企业研究院。",
-          "evaluation_rule": "未来准备使用征求意见稿；正式资格结论仍标明待正式文件发布。"
+          "evaluation_rule": "未来准备使用征求意见稿；正式资格结论仍标明待正式文件发布。",
+          "monitor": {
+            "status": "awaiting-formal-publication",
+            "keywords": [
+              "杭州市重点企业研究院",
+              "杭州市企业研究院",
+              "建设管理办法"
+            ],
+            "official_domains": [
+              "kj.hangzhou.gov.cn",
+              "zfgb.hangzhou.gov.cn",
+              "hangzhou.gov.cn"
+            ],
+            "requires_leaf_threshold_pack": true
+          }
         },
         {
           "city": "宁波市",
           "canonical_name": "宁波市重点企业研究院、企业技术研发中心",
+          "algorithm_project_id": "hangzhou-enterprise-institute",
+          "threshold_track_ids": [
+            "ningbo-key-enterprise-institute",
+            "ningbo-enterprise-technology-rd-center"
+          ],
           "route_status": "active-municipal",
           "formal_policy": "《宁波市重点企业研究院、企业技术研发中心建设与认定管理办法》（甬科高〔2026〕12号）",
           "policy_status": "current",
@@ -92,6 +128,10 @@
         {
           "city": "绍兴市",
           "canonical_name": "绍兴市企业研究开发中心",
+          "algorithm_project_id": "hangzhou-enterprise-institute",
+          "threshold_track_ids": [
+            "shaoxing-enterprise-rd-center"
+          ],
           "route_status": "active-municipal",
           "formal_policy": "《绍兴市企业研究开发中心建设与管理办法》（2026年修订）",
           "policy_status": "current",
@@ -104,6 +144,10 @@
         {
           "city": "金华市",
           "canonical_name": "金华市科学技术研究开发中心",
+          "algorithm_project_id": "hangzhou-enterprise-institute",
+          "threshold_track_ids": [
+            "jinhua-science-technology-rd-center"
+          ],
           "route_status": "active-municipal-filing",
           "formal_policy": "《金华市科学技术研究开发中心管理办法》（金市科〔2024〕47号）",
           "policy_status": "current",

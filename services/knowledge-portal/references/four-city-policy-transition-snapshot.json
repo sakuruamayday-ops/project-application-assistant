@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "snapshot_type": "four-city-policy-transition-cells",
+  "cell_count": 8,
+  "cells": {
+    "municipal-enterprise-technology-center|杭州市": {
+      "cell_key": "municipal-enterprise-technology-center|杭州市",
+      "family_id": "municipal-enterprise-technology-center",
+      "city": "杭州市",
+      "canonical_name": "杭州市企业技术中心",
+      "algorithm_project_id": null,
+      "route_status": "active-municipal",
+      "formal_policy": "《杭州市企业技术中心管理办法》（杭经信联智能〔2018〕81号）",
+      "formal_policy_status": "current",
+      "prospective_policy": null,
+      "threshold_track_ids": [],
+      "content_hash": "6c0c8f2a22e5caaacefa7d4c8861dc10a5d06981385c9f22d114212d20a333f2"
+    },
+    "municipal-enterprise-technology-center|宁波市": {
+      "cell_key": "municipal-enterprise-technology-center|宁波市",
+      "family_id": "municipal-enterprise-technology-center",
+      "city": "宁波市",
+      "canonical_name": "浙江省企业技术中心（宁波推荐）",
+      "algorithm_project_id": null,
+      "route_status": "redirect-to-provincial",
+      "formal_policy": "《浙江省企业技术中心管理办法》及宁波年度推荐通知",
+      "formal_policy_status": "current",
+      "prospective_policy": null,
+      "threshold_track_ids": [],
+      "content_hash": "0bdb57ecbfe8fe8cad43071c7154c72cf387f8b11e1efddf8774390cec0527f1"
+    },
+    "municipal-enterprise-technology-center|绍兴市": {
+      "cell_key": "municipal-enterprise-technology-center|绍兴市",
+      "family_id": "municipal-enterprise-technology-center",
+      "city": "绍兴市",
+      "canonical_name": "绍兴市市级企业技术中心",
+      "algorithm_project_id": null,
+      "route_status": "active-municipal",
+      "formal_policy": "《绍兴市市级企业技术中心管理办法》（绍市经信〔2018〕28号）",
+      "formal_policy_status": "current-cited-by-2025-notice",
+      "prospective_policy": null,
+      "threshold_track_ids": [],
+      "content_hash": "c8deb99cb7a321b9e60dfa6041db93ddffa5fd0c7a06a19a4b2d2fe66b5442b1"
+    },
+    "municipal-enterprise-technology-center|金华市": {
+      "cell_key": "municipal-enterprise-technology-center|金华市",
+      "family_id": "municipal-enterprise-technology-center",
+      "city": "金华市",
+      "canonical_name": "金华市企业技术中心",
+      "algorithm_project_id": null,
+      "route_status": "active-municipal",
+      "formal_policy": "《金华市企业技术中心管理办法（2024年版）》（金经信投资〔2024〕104号）",
+      "formal_policy_status": "current",
+      "prospective_policy": null,
+      "threshold_track_ids": [],
+      "content_hash": "8d066db44ab8f9b0f040fe325e05fd469c7cf6a3cea411bfefef441b379dde72"
+    },
+    "municipal-enterprise-rd-platform|杭州市": {
+      "cell_key": "municipal-enterprise-rd-platform|杭州市",
+      "family_id": "municipal-enterprise-rd-platform",
+      "city": "杭州市",
+      "canonical_name": "杭州市企业研究院",
+      "algorithm_project_id": "hangzhou-enterprise-institute",
+      "route_status": "consultation-transition",
+      "formal_policy": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
+      "formal_policy_status": "current-until-repealed",
+      "prospective_policy": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+      "threshold_track_ids": [
+        "hangzhou-current-rd-center",
+        "hangzhou-prospective-enterprise-institute"
+      ],
+      "content_hash": "ead80dea61092933aea0694ba147a4b1393bdc99d1e89b495539d674af59b50b"
+    },
+    "municipal-enterprise-rd-platform|宁波市": {
+      "cell_key": "municipal-enterprise-rd-platform|宁波市",
+      "family_id": "municipal-enterprise-rd-platform",
+      "city": "宁波市",
+      "canonical_name": "宁波市重点企业研究院、企业技术研发中心",
+      "algorithm_project_id": "hangzhou-enterprise-institute",
+      "route_status": "active-municipal",
+      "formal_policy": "《宁波市重点企业研究院、企业技术研发中心建设与认定管理办法》（甬科高〔2026〕12号）",
+      "formal_policy_status": "current",
+      "prospective_policy": null,
+      "threshold_track_ids": [
+        "ningbo-key-enterprise-institute",
+        "ningbo-enterprise-technology-rd-center"
+      ],
+      "content_hash": "a94f19dc068105bdb7b1202e80b14337995baa7de8cd99b675772dca771ce81f"
+    },
+    "municipal-enterprise-rd-platform|绍兴市": {
+      "cell_key": "municipal-enterprise-rd-platform|绍兴市",
+      "family_id": "municipal-enterprise-rd-platform",
+      "city": "绍兴市",
+      "canonical_name": "绍兴市企业研究开发中心",
+      "algorithm_project_id": "hangzhou-enterprise-institute",
+      "route_status": "active-municipal",
+      "formal_policy": "《绍兴市企业研究开发中心建设与管理办法》（2026年修订）",
+      "formal_policy_status": "current",
+      "prospective_policy": null,
+      "threshold_track_ids": [
+        "shaoxing-enterprise-rd-center"
+      ],
+      "content_hash": "d2316bf07294ff5bb4fd7d10921e6c6556b4cc3dd7c21078437caebf923f5e05"
+    },
+    "municipal-enterprise-rd-platform|金华市": {
+      "cell_key": "municipal-enterprise-rd-platform|金华市",
+      "family_id": "municipal-enterprise-rd-platform",
+      "city": "金华市",
+      "canonical_name": "金华市科学技术研究开发中心",
+      "algorithm_project_id": "hangzhou-enterprise-institute",
+      "route_status": "active-municipal-filing",
+      "formal_policy": "《金华市科学技术研究开发中心管理办法》（金市科〔2024〕47号）",
+      "formal_policy_status": "current",
+      "prospective_policy": null,
+      "threshold_track_ids": [
+        "jinhua-science-technology-rd-center"
+      ],
+      "content_hash": "a85a13b58298411926269ea6889ad41d1b93e7b49cad006d0d7a794b0e4590df"
+    }
+  },
+  "source_hashes": {
+    "policy_registry": "6cb4b8657c00338755e884b65c4075caed521302c531bf8195afe2a9107b7e06",
+    "threshold_registry": "f328f9ba1ae50c9c39cbab7cb3cd5aae9ae0338dff140c7496c297c7776bb57f"
+  }
+}

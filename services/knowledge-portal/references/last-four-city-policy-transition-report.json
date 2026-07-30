@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "promotion": null,
+  "change_set": {
+    "schema_version": 1,
+    "change_count": 8,
+    "changed_cells": [
+      {
+        "cell_key": "municipal-enterprise-rd-platform|宁波市",
+        "family_id": "municipal-enterprise-rd-platform",
+        "city": "宁波市",
+        "change_type": "added",
+        "before_hash": null,
+        "after_hash": "a94f19dc068105bdb7b1202e80b14337995baa7de8cd99b675772dca771ce81f",
+        "algorithm_project_id": "hangzhou-enterprise-institute",
+        "affected_outputs": [
+          "项目路由",
+          "企业阈值判断",
+          "前瞻预测",
+          "历史回测解释",
+          "政策来源披露"
+        ]
+      },
+      {
+        "cell_key": "municipal-enterprise-rd-platform|杭州市",
+        "family_id": "municipal-enterprise-rd-platform",
+        "city": "杭州市",
+        "change_type": "added",
+        "before_hash": null,
+        "after_hash": "ead80dea61092933aea0694ba147a4b1393bdc99d1e89b495539d674af59b50b",
+        "algorithm_project_id": "hangzhou-enterprise-institute",
+        "affected_outputs": [
+          "项目路由",
+          "企业阈值判断",
+          "前瞻预测",
+          "历史回测解释",
+          "政策来源披露"
+        ]
+      },
+      {
+        "cell_key": "municipal-enterprise-rd-platform|绍兴市",
+        "family_id": "municipal-enterprise-rd-platform",
+        "city": "绍兴市",
+        "change_type": "added",
+        "before_hash": null,
+        "after_hash": "d2316bf07294ff5bb4fd7d10921e6c6556b4cc3dd7c21078437caebf923f5e05",
+        "algorithm_project_id": "hangzhou-enterprise-institute",
+        "affected_outputs": [
+          "项目路由",
+          "企业阈值判断",
+          "前瞻预测",
+          "历史回测解释",
+          "政策来源披露"
+        ]
+      },
+      {
+        "cell_key": "municipal-enterprise-rd-platform|金华市",
+        "family_id": "municipal-enterprise-rd-platform",
+        "city": "金华市",
+        "change_type": "added",
+        "before_hash": null,
+        "after_hash": "a85a13b58298411926269ea6889ad41d1b93e7b49cad006d0d7a794b0e4590df",
+        "algorithm_project_id": "hangzhou-enterprise-institute",
+        "affected_outputs": [
+          "项目路由",
+          "企业阈值判断",
+          "前瞻预测",
+          "历史回测解释",
+          "政策来源披露"
+        ]
+      },
+      {
+        "cell_key": "municipal-enterprise-technology-center|宁波市",
+        "family_id": "municipal-enterprise-technology-center",
+        "city": "宁波市",
+        "change_type": "added",
+        "before_hash": null,
+        "after_hash": "0bdb57ecbfe8fe8cad43071c7154c72cf387f8b11e1efddf8774390cec0527f1",
+        "algorithm_project_id": null,
+        "affected_outputs": [
+          "项目路由",
+          "企业阈值判断",
+          "前瞻预测",
+          "历史回测解释",
+          "政策来源披露"
+        ]
+      },
+      {
+        "cell_key": "municipal-enterprise-technology-center|杭州市",
+        "family_id": "municipal-enterprise-technology-center",
+        "city": "杭州市",
+        "change_type": "added",
+        "before_hash": null,
+        "after_hash": "6c0c8f2a22e5caaacefa7d4c8861dc10a5d06981385c9f22d114212d20a333f2",
+        "algorithm_project_id": null,
+        "affected_outputs": [
+          "项目路由",
+          "企业阈值判断",
+          "前瞻预测",
+          "历史回测解释",
+          "政策来源披露"
+        ]
+      },
+      {
+        "cell_key": "municipal-enterprise-technology-center|绍兴市",
+        "family_id": "municipal-enterprise-technology-center",
+        "city": "绍兴市",
+        "change_type": "added",
+        "before_hash": null,
+        "after_hash": "c8deb99cb7a321b9e60dfa6041db93ddffa5fd0c7a06a19a4b2d2fe66b5442b1",
+        "algorithm_project_id": null,
+        "affected_outputs": [
+          "项目路由",
+          "企业阈值判断",
+          "前瞻预测",
+          "历史回测解释",
+          "政策来源披露"
+        ]
+      },
+      {
+        "cell_key": "municipal-enterprise-technology-center|金华市",
+        "family_id": "municipal-enterprise-technology-center",
+        "city": "金华市",
+        "change_type": "added",
+        "before_hash": null,
+        "after_hash": "8d066db44ab8f9b0f040fe325e05fd469c7cf6a3cea411bfefef441b379dde72",
+        "algorithm_project_id": null,
+        "affected_outputs": [
+          "项目路由",
+          "企业阈值判断",
+          "前瞻预测",
+          "历史回测解释",
+          "政策来源披露"
+        ]
+      }
+    ],
+    "compile_project_ids": [
+      "hangzhou-enterprise-institute"
+    ],
+    "reused_cell_count": 0,
+    "invariants": [
+      "只重编内容哈希发生变化的城市项目族单元及依赖项目",
+      "正式名单身份事实不因政策变化被改写",
+      "征求意见稿转正式后只替换前瞻政策层并保留历史草案"
+    ]
+  },
+  "affected_enterprise_count": 0,
+  "affected_enterprises": [],
+  "next_actions": {
+    "compile_project_ids": [
+      "hangzhou-enterprise-institute"
+    ],
+    "recompute": [
+      "企业阈值判断",
+      "前瞻预测",
+      "历史回测解释",
+      "政策来源披露"
+    ],
+    "preserve": [
+      "官方名单身份事实",
+      "认定年度",
+      "认定时名称"
+    ]
+  }
+}

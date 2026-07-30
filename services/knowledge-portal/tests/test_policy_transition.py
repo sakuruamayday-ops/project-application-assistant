@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from app.policy_thresholds import validate_threshold_registry
 from app.policy_transition import (
     resolve_policy_transition,
     validate_four_city_policy_registry,
@@ -12,6 +13,11 @@ REGISTRY_PATH = (
     PORTAL_DIR
     / "references"
     / "four-city-rd-platform-policy-registry.json"
+)
+THRESHOLD_PATH = (
+    PORTAL_DIR
+    / "references"
+    / "four-city-rd-platform-threshold-packs.json"
 )
 
 
@@ -27,6 +33,27 @@ def test_four_city_two_family_policy_registry_is_closed():
     assert all(
         len(family["city_variants"]) == 4
         for family in registry["project_families"]
+    )
+
+
+def test_rd_platform_routes_only_reference_registered_threshold_tracks():
+    registry = load_registry()
+    thresholds = json.loads(THRESHOLD_PATH.read_text(encoding="utf-8"))
+    assert validate_threshold_registry(thresholds) == []
+    track_ids = {
+        str(track["track_id"])
+        for city in thresholds["city_variants"]
+        for track in city["tracks"]
+    }
+    rd_family = next(
+        item
+        for item in registry["project_families"]
+        if item["family_id"] == "municipal-enterprise-rd-platform"
+    )
+
+    assert all(
+        set(variant["threshold_track_ids"]) <= track_ids
+        for variant in rd_family["city_variants"]
     )
 
 

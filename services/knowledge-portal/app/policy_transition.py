@@ -134,6 +134,16 @@ def resolve_policy_transition(
         "evaluation_mode": evaluation_mode,
         "route_status": variant.get("route_status"),
         "canonical_name": variant.get("canonical_name"),
+        "algorithm_project_id": variant.get("algorithm_project_id"),
+        "threshold_track_ids": list(
+            variant.get("threshold_track_ids", [])
+            if isinstance(variant.get("threshold_track_ids"), Sequence)
+            and not isinstance(
+                variant.get("threshold_track_ids"),
+                (str, bytes),
+            )
+            else []
+        ),
         "primary_policy": primary_policy,
         "primary_policy_status": primary_status,
         "formal_policy": variant.get("formal_policy"),

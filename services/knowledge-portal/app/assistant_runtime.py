@@ -259,7 +259,8 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                 "name": "policy_transition_resolve",
                 "description": (
                     "解析杭州、宁波、绍兴、金华研发平台或企业技术中心的"
-                    "属地版本；发现征求意见稿时，自动区分正式判断与前瞻准备。"
+                    "属地版本；发现征求意见稿时，自动区分正式判断与前瞻准备，"
+                    "并返回该城市可执行的阈值轨道。"
                 ),
                 "parameters": {
                     "type": "object",
@@ -286,6 +287,45 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                         },
                     },
                     "required": ["family_id", "city", "evaluation_mode"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "policy_threshold_evaluate",
+                "description": (
+                    "按四市研发平台评分附件或备案办法的叶节点规则评估企业事实。"
+                    "宁波、绍兴逐叶评分，金华只判断硬门槛与材料，不虚构分值；"
+                    "杭州转交现有正式或征求意见稿规则层。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "city": {
+                            "type": "string",
+                            "enum": ["杭州市", "宁波市", "绍兴市", "金华市"],
+                        },
+                        "track_id": {
+                            "type": "string",
+                            "enum": [
+                                "hangzhou-current-rd-center",
+                                "hangzhou-prospective-enterprise-institute",
+                                "ningbo-key-enterprise-institute",
+                                "ningbo-enterprise-technology-rd-center",
+                                "shaoxing-enterprise-rd-center",
+                                "jinhua-science-technology-rd-center",
+                            ],
+                        },
+                        "facts": {
+                            "type": "object",
+                            "description": (
+                                "企业事实字段。缺失字段会形成待补证清单，"
+                                "不得猜测评分或资格。"
+                            ),
+                        },
+                    },
+                    "required": ["city", "track_id", "facts"],
                 },
             },
         },

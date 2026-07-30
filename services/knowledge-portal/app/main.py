@@ -94,6 +94,10 @@ from app.deliverable_contract import (
     validate_delivery_contract,
 )
 from app.policy_retrieval import select_policy_evidence
+from app.policy_thresholds import (
+    evaluate_threshold_track,
+    threshold_track_catalog,
+)
 from app.policy_time import enrich_policy_time_context
 from app.policy_transition import resolve_policy_transition
 from app.three_first_routing import plan_three_first_analysis
@@ -223,6 +227,9 @@ LIFECYCLE_FACT_CONTRACT_PATH = (
 PROJECT_ALGORITHM_PACK_DIR = BASE_DIR / "references" / "project-algorithm-packs"
 FOUR_CITY_RD_PLATFORM_POLICY_REGISTRY_PATH = (
     BASE_DIR / "references" / "four-city-rd-platform-policy-registry.json"
+)
+FOUR_CITY_RD_PLATFORM_THRESHOLD_PACKS_PATH = (
+    BASE_DIR / "references" / "four-city-rd-platform-threshold-packs.json"
 )
 COMPILED_PROJECT_RULE_IR_PATH = (
     BASE_DIR / "references" / "compiled-project-rule-ir.json"
@@ -1849,6 +1856,21 @@ def load_four_city_rd_platform_policy_registry() -> dict[str, object]:
     try:
         payload = json.loads(
             FOUR_CITY_RD_PLATFORM_POLICY_REGISTRY_PATH.read_text(
+                encoding="utf-8"
+            )
+        )
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+@lru_cache(maxsize=1)
+def load_four_city_rd_platform_threshold_packs() -> dict[str, object]:
+    if not FOUR_CITY_RD_PLATFORM_THRESHOLD_PACKS_PATH.is_file():
+        return {}
+    try:
+        payload = json.loads(
+            FOUR_CITY_RD_PLATFORM_THRESHOLD_PACKS_PATH.read_text(
                 encoding="utf-8"
             )
         )
@@ -4671,6 +4693,26 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             evaluation_mode=str(
                 arguments.get("evaluation_mode") or "current-assessment"
             ),
+        )
+        if (
+            result.get("status") == "resolved"
+            and str(arguments.get("family_id") or "")
+            == "municipal-enterprise-rd-platform"
+        ):
+            result["threshold_tracks"] = threshold_track_catalog(
+                load_four_city_rd_platform_threshold_packs(),
+                str(arguments.get("city") or ""),
+            )
+        return result, []
+    if name == "policy_threshold_evaluate":
+        facts = arguments.get("facts")
+        if not isinstance(facts, dict):
+            raise ValueError("facts必须为对象")
+        result = evaluate_threshold_track(
+            load_four_city_rd_platform_threshold_packs(),
+            city=str(arguments.get("city") or ""),
+            track_id=str(arguments.get("track_id") or ""),
+            facts=facts,
         )
         return result, []
     if name == "delivery_contract_audit":
@@ -7619,6 +7661,9 @@ def portal_payload(
         ),
         "four_city_policy_registry": (
             load_four_city_rd_platform_policy_registry()
+        ),
+        "four_city_rd_platform_threshold_packs": (
+            load_four_city_rd_platform_threshold_packs()
         ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_announcement": announcement_payload,

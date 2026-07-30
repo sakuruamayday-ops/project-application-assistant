@@ -17,6 +17,9 @@ COMPANY_LAW_PATH = (
 )
 LAYER_GUIDE_PATH = KNOWLEDGE_ROOT / "10_政策与目录/政策检索分层说明.md"
 HANGZHOU_INSTITUTE_ROOT = KNOWLEDGE_ROOT / "10_政策与目录/研究院/杭州市企业研究院"
+FOUR_CITY_RD_PLATFORM_ROOT = (
+    KNOWLEDGE_ROOT / "10_政策与目录/研究院/四市研发平台"
+)
 SUPPLEMENTARY_ROOTS = (
     KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/_省级专精特新",
     KNOWLEDGE_ROOT / "50_名单与对标/优质中小企业梯度培育/_覆盖矩阵",
@@ -151,6 +154,17 @@ def hangzhou_institute_files() -> list[Path]:
     )
 
 
+def four_city_rd_platform_files() -> list[Path]:
+    return sorted(
+        (
+            path
+            for path in FOUR_CITY_RD_PLATFORM_ROOT.rglob("*")
+            if path.is_file() and not path.name.startswith("._")
+        ),
+        key=lambda path: path.as_posix(),
+    )
+
+
 def supplementary_files() -> list[Path]:
     return sorted(
         (
@@ -198,6 +212,7 @@ def main() -> None:
     existing_by_path = {str(row.get("relative_path") or ""): row for row in existing}
     replacement_prefix = "10_政策与目录/政策数据库/企策顾问/"
     institute_prefix = "10_政策与目录/研究院/杭州市企业研究院/"
+    four_city_rd_prefix = "10_政策与目录/研究院/四市研发平台/"
     supplementary_prefixes = tuple(
         f"{root.relative_to(KNOWLEDGE_ROOT).as_posix()}/" for root in SUPPLEMENTARY_ROOTS
     )
@@ -207,16 +222,20 @@ def main() -> None:
         for row in existing
         if not str(row.get("relative_path", "")).startswith(replacement_prefix)
         and not str(row.get("relative_path", "")).startswith(institute_prefix)
+        and not str(row.get("relative_path", "")).startswith(
+            four_city_rd_prefix
+        )
         and not str(row.get("relative_path", "")).startswith(supplementary_prefixes)
         and str(row.get("relative_path", "")) not in replaced_paths
     ]
-    additions = [
+    regional_additions = [
         manifest_row(
             path,
             existing_by_path.get(path.relative_to(KNOWLEDGE_ROOT).as_posix()),
         )
         for path in regional_files()
     ]
+    additions = list(regional_additions)
     additions.extend(
         manifest_row(
             path,
@@ -232,6 +251,16 @@ def main() -> None:
         for path in hangzhou_institute_files()
     ]
     additions.extend(institute_additions)
+    four_city_rd_additions = [
+        manifest_row(
+            path,
+            existing_by_path.get(
+                path.relative_to(KNOWLEDGE_ROOT).as_posix()
+            ),
+        )
+        for path in four_city_rd_platform_files()
+    ]
+    additions.extend(four_city_rd_additions)
     supplementary_additions = [
         manifest_row(
             path,
@@ -262,9 +291,12 @@ def main() -> None:
         json.dumps(
             {
                 "retained": len(retained),
-                "regional_added": len(additions) - 2 - len(institute_additions),
+                "regional_added": len(regional_additions),
                 "guides_added": 2,
                 "hangzhou_institute_added": len(institute_additions),
+                "four_city_rd_platform_added": len(
+                    four_city_rd_additions
+                ),
                 "supplementary_added": len(supplementary_additions),
                 "manifest_total": len(rows),
                 "ocr_companions_reconciled": reconciled_companions,
