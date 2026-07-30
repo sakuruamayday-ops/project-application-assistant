@@ -1,0 +1,208 @@
+{
+  "project_id": "manufacturing-single-champion-1",
+  "project_name": "浙江省制造业单项冠军企业",
+  "version": "2025.179-current-2026-cycle",
+  "aliases": [
+    "单项冠军"
+  ],
+  "source_retrieval_rule_ids": [
+    "manufacturing-single-champion"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363",
+  "source_title": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+  "stable_applicability": {},
+  "fact_fields": [
+    {
+      "field": "zj_single_champion_independent_entity",
+      "label": "独立法人资格",
+      "aliases": [
+        "独立法人资格"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "省单项冠军申报单位应具有独立法人资格。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_specialization_branch_met",
+      "label": "专业化年限分支",
+      "aliases": [
+        "专业化年限分支"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "一般产品从事相关领域6年以上、新产品3年以上；山区海岛县一般产品5年以上、新产品2年以上。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_market_rank_met",
+      "label": "市场占有率排名",
+      "aliases": [
+        "市场占有率排名"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申请产品市场占有率位居全球前5或全国前3。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_revenue_branch_met",
+      "label": "主营收入分支",
+      "aliases": [
+        "主营收入分支"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "近三年其中一年主营业务收入原则上达到4亿元；有效小巨人、山区海岛县及特定排名或历史经典产业适用豁免或降低分支。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_innovation_met",
+      "label": "创新能力",
+      "aliases": [
+        "创新能力"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "原则上具有省级以上研发平台，研发强度达到3%或行业领先，并拥有实际应用、产生效益的核心知识产权和标准成果。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_quality_energy_met",
+      "label": "质量性能能耗",
+      "aliases": [
+        "质量性能能耗"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品质量、工艺和关键性能国内领先，能耗达到行业先进值，绿色低碳水平较高。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_management_met",
+      "label": "经营管理和国际化",
+      "aliases": [
+        "经营管理和国际化"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "盈利、精益管理、数字化、人才、品牌和国际化能力应符合管理办法。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_compliance_clear",
+      "label": "近三年合规",
+      "aliases": [
+        "近三年合规"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "不得列入经营异常或严重失信，产品不属于禁止限制淘汰类，近三年无重大事故、偷漏税、数据造假等违法违规。"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "zj-single-champion-1",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_independent_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "省单项冠军申报单位应具有独立法人资格。"
+    },
+    {
+      "rule_id": "zj-single-champion-2",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_specialization_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "一般产品从事相关领域6年以上、新产品3年以上；山区海岛县一般产品5年以上、新产品2年以上。"
+    },
+    {
+      "rule_id": "zj-single-champion-3",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_market_rank_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "申请产品市场占有率位居全球前5或全国前3。"
+    },
+    {
+      "rule_id": "zj-single-champion-4",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_revenue_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "近三年其中一年主营业务收入原则上达到4亿元；有效小巨人、山区海岛县及特定排名或历史经典产业适用豁免或降低分支。"
+    },
+    {
+      "rule_id": "zj-single-champion-5",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_innovation_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "原则上具有省级以上研发平台，研发强度达到3%或行业领先，并拥有实际应用、产生效益的核心知识产权和标准成果。"
+    },
+    {
+      "rule_id": "zj-single-champion-6",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_quality_energy_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "产品质量、工艺和关键性能国内领先，能耗达到行业先进值，绿色低碳水平较高。"
+    },
+    {
+      "rule_id": "zj-single-champion-7",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_management_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "盈利、精益管理、数字化、人才、品牌和国际化能力应符合管理办法。"
+    },
+    {
+      "rule_id": "zj-single-champion-8",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "不得列入经营异常或严重失信，产品不属于禁止限制淘汰类，近三年无重大事故、偷漏税、数据造假等违法违规。"
+    }
+  ],
+  "annual_overlays": [
+    {
+      "overlay_id": "zj-single-champion-2026",
+      "label": "2026年度浙江省制造业单项冠军遴选",
+      "year": 2026,
+      "regions": [],
+      "application_types": [
+        "recognition"
+      ],
+      "policy_status": "current",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/article/news/detail.html?id=287115",
+      "rules": [
+        {
+          "rule_id": "zj-single-champion-2026-one-product",
+          "type": "submission",
+          "field": "zj_single_champion_independent_entity",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "同一年度按通知要求仅申报一个产品，并经属地审核推荐。"
+        }
+      ]
+    }
+  ],
+  "jurisdiction_overlays": []
+}

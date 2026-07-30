@@ -325,10 +325,26 @@
           "status": "current",
           "authority": "浙江省经济和信息化厅",
           "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363",
-          "relation": "governed-by"
+          "relation": "governed-by",
+          "still_effective": true
+        },
+        {
+          "document_id": "zj-single-champion-notice-2026",
+          "title": "关于开展2026年度浙江省制造业单项冠军企业遴选认定工作的通知",
+          "issued_year": 2026,
+          "status": "current",
+          "authority": "浙江省经济和信息化厅",
+          "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/article/news/detail.html?id=287115",
+          "relation": "announced-by"
         }
       ],
-      "dependencies": []
+      "dependencies": [
+        {
+          "from_document_id": "zj-single-champion-notice-2026",
+          "to_document_id": "zj-single-champion-method-2025",
+          "relation": "cites"
+        }
+      ]
     },
     {
       "project_id": "technology-sme-1",
@@ -370,12 +386,12 @@
       "decision_mode": "latest-rule-with-review-cycle",
       "policy_documents": [
         {
-          "document_id": "zj-hidden-champion-2025",
-          "title": "关于开展2025年浙江省隐形冠军企业认定和复核工作的通知",
-          "issued_year": 2025,
-          "status": "latest-complete-cycle",
+          "document_id": "zj-hidden-champion-2026",
+          "title": "关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知",
+          "issued_year": 2026,
+          "status": "current",
           "authority": "浙江省经济和信息化厅",
-          "official_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6181240",
+          "official_url": "https://aiqice.cn/policyDetail?id=13128837&indexId=8c65d358e6284a548ccb3f9726c51729",
           "relation": "announced-by"
         }
       ],

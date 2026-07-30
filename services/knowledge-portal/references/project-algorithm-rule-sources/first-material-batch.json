@@ -1,0 +1,207 @@
+{
+  "project_id": "first-material-batch",
+  "project_name": "重点新材料首批次",
+  "version": "2025-cycle-20260730",
+  "aliases": [
+    "首批次"
+  ],
+  "source_retrieval_rule_ids": [
+    "first-material-batch"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3499/site/attach/0/6922fc25da0e4fde84582f6d7a3d9ff1.pdf",
+  "source_title": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+  "stable_applicability": {
+    "years": [
+      "2025"
+    ]
+  },
+  "fact_fields": [
+    {
+      "field": "first_material_zhejiang_entity",
+      "label": "浙江独立法人及省内研发生产",
+      "aliases": [
+        "浙江独立法人及省内研发生产"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报单位在浙江省内依法设立，具有独立法人资格，并在省内从事新材料研发及生产业务。"
+      ]
+    },
+    {
+      "field": "first_material_maturity_sales_met",
+      "label": "技术成熟度及商业销售",
+      "aliases": [
+        "技术成熟度及商业销售"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品技术成熟度达到7级及以上且已实现商业销售。"
+      ]
+    },
+    {
+      "field": "first_material_test_and_license_met",
+      "label": "检测及许可",
+      "aliases": [
+        "检测及许可"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品应具有符合要求的第三方检测报告；存在特殊许可或强制认证要求的须取得资质。"
+      ]
+    },
+    {
+      "field": "first_material_novelty_valid",
+      "label": "两年内一级查新",
+      "aliases": [
+        "两年内一级查新"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品应具有国家一级查新资质单位近两年内出具的查新报告。"
+      ]
+    },
+    {
+      "field": "first_material_domestic_leading",
+      "label": "国内领先及以上",
+      "aliases": [
+        "国内领先及以上"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品达到国内领先及以上技术水平。"
+      ]
+    },
+    {
+      "field": "first_material_independent_ip",
+      "label": "自主知识产权",
+      "aliases": [
+        "自主知识产权"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品具有自主知识产权。"
+      ]
+    },
+    {
+      "field": "first_material_route_met",
+      "label": "目录或推荐认定路径",
+      "aliases": [
+        "目录或推荐认定路径"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应进入国家或浙江省重点新材料目录，或由院士、三名以上正高级专家推荐并满足通知列明的推荐条件。"
+      ]
+    },
+    {
+      "field": "first_material_exclusions_clear",
+      "label": "首批次排除项",
+      "aliases": [
+        "首批次排除项"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品不得属于限制淘汰类，能耗排放资源和碳强度应达先进水平，不得存在重大质量影响或无重大突破的三年内重复认定。"
+      ]
+    },
+    {
+      "field": "first_material_tier_requirement_met",
+      "label": "国际或国内首批次附加条件",
+      "aliases": [
+        "国际或国内首批次附加条件"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报国际或国内首批次的，应达到相应技术水平、进口替代和知名用户或重大工程销售要求。"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "first-material-1",
+      "type": "hard-threshold",
+      "field": "first_material_zhejiang_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "申报单位在浙江省内依法设立，具有独立法人资格，并在省内从事新材料研发及生产业务。"
+    },
+    {
+      "rule_id": "first-material-2",
+      "type": "hard-threshold",
+      "field": "first_material_maturity_sales_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "产品技术成熟度达到7级及以上且已实现商业销售。"
+    },
+    {
+      "rule_id": "first-material-3",
+      "type": "hard-threshold",
+      "field": "first_material_test_and_license_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "产品应具有符合要求的第三方检测报告；存在特殊许可或强制认证要求的须取得资质。"
+    },
+    {
+      "rule_id": "first-material-4",
+      "type": "hard-threshold",
+      "field": "first_material_novelty_valid",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "产品应具有国家一级查新资质单位近两年内出具的查新报告。"
+    },
+    {
+      "rule_id": "first-material-5",
+      "type": "hard-threshold",
+      "field": "first_material_domestic_leading",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "产品达到国内领先及以上技术水平。"
+    },
+    {
+      "rule_id": "first-material-6",
+      "type": "hard-threshold",
+      "field": "first_material_independent_ip",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "产品具有自主知识产权。"
+    },
+    {
+      "rule_id": "first-material-7",
+      "type": "hard-threshold",
+      "field": "first_material_route_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "应进入国家或浙江省重点新材料目录，或由院士、三名以上正高级专家推荐并满足通知列明的推荐条件。"
+    },
+    {
+      "rule_id": "first-material-8",
+      "type": "hard-threshold",
+      "field": "first_material_exclusions_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "产品不得属于限制淘汰类，能耗排放资源和碳强度应达先进水平，不得存在重大质量影响或无重大突破的三年内重复认定。"
+    },
+    {
+      "rule_id": "first-material-9",
+      "type": "hard-threshold",
+      "field": "first_material_tier_requirement_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首批次新材料认定工作的通知》",
+      "source_quote": "申报国际或国内首批次的，应达到相应技术水平、进口替代和知名用户或重大工程销售要求。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

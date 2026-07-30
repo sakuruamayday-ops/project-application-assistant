@@ -1,0 +1,169 @@
+{
+  "project_id": "key-little-giant-support",
+  "project_name": "重点小巨人企业高质量发展奖补项目",
+  "version": "2024-2026-support-cycle-20260730",
+  "aliases": [
+    "重点小巨人"
+  ],
+  "source_retrieval_rule_ids": [
+    "key-little-giant-support"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://www.miit.gov.cn/xwdt/gxdt/art/2024/art_8df1cf7787fb4e3589bd5233022a51e7.html",
+  "source_title": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
+  "stable_applicability": {
+    "years": [
+      "2024",
+      "2025",
+      "2026"
+    ]
+  },
+  "fact_fields": [
+    {
+      "field": "key_lg_valid_little_giant",
+      "label": "有效期内小巨人资格",
+      "aliases": [
+        "有效期内小巨人资格"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "支持对象应为有效期内专精特新小巨人企业，并符合支持批次和推荐范围。"
+      ]
+    },
+    {
+      "field": "key_lg_no_duplicate_support",
+      "label": "无重复支持",
+      "aliases": [
+        "无重复支持"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "同一企业和项目不得违反中央财政资金重复支持及通知列明的排除要求。"
+      ]
+    },
+    {
+      "field": "key_lg_three_transformations_plan_met",
+      "label": "三新一强项目计划",
+      "aliases": [
+        "三新一强项目计划"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业应围绕打造新动能、攻坚新技术、开发新产品和强化产业链配套能力提出实施计划。"
+      ]
+    },
+    {
+      "field": "key_lg_project_investment_met",
+      "label": "项目投资及资金用途",
+      "aliases": [
+        "项目投资及资金用途"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "实施项目、投资计划和资金用途应符合支持通知和地方实施方案。"
+      ]
+    },
+    {
+      "field": "key_lg_performance_targets_met",
+      "label": "绩效目标可量化",
+      "aliases": [
+        "绩效目标可量化"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应设置可量化、可考核的阶段性绩效目标。"
+      ]
+    },
+    {
+      "field": "key_lg_local_recommendation_met",
+      "label": "地方择优推荐",
+      "aliases": [
+        "地方择优推荐"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业须经地方中小企业主管部门、财政部门按名额和程序择优推荐。"
+      ]
+    },
+    {
+      "field": "key_lg_compliance_clear",
+      "label": "合规核验",
+      "aliases": [
+        "合规核验"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "不得存在重大事故、严重失信、违法违规、弄虚作假等不予支持情形。"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "key-little-giant-1",
+      "type": "hard-threshold",
+      "field": "key_lg_valid_little_giant",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
+      "source_quote": "支持对象应为有效期内专精特新小巨人企业，并符合支持批次和推荐范围。"
+    },
+    {
+      "rule_id": "key-little-giant-2",
+      "type": "hard-threshold",
+      "field": "key_lg_no_duplicate_support",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
+      "source_quote": "同一企业和项目不得违反中央财政资金重复支持及通知列明的排除要求。"
+    },
+    {
+      "rule_id": "key-little-giant-3",
+      "type": "hard-threshold",
+      "field": "key_lg_three_transformations_plan_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
+      "source_quote": "企业应围绕打造新动能、攻坚新技术、开发新产品和强化产业链配套能力提出实施计划。"
+    },
+    {
+      "rule_id": "key-little-giant-4",
+      "type": "hard-threshold",
+      "field": "key_lg_project_investment_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
+      "source_quote": "实施项目、投资计划和资金用途应符合支持通知和地方实施方案。"
+    },
+    {
+      "rule_id": "key-little-giant-5",
+      "type": "hard-threshold",
+      "field": "key_lg_performance_targets_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
+      "source_quote": "应设置可量化、可考核的阶段性绩效目标。"
+    },
+    {
+      "rule_id": "key-little-giant-6",
+      "type": "hard-threshold",
+      "field": "key_lg_local_recommendation_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
+      "source_quote": "企业须经地方中小企业主管部门、财政部门按名额和程序择优推荐。"
+    },
+    {
+      "rule_id": "key-little-giant-7",
+      "type": "hard-threshold",
+      "field": "key_lg_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于进一步支持专精特新中小企业高质量发展的通知》财建〔2024〕148号",
+      "source_quote": "不得存在重大事故、严重失信、违法违规、弄虚作假等不予支持情形。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

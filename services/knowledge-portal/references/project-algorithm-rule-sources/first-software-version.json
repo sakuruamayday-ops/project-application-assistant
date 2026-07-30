@@ -1,0 +1,226 @@
+{
+  "project_id": "first-software-version",
+  "project_name": "首版次软件",
+  "version": "2025-cycle-20260730",
+  "aliases": [
+    "首版次"
+  ],
+  "source_retrieval_rule_ids": [
+    "first-software-version"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293873",
+  "source_title": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+  "stable_applicability": {
+    "years": [
+      "2025"
+    ]
+  },
+  "fact_fields": [
+    {
+      "field": "first_software_zhejiang_entity",
+      "label": "浙江独立法人主体",
+      "aliases": [
+        "浙江独立法人主体"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报单位应在浙江省内依法设立并具有独立法人资格。"
+      ]
+    },
+    {
+      "field": "first_software_compliance_clear",
+      "label": "近三年信用及安全质量合规",
+      "aliases": [
+        "近三年信用及安全质量合规"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "近三年不得存在失信、债务违约、重大质量或生产安全等风险事件。"
+      ]
+    },
+    {
+      "field": "first_software_environment_talent_met",
+      "label": "软件开发环境及人才",
+      "aliases": [
+        "软件开发环境及人才"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应具有与软件开发相适应的经营场所、合法软硬件开发环境和人才支撑。"
+      ]
+    },
+    {
+      "field": "first_software_catalog_met",
+      "label": "指导目录范围",
+      "aliases": [
+        "指导目录范围"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报软件产品应属于当年度浙江省首版次软件产品申报指导目录范围。"
+      ]
+    },
+    {
+      "field": "first_software_copyright_met",
+      "label": "著作权时间及第一作者",
+      "aliases": [
+        "著作权时间及第一作者"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应在通知规定时间后取得软件著作权，申报单位为第一著作权人；共有权须取得同意。"
+      ]
+    },
+    {
+      "field": "first_software_first_release_sale",
+      "label": "首次正式发布销售",
+      "aliases": [
+        "首次正式发布销售"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "软件产品应为首次正式发布并进行销售，具有市场推广应用前景。"
+      ]
+    },
+    {
+      "field": "first_software_cnas_cma_test_met",
+      "label": "CNAS与CMA检测",
+      "aliases": [
+        "CNAS与CMA检测"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品功能、性能指标应通过同时具备相应CNAS和CMA能力的第三方机构检测。"
+      ]
+    },
+    {
+      "field": "first_software_domestic_tier_met",
+      "label": "国内首版次附加条件",
+      "aliases": [
+        "国内首版次附加条件"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报国内首版次的，须在技术突破、国产替代、奖项课题、信创适配、发明专利或标准等七项中至少满足两项。"
+      ]
+    },
+    {
+      "field": "first_software_exclusions_clear",
+      "label": "首版次排除项",
+      "aliases": [
+        "首版次排除项"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "不得属于限制淘汰类，不得在能耗排放、质量稳定性或同系列重复认定方面触发排除条件。"
+      ]
+    },
+    {
+      "field": "first_software_rnd_investment",
+      "label": "首版次产品研发投入",
+      "aliases": [
+        "首版次产品研发投入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "first-software-1",
+      "type": "hard-threshold",
+      "field": "first_software_zhejiang_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "申报单位应在浙江省内依法设立并具有独立法人资格。"
+    },
+    {
+      "rule_id": "first-software-2",
+      "type": "hard-threshold",
+      "field": "first_software_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "近三年不得存在失信、债务违约、重大质量或生产安全等风险事件。"
+    },
+    {
+      "rule_id": "first-software-3",
+      "type": "hard-threshold",
+      "field": "first_software_environment_talent_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "应具有与软件开发相适应的经营场所、合法软硬件开发环境和人才支撑。"
+    },
+    {
+      "rule_id": "first-software-4",
+      "type": "hard-threshold",
+      "field": "first_software_catalog_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "申报软件产品应属于当年度浙江省首版次软件产品申报指导目录范围。"
+    },
+    {
+      "rule_id": "first-software-5",
+      "type": "hard-threshold",
+      "field": "first_software_copyright_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "应在通知规定时间后取得软件著作权，申报单位为第一著作权人；共有权须取得同意。"
+    },
+    {
+      "rule_id": "first-software-6",
+      "type": "hard-threshold",
+      "field": "first_software_first_release_sale",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "软件产品应为首次正式发布并进行销售，具有市场推广应用前景。"
+    },
+    {
+      "rule_id": "first-software-7",
+      "type": "hard-threshold",
+      "field": "first_software_cnas_cma_test_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "产品功能、性能指标应通过同时具备相应CNAS和CMA能力的第三方机构检测。"
+    },
+    {
+      "rule_id": "first-software-8",
+      "type": "hard-threshold",
+      "field": "first_software_domestic_tier_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "申报国内首版次的，须在技术突破、国产替代、奖项课题、信创适配、发明专利或标准等七项中至少满足两项。"
+    },
+    {
+      "rule_id": "first-software-9",
+      "type": "hard-threshold",
+      "field": "first_software_exclusions_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "不得属于限制淘汰类，不得在能耗排放、质量稳定性或同系列重复认定方面触发排除条件。"
+    },
+    {
+      "rule_id": "first-software-rnd-investment",
+      "type": "hard-threshold",
+      "field": "first_software_rnd_investment",
+      "operator": "gt",
+      "expected": 100,
+      "source": "《关于开展2025年度浙江省首版次软件产品认定工作的通知》",
+      "source_quote": "申报软件产品研发投入在100万元人民币以上。",
+      "unit": "万元"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

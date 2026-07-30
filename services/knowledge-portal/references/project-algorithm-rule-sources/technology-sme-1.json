@@ -1,0 +1,142 @@
+{
+  "project_id": "technology-sme-1",
+  "project_name": "浙江省科技型中小企业",
+  "version": "2016-method-still-effective-20260730",
+  "aliases": [
+    "科小"
+  ],
+  "source_retrieval_rule_ids": [
+    "technology-sme"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/extSmeCustBaseSearch.do?ID=70350&action=custServDetail&sid=",
+  "source_title": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
+  "stable_applicability": {},
+  "fact_fields": [
+    {
+      "field": "zj_tech_sme_entity_met",
+      "label": "浙江注册一年以上并独立核算",
+      "aliases": [
+        "浙江注册一年以上并独立核算"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "在本省登记注册成立一年以上，产权明晰，实行独立核算、自主经营、自负盈亏。"
+      ]
+    },
+    {
+      "field": "zj_tech_sme_ip_product_met",
+      "label": "知识产权及对应产品服务",
+      "aliases": [
+        "知识产权及对应产品服务"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "拥有专利、标准、商标、科技成果或其他专有技术，并形成相应产品或服务。"
+      ]
+    },
+    {
+      "field": "zj_tech_sme_innovation_investment_met",
+      "label": "持续科技创新投入",
+      "aliases": [
+        "持续科技创新投入"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业具有科技创新经费投入并具备持续开展科技创新活动的能力。"
+      ]
+    },
+    {
+      "field": "zj_tech_sme_size_standard_met",
+      "label": "中小企业划型符合",
+      "aliases": [
+        "中小企业划型符合"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业规模符合中小企业划型标准。"
+      ]
+    },
+    {
+      "field": "zj_tech_sme_materials_complete",
+      "label": "平台申请材料完整",
+      "aliases": [
+        "平台申请材料完整"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业通过平台提交申请书和附件，由市县审核、公示并报省备案。"
+      ]
+    },
+    {
+      "field": "zj_tech_sme_tech_staff_ratio",
+      "label": "科技人员占职工比例",
+      "aliases": [
+        "科技人员占职工比例"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "zj-tech-sme-1",
+      "type": "hard-threshold",
+      "field": "zj_tech_sme_entity_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
+      "source_quote": "在本省登记注册成立一年以上，产权明晰，实行独立核算、自主经营、自负盈亏。"
+    },
+    {
+      "rule_id": "zj-tech-sme-2",
+      "type": "hard-threshold",
+      "field": "zj_tech_sme_ip_product_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
+      "source_quote": "拥有专利、标准、商标、科技成果或其他专有技术，并形成相应产品或服务。"
+    },
+    {
+      "rule_id": "zj-tech-sme-3",
+      "type": "hard-threshold",
+      "field": "zj_tech_sme_innovation_investment_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
+      "source_quote": "企业具有科技创新经费投入并具备持续开展科技创新活动的能力。"
+    },
+    {
+      "rule_id": "zj-tech-sme-4",
+      "type": "hard-threshold",
+      "field": "zj_tech_sme_size_standard_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
+      "source_quote": "企业规模符合中小企业划型标准。"
+    },
+    {
+      "rule_id": "zj-tech-sme-5",
+      "type": "hard-threshold",
+      "field": "zj_tech_sme_materials_complete",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
+      "source_quote": "企业通过平台提交申请书和附件，由市县审核、公示并报省备案。"
+    },
+    {
+      "rule_id": "zj-tech-sme-staff-ratio",
+      "type": "hard-threshold",
+      "field": "zj_tech_sme_tech_staff_ratio",
+      "operator": "gte",
+      "expected": 10,
+      "source": "《浙江省科技型中小企业认定管理办法》浙科发高〔2016〕88号",
+      "source_quote": "研发和相关技术活动科技人员占当年职工总数比例原则上不低于10%。",
+      "unit": "%"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

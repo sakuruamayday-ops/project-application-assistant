@@ -2,22 +2,561 @@
   "schema_version": 1,
   "project_id": "manufacturing-single-champion-1",
   "project_name": "浙江省制造业单项冠军企业",
-  "version": "1.0",
-  "coverage_status": "routing-only",
+  "version": "2025.179-current-2026-cycle",
+  "coverage_status": "rules-confirmed",
   "aliases": [
     "单项冠军"
   ],
-  "fact_fields": [],
-  "rule_cards": [],
-  "gold_cases": [
-    {
-      "case_id": "rules-pending",
-      "facts": [],
-      "confirm_rule_ids": [],
-      "expected_conclusion": "undetermined"
-    }
-  ],
   "source_retrieval_rule_ids": [
     "manufacturing-single-champion"
+  ],
+  "fact_fields": [
+    {
+      "field": "zj_single_champion_independent_entity",
+      "label": "独立法人资格",
+      "aliases": [
+        "独立法人资格"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "省单项冠军申报单位应具有独立法人资格。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_specialization_branch_met",
+      "label": "专业化年限分支",
+      "aliases": [
+        "专业化年限分支"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "一般产品从事相关领域6年以上、新产品3年以上；山区海岛县一般产品5年以上、新产品2年以上。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_market_rank_met",
+      "label": "市场占有率排名",
+      "aliases": [
+        "市场占有率排名"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申请产品市场占有率位居全球前5或全国前3。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_revenue_branch_met",
+      "label": "主营收入分支",
+      "aliases": [
+        "主营收入分支"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "近三年其中一年主营业务收入原则上达到4亿元；有效小巨人、山区海岛县及特定排名或历史经典产业适用豁免或降低分支。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_innovation_met",
+      "label": "创新能力",
+      "aliases": [
+        "创新能力"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "原则上具有省级以上研发平台，研发强度达到3%或行业领先，并拥有实际应用、产生效益的核心知识产权和标准成果。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_quality_energy_met",
+      "label": "质量性能能耗",
+      "aliases": [
+        "质量性能能耗"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品质量、工艺和关键性能国内领先，能耗达到行业先进值，绿色低碳水平较高。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_management_met",
+      "label": "经营管理和国际化",
+      "aliases": [
+        "经营管理和国际化"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "盈利、精益管理、数字化、人才、品牌和国际化能力应符合管理办法。"
+      ]
+    },
+    {
+      "field": "zj_single_champion_compliance_clear",
+      "label": "近三年合规",
+      "aliases": [
+        "近三年合规"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "不得列入经营异常或严重失信，产品不属于禁止限制淘汰类，近三年无重大事故、偷漏税、数据造假等违法违规。"
+      ]
+    }
+  ],
+  "rule_cards": [
+    {
+      "rule_id": "zj-single-champion-1",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_independent_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "省单项冠军申报单位应具有独立法人资格。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+    },
+    {
+      "rule_id": "zj-single-champion-2",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_specialization_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "一般产品从事相关领域6年以上、新产品3年以上；山区海岛县一般产品5年以上、新产品2年以上。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+    },
+    {
+      "rule_id": "zj-single-champion-3",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_market_rank_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "申请产品市场占有率位居全球前5或全国前3。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+    },
+    {
+      "rule_id": "zj-single-champion-4",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_revenue_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "近三年其中一年主营业务收入原则上达到4亿元；有效小巨人、山区海岛县及特定排名或历史经典产业适用豁免或降低分支。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+    },
+    {
+      "rule_id": "zj-single-champion-5",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_innovation_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "原则上具有省级以上研发平台，研发强度达到3%或行业领先，并拥有实际应用、产生效益的核心知识产权和标准成果。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+    },
+    {
+      "rule_id": "zj-single-champion-6",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_quality_energy_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "产品质量、工艺和关键性能国内领先，能耗达到行业先进值，绿色低碳水平较高。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+    },
+    {
+      "rule_id": "zj-single-champion-7",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_management_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "盈利、精益管理、数字化、人才、品牌和国际化能力应符合管理办法。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+    },
+    {
+      "rule_id": "zj-single-champion-8",
+      "type": "hard-threshold",
+      "field": "zj_single_champion_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+      "source_quote": "不得列入经营异常或严重失信，产品不属于禁止限制淘汰类，近三年无重大事故、偷漏税、数据造假等违法违规。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+    }
+  ],
+  "rule_layers": [
+    {
+      "layer_id": "stable-management",
+      "layer_type": "stable",
+      "label": "稳定管理办法",
+      "applicability": {},
+      "rules": [
+        {
+          "rule_id": "zj-single-champion-1",
+          "type": "hard-threshold",
+          "field": "zj_single_champion_independent_entity",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "省单项冠军申报单位应具有独立法人资格。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+        },
+        {
+          "rule_id": "zj-single-champion-2",
+          "type": "hard-threshold",
+          "field": "zj_single_champion_specialization_branch_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "一般产品从事相关领域6年以上、新产品3年以上；山区海岛县一般产品5年以上、新产品2年以上。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+        },
+        {
+          "rule_id": "zj-single-champion-3",
+          "type": "hard-threshold",
+          "field": "zj_single_champion_market_rank_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "申请产品市场占有率位居全球前5或全国前3。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+        },
+        {
+          "rule_id": "zj-single-champion-4",
+          "type": "hard-threshold",
+          "field": "zj_single_champion_revenue_branch_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "近三年其中一年主营业务收入原则上达到4亿元；有效小巨人、山区海岛县及特定排名或历史经典产业适用豁免或降低分支。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+        },
+        {
+          "rule_id": "zj-single-champion-5",
+          "type": "hard-threshold",
+          "field": "zj_single_champion_innovation_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "原则上具有省级以上研发平台，研发强度达到3%或行业领先，并拥有实际应用、产生效益的核心知识产权和标准成果。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+        },
+        {
+          "rule_id": "zj-single-champion-6",
+          "type": "hard-threshold",
+          "field": "zj_single_champion_quality_energy_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "产品质量、工艺和关键性能国内领先，能耗达到行业先进值，绿色低碳水平较高。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+        },
+        {
+          "rule_id": "zj-single-champion-7",
+          "type": "hard-threshold",
+          "field": "zj_single_champion_management_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "盈利、精益管理、数字化、人才、品牌和国际化能力应符合管理办法。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+        },
+        {
+          "rule_id": "zj-single-champion-8",
+          "type": "hard-threshold",
+          "field": "zj_single_champion_compliance_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "不得列入经营异常或严重失信，产品不属于禁止限制淘汰类，近三年无重大事故、偷漏税、数据造假等违法违规。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/upload/rest/image/filebyid?attId=6160363"
+        }
+      ]
+    },
+    {
+      "layer_id": "zj-single-champion-2026",
+      "layer_type": "annual",
+      "label": "2026年度浙江省制造业单项冠军遴选",
+      "applicability": {
+        "years": [
+          "2026"
+        ],
+        "application_types": [
+          "recognition"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "zj-single-champion-2026-one-product",
+          "type": "submission",
+          "field": "zj_single_champion_independent_entity",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省制造业单项冠军企业认定管理办法（试行）》浙经信大企〔2025〕179号",
+          "source_quote": "同一年度按通知要求仅申报一个产品，并经属地审核推荐。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/article/news/detail.html?id=287115"
+        }
+      ]
+    }
+  ],
+  "gold_cases": [
+    {
+      "case_id": "eligible-verified",
+      "facts": [
+        {
+          "field": "zj_single_champion_independent_entity",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_specialization_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_market_rank_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_revenue_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_innovation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_quality_energy_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_management_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "zj-single-champion-1",
+        "zj-single-champion-2",
+        "zj-single-champion-3",
+        "zj-single-champion-4",
+        "zj-single-champion-5",
+        "zj-single-champion-6",
+        "zj-single-champion-7",
+        "zj-single-champion-8"
+      ],
+      "expected_conclusion": "eligible"
+    },
+    {
+      "case_id": "conditional-pending",
+      "facts": [
+        {
+          "field": "zj_single_champion_independent_entity",
+          "value": true,
+          "evidence_state": "claimed",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_specialization_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_market_rank_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_revenue_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_innovation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_quality_energy_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_management_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "zj-single-champion-1",
+        "zj-single-champion-2",
+        "zj-single-champion-3",
+        "zj-single-champion-4",
+        "zj-single-champion-5",
+        "zj-single-champion-6",
+        "zj-single-champion-7",
+        "zj-single-champion-8"
+      ],
+      "expected_conclusion": "conditional"
+    },
+    {
+      "case_id": "ineligible-failed",
+      "facts": [
+        {
+          "field": "zj_single_champion_independent_entity",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_specialization_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_market_rank_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_revenue_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_innovation_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_quality_energy_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_management_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "zj_single_champion_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "zj-single-champion-1",
+        "zj-single-champion-2",
+        "zj-single-champion-3",
+        "zj-single-champion-4",
+        "zj-single-champion-5",
+        "zj-single-champion-6",
+        "zj-single-champion-7",
+        "zj-single-champion-8"
+      ],
+      "expected_conclusion": "ineligible"
+    }
   ]
 }

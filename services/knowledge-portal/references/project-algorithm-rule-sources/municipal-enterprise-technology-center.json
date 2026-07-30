@@ -1,0 +1,150 @@
+{
+  "project_id": "municipal-enterprise-technology-center",
+  "project_name": "市级企业技术中心",
+  "version": "dynamic-11-city-rule-compiler-20260730",
+  "aliases": [
+    "市企业技术中心"
+  ],
+  "source_retrieval_rule_ids": [
+    "municipal-enterprise-technology-center"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+  "source_title": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
+  "stable_applicability": {},
+  "fact_fields": [
+    {
+      "field": "municipal_tc_jurisdiction_resolved",
+      "label": "目标设区市已解析",
+      "aliases": [
+        "目标设区市已解析"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "市级企业技术中心由各地依法制定认定和评价政策，必须先解析企业注册地。"
+      ]
+    },
+    {
+      "field": "municipal_tc_current_local_rule_resolved",
+      "label": "属地现行办法版本已锁定",
+      "aliases": [
+        "属地现行办法版本已锁定"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "判断必须加载目标设区市查询日最新有效办法及当年度通知。"
+      ]
+    },
+    {
+      "field": "municipal_tc_local_thresholds_met",
+      "label": "属地全部硬门槛符合",
+      "aliases": [
+        "属地全部硬门槛符合"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。"
+      ]
+    },
+    {
+      "field": "municipal_tc_local_compliance_clear",
+      "label": "属地排除项核验",
+      "aliases": [
+        "属地排除项核验"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "严重违法失信、重大质量安全事故及属地列明排除项须逐项核验。"
+      ]
+    },
+    {
+      "field": "municipal_tc_submission_complete",
+      "label": "属地申报材料完整",
+      "aliases": [
+        "属地申报材料完整"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申请报告、评价表及属地通知要求的证明材料须完整。"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "municipal-tech-center-1",
+      "type": "hard-threshold",
+      "field": "municipal_tc_jurisdiction_resolved",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
+      "source_quote": "市级企业技术中心由各地依法制定认定和评价政策，必须先解析企业注册地。"
+    },
+    {
+      "rule_id": "municipal-tech-center-2",
+      "type": "hard-threshold",
+      "field": "municipal_tc_current_local_rule_resolved",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
+      "source_quote": "判断必须加载目标设区市查询日最新有效办法及当年度通知。"
+    },
+    {
+      "rule_id": "municipal-tech-center-3",
+      "type": "hard-threshold",
+      "field": "municipal_tc_local_thresholds_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
+      "source_quote": "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。"
+    },
+    {
+      "rule_id": "municipal-tech-center-4",
+      "type": "hard-threshold",
+      "field": "municipal_tc_local_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
+      "source_quote": "严重违法失信、重大质量安全事故及属地列明排除项须逐项核验。"
+    },
+    {
+      "rule_id": "municipal-tech-center-5",
+      "type": "hard-threshold",
+      "field": "municipal_tc_submission_complete",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
+      "source_quote": "申请报告、评价表及属地通知要求的证明材料须完整。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": [
+    {
+      "overlay_id": "municipal-tech-center-11-city-runtime",
+      "label": "浙江11个设区市动态阈值层",
+      "regions": [
+        "浙江省11个设区市"
+      ],
+      "application_types": [
+        "recognition",
+        "evaluation"
+      ],
+      "policy_status": "current",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+      "rules": [
+        {
+          "rule_id": "municipal-tech-center-runtime-gate",
+          "type": "hard-threshold",
+          "field": "municipal_tc_current_local_rule_resolved",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
+          "source_quote": "未加载具体城市现行办法和年度通知时，正式结论必须保持待核验。"
+        }
+      ]
+    }
+  ]
+}

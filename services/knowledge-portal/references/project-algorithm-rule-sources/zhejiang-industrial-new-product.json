@@ -1,0 +1,107 @@
+{
+  "project_id": "zhejiang-industrial-new-product",
+  "project_name": "浙江省工业新产品",
+  "version": "historical-2023-successor-2025",
+  "aliases": [
+    "工业新产品"
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-industrial-new-product"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
+  "source_title": "浙江省工业新产品历史认定证据及浙江制造精品后续项目",
+  "stable_applicability": {},
+  "fact_fields": [
+    {
+      "field": "industrial_new_product_current_notice_open",
+      "label": "当前年度工业新产品申报通知有效",
+      "aliases": [
+        "当前年度工业新产品申报通知有效"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "industrial_new_product_historical_thresholds_met",
+      "label": "历史年度工业新产品条件符合",
+      "aliases": [
+        "历史年度工业新产品条件符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "industrial_new_product_successor_route_resolved",
+      "label": "后续项目路径已解析",
+      "aliases": [
+        "后续项目路径已解析"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "industrial_new_product_materials_complete",
+      "label": "历史申报材料完整",
+      "aliases": [
+        "历史申报材料完整"
+      ],
+      "value_type": "boolean"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "industrial-new-product-current-open",
+      "type": "hard-threshold",
+      "field": "industrial_new_product_current_notice_open",
+      "operator": "truthy",
+      "expected": true,
+      "source": "浙江省工业新产品历史认定证据及浙江制造精品后续项目",
+      "source_quote": "当前查询年度必须存在有效申报通知；未发现现行通知时不得把历史规则当作当前资格结论。"
+    },
+    {
+      "rule_id": "industrial-new-product-successor",
+      "type": "submission",
+      "field": "industrial_new_product_successor_route_resolved",
+      "operator": "truthy",
+      "expected": true,
+      "source": "浙江省工业新产品历史认定证据及浙江制造精品后续项目",
+      "source_quote": "历史项目停止或转轨时，应保留历史身份，并解析浙江制造精品等现行后续路径。"
+    }
+  ],
+  "annual_overlays": [
+    {
+      "overlay_id": "industrial-new-product-2023-history",
+      "label": "2023年度工业新产品历史回放",
+      "year": 2023,
+      "regions": [],
+      "application_types": [
+        "historical-replay"
+      ],
+      "policy_status": "historical_reference",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=490d5583993f405a92d0cbdee4b69f0c.pdf",
+      "rules": [
+        {
+          "rule_id": "industrial-new-product-2023-thresholds",
+          "type": "hard-threshold",
+          "field": "industrial_new_product_historical_thresholds_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙江省工业新产品历史认定证据及浙江制造精品后续项目",
+          "source_quote": "仅按2023年度有效政策和名单附件回放当年资格与认定事实。"
+        },
+        {
+          "rule_id": "industrial-new-product-2023-materials",
+          "type": "submission",
+          "field": "industrial_new_product_materials_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "浙江省工业新产品历史认定证据及浙江制造精品后续项目",
+          "source_quote": "历史回放应保留当年申请、评价及名单附件证据。"
+        }
+      ]
+    }
+  ],
+  "jurisdiction_overlays": []
+}

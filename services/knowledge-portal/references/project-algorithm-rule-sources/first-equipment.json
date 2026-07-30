@@ -1,0 +1,203 @@
+{
+  "project_id": "first-equipment",
+  "project_name": "首台（套）装备",
+  "version": "2022-guide-2025-cycle-20260730",
+  "aliases": [
+    "首台套"
+  ],
+  "source_retrieval_rule_ids": [
+    "first-equipment"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=290239",
+  "source_title": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+  "stable_applicability": {},
+  "fact_fields": [
+    {
+      "field": "first_equipment_zhejiang_entity",
+      "label": "浙江独立法人及省内研发生产",
+      "aliases": [
+        "浙江独立法人及省内研发生产"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报单位应在浙江省内依法设立、具有独立法人资格，并在省内具备研发和生产基础。"
+      ]
+    },
+    {
+      "field": "first_equipment_supported_direction",
+      "label": "装备方向符合性",
+      "aliases": [
+        "装备方向符合性"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报装备应符合首台套支持方向和当年度申报范围。"
+      ]
+    },
+    {
+      "field": "first_equipment_license_and_test_met",
+      "label": "许可认证与检测",
+      "aliases": [
+        "许可认证与检测"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "法律法规要求许可或认证的应已取得，并具有符合要求的第三方检测报告。"
+      ]
+    },
+    {
+      "field": "first_equipment_initial_market_met",
+      "label": "初期市场业绩",
+      "aliases": [
+        "初期市场业绩"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品应已形成初步市场业绩，但仍符合首台套首次推广应用阶段要求。"
+      ]
+    },
+    {
+      "field": "first_equipment_breakthrough_and_ip_met",
+      "label": "重大技术突破及自主知识产权",
+      "aliases": [
+        "重大技术突破及自主知识产权"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品应具有重大技术突破并拥有核心自主知识产权。"
+      ]
+    },
+    {
+      "field": "first_equipment_engineering_acceptance_met",
+      "label": "工程化攻关验收",
+      "aliases": [
+        "工程化攻关验收"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "按指南要求应纳入工程化攻关项目库并完成验收的，须已完成相应程序。"
+      ]
+    },
+    {
+      "field": "first_equipment_technical_tier_met",
+      "label": "技术水平分档",
+      "aliases": [
+        "技术水平分档"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "国际、国内或省内首台套应分别达到对应技术水平和替代能力。"
+      ]
+    },
+    {
+      "field": "first_equipment_novelty_report_valid",
+      "label": "两年内查新报告",
+      "aliases": [
+        "两年内查新报告"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应提供具有资质机构近两年内出具的查新报告。"
+      ]
+    },
+    {
+      "field": "first_equipment_exclusions_clear",
+      "label": "首台套排除项核验",
+      "aliases": [
+        "首台套排除项核验"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "不得属于限制淘汰类，且不得存在重大质量、安全、环保、失信或重复认定等排除情形。"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "first-equipment-1",
+      "type": "hard-threshold",
+      "field": "first_equipment_zhejiang_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "申报单位应在浙江省内依法设立、具有独立法人资格，并在省内具备研发和生产基础。"
+    },
+    {
+      "rule_id": "first-equipment-2",
+      "type": "hard-threshold",
+      "field": "first_equipment_supported_direction",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "申报装备应符合首台套支持方向和当年度申报范围。"
+    },
+    {
+      "rule_id": "first-equipment-3",
+      "type": "hard-threshold",
+      "field": "first_equipment_license_and_test_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "法律法规要求许可或认证的应已取得，并具有符合要求的第三方检测报告。"
+    },
+    {
+      "rule_id": "first-equipment-4",
+      "type": "hard-threshold",
+      "field": "first_equipment_initial_market_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "产品应已形成初步市场业绩，但仍符合首台套首次推广应用阶段要求。"
+    },
+    {
+      "rule_id": "first-equipment-5",
+      "type": "hard-threshold",
+      "field": "first_equipment_breakthrough_and_ip_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "产品应具有重大技术突破并拥有核心自主知识产权。"
+    },
+    {
+      "rule_id": "first-equipment-6",
+      "type": "hard-threshold",
+      "field": "first_equipment_engineering_acceptance_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "按指南要求应纳入工程化攻关项目库并完成验收的，须已完成相应程序。"
+    },
+    {
+      "rule_id": "first-equipment-7",
+      "type": "hard-threshold",
+      "field": "first_equipment_technical_tier_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "国际、国内或省内首台套应分别达到对应技术水平和替代能力。"
+    },
+    {
+      "rule_id": "first-equipment-8",
+      "type": "hard-threshold",
+      "field": "first_equipment_novelty_report_valid",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "应提供具有资质机构近两年内出具的查新报告。"
+    },
+    {
+      "rule_id": "first-equipment-9",
+      "type": "hard-threshold",
+      "field": "first_equipment_exclusions_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省制造业首台（套）提升工程工作指南（试行）》及2025年度通知",
+      "source_quote": "不得属于限制淘汰类，且不得存在重大质量、安全、环保、失信或重复认定等排除情形。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

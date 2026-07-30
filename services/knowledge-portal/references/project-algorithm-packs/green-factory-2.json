@@ -2,22 +2,442 @@
   "schema_version": 1,
   "project_id": "green-factory-2",
   "project_name": "市级绿色工厂",
-  "version": "1.0",
-  "coverage_status": "routing-only",
+  "version": "2024-guide-dynamic-jurisdiction-20260730",
+  "coverage_status": "rules-confirmed",
   "aliases": [
     "绿色工厂"
   ],
-  "fact_fields": [],
-  "rule_cards": [],
-  "gold_cases": [
-    {
-      "case_id": "rules-pending",
-      "facts": [],
-      "confirm_rule_ids": [],
-      "expected_conclusion": "undetermined"
-    }
-  ],
   "source_retrieval_rule_ids": [
     "green-factory"
+  ],
+  "fact_fields": [
+    {
+      "field": "green_factory_2_jurisdiction_rule_resolved",
+      "label": "属地和层级规则已解析",
+      "aliases": [
+        "属地和层级规则已解析"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应先解析申报企业所在地、申报层级及对应主管部门现行实施细则。"
+      ]
+    },
+    {
+      "field": "green_factory_2_basic_compliance_met",
+      "label": "绿色工厂基本合规",
+      "aliases": [
+        "绿色工厂基本合规"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。"
+      ]
+    },
+    {
+      "field": "green_factory_2_management_system_met",
+      "label": "绿色管理体系",
+      "aliases": [
+        "绿色管理体系"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。"
+      ]
+    },
+    {
+      "field": "green_factory_2_mandatory_indicators_met",
+      "label": "评价必选及门槛指标",
+      "aliases": [
+        "评价必选及门槛指标"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。"
+      ]
+    },
+    {
+      "field": "green_factory_2_self_evaluation_complete",
+      "label": "绿色工厂自评价材料",
+      "aliases": [
+        "绿色工厂自评价材料"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应按适用标准完成自评价报告，并提供能源资源、排放、绩效和证明材料。"
+      ]
+    },
+    {
+      "field": "green_factory_2_dynamic_management_clear",
+      "label": "动态管理风险核验",
+      "aliases": [
+        "动态管理风险核验"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "不得存在应移出梯度培育名单的重大违法、事故、失信、弄虚作假或停产注销等情形。"
+      ]
+    }
+  ],
+  "rule_cards": [
+    {
+      "rule_id": "green-factory-2-1",
+      "type": "hard-threshold",
+      "field": "green_factory_2_jurisdiction_rule_resolved",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+      "source_quote": "应先解析申报企业所在地、申报层级及对应主管部门现行实施细则。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+    },
+    {
+      "rule_id": "green-factory-2-2",
+      "type": "hard-threshold",
+      "field": "green_factory_2_basic_compliance_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+      "source_quote": "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+    },
+    {
+      "rule_id": "green-factory-2-3",
+      "type": "hard-threshold",
+      "field": "green_factory_2_management_system_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+      "source_quote": "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+    },
+    {
+      "rule_id": "green-factory-2-4",
+      "type": "hard-threshold",
+      "field": "green_factory_2_mandatory_indicators_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+      "source_quote": "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+    },
+    {
+      "rule_id": "green-factory-2-5",
+      "type": "hard-threshold",
+      "field": "green_factory_2_self_evaluation_complete",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+      "source_quote": "应按适用标准完成自评价报告，并提供能源资源、排放、绩效和证明材料。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+    },
+    {
+      "rule_id": "green-factory-2-6",
+      "type": "hard-threshold",
+      "field": "green_factory_2_dynamic_management_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+      "source_quote": "不得存在应移出梯度培育名单的重大违法、事故、失信、弄虚作假或停产注销等情形。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+    }
+  ],
+  "rule_layers": [
+    {
+      "layer_id": "stable-management",
+      "layer_type": "stable",
+      "label": "稳定管理办法",
+      "applicability": {},
+      "rules": [
+        {
+          "rule_id": "green-factory-2-1",
+          "type": "hard-threshold",
+          "field": "green_factory_2_jurisdiction_rule_resolved",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+          "source_quote": "应先解析申报企业所在地、申报层级及对应主管部门现行实施细则。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+        },
+        {
+          "rule_id": "green-factory-2-2",
+          "type": "hard-threshold",
+          "field": "green_factory_2_basic_compliance_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+          "source_quote": "企业应依法设立并在建设、生产、质量、安全、环保、节能等方面保持合规。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+        },
+        {
+          "rule_id": "green-factory-2-3",
+          "type": "hard-threshold",
+          "field": "green_factory_2_management_system_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+          "source_quote": "应建立绿色发展制度和能源、资源、环境、质量、安全等管理体系。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+        },
+        {
+          "rule_id": "green-factory-2-4",
+          "type": "hard-threshold",
+          "field": "green_factory_2_mandatory_indicators_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+          "source_quote": "须满足适用评价标准中的基本要求、必选指标和属地评分门槛。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+        },
+        {
+          "rule_id": "green-factory-2-5",
+          "type": "hard-threshold",
+          "field": "green_factory_2_self_evaluation_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+          "source_quote": "应按适用标准完成自评价报告，并提供能源资源、排放、绩效和证明材料。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+        },
+        {
+          "rule_id": "green-factory-2-6",
+          "type": "hard-threshold",
+          "field": "green_factory_2_dynamic_management_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+          "source_quote": "不得存在应移出梯度培育名单的重大违法、事故、失信、弄虚作假或停产注销等情形。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "green-factory-2-jurisdiction",
+      "layer_type": "jurisdiction",
+      "label": "市级绿色工厂属地实施细则",
+      "applicability": {
+        "regions": [
+          "设区市"
+        ],
+        "application_types": [
+          "recognition",
+          "evaluation"
+        ]
+      },
+      "rules": [
+        {
+          "rule_id": "green-factory-2-local-thresholds",
+          "type": "hard-threshold",
+          "field": "green_factory_2_jurisdiction_rule_resolved",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《浙江省绿色（低碳）工厂梯度培育管理实施细则》及评价要求",
+          "source_quote": "运行时必须选择对应层级与属地规则版本；未解析时只能输出待补政策，不能判定符合。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://jxt.zj.gov.cn/art/2024/5/28/art_1582899_26283.html"
+        }
+      ]
+    }
+  ],
+  "gold_cases": [
+    {
+      "case_id": "eligible-verified",
+      "facts": [
+        {
+          "field": "green_factory_2_jurisdiction_rule_resolved",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_basic_compliance_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_management_system_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_mandatory_indicators_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_self_evaluation_complete",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_dynamic_management_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "green-factory-2-1",
+        "green-factory-2-2",
+        "green-factory-2-3",
+        "green-factory-2-4",
+        "green-factory-2-5",
+        "green-factory-2-6"
+      ],
+      "expected_conclusion": "eligible"
+    },
+    {
+      "case_id": "conditional-pending",
+      "facts": [
+        {
+          "field": "green_factory_2_jurisdiction_rule_resolved",
+          "value": true,
+          "evidence_state": "claimed",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_basic_compliance_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_management_system_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_mandatory_indicators_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_self_evaluation_complete",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_dynamic_management_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "green-factory-2-1",
+        "green-factory-2-2",
+        "green-factory-2-3",
+        "green-factory-2-4",
+        "green-factory-2-5",
+        "green-factory-2-6"
+      ],
+      "expected_conclusion": "conditional"
+    },
+    {
+      "case_id": "ineligible-failed",
+      "facts": [
+        {
+          "field": "green_factory_2_jurisdiction_rule_resolved",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_basic_compliance_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_management_system_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_mandatory_indicators_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_self_evaluation_complete",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "green_factory_2_dynamic_management_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "green-factory-2-1",
+        "green-factory-2-2",
+        "green-factory-2-3",
+        "green-factory-2-4",
+        "green-factory-2-5",
+        "green-factory-2-6"
+      ],
+      "expected_conclusion": "ineligible"
+    }
   ]
 }

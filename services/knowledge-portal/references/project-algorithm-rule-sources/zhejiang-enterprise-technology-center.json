@@ -1,0 +1,184 @@
+{
+  "project_id": "zhejiang-enterprise-technology-center",
+  "project_name": "浙江省企业技术中心",
+  "version": "2019-method-still-effective-20260730",
+  "aliases": [
+    "省技中心",
+    "省企业技术中心"
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-enterprise-technology-center"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+  "source_title": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+  "stable_applicability": {},
+  "fact_fields": [
+    {
+      "field": "zj_tech_center_competitive_met",
+      "label": "行业竞争和创新能力",
+      "aliases": [
+        "行业竞争和创新能力"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业综合经济技术指标、技术开发能力及产品附加值应符合第五条第一项。"
+      ]
+    },
+    {
+      "field": "zj_tech_center_revenue_branch_met",
+      "label": "行业收入分支要求",
+      "aliases": [
+        "行业收入分支要求"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "制造业一般2亿元、加快发展县1亿元；建筑业结算收入15亿元；高技术服务业主营收入5000万元。"
+      ]
+    },
+    {
+      "field": "zj_tech_center_equipment_branch_met",
+      "label": "设备原值分支要求",
+      "aliases": [
+        "设备原值分支要求"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "制造业一般1200万元、加快发展县800万元；建筑业800万元；高技术服务业1000万元。"
+      ]
+    },
+    {
+      "field": "zj_tech_center_rnd_ratio_branch_met",
+      "label": "研发经费比例分支要求",
+      "aliases": [
+        "研发经费比例分支要求"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "制造业按主营收入规模适用1.5%、2%或3%；建筑业0.5%；高技术服务业2.5%。"
+      ]
+    },
+    {
+      "field": "zj_tech_center_staff_branch_met",
+      "label": "创新人员分支要求",
+      "aliases": [
+        "创新人员分支要求"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "制造业一般50人、加快发展县30人；建筑业一级注册人员50人；高技术服务业开发人员50人。"
+      ]
+    },
+    {
+      "field": "zj_tech_center_municipal_one_year",
+      "label": "市级技术中心满一年",
+      "aliases": [
+        "市级技术中心满一年"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申请企业已取得市级企业技术中心资格一年以上。"
+      ]
+    },
+    {
+      "field": "zj_tech_center_three_year_compliance",
+      "label": "申请前三年合规",
+      "aliases": [
+        "申请前三年合规"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申请受理截止日前三年不得存在严重税收、海关、失信或技术原因重大质量安全事故。"
+      ]
+    },
+    {
+      "field": "zj_tech_center_materials_complete",
+      "label": "申请报告和评价材料",
+      "aliases": [
+        "申请报告和评价材料"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应提交企业技术中心申请报告、评价表及评价指标体系所需证明材料。"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "zj-tech-center-1",
+      "type": "hard-threshold",
+      "field": "zj_tech_center_competitive_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+      "source_quote": "企业综合经济技术指标、技术开发能力及产品附加值应符合第五条第一项。"
+    },
+    {
+      "rule_id": "zj-tech-center-2",
+      "type": "hard-threshold",
+      "field": "zj_tech_center_revenue_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+      "source_quote": "制造业一般2亿元、加快发展县1亿元；建筑业结算收入15亿元；高技术服务业主营收入5000万元。"
+    },
+    {
+      "rule_id": "zj-tech-center-3",
+      "type": "hard-threshold",
+      "field": "zj_tech_center_equipment_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+      "source_quote": "制造业一般1200万元、加快发展县800万元；建筑业800万元；高技术服务业1000万元。"
+    },
+    {
+      "rule_id": "zj-tech-center-4",
+      "type": "hard-threshold",
+      "field": "zj_tech_center_rnd_ratio_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+      "source_quote": "制造业按主营收入规模适用1.5%、2%或3%；建筑业0.5%；高技术服务业2.5%。"
+    },
+    {
+      "rule_id": "zj-tech-center-5",
+      "type": "hard-threshold",
+      "field": "zj_tech_center_staff_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+      "source_quote": "制造业一般50人、加快发展县30人；建筑业一级注册人员50人；高技术服务业开发人员50人。"
+    },
+    {
+      "rule_id": "zj-tech-center-6",
+      "type": "hard-threshold",
+      "field": "zj_tech_center_municipal_one_year",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+      "source_quote": "申请企业已取得市级企业技术中心资格一年以上。"
+    },
+    {
+      "rule_id": "zj-tech-center-7",
+      "type": "hard-threshold",
+      "field": "zj_tech_center_three_year_compliance",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+      "source_quote": "申请受理截止日前三年不得存在严重税收、海关、失信或技术原因重大质量安全事故。"
+    },
+    {
+      "rule_id": "zj-tech-center-8",
+      "type": "hard-threshold",
+      "field": "zj_tech_center_materials_complete",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省企业技术中心管理办法》浙经信技术〔2019〕128号",
+      "source_quote": "应提交企业技术中心申请报告、评价表及评价指标体系所需证明材料。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

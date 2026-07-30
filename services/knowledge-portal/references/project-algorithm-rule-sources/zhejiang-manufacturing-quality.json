@@ -1,0 +1,188 @@
+{
+  "project_id": "zhejiang-manufacturing-quality",
+  "project_name": "浙江制造精品",
+  "version": "2025-cycle-20260730",
+  "aliases": [
+    "制造精品",
+    "浙江制造"
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-manufacturing-quality",
+    "zhejiang-manufacturing"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=271341",
+  "source_title": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+  "stable_applicability": {
+    "years": [
+      "2025"
+    ]
+  },
+  "fact_fields": [
+    {
+      "field": "quality_zhejiang_entity_rd_production",
+      "label": "浙江独立法人且省内研发生产",
+      "aliases": [
+        "浙江独立法人且省内研发生产"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_product_competitiveness_met",
+      "label": "细分市场和核心技术符合",
+      "aliases": [
+        "细分市场和核心技术符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_product_category",
+      "label": "申报产品类别",
+      "aliases": [
+        "申报产品类别"
+      ],
+      "value_type": "string"
+    },
+    {
+      "field": "quality_mountain_county",
+      "label": "山区26县企业",
+      "aliases": [
+        "山区26县企业"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_annual_product_sales",
+      "label": "产品上市后每年销售收入",
+      "aliases": [
+        "产品上市后每年销售收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "quality_sales_branch_met",
+      "label": "类别与山区销售收入分支要求",
+      "aliases": [
+        "类别与山区销售收入分支要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_three_year_avg_rnd_ratio",
+      "label": "近三年平均研发投入占主营收入",
+      "aliases": [
+        "近三年平均研发投入占主营收入"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "quality_listing_period_met",
+      "label": "产品上市时间符合",
+      "aliases": [
+        "产品上市时间符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_one_product_limit_met",
+      "label": "企业申报产品数量符合",
+      "aliases": [
+        "企业申报产品数量符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "quality_materials_complete",
+      "label": "申报及佐证材料完整",
+      "aliases": [
+        "申报及佐证材料完整"
+      ],
+      "value_type": "boolean"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "quality-entity",
+      "type": "hard-threshold",
+      "field": "quality_zhejiang_entity_rd_production",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+      "source_quote": "主体应在浙江省内依法设立、具有独立法人资格，在省内建有研发机构和生产基地。"
+    },
+    {
+      "rule_id": "quality-product",
+      "type": "hard-threshold",
+      "field": "quality_product_competitiveness_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+      "source_quote": "产品应聚焦细分市场，市场占有率高、技术领先并具有关键核心技术和自主知识产权。"
+    },
+    {
+      "rule_id": "quality-category",
+      "type": "hard-threshold",
+      "field": "quality_product_category",
+      "operator": "in",
+      "expected": [
+        "先进制造类",
+        "数字技术融合类",
+        "特色（消费品）类"
+      ],
+      "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+      "source_quote": "申报类别须为先进制造类、数字技术融合类或特色消费品类。"
+    },
+    {
+      "rule_id": "quality-listing-period",
+      "type": "hard-threshold",
+      "field": "quality_listing_period_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+      "source_quote": "申报产品须符合通知规定的近三年上市产品时间范围。"
+    },
+    {
+      "rule_id": "quality-sales-branch",
+      "type": "hard-threshold",
+      "field": "quality_sales_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+      "source_quote": "先进制造、数字技术融合、特色消费品三类每年销售收入一般分别不低于800、600、600万元；山区26县适用500、300、300万元分支，须按类别和地区逐项选择。"
+    },
+    {
+      "rule_id": "quality-rnd",
+      "type": "hard-threshold",
+      "field": "quality_three_year_avg_rnd_ratio",
+      "operator": "gte",
+      "expected": 3,
+      "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+      "source_quote": "申报企业近三年平均研发投入占主营业务收入比重不低于3%。",
+      "unit": "%"
+    },
+    {
+      "rule_id": "quality-one-product",
+      "type": "hard-threshold",
+      "field": "quality_one_product_limit_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+      "source_quote": "原则上每家企业申报浙江制造精品数量不超过1个。"
+    },
+    {
+      "rule_id": "quality-materials",
+      "type": "submission",
+      "field": "quality_materials_complete",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于组织开展2025年“浙江制造精品”遴选工作的通知》",
+      "source_quote": "应在线填报申报信息并上传申报书及相关佐证材料。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

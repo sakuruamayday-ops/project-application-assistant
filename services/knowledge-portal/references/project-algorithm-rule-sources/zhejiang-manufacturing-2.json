@@ -1,0 +1,123 @@
+{
+  "project_id": "zhejiang-manufacturing-2",
+  "project_name": "品字标浙江制造",
+  "version": "current-certification-self-declaration-20260730",
+  "aliases": [
+    "浙江制造"
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-manufacturing"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zhejiangmade.zjamr.zj.gov.cn/Web/Apply/ProductLooked/ProductDoc.aspx",
+  "source_title": "品字标浙江制造认证、自我声明和品牌授权现行规则",
+  "stable_applicability": {},
+  "fact_fields": [
+    {
+      "field": "pin_zhejiang_manufacturing_standard_valid",
+      "label": "适用浙江制造标准有效",
+      "aliases": [
+        "适用浙江制造标准有效"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品应具有现行有效且适用的浙江制造团体标准或标准体系依据。"
+      ]
+    },
+    {
+      "field": "pin_zhejiang_manufacturing_route_resolved",
+      "label": "认证或自我声明路径已解析",
+      "aliases": [
+        "认证或自我声明路径已解析"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应明确采用第三方认证或符合规则的自我声明路径，并满足对应评价要求。"
+      ]
+    },
+    {
+      "field": "pin_zhejiang_manufacturing_conformity_met",
+      "label": "产品符合性评价通过",
+      "aliases": [
+        "产品符合性评价通过"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "产品、生产过程、质量保证和检验能力应满足适用标准及评价细则。"
+      ]
+    },
+    {
+      "field": "pin_zhejiang_manufacturing_authorization_complete",
+      "label": "品牌授权材料完整",
+      "aliases": [
+        "品牌授权材料完整"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申请品牌标识使用授权时，应按平台要求提交证书、声明、标准和主体材料。"
+      ]
+    },
+    {
+      "field": "pin_zhejiang_manufacturing_continuing_compliance",
+      "label": "持续合规及标识使用",
+      "aliases": [
+        "持续合规及标识使用"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "获授权后应在证书或声明有效期内规范使用标识并接受监督。"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "pin-zhejiang-manufacturing-1",
+      "type": "hard-threshold",
+      "field": "pin_zhejiang_manufacturing_standard_valid",
+      "operator": "truthy",
+      "expected": true,
+      "source": "品字标浙江制造认证、自我声明和品牌授权现行规则",
+      "source_quote": "产品应具有现行有效且适用的浙江制造团体标准或标准体系依据。"
+    },
+    {
+      "rule_id": "pin-zhejiang-manufacturing-2",
+      "type": "hard-threshold",
+      "field": "pin_zhejiang_manufacturing_route_resolved",
+      "operator": "truthy",
+      "expected": true,
+      "source": "品字标浙江制造认证、自我声明和品牌授权现行规则",
+      "source_quote": "应明确采用第三方认证或符合规则的自我声明路径，并满足对应评价要求。"
+    },
+    {
+      "rule_id": "pin-zhejiang-manufacturing-3",
+      "type": "hard-threshold",
+      "field": "pin_zhejiang_manufacturing_conformity_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "品字标浙江制造认证、自我声明和品牌授权现行规则",
+      "source_quote": "产品、生产过程、质量保证和检验能力应满足适用标准及评价细则。"
+    },
+    {
+      "rule_id": "pin-zhejiang-manufacturing-4",
+      "type": "hard-threshold",
+      "field": "pin_zhejiang_manufacturing_authorization_complete",
+      "operator": "truthy",
+      "expected": true,
+      "source": "品字标浙江制造认证、自我声明和品牌授权现行规则",
+      "source_quote": "申请品牌标识使用授权时，应按平台要求提交证书、声明、标准和主体材料。"
+    },
+    {
+      "rule_id": "pin-zhejiang-manufacturing-5",
+      "type": "hard-threshold",
+      "field": "pin_zhejiang_manufacturing_continuing_compliance",
+      "operator": "truthy",
+      "expected": true,
+      "source": "品字标浙江制造认证、自我声明和品牌授权现行规则",
+      "source_quote": "获授权后应在证书或声明有效期内规范使用标识并接受监督。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

@@ -1,0 +1,386 @@
+{
+  "project_id": "zhejiang-hidden-champion",
+  "project_name": "浙江省隐形冠军企业",
+  "version": "2026-recognition-review",
+  "aliases": [
+    "隐形冠军"
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-hidden-champion"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://aiqice.cn/policyDetail?id=13128837&indexId=8c65d358e6284a548ccb3f9726c51729",
+  "source_title": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+  "stable_applicability": {
+    "years": [
+      "2026"
+    ],
+    "application_types": [
+      "recognition"
+    ]
+  },
+  "fact_fields": [
+    {
+      "field": "hidden_champion_zhejiang_ten_year_entity",
+      "label": "浙江独立法人连续经营年限符合",
+      "aliases": [
+        "浙江独立法人连续经营年限符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_revenue",
+      "label": "上年度营业收入",
+      "aliases": [
+        "上年度营业收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "hidden_champion_revenue_growth_two_years",
+      "label": "近两年营业收入持续增长",
+      "aliases": [
+        "近两年营业收入持续增长"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_net_profit_avg_growth",
+      "label": "近两年净利润平均增长率",
+      "aliases": [
+        "近两年净利润平均增长率"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "hidden_champion_debt_ratio",
+      "label": "资产负债率",
+      "aliases": [
+        "资产负债率"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "hidden_champion_credit_met",
+      "label": "A级资信或征信无不良",
+      "aliases": [
+        "A级资信或征信无不良"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_specialization_met",
+      "label": "细分领域年限与主导产品结构",
+      "aliases": [
+        "细分领域年限与主导产品结构"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_market_rank_met",
+      "label": "细分市场排名",
+      "aliases": [
+        "细分市场排名"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_rnd_ratio_two_years",
+      "label": "近两年研发投入占比均达标",
+      "aliases": [
+        "近两年研发投入占比均达标"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_invention_patents",
+      "label": "相关有效发明专利",
+      "aliases": [
+        "相关有效发明专利"
+      ],
+      "value_type": "number",
+      "unit": "项"
+    },
+    {
+      "field": "hidden_champion_rd_it_met",
+      "label": "研发机构和信息系统",
+      "aliases": [
+        "研发机构和信息系统"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_standard_brand_cert_met",
+      "label": "标准品牌和国际认证",
+      "aliases": [
+        "标准品牌和国际认证"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_compliance_clear",
+      "label": "近三年合规",
+      "aliases": [
+        "近三年合规"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_conflict_identity_clear",
+      "label": "无单项冠军或小巨人身份冲突",
+      "aliases": [
+        "无单项冠军或小巨人身份冲突"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_review_operation_normal",
+      "label": "复核期近三年经营正常",
+      "aliases": [
+        "复核期近三年经营正常"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hidden_champion_review_participated",
+      "label": "按规定参加复核",
+      "aliases": [
+        "按规定参加复核"
+      ],
+      "value_type": "boolean"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "hidden-entity",
+      "type": "hard-threshold",
+      "field": "hidden_champion_zhejiang_ten_year_entity",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "在浙江省内工商登记、连续经营10年以上并具有独立法人资格。"
+    },
+    {
+      "rule_id": "hidden-revenue-min",
+      "type": "hard-threshold",
+      "field": "hidden_champion_revenue",
+      "operator": "gte",
+      "expected": 5000,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "上年度营业收入5000万元及以上，一般不超过20亿元。",
+      "unit": "万元"
+    },
+    {
+      "rule_id": "hidden-revenue-growth",
+      "type": "hard-threshold",
+      "field": "hidden_champion_revenue_growth_two_years",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "近2年营业收入持续增长。"
+    },
+    {
+      "rule_id": "hidden-profit-growth",
+      "type": "hard-threshold",
+      "field": "hidden_champion_net_profit_avg_growth",
+      "operator": "gte",
+      "expected": 10,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "近2年净利润平均增长率达到10%以上。",
+      "unit": "%"
+    },
+    {
+      "rule_id": "hidden-debt-ratio",
+      "type": "hard-threshold",
+      "field": "hidden_champion_debt_ratio",
+      "operator": "lte",
+      "expected": 75,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "资产负债率不高于75%。",
+      "unit": "%"
+    },
+    {
+      "rule_id": "hidden-credit",
+      "type": "hard-threshold",
+      "field": "hidden_champion_credit_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "银行资信等级A级以上或人行征信报告无不良记录。"
+    },
+    {
+      "rule_id": "hidden-specialization",
+      "type": "hard-threshold",
+      "field": "hidden_champion_specialization_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "细分领域10年以上，主导产品不超过3个，主营业务收入占营业收入70%以上。"
+    },
+    {
+      "rule_id": "hidden-market-rank",
+      "type": "hard-threshold",
+      "field": "hidden_champion_market_rank_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "主导产品细分市场占有率位于全球前10或全国前3。"
+    },
+    {
+      "rule_id": "hidden-rnd",
+      "type": "hard-threshold",
+      "field": "hidden_champion_rnd_ratio_two_years",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "近2年研发投入占营业收入比重每年均不低于4%。"
+    },
+    {
+      "rule_id": "hidden-invention",
+      "type": "hard-threshold",
+      "field": "hidden_champion_invention_patents",
+      "operator": "gte",
+      "expected": 4,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "拥有与主导产品相关且实际应用、产生经济效益的有效发明专利4项及以上。",
+      "unit": "项"
+    },
+    {
+      "rule_id": "hidden-rd-it",
+      "type": "hard-threshold",
+      "field": "hidden_champion_rd_it_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "自建或联合建立研发机构，研发、生产、供应等至少一项核心业务采用信息系统。"
+    },
+    {
+      "rule_id": "hidden-standard-brand",
+      "type": "hard-threshold",
+      "field": "hidden_champion_standard_brand_cert_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "主导或参与国际、国家或行业标准1项以上，拥有自主品牌并取得国际相关认证1项以上。"
+    },
+    {
+      "rule_id": "hidden-compliance",
+      "type": "hard-threshold",
+      "field": "hidden_champion_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "近三年无重大事故、严重失信、偷税漏税、数据造假等违法违规。"
+    },
+    {
+      "rule_id": "hidden-conflict",
+      "type": "hard-threshold",
+      "field": "hidden_champion_conflict_identity_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+      "source_quote": "已认定国家制造业单项冠军或有效小巨人的，不再推荐新申请隐形冠军。"
+    }
+  ],
+  "annual_overlays": [
+    {
+      "overlay_id": "hidden-champion-review-2026",
+      "label": "2026年度隐形冠军复核",
+      "year": 2026,
+      "regions": [],
+      "application_types": [
+        "review"
+      ],
+      "policy_status": "current",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://aiqice.cn/policyDetail?id=13128837&indexId=8c65d358e6284a548ccb3f9726c51729",
+      "rules": [
+        {
+          "rule_id": "hidden-review-operation",
+          "type": "hard-threshold",
+          "field": "hidden_champion_review_operation_normal",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+          "source_quote": "近三年生产经营正常，并符合复核适用的申报条件。"
+        },
+        {
+          "rule_id": "hidden-review-participation",
+          "type": "hard-threshold",
+          "field": "hidden_champion_review_participated",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+          "source_quote": "未按规定参加复核的，撤销隐形冠军称号。"
+        },
+        {
+          "rule_id": "hidden-review-debt",
+          "type": "hard-threshold",
+          "field": "hidden_champion_debt_ratio",
+          "operator": "lte",
+          "expected": 75,
+          "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+          "source_quote": "复核资产负债率不高于75%。",
+          "unit": "%"
+        },
+        {
+          "rule_id": "hidden-review-specialization",
+          "type": "hard-threshold",
+          "field": "hidden_champion_specialization_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+          "source_quote": "复核继续满足细分领域、主导产品数量和主营占比要求。"
+        },
+        {
+          "rule_id": "hidden-review-market",
+          "type": "hard-threshold",
+          "field": "hidden_champion_market_rank_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+          "source_quote": "复核继续满足全球前10或全国前3市场排名要求。"
+        },
+        {
+          "rule_id": "hidden-review-rnd",
+          "type": "hard-threshold",
+          "field": "hidden_champion_rnd_ratio_two_years",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+          "source_quote": "复核近2年研发投入占比每年不低于4%。"
+        },
+        {
+          "rule_id": "hidden-review-invention",
+          "type": "hard-threshold",
+          "field": "hidden_champion_invention_patents",
+          "operator": "gte",
+          "expected": 4,
+          "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+          "source_quote": "复核有效发明专利4项及以上并实际应用。",
+          "unit": "项"
+        },
+        {
+          "rule_id": "hidden-review-compliance",
+          "type": "hard-threshold",
+          "field": "hidden_champion_compliance_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知》附件4、5",
+          "source_quote": "复核期不得存在事故、失信、违法违规或数据造假。"
+        }
+      ],
+      "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2026-03-26__关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知__8c65d358e6284a548ccb3f9726c51729/附件/5.浙江省隐形冠军企业复核条件和要求.doc",
+      "source_archive_sha256": "c3d0734c2e17f0bd083d8dca1c67eff50728a8c23cdc3537a732fef098a7864c"
+    }
+  ],
+  "jurisdiction_overlays": [],
+  "source_archive_path": "10_政策与目录/政策数据库/企策顾问/申报通知/宁波市/优质中小企业梯度培育/2026-03-26__关于开展2026年度浙江省制造业单项冠军（隐形冠军）企业遴选认定工作的通知__8c65d358e6284a548ccb3f9726c51729/附件/4.浙江省隐形冠军企业申请条件和要求.doc",
+  "source_archive_sha256": "2c2212e47b2952085b1e49d622a4fbdcb5b5065eb7476340c4295027042a17fe"
+}

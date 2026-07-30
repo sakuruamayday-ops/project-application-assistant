@@ -1,0 +1,312 @@
+{
+  "project_id": "zhejiang-key-specialized-sme",
+  "project_name": "浙江省重点专精特新中小企业",
+  "version": "2026-support-cycle",
+  "aliases": [
+    "重点省专",
+    "重专"
+  ],
+  "source_retrieval_rule_ids": [
+    "zhejiang-key-specialized-sme"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=293014",
+  "source_title": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+  "stable_applicability": {
+    "years": [
+      "2026"
+    ]
+  },
+  "fact_fields": [
+    {
+      "field": "key_zj_sme_valid_status",
+      "label": "有效期内浙江省专精特新中小企业",
+      "aliases": [
+        "有效期内浙江省专精特新中小企业"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_excluded_little_giant_clear",
+      "label": "非有效期内小巨人",
+      "aliases": [
+        "非有效期内小巨人"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_public_listing_clear",
+      "label": "未在境内外公开发行股票",
+      "aliases": [
+        "未在境内外公开发行股票"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_four_improvements_plan_met",
+      "label": "四提一强计划符合",
+      "aliases": [
+        "四提一强计划符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "investment_amount",
+      "label": "推进计划投资总额",
+      "aliases": [
+        "推进计划投资总额"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "key_zj_sme_project_scope_met",
+      "label": "拟实施项目范围符合",
+      "aliases": [
+        "拟实施项目范围符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_no_duplicate_funding",
+      "label": "无重复专项资金支持",
+      "aliases": [
+        "无重复专项资金支持"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "revenue",
+      "label": "上年度营业收入",
+      "aliases": [
+        "上年度营业收入"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "key_zj_sme_size_standard_met",
+      "label": "中小企业划型符合",
+      "aliases": [
+        "中小企业划型符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_debt_ratio",
+      "label": "上年度资产负债率",
+      "aliases": [
+        "上年度资产负债率"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "rnd_ratio",
+      "label": "上年度研发费用强度",
+      "aliases": [
+        "上年度研发费用强度"
+      ],
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "rnd_expense",
+      "label": "上年度研发费用",
+      "aliases": [
+        "上年度研发费用"
+      ],
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "key_zj_sme_class1_ip_count",
+      "label": "主导产品相关I类知识产权",
+      "aliases": [
+        "主导产品相关I类知识产权"
+      ],
+      "value_type": "number",
+      "unit": "项"
+    },
+    {
+      "field": "key_zj_sme_priority_industry_met",
+      "label": "重点产业领域符合",
+      "aliases": [
+        "重点产业领域符合"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_review_failure_clear",
+      "label": "非复核未通过小巨人",
+      "aliases": [
+        "非复核未通过小巨人"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "key_zj_sme_compliance_clear",
+      "label": "经营异常失信及近三年事故违法核验",
+      "aliases": [
+        "经营异常失信及近三年事故违法核验"
+      ],
+      "value_type": "boolean"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "key-zj-sme-valid",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_valid_status",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "申请企业须为有效期内浙江省专精特新中小企业，宁波市除外。"
+    },
+    {
+      "rule_id": "key-zj-sme-not-little-giant",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_excluded_little_giant_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "不含有效期内专精特新小巨人企业。"
+    },
+    {
+      "rule_id": "key-zj-sme-not-listed",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_public_listing_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "企业未在上交所、深交所、北交所或境外公开发行股票。"
+    },
+    {
+      "rule_id": "key-zj-sme-plan",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_four_improvements_plan_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "须提出有具体项目和绩效目标支撑的融通入链四提一强推进计划。"
+    },
+    {
+      "rule_id": "key-zj-sme-investment",
+      "type": "hard-threshold",
+      "field": "investment_amount",
+      "operator": "gt",
+      "expected": 1000,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "推进计划投资总额需超过1000万元。",
+      "unit": "万元"
+    },
+    {
+      "rule_id": "key-zj-sme-project-scope",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_project_scope_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "技术改造、数字化网络化智能化改造、基础研究项目不在拟实施项目支持范围。"
+    },
+    {
+      "rule_id": "key-zj-sme-no-duplicate",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_no_duplicate_funding",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "同一项目已获超长期国债、工信部或省级工信专项资金支持的不得重复申报。"
+    },
+    {
+      "rule_id": "key-zj-sme-revenue",
+      "type": "hard-threshold",
+      "field": "revenue",
+      "operator": "gte",
+      "expected": 1000,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "上年度营业收入原则上不低于1000万元。",
+      "unit": "万元"
+    },
+    {
+      "rule_id": "key-zj-sme-size",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_size_standard_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "企业须符合中小企业划型标准。"
+    },
+    {
+      "rule_id": "key-zj-sme-debt",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_debt_ratio",
+      "operator": "lte",
+      "expected": 100,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "上年度资产负债率原则上不高于100%。",
+      "unit": "%"
+    },
+    {
+      "rule_id": "key-zj-sme-rnd-ratio",
+      "type": "hard-threshold",
+      "field": "rnd_ratio",
+      "operator": "gte",
+      "expected": 3,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "上年度研发费用强度原则上不低于3%。",
+      "unit": "%"
+    },
+    {
+      "rule_id": "key-zj-sme-rnd-expense",
+      "type": "hard-threshold",
+      "field": "rnd_expense",
+      "operator": "gte",
+      "expected": 300,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "上年度研发费用原则上不少于300万元。",
+      "unit": "万元"
+    },
+    {
+      "rule_id": "key-zj-sme-ip",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_class1_ip_count",
+      "operator": "gte",
+      "expected": 2,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "已授权且与主导产品相关的I类知识产权原则上不少于2项。",
+      "unit": "项"
+    },
+    {
+      "rule_id": "key-zj-sme-industry",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_priority_industry_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "企业应属于重点产业领域。"
+    },
+    {
+      "rule_id": "key-zj-sme-review-clear",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_review_failure_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "复核未通过的专精特新小巨人原则上不予支持。"
+    },
+    {
+      "rule_id": "key-zj-sme-compliance",
+      "type": "hard-threshold",
+      "field": "key_zj_sme_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《2026年支持专精特新中小企业高质量发展项目申报通知》及遴选标准",
+      "source_quote": "不得列入经营异常或严重失信，近三年无重大事故、偷漏税等违法违规。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}

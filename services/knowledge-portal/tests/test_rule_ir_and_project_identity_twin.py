@@ -234,7 +234,7 @@ def test_policy_baseline_enrichment_and_dependency_graph():
     assert graph["cold_archive_document_ids"] == []
 
 
-def test_repository_policy_baselines_cover_every_nonformal_project():
+def test_repository_policy_baselines_are_compiled_into_formal_rule_sources():
     portal_dir = Path(__file__).resolve().parents[1]
     baseline_registry = json.loads(
         (
@@ -259,8 +259,29 @@ def test_repository_policy_baselines_cover_every_nonformal_project():
         for item in baseline_registry["baselines"]
         if item.get("baseline_status") == "complete"
     }
-    assert len(routing_ids) == 21
-    assert baseline_ids == routing_ids
+    source_ids = {
+        str(payload["project_id"])
+        for payload in (
+            json.loads(path.read_text(encoding="utf-8"))
+            for path in sorted(
+                (
+                    portal_dir
+                    / "references"
+                    / "project-algorithm-rule-sources"
+                ).glob("*.json")
+            )
+        )
+    }
+    formal_ids = {
+        str(pack["project_id"])
+        for pack in packs
+        if pack.get("coverage_status") == "rules-confirmed"
+    }
+    assert routing_ids == set()
+    assert len(baseline_ids) == 21
+    assert baseline_ids <= source_ids
+    assert source_ids == formal_ids
+    assert len(formal_ids) == 29
     assert all(
         str(document.get("official_url") or "").startswith("https://")
         for item in baseline_registry["baselines"]

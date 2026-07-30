@@ -2,24 +2,627 @@
   "schema_version": 1,
   "project_id": "hangzhou-enterprise-institute",
   "project_name": "杭州市企业研究院",
-  "version": "1.0",
-  "coverage_status": "routing-only",
+  "version": "2022-method-valid-through-2027-20260730",
+  "coverage_status": "rules-confirmed",
   "aliases": [
     "杭州研发中心",
     "杭州市研发中心",
     "市高企研发中心"
   ],
-  "fact_fields": [],
-  "rule_cards": [],
-  "gold_cases": [
-    {
-      "case_id": "rules-pending",
-      "facts": [],
-      "confirm_rule_ids": [],
-      "expected_conclusion": "undetermined"
-    }
-  ],
   "source_retrieval_rule_ids": [
     "hangzhou-enterprise-institute"
+  ],
+  "fact_fields": [
+    {
+      "field": "hz_rd_enterprise_type_met",
+      "label": "杭州注册且属于适用企业类型",
+      "aliases": [
+        "杭州注册且属于适用企业类型"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_staff_branch_met",
+      "label": "专职研发人员分支要求",
+      "aliases": [
+        "专职研发人员分支要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_site_area",
+      "label": "集中科研场地面积",
+      "aliases": [
+        "集中科研场地面积"
+      ],
+      "value_type": "number",
+      "unit": "平方米"
+    },
+    {
+      "field": "hz_rd_equipment_branch_met",
+      "label": "科研设备原值分支要求",
+      "aliases": [
+        "科研设备原值分支要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_investment_branch_met",
+      "label": "研发自筹投入分支要求",
+      "aliases": [
+        "研发自筹投入分支要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_project_branch_met",
+      "label": "科研项目分支要求",
+      "aliases": [
+        "科研项目分支要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_ip_branch_met",
+      "label": "知识产权分支要求",
+      "aliases": [
+        "知识产权分支要求"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_independent_accounting",
+      "label": "研发活动单独建账",
+      "aliases": [
+        "研发活动单独建账"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_compliance_clear",
+      "label": "前一年度至申请日合规",
+      "aliases": [
+        "前一年度至申请日合规"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_materials_complete",
+      "label": "研发中心申请及实施方案完整",
+      "aliases": [
+        "研发中心申请及实施方案完整"
+      ],
+      "value_type": "boolean"
+    }
+  ],
+  "rule_cards": [
+    {
+      "rule_id": "hz-rd-entity",
+      "type": "hard-threshold",
+      "field": "hz_rd_enterprise_type_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "本市注册，且为市级以上科技型企业、高新技术企业或规上工业企业。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-staff",
+      "type": "hard-threshold",
+      "field": "hz_rd_staff_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "专职从事研发活动人员一般10人以上；软件企业15人以上，须按企业类型选择对应分支。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-site",
+      "type": "hard-threshold",
+      "field": "hz_rd_site_area",
+      "operator": "gt",
+      "expected": 200,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "科研场地相对集中，面积200平方米以上。",
+      "unit": "平方米",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-equipment",
+      "type": "hard-threshold",
+      "field": "hz_rd_equipment_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "专用科研设备原值一般200万元以上；软件、农业企业及软件企业50人以上研发队伍适用相应降低分支。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-investment",
+      "type": "hard-threshold",
+      "field": "hz_rd_investment_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "上一年度研发费用自筹投入200万元以上，或占销售收入3%以上。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-projects",
+      "type": "hard-threshold",
+      "field": "hz_rd_project_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "获市级以上科研项目1项以上，或企业自主立项技术创新项目3项以上。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-ip",
+      "type": "hard-threshold",
+      "field": "hz_rd_ip_branch_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "取得发明专利等I类成果1项以上，或实用新型、外观设计、软件著作权等3项以上。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-accounting",
+      "type": "hard-threshold",
+      "field": "hz_rd_independent_accounting",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "研发活动应单独建账核算，规章制度健全。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-compliance",
+      "type": "hard-threshold",
+      "field": "hz_rd_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "申请前一年度至申请日未发生重大安全质量事故及严重环境、知识产权、税务、科研失信。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    },
+    {
+      "rule_id": "hz-rd-materials",
+      "type": "submission",
+      "field": "hz_rd_materials_complete",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《杭州市企业高新技术研究开发中心管理办法》",
+      "source_quote": "应提交申请书、建设实施方案及规定佐证材料。",
+      "policy_status": "current",
+      "review_status": "confirmed",
+      "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+      "approved_at": "2026-07-30 09:00:00",
+      "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+    }
+  ],
+  "rule_layers": [
+    {
+      "layer_id": "stable-management",
+      "layer_type": "stable",
+      "label": "稳定管理办法",
+      "applicability": {},
+      "rules": [
+        {
+          "rule_id": "hz-rd-entity",
+          "type": "hard-threshold",
+          "field": "hz_rd_enterprise_type_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "本市注册，且为市级以上科技型企业、高新技术企业或规上工业企业。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-staff",
+          "type": "hard-threshold",
+          "field": "hz_rd_staff_branch_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "专职从事研发活动人员一般10人以上；软件企业15人以上，须按企业类型选择对应分支。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-site",
+          "type": "hard-threshold",
+          "field": "hz_rd_site_area",
+          "operator": "gt",
+          "expected": 200,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "科研场地相对集中，面积200平方米以上。",
+          "unit": "平方米",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-equipment",
+          "type": "hard-threshold",
+          "field": "hz_rd_equipment_branch_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "专用科研设备原值一般200万元以上；软件、农业企业及软件企业50人以上研发队伍适用相应降低分支。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-investment",
+          "type": "hard-threshold",
+          "field": "hz_rd_investment_branch_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "上一年度研发费用自筹投入200万元以上，或占销售收入3%以上。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-projects",
+          "type": "hard-threshold",
+          "field": "hz_rd_project_branch_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "获市级以上科研项目1项以上，或企业自主立项技术创新项目3项以上。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-ip",
+          "type": "hard-threshold",
+          "field": "hz_rd_ip_branch_met",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "取得发明专利等I类成果1项以上，或实用新型、外观设计、软件著作权等3项以上。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-accounting",
+          "type": "hard-threshold",
+          "field": "hz_rd_independent_accounting",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "研发活动应单独建账核算，规章制度健全。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-compliance",
+          "type": "hard-threshold",
+          "field": "hz_rd_compliance_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "申请前一年度至申请日未发生重大安全质量事故及严重环境、知识产权、税务、科研失信。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        },
+        {
+          "rule_id": "hz-rd-materials",
+          "type": "submission",
+          "field": "hz_rd_materials_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市企业高新技术研究开发中心管理办法》",
+          "source_quote": "应提交申请书、建设实施方案及规定佐证材料。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+          "approved_at": "2026-07-30 09:00:00",
+          "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        }
+      ]
+    }
+  ],
+  "gold_cases": [
+    {
+      "case_id": "eligible-verified",
+      "facts": [
+        {
+          "field": "hz_rd_enterprise_type_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_staff_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_site_area",
+          "value": 202.0,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_equipment_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_investment_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_project_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_ip_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_independent_accounting",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_materials_complete",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "hz-rd-entity",
+        "hz-rd-staff",
+        "hz-rd-site",
+        "hz-rd-equipment",
+        "hz-rd-investment",
+        "hz-rd-projects",
+        "hz-rd-ip",
+        "hz-rd-accounting",
+        "hz-rd-compliance",
+        "hz-rd-materials"
+      ],
+      "expected_conclusion": "eligible"
+    },
+    {
+      "case_id": "conditional-pending",
+      "facts": [
+        {
+          "field": "hz_rd_enterprise_type_met",
+          "value": true,
+          "evidence_state": "claimed",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_staff_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_site_area",
+          "value": 202.0,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_equipment_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_investment_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_project_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_ip_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_independent_accounting",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_materials_complete",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "hz-rd-entity",
+        "hz-rd-staff",
+        "hz-rd-site",
+        "hz-rd-equipment",
+        "hz-rd-investment",
+        "hz-rd-projects",
+        "hz-rd-ip",
+        "hz-rd-accounting",
+        "hz-rd-compliance",
+        "hz-rd-materials"
+      ],
+      "expected_conclusion": "conditional"
+    },
+    {
+      "case_id": "ineligible-failed",
+      "facts": [
+        {
+          "field": "hz_rd_enterprise_type_met",
+          "value": false,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_staff_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_site_area",
+          "value": 202.0,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_equipment_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_investment_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_project_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_ip_branch_met",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_independent_accounting",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_compliance_clear",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        },
+        {
+          "field": "hz_rd_materials_complete",
+          "value": true,
+          "evidence_state": "verified",
+          "source": "金标准事实"
+        }
+      ],
+      "confirm_rule_ids": [
+        "hz-rd-entity",
+        "hz-rd-staff",
+        "hz-rd-site",
+        "hz-rd-equipment",
+        "hz-rd-investment",
+        "hz-rd-projects",
+        "hz-rd-ip",
+        "hz-rd-accounting",
+        "hz-rd-compliance",
+        "hz-rd-materials"
+      ],
+      "expected_conclusion": "ineligible"
+    }
   ]
 }

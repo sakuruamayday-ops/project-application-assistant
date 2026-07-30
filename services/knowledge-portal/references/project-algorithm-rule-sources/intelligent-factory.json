@@ -1,0 +1,143 @@
+{
+  "project_id": "intelligent-factory",
+  "project_name": "浙江省智能工厂",
+  "version": "2025-guide-2025-cycle-20260730",
+  "aliases": [
+    "智能工厂"
+  ],
+  "source_retrieval_rule_ids": [
+    "intelligent-factory"
+  ],
+  "policy_status": "current",
+  "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
+  "approved_at": "2026-07-30 09:00:00",
+  "source_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=274735",
+  "source_title": "《浙江省未来工厂梯度培育工作指南（2025年版）》",
+  "stable_applicability": {},
+  "fact_fields": [
+    {
+      "field": "intelligent_factory_zhejiang_entity_met",
+      "label": "智能工厂浙江主体要求",
+      "aliases": [
+        "智能工厂浙江主体要求"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报主体及项目须属于浙江省制造业数字化转型梯度培育范围。"
+      ]
+    },
+    {
+      "field": "intelligent_factory_cultivation_status_met",
+      "label": "智能工厂培育入库要求",
+      "aliases": [
+        "智能工厂培育入库要求"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "未来工厂须为未来工厂试点培育企业；智能工厂、数字化车间项目须纳入省级培育库。"
+      ]
+    },
+    {
+      "field": "intelligent_factory_completed_operational",
+      "label": "智能工厂完工投产要求",
+      "aliases": [
+        "智能工厂完工投产要求"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报项目应按当年度通知规定完成建设并投入运行。"
+      ]
+    },
+    {
+      "field": "intelligent_factory_assessment_standard_met",
+      "label": "智能工厂评定标准符合情况",
+      "aliases": [
+        "智能工厂评定标准符合情况"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "企业须按对应未来工厂、智能工厂或数字化车间评定标准完成自评。"
+      ]
+    },
+    {
+      "field": "intelligent_factory_materials_complete",
+      "label": "智能工厂材料完整性",
+      "aliases": [
+        "智能工厂材料完整性"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "应提交申报书、自评材料、软硬件投入清单及知识产权、标准等佐证。"
+      ]
+    },
+    {
+      "field": "intelligent_factory_compliance_clear",
+      "label": "智能工厂合规核验",
+      "aliases": [
+        "智能工厂合规核验"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "申报材料应真实完整，项目建设和运行不得存在影响推荐的重大违法违规情形。"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "intelligent_factory-1",
+      "type": "hard-threshold",
+      "field": "intelligent_factory_zhejiang_entity_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省未来工厂梯度培育工作指南（2025年版）》",
+      "source_quote": "申报主体及项目须属于浙江省制造业数字化转型梯度培育范围。"
+    },
+    {
+      "rule_id": "intelligent_factory-2",
+      "type": "hard-threshold",
+      "field": "intelligent_factory_cultivation_status_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省未来工厂梯度培育工作指南（2025年版）》",
+      "source_quote": "未来工厂须为未来工厂试点培育企业；智能工厂、数字化车间项目须纳入省级培育库。"
+    },
+    {
+      "rule_id": "intelligent_factory-3",
+      "type": "hard-threshold",
+      "field": "intelligent_factory_completed_operational",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省未来工厂梯度培育工作指南（2025年版）》",
+      "source_quote": "申报项目应按当年度通知规定完成建设并投入运行。"
+    },
+    {
+      "rule_id": "intelligent_factory-4",
+      "type": "hard-threshold",
+      "field": "intelligent_factory_assessment_standard_met",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省未来工厂梯度培育工作指南（2025年版）》",
+      "source_quote": "企业须按对应未来工厂、智能工厂或数字化车间评定标准完成自评。"
+    },
+    {
+      "rule_id": "intelligent_factory-5",
+      "type": "hard-threshold",
+      "field": "intelligent_factory_materials_complete",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省未来工厂梯度培育工作指南（2025年版）》",
+      "source_quote": "应提交申报书、自评材料、软硬件投入清单及知识产权、标准等佐证。"
+    },
+    {
+      "rule_id": "intelligent_factory-6",
+      "type": "hard-threshold",
+      "field": "intelligent_factory_compliance_clear",
+      "operator": "truthy",
+      "expected": true,
+      "source": "《浙江省未来工厂梯度培育工作指南（2025年版）》",
+      "source_quote": "申报材料应真实完整，项目建设和运行不得存在影响推荐的重大违法违规情形。"
+    }
+  ],
+  "annual_overlays": [],
+  "jurisdiction_overlays": []
+}
