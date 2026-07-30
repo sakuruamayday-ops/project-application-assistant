@@ -51,14 +51,18 @@ def normalize_version(value: str) -> tuple[str, str, str]:
         raise ValueError(
             "版本必须形如 1.3、1.3.1、1.3.1.1，或带V前缀"
         )
-    major, minor, patch = match.group(1), match.group(2), match.group(3) or "0"
+    major, minor = match.group(1), match.group(2)
+    explicit_patch = match.group(3)
+    patch = explicit_patch or "0"
     hotfix = match.group(4)
     if hotfix is not None:
         public = f"{major}.{minor}.{patch}.{hotfix}"
         semantic = public
     else:
         public = (
-            f"{major}.{minor}" if patch == "0" else f"{major}.{minor}.{patch}"
+            f"{major}.{minor}.{patch}"
+            if explicit_patch is not None
+            else f"{major}.{minor}"
         )
         semantic = f"{major}.{minor}.{patch}"
     return public, semantic, f"V{public}"
