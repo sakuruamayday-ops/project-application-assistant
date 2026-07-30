@@ -1,0 +1,32 @@
+{
+  "schema_version": "patent-application-input/v1",
+  "case_id": "fixture-case",
+  "case_revision": 1,
+  "anonymized_test_fixture": true,
+  "fact_lock": {
+    "status": "confirmed",
+    "source_roles": [
+      "technical_disclosure",
+      "search_plan",
+      "prior_art_evidence"
+    ],
+    "note": "仅确认匿名结构夹具，不确认任何真实技术事实"
+  },
+  "title": "匿名测试案件，不得提交",
+  "abstract": "本摘要是无技术内容的结构占位文本，只用于验证申请文件生成、版本绑定和交付门禁。",
+  "claims": [
+    {
+      "text": "1. 一种匿名结构测试方法，其仅用于验证文档章节是否完整。"
+    }
+  ],
+  "description": {
+    "technical_field": "本节仅验证技术领域章节存在，不表达真实技术内容。",
+    "background": "本节仅验证背景技术章节存在，不表达真实问题或现有技术。",
+    "technical_problem": "本节仅验证问题章节存在，不表达真实技术问题。",
+    "technical_solution": "本节仅验证技术方案章节存在，不表达真实技术方案。",
+    "beneficial_effects": "本节仅验证有益效果章节存在，不声明真实性能或效果。",
+    "drawing_description": "本匿名夹具不包含附图。",
+    "embodiments": "本节仅验证具体实施方式章节存在，不包含参数、步骤或实施例。"
+  },
+  "drawings": []
+}

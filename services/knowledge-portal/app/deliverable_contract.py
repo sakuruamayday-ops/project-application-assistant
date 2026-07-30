@@ -92,6 +92,17 @@ def _normalized_variant(value: object) -> str:
     return aliases.get(normalized, str(value or "").strip())
 
 
+def _normalized_case_mode(value: object) -> str:
+    normalized = str(value or "").strip().lower()
+    aliases = {
+        "filing-ready": "filing-ready",
+        "正式提交": "filing-ready",
+        "提交前": "filing-ready",
+        "完整申请": "filing-ready",
+    }
+    return aliases.get(normalized, str(value or "").strip())
+
+
 def infer_delivery_profile(deliverable: Mapping[str, object]) -> tuple[str, str]:
     explicit = str(deliverable.get("delivery_profile") or "").strip()
     profiles = _delivery_registry().get("delivery_profiles")
@@ -114,6 +125,17 @@ def infer_delivery_profile(deliverable: Mapping[str, object]) -> tuple[str, str]
     selector = selectors.get(skill_id)
     if not isinstance(selector, Mapping):
         return "", ""
+    case_mode = _normalized_case_mode(
+        deliverable.get("case_mode") or template.get("case_mode")
+    )
+    by_case_mode = selector.get("by_case_mode")
+    if isinstance(by_case_mode, Mapping):
+        if not case_mode:
+            return "", ""
+        profile_id = str(by_case_mode.get(case_mode) or "").strip()
+        if not profile_id:
+            return "", f"{skill_id}不支持案件模式：{case_mode}"
+        return profile_id, ""
     variant = _normalized_variant(
         deliverable.get("report_variant")
         or deliverable.get("variant")

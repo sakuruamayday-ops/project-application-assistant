@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.3.1.6"><img src="https://img.shields.io/badge/Release-V1.3.1.6-C9A760?style=for-the-badge" alt="Release V1.3.1.6"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.4.0"><img src="https://img.shields.io/badge/Release-V1.4.0-C9A760?style=for-the-badge" alt="Release V1.4.0"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.3.1.6.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
+  <a href="docs/releases/V1.4.0.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -86,7 +86,7 @@ WorkBuddy 的系统差异由同一个插件包内的运行时适配处理。发�
 |---|---|
 | [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.docx) | 下载、安装、首次配置和日常使用 |
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
-| [V1.3.1.6 发布说明](docs/releases/V1.3.1.6.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.4.0 发布说明](docs/releases/V1.4.0.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -107,6 +107,7 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 RELEASE_VERSION=按正式发布指令填写
 python3 scripts/controlled_release.py \
   --version "$RELEASE_VERSION" \
+  --generic-package "dist/企业全生命周期助手-V${RELEASE_VERSION}.zip" \
   --workbuddy-package "dist/企业全生命周期助手-V${RELEASE_VERSION}-WorkBuddy.zip" \
   --gate-report "dist/企业全生命周期助手-V${RELEASE_VERSION}-发布门禁.json" \
   --release-notes "docs/releases/V${RELEASE_VERSION}.md"
@@ -121,18 +122,25 @@ GitHub 预发布
 ```
 
 主人明确说出“确认正式发布”后，才执行第二条命令：在原参数后追加
-`--promote --confirm-text "确认正式发布"`。系统核对预发布提交和三项资产哈希，
-把同一批候选文件登记为网站正式版，最后将 GitHub 预发布提升为 Latest。
+`--promote --confirm-text "确认正式发布"`。系统核对预发布提交和全部候选资产哈希，
+随后以通用正式包为唯一升级源，对本机 `~/.codex/skills` 执行原子替换、49 项
+Skill 全量验签以及开发源、正式包、实际安装目录三方哈希比对。部署后门禁通过，
+才把同一批候选文件登记为网站正式版，最后将 GitHub 预发布提升为 Latest。
 
 `--execute` 一步直发入口已停用。任一步失败都会停止；没有独立确认时，
 候选版本只能保持“正式发布中”，不能替换当前正式版。
+
+每次安装命令、跳过原因、备份、回滚和验签结果分别写入
+`~/.config/project-assistant/install-executions.jsonl` 与单次升级报告；三方审计
+统一写入 `~/.config/project-assistant/deployment-audits/`。已签名安装目录会移除
+写权限，日常开发必须在独立工作树完成。
 
 ## 版本口径
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.3.1.6` | 网站、GitHub Release 和用户可见版本 |
-| 组件版本 | `1.3.1.6` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.4.0` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.4.0` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 | 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1`、`V1.3.1.1`、`V1.3.1.2`、`V1.3.1.3`、`V1.3.1.4` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
 

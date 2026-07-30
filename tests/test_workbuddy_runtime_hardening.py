@@ -405,6 +405,26 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 for marker in expected_markers:
                     self.assertIn(marker, joined)
 
+    def test_patent_full_case_contract_blocks_missing_case_chain(self):
+        contract = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "skills/delivery-contracts.json"
+            ).read_text(encoding="utf-8")
+        )
+        missing = BRIDGE.audit_delivery_completion(
+            prompt="请撰写专利并形成完整申请文件。",
+            answer="申请文件已经完成。",
+            active_skills=[{"skill": "jiaotang-patent-router"}],
+            contract=contract,
+        )
+        joined = "；".join(missing)
+
+        self.assertIn("全案唯一清单", joined)
+        self.assertIn("权利要求现有技术矩阵", joined)
+        self.assertIn("核稿验证", joined)
+        self.assertIn("提交清单", joined)
+
     def test_stop_hook_keeps_blocking_after_repeated_quality_failures(self):
         contract_path = (
             Path(__file__).resolve().parents[1]

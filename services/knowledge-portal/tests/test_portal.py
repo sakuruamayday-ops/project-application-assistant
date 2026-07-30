@@ -461,6 +461,10 @@ def test_public_user_guide(tmp_path):
         assert guide.status_code == 200
         assert "企业全生命周期助手用户使用手册" in guide.text
         assert "下载与安装" in guide.text
+        assert "Skills V1.4.0" in guide.text
+        assert "项目算法与政策版本" in guide.text
+        assert "企业项目身份数字孪生" in guide.text
+        assert "patent-case-manifest" in guide.text
         assert "53项 Skills 能力导航" not in guide.text
         assert "2.1.5版本" not in guide.text
 
@@ -471,6 +475,22 @@ def test_public_user_guide(tmp_path):
         login = client.get("/login")
         assert login.status_code == 200
         assert 'href="/guide"' in login.text
+
+
+def test_public_demo_describes_v140_execution_chain(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        response = client.get("/demo")
+
+    assert response.status_code == 200
+    assert "V1.4.0 · PRODUCT DEMO" in response.text
+    assert "企业项目身份、政策规则与交付质量" in response.text
+    assert "统一进入可追溯执行链" in response.text
+    assert "项目决策算法" in response.text
+    assert "企业项目身份数字孪生" in response.text
+    assert "政策变化影响模拟" in response.text
+    assert "交付契约自动修复" in response.text
+    assert "专利全流程" in response.text
 
 
 def test_personal_preferences_api_sync_history_undo_and_reset(tmp_path):

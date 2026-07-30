@@ -1,0 +1,9 @@
+{
+  "schema_version": "patent-search-plan/v1",
+  "case_id": "fixture-case",
+  "case_revision": 1,
+  "purpose": "仅验证检索计划文件在案卷中的位置",
+  "queries": [],
+  "databases": [],
+  "status": "fixture"
+}

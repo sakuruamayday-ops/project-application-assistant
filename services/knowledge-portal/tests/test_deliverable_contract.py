@@ -356,3 +356,48 @@ def test_panorama_profile_refuses_to_guess_a_or_b():
         if item["failure_code"] == "missing-delivery-profile"
     )
     assert "不得由模型自行替用户选择" in task["acceptance_criteria"][1]
+
+
+def test_patent_filing_ready_profile_requires_manifest_and_same_hash_artifacts():
+    deliverable = {
+        "task_type": "formal-application-report",
+        "skill_id": "jiaotang-patent-router",
+        "case_mode": "filing-ready",
+        "sections": {},
+        "four_question_review": _review(),
+    }
+    contract = build_delivery_contract("形成完整发明专利申请案卷", deliverable)
+    audit = validate_delivery_contract(deliverable, contract)
+
+    assert contract["delivery_profile"] == "patent-application-case"
+    assert contract["requires_peer_comparison"] is False
+    assert contract["requires_policy_selection_trace"] is False
+    assert {
+        item["role"] for item in contract["required_artifacts"]
+    } == {
+        "patent_case_manifest",
+        "patent_application_docx",
+        "claim_prior_art_matrix",
+        "submission_checklist",
+    }
+    assert "patent_case_manifest" in audit["missing_items"]
+    manifest_task = next(
+        item
+        for item in audit["repair_plan"]["tasks"]
+        if item["target_path"] == "artifacts.patent_case_manifest"
+    )
+    assert manifest_task["blocking"] is True
+    assert manifest_task["acceptance_criteria"]
+
+
+def test_patent_router_without_filing_mode_keeps_narrow_tasks_unprofiled():
+    contract = build_delivery_contract(
+        "只做一次现有技术检索",
+        {
+            "task_type": "general-response",
+            "skill_id": "jiaotang-patent-router",
+        },
+    )
+
+    assert contract["delivery_profile"] == ""
+    assert contract["delivery_profile_error"] == ""

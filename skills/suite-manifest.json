@@ -4,22 +4,28 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.3.1.6",
-    "version": "1.3.1.6",
-    "summary": "修复 WorkBuddy 重启后插件运行文件丢失与 .mcp.json 完整性依赖导致的连接中断，要求持久保存本地市场并由签名插件清单内联声明 jiaotang-kb。",
+    "tag": "V1.4.0",
+    "version": "1.4.0",
+    "summary": "V1.4.0 将 28 个常规项目、政策时间语义、企业项目身份数字孪生、政策变化影响模拟、交付契约和专利完整案卷纳入同一可追溯执行内核。",
     "changes": [
-      "jiaotang-kb MCP 改由签名 .codebuddy-plugin/plugin.json 内联声明，正式包不再依赖插件根目录 .mcp.json。",
-      "UserPromptSubmit 钩子统一输出 ASCII 安全 JSON，避免 Windows 控制台编码破坏错误信息。",
-      "JIAOTANG_TEST_CREDENTIAL_FILE 仅在显式开启 JIAOTANG_ENABLE_TEST_CREDENTIAL_FILE=1 时生效，正式 Windows 路径继续使用当前用户 DPAPI。",
-      "门户明确禁止安装流程写入用户级、项目级或全局 MCP 配置；连接必须由已签名插件清单加载。",
-      "安装流程必须先把完整 jiaotang 市场保存到当前 WorkBuddy 的持久用户插件目录，再注册和启用；清理只覆盖下载包与未注册中转目录。",
-      "首次配置必须确认 jiaotang-kb 已进入当前 WorkBuddy 运行时并成功调用任一只读状态或检索工具，之后才提示安装 OCR、PDF、Word、PPT、Excel 和联网检索 Skills。"
+      "28 个常规项目全部进入统一规则中间语言；网站展示 28 类常规项目，运行时另保留 1 个兼容别名编译单元。",
+      "政策检索支持主管部门原文、下级政府明确引用、当前有效管理办法三级降级；降级来源不得虚构年度截止时间和批次要求。",
+      "正式判断、历史回放、当年申报前准备、预测和回测使用不同政策时间类型，阻止新规则冒充历史事实。",
+      "已核验且明确替代旧政策的征求意见稿，在申报尚未开放时作为准备主基线；页面和报告保留尚未正式生效标识。",
+      "杭州、宁波、绍兴、金华研发平台统一路由为市级研发中心（四市属地版）和市级企业技术中心（四市属地版），保留旧名称别名和历史记录。",
+      "杭州、宁波、绍兴、金华共 38 个行政区县完成绿色工厂正式政策适用注册；未解析属地规则时禁止用省级门槛替代区级结论。",
+      "增加企业项目身份数字孪生和生命周期事件回放，覆盖政策版本、名单附件、主体匹配和身份迁移。",
+      "增加政策变化影响模拟器、依赖图和内容哈希增量编译，只更新受影响的城市、年度和项目族。",
+      "增加 WorkBuddy 交付契约和自动修复任务，约束政策选择、同行对比、四问复盘、内置表格、证据来源、品牌、水印和产物哈希。",
+      "专利完整申请任务增加全案唯一清单、事实锁、统一申请文件生成器、文件哈希和提交前交付契约，阶段错版会被阻止并生成重建任务。",
+      "正式提升前以通用签名包原子升级发布机 Codex Skills，完成套件级与 49 项技能级验签、开发源与正式包及实际安装目录三方哈希比对，并输出单一部署审计报告。",
+      "49 项顶层 Skills 数量保持不变；V1.3.1.6 已绑定设备升级 V1.4.0 时无需重新登记。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "通过门户两步流程时，第二步授权 Agent 自动下载、校验并安装 V1.3.1.6 WorkBuddy 包；选择手工配置时才需从 Skills 中心下载并在 WorkBuddy 中通过 /plugin 安装。",
+      "workbuddy": "通过门户两步流程时，第二步授权 Agent 自动下载、校验并安装 V1.4.0 WorkBuddy 包；选择手工配置时才需从 Skills 中心下载并在 WorkBuddy 中通过 /plugin 安装。",
       "manual_fallback": "手工配置只作为自动两步流程的替代路径；核验签名包后，将一次性 bootstrap_url 填入 WorkBuddy 插件敏感配置。",
-      "verification": "门户四阶段完成后还必须确认 jiaotang-kb 已进入当前运行时，并成功调用任一只读状态或检索工具；之后首次配置才完成。"
+      "verification": "门户四阶段完成后还必须确认 jiaotang-kb 已进入当前运行时，成功调用任一只读状态或检索工具，并抽样验证项目算法、交付契约或专利案卷入口；之后升级验收才完成。"
     },
     "compatibility": [
       {
@@ -30,12 +36,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "已发现临时市场在安装后被清理会导致 run-node ENOENT；V1.3.1.6 要求持久保存市场，并同步采用签名插件清单内联 MCP，已绑定设备无需重新登记。"
+        "note": "继续使用持久本地市场和签名插件清单内联 MCP；V1.3.1.6 已绑定设备升级 V1.4.0 时无需重新登记。"
       },
       {
         "target": "Windows WorkBuddy",
         "status": "结构兼容，待主人实机验收",
-        "note": "V1.3.1.6 已移除导致 WorkBuddy 5.3.5 重启报错的 .mcp.json 运行时依赖，并通过包结构、签名与钩子回归；真实 Windows 升级和重启由主人验收。"
+        "note": "V1.4.0 沿用无 .mcp.json 运行时依赖的跨平台结构，并通过包结构、签名与钩子回归；真实 Windows 升级和重启继续由主人验收。"
       }
     ],
     "rollback": [
@@ -320,6 +326,8 @@
     "application-evidence",
     "policy-corpus",
     "ip-evidence",
-    "client-dossier"
+    "client-dossier",
+    "filing-ready",
+    "needs-user-input"
   ]
 }
