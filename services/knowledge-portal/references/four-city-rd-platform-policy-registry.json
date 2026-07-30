@@ -105,12 +105,13 @@
           "city": "金华市",
           "canonical_name": "金华市科学技术研究开发中心",
           "route_status": "active-municipal-filing",
-          "formal_policy": "金华市科学技术研究开发中心备案事项",
-          "policy_status": "current-service",
-          "official_url": "https://kjdn.kjj.jinhua.gov.cn/office/hall/index",
-          "source_role": "金华科技大脑常年备案事项",
+          "formal_policy": "《金华市科学技术研究开发中心管理办法》（金市科〔2024〕47号）",
+          "policy_status": "current",
+          "official_url": "https://zjjcmspublic.oss-cn-hangzhou-zwynet-d01-a.internet.cloud.zj.gov.cn/jcms_files/jcms1/web3539/site/attach/0/f00cfd9976d14688b7cbf89d10f6f102.pdf",
+          "source_role": "金华市人民政府公报正式办法；金华科技大脑提供备案办理入口",
+          "service_url": "https://kjdn.kjj.jinhua.gov.cn/office/hall/index",
           "annual_notice_required": false,
-          "note": "金华采用常年备案事项，不强行套用杭州、宁波或绍兴的年度认定名称。"
+          "note": "金华采用备案管理，不强行套用杭州、宁波或绍兴的认定名称。"
         }
       ]
     }

@@ -82,3 +82,16 @@ def test_shaoxing_rd_platform_uses_2026_revision_not_superseded_2019_rule():
     assert "2026年修订" in selected["primary_policy"]
     assert "2019" not in selected["primary_policy"]
     assert selected["formal_conclusion_allowed"] is True
+
+
+def test_jinhua_rd_platform_uses_2024_formal_filing_measure():
+    selected = resolve_policy_transition(
+        load_registry(),
+        family_id="municipal-enterprise-rd-platform",
+        city="金华市",
+        evaluation_mode="current-assessment",
+    )
+
+    assert selected["primary_policy_status"] == "current"
+    assert "金市科〔2024〕47号" in selected["primary_policy"]
+    assert selected["route_status"] == "active-municipal-filing"
