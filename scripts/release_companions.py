@@ -346,6 +346,37 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
             _replace_paragraph_text(paragraph, updated)
 
     if manager_profile:
+        compatibility_replacements = {
+            (
+                "在签名 plugin.json 中内联声明 jiaotang-kb，不依赖插件根目录 "
+                ".mcp.json，也不写用户级、项目级或全局 MCP 配置。"
+            ): (
+                "从签名插件根目录 .mcp.json 加载 jiaotang-kb，plugin.json "
+                "保留相对路径声明；不写用户级、项目级或全局 MCP 配置。"
+            ),
+            (
+                "填写 bootstrap。 门户 API 页复制一次性地址并粘贴到敏感配置；"
+                "同机已绑定时复用现有凭据。"
+            ): (
+                "完成首次绑定。 新设备安装并启用插件后，让 Agent 将门户一次性 "
+                "bootstrap_url 仅作为本地 jiaotang_kb_setup 工具参数调用一次；"
+                "同机已绑定设备直接复用系统凭据。"
+            ),
+            (
+                "WorkBuddy 使用通用跨平台包，并在应用内完成市场添加、安装、"
+                "启用与 bootstrap 配置。"
+            ): (
+                "WorkBuddy 使用通用跨平台包，并在应用内完成市场添加、安装与启用；"
+                "首次绑定通过本地 jiaotang_kb_setup 工具完成。"
+            ),
+        }
+        for paragraph in paragraphs:
+            updated = paragraph.text
+            for old, new in compatibility_replacements.items():
+                updated = updated.replace(old, new)
+            if updated != paragraph.text:
+                _replace_paragraph_text(paragraph, updated)
+
         upgrade_anchor = next(
             (
                 paragraph
@@ -390,12 +421,14 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
             ),
             (
                 "复用原身份。 升级沿用现有设备标识、设备密钥、API Token、"
-                "bootstrap_url 与 jiaotang-kb MCP，不重新登记设备，不创建第二套连接。",
+                "jiaotang-kb MCP 身份，不需要 bootstrap_url，不重新登记设备，"
+                "不创建第二套连接。",
                 "Normal",
             ),
             (
-                "完成验收。 目标包 SHA-256、Ed25519 签名、插件启用和任一只读 "
-                "jiaotang-kb 调用全部通过后，Agent 回传目标版本和目标包哈希；"
+                "完成验收。 目标包 SHA-256、Ed25519 签名、插件启用、tools/list "
+                "出现 knowledge_search、knowledge_document 和 knowledge_service_status，"
+                "且任一只读 jiaotang-kb 调用通过后，Agent 回传目标版本和目标包哈希；"
                 "门户只接受与固定计划完全一致的结果。",
                 "Normal",
             ),

@@ -23,12 +23,14 @@ import {fileURLToPath} from "node:url";
 import readline from "node:readline";
 
 
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const SIGNATURE_VERSION = "JIAOTANG-SIGNATURE-V1";
 const ENROLLMENT_VERSION = "JIAOTANG-ENROLLMENT-V1";
 const TRANSACTIONAL_ENROLLMENT_VERSION = "JIAOTANG-ENROLLMENT-TRANSACTION-V1";
 const ACTIVATION_VERSION = "JIAOTANG-ACTIVATION-V1";
 const TRANSACTION_MODE = "credential_activation_v1";
+const SETUP_TOOL_NAME = "jiaotang_kb_setup";
+const SETUP_STATUS_TOOL_NAME = "jiaotang_kb_setup_status";
 const KEYCHAIN_SERVICE = "cn.zshjiaotang.knowledge-device";
 const KEYCHAIN_ACCOUNT = "jiaotang-kb";
 const MAC_SECURITY_COMMAND = "/usr/bin/security";
@@ -526,6 +528,8 @@ async function activateStoredCredentials(credentials) {
 
 async function testStdioMcpConnection(scriptPath, platform, home) {
   const requestId = `jiaotang-install-${randomUUID()}`;
+  const toolsListId = `${requestId}-tools`;
+  const statusCallId = `${requestId}-status`;
   const request = {
     jsonrpc: "2.0",
     id: requestId,
@@ -560,7 +564,7 @@ async function testStdioMcpConnection(scriptPath, platform, home) {
     };
     const timeout = setTimeout(
       () => finish(new Error("MCP 初始化等待服务器确认超时")),
-      20000,
+      30000,
     );
     child.stderr.on("data", (chunk) => {
       stderr = `${stderr}${String(chunk)}`.slice(-500);
@@ -574,12 +578,69 @@ async function testStdioMcpConnection(scriptPath, platform, home) {
     output.on("line", (line) => {
       try {
         const message = JSON.parse(line);
-        if (message.id !== requestId) return;
-        if (message.error) {
-          finish(new Error(`MCP 初始化失败：${message.error.message || "未知错误"}`));
-          return;
+        if (message.id === requestId) {
+          if (message.error) {
+            finish(new Error(`MCP 初始化失败：${message.error.message || "未知错误"}`));
+            return;
+          }
+          child.stdin.write(
+            `${JSON.stringify({
+              jsonrpc: "2.0",
+              method: "notifications/initialized",
+            })}\n`,
+          );
+          child.stdin.write(
+            `${JSON.stringify({
+              jsonrpc: "2.0",
+              id: toolsListId,
+              method: "tools/list",
+              params: {},
+            })}\n`,
+          );
+        } else if (message.id === toolsListId) {
+          if (message.error) {
+            finish(new Error(`MCP 工具枚举失败：${message.error.message || "未知错误"}`));
+            return;
+          }
+          const toolNames = new Set(
+            Array.isArray(message.result?.tools)
+              ? message.result.tools.map((tool) => String(tool?.name || ""))
+              : [],
+          );
+          const requiredTools = [
+            "knowledge_search",
+            "knowledge_document",
+            "knowledge_service_status",
+          ];
+          const missingTools = requiredTools.filter((name) => !toolNames.has(name));
+          if (missingTools.length) {
+            finish(new Error(`MCP 工具枚举不完整：${missingTools.join(", ")}`));
+            return;
+          }
+          child.stdin.write(
+            `${JSON.stringify({
+              jsonrpc: "2.0",
+              id: statusCallId,
+              method: "tools/call",
+              params: {
+                name: "knowledge_service_status",
+                arguments: {},
+              },
+            })}\n`,
+          );
+        } else if (message.id === statusCallId) {
+          if (message.error || message.result?.isError === true) {
+            finish(
+              new Error(
+                `MCP 只读状态调用失败：${
+                  message.error?.message || "远端工具返回错误"
+                }`,
+              ),
+            );
+            return;
+          }
+          finish();
         }
-        if (message.result) finish();
       } catch {}
     });
     child.stdin.write(`${JSON.stringify(request)}\n`);
@@ -787,48 +848,44 @@ async function pluginServe(argumentsValue) {
   const enrollmentMarker = pluginData
     ? join(pluginData, "jiaotang-kb-enrollment.json")
     : "";
-  let credentials;
+  let credentials = null;
+  let credentialIssue = "";
   try {
     credentials = loadCredentials(platform, home);
   } catch (credentialError) {
-    if (enrollmentMarker && existsSync(enrollmentMarker)) {
-      throw new Error(
-        "插件已完成过设备登记，但系统凭据当前不可读取；"
-        + "请检查钥匙串或Windows用户凭据后重试",
-        {cause: credentialError},
-      );
-    }
+    credentialIssue = enrollmentMarker && existsSync(enrollmentMarker)
+      ? "credential_unavailable"
+      : "setup_required";
     const bootstrapUrl = String(
       argumentsValue["bootstrap-url"]
       || process.env.CODEBUDDY_PLUGIN_OPTION_BOOTSTRAP_URL
       || "",
     );
-    if (!bootstrapUrl) {
-      throw new Error("插件尚未绑定，请重新启用插件并填写门户生成的一次性引导地址");
+    if (bootstrapUrl) {
+      const installationArguments = {
+        ...argumentsValue,
+        "bootstrap-url": bootstrapUrl,
+        "plugin-mode": true,
+        host: "workbuddy",
+      };
+      try {
+        const result = await install(installationArguments);
+        result.reported_to_portal = await reportInstallationResult(
+          installationArguments,
+          result,
+        );
+        credentials = loadCredentials(platform, home);
+        credentialIssue = "";
+      } catch (error) {
+        const result = installationFailure(error, installationArguments);
+        result.reported_to_portal = await reportInstallationResult(
+          installationArguments,
+          result,
+        );
+      }
     }
-    const installationArguments = {
-      ...argumentsValue,
-      "bootstrap-url": bootstrapUrl,
-      "plugin-mode": true,
-      host: "workbuddy",
-    };
-    try {
-      const result = await install(installationArguments);
-      result.reported_to_portal = await reportInstallationResult(
-        installationArguments,
-        result,
-      );
-    } catch (error) {
-      const result = installationFailure(error, installationArguments);
-      result.reported_to_portal = await reportInstallationResult(
-        installationArguments,
-        result,
-      );
-      throw error;
-    }
-    credentials = loadCredentials(platform, home);
   }
-  if (credentials.activated !== true && credentials.activationUrl) {
+  if (credentials && credentials.activated !== true && credentials.activationUrl) {
     try {
       const activatedCredentials = await activateStoredCredentials(credentials);
       storeCredentials(activatedCredentials, platform, home);
@@ -840,14 +897,19 @@ async function pluginServe(argumentsValue) {
       );
     }
   }
-  if (enrollmentMarker) {
+  if (credentials && enrollmentMarker) {
     atomicWrite(
       enrollmentMarker,
       `${JSON.stringify({version: 2, enrolled: true, activated: true})}\n`,
       0o600,
     );
   }
-  await serve(argumentsValue);
+  await serve(argumentsValue, {
+    allowSetup: true,
+    credentials,
+    credentialIssue,
+    enrollmentMarker,
+  });
 }
 
 
@@ -914,46 +976,355 @@ function parseSsePayload(text) {
 }
 
 
-async function serve(argumentsValue) {
+function setupTools() {
+  return [
+    {
+      name: SETUP_TOOL_NAME,
+      description: (
+        "使用焦糖门户生成的一次性引导地址绑定当前 WorkBuddy 设备。"
+        + "地址仅在本机插件进程中使用，成功后凭据写入系统凭据库。"
+      ),
+      inputSchema: {
+        type: "object",
+        properties: {
+          bootstrap_url: {
+            type: "string",
+            description: "焦糖门户生成的一次性 HTTPS 引导地址",
+          },
+        },
+        required: ["bootstrap_url"],
+        additionalProperties: false,
+      },
+    },
+    {
+      name: SETUP_STATUS_TOOL_NAME,
+      description: "查看当前插件是否已完成设备绑定，不返回任何凭据。",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+    },
+  ];
+}
+
+
+function setupToolResult(payload, isError = false) {
+  const text = JSON.stringify(payload);
+  return {
+    content: [{type: "text", text}],
+    structuredContent: payload,
+    isError,
+  };
+}
+
+
+function setupProtocolResult(request) {
+  return {
+    jsonrpc: "2.0",
+    id: request.id,
+    result: {
+      protocolVersion: String(
+        request.params?.protocolVersion || "2025-06-18",
+      ),
+      capabilities: {tools: {listChanged: true}},
+      serverInfo: {name: "jiaotang-kb", version: VERSION},
+      instructions: (
+        `首次使用请调用 ${SETUP_TOOL_NAME} 完成设备绑定；`
+        + "已绑定设备会直接加载知识库检索工具。"
+      ),
+    },
+  };
+}
+
+
+async function handleSetupRequest(request, context) {
+  const method = String(request?.method || "");
+  if (method === "notifications/initialized") {
+    context.clientInitialized = true;
+    return {messages: []};
+  }
+  if (method === "initialize") {
+    context.initializeRequest = request;
+    return {messages: [setupProtocolResult(request)]};
+  }
+  if (method === "ping") {
+    return {
+      messages: [{jsonrpc: "2.0", id: request.id, result: {}}],
+    };
+  }
+  if (method === "tools/list") {
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: {tools: setupTools()},
+      }],
+    };
+  }
+  if (method === "resources/list") {
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: {resources: []},
+      }],
+    };
+  }
+  if (method === "resources/templates/list") {
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: {resourceTemplates: []},
+      }],
+    };
+  }
+  if (method === "prompts/list") {
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: {prompts: []},
+      }],
+    };
+  }
+  if (method !== "tools/call") {
+    if (request?.id === undefined) return {messages: []};
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        error: {code: -32601, message: `Method not found: ${method}`},
+      }],
+    };
+  }
+
+  const toolName = String(request.params?.name || "");
+  if (toolName === SETUP_STATUS_TOOL_NAME) {
+    const status = context.credentialIssue === "credential_unavailable"
+      ? "credential_unavailable"
+      : "setup_required";
+    const payload = status === "credential_unavailable"
+      ? {
+        status,
+        configured: false,
+        message: "检测到历史绑定记录，但系统凭据当前不可读取。",
+        next_action: "检查 macOS 登录钥匙串或 Windows 当前用户凭据后重试。",
+      }
+      : {
+        status,
+        configured: false,
+        message: "插件已加载，等待使用门户的一次性引导地址完成设备绑定。",
+        next_action: `调用 ${SETUP_TOOL_NAME}。`,
+      };
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: setupToolResult(payload),
+      }],
+    };
+  }
+  if (toolName !== SETUP_TOOL_NAME) {
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: setupToolResult(
+          {
+            status: "unsupported_tool",
+            message: `设备绑定前不可调用工具：${toolName}`,
+          },
+          true,
+        ),
+      }],
+    };
+  }
+
+  const bootstrapUrl = String(
+    request.params?.arguments?.bootstrap_url || "",
+  ).trim();
+  if (!bootstrapUrl) {
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: setupToolResult(
+          {
+            status: "invalid_request",
+            message: "缺少 bootstrap_url。",
+          },
+          true,
+        ),
+      }],
+    };
+  }
+  const installationArguments = {
+    ...context.argumentsValue,
+    "bootstrap-url": bootstrapUrl,
+    "plugin-mode": true,
+    host: "workbuddy",
+  };
+  try {
+    const result = await install(installationArguments);
+    result.reported_to_portal = await reportInstallationResult(
+      installationArguments,
+      result,
+    );
+    context.credentials = loadCredentials(context.platform, context.home);
+    context.credentialIssue = "";
+    const initializeRequest = context.initializeRequest;
+    if (initializeRequest) {
+      const initializeMessages = await forwardMcpRequest(
+        context.credentials,
+        initializeRequest,
+        context.session,
+      );
+      const initializeResponse = initializeMessages.find(
+        (message) => message?.id === initializeRequest.id,
+      );
+      if (!initializeResponse || initializeResponse.error) {
+        throw new Error(
+          `MCP 热切换初始化失败：${
+            initializeResponse?.error?.message || "远端未返回初始化结果"
+          }`,
+        );
+      }
+      if (context.clientInitialized) {
+        await forwardMcpRequest(
+          context.credentials,
+          {
+            jsonrpc: "2.0",
+            method: "notifications/initialized",
+          },
+          context.session,
+        );
+      }
+    }
+    if (context.enrollmentMarker) {
+      atomicWrite(
+        context.enrollmentMarker,
+        `${JSON.stringify({version: 2, enrolled: true, activated: true})}\n`,
+        0o600,
+      );
+    }
+    return {
+      credentials: context.credentials,
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: setupToolResult({
+          status: "configured",
+          configured: true,
+          stages: result.stages,
+          message: "设备绑定、凭据保存、签名验签和 MCP 首次连接均已完成。",
+          next_action: "知识库工具清单正在刷新；如未自动出现，请完全退出并重启 WorkBuddy。",
+        }),
+      }],
+      notifyToolsChanged: true,
+    };
+  } catch (error) {
+    const result = installationFailure(error, installationArguments);
+    result.reported_to_portal = await reportInstallationResult(
+      installationArguments,
+      result,
+    );
+    return {
+      messages: [{
+        jsonrpc: "2.0",
+        id: request.id,
+        result: setupToolResult(
+          {
+            status: "failed",
+            error_stage: result.error_stage,
+            message: result.user_message,
+            next_action: result.next_action,
+          },
+          true,
+        ),
+      }],
+    };
+  }
+}
+
+
+async function forwardMcpRequest(credentials, request, session) {
+  const body = Buffer.from(JSON.stringify(request), "utf8");
+  const headers = {
+    "Content-Type": "application/json",
+    Accept: "application/json, text/event-stream",
+  };
+  if (session.id) headers["Mcp-Session-Id"] = session.id;
+  const response = await signedFetch(credentials, credentials.mcpUrl, {
+    method: "POST",
+    headers,
+    body,
+  });
+  const returnedSession = response.headers.get("mcp-session-id");
+  if (returnedSession) session.id = returnedSession;
+  const responseText = await response.text();
+  if (!response.ok) {
+    throw new Error(
+      `upstream HTTP ${response.status}: ${redactSensitiveText(responseText).slice(0, 300)}`,
+    );
+  }
+  return response.headers.get("content-type")?.includes("text/event-stream")
+    ? parseSsePayload(responseText)
+    : responseText.trim()
+      ? [JSON.parse(responseText)]
+      : [];
+}
+
+
+async function serve(argumentsValue, runtime = {}) {
   const platform = platformValue(argumentsValue.platform);
   const home = resolve(String(argumentsValue.home || homedir()));
-  const credentials = loadCredentials(platform, home);
-  let mcpSessionId = "";
+  let credentials = runtime.credentials || null;
+  if (!credentials && !runtime.allowSetup) {
+    credentials = loadCredentials(platform, home);
+  }
+  const session = {id: ""};
+  const setupContext = {
+    argumentsValue,
+    platform,
+    home,
+    enrollmentMarker: String(runtime.enrollmentMarker || ""),
+    credentialIssue: String(runtime.credentialIssue || ""),
+    credentials,
+    session,
+    initializeRequest: null,
+    clientInitialized: false,
+  };
   const input = readline.createInterface({
     input: process.stdin,
     crlfDelay: Infinity,
     terminal: false,
   });
-  input.on("line", async (line) => {
+  for await (const line of input) {
     let request;
     try {
       request = JSON.parse(line);
-      const body = Buffer.from(JSON.stringify(request), "utf8");
-      const headers = {
-        "Content-Type": "application/json",
-        Accept: "application/json, text/event-stream",
-      };
-      if (mcpSessionId) headers["Mcp-Session-Id"] = mcpSessionId;
-      const response = await signedFetch(credentials, credentials.mcpUrl, {
-        method: "POST",
-        headers,
-        body,
-      });
-      const returnedSession = response.headers.get("mcp-session-id");
-      if (returnedSession) mcpSessionId = returnedSession;
-      const responseText = await response.text();
-      if (!response.ok) {
-        throw new Error(
-          `upstream HTTP ${response.status}: ${redactSensitiveText(responseText).slice(0, 300)}`,
-        );
+      let messages;
+      let notifyToolsChanged = false;
+      if (!credentials && runtime.allowSetup) {
+        const setup = await handleSetupRequest(request, setupContext);
+        credentials = setup.credentials || setupContext.credentials || null;
+        messages = setup.messages;
+        notifyToolsChanged = setup.notifyToolsChanged === true;
+      } else {
+        messages = await forwardMcpRequest(credentials, request, session);
       }
-      const messages = response.headers.get("content-type")?.includes("text/event-stream")
-        ? parseSsePayload(responseText)
-        : responseText.trim()
-          ? [JSON.parse(responseText)]
-          : [];
       for (const message of messages) {
         process.stdout.write(`${JSON.stringify(message)}\n`);
+      }
+      if (notifyToolsChanged) {
+        process.stdout.write(
+          `${JSON.stringify({
+            jsonrpc: "2.0",
+            method: "notifications/tools/list_changed",
+          })}\n`,
+        );
       }
     } catch (error) {
       if (request?.id !== undefined) {
@@ -961,12 +1332,15 @@ async function serve(argumentsValue) {
           `${JSON.stringify({
             jsonrpc: "2.0",
             id: request.id,
-            error: {code: -32000, message: String(error.message || error)},
+            error: {
+              code: -32000,
+              message: redactSensitiveText(error.message || error),
+            },
           })}\n`,
         );
       }
     }
-  });
+  }
 }
 
 

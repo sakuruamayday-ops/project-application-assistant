@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.4.1"><img src="https://img.shields.io/badge/Release-V1.4.1-C9A760?style=for-the-badge" alt="Release V1.4.1"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.4.2"><img src="https://img.shields.io/badge/Release-V1.4.2-C9A760?style=for-the-badge" alt="Release V1.4.2"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.4.1.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
+  <a href="docs/releases/V1.4.2.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -86,7 +86,7 @@ WorkBuddy 的系统差异由同一个插件包内的运行时适配处理。发�
 |---|---|
 | [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.docx) | 下载、安装、首次配置和日常使用 |
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
-| [V1.4.1 发布说明](docs/releases/V1.4.1.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.4.2 发布说明](docs/releases/V1.4.2.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -139,10 +139,10 @@ Skill 全量验签以及开发源、正式包、实际安装目录三方哈希�
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.4.1` | 网站、GitHub Release 和用户可见版本 |
-| 组件版本 | `1.4.1` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.4.2` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.4.2` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
-| 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1`、`V1.3.1.1`、`V1.3.1.2`、`V1.3.1.3`、`V1.3.1.4`、`V1.4.0` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
+| 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1`、`V1.3.1.1`、`V1.3.1.2`、`V1.3.1.3`、`V1.3.1.4`、`V1.4.0`、`V1.4.1` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
 
 GitHub 文件列表右侧显示的是“最后修改该路径的提交标题”，不是该目录的当前版本。
 

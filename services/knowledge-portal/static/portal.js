@@ -405,7 +405,7 @@ document.addEventListener("click", async (event) => {
       manualToggle.disabled = true;
       try {
         await loadAgentInstallReview(card);
-        if (status) status.textContent = "手工审查信息已加载；核对后点击“我已审查，生成并复制 bootstrap_url”。";
+        if (status) status.textContent = "手工审查信息已加载；核对后生成一次性 bootstrap_url，并仅交给本地 jiaotang_kb_setup 工具。";
       } catch (error) {
         if (status) {
           status.classList.add("is-error");
@@ -490,10 +490,10 @@ document.addEventListener("click", async (event) => {
       try {
         await copyToClipboard(payload.manual_configuration.bootstrap_url);
         confirmManualButton.textContent = "bootstrap_url 已复制";
-        if (status) status.textContent = "一次性引导地址已复制；请仅粘贴到插件的敏感配置项 bootstrap_url。";
+        if (status) status.textContent = "一次性引导地址已复制；请仅作为本地 jiaotang_kb_setup 工具的 bootstrap_url 参数调用一次。";
       } catch (_copyError) {
         confirmManualButton.textContent = "bootstrap_url 已生成";
-        if (status) status.textContent = "浏览器未允许自动复制；请复制下方一次性引导地址，并仅粘贴到插件敏感配置项 bootstrap_url。";
+        if (status) status.textContent = "浏览器未允许自动复制；请复制下方一次性引导地址，并仅作为本地 jiaotang_kb_setup 工具参数调用一次。";
       }
       watchAgentInstallStatus(card);
     } catch (error) {
