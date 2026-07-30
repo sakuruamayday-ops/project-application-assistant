@@ -778,7 +778,8 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "政策变化只重编受影响项目" in response.text
     assert "四市研发平台与企业技术中心版本" in response.text
     assert "宁波市重点企业研究院、企业技术研发中心" in response.text
-    assert "绍兴市企业研究开发中心" in response.text
+    assert "绍兴市企业研究开发中心建设与管理办法" in response.text
+    assert "2026年修订" in response.text
     assert "金华市科学技术研究开发中心" in response.text
     assert "稳定管理办法" in response.text
     assert "点击清单中的项目" in response.text

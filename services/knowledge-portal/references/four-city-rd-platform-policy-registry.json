@@ -93,10 +93,12 @@
           "city": "绍兴市",
           "canonical_name": "绍兴市企业研究开发中心",
           "route_status": "active-municipal",
-          "formal_policy": "《绍兴市企业研究开发中心认定管理办法》（绍市科〔2019〕37号）",
-          "policy_status": "current-confirmed-by-2024-cleanup",
-          "official_url": "https://www.sx.gov.cn/module/download/downfile.jsp?classid=0&filename=ec627194d5674f23a9b6ee368d490700.pdf",
-          "source_role": "绍兴市科技局2024年规范性文件清理确认继续有效",
+          "formal_policy": "《绍兴市企业研究开发中心建设与管理办法》（2026年修订）",
+          "policy_status": "current",
+          "official_url": "https://kjj.sx.gov.cn/col/col1229459336/art/2026/art_ebccf9f535264ce4a46f41f8bbff8dc1.html",
+          "source_role": "2026年3月30日发布，自印发30日后施行",
+          "supersedes": "《绍兴市企业研究开发中心认定管理办法》（绍市科〔2019〕37号）",
+          "transition": "2019年办法自2026年修订办法生效时停止执行；当前判断和未来准备均不得再沿用旧门槛。",
           "annual_notice_required": true
         },
         {

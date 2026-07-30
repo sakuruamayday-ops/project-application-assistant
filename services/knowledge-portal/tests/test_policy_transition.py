@@ -68,3 +68,17 @@ def test_ningbo_technology_center_routes_to_provincial_instead_of_other_city_rul
     assert selected["route_status"] == "redirect-to-provincial"
     assert selected["canonical_name"] == "浙江省企业技术中心（宁波推荐）"
     assert selected["formal_conclusion_allowed"] is True
+
+
+def test_shaoxing_rd_platform_uses_2026_revision_not_superseded_2019_rule():
+    selected = resolve_policy_transition(
+        load_registry(),
+        family_id="municipal-enterprise-rd-platform",
+        city="绍兴市",
+        evaluation_mode="current-assessment",
+    )
+
+    assert selected["primary_policy_status"] == "current"
+    assert "2026年修订" in selected["primary_policy"]
+    assert "2019" not in selected["primary_policy"]
+    assert selected["formal_conclusion_allowed"] is True
