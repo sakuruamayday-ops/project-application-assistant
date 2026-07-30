@@ -17,6 +17,16 @@ SIGNATURE_FILES = {
     "release-manifest.json.sig",
     "release-signature.json",
 }
+MANAGED_RUNTIME_START = "<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->"
+MANAGED_RUNTIME_END = "<!-- END MANAGED PORTABLE SKILL RUNTIME -->"
+PACKAGER_MANAGED_SKILL_PATHS = {
+    "references/portable-runtime-protocol.md",
+    "scripts/portable_skill_runtime.py",
+    "scripts/verify_skill_installation.py",
+}
+DEVELOPMENT_COMPARISON_MODE = (
+    "business-source-with-managed-runtime-normalization"
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -32,6 +42,26 @@ def load_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise RuntimeError(f"JSON根节点必须是对象：{path}")
     return payload
+
+
+def normalized_skill_business_source(path: Path) -> bytes:
+    """Return SKILL.md business content without the packager-managed runtime block."""
+    text = path.read_text(encoding="utf-8")
+    start_count = text.count(MANAGED_RUNTIME_START)
+    end_count = text.count(MANAGED_RUNTIME_END)
+    if start_count != end_count or start_count > 1:
+        raise RuntimeError(
+            f"SKILL.md托管运行时标记不完整或重复：{path}"
+        )
+    if start_count:
+        pattern = re.compile(
+            re.escape(MANAGED_RUNTIME_START)
+            + r".*?"
+            + re.escape(MANAGED_RUNTIME_END),
+            flags=re.DOTALL,
+        )
+        text = pattern.sub("", text)
+    return (text.rstrip() + "\n").encode("utf-8")
 
 
 def public_key_fingerprint(public_key: Path) -> str:
@@ -463,8 +493,19 @@ def audit_skill_layers(
                 "declared_hashes"
             ].items():
                 path = development_skill / relative
+                release_path = release_skill / relative
+                if relative in PACKAGER_MANAGED_SKILL_PATHS:
+                    continue
                 if not path.is_file():
                     development_mismatches.append(f"缺少：{relative}")
+                elif relative == "SKILL.md":
+                    if (
+                        normalized_skill_business_source(path)
+                        != normalized_skill_business_source(release_path)
+                    ):
+                        development_mismatches.append(
+                            f"业务内容不一致：{relative}"
+                        )
                 elif sha256_file(path) != expected:
                     development_mismatches.append(f"哈希不一致：{relative}")
             installed_verification = None
@@ -516,6 +557,12 @@ def audit_skill_layers(
                         else None
                     ),
                     "checked_files": release_verification["checked_files"],
+                    "development_comparison_mode": (
+                        DEVELOPMENT_COMPARISON_MODE
+                    ),
+                    "packager_managed_paths": sorted(
+                        PACKAGER_MANAGED_SKILL_PATHS
+                    ),
                 }
             )
         except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
@@ -587,6 +634,8 @@ def audit_skill_layers(
     return {
         "status": "pass" if not failures else "fail",
         "skill_count": len(expected_skills),
+        "development_comparison_mode": DEVELOPMENT_COMPARISON_MODE,
+        "packager_managed_paths": sorted(PACKAGER_MANAGED_SKILL_PATHS),
         "trusted_publisher_fingerprint": trusted_fingerprint,
         "verified_skill_signatures": sum(
             1
