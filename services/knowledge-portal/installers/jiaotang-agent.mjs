@@ -23,7 +23,7 @@ import {fileURLToPath} from "node:url";
 import readline from "node:readline";
 
 
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const SIGNATURE_VERSION = "JIAOTANG-SIGNATURE-V1";
 const ENROLLMENT_VERSION = "JIAOTANG-ENROLLMENT-V1";
 const TRANSACTIONAL_ENROLLMENT_VERSION = "JIAOTANG-ENROLLMENT-TRANSACTION-V1";
@@ -64,13 +64,14 @@ function redactSensitiveText(value) {
   return String(value || "")
     .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, "Bearer [已隐藏凭据]")
     .replace(/jbe_[A-Za-z0-9_-]+/g, "[已隐藏安装码]")
+    .replace(/jbu_[A-Za-z0-9_-]+/g, "[已隐藏升级码]")
     .replace(/jtk_[A-Za-z0-9_-]+/g, "[已隐藏凭据]")
     .replace(
       /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g,
       "[已隐藏私钥]",
     )
     .replace(
-      /([?&](?:token|key|secret|code|bootstrap_url)=)[^&#\s]+/gi,
+      /([?&](?:token|key|secret|code|bootstrap_url|upgrade_url)=)[^&#\s]+/gi,
       "$1[已隐藏]",
     );
 }

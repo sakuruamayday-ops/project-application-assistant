@@ -20,6 +20,8 @@ from typing import Any, Iterable
 
 from docx import Document
 from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.text.paragraph import Paragraph
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -208,6 +210,64 @@ def _insert_after(paragraph: Any, text: str) -> Any:
     return created
 
 
+def _insert_before(paragraph: Any, text: str, style: str | None = None) -> Any:
+    new_element = OxmlElement("w:p")
+    paragraph._p.addprevious(new_element)
+    created = Paragraph(new_element, paragraph._parent)
+    if style:
+        created.style = style
+    created.add_run(text)
+    return created
+
+
+def _set_east_asia_font(document: Document, font_name: str) -> None:
+    def apply_to_run_properties(run_properties: Any) -> None:
+        fonts = run_properties.rFonts
+        if fonts is None:
+            fonts = OxmlElement("w:rFonts")
+            run_properties.insert(0, fonts)
+        for theme_attribute in (
+            "w:asciiTheme",
+            "w:hAnsiTheme",
+            "w:eastAsiaTheme",
+            "w:cstheme",
+        ):
+            fonts.attrib.pop(qn(theme_attribute), None)
+        fonts.set(qn("w:ascii"), font_name)
+        fonts.set(qn("w:hAnsi"), font_name)
+        fonts.set(qn("w:eastAsia"), font_name)
+        fonts.set(qn("w:cs"), font_name)
+        language = run_properties.find(qn("w:lang"))
+        if language is None:
+            language = OxmlElement("w:lang")
+            run_properties.append(language)
+        language.set(qn("w:eastAsia"), "zh-CN")
+
+    for style in document.styles:
+        if not hasattr(style._element, "get_or_add_rPr"):
+            continue
+        apply_to_run_properties(style._element.get_or_add_rPr())
+
+    paragraphs = list(_all_paragraphs(document))
+    for section in document.sections:
+        for part in (
+            section.header,
+            section.first_page_header,
+            section.even_page_header,
+            section.footer,
+            section.first_page_footer,
+            section.even_page_footer,
+        ):
+            paragraphs.extend(part.paragraphs)
+            for table in part.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        paragraphs.extend(cell.paragraphs)
+    for paragraph in paragraphs:
+        for run in paragraph.runs:
+            apply_to_run_properties(run._element.get_or_add_rPr())
+
+
 def release_lines(spec: dict[str, Any]) -> list[str]:
     def clean(value: str) -> str:
         return value.rstrip("。；; ")
@@ -286,6 +346,68 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
             _replace_paragraph_text(paragraph, updated)
 
     if manager_profile:
+        upgrade_anchor = next(
+            (
+                paragraph
+                for paragraph in document.paragraphs
+                if paragraph.text.strip().startswith(
+                    "远程适配器只更新数据"
+                )
+            ),
+            None,
+        )
+        if upgrade_anchor is None:
+            upgrade_anchor = next(
+                (
+                    paragraph
+                    for paragraph in document.paragraphs
+                    if paragraph.text.strip().startswith(
+                        "现有用户不受影响"
+                    )
+                ),
+                document.paragraphs[-1],
+            )
+        upgrade_lines = [
+            (
+                f"{spec['tag']} 已绑定设备跨版本升级",
+                "Heading 2",
+            ),
+            (
+                "已有设备不再走首次安装。门户会比较当前已验收版本与最新 "
+                "WorkBuddy 正式包；只有存在更高版本时，Skills 中心才显示升级按钮。",
+                "Normal",
+            ),
+            (
+                "第一步，生成升级审查计划。 将审查内容粘贴给当前设备的同一个 "
+                "Agent，核对源版本、源包哈希、目标版本、目标包哈希、Ed25519 "
+                "发布者指纹、身份复用范围与回滚方法。",
+                "Normal",
+            ),
+            (
+                "第二步，明确授权。 回到门户点击升级确认，再把确认内容粘贴给 "
+                "审查计划的同一个 Agent；升级计划生成后固定目标包，不跟随后续发布漂移。",
+                "Normal",
+            ),
+            (
+                "复用原身份。 升级沿用现有设备标识、设备密钥、API Token、"
+                "bootstrap_url 与 jiaotang-kb MCP，不重新登记设备，不创建第二套连接。",
+                "Normal",
+            ),
+            (
+                "完成验收。 目标包 SHA-256、Ed25519 签名、插件启用和任一只读 "
+                "jiaotang-kb 调用全部通过后，Agent 回传目标版本和目标包哈希；"
+                "门户只接受与固定计划完全一致的结果。",
+                "Normal",
+            ),
+            (
+                "失败回滚。 任一步失败时恢复升级前插件目录，保留原设备身份、"
+                "系统凭据、个人偏好与本地项目资料，并在门户显示失败阶段和下一步。",
+                "Normal",
+            ),
+        ]
+        for line, style in upgrade_lines:
+            _insert_before(upgrade_anchor, line, style)
+        _set_east_asia_font(document, "Hiragino Sans GB")
         output.parent.mkdir(parents=True, exist_ok=True)
         document.save(output)
         canonicalize_docx(output)
@@ -322,6 +444,7 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
         for line in lines:
             anchor = _insert_after(anchor, line)
 
+    _set_east_asia_font(document, "Hiragino Sans GB")
     output.parent.mkdir(parents=True, exist_ok=True)
     document.save(output)
     canonicalize_docx(output)
@@ -415,6 +538,29 @@ def render_qa(path: Path, output_dir: Path) -> dict[str, Any]:
         raise RuntimeError("逐页渲染需要 soffice、pdftoppm 和 pdfinfo")
     output_dir.mkdir(parents=True, exist_ok=True)
     with recoverable_workspace("manual-render-") as profile:
+        render_environment = os.environ.copy()
+        if sys.platform == "darwin":
+            font_cache = profile / "fontconfig-cache"
+            font_cache.mkdir(parents=True, exist_ok=True)
+            fontconfig = profile / "fontconfig.conf"
+            fontconfig.write_text(
+                "\n".join(
+                    [
+                        '<?xml version="1.0"?>',
+                        '<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">',
+                        "<fontconfig>",
+                        "  <dir>/System/Library/Fonts</dir>",
+                        "  <dir>/System/Library/Fonts/Supplemental</dir>",
+                        "  <dir>/Library/Fonts</dir>",
+                        f"  <dir>{Path.home() / 'Library/Fonts'}</dir>",
+                        f"  <cachedir>{font_cache}</cachedir>",
+                        "</fontconfig>",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            render_environment["FONTCONFIG_FILE"] = os.fspath(fontconfig)
         subprocess.run(
             [
                 soffice,
@@ -429,6 +575,7 @@ def render_qa(path: Path, output_dir: Path) -> dict[str, Any]:
             check=True,
             capture_output=True,
             text=True,
+            env=render_environment,
         )
     pdf = output_dir / f"{path.stem}.pdf"
     if not pdf.is_file():

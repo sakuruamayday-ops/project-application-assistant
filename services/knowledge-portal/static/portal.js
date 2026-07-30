@@ -157,7 +157,8 @@ const renderAgentInstallStatus = (card, payload) => {
   const result = payload.result;
   resultBox?.classList.toggle("is-success", Boolean(result?.result_ok));
   resultBox?.classList.toggle("is-error", Boolean(result && !result.result_ok));
-  if (title) title.textContent = result ? (result.result_ok ? "最近一次安装已通过" : "最近一次安装未完成") : "等待本地 Agent 回传";
+  const resultAction = result?.operation === "upgrade" ? "升级" : "安装";
+  if (title) title.textContent = result ? (result.result_ok ? `最近一次${resultAction}已通过` : `最近一次${resultAction}未完成`) : "等待本地 Agent 回传";
   if (message) message.textContent = result?.result_user_message || "本页正在等待设备登记、签名和 MCP 连接结果。";
   if (next) next.textContent = result?.result_next_action || result?.result_reported_at_display || "";
 };
@@ -184,6 +185,35 @@ const watchAgentInstallStatus = (card) => {
     }
     if (attempts < 120) window.setTimeout(poll, 5000);
     else card.dataset.installPolling = "false";
+  };
+  poll();
+};
+
+const watchAgentUpgradeStatus = (card) => {
+  const statusUrl = card?.dataset.installStatusUrl;
+  if (!statusUrl || card.dataset.upgradePolling === "true") return;
+  card.dataset.upgradePolling = "true";
+  let attempts = 0;
+  const poll = async () => {
+    attempts += 1;
+    try {
+      const response = await fetch(statusUrl, {headers: {Accept: "application/json"}, cache: "no-store"});
+      if (response.ok) {
+        const payload = await response.json();
+        renderAgentInstallStatus(card, payload);
+        if (
+          payload.result?.operation === "upgrade"
+          && ["upgraded", "failed"].includes(payload.result?.result_status)
+        ) {
+          card.dataset.upgradePolling = "false";
+          return;
+        }
+      }
+    } catch {
+      // A temporary polling failure does not invalidate the pinned upgrade plan.
+    }
+    if (attempts < 120) window.setTimeout(poll, 5000);
+    else card.dataset.upgradePolling = "false";
   };
   poll();
 };
@@ -254,6 +284,43 @@ const confirmAgentInstall = async (card) => {
   return payload;
 };
 
+const loadAgentUpgradeReview = async (card, {copyPrompt = false} = {}) => {
+  const form = new URLSearchParams();
+  form.set("csrf_token", card?.dataset.csrfToken || "");
+  const response = await fetch("/agent-upgrade-codes", {
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
+    body: form,
+  });
+  const payload = await response.json();
+  if (!response.ok || payload.phase !== "review" || !payload.prompt || !payload.review_code || !payload.review_url) {
+    throw new Error(payload.detail || "无法生成升级审查");
+  }
+  card.dataset.agentUpgradeCode = payload.review_code;
+  card.dataset.agentUpgradeUrl = payload.review_url;
+  if (copyPrompt) await copyToClipboard(payload.prompt);
+  card.querySelector("[data-confirm-agent-upgrade]")?.removeAttribute("hidden");
+  return payload;
+};
+
+const confirmAgentUpgrade = async (card) => {
+  const upgradeCode = card?.dataset.agentUpgradeCode || "";
+  if (!upgradeCode) throw new Error("请先生成并审查升级计划。");
+  const form = new URLSearchParams();
+  form.set("csrf_token", card?.dataset.csrfToken || "");
+  form.set("upgrade_code", upgradeCode);
+  const response = await fetch("/agent-upgrade-codes/confirm", {
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
+    body: form,
+  });
+  const payload = await response.json();
+  if (!response.ok || payload.phase !== "upgrade_authorized" || !payload.prompt) {
+    throw new Error(payload.detail || "无法确认升级");
+  }
+  return payload;
+};
+
 const renderManualAgentConfiguration = (card, payload) => {
   const manual = payload?.manual_configuration;
   if (!manual?.bootstrap_url) throw new Error("手工配置缺少一次性引导地址。");
@@ -272,6 +339,60 @@ const renderManualAgentConfiguration = (card, payload) => {
 };
 
 document.addEventListener("click", async (event) => {
+  const agentUpgradeButton = event.target.closest("[data-copy-agent-upgrade]");
+  if (agentUpgradeButton) {
+    const card = agentUpgradeButton.closest("[data-agent-upgrade]");
+    const status = card?.querySelector("[data-agent-upgrade-status]");
+    const originalMarkup = agentUpgradeButton.innerHTML;
+    agentUpgradeButton.disabled = true;
+    agentUpgradeButton.classList.add("is-loading");
+    status?.classList.remove("is-error");
+    agentUpgradeButton.innerHTML = "<span>正在锁定升级版本…</span><small>请稍候</small>";
+    try {
+      await loadAgentUpgradeReview(card, {copyPrompt: true});
+      agentUpgradeButton.classList.remove("is-loading");
+      agentUpgradeButton.classList.add("copy-success");
+      agentUpgradeButton.innerHTML = "<span>升级审查已复制</span><small>回到本页确认后再升级</small>";
+      if (status) status.textContent = "请把审查计划粘贴给当前设备的同一个 Agent；核对目标版本、签名、身份复用和回滚步骤后再确认。";
+      window.setTimeout(() => {
+        agentUpgradeButton.innerHTML = originalMarkup;
+        agentUpgradeButton.classList.remove("copy-success");
+        agentUpgradeButton.disabled = false;
+      }, 4000);
+    } catch (error) {
+      agentUpgradeButton.innerHTML = originalMarkup;
+      agentUpgradeButton.disabled = false;
+      agentUpgradeButton.classList.remove("is-loading");
+      if (status) {
+        status.classList.add("is-error");
+        status.textContent = error.message || "生成升级审查失败。";
+      }
+    }
+    return;
+  }
+  const confirmUpgradeButton = event.target.closest("[data-confirm-agent-upgrade]");
+  if (confirmUpgradeButton) {
+    const card = confirmUpgradeButton.closest("[data-agent-upgrade]");
+    const status = card?.querySelector("[data-agent-upgrade-status]");
+    const installCard = card?.closest("[data-agent-bootstrap]");
+    confirmUpgradeButton.disabled = true;
+    status?.classList.remove("is-error");
+    try {
+      const payload = await confirmAgentUpgrade(card);
+      await copyToClipboard(payload.prompt);
+      confirmUpgradeButton.innerHTML = "<span>升级确认已复制</span><small>发送给同一个 Agent</small>";
+      if (status) status.textContent = "请粘贴给审查升级计划的同一个 Agent；门户只接受目标版本和目标哈希完全一致的回传。";
+      watchAgentUpgradeStatus(installCard);
+    } catch (error) {
+      if (status) {
+        status.classList.add("is-error");
+        status.textContent = error.message || "确认升级失败。";
+      }
+    } finally {
+      confirmUpgradeButton.disabled = false;
+    }
+    return;
+  }
   const manualToggle = event.target.closest("[data-toggle-manual-agent-config]");
   if (manualToggle) {
     const card = manualToggle.closest("[data-agent-bootstrap]");
