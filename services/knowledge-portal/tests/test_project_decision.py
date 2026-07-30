@@ -87,6 +87,8 @@ def test_decision_maps_year_to_batch_and_builds_multi_path_variants():
     assert decision["year"] == 2024
     assert decision["batch"] == "第六批"
     assert decision["targets"] == ["专精特新小巨人"]
+    assert decision["preflight"]["status"] == "ready"
+    assert decision["preflight"]["can_start_substantive_work"] is True
     assert decision["list_intent"] is True
     assert decision["retrieval_policy"]["current_policy_only"] is False
     assert any("第六批" in variant for variant in decision["variants"])
@@ -103,6 +105,9 @@ def test_decision_requires_clarification_for_ambiguous_project_alias():
         "浙江省科技型中小企业",
         "国家科技型中小企业",
     ]
+    assert decision["preflight"]["status"] == "needs-user-input"
+    assert decision["preflight"]["can_start_substantive_work"] is False
+    assert decision["preflight"]["blocking_question"] == decision["clarification"]
 
 
 def test_current_policy_decision_blocks_stale_validity_states():

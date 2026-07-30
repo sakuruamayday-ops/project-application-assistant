@@ -5,6 +5,8 @@ import re
 from datetime import datetime
 from typing import Mapping, Sequence
 
+from app.task_preflight import assess_task_preflight
+
 
 POLICY_INTENT_TERMS = (
     "条件",
@@ -421,6 +423,24 @@ def build_project_decision(
     )
     if not targets and resolved:
         targets = list(base_variants)
+    preflight = assess_task_preflight(
+        objective=f"解析并执行项目问题：{normalized_query}",
+        requirements=[
+            {
+                "key": "project_scope",
+                "label": "明确的项目范围",
+                "dimension": "task_type",
+                "impact": "high",
+                "resolution": "ask-user",
+                "reason": "项目范围决定适用政策、规则版本和检索目标",
+            }
+        ],
+        supplied={
+            "project_scope": [] if clarification else targets,
+        },
+    )
+    if clarification and preflight["high_impact_gaps"]:
+        preflight["blocking_question"] = clarification
 
     regions = explicit_project_regions(normalized_query)
     list_intent = any(
@@ -519,6 +539,7 @@ def build_project_decision(
         "matched_alias": matched_alias,
         "resolved": resolved,
         "clarification": clarification,
+        "preflight": preflight,
         "targets": unique_strings(targets),
         "regions": regions,
         "year": requested_year,

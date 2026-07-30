@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-07-30",
+  "policy_version": "2026.1",
+  "common_policy": {
+    "title": "《优质中小企业梯度培育管理办法》",
+    "document_number": "工信部企业〔2026〕2号",
+    "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_2aa4981e3c9248379bc210c62dbb0569.html"
+  },
+  "project_levels": {
+    "省级专精特新中小企业": {
+      "project_id": "zhejiang-specialized-sme",
+      "aliases": [
+        "省级专精特新",
+        "省专",
+        "专精特新中小企业"
+      ],
+      "application_types": {
+        "recognition": {
+          "rule_branch": "2026-current",
+          "quality_score_threshold": 50,
+          "operator": "gte",
+          "rule_id": "specialized-sme-quality-score"
+        },
+        "review": {
+          "rule_branch": "2026-current",
+          "quality_score_threshold": 50,
+          "operator": "gte",
+          "rule_id": "specialized-sme-quality-score"
+        }
+      },
+      "annual_source": {
+        "title": "浙江省2026年度专精特新中小企业申报政策",
+        "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/citySite/views/policy/cash/detail.html?id=46005"
+      }
+    },
+    "专精特新“小巨人”": {
+      "project_id": "little-giant",
+      "aliases": [
+        "小巨人",
+        "专精特新小巨人"
+      ],
+      "application_types": {
+        "recognition": {
+          "rule_branch": "2026-current",
+          "quality_score_threshold": 60,
+          "operator": "gte",
+          "rule_id": "little-giant-quality-score"
+        },
+        "review": {
+          "rule_branch": "2022-transition-for-2026-review",
+          "quality_score_threshold": null,
+          "operator": null,
+          "rule_id": null
+        }
+      },
+      "annual_source": {
+        "title": "工业和信息化部办公厅关于开展2026年专精特新“小巨人”企业认定和复核工作的通知",
+        "official_url": "https://www.miit.gov.cn/jgsj/qyj/wjfb/art/2026/art_83857a4773ac4583bd1540eeb78bcbcb.html"
+      }
+    }
+  },
+  "method_boundary": {
+    "official_evaluation": "2026年新办法采用专精特新发展质量评价，包含二十余项量化指标，由系统评价形成质量得分。",
+    "internal_preassessment": "本技能二十二项、满分一百分的工作簿仅用于申报前差距分析，不等同于主管部门系统评价。",
+    "prohibited_for_current_recognition": [
+      "把2022年专业化、精细化、特色化、创新能力四个二十五分维度直接作为2026年新申报评分表",
+      "把省级专精特新中小企业当前新申报质量门槛写成六十分"
+    ]
+  }
+}
