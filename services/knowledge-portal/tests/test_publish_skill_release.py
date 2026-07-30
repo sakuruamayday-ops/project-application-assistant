@@ -414,6 +414,29 @@ def test_selective_stage_and_promote_workbuddy_only(tmp_path: Path) -> None:
     assert staged["targets"] == ["workbuddy"]
     assert staged["release_state"] == "releasing"
 
+    refreshed = MODULE.stage_selective(
+        database,
+        release_dir,
+        {"workbuddy": workbuddy},
+        "1.3.1.1",
+        "WorkBuddy hotfix refreshed",
+        "def456",
+        "https://github.example/releases/V1.3.1.1-refreshed",
+    )
+    assert refreshed["status"] == "already-staged"
+    assert refreshed["git_commit"] == "def456"
+    with sqlite3.connect(database) as connection:
+        assert connection.execute(
+            """
+            SELECT release_notes,git_commit,github_url
+            FROM skill_release_stages WHERE version='1.3.1.1'
+            """
+        ).fetchone() == (
+            "WorkBuddy hotfix refreshed",
+            "def456",
+            "https://github.example/releases/V1.3.1.1-refreshed",
+        )
+
     promoted = MODULE.promote_selective(
         database,
         release_dir,

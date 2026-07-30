@@ -895,11 +895,26 @@ def stage_selective(
                     for row in rows
                 )
             ):
+                connection.execute(
+                    """
+                    UPDATE skill_release_stages
+                    SET release_notes=?,git_commit=?,github_url=?
+                    WHERE version=? AND status='releasing'
+                    """,
+                    (
+                        release_notes.strip(),
+                        git_commit.strip(),
+                        github_url.strip(),
+                        version,
+                    ),
+                )
+                connection.commit()
                 return {
                     **validation,
                     "status": "already-staged",
                     "release_state": "releasing",
-                    "github_url": str(existing["github_url"]),
+                    "github_url": github_url.strip(),
+                    "git_commit": git_commit.strip(),
                 }
             raise RuntimeError(f"版本 {version} 已有不同内容的发布中记录")
 
