@@ -140,3 +140,71 @@ def test_promote_cannot_create_a_missing_prerelease(tmp_path, monkeypatch) -> No
             [asset],
             create_if_missing=False,
         )
+
+
+def test_local_skill_deployment_gate_is_fail_closed(
+    tmp_path, monkeypatch
+) -> None:
+    captured = {}
+
+    def pass_gate(command, **kwargs):
+        captured["command"] = command
+        return SimpleNamespace(
+            returncode=0,
+            stdout='{"status":"pass","report":"audit.json"}',
+            stderr="",
+        )
+
+    monkeypatch.setattr(MODULE.subprocess, "run", pass_gate)
+    result = MODULE.run_local_skill_deployment_gate(
+        development_root=tmp_path / "development",
+        generic_package=tmp_path / "generic.zip",
+        install_root=tmp_path / "installed",
+        config_dir=tmp_path / "config",
+        audit_dir=tmp_path / "audit",
+    )
+    assert result["status"] == "pass"
+    assert "--release-archive" in captured["command"]
+    assert "--install-root" in captured["command"]
+
+    monkeypatch.setattr(
+        MODULE.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=2,
+            stdout="",
+            stderr='{"status":"fail","error":"hash mismatch"}',
+        ),
+    )
+    with pytest.raises(RuntimeError, match="hash mismatch"):
+        MODULE.run_local_skill_deployment_gate(
+            development_root=tmp_path / "development",
+            generic_package=tmp_path / "generic.zip",
+            install_root=tmp_path / "installed",
+            config_dir=tmp_path / "config",
+            audit_dir=tmp_path / "audit",
+        )
+
+
+def test_controlled_release_requires_generic_package(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "controlled_release.py",
+            "--version",
+            "1.4.0",
+            "--workbuddy-package",
+            str(tmp_path / "workbuddy.zip"),
+            "--gate-report",
+            str(tmp_path / "gate.json"),
+            "--release-notes",
+            str(tmp_path / "notes.md"),
+        ],
+    )
+    with pytest.raises(SystemExit) as raised:
+        MODULE.main()
+    assert raised.value.code == 2
+    assert "--generic-package" in capsys.readouterr().err

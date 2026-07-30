@@ -348,6 +348,50 @@ def promote_portal(version: str) -> dict[str, object]:
     return json.loads(run([*ssh, remote_command]))
 
 
+def run_local_skill_deployment_gate(
+    *,
+    development_root: Path,
+    generic_package: Path,
+    install_root: Path,
+    config_dir: Path,
+    audit_dir: Path,
+) -> dict[str, object]:
+    command = [
+        sys.executable,
+        str(ROOT / "scripts" / "post_release_skill_gate.py"),
+        "--development-root",
+        str(development_root),
+        "--release-archive",
+        str(generic_package),
+        "--install-root",
+        str(install_root),
+        "--config-dir",
+        str(config_dir),
+        "--audit-dir",
+        str(audit_dir),
+    ]
+    process = subprocess.run(
+        command,
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    try:
+        payload = json.loads(process.stdout or process.stderr)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            "本机Skills部署后门禁未返回有效JSON："
+            + (process.stdout or process.stderr)[-2000:]
+        ) from exc
+    if process.returncode or payload.get("status") != "pass":
+        raise RuntimeError(
+            "本机Skills原子升级或部署后门禁失败："
+            + str(payload.get("error") or payload)
+        )
+    return payload
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="两阶段受控发布：进入正式发布中 → 独立确认后正式发布"
@@ -364,6 +408,27 @@ def main() -> None:
     parser.add_argument(
         "--repository",
         default="sakuruamayday-ops/project-application-assistant",
+    )
+    parser.add_argument(
+        "--local-skills-target",
+        type=Path,
+        default=Path.home() / ".codex" / "skills",
+        help="正式提升前必须完成原子升级和三方验签的本机Skills目录",
+    )
+    parser.add_argument(
+        "--local-install-config-dir",
+        type=Path,
+        default=Path.home() / ".config" / "project-assistant",
+        help="安装日志、备份和事务证据目录",
+    )
+    parser.add_argument(
+        "--deployment-audit-dir",
+        type=Path,
+        default=Path.home()
+        / ".config"
+        / "project-assistant"
+        / "deployment-audits",
+        help="开发源、正式包、实际安装目录三方审计报告目录",
     )
     action = parser.add_mutually_exclusive_group()
     action.add_argument(
@@ -397,6 +462,11 @@ def main() -> None:
     }
     if not packages:
         parser.error("至少提供一个发布包")
+    if "generic" not in packages:
+        parser.error(
+            "受控发布必须提供--generic-package，"
+            "用于正式提升前的本机原子升级、全量验签和三方哈希门禁"
+        )
     action_name = release_action(
         stage=arguments.stage,
         promote=arguments.promote,
@@ -454,6 +524,13 @@ def main() -> None:
                 assets,
                 create_if_missing=False,
             )
+        local_deployment = run_local_skill_deployment_gate(
+            development_root=ROOT / "skills",
+            generic_package=packages["generic"],
+            install_root=arguments.local_skills_target.expanduser().resolve(),
+            config_dir=arguments.local_install_config_dir.expanduser().resolve(),
+            audit_dir=arguments.deployment_audit_dir.expanduser().resolve(),
+        )
         portal_result = promote_portal(validation["short_version"])
         run(
             [
@@ -477,6 +554,7 @@ def main() -> None:
                     **preflight,
                     "status": "published",
                     "release_url": release_url,
+                    "local_skill_deployment": local_deployment,
                     "portal": portal_result,
                     "delivery": delivery,
                 },

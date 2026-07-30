@@ -39,6 +39,11 @@ def parser() -> argparse.ArgumentParser:
     install.add_argument("--guide", type=Path, default=None, help="覆盖首次使用指南路径")
     install.add_argument("--config-dir", type=Path, default=None, help="个人偏好、备份和升级报告目录")
     install.add_argument("--version", default="unknown", help="当前官方Skills版本")
+    install.add_argument(
+        "--require-signatures",
+        action="store_true",
+        help="要求全部Skill具有有效Ed25519签名",
+    )
 
     guide = subcommands.add_parser("guide", help="生成详细使用指南")
     guide.add_argument("--output", type=Path, default=None)
@@ -108,6 +113,8 @@ def main() -> int:
             args.force,
             args.config_dir,
             args.version,
+            command=[sys.executable, "-m", "project_assistant.cli", *sys.argv[1:]],
+            require_signatures=args.require_signatures,
         )
         print(f"已安装 {len(installed)} 个技能到 {destination}")
         if installed:
@@ -115,7 +122,7 @@ def main() -> int:
         if not args.skip_guide:
             print(write_guide(render_guide(config, checks), output))
         return 0
-    except (ConfigError, FileNotFoundError, ValueError) as exc:
+    except (ConfigError, FileNotFoundError, RuntimeError, ValueError) as exc:
         print(f"错误：{exc}")
         return 2
 

@@ -1,10 +1,13 @@
 import json
+import os
+import shutil
 import sys
 import tempfile
 import unittest
 import subprocess
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 from project_assistant.installer import classify_skill_change, install_skills
 from scripts.build_standard_package import (
@@ -192,6 +195,179 @@ class InstallTests(unittest.TestCase):
             self.assertEqual((destination / "sample-skill" / "SKILL.md").read_text(encoding="utf-8"), "second")
             self.assertTrue(any((config_dir / "install-backups").glob("*/sample-skill/SKILL.md")))
             self.assertTrue(any((config_dir / "upgrade-reports").glob("*.json")))
+
+    def test_skipped_install_records_real_command_and_reason(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            skill = source / "sample-skill"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("first", encoding="utf-8")
+            destination = root / "destination"
+            config_dir = root / "config"
+            command = [
+                sys.executable,
+                "-m",
+                "project_assistant.cli",
+                "install",
+                "--target",
+                str(destination),
+            ]
+            install_skills(
+                source,
+                destination,
+                "copy",
+                False,
+                config_dir,
+                "1.0",
+                command=command,
+            )
+            self.assertEqual(
+                install_skills(
+                    source,
+                    destination,
+                    "copy",
+                    False,
+                    config_dir,
+                    "1.0",
+                    command=command,
+                ),
+                [],
+            )
+            reports = sorted((config_dir / "upgrade-reports").glob("*.json"))
+            report = json.loads(reports[-1].read_text(encoding="utf-8"))
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(
+                report["items"][0]["reason"],
+                "existing-target-without-force",
+            )
+            executions = [
+                json.loads(line)
+                for line in (config_dir / "install-executions.jsonl")
+                .read_text(encoding="utf-8")
+                .splitlines()
+            ]
+            self.assertEqual(executions[-1]["command"], command)
+            self.assertEqual(
+                executions[-1]["skipped_entries"], ["sample-skill"]
+            )
+
+    @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
+    def test_signed_upgrade_rolls_back_when_post_swap_step_fails(self):
+        repository = Path(__file__).resolve().parents[1]
+        signed_source = (
+            repository / "skills/high-tech-enterprise-application-drafting"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            shutil.copytree(
+                signed_source,
+                source / signed_source.name,
+            )
+            destination = root / "destination"
+            existing = destination / signed_source.name
+            existing.mkdir(parents=True)
+            (existing / "SKILL.md").write_text(
+                "previous-install",
+                encoding="utf-8",
+            )
+            config_dir = root / "config"
+            with mock.patch(
+                "project_assistant.installer.freeze_signed_skill",
+                side_effect=RuntimeError("injected-freeze-failure"),
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError, "injected-freeze-failure"
+                ):
+                    install_skills(
+                        source,
+                        destination,
+                        "copy",
+                        True,
+                        config_dir,
+                        "1.1",
+                        require_signatures=True,
+                    )
+            self.assertEqual(
+                (existing / "SKILL.md").read_text(encoding="utf-8"),
+                "previous-install",
+            )
+            report_path = sorted(
+                (config_dir / "upgrade-reports").glob("*.json")
+            )[-1]
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(report["transaction_status"], "rolled-back")
+            self.assertEqual(report["status"], "fail")
+            self.assertTrue(
+                any(
+                    (config_dir / "install-rollbacks").glob(
+                        "*/high-tech-enterprise-application-drafting/SKILL.md"
+                    )
+                )
+            )
+
+    @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
+    def test_signed_install_is_read_only_and_fully_verified(self):
+        repository = Path(__file__).resolve().parents[1]
+        signed_source = (
+            repository / "skills/high-tech-enterprise-application-drafting"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            shutil.copytree(
+                signed_source,
+                source / signed_source.name,
+            )
+            destination = root / "destination"
+            config_dir = root / "config"
+            report_out = {}
+            try:
+                installed = install_skills(
+                    source,
+                    destination,
+                    "copy",
+                    True,
+                    config_dir,
+                    "1.1",
+                    require_signatures=True,
+                    report_out=report_out,
+                )
+                self.assertEqual(installed, [signed_source.name])
+                target = destination / signed_source.name
+                self.assertEqual(
+                    target.stat().st_mode & 0o222,
+                    0,
+                )
+                self.assertEqual(
+                    (target / "SKILL.md").stat().st_mode & 0o222,
+                    0,
+                )
+                self.assertTrue(
+                    (target / "local-overrides").is_dir()
+                )
+                self.assertNotEqual(
+                    (target / "local-overrides").stat().st_mode & 0o200,
+                    0,
+                )
+                report = json.loads(
+                    Path(report_out["report"]).read_text(encoding="utf-8")
+                )
+                self.assertEqual(report["transaction_status"], "committed")
+                self.assertIn(
+                    signed_source.name,
+                    report["read_only_signed_skills"],
+                )
+            finally:
+                if destination.exists():
+                    for path in sorted(
+                        destination.rglob("*"),
+                        key=lambda item: len(item.parts),
+                    ):
+                        if path.exists() and not path.is_symlink():
+                            os.chmod(path, path.stat().st_mode | 0o700)
+                    os.chmod(destination, destination.stat().st_mode | 0o700)
 
     def test_direct_skill_edit_is_detected_and_backed_up(self):
         with tempfile.TemporaryDirectory() as directory:

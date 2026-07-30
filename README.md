@@ -107,6 +107,7 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 RELEASE_VERSION=按正式发布指令填写
 python3 scripts/controlled_release.py \
   --version "$RELEASE_VERSION" \
+  --generic-package "dist/企业全生命周期助手-V${RELEASE_VERSION}.zip" \
   --workbuddy-package "dist/企业全生命周期助手-V${RELEASE_VERSION}-WorkBuddy.zip" \
   --gate-report "dist/企业全生命周期助手-V${RELEASE_VERSION}-发布门禁.json" \
   --release-notes "docs/releases/V${RELEASE_VERSION}.md"
@@ -121,11 +122,18 @@ GitHub 预发布
 ```
 
 主人明确说出“确认正式发布”后，才执行第二条命令：在原参数后追加
-`--promote --confirm-text "确认正式发布"`。系统核对预发布提交和三项资产哈希，
-把同一批候选文件登记为网站正式版，最后将 GitHub 预发布提升为 Latest。
+`--promote --confirm-text "确认正式发布"`。系统核对预发布提交和全部候选资产哈希，
+随后以通用正式包为唯一升级源，对本机 `~/.codex/skills` 执行原子替换、49 项
+Skill 全量验签以及开发源、正式包、实际安装目录三方哈希比对。部署后门禁通过，
+才把同一批候选文件登记为网站正式版，最后将 GitHub 预发布提升为 Latest。
 
 `--execute` 一步直发入口已停用。任一步失败都会停止；没有独立确认时，
 候选版本只能保持“正式发布中”，不能替换当前正式版。
+
+每次安装命令、跳过原因、备份、回滚和验签结果分别写入
+`~/.config/project-assistant/install-executions.jsonl` 与单次升级报告；三方审计
+统一写入 `~/.config/project-assistant/deployment-audits/`。已签名安装目录会移除
+写权限，日常开发必须在独立工作树完成。
 
 ## 版本口径
 
