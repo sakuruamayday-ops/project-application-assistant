@@ -145,8 +145,19 @@
         <span class="skill-card-index">01 / 安装计划</span>
         <h3>生成一次性安全安装指令</h3>
         {% if active_device_binding and active_device_binding.mcp_connected_at %}
-        <p>当前账号已有通过服务器验收的本地 Agent。需要更换电脑时，请先在“API 与用户”撤销原设备，再生成新计划。</p>
-        <a class="button" href="/access">查看已连接设备</a>
+        <p>当前账号已有通过服务器验收的本地 Agent。已安装版本为 <strong>V{{ active_device_binding.installed_version or '待核验' }}</strong>；升级会复用现有设备身份、密钥、访问凭据和 jiaotang-kb 连接。</p>
+        {% if active_device_binding.upgrade_available %}
+        <div class="agent-install-actions" data-agent-upgrade data-csrf-token="{{ user.csrf_token }}">
+          <button class="button agent-copy-primary" type="button" data-copy-agent-upgrade><span>升级到 V{{ active_device_binding.latest_workbuddy_version }}</span><small>第一步 · 生成审查计划</small></button>
+          <button class="button agent-confirm-install" type="button" data-confirm-agent-upgrade hidden><span>我已审查，复制升级确认</span><small>第二步 · 明确授权</small></button>
+          <p class="agent-copy-status" data-agent-upgrade-status aria-live="polite">升级不会重新登记设备；新包验签、启用和连接复核通过后才更新设备版本。</p>
+        </div>
+        {% elif active_device_binding.installed_version %}
+        <p class="agent-copy-status">当前设备已经是最新正式版本，无需升级。</p>
+        {% else %}
+        <p class="agent-copy-status is-error">当前设备尚未回传已安装版本和包哈希，请联系管理员核验原安装记录；系统不会猜测源版本。</p>
+        {% endif %}
+        <a class="button secondary" href="/access">查看已连接设备</a>
         {% else %}
         <p>第一步只公开安装器来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法，不包含引导地址；只有你回到本页明确同意后，Agent 才能执行。</p>
         <div class="agent-install-actions">
@@ -186,7 +197,7 @@
           <li class="{{ 'is-complete' if active_device_binding and active_device_binding.mcp_connected_at else '' }}" data-agent-stage="mcp_connection"><i></i><span><strong>MCP 首次连接</strong><small>{{ active_device_binding.mcp_connected_at_display if active_device_binding and active_device_binding.mcp_connected_at else '尚未验收' }}</small></span></li>
         </ol>
         <div class="skill-install-result {{ 'is-success' if latest_agent_install_result and latest_agent_install_result.result_ok else ('is-error' if latest_agent_install_result else '') }}" data-agent-result>
-          <strong data-agent-result-title>{{ '最近一次安装已通过' if latest_agent_install_result and latest_agent_install_result.result_ok else ('最近一次安装未完成' if latest_agent_install_result else '等待本地 Agent 回传') }}</strong>
+          <strong data-agent-result-title>{% if latest_agent_install_result %}最近一次{{ '升级' if latest_agent_install_result.operation == 'upgrade' else '安装' }}{{ '已通过' if latest_agent_install_result.result_ok else '未完成' }}{% else %}等待本地 Agent 回传{% endif %}</strong>
           <p data-agent-result-message>{{ latest_agent_install_result.result_user_message if latest_agent_install_result else '生成安装计划后，本页会自动刷新设备登记、签名和 MCP 连接结果。' }}</p>
           <small data-agent-result-next>{{ latest_agent_install_result.result_next_action if latest_agent_install_result and latest_agent_install_result.result_next_action else (latest_agent_install_result.result_reported_at_display if latest_agent_install_result else '') }}</small>
         </div>

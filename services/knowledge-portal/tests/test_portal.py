@@ -446,6 +446,7 @@ def load_app(tmp_path):
     os.environ.pop("JIAOTANG_AI_API_BASE", None)
     os.environ.pop("JIAOTANG_AI_API_KEY", None)
     os.environ.pop("JIAOTANG_AI_MODEL", None)
+    os.environ["JIAOTANG_WEB_SEARCH_RSS_URL"] = ""
     create_test_content_index(tmp_path / "knowledge-index" / "knowledge_content.sqlite3")
     import app.main
 
@@ -461,7 +462,7 @@ def test_public_user_guide(tmp_path):
         assert guide.status_code == 200
         assert "企业全生命周期助手用户使用手册" in guide.text
         assert "下载与安装" in guide.text
-        assert "Skills V1.4.0" in guide.text
+        assert "Skills V1.4.1" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -477,13 +478,13 @@ def test_public_user_guide(tmp_path):
         assert 'href="/guide"' in login.text
 
 
-def test_public_demo_describes_v140_execution_chain(tmp_path):
+def test_public_demo_describes_v141_execution_chain(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:
         response = client.get("/demo")
 
     assert response.status_code == 200
-    assert "V1.4.0 · PRODUCT DEMO" in response.text
+    assert "V1.4.1 · PRODUCT DEMO" in response.text
     assert "企业项目身份、政策规则与交付质量" in response.text
     assert "统一进入可追溯执行链" in response.text
     assert "项目决策算法" in response.text
@@ -491,6 +492,7 @@ def test_public_demo_describes_v140_execution_chain(tmp_path):
     assert "政策变化影响模拟" in response.text
     assert "交付契约自动修复" in response.text
     assert "专利全流程" in response.text
+    assert "跨版本升级与失败回滚" in response.text
 
 
 def test_personal_preferences_api_sync_history_undo_and_reset(tmp_path):
@@ -3743,6 +3745,263 @@ def test_admin_uses_same_transactional_agent_onboarding_as_members(
         status = client.get("/agent-installation-status").json()
         assert status["configured"] is True
         assert all(stage["complete"] for stage in status["stages"].values())
+
+
+def test_connected_device_cross_version_upgrade_reuses_identity(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    target_package = tmp_path / "workbuddy-v1.4.1.zip"
+    target_package.write_bytes(b"signed-workbuddy-v1.4.1")
+    target_sha256 = hashlib.sha256(target_package.read_bytes()).hexdigest()
+    source_sha256 = hashlib.sha256(b"signed-workbuddy-v1.4.0").hexdigest()
+    monkeypatch.setattr(
+        module,
+        "latest_skill_artifact",
+        lambda target: (
+            {
+                "file_path": str(target_package),
+                "file_name": target_package.name,
+                "sha256": target_sha256,
+                "target": "workbuddy",
+                "version": "1.4.1",
+            }
+            if target == "workbuddy"
+            else None
+        ),
+    )
+
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        _, key_id = provision_signed_device(
+            module,
+            int(user["id"]),
+            agent_host="workbuddy",
+        )
+        now = module.isoformat(module.utc_now())
+        token_seed = "test-upgrade-token-seed"
+        with closing(module.database()) as connection:
+            binding = connection.execute(
+                """
+                SELECT id FROM device_bindings
+                WHERE user_id=? AND revoked_at IS NULL
+                """,
+                (int(user["id"]),),
+            ).fetchone()
+            connection.execute(
+                """
+                UPDATE device_bindings
+                SET installed_version='1.4.0',
+                    installed_package_sha256=?,installed_at=?
+                WHERE id=?
+                """,
+                (source_sha256, now, int(binding["id"])),
+            )
+            connection.execute(
+                """
+                UPDATE device_keys
+                SET credential_saved_at=?,first_verified_at=?,mcp_connected_at=?,
+                    last_verified_at=?
+                WHERE key_id=?
+                """,
+                (now, now, now, now, key_id),
+            )
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at
+                ) VALUES (?,?,?,?,?,?)
+                """,
+                (
+                    int(user["id"]),
+                    TEST_DEVICE_NAME,
+                    "jt_test",
+                    module.token_hash("test-upgrade-token"),
+                    token_seed,
+                    now,
+                ),
+            )
+            connection.commit()
+
+        before = {}
+        with closing(module.database()) as connection:
+            for table in ("device_bindings", "device_keys", "device_tokens"):
+                before[table] = connection.execute(
+                    f"SELECT COUNT(*) FROM {table} WHERE user_id=?",
+                    (int(user["id"]),),
+                ).fetchone()[0]
+            key_before = dict(
+                connection.execute(
+                    "SELECT key_id,public_key FROM device_keys WHERE user_id=?",
+                    (int(user["id"]),),
+                ).fetchone()
+            )
+            token_before = dict(
+                connection.execute(
+                    "SELECT token_hash,token_seed FROM device_tokens WHERE user_id=?",
+                    (int(user["id"]),),
+                ).fetchone()
+            )
+
+        skills = client.get("/skills")
+        assert skills.status_code == 200
+        assert "升级到 V1.4.1" in skills.text
+        assert "data-copy-agent-upgrade" in skills.text
+        assert "升级不会重新登记设备" in skills.text
+
+        review = client.post(
+            "/agent-upgrade-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        assert review.status_code == 200
+        assert review.json()["phase"] == "review"
+        assert review.json()["source_version"] == "1.4.0"
+        assert review.json()["target_version"] == "1.4.1"
+        assert "不得重新登记设备" in review.json()["prompt"]
+        upgrade_code = review.json()["review_code"]
+
+        protocol = client.get(f"/v1/agent-upgrade/{upgrade_code}")
+        assert protocol.status_code == 200
+        assert protocol.json()["phase"] == "review"
+        assert protocol.json()["source"] == {
+            "version": "1.4.0",
+            "sha256": source_sha256,
+        }
+        assert protocol.json()["target"]["version"] == "1.4.1"
+        assert protocol.json()["target"]["sha256"] == target_sha256
+        assert protocol.json()["identity"] == {
+            "reuse_existing_device_binding": True,
+            "reuse_existing_device_key": True,
+            "reuse_existing_api_token": True,
+            "reuse_existing_bootstrap_url": True,
+            "device_reregistration": False,
+            "credential_rotation": False,
+        }
+        assert protocol.json()["installation"]["authorized"] is False
+        assert client.get(
+            f"/v1/agent-upgrade/{upgrade_code}/workbuddy/download"
+        ).status_code == 403
+
+        confirmed = client.post(
+            "/agent-upgrade-codes/confirm",
+            data={
+                "csrf_token": user["csrf_token"],
+                "upgrade_code": upgrade_code,
+            },
+        )
+        assert confirmed.status_code == 200
+        assert confirmed.json()["phase"] == "upgrade_authorized"
+        assert "不得重新登记设备" in confirmed.json()["prompt"]
+
+        authorized = client.get(f"/v1/agent-upgrade/{upgrade_code}")
+        assert authorized.status_code == 200
+        assert authorized.json()["phase"] == "upgrade_authorized"
+        assert authorized.json()["installation"]["authorized"] is True
+        assert "device_private_key" in authorized.json()["installation"]["preserve"]
+        assert authorized.json()["rollback"]["report_failure_stage"] is True
+        download = client.get(
+            f"/v1/agent-upgrade/{upgrade_code}/workbuddy/download"
+        )
+        assert download.status_code == 200
+        assert download.content == target_package.read_bytes()
+        assert download.headers["x-jiaotang-package-sha256"] == target_sha256
+        assert download.headers["x-jiaotang-target-version"] == "1.4.1"
+
+        mismatched = client.post(
+            f"/v1/agent-upgrade-result/{upgrade_code}",
+            json={
+                "schema": "jiaotang-agent-upgrade-result/v1",
+                "ok": True,
+                "status": "upgraded",
+                "user_message": "升级完成",
+                "installed_version": "1.4.1",
+                "installed_package_sha256": "0" * 64,
+            },
+        )
+        assert mismatched.status_code == 422
+
+        upgraded = client.post(
+            f"/v1/agent-upgrade-result/{upgrade_code}",
+            json={
+                "schema": "jiaotang-agent-upgrade-result/v1",
+                "ok": True,
+                "status": "upgraded",
+                "user_message": "签名包升级和知识库连接复核均已通过",
+                "installed_version": "1.4.1",
+                "installed_package_sha256": target_sha256,
+            },
+        )
+        assert upgraded.status_code == 200
+        assert upgraded.json()["upgraded"] is True
+
+        status = client.get("/agent-installation-status")
+        assert status.status_code == 200
+        assert status.json()["result"]["operation"] == "upgrade"
+        assert status.json()["result"]["result_status"] == "upgraded"
+        assert status.json()["result"]["workbuddy_version"] == "1.4.1"
+
+        with closing(module.database()) as connection:
+            binding_after = dict(
+                connection.execute(
+                    """
+                    SELECT installed_version,installed_package_sha256,last_upgrade_at
+                    FROM device_bindings WHERE user_id=?
+                    """,
+                    (int(user["id"]),),
+                ).fetchone()
+            )
+            key_after = dict(
+                connection.execute(
+                    "SELECT key_id,public_key FROM device_keys WHERE user_id=?",
+                    (int(user["id"]),),
+                ).fetchone()
+            )
+            token_after = dict(
+                connection.execute(
+                    "SELECT token_hash,token_seed FROM device_tokens WHERE user_id=?",
+                    (int(user["id"]),),
+                ).fetchone()
+            )
+            after = {
+                table: connection.execute(
+                    f"SELECT COUNT(*) FROM {table} WHERE user_id=?",
+                    (int(user["id"]),),
+                ).fetchone()[0]
+                for table in ("device_bindings", "device_keys", "device_tokens")
+            }
+            consumed_at = connection.execute(
+                """
+                SELECT consumed_at FROM agent_enrollment_codes
+                WHERE code_hash=? AND operation='upgrade'
+                """,
+                (module.token_hash(upgrade_code),),
+            ).fetchone()["consumed_at"]
+        assert binding_after["installed_version"] == "1.4.1"
+        assert binding_after["installed_package_sha256"] == target_sha256
+        assert binding_after["last_upgrade_at"]
+        assert after == before
+        assert key_after == key_before
+        assert token_after == token_before
+        assert consumed_at
+
+        latest = client.get("/skills")
+        assert "data-copy-agent-upgrade" not in latest.text
+        assert "当前设备已经是最新正式版本" in latest.text
 
 
 def test_member_agent_bootstrap_device_signature_and_replacement(
