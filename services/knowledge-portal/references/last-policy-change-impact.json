@@ -1,0 +1,2743 @@
+{
+  "schema_version": 1,
+  "report_type": "policy-change-impact-simulation",
+  "before_source_digest": "67a2bc9fb68c455e9a97d1287de97337f949aa2da4d2cc4507769a15ad1adfef",
+  "after_source_digest": "84206f6486c92e73231c4e232f071b11ac3363d809836b46ebb24dc181943a86",
+  "changed_policy_node_ids": [
+    "policy:zj-single-champion-method-2025"
+  ],
+  "added_policy_node_ids": [
+    "policy:zj-hidden-champion-2026",
+    "policy:zj-single-champion-notice-2026"
+  ],
+  "removed_policy_node_ids": [
+    "policy:zj-hidden-champion-2025"
+  ],
+  "affected_project_ids": [
+    "digital-workshop",
+    "first-equipment",
+    "first-material-batch",
+    "first-software-version",
+    "future-factory",
+    "green-factory-1",
+    "green-factory-2",
+    "green-factory-3",
+    "green-factory-4",
+    "hangzhou-enterprise-institute",
+    "hangzhou-enterprise-technology-center",
+    "intelligent-factory",
+    "key-little-giant-support",
+    "little-giant",
+    "manufacturing-single-champion-1",
+    "manufacturing-single-champion-2",
+    "municipal-enterprise-technology-center",
+    "national-high-tech-enterprise",
+    "technology-sme-1",
+    "technology-sme-2",
+    "zhejiang-enterprise-institute",
+    "zhejiang-enterprise-technology-center",
+    "zhejiang-hidden-champion",
+    "zhejiang-industrial-new-product",
+    "zhejiang-key-enterprise-institute",
+    "zhejiang-key-specialized-sme",
+    "zhejiang-manufacturing-2",
+    "zhejiang-manufacturing-quality",
+    "zhejiang-specialized-sme"
+  ],
+  "affected_projects": [
+    {
+      "project_id": "digital-workshop",
+      "project_name": "浙江省数字化车间",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "digital_workshop-1",
+          "digital_workshop-2",
+          "digital_workshop-3",
+          "digital_workshop-4",
+          "digital_workshop-5",
+          "digital_workshop-6"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "digital_workshop_assessment_standard_met",
+          "digital_workshop_completed_operational",
+          "digital_workshop_compliance_clear",
+          "digital_workshop_cultivation_status_met",
+          "digital_workshop_materials_complete",
+          "digital_workshop_zhejiang_entity_met"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-3d446b9ad127bbada34f"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-3d446b9ad127bbada34f",
+        "new_high_impact_requirements": [
+          {
+            "key": "digital_workshop_assessment_standard_met",
+            "label": "digital_workshop_assessment_standard_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "digital_workshop_completed_operational",
+            "label": "digital_workshop_completed_operational",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "digital_workshop_compliance_clear",
+            "label": "digital_workshop_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "digital_workshop_cultivation_status_met",
+            "label": "digital_workshop_cultivation_status_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "digital_workshop_materials_complete",
+            "label": "digital_workshop_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "digital_workshop_zhejiang_entity_met",
+            "label": "digital_workshop_zhejiang_entity_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：digital_workshop_assessment_standard_met、digital_workshop_completed_operational、digital_workshop_compliance_clear、digital_workshop_cultivation_status_met、digital_workshop_materials_complete、digital_workshop_zhejiang_entity_met。"
+      }
+    },
+    {
+      "project_id": "first-equipment",
+      "project_name": "首台（套）装备",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "first-equipment-1",
+          "first-equipment-2",
+          "first-equipment-3",
+          "first-equipment-4",
+          "first-equipment-5",
+          "first-equipment-6",
+          "first-equipment-7",
+          "first-equipment-8",
+          "first-equipment-9"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "first_equipment_breakthrough_and_ip_met",
+          "first_equipment_engineering_acceptance_met",
+          "first_equipment_exclusions_clear",
+          "first_equipment_initial_market_met",
+          "first_equipment_license_and_test_met",
+          "first_equipment_novelty_report_valid",
+          "first_equipment_supported_direction",
+          "first_equipment_technical_tier_met",
+          "first_equipment_zhejiang_entity"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-cd15edcc6d23cb112b9c"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-cd15edcc6d23cb112b9c",
+        "new_high_impact_requirements": [
+          {
+            "key": "first_equipment_breakthrough_and_ip_met",
+            "label": "first_equipment_breakthrough_and_ip_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_equipment_engineering_acceptance_met",
+            "label": "first_equipment_engineering_acceptance_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_equipment_exclusions_clear",
+            "label": "first_equipment_exclusions_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_equipment_initial_market_met",
+            "label": "first_equipment_initial_market_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_equipment_license_and_test_met",
+            "label": "first_equipment_license_and_test_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_equipment_novelty_report_valid",
+            "label": "first_equipment_novelty_report_valid",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_equipment_supported_direction",
+            "label": "first_equipment_supported_direction",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_equipment_technical_tier_met",
+            "label": "first_equipment_technical_tier_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_equipment_zhejiang_entity",
+            "label": "first_equipment_zhejiang_entity",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：first_equipment_breakthrough_and_ip_met、first_equipment_engineering_acceptance_met、first_equipment_exclusions_clear、first_equipment_initial_market_met、first_equipment_license_and_test_met、first_equipment_novelty_report_valid、first_equipment_supported_direction、first_equipment_technical_tier_met、first_equipment_zhejiang_entity。"
+      }
+    },
+    {
+      "project_id": "first-material-batch",
+      "project_name": "重点新材料首批次",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "first-material-1",
+          "first-material-2",
+          "first-material-3",
+          "first-material-4",
+          "first-material-5",
+          "first-material-6",
+          "first-material-7",
+          "first-material-8",
+          "first-material-9"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "first_material_domestic_leading",
+          "first_material_exclusions_clear",
+          "first_material_independent_ip",
+          "first_material_maturity_sales_met",
+          "first_material_novelty_valid",
+          "first_material_route_met",
+          "first_material_test_and_license_met",
+          "first_material_tier_requirement_met",
+          "first_material_zhejiang_entity"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-e62afb6c344a3e37355f"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-e62afb6c344a3e37355f",
+        "new_high_impact_requirements": [
+          {
+            "key": "first_material_domestic_leading",
+            "label": "first_material_domestic_leading",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_material_exclusions_clear",
+            "label": "first_material_exclusions_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_material_independent_ip",
+            "label": "first_material_independent_ip",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_material_maturity_sales_met",
+            "label": "first_material_maturity_sales_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_material_novelty_valid",
+            "label": "first_material_novelty_valid",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_material_route_met",
+            "label": "first_material_route_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_material_test_and_license_met",
+            "label": "first_material_test_and_license_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_material_tier_requirement_met",
+            "label": "first_material_tier_requirement_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_material_zhejiang_entity",
+            "label": "first_material_zhejiang_entity",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：first_material_domestic_leading、first_material_exclusions_clear、first_material_independent_ip、first_material_maturity_sales_met、first_material_novelty_valid、first_material_route_met、first_material_test_and_license_met、first_material_tier_requirement_met、first_material_zhejiang_entity。"
+      }
+    },
+    {
+      "project_id": "first-software-version",
+      "project_name": "首版次软件",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "first-software-1",
+          "first-software-2",
+          "first-software-3",
+          "first-software-4",
+          "first-software-5",
+          "first-software-6",
+          "first-software-7",
+          "first-software-8",
+          "first-software-9",
+          "first-software-rnd-investment"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "first_software_catalog_met",
+          "first_software_cnas_cma_test_met",
+          "first_software_compliance_clear",
+          "first_software_copyright_met",
+          "first_software_domestic_tier_met",
+          "first_software_environment_talent_met",
+          "first_software_exclusions_clear",
+          "first_software_first_release_sale",
+          "first_software_rnd_investment",
+          "first_software_zhejiang_entity"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-2448fa908b4807b977a7"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-2448fa908b4807b977a7",
+        "new_high_impact_requirements": [
+          {
+            "key": "first_software_catalog_met",
+            "label": "first_software_catalog_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_cnas_cma_test_met",
+            "label": "first_software_cnas_cma_test_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_compliance_clear",
+            "label": "first_software_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_copyright_met",
+            "label": "first_software_copyright_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_domestic_tier_met",
+            "label": "first_software_domestic_tier_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_environment_talent_met",
+            "label": "first_software_environment_talent_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_exclusions_clear",
+            "label": "first_software_exclusions_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_first_release_sale",
+            "label": "first_software_first_release_sale",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_rnd_investment",
+            "label": "first_software_rnd_investment",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "first_software_zhejiang_entity",
+            "label": "first_software_zhejiang_entity",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：first_software_catalog_met、first_software_cnas_cma_test_met、first_software_compliance_clear、first_software_copyright_met、first_software_domestic_tier_met、first_software_environment_talent_met、first_software_exclusions_clear、first_software_first_release_sale、first_software_rnd_investment、first_software_zhejiang_entity。"
+      }
+    },
+    {
+      "project_id": "future-factory",
+      "project_name": "浙江省未来工厂",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "future_factory-1",
+          "future_factory-2",
+          "future_factory-3",
+          "future_factory-4",
+          "future_factory-5",
+          "future_factory-6"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "future_factory_assessment_standard_met",
+          "future_factory_completed_operational",
+          "future_factory_compliance_clear",
+          "future_factory_cultivation_status_met",
+          "future_factory_materials_complete",
+          "future_factory_zhejiang_entity_met"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-cfe721c7a33e492ef583"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-cfe721c7a33e492ef583",
+        "new_high_impact_requirements": [
+          {
+            "key": "future_factory_assessment_standard_met",
+            "label": "future_factory_assessment_standard_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "future_factory_completed_operational",
+            "label": "future_factory_completed_operational",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "future_factory_compliance_clear",
+            "label": "future_factory_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "future_factory_cultivation_status_met",
+            "label": "future_factory_cultivation_status_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "future_factory_materials_complete",
+            "label": "future_factory_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "future_factory_zhejiang_entity_met",
+            "label": "future_factory_zhejiang_entity_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：future_factory_assessment_standard_met、future_factory_completed_operational、future_factory_compliance_clear、future_factory_cultivation_status_met、future_factory_materials_complete、future_factory_zhejiang_entity_met。"
+      }
+    },
+    {
+      "project_id": "green-factory-1",
+      "project_name": "区级绿色工厂",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "green-factory-1-1",
+          "green-factory-1-2",
+          "green-factory-1-3",
+          "green-factory-1-4",
+          "green-factory-1-5",
+          "green-factory-1-6",
+          "green-factory-1-local-thresholds"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "green_factory_1_basic_compliance_met",
+          "green_factory_1_dynamic_management_clear",
+          "green_factory_1_jurisdiction_rule_resolved",
+          "green_factory_1_management_system_met",
+          "green_factory_1_mandatory_indicators_met",
+          "green_factory_1_self_evaluation_complete"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-c3b697cc449e79056b84"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-c3b697cc449e79056b84",
+        "new_high_impact_requirements": [
+          {
+            "key": "green_factory_1_basic_compliance_met",
+            "label": "green_factory_1_basic_compliance_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_dynamic_management_clear",
+            "label": "green_factory_1_dynamic_management_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_jurisdiction_rule_resolved",
+            "label": "green_factory_1_jurisdiction_rule_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_management_system_met",
+            "label": "green_factory_1_management_system_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_mandatory_indicators_met",
+            "label": "green_factory_1_mandatory_indicators_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_1_self_evaluation_complete",
+            "label": "green_factory_1_self_evaluation_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：green_factory_1_basic_compliance_met、green_factory_1_dynamic_management_clear、green_factory_1_jurisdiction_rule_resolved、green_factory_1_management_system_met、green_factory_1_mandatory_indicators_met、green_factory_1_self_evaluation_complete。"
+      }
+    },
+    {
+      "project_id": "green-factory-2",
+      "project_name": "市级绿色工厂",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "green-factory-2-1",
+          "green-factory-2-2",
+          "green-factory-2-3",
+          "green-factory-2-4",
+          "green-factory-2-5",
+          "green-factory-2-6",
+          "green-factory-2-local-thresholds"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "green_factory_2_basic_compliance_met",
+          "green_factory_2_dynamic_management_clear",
+          "green_factory_2_jurisdiction_rule_resolved",
+          "green_factory_2_management_system_met",
+          "green_factory_2_mandatory_indicators_met",
+          "green_factory_2_self_evaluation_complete"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-41a5305cf925167c717c"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-41a5305cf925167c717c",
+        "new_high_impact_requirements": [
+          {
+            "key": "green_factory_2_basic_compliance_met",
+            "label": "green_factory_2_basic_compliance_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_dynamic_management_clear",
+            "label": "green_factory_2_dynamic_management_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_jurisdiction_rule_resolved",
+            "label": "green_factory_2_jurisdiction_rule_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_management_system_met",
+            "label": "green_factory_2_management_system_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_mandatory_indicators_met",
+            "label": "green_factory_2_mandatory_indicators_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_2_self_evaluation_complete",
+            "label": "green_factory_2_self_evaluation_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：green_factory_2_basic_compliance_met、green_factory_2_dynamic_management_clear、green_factory_2_jurisdiction_rule_resolved、green_factory_2_management_system_met、green_factory_2_mandatory_indicators_met、green_factory_2_self_evaluation_complete。"
+      }
+    },
+    {
+      "project_id": "green-factory-3",
+      "project_name": "浙江省绿色低碳工厂",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "green-factory-3-1",
+          "green-factory-3-2",
+          "green-factory-3-3",
+          "green-factory-3-4",
+          "green-factory-3-5",
+          "green-factory-3-6",
+          "green-factory-3-local-thresholds"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "green_factory_3_basic_compliance_met",
+          "green_factory_3_dynamic_management_clear",
+          "green_factory_3_jurisdiction_rule_resolved",
+          "green_factory_3_management_system_met",
+          "green_factory_3_mandatory_indicators_met",
+          "green_factory_3_self_evaluation_complete"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-ba0052fbed6767e53ea2"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-ba0052fbed6767e53ea2",
+        "new_high_impact_requirements": [
+          {
+            "key": "green_factory_3_basic_compliance_met",
+            "label": "green_factory_3_basic_compliance_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_3_dynamic_management_clear",
+            "label": "green_factory_3_dynamic_management_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_3_jurisdiction_rule_resolved",
+            "label": "green_factory_3_jurisdiction_rule_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_3_management_system_met",
+            "label": "green_factory_3_management_system_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_3_mandatory_indicators_met",
+            "label": "green_factory_3_mandatory_indicators_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "green_factory_3_self_evaluation_complete",
+            "label": "green_factory_3_self_evaluation_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：green_factory_3_basic_compliance_met、green_factory_3_dynamic_management_clear、green_factory_3_jurisdiction_rule_resolved、green_factory_3_management_system_met、green_factory_3_mandatory_indicators_met、green_factory_3_self_evaluation_complete。"
+      }
+    },
+    {
+      "project_id": "green-factory-4",
+      "project_name": "国家绿色工厂",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-1523bea94dad3bd5fa62"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-1523bea94dad3bd5fa62",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    },
+    {
+      "project_id": "hangzhou-enterprise-institute",
+      "project_name": "杭州市企业研究院",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "hz-rd-accounting",
+          "hz-rd-compliance",
+          "hz-rd-entity",
+          "hz-rd-equipment",
+          "hz-rd-investment",
+          "hz-rd-ip",
+          "hz-rd-materials",
+          "hz-rd-projects",
+          "hz-rd-site",
+          "hz-rd-staff"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "hz_rd_compliance_clear",
+          "hz_rd_enterprise_type_met",
+          "hz_rd_equipment_branch_met",
+          "hz_rd_independent_accounting",
+          "hz_rd_investment_branch_met",
+          "hz_rd_ip_branch_met",
+          "hz_rd_materials_complete",
+          "hz_rd_project_branch_met",
+          "hz_rd_site_area",
+          "hz_rd_staff_branch_met"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-076cf26e661e815a9e5b"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-076cf26e661e815a9e5b",
+        "new_high_impact_requirements": [
+          {
+            "key": "hz_rd_compliance_clear",
+            "label": "hz_rd_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_enterprise_type_met",
+            "label": "hz_rd_enterprise_type_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_equipment_branch_met",
+            "label": "hz_rd_equipment_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_independent_accounting",
+            "label": "hz_rd_independent_accounting",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_investment_branch_met",
+            "label": "hz_rd_investment_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_ip_branch_met",
+            "label": "hz_rd_ip_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_materials_complete",
+            "label": "hz_rd_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_project_branch_met",
+            "label": "hz_rd_project_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_site_area",
+            "label": "hz_rd_site_area",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_staff_branch_met",
+            "label": "hz_rd_staff_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：hz_rd_compliance_clear、hz_rd_enterprise_type_met、hz_rd_equipment_branch_met、hz_rd_independent_accounting、hz_rd_investment_branch_met、hz_rd_ip_branch_met、hz_rd_materials_complete、hz_rd_project_branch_met、hz_rd_site_area、hz_rd_staff_branch_met。"
+      }
+    },
+    {
+      "project_id": "hangzhou-enterprise-technology-center",
+      "project_name": "杭州市企业技术中心",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "hz-tech-center-1",
+          "hz-tech-center-2",
+          "hz-tech-center-3",
+          "hz-tech-center-4",
+          "hz-tech-center-5",
+          "hz-tech-center-6",
+          "hz-tech-center-7",
+          "hz-tech-center-rnd-expense"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "hz_tech_center_competitive_met",
+          "hz_tech_center_credit_clear",
+          "hz_tech_center_equipment_branch_met",
+          "hz_tech_center_independent_accounting",
+          "hz_tech_center_innovation_system_met",
+          "hz_tech_center_revenue_branch_met",
+          "hz_tech_center_rnd_expense",
+          "hz_tech_center_staff_branch_met"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-3ab1743ea30263b64d68"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-3ab1743ea30263b64d68",
+        "new_high_impact_requirements": [
+          {
+            "key": "hz_tech_center_competitive_met",
+            "label": "hz_tech_center_competitive_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_tech_center_credit_clear",
+            "label": "hz_tech_center_credit_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_tech_center_equipment_branch_met",
+            "label": "hz_tech_center_equipment_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_tech_center_independent_accounting",
+            "label": "hz_tech_center_independent_accounting",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_tech_center_innovation_system_met",
+            "label": "hz_tech_center_innovation_system_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_tech_center_revenue_branch_met",
+            "label": "hz_tech_center_revenue_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_tech_center_rnd_expense",
+            "label": "hz_tech_center_rnd_expense",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_tech_center_staff_branch_met",
+            "label": "hz_tech_center_staff_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：hz_tech_center_competitive_met、hz_tech_center_credit_clear、hz_tech_center_equipment_branch_met、hz_tech_center_independent_accounting、hz_tech_center_innovation_system_met、hz_tech_center_revenue_branch_met、hz_tech_center_rnd_expense、hz_tech_center_staff_branch_met。"
+      }
+    },
+    {
+      "project_id": "intelligent-factory",
+      "project_name": "浙江省智能工厂",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "intelligent_factory-1",
+          "intelligent_factory-2",
+          "intelligent_factory-3",
+          "intelligent_factory-4",
+          "intelligent_factory-5",
+          "intelligent_factory-6"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "intelligent_factory_assessment_standard_met",
+          "intelligent_factory_completed_operational",
+          "intelligent_factory_compliance_clear",
+          "intelligent_factory_cultivation_status_met",
+          "intelligent_factory_materials_complete",
+          "intelligent_factory_zhejiang_entity_met"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-bf78fa7bb4f3b84a2319"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-bf78fa7bb4f3b84a2319",
+        "new_high_impact_requirements": [
+          {
+            "key": "intelligent_factory_assessment_standard_met",
+            "label": "intelligent_factory_assessment_standard_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "intelligent_factory_completed_operational",
+            "label": "intelligent_factory_completed_operational",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "intelligent_factory_compliance_clear",
+            "label": "intelligent_factory_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "intelligent_factory_cultivation_status_met",
+            "label": "intelligent_factory_cultivation_status_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "intelligent_factory_materials_complete",
+            "label": "intelligent_factory_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "intelligent_factory_zhejiang_entity_met",
+            "label": "intelligent_factory_zhejiang_entity_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：intelligent_factory_assessment_standard_met、intelligent_factory_completed_operational、intelligent_factory_compliance_clear、intelligent_factory_cultivation_status_met、intelligent_factory_materials_complete、intelligent_factory_zhejiang_entity_met。"
+      }
+    },
+    {
+      "project_id": "key-little-giant-support",
+      "project_name": "重点小巨人企业高质量发展奖补项目",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "key-little-giant-1",
+          "key-little-giant-2",
+          "key-little-giant-3",
+          "key-little-giant-4",
+          "key-little-giant-5",
+          "key-little-giant-6",
+          "key-little-giant-7"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "key_lg_compliance_clear",
+          "key_lg_local_recommendation_met",
+          "key_lg_no_duplicate_support",
+          "key_lg_performance_targets_met",
+          "key_lg_project_investment_met",
+          "key_lg_three_transformations_plan_met",
+          "key_lg_valid_little_giant"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-5e4574e9b5177c898d74"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-5e4574e9b5177c898d74",
+        "new_high_impact_requirements": [
+          {
+            "key": "key_lg_compliance_clear",
+            "label": "key_lg_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_lg_local_recommendation_met",
+            "label": "key_lg_local_recommendation_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_lg_no_duplicate_support",
+            "label": "key_lg_no_duplicate_support",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_lg_performance_targets_met",
+            "label": "key_lg_performance_targets_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_lg_project_investment_met",
+            "label": "key_lg_project_investment_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_lg_three_transformations_plan_met",
+            "label": "key_lg_three_transformations_plan_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_lg_valid_little_giant",
+            "label": "key_lg_valid_little_giant",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：key_lg_compliance_clear、key_lg_local_recommendation_met、key_lg_no_duplicate_support、key_lg_performance_targets_met、key_lg_project_investment_met、key_lg_three_transformations_plan_met、key_lg_valid_little_giant。"
+      }
+    },
+    {
+      "project_id": "little-giant",
+      "project_name": "专精特新小巨人",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-b42a23d97595171f3d21"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-b42a23d97595171f3d21",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    },
+    {
+      "project_id": "manufacturing-single-champion-1",
+      "project_name": "浙江省制造业单项冠军企业",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "zj-single-champion-1",
+          "zj-single-champion-2",
+          "zj-single-champion-2026-one-product",
+          "zj-single-champion-3",
+          "zj-single-champion-4",
+          "zj-single-champion-5",
+          "zj-single-champion-6",
+          "zj-single-champion-7",
+          "zj-single-champion-8"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "zj_single_champion_compliance_clear",
+          "zj_single_champion_independent_entity",
+          "zj_single_champion_innovation_met",
+          "zj_single_champion_management_met",
+          "zj_single_champion_market_rank_met",
+          "zj_single_champion_quality_energy_met",
+          "zj_single_champion_revenue_branch_met",
+          "zj_single_champion_specialization_branch_met"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-cec55042ebc033576e37"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-cec55042ebc033576e37",
+        "new_high_impact_requirements": [
+          {
+            "key": "zj_single_champion_compliance_clear",
+            "label": "zj_single_champion_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_single_champion_independent_entity",
+            "label": "zj_single_champion_independent_entity",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_single_champion_innovation_met",
+            "label": "zj_single_champion_innovation_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_single_champion_management_met",
+            "label": "zj_single_champion_management_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_single_champion_market_rank_met",
+            "label": "zj_single_champion_market_rank_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_single_champion_quality_energy_met",
+            "label": "zj_single_champion_quality_energy_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_single_champion_revenue_branch_met",
+            "label": "zj_single_champion_revenue_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_single_champion_specialization_branch_met",
+            "label": "zj_single_champion_specialization_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：zj_single_champion_compliance_clear、zj_single_champion_independent_entity、zj_single_champion_innovation_met、zj_single_champion_management_met、zj_single_champion_market_rank_met、zj_single_champion_quality_energy_met、zj_single_champion_revenue_branch_met、zj_single_champion_specialization_branch_met。"
+      }
+    },
+    {
+      "project_id": "manufacturing-single-champion-2",
+      "project_name": "国家制造业单项冠军企业",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-28a53dceee1ee7f56801"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-28a53dceee1ee7f56801",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    },
+    {
+      "project_id": "municipal-enterprise-technology-center",
+      "project_name": "市级企业技术中心",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "municipal-tech-center-1",
+          "municipal-tech-center-2",
+          "municipal-tech-center-3",
+          "municipal-tech-center-4",
+          "municipal-tech-center-5",
+          "municipal-tech-center-runtime-gate"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "municipal_tc_current_local_rule_resolved",
+          "municipal_tc_jurisdiction_resolved",
+          "municipal_tc_local_compliance_clear",
+          "municipal_tc_local_thresholds_met",
+          "municipal_tc_submission_complete"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-b035f8b1fbc44e5ce1f6"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-b035f8b1fbc44e5ce1f6",
+        "new_high_impact_requirements": [
+          {
+            "key": "municipal_tc_current_local_rule_resolved",
+            "label": "municipal_tc_current_local_rule_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "municipal_tc_jurisdiction_resolved",
+            "label": "municipal_tc_jurisdiction_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "municipal_tc_local_compliance_clear",
+            "label": "municipal_tc_local_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "municipal_tc_local_thresholds_met",
+            "label": "municipal_tc_local_thresholds_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "municipal_tc_submission_complete",
+            "label": "municipal_tc_submission_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：municipal_tc_current_local_rule_resolved、municipal_tc_jurisdiction_resolved、municipal_tc_local_compliance_clear、municipal_tc_local_thresholds_met、municipal_tc_submission_complete。"
+      }
+    },
+    {
+      "project_id": "national-high-tech-enterprise",
+      "project_name": "高新技术企业",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-ab89567939e140fc3f7e"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-ab89567939e140fc3f7e",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    },
+    {
+      "project_id": "technology-sme-1",
+      "project_name": "浙江省科技型中小企业",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "zj-tech-sme-1",
+          "zj-tech-sme-2",
+          "zj-tech-sme-3",
+          "zj-tech-sme-4",
+          "zj-tech-sme-5",
+          "zj-tech-sme-staff-ratio"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "zj_tech_sme_entity_met",
+          "zj_tech_sme_innovation_investment_met",
+          "zj_tech_sme_ip_product_met",
+          "zj_tech_sme_materials_complete",
+          "zj_tech_sme_size_standard_met",
+          "zj_tech_sme_tech_staff_ratio"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-f4b31fb0508369fb9d1a"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-f4b31fb0508369fb9d1a",
+        "new_high_impact_requirements": [
+          {
+            "key": "zj_tech_sme_entity_met",
+            "label": "zj_tech_sme_entity_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_sme_innovation_investment_met",
+            "label": "zj_tech_sme_innovation_investment_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_sme_ip_product_met",
+            "label": "zj_tech_sme_ip_product_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_sme_materials_complete",
+            "label": "zj_tech_sme_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_sme_size_standard_met",
+            "label": "zj_tech_sme_size_standard_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_sme_tech_staff_ratio",
+            "label": "zj_tech_sme_tech_staff_ratio",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：zj_tech_sme_entity_met、zj_tech_sme_innovation_investment_met、zj_tech_sme_ip_product_met、zj_tech_sme_materials_complete、zj_tech_sme_size_standard_met、zj_tech_sme_tech_staff_ratio。"
+      }
+    },
+    {
+      "project_id": "technology-sme-2",
+      "project_name": "国家科技型中小企业",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-9d418843815558e97016"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-9d418843815558e97016",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    },
+    {
+      "project_id": "zhejiang-enterprise-institute",
+      "project_name": "浙江省企业研究院",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-ae244dc7807e027d1a31"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-ae244dc7807e027d1a31",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    },
+    {
+      "project_id": "zhejiang-enterprise-technology-center",
+      "project_name": "浙江省企业技术中心",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "zj-tech-center-1",
+          "zj-tech-center-2",
+          "zj-tech-center-3",
+          "zj-tech-center-4",
+          "zj-tech-center-5",
+          "zj-tech-center-6",
+          "zj-tech-center-7",
+          "zj-tech-center-8"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "zj_tech_center_competitive_met",
+          "zj_tech_center_equipment_branch_met",
+          "zj_tech_center_materials_complete",
+          "zj_tech_center_municipal_one_year",
+          "zj_tech_center_revenue_branch_met",
+          "zj_tech_center_rnd_ratio_branch_met",
+          "zj_tech_center_staff_branch_met",
+          "zj_tech_center_three_year_compliance"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-2c2c9cc2adf4a0b704ed"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-2c2c9cc2adf4a0b704ed",
+        "new_high_impact_requirements": [
+          {
+            "key": "zj_tech_center_competitive_met",
+            "label": "zj_tech_center_competitive_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_center_equipment_branch_met",
+            "label": "zj_tech_center_equipment_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_center_materials_complete",
+            "label": "zj_tech_center_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_center_municipal_one_year",
+            "label": "zj_tech_center_municipal_one_year",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_center_revenue_branch_met",
+            "label": "zj_tech_center_revenue_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_center_rnd_ratio_branch_met",
+            "label": "zj_tech_center_rnd_ratio_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_center_staff_branch_met",
+            "label": "zj_tech_center_staff_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "zj_tech_center_three_year_compliance",
+            "label": "zj_tech_center_three_year_compliance",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：zj_tech_center_competitive_met、zj_tech_center_equipment_branch_met、zj_tech_center_materials_complete、zj_tech_center_municipal_one_year、zj_tech_center_revenue_branch_met、zj_tech_center_rnd_ratio_branch_met、zj_tech_center_staff_branch_met、zj_tech_center_three_year_compliance。"
+      }
+    },
+    {
+      "project_id": "zhejiang-hidden-champion",
+      "project_name": "浙江省隐形冠军企业",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "hidden-compliance",
+          "hidden-conflict",
+          "hidden-credit",
+          "hidden-debt-ratio",
+          "hidden-entity",
+          "hidden-invention",
+          "hidden-market-rank",
+          "hidden-profit-growth",
+          "hidden-rd-it",
+          "hidden-revenue-growth",
+          "hidden-revenue-min",
+          "hidden-review-compliance",
+          "hidden-review-debt",
+          "hidden-review-invention",
+          "hidden-review-market",
+          "hidden-review-operation",
+          "hidden-review-participation",
+          "hidden-review-rnd",
+          "hidden-review-specialization",
+          "hidden-rnd",
+          "hidden-specialization",
+          "hidden-standard-brand"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "hidden_champion_compliance_clear",
+          "hidden_champion_conflict_identity_clear",
+          "hidden_champion_credit_met",
+          "hidden_champion_debt_ratio",
+          "hidden_champion_invention_patents",
+          "hidden_champion_market_rank_met",
+          "hidden_champion_net_profit_avg_growth",
+          "hidden_champion_rd_it_met",
+          "hidden_champion_revenue",
+          "hidden_champion_revenue_growth_two_years",
+          "hidden_champion_review_operation_normal",
+          "hidden_champion_review_participated",
+          "hidden_champion_rnd_ratio_two_years",
+          "hidden_champion_specialization_met",
+          "hidden_champion_standard_brand_cert_met",
+          "hidden_champion_zhejiang_ten_year_entity"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-b575c6a8e7131d2373bd"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-b575c6a8e7131d2373bd",
+        "new_high_impact_requirements": [
+          {
+            "key": "hidden_champion_compliance_clear",
+            "label": "hidden_champion_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_conflict_identity_clear",
+            "label": "hidden_champion_conflict_identity_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_credit_met",
+            "label": "hidden_champion_credit_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_debt_ratio",
+            "label": "hidden_champion_debt_ratio",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_invention_patents",
+            "label": "hidden_champion_invention_patents",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_market_rank_met",
+            "label": "hidden_champion_market_rank_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_net_profit_avg_growth",
+            "label": "hidden_champion_net_profit_avg_growth",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_rd_it_met",
+            "label": "hidden_champion_rd_it_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_revenue",
+            "label": "hidden_champion_revenue",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_revenue_growth_two_years",
+            "label": "hidden_champion_revenue_growth_two_years",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_review_operation_normal",
+            "label": "hidden_champion_review_operation_normal",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_review_participated",
+            "label": "hidden_champion_review_participated",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_rnd_ratio_two_years",
+            "label": "hidden_champion_rnd_ratio_two_years",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_specialization_met",
+            "label": "hidden_champion_specialization_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_standard_brand_cert_met",
+            "label": "hidden_champion_standard_brand_cert_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hidden_champion_zhejiang_ten_year_entity",
+            "label": "hidden_champion_zhejiang_ten_year_entity",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：hidden_champion_compliance_clear、hidden_champion_conflict_identity_clear、hidden_champion_credit_met、hidden_champion_debt_ratio、hidden_champion_invention_patents、hidden_champion_market_rank_met、hidden_champion_net_profit_avg_growth、hidden_champion_rd_it_met、hidden_champion_revenue、hidden_champion_revenue_growth_two_years、hidden_champion_review_operation_normal、hidden_champion_review_participated、hidden_champion_rnd_ratio_two_years、hidden_champion_specialization_met、hidden_champion_standard_brand_cert_met、hidden_champion_zhejiang_ten_year_entity。"
+      }
+    },
+    {
+      "project_id": "zhejiang-industrial-new-product",
+      "project_name": "浙江省工业新产品",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "industrial-new-product-2023-materials",
+          "industrial-new-product-2023-thresholds",
+          "industrial-new-product-current-open",
+          "industrial-new-product-successor"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "industrial_new_product_current_notice_open",
+          "industrial_new_product_historical_thresholds_met",
+          "industrial_new_product_materials_complete",
+          "industrial_new_product_successor_route_resolved"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-af0948effac1d289f4a1"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-af0948effac1d289f4a1",
+        "new_high_impact_requirements": [
+          {
+            "key": "industrial_new_product_current_notice_open",
+            "label": "industrial_new_product_current_notice_open",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "industrial_new_product_historical_thresholds_met",
+            "label": "industrial_new_product_historical_thresholds_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "industrial_new_product_materials_complete",
+            "label": "industrial_new_product_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "industrial_new_product_successor_route_resolved",
+            "label": "industrial_new_product_successor_route_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：industrial_new_product_current_notice_open、industrial_new_product_historical_thresholds_met、industrial_new_product_materials_complete、industrial_new_product_successor_route_resolved。"
+      }
+    },
+    {
+      "project_id": "zhejiang-key-enterprise-institute",
+      "project_name": "浙江省重点企业研究院",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-5bdf3d1bf9c50b9f6546"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-5bdf3d1bf9c50b9f6546",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    },
+    {
+      "project_id": "zhejiang-key-specialized-sme",
+      "project_name": "浙江省重点专精特新中小企业",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "key-zj-sme-compliance",
+          "key-zj-sme-debt",
+          "key-zj-sme-industry",
+          "key-zj-sme-investment",
+          "key-zj-sme-ip",
+          "key-zj-sme-no-duplicate",
+          "key-zj-sme-not-listed",
+          "key-zj-sme-not-little-giant",
+          "key-zj-sme-plan",
+          "key-zj-sme-project-scope",
+          "key-zj-sme-revenue",
+          "key-zj-sme-review-clear",
+          "key-zj-sme-rnd-expense",
+          "key-zj-sme-rnd-ratio",
+          "key-zj-sme-size",
+          "key-zj-sme-valid"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "investment_amount",
+          "key_zj_sme_class1_ip_count",
+          "key_zj_sme_compliance_clear",
+          "key_zj_sme_debt_ratio",
+          "key_zj_sme_excluded_little_giant_clear",
+          "key_zj_sme_four_improvements_plan_met",
+          "key_zj_sme_no_duplicate_funding",
+          "key_zj_sme_priority_industry_met",
+          "key_zj_sme_project_scope_met",
+          "key_zj_sme_public_listing_clear",
+          "key_zj_sme_review_failure_clear",
+          "key_zj_sme_size_standard_met",
+          "key_zj_sme_valid_status",
+          "revenue",
+          "rnd_expense",
+          "rnd_ratio"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-a05eab4a7977cf5832da"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-a05eab4a7977cf5832da",
+        "new_high_impact_requirements": [
+          {
+            "key": "investment_amount",
+            "label": "investment_amount",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_class1_ip_count",
+            "label": "key_zj_sme_class1_ip_count",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_compliance_clear",
+            "label": "key_zj_sme_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_debt_ratio",
+            "label": "key_zj_sme_debt_ratio",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_excluded_little_giant_clear",
+            "label": "key_zj_sme_excluded_little_giant_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_four_improvements_plan_met",
+            "label": "key_zj_sme_four_improvements_plan_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_no_duplicate_funding",
+            "label": "key_zj_sme_no_duplicate_funding",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_priority_industry_met",
+            "label": "key_zj_sme_priority_industry_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_project_scope_met",
+            "label": "key_zj_sme_project_scope_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_public_listing_clear",
+            "label": "key_zj_sme_public_listing_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_review_failure_clear",
+            "label": "key_zj_sme_review_failure_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_size_standard_met",
+            "label": "key_zj_sme_size_standard_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "key_zj_sme_valid_status",
+            "label": "key_zj_sme_valid_status",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "revenue",
+            "label": "revenue",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "rnd_expense",
+            "label": "rnd_expense",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "rnd_ratio",
+            "label": "rnd_ratio",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：investment_amount、key_zj_sme_class1_ip_count、key_zj_sme_compliance_clear、key_zj_sme_debt_ratio、key_zj_sme_excluded_little_giant_clear、key_zj_sme_four_improvements_plan_met、key_zj_sme_no_duplicate_funding、key_zj_sme_priority_industry_met、key_zj_sme_project_scope_met、key_zj_sme_public_listing_clear、key_zj_sme_review_failure_clear、key_zj_sme_size_standard_met、key_zj_sme_valid_status、revenue、rnd_expense、rnd_ratio。"
+      }
+    },
+    {
+      "project_id": "zhejiang-manufacturing-2",
+      "project_name": "品字标浙江制造",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "pin-zhejiang-manufacturing-1",
+          "pin-zhejiang-manufacturing-2",
+          "pin-zhejiang-manufacturing-3",
+          "pin-zhejiang-manufacturing-4",
+          "pin-zhejiang-manufacturing-5"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "pin_zhejiang_manufacturing_authorization_complete",
+          "pin_zhejiang_manufacturing_conformity_met",
+          "pin_zhejiang_manufacturing_continuing_compliance",
+          "pin_zhejiang_manufacturing_route_resolved",
+          "pin_zhejiang_manufacturing_standard_valid"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-53e8a4102404c12894b4"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-53e8a4102404c12894b4",
+        "new_high_impact_requirements": [
+          {
+            "key": "pin_zhejiang_manufacturing_authorization_complete",
+            "label": "pin_zhejiang_manufacturing_authorization_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "pin_zhejiang_manufacturing_conformity_met",
+            "label": "pin_zhejiang_manufacturing_conformity_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "pin_zhejiang_manufacturing_continuing_compliance",
+            "label": "pin_zhejiang_manufacturing_continuing_compliance",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "pin_zhejiang_manufacturing_route_resolved",
+            "label": "pin_zhejiang_manufacturing_route_resolved",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "pin_zhejiang_manufacturing_standard_valid",
+            "label": "pin_zhejiang_manufacturing_standard_valid",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：pin_zhejiang_manufacturing_authorization_complete、pin_zhejiang_manufacturing_conformity_met、pin_zhejiang_manufacturing_continuing_compliance、pin_zhejiang_manufacturing_route_resolved、pin_zhejiang_manufacturing_standard_valid。"
+      }
+    },
+    {
+      "project_id": "zhejiang-manufacturing-quality",
+      "project_name": "浙江制造精品",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "quality-category",
+          "quality-entity",
+          "quality-listing-period",
+          "quality-materials",
+          "quality-one-product",
+          "quality-product",
+          "quality-rnd",
+          "quality-sales-branch"
+        ],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "quality_listing_period_met",
+          "quality_materials_complete",
+          "quality_one_product_limit_met",
+          "quality_product_category",
+          "quality_product_competitiveness_met",
+          "quality_sales_branch_met",
+          "quality_three_year_avg_rnd_ratio",
+          "quality_zhejiang_entity_rd_production"
+        ]
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-7127f3432e76907ae754"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-7127f3432e76907ae754",
+        "new_high_impact_requirements": [
+          {
+            "key": "quality_listing_period_met",
+            "label": "quality_listing_period_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "quality_materials_complete",
+            "label": "quality_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "quality_one_product_limit_met",
+            "label": "quality_one_product_limit_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "quality_product_category",
+            "label": "quality_product_category",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "quality_product_competitiveness_met",
+            "label": "quality_product_competitiveness_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "quality_sales_branch_met",
+            "label": "quality_sales_branch_met",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "quality_three_year_avg_rnd_ratio",
+            "label": "quality_three_year_avg_rnd_ratio",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "quality_zhejiang_entity_rd_production",
+            "label": "quality_zhejiang_entity_rd_production",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：quality_listing_period_met、quality_materials_complete、quality_one_product_limit_met、quality_product_category、quality_product_competitiveness_met、quality_sales_branch_met、quality_three_year_avg_rnd_ratio、quality_zhejiang_entity_rd_production。"
+      }
+    },
+    {
+      "project_id": "zhejiang-specialized-sme",
+      "project_name": "专精特新中小企业",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [],
+        "removed_rule_ids": [],
+        "changed_rule_ids": [],
+        "changed_fact_fields": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": false,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "invalidation_key": "policy-5f223932453fff68cb0c"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": false,
+        "historical_facts_mutated": false
+      },
+      "preflight_impact": {
+        "requires_reassessment": false,
+        "policy_version_id": "policy-5f223932453fff68cb0c",
+        "new_high_impact_requirements": [],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": null
+      }
+    }
+  ],
+  "summary": {
+    "affected_projects": 29,
+    "identity_events_replayed": 0,
+    "identity_twins_replayed": 0,
+    "prediction_project_invalidations": 29,
+    "historical_backtest_project_invalidations": 21,
+    "preflight_project_reassessments": 21
+  },
+  "invariants": [
+    "官方名单形成的认定、复核、撤销等历史事实不因政策变化被改写",
+    "仅重算政策解释、生命周期派生状态、预测结果和历史回测",
+    "所有影响均可回指变更政策节点、项目规则差异和版本哈希"
+  ]
+}

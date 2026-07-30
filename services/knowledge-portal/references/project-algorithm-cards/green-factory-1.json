@@ -2,23 +2,25 @@
   "schema_version": 1,
   "algorithm_id": "project-decision-green-factory-1",
   "algorithm_name": "区级绿色工厂项目决策算法",
-  "algorithm_version": "1.0",
+  "algorithm_version": "2024-guide-dynamic-jurisdiction-20260730",
   "project_id": "green-factory-1",
   "project_name": "区级绿色工厂",
-  "coverage_status": "policy-baseline-confirmed",
-  "decision_boundary": "已补齐最新政策基线、适用窗口和依赖关系；未编译完整门槛前，仅作政策查询、预测准备和历史回放，不直接形成符合或不符合结论。",
-  "policy_version_id": "policy-074dead267b21a7561d7",
+  "coverage_status": "rules-confirmed",
+  "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
+  "policy_version_id": "policy-c3b697cc449e79056b84",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
     "as_of": "判断或回放的时间点"
   },
   "outputs": {
+    "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
     "conclusion": "eligible、conditional、ineligible或undetermined",
     "rule_trace": "选中的规则层、逐规则比较和证据引用",
     "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
   },
   "shared_execution_kernels": [
+    "task-omission-preflight",
     "project-router",
     "policy-version-gate",
     "fact-contract-normalizer",
@@ -27,13 +29,14 @@
     "requirement-comparator",
     "lifecycle-state-machine",
     "coverage-hash-planner",
+    "policy-change-impact-simulator",
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 0,
-    "confirmed_rules": 0,
-    "rule_layers": 0,
-    "gold_cases": 1
+    "fact_fields": 6,
+    "confirmed_rules": 7,
+    "rule_layers": 2,
+    "gold_cases": 3
   },
   "explainability": {
     "level": "field-and-source-trace",
@@ -49,14 +52,16 @@
     "changed": "仅重编译源内容哈希发生变化的项目节点"
   },
   "quality_gates": {
+    "task_preflight_required": true,
     "pack_validation": true,
-    "gold_case_count": 1,
-    "formal_decision_enabled": false,
+    "gold_case_count": 3,
+    "formal_decision_enabled": true,
     "policy_baseline_complete": true
   },
   "limitations": [
-    "政策基线完整但尚未编译全部门槛规则",
+    "年度通知与属地覆盖仍须按查询时点选择",
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
-  ]
+  ],
+  "compile_input_hash": "1e0abff6a76b30ef9c9bb058344d83be0bcc600543c3b24707ced6674e82cf15"
 }
