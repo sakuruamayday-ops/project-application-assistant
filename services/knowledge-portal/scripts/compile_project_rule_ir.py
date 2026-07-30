@@ -17,6 +17,7 @@ from app.rule_ir import (  # noqa: E402
     read_json,
     write_compiled_rule_ir,
 )
+from app.policy_impact import simulate_policy_change_impact  # noqa: E402
 
 
 def write_card(path: Path, card: object) -> str:
@@ -62,6 +63,12 @@ def main() -> int:
         type=Path,
         default=PORTAL_DIR / "references" / "project-algorithm-cards",
     )
+    parser.add_argument(
+        "--impact-output",
+        type=Path,
+        default=PORTAL_DIR / "references" / "last-policy-change-impact.json",
+    )
+    parser.add_argument("--database", type=Path)
     arguments = parser.parse_args()
     packs = load_algorithm_packs(arguments.packs_dir)
     lifecycle_payload = read_json(arguments.lifecycle_rules)
@@ -73,13 +80,25 @@ def main() -> int:
         or not isinstance(baseline_registry, dict)
     ):
         raise ValueError("生命周期规则、事实契约和政策基线顶层必须为对象")
+    previous_payload = None
+    if arguments.output.is_file():
+        loaded_previous = read_json(arguments.output)
+        if isinstance(loaded_previous, dict):
+            previous_payload = loaded_previous
     payload = compile_rule_ir(
         packs,
         lifecycle_payload,
         fact_contract,
         baseline_registry,
+        previous_payload=previous_payload,
+    )
+    impact_report = simulate_policy_change_impact(
+        previous_payload,
+        payload,
+        database_path=arguments.database,
     )
     bundle_status = write_compiled_rule_ir(arguments.output, payload)
+    impact_status = write_card(arguments.impact_output, impact_report)
     card_statuses = {
         project_id: write_card(
             arguments.cards_dir / f"{project_id}.json",
@@ -105,6 +124,11 @@ def main() -> int:
         ],
         "cards_compiled": sum(status == "compiled" for status in card_statuses.values()),
         "cards_reused": sum(status == "hash_reused" for status in card_statuses.values()),
+        "projects_compiled": payload["incremental_compilation"]["compiled_count"],
+        "projects_reused": payload["incremental_compilation"]["reused_count"],
+        "impact_report_status": impact_status,
+        "affected_projects": impact_report["summary"]["affected_projects"],
+        "impact_output": str(arguments.impact_output),
         "output": str(arguments.output),
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))

@@ -18,6 +18,7 @@ from app.policy_lifecycle import (
     policy_document_in_execution_window,
     rolling_policy_window,
 )
+from app.policy_impact import simulate_policy_change_impact
 
 
 def sample_pack(project_id: str = "sample") -> dict[str, object]:
@@ -68,7 +69,7 @@ def test_rule_ir_compiles_once_and_reuses_source_digest(tmp_path: Path):
     assert write_compiled_rule_ir(output, payload) == "compiled"
     assert write_compiled_rule_ir(output, payload) == "hash_reused"
     assert payload["metrics"]["project_count"] == 1
-    assert payload["metrics"]["shared_kernel_count"] == 9
+    assert payload["metrics"]["shared_kernel_count"] == 10
     assert compiled_projects(payload)[0]["policy_version_id"].startswith("policy-")
 
 
@@ -84,6 +85,54 @@ def test_rule_ir_changes_only_when_source_content_changes():
         first["projects"]["sample"]["source_content_hash"]
         != changed["projects"]["sample"]["source_content_hash"]
     )
+
+
+def test_incremental_compile_reuses_unchanged_project_only():
+    lifecycle = {"projects": []}
+    first = compile_rule_ir(
+        [sample_pack("sample-a"), sample_pack("sample-b")],
+        lifecycle,
+        {"fields": []},
+    )
+    changed_a = sample_pack("sample-a")
+    changed_a["version"] = "1.1"
+    second = compile_rule_ir(
+        [changed_a, sample_pack("sample-b")],
+        lifecycle,
+        {"fields": []},
+        previous_payload=first,
+    )
+
+    assert second["incremental_compilation"]["compiled_project_ids"] == [
+        "sample-a"
+    ]
+    assert second["incremental_compilation"]["reused_project_ids"] == [
+        "sample-b"
+    ]
+
+
+def test_policy_change_impact_preserves_historical_facts_and_invalidates_derivations():
+    first = compile_rule_ir(
+        [sample_pack()],
+        {"projects": []},
+        {"fields": []},
+    )
+    changed_pack = sample_pack()
+    changed_pack["rule_layers"][0]["rules"][0]["expected"] = 100
+    second = compile_rule_ir(
+        [changed_pack],
+        {"projects": []},
+        {"fields": []},
+        previous_payload=first,
+    )
+
+    impact = simulate_policy_change_impact(first, second)
+
+    assert impact["affected_project_ids"] == ["sample"]
+    affected = impact["affected_projects"][0]
+    assert affected["identity_impact"]["official_list_facts_mutated"] is False
+    assert affected["prediction_impact"]["requires_recompute"] is True
+    assert affected["historical_backtest_impact"]["requires_recompute"] is True
 
 
 def test_rule_ir_matches_lifecycle_by_pack_alias():

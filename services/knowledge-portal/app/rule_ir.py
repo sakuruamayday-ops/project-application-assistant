@@ -20,6 +20,7 @@ SHARED_EXECUTION_KERNELS = (
     "requirement-comparator",
     "lifecycle-state-machine",
     "coverage-hash-planner",
+    "policy-change-impact-simulator",
     "explanation-trace",
 )
 
@@ -260,11 +261,30 @@ def build_algorithm_card(
     }
 
 
+def project_compile_input_hash(
+    project: Mapping[str, object],
+    lifecycle_rule: Mapping[str, object] | None,
+    fact_contract: Mapping[str, object],
+) -> str:
+    """Return the exact dependency hash for one project compilation unit."""
+    return content_digest(
+        {
+            "project": dict(project),
+            "lifecycle_rule": dict(lifecycle_rule or {}),
+            "fact_contract": dict(fact_contract),
+            "compiler_schema": RULE_IR_SCHEMA_VERSION,
+            "kernel_version": SHARED_KERNEL_VERSION,
+        }
+    )
+
+
 def compile_rule_ir(
     packs: Sequence[Mapping[str, object]],
     lifecycle_payload: Mapping[str, object],
     fact_contract: Mapping[str, object],
     baseline_registry: Mapping[str, object] | None = None,
+    *,
+    previous_payload: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     lifecycle_rules = lifecycle_rule_index(lifecycle_payload)
     sorted_packs = sorted(
@@ -284,6 +304,22 @@ def compile_rule_ir(
     alias_index: dict[str, list[str]] = {}
     policy_index: dict[str, str] = {}
     algorithm_cards: dict[str, dict[str, object]] = {}
+    compiled_project_ids: list[str] = []
+    reused_project_ids: list[str] = []
+    previous_projects = (
+        previous_payload.get("projects", {})
+        if isinstance(previous_payload, Mapping)
+        else {}
+    )
+    previous_cards = (
+        previous_payload.get("algorithm_cards", {})
+        if isinstance(previous_payload, Mapping)
+        else {}
+    )
+    if not isinstance(previous_projects, Mapping):
+        previous_projects = {}
+    if not isinstance(previous_cards, Mapping):
+        previous_cards = {}
     for pack in sorted_packs:
         project_id = str(pack.get("project_id") or "").strip()
         project_name = str(pack.get("project_name") or "").strip()
@@ -303,17 +339,38 @@ def compile_rule_ir(
             None,
         )
         version_id = policy_version_id(pack, lifecycle_rule)
-        compiled_project = {
-            **pack,
-            "ir_node_id": f"project:{project_id}",
-            "policy_version_id": version_id,
-            "source_content_hash": content_digest(pack),
-            "shared_kernel_version": SHARED_KERNEL_VERSION,
-            "lifecycle_rule": dict(lifecycle_rule or {}),
-        }
+        compile_input_hash = project_compile_input_hash(
+            pack,
+            lifecycle_rule,
+            fact_contract,
+        )
+        previous_project = previous_projects.get(project_id)
+        previous_card = previous_cards.get(project_id)
+        can_reuse = (
+            isinstance(previous_project, Mapping)
+            and isinstance(previous_card, Mapping)
+            and previous_project.get("compile_input_hash") == compile_input_hash
+        )
+        if can_reuse:
+            compiled_project = dict(previous_project)
+            algorithm_card = dict(previous_card)
+            reused_project_ids.append(project_id)
+        else:
+            compiled_project = {
+                **pack,
+                "ir_node_id": f"project:{project_id}",
+                "policy_version_id": version_id,
+                "source_content_hash": content_digest(pack),
+                "compile_input_hash": compile_input_hash,
+                "shared_kernel_version": SHARED_KERNEL_VERSION,
+                "lifecycle_rule": dict(lifecycle_rule or {}),
+            }
+            algorithm_card = build_algorithm_card(pack, lifecycle_rule)
+            algorithm_card["compile_input_hash"] = compile_input_hash
+            compiled_project_ids.append(project_id)
         projects[project_id] = compiled_project
         policy_index[project_id] = version_id
-        algorithm_cards[project_id] = build_algorithm_card(pack, lifecycle_rule)
+        algorithm_cards[project_id] = algorithm_card
         for alias in [
             project_id,
             project_name,
@@ -345,6 +402,12 @@ def compile_rule_ir(
         str(pack.get("coverage_status") or "") == "routing-only"
         for pack in sorted_packs
     )
+    previous_project_ids = (
+        set(str(project_id) for project_id in previous_projects)
+        if isinstance(previous_projects, Mapping)
+        else set()
+    )
+    removed_project_ids = sorted(previous_project_ids - set(projects))
     return {
         "schema_version": RULE_IR_SCHEMA_VERSION,
         "ir_type": "jiaotang-unified-project-rule-ir",
@@ -364,6 +427,15 @@ def compile_rule_ir(
         },
         "algorithm_cards": algorithm_cards,
         "policy_dependency_graph": dependency_graph,
+        "incremental_compilation": {
+            "strategy": "project-dependency-content-hash",
+            "compiled_project_ids": compiled_project_ids,
+            "reused_project_ids": reused_project_ids,
+            "removed_project_ids": removed_project_ids,
+            "compiled_count": len(compiled_project_ids),
+            "reused_count": len(reused_project_ids),
+            "removed_count": len(removed_project_ids),
+        },
         "policy_execution_window": {
             "as_of_year": as_of_year,
             "window_years": window_years,
@@ -390,6 +462,8 @@ def compile_rule_ir(
             "cold_archive_policy_documents": len(
                 dependency_graph["cold_archive_document_ids"]
             ),
+            "compiled_projects": len(compiled_project_ids),
+            "reused_projects": len(reused_project_ids),
         },
     }
 
