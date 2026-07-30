@@ -370,16 +370,18 @@ def confirmed_rule_cards(
         raise ValueError("规则层rules必须为列表")
     audit_source = {**source, **(layer or {})}
     policy_status = str(audit_source.get("policy_status") or "")
-    allowed_statuses = {"current"}
+    layer_type = str((layer or {}).get("layer_type") or "")
+    allowed_statuses = (
+        {"draft", "active_candidate"}
+        if layer_type == "prospective"
+        else {"current"}
+    )
     if layer is not None and (
         layer.get("year") or layer.get("years")
     ):
         allowed_statuses.add("historical_reference")
     if policy_status not in allowed_statuses:
-        raise ValueError(
-            "稳定规则仅允许current；带明确年份的覆盖层可使用"
-            "current或historical_reference"
-        )
+        raise ValueError("政策状态与规则层类型不匹配")
     for field in ("approved_by", "approved_at", "source_url"):
         if not str(audit_source.get(field) or "").strip():
             raise ValueError(f"确认规则层缺少{field}")
@@ -449,6 +451,7 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
     for layer_type, source_key, label in (
         ("annual", "annual_overlays", "年度通知"),
         ("jurisdiction", "jurisdiction_overlays", "属地覆盖"),
+        ("prospective", "prospective_overlays", "征求意见前瞻规则"),
     ):
         raw_layers = source.get(source_key, [])
         if not isinstance(raw_layers, list):
@@ -473,6 +476,7 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                 raise ValueError(f"{source_key}[{index}]缺少year或years")
             if layer_type == "jurisdiction" and not applicability["regions"]:
                 raise ValueError(f"{source_key}[{index}]缺少regions")
+            raw_layer = {**raw_layer, "layer_type": layer_type}
             layers.append(
                 {
                     "layer_id": layer_id,
@@ -481,6 +485,8 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                         "annual-notice"
                         if layer_type == "annual"
                         else "jurisdiction-detail"
+                        if layer_type == "jurisdiction"
+                        else "consultation-draft"
                     ),
                     "label": str(raw_layer.get("label") or label),
                     "applicability": {
@@ -505,6 +511,8 @@ def build_rule_layers(source: dict[str, object]) -> list[dict[str, object]]:
                             "enterprise_deadline",
                             "enterprise_deadline_note",
                             "provincial_review_schedule",
+                            "replaces_rule_ids",
+                            "transition_notice",
                         )
                         if key == "enterprise_deadline"
                         or (
@@ -589,6 +597,16 @@ def generate_from_confirmed_rules(
                 *source.get("source_retrieval_rule_ids", []),
             ]
         ),
+        **{
+            key: source[key]
+            for key in (
+                "canonical_project_id",
+                "variant_of",
+                "ui_hidden",
+                "policy_transition",
+            )
+            if key in source
+        },
         "fact_fields": list(
             {str(field["field"]): field for field in fact_fields}.values()
         ),
@@ -804,6 +822,18 @@ def template_payload() -> dict[str, object]:
                 "source_url": "https://属地政策官方地址",
                 "years": [],
                 "application_types": [],
+                "rules": []
+            }
+        ],
+        "prospective_overlays": [
+            {
+                "overlay_id": "consultation-draft-example",
+                "label": "已核验征求意见稿",
+                "policy_status": "draft",
+                "approved_by": "规则核验人",
+                "approved_at": "YYYY-MM-DD HH:MM:SS",
+                "source_url": "https://征求意见公告地址",
+                "application_types": ["recognition"],
                 "rules": []
             }
         ]

@@ -10,6 +10,7 @@ POLICY_TIME_TYPES = frozenset(
         "stable-management",
         "annual-notice",
         "jurisdiction-detail",
+        "consultation-draft",
     }
 )
 EVALUATION_MODES = frozenset(
@@ -26,6 +27,7 @@ OUTPUT_LABELS = {
     "forecast": "预测",
     "backtest-simulation": "回测模拟",
 }
+PROSPECTIVE_POLICY_STATUSES = frozenset({"draft", "active_candidate"})
 
 
 def enrich_policy_time_context(
@@ -80,6 +82,7 @@ def policy_time_type_for_layer(layer_type: str) -> str:
         "stable": "stable-management",
         "annual": "annual-notice",
         "jurisdiction": "jurisdiction-detail",
+        "prospective": "consultation-draft",
     }.get(layer_type, "")
 
 
@@ -215,6 +218,28 @@ def assess_policy_layer_time(
     if time_type not in POLICY_TIME_TYPES:
         allowed = False
         reason = "规则层缺少可识别的政策时间类型"
+    elif time_type == "consultation-draft":
+        verified_draft = bool(
+            statuses & PROSPECTIVE_POLICY_STATUSES
+        ) and source_level in {"official-online", "audited-official-archive"}
+        if not verified_draft:
+            allowed = False
+            reason = (
+                "前瞻规则层必须同时具备征求意见稿状态和"
+                "政府官网原文或已审计原文归档"
+            )
+        elif mode == "forecast":
+            allowed = True
+            reason = (
+                "已核验征求意见稿，作为前瞻准备主基线；"
+                "结果必须标明尚未正式生效"
+            )
+        else:
+            allowed = False
+            reason = (
+                "征求意见稿仅用于预测和准备，不得替代查询日正式政策"
+                "或冒充历史事实"
+            )
     elif (
         time_type == "annual-notice"
         and source_level == "unverified-source"
@@ -300,6 +325,10 @@ def summarize_policy_time_selection(
         audit.get("policy_time_type") == "annual-notice"
         for audit in selected
     )
+    has_selected_consultation = any(
+        audit.get("policy_time_type") == "consultation-draft"
+        for audit in selected
+    )
     historical_has_basis = bool(selected) and any(
         audit.get("policy_time_type") in {"annual-notice", "stable-management"}
         for audit in selected
@@ -313,8 +342,15 @@ def summarize_policy_time_selection(
         status = "blocked"
         reason = "当年有效规则暂缺，只保留名单身份和生命周期，不判断当年是否符合"
     elif mode == "forecast" and not has_selected_annual:
-        status = "forecast-baseline-only"
-        reason = "仅以查询日最新有效管理规则形成准备方向，不预测旧通知截止日期"
+        if has_selected_consultation:
+            status = "forecast-draft-baseline"
+            reason = (
+                "采用已核验征求意见稿形成前瞻准备；"
+                "尚未正式生效，不生成正式资格结论或旧通知截止日期"
+            )
+        else:
+            status = "forecast-baseline-only"
+            reason = "仅以查询日最新有效管理规则形成准备方向，不预测旧通知截止日期"
     elif mode == "backtest-simulation":
         status = "simulation-only"
         reason = "结果属于回测模拟，不得写成历史事实"

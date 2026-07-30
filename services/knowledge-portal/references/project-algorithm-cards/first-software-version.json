@@ -35,7 +35,9 @@
     "lifecycle-state-machine",
     "coverage-hash-planner",
     "policy-change-impact-simulator",
+    "four-city-policy-transition-resolver",
     "deliverable-contract-gate",
+    "deliverable-contract-auto-repair",
     "explanation-trace"
   ],
   "project_specific_assets": {
@@ -81,5 +83,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "402e3466df2d91af731d9a93c1b684976ce7a9f1671110f2c0faf5d60d3e31dc"
+  "compile_input_hash": "b5c13aab07441961e09ce1f95629954d5dff871b6c6339ff48912e5d68545eac"
 }

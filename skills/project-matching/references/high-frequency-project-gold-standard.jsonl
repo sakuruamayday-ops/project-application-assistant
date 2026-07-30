@@ -73,12 +73,27 @@
 {"alias": "省企业技术中心", "expected_clarification": false, "expected_targets": ["浙江省企业技术中心"], "id": "zhejiang-enterprise-technology-center:省企业技术中心:positive", "kind": "positive", "query": "省企业技术中心申报条件"}
 {"alias": "省企业技术中心", "allowed_title": "浙江省企业技术中心申报通知", "excluded_title": "杭州市企业技术中心申报通知", "id": "zhejiang-enterprise-technology-center:省企业技术中心:cross-project", "kind": "cross-project", "query": "省企业技术中心申报条件"}
 {"alias": "省企业技术中心", "current_title": "浙江省企业技术中心管理办法", "id": "zhejiang-enterprise-technology-center:省企业技术中心:stale", "kind": "stale", "query": "省企业技术中心申报条件", "stale_title": "2022年浙江省企业技术中心申报指南"}
-{"alias": "杭州企业技术中心", "expected_clarification": false, "expected_targets": ["杭州市企业技术中心"], "id": "hangzhou-enterprise-technology-center:杭州企业技术中心:positive", "kind": "positive", "query": "杭州企业技术中心申报条件"}
+{"alias": "杭州企业技术中心", "expected_clarification": false, "expected_targets": ["市级企业技术中心（四市属地版）"], "id": "hangzhou-enterprise-technology-center:杭州企业技术中心:positive", "kind": "positive", "query": "杭州企业技术中心申报条件"}
 {"alias": "杭州企业技术中心", "allowed_title": "杭州市企业技术中心申报通知", "excluded_title": "浙江省企业技术中心申报通知", "id": "hangzhou-enterprise-technology-center:杭州企业技术中心:cross-project", "kind": "cross-project", "query": "杭州企业技术中心申报条件"}
 {"alias": "杭州企业技术中心", "current_title": "杭州市企业技术中心管理办法", "id": "hangzhou-enterprise-technology-center:杭州企业技术中心:stale", "kind": "stale", "query": "杭州企业技术中心申报条件", "stale_title": "2022年杭州市企业技术中心申报指南"}
-{"alias": "市企业技术中心", "expected_clarification": true, "expected_targets": ["市级企业技术中心"], "id": "municipal-enterprise-technology-center:市企业技术中心:positive", "kind": "positive", "query": "市企业技术中心申报条件"}
+{"alias": "市企业技术中心", "expected_clarification": true, "expected_targets": ["市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:市企业技术中心:positive", "kind": "positive", "query": "市企业技术中心申报条件"}
 {"alias": "市企业技术中心", "allowed_title": "企业技术中心申报通知", "excluded_title": "省级企业技术中心申报通知", "id": "municipal-enterprise-technology-center:市企业技术中心:cross-project", "kind": "cross-project", "query": "市企业技术中心申报条件"}
 {"alias": "市企业技术中心", "current_title": "企业技术中心管理办法", "id": "municipal-enterprise-technology-center:市企业技术中心:stale", "kind": "stale", "query": "市企业技术中心申报条件", "stale_title": "2022年企业技术中心申报指南"}
+{"alias": "市级企业技术中心", "expected_clarification": true, "expected_targets": ["市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:市级企业技术中心:positive", "kind": "positive", "query": "市级企业技术中心申报条件"}
+{"alias": "市级企业技术中心", "allowed_title": "企业技术中心申报通知", "excluded_title": "省级企业技术中心申报通知", "id": "municipal-enterprise-technology-center:市级企业技术中心:cross-project", "kind": "cross-project", "query": "市级企业技术中心申报条件"}
+{"alias": "市级企业技术中心", "current_title": "企业技术中心管理办法", "id": "municipal-enterprise-technology-center:市级企业技术中心:stale", "kind": "stale", "query": "市级企业技术中心申报条件", "stale_title": "2022年企业技术中心申报指南"}
+{"alias": "杭州市企业技术中心", "expected_clarification": false, "expected_targets": ["杭州市 市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:杭州市企业技术中心:positive", "kind": "positive", "query": "杭州市企业技术中心申报条件"}
+{"alias": "杭州市企业技术中心", "allowed_title": "杭州市企业技术中心申报通知", "excluded_title": "浙江省企业技术中心申报通知", "id": "municipal-enterprise-technology-center:杭州市企业技术中心:cross-project", "kind": "cross-project", "query": "杭州市企业技术中心申报条件"}
+{"alias": "杭州市企业技术中心", "current_title": "杭州市企业技术中心管理办法", "id": "municipal-enterprise-technology-center:杭州市企业技术中心:stale", "kind": "stale", "query": "杭州市企业技术中心申报条件", "stale_title": "2022年杭州市企业技术中心申报指南"}
+{"alias": "宁波市企业技术中心", "expected_clarification": false, "expected_targets": ["宁波市 市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:宁波市企业技术中心:positive", "kind": "positive", "query": "宁波市企业技术中心申报条件"}
+{"alias": "宁波市企业技术中心", "allowed_title": "浙江省企业技术中心申报通知", "excluded_title": "杭州市企业技术中心申报通知", "id": "municipal-enterprise-technology-center:宁波市企业技术中心:cross-project", "kind": "cross-project", "query": "宁波市企业技术中心申报条件"}
+{"alias": "宁波市企业技术中心", "current_title": "浙江省企业技术中心管理办法及宁波年度推荐通知", "id": "municipal-enterprise-technology-center:宁波市企业技术中心:stale", "kind": "stale", "query": "宁波市企业技术中心申报条件", "stale_title": "2022年宁波市企业技术中心申报指南"}
+{"alias": "绍兴市企业技术中心", "expected_clarification": false, "expected_targets": ["绍兴市 市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:绍兴市企业技术中心:positive", "kind": "positive", "query": "绍兴市企业技术中心申报条件"}
+{"alias": "绍兴市企业技术中心", "allowed_title": "绍兴市市级企业技术中心申报通知", "excluded_title": "浙江省企业技术中心申报通知", "id": "municipal-enterprise-technology-center:绍兴市企业技术中心:cross-project", "kind": "cross-project", "query": "绍兴市企业技术中心申报条件"}
+{"alias": "绍兴市企业技术中心", "current_title": "绍兴市市级企业技术中心管理办法", "id": "municipal-enterprise-technology-center:绍兴市企业技术中心:stale", "kind": "stale", "query": "绍兴市企业技术中心申报条件", "stale_title": "2022年绍兴市企业技术中心申报指南"}
+{"alias": "金华市企业技术中心", "expected_clarification": false, "expected_targets": ["金华市 市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:金华市企业技术中心:positive", "kind": "positive", "query": "金华市企业技术中心申报条件"}
+{"alias": "金华市企业技术中心", "allowed_title": "金华市企业技术中心申报通知", "excluded_title": "浙江省企业技术中心申报通知", "id": "municipal-enterprise-technology-center:金华市企业技术中心:cross-project", "kind": "cross-project", "query": "金华市企业技术中心申报条件"}
+{"alias": "金华市企业技术中心", "current_title": "金华市企业技术中心管理办法（2024年版）", "id": "municipal-enterprise-technology-center:金华市企业技术中心:stale", "kind": "stale", "query": "金华市企业技术中心申报条件", "stale_title": "2022年金华市企业技术中心申报指南"}
 {"alias": "制造精品", "expected_clarification": false, "expected_targets": ["浙江制造精品"], "id": "zhejiang-manufacturing-quality:制造精品:positive", "kind": "positive", "query": "制造精品申报条件"}
 {"alias": "制造精品", "allowed_title": "浙江制造精品申报通知", "excluded_title": "品字标浙江制造申报通知", "id": "zhejiang-manufacturing-quality:制造精品:cross-project", "kind": "cross-project", "query": "制造精品申报条件"}
 {"alias": "制造精品", "current_title": "浙江制造精品管理办法", "id": "zhejiang-manufacturing-quality:制造精品:stale", "kind": "stale", "query": "制造精品申报条件", "stale_title": "2022年浙江制造精品申报指南"}

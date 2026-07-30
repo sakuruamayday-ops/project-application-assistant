@@ -67,7 +67,7 @@ RULE_TYPES = frozenset(
 GATE_STATES = frozenset(
     {"passed", "failed", "pending", "unknown", "not-applicable"}
 )
-RULE_LAYER_TYPES = frozenset({"stable", "annual", "jurisdiction"})
+RULE_LAYER_TYPES = frozenset({"stable", "annual", "jurisdiction", "prospective"})
 RULE_LOGICS = frozenset({"all", "any"})
 
 DEADLINE_DATE_PATTERN = re.compile(
@@ -1376,6 +1376,7 @@ def validate_project_algorithm_pack(
             "stable": "stable-management",
             "annual": "annual-notice",
             "jurisdiction": "jurisdiction-detail",
+            "prospective": "consultation-draft",
         }.get(layer_type)
         actual_time_type = str(layer.get("policy_time_type") or "")
         if actual_time_type and actual_time_type != expected_time_type:
@@ -1408,7 +1409,11 @@ def validate_project_algorithm_pack(
                 errors.append(
                     f"rule_layers[{layer_index}].rules[{rule_index}]必须已确认"
                 )
-            allowed_layer_statuses = {"current"}
+            allowed_layer_statuses = (
+                {"draft", "active_candidate"}
+                if layer_type == "prospective"
+                else {"current"}
+            )
             if layer_type in {"annual", "jurisdiction"} and applicability.get(
                 "years"
             ):
@@ -1519,7 +1524,7 @@ def select_project_algorithm_rules(
     selected_layers: list[str] = []
     selected_rules: dict[str, dict[str, object]] = {}
     time_audits: list[dict[str, object]] = []
-    for layer_type in ("stable", "annual", "jurisdiction"):
+    for layer_type in ("stable", "annual", "jurisdiction", "prospective"):
         for layer in layers:
             if not isinstance(layer, Mapping):
                 continue
@@ -1542,6 +1547,10 @@ def select_project_algorithm_rules(
             if not time_audit["allowed"]:
                 continue
             selected_layers.append(str(layer.get("layer_id") or layer_type))
+            for replaced_rule_id in unique_strings(
+                layer.get("replaces_rule_ids", [])
+            ):
+                selected_rules.pop(replaced_rule_id, None)
             for rule in layer.get("rules", []):
                 if not isinstance(rule, Mapping):
                     continue

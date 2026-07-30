@@ -11,7 +11,7 @@ from app.rule_structure import audit_composite_rule_structure
 
 
 RULE_IR_SCHEMA_VERSION = 1
-SHARED_KERNEL_VERSION = "1.3"
+SHARED_KERNEL_VERSION = "1.4"
 SHARED_EXECUTION_KERNELS = (
     "task-omission-preflight",
     "project-router",
@@ -27,7 +27,9 @@ SHARED_EXECUTION_KERNELS = (
     "lifecycle-state-machine",
     "coverage-hash-planner",
     "policy-change-impact-simulator",
+    "four-city-policy-transition-resolver",
     "deliverable-contract-gate",
+    "deliverable-contract-auto-repair",
     "explanation-trace",
 )
 
@@ -113,6 +115,8 @@ def _derived_confirmed_rule_baseline(
         if isinstance(rule, Mapping)
     ]
     for rule in rules:
+        if rule.get("source_display") is False:
+            continue
         title = str(rule.get("source") or "").strip()
         url = str(rule.get("source_url") or "").strip()
         if not title and not url:

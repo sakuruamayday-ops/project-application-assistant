@@ -1,115 +1,20 @@
 {
   "schema_version": 1,
   "report_type": "policy-change-impact-simulation",
-  "before_source_digest": "37a1b156e9ae315cad2c8d7a625de8b87e95f4bc6f4d3400c6cb62b88d1e39b7",
-  "after_source_digest": "d73fba37dfde0b4926f85692717eed86c2715bc3151d0976469cd42c7614c272",
+  "before_source_digest": "d2f3e8e64588e4e454d841e42bbe642fad87f713dfcd4787cc34c34fc2482862",
+  "after_source_digest": "d2f3e8e64588e4e454d841e42bbe642fad87f713dfcd4787cc34c34fc2482862",
   "changed_policy_node_ids": [],
   "added_policy_node_ids": [],
   "removed_policy_node_ids": [],
-  "affected_project_ids": [
-    "zhejiang-enterprise-technology-center"
-  ],
-  "affected_projects": [
-    {
-      "project_id": "zhejiang-enterprise-technology-center",
-      "project_name": "浙江省企业技术中心",
-      "change_type": "modified",
-      "rule_delta": {
-        "added_rule_ids": [],
-        "removed_rule_ids": [],
-        "changed_rule_ids": [
-          "zj-tech-center-2",
-          "zj-tech-center-3",
-          "zj-tech-center-5"
-        ],
-        "changed_fact_fields": [
-          "zj_tech_center_accelerated_development_county",
-          "zj_tech_center_equipment_value",
-          "zj_tech_center_industry_type",
-          "zj_tech_center_revenue_value",
-          "zj_tech_center_staff_value"
-        ]
-      },
-      "policy_time_delta": {
-        "added_layer_ids": [],
-        "removed_layer_ids": [],
-        "changed_layer_ids": []
-      },
-      "lifecycle_rule_changed": false,
-      "identity_impact": {
-        "official_list_facts_mutated": false,
-        "derived_lifecycle_requires_replay": true,
-        "policy_trace_requires_relink": false,
-        "identity_events": 0,
-        "identity_twins": 0
-      },
-      "prediction_impact": {
-        "requires_recompute": true,
-        "time_window_changed": false,
-        "invalidation_key": "policy-0a49f94464d73e70eccc"
-      },
-      "historical_backtest_impact": {
-        "requires_recompute": true,
-        "historical_facts_mutated": false,
-        "historical_fact_guard_changed": false
-      },
-      "preflight_impact": {
-        "requires_reassessment": true,
-        "policy_version_id": "policy-0a49f94464d73e70eccc",
-        "new_high_impact_requirements": [
-          {
-            "key": "zj_tech_center_accelerated_development_county",
-            "label": "zj_tech_center_accelerated_development_county",
-            "dimension": "source_data",
-            "impact": "high",
-            "resolution": "discover",
-            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
-          },
-          {
-            "key": "zj_tech_center_equipment_value",
-            "label": "zj_tech_center_equipment_value",
-            "dimension": "source_data",
-            "impact": "high",
-            "resolution": "discover",
-            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
-          },
-          {
-            "key": "zj_tech_center_industry_type",
-            "label": "zj_tech_center_industry_type",
-            "dimension": "source_data",
-            "impact": "high",
-            "resolution": "discover",
-            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
-          },
-          {
-            "key": "zj_tech_center_revenue_value",
-            "label": "zj_tech_center_revenue_value",
-            "dimension": "source_data",
-            "impact": "high",
-            "resolution": "discover",
-            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
-          },
-          {
-            "key": "zj_tech_center_staff_value",
-            "label": "zj_tech_center_staff_value",
-            "dimension": "source_data",
-            "impact": "high",
-            "resolution": "discover",
-            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
-          }
-        ],
-        "ask_user_only_after_discovery": true,
-        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：zj_tech_center_accelerated_development_county、zj_tech_center_equipment_value、zj_tech_center_industry_type、zj_tech_center_revenue_value、zj_tech_center_staff_value。"
-      }
-    }
-  ],
+  "affected_project_ids": [],
+  "affected_projects": [],
   "summary": {
-    "affected_projects": 1,
+    "affected_projects": 0,
     "identity_events_replayed": 0,
     "identity_twins_replayed": 0,
-    "prediction_project_invalidations": 1,
-    "historical_backtest_project_invalidations": 1,
-    "preflight_project_reassessments": 1
+    "prediction_project_invalidations": 0,
+    "historical_backtest_project_invalidations": 0,
+    "preflight_project_reassessments": 0
   },
   "invariants": [
     "官方名单形成的认定、复核、撤销等历史事实不因政策变化被改写",

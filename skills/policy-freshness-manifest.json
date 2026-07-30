@@ -60,12 +60,12 @@
     {
       "id": "high-frequency-retrieval-rules",
       "path": "project-matching/references/high-frequency-project-retrieval-rules.json",
-      "verified_at": "2026-07-24",
+      "verified_at": "2026-07-30",
       "effective_from": "2026-07-24",
       "effective_until": null,
       "next_review_at": "2026-08-31",
-      "source_locator": "高频项目简称召回与排除规则本地快照",
-      "source_sha256": "943aa7794390f9a459ea1b62c1ff49da618466aa20f157742817b38dd5303764",
+      "source_locator": "高频项目简称召回、四市企业技术中心合并路由与排除规则本地快照",
+      "source_sha256": "cd482800c9330c97c64f8e5ea31355f0bfc49e81f7346a0a7e6965432734850b",
       "block_after_next_review": true
     },
     {

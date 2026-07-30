@@ -72,7 +72,7 @@ def test_rule_ir_compiles_once_and_reuses_source_digest(tmp_path: Path):
     assert write_compiled_rule_ir(output, payload) == "compiled"
     assert write_compiled_rule_ir(output, payload) == "hash_reused"
     assert payload["metrics"]["project_count"] == 1
-    assert payload["metrics"]["shared_kernel_count"] == 16
+    assert payload["metrics"]["shared_kernel_count"] == 18
     assert payload["shared_kernel"]["components"][0] == "task-omission-preflight"
     assert "policy-change-impact-simulator" in payload["shared_kernel"][
         "components"

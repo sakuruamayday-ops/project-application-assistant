@@ -256,10 +256,47 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
         {
             "type": "function",
             "function": {
+                "name": "policy_transition_resolve",
+                "description": (
+                    "解析杭州、宁波、绍兴、金华研发平台或企业技术中心的"
+                    "属地版本；发现征求意见稿时，自动区分正式判断与前瞻准备。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "family_id": {
+                            "type": "string",
+                            "enum": [
+                                "municipal-enterprise-technology-center",
+                                "municipal-enterprise-rd-platform",
+                            ],
+                        },
+                        "city": {
+                            "type": "string",
+                            "enum": ["杭州市", "宁波市", "绍兴市", "金华市"],
+                        },
+                        "evaluation_mode": {
+                            "type": "string",
+                            "enum": [
+                                "current-assessment",
+                                "future-preparation",
+                                "forecast",
+                                "historical-fact",
+                            ],
+                        },
+                    },
+                    "required": ["family_id", "city", "evaluation_mode"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "delivery_contract_audit",
                 "description": (
                     "在完成分析报告或复杂任务前检查模板章节、政策选择链、"
-                    "同行对比和四问复盘；completion_allowed为false时必须修订。"
+                    "同行对比和四问复盘；失败时直接返回含补写位置、证据、"
+                    "来源和验收条件的repair_plan。"
                 ),
                 "parameters": {
                     "type": "object",

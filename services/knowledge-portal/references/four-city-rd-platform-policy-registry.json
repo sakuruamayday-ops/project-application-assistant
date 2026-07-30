@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-07-30",
+  "cities": [
+    "杭州市",
+    "宁波市",
+    "绍兴市",
+    "金华市"
+  ],
+  "selection_contract": {
+    "current_formal_assessment": "现行正式办法加当年度通知",
+    "future_preparation": "已核验征求意见稿优先；没有征求意见稿时使用查询日最新有效办法",
+    "historical_replay": "只使用目标年度当时有效规则；缺失时保留身份事件但不判断当年是否符合",
+    "draft_disclosure": "所有征求意见稿必须显示尚未正式生效、公开征求意见时间和拟替代文件",
+    "old_rule_after_draft": "旧规则仅保留现行正式判断和历史回放价值，不再作为未来准备主基线"
+  },
+  "project_families": [
+    {
+      "family_id": "municipal-enterprise-technology-center",
+      "family_name": "市级企业技术中心",
+      "city_variants": [
+        {
+          "city": "杭州市",
+          "canonical_name": "杭州市企业技术中心",
+          "route_status": "active-municipal",
+          "formal_policy": "《杭州市企业技术中心管理办法》（杭经信联智能〔2018〕81号）",
+          "policy_status": "current",
+          "official_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
+          "source_role": "2025年行政规范性文件清理结果确认2018年办法继续有效",
+          "annual_notice_required": true
+        },
+        {
+          "city": "宁波市",
+          "canonical_name": "浙江省企业技术中心（宁波推荐）",
+          "route_status": "redirect-to-provincial",
+          "formal_policy": "《浙江省企业技术中心管理办法》及宁波年度推荐通知",
+          "policy_status": "current",
+          "official_url": "https://qf.ningbo.gov.cn/qfpt/fwbkqdsx/art/2024/art_3e1d12182dd9469c8f01ebbe3e1c0e66.html",
+          "source_role": "宁波政务事项列示为省级企业技术中心认定",
+          "annual_notice_required": true,
+          "exception": "建设行业另有宁波市建设行业企业技术中心管理办法，不与普通制造业混用。"
+        },
+        {
+          "city": "绍兴市",
+          "canonical_name": "绍兴市市级企业技术中心",
+          "route_status": "active-municipal",
+          "formal_policy": "《绍兴市市级企业技术中心管理办法》（绍市经信〔2018〕28号）",
+          "policy_status": "current-cited-by-2025-notice",
+          "official_url": "https://sxjxw.sx.gov.cn/art/2023/12/18/art_1229313645_4100402.html",
+          "source_role": "绍兴经信公开认定链及2025年度通知持续引用",
+          "annual_notice_required": true
+        },
+        {
+          "city": "金华市",
+          "canonical_name": "金华市企业技术中心",
+          "route_status": "active-municipal",
+          "formal_policy": "《金华市企业技术中心管理办法（2024年版）》（金经信投资〔2024〕104号）",
+          "policy_status": "current",
+          "official_url": "https://www.jinhua.gov.cn/module/download/downfile.jsp?classid=0&filename=18901b6538e74d06a0c90f45f3bbfc34.pdf",
+          "source_role": "金华市人民政府公报正式办法",
+          "annual_notice_required": true
+        }
+      ]
+    },
+    {
+      "family_id": "municipal-enterprise-rd-platform",
+      "family_name": "市级企业研发机构",
+      "city_variants": [
+        {
+          "city": "杭州市",
+          "canonical_name": "杭州市企业研究院",
+          "route_status": "consultation-transition",
+          "formal_policy": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
+          "formal_policy_status": "current-until-repealed",
+          "prospective_policy": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "prospective_policy_status": "draft",
+          "consultation_period": "2026-05-29/2026-06-27",
+          "prospective_url": "https://www.xclcy.com/8955.html",
+          "transition": "拟停止认定市企业高新技术研究开发中心，相关资质拟迁移为市企业研究院。",
+          "evaluation_rule": "未来准备使用征求意见稿；正式资格结论仍标明待正式文件发布。"
+        },
+        {
+          "city": "宁波市",
+          "canonical_name": "宁波市重点企业研究院、企业技术研发中心",
+          "route_status": "active-municipal",
+          "formal_policy": "《宁波市重点企业研究院、企业技术研发中心建设与认定管理办法》（甬科高〔2026〕12号）",
+          "policy_status": "current",
+          "official_url": "https://kjj.ningbo.gov.cn/tzgg/art/2026/art_ca076a2770cd43d39e8c6be985ff2d13.html",
+          "source_role": "2026年7月正式认定通知明确援引现行管理办法",
+          "annual_notice_required": true
+        },
+        {
+          "city": "绍兴市",
+          "canonical_name": "绍兴市企业研究开发中心",
+          "route_status": "active-municipal",
+          "formal_policy": "《绍兴市企业研究开发中心认定管理办法》（绍市科〔2019〕37号）",
+          "policy_status": "current-confirmed-by-2024-cleanup",
+          "official_url": "https://www.sx.gov.cn/module/download/downfile.jsp?classid=0&filename=ec627194d5674f23a9b6ee368d490700.pdf",
+          "source_role": "绍兴市科技局2024年规范性文件清理确认继续有效",
+          "annual_notice_required": true
+        },
+        {
+          "city": "金华市",
+          "canonical_name": "金华市科学技术研究开发中心",
+          "route_status": "active-municipal-filing",
+          "formal_policy": "金华市科学技术研究开发中心备案事项",
+          "policy_status": "current-service",
+          "official_url": "https://kjdn.kjj.jinhua.gov.cn/office/hall/index",
+          "source_role": "金华科技大脑常年备案事项",
+          "annual_notice_required": false,
+          "note": "金华采用常年备案事项，不强行套用杭州、宁波或绍兴的年度认定名称。"
+        }
+      ]
+    }
+  ]
+}

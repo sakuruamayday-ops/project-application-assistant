@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "ir_type": "jiaotang-unified-project-rule-ir",
-  "source_digest": "d73fba37dfde0b4926f85692717eed86c2715bc3151d0976469cd42c7614c272",
+  "source_digest": "d2f3e8e64588e4e454d841e42bbe642fad87f713dfcd4787cc34c34fc2482862",
   "shared_kernel": {
-    "version": "1.3",
+    "version": "1.4",
     "components": [
       "task-omission-preflight",
       "project-router",
@@ -19,7 +19,9 @@
       "lifecycle-state-machine",
       "coverage-hash-planner",
       "policy-change-impact-simulator",
+      "four-city-policy-transition-resolver",
       "deliverable-contract-gate",
+      "deliverable-contract-auto-repair",
       "explanation-trace"
     ]
   },
@@ -711,8 +713,8 @@
       "ir_node_id": "project:digital-workshop",
       "policy_version_id": "policy-9bc60a71033accfd80d2",
       "source_content_hash": "8d6b6e1fddc6fbe741d01db39da56628739f28b02e6e4b1e971fe56d4fc617cc",
-      "compile_input_hash": "29107898949d8e890fdecebe8e17679d0db6ba45913fd823e6c338a299bad792",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "5ea98c303eadd5afbc5712751986e9ca2ce881655cea1c831df3a9c2b9a47b0d",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "first-equipment": {
@@ -1541,8 +1543,8 @@
       "ir_node_id": "project:first-equipment",
       "policy_version_id": "policy-5df6d2e04bd0b44961ba",
       "source_content_hash": "f1993aacad460a9f8ba34bf15c55e495845e9c53feb6acfa76b537741d9240aa",
-      "compile_input_hash": "6edef26c95672da579a580b4aac074e000af9a07e17a8d7e294bf3ae9eee91e6",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "5856b25eaa04578183f9ce97eb278b8180b1fa5d9bd098d2e8ffac9e43ac88e8",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "first-material-batch": {
@@ -2342,8 +2344,8 @@
       "ir_node_id": "project:first-material-batch",
       "policy_version_id": "policy-b7a024455875df3701bc",
       "source_content_hash": "bb7b928a899eae85e244e2ada1e61657ed6f9f3ef47907819b99d3ebf79a8a71",
-      "compile_input_hash": "a1a24f8145907fc5f8ed18a145618ed98a2cebe5ecf53077eb67b5dc40a0fd96",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "e3cf5f085220fb283b5ef232c5279385802b439ab74c3cbcb97de861b0ca8159",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "first-software-version": {
@@ -4122,8 +4124,8 @@
       "ir_node_id": "project:first-software-version",
       "policy_version_id": "policy-90fe31e34830d4ea3815",
       "source_content_hash": "bdad0a2ec9845a9c94ce1a79e5fca1ae490ed45060c2f75d9c4eb711be9f3ec6",
-      "compile_input_hash": "402e3466df2d91af731d9a93c1b684976ce7a9f1671110f2c0faf5d60d3e31dc",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "b5c13aab07441961e09ce1f95629954d5dff871b6c6339ff48912e5d68545eac",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "future-factory": {
@@ -4619,8 +4621,8 @@
       "ir_node_id": "project:future-factory",
       "policy_version_id": "policy-e0c8a5842e026406ed97",
       "source_content_hash": "a9fa5e5559fcd4ead339038be6b06173ebfe2cac649e79fce7dba646941883dd",
-      "compile_input_hash": "0d8ca67c6e048be6c4e63e95e917ccad2ca4f5eb326e2dc65c23f0abe7995c4e",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "baa8693774ccc566a21a5615b2a1f8d2061f35cf5ac2018d86abf69771544ce0",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "green-factory-1": {
@@ -5611,8 +5613,8 @@
       "ir_node_id": "project:green-factory-1",
       "policy_version_id": "policy-09bf8be2b8c3b630f46f",
       "source_content_hash": "1d9b06331099bd9452608ce640fa8da0fc132cc20857211942e9a83e5459c569",
-      "compile_input_hash": "3f6667363d6d0469e4c503c841f94eac1aa737d16be056d45398b7e8b97f3441",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "b31765345bf7f9badd8179c2173f8c57e27e840456bda63e31c481093028052c",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "green-factory-2": {
@@ -6603,8 +6605,8 @@
       "ir_node_id": "project:green-factory-2",
       "policy_version_id": "policy-3e0fae449f99284812aa",
       "source_content_hash": "d0bd9b8849f2a2767e792cd7e97ada1106ef9f1256e3d6416caac307cf0d26b4",
-      "compile_input_hash": "ffc82a3ea139f05c5e0b03e69055f1d1b4628ea1d2bde12386b1f7074ab06f20",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "1db10fc9f0d462541af122b946b5cb5a57b027d2a3a02c74801fbbc1f0f8029f",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "green-factory-3": {
@@ -7595,8 +7597,8 @@
       "ir_node_id": "project:green-factory-3",
       "policy_version_id": "policy-014872608585cd65cdb3",
       "source_content_hash": "493acf7b514e9ea6d7b6be238b0cd42990a7bfa7c1861e58ae73f1e59e6c6d06",
-      "compile_input_hash": "ec5d21f796f004a2e07418cc03dfc19e83297a1c739e0909975ff416c27db5c0",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "b2bdef0f294d104fb0fdab16a90d06dfd87cb9b51df3447f01e2d4c8f4788241",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "green-factory-4": {
@@ -8118,8 +8120,8 @@
       "ir_node_id": "project:green-factory-4",
       "policy_version_id": "policy-7511e12cda0ed8abda6e",
       "source_content_hash": "79be760cc98ee47e11f8e4d18b7d571db4c674e2392df5f7989b73d01f2f8f85",
-      "compile_input_hash": "56d5b9b60b98aac55ebb329d917b42d3b22c8c474437953989f89de73ac259a0",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "aad28fb363f11bb832e1506be9ccfb77a5dec2d3a597dbe5ab58e89138168db2",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "national-green-factory",
         "project_name": "国家绿色工厂",
@@ -8149,7 +8151,7 @@
       "schema_version": 1,
       "project_id": "hangzhou-enterprise-institute",
       "project_name": "杭州市企业研究院",
-      "version": "2022-method-valid-through-2027-20260730",
+      "version": "2022-formal-plus-2026-consultation-transition-20260730",
       "coverage_status": "rules-confirmed",
       "aliases": [
         "杭州研发中心",
@@ -8302,6 +8304,22 @@
           "label": "研发中心申请及实施方案完整",
           "aliases": [
             "研发中心申请及实施方案完整"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "hz_rd_technology_sme",
+          "label": "有效期内科技型中小企业",
+          "aliases": [
+            "有效期内科技型中小企业"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "hz_rd_good_seed_enterprise",
+          "label": "有效期内好苗子企业",
+          "aliases": [
+            "有效期内好苗子企业"
           ],
           "value_type": "boolean"
         }
@@ -8820,6 +8838,279 @@
               "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
             }
           ]
+        },
+        {
+          "layer_id": "hangzhou-enterprise-institute-2026-consultation",
+          "layer_type": "prospective",
+          "policy_time_type": "consultation-draft",
+          "label": "2026年杭州市企业研究院征求意见稿前瞻基线",
+          "applicability": {
+            "application_types": [
+              "recognition"
+            ]
+          },
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f",
+          "source_role": "杭州市科技局征求意见公告公开镜像",
+          "published_at": "2026-05-29",
+          "enterprise_deadline": null,
+          "replaces_rule_ids": [
+            "hz-rd-entity",
+            "hz-rd-staff",
+            "hz-rd-site",
+            "hz-rd-equipment",
+            "hz-rd-investment",
+            "hz-rd-projects",
+            "hz-rd-ip",
+            "hz-rd-accounting",
+            "hz-rd-compliance",
+            "hz-rd-materials"
+          ],
+          "transition_notice": "市企业高新技术研究开发中心拟停止认定，相关资质拟迁移为市企业研究院；正式发布前仅作前瞻准备和差距评估。",
+          "rules": [
+            {
+              "rule_id": "hz-institute-draft-entity",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "hz-institute-draft-hangzhou",
+                  "field": "hz_rd_registered_in_hangzhou",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "hz-institute-draft-enterprise-route",
+                  "logic": "any",
+                  "children": [
+                    {
+                      "rule_id": "hz-institute-draft-tech-sme",
+                      "field": "hz_rd_technology_sme",
+                      "operator": "truthy",
+                      "expected": true
+                    },
+                    {
+                      "rule_id": "hz-institute-draft-good-seed",
+                      "field": "hz_rd_good_seed_enterprise",
+                      "operator": "truthy",
+                      "expected": true
+                    },
+                    {
+                      "rule_id": "hz-institute-draft-high-tech",
+                      "field": "hz_rd_high_tech_enterprise",
+                      "operator": "truthy",
+                      "expected": true
+                    }
+                  ]
+                }
+              ],
+              "type": "hard-threshold",
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "依托企业须在杭注册并具有独立法人资格；申报企业研究院须为有效期内科技型中小企业、好苗子企业或高新技术企业。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            },
+            {
+              "rule_id": "hz-institute-draft-staff",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz-institute-draft-staff-software",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "hz-institute-draft-software-type",
+                      "field": "hz_rd_is_software_enterprise",
+                      "operator": "truthy",
+                      "expected": true
+                    },
+                    {
+                      "rule_id": "hz-institute-draft-software-staff",
+                      "field": "hz_rd_full_time_research_staff",
+                      "operator": "gte",
+                      "expected": 15,
+                      "unit": "人"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "hz-institute-draft-staff-general",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "hz-institute-draft-nonsoftware-type",
+                      "field": "hz_rd_is_software_enterprise",
+                      "operator": "falsy",
+                      "expected": false
+                    },
+                    {
+                      "rule_id": "hz-institute-draft-general-staff",
+                      "field": "hz_rd_full_time_research_staff",
+                      "operator": "gte",
+                      "expected": 10,
+                      "unit": "人"
+                    }
+                  ]
+                }
+              ],
+              "type": "hard-threshold",
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "上年度研发人员数量10人以上，软件企业15人以上。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            },
+            {
+              "rule_id": "hz-institute-draft-site",
+              "type": "hard-threshold",
+              "field": "hz_rd_site_area",
+              "operator": "gt",
+              "expected": 100,
+              "unit": "平方米",
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "研发场地相对集中，面积100平方米以上。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            },
+            {
+              "rule_id": "hz-institute-draft-equipment",
+              "type": "hard-threshold",
+              "field": "hz_rd_applicable_equipment_threshold_assessment_passed",
+              "operator": "truthy",
+              "expected": true,
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "科研设备原值总额100万元以上；农业企业50万元以上；租赁设备按上年度租金凭证金额的150%计入。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            },
+            {
+              "rule_id": "hz-institute-draft-investment",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz-institute-draft-investment-amount",
+                  "field": "hz_rd_self_funded_expense",
+                  "operator": "gte",
+                  "expected": 100,
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "hz-institute-draft-investment-ratio",
+                  "field": "hz_rd_self_funded_expense_ratio",
+                  "operator": "gte",
+                  "expected": 3,
+                  "unit": "%"
+                }
+              ],
+              "type": "hard-threshold",
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "上年度研发费用100万元以上，或研发费用占营业收入比重3%以上。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            },
+            {
+              "rule_id": "hz-institute-draft-ip",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz-institute-draft-class-i-ip",
+                  "field": "hz_rd_class_i_ip_count",
+                  "operator": "gte",
+                  "expected": 1,
+                  "unit": "项"
+                },
+                {
+                  "rule_id": "hz-institute-draft-class-ii-ip",
+                  "field": "hz_rd_other_ip_count",
+                  "operator": "gte",
+                  "expected": 3,
+                  "unit": "项"
+                }
+              ],
+              "type": "hard-threshold",
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "近三年获I类知识产权1件以上或II类知识产权3件以上。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            },
+            {
+              "rule_id": "hz-institute-draft-accounting",
+              "type": "hard-threshold",
+              "field": "hz_rd_independent_accounting",
+              "operator": "truthy",
+              "expected": true,
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "各项规章制度健全，研发活动单独建账核算。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            },
+            {
+              "rule_id": "hz-institute-draft-compliance",
+              "type": "hard-threshold",
+              "field": "hz_rd_compliance_clear",
+              "operator": "truthy",
+              "expected": true,
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "依托企业不得列入严重失信名单。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            },
+            {
+              "rule_id": "hz-institute-draft-materials",
+              "type": "submission",
+              "field": "hz_rd_materials_complete",
+              "operator": "truthy",
+              "expected": true,
+              "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "source_quote": "申报企业研究院应填报申报书、实施方案等材料。",
+              "policy_status": "draft",
+              "review_status": "confirmed",
+              "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+              "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+            }
+          ]
         }
       ],
       "gold_cases": [
@@ -9107,15 +9398,27 @@
             "authority": "杭州市科学技术局",
             "official_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
             "relation": "canonical-project-correction"
+          },
+          {
+            "document_id": "hangzhou-enterprise-institute-consultation-2026",
+            "title": "杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）",
+            "issued_year": 2026,
+            "status": "draft",
+            "authority": "杭州市科学技术局",
+            "official_url": "https://www.xclcy.com/8955.html",
+            "relation": "prospective-replacement",
+            "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+            "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f",
+            "mandatory_disclosure": "尚未正式生效；仅作未来准备和预测基线"
           }
         ],
         "dependencies": []
       },
       "ir_node_id": "project:hangzhou-enterprise-institute",
-      "policy_version_id": "policy-4a705c4e38a750c5cc25",
-      "source_content_hash": "6e329ce1fc16a69ec2a3acfab5621919be0f51e6cf8266a1465b049b916c4718",
-      "compile_input_hash": "1b1c07a7efaf6b98e1f5f175fb7887288393f3fbff41ccd5e0704f5962b7dde0",
-      "shared_kernel_version": "1.3",
+      "policy_version_id": "policy-033c259e32559434fe49",
+      "source_content_hash": "8a34e9ea00897e26d151319f0d43b74ca3b4bd76968da71b4b06723b00d2804a",
+      "compile_input_hash": "a6ff7438577fce7e5b612fd02f4334d6c50876e5a1ff483dd632aaedd8c08fac",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "hangzhou-enterprise-technology-center": {
@@ -9130,6 +9433,9 @@
       "source_retrieval_rule_ids": [
         "hangzhou-enterprise-technology-center"
       ],
+      "canonical_project_id": "municipal-enterprise-technology-center",
+      "variant_of": "municipal-enterprise-technology-center",
+      "ui_hidden": true,
       "fact_fields": [
         {
           "field": "hz_tech_center_innovation_operation_mechanism_sound",
@@ -9913,9 +10219,9 @@
       },
       "ir_node_id": "project:hangzhou-enterprise-technology-center",
       "policy_version_id": "policy-c98e4015479d64be728c",
-      "source_content_hash": "283cd76b0b24bf56ad8df71ce08ba26f8b6e25cefee635367ab36e5329cd95de",
-      "compile_input_hash": "a19f9acc5dcdef670c73715069fcf8a8e887573f633a9d4336079d1adca80a7f",
-      "shared_kernel_version": "1.3",
+      "source_content_hash": "37e5db20e130e581443d7cb0b42604e856ace205ecc5632f84fbb22f595bb805",
+      "compile_input_hash": "82c5b6da7eea923389eb014b18d22b398b3e4baf88ec080c786ef7c48752809f",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "hangzhou-enterprise-technology-center-lifecycle",
         "project_name": "杭州市企业技术中心",
@@ -10432,8 +10738,8 @@
       "ir_node_id": "project:intelligent-factory",
       "policy_version_id": "policy-b47c249c68eed5649684",
       "source_content_hash": "ffa64ef3d7ecaaa6e76b18650b482395677a51e2402143e945003a340021e0cb",
-      "compile_input_hash": "e21dc24e44098228df26957a53cff6a096675c19696aa77a806709e8c6d58d3c",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "713a00da2a869feb95c696d0b05e8b4588803bac9c7af7d9187209c7047aa1e3",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "key-little-giant-support": {
@@ -11276,8 +11582,8 @@
       "ir_node_id": "project:key-little-giant-support",
       "policy_version_id": "policy-f1dc8f9b27fcd1870c93",
       "source_content_hash": "9493518c0007e55ee8c14f5b0cb373cfb57fa6fcf587fb51197d5010169e4deb",
-      "compile_input_hash": "8c207aecb442a4aea15b76062f91b67b5d766b880b342de98ac3fceb72705465",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "868c55423a3fd19e485bf6159eaa7b9e6a4e0952b65eba920c8656011b0d48c4",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "little-giant": {
@@ -12687,8 +12993,8 @@
       "ir_node_id": "project:little-giant",
       "policy_version_id": "policy-56caea550262ec7c9ac6",
       "source_content_hash": "52c3156b8a5994d5952ce81f8198e4808b0835169edc4b74a88cd96d02b06d15",
-      "compile_input_hash": "72bd211b4d8e5f914c932f93c34c39227de1196f3197e44c8ccbd5f609fbe0bc",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "8a46e9922be7e694d8633e7b623bbda938536f915d8e2f266b9f4a2b79c19662",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "national-little-giant",
         "project_name": "国家专精特新“小巨人”企业",
@@ -14191,8 +14497,8 @@
       "ir_node_id": "project:manufacturing-single-champion-1",
       "policy_version_id": "policy-b6def70071a088cbb1ee",
       "source_content_hash": "c6c1de281dd10c61b9a2ff764669edf28e534dd2641f066a1ee1991388a5e985",
-      "compile_input_hash": "8ef6393d57b8425a719eae29a83b6db65dd7ef6bce7a5f9b68ab5c2c259a5d85",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "add2e98aa5a18d89fe1baa03bd9a6ae8567ba4b7703881caa70f39e05283c46b",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "zhejiang-manufacturing-single-champion",
         "project_name": "浙江省制造业单项冠军企业",
@@ -15084,8 +15390,8 @@
       "ir_node_id": "project:manufacturing-single-champion-2",
       "policy_version_id": "policy-b04ece5c1477acd1efe5",
       "source_content_hash": "0b02e6a350cea9c4f09587b0756f44fe86a644ca1a9f033882b6d89a22cbfd70",
-      "compile_input_hash": "8888b084da8164c799cdbaa1f32e1ffe5525dbcee2ce8e870dd39959e301a89e",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "1eddbb57592ebcc25d61403294621706920baa77fb8b57205ef060f296cdc8cc",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "national-manufacturing-single-champion",
         "project_name": "国家制造业单项冠军企业",
@@ -15117,11 +15423,18 @@
     "municipal-enterprise-technology-center": {
       "schema_version": 1,
       "project_id": "municipal-enterprise-technology-center",
-      "project_name": "市级企业技术中心",
-      "version": "dynamic-11-city-rule-compiler-20260730",
+      "project_name": "市级企业技术中心（四市属地版）",
+      "version": "four-city-jurisdiction-router-20260730",
       "coverage_status": "rules-confirmed",
       "aliases": [
-        "市企业技术中心"
+        "市企业技术中心",
+        "市级企业技术中心",
+        "杭州市企业技术中心",
+        "杭州企业技术中心",
+        "宁波市企业技术中心",
+        "绍兴市企业技术中心",
+        "绍兴市市级企业技术中心",
+        "金华市企业技术中心"
       ],
       "source_retrieval_rule_ids": [
         "municipal-enterprise-technology-center"
@@ -15179,6 +15492,17 @@
           "derivation_requirements": [
             "申请报告、评价表及属地通知要求的证明材料须完整。"
           ]
+        },
+        {
+          "field": "municipal_tc_local_project_available",
+          "label": "属地存在同名市级认定层",
+          "aliases": [
+            "属地存在同名市级认定层"
+          ],
+          "value_type": "boolean",
+          "derivation_requirements": [
+            "必须先核验目标城市是否设有普通制造业市级企业技术中心；不存在时应改道省级项目，不得套用其他城市门槛。"
+          ]
         }
       ],
       "rule_cards": [
@@ -15190,6 +15514,7 @@
           "expected": true,
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "市级企业技术中心由各地依法制定认定和评价政策，必须先解析企业注册地。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15204,6 +15529,7 @@
           "expected": true,
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "判断必须加载目标设区市查询日最新有效办法及当年度通知。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15218,6 +15544,7 @@
           "type": "hard-threshold",
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15232,6 +15559,7 @@
           "expected": true,
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "严重违法失信、重大质量安全事故及属地列明排除项须逐项核验。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15246,6 +15574,7 @@
           "expected": true,
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "申请报告、评价表及属地通知要求的证明材料须完整。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15270,6 +15599,7 @@
               "expected": true,
               "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
               "source_quote": "市级企业技术中心由各地依法制定认定和评价政策，必须先解析企业注册地。",
+              "source_display": false,
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15284,6 +15614,7 @@
               "expected": true,
               "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
               "source_quote": "判断必须加载目标设区市查询日最新有效办法及当年度通知。",
+              "source_display": false,
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15298,6 +15629,7 @@
               "type": "hard-threshold",
               "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
               "source_quote": "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。",
+              "source_display": false,
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15312,6 +15644,7 @@
               "expected": true,
               "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
               "source_quote": "严重违法失信、重大质量安全事故及属地列明排除项须逐项核验。",
+              "source_display": false,
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15326,6 +15659,7 @@
               "expected": true,
               "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
               "source_quote": "申请报告、评价表及属地通知要求的证明材料须完整。",
+              "source_display": false,
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -15335,35 +15669,138 @@
           ]
         },
         {
-          "layer_id": "municipal-tech-center-11-city-runtime",
+          "layer_id": "municipal-tech-center-hangzhou",
           "layer_type": "jurisdiction",
           "policy_time_type": "jurisdiction-detail",
-          "label": "浙江11个设区市动态阈值层",
+          "label": "杭州市企业技术中心属地规则",
           "applicability": {
             "regions": [
-              "浙江省11个设区市"
+              "浙江省",
+              "杭州市"
             ],
             "application_types": [
               "recognition",
               "evaluation"
             ]
           },
-          "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+          "source_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
           "enterprise_deadline": null,
           "rules": [
             {
-              "rule_id": "municipal-tech-center-runtime-gate",
+              "rule_id": "municipal-tech-center-hangzhou-gate",
               "type": "hard-threshold",
               "field": "municipal_tc_current_local_rule_resolved",
               "operator": "truthy",
               "expected": true,
-              "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
-              "source_quote": "未加载具体城市现行办法和年度通知时，正式结论必须保持待核验。",
+              "source": "《杭州市企业技术中心管理办法》（杭经信联智能〔2018〕81号，2025年清理确认继续有效）",
+              "source_quote": "杭州企业应按杭州市现行办法和当年度认定、复评通知判断；清理结果页用于证明2018年办法继续有效。",
               "policy_status": "current",
               "review_status": "confirmed",
               "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
               "approved_at": "2026-07-30 09:00:00",
-              "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html"
+              "source_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml"
+            }
+          ]
+        },
+        {
+          "layer_id": "municipal-tech-center-shaoxing",
+          "layer_type": "jurisdiction",
+          "policy_time_type": "jurisdiction-detail",
+          "label": "绍兴市市级企业技术中心属地规则",
+          "applicability": {
+            "regions": [
+              "浙江省",
+              "绍兴市"
+            ],
+            "application_types": [
+              "recognition",
+              "evaluation"
+            ]
+          },
+          "source_url": "https://sxjxw.sx.gov.cn/art/2023/12/18/art_1229313645_4100402.html",
+          "enterprise_deadline": null,
+          "rules": [
+            {
+              "rule_id": "municipal-tech-center-shaoxing-gate",
+              "type": "hard-threshold",
+              "field": "municipal_tc_current_local_rule_resolved",
+              "operator": "truthy",
+              "expected": true,
+              "source": "《绍兴市市级企业技术中心管理办法》（绍市经信〔2018〕28号）",
+              "source_quote": "2025年认定通知继续援引该办法；正式判断还须叠加当年度通知。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "主人授权；焦糖依据2025年度通知对管理办法引用核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://sxjxw.sx.gov.cn/art/2023/12/18/art_1229313645_4100402.html"
+            }
+          ]
+        },
+        {
+          "layer_id": "municipal-tech-center-jinhua",
+          "layer_type": "jurisdiction",
+          "policy_time_type": "jurisdiction-detail",
+          "label": "金华市企业技术中心属地规则",
+          "applicability": {
+            "regions": [
+              "浙江省",
+              "金华市"
+            ],
+            "application_types": [
+              "recognition",
+              "evaluation"
+            ]
+          },
+          "source_url": "https://www.jinhua.gov.cn/module/download/downfile.jsp?classid=0&filename=18901b6538e74d06a0c90f45f3bbfc34.pdf",
+          "enterprise_deadline": null,
+          "rules": [
+            {
+              "rule_id": "municipal-tech-center-jinhua-gate",
+              "type": "hard-threshold",
+              "field": "municipal_tc_current_local_rule_resolved",
+              "operator": "truthy",
+              "expected": true,
+              "source": "《金华市企业技术中心管理办法（2024年版）》（金经信投资〔2024〕104号）",
+              "source_quote": "金华企业应按2024年版办法及当年度认定、评价通知判断。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "主人授权；焦糖依据金华市政府公报原文核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://www.jinhua.gov.cn/module/download/downfile.jsp?classid=0&filename=18901b6538e74d06a0c90f45f3bbfc34.pdf"
+            }
+          ]
+        },
+        {
+          "layer_id": "municipal-tech-center-ningbo-route",
+          "layer_type": "jurisdiction",
+          "policy_time_type": "jurisdiction-detail",
+          "label": "宁波市普通制造业项目改道路由",
+          "applicability": {
+            "regions": [
+              "浙江省",
+              "宁波市"
+            ],
+            "application_types": [
+              "recognition",
+              "evaluation"
+            ]
+          },
+          "source_url": "https://qf.ningbo.gov.cn/qfpt/fwbkqdsx/art/2024/art_3e1d12182dd9469c8f01ebbe3e1c0e66.html",
+          "enterprise_deadline": null,
+          "rules": [
+            {
+              "rule_id": "municipal-tech-center-ningbo-availability",
+              "type": "hard-threshold",
+              "field": "municipal_tc_local_project_available",
+              "operator": "truthy",
+              "expected": true,
+              "source": "宁波市产业服务事项及2025年企业技术中心申报链",
+              "source_quote": "普通制造业未检出独立的宁波市级同名认定层，当前应改道浙江省企业技术中心；建设行业另按宁波市建设行业办法处理。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "主人授权；焦糖依据宁波政务事项与近年申报链核验",
+              "approved_at": "2026-07-30 12:00:00",
+              "source_url": "https://qf.ningbo.gov.cn/qfpt/fwbkqdsx/art/2024/art_3e1d12182dd9469c8f01ebbe3e1c0e66.html"
             }
           ]
         }
@@ -15502,28 +15939,85 @@
       "policy_baseline": {
         "project_id": "municipal-enterprise-technology-center",
         "baseline_status": "complete",
-        "decision_mode": "jurisdiction-required",
+        "decision_mode": "four-city-jurisdiction-router",
         "policy_documents": [
           {
-            "document_id": "zj-enterprise-tech-center-method-2019",
-            "title": "浙江省企业技术中心管理办法",
-            "issued_year": 2019,
+            "document_id": "hangzhou-enterprise-tech-center-2018",
+            "title": "杭州市企业技术中心管理办法",
+            "issued_year": 2018,
             "status": "current",
-            "authority": "浙江省经济和信息化厅",
-            "official_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
-            "relation": "upper-level-basis",
+            "authority": "杭州市经济和信息化局",
+            "official_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
+            "relation": "hangzhou-governed-by",
             "still_effective": true,
-            "current_upstream_basis": true
+            "cited_by_current_notice": true,
+            "source_role": "2025年清理结果确认杭经信联智能〔2018〕81号继续有效"
+          },
+          {
+            "document_id": "shaoxing-enterprise-tech-center-2018",
+            "title": "绍兴市市级企业技术中心管理办法",
+            "issued_year": 2018,
+            "status": "current-cited-by-2025-notice",
+            "authority": "绍兴市经济和信息化局",
+            "official_url": "https://sxjxw.sx.gov.cn/art/2023/12/18/art_1229313645_4100402.html",
+            "relation": "shaoxing-governed-by",
+            "cited_by_current_notice": true
+          },
+          {
+            "document_id": "jinhua-enterprise-tech-center-2024",
+            "title": "金华市企业技术中心管理办法（2024年版）",
+            "issued_year": 2024,
+            "status": "current",
+            "authority": "金华市经济和信息化局",
+            "official_url": "https://www.jinhua.gov.cn/module/download/downfile.jsp?classid=0&filename=18901b6538e74d06a0c90f45f3bbfc34.pdf",
+            "relation": "jinhua-governed-by",
+            "still_effective": true
+          },
+          {
+            "document_id": "ningbo-enterprise-tech-center-route",
+            "title": "宁波市企业技术中心项目路由说明",
+            "issued_year": 2024,
+            "status": "current-route",
+            "authority": "宁波市企业综合服务平台",
+            "official_url": "https://qf.ningbo.gov.cn/qfpt/fwbkqdsx/art/2024/art_3e1d12182dd9469c8f01ebbe3e1c0e66.html",
+            "relation": "redirect-to-zhejiang-provincial",
+            "source_role": "普通制造业当前改道浙江省企业技术中心；建设行业单独适用宁波市建设行业办法"
           }
         ],
-        "dependencies": []
+        "dependencies": [
+          {
+            "type": "jurisdiction-resolution",
+            "description": "必须先解析杭州、宁波、绍兴或金华，再加载对应属地规则或省级改道路由。"
+          }
+        ]
       },
       "ir_node_id": "project:municipal-enterprise-technology-center",
-      "policy_version_id": "policy-5aacd2b439fa3b485054",
-      "source_content_hash": "657e426dcd97ca0daa7584c3f3d69744dc634e6f91a0900ac6a18088b0ae8be4",
-      "compile_input_hash": "ab0947bc29a3aa31709884a52e6ba18fde1c9037b778a313df19407c659a205d",
-      "shared_kernel_version": "1.3",
-      "lifecycle_rule": {}
+      "policy_version_id": "policy-16e247b21fc4f3b4edd9",
+      "source_content_hash": "05a2a1ac26f39c924817d6de7fa1aaf88e5e85714a07a10a0bb1764b80651ead",
+      "compile_input_hash": "41fc54c1eabf20deb21367f3c5c9309e9ba06b066df33116ca61fdbedc2690ec",
+      "shared_kernel_version": "1.4",
+      "lifecycle_rule": {
+        "rule_id": "hangzhou-enterprise-technology-center-lifecycle",
+        "project_name": "杭州市企业技术中心",
+        "aliases": [
+          "杭州市建设行业企业技术中心认定和评价"
+        ],
+        "cycle_type": "dynamic_evaluation",
+        "supported_event_types": [
+          "recognition",
+          "recognition_publicity",
+          "annual_evaluation",
+          "performance_evaluation",
+          "changed",
+          "revoked"
+        ],
+        "current_rule_state": "confirmed",
+        "local_rule_sources": [],
+        "official_rule_urls": [
+          "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml"
+        ],
+        "rule_note": "认定与后续评价分别建事件；当前检索层未确认固定资格年限，因此不自动生成到期复核。建设行业标题归入同一市级项目并保留来源子类型。"
+      }
     },
     "national-high-tech-enterprise": {
       "schema_version": 1,
@@ -16764,8 +17258,8 @@
       "ir_node_id": "project:national-high-tech-enterprise",
       "policy_version_id": "policy-90a54326e73196ab0260",
       "source_content_hash": "ec23e0b920182ffd4eb7fce9f0344cd00ebdb9b632aa135d05e313747916eda2",
-      "compile_input_hash": "1367550fe8ebee62f1c46948004462a3b437d2272ae33c73fc75281939aadeb9",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "d51697dbf5df716adc63a8f66c2ae5b57362c8e65cb6fa8bcfcff6f6c264bb42",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "national-high-tech-enterprise",
         "project_name": "国家高新技术企业",
@@ -17631,8 +18125,8 @@
       "ir_node_id": "project:technology-sme-1",
       "policy_version_id": "policy-446163e9745a87780eb5",
       "source_content_hash": "1415d76ac82c3266883ee8bea2ca77be1344746eb4c7c2797c0c41d0dc97648f",
-      "compile_input_hash": "4fba20291b464aa212b3d1ebef6ee941dcf82b479276a4891f3ec9ecfcf17854",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "a83ede39d4b11a03e1efcc730111e1d6f724189950c2d89000d979d49f70cfee",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "technology-sme-2": {
@@ -18404,8 +18898,8 @@
       "ir_node_id": "project:technology-sme-2",
       "policy_version_id": "policy-0fe5e158d608e38cfc07",
       "source_content_hash": "6b124cef92c3f67ab9acaf54e629efead5be6291f7700a1f4130b6a50fcc9578",
-      "compile_input_hash": "039b160769ddc5f69a282095c719cedcfe1b24731ef718ed6a9587d154be535b",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "da6f0a7bc912c5489e176907ec9ffc8c8a773ae1c16605437b391368bd05f406",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "national-technology-sme",
         "project_name": "国家科技型中小企业",
@@ -19285,8 +19779,8 @@
       "ir_node_id": "project:zhejiang-enterprise-institute",
       "policy_version_id": "policy-2adbb6c7293e900cc6b9",
       "source_content_hash": "f38eb1323a6eb37e608f0536fd13fb06e0d9d88eca634d8821a2d7a5a95ae868",
-      "compile_input_hash": "f924223daaf3da1bb783b122ec5a97c107e1208dbf07aad75874b1bdee517c52",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "fa84022eebe3db60a4c9fc2f5d52ca2236eee0edbc9d4e68a0d2a13c39bdb3dd",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "zhejiang-enterprise-institute",
         "project_name": "浙江省企业研究院",
@@ -20540,8 +21034,8 @@
       "ir_node_id": "project:zhejiang-enterprise-technology-center",
       "policy_version_id": "policy-0a49f94464d73e70eccc",
       "source_content_hash": "088e1acde1a9066f7d5ced07924560d63df983e65a11214e6aa9c791ebc2159d",
-      "compile_input_hash": "30f6c19248969e36bf9befc8e8b1ac74b4399fc1e56bda8398de316666f7e671",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "2a466b39a5743ef832510a3c738156b434d8451a6f782fce089d14c8794d0c15",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "zhejiang-hidden-champion": {
@@ -22057,8 +22551,8 @@
       "ir_node_id": "project:zhejiang-hidden-champion",
       "policy_version_id": "policy-a27400b330359ae77e3e",
       "source_content_hash": "e1a24824bc316aceb349a7952ae742f11386f9ce51adf8cda55351c0a1f4228a",
-      "compile_input_hash": "97dffa979c1ca229292e46853232fbb5c5bf843e7ed19b7d75e82c8497d77596",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "b28c850c5d615a710989d4bf5dcfd56e9ca287154d2e76986685c7dfbe1630bb",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "zhejiang-hidden-champion",
         "project_name": "浙江省隐形冠军企业",
@@ -22355,8 +22849,8 @@
       "ir_node_id": "project:zhejiang-industrial-new-product",
       "policy_version_id": "policy-3175adfdfb96ec7f0488",
       "source_content_hash": "50eb9c641edad43e65c93d63252bdd9a47b9516bb16b6ea7c3390ebc67b19ae4",
-      "compile_input_hash": "7bef2141253ac830f4ffff96005e83dcffe20d74dfbddecd168e08e11321fe3f",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "cfac82ca961e48e6cfb0535e74e0878e7542f1161bbd579576c522f7276edda9",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "zhejiang-key-enterprise-institute": {
@@ -23336,8 +23830,8 @@
       "ir_node_id": "project:zhejiang-key-enterprise-institute",
       "policy_version_id": "policy-1ddf328a212fab8d5ff2",
       "source_content_hash": "1ee980d7eda569f468a98c54db9827375ab61bc92c22167ec39377f66b0cc554",
-      "compile_input_hash": "f0df52ccacd82aaaecf3b5dbef25271f7709895c87cbae440aae7443d8d196a1",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "f0a07beee44143a8b7fdad9f4290d0e6d2acc5eca74195cba09dcae5b1b41534",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "zhejiang-key-enterprise-institute",
         "project_name": "浙江省重点企业研究院",
@@ -24556,8 +25050,8 @@
       "ir_node_id": "project:zhejiang-key-specialized-sme",
       "policy_version_id": "policy-c794ae0e49f663ca709a",
       "source_content_hash": "f530e8fc0569aab10065206e284e73e1ccbd37167a6ff8fdf8e1431f22562c64",
-      "compile_input_hash": "39557d3c5256188d7a20996b28e078d50e8ba2427702e3d4c0f07403417ca75e",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "fcc60a0a0ca196dcd4ebd29d48604ba3976b7c447d600bbbddb38670d709cfcc",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "zhejiang-manufacturing-2": {
@@ -25057,8 +25551,8 @@
       "ir_node_id": "project:zhejiang-manufacturing-2",
       "policy_version_id": "policy-25e8d7b1b9c9bbf0dd58",
       "source_content_hash": "70c5e6d77a1e15d136166b7375eda8ada18548f34eea02cdbac99f6a799bb65b",
-      "compile_input_hash": "3718fc648eefb24c7a56cf12a1dd3527e1d431be9640975787c1d093806aedbd",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "b3d8dc5b00a5f51bbc693d5dcfbebe75e12c5948fa7dc66378a9148692321c7c",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "zhejiang-manufacturing-quality": {
@@ -26065,8 +26559,8 @@
       "ir_node_id": "project:zhejiang-manufacturing-quality",
       "policy_version_id": "policy-54fbcedf13401c12ad1e",
       "source_content_hash": "8fc6a6f84859b89b1ce7107ea6b95e8fcbba2c8b4aea0e9f2f10194f69515051",
-      "compile_input_hash": "6ebec70b56f0a33f38fb0779cf140eb147334a9be738809304958a90bcf093ad",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "061aeb612fcd38ac933e663ef40701dfcbf197f9fa542508013c36c9cdb2ae49",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {}
     },
     "zhejiang-specialized-sme": {
@@ -27082,8 +27576,8 @@
       "ir_node_id": "project:zhejiang-specialized-sme",
       "policy_version_id": "policy-a17575d282319cc1d52b",
       "source_content_hash": "d1599e98fe4bf2ecbbd2fc83623d3933f59c6283642738b6e353e6d905230b5c",
-      "compile_input_hash": "b8afa031dcdbbada63e9af8f70d61025f7b012b80ca551a43dff6b71ee9b8ff7",
-      "shared_kernel_version": "1.3",
+      "compile_input_hash": "bacbefff282cb58cefd5bffd89cc601c7b5b261df5393f8bb54fe529c1d372f0",
+      "shared_kernel_version": "1.4",
       "lifecycle_rule": {
         "rule_id": "zhejiang-specialized-sme",
         "project_name": "浙江省专精特新中小企业",
@@ -27267,6 +27761,9 @@
       "国高": [
         "national-high-tech-enterprise"
       ],
+      "宁波市企业技术中心": [
+        "municipal-enterprise-technology-center"
+      ],
       "小巨人": [
         "little-giant"
       ],
@@ -27277,6 +27774,9 @@
         "municipal-enterprise-technology-center"
       ],
       "市级企业技术中心": [
+        "municipal-enterprise-technology-center"
+      ],
+      "市级企业技术中心四市属地版": [
         "municipal-enterprise-technology-center"
       ],
       "市级绿色工厂": [
@@ -27295,10 +27795,12 @@
         "future-factory"
       ],
       "杭州企业技术中心": [
-        "hangzhou-enterprise-technology-center"
+        "hangzhou-enterprise-technology-center",
+        "municipal-enterprise-technology-center"
       ],
       "杭州市企业技术中心": [
-        "hangzhou-enterprise-technology-center"
+        "hangzhou-enterprise-technology-center",
+        "municipal-enterprise-technology-center"
       ],
       "杭州市企业研究院": [
         "hangzhou-enterprise-institute"
@@ -27409,6 +27911,12 @@
       "科技型中小企业": [
         "technology-sme-2"
       ],
+      "绍兴市企业技术中心": [
+        "municipal-enterprise-technology-center"
+      ],
+      "绍兴市市级企业技术中心": [
+        "municipal-enterprise-technology-center"
+      ],
       "绿色工厂": [
         "green-factory-1",
         "green-factory-2",
@@ -27429,6 +27937,9 @@
       ],
       "重点省专": [
         "zhejiang-key-specialized-sme"
+      ],
+      "金华市企业技术中心": [
+        "municipal-enterprise-technology-center"
       ],
       "隐形冠军": [
         "zhejiang-hidden-champion"
@@ -27468,14 +27979,14 @@
       "green-factory-2": "policy-3e0fae449f99284812aa",
       "green-factory-3": "policy-014872608585cd65cdb3",
       "green-factory-4": "policy-7511e12cda0ed8abda6e",
-      "hangzhou-enterprise-institute": "policy-4a705c4e38a750c5cc25",
+      "hangzhou-enterprise-institute": "policy-033c259e32559434fe49",
       "hangzhou-enterprise-technology-center": "policy-c98e4015479d64be728c",
       "intelligent-factory": "policy-b47c249c68eed5649684",
       "key-little-giant-support": "policy-f1dc8f9b27fcd1870c93",
       "little-giant": "policy-56caea550262ec7c9ac6",
       "manufacturing-single-champion-1": "policy-b6def70071a088cbb1ee",
       "manufacturing-single-champion-2": "policy-b04ece5c1477acd1efe5",
-      "municipal-enterprise-technology-center": "policy-5aacd2b439fa3b485054",
+      "municipal-enterprise-technology-center": "policy-16e247b21fc4f3b4edd9",
       "national-high-tech-enterprise": "policy-90a54326e73196ab0260",
       "technology-sme-1": "policy-446163e9745a87780eb5",
       "technology-sme-2": "policy-0fe5e158d608e38cfc07",
@@ -27528,7 +28039,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -27574,7 +28087,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "29107898949d8e890fdecebe8e17679d0db6ba45913fd823e6c338a299bad792"
+      "compile_input_hash": "5ea98c303eadd5afbc5712751986e9ca2ce881655cea1c831df3a9c2b9a47b0d"
     },
     "first-equipment": {
       "schema_version": 1,
@@ -27613,7 +28126,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -27659,7 +28174,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "6edef26c95672da579a580b4aac074e000af9a07e17a8d7e294bf3ae9eee91e6"
+      "compile_input_hash": "5856b25eaa04578183f9ce97eb278b8180b1fa5d9bd098d2e8ffac9e43ac88e8"
     },
     "first-material-batch": {
       "schema_version": 1,
@@ -27698,7 +28213,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -27744,7 +28261,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "a1a24f8145907fc5f8ed18a145618ed98a2cebe5ecf53077eb67b5dc40a0fd96"
+      "compile_input_hash": "e3cf5f085220fb283b5ef232c5279385802b439ab74c3cbcb97de861b0ca8159"
     },
     "first-software-version": {
       "schema_version": 1,
@@ -27783,7 +28300,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -27829,7 +28348,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "402e3466df2d91af731d9a93c1b684976ce7a9f1671110f2c0faf5d60d3e31dc"
+      "compile_input_hash": "b5c13aab07441961e09ce1f95629954d5dff871b6c6339ff48912e5d68545eac"
     },
     "future-factory": {
       "schema_version": 1,
@@ -27868,7 +28387,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -27914,7 +28435,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "0d8ca67c6e048be6c4e63e95e917ccad2ca4f5eb326e2dc65c23f0abe7995c4e"
+      "compile_input_hash": "baa8693774ccc566a21a5615b2a1f8d2061f35cf5ac2018d86abf69771544ce0"
     },
     "green-factory-1": {
       "schema_version": 1,
@@ -27953,7 +28474,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -27999,7 +28522,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "3f6667363d6d0469e4c503c841f94eac1aa737d16be056d45398b7e8b97f3441"
+      "compile_input_hash": "b31765345bf7f9badd8179c2173f8c57e27e840456bda63e31c481093028052c"
     },
     "green-factory-2": {
       "schema_version": 1,
@@ -28038,7 +28561,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28084,7 +28609,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "ffc82a3ea139f05c5e0b03e69055f1d1b4628ea1d2bde12386b1f7074ab06f20"
+      "compile_input_hash": "1db10fc9f0d462541af122b946b5cb5a57b027d2a3a02c74801fbbc1f0f8029f"
     },
     "green-factory-3": {
       "schema_version": 1,
@@ -28123,7 +28648,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28169,7 +28696,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "ec5d21f796f004a2e07418cc03dfc19e83297a1c739e0909975ff416c27db5c0"
+      "compile_input_hash": "b2bdef0f294d104fb0fdab16a90d06dfd87cb9b51df3447f01e2d4c8f4788241"
     },
     "green-factory-4": {
       "schema_version": 1,
@@ -28208,7 +28735,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28254,18 +28783,18 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "56d5b9b60b98aac55ebb329d917b42d3b22c8c474437953989f89de73ac259a0"
+      "compile_input_hash": "aad28fb363f11bb832e1506be9ccfb77a5dec2d3a597dbe5ab58e89138168db2"
     },
     "hangzhou-enterprise-institute": {
       "schema_version": 1,
       "algorithm_id": "project-decision-hangzhou-enterprise-institute",
       "algorithm_name": "杭州市企业研究院项目决策算法",
-      "algorithm_version": "2022-method-valid-through-2027-20260730",
+      "algorithm_version": "2022-formal-plus-2026-consultation-transition-20260730",
       "project_id": "hangzhou-enterprise-institute",
       "project_name": "杭州市企业研究院",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-4a705c4e38a750c5cc25",
+      "policy_version_id": "policy-033c259e32559434fe49",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -28293,13 +28822,15 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 17,
-        "confirmed_rules": 10,
-        "rule_layers": 1,
+        "fact_fields": 19,
+        "confirmed_rules": 19,
+        "rule_layers": 2,
         "gold_cases": 3
       },
       "explainability": {
@@ -28339,7 +28870,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "1b1c07a7efaf6b98e1f5f175fb7887288393f3fbff41ccd5e0704f5962b7dde0"
+      "compile_input_hash": "a6ff7438577fce7e5b612fd02f4334d6c50876e5a1ff483dd632aaedd8c08fac"
     },
     "hangzhou-enterprise-technology-center": {
       "schema_version": 1,
@@ -28378,7 +28909,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28424,7 +28957,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "a19f9acc5dcdef670c73715069fcf8a8e887573f633a9d4336079d1adca80a7f"
+      "compile_input_hash": "82c5b6da7eea923389eb014b18d22b398b3e4baf88ec080c786ef7c48752809f"
     },
     "intelligent-factory": {
       "schema_version": 1,
@@ -28463,7 +28996,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28509,7 +29044,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "e21dc24e44098228df26957a53cff6a096675c19696aa77a806709e8c6d58d3c"
+      "compile_input_hash": "713a00da2a869feb95c696d0b05e8b4588803bac9c7af7d9187209c7047aa1e3"
     },
     "key-little-giant-support": {
       "schema_version": 1,
@@ -28548,7 +29083,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28594,7 +29131,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "8c207aecb442a4aea15b76062f91b67b5d766b880b342de98ac3fceb72705465"
+      "compile_input_hash": "868c55423a3fd19e485bf6159eaa7b9e6a4e0952b65eba920c8656011b0d48c4"
     },
     "little-giant": {
       "schema_version": 1,
@@ -28633,7 +29170,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28679,7 +29218,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "72bd211b4d8e5f914c932f93c34c39227de1196f3197e44c8ccbd5f609fbe0bc"
+      "compile_input_hash": "8a46e9922be7e694d8633e7b623bbda938536f915d8e2f266b9f4a2b79c19662"
     },
     "manufacturing-single-champion-1": {
       "schema_version": 1,
@@ -28718,7 +29257,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28764,7 +29305,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "8ef6393d57b8425a719eae29a83b6db65dd7ef6bce7a5f9b68ab5c2c259a5d85"
+      "compile_input_hash": "add2e98aa5a18d89fe1baa03bd9a6ae8567ba4b7703881caa70f39e05283c46b"
     },
     "manufacturing-single-champion-2": {
       "schema_version": 1,
@@ -28803,7 +29344,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -28849,18 +29392,18 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "8888b084da8164c799cdbaa1f32e1ffe5525dbcee2ce8e870dd39959e301a89e"
+      "compile_input_hash": "1eddbb57592ebcc25d61403294621706920baa77fb8b57205ef060f296cdc8cc"
     },
     "municipal-enterprise-technology-center": {
       "schema_version": 1,
       "algorithm_id": "project-decision-municipal-enterprise-technology-center",
-      "algorithm_name": "市级企业技术中心项目决策算法",
-      "algorithm_version": "dynamic-11-city-rule-compiler-20260730",
+      "algorithm_name": "市级企业技术中心（四市属地版）项目决策算法",
+      "algorithm_version": "four-city-jurisdiction-router-20260730",
       "project_id": "municipal-enterprise-technology-center",
-      "project_name": "市级企业技术中心",
+      "project_name": "市级企业技术中心（四市属地版）",
       "coverage_status": "rules-confirmed",
       "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-      "policy_version_id": "policy-5aacd2b439fa3b485054",
+      "policy_version_id": "policy-16e247b21fc4f3b4edd9",
       "inputs": {
         "project_context": "项目名称、年度、申请类型与属地",
         "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -28888,13 +29431,15 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
-        "fact_fields": 5,
-        "confirmed_rules": 6,
-        "rule_layers": 2,
+        "fact_fields": 6,
+        "confirmed_rules": 9,
+        "rule_layers": 5,
         "gold_cases": 3
       },
       "explainability": {
@@ -28934,7 +29479,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "ab0947bc29a3aa31709884a52e6ba18fde1c9037b778a313df19407c659a205d"
+      "compile_input_hash": "41fc54c1eabf20deb21367f3c5c9309e9ba06b066df33116ca61fdbedc2690ec"
     },
     "national-high-tech-enterprise": {
       "schema_version": 1,
@@ -28973,7 +29518,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29019,7 +29566,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "1367550fe8ebee62f1c46948004462a3b437d2272ae33c73fc75281939aadeb9"
+      "compile_input_hash": "d51697dbf5df716adc63a8f66c2ae5b57362c8e65cb6fa8bcfcff6f6c264bb42"
     },
     "technology-sme-1": {
       "schema_version": 1,
@@ -29058,7 +29605,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29104,7 +29653,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "4fba20291b464aa212b3d1ebef6ee941dcf82b479276a4891f3ec9ecfcf17854"
+      "compile_input_hash": "a83ede39d4b11a03e1efcc730111e1d6f724189950c2d89000d979d49f70cfee"
     },
     "technology-sme-2": {
       "schema_version": 1,
@@ -29143,7 +29692,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29189,7 +29740,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "039b160769ddc5f69a282095c719cedcfe1b24731ef718ed6a9587d154be535b"
+      "compile_input_hash": "da6f0a7bc912c5489e176907ec9ffc8c8a773ae1c16605437b391368bd05f406"
     },
     "zhejiang-enterprise-institute": {
       "schema_version": 1,
@@ -29228,7 +29779,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29274,7 +29827,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "f924223daaf3da1bb783b122ec5a97c107e1208dbf07aad75874b1bdee517c52"
+      "compile_input_hash": "fa84022eebe3db60a4c9fc2f5d52ca2236eee0edbc9d4e68a0d2a13c39bdb3dd"
     },
     "zhejiang-enterprise-technology-center": {
       "schema_version": 1,
@@ -29313,7 +29866,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29359,7 +29914,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "30f6c19248969e36bf9befc8e8b1ac74b4399fc1e56bda8398de316666f7e671"
+      "compile_input_hash": "2a466b39a5743ef832510a3c738156b434d8451a6f782fce089d14c8794d0c15"
     },
     "zhejiang-hidden-champion": {
       "schema_version": 1,
@@ -29398,7 +29953,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29444,7 +30001,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "97dffa979c1ca229292e46853232fbb5c5bf843e7ed19b7d75e82c8497d77596"
+      "compile_input_hash": "b28c850c5d615a710989d4bf5dcfd56e9ca287154d2e76986685c7dfbe1630bb"
     },
     "zhejiang-industrial-new-product": {
       "schema_version": 1,
@@ -29483,7 +30040,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29529,7 +30088,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "7bef2141253ac830f4ffff96005e83dcffe20d74dfbddecd168e08e11321fe3f"
+      "compile_input_hash": "cfac82ca961e48e6cfb0535e74e0878e7542f1161bbd579576c522f7276edda9"
     },
     "zhejiang-key-enterprise-institute": {
       "schema_version": 1,
@@ -29568,7 +30127,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29614,7 +30175,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "f0df52ccacd82aaaecf3b5dbef25271f7709895c87cbae440aae7443d8d196a1"
+      "compile_input_hash": "f0a07beee44143a8b7fdad9f4290d0e6d2acc5eca74195cba09dcae5b1b41534"
     },
     "zhejiang-key-specialized-sme": {
       "schema_version": 1,
@@ -29653,7 +30214,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29699,7 +30262,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "39557d3c5256188d7a20996b28e078d50e8ba2427702e3d4c0f07403417ca75e"
+      "compile_input_hash": "fcc60a0a0ca196dcd4ebd29d48604ba3976b7c447d600bbbddb38670d709cfcc"
     },
     "zhejiang-manufacturing-2": {
       "schema_version": 1,
@@ -29738,7 +30301,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29784,7 +30349,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "3718fc648eefb24c7a56cf12a1dd3527e1d431be9640975787c1d093806aedbd"
+      "compile_input_hash": "b3d8dc5b00a5f51bbc693d5dcfbebe75e12c5948fa7dc66378a9148692321c7c"
     },
     "zhejiang-manufacturing-quality": {
       "schema_version": 1,
@@ -29823,7 +30388,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29869,7 +30436,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "6ebec70b56f0a33f38fb0779cf140eb147334a9be738809304958a90bcf093ad"
+      "compile_input_hash": "061aeb612fcd38ac933e663ef40701dfcbf197f9fa542508013c36c9cdb2ae49"
     },
     "zhejiang-specialized-sme": {
       "schema_version": 1,
@@ -29908,7 +30475,9 @@
         "lifecycle-state-machine",
         "coverage-hash-planner",
         "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
         "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
         "explanation-trace"
       ],
       "project_specific_assets": {
@@ -29954,7 +30523,7 @@
         "名单未披露或主体匹配冲突时只能输出待核验",
         "算法不替代主管部门最终审核结论"
       ],
-      "compile_input_hash": "b8afa031dcdbbada63e9af8f70d61025f7b012b80ca551a43dff6b71ee9b8ff7"
+      "compile_input_hash": "bacbefff282cb58cefd5bffd89cc601c7b5b261df5393f8bb54fe529c1d372f0"
     }
   },
   "policy_dependency_graph": {
@@ -30066,6 +30635,22 @@
         "content_hash": "5445b676f8df6006b183f11d1dd696d716764540a916b6b81ebc1d76d065096c"
       },
       {
+        "node_id": "policy:hangzhou-enterprise-institute-consultation-2026",
+        "node_type": "policy",
+        "document_id": "hangzhou-enterprise-institute-consultation-2026",
+        "title": "杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）",
+        "issued_year": 2026,
+        "status": "draft",
+        "authority": "杭州市科学技术局",
+        "official_url": "https://www.xclcy.com/8955.html",
+        "relation": "prospective-replacement",
+        "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+        "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f",
+        "mandatory_disclosure": "尚未正式生效；仅作未来准备和预测基线",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "41b56d19cd015d6af3c56f7d4cb4b58dc266623379bf1937b8d14f050bc369e4"
+      },
+      {
         "node_id": "policy:hangzhou-enterprise-rd-center-2022",
         "node_type": "policy",
         "document_id": "hangzhou-enterprise-rd-center-2022",
@@ -30087,11 +30672,26 @@
         "status": "current",
         "authority": "杭州市经济和信息化局",
         "official_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
-        "relation": "governed-by",
+        "relation": "hangzhou-governed-by",
         "still_effective": true,
         "cited_by_current_notice": true,
+        "source_role": "2025年清理结果确认杭经信联智能〔2018〕81号继续有效",
         "selection_reason": "still-effective",
-        "content_hash": "03da2a7562bf2522cc927b3f00c0e68e402cf5279169632e330a19d077a4f18b"
+        "content_hash": "7646ea7b1d0b59f174eb5e8150852967e52dbe05a423d4c44b698723de14ab6f"
+      },
+      {
+        "node_id": "policy:jinhua-enterprise-tech-center-2024",
+        "node_type": "policy",
+        "document_id": "jinhua-enterprise-tech-center-2024",
+        "title": "金华市企业技术中心管理办法（2024年版）",
+        "issued_year": 2024,
+        "status": "current",
+        "authority": "金华市经济和信息化局",
+        "official_url": "https://www.jinhua.gov.cn/module/download/downfile.jsp?classid=0&filename=18901b6538e74d06a0c90f45f3bbfc34.pdf",
+        "relation": "jinhua-governed-by",
+        "still_effective": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "85db4d984add1e54d26173df3d364a97ebf25999f27caf55c74e801b3fd300d5"
       },
       {
         "node_id": "policy:little-giant-confirmed-12bcf014dbf2",
@@ -30317,6 +30917,20 @@
         "content_hash": "0beb61b89de61f89279b0a5493a72a0c4216e98fdb652c74347a43837cd50fa0"
       },
       {
+        "node_id": "policy:ningbo-enterprise-tech-center-route",
+        "node_type": "policy",
+        "document_id": "ningbo-enterprise-tech-center-route",
+        "title": "宁波市企业技术中心项目路由说明",
+        "issued_year": 2024,
+        "status": "current-route",
+        "authority": "宁波市企业综合服务平台",
+        "official_url": "https://qf.ningbo.gov.cn/qfpt/fwbkqdsx/art/2024/art_3e1d12182dd9469c8f01ebbe3e1c0e66.html",
+        "relation": "redirect-to-zhejiang-provincial",
+        "source_role": "普通制造业当前改道浙江省企业技术中心；建设行业单独适用宁波市建设行业办法",
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "9704c22f33ee3fe32f0ee97ccf065d2397e66bd003915db445308bc2e8479e84"
+      },
+      {
         "node_id": "policy:pin-zi-biao-authorization-current",
         "node_type": "policy",
         "document_id": "pin-zi-biao-authorization-current",
@@ -30328,6 +30942,20 @@
         "relation": "governed-by",
         "selection_reason": "rolling-five-year-window",
         "content_hash": "a34804e30dc108daa3759776adefc34cbafa89c9534b2b92a3c2d42f3df544df"
+      },
+      {
+        "node_id": "policy:shaoxing-enterprise-tech-center-2018",
+        "node_type": "policy",
+        "document_id": "shaoxing-enterprise-tech-center-2018",
+        "title": "绍兴市市级企业技术中心管理办法",
+        "issued_year": 2018,
+        "status": "current-cited-by-2025-notice",
+        "authority": "绍兴市经济和信息化局",
+        "official_url": "https://sxjxw.sx.gov.cn/art/2023/12/18/art_1229313645_4100402.html",
+        "relation": "shaoxing-governed-by",
+        "cited_by_current_notice": true,
+        "selection_reason": "cited-by-current-notice",
+        "content_hash": "4ad981764d62b68ceb6fc4385e90fdeec8dd78f355ed5285171139bc4c236c24"
       },
       {
         "node_id": "policy:technology-sme-2-confirmed-1f383b27450e",
@@ -30880,7 +31508,7 @@
         "node_id": "project:municipal-enterprise-technology-center",
         "node_type": "project",
         "project_id": "municipal-enterprise-technology-center",
-        "title": "市级企业技术中心"
+        "title": "市级企业技术中心（四市属地版）"
       },
       {
         "node_id": "project:national-high-tech-enterprise",
@@ -31078,6 +31706,11 @@
       },
       {
         "from": "project:hangzhou-enterprise-institute",
+        "to": "policy:hangzhou-enterprise-institute-consultation-2026",
+        "relation": "prospective-replacement"
+      },
+      {
+        "from": "project:hangzhou-enterprise-institute",
         "to": "policy:hangzhou-enterprise-rd-center-2022",
         "relation": "canonical-project-correction"
       },
@@ -31163,8 +31796,23 @@
       },
       {
         "from": "project:municipal-enterprise-technology-center",
-        "to": "policy:zj-enterprise-tech-center-method-2019",
-        "relation": "upper-level-basis"
+        "to": "policy:hangzhou-enterprise-tech-center-2018",
+        "relation": "hangzhou-governed-by"
+      },
+      {
+        "from": "project:municipal-enterprise-technology-center",
+        "to": "policy:jinhua-enterprise-tech-center-2024",
+        "relation": "jinhua-governed-by"
+      },
+      {
+        "from": "project:municipal-enterprise-technology-center",
+        "to": "policy:ningbo-enterprise-tech-center-route",
+        "relation": "redirect-to-zhejiang-provincial"
+      },
+      {
+        "from": "project:municipal-enterprise-technology-center",
+        "to": "policy:shaoxing-enterprise-tech-center-2018",
+        "relation": "shaoxing-governed-by"
       },
       {
         "from": "project:national-high-tech-enterprise",
@@ -31335,8 +31983,10 @@
       "green-factory-4-confirmed-7ce4edf533b9",
       "green-factory-4-confirmed-bfcc47a315ca",
       "green-factory-4-confirmed-ecd28bef0f3d",
+      "hangzhou-enterprise-institute-consultation-2026",
       "hangzhou-enterprise-rd-center-2022",
       "hangzhou-enterprise-tech-center-2018",
+      "jinhua-enterprise-tech-center-2024",
       "little-giant-confirmed-12bcf014dbf2",
       "little-giant-confirmed-1f636aee1e30",
       "little-giant-confirmed-3179e2c83396",
@@ -31353,7 +32003,9 @@
       "national-high-tech-enterprise-confirmed-aac1075f0ffb",
       "national-high-tech-enterprise-confirmed-e87f259ac1af",
       "national-key-little-giant-support-2024",
+      "ningbo-enterprise-tech-center-route",
       "pin-zi-biao-authorization-current",
+      "shaoxing-enterprise-tech-center-2018",
       "technology-sme-2-confirmed-1f383b27450e",
       "technology-sme-2-confirmed-5b833eb17879",
       "technology-sme-2-confirmed-60d211ae61dc",
@@ -31389,14 +32041,11 @@
       "zj-technology-sme-method-2016"
     ],
     "cold_archive_document_ids": [],
-    "content_hash": "bac006fafd9897e506f7e7c1d49c1ff9b54104a273ddcc100f953369bed22ac7"
+    "content_hash": "df35e6cc3c70fe81c2c23d9a7af0c56b1cbb04fe04e41de36e7ae18a6c82b368"
   },
   "incremental_compilation": {
     "strategy": "project-dependency-content-hash",
     "compiled_project_ids": [
-      "zhejiang-enterprise-technology-center"
-    ],
-    "reused_project_ids": [
       "digital-workshop",
       "first-equipment",
       "first-material-batch",
@@ -31418,6 +32067,7 @@
       "technology-sme-1",
       "technology-sme-2",
       "zhejiang-enterprise-institute",
+      "zhejiang-enterprise-technology-center",
       "zhejiang-hidden-champion",
       "zhejiang-industrial-new-product",
       "zhejiang-key-enterprise-institute",
@@ -31426,9 +32076,10 @@
       "zhejiang-manufacturing-quality",
       "zhejiang-specialized-sme"
     ],
+    "reused_project_ids": [],
     "removed_project_ids": [],
-    "compiled_count": 1,
-    "reused_count": 28,
+    "compiled_count": 29,
+    "reused_count": 0,
     "removed_count": 0
   },
   "policy_execution_window": {
@@ -31448,12 +32099,12 @@
     "policy_baseline_count": 0,
     "policy_covered_count": 29,
     "routing_only_count": 0,
-    "shared_kernel_count": 16,
-    "policy_dependency_nodes": 88,
-    "policy_dependency_edges": 74,
-    "execution_policy_documents": 59,
+    "shared_kernel_count": 18,
+    "policy_dependency_nodes": 92,
+    "policy_dependency_edges": 78,
+    "execution_policy_documents": 63,
     "cold_archive_policy_documents": 0,
-    "compiled_projects": 1,
-    "reused_projects": 28
+    "compiled_projects": 29,
+    "reused_projects": 0
   }
 }

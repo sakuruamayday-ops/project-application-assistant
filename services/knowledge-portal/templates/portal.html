@@ -81,12 +81,18 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
         <div class="section-heading"><div><p class="eyebrow">Decision Registry</p><h2>项目算法包</h2></div><p>算法包把项目识别、稳定管理办法、年度通知和属地要求组织为统一决策规则。规则更新由服务端完成，现有 Skills 与 MCP 无需重复配置。</p></div>
         <article class="panel algorithm-introduction">
           <div><span class="eyebrow">它解决什么问题</span><h3>让网站、API、MCP 和 Skills 使用同一套项目判断口径</h3></div>
-          <p>29 个项目均已形成正式阈值规则包。系统会读取企业事实字段，按稳定管理办法、年度通知和属地规则逐项核对门槛；年度通知型项目只在对应年度生效，不能拿上一年度规则冒充当前结论。点击清单中的项目，可以查看企业字段、规则层、政策来源和实际运行配置。</p>
+          <p>29 个编译单元均已形成正式阈值规则包，其中“杭州市企业技术中心”已并入市级企业技术中心四市属地版，前台展示28个主项目。系统会读取企业事实字段，按稳定管理办法、年度通知、属地规则和已核验征求意见前瞻层逐项核对；征求意见稿只用于预测准备，不能冒充现行正式政策。点击清单中的项目，可以查看企业字段、规则层、政策来源和实际运行配置。</p>
         </article>
         <article class="panel algorithm-introduction">
           <div><span class="eyebrow">Policy Impact</span><h3>政策变化只重编受影响项目</h3></div>
           <p>新政策进入后，系统先比较内容哈希，再沿政策依赖图定位受影响项目。未变化的算法包直接复用；变化项目会重算当前判断、预测和历史回测。官方名单形成的企业认定、复核和撤销事实不会被后续政策改写。</p>
         </article>
+        {% if four_city_policy_registry.project_families %}
+        <article class="panel table-panel algorithm-catalog">
+          <div class="panel-head algorithm-catalog-head"><div><span class="eyebrow">Four-city Policy Router</span><h3>四市研发平台与企业技术中心版本</h3></div><p>杭州、宁波、绍兴、金华分别路由；征求意见稿只替代未来准备基线，不冒充现行正式文件。</p></div>
+          <div class="table-wrap"><table><thead><tr><th>项目族</th><th>城市</th><th>规范项目名</th><th>正式政策或办理路径</th><th>前瞻变化</th></tr></thead><tbody>{% for family in four_city_policy_registry.project_families %}{% for variant in family.city_variants %}<tr><td><strong>{{ family.family_name }}</strong></td><td>{{ variant.city }}</td><td>{{ variant.canonical_name }}</td><td>{{ variant.formal_policy }}<small>{{ variant.route_status }}{% if variant.source_role %} · {{ variant.source_role }}{% endif %}</small></td><td>{% if variant.prospective_policy %}<strong>{{ variant.prospective_policy }}</strong><small>{{ variant.prospective_policy_status }} · 尚未正式生效{% if variant.transition %} · {{ variant.transition }}{% endif %}</small>{% else %}<span class="muted">当前未登记征求意见替代稿</span>{% endif %}</td></tr>{% endfor %}{% endfor %}</tbody></table></div>
+        </article>
+        {% endif %}
         <nav class="algorithm-metrics" aria-label="算法包分类">
           <a class="algorithm-stat-card {{ 'is-active' if not project_algorithms.coverage_filter else '' }}" href="/algorithms#algorithm-catalog" data-force-navigation>
             <span>全部算法包</span><strong>{{ project_algorithms.total }}</strong><small>查看完整项目清单</small><em>查看全部 →</em>
@@ -120,11 +126,14 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
             <div><dt>已配置规则</dt><dd>{{ project_algorithm_detail.rules|length }} 条</dd></div>
             <div><dt>政策来源</dt><dd>{{ project_algorithm_detail.sources|length }} 项</dd></div>
           </dl>
+          {% if project_algorithm_detail.has_prospective_layer %}
+          <div class="algorithm-routing-notice"><strong>政策过渡提示</strong><p>本项目已接入征求意见前瞻层。未来准备与预测优先按已核验征求意见稿比对，但征求意见稿尚未正式生效，不得据此生成当前正式资格结论；现行正式判断和历史回放仍按对应时点有效文件执行。</p>{% for notice in project_algorithm_detail.transition_notices %}<p>{{ notice }}</p>{% endfor %}</div>
+          {% endif %}
           {% if project_algorithm_detail.fact_fields %}
           <div class="algorithm-detail-section"><h4>需要读取的企业事实</h4><div class="algorithm-chip-list">{% for field in project_algorithm_detail.fact_fields %}<span><strong>{{ field.label }}</strong><small>{{ field.field }}{% if field.unit %} · {{ field.unit }}{% endif %}</small></span>{% endfor %}</div></div>
           {% endif %}
           {% if project_algorithm_detail.rules %}
-          <div class="algorithm-detail-section"><h4>正式判断规则</h4><div class="table-wrap"><table><thead><tr><th>规则字段</th><th>判断</th><th>规则层</th><th>政策依据</th></tr></thead><tbody>{% for rule in project_algorithm_detail.rules %}<tr><td><strong>{{ rule.field }}</strong><small>{{ rule.rule_id }}</small></td><td>{{ rule.operator }} {{ rule.expected }} {{ rule.unit }}</td><td>{{ rule.layer_label }}</td><td><strong>{{ rule.source }}</strong>{% if rule.source_quote %}<small>{{ rule.source_quote }}</small>{% endif %}{% if rule.source_url %}<a href="{{ rule.source_url }}" target="_blank" rel="noreferrer">查看官方原文 →</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div>
+          <div class="algorithm-detail-section"><h4>已配置判断规则</h4><div class="table-wrap"><table><thead><tr><th>规则字段</th><th>判断</th><th>规则层</th><th>政策状态</th><th>政策依据</th></tr></thead><tbody>{% for rule in project_algorithm_detail.rules %}<tr><td><strong>{{ rule.field }}</strong><small>{{ rule.rule_id }}</small></td><td>{{ rule.operator }} {{ rule.expected }} {{ rule.unit }}</td><td>{{ rule.layer_label }}</td><td>{{ rule.policy_status or '待标记状态' }}</td><td><strong>{{ rule.source }}</strong>{% if rule.source_quote %}<small>{{ rule.source_quote }}</small>{% endif %}{% if rule.source_url %}<a href="{{ rule.source_url }}" target="_blank" rel="noreferrer">查看原文 →</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div>
           {% else %}
           {% if project_algorithm_detail.coverage_status == 'policy-baseline-confirmed' %}
           <div class="algorithm-routing-notice"><strong>为什么尚不直接给出符合或不符合</strong><p>该项目的最新有效办法、最近年度通知、属地规则需求和政策依赖已经核验入库，但完整门槛尚未全部编译为企业事实比较规则。系统可以查询现行政策、形成下一年度准备建议和回放历史身份，不会把政策基线误当作自动审批结论。</p></div>
@@ -139,7 +148,7 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
         <article class="panel table-panel algorithm-catalog" id="algorithm-catalog">
           <div class="panel-head algorithm-catalog-head">
             <div><span class="eyebrow">Project Registry</span><h3>项目算法清单</h3></div>
-            <div class="algorithm-catalog-summary"><strong>{{ project_algorithms.coverage_filter_label }}</strong><span>显示 {{ project_algorithms.visible_total }} / {{ project_algorithms.total }} 个项目</span>{% if project_algorithms.coverage_filter %}<a href="/algorithms#algorithm-catalog" data-force-navigation>清除筛选</a>{% endif %}</div>
+            <div class="algorithm-catalog-summary"><strong>{{ project_algorithms.coverage_filter_label }}</strong><span>显示 {{ project_algorithms.visible_total }} / {{ project_algorithms.total }} 个主项目{% if project_algorithms.hidden_compatibility_aliases %}，另有 {{ project_algorithms.hidden_compatibility_aliases }} 个兼容别名包{% endif %}</span>{% if project_algorithms.coverage_filter %}<a href="/algorithms#algorithm-catalog" data-force-navigation>清除筛选</a>{% endif %}</div>
           </div>
           <div class="table-wrap algorithm-table-wrap"><table class="algorithm-table"><thead><tr><th>项目</th><th>状态</th><th>补齐顺序</th><th>近7日查询</th><th>规则层</th><th>正式规则</th><th>当前能力</th><th></th></tr></thead><tbody>{% for item in project_algorithms["items"] %}<tr class="{{ 'is-current' if project_algorithm_detail and project_algorithm_detail.project_id == item.project_id else '' }}"><td><a class="algorithm-project-link" href="/algorithms?project={{ item.project_id }}#algorithm-detail" data-force-navigation><strong>{{ item.project_name }}</strong><small>{{ item.project_id }}</small></a></td><td><span class="table-status {{ 'off' if item.coverage_status != 'rules-confirmed' else '' }}">{{ item.coverage_label }}</span></td><td><strong>{{ item.priority_label }}</strong><small>{{ item.priority_reason }}</small></td><td>{{ item.usage_7d }} 次<small>{{ item.users_7d }} 名成员</small></td><td>{% if item.layers %}{% for layer in item.layers %}<span class="status-pill">{{ layer.label }} · {{ layer.rule_count }}</span>{% endfor %}{% else %}<span class="muted">待确认规则源</span>{% endif %}</td><td>{{ item.rule_count }}</td><td>{{ item.decision_scope }}</td><td><a class="text-action" href="/algorithms?project={{ item.project_id }}#algorithm-detail" data-force-navigation>查看详情 →</a></td></tr>{% else %}<tr><td colspan="8" class="empty">当前筛选条件下没有项目</td></tr>{% endfor %}</tbody></table></div>
         </article>

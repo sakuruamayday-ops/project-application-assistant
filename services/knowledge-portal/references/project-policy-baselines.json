@@ -220,6 +220,18 @@
           "authority": "杭州市科学技术局",
           "official_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
           "relation": "canonical-project-correction"
+        },
+        {
+          "document_id": "hangzhou-enterprise-institute-consultation-2026",
+          "title": "杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）",
+          "issued_year": 2026,
+          "status": "draft",
+          "authority": "杭州市科学技术局",
+          "official_url": "https://www.xclcy.com/8955.html",
+          "relation": "prospective-replacement",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f",
+          "mandatory_disclosure": "尚未正式生效；仅作未来准备和预测基线"
         }
       ],
       "dependencies": []
@@ -246,21 +258,57 @@
     {
       "project_id": "municipal-enterprise-technology-center",
       "baseline_status": "complete",
-      "decision_mode": "jurisdiction-required",
+      "decision_mode": "four-city-jurisdiction-router",
       "policy_documents": [
         {
-          "document_id": "zj-enterprise-tech-center-method-2019",
-          "title": "浙江省企业技术中心管理办法",
-          "issued_year": 2019,
+          "document_id": "hangzhou-enterprise-tech-center-2018",
+          "title": "杭州市企业技术中心管理办法",
+          "issued_year": 2018,
           "status": "current",
-          "authority": "浙江省经济和信息化厅",
-          "official_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
-          "relation": "upper-level-basis",
+          "authority": "杭州市经济和信息化局",
+          "official_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
+          "relation": "hangzhou-governed-by",
           "still_effective": true,
-          "current_upstream_basis": true
+          "cited_by_current_notice": true,
+          "source_role": "2025年清理结果确认杭经信联智能〔2018〕81号继续有效"
+        },
+        {
+          "document_id": "shaoxing-enterprise-tech-center-2018",
+          "title": "绍兴市市级企业技术中心管理办法",
+          "issued_year": 2018,
+          "status": "current-cited-by-2025-notice",
+          "authority": "绍兴市经济和信息化局",
+          "official_url": "https://sxjxw.sx.gov.cn/art/2023/12/18/art_1229313645_4100402.html",
+          "relation": "shaoxing-governed-by",
+          "cited_by_current_notice": true
+        },
+        {
+          "document_id": "jinhua-enterprise-tech-center-2024",
+          "title": "金华市企业技术中心管理办法（2024年版）",
+          "issued_year": 2024,
+          "status": "current",
+          "authority": "金华市经济和信息化局",
+          "official_url": "https://www.jinhua.gov.cn/module/download/downfile.jsp?classid=0&filename=18901b6538e74d06a0c90f45f3bbfc34.pdf",
+          "relation": "jinhua-governed-by",
+          "still_effective": true
+        },
+        {
+          "document_id": "ningbo-enterprise-tech-center-route",
+          "title": "宁波市企业技术中心项目路由说明",
+          "issued_year": 2024,
+          "status": "current-route",
+          "authority": "宁波市企业综合服务平台",
+          "official_url": "https://qf.ningbo.gov.cn/qfpt/fwbkqdsx/art/2024/art_3e1d12182dd9469c8f01ebbe3e1c0e66.html",
+          "relation": "redirect-to-zhejiang-provincial",
+          "source_role": "普通制造业当前改道浙江省企业技术中心；建设行业单独适用宁波市建设行业办法"
         }
       ],
-      "dependencies": []
+      "dependencies": [
+        {
+          "type": "jurisdiction-resolution",
+          "description": "必须先解析杭州、宁波、绍兴或金华，再加载对应属地规则或省级改道路由。"
+        }
+      ]
     },
     {
       "project_id": "zhejiang-enterprise-technology-center",

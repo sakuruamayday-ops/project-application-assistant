@@ -95,18 +95,37 @@
     {
       "id": "hangzhou-enterprise-technology-center",
       "aliases": ["杭州企业技术中心"],
-      "targets": ["杭州市企业技术中心"],
+      "targets": ["市级企业技术中心（四市属地版）"],
+      "canonical_project_id": "municipal-enterprise-technology-center",
       "allowed_title_terms": ["杭州市企业技术中心", "市级企业技术中心"],
       "excluded_title_terms": ["浙江省企业技术中心", "企业研究院", "研究开发中心"]
     },
     {
       "id": "municipal-enterprise-technology-center",
-      "aliases": ["市企业技术中心"],
-      "targets": ["市级企业技术中心"],
+      "aliases": ["市企业技术中心", "市级企业技术中心", "杭州市企业技术中心", "宁波市企业技术中心", "绍兴市企业技术中心", "金华市企业技术中心"],
+      "targets": ["市级企业技术中心（四市属地版）"],
       "required_region_level": "city",
       "region_prompt": "请先说明企业所在城市，例如杭州市、宁波市、绍兴市或金华市；市级项目默认检索该市政策。",
       "allowed_title_terms": ["企业技术中心", "市级企业技术中心"],
-      "excluded_title_terms": ["省级企业技术中心", "浙江省企业技术中心", "国家企业技术中心", "企业研究院", "研究开发中心"]
+      "excluded_title_terms": ["省级企业技术中心", "浙江省企业技术中心", "国家企业技术中心", "企业研究院", "研究开发中心"],
+      "jurisdiction_title_terms": {
+        "杭州市": {
+          "allowed_title_terms": ["杭州市企业技术中心"],
+          "excluded_title_terms": ["浙江省企业技术中心", "宁波市企业技术中心", "绍兴市企业技术中心", "金华市企业技术中心"]
+        },
+        "宁波市": {
+          "allowed_title_terms": ["浙江省企业技术中心", "宁波市企业技术中心"],
+          "excluded_title_terms": ["杭州市企业技术中心", "绍兴市企业技术中心", "金华市企业技术中心"]
+        },
+        "绍兴市": {
+          "allowed_title_terms": ["绍兴市市级企业技术中心", "绍兴市企业技术中心"],
+          "excluded_title_terms": ["浙江省企业技术中心", "杭州市企业技术中心", "宁波市企业技术中心", "金华市企业技术中心"]
+        },
+        "金华市": {
+          "allowed_title_terms": ["金华市企业技术中心"],
+          "excluded_title_terms": ["浙江省企业技术中心", "杭州市企业技术中心", "宁波市企业技术中心", "绍兴市企业技术中心"]
+        }
+      }
     },
     {
       "id": "zhejiang-manufacturing-quality",

@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "algorithm_id": "project-decision-municipal-enterprise-technology-center",
-  "algorithm_name": "市级企业技术中心项目决策算法",
-  "algorithm_version": "dynamic-11-city-rule-compiler-20260730",
+  "algorithm_name": "市级企业技术中心（四市属地版）项目决策算法",
+  "algorithm_version": "four-city-jurisdiction-router-20260730",
   "project_id": "municipal-enterprise-technology-center",
-  "project_name": "市级企业技术中心",
+  "project_name": "市级企业技术中心（四市属地版）",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-5aacd2b439fa3b485054",
+  "policy_version_id": "policy-16e247b21fc4f3b4edd9",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -35,13 +35,15 @@
     "lifecycle-state-machine",
     "coverage-hash-planner",
     "policy-change-impact-simulator",
+    "four-city-policy-transition-resolver",
     "deliverable-contract-gate",
+    "deliverable-contract-auto-repair",
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 5,
-    "confirmed_rules": 6,
-    "rule_layers": 2,
+    "fact_fields": 6,
+    "confirmed_rules": 9,
+    "rule_layers": 5,
     "gold_cases": 3
   },
   "explainability": {
@@ -81,5 +83,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "ab0947bc29a3aa31709884a52e6ba18fde1c9037b778a313df19407c659a205d"
+  "compile_input_hash": "41fc54c1eabf20deb21367f3c5c9309e9ba06b066df33116ca61fdbedc2690ec"
 }

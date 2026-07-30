@@ -10,6 +10,9 @@
   "source_retrieval_rule_ids": [
     "hangzhou-enterprise-technology-center"
   ],
+  "canonical_project_id": "municipal-enterprise-technology-center",
+  "variant_of": "municipal-enterprise-technology-center",
+  "ui_hidden": true,
   "fact_fields": [
     {
       "field": "hz_tech_center_innovation_operation_mechanism_sound",

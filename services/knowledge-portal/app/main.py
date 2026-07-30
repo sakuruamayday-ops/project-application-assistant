@@ -95,6 +95,7 @@ from app.deliverable_contract import (
 )
 from app.policy_retrieval import select_policy_evidence
 from app.policy_time import enrich_policy_time_context
+from app.policy_transition import resolve_policy_transition
 from app.three_first_routing import plan_three_first_analysis
 
 # Production may supply this private extension as a server-managed overlay.
@@ -220,6 +221,9 @@ LIFECYCLE_FACT_CONTRACT_PATH = (
     BASE_DIR / "references" / "lifecycle-fact-contract.json"
 )
 PROJECT_ALGORITHM_PACK_DIR = BASE_DIR / "references" / "project-algorithm-packs"
+FOUR_CITY_RD_PLATFORM_POLICY_REGISTRY_PATH = (
+    BASE_DIR / "references" / "four-city-rd-platform-policy-registry.json"
+)
 COMPILED_PROJECT_RULE_IR_PATH = (
     BASE_DIR / "references" / "compiled-project-rule-ir.json"
 )
@@ -1382,11 +1386,25 @@ def filter_project_results(
     retrieval_queries = project_query_variants(question)
     retrieval_rule = matched_project_retrieval_rule(question)
     if retrieval_rule:
+        title_term_source = retrieval_rule
+        jurisdiction_terms = retrieval_rule.get("jurisdiction_title_terms")
+        if isinstance(jurisdiction_terms, dict):
+            title_term_source = next(
+                (
+                    override
+                    for region in explicit_project_regions(question)
+                    for city, override in jurisdiction_terms.items()
+                    if region == city and isinstance(override, dict)
+                ),
+                retrieval_rule,
+            )
         allowed_terms = [
-            normalize_search_text(term) for term in retrieval_rule.get("allowed_title_terms", [])
+            normalize_search_text(term)
+            for term in title_term_source.get("allowed_title_terms", [])
         ]
         excluded_terms = [
-            normalize_search_text(term) for term in retrieval_rule.get("excluded_title_terms", [])
+            normalize_search_text(term)
+            for term in title_term_source.get("excluded_title_terms", [])
         ]
         allowed_rows = [
             row
@@ -1824,6 +1842,21 @@ def load_project_algorithm_packs() -> tuple[dict[str, object], ...]:
     return tuple(packs)
 
 
+@lru_cache(maxsize=1)
+def load_four_city_rd_platform_policy_registry() -> dict[str, object]:
+    if not FOUR_CITY_RD_PLATFORM_POLICY_REGISTRY_PATH.is_file():
+        return {}
+    try:
+        payload = json.loads(
+            FOUR_CITY_RD_PLATFORM_POLICY_REGISTRY_PATH.read_text(
+                encoding="utf-8"
+            )
+        )
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
 def project_algorithm_catalog_payload(
     coverage_filter: str = "",
 ) -> dict[str, object]:
@@ -1839,7 +1872,13 @@ def project_algorithm_catalog_payload(
     )
     usage_metrics = project_algorithm_usage_metrics()
     items: list[dict[str, object]] = []
-    for pack in load_project_algorithm_packs():
+    all_packs = load_project_algorithm_packs()
+    hidden_compatibility_packs = [
+        pack for pack in all_packs if pack.get("ui_hidden") is True
+    ]
+    for pack in all_packs:
+        if pack.get("ui_hidden") is True:
+            continue
         layers = [
             layer
             for layer in pack.get("rule_layers", [])
@@ -1985,6 +2024,8 @@ def project_algorithm_catalog_payload(
     ]
     return {
         "total": len(items),
+        "compilation_total": len(all_packs),
+        "hidden_compatibility_aliases": len(hidden_compatibility_packs),
         "confirmed": confirmed,
         "policy_baselines": baselines,
         "policy_covered": confirmed + baselines,
@@ -2013,7 +2054,10 @@ def project_algorithm_catalog_payload(
             if top_priority
             else "近7日暂无可识别项目查询，暂不人为指定优先级"
             if routing_only
-            else "29个项目均已编译正式阈值规则包"
+            else (
+                "29个编译单元均已形成正式阈值规则包，"
+                "前台合并展示28个主项目"
+            )
         ),
         "items": visible_items,
     }
@@ -2050,14 +2094,18 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
             "policy_status": str(rule.get("policy_status") or ""),
             "review_status": str(rule.get("review_status") or ""),
             "layer_label": str(layer.get("label") or ""),
+            "source_display": rule.get("source_display", True),
         }
         for layer in layers
         for rule in layer.get("rules", [])
         if isinstance(rule, dict)
+        and rule.get("source_display") is not False
     ]
     sources: list[dict[str, str]] = []
     seen_sources: set[tuple[str, str]] = set()
     for rule in rules:
+        if rule.get("source_display") is False:
+            continue
         source_key = (rule["source"], rule["source_url"])
         if not any(source_key) or source_key in seen_sources:
             continue
@@ -2126,6 +2174,12 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
                 "layer_id": str(layer.get("layer_id") or ""),
                 "label": str(layer.get("label") or ""),
                 "layer_type": str(layer.get("layer_type") or ""),
+                "policy_time_type": str(
+                    layer.get("policy_time_type") or ""
+                ),
+                "transition_notice": str(
+                    layer.get("transition_notice") or ""
+                ),
                 "rule_count": len(
                     [
                         rule
@@ -2136,6 +2190,17 @@ def project_algorithm_detail_payload(project_id: str) -> dict[str, object] | Non
             }
             for layer in layers
         ],
+        "has_prospective_layer": any(
+            str(layer.get("layer_type") or "") == "prospective"
+            for layer in layers
+        ),
+        "transition_notices": list(
+            dict.fromkeys(
+                str(layer.get("transition_notice") or "").strip()
+                for layer in layers
+                if str(layer.get("transition_notice") or "").strip()
+            )
+        ),
         "rules": rules,
         "sources": sources,
         "policy_baseline": baseline,
@@ -4596,6 +4661,16 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             [item for item in candidates if isinstance(item, dict)],
             target_year=int(arguments.get("target_year") or 0),
             requested_claims=[str(item) for item in claims],
+        )
+        return result, []
+    if name == "policy_transition_resolve":
+        result = resolve_policy_transition(
+            load_four_city_rd_platform_policy_registry(),
+            family_id=str(arguments.get("family_id") or ""),
+            city=str(arguments.get("city") or ""),
+            evaluation_mode=str(
+                arguments.get("evaluation_mode") or "current-assessment"
+            ),
         )
         return result, []
     if name == "delivery_contract_audit":
@@ -7541,6 +7616,9 @@ def portal_payload(
         "project_algorithms": project_algorithm_catalog_payload(algorithm_coverage),
         "project_algorithm_detail": project_algorithm_detail_payload(
             algorithm_project_id
+        ),
+        "four_city_policy_registry": (
+            load_four_city_rd_platform_policy_registry()
         ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_announcement": announcement_payload,

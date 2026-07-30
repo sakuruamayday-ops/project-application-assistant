@@ -744,6 +744,61 @@ def test_2026_notice_selection_distinguishes_verified_high_tech_from_missing_cha
     )
 
 
+def test_consultation_draft_is_selected_only_for_forecast():
+    pack = {
+        "rule_layers": [
+            {
+                "layer_id": "stable",
+                "layer_type": "stable",
+                "policy_time_type": "stable-management",
+                "rules": [
+                    {
+                        "rule_id": "same-threshold",
+                        "field": "old_value",
+                        "operator": "gte",
+                        "expected": 200,
+                        "policy_status": "current",
+                    }
+                ],
+            },
+            {
+                "layer_id": "consultation",
+                "layer_type": "prospective",
+                "policy_time_type": "consultation-draft",
+                "source_archive_sha256": "a" * 64,
+                "replaces_rule_ids": ["same-threshold"],
+                "rules": [
+                    {
+                        "rule_id": "draft-threshold",
+                        "field": "new_value",
+                        "operator": "gte",
+                        "expected": 100,
+                        "policy_status": "draft",
+                    }
+                ],
+            },
+        ]
+    }
+
+    forecast = select_project_algorithm_rules(
+        pack,
+        {"evaluation_mode": "forecast"},
+    )
+    current = select_project_algorithm_rules(
+        pack,
+        {"evaluation_mode": "current-assessment"},
+    )
+
+    assert [rule["rule_id"] for rule in forecast["rules"]] == [
+        "draft-threshold"
+    ]
+    assert forecast["policy_time"]["status"] == "forecast-draft-baseline"
+    assert forecast["policy_time"]["formal_conclusion_allowed"] is False
+    assert [rule["rule_id"] for rule in current["rules"]] == [
+        "same-threshold"
+    ]
+
+
 def test_project_algorithm_pack_gate_runs_all_gold_cases():
     script = (
         Path(__file__).resolve().parents[1]

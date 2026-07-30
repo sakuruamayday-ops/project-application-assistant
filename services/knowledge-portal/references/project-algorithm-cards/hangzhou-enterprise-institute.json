@@ -2,12 +2,12 @@
   "schema_version": 1,
   "algorithm_id": "project-decision-hangzhou-enterprise-institute",
   "algorithm_name": "杭州市企业研究院项目决策算法",
-  "algorithm_version": "2022-method-valid-through-2027-20260730",
+  "algorithm_version": "2022-formal-plus-2026-consultation-transition-20260730",
   "project_id": "hangzhou-enterprise-institute",
   "project_name": "杭州市企业研究院",
   "coverage_status": "rules-confirmed",
   "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
-  "policy_version_id": "policy-4a705c4e38a750c5cc25",
+  "policy_version_id": "policy-033c259e32559434fe49",
   "inputs": {
     "project_context": "项目名称、年度、申请类型与属地",
     "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
@@ -35,13 +35,15 @@
     "lifecycle-state-machine",
     "coverage-hash-planner",
     "policy-change-impact-simulator",
+    "four-city-policy-transition-resolver",
     "deliverable-contract-gate",
+    "deliverable-contract-auto-repair",
     "explanation-trace"
   ],
   "project_specific_assets": {
-    "fact_fields": 17,
-    "confirmed_rules": 10,
-    "rule_layers": 1,
+    "fact_fields": 19,
+    "confirmed_rules": 19,
+    "rule_layers": 2,
     "gold_cases": 3
   },
   "explainability": {
@@ -81,5 +83,5 @@
     "名单未披露或主体匹配冲突时只能输出待核验",
     "算法不替代主管部门最终审核结论"
   ],
-  "compile_input_hash": "1b1c07a7efaf6b98e1f5f175fb7887288393f3fbff41ccd5e0704f5962b7dde0"
+  "compile_input_hash": "a6ff7438577fce7e5b612fd02f4334d6c50876e5a1ff483dd632aaedd8c08fac"
 }

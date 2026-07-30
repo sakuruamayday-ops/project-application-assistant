@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project_id": "hangzhou-enterprise-institute",
   "project_name": "杭州市企业研究院",
-  "version": "2022-method-valid-through-2027-20260730",
+  "version": "2022-formal-plus-2026-consultation-transition-20260730",
   "coverage_status": "rules-confirmed",
   "aliases": [
     "杭州研发中心",
@@ -155,6 +155,22 @@
       "label": "研发中心申请及实施方案完整",
       "aliases": [
         "研发中心申请及实施方案完整"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_technology_sme",
+      "label": "有效期内科技型中小企业",
+      "aliases": [
+        "有效期内科技型中小企业"
+      ],
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz_rd_good_seed_enterprise",
+      "label": "有效期内好苗子企业",
+      "aliases": [
+        "有效期内好苗子企业"
       ],
       "value_type": "boolean"
     }
@@ -671,6 +687,279 @@
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
           "approved_at": "2026-07-30 09:00:00",
           "source_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf"
+        }
+      ]
+    },
+    {
+      "layer_id": "hangzhou-enterprise-institute-2026-consultation",
+      "layer_type": "prospective",
+      "policy_time_type": "consultation-draft",
+      "label": "2026年杭州市企业研究院征求意见稿前瞻基线",
+      "applicability": {
+        "application_types": [
+          "recognition"
+        ]
+      },
+      "source_url": "https://www.xclcy.com/8955.html",
+      "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+      "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f",
+      "source_role": "杭州市科技局征求意见公告公开镜像",
+      "published_at": "2026-05-29",
+      "enterprise_deadline": null,
+      "replaces_rule_ids": [
+        "hz-rd-entity",
+        "hz-rd-staff",
+        "hz-rd-site",
+        "hz-rd-equipment",
+        "hz-rd-investment",
+        "hz-rd-projects",
+        "hz-rd-ip",
+        "hz-rd-accounting",
+        "hz-rd-compliance",
+        "hz-rd-materials"
+      ],
+      "transition_notice": "市企业高新技术研究开发中心拟停止认定，相关资质拟迁移为市企业研究院；正式发布前仅作前瞻准备和差距评估。",
+      "rules": [
+        {
+          "rule_id": "hz-institute-draft-entity",
+          "logic": "all",
+          "children": [
+            {
+              "rule_id": "hz-institute-draft-hangzhou",
+              "field": "hz_rd_registered_in_hangzhou",
+              "operator": "truthy",
+              "expected": true
+            },
+            {
+              "rule_id": "hz-institute-draft-enterprise-route",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz-institute-draft-tech-sme",
+                  "field": "hz_rd_technology_sme",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "hz-institute-draft-good-seed",
+                  "field": "hz_rd_good_seed_enterprise",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "hz-institute-draft-high-tech",
+                  "field": "hz_rd_high_tech_enterprise",
+                  "operator": "truthy",
+                  "expected": true
+                }
+              ]
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "依托企业须在杭注册并具有独立法人资格；申报企业研究院须为有效期内科技型中小企业、好苗子企业或高新技术企业。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+        },
+        {
+          "rule_id": "hz-institute-draft-staff",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hz-institute-draft-staff-software",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "hz-institute-draft-software-type",
+                  "field": "hz_rd_is_software_enterprise",
+                  "operator": "truthy",
+                  "expected": true
+                },
+                {
+                  "rule_id": "hz-institute-draft-software-staff",
+                  "field": "hz_rd_full_time_research_staff",
+                  "operator": "gte",
+                  "expected": 15,
+                  "unit": "人"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz-institute-draft-staff-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "hz-institute-draft-nonsoftware-type",
+                  "field": "hz_rd_is_software_enterprise",
+                  "operator": "falsy",
+                  "expected": false
+                },
+                {
+                  "rule_id": "hz-institute-draft-general-staff",
+                  "field": "hz_rd_full_time_research_staff",
+                  "operator": "gte",
+                  "expected": 10,
+                  "unit": "人"
+                }
+              ]
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "上年度研发人员数量10人以上，软件企业15人以上。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+        },
+        {
+          "rule_id": "hz-institute-draft-site",
+          "type": "hard-threshold",
+          "field": "hz_rd_site_area",
+          "operator": "gt",
+          "expected": 100,
+          "unit": "平方米",
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "研发场地相对集中，面积100平方米以上。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+        },
+        {
+          "rule_id": "hz-institute-draft-equipment",
+          "type": "hard-threshold",
+          "field": "hz_rd_applicable_equipment_threshold_assessment_passed",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "科研设备原值总额100万元以上；农业企业50万元以上；租赁设备按上年度租金凭证金额的150%计入。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+        },
+        {
+          "rule_id": "hz-institute-draft-investment",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hz-institute-draft-investment-amount",
+              "field": "hz_rd_self_funded_expense",
+              "operator": "gte",
+              "expected": 100,
+              "unit": "万元"
+            },
+            {
+              "rule_id": "hz-institute-draft-investment-ratio",
+              "field": "hz_rd_self_funded_expense_ratio",
+              "operator": "gte",
+              "expected": 3,
+              "unit": "%"
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "上年度研发费用100万元以上，或研发费用占营业收入比重3%以上。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+        },
+        {
+          "rule_id": "hz-institute-draft-ip",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hz-institute-draft-class-i-ip",
+              "field": "hz_rd_class_i_ip_count",
+              "operator": "gte",
+              "expected": 1,
+              "unit": "项"
+            },
+            {
+              "rule_id": "hz-institute-draft-class-ii-ip",
+              "field": "hz_rd_other_ip_count",
+              "operator": "gte",
+              "expected": 3,
+              "unit": "项"
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "近三年获I类知识产权1件以上或II类知识产权3件以上。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+        },
+        {
+          "rule_id": "hz-institute-draft-accounting",
+          "type": "hard-threshold",
+          "field": "hz_rd_independent_accounting",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "各项规章制度健全，研发活动单独建账核算。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+        },
+        {
+          "rule_id": "hz-institute-draft-compliance",
+          "type": "hard-threshold",
+          "field": "hz_rd_compliance_clear",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "依托企业不得列入严重失信名单。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
+        },
+        {
+          "rule_id": "hz-institute-draft-materials",
+          "type": "submission",
+          "field": "hz_rd_materials_complete",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+          "source_quote": "申报企业研究院应填报申报书、实施方案等材料。",
+          "policy_status": "draft",
+          "review_status": "confirmed",
+          "approved_by": "主人授权前瞻使用；焦糖依据公开征求意见全文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.xclcy.com/8955.html",
+          "source_archive_path": "10_政策与目录/研究院/杭州市企业研究院/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）.md",
+          "source_archive_sha256": "b65af41141dfef5c2e0daaa6d9dbb86770654327b5c28f99f1540d78f2569d3f"
         }
       ]
     }

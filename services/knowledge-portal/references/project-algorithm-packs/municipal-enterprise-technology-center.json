@@ -1,11 +1,18 @@
 {
   "schema_version": 1,
   "project_id": "municipal-enterprise-technology-center",
-  "project_name": "市级企业技术中心",
-  "version": "dynamic-11-city-rule-compiler-20260730",
+  "project_name": "市级企业技术中心（四市属地版）",
+  "version": "four-city-jurisdiction-router-20260730",
   "coverage_status": "rules-confirmed",
   "aliases": [
-    "市企业技术中心"
+    "市企业技术中心",
+    "市级企业技术中心",
+    "杭州市企业技术中心",
+    "杭州企业技术中心",
+    "宁波市企业技术中心",
+    "绍兴市企业技术中心",
+    "绍兴市市级企业技术中心",
+    "金华市企业技术中心"
   ],
   "source_retrieval_rule_ids": [
     "municipal-enterprise-technology-center"
@@ -63,6 +70,17 @@
       "derivation_requirements": [
         "申请报告、评价表及属地通知要求的证明材料须完整。"
       ]
+    },
+    {
+      "field": "municipal_tc_local_project_available",
+      "label": "属地存在同名市级认定层",
+      "aliases": [
+        "属地存在同名市级认定层"
+      ],
+      "value_type": "boolean",
+      "derivation_requirements": [
+        "必须先核验目标城市是否设有普通制造业市级企业技术中心；不存在时应改道省级项目，不得套用其他城市门槛。"
+      ]
     }
   ],
   "rule_cards": [
@@ -74,6 +92,7 @@
       "expected": true,
       "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
       "source_quote": "市级企业技术中心由各地依法制定认定和评价政策，必须先解析企业注册地。",
+      "source_display": false,
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -88,6 +107,7 @@
       "expected": true,
       "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
       "source_quote": "判断必须加载目标设区市查询日最新有效办法及当年度通知。",
+      "source_display": false,
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -102,6 +122,7 @@
       "type": "hard-threshold",
       "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
       "source_quote": "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。",
+      "source_display": false,
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -116,6 +137,7 @@
       "expected": true,
       "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
       "source_quote": "严重违法失信、重大质量安全事故及属地列明排除项须逐项核验。",
+      "source_display": false,
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -130,6 +152,7 @@
       "expected": true,
       "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
       "source_quote": "申请报告、评价表及属地通知要求的证明材料须完整。",
+      "source_display": false,
       "policy_status": "current",
       "review_status": "confirmed",
       "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -154,6 +177,7 @@
           "expected": true,
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "市级企业技术中心由各地依法制定认定和评价政策，必须先解析企业注册地。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -168,6 +192,7 @@
           "expected": true,
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "判断必须加载目标设区市查询日最新有效办法及当年度通知。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -182,6 +207,7 @@
           "type": "hard-threshold",
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "企业收入、研发投入、人员、设备、组织和前置资质按属地现行办法逐项比较。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -196,6 +222,7 @@
           "expected": true,
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "严重违法失信、重大质量安全事故及属地列明排除项须逐项核验。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -210,6 +237,7 @@
           "expected": true,
           "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
           "source_quote": "申请报告、评价表及属地通知要求的证明材料须完整。",
+          "source_display": false,
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
@@ -219,35 +247,138 @@
       ]
     },
     {
-      "layer_id": "municipal-tech-center-11-city-runtime",
+      "layer_id": "municipal-tech-center-hangzhou",
       "layer_type": "jurisdiction",
       "policy_time_type": "jurisdiction-detail",
-      "label": "浙江11个设区市动态阈值层",
+      "label": "杭州市企业技术中心属地规则",
       "applicability": {
         "regions": [
-          "浙江省11个设区市"
+          "浙江省",
+          "杭州市"
         ],
         "application_types": [
           "recognition",
           "evaluation"
         ]
       },
-      "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html",
+      "source_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml",
       "enterprise_deadline": null,
       "rules": [
         {
-          "rule_id": "municipal-tech-center-runtime-gate",
+          "rule_id": "municipal-tech-center-hangzhou-gate",
           "type": "hard-threshold",
           "field": "municipal_tc_current_local_rule_resolved",
           "operator": "truthy",
           "expected": true,
-          "source": "《浙江省企业技术中心管理办法》第二十四条及属地现行办法",
-          "source_quote": "未加载具体城市现行办法和年度通知时，正式结论必须保持待核验。",
+          "source": "《杭州市企业技术中心管理办法》（杭经信联智能〔2018〕81号，2025年清理确认继续有效）",
+          "source_quote": "杭州企业应按杭州市现行办法和当年度认定、复评通知判断；清理结果页用于证明2018年办法继续有效。",
           "policy_status": "current",
           "review_status": "confirmed",
           "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
           "approved_at": "2026-07-30 09:00:00",
-          "source_url": "https://jxt.zj.gov.cn/art/2019/8/1/art_1229123402_580113.html"
+          "source_url": "https://zfgb.hangzhou.gov.cn/11/110220253/t131220253104/529786.shtml"
+        }
+      ]
+    },
+    {
+      "layer_id": "municipal-tech-center-shaoxing",
+      "layer_type": "jurisdiction",
+      "policy_time_type": "jurisdiction-detail",
+      "label": "绍兴市市级企业技术中心属地规则",
+      "applicability": {
+        "regions": [
+          "浙江省",
+          "绍兴市"
+        ],
+        "application_types": [
+          "recognition",
+          "evaluation"
+        ]
+      },
+      "source_url": "https://sxjxw.sx.gov.cn/art/2023/12/18/art_1229313645_4100402.html",
+      "enterprise_deadline": null,
+      "rules": [
+        {
+          "rule_id": "municipal-tech-center-shaoxing-gate",
+          "type": "hard-threshold",
+          "field": "municipal_tc_current_local_rule_resolved",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《绍兴市市级企业技术中心管理办法》（绍市经信〔2018〕28号）",
+          "source_quote": "2025年认定通知继续援引该办法；正式判断还须叠加当年度通知。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据2025年度通知对管理办法引用核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://sxjxw.sx.gov.cn/art/2023/12/18/art_1229313645_4100402.html"
+        }
+      ]
+    },
+    {
+      "layer_id": "municipal-tech-center-jinhua",
+      "layer_type": "jurisdiction",
+      "policy_time_type": "jurisdiction-detail",
+      "label": "金华市企业技术中心属地规则",
+      "applicability": {
+        "regions": [
+          "浙江省",
+          "金华市"
+        ],
+        "application_types": [
+          "recognition",
+          "evaluation"
+        ]
+      },
+      "source_url": "https://www.jinhua.gov.cn/module/download/downfile.jsp?classid=0&filename=18901b6538e74d06a0c90f45f3bbfc34.pdf",
+      "enterprise_deadline": null,
+      "rules": [
+        {
+          "rule_id": "municipal-tech-center-jinhua-gate",
+          "type": "hard-threshold",
+          "field": "municipal_tc_current_local_rule_resolved",
+          "operator": "truthy",
+          "expected": true,
+          "source": "《金华市企业技术中心管理办法（2024年版）》（金经信投资〔2024〕104号）",
+          "source_quote": "金华企业应按2024年版办法及当年度认定、评价通知判断。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据金华市政府公报原文核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://www.jinhua.gov.cn/module/download/downfile.jsp?classid=0&filename=18901b6538e74d06a0c90f45f3bbfc34.pdf"
+        }
+      ]
+    },
+    {
+      "layer_id": "municipal-tech-center-ningbo-route",
+      "layer_type": "jurisdiction",
+      "policy_time_type": "jurisdiction-detail",
+      "label": "宁波市普通制造业项目改道路由",
+      "applicability": {
+        "regions": [
+          "浙江省",
+          "宁波市"
+        ],
+        "application_types": [
+          "recognition",
+          "evaluation"
+        ]
+      },
+      "source_url": "https://qf.ningbo.gov.cn/qfpt/fwbkqdsx/art/2024/art_3e1d12182dd9469c8f01ebbe3e1c0e66.html",
+      "enterprise_deadline": null,
+      "rules": [
+        {
+          "rule_id": "municipal-tech-center-ningbo-availability",
+          "type": "hard-threshold",
+          "field": "municipal_tc_local_project_available",
+          "operator": "truthy",
+          "expected": true,
+          "source": "宁波市产业服务事项及2025年企业技术中心申报链",
+          "source_quote": "普通制造业未检出独立的宁波市级同名认定层，当前应改道浙江省企业技术中心；建设行业另按宁波市建设行业办法处理。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "主人授权；焦糖依据宁波政务事项与近年申报链核验",
+          "approved_at": "2026-07-30 12:00:00",
+          "source_url": "https://qf.ningbo.gov.cn/qfpt/fwbkqdsx/art/2024/art_3e1d12182dd9469c8f01ebbe3e1c0e66.html"
         }
       ]
     }

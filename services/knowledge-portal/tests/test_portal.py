@@ -699,6 +699,30 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
 
 def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     module = load_app(tmp_path)
+    municipal_detail = module.project_algorithm_detail_payload(
+        "municipal-enterprise-technology-center"
+    )
+    assert municipal_detail is not None
+    municipal_source_titles = {
+        source["title"] for source in municipal_detail["sources"]
+    }
+    assert {
+        "杭州市企业技术中心管理办法",
+        "绍兴市市级企业技术中心管理办法",
+        "金华市企业技术中心管理办法（2024年版）",
+        "宁波市企业技术中心项目路由说明",
+    }.issubset(municipal_source_titles)
+    assert "浙江省企业技术中心管理办法" not in municipal_source_titles
+    assert all(
+        "浙江省企业技术中心管理办法" not in rule["source"]
+        for rule in municipal_detail["rules"]
+    )
+    institute_detail = module.project_algorithm_detail_payload(
+        "hangzhou-enterprise-institute"
+    )
+    assert institute_detail is not None
+    assert institute_detail["has_prospective_layer"] is True
+    assert institute_detail["transition_notices"]
     with closing(module.database()) as connection:
         connection.execute(
             """
@@ -734,27 +758,38 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
         )
         detail_response = client.get("/algorithms?project=little-giant")
         routing_response = client.get("/algorithms?project=first-equipment")
+        municipal_response = client.get(
+            "/algorithms?project=municipal-enterprise-technology-center"
+        )
+        institute_response = client.get(
+            "/algorithms?project=hangzhou-enterprise-institute"
+        )
 
     assert response.status_code == 200
     assert 'data-section-link="algorithms"' in response.text
     assert "项目算法包" in response.text
-    assert "显示 29 / 29 个项目" in response.text
+    assert "显示 28 / 28 个主项目" in response.text
+    assert "另有 1 个兼容别名包" in response.text
     assert "正式规则包" in response.text
     assert "政策基线包" in response.text
     assert "近7日查询" in response.text
     assert "纯检索路由" in response.text
-    assert "29 个项目均已形成正式阈值规则包" in response.text
+    assert "29 个编译单元均已形成正式阈值规则包" in response.text
     assert "政策变化只重编受影响项目" in response.text
+    assert "四市研发平台与企业技术中心版本" in response.text
+    assert "宁波市重点企业研究院、企业技术研发中心" in response.text
+    assert "绍兴市企业研究开发中心" in response.text
+    assert "金华市科学技术研究开发中心" in response.text
     assert "稳定管理办法" in response.text
     assert "点击清单中的项目" in response.text
     assert 'href="/algorithms?coverage=rules-confirmed#algorithm-catalog"' in response.text
     assert 'href="/algorithms#algorithm-catalog" data-force-navigation' in response.text
     assert confirmed_response.status_code == 200
-    assert "显示 29 / 29 个项目" in confirmed_response.text
+    assert "显示 28 / 28 个主项目" in confirmed_response.text
     assert "专精特新小巨人" in confirmed_response.text
     assert "区级绿色工厂" in confirmed_response.text
     assert baseline_catalog_response.status_code == 200
-    assert "显示 0 / 29 个项目" in baseline_catalog_response.text
+    assert "显示 0 / 28 个主项目" in baseline_catalog_response.text
     assert "区级绿色工厂" not in baseline_catalog_response.text
     assert 'href="/algorithms?project=little-giant#algorithm-detail"' not in baseline_catalog_response.text
     assert detail_response.status_code == 200
@@ -762,11 +797,18 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "用途说明" in detail_response.text
     assert "查看算法包源配置 JSON" in detail_response.text
     assert "little-giant-revenue" in detail_response.text
-    assert "查看官方原文" in detail_response.text
+    assert "查看原文" in detail_response.text
     assert routing_response.status_code == 200
     assert "为什么尚不直接给出符合或不符合" not in routing_response.text
     assert "first-equipment-1" in routing_response.text
     assert "2025年度通知" in routing_response.text
+    assert municipal_response.status_code == 200
+    assert "市级企业技术中心（四市属地版）" in municipal_response.text
+    assert "杭州市企业技术中心管理办法" in municipal_response.text
+    assert "金华市企业技术中心管理办法（2024年版）" in municipal_response.text
+    assert institute_response.status_code == 200
+    assert "政策过渡提示" in institute_response.text
+    assert "征求意见稿尚未正式生效" in institute_response.text
 
 
 def test_project_usage_metadata_covers_rest_and_mcp_searches(tmp_path):
@@ -2970,7 +3012,7 @@ def test_municipal_projects_require_city_and_accept_explicit_city(tmp_path):
     assert "所在城市" in module.project_selection_prompt("市企业技术中心申报条件")
     assert module.project_selection_prompt("宁波市企业技术中心申报条件") is None
     assert module.project_query_variants("宁波市企业技术中心申报条件") == [
-        "宁波市 市级企业技术中心"
+        "宁波市 市级企业技术中心（四市属地版）"
     ]
 
 

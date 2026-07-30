@@ -8,6 +8,9 @@
   "source_retrieval_rule_ids": [
     "hangzhou-enterprise-technology-center"
   ],
+  "canonical_project_id": "municipal-enterprise-technology-center",
+  "variant_of": "municipal-enterprise-technology-center",
+  "ui_hidden": true,
   "policy_status": "current",
   "approved_by": "主人授权；焦糖依据政策原文、正式附件和适用边界核验",
   "approved_at": "2026-07-30 09:00:00",

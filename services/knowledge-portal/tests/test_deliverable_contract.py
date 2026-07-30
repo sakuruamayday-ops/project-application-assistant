@@ -25,6 +25,18 @@ def test_report_contract_blocks_workbuddy_from_silently_omitting_required_parts(
     assert "peer_comparison.peers" in audit["missing_items"]
     assert "least_certain" in audit["missing_items"]
     assert audit["completion_allowed"] is False
+    assert audit["repair_plan"]["status"] == "repair-required"
+    assert audit["repair_plan"]["blocking_task_count"] == len(
+        audit["failures"]
+    )
+    peer_task = next(
+        task
+        for task in audit["repair_plan"]["tasks"]
+        if task["failure_code"] == "missing-peer-evidence"
+    )
+    assert peer_task["target_path"] == "peer_comparison.peers"
+    assert "政府认定或公示名单" in peer_task["preferred_sources"]
+    assert peer_task["acceptance_criteria"]
 
 
 def test_complete_report_contract_passes_with_policy_fallback_trace():
@@ -61,6 +73,8 @@ def test_complete_report_contract_passes_with_policy_fallback_trace():
 
     assert audit["status"] == "passed"
     assert audit["completion_allowed"] is True
+    assert audit["repair_plan"]["status"] == "not-needed"
+    assert audit["repair_plan"]["task_count"] == 0
 
 
 def test_formal_application_omits_peer_gate_unless_explicitly_requested():

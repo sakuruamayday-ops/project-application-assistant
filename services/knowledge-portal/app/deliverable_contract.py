@@ -241,11 +241,234 @@ def validate_delivery_contract(
                 )
 
     status = "passed" if not failures else "needs-revision"
-    return {
+    audit = {
         "status": status,
         "failures": failures,
         "warnings": warnings,
         "missing_items": [str(item["item"]) for item in failures],
         "repair_instructions": [str(item["message"]) for item in failures],
         "completion_allowed": not failures,
+    }
+    audit["repair_plan"] = build_delivery_repair_plan(payload, contract, failures)
+    return audit
+
+
+def _repair_task(
+    failure: Mapping[str, object],
+    *,
+    target_path: str,
+    action: str,
+    required_inputs: Sequence[str],
+    preferred_sources: Sequence[str],
+    acceptance_criteria: Sequence[str],
+    priority: str = "blocking",
+) -> dict[str, object]:
+    code = str(failure.get("code") or "delivery-contract-failure")
+    item = str(failure.get("item") or "")
+    return {
+        "task_id": f"repair-{code}-{item}".replace("_", "-").replace(".", "-"),
+        "failure_code": code,
+        "target_path": target_path,
+        "action": action,
+        "required_inputs": list(required_inputs),
+        "preferred_sources": list(preferred_sources),
+        "acceptance_criteria": list(acceptance_criteria),
+        "priority": priority,
+        "blocking": priority == "blocking",
+        "status": "pending",
+    }
+
+
+def build_delivery_repair_plan(
+    deliverable: Mapping[str, object] | None,
+    contract: Mapping[str, object],
+    failures: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    payload = dict(deliverable or {})
+    tasks: list[dict[str, object]] = []
+    for failure in failures:
+        code = str(failure.get("code") or "")
+        item = str(failure.get("item") or "")
+        if code == "missing-required-section":
+            tasks.append(
+                _repair_task(
+                    failure,
+                    target_path=f"sections.{item}",
+                    action=(
+                        f"按已绑定模板在正确顺序插入“{item}”章节，"
+                        "从现有事实、判断和来源中回填内容；无证据的字段明确标为待补。"
+                    ),
+                    required_inputs=[
+                        "模板中该章节的字段定义与顺序",
+                        "本次任务已核验事实",
+                        "对应结论的政策或材料来源",
+                    ],
+                    preferred_sources=[
+                        "已绑定Skill模板底稿",
+                        "用户提供材料",
+                        "政府官网原文或已审计官方附件",
+                    ],
+                    acceptance_criteria=[
+                        f"sections.{item}存在且正文非空",
+                        "章节内事实、判断与来源可逐项追溯",
+                    ],
+                )
+            )
+        elif code == "missing-template-binding":
+            labels = {
+                "skill_id": "Skill标识",
+                "template_id": "模板底稿标识",
+                "template_version": "模板版本",
+                "template_hash": "模板内容哈希",
+            }
+            tasks.append(
+                _repair_task(
+                    failure,
+                    target_path=f"skill_template.{item}",
+                    action=(
+                        f"从实际读取的Skill和模板底稿写入{labels.get(item, item)}，"
+                        "禁止凭名称猜测版本或哈希。"
+                    ),
+                    required_inputs=["实际Skill清单", "实际模板文件元数据"],
+                    preferred_sources=["本次运行已读取的SKILL.md", "模板原文件"],
+                    acceptance_criteria=[
+                        f"skill_template.{item}为非空真实值",
+                        "模板内容哈希可由模板原文件复算",
+                    ],
+                )
+            )
+        elif code == "missing-policy-selection":
+            tasks.append(
+                _repair_task(
+                    failure,
+                    target_path="policy_selection",
+                    action=(
+                        "重新执行政策选择降级链：发文机关原文→下级政府官网明确引用"
+                        "→最近一次申报采用的管理办法；记录每级命中或未命中结果。"
+                    ),
+                    required_inputs=[
+                        "目标项目、地区、判断年度和查询日",
+                        "候选政策标题、文号、发布日期、状态与URL",
+                    ],
+                    preferred_sources=[
+                        "发文机关政府官网",
+                        "下级政府官网的上级文件引用",
+                        "政府公报或已审计官方附件",
+                    ],
+                    acceptance_criteria=[
+                        "policy_selection.status属于允许状态",
+                        "selected_documents至少一份且含可验证来源",
+                        "征求意见稿与正式政策状态分开标注",
+                    ],
+                )
+            )
+        elif code == "policy-scope-overreach":
+            tasks.append(
+                _repair_task(
+                    failure,
+                    target_path="policy_selection.prohibited_claims",
+                    action=(
+                        "逐条定位越界结论：删除、改为预测或改为“当前检索层未命中”；"
+                        "征求意见稿不得写成已生效，但可作为前瞻准备主基线。"
+                    ),
+                    required_inputs=[
+                        "prohibited_claims明细",
+                        "每条结论对应的证据层和政策状态",
+                    ],
+                    preferred_sources=["政策选择审计轨迹", "政策时间类型检查结果"],
+                    acceptance_criteria=[
+                        "prohibited_claims为空",
+                        "预测、历史事实与当前正式判断具有不同标签",
+                    ],
+                )
+            )
+        elif code == "missing-peer-evidence":
+            tasks.append(
+                _repair_task(
+                    failure,
+                    target_path="peer_comparison.peers",
+                    action=(
+                        "从同一项目公示名单中选择至少一家同地区、同项目或同细分领域企业，"
+                        "补入企业名称、可比理由、名单年度和来源URL。"
+                    ),
+                    required_inputs=["目标企业所属行业与项目", "同项目政府公示名单"],
+                    preferred_sources=[
+                        "政府认定或公示名单",
+                        "政府官网企业案例",
+                        "企业官网仅作辅助",
+                    ],
+                    acceptance_criteria=[
+                        "至少一家同行同时含name与source_url",
+                        "可比理由没有跨项目或跨产业环节",
+                    ],
+                )
+            )
+        elif code == "missing-peer-dimensions":
+            tasks.append(
+                _repair_task(
+                    failure,
+                    target_path="peer_comparison.dimensions",
+                    action=(
+                        "按项目门槛和报告目标补齐比较维度；至少覆盖资格门槛、"
+                        "研发创新、市场或产业链位置，并说明统一口径。"
+                    ),
+                    required_inputs=["项目门槛字段", "企业事实字段", "同行公开字段"],
+                    preferred_sources=["正式管理办法", "同一批次名单附件", "企业申报材料"],
+                    acceptance_criteria=[
+                        "dimensions为非空列表",
+                        "每个维度在目标企业和同行间使用同一口径",
+                    ],
+                )
+            )
+        elif code in {
+            "missing-four-question-answer",
+            "empty-four-question-answer",
+        }:
+            label = FOUR_QUESTION_LABELS.get(item, item)
+            tasks.append(
+                _repair_task(
+                    failure,
+                    target_path=f"four_question_review.{item}",
+                    action=(
+                        f"结合本次实际证据、缺口和实现结果，写出“{label}”的具体答案；"
+                        "不得只复述问题。"
+                    ),
+                    required_inputs=[
+                        "本次未核验或存在冲突的事实",
+                        "尚未完成的覆盖单元",
+                        "已实施的改进与测试结果",
+                    ],
+                    preferred_sources=["本次审计结果", "测试日志", "政策覆盖矩阵"],
+                    acceptance_criteria=[
+                        f"four_question_review.{item}为非空具体回答",
+                        "答案包含本次任务特有对象或证据，不是通用套话",
+                    ],
+                )
+            )
+        else:
+            tasks.append(
+                _repair_task(
+                    failure,
+                    target_path=item,
+                    action=str(failure.get("message") or "修复交付契约失败项"),
+                    required_inputs=["失败项对应的原始内容与证据"],
+                    preferred_sources=["本次任务已核验来源"],
+                    acceptance_criteria=[f"门禁失败项{code}不再出现"],
+                )
+            )
+    return {
+        "schema_version": 1,
+        "status": "not-needed" if not tasks else "repair-required",
+        "task_count": len(tasks),
+        "blocking_task_count": sum(task["blocking"] for task in tasks),
+        "tasks": tasks,
+        "rerun": {
+            "required": bool(tasks),
+            "action": "完成全部阻断任务后重新执行delivery_contract_audit",
+            "pass_condition": "completion_allowed=true",
+        },
+        "context": {
+            "task_type": contract.get("task_type"),
+            "template_bound": bool(payload.get("skill_template")),
+        },
     }
