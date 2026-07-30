@@ -11,6 +11,8 @@ description: 专精特新中小企业与专精特新“小巨人”申报前测�
 
 !`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
 
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/preflight.py" --task-type explanation`
+
 !`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "sme-score-preassessment" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
 
 每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
@@ -19,6 +21,26 @@ description: 专精特新中小企业与专精特新“小巨人”申报前测�
 ## 目标
 
 在企业尚未形成完整申请书时，快速判断申报基础、可核验得分、系统未知项和补强顺序。输出是前期咨询评估，不冒充主管部门系统评分或正式评审意见。
+
+## 任务前置复盘门禁
+
+每次触发先完整读取 [2026年政策基线](references/current-policy-baseline-2026.md)，再根据用户原始问题运行：
+
+```bash
+python3 "${CODEBUDDY_SKILL_DIR}/scripts/preflight.py" \
+  --task-type full-score \
+  --project-level "省级专精特新中小企业" \
+  --application-type "新申报" \
+  --has-standard-input
+```
+
+参数必须来自当前问题和已提供文件，不得使用历史默认值。只做解释时使用 `--task-type explanation`；未提供完整财务底表的部分评估使用 `--task-type non-financial-preview`，不得传入 `--has-standard-input`。
+
+- 返回 `needs-user-input` 时，先把 `high_impact_gaps` 及影响告诉用户，只提出 `blocking_question` 这一组最小确认，并暂停评分、政策判断和正式成稿。
+- 返回 `ready` 时，先简要说明未发现会改变核心结论的遗漏，再按 `selected_policy` 执行。
+- 可从当前材料、本地政策基线或官方来源自行发现的事项先自行核验，不得要求用户重复提供。
+- 2026年新申报口径固定为：省级专精特新中小企业质量得分不低于50分，专精特新“小巨人”质量得分不低于60分。2026年小巨人复核执行通知规定的2022年过渡标准，不得直接套用新申报60分门槛。
+- 禁止把2022年四个二十五分维度及省级六十分及格线用于2026年新申报。本技能二十二项、满分一百分的工作簿仅是内部申报前差距模型，必须与主管部门系统质量得分分开表述。
 
 ## 路由边界
 
@@ -82,6 +104,8 @@ description: 专精特新中小企业与专精特新“小巨人”申报前测�
 区分省级专精特新中小企业和专精特新“小巨人”。检索或读取当期管理办法、申报通知和申请书，记录地域、批次、版本、发布日期和官方来源。
 
 用户必须确认项目层级。企业同时规划两级申报时，分别生成两份评分验收表，不把浙江省与全国行业基准混入同一个总分。
+
+申请类型也必须确认是新申报还是复核。项目层级或申请类型任一缺失时，`scripts/preflight.py` 必须阻断实质性执行；不得自行选择新申报分支，也不得把旧版六十分线当作省级当前门槛。
 
 ### 四、建立证据底表
 
@@ -161,6 +185,9 @@ description: 专精特新中小企业与专精特新“小巨人”申报前测�
 交付前逐项确认：
 
 - 项目层级和政策版本没有混用；
+- `scripts/preflight.py` 返回 `ready`，项目层级、申请类型、政策版本和完整评分所需输入均已通过门禁；
+- 省级新申报质量门槛使用不低于50分，小巨人新申报质量门槛使用不低于60分；小巨人复核没有误套新申报60分门槛；
+- 未把2022年四个二十五分旧评分表当作2026年新申报系统评分依据；
 - 首次交互只返回通用三年财务底表、填写说明和版本询问；底表与版本均确认前没有形成完整评分；
 - 财务表头固定为近三年、近两年、近一年，实际期间由近一年对应财务年度识别；
 - 省级专精特新采用浙江省行业基准，小巨人采用全国行业基准；地域路由已在总览、行业基准和校验页显示；

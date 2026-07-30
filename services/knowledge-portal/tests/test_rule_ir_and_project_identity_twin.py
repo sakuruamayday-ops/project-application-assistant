@@ -41,6 +41,9 @@ def sample_pack(project_id: str = "sample") -> dict[str, object]:
                     {
                         "rule_id": "revenue",
                         "review_status": "confirmed",
+                        "field": "revenue",
+                        "operator": "gte",
+                        "expected": 0,
                     }
                 ],
             }
@@ -69,7 +72,14 @@ def test_rule_ir_compiles_once_and_reuses_source_digest(tmp_path: Path):
     assert write_compiled_rule_ir(output, payload) == "compiled"
     assert write_compiled_rule_ir(output, payload) == "hash_reused"
     assert payload["metrics"]["project_count"] == 1
-    assert payload["metrics"]["shared_kernel_count"] == 10
+    assert payload["metrics"]["shared_kernel_count"] == 11
+    assert payload["shared_kernel"]["components"][0] == "task-omission-preflight"
+    assert "policy-change-impact-simulator" in payload["shared_kernel"][
+        "components"
+    ]
+    assert payload["algorithm_cards"]["sample"]["quality_gates"][
+        "task_preflight_required"
+    ] is True
     assert compiled_projects(payload)[0]["policy_version_id"].startswith("policy-")
 
 
@@ -133,6 +143,17 @@ def test_policy_change_impact_preserves_historical_facts_and_invalidates_derivat
     assert affected["identity_impact"]["official_list_facts_mutated"] is False
     assert affected["prediction_impact"]["requires_recompute"] is True
     assert affected["historical_backtest_impact"]["requires_recompute"] is True
+    assert affected["preflight_impact"]["requires_reassessment"] is True
+    assert affected["preflight_impact"]["new_high_impact_requirements"] == [
+        {
+            "key": "revenue",
+            "label": "revenue",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛",
+        }
+    ]
 
 
 def test_rule_ir_matches_lifecycle_by_pack_alias():

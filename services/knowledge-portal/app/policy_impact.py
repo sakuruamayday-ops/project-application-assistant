@@ -225,6 +225,18 @@ def simulate_policy_change_impact(
             _mapping(before_project.get("lifecycle_rule"))
         ) != content_digest(_mapping(after_project.get("lifecycle_rule")))
         has_rule_delta = any(delta[key] for key in delta)
+        changed_fact_fields = list(delta["changed_fact_fields"])
+        preflight_requirements = [
+            {
+                "key": field,
+                "label": field,
+                "dimension": "source_data",
+                "impact": "high",
+                "resolution": "discover",
+                "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛",
+            }
+            for field in changed_fact_fields
+        ]
         impacts.append(
             {
                 "project_id": project_id,
@@ -255,6 +267,24 @@ def simulate_policy_change_impact(
                     "requires_recompute": has_rule_delta or lifecycle_changed,
                     "historical_facts_mutated": False,
                 },
+                "preflight_impact": {
+                    "requires_reassessment": has_rule_delta
+                    or lifecycle_changed,
+                    "policy_version_id": (
+                        _mapping(after_project).get("policy_version_id")
+                        or _mapping(before_project).get("policy_version_id")
+                    ),
+                    "new_high_impact_requirements": preflight_requirements,
+                    "ask_user_only_after_discovery": True,
+                    "single_question_template": (
+                        "政策变化影响了以下企业事实，请主人一次确认现有材料是否"
+                        "可覆盖："
+                        + "、".join(changed_fact_fields)
+                        + "。"
+                        if changed_fact_fields
+                        else None
+                    ),
+                },
             }
         )
     return {
@@ -282,6 +312,10 @@ def simulate_policy_change_impact(
             "prediction_project_invalidations": len(affected_project_ids),
             "historical_backtest_project_invalidations": sum(
                 bool(item["historical_backtest_impact"]["requires_recompute"])
+                for item in impacts
+            ),
+            "preflight_project_reassessments": sum(
+                bool(item["preflight_impact"]["requires_reassessment"])
                 for item in impacts
             ),
         },
