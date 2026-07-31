@@ -27,6 +27,7 @@ from scripts.refresh_index_from_oss import (
     REQUIRED_STRUCTURED_TABLES,
     activate_release,
     download_release,
+    local_generation_metadata_valid,
     local_generation_valid,
     require_unused_staging,
     release_id_from_link,
@@ -432,6 +433,26 @@ def test_local_current_previous_switch_and_rollback(tmp_path: Path) -> None:
     assert os.readlink(index_dir / "knowledge_content.sqlite3") == (
         "current/knowledge_content.sqlite3"
     )
+
+
+def test_metadata_health_check_avoids_deep_hash_and_sqlite_scan(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    index_dir = tmp_path / "index"
+    index_dir.mkdir()
+    create_local_release(index_dir, "release-0001")
+
+    def unexpected_deep_check(*_args, **_kwargs):
+        raise AssertionError("health path must not run deep content validation")
+
+    monkeypatch.setattr(refresh_module, "sha256_file", unexpected_deep_check)
+    monkeypatch.setattr(refresh_module, "valid_index", unexpected_deep_check)
+
+    assert local_generation_metadata_valid(index_dir, "release-0001")
+    readme = index_dir / "releases" / "release-0001" / "README.md"
+    readme.write_bytes(readme.read_bytes() + b"changed-size")
+    assert not local_generation_metadata_valid(index_dir, "release-0001")
 
 
 def test_interrupted_release_download_removes_only_transaction_staging(
