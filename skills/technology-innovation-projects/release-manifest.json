@@ -22,7 +22,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "3e532bebd5b75659c75ce6815653ff2e009b8c0447b189da4454c346884bfe3f",
+    "SKILL.md": "3bf362186d78dd557baa56b93077c7693840dbc389decc67492710e756c102c8",
     "references/current-rd-platform-baseline-2026.md": "7d696b927b399c884f232043168dd35a9b857ead5c3238e718ed0971a435b067",
     "references/portable-runtime-protocol.md": "69474087d3c12c950b704f378a05ad41a361468eb37cb335b9bfd2691336fb72",
     "scripts/portable_skill_runtime.py": "920a5434860a03453a265c26ba4b57635bd9dc3770031e91724fb1adde18edc7",

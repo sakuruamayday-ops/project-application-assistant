@@ -204,6 +204,9 @@ def run_case(
         "jiaotang-workbuddy-skills 插件中实际加载完成路由所需的最少技能，"
         "但不要联网、不要检索外部资料、不要读取与路由无关的参考文件、"
         "不要分析企业条件、不要写正式材料，也不要输出解释、标题、表格或建议。"
+        "primary_skill必须是已经实际加载的业务技能，并同时出现在"
+        "activated_skills中；只加载project-task-router或只声明未加载的主技能"
+        "都不合格。"
         "完成必要的技能加载后，只输出下面格式的一行，不得输出其他内容："
         'ROUTE_JSON: {"primary_skill":"技能目录名","activated_skills":'
         '["实际加载的技能目录名"],"clarification_required":false,'

@@ -817,6 +817,31 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 "policy-retrieval",
             )
 
+    def test_stale_policy_competitors_defer_to_policy_retrieval(self):
+        competitors = (
+            "agriculture-and-rural-projects",
+            "digitalization-projects",
+            "green-development-projects",
+            "intellectual-property-projects",
+            "investment-subsidy-projects",
+            "peer-benchmarking",
+            "quality-brand-projects",
+            "regional-special-projects",
+            "talent-projects",
+            "technology-innovation-projects",
+            "trade-and-open-economy-projects",
+        )
+        expected = (
+            "若只核验旧通知、政策版本、效力或完整文件链，"
+            "本技能不适用，必须以policy-retrieval为主技能"
+        )
+        for skill in competitors:
+            with self.subTest(skill=skill):
+                source = (
+                    REPOSITORY / "skills" / skill / "SKILL.md"
+                ).read_text(encoding="utf-8")
+                self.assertIn(expected, source)
+
     def test_runtime_exception_degrades_but_integrity_error_blocks(self):
         options = Namespace(command="prompt", plugin_root="/tmp/plugin")
         with mock.patch.object(BRIDGE, "arguments", return_value=options):

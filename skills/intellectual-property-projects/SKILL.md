@@ -1,6 +1,6 @@
 ---
 name: intellectual-property-projects
-description: 分析知识产权示范、管理体系、专利产业化、高价值专利组合、保护运用和商标品牌类政府项目，调用ip-assessment核验权利事实；FTO、侵权和无效分析转专利专业技能。
+description: 分析知识产权示范、管理体系、专利产业化、高价值专利组合、保护运用和商标品牌类政府项目，调用ip-assessment核验权利事实；FTO、侵权和无效分析转专利专业技能；若只核验旧通知、政策版本、效力或完整文件链，本技能不适用，必须以policy-retrieval为主技能。
 ---
 
 # 知识产权项目
