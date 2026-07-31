@@ -6931,6 +6931,7 @@ def test_security_headers_storage_cache_robots_health_and_404_contract(tmp_path)
             "wheelhouse_content_identity_sha256",
             "dependency_identity_sha256",
             "dependency_release_record_sha256",
+            "private_overlay_identity_sha256",
             "candidate_version",
             "published_generic_version",
             "published_workbuddy_version",

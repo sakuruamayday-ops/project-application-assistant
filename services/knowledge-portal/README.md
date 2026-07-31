@@ -252,7 +252,7 @@ export JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256=由对应main分支CI记录�
 ./scripts/deploy_production.sh
 ```
 
-部署脚本先在本地核验 wheelhouse、外部绑定摘要、依赖身份和 main 分支 CI 发布记录，再把源码、锁、wheelhouse 和发布记录一起写入新槽。服务器安装阶段设置 `PIP_NO_INDEX=1`，只从该槽内的 wheelhouse 安装；生产主机不会访问 PyPI。
+部署脚本先在本地核验 wheelhouse、外部绑定摘要、依赖身份和 main 分支 CI 发布记录，再把源码、锁、wheelhouse 和发布记录一起写入新槽。服务器安装阶段设置 `PIP_NO_INDEX=1`，只从该槽内的 wheelhouse 安装；生产主机不会访问 PyPI。若服务器启用了私有 Kindle 管理扩展，部署只会把 `app/kindle_library.py`、对应两个页面模板和私有导航模板四个白名单文件复制到新槽，并生成只含路径、大小和 SHA-256 的 `private-overlay-manifest.json`；其身份摘要会进入 `/build`，私有内容不会回传本地或进入公开仓库。
 
 生产 Token 冒烟测试不会输出 Token，仅报告身份、检索、文档、调用统计和 Skills 状态：
 

@@ -34,8 +34,6 @@ PRODUCTION_FILES = (
     "extraction_report.csv",
     "upload_allowlist.csv",
     "upload_allowlist_summary.json",
-    "OCR资料抽检报告_2026-07-21.md",
-    "OCR资料抽检报告_2026-07-21.json",
 )
 FULL_INDEX_NAME = "knowledge_content.sqlite3"
 RELEASE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$")
