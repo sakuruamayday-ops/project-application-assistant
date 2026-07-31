@@ -300,48 +300,75 @@ def ensure_root_aliases(index_dir: Path) -> None:
         replace_symlink(alias, expected)
 
 
-def local_generation_valid(index_dir: Path, release_id: str) -> bool:
+def local_release_metadata(
+    index_dir: Path,
+    release_id: str,
+) -> dict[str, object] | None:
     release_dir = index_dir / "releases" / release_id
     if not release_dir.is_dir():
-        return False
+        return None
     manifest_path = release_dir / "release.json"
     if not manifest_path.is_file():
-        return False
+        return None
     try:
         release = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError, json.JSONDecodeError):
-        return False
+        return None
+    if not isinstance(release, dict):
+        return None
     if (
         release.get("schema") != MANIFEST_SCHEMA
         or release.get("release_id") != release_id
         or release.get("file_whitelist") != list(PRODUCTION_FILES)
     ):
-        return False
+        return None
     files = release.get("files")
     if not isinstance(files, list):
-        return False
+        return None
     names = [
         str(row.get("name") or "")
         for row in files
         if isinstance(row, dict)
     ]
     if names != list(PRODUCTION_FILES) or len(names) != len(files):
-        return False
+        return None
     for row in files:
         if not isinstance(row, dict):
-            return False
+            return None
         name = str(row.get("name") or "")
         path = release_dir / name
         try:
             size = int(row.get("size"))
-            crc64 = int(str(row.get("crc64")))
+            int(str(row.get("crc64")))
         except (TypeError, ValueError):
-            return False
+            return None
         if (
-            not path.is_file()
+            size < 0
+            or not re.fullmatch(r"[0-9a-f]{64}", str(row.get("sha256") or ""))
+            or not path.is_file()
             or path.stat().st_size != size
-            or sha256_file(path) != row.get("sha256")
         ):
+            return None
+    return release
+
+
+def local_generation_metadata_valid(index_dir: Path, release_id: str) -> bool:
+    """Cheap health-path validation; deep hashes and SQLite checks stay in refresh."""
+
+    return local_release_metadata(index_dir, release_id) is not None
+
+
+def local_generation_valid(index_dir: Path, release_id: str) -> bool:
+    release = local_release_metadata(index_dir, release_id)
+    if release is None:
+        return False
+    release_dir = index_dir / "releases" / release_id
+    files = release["files"]
+    assert isinstance(files, list)
+    for row in files:
+        assert isinstance(row, dict)
+        path = release_dir / str(row["name"])
+        if sha256_file(path) != row.get("sha256"):
             return False
     return valid_index(release_dir / "knowledge_content.sqlite3")
 

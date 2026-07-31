@@ -10,6 +10,7 @@ from scripts.check_oss_governance import SECRET_NAMES, evaluate
 from scripts.oss_auth import build_auth
 from scripts.validate_operational_health import (
     parse_timestamp,
+    read_valid_status_with_age,
     validate_fresh_status,
 )
 
@@ -34,6 +35,32 @@ def test_status_ttl_rejects_stale_index_status(tmp_path: Path) -> None:
             accepted_statuses={"正常"},
             now=datetime.now(timezone.utc),
         )
+
+
+def test_stale_but_well_formed_status_can_be_degraded_to_warning(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "index-status.json"
+    old = datetime.now(timezone.utc) - timedelta(days=3)
+    path.write_text(
+        json.dumps(
+            {
+                "status": "正常",
+                "checked_at": old.isoformat().replace("+00:00", "Z"),
+            }
+        )
+    )
+    payload, age = read_valid_status_with_age(
+        path,
+        label="索引缓存",
+        timestamp_field="checked_at",
+        accepted_statuses={"正常"},
+        now=datetime.now(timezone.utc),
+    )
+    assert payload["status"] == "正常"
+    assert age > 48 * 3600
+
+
 def test_governance_gate_rejects_portal_credential_leak() -> None:
     checks = {
         "auth_mode": "sts",

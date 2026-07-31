@@ -8,13 +8,13 @@ from pathlib import Path
 
 try:
     from scripts.refresh_index_from_oss import (
-        local_generation_valid,
+        local_generation_metadata_valid,
         release_id_from_link,
         runtime_binding_mode,
     )
 except ImportError:  # direct script execution
     from refresh_index_from_oss import (
-        local_generation_valid,
+        local_generation_metadata_valid,
         release_id_from_link,
         runtime_binding_mode,
     )
@@ -56,6 +56,28 @@ def validate_fresh_status(
     accepted_statuses: set[str],
     now: datetime,
 ) -> dict[str, object]:
+    payload, age = read_valid_status_with_age(
+        path,
+        label=label,
+        timestamp_field=timestamp_field,
+        accepted_statuses=accepted_statuses,
+        now=now,
+    )
+    if age > max_age_seconds:
+        raise RuntimeError(
+            f"{label}状态过期：{int(age)}秒 > {max_age_seconds}秒"
+        )
+    return payload
+
+
+def read_valid_status_with_age(
+    path: Path,
+    *,
+    label: str,
+    timestamp_field: str,
+    accepted_statuses: set[str],
+    now: datetime,
+) -> tuple[dict[str, object], float]:
     payload = read_json(path, label)
     if str(payload.get("status") or "") not in accepted_statuses:
         raise RuntimeError(f"{label}状态异常：{payload.get('status')}")
@@ -65,11 +87,7 @@ def validate_fresh_status(
     age = age_seconds(value, now)
     if age < -300:
         raise RuntimeError(f"{label}时间位于未来：{value}")
-    if age > max_age_seconds:
-        raise RuntimeError(
-            f"{label}状态过期：{int(age)}秒 > {max_age_seconds}秒"
-        )
-    return payload
+    return payload, age
 
 
 def validate_generation(
@@ -84,10 +102,10 @@ def validate_generation(
         raise RuntimeError("缓存状态current_release_id与文件系统不一致")
     if not cache_status.get("generation_consistent"):
         raise RuntimeError("缓存状态标记世代不一致")
-    if not local_generation_valid(index_dir, current):
-        raise RuntimeError("current release本地复检失败")
-    if previous and not local_generation_valid(index_dir, previous):
-        raise RuntimeError("previous release本地复检失败")
+    if not local_generation_metadata_valid(index_dir, current):
+        raise RuntimeError("current release本地元数据复检失败")
+    if previous and not local_generation_metadata_valid(index_dir, previous):
+        raise RuntimeError("previous release本地元数据复检失败")
     runtime_mode = runtime_binding_mode(index_dir, current)
     if not runtime_mode:
         raise RuntimeError("运行时根索引与current release不一致")
@@ -152,18 +170,23 @@ def main() -> int:
     else:
         warnings.append("未取得TLS证书到期时间")
     try:
-        cache = validate_fresh_status(
+        cache, cache_age = read_valid_status_with_age(
             args.data_dir / "oss-index-cache-status.json",
             label="索引缓存",
             timestamp_field="checked_at",
-            max_age_seconds=int(
-                os.environ.get("JIAOTANG_INDEX_STATUS_MAX_AGE_SECONDS", "7200")
-            ),
             accepted_statuses={"正常"},
             now=now,
         )
         generation = validate_generation(args.index_dir, cache)
         details.update(generation)
+        max_cache_age = int(
+            os.environ.get("JIAOTANG_INDEX_STATUS_MAX_AGE_SECONDS", "7200")
+        )
+        if cache_age > max_cache_age:
+            warnings.append(
+                "索引缓存上次OSS验证已超过"
+                f"{max_cache_age}秒；本地release元数据与运行时绑定复检通过"
+            )
         if generation.get("runtime_mode") == "legacy-root-readonly":
             warnings.append(
                 "根索引处于只读兼容模式；本轮未迁移或处置既有文件，"
