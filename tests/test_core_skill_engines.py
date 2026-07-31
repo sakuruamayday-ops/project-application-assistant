@@ -1,13 +1,35 @@
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
-RELEASE_MANAGER = Path("/Users/zsh/.codex/skills/skill-release-manager")
+RELEASE_MANAGER = Path(
+    os.environ.get(
+        "JIAOTANG_RELEASE_MANAGER_ROOT",
+        Path.home() / ".codex/skills/skill-release-manager",
+    )
+)
+POLICY_FRESHNESS_SCRIPT = (
+    RELEASE_MANAGER / "scripts" / "validate_policy_freshness.py"
+)
+COLLECTION_SCRIPT = (
+    RELEASE_MANAGER / "scripts" / "package_skill_collection.py"
+)
+requires_policy_freshness_host = pytest.mark.skipif(
+    not POLICY_FRESHNESS_SCRIPT.is_file(),
+    reason="requires the separately installed policy-freshness host gate",
+)
+requires_collection_host = pytest.mark.skipif(
+    not COLLECTION_SCRIPT.is_file(),
+    reason="requires the separately installed release collection host gate",
+)
 
 
 def run_validator(relative_script: str, payload: dict, tmp_path: Path):
@@ -158,11 +180,12 @@ def test_sme_validator_requires_all_four_judgments(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+@requires_policy_freshness_host
 def test_policy_freshness_current_manifest_passes():
     result = subprocess.run(
         [
             sys.executable,
-            str(RELEASE_MANAGER / "scripts" / "validate_policy_freshness.py"),
+            str(POLICY_FRESHNESS_SCRIPT),
             "--skills-root",
             str(SKILLS),
             "--as-of",
@@ -175,11 +198,12 @@ def test_policy_freshness_current_manifest_passes():
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+@requires_policy_freshness_host
 def test_policy_freshness_blocks_after_review_date():
     result = subprocess.run(
         [
             sys.executable,
-            str(RELEASE_MANAGER / "scripts" / "validate_policy_freshness.py"),
+            str(POLICY_FRESHNESS_SCRIPT),
             "--skills-root",
             str(SKILLS),
             "--as-of",
@@ -194,7 +218,7 @@ def test_policy_freshness_blocks_after_review_date():
 
 
 def load_collection_module():
-    path = RELEASE_MANAGER / "scripts" / "package_skill_collection.py"
+    path = COLLECTION_SCRIPT
     sys.path.insert(0, str(path.parent))
     spec = importlib.util.spec_from_file_location("package_skill_collection_test", path)
     module = importlib.util.module_from_spec(spec)
@@ -203,6 +227,7 @@ def load_collection_module():
     return module
 
 
+@requires_collection_host
 def test_release_gate_failure_blocks(tmp_path):
     module = load_collection_module()
     skills = tmp_path / "skills"

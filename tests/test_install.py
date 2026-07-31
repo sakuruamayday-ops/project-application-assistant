@@ -48,6 +48,15 @@ class InstallTests(unittest.TestCase):
         )
         self.assertTrue(included(Path("skills/example/SKILL.md")))
 
+    @unittest.skipUnless(
+        Path(
+            os.environ.get(
+                "JIAOTANG_BRANDING_ROOT",
+                Path.home() / ".agents/skills/jiaotang-branding",
+            )
+        ).joinpath("SKILL.md").is_file(),
+        "requires the separately installed jiaotang-branding host integration",
+    )
     def test_release_gates_cover_startup_evolution_and_four_questions(self):
         repository = Path(__file__).resolve().parents[1]
         validate_release_source(repository)
