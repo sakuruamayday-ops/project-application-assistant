@@ -54,7 +54,7 @@ else
     cat <<'REMOTE_INDEX_VERIFY'
 set -e
 set -a
-source /etc/jiaotang-kb.env
+source /etc/jiaotang-kb-app.env
 set +a
 python3 - "$JIAOTANG_INDEX_DIR/knowledge_content.sqlite3" <<'PY'
 import json
@@ -140,8 +140,8 @@ echo "[2/6] 高频项目检索金标准"
 
 echo "[3/6] REST API"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
-  "set -e; source /etc/jiaotang-kb.env; \
-  /opt/jiaotang-kb/.venv/bin/python /opt/jiaotang-kb/scripts/verify_authenticated_portal.py \
+  "set -e; source /etc/jiaotang-kb-app.env; \
+  \"\${JIAOTANG_APP_DIR}/.venv/bin/python\" \"\${JIAOTANG_APP_DIR}/scripts/verify_authenticated_portal.py\" \
   --base-url http://127.0.0.1:8100"
 if [[ "${remote_online_gate}" = "true" ]]; then
   {
@@ -150,8 +150,9 @@ if [[ "${remote_online_gate}" = "true" ]]; then
     printf 'export JIAOTANG_KB_DEVICE_ID=%q\n' "${device_id}"
     printf 'export JIAOTANG_KB_DEVICE_NAME=%q\n' "${device_name}"
     cat <<'REMOTE_REST'
+source /etc/jiaotang-kb-app.env
 export JIAOTANG_RESOLVE_IP=127.0.0.1
-/opt/jiaotang-kb/scripts/smoke_test_production.sh
+"${JIAOTANG_APP_DIR}/scripts/smoke_test_production.sh"
 curl --fail-with-body --silent --show-error --max-time 45 \
   --resolve "zshjiaotang.cn:443:127.0.0.1" \
   -H "Authorization: Bearer ${JIAOTANG_KB_TOKEN}" \
@@ -307,20 +308,17 @@ with zipfile.ZipFile(os.environ["JIAOTANG_RELEASE_ARCHIVE"]) as archive:
     assert inferred["region"]["city"] == "杭州市" and inferred["output"]["detail_level"] == "detailed", "旧Skill偏好迁移门禁失败"
 PY
 
-echo "[6/6] 最近备份"
+echo "[6/6] 当前签名索引release（按本轮边界跳过历史部署备份盘点）"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
   "python3 - <<'PY'
 import json
-from datetime import datetime, timezone
 from pathlib import Path
-path = Path('/var/lib/jiaotang-kb/backup-status.json')
-assert path.is_file(), '缺少备份状态文件'
-payload = json.loads(path.read_text(encoding='utf-8'))
-assert payload.get('status') == '正常', '最近备份状态异常'
-completed = datetime.strptime(payload['completed_at'], '%Y%m%dT%H%M%SZ').replace(tzinfo=timezone.utc)
-assert (datetime.now(timezone.utc) - completed).total_seconds() <= 48 * 3600, '最近备份超过48小时'
-assert any(Path('/var/backups/jiaotang-kb').glob('portal-*.sqlite3.gz')), '未找到门户数据库备份'
-print('备份状态正常：' + payload['completed_at'])
+cache_path = Path('/var/lib/jiaotang-kb/oss-index-cache-status.json')
+cache = json.loads(cache_path.read_text(encoding='utf-8'))
+assert cache.get('status') == '正常', '索引缓存状态异常'
+assert cache.get('current_release_id'), '索引缓存缺少current release身份'
+assert cache.get('generation_consistent') is True, '索引世代不一致'
+print('当前签名索引release正常：' + cache['current_release_id'])
 PY"
 
 echo "六项发布门禁全部通过。"

@@ -20,6 +20,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+OFFICIAL_PUBLISHER_FINGERPRINT = (
+    "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
+)
+GATE_SIGNATURE_NAMESPACE = "codex-skill-release-gate"
 
 
 def run(
@@ -48,6 +52,134 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def verify_gate_attestation(gate_report: Path) -> dict[str, Path | str]:
+    metadata_path = gate_report.with_name(
+        gate_report.name + ".signature.json"
+    )
+    if not metadata_path.is_file():
+        raise RuntimeError("发布门禁报告缺少固定发布者签名元数据")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if not isinstance(metadata, dict):
+        raise RuntimeError("发布门禁签名元数据根节点必须是对象")
+    expected = {
+        "algorithm": "OpenSSH-Ed25519",
+        "signature_namespace": GATE_SIGNATURE_NAMESPACE,
+        "signed_file": gate_report.name,
+        "signed_file_sha256": sha256(gate_report),
+        "public_key_fingerprint": OFFICIAL_PUBLISHER_FINGERPRINT,
+    }
+    if any(metadata.get(key) != value for key, value in expected.items()):
+        raise RuntimeError("发布门禁签名元数据与报告或官方身份不一致")
+    signature_name = str(metadata.get("signature") or "")
+    public_key_name = str(metadata.get("public_key") or "")
+    if (
+        Path(signature_name).name != signature_name
+        or Path(public_key_name).name != public_key_name
+    ):
+        raise RuntimeError("发布门禁签名伴随物路径不安全")
+    signature = gate_report.parent / signature_name
+    public_key = gate_report.parent / public_key_name
+    if not signature.is_file() or not public_key.is_file():
+        raise RuntimeError("发布门禁报告缺少签名或发布公钥")
+    fingerprint = run(
+        ["ssh-keygen", "-lf", str(public_key), "-E", "sha256"]
+    ).split()[1]
+    if fingerprint != OFFICIAL_PUBLISHER_FINGERPRINT:
+        raise RuntimeError("发布门禁报告的公钥不是官方固定发布者")
+    allowed_fd, allowed_name = tempfile.mkstemp(
+        prefix="jiaotang-gate-allowed-signers-"
+    )
+    os.close(allowed_fd)
+    allowed_path = Path(allowed_name)
+    allowed_path.write_text(
+        "jiaotang " + public_key.read_text(encoding="utf-8").strip() + "\n",
+        encoding="utf-8",
+    )
+    allowed_path.chmod(0o600)
+    process = subprocess.run(
+        [
+            "ssh-keygen",
+            "-Y",
+            "verify",
+            "-f",
+            str(allowed_path),
+            "-I",
+            "jiaotang",
+            "-n",
+            GATE_SIGNATURE_NAMESPACE,
+            "-s",
+            str(signature),
+        ],
+        input=gate_report.read_bytes(),
+        check=False,
+        capture_output=True,
+    )
+    if process.returncode:
+        raise RuntimeError("发布门禁报告的 Ed25519 签名无效")
+    return {
+        "status": "verified",
+        "signature": signature,
+        "metadata": metadata_path,
+        "public_key": public_key,
+        "publisher_fingerprint": fingerprint,
+    }
+
+
+def validate_release_provenance_environment(
+    provenance: dict[str, object],
+) -> None:
+    manager_root = Path(
+        os.environ.get(
+            "JIAOTANG_RELEASE_MANAGER_ROOT",
+            str(Path.home() / ".codex" / "skills" / "skill-release-manager"),
+        )
+    ).expanduser().resolve()
+    manager_scripts = manager_root / "scripts"
+    declared_manager = provenance.get("release_manager_sha256")
+    if not isinstance(declared_manager, dict) or not declared_manager:
+        raise RuntimeError("发布门禁报告缺少发布管理器哈希")
+    actual_manager = {
+        path.name: sha256(path)
+        for path in sorted(manager_scripts.glob("*.py"))
+        if path.is_file()
+    }
+    if declared_manager != actual_manager:
+        raise RuntimeError("发布门禁报告使用的发布管理器与当前固定版本不一致")
+    declared_tools = provenance.get("toolchain")
+    if not isinstance(declared_tools, dict):
+        raise RuntimeError("发布门禁报告缺少工具链锁定信息")
+    for name in ("python", "git", "ssh-keygen"):
+        item = declared_tools.get(name)
+        if not isinstance(item, dict):
+            raise RuntimeError(f"发布门禁报告缺少工具链：{name}")
+        executable = Path(str(item.get("executable") or "")).resolve()
+        if (
+            not executable.is_file()
+            or item.get("executable_sha256") != sha256(executable)
+        ):
+            raise RuntimeError(f"发布门禁工具链身份不一致：{name}")
+
+
+def tracked_source_digest(root: Path) -> tuple[str, int]:
+    tracked = [
+        item
+        for item in run(
+            ["git", "-C", str(root), "ls-files", "-z"]
+        ).split("\0")
+        if item
+    ]
+    digest = hashlib.sha256()
+    for relative in sorted(tracked):
+        path = root / relative
+        if not path.is_file():
+            raise RuntimeError(f"Git跟踪文件在工作树缺失：{relative}")
+        digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(sha256(path).encode("ascii"))
+        digest.update(b"\n")
+    return digest.hexdigest(), len(tracked)
 
 
 def normalize_version(value: str) -> tuple[str, str, str]:
@@ -332,6 +464,7 @@ def validate_inputs(
     gate_report: Path,
     notes: Path,
     companions: dict[str, object],
+    expected_commit: str,
 ) -> dict[str, object]:
     short, semantic, tag = normalize_version(version)
     manifest = json.loads(
@@ -353,14 +486,53 @@ def validate_inputs(
         if fact and fact not in release_notes:
             raise RuntimeError("发布说明未覆盖 suite-manifest 中的版本事实")
     gate = json.loads(gate_report.read_text(encoding="utf-8"))
+    gate_attestation = verify_gate_attestation(gate_report)
     if (
         gate.get("status") != "pass"
         or gate.get("failed")
         or gate.get("passed") != gate.get("gate_count")
     ):
         raise RuntimeError("本地发布门禁报告未全部通过")
+    provenance = gate.get("source_provenance")
+    if not isinstance(provenance, dict):
+        raise RuntimeError("发布门禁报告缺少源码与工具链溯源")
+    current_tree = run(
+        ["git", "-C", str(root), "rev-parse", "HEAD^{tree}"]
+    )
+    source_digest, tracked_files = tracked_source_digest(root)
+    expected_provenance = {
+        "git_commit": expected_commit,
+        "git_tree": current_tree,
+        "dirty": False,
+        "tracked_source_sha256": source_digest,
+        "tracked_files": tracked_files,
+        "suite_manifest_sha256": sha256(
+            root / "skills" / "suite-manifest.json"
+        ),
+    }
+    if any(
+        provenance.get(key) != value
+        for key, value in expected_provenance.items()
+    ):
+        raise RuntimeError("发布门禁报告与当前提交、源码或套件清单不一致")
+    validate_release_provenance_environment(provenance)
     publisher = load_portal_publisher(root)
     package_validation = publisher.validate_release_packages(packages, short)
+    final_artifacts = gate.get("final_artifacts")
+    if (
+        gate.get("final_artifacts_complete") is not True
+        or not isinstance(final_artifacts, dict)
+    ):
+        raise RuntimeError("发布门禁报告尚未绑定最终候选包")
+    for target, artifact in package_validation["artifacts"].items():
+        declared = final_artifacts.get(target)
+        if (
+            not isinstance(declared, dict)
+            or declared.get("sha256") != artifact.get("sha256")
+        ):
+            raise RuntimeError(
+                f"发布门禁报告绑定的{target}包与当前候选包不一致"
+            )
     payload = companions.get("payload")
     if not isinstance(payload, dict):
         raise RuntimeError("发布伴随物没有返回机器可读清单")
@@ -378,15 +550,18 @@ def validate_inputs(
         "targets": package_validation["targets"],
         "artifacts": package_validation["artifacts"],
         "gate_sha256": sha256(gate_report),
+        "gate_attestation": gate_attestation,
+        "source_provenance": provenance,
         "manual_sha256": payload["manual"]["sha256"],
         "companion_sha256": sha256(Path(str(companions["companion"]))),
     }
 
 
 def validate_clean_default_branch(repository: str) -> str:
-    if run(["git", "status", "--porcelain"]):
+    git_root = ["git", "-C", str(ROOT)]
+    if run([*git_root, "status", "--porcelain"]):
         raise RuntimeError("受控发布必须从无未提交改动的工作树执行")
-    branch = run(["git", "branch", "--show-current"])
+    branch = run([*git_root, "branch", "--show-current"])
     repository_data = json_command(
         ["gh", "repo", "view", repository, "--json", "defaultBranchRef"]
     )
@@ -395,9 +570,9 @@ def validate_clean_default_branch(repository: str) -> str:
         raise RuntimeError(
             f"受控发布必须从默认分支 {default_branch} 执行，当前为 {branch}"
         )
-    run(["git", "fetch", "origin", default_branch])
-    local = run(["git", "rev-parse", "HEAD"])
-    remote = run(["git", "rev-parse", f"origin/{default_branch}"])
+    run([*git_root, "fetch", "origin", default_branch])
+    local = run([*git_root, "rev-parse", "HEAD"])
+    remote = run([*git_root, "rev-parse", f"origin/{default_branch}"])
     if local != remote:
         raise RuntimeError("本地默认分支与 GitHub 默认分支不一致")
     return local
@@ -420,9 +595,15 @@ def prepare_ascii_assets(
         target = directory / names[target_name]
         shutil.copy2(source, target)
         targets.append(target)
-    gate_target = directory / f"jiaotang-skills-{tag}-release-gate.json"
+    gate_target = directory / gate_report.name
     shutil.copy2(gate_report, gate_target)
     targets.append(gate_target)
+    gate_attestation = verify_gate_attestation(gate_report)
+    for key in ("signature", "metadata", "public_key"):
+        source = Path(str(gate_attestation[key]))
+        target = directory / source.name
+        shutil.copy2(source, target)
+        targets.append(target)
     companion_names = {
         "manual": f"jiaotang-user-manual-{tag}.docx",
         "companion": f"jiaotang-release-companions-{tag}.json",
@@ -933,6 +1114,7 @@ def main() -> None:
     }
     gate_report = arguments.gate_report.resolve()
     release_notes = arguments.release_notes.resolve()
+    commit = validate_clean_default_branch(arguments.repository)
     validation = validate_inputs(
         ROOT,
         arguments.version,
@@ -940,8 +1122,8 @@ def main() -> None:
         gate_report,
         release_notes,
         companion_result,
+        commit,
     )
-    commit = validate_clean_default_branch(arguments.repository)
     with tempfile.TemporaryDirectory(
         prefix="jiaotang-controlled-release-transaction-"
     ) as directory:
@@ -1009,6 +1191,8 @@ def main() -> None:
             tag=str(validation["tag"]),
             holder_id=holder,
         )
+        portal_result: dict[str, object] | None = None
+        github_published = False
         try:
             credential = load_or_create_lease_credential(
                 path=credential_path,
@@ -1116,7 +1300,7 @@ def main() -> None:
                 json.dumps(
                     {
                         **preflight,
-                        "status": "releasing",
+                        "status": "staged-awaiting-acceptance",
                         "release_url": release_url,
                         "portal": portal_result,
                         "lease": lease,
@@ -1192,6 +1376,7 @@ def main() -> None:
                     "--latest",
                 ]
             )
+            github_published = True
             transition(
                 "github_published",
                 {
@@ -1214,7 +1399,30 @@ def main() -> None:
             )
         except Exception as exc:
             try:
-                transition("failed", {"promote_error": str(exc)})
+                transition(
+                    "failed",
+                    {
+                        "promote_error": str(exc),
+                        "partial_state": (
+                            "portal-published-github-pending"
+                            if portal_result is not None
+                            and not github_published
+                            else "pre-publication-failed"
+                        ),
+                        "portal": (
+                            portal_result.get("release_state")
+                            if portal_result
+                            else None
+                        ),
+                        "github": (
+                            "published" if github_published else "pending"
+                        ),
+                        "resume": (
+                            "使用同一签名事务和租约重新执行 --promote；"
+                            "事务从 last_success_state 继续，禁止换包"
+                        ),
+                    },
+                )
             except Exception:
                 pass
             raise

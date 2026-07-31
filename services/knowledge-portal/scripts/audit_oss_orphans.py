@@ -4,12 +4,18 @@ import argparse
 import csv
 import json
 import os
+import re
 import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
 import oss2
+
+try:
+    from scripts.oss_auth import build_bucket
+except ImportError:  # direct script execution
+    from oss_auth import build_bucket
 
 
 UNMAPPED_ORPHAN_LABEL = "仅OSS可见，现有本地审计资料未映射"
@@ -55,24 +61,22 @@ def read_jsonl(path: Path) -> list[dict[str, object]]:
 
 def load_expected_shas(path: Path) -> set[str]:
     with path.open(encoding="utf-8-sig", newline="") as source:
-        return {
+        expected = {
             str(row.get("sha256") or "")
             for row in csv.DictReader(source)
             if str(row.get("object_storage_allowed", "")).lower() == "true"
             and row.get("sha256")
         }
+    invalid = sorted(
+        digest for digest in expected if not re.fullmatch(r"[0-9a-f]{64}", digest)
+    )
+    if invalid:
+        raise RuntimeError(f"OSS白名单包含非法SHA-256：{invalid[:10]}")
+    return expected
 
 
 def oss_bucket() -> oss2.Bucket:
-    auth = oss2.Auth(
-        os.environ["JIAOTANG_OSS_ACCESS_KEY_ID"],
-        os.environ["JIAOTANG_OSS_ACCESS_KEY_SECRET"],
-    )
-    return oss2.Bucket(
-        auth,
-        os.environ["JIAOTANG_OSS_ENDPOINT"].rstrip("/"),
-        os.environ["JIAOTANG_OSS_BUCKET"],
-    )
+    return build_bucket()
 
 
 def list_objects_page_with_network_retry(
@@ -137,7 +141,11 @@ def load_history(
             "manifest_files": set(),
         }
     )
-    manifest_files = sorted(manifest_history_dir.glob("manifest*.jsonl"))
+    manifest_files = sorted(
+        path
+        for path in manifest_history_dir.rglob("manifest*.jsonl")
+        if path.is_file()
+    )
     for manifest_file in manifest_files:
         for row in read_jsonl(manifest_file):
             digest = str(row.get("sha256") or "")
@@ -204,6 +212,17 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     expected_shas = load_expected_shas(args.allowlist)
     current_rows = read_jsonl(args.manifest)
+    current_shas = {
+        str(row.get("sha256") or "")
+        for row in current_rows
+        if row.get("sha256")
+    }
+    unknown_expected = expected_shas - current_shas
+    if unknown_expected:
+        raise SystemExit(
+            "OSS白名单包含当前manifest未声明SHA-256："
+            + ", ".join(sorted(unknown_expected)[:10])
+        )
     current_by_path = {
         str(row["relative_path"]): row
         for row in current_rows

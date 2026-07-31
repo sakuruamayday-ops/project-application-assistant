@@ -48,11 +48,24 @@ class InstallTests(unittest.TestCase):
         )
         self.assertTrue(included(Path("skills/example/SKILL.md")))
 
+    @unittest.skipUnless(
+        Path(
+            os.environ.get(
+                "JIAOTANG_BRANDING_ROOT",
+                Path.home() / ".agents/skills/jiaotang-branding",
+            )
+        ).joinpath("SKILL.md").is_file(),
+        "requires the separately installed jiaotang-branding host integration",
+    )
     def test_release_gates_cover_startup_evolution_and_four_questions(self):
         repository = Path(__file__).resolve().parents[1]
         validate_release_source(repository)
         with tempfile.TemporaryDirectory() as directory:
             package = Path(directory) / "release.zip"
+            environment = os.environ.copy()
+            environment["JIAOTANG_RELEASE_WORK_ROOT"] = str(
+                Path(directory) / "release-work"
+            )
             subprocess.run(
                 [
                     sys.executable,
@@ -66,6 +79,7 @@ class InstallTests(unittest.TestCase):
                 check=True,
                 capture_output=True,
                 text=True,
+                env=environment,
             )
             validate_release_archive(package)
             with zipfile.ZipFile(package) as archive:
@@ -175,7 +189,13 @@ class InstallTests(unittest.TestCase):
             skill.mkdir(parents=True)
             (skill / "SKILL.md").write_text("---\nname: sample-skill\ndescription: test\n---\n", encoding="utf-8")
             destination = root / "destination"
-            installed = install_skills(source, destination, "copy", False)
+            installed = install_skills(
+                source,
+                destination,
+                "copy",
+                False,
+                root / "config",
+            )
             self.assertEqual(installed, ["sample-skill"])
             self.assertTrue((destination / "sample-skill" / "SKILL.md").is_file())
 
@@ -187,10 +207,25 @@ class InstallTests(unittest.TestCase):
             skill.mkdir(parents=True)
             (skill / "SKILL.md").write_text("first", encoding="utf-8")
             destination = root / "destination"
-            install_skills(source, destination, "copy", False)
-            (skill / "SKILL.md").write_text("second", encoding="utf-8")
-            self.assertEqual(install_skills(source, destination, "copy", False), [])
             config_dir = root / "config"
+            install_skills(
+                source,
+                destination,
+                "copy",
+                False,
+                config_dir,
+            )
+            (skill / "SKILL.md").write_text("second", encoding="utf-8")
+            self.assertEqual(
+                install_skills(
+                    source,
+                    destination,
+                    "copy",
+                    False,
+                    config_dir,
+                ),
+                [],
+            )
             install_skills(source, destination, "copy", True, config_dir, "1.1")
             self.assertEqual((destination / "sample-skill" / "SKILL.md").read_text(encoding="utf-8"), "second")
             self.assertTrue(any((config_dir / "install-backups").glob("*/sample-skill/SKILL.md")))
@@ -306,6 +341,65 @@ class InstallTests(unittest.TestCase):
                     )
                 )
             )
+
+    def test_backup_phase_failure_restores_every_already_moved_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            destination = root / "destination"
+            config_dir = root / "config"
+            for name in ("alpha-skill", "beta-skill"):
+                incoming = source / name
+                incoming.mkdir(parents=True)
+                (incoming / "SKILL.md").write_text(
+                    f"incoming-{name}",
+                    encoding="utf-8",
+                )
+                existing = destination / name
+                existing.mkdir(parents=True)
+                (existing / "SKILL.md").write_text(
+                    f"previous-{name}",
+                    encoding="utf-8",
+                )
+
+            original_rename = Path.rename
+            backup_moves = 0
+
+            def fail_second_backup(path: Path, target: Path):
+                nonlocal backup_moves
+                if "install-backups" in target.parts:
+                    backup_moves += 1
+                    if backup_moves == 2:
+                        raise OSError("injected-second-backup-failure")
+                return original_rename(path, target)
+
+            with mock.patch.object(Path, "rename", fail_second_backup):
+                with self.assertRaisesRegex(
+                    OSError,
+                    "injected-second-backup-failure",
+                ):
+                    install_skills(
+                        source,
+                        destination,
+                        "copy",
+                        True,
+                        config_dir,
+                        "2.0",
+                    )
+
+            for name in ("alpha-skill", "beta-skill"):
+                self.assertEqual(
+                    (destination / name / "SKILL.md").read_text(
+                        encoding="utf-8"
+                    ),
+                    f"previous-{name}",
+                )
+            report_path = sorted(
+                (config_dir / "upgrade-reports").glob("*.json")
+            )[-1]
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(report["transaction_status"], "rolled-back")
+            self.assertEqual(report["status"], "fail")
 
     @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
     def test_signed_install_is_read_only_and_fully_verified(self):

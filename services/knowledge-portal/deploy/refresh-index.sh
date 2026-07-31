@@ -8,8 +8,11 @@ if [[ "${mode}" == "--if-missing" ]]; then
     if [[ -s "${index_dir}/knowledge_content.sqlite3" ]]; then
         exit 0
     fi
+    mode=""
+elif [[ "${mode}" == "--allow-stale" || "${mode}" == "--rollback" ]]; then
+    :
 elif [[ -n "${mode}" ]]; then
     echo "未知参数：${mode}" >&2
     exit 2
 fi
-exec "${app_dir}/.venv/bin/python" "${app_dir}/scripts/refresh_index_from_oss.py"
+exec "${app_dir}/.venv/bin/python" "${app_dir}/scripts/refresh_index_from_oss.py" ${mode:+"${mode}"}

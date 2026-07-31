@@ -1,10 +1,11 @@
 [Unit]
 Description=Back up Jiaotang knowledge database
 After=jiaotang-kb.service
+OnFailure=jiaotang-kb-failure-report@%n.service
 
 [Service]
 Type=oneshot
-EnvironmentFile=/etc/jiaotang-kb.env
+EnvironmentFile=/etc/jiaotang-kb-app.env
 ExecStart=/usr/local/sbin/jiaotang-kb-backup
 User=root
 Group=root

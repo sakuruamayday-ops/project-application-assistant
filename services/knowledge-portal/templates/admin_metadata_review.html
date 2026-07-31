@@ -28,8 +28,8 @@
     <div class="calibration-list">
       {% for item in alias_candidates %}
       <article class="calibration-card">
-        <div class="learning-score" style="--score: {{ item.learning_score }}" aria-label="主动学习优先分 {{ item.learning_score }} 分">
-          <span>优先分</span><strong>{{ item.learning_score }}</strong><small>/ 100</small><i aria-hidden="true"><b></b></i>
+        <div class="learning-score" aria-label="主动学习优先分 {{ item.learning_score }} 分">
+          <span>优先分</span><strong>{{ item.learning_score }}</strong><small>/ 100</small><progress max="100" value="{{ item.learning_score }}" aria-hidden="true"></progress>
         </div>
         <div class="calibration-card-main">
           <div class="candidate-title"><div><span class="risk-label {{ 'risk-alert' if item.learning_score >= 60 else 'risk-normal' }}">{{ '优先处理' if item.learning_score >= 60 else '常规确认' }}</span><h3>{{ item.raw_project_name }}</h3></div><span class="impact-count">影响 {{ item.impacted_documents }} 份</span></div>
@@ -65,8 +65,8 @@
     <div class="calibration-list">
       {% for item in policy_queue %}
       <article class="calibration-card policy-review-card">
-        <div class="learning-score" style="--score: {{ item.learning_score / 1.4 }}" aria-label="政策核验优先分 {{ item.learning_score }} 分">
-          <span>风险分</span><strong>{{ item.learning_score }}</strong><small>/ 140</small><i aria-hidden="true"><b></b></i>
+        <div class="learning-score" aria-label="政策核验优先分 {{ item.learning_score }} 分">
+          <span>风险分</span><strong>{{ item.learning_score }}</strong><small>/ 140</small><progress max="140" value="{{ item.learning_score }}" aria-hidden="true"></progress>
         </div>
         <div class="calibration-card-main">
           <div class="candidate-title"><div><span class="risk-label {{ 'risk-alert' if item.priority == 'high' else 'risk-normal' }}">{{ item.priority|upper }} 优先级</span><h3>{{ item.title }}</h3></div><span class="impact-count">{{ item.cluster_document_count }} 份同源文档</span></div>
@@ -116,7 +116,7 @@
   <section class="panel table-panel calibration-history">
     <div class="panel-head"><h3>人工拆分与合并记录</h3><span>共 {{ cluster_operation_total }} 条 · 显示最近30条</span></div>
     <div class="table-wrap"><table class="archive-table"><thead><tr><th>操作</th><th>原簇</th><th>文档</th><th>依据</th><th>状态</th><th>操作人</th><th>时间</th><th>动作</th></tr></thead><tbody>
-      {% for item in cluster_operations %}<tr><td data-label="操作"><strong>{{ '拆分' if item.operation_type == 'split' else '合并' }}</strong></td><td data-label="原簇">#{{ item.source_cluster_ids|join('、#') }}</td><td data-label="文档">{{ item.document_ids|length }} 份</td><td data-label="依据" class="wrap-cell">{{ item.note or '未填写' }}</td><td data-label="状态"><span class="table-status {{ 'failed' if item.undone_at else 'ready' }}">{{ '已撤销' if item.undone_at else '已生效' }}</span>{% if item.undone_at %}<small class="source-cell">{{ item.undone_by }} · {{ item.undone_at }}</small>{% endif %}</td><td data-label="操作人">{{ item.operated_by }}</td><td data-label="时间">{{ item.operated_at }}</td><td data-label="动作">{% if not item.undone_at %}<form method="post" action="/admin/metadata-review/policy-clusters/{{ item.id }}/undo" onsubmit="return confirm('确认撤销这次政策簇操作？')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-button danger" type="submit">撤销</button></form>{% else %}—{% endif %}</td></tr>
+      {% for item in cluster_operations %}<tr><td data-label="操作"><strong>{{ '拆分' if item.operation_type == 'split' else '合并' }}</strong></td><td data-label="原簇">#{{ item.source_cluster_ids|join('、#') }}</td><td data-label="文档">{{ item.document_ids|length }} 份</td><td data-label="依据" class="wrap-cell">{{ item.note or '未填写' }}</td><td data-label="状态"><span class="table-status {{ 'failed' if item.undone_at else 'ready' }}">{{ '已撤销' if item.undone_at else '已生效' }}</span>{% if item.undone_at %}<small class="source-cell">{{ item.undone_by }} · {{ item.undone_at }}</small>{% endif %}</td><td data-label="操作人">{{ item.operated_by }}</td><td data-label="时间">{{ item.operated_at }}</td><td data-label="动作">{% if not item.undone_at %}<form method="post" action="/admin/metadata-review/policy-clusters/{{ item.id }}/undo" data-confirm="确认撤销这次政策簇操作？"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="text-button danger" type="submit">撤销</button></form>{% else %}—{% endif %}</td></tr>
       {% else %}<tr class="empty-row"><td colspan="8">尚无人工拆分或合并记录</td></tr>{% endfor %}
     </tbody></table></div>
   </section>

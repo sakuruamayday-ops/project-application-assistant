@@ -209,8 +209,14 @@ def install_skills(
         raise ValueError("安装模式必须是 copy 或 symlink")
     source = source.expanduser().resolve()
     destination = destination.expanduser().resolve()
+    configured_root = os.environ.get(
+        "PROJECT_ASSISTANT_CONFIG_DIR",
+        "",
+    ).strip()
     config_dir = (
-        config_dir or Path.home() / ".config" / "project-assistant"
+        config_dir
+        or (Path(configured_root) if configured_root else None)
+        or Path.home() / ".config" / "project-assistant"
     ).expanduser().resolve()
     run_id = timestamp()
     created_at = datetime.now(timezone.utc).isoformat()
@@ -458,16 +464,36 @@ def install_skills(
         transaction_status = "committed"
     except Exception as exc:
         error = str(exc)
-        if deployed_targets:
-            for target, rollback in reversed(deployed_targets):
+        rollback_errors: list[str] = []
+        # The backup phase is itself transactional.  A failure while moving the
+        # second or later existing target must restore every target already
+        # moved, even though no staged target has been deployed yet.
+        for target, rollback in reversed(deployed_targets):
+            try:
                 if target.exists() or target.is_symlink():
                     rollback.parent.mkdir(parents=True, exist_ok=True)
                     target.rename(rollback)
-            for target, backup in reversed(moved_backups):
+            except Exception as rollback_exc:
+                rollback_errors.append(
+                    f"隔离新安装失败 {target}：{rollback_exc}"
+                )
+        for target, backup in reversed(moved_backups):
+            try:
                 if backup.exists() or backup.is_symlink():
                     target.parent.mkdir(parents=True, exist_ok=True)
+                    if target.exists() or target.is_symlink():
+                        raise RuntimeError("恢复目标仍被占用")
                     backup.rename(target)
-            transaction_status = "rolled-back"
+            except Exception as rollback_exc:
+                rollback_errors.append(
+                    f"恢复旧安装失败 {target}：{rollback_exc}"
+                )
+        if deployed_targets or moved_backups:
+            transaction_status = (
+                "rollback-failed" if rollback_errors else "rolled-back"
+            )
+        if rollback_errors:
+            error = error + "；回滚异常：" + "；".join(rollback_errors)
         raise
     finally:
         completed_at = datetime.now(timezone.utc).isoformat()

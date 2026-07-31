@@ -45,9 +45,15 @@ TRUSTED_PUBLISHER_FINGERPRINT = (
     "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
 )
 WORKBUDDY_SIGNATURE_NAMESPACE = "codex-workbuddy-plugin-manifest"
+WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE = (
+    "codex-workbuddy-marketplace-manifest"
+)
+GENERIC_SIGNATURE_NAMESPACE = "codex-skill-suite-manifest"
 SSHSIG_MAGIC = b"SSHSIG"
 SSH_ED25519 = b"ssh-ed25519"
 MAX_EXPANDED_BYTES = 1024 * 1024 * 1024
+STAGED_STATUS = "staged-awaiting-acceptance"
+PENDING_STAGE_STATUSES = {STAGED_STATUS, "releasing"}
 
 
 def _parse_lease_credential(payload: object) -> tuple[str, str]:
@@ -297,6 +303,8 @@ def _verify_manifest_signature(
     payload: bytes,
     signature: bytes,
     supplied_public_key: bytes,
+    *,
+    namespace: str = WORKBUDDY_SIGNATURE_NAMESPACE,
 ) -> None:
     pinned = _parse_public_key(TRUSTED_PUBLISHER_PUBLIC_KEY)
     supplied = _parse_public_key(supplied_public_key)
@@ -307,8 +315,8 @@ def _verify_manifest_signature(
     parsed = _parse_sshsig(signature)
     if parsed["public_key_blob"] != pinned["blob"]:
         raise ValueError("签名内嵌公钥与固定公钥不一致")
-    if parsed["namespace"].decode("utf-8") != WORKBUDDY_SIGNATURE_NAMESPACE:
-        raise ValueError("WorkBuddy 签名命名空间不匹配")
+    if parsed["namespace"].decode("utf-8") != namespace:
+        raise ValueError("发布清单签名命名空间不匹配")
     if parsed["reserved"]:
         raise ValueError("OpenSSH SSHSIG reserved 字段必须为空")
     hash_name = parsed["hash_algorithm"].decode("ascii")
@@ -318,7 +326,7 @@ def _verify_manifest_signature(
     signed_data = b"".join(
         (
             SSHSIG_MAGIC,
-            _ssh_string(WORKBUDDY_SIGNATURE_NAMESPACE),
+            _ssh_string(namespace),
             _ssh_string(b""),
             _ssh_string(hash_name),
             _ssh_string(payload_digest),
@@ -330,6 +338,131 @@ def _verify_manifest_signature(
         ).verify(parsed["signature"], signed_data)
     except InvalidSignature as error:
         raise ValueError("WorkBuddy Ed25519 签名验证失败") from error
+
+
+def _validate_generic_integrity(
+    archive: zipfile.ZipFile,
+    names: list[str],
+    suite: dict[str, object],
+) -> dict[str, object]:
+    file_names = {
+        name for name in names if not archive.getinfo(name).is_dir()
+    }
+    suite_names = [
+        name
+        for name in file_names
+        if name.endswith("/skills/suite-manifest.json")
+    ]
+    if len(suite_names) != 1:
+        raise ValueError("通用包应且仅应包含一个套件清单")
+    suite_name = suite_names[0]
+    suite_parts = PurePosixPath(suite_name).parts
+    if len(suite_parts) != 3 or suite_parts[1:] != (
+        "skills",
+        "suite-manifest.json",
+    ):
+        raise ValueError("通用包套件清单不在固定目录")
+    bundle_root = suite_parts[0]
+    prefix = f"{bundle_root}/"
+    companions = {
+        f"{prefix}suite-release-manifest.json",
+        f"{prefix}suite-release-manifest.sig",
+        f"{prefix}publisher-ed25519.pub",
+        f"{prefix}publisher-key.json",
+    }
+    if not companions.issubset(file_names):
+        raise ValueError("通用包签名伴随物不完整")
+    unexpected_outer = sorted(
+        name for name in file_names if not name.startswith(prefix)
+    )
+    if unexpected_outer:
+        raise ValueError(
+            "通用包包含固定根目录外文件："
+            + "、".join(unexpected_outer[:5])
+        )
+
+    manifest_name = f"{prefix}suite-release-manifest.json"
+    signature_name = f"{prefix}suite-release-manifest.sig"
+    public_key_name = f"{prefix}publisher-ed25519.pub"
+    metadata_name = f"{prefix}publisher-key.json"
+    manifest_bytes = archive.read(manifest_name)
+    manifest = json.loads(manifest_bytes.decode("utf-8"))
+    metadata = json.loads(archive.read(metadata_name).decode("utf-8"))
+    if (
+        not isinstance(metadata, dict)
+        or metadata.get("algorithm") not in {"Ed25519", "OpenSSH-Ed25519"}
+        or metadata.get("fingerprint_sha256")
+        != TRUSTED_PUBLISHER_FINGERPRINT
+    ):
+        raise ValueError("通用包发布者元数据不合规")
+    _verify_manifest_signature(
+        manifest_bytes,
+        archive.read(signature_name),
+        archive.read(public_key_name),
+        namespace=GENERIC_SIGNATURE_NAMESPACE,
+    )
+    release = suite.get("release")
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schema_version") != 1
+        or manifest.get("artifact_type") != "skill-suite"
+        or manifest.get("release_tag")
+        != (release.get("tag") if isinstance(release, dict) else None)
+        or manifest.get("release_version")
+        != (release.get("version") if isinstance(release, dict) else None)
+        or manifest.get("skills") != suite.get("skills")
+        or manifest.get("skill_count") != len(suite.get("skills") or [])
+    ):
+        raise ValueError("通用包签名清单与套件清单不一致")
+    declared = manifest.get("files")
+    if not isinstance(declared, dict) or not declared:
+        raise ValueError("通用包签名清单缺少files哈希表")
+    actual_files = {
+        name[len(prefix) :]
+        for name in file_names
+        if name.startswith(prefix) and name not in companions
+    }
+    missing_skill_entries = [
+        f"skills/{skill}/SKILL.md"
+        for skill in suite.get("skills") or []
+        if f"skills/{skill}/SKILL.md" not in actual_files
+    ]
+    if missing_skill_entries:
+        raise ValueError(
+            "通用包缺少声明技能入口："
+            + "、".join(missing_skill_entries[:5])
+        )
+    if set(declared) != actual_files:
+        missing = sorted(set(declared) - actual_files)
+        unexpected = sorted(actual_files - set(declared))
+        details = [
+            *(f"缺少：{name}" for name in missing[:3]),
+            *(f"未签名：{name}" for name in unexpected[:3]),
+        ]
+        raise ValueError("通用包文件集合与签名清单不一致：" + "；".join(details))
+    for relative, expected_hash in declared.items():
+        relative_path = PurePosixPath(str(relative))
+        if (
+            not isinstance(relative, str)
+            or relative_path.is_absolute()
+            or ".." in relative_path.parts
+            or "\\" in relative
+            or ":" in relative
+            or not re.fullmatch(r"[0-9a-f]{64}", str(expected_hash))
+        ):
+            raise ValueError("通用包签名清单包含非法路径或SHA-256")
+        actual_hash = hashlib.sha256(
+            archive.read(prefix + relative)
+        ).hexdigest()
+        if actual_hash != expected_hash:
+            raise ValueError(f"通用包签名文件哈希不一致：{relative}")
+    return {
+        "status": "verified",
+        "publisher_fingerprint": TRUSTED_PUBLISHER_FINGERPRINT,
+        "signature_namespace": GENERIC_SIGNATURE_NAMESPACE,
+        "verified_files": len(declared),
+        "archive_entries": len(file_names),
+    }
 
 
 def _validate_workbuddy_integrity(
@@ -353,6 +486,86 @@ def _validate_workbuddy_integrity(
         raise ValueError("WorkBuddy 插件签名清单不在固定市场目录")
     archive_root, _, plugin_directory, _ = parts
     plugin_prefix = f"{archive_root}/plugins/{plugin_directory}/"
+    marketplace_manifest_name = (
+        f"{archive_root}/marketplace-release-manifest.json"
+    )
+    marketplace_signature_name = marketplace_manifest_name + ".sig"
+    marketplace_metadata_name = (
+        f"{archive_root}/marketplace-release-signature.json"
+    )
+    marketplace_public_key_name = (
+        f"{archive_root}/marketplace-publisher-ed25519.pub"
+    )
+    marketplace_companions = {
+        marketplace_manifest_name,
+        marketplace_signature_name,
+        marketplace_metadata_name,
+        marketplace_public_key_name,
+    }
+    if not marketplace_companions.issubset(file_names):
+        raise ValueError("WorkBuddy 市场整包签名伴随物不完整")
+    marketplace_manifest_bytes = archive.read(marketplace_manifest_name)
+    marketplace_manifest = json.loads(
+        marketplace_manifest_bytes.decode("utf-8")
+    )
+    marketplace_metadata = json.loads(
+        archive.read(marketplace_metadata_name).decode("utf-8")
+    )
+    expected_marketplace_metadata = {
+        "algorithm": "OpenSSH-Ed25519",
+        "signature_namespace": WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE,
+        "signed_file": "marketplace-release-manifest.json",
+        "signature": "marketplace-release-manifest.json.sig",
+        "public_key": "marketplace-publisher-ed25519.pub",
+        "public_key_fingerprint": TRUSTED_PUBLISHER_FINGERPRINT,
+    }
+    if (
+        not isinstance(marketplace_metadata, dict)
+        or any(
+            marketplace_metadata.get(key) != value
+            for key, value in expected_marketplace_metadata.items()
+        )
+    ):
+        raise ValueError("WorkBuddy 市场整包签名元数据不合规")
+    _verify_manifest_signature(
+        marketplace_manifest_bytes,
+        archive.read(marketplace_signature_name),
+        archive.read(marketplace_public_key_name),
+        namespace=WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE,
+    )
+    if (
+        not isinstance(marketplace_manifest, dict)
+        or marketplace_manifest.get("artifact_type")
+        != "workbuddy-marketplace"
+        or marketplace_manifest.get("marketplace_name") != archive_root
+        or marketplace_manifest.get("plugin_name") != plugin_directory
+        or marketplace_manifest.get("release_tag")
+        != suite.get("release", {}).get("tag")
+    ):
+        raise ValueError("WorkBuddy 市场整包签名清单与套件不一致")
+    marketplace_files = marketplace_manifest.get("files")
+    if not isinstance(marketplace_files, dict) or not marketplace_files:
+        raise ValueError("WorkBuddy 市场整包签名清单缺少 files 哈希表")
+    verified_marketplace_files: set[str] = set()
+    for relative, expected_hash in marketplace_files.items():
+        relative_path = PurePosixPath(str(relative))
+        if (
+            not isinstance(relative, str)
+            or relative_path.is_absolute()
+            or ".." in relative_path.parts
+            or "\\" in relative
+            or ":" in relative
+            or not re.fullmatch(r"[0-9a-f]{64}", str(expected_hash))
+        ):
+            raise ValueError("WorkBuddy 市场整包签名清单包含非法路径或 SHA-256")
+        full_name = f"{archive_root}/{relative_path.as_posix()}"
+        if full_name not in file_names:
+            raise ValueError(f"WorkBuddy 市场整包签名文件缺失：{full_name}")
+        if hashlib.sha256(archive.read(full_name)).hexdigest() != expected_hash:
+            raise ValueError(f"WorkBuddy 市场整包签名文件哈希不一致：{full_name}")
+        verified_marketplace_files.add(full_name)
+    if file_names != verified_marketplace_files | marketplace_companions:
+        raise ValueError("WorkBuddy ZIP 文件集合与市场整包签名清单不一致")
     signature_name = f"{manifest_name}.sig"
     metadata_name = (
         f"{plugin_prefix}plugin-release-signature.json"
@@ -387,6 +600,7 @@ def _validate_workbuddy_integrity(
         manifest_bytes,
         archive.read(signature_name),
         archive.read(public_key_name),
+        namespace=WORKBUDDY_SIGNATURE_NAMESPACE,
     )
     if (
         not isinstance(manifest, dict)
@@ -437,6 +651,7 @@ def _validate_workbuddy_integrity(
     outer_allowed = {
         f"{archive_root}/.codebuddy-plugin/marketplace.json",
         f"{archive_root}/INSTALL.md",
+        *marketplace_companions,
     }
     unexpected_outer = sorted(
         name
@@ -530,6 +745,9 @@ def _validate_workbuddy_integrity(
         "status": "verified",
         "publisher_fingerprint": TRUSTED_PUBLISHER_FINGERPRINT,
         "signature_namespace": WORKBUDDY_SIGNATURE_NAMESPACE,
+        "marketplace_signature_namespace": (
+            WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE
+        ),
         "verified_files": len(verified_files),
         "archive_entries": len(file_names),
         "outer_fixed_installers": False,
@@ -578,7 +796,13 @@ def validate_release_packages(
             elif skills != canonical_skills:
                 raise ValueError("各客户端包的技能清单不一致")
 
-            if target != "generic":
+            if target == "generic":
+                integrity[target] = _validate_generic_integrity(
+                    archive,
+                    names,
+                    suite,
+                )
+            else:
                 marketplace = _single_json(
                     archive, "/.codebuddy-plugin/marketplace.json"
                 )
@@ -790,7 +1014,7 @@ def stage_artifact_addition(
         if staged is not None:
             staged_file = Path(str(staged["file_path"]))
             if (
-                str(staged["status"]) == "releasing"
+                str(staged["status"]) in PENDING_STAGE_STATUSES
                 and str(staged["sha256"]) == expected_sha
                 and staged_file.is_file()
                 and sha256(staged_file) == expected_sha
@@ -798,7 +1022,7 @@ def stage_artifact_addition(
                 return {
                     **validation,
                     "status": "already-staged",
-                    "release_state": "releasing",
+                    "release_state": STAGED_STATUS,
                     "github_url": str(staged["github_url"]),
                 }
             raise RuntimeError(
@@ -816,7 +1040,7 @@ def stage_artifact_addition(
             (
                 version,
                 target,
-                "releasing",
+                STAGED_STATUS,
                 str(staged_path),
                 expected_sha,
                 release_notes.strip(),
@@ -829,7 +1053,7 @@ def stage_artifact_addition(
     return {
         **validation,
         "status": "staged",
-        "release_state": "releasing",
+        "release_state": STAGED_STATUS,
         "github_url": github_url.strip(),
         "staged_at": staged_at,
     }
@@ -856,7 +1080,11 @@ def promote_artifact_addition(
             """,
             (version, target),
         ).fetchone()
-        if release is None or staged is None or str(staged["status"]) != "releasing":
+        if (
+            release is None
+            or staged is None
+            or str(staged["status"]) not in PENDING_STAGE_STATUSES
+        ):
             raise RuntimeError(
                 f"版本 {version} 的 {target} 通道未处于可提升状态"
             )
@@ -915,7 +1143,8 @@ def promote_artifact_addition(
             """
             UPDATE skill_release_artifact_stages
             SET status='published',promoted_at=?
-            WHERE version=? AND target=? AND status='releasing'
+            WHERE version=? AND target=?
+              AND status IN ('releasing','staged-awaiting-acceptance')
             """,
             (promoted_at, version, target),
         )
@@ -968,7 +1197,7 @@ def stage_selective(
                 for target, data in validation["artifacts"].items()
             }
             if (
-                str(existing["status"]) == "releasing"
+                str(existing["status"]) in PENDING_STAGE_STATUSES
                 and existing_hashes == expected_hashes
                 and all(
                     Path(str(row["file_path"])).is_file()
@@ -981,7 +1210,8 @@ def stage_selective(
                     """
                     UPDATE skill_release_stages
                     SET release_notes=?,git_commit=?,github_url=?
-                    WHERE version=? AND status='releasing'
+                    WHERE version=?
+                      AND status IN ('releasing','staged-awaiting-acceptance')
                     """,
                     (
                         release_notes.strip(),
@@ -994,7 +1224,7 @@ def stage_selective(
                 return {
                     **validation,
                     "status": "already-staged",
-                    "release_state": "releasing",
+                    "release_state": STAGED_STATUS,
                     "github_url": github_url.strip(),
                     "git_commit": git_commit.strip(),
                 }
@@ -1016,7 +1246,7 @@ def stage_selective(
             """,
             (
                 version,
-                "releasing",
+                STAGED_STATUS,
                 str(installed.get("generic", "")),
                 validation["artifacts"].get("generic", {}).get("sha256", ""),
                 str(installed.get("workbuddy") or ""),
@@ -1047,7 +1277,7 @@ def stage_selective(
     return {
         **validation,
         "status": "staged",
-        "release_state": "releasing",
+        "release_state": STAGED_STATUS,
         "github_url": github_url.strip(),
         "staged_at": staged_at,
     }
@@ -1178,7 +1408,8 @@ def promote_selective(
         ).fetchall()
     if (
         staged is None
-        or str(staged["status"]) not in {"releasing", "published"}
+        or str(staged["status"])
+        not in {*PENDING_STAGE_STATUSES, "published"}
         or not rows
     ):
         raise RuntimeError(f"版本 {version} 未处于可提升的正式发布中")
@@ -1221,7 +1452,8 @@ def promote_selective(
             """
             UPDATE skill_release_stages
             SET status='published',promoted_at=?
-            WHERE version=? AND status='releasing'
+            WHERE version=?
+              AND status IN ('releasing','staged-awaiting-acceptance')
             """,
             (promoted_at, version),
         )
@@ -1262,7 +1494,7 @@ def stage(
         ).fetchone()
         if existing is not None:
             if (
-                str(existing["status"]) == "releasing"
+                str(existing["status"]) in PENDING_STAGE_STATUSES
                 and str(existing["generic_sha256"]) == validation["generic_sha256"]
                 and str(existing["workbuddy_sha256"])
                 == validation["workbuddy_sha256"]
@@ -1276,7 +1508,7 @@ def stage(
                 return {
                     **validation,
                     "status": "already-staged",
-                    "release_state": "releasing",
+                    "release_state": STAGED_STATUS,
                     "github_url": str(existing["github_url"]),
                 }
             raise RuntimeError(f"版本 {version} 已有不同内容的发布中记录")
@@ -1293,7 +1525,7 @@ def stage(
             """,
             (
                 version,
-                "releasing",
+                STAGED_STATUS,
                 str(generic_target),
                 validation["generic_sha256"],
                 str(workbuddy_target),
@@ -1308,7 +1540,7 @@ def stage(
     return {
         **validation,
         "status": "staged",
-        "release_state": "releasing",
+        "release_state": STAGED_STATUS,
         "github_url": github_url.strip(),
         "staged_at": staged_at,
     }
@@ -1387,7 +1619,10 @@ def promote(
         staged = connection.execute(
             "SELECT * FROM skill_release_stages WHERE version=?", (version,)
         ).fetchone()
-    if staged is None or str(staged["status"]) != "releasing":
+    if (
+        staged is None
+        or str(staged["status"]) not in PENDING_STAGE_STATUSES
+    ):
         raise RuntimeError(f"版本 {version} 未处于正式发布中，禁止确认发布")
     generic_package = Path(str(staged["generic_path"]))
     workbuddy_package = Path(str(staged["workbuddy_path"]))
@@ -1412,7 +1647,8 @@ def promote(
             """
             UPDATE skill_release_stages
             SET status='published',promoted_at=?
-            WHERE version=? AND status='releasing'
+            WHERE version=?
+              AND status IN ('releasing','staged-awaiting-acceptance')
             """,
             (promoted_at, version),
         )

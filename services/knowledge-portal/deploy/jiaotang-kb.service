@@ -1,22 +1,24 @@
 [Unit]
 Description=Jiaotang Knowledge Portal
 After=network.target
+OnFailure=jiaotang-kb-failure-report@%n.service
 
 [Service]
 Type=simple
 User=jiaotang
 Group=jiaotang
-WorkingDirectory=/opt/jiaotang-kb
-EnvironmentFile=/etc/jiaotang-kb.env
-ExecStartPre=/usr/local/sbin/jiaotang-kb-refresh-index --if-missing
-ExecStart=/opt/jiaotang-kb/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100 --workers 1
+WorkingDirectory=/opt/jiaotang-kb-runtime/current
+EnvironmentFile=/etc/jiaotang-kb-app.env
+ExecStartPre=/usr/bin/test -s ${JIAOTANG_INDEX_DIR}/knowledge_content.sqlite3
+ExecStart=/opt/jiaotang-kb-runtime/current/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100 --workers 1
 Restart=always
 RestartSec=3
 TimeoutStartSec=10min
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /srv/jiaotang/knowledge-files /srv/jiaotang/skill-releases /srv/jiaotang/index-snapshots /var/backups/jiaotang-kb
+ReadWritePaths=/var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /srv/jiaotang/knowledge-files
+ReadOnlyPaths=-/srv/jiaotang/skill-releases
 NoNewPrivileges=true
 
 [Install]

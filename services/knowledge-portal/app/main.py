@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import hmac
 import html
+import http.client
 import importlib.util
 import ipaddress
 import csv
@@ -14,7 +16,10 @@ import queue
 import re
 import secrets
 import shutil
+import socket
 import sqlite3
+import ssl
+import tempfile
 import threading
 import time
 import urllib.error
@@ -23,8 +28,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from base64 import urlsafe_b64encode
 from copy import deepcopy
-from contextlib import closing
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, closing, contextmanager
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from difflib import SequenceMatcher
@@ -45,6 +49,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from markupsafe import Markup
 from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
+from starlette.background import BackgroundTask
 from starlette.middleware.gzip import GZipMiddleware
 
 from app.assistant_runtime import (
@@ -148,8 +153,17 @@ BACKUP_STATUS_PATH = DATA_DIR / "backup-status.json"
 OSS_SYNC_STATUS_PATH = DATA_DIR / "oss-sync-status.json"
 OSS_INDEX_CACHE_STATUS_PATH = DATA_DIR / "oss-index-cache-status.json"
 OSS_SYNC_REQUEST_PATH = DATA_DIR / "oss-sync-request.json"
-SNAPSHOT_RETENTION_STATUS_PATH = DATA_DIR / "snapshot-retention-status.json"
+ASSISTANT_PRIVACY_STATUS_PATH = DATA_DIR / "assistant-privacy-status.json"
 SKILL_DEPLOY_GATE_STATUS_PATH = DATA_DIR / "skill-deploy-gate-status.json"
+HEALTH_STATUS_MAX_AGE_SECONDS = max(
+    60, int(os.environ.get("JIAOTANG_HEALTH_STATUS_MAX_AGE_SECONDS", "900"))
+)
+INDEX_STATUS_MAX_AGE_SECONDS = max(
+    60, int(os.environ.get("JIAOTANG_INDEX_STATUS_MAX_AGE_SECONDS", "7200"))
+)
+BACKUP_STATUS_MAX_AGE_SECONDS = max(
+    60, int(os.environ.get("JIAOTANG_BACKUP_STATUS_MAX_AGE_SECONDS", "172800"))
+)
 PREFERENCE_SCHEMA_VERSION = 1
 DEFAULT_USER_PREFERENCES: dict[str, object] = {
     "region": {"province": "", "city": ""},
@@ -192,6 +206,69 @@ AI_API_BASE = os.environ.get("JIAOTANG_AI_API_BASE", "").strip()
 AI_API_KEY = os.environ.get("JIAOTANG_AI_API_KEY", "").strip()
 AI_MODEL = os.environ.get("JIAOTANG_AI_MODEL", "").strip()
 AI_TIMEOUT_SECONDS = int(os.environ.get("JIAOTANG_AI_TIMEOUT_SECONDS", "45"))
+USER_AI_ALLOWED_HOSTS = frozenset(
+    host.strip().lower().rstrip(".")
+    for host in os.environ.get(
+        "JIAOTANG_USER_AI_ALLOWED_HOSTS",
+        (
+            "api.openai.com,api.deepseek.com,api.moonshot.cn,"
+            "dashscope.aliyuncs.com,open.bigmodel.cn,"
+            "generativelanguage.googleapis.com"
+        ),
+    ).split(",")
+    if host.strip()
+)
+USER_AI_MAX_RESPONSE_BYTES = int(
+    os.environ.get("JIAOTANG_USER_AI_MAX_RESPONSE_BYTES", str(2 * 1024 * 1024))
+)
+USER_AI_GLOBAL_CONCURRENCY = max(
+    1, int(os.environ.get("JIAOTANG_USER_AI_GLOBAL_CONCURRENCY", "8"))
+)
+USER_AI_PER_USER_CONCURRENCY = max(
+    1, int(os.environ.get("JIAOTANG_USER_AI_PER_USER_CONCURRENCY", "2"))
+)
+ASSISTANT_QUESTION_RETENTION_HOURS = max(
+    1, min(int(os.environ.get("JIAOTANG_ASSISTANT_QUESTION_RETENTION_HOURS", "24")), 168)
+)
+ASSISTANT_REDACTION_INTERVAL_SECONDS = max(
+    60, int(os.environ.get("JIAOTANG_ASSISTANT_REDACTION_INTERVAL_SECONDS", "3600"))
+)
+REGISTRATION_INVITE_HOURS = max(
+    1, min(int(os.environ.get("JIAOTANG_REGISTRATION_INVITE_HOURS", "48")), 168)
+)
+BUILD_COMMIT = os.environ.get("JIAOTANG_BUILD_COMMIT", "unknown").strip() or "unknown"
+BUILD_DEPLOYMENT_ID = (
+    os.environ.get("JIAOTANG_DEPLOYMENT_ID", "unknown").strip() or "unknown"
+)
+BUILD_CREATED_AT = os.environ.get("JIAOTANG_BUILD_CREATED_AT", "").strip()
+BUILD_DEPENDENCY_LOCK_SHA256 = os.environ.get(
+    "JIAOTANG_DEPENDENCY_LOCK_SHA256",
+    "unknown",
+).strip() or "unknown"
+BUILD_DEPENDENCY_BUILD_LOCK_SHA256 = os.environ.get(
+    "JIAOTANG_DEPENDENCY_BUILD_LOCK_SHA256",
+    "unknown",
+).strip() or "unknown"
+BUILD_WHEELHOUSE_INSTALL_LOCK_SHA256 = os.environ.get(
+    "JIAOTANG_WHEELHOUSE_INSTALL_LOCK_SHA256",
+    "unknown",
+).strip() or "unknown"
+BUILD_WHEELHOUSE_MANIFEST_SHA256 = os.environ.get(
+    "JIAOTANG_WHEELHOUSE_MANIFEST_SHA256",
+    "unknown",
+).strip() or "unknown"
+BUILD_WHEELHOUSE_CONTENT_IDENTITY_SHA256 = os.environ.get(
+    "JIAOTANG_WHEELHOUSE_CONTENT_IDENTITY_SHA256",
+    "unknown",
+).strip() or "unknown"
+BUILD_DEPENDENCY_IDENTITY_SHA256 = os.environ.get(
+    "JIAOTANG_DEPENDENCY_IDENTITY_SHA256",
+    "unknown",
+).strip() or "unknown"
+BUILD_DEPENDENCY_RELEASE_RECORD_SHA256 = os.environ.get(
+    "JIAOTANG_DEPENDENCY_RELEASE_RECORD_SHA256",
+    "unknown",
+).strip() or "unknown"
 WEB_SEARCH_RSS_URL = os.environ.get(
     "JIAOTANG_WEB_SEARCH_RSS_URL",
     "https://www.bing.com/search?format=rss&q={query}",
@@ -238,6 +315,10 @@ FOUR_CITY_GREEN_FACTORY_POLICY_REGISTRY_PATH = (
 COMPILED_PROJECT_RULE_IR_PATH = (
     BASE_DIR / "references" / "compiled-project-rule-ir.json"
 )
+
+USER_AI_GLOBAL_SEMAPHORE = threading.BoundedSemaphore(USER_AI_GLOBAL_CONCURRENCY)
+USER_AI_USER_SEMAPHORES: dict[int, threading.BoundedSemaphore] = {}
+USER_AI_USER_SEMAPHORES_LOCK = threading.Lock()
 
 POLICY_INTENT_TERMS = (
     "条件",
@@ -587,7 +668,16 @@ async def lifespan(application: FastAPI):
     del application
     init_database()
     async with knowledge_mcp.session_manager.run():
-        yield
+        redaction_stop = asyncio.Event()
+        redaction_task = asyncio.create_task(
+            assistant_question_redaction_worker(redaction_stop),
+            name="assistant-question-redaction",
+        )
+        try:
+            yield
+        finally:
+            redaction_stop.set()
+            await redaction_task
 
 
 app = FastAPI(title="企业全生命周期助手知识库", docs_url=None, redoc_url=None, lifespan=lifespan)
@@ -975,24 +1065,71 @@ def normalize_identity_code(value: str) -> str:
 
 def registration_invite_token(authorization: sqlite3.Row | dict[str, object]) -> str:
     authorization_id = int(authorization["id"])
-    message = (
-        f"registration-invite:{authorization_id}:{authorization['real_name']}:"
-        f"{authorization['identity_code']}:{authorization['created_at']}"
-    ).encode("utf-8")
+    invite_secret = str(authorization["invite_secret"] or "")
+    if len(invite_secret) < 32:
+        raise ValueError("注册邀请尚未签发")
+    message = f"registration-invite-v2:{authorization_id}:{invite_secret}".encode("utf-8")
     signature = urlsafe_b64encode(
         hmac.new(TOKEN_DERIVATION_SECRET, message, hashlib.sha256).digest()
     ).decode("ascii").rstrip("=")
-    return f"{authorization_id}.{signature}"
+    return f"{authorization_id}.{invite_secret}.{signature}"
 
 
-def registration_authorization_from_invite(invite_token: str) -> sqlite3.Row | None:
+def issue_registration_invite(
+    connection: sqlite3.Connection,
+    authorization_id: int,
+    *,
+    issued_by: int | None,
+) -> sqlite3.Row:
+    now = utc_now()
+    invite_secret = secrets.token_urlsafe(32)
+    connection.execute(
+        """
+        UPDATE registration_authorizations
+        SET status='pending',created_by=?,created_at=?,registered_at=NULL,
+            revoked_at=NULL,deleted_at=NULL,invite_secret=?,invite_issued_at=?,
+            invite_expires_at=?,invite_consumed_at=NULL
+        WHERE id=? AND user_id IS NULL
+        """,
+        (
+            issued_by,
+            isoformat(now),
+            invite_secret,
+            isoformat(now),
+            isoformat(now + timedelta(hours=REGISTRATION_INVITE_HOURS)),
+            authorization_id,
+        ),
+    )
+    authorization = connection.execute(
+        """
+        SELECT registration_authorizations.*,users.username AS existing_username
+        FROM registration_authorizations
+        LEFT JOIN users ON users.id=registration_authorizations.user_id
+        WHERE registration_authorizations.id=?
+        """,
+        (authorization_id,),
+    ).fetchone()
+    if authorization is None or authorization["user_id"]:
+        raise ValueError("已注册账号不能重新签发注册邀请")
+    return authorization
+
+
+def registration_authorization_from_invite(
+    invite_token: str,
+    connection: sqlite3.Connection | None = None,
+) -> sqlite3.Row | None:
     try:
-        authorization_id_text, provided_signature = invite_token.strip().split(".", 1)
+        authorization_id_text, provided_secret, provided_signature = (
+            invite_token.strip().split(".", 2)
+        )
         authorization_id = int(authorization_id_text)
     except (TypeError, ValueError):
         return None
-    with closing(database()) as connection:
-        authorization = connection.execute(
+    if len(provided_secret) < 32 or len(provided_signature) < 32:
+        return None
+
+    def load(active_connection: sqlite3.Connection) -> sqlite3.Row | None:
+        return active_connection.execute(
             """
             SELECT registration_authorizations.*,users.username AS existing_username
             FROM registration_authorizations
@@ -1001,12 +1138,51 @@ def registration_authorization_from_invite(invite_token: str) -> sqlite3.Row | N
             """,
             (authorization_id,),
         ).fetchone()
+    if connection is None:
+        with closing(database()) as owned_connection:
+            authorization = load(owned_connection)
+    else:
+        authorization = load(connection)
     if authorization is None:
         return None
-    expected_signature = registration_invite_token(authorization).split(".", 1)[1]
+    if (
+        authorization["status"] != "pending"
+        or authorization["user_id"] is not None
+        or authorization["invite_consumed_at"] is not None
+        or not authorization["invite_expires_at"]
+        or datetime.fromisoformat(
+            str(authorization["invite_expires_at"]).replace("Z", "+00:00")
+        )
+        <= utc_now()
+        or not secrets.compare_digest(
+            provided_secret, str(authorization["invite_secret"] or "")
+        )
+    ):
+        return None
+    expected_signature = registration_invite_token(authorization).rsplit(".", 1)[1]
     if not secrets.compare_digest(provided_signature, expected_signature):
         return None
     return authorization
+
+
+def registration_invite_is_active(
+    authorization: sqlite3.Row | dict[str, object],
+) -> bool:
+    if (
+        authorization["status"] != "pending"
+        or authorization["user_id"] is not None
+        or authorization["invite_consumed_at"] is not None
+        or not authorization["invite_secret"]
+        or not authorization["invite_expires_at"]
+    ):
+        return False
+    try:
+        expires_at = datetime.fromisoformat(
+            str(authorization["invite_expires_at"]).replace("Z", "+00:00")
+        )
+    except ValueError:
+        return False
+    return expires_at > utc_now()
 
 
 def read_status_file(path: Path) -> dict[str, object]:
@@ -1015,6 +1191,117 @@ def read_status_file(path: Path) -> dict[str, object]:
     except (FileNotFoundError, OSError, json.JSONDecodeError):
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def parse_status_timestamp(value: object) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        if re.fullmatch(r"\d{8}T\d{6}Z", text):
+            return datetime.strptime(text, "%Y%m%dT%H%M%SZ").replace(
+                tzinfo=timezone.utc
+            )
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def operational_status_view(
+    path: Path,
+    *,
+    timestamp_field: str,
+    max_age_seconds: int,
+) -> dict[str, object]:
+    payload = read_status_file(path)
+    timestamp = parse_status_timestamp(payload.get(timestamp_field))
+    age_seconds = (
+        max(0.0, (utc_now() - timestamp).total_seconds())
+        if timestamp is not None
+        else None
+    )
+    fresh = age_seconds is not None and age_seconds <= max_age_seconds
+    if not payload:
+        display_status = "待采集"
+        freshness_label = "尚无状态记录"
+    elif timestamp is None:
+        display_status = "时间无效"
+        freshness_label = f"{timestamp_field} 缺失或格式无效"
+    elif not fresh:
+        display_status = "状态过期"
+        freshness_label = f"已超过 {max_age_seconds // 60} 分钟时效窗口"
+    else:
+        display_status = str(payload.get("status") or "待采集")
+        freshness_label = "时效有效"
+    return {
+        **payload,
+        "display_status": display_status,
+        "is_fresh": fresh,
+        "freshness_label": freshness_label,
+        "age_seconds": age_seconds,
+    }
+
+
+def status_list_display(value: object) -> str:
+    if not isinstance(value, list) or not value:
+        return "无"
+    return "；".join(str(item) for item in value if str(item).strip()) or "无"
+
+
+def backup_artifacts_display(value: object) -> str:
+    if not isinstance(value, list) or not value:
+        return "未记录"
+    labels: list[str] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        artifact = str(item.get("artifact") or "未命名产物")
+        label = str(item.get("label") or "备份")
+        size = item.get("size")
+        digest = str(item.get("sha256") or "")
+        size_label = (
+            format_storage_size(int(size))
+            if isinstance(size, int) or str(size or "").isdigit()
+            else "大小未记录"
+        )
+        digest_label = f"{digest[:12]}…{digest[-6:]}" if len(digest) == 64 else "哈希未记录"
+        labels.append(f"{label}: {artifact} / {size_label} / SHA-256 {digest_label}")
+    return "；".join(labels) or "未记录"
+
+
+def runtime_operational_status_view() -> dict[str, object]:
+    runtime = operational_status_view(
+        HEALTH_STATUS_PATH,
+        timestamp_field="checked_at",
+        max_age_seconds=HEALTH_STATUS_MAX_AGE_SECONDS,
+    )
+    privacy = operational_status_view(
+        ASSISTANT_PRIVACY_STATUS_PATH,
+        timestamp_field="checked_at",
+        max_age_seconds=max(120, ASSISTANT_REDACTION_INTERVAL_SECONDS * 2),
+    )
+    privacy_healthy = privacy.get("is_fresh") and privacy.get("status") == "正常"
+    if not privacy_healthy:
+        warnings = (
+            list(runtime.get("warnings"))
+            if isinstance(runtime.get("warnings"), list)
+            else []
+        )
+        detail = str(
+            privacy.get("error")
+            or privacy.get("freshness_label")
+            or "状态未知"
+        )
+        warnings.append(f"问答原文定时清理告警：{detail}")
+        runtime["warnings"] = warnings
+        if runtime.get("is_fresh") and runtime.get("status") == "正常":
+            runtime["status"] = "告警"
+            runtime["display_status"] = "告警"
+    runtime["privacy_redaction"] = privacy
+    return runtime
 
 
 def skill_deploy_gate_status() -> dict[str, object]:
@@ -4717,9 +5004,142 @@ def assistant_chat_url(api_base: str | None = None) -> str:
     return f"{base}/v1/chat/completions"
 
 
+def public_model_addresses(hostname: str, port: int = 443) -> tuple[str, ...]:
+    try:
+        records = socket.getaddrinfo(
+            hostname,
+            port,
+            type=socket.SOCK_STREAM,
+            proto=socket.IPPROTO_TCP,
+        )
+    except socket.gaierror as error:
+        raise ValueError("自带API域名当前无法解析。") from error
+    addresses = tuple(
+        dict.fromkeys(str(record[4][0]).split("%", 1)[0] for record in records)
+    )
+    if not addresses:
+        raise ValueError("自带API域名当前无法解析。")
+    for address_text in addresses:
+        try:
+            address = ipaddress.ip_address(address_text)
+        except ValueError as error:
+            raise ValueError("自带API域名解析结果无效。") from error
+        if not address.is_global:
+            raise ValueError("自带API地址不能解析到本机、内网或保留地址。")
+    return addresses
+
+
+class PinnedHTTPSConnection(http.client.HTTPSConnection):
+    def __init__(
+        self,
+        hostname: str,
+        *,
+        resolved_address: str,
+        port: int = 443,
+        timeout: float,
+    ) -> None:
+        super().__init__(
+            hostname,
+            port=port,
+            timeout=timeout,
+            context=ssl.create_default_context(),
+        )
+        self.resolved_address = resolved_address
+
+    def connect(self) -> None:
+        raw_socket = socket.create_connection(
+            (self.resolved_address, self.port),
+            self.timeout,
+        )
+        self.sock = self._context.wrap_socket(raw_socket, server_hostname=self.host)
+
+
+@contextmanager
+def user_ai_request_slot(user_id: int) -> Iterator[None]:
+    if not USER_AI_GLOBAL_SEMAPHORE.acquire(blocking=False):
+        raise HTTPException(
+            status_code=429,
+            detail="自带API当前请求较多，请稍后重试。",
+        )
+    with USER_AI_USER_SEMAPHORES_LOCK:
+        user_semaphore = USER_AI_USER_SEMAPHORES.setdefault(
+            user_id,
+            threading.BoundedSemaphore(USER_AI_PER_USER_CONCURRENCY),
+        )
+    if not user_semaphore.acquire(blocking=False):
+        USER_AI_GLOBAL_SEMAPHORE.release()
+        raise HTTPException(
+            status_code=429,
+            detail="当前账号已有自带API请求正在处理，请等待完成后重试。",
+        )
+    try:
+        yield
+    finally:
+        user_semaphore.release()
+        USER_AI_GLOBAL_SEMAPHORE.release()
+
+
+def read_bounded_response(
+    response: http.client.HTTPResponse | object,
+    *,
+    limit: int = USER_AI_MAX_RESPONSE_BYTES,
+) -> bytes:
+    body = response.read(limit + 1)
+    if len(body) > limit:
+        raise ValueError("大模型响应超过允许大小。")
+    return body
+
+
+def request_user_assistant_model(
+    request_payload: bytes,
+    config: dict[str, object],
+) -> dict[str, object]:
+    endpoint = urlparse(assistant_chat_url(str(config["api_base"])))
+    hostname = str(endpoint.hostname or "").lower().rstrip(".")
+    port = endpoint.port or 443
+    addresses = public_model_addresses(hostname, port)
+    request_path = endpoint.path or "/"
+    if endpoint.query:
+        request_path = f"{request_path}?{endpoint.query}"
+    connection = PinnedHTTPSConnection(
+        hostname,
+        resolved_address=addresses[0],
+        port=port,
+        timeout=AI_TIMEOUT_SECONDS,
+    )
+    try:
+        connection.request(
+            "POST",
+            request_path,
+            body=request_payload,
+            headers={
+                "Authorization": f"Bearer {config['api_key']}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Host": hostname if port == 443 else f"{hostname}:{port}",
+            },
+        )
+        response = connection.getresponse()
+        if 300 <= response.status < 400:
+            raise ValueError("自带API不允许HTTP重定向。")
+        if response.status < 200 or response.status >= 300:
+            read_bounded_response(response)
+            raise ValueError(f"自带API返回HTTP {response.status}。")
+        body = read_bounded_response(response)
+    finally:
+        connection.close()
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("自带API返回了无效JSON。") from error
+    if not isinstance(payload, dict):
+        raise ValueError("自带API响应结构无效。")
+    return payload
+
+
 def request_assistant_model(
     messages: list[dict[str, object]],
-    model_config: dict[str, str] | None = None,
+    model_config: dict[str, object] | None = None,
 ) -> dict[str, object]:
     config = model_config or {"api_base": AI_API_BASE, "api_key": AI_API_KEY, "model": AI_MODEL}
     payload = {
@@ -4729,14 +5149,21 @@ def request_assistant_model(
         "tools": assistant_tool_schemas(),
         "tool_choice": "auto",
     }
+    encoded_payload = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    if model_config is not None:
+        with user_ai_request_slot(int(config["user_id"])):
+            body = request_user_assistant_model(encoded_payload, config)
+        return body["choices"][0]["message"]
     request = urllib.request.Request(
-        assistant_chat_url(config["api_base"]),
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        assistant_chat_url(str(config["api_base"])),
+        data=encoded_payload,
         headers={"Authorization": f"Bearer {config['api_key']}", "Content-Type": "application/json"},
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=AI_TIMEOUT_SECONDS) as response:
-        body = json.loads(response.read().decode("utf-8"))
+        body = json.loads(
+            read_bounded_response(response).decode("utf-8")
+        )
     return body["choices"][0]["message"]
 
 
@@ -4976,7 +5403,7 @@ def answer_with_knowledge(
     question: str,
     results: list[dict[str, object]],
     progress: Callable[[str, str, dict[str, object]], None] | None = None,
-    model_config: dict[str, str] | None = None,
+    model_config: dict[str, object] | None = None,
 ) -> tuple[str, str, list[dict[str, object]], list[str]]:
     def emit(stage: str, message: str, details: dict[str, object] | None = None) -> None:
         if progress:
@@ -5209,7 +5636,7 @@ def answer_with_knowledge_then_web(
     question: str,
     knowledge_results: list[dict[str, object]],
     progress: Callable[[str, str, dict[str, object]], None] | None = None,
-    model_config: dict[str, str] | None = None,
+    model_config: dict[str, object] | None = None,
 ) -> tuple[str, str, list[dict[str, object]], list[str]]:
     clarification = project_selection_prompt(question)
     if clarification:
@@ -5565,6 +5992,10 @@ def init_database() -> None:
                 registered_at TEXT,
                 revoked_at TEXT,
                 deleted_at TEXT,
+                invite_secret TEXT NOT NULL DEFAULT '',
+                invite_issued_at TEXT,
+                invite_expires_at TEXT,
+                invite_consumed_at TEXT,
                 UNIQUE(real_name, identity_code)
             );
 
@@ -5787,7 +6218,9 @@ def init_database() -> None:
                 error_type TEXT,
                 error_message TEXT,
                 quota_counted INTEGER NOT NULL DEFAULT 1,
-                provider_mode TEXT NOT NULL DEFAULT 'platform'
+                provider_mode TEXT NOT NULL DEFAULT 'platform',
+                question_fingerprint TEXT NOT NULL DEFAULT '',
+                question_redacted_at TEXT
             );
 
             CREATE INDEX IF NOT EXISTS assistant_usage_user_time_idx
@@ -6007,6 +6440,10 @@ def init_database() -> None:
                     registered_at TEXT,
                     revoked_at TEXT,
                     deleted_at TEXT,
+                    invite_secret TEXT NOT NULL DEFAULT '',
+                    invite_issued_at TEXT,
+                    invite_expires_at TEXT,
+                    invite_consumed_at TEXT,
                     UNIQUE(real_name, identity_code)
                 );
                 INSERT INTO registration_authorizations(
@@ -6030,6 +6467,47 @@ def init_database() -> None:
         if "deleted_at" not in authorization_columns:
             connection.execute(
                 "ALTER TABLE registration_authorizations ADD COLUMN deleted_at TEXT"
+            )
+        authorization_migrations = {
+            "invite_secret": "TEXT NOT NULL DEFAULT ''",
+            "invite_issued_at": "TEXT",
+            "invite_expires_at": "TEXT",
+            "invite_consumed_at": "TEXT",
+        }
+        authorization_columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(registration_authorizations)"
+            ).fetchall()
+        }
+        for column_name, declaration in authorization_migrations.items():
+            if column_name not in authorization_columns:
+                connection.execute(
+                    f"ALTER TABLE registration_authorizations ADD COLUMN {column_name} {declaration}"
+                )
+        invitation_now = utc_now()
+        for pending_authorization in connection.execute(
+            """
+            SELECT id FROM registration_authorizations
+            WHERE status='pending' AND user_id IS NULL
+              AND (invite_secret='' OR invite_secret IS NULL)
+            """
+        ).fetchall():
+            connection.execute(
+                """
+                UPDATE registration_authorizations
+                SET invite_secret=?,invite_issued_at=?,invite_expires_at=?,
+                    invite_consumed_at=NULL
+                WHERE id=?
+                """,
+                (
+                    secrets.token_urlsafe(32),
+                    isoformat(invitation_now),
+                    isoformat(
+                        invitation_now + timedelta(hours=REGISTRATION_INVITE_HOURS)
+                    ),
+                    int(pending_authorization["id"]),
+                ),
             )
         connection.execute(
             "CREATE INDEX IF NOT EXISTS registration_authorizations_status_idx "
@@ -6300,6 +6778,8 @@ def init_database() -> None:
             "error_message": "TEXT",
             "quota_counted": "INTEGER NOT NULL DEFAULT 1",
             "provider_mode": "TEXT NOT NULL DEFAULT 'platform'",
+            "question_fingerprint": "TEXT NOT NULL DEFAULT ''",
+            "question_redacted_at": "TEXT",
         }
         for column_name, declaration in assistant_migrations.items():
             if column_name not in assistant_columns:
@@ -6309,6 +6789,17 @@ def init_database() -> None:
         connection.execute(
             "UPDATE assistant_usage SET status = 'failed', completed_at = ? WHERE status = 'running'",
             (isoformat(utc_now()),),
+        )
+        question_cutoff = isoformat(
+            utc_now() - timedelta(hours=ASSISTANT_QUESTION_RETENTION_HOURS)
+        )
+        connection.execute(
+            """
+            UPDATE assistant_usage
+            SET question='[已按隐私策略清理]',question_redacted_at=?
+            WHERE started_at < ? AND question_redacted_at IS NULL
+            """,
+            (isoformat(utc_now()), question_cutoff),
         )
         connection.executescript(
             """
@@ -6330,8 +6821,42 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "base-uri 'self'; "
+        "connect-src 'self'; "
+        "font-src 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'none'; "
+        "img-src 'self' data:; "
+        "object-src 'none'; "
+        "script-src 'self'; "
+        "script-src-attr 'none'; "
+        "style-src 'self'; "
+        "style-src-attr 'none'; "
+        "upgrade-insecure-requests"
+    )
+    if SECURE_COOKIES:
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
     if request.url.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=604800, immutable"
+        version = request.query_params.get("v", "")
+        response.headers["Cache-Control"] = (
+            "public, max-age=31536000, immutable"
+            if re.fullmatch(r"[0-9a-f]{12,64}", version)
+            else "public, max-age=300, must-revalidate"
+        )
+    elif request.url.path in {"/demo", "/guide"}:
+        response.headers.setdefault("Cache-Control", "public, max-age=300")
+        response.headers.setdefault("X-Robots-Tag", "index, follow")
+    elif request.url.path == "/robots.txt":
+        response.headers["Cache-Control"] = "public, max-age=3600"
+    else:
+        response.headers.setdefault("Cache-Control", "private, no-store")
+        response.headers.setdefault("X-Robots-Tag", "noindex, nofollow")
     return response
 
 
@@ -7005,9 +7530,7 @@ async def require_api_user(
         str | None, Header(alias=DEVICE_SIGNATURE_HEADER)
     ] = None,
 ) -> sqlite3.Row:
-    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
-    if not client_ip and request.client:
-        client_ip = request.client.host
+    client_ip = client_ip_from(request)
     return authenticate_api_token(
         authorization,
         request.url.path,
@@ -7081,9 +7604,9 @@ class MCPBearerMiddleware:
                 device_signature_value=headers.get(DEVICE_SIGNATURE_HEADER.lower()),
                 request_target=request_target,
                 body=request_body,
-                client_ip=(
-                    headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
-                    or str((scope.get("client") or ("unknown", 0))[0])
+                client_ip=client_ip_from_peer(
+                    str((scope.get("client") or ("unknown", 0))[0]),
+                    headers.get("x-real-ip"),
                 ),
                 user_agent=headers.get("user-agent", ""),
                 record_usage=False,
@@ -7152,22 +7675,45 @@ def validate_user_model_config(
     api_base: str | None,
     api_key: str | None,
     model: str | None,
-) -> dict[str, str] | None:
+    *,
+    user_id: int,
+) -> dict[str, object] | None:
     values = [str(value or "").strip() for value in (api_base, api_key, model)]
     if not any(values):
         return None
     if not all(values):
         raise HTTPException(status_code=422, detail="自带API需要同时填写接口地址、API Key和模型名称。")
     parsed = urlparse(values[0])
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+    if (
+        parsed.scheme != "https"
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.fragment
+    ):
         raise HTTPException(status_code=422, detail="自带API地址必须是公开HTTPS地址。")
-    hostname = parsed.hostname.lower()
-    if hostname == "localhost" or hostname.endswith(".local"):
-        raise HTTPException(status_code=422, detail="自带API地址不能指向本机或内网。")
+    hostname = parsed.hostname.lower().rstrip(".")
+    if hostname not in USER_AI_ALLOWED_HOSTS:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "自带API域名不在当前可信供应商白名单中。"
+                "请联系管理员完成供应商安全评估后再启用。"
+            ),
+        )
+    try:
+        parsed_port = parsed.port
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="自带API端口无效。") from error
+    if parsed_port not in {None, 443}:
+        raise HTTPException(status_code=422, detail="自带API仅允许使用HTTPS 443端口。")
     try:
         address = ipaddress.ip_address(hostname)
     except ValueError:
-        pass
+        try:
+            public_model_addresses(hostname, 443)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
     else:
         if not address.is_global:
             raise HTTPException(status_code=422, detail="自带API地址不能指向本机或内网。")
@@ -7175,7 +7721,12 @@ def validate_user_model_config(
         raise HTTPException(status_code=422, detail="模型名称格式不正确。")
     if len(values[1]) > 500:
         raise HTTPException(status_code=422, detail="API Key长度超过限制。")
-    return {"api_base": values[0], "api_key": values[1], "model": values[2]}
+    return {
+        "api_base": values[0],
+        "api_key": values[1],
+        "model": values[2],
+        "user_id": user_id,
+    }
 
 
 def require_admin(user: sqlite3.Row) -> None:
@@ -7216,10 +7767,93 @@ def assistant_usage_today(user_id: int) -> int:
         )
 
 
+def assistant_question_fingerprint(question: str) -> str:
+    normalized = " ".join(question.casefold().split())
+    return hmac.new(
+        TOKEN_DERIVATION_SECRET,
+        f"assistant-question:{normalized}".encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def redact_expired_assistant_questions(connection: sqlite3.Connection) -> int:
+    cutoff = isoformat(utc_now() - timedelta(hours=ASSISTANT_QUESTION_RETENTION_HOURS))
+    cursor = connection.execute(
+        """
+        UPDATE assistant_usage
+        SET question='[已按隐私策略清理]',question_redacted_at=?
+        WHERE started_at < ? AND question_redacted_at IS NULL
+        """,
+        (isoformat(utc_now()), cutoff),
+    )
+    return int(cursor.rowcount)
+
+
+def write_assistant_privacy_status(
+    *,
+    status: str,
+    redacted_rows: int = 0,
+    error: str = "",
+) -> None:
+    ASSISTANT_PRIVACY_STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    payload: dict[str, object] = {
+        "status": status,
+        "checked_at": isoformat(utc_now()),
+        "retention_hours": ASSISTANT_QUESTION_RETENTION_HOURS,
+        "redacted_rows": redacted_rows,
+    }
+    if error:
+        payload["error"] = error[:500]
+    temporary = ASSISTANT_PRIVACY_STATUS_PATH.with_name(
+        f".{ASSISTANT_PRIVACY_STATUS_PATH.name}.{os.getpid()}.tmp"
+    )
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    os.chmod(temporary, 0o640)
+    os.replace(temporary, ASSISTANT_PRIVACY_STATUS_PATH)
+
+
+def run_assistant_question_redaction_cycle() -> int:
+    try:
+        with closing(database()) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            redacted_rows = redact_expired_assistant_questions(connection)
+            connection.commit()
+        write_assistant_privacy_status(
+            status="正常",
+            redacted_rows=redacted_rows,
+        )
+        return redacted_rows
+    except Exception as error:
+        try:
+            write_assistant_privacy_status(
+                status="异常",
+                error=f"{type(error).__name__}: {error}",
+            )
+        except OSError:
+            pass
+        return -1
+
+
+async def assistant_question_redaction_worker(stop_event: asyncio.Event) -> None:
+    while not stop_event.is_set():
+        await asyncio.to_thread(run_assistant_question_redaction_cycle)
+        try:
+            await asyncio.wait_for(
+                stop_event.wait(),
+                timeout=ASSISTANT_REDACTION_INTERVAL_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            continue
+
+
 def reserve_assistant_usage(user_id: int, question: str) -> tuple[int, int, int]:
     day_start, day_end = assistant_day_bounds()
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
+        redact_expired_assistant_questions(connection)
         daily_limit = assistant_limit_for_user(user_id, connection)
         used = int(
             connection.execute(
@@ -7234,8 +7868,17 @@ def reserve_assistant_usage(user_id: int, question: str) -> tuple[int, int, int]
                 detail=f"今日知识库答疑次数已用完，当前账号每天最多{daily_limit}次，请明日再试。",
             )
         cursor = connection.execute(
-            "INSERT INTO assistant_usage(user_id, question, status, started_at) VALUES (?, ?, 'running', ?)",
-            (user_id, question, isoformat(utc_now())),
+            """
+            INSERT INTO assistant_usage(
+                user_id,question,status,started_at,question_fingerprint
+            ) VALUES (?,?,'running',?,?)
+            """,
+            (
+                user_id,
+                question,
+                isoformat(utc_now()),
+                assistant_question_fingerprint(question),
+            ),
         )
         connection.commit()
         return int(cursor.lastrowid), daily_limit - used - 1, daily_limit
@@ -7247,13 +7890,21 @@ def create_unmetered_assistant_usage(
     provider_mode: str = "user-api",
 ) -> int:
     with closing(database()) as connection:
+        redact_expired_assistant_questions(connection)
         cursor = connection.execute(
             """
             INSERT INTO assistant_usage(
-                user_id,question,status,started_at,quota_counted,provider_mode
-            ) VALUES (?,?,'running',?,0,?)
+                user_id,question,status,started_at,quota_counted,provider_mode,
+                question_fingerprint
+            ) VALUES (?,?,'running',?,0,?,?)
             """,
-            (user_id, question, isoformat(utc_now()), provider_mode),
+            (
+                user_id,
+                question,
+                isoformat(utc_now()),
+                provider_mode,
+                assistant_question_fingerprint(question),
+            ),
         )
         connection.commit()
         return int(cursor.lastrowid)
@@ -7446,11 +8097,15 @@ def portal_payload(
             if latest_workbuddy_upgrade_artifact
             else ""
         )
+        latest_workbuddy_installable = workbuddy_artifact_has_signed_root_mcp(
+            latest_workbuddy_upgrade_artifact
+        )
         upgrade_available = bool(
             active_device_binding
             and active_device_binding["mcp_connected_at"]
             and installed_version
             and latest_workbuddy_version
+            and latest_workbuddy_installable
             and valid_release_version(installed_version)
             and valid_release_version(latest_workbuddy_version)
             and release_version_key(installed_version)
@@ -7460,6 +8115,7 @@ def portal_payload(
             {
                 **dict(active_device_binding),
                 "upgrade_available": upgrade_available,
+                "workbuddy_installable": latest_workbuddy_installable,
                 "latest_workbuddy_version": latest_workbuddy_version,
                 "latest_workbuddy_sha256": (
                     str(latest_workbuddy_upgrade_artifact.get("sha256") or "")
@@ -7625,8 +8281,12 @@ def portal_payload(
                     "invitation_url": (
                         f"{public_endpoint}/register?invite="
                         f"{quote(registration_invite_token(authorization))}"
-                        if authorization["status"] == "pending"
+                        if registration_invite_is_active(authorization)
                         else None
+                    ),
+                    "invite_active": registration_invite_is_active(authorization),
+                    "invite_expires_at_display": format_chinese_datetime(
+                        authorization["invite_expires_at"]
                     ),
                     "created_at_display": format_chinese_datetime(authorization["created_at"]),
                     "registered_at_display": format_chinese_datetime(
@@ -7773,11 +8433,18 @@ def portal_payload(
                         "SELECT COUNT(*) FROM feedback_messages WHERE status IN ('pending','reviewing')"
                     ).fetchone()[0]
                 ),
-                "runtime": read_status_file(HEALTH_STATUS_PATH),
-                "backup": read_status_file(BACKUP_STATUS_PATH),
+                "runtime": runtime_operational_status_view(),
+                "backup": operational_status_view(
+                    BACKUP_STATUS_PATH,
+                    timestamp_field="completed_at",
+                    max_age_seconds=BACKUP_STATUS_MAX_AGE_SECONDS,
+                ),
                 "oss_sync": read_status_file(OSS_SYNC_STATUS_PATH),
-                "oss_cache": read_status_file(OSS_INDEX_CACHE_STATUS_PATH),
-                "snapshot_retention": read_status_file(SNAPSHOT_RETENTION_STATUS_PATH),
+                "oss_cache": operational_status_view(
+                    OSS_INDEX_CACHE_STATUS_PATH,
+                    timestamp_field="checked_at",
+                    max_age_seconds=INDEX_STATUS_MAX_AGE_SECONDS,
+                ),
                 "deploy_gate": skill_deploy_gate_status(),
             }
         latest_release = connection.execute(
@@ -7793,7 +8460,7 @@ def portal_payload(
             SELECT version,status,generic_sha256,workbuddy_sha256,
                    git_commit,github_url,staged_at
             FROM skill_release_stages
-            WHERE status='releasing'
+            WHERE status IN ('releasing','staged-awaiting-acceptance')
             ORDER BY staged_at DESC
             LIMIT 1
             """
@@ -7808,12 +8475,19 @@ def portal_payload(
             if release_stage
             else None
         )
+        latest_generic_artifact = latest_skill_artifact("generic")
+        latest_generic_available = release_artifact_is_servable(
+            latest_generic_artifact,
+            target="generic",
+            require_signature=True,
+        )
         latest_release_payload = (
             {
                 **dict(latest_release),
                 "published_at_display": format_chinese_datetime(latest_release["published_at"]),
                 "release_notes_html": render_guide_markdown(str(latest_release["release_notes"])),
-                "workbuddy_available": latest_workbuddy_artifact()["included"],
+                "generic_available": latest_generic_available,
+                "workbuddy_available": latest_workbuddy_artifact()["installable"],
                 "workbuddy": latest_workbuddy_artifact(),
             }
             if latest_release
@@ -7839,7 +8513,7 @@ def portal_payload(
                 **dict(row),
                 "published_at_display": format_chinese_datetime(row["published_at"]),
                 "release_notes_html": render_guide_markdown(str(row["release_notes"])),
-                "workbuddy_available": workbuddy_artifact(str(row["version"]))["included"],
+                "workbuddy_available": workbuddy_artifact(str(row["version"]))["installable"],
                 "workbuddy": workbuddy_artifact(str(row["version"])),
             }
             for row in historical_release_rows
@@ -7875,6 +8549,7 @@ def portal_payload(
         "recent_calls": recent_calls,
         "usage_total": usage_total,
         "assistant_daily_limit": assistant_daily_limit,
+        "assistant_question_retention_hours": ASSISTANT_QUESTION_RETENTION_HOURS,
         "assistant_used_today": assistant_used_today,
         "assistant_remaining_today": (
             None
@@ -7911,6 +8586,7 @@ def portal_payload(
             load_four_city_green_factory_policy_registry()
         ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
+        "release_guidance": public_release_guidance(),
         "release_announcement": announcement_payload,
         "knowledge_stats": knowledge_index_stats(),
         "new_token": new_token,
@@ -7929,16 +8605,175 @@ def portal_payload(
     }
 
 
-@app.get("/health")
-def health() -> dict[str, object]:
-    index = knowledge_index_stats()
-    database_ready = DATABASE_PATH.is_file()
-    status_value = "ok" if database_ready and index["connected"] else "degraded"
+def workbuddy_artifact_has_signed_root_mcp(
+    artifact: dict[str, object] | None,
+) -> bool:
+    try:
+        integrity = validate_release_artifact_for_serving(
+            artifact,
+            target="workbuddy",
+            require_signature=True,
+        )
+    except (OSError, ValueError, zipfile.BadZipFile):
+        return False
+    return (
+        integrity.get("status") == "verified"
+        and integrity.get("mcp_configuration_mode")
+        == "signed_external_plugin_mcp_file"
+    )
+
+
+def require_installable_workbuddy_artifact(
+    artifact: dict[str, object] | None = None,
+) -> dict[str, object]:
+    selected = artifact or latest_skill_artifact("workbuddy")
+    if selected is None:
+        raise HTTPException(status_code=503, detail="当前没有可安装的 WorkBuddy 正式包。")
+    if not workbuddy_artifact_has_signed_root_mcp(selected):
+        version = str(selected.get("version") or "")
+        version_label = f" V{version}" if version else ""
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"WorkBuddy 正式包{version_label}未通过签名插件根 .mcp.json "
+                "能力门禁，新安装与升级已暂停，请等待安全正式版。"
+            ),
+        )
+    return selected
+
+
+def public_release_guidance() -> dict[str, object]:
+    suite = read_json_object(SKILL_SOURCE_DIR / "suite-manifest.json")
+    candidate = suite.get("release", {})
+    candidate = candidate if isinstance(candidate, dict) else {}
+    generic = latest_skill_artifact("generic")
+    workbuddy = latest_skill_artifact("workbuddy")
+    generic_version = str((generic or {}).get("version") or "")
+    workbuddy_version = str((workbuddy or {}).get("version") or "")
+    candidate_version = str(candidate.get("version") or "")
+    generic_available = release_artifact_is_servable(
+        generic,
+        target="generic",
+        require_signature=True,
+    )
+    workbuddy_installable = workbuddy_artifact_has_signed_root_mcp(workbuddy)
+    if workbuddy_installable:
+        workbuddy_notice = (
+            f"WorkBuddy 正式包 V{workbuddy_version} 可安装。"
+            "插件包必须包含签名插件根 .mcp.json，并在启用后完成真实工具枚举。"
+        )
+    elif workbuddy_version:
+        pending = (
+            f"；安全候选 V{candidate_version} 尚未正式发布"
+            if candidate_version and candidate_version != workbuddy_version
+            else ""
+        )
+        workbuddy_notice = (
+            f"WorkBuddy 正式包 V{workbuddy_version} 已暂停新安装，"
+            f"当前包未满足签名插件根 .mcp.json 能力门禁{pending}。"
+            "请等待网站恢复“可安装”状态。"
+        )
+    else:
+        workbuddy_notice = "当前没有通过插件根 .mcp.json 能力门禁的 WorkBuddy 正式包。"
     return {
-        "status": status_value,
-        "database": database_ready,
-        "index": index,
+        "published_version": generic_version,
+        "published_label": f"V{generic_version}" if generic_version else "尚未正式发布",
+        "candidate_version": candidate_version,
+        "candidate_label": f"V{candidate_version}" if candidate_version else "未声明",
+        "generic_available": generic_available,
+        "workbuddy_version": workbuddy_version,
+        "workbuddy_installable": workbuddy_installable,
+        "workbuddy_notice": workbuddy_notice,
+        "candidate_summary": str(candidate.get("summary") or ""),
+        "skill_count": len(suite.get("skills", []))
+        if isinstance(suite.get("skills"), list)
+        else 0,
     }
+
+
+def build_provenance_payload() -> dict[str, object]:
+    release = public_release_guidance()
+    return {
+        "schema": "jiaotang-build-provenance/v1",
+        "commit": BUILD_COMMIT,
+        "deployment_id": BUILD_DEPLOYMENT_ID,
+        "built_at": BUILD_CREATED_AT or None,
+        "dependency_lock_sha256": BUILD_DEPENDENCY_LOCK_SHA256,
+        "dependency_build_lock_sha256": (
+            BUILD_DEPENDENCY_BUILD_LOCK_SHA256
+        ),
+        "wheelhouse_install_lock_sha256": (
+            BUILD_WHEELHOUSE_INSTALL_LOCK_SHA256
+        ),
+        "wheelhouse_manifest_sha256": BUILD_WHEELHOUSE_MANIFEST_SHA256,
+        "wheelhouse_content_identity_sha256": (
+            BUILD_WHEELHOUSE_CONTENT_IDENTITY_SHA256
+        ),
+        "dependency_identity_sha256": BUILD_DEPENDENCY_IDENTITY_SHA256,
+        "dependency_release_record_sha256": (
+            BUILD_DEPENDENCY_RELEASE_RECORD_SHA256
+        ),
+        "candidate_version": release["candidate_version"] or None,
+        "published_generic_version": release["published_version"] or None,
+        "published_workbuddy_version": release["workbuddy_version"] or None,
+        "workbuddy_installable": release["workbuddy_installable"],
+    }
+
+
+def readiness_payload() -> tuple[dict[str, object], int]:
+    checks = {"portal_database": False, "knowledge_index": False}
+    try:
+        with closing(database()) as connection:
+            checks["portal_database"] = connection.execute("SELECT 1").fetchone()[0] == 1
+    except sqlite3.Error:
+        pass
+    try:
+        with closing(content_database()) as connection:
+            checks["knowledge_index"] = connection.execute("SELECT 1").fetchone()[0] == 1
+    except sqlite3.Error:
+        pass
+    ready = all(checks.values())
+    return (
+        {
+            "status": "ok" if ready else "not_ready",
+            "checks": checks,
+            "build": build_provenance_payload(),
+        },
+        200 if ready else 503,
+    )
+
+
+@app.get("/health")
+def health():
+    payload, status_code = readiness_payload()
+    return JSONResponse(payload, status_code=status_code)
+
+
+@app.get("/livez")
+def livez():
+    return JSONResponse(
+        {"status": "ok", "build": build_provenance_payload()},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/readyz")
+def readyz():
+    payload, status_code = readiness_payload()
+    return JSONResponse(payload, status_code=status_code)
+
+
+@app.get("/build")
+def build_provenance():
+    return JSONResponse(build_provenance_payload())
+
+
+@app.get("/robots.txt")
+def robots():
+    return Response(
+        "User-agent: *\nAllow: /demo\nAllow: /guide\nDisallow: /\n",
+        media_type="text/plain; charset=utf-8",
+    )
 
 
 @app.get("/")
@@ -7946,11 +8781,33 @@ def home():
     return RedirectResponse("/login", status_code=303)
 
 
+@app.exception_handler(404)
+async def not_found_page(request: Request, error: Exception):
+    del error
+    wants_html = (
+        request.method == "GET"
+        and not request.url.path.startswith(("/v1/", "/mcp/", "/assistant/"))
+    )
+    if wants_html:
+        return templates.TemplateResponse(
+            request,
+            "404.html",
+            status_code=404,
+        )
+    return JSONResponse(
+        {"detail": "资源不存在"},
+        status_code=404,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 @app.get("/demo", response_class=HTMLResponse)
 def public_demo(request: Request):
+    release_guidance = public_release_guidance()
     return templates.TemplateResponse(
         request,
         "demo.html",
+        {"release_guidance": release_guidance},
         headers={
             "Cache-Control": "public, max-age=300",
             "X-Robots-Tag": "index, follow",
@@ -7966,7 +8823,10 @@ def user_guide(request: Request):
     return templates.TemplateResponse(
         request,
         "user_guide.html",
-        {"guide_html": render_guide_markdown(source)},
+        {
+            "guide_html": render_guide_markdown(source),
+            "release_guidance": public_release_guidance(),
+        },
     )
 
 
@@ -8029,25 +8889,39 @@ def login_page(
 
 
 def client_ip_from(request: Request) -> str:
-    forwarded = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
-    if forwarded:
-        return forwarded
-    if request.client:
-        return request.client.host
-    return "unknown"
+    peer = request.client.host if request.client else ""
+    return client_ip_from_peer(peer, request.headers.get("x-real-ip"))
+
+
+def client_ip_from_peer(peer: str, real_ip_header: str | None = None) -> str:
+    normalized_peer = str(peer or "").strip()
+    try:
+        peer_address = ipaddress.ip_address(
+            normalized_peer.split("%", 1)[0]
+        )
+    except ValueError:
+        peer_address = None
+    if peer_address is not None and peer_address.is_loopback:
+        candidate = str(real_ip_header or "").strip()
+        try:
+            return str(ipaddress.ip_address(candidate.split("%", 1)[0]))
+        except ValueError:
+            pass
+    return normalized_peer[:100] or "unknown"
 
 
 def auth_attempts_blocked(
     connection: sqlite3.Connection, action: str, username: str, client_ip: str, limit: int
 ) -> bool:
+    del username
     window_start = isoformat(utc_now() - timedelta(minutes=30))
     failures = connection.execute(
         """
         SELECT COUNT(*) FROM auth_attempts
         WHERE action=? AND succeeded=0 AND attempted_at>=?
-          AND (client_ip=? OR username=?)
+          AND client_ip=?
         """,
-        (action, window_start, client_ip, username),
+        (action, window_start, client_ip),
     ).fetchone()[0]
     return int(failures) >= limit
 
@@ -8061,14 +8935,54 @@ def record_auth_attempt(
     )
     if succeeded:
         connection.execute(
-            "DELETE FROM auth_attempts WHERE action=? AND (client_ip=? OR username=?)",
-            (action, client_ip, username),
+            "DELETE FROM auth_attempts WHERE action=? AND client_ip=?",
+            (action, client_ip),
         )
     else:
         connection.execute(
             "INSERT INTO auth_attempts(action, username, client_ip, succeeded, attempted_at) VALUES (?,?,?,0,?)",
             (action, username, client_ip, isoformat(utc_now())),
         )
+
+
+def registration_error_response(
+    request: Request,
+    *,
+    status_code: int,
+    error: str,
+    invite_token: str = "",
+    invited_authorization: sqlite3.Row | None = None,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "register.html",
+        {
+            "error": error,
+            "invite_token": invite_token if invited_authorization else "",
+            "invited_member": (
+                dict(invited_authorization) if invited_authorization else None
+            ),
+            "registration_invite_hours": REGISTRATION_INVITE_HOURS,
+        },
+        status_code=status_code,
+    )
+
+
+def record_registration_attempt(
+    request: Request,
+    username: str,
+    *,
+    succeeded: bool,
+) -> None:
+    with closing(database()) as connection:
+        record_auth_attempt(
+            connection,
+            "register",
+            username.strip().lower()[:64] or "[unknown]",
+            client_ip_from(request),
+            succeeded,
+        )
+        connection.commit()
 
 
 @app.get("/password/reset", response_class=HTMLResponse)
@@ -8106,6 +9020,7 @@ def register_page(request: Request, invite: str = ""):
             "error": error,
             "invite_token": invite if authorization else "",
             "invited_member": dict(authorization) if authorization else None,
+            "registration_invite_hours": REGISTRATION_INVITE_HOURS,
         },
         status_code=400 if error else 200,
     )
@@ -8115,159 +9030,143 @@ def register_page(request: Request, invite: str = ""):
 def register_submit(
     request: Request,
     username: Annotated[str, Form(min_length=3, max_length=64)],
-    real_name: Annotated[str, Form(min_length=2, max_length=20)],
-    identity_code: Annotated[str, Form(min_length=4, max_length=24)],
+    real_name: Annotated[str, Form(max_length=20)],
+    identity_code: Annotated[str, Form(max_length=24)],
     company_name: Annotated[str, Form(min_length=2, max_length=100)],
     password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
     confirm_password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
     invite_token: Annotated[str, Form()] = "",
 ):
+    del real_name, identity_code
+    normalized_attempt_username = username.strip().lower()[:64] or "[unknown]"
+    client_ip = client_ip_from(request)
+    with closing(database()) as connection:
+        if auth_attempts_blocked(
+            connection,
+            "register",
+            normalized_attempt_username,
+            client_ip,
+            8,
+        ):
+            return registration_error_response(
+                request,
+                status_code=429,
+                error="注册尝试次数过多，请30分钟后使用最新邀请链接重试。",
+            )
     invited_authorization = (
         registration_authorization_from_invite(invite_token) if invite_token else None
     )
-    template_context = {
-        "invite_token": invite_token if invited_authorization else "",
-        "invited_member": dict(invited_authorization) if invited_authorization else None,
-    }
-    if invite_token and (
-        invited_authorization is None or invited_authorization["status"] != "pending"
-    ):
-        return templates.TemplateResponse(
+    if invited_authorization is None:
+        record_registration_attempt(request, normalized_attempt_username, succeeded=False)
+        return registration_error_response(
             request,
-            "register.html",
-            {
-                "error": "注册邀请链接无效、已使用或已撤销，请联系管理员重新发送。",
-                "invite_token": "",
-                "invited_member": None,
-            },
+            error="注册邀请无效、已过期或已使用，请联系管理员获取新的专属邀请链接。",
             status_code=403,
         )
     try:
         normalized_username = normalize_account_name(username)
-        if invited_authorization:
-            normalized_real_name = str(invited_authorization["real_name"])
-            normalized_identity_code = str(invited_authorization["identity_code"])
-        else:
-            normalized_real_name = normalize_real_name(real_name)
-            normalized_identity_code = normalize_identity_code(identity_code)
+        normalized_real_name = str(invited_authorization["real_name"])
     except ValueError as exc:
-        return templates.TemplateResponse(
+        record_registration_attempt(request, normalized_attempt_username, succeeded=False)
+        return registration_error_response(
             request,
-            "register.html",
-            {"error": str(exc), **template_context},
+            error=str(exc),
             status_code=400,
+            invite_token=invite_token,
+            invited_authorization=invited_authorization,
         )
     if not company_verified(company_name):
-        return templates.TemplateResponse(
+        record_registration_attempt(request, normalized_attempt_username, succeeded=False)
+        return registration_error_response(
             request,
-            "register.html",
-            {"error": "公司名称验证未通过，请填写完整公司名称。", **template_context},
+            error="公司名称验证未通过，请填写完整公司名称。",
             status_code=403,
+            invite_token=invite_token,
+            invited_authorization=invited_authorization,
         )
     if password != confirm_password:
-        return templates.TemplateResponse(
+        record_registration_attempt(request, normalized_attempt_username, succeeded=False)
+        return registration_error_response(
             request,
-            "register.html",
-            {"error": "两次输入的密码不一致。", **template_context},
+            error="两次输入的密码不一致。",
             status_code=400,
+            invite_token=invite_token,
+            invited_authorization=invited_authorization,
         )
     try:
         with closing(database()) as connection:
-            if invited_authorization:
-                authorization = connection.execute(
-                    "SELECT * FROM registration_authorizations WHERE id=? AND deleted_at IS NULL",
-                    (invited_authorization["id"],),
-                ).fetchone()
-            else:
-                authorization = connection.execute(
-                    "SELECT * FROM registration_authorizations WHERE real_name=? AND identity_code=? AND deleted_at IS NULL",
-                    (normalized_real_name, normalized_identity_code),
-                ).fetchone()
-            if authorization is None or authorization["status"] == "revoked":
-                return templates.TemplateResponse(
+            connection.execute("BEGIN IMMEDIATE")
+            authorization = registration_authorization_from_invite(
+                invite_token, connection
+            )
+            if authorization is None:
+                connection.rollback()
+                record_registration_attempt(
+                    request, normalized_attempt_username, succeeded=False
+                )
+                return registration_error_response(
                     request,
-                    "register.html",
-                    {
-                        "error": "姓名或企微手机号后四位未获得注册权限，请联系管理员添加或核对。",
-                        **template_context,
-                    },
+                    error=(
+                        "注册邀请无效、已过期或已使用，"
+                        "请联系管理员获取新的专属邀请链接。"
+                    ),
                     status_code=403,
                 )
-            if authorization["status"] == "registered":
-                return templates.TemplateResponse(
-                    request,
-                    "register.html",
-                    {"error": "该邀请已完成注册，如需处理请联系管理员。", **template_context},
-                    status_code=409,
-                )
-            if authorization["user_id"]:
-                existing_user = connection.execute(
-                    "SELECT * FROM users WHERE id=?", (authorization["user_id"],)
-                ).fetchone()
-                if existing_user is None or existing_user["deleted_at"]:
-                    return templates.TemplateResponse(
-                        request,
-                        "register.html",
-                        {"error": "原账号已进入回收站，请管理员先恢复或彻底清除。", **template_context},
-                        status_code=409,
-                    )
-                if normalized_username != existing_user["username"]:
-                    return templates.TemplateResponse(
-                        request,
-                        "register.html",
-                        {"error": "重新邀请必须使用原英文登录账号。", **template_context},
-                        status_code=409,
-                    )
-                new_user_id = int(existing_user["id"])
-                connection.execute(
-                    """
-                    UPDATE users
-                    SET password_hash=?,real_name=?,company_name=?,active=1,deleted_at=NULL
-                    WHERE id=?
-                    """,
-                    (
-                        password_hasher.hash(password),
-                        normalized_real_name,
-                        MEMBER_COMPANY,
-                        new_user_id,
-                    ),
-                )
-                connection.execute(
-                    "UPDATE device_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE user_id=?",
-                    (isoformat(utc_now()), new_user_id),
-                )
-                connection.execute("DELETE FROM sessions WHERE user_id=?", (new_user_id,))
-            else:
-                connection.execute(
-                    """
-                    INSERT INTO users(username, real_name, password_hash, company_name, created_at)
-                    VALUES (?, ?, ?, ?, ?)
-                    """,
-                    (
-                        normalized_username,
-                        normalized_real_name,
-                        password_hasher.hash(password),
-                        MEMBER_COMPANY,
-                        isoformat(utc_now()),
-                    ),
-                )
-                new_user_id = int(connection.execute("SELECT last_insert_rowid()").fetchone()[0])
-            connection.execute(
+            cursor = connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,password_hash,company_name,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    normalized_username,
+                    normalized_real_name,
+                    password_hasher.hash(password),
+                    MEMBER_COMPANY,
+                    isoformat(utc_now()),
+                ),
+            )
+            new_user_id = int(cursor.lastrowid)
+            consumed_at = isoformat(utc_now())
+            consumed = connection.execute(
                 """
                 UPDATE registration_authorizations
-                SET status='registered',user_id=?,registered_at=?,revoked_at=NULL
-                WHERE id=? AND status='pending'
+                SET status='registered',user_id=?,registered_at=?,
+                    invite_consumed_at=?,invite_secret='',revoked_at=NULL
+                WHERE id=? AND status='pending' AND user_id IS NULL
+                  AND invite_consumed_at IS NULL
                 """,
-                (new_user_id, isoformat(utc_now()), authorization["id"]),
+                (
+                    new_user_id,
+                    consumed_at,
+                    consumed_at,
+                    int(authorization["id"]),
+                ),
             )
+            if consumed.rowcount != 1:
+                connection.rollback()
+                record_registration_attempt(
+                    request, normalized_attempt_username, succeeded=False
+                )
+                return registration_error_response(
+                    request,
+                    error=(
+                        "注册邀请无效、已过期或已使用，"
+                        "请联系管理员获取新的专属邀请链接。"
+                    ),
+                    status_code=403,
+                )
             connection.commit()
     except sqlite3.IntegrityError:
-        return templates.TemplateResponse(
+        record_registration_attempt(request, normalized_attempt_username, succeeded=False)
+        return registration_error_response(
             request,
-            "register.html",
-            {"error": "该用户名称已经注册。", **template_context},
+            error="无法完成注册，请更换英文账号或联系管理员核对邀请。",
             status_code=409,
+            invite_token=invite_token,
+            invited_authorization=invited_authorization,
         )
+    record_registration_attempt(request, normalized_attempt_username, succeeded=True)
     return RedirectResponse("/login?registered=1", status_code=303)
 
 
@@ -9015,33 +9914,18 @@ def create_registration_authorization(
         if existing:
             authorization_id = int(existing["id"])
             if existing["user_id"]:
-                linked_user = connection.execute(
-                    "SELECT * FROM users WHERE id=?", (existing["user_id"],)
-                ).fetchone()
-                if linked_user and linked_user["active"] and not linked_user["deleted_at"] and not existing["deleted_at"]:
-                    raise HTTPException(status_code=409, detail="该成员已经完成注册")
-                connection.execute(
-                    "UPDATE users SET active=1,deleted_at=NULL WHERE id=?",
-                    (existing["user_id"],),
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "该成员身份已绑定账号。请在账号详情中直接启用或由管理员重置密码，"
+                        "不能重新签发注册邀请。"
+                    ),
                 )
-                connection.execute(
-                    """
-                    UPDATE registration_authorizations
-                    SET status='registered',created_by=?,created_at=?,revoked_at=NULL,deleted_at=NULL
-                    WHERE id=?
-                    """,
-                    (user["id"], now, existing["id"]),
-                )
-            else:
-                connection.execute(
-                    """
-                    UPDATE registration_authorizations
-                    SET status='pending',created_by=?,created_at=?,
-                        registered_at=NULL,revoked_at=NULL,deleted_at=NULL
-                    WHERE id=?
-                    """,
-                    (user["id"], now, existing["id"]),
-                )
+            issue_registration_invite(
+                connection,
+                authorization_id,
+                issued_by=int(user["id"]),
+            )
         else:
             cursor = connection.execute(
                 """
@@ -9053,6 +9937,11 @@ def create_registration_authorization(
                 (normalized_real_name, normalized_identity_code, user["id"], now),
             )
             authorization_id = int(cursor.lastrowid)
+            issue_registration_invite(
+                connection,
+                authorization_id,
+                issued_by=int(user["id"]),
+            )
         connection.commit()
     return RedirectResponse(f"/admin/members#invite-{authorization_id}", status_code=303)
 
@@ -9162,6 +10051,7 @@ async def import_registration_authorizations(
     inserted = 0
     restored = 0
     overwritten = 0
+    linked = 0
     now = isoformat(utc_now())
     with closing(database()) as connection:
         for real_name, identity_code in rows:
@@ -9170,7 +10060,7 @@ async def import_registration_authorizations(
                 (real_name, identity_code),
             ).fetchone()
             if existing is None:
-                connection.execute(
+                cursor = connection.execute(
                     """
                     INSERT INTO registration_authorizations(
                         real_name,identity_code,status,created_by,created_at
@@ -9178,34 +10068,24 @@ async def import_registration_authorizations(
                     """,
                     (real_name, identity_code, user["id"], now),
                 )
+                issue_registration_invite(
+                    connection,
+                    int(cursor.lastrowid),
+                    issued_by=int(user["id"]),
+                )
                 inserted += 1
             else:
                 was_inactive = bool(existing["deleted_at"] or existing["status"] == "revoked")
                 if existing["user_id"]:
-                    connection.execute(
-                        "UPDATE users SET active=1,deleted_at=NULL WHERE id=?",
-                        (existing["user_id"],),
-                    )
-                    connection.execute(
-                        """
-                        UPDATE registration_authorizations
-                        SET status='registered',created_by=?,created_at=?,revoked_at=NULL,deleted_at=NULL
-                        WHERE id=?
-                        """,
-                        (user["id"], now, existing["id"]),
-                    )
+                    linked += 1
                 else:
-                    connection.execute(
-                        """
-                        UPDATE registration_authorizations
-                        SET status='pending',created_by=?,created_at=?,
-                            registered_at=NULL,revoked_at=NULL,deleted_at=NULL
-                        WHERE id=?
-                        """,
-                        (user["id"], now, existing["id"]),
+                    issue_registration_invite(
+                        connection,
+                        int(existing["id"]),
+                        issued_by=int(user["id"]),
                     )
-                restored += int(was_inactive)
-                overwritten += int(not was_inactive)
+                    restored += int(was_inactive)
+                    overwritten += int(not was_inactive)
         connection.commit()
     return templates.TemplateResponse(
         request,
@@ -9213,7 +10093,10 @@ async def import_registration_authorizations(
         portal_payload(
             request,
             user,
-            message=f"名单导入完成：新增{inserted}人，恢复{restored}人，覆盖重复{overwritten}人。",
+            message=(
+                f"名单导入完成：新增{inserted}人，重新签发{restored + overwritten}人，"
+                f"跳过已绑定账号{linked}人。已绑定账号请直接启用或由管理员重置密码。"
+            ),
             active_page="members",
         ),
     )
@@ -9237,11 +10120,48 @@ def revoke_registration_authorization(
         if authorization["status"] == "registered":
             raise HTTPException(status_code=409, detail="已注册成员请在账号列表中停用")
         connection.execute(
-            "UPDATE registration_authorizations SET status='revoked',revoked_at=? WHERE id=?",
+            """
+            UPDATE registration_authorizations
+            SET status='revoked',revoked_at=?,invite_secret='',invite_expires_at=NULL
+            WHERE id=?
+            """,
             (isoformat(utc_now()), authorization_id),
         )
         connection.commit()
     return RedirectResponse("/admin/members", status_code=303)
+
+
+@app.post("/admin/registration-authorizations/{authorization_id}/reissue")
+def reissue_registration_authorization(
+    authorization_id: int,
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    require_admin(user)
+    with closing(database()) as connection:
+        authorization = connection.execute(
+            """
+            SELECT * FROM registration_authorizations
+            WHERE id=? AND user_id IS NULL AND deleted_at IS NULL
+            """,
+            (authorization_id,),
+        ).fetchone()
+        if authorization is None:
+            raise HTTPException(
+                status_code=409,
+                detail="只有尚未绑定账号的成员可以重新签发邀请。",
+            )
+        issue_registration_invite(
+            connection,
+            authorization_id,
+            issued_by=int(user["id"]),
+        )
+        connection.commit()
+    return RedirectResponse(
+        f"/admin/registration-authorizations/{authorization_id}",
+        status_code=303,
+    )
 
 
 @app.get("/admin/registration-authorizations/{authorization_id}", response_class=HTMLResponse)
@@ -9264,7 +10184,10 @@ def registration_authorization_detail(
     if authorization is None:
         raise HTTPException(status_code=404, detail="注册邀请不存在")
     invitation_url = None
-    if authorization["status"] == "pending" and not authorization["deleted_at"]:
+    if (
+        not authorization["deleted_at"]
+        and registration_invite_is_active(authorization)
+    ):
         invitation_url = (
             f"{str(request.base_url).rstrip('/')}/register?invite="
             f"{quote(registration_invite_token(authorization))}"
@@ -9277,6 +10200,10 @@ def registration_authorization_detail(
             "authorization": {
                 **dict(authorization),
                 "invitation_url": invitation_url,
+                "invite_active": registration_invite_is_active(authorization),
+                "invite_expires_at_display": format_chinese_datetime(
+                    authorization["invite_expires_at"]
+                ),
                 "created_at_display": format_chinese_datetime(authorization["created_at"]),
                 "registered_at_display": format_chinese_datetime(authorization["registered_at"]),
                 "revoked_at_display": format_chinese_datetime(authorization["revoked_at"]),
@@ -9305,7 +10232,8 @@ def trash_registration_authorization(
         connection.execute(
             """
             UPDATE registration_authorizations
-            SET deleted_at=?, status='revoked', revoked_at=COALESCE(revoked_at, ?)
+            SET deleted_at=?,status='revoked',revoked_at=COALESCE(revoked_at, ?),
+                invite_secret='',invite_expires_at=NULL
             WHERE id=?
             """,
             (now, now, authorization_id),
@@ -9336,19 +10264,24 @@ def restore_registration_authorization(
         ).fetchone()
         if authorization is None:
             raise HTTPException(status_code=404, detail="回收记录不存在")
-        status_value = "registered" if authorization["user_id"] else "pending"
-        connection.execute(
-            """
-            UPDATE registration_authorizations
-            SET deleted_at=NULL, status=?, revoked_at=NULL
-            WHERE id=?
-            """,
-            (status_value, authorization_id),
-        )
         if authorization["user_id"]:
             connection.execute(
                 "UPDATE users SET active=1,deleted_at=NULL WHERE id=?",
                 (authorization["user_id"],),
+            )
+            connection.execute(
+                """
+                UPDATE registration_authorizations
+                SET deleted_at=NULL,status='registered',revoked_at=NULL
+                WHERE id=?
+                """,
+                (authorization_id,),
+            )
+        else:
+            issue_registration_invite(
+                connection,
+                authorization_id,
+                issued_by=int(user["id"]),
             )
         connection.commit()
     return RedirectResponse(
@@ -9473,35 +10406,12 @@ def reinvite_disabled_user(
     require_admin(user)
     if member_id == user["id"]:
         raise HTTPException(status_code=400, detail="不能重新邀请当前管理员账号")
-    now = isoformat(utc_now())
-    with closing(database()) as connection:
-        member = connection.execute(
-            "SELECT * FROM users WHERE id=? AND active=0 AND deleted_at IS NULL", (member_id,)
-        ).fetchone()
-        if member is None:
-            raise HTTPException(status_code=409, detail="只有已停用账号可以重新邀请")
-        authorization = connection.execute(
-            "SELECT * FROM registration_authorizations WHERE user_id=?", (member_id,)
-        ).fetchone()
-        if authorization is None:
-            raise HTTPException(status_code=409, detail="该账号缺少成员识别信息，无法生成邀请")
-        connection.execute(
-            """
-            UPDATE registration_authorizations
-            SET status='pending',created_by=?,created_at=?,registered_at=NULL,
-                revoked_at=NULL,deleted_at=NULL
-            WHERE id=?
-            """,
-            (user["id"], now, authorization["id"]),
-        )
-        connection.execute("DELETE FROM sessions WHERE user_id=?", (member_id,))
-        connection.execute(
-            "UPDATE device_tokens SET revoked_at=COALESCE(revoked_at,?) WHERE user_id=?",
-            (now, member_id),
-        )
-        connection.commit()
-    return RedirectResponse(
-        f"/admin/registration-authorizations/{authorization['id']}", status_code=303
+    raise HTTPException(
+        status_code=409,
+        detail=(
+            "已绑定账号不能通过重新邀请重设密码。"
+            "请直接启用账号，或由管理员在账号详情中重置密码。"
+        ),
     )
 
 
@@ -9702,7 +10612,7 @@ def assistant_answer_stream(
     usage_id: int,
     remaining: int | None,
     daily_limit: int | None,
-    model_config: dict[str, str] | None = None,
+    model_config: dict[str, object] | None = None,
     quota_counted: bool = True,
     unlimited: bool = False,
 ) -> Iterator[str]:
@@ -9849,7 +10759,12 @@ def assistant_answer(
                 ),
             }
         )
-    model_config = validate_user_model_config(user_api_base, user_api_key, user_api_model)
+    model_config = validate_user_model_config(
+        user_api_base,
+        user_api_key,
+        user_api_model,
+        user_id=int(user["id"]),
+    )
     if model_config or admin_unlimited:
         usage_id = create_unmetered_assistant_usage(
             int(user["id"]),
@@ -9966,11 +10881,18 @@ def admin_health_detail(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     require_admin(user)
-    runtime = read_status_file(HEALTH_STATUS_PATH)
-    backup = read_status_file(BACKUP_STATUS_PATH)
+    runtime = runtime_operational_status_view()
+    backup = operational_status_view(
+        BACKUP_STATUS_PATH,
+        timestamp_field="completed_at",
+        max_age_seconds=BACKUP_STATUS_MAX_AGE_SECONDS,
+    )
     oss_sync = read_status_file(OSS_SYNC_STATUS_PATH)
-    oss_cache = read_status_file(OSS_INDEX_CACHE_STATUS_PATH)
-    snapshot_retention = read_status_file(SNAPSHOT_RETENTION_STATUS_PATH)
+    oss_cache = operational_status_view(
+        OSS_INDEX_CACHE_STATUS_PATH,
+        timestamp_field="checked_at",
+        max_age_seconds=INDEX_STATUS_MAX_AGE_SECONDS,
+    )
     deploy_gate = skill_deploy_gate_status()
     index = knowledge_index_stats()
     requested_activity = request.query_params.get("activity", "").strip()
@@ -10312,32 +11234,65 @@ def admin_health_detail(
             }
         )
     sections = {
-        "runtime": ("应用服务", [("状态", runtime.get("status", "待采集")), ("检查时间", runtime.get("checked_at", "待采集")), ("公开地址", os.environ.get("JIAOTANG_PUBLIC_HOST", "未配置"))]),
+        "runtime": (
+            "应用服务",
+            [
+                ("状态", runtime.get("display_status", "待采集")),
+                ("状态时效", runtime.get("freshness_label", "待采集")),
+                ("检查时间", runtime.get("checked_at", "待采集")),
+                ("错误", status_list_display(runtime.get("errors"))),
+                ("告警", status_list_display(runtime.get("warnings"))),
+                ("失败单元", status_list_display(runtime.get("failed_units"))),
+                ("当前索引发布", runtime.get("current_release_id") or "未记录"),
+                ("上一索引发布", runtime.get("previous_release_id") or "未记录"),
+                (
+                    "问答原文定时清理",
+                    runtime.get("privacy_redaction", {}).get(
+                        "display_status", "待采集"
+                    ),
+                ),
+                (
+                    "问答清理检查时间",
+                    runtime.get("privacy_redaction", {}).get(
+                        "checked_at", "待采集"
+                    ),
+                ),
+                ("公开地址", os.environ.get("JIAOTANG_PUBLIC_HOST", "未配置")),
+            ],
+        ),
         "index": ("全文索引", [("连接状态", "已连接" if index["connected"] else "未连接"), ("全文资料", index["documents"]), ("文本字符", index["characters"]), ("索引更新时间", index["updated_at"] or "待采集")]),
-        "backup": ("最近备份", [("状态", backup.get("status", "待采集")), ("完成时间", backup.get("completed_at", "待采集")), ("备份位置", backup.get("backup_path", "由服务器备份任务管理"))]),
+        "backup": (
+            "最近备份",
+            [
+                ("状态", backup.get("display_status", "待采集")),
+                ("状态时效", backup.get("freshness_label", "待采集")),
+                ("完成时间", backup.get("completed_at", "待采集")),
+                ("备份产物", backup_artifacts_display(backup.get("artifacts"))),
+                ("异地模式", backup.get("offsite_mode") or "未配置"),
+                ("异地状态", backup.get("offsite_status") or "未记录"),
+            ],
+        ),
         "oss": (
             "OSS 权威知识源",
             [
-                ("本地缓存状态", oss_cache.get("status", "待首次校验")),
+                ("本地缓存状态", oss_cache.get("display_status", "待首次校验")),
+                ("状态时效", oss_cache.get("freshness_label", "待采集")),
                 ("缓存模式", oss_cache.get("mode", "OSS 权威源 + 服务器查询缓存")),
                 ("缓存校验时间", oss_cache.get("checked_at", "待采集")),
                 ("缓存更新时间", oss_cache.get("cache_updated_at", "尚未更新")),
+                ("当前发布 ID", oss_cache.get("current_release_id") or "未记录"),
+                ("上一发布 ID", oss_cache.get("previous_release_id") or "未记录"),
+                (
+                    "索引世代一致",
+                    "是" if oss_cache.get("generation_consistent") is True else "否",
+                ),
+                ("指针 SHA-256", oss_cache.get("pointer_sha256") or "未记录"),
                 ("OSS 同步状态", oss_sync.get("status", "待首次同步")),
                 ("OSS 同步完成时间", oss_sync.get("completed_at", "待采集")),
                 ("目标 Bucket", oss_sync.get("bucket", "未配置")),
                 ("本次上传文件", oss_sync.get("uploaded_files", 0)),
                 ("跳过未变化文件", oss_sync.get("skipped_files", 0)),
                 ("索引快照", oss_sync.get("index_snapshot", "本次未生成")),
-            ],
-        ),
-        "snapshot": (
-            "服务器快照保留",
-            [
-                ("状态", snapshot_retention.get("status", "待首次整理")),
-                ("完成时间", snapshot_retention.get("completed_at", "待采集")),
-                ("热回滚快照", snapshot_retention.get("hot_snapshots", 0)),
-                ("本次归档快照", snapshot_retention.get("archived_snapshots", 0)),
-                ("保留规则", snapshot_retention.get("policy", "最近12份热快照，其余按年月归档")),
             ],
         ),
         "deploy-gate": (
@@ -11302,6 +12257,7 @@ def pinned_agent_install_artifact(
         or not secrets.compare_digest(sha256_file(package_path), expected_sha256)
     ):
         raise HTTPException(status_code=503, detail="WorkBuddy 签名包与发布记录不一致，下载已暂停。")
+    require_installable_workbuddy_artifact(artifact)
     return enrollment_payload, artifact
 
 
@@ -11312,6 +12268,7 @@ def create_agent_bootstrap_code(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
+    require_installable_workbuddy_artifact()
     now_value = utc_now()
     now = isoformat(now_value)
     raw_code = "jbe_" + secrets.token_urlsafe(32)
@@ -11382,9 +12339,7 @@ def confirm_agent_bootstrap_code(
 ):
     validate_csrf(user, csrf_token)
     now = isoformat(utc_now())
-    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
-    if not client_ip and request.client:
-        client_ip = request.client.host
+    client_ip = client_ip_from(request)
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
         enrollment = connection.execute(
@@ -11521,9 +12476,7 @@ def create_agent_upgrade_code(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
-    artifact = latest_skill_artifact("workbuddy")
-    if artifact is None:
-        raise HTTPException(status_code=503, detail="当前没有可升级的 WorkBuddy 正式包")
+    artifact = require_installable_workbuddy_artifact()
     package_path = Path(str(artifact.get("file_path") or ""))
     target_sha256 = str(artifact.get("sha256") or "")
     target_version = str(artifact.get("version") or "")
@@ -12030,14 +12983,14 @@ def download_authorized_workbuddy_plugin(enrollment_code: str):
         enrollment_code,
         require_confirmed=True,
     )
-    package_path = Path(str(artifact["file_path"]))
-    return FileResponse(
-        package_path,
+    return validated_release_artifact_download(
+        artifact,
+        target="workbuddy",
+        require_signature=True,
         filename=str(
             artifact["file_name"]
             or f"企业全生命周期助手-V{artifact['version']}-WorkBuddy.zip"
         ),
-        media_type="application/zip",
         headers={
             "Cache-Control": "private, no-store",
             "X-Jiaotang-Package-SHA256": str(artifact["sha256"]),
@@ -12142,10 +13095,10 @@ def download_authorized_workbuddy_upgrade(upgrade_code: str):
         upgrade_code,
         require_confirmed=True,
     )
-    package_path = Path(str(artifact["file_path"]))
-    return FileResponse(
-        package_path,
-        media_type="application/zip",
+    return validated_release_artifact_download(
+        artifact,
+        target="workbuddy",
+        require_signature=True,
         filename=str(artifact["file_name"]),
         headers={
             "Cache-Control": "no-store",
@@ -12184,9 +13137,7 @@ def report_agent_upgrade_result(
         raise HTTPException(status_code=422, detail="升级失败必须包含 error_stage")
 
     now = isoformat(utc_now())
-    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
-    if not client_ip and request.client:
-        client_ip = request.client.host
+    client_ip = client_ip_from(request)
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
         enrollment = connection.execute(
@@ -12410,9 +13361,7 @@ def report_agent_install_result(
     now_value = utc_now()
     now = isoformat(now_value)
     recent_cutoff = isoformat(now_value - timedelta(hours=24))
-    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
-    if not client_ip and request.client:
-        client_ip = request.client.host
+    client_ip = client_ip_from(request)
     with closing(database()) as connection:
         enrollment = connection.execute(
             """
@@ -12543,9 +13492,7 @@ def register_agent_device(
 
     now_value = utc_now()
     now = isoformat(now_value)
-    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
-    if not client_ip and request.client:
-        client_ip = request.client.host
+    client_ip = client_ip_from(request)
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
         enrollment = connection.execute(
@@ -12882,9 +13829,7 @@ def activate_agent_device(
     now = isoformat(now_value)
     device_hash = hashlib.sha256(payload.device_id.encode("utf-8")).hexdigest()
     credential_hash = token_hash(payload.token)
-    client_ip = (request.headers.get("x-forwarded-for") or "").split(",", 1)[0].strip()
-    if not client_ip and request.client:
-        client_ip = request.client.host
+    client_ip = client_ip_from(request)
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
         enrollment = connection.execute(
@@ -13668,7 +14613,16 @@ def publish_skill_release(
     try:
         with zipfile.ZipFile(stored_path) as archive:
             validate_complete_skill_release_archive(archive)
-    except (zipfile.BadZipFile, ValueError) as error:
+        validate_release_artifact_for_serving(
+            {
+                "version": normalized_version,
+                "file_path": str(stored_path),
+                "sha256": digest,
+            },
+            target="generic",
+            require_signature=True,
+        )
+    except (OSError, zipfile.BadZipFile, ValueError) as error:
         rejected = SKILL_RELEASE_DIR / "rejected"
         rejected.mkdir(parents=True, exist_ok=True)
         stored_path.replace(rejected / stored_path.name)
@@ -13791,10 +14745,12 @@ def web_download_latest_skills(user: Annotated[sqlite3.Row, Depends(require_web_
     release = latest_skill_artifact("generic")
     if release is None:
         raise HTTPException(status_code=404, detail="尚未发布 Skills 版本")
-    package_path = Path(str(release["file_path"]))
-    if not package_path.is_file():
-        raise HTTPException(status_code=503, detail="最新版 Skills 文件暂不可用")
-    return FileResponse(package_path, filename=release["file_name"], media_type="application/zip")
+    return validated_release_artifact_download(
+        release,
+        target="generic",
+        require_signature=True,
+        filename=str(release["file_name"]),
+    )
 
 
 @app.get("/skills/latest/workbuddy/download")
@@ -13805,13 +14761,12 @@ def web_download_latest_workbuddy_skills(
     release = latest_skill_artifact("workbuddy")
     if release is None:
         raise HTTPException(status_code=404, detail="尚未发布 WorkBuddy 版本")
-    package_path = Path(str(release["file_path"]))
-    if not package_path.is_file():
-        raise HTTPException(status_code=503, detail="最新版 WorkBuddy 文件暂不可用")
-    return FileResponse(
-        package_path,
+    require_installable_workbuddy_artifact(release)
+    return validated_release_artifact_download(
+        release,
+        target="workbuddy",
+        require_signature=True,
         filename=f"企业全生命周期助手-V{release['version']}-WorkBuddy.zip",
-        media_type="application/zip",
     )
 
 
@@ -13838,7 +14793,7 @@ def web_download_historical_skills(
     with closing(database()) as connection:
         release = connection.execute(
             """
-            SELECT id, version, file_name, file_path
+            SELECT id, version, file_name, file_path, sha256
             FROM skill_releases
             WHERE id=?
             """,
@@ -13846,10 +14801,12 @@ def web_download_historical_skills(
         ).fetchone()
     if release is None:
         raise HTTPException(status_code=404, detail="历史 Skills 版本不存在")
-    package_path = Path(release["file_path"])
-    if not package_path.is_file():
-        raise HTTPException(status_code=503, detail="历史 Skills 文件暂不可用")
-    return FileResponse(package_path, filename=release["file_name"], media_type="application/zip")
+    return validated_release_artifact_download(
+        release,
+        target="generic",
+        require_signature=False,
+        filename=str(release["file_name"]),
+    )
 
 
 @app.get("/skills/releases/{release_id}/workbuddy/download")
@@ -13860,15 +14817,28 @@ def web_download_historical_workbuddy_skills(
     del user
     with closing(database()) as connection:
         release = connection.execute(
-            "SELECT version FROM skill_releases WHERE id=?",
+            """
+            SELECT r.version,a.file_name,a.file_path,a.sha256
+            FROM skill_releases r
+            JOIN skill_release_artifacts a ON a.release_id=r.id
+            WHERE r.id=? AND a.target IN ('workbuddy','windows','macos')
+            ORDER BY CASE a.target
+                WHEN 'workbuddy' THEN 0
+                WHEN 'windows' THEN 1
+                ELSE 2
+            END
+            LIMIT 1
+            """,
             (release_id,),
         ).fetchone()
     if release is None:
-        raise HTTPException(status_code=404, detail="历史 Skills 版本不存在")
-    package_path = historical_workbuddy_skill_package(str(release["version"]))
-    if not package_path.is_file():
-        raise HTTPException(status_code=404, detail="该历史版本未发布 WorkBuddy 插件包")
-    return FileResponse(package_path, filename=package_path.name, media_type="application/zip")
+        raise HTTPException(status_code=404, detail="该历史版本没有带哈希记录的 WorkBuddy 插件包")
+    return validated_release_artifact_download(
+        release,
+        target="workbuddy",
+        require_signature=False,
+        filename=str(release["file_name"]),
+    )
 
 
 @app.get("/v1/me")
@@ -14314,6 +15284,299 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
     return None
 
 
+RELEASE_ARTIFACT_VALIDATION_CACHE: dict[
+    tuple[str, str, str, str, bool],
+    dict[str, object],
+] = {}
+RELEASE_ARTIFACT_VALIDATION_CACHE_LOCK = threading.Lock()
+RELEASE_ARTIFACT_VALIDATION_CACHE_MAX_ENTRIES = 64
+
+
+def validate_release_artifact_for_serving_cached(
+    snapshot_path_value: str,
+    target: str,
+    version: str,
+    expected_sha256: str,
+    actual_sha256: str,
+    require_signature: bool,
+) -> dict[str, object]:
+    """Validate an immutable snapshot, caching only by its content identity.
+
+    The snapshot path is deliberately excluded from the cache key. A path,
+    size, or mtime can be restored after tampering; a SHA-256 content identity
+    cannot be reused for different bytes without breaking the digest.
+    """
+    package_path = Path(snapshot_path_value)
+    if target not in {"generic", "workbuddy"}:
+        raise ValueError("不支持的发布产物类型")
+    if (
+        not package_path.is_file()
+        or not re.fullmatch(r"[a-f0-9]{64}", expected_sha256)
+        or not re.fullmatch(r"[a-f0-9]{64}", actual_sha256)
+        or not valid_release_version(version)
+    ):
+        raise ValueError("发布产物记录不完整")
+    if not secrets.compare_digest(actual_sha256, expected_sha256):
+        raise ValueError("发布产物文件与数据库 SHA-256 不一致")
+
+    cache_key = (
+        target,
+        version,
+        expected_sha256,
+        actual_sha256,
+        bool(require_signature),
+    )
+    with RELEASE_ARTIFACT_VALIDATION_CACHE_LOCK:
+        cached = RELEASE_ARTIFACT_VALIDATION_CACHE.get(cache_key)
+    if cached is not None:
+        return deepcopy(cached)
+
+    with zipfile.ZipFile(package_path) as archive:
+        names = {
+            info.filename
+            for info in archive.infolist()
+            if not info.is_dir()
+        }
+    signed_format = (
+        any(name.endswith("/suite-release-manifest.json") for name in names)
+        and any(name.endswith("/suite-release-manifest.sig") for name in names)
+        if target == "generic"
+        else any(
+            name.endswith("/plugin-release-manifest.json") for name in names
+        )
+        and any(
+            name.endswith("/plugin-release-manifest.json.sig") for name in names
+        )
+    )
+    if not require_signature and not signed_format:
+        result = {
+            "status": "legacy_sha256_verified",
+            "sha256": actual_sha256,
+            "signed_format": False,
+        }
+    else:
+        validator_path = BASE_DIR / "scripts" / "publish_skill_release.py"
+        if not validator_path.is_file():
+            raise ValueError("正式发布验签器不存在")
+        spec = importlib.util.spec_from_file_location(
+            "jiaotang_release_serving_validator",
+            validator_path,
+        )
+        if spec is None or spec.loader is None:
+            raise ValueError("正式发布验签器无法加载")
+        validator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(validator)
+        validation = validator.validate_release_packages(
+            {target: package_path},
+            version,
+        )
+        artifact_result = validation.get("artifacts", {}).get(target, {})
+        if (
+            not isinstance(artifact_result, dict)
+            or artifact_result.get("sha256") != expected_sha256
+        ):
+            raise ValueError("正式发布验签结果与数据库记录不一致")
+        integrity = artifact_result.get("integrity")
+        if not isinstance(integrity, dict) or integrity.get("status") != "verified":
+            raise ValueError("正式发布固定公钥验签未通过")
+        result = {
+            **integrity,
+            "sha256": actual_sha256,
+            "signed_format": True,
+        }
+
+    with RELEASE_ARTIFACT_VALIDATION_CACHE_LOCK:
+        if cache_key not in RELEASE_ARTIFACT_VALIDATION_CACHE:
+            if (
+                len(RELEASE_ARTIFACT_VALIDATION_CACHE)
+                >= RELEASE_ARTIFACT_VALIDATION_CACHE_MAX_ENTRIES
+            ):
+                oldest_key = next(iter(RELEASE_ARTIFACT_VALIDATION_CACHE))
+                RELEASE_ARTIFACT_VALIDATION_CACHE.pop(oldest_key, None)
+            RELEASE_ARTIFACT_VALIDATION_CACHE[cache_key] = deepcopy(result)
+    return deepcopy(result)
+
+
+def snapshot_release_artifact(
+    artifact: dict[str, object] | sqlite3.Row | None,
+) -> tuple[object, Path, str, int]:
+    """Copy one artifact into a private immutable snapshot and hash that copy."""
+    if artifact is None:
+        raise ValueError("发布产物不存在")
+    package_path = Path(str(artifact["file_path"] or ""))
+    expected_sha256 = str(artifact["sha256"] or "")
+    if (
+        not package_path.is_file()
+        or not re.fullmatch(r"[a-f0-9]{64}", expected_sha256)
+    ):
+        raise ValueError("发布产物记录不完整")
+
+    snapshot = tempfile.NamedTemporaryFile(
+        mode="w+b",
+        prefix="jiaotang-release-",
+        suffix=".zip",
+        delete=False,
+    )
+    snapshot_path = Path(snapshot.name)
+    digest = hashlib.sha256()
+    total_bytes = 0
+    try:
+        with package_path.open("rb") as source:
+            while chunk := source.read(1024 * 1024):
+                snapshot.write(chunk)
+                digest.update(chunk)
+                total_bytes += len(chunk)
+        snapshot.flush()
+        os.fsync(snapshot.fileno())
+        actual_sha256 = digest.hexdigest()
+        if not secrets.compare_digest(actual_sha256, expected_sha256):
+            raise ValueError("发布产物文件与数据库 SHA-256 不一致")
+        snapshot.seek(0)
+        return snapshot, snapshot_path, actual_sha256, total_bytes
+    except Exception:
+        snapshot.close()
+        snapshot_path.unlink(missing_ok=True)
+        raise
+
+
+def close_release_artifact_snapshot(snapshot: object, snapshot_path: Path) -> None:
+    try:
+        snapshot.close()
+    finally:
+        snapshot_path.unlink(missing_ok=True)
+
+
+def validate_release_artifact_for_serving(
+    artifact: dict[str, object] | sqlite3.Row | None,
+    *,
+    target: str,
+    require_signature: bool,
+) -> dict[str, object]:
+    snapshot, snapshot_path, actual_sha256, _ = snapshot_release_artifact(artifact)
+    try:
+        return validate_release_artifact_for_serving_cached(
+            str(snapshot_path),
+            target,
+            str(artifact["version"] or "") if artifact is not None else "",
+            str(artifact["sha256"] or "") if artifact is not None else "",
+            actual_sha256,
+            require_signature,
+        )
+    finally:
+        close_release_artifact_snapshot(snapshot, snapshot_path)
+
+
+def validated_release_artifact_download(
+    artifact: dict[str, object] | sqlite3.Row | None,
+    *,
+    target: str,
+    require_signature: bool,
+    filename: str,
+    headers: dict[str, str] | None = None,
+) -> StreamingResponse:
+    """Validate then stream a private content-addressed snapshot.
+
+    Validation and response streaming never reopen the mutable release path.
+    A replacement between validation and download preparation is detected by
+    the second SHA-256 check before any response is created.
+    """
+    try:
+        validate_release_artifact_for_serving(
+            artifact,
+            target=target,
+            require_signature=require_signature,
+        )
+        snapshot, snapshot_path, actual_sha256, total_bytes = (
+            snapshot_release_artifact(artifact)
+        )
+    except (OSError, ValueError, zipfile.BadZipFile) as error:
+        label = "通用 Skills" if target == "generic" else "WorkBuddy"
+        raise HTTPException(
+            status_code=503,
+            detail=f"{label} 发布产物在下载准备期间发生变化，下载已暂停。",
+        ) from error
+
+    expected_sha256 = str(artifact["sha256"] or "") if artifact is not None else ""
+    if not secrets.compare_digest(actual_sha256, expected_sha256):
+        close_release_artifact_snapshot(snapshot, snapshot_path)
+        raise HTTPException(
+            status_code=503,
+            detail="发布产物内容身份不一致，下载已暂停。",
+        )
+
+    cleanup_lock = threading.Lock()
+    cleaned_up = False
+
+    def cleanup() -> None:
+        nonlocal cleaned_up
+        with cleanup_lock:
+            if cleaned_up:
+                return
+            cleaned_up = True
+            close_release_artifact_snapshot(snapshot, snapshot_path)
+
+    def body() -> Iterator[bytes]:
+        try:
+            snapshot.seek(0)
+            while chunk := snapshot.read(1024 * 1024):
+                yield chunk
+        finally:
+            cleanup()
+
+    safe_name = safe_file_name(filename)
+    response_headers = {
+        "Content-Disposition": (
+            "attachment; filename*=UTF-8''"
+            + quote(safe_name, safe="")
+        ),
+        "Content-Length": str(total_bytes),
+        **(headers or {}),
+    }
+    return StreamingResponse(
+        body(),
+        media_type="application/zip",
+        headers=response_headers,
+        background=BackgroundTask(cleanup),
+    )
+
+
+def release_artifact_is_servable(
+    artifact: dict[str, object] | sqlite3.Row | None,
+    *,
+    target: str,
+    require_signature: bool,
+) -> bool:
+    try:
+        validate_release_artifact_for_serving(
+            artifact,
+            target=target,
+            require_signature=require_signature,
+        )
+    except (OSError, ValueError, zipfile.BadZipFile):
+        return False
+    return True
+
+
+def require_release_artifact_for_serving(
+    artifact: dict[str, object] | sqlite3.Row | None,
+    *,
+    target: str,
+    require_signature: bool,
+) -> None:
+    try:
+        validate_release_artifact_for_serving(
+            artifact,
+            target=target,
+            require_signature=require_signature,
+        )
+    except (OSError, ValueError, zipfile.BadZipFile) as error:
+        label = "通用 Skills" if target == "generic" else "WorkBuddy"
+        raise HTTPException(
+            status_code=503,
+            detail=f"{label} 发布产物完整性或固定公钥验签未通过，下载已暂停。",
+        ) from error
+
+
 def workbuddy_connector_sha256(artifact: dict[str, object]) -> str:
     package_path = Path(str(artifact.get("file_path") or ""))
     if not package_path.is_file():
@@ -14345,7 +15608,6 @@ def workbuddy_connector_sha256(artifact: dict[str, object]) -> str:
     return connector_sha256
 
 
-@lru_cache(maxsize=8)
 def validate_workbuddy_artifact_for_diagnostics(
     package_path_value: str,
     version: str,
@@ -14353,26 +15615,16 @@ def validate_workbuddy_artifact_for_diagnostics(
     size: int,
     modified_ns: int,
 ) -> dict[str, object]:
-    del expected_sha256, size, modified_ns
-    validator_path = BASE_DIR / "scripts" / "publish_skill_release.py"
-    if not validator_path.is_file():
-        raise ValueError("正式发布验签器不存在")
-    spec = importlib.util.spec_from_file_location(
-        "jiaotang_release_diagnostics_validator",
-        validator_path,
+    del size, modified_ns
+    integrity = validate_release_artifact_for_serving(
+        {
+            "file_path": package_path_value,
+            "version": version,
+            "sha256": expected_sha256,
+        },
+        target="workbuddy",
+        require_signature=True,
     )
-    if spec is None or spec.loader is None:
-        raise ValueError("正式发布验签器无法加载")
-    validator = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(validator)
-    result = validator.validate_release_packages(
-        {"workbuddy": Path(package_path_value)},
-        version,
-    )
-    artifact = result.get("artifacts", {}).get("workbuddy", {})
-    integrity = artifact.get("integrity")
-    if not isinstance(integrity, dict):
-        raise ValueError("正式包未返回签名验证结果")
     return {
         "status": str(integrity.get("status") or ""),
         "publisher_fingerprint": str(
@@ -14381,6 +15633,9 @@ def validate_workbuddy_artifact_for_diagnostics(
         "signature_namespace": str(integrity.get("signature_namespace") or ""),
         "verified_files": int(integrity.get("verified_files") or 0),
         "archive_entries": int(integrity.get("archive_entries") or 0),
+        "mcp_configuration_mode": str(
+            integrity.get("mcp_configuration_mode") or ""
+        ),
     }
 
 
@@ -14581,7 +15836,28 @@ def historical_workbuddy_skill_package(version: str) -> Path:
 
 
 def workbuddy_artifact(version: str) -> dict[str, object]:
-    package_path = workbuddy_skill_package(version)
+    with closing(database()) as connection:
+        artifact_row = connection.execute(
+            """
+            SELECT r.version,a.file_name,a.file_path,a.sha256,a.target
+            FROM skill_release_artifacts a
+            JOIN skill_releases r ON r.id=a.release_id
+            WHERE r.version=? AND a.target IN ('workbuddy','windows','macos')
+            ORDER BY CASE a.target
+                WHEN 'workbuddy' THEN 0
+                WHEN 'windows' THEN 1
+                ELSE 2
+            END
+            LIMIT 1
+            """,
+            (version,),
+        ).fetchone()
+    artifact_record = dict(artifact_row) if artifact_row is not None else None
+    package_path = (
+        Path(str(artifact_record["file_path"]))
+        if artifact_record
+        else workbuddy_skill_package(version)
+    )
     names: set[str] = set()
     if package_path.is_file():
         try:
@@ -14608,11 +15884,15 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
         any(name.endswith("/.codebuddy-plugin/marketplace.json") for name in names)
         and any(name.endswith("/.codebuddy-plugin/plugin.json") for name in names)
     )
+    installable = included and workbuddy_artifact_has_signed_root_mcp(
+        artifact_record
+    )
     return {
         "id": "workbuddy",
         "name": "WorkBuddy",
         "version": version if included else None,
         "included": included,
+        "installable": installable,
         "download_url": "/skills/latest/workbuddy/download",
         "distribution_notes_html": (
             render_guide_markdown(str(distribution_revision["release_notes"]))
@@ -14648,7 +15928,11 @@ def latest_workbuddy_artifact() -> dict[str, object]:
 def latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
     del user
     release = latest_skill_artifact("generic")
-    if release is None:
+    if release is None or not release_artifact_is_servable(
+        release,
+        target="generic",
+        require_signature=True,
+    ):
         return SkillLatestResponse(available=False)
     package_path = Path(str(release["file_path"]))
     if not package_path.is_file():
@@ -14671,6 +15955,15 @@ def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
         return SkillChannelArtifactResponse(id=target, available=False)
     package_path = Path(str(release["file_path"]))
     if not package_path.is_file():
+        return SkillChannelArtifactResponse(id=target, available=False)
+    validation_target = "generic" if target == "generic" else "workbuddy"
+    if not release_artifact_is_servable(
+        release,
+        target=validation_target,
+        require_signature=True,
+    ):
+        return SkillChannelArtifactResponse(id=target, available=False)
+    if target == "workbuddy" and not workbuddy_artifact_has_signed_root_mcp(release):
         return SkillChannelArtifactResponse(id=target, available=False)
     download_url = (
         "/v1/skills/latest/download"
@@ -14729,10 +16022,12 @@ def download_latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user
     release = latest_skill_artifact("generic")
     if release is None:
         raise HTTPException(status_code=404, detail="尚未发布 Skills 版本")
-    package_path = Path(str(release["file_path"]))
-    if not package_path.is_file():
-        raise HTTPException(status_code=503, detail="最新版 Skills 文件暂不可用")
-    return FileResponse(package_path, filename=release["file_name"], media_type="application/zip")
+    return validated_release_artifact_download(
+        release,
+        target="generic",
+        require_signature=True,
+        filename=str(release["file_name"]),
+    )
 
 
 @app.get("/v1/skills/latest/workbuddy/download")
@@ -14743,13 +16038,12 @@ def download_latest_workbuddy_skills(
     release = latest_skill_artifact("workbuddy")
     if release is None:
         raise HTTPException(status_code=404, detail="尚未发布 WorkBuddy 版本")
-    package_path = Path(str(release["file_path"]))
-    if not package_path.is_file():
-        raise HTTPException(status_code=503, detail="最新版 WorkBuddy 文件暂不可用")
-    return FileResponse(
-        package_path,
+    require_installable_workbuddy_artifact(release)
+    return validated_release_artifact_download(
+        release,
+        target="workbuddy",
+        require_signature=True,
         filename=f"企业全生命周期助手-V{release['version']}-WorkBuddy.zip",
-        media_type="application/zip",
     )
 
 

@@ -39,6 +39,9 @@ RELEASE_PREFIXES = (
 
 
 def _recovery_root() -> Path:
+    configured = os.environ.get("JIAOTANG_RELEASE_WORK_ROOT", "").strip()
+    if configured:
+        return Path(configured).expanduser()
     if sys.platform == "darwin":
         return Path.home() / ".Trash" / "jiaotang-release-workspaces"
     if os.name == "nt":

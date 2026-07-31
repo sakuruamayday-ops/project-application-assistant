@@ -1,3 +1,37 @@
+const USER_API_SESSION_STORAGE_KEY = "jiaotang-user-model-api";
+if (document.querySelector("[data-clear-sensitive-storage-on-load]")) {
+  try {
+    sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
+  } catch {
+    // Storage can be unavailable in hardened browser profiles.
+  }
+}
+try {
+  document.documentElement.dataset.pageDirection =
+    sessionStorage.getItem("jiaotang-page-direction") || "next";
+  sessionStorage.removeItem("jiaotang-page-direction");
+} catch {
+  document.documentElement.dataset.pageDirection = "next";
+}
+
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement)) return;
+  const confirmation = form.dataset.confirm;
+  if (confirmation && !window.confirm(confirmation)) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return;
+  }
+  if (form.dataset.clearSensitiveStorage !== undefined) {
+    try {
+      sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
+    } catch {
+      // Storage can be unavailable in hardened browser profiles.
+    }
+  }
+}, true);
+
 function renderAssistantAnswer(container, value) {
   container.replaceChildren();
   const urlPattern = /(https:\/\/[^\s]+)/g;
@@ -23,8 +57,7 @@ async function copyToClipboard(value) {
   const temporary = document.createElement("textarea");
   temporary.value = value;
   temporary.setAttribute("readonly", "");
-  temporary.style.position = "fixed";
-  temporary.style.opacity = "0";
+  temporary.className = "clipboard-fallback";
   document.body.appendChild(temporary);
   temporary.select();
   const copied = document.execCommand("copy");
@@ -661,7 +694,6 @@ document.querySelector("#assistant-form")?.addEventListener("submit", async (eve
   }
 });
 
-const userApiStorageKey = "jiaotang-user-model-api";
 const userApiForm = document.querySelector("#assistant-form");
 if (userApiForm) {
   const apiBase = userApiForm.querySelector('[name="user_api_base"]');
@@ -669,7 +701,7 @@ if (userApiForm) {
   const apiModel = userApiForm.querySelector('[name="user_api_model"]');
   const enabled = document.querySelector("#user-api-enabled");
   try {
-    const saved = JSON.parse(localStorage.getItem(userApiStorageKey) || "null");
+    const saved = JSON.parse(sessionStorage.getItem(USER_API_SESSION_STORAGE_KEY) || "null");
     if (saved) {
       apiBase.value = saved.apiBase || "";
       apiKey.value = saved.apiKey || "";
@@ -677,10 +709,10 @@ if (userApiForm) {
       enabled.checked = Boolean(saved.enabled);
     }
   } catch {
-    localStorage.removeItem(userApiStorageKey);
+    sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
   }
   document.querySelector("#save-user-api")?.addEventListener("click", () => {
-    localStorage.setItem(userApiStorageKey, JSON.stringify({
+    sessionStorage.setItem(USER_API_SESSION_STORAGE_KEY, JSON.stringify({
       apiBase: apiBase.value.trim(),
       apiKey: apiKey.value.trim(),
       apiModel: apiModel.value.trim(),
@@ -688,10 +720,10 @@ if (userApiForm) {
     }));
     const button = document.querySelector("#save-user-api");
     button.textContent = "已保存";
-    window.setTimeout(() => { button.textContent = "保存到当前浏览器"; }, 1500);
+    window.setTimeout(() => { button.textContent = "保存到本标签页会话"; }, 1500);
   });
   document.querySelector("#clear-user-api")?.addEventListener("click", () => {
-    localStorage.removeItem(userApiStorageKey);
+    sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
     apiBase.value = "";
     apiKey.value = "";
     apiModel.value = "";
@@ -718,12 +750,25 @@ const activateSectionLink = (sectionId) => {
     link.classList.toggle("active", link.dataset.sectionLink === sectionId);
   });
 };
+const scrollToPortalSection = (section, behavior) => {
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    const sidebar = document.querySelector(".sidebar");
+    const stickyOffset = (sidebar?.getBoundingClientRect().height || 0) + 12;
+    const targetTop = window.scrollY + section.getBoundingClientRect().top - stickyOffset;
+    window.scrollTo({top: Math.max(0, targetTop), behavior});
+    return;
+  }
+  section.scrollIntoView({behavior, block: "start"});
+};
 const initialSectionId = window.location.hash.slice(1) || ROUTE_SECTIONS[window.location.pathname];
 const initialSection = initialSectionId ? document.getElementById(initialSectionId) : null;
 let initialRouteAnchorLocked = Boolean(singlePage && initialSection);
 if (singlePage && initialSection) {
   window.requestAnimationFrame(() => {
-    initialSection.scrollIntoView({behavior: "auto", block: "start"});
+    const isDefaultOverview = window.location.pathname === "/portal" && !window.location.hash;
+    if (!isDefaultOverview) {
+      scrollToPortalSection(initialSection, "auto");
+    }
     activateSectionLink(initialSectionId);
     if (!window.location.hash) {
       history.replaceState(null, "", `/portal#${initialSectionId}`);
@@ -743,7 +788,7 @@ document.querySelectorAll("a.page-transition-link").forEach((link) => {
     const section = sectionId ? document.getElementById(sectionId) : null;
     if (singlePage && section) {
       event.preventDefault();
-      section.scrollIntoView({behavior: "smooth", block: "start"});
+      scrollToPortalSection(section, "smooth");
       activateSectionLink(sectionId);
       history.replaceState(null, "", `/portal#${sectionId}`);
       return;
@@ -767,7 +812,7 @@ document.querySelector(".single-page")?.addEventListener("click", (event) => {
   const section = sectionId ? document.getElementById(sectionId) : null;
   if (!section) return;
   event.preventDefault();
-  section.scrollIntoView({behavior: "smooth", block: "start"});
+  scrollToPortalSection(section, "smooth");
   activateSectionLink(sectionId);
   history.replaceState(null, "", `/portal#${sectionId}`);
 });

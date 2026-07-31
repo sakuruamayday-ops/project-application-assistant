@@ -100,19 +100,20 @@ function renderScenario(key, animate = true) {
   const deadline = document.querySelector("#deadline-sample strong");
   if (deadline) deadline.textContent = scenario.deadline;
   clearInterval(progressTimer);
+  progressBar.max = scenario.progress.length;
   if (!animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    progressBar.style.transform = "scaleX(1)";
+    progressBar.value = scenario.progress.length;
     progressLabel.textContent = scenario.progress.at(-1);
     output.classList.remove("loading");
     return;
   }
   output.classList.add("loading");
-  progressBar.style.transform = "scaleX(.08)";
+  progressBar.value = 0;
   let step = 0;
   progressLabel.textContent = scenario.progress[step];
   progressTimer = window.setInterval(() => {
     step += 1;
-    progressBar.style.transform = `scaleX(${Math.min(1, (step + 1) / scenario.progress.length)})`;
+    progressBar.value = Math.min(scenario.progress.length, step + 1);
     progressLabel.textContent = scenario.progress[Math.min(step, scenario.progress.length - 1)];
     if (step >= scenario.progress.length - 1) {
       clearInterval(progressTimer);

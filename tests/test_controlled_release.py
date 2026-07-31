@@ -15,6 +15,27 @@ assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
 
 
+def fake_gate_attestation(
+    gate: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signature = gate.with_name(gate.name + ".sig")
+    metadata = gate.with_name(gate.name + ".signature.json")
+    public_key = gate.with_name(gate.stem + "-publisher-ed25519.pub")
+    for path in (signature, metadata, public_key):
+        path.write_text(path.name, encoding="utf-8")
+    monkeypatch.setattr(
+        MODULE,
+        "verify_gate_attestation",
+        lambda _path: {
+            "status": "verified",
+            "signature": signature,
+            "metadata": metadata,
+            "public_key": public_key,
+        },
+    )
+
+
 def test_normalize_version_uses_one_public_version_model() -> None:
     assert MODULE.normalize_version("V1.2") == ("1.2", "1.2.0", "V1.2")
     assert MODULE.normalize_version("1.2.0") == (
@@ -31,12 +52,16 @@ def test_normalize_version_uses_one_public_version_model() -> None:
     )
 
 
-def test_prepare_assets_contains_only_release_files(tmp_path) -> None:
+def test_prepare_assets_contains_only_release_files(
+    tmp_path,
+    monkeypatch,
+) -> None:
     generic = tmp_path / "generic.zip"
     workbuddy = tmp_path / "workbuddy.zip"
     gate = tmp_path / "gate.json"
     for path in (generic, workbuddy, gate):
         path.write_text(path.name, encoding="utf-8")
+    fake_gate_attestation(gate, monkeypatch)
 
     assets = MODULE.prepare_ascii_assets(
         tmp_path / "assets",
@@ -48,17 +73,24 @@ def test_prepare_assets_contains_only_release_files(tmp_path) -> None:
     assert [path.name for path in assets] == [
         "jiaotang-skills-V1.3.zip",
         "jiaotang-skills-V1.3-WorkBuddy.zip",
-        "jiaotang-skills-V1.3-release-gate.json",
+        "gate.json",
+        "gate.json.sig",
+        "gate.json.signature.json",
+        "gate-publisher-ed25519.pub",
     ]
 
 
-def test_prepare_assets_includes_word_manual_and_companion_audit(tmp_path) -> None:
+def test_prepare_assets_includes_word_manual_and_companion_audit(
+    tmp_path,
+    monkeypatch,
+) -> None:
     generic = tmp_path / "generic.zip"
     gate = tmp_path / "gate.json"
     manual = tmp_path / "manual.docx"
     companion = tmp_path / "companion.json"
     for path in (generic, gate, manual, companion):
         path.write_text(path.name, encoding="utf-8")
+    fake_gate_attestation(gate, monkeypatch)
 
     assets = MODULE.prepare_ascii_assets(
         tmp_path / "assets",
@@ -70,13 +102,19 @@ def test_prepare_assets_includes_word_manual_and_companion_audit(tmp_path) -> No
 
     assert [path.name for path in assets] == [
         "jiaotang-skills-V1.3.1.1.zip",
-        "jiaotang-skills-V1.3.1.1-release-gate.json",
+        "gate.json",
+        "gate.json.sig",
+        "gate.json.signature.json",
+        "gate-publisher-ed25519.pub",
         "jiaotang-user-manual-V1.3.1.1.docx",
         "jiaotang-release-companions-V1.3.1.1.json",
     ]
 
 
-def test_prepare_assets_allows_one_or_two_release_targets(tmp_path) -> None:
+def test_prepare_assets_allows_one_or_two_release_targets(
+    tmp_path,
+    monkeypatch,
+) -> None:
     packages = {}
     for target in ("generic", "workbuddy"):
         package = tmp_path / f"{target}.zip"
@@ -84,6 +122,7 @@ def test_prepare_assets_allows_one_or_two_release_targets(tmp_path) -> None:
         packages[target] = package
     gate = tmp_path / "gate.json"
     gate.write_text("gate", encoding="utf-8")
+    fake_gate_attestation(gate, monkeypatch)
 
     assets = MODULE.prepare_ascii_assets(
         tmp_path / "assets",
@@ -94,7 +133,10 @@ def test_prepare_assets_allows_one_or_two_release_targets(tmp_path) -> None:
     assert [path.name for path in assets] == [
         "jiaotang-skills-V1.3.1.1.zip",
         "jiaotang-skills-V1.3.1.1-WorkBuddy.zip",
-        "jiaotang-skills-V1.3.1.1-release-gate.json",
+        "gate.json",
+        "gate.json.sig",
+        "gate.json.signature.json",
+        "gate-publisher-ed25519.pub",
     ]
 
 

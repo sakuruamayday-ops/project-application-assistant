@@ -47,8 +47,10 @@ MODULE.TRUSTED_PUBLISHER_PUBLIC_KEY = TEST_PUBLIC_TEXT
 MODULE.TRUSTED_PUBLISHER_FINGERPRINT = TEST_FINGERPRINT
 
 
-def sign_manifest(payload: bytes) -> bytes:
-    namespace = MODULE.WORKBUDDY_SIGNATURE_NAMESPACE
+def sign_manifest(
+    payload: bytes,
+    namespace: str = MODULE.WORKBUDDY_SIGNATURE_NAMESPACE,
+) -> bytes:
     digest = hashlib.sha512(payload).digest()
     signed_data = b"".join(
         (
@@ -93,8 +95,54 @@ def make_packages(
         "release": {"tag": tag, "version": semantic_version},
         "skills": [f"skill-{index}" for index in range(48)],
     }
+    generic_files = {
+        "skills/suite-manifest.json": json.dumps(suite).encode("utf-8"),
+        **{
+            f"skills/{skill}/SKILL.md": (
+                f"---\nname: {skill}\n---\n".encode("utf-8")
+            )
+            for skill in suite["skills"]
+        },
+    }
+    generic_manifest = {
+        "schema_version": 1,
+        "artifact_type": "skill-suite",
+        "release_tag": tag,
+        "release_version": semantic_version,
+        "skill_count": len(suite["skills"]),
+        "skills": suite["skills"],
+        "files": {
+            name: hashlib.sha256(content).hexdigest()
+            for name, content in generic_files.items()
+        },
+    }
+    generic_manifest_bytes = (
+        json.dumps(generic_manifest, ensure_ascii=False, indent=2) + "\n"
+    ).encode("utf-8")
     with zipfile.ZipFile(generic, "w") as archive:
-        archive.writestr("bundle/skills/suite-manifest.json", json.dumps(suite))
+        for name, content in generic_files.items():
+            archive.writestr("bundle/" + name, content)
+        archive.writestr(
+            "bundle/suite-release-manifest.json",
+            generic_manifest_bytes,
+        )
+        archive.writestr(
+            "bundle/suite-release-manifest.sig",
+            sign_manifest(
+                generic_manifest_bytes,
+                MODULE.GENERIC_SIGNATURE_NAMESPACE,
+            ),
+        )
+        archive.writestr("bundle/publisher-ed25519.pub", TEST_PUBLIC_TEXT)
+        archive.writestr(
+            "bundle/publisher-key.json",
+            json.dumps(
+                {
+                    "algorithm": "Ed25519",
+                    "fingerprint_sha256": TEST_FINGERPRINT,
+                }
+            ),
+        )
     plugin_files = {
         ".codebuddy-plugin/plugin.json": json.dumps(
             {
@@ -154,42 +202,95 @@ def make_packages(
         "public_key": "publisher-ed25519.pub",
         "public_key_fingerprint": TEST_FINGERPRINT,
     }
-    with zipfile.ZipFile(workbuddy, "w") as archive:
-        archive.writestr(
-            "jiaotang/.codebuddy-plugin/marketplace.json",
-            json.dumps(
+    marketplace_bytes = json.dumps(
+        {
+            "name": "jiaotang",
+            "description": "test",
+            "owner": {"name": "Jiaotang"},
+            "plugins": [
                 {
-                    "name": "jiaotang",
+                    "name": "jiaotang-workbuddy-skills",
                     "description": "test",
-                    "owner": {"name": "Jiaotang"},
-                    "plugins": [
-                        {
-                            "name": "jiaotang-workbuddy-skills",
-                            "description": "test",
-                            "version": semantic_version,
-                            "source": "./plugins/jiaotang-workbuddy-skills",
-                        }
-                    ],
+                    "version": semantic_version,
+                    "source": "./plugins/jiaotang-workbuddy-skills",
                 }
+            ],
+        }
+    ).encode("utf-8")
+    plugin_relative_prefix = "plugins/jiaotang-workbuddy-skills/"
+    marketplace_files = {
+        ".codebuddy-plugin/marketplace.json": marketplace_bytes,
+        "INSTALL.md": b"test",
+        **{
+            plugin_relative_prefix + name: content
+            for name, content in plugin_files.items()
+        },
+        plugin_relative_prefix
+        + "plugin-release-manifest.json": plugin_manifest_bytes,
+        plugin_relative_prefix
+        + "plugin-release-manifest.json.sig": sign_manifest(
+            plugin_manifest_bytes
+        ),
+        plugin_relative_prefix
+        + "plugin-release-signature.json": json.dumps(
+            signature_metadata
+        ).encode("utf-8"),
+        plugin_relative_prefix
+        + "publisher-ed25519.pub": TEST_PUBLIC_TEXT.encode("utf-8"),
+    }
+    marketplace_manifest = {
+        "schema_version": 1,
+        "artifact_type": "workbuddy-marketplace",
+        "marketplace_name": "jiaotang",
+        "plugin_name": "jiaotang-workbuddy-skills",
+        "release_tag": tag,
+        "files": {
+            name: hashlib.sha256(content).hexdigest()
+            for name, content in marketplace_files.items()
+        },
+        "integrity_excludes": [
+            "marketplace-publisher-ed25519.pub",
+            "marketplace-release-manifest.json",
+            "marketplace-release-manifest.json.sig",
+            "marketplace-release-signature.json",
+        ],
+    }
+    marketplace_manifest_bytes = (
+        json.dumps(marketplace_manifest, ensure_ascii=False, indent=2) + "\n"
+    ).encode("utf-8")
+    marketplace_metadata = {
+        "schema_version": 1,
+        "algorithm": "OpenSSH-Ed25519",
+        "signature_namespace": (
+            MODULE.WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE
+        ),
+        "signed_file": "marketplace-release-manifest.json",
+        "signature": "marketplace-release-manifest.json.sig",
+        "public_key": "marketplace-publisher-ed25519.pub",
+        "public_key_fingerprint": TEST_FINGERPRINT,
+    }
+    with zipfile.ZipFile(workbuddy, "w") as archive:
+        for name, content in marketplace_files.items():
+            archive.writestr("jiaotang/" + name, content)
+        archive.writestr(
+            "jiaotang/marketplace-release-manifest.json",
+            marketplace_manifest_bytes,
+        )
+        archive.writestr(
+            "jiaotang/marketplace-release-manifest.json.sig",
+            sign_manifest(
+                marketplace_manifest_bytes,
+                MODULE.WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE,
             ),
         )
-        archive.writestr("jiaotang/INSTALL.md", "test")
-        prefix = "jiaotang/plugins/jiaotang-workbuddy-skills/"
-        for name, content in plugin_files.items():
-            archive.writestr(prefix + name, content)
         archive.writestr(
-            prefix + "plugin-release-manifest.json",
-            plugin_manifest_bytes,
+            "jiaotang/marketplace-release-signature.json",
+            json.dumps(marketplace_metadata),
         )
         archive.writestr(
-            prefix + "plugin-release-manifest.json.sig",
-            sign_manifest(plugin_manifest_bytes),
+            "jiaotang/marketplace-publisher-ed25519.pub",
+            TEST_PUBLIC_TEXT,
         )
-        archive.writestr(
-            prefix + "plugin-release-signature.json",
-            json.dumps(signature_metadata),
-        )
-        archive.writestr(prefix + "publisher-ed25519.pub", TEST_PUBLIC_TEXT)
     return generic, workbuddy
 
 
@@ -271,13 +372,13 @@ def test_two_stage_release_requires_stage_before_promotion(tmp_path: Path) -> No
         "https://github.example/releases/V1.2",
     )
     assert staged["status"] == "staged"
-    assert staged["release_state"] == "releasing"
+    assert staged["release_state"] == "staged-awaiting-acceptance"
     assert not (release_dir / "企业全生命周期助手-V1.2.zip").exists()
     with sqlite3.connect(database) as connection:
         assert connection.execute("SELECT COUNT(*) FROM skill_releases").fetchone()[0] == 0
         assert connection.execute(
             "SELECT status FROM skill_release_stages WHERE version='1.2'"
-        ).fetchone()[0] == "releasing"
+        ).fetchone()[0] == "staged-awaiting-acceptance"
 
     repeated = MODULE.stage(
         database,
@@ -392,9 +493,80 @@ def test_workbuddy_publish_rejects_outer_fixed_installer(tmp_path: Path) -> None
             "1.3.1.2",
         )
     except ValueError as error:
-        assert "未经允许的外层文件" in str(error)
+        assert "整包签名清单不一致" in str(error)
     else:
         raise AssertionError("outer fixed installer must be rejected")
+
+
+def test_workbuddy_publish_rejects_tampered_outer_install_guide(
+    tmp_path: Path,
+) -> None:
+    _, workbuddy = make_packages(
+        tmp_path,
+        tag="V1.3.1.2",
+        semantic_version="1.3.1.2",
+    )
+    tampered = tmp_path / "tampered-install-guide.zip"
+    rewrite_zip(
+        workbuddy,
+        tampered,
+        replacements={"jiaotang/INSTALL.md": b"run attacker command"},
+    )
+    try:
+        MODULE.validate_release_packages(
+            {"workbuddy": tampered},
+            "1.3.1.2",
+        )
+    except ValueError as error:
+        assert "整包签名文件哈希不一致" in str(error)
+    else:
+        raise AssertionError("tampered outer INSTALL.md must be rejected")
+
+
+def test_generic_publish_rejects_unsigned_extra_file(tmp_path: Path) -> None:
+    generic, _ = make_packages(
+        tmp_path,
+        tag="V1.3.1.2",
+        semantic_version="1.3.1.2",
+    )
+    tampered = tmp_path / "generic-extra.zip"
+    rewrite_zip(
+        generic,
+        tampered,
+        additions={"bundle/skills/attacker.txt": b"unsigned"},
+    )
+    try:
+        MODULE.validate_release_packages(
+            {"generic": tampered},
+            "1.3.1.2",
+        )
+    except ValueError as error:
+        assert "文件集合" in str(error)
+    else:
+        raise AssertionError("unsigned generic file must be rejected")
+
+
+def test_generic_publish_rejects_tampered_signed_file(tmp_path: Path) -> None:
+    generic, _ = make_packages(
+        tmp_path,
+        tag="V1.3.1.2",
+        semantic_version="1.3.1.2",
+    )
+    tampered = tmp_path / "generic-tampered.zip"
+    rewrite_zip(
+        generic,
+        tampered,
+        replacements={"bundle/skills/skill-0/SKILL.md": b"tampered"},
+    )
+    try:
+        MODULE.validate_release_packages(
+            {"generic": tampered},
+            "1.3.1.2",
+        )
+    except ValueError as error:
+        assert "哈希不一致" in str(error)
+    else:
+        raise AssertionError("tampered generic file must be rejected")
 
 
 def test_selective_stage_and_promote_workbuddy_only(tmp_path: Path) -> None:
@@ -417,7 +589,7 @@ def test_selective_stage_and_promote_workbuddy_only(tmp_path: Path) -> None:
         "https://github.example/releases/V1.3.1.1",
     )
     assert staged["targets"] == ["workbuddy"]
-    assert staged["release_state"] == "releasing"
+    assert staged["release_state"] == "staged-awaiting-acceptance"
 
     refreshed = MODULE.stage_selective(
         database,

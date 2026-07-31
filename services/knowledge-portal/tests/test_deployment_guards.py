@@ -61,23 +61,131 @@ def test_server_managed_private_template_hooks_survive_public_deploys():
     )
 
 
-def test_deploy_refreshes_index_before_restart_and_startup_only_repairs_missing_cache():
+def test_deploy_refreshes_signed_release_before_restart_without_leaking_oss_credentials():
     service = (DEPLOY_DIR / "jiaotang-kb.service").read_text(encoding="utf-8")
     refresh_wrapper = (DEPLOY_DIR / "refresh-index.sh").read_text(encoding="utf-8")
+    refresh_service = (
+        DEPLOY_DIR / "jiaotang-kb-index-refresh.service"
+    ).read_text(encoding="utf-8")
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
 
-    assert (
-        "ExecStartPre=/usr/local/sbin/jiaotang-kb-refresh-index --if-missing"
-        in service
+    assert "EnvironmentFile=/etc/jiaotang-kb-app.env" in service
+    assert "jiaotang-kb.env" not in service
+    assert "jiaotang-kb-refresh-index" not in service
+    writable_paths = next(
+        line
+        for line in service.splitlines()
+        if line.startswith("ReadWritePaths=")
     )
+    assert "/srv/jiaotang/skill-releases" not in writable_paths
+    assert "/var/backups/jiaotang-kb" not in writable_paths
+    assert "/srv/jiaotang/index-snapshots" not in writable_paths
     assert 'if [[ "${mode}" == "--if-missing" ]]' in refresh_wrapper
-    refresh_command = (
-        "runuser --preserve-environment -u jiaotang -- "
-        "/usr/local/sbin/jiaotang-kb-refresh-index"
+    assert "EnvironmentFile=/etc/jiaotang-kb-ops.env" in refresh_service
+    refresh_command = "index_before="
+    assert "scripts/refresh_index_from_oss.py" in deploy_script
+    bootstrap_command = "scripts/publish_index_to_oss.py"
+    assert bootstrap_command in deploy_script
+    assert "--allow-initial-current" in deploy_script
+    assert "拒绝用陈旧本地索引执行bootstrap" in deploy_script
+    bootstrap_execution = deploy_script.index("bootstrap_release_id=")
+    refresh_execution = deploy_script.index(refresh_command)
+    restart = deploy_script.index(
+        "systemctl restart jiaotang-kb",
+        refresh_execution,
     )
-    assert refresh_command in deploy_script
-    assert deploy_script.index(refresh_command) < deploy_script.index(
-        "systemctl restart jiaotang-kb"
+    assert bootstrap_execution < refresh_execution < restart
+
+
+def test_legacy_oss_sync_is_disabled_without_touching_historical_snapshots():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+    legacy_wrapper = (DEPLOY_DIR / "oss-sync.sh").read_text(encoding="utf-8")
+
+    assert "systemctl disable --now" in deploy_script
+    assert "jiaotang-kb-oss-sync.timer jiaotang-kb-oss-sync.path" in deploy_script
+    assert "enable --now jiaotang-kb-oss-sync" not in deploy_script
+    assert "snapshot-retention" not in deploy_script
+    assert "exit 78" in legacy_wrapper
+
+
+def test_deploy_rolls_back_previous_release_when_new_index_health_fails():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+    delta_script = (
+        SCRIPT_DIR / "deploy_index_delta_to_server.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "scripts/refresh_index_from_oss.py' \\\n                --rollback" in deploy_script
+    assert "jiaotang-kb-refresh-index --rollback" in delta_script
+    assert "rsync " not in delta_script
+
+
+def test_deploy_injects_and_verifies_exact_build_identity():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+
+    assert 'build_commit="$(git -C "${repository_dir}" rev-parse HEAD)"' in deploy_script
+    assert "JIAOTANG_BUILD_COMMIT" in deploy_script
+    assert "JIAOTANG_DEPLOYMENT_ID" in deploy_script
+    assert "JIAOTANG_BUILD_CREATED_AT" in deploy_script
+    assert "JIAOTANG_DEPENDENCY_LOCK_SHA256" in deploy_script
+    assert "JIAOTANG_DEPENDENCY_BUILD_LOCK_SHA256" in deploy_script
+    assert "JIAOTANG_WHEELHOUSE_INSTALL_LOCK_SHA256" in deploy_script
+    assert "JIAOTANG_WHEELHOUSE_MANIFEST_SHA256" in deploy_script
+    assert "JIAOTANG_WHEELHOUSE_CONTENT_IDENTITY_SHA256" in deploy_script
+    assert "JIAOTANG_DEPENDENCY_IDENTITY_SHA256" in deploy_script
+    assert "JIAOTANG_DEPENDENCY_RELEASE_RECORD_SHA256" in deploy_script
+    assert "/build" in deploy_script
+    assert "生产/build commit与部署源不一致" in deploy_script
+    assert "生产/build dependency_identity_sha256不一致" in deploy_script
+
+
+def test_deploy_requires_main_ci_wheelhouse_and_installs_without_index():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+
+    assert "JIAOTANG_WHEELHOUSE_DIR" in deploy_script
+    assert "JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256" in deploy_script
+    assert "JIAOTANG_DEPENDENCY_RELEASE_RECORD" in deploy_script
+    assert '"source_event": "push"' in deploy_script
+    assert '"source_ref": "refs/heads/main"' in deploy_script
+    assert "portal-production-dependency-release-record.json" in deploy_script
+    assert "生产主机必须提供CPython 3.12" in deploy_script
+    assert "python_supply_chain.py' install" in deploy_script
+    assert "PIP_NO_INDEX=1" in deploy_script
+    assert "--expected-manifest-sha256" in deploy_script
+    assert ".venv/bin/pip' install" not in deploy_script
+    assert "-r '${remote_release_dir}/requirements.txt'" not in deploy_script
+
+
+def test_deploy_uses_future_release_slots_without_historical_backup_governance():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+
+    assert "/opt/jiaotang-kb-release-slots" in deploy_script
+    assert "/opt/jiaotang-kb-runtime" in deploy_script
+    assert "runtime / 'current'" in deploy_script
+    assert "runtime / 'previous'" in deploy_script
+    assert "不可变应用release已存在，拒绝覆盖" in deploy_script
+    assert "应用current已指回previous" in deploy_script
+    for forbidden in (
+        "runtime-transaction",
+        "failed-new-state",
+        "portal-predeploy",
+        "REMOTE_BACKUP_DIR",
+        "/opt/jiaotang-kb-backups",
+    ):
+        assert forbidden not in deploy_script
+    assert "tar -C '${remote_release_dir}' -xf -" in deploy_script
+    assert "tar -C '${legacy_app_dir}' -xf -" not in deploy_script
+
+
+def test_index_sync_bootstraps_server_before_advancing_remote_current():
+    sync_script = (
+        SCRIPT_DIR / "sync_archived_knowledge_to_production.sh"
+    ).read_text(encoding="utf-8")
+
+    deploy = '"${script_dir}/deploy_production.sh"'
+    publish = 'python3 "${script_dir}/publish_index_to_oss.py"'
+    assert sync_script.index(deploy) < sync_script.index(publish)
+    assert sync_script.index(publish) < sync_script.index(
+        '"${script_dir}/deploy_index_delta_to_server.sh"'
     )
 
 

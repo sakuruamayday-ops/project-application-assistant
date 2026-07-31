@@ -20,11 +20,58 @@
 ```bash
 cd services/knowledge-portal
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install --require-hashes -r requirements.lock
 export JIAOTANG_SETUP_KEY="$(openssl rand -hex 24)"
 export JIAOTANG_SECURE_COOKIES=false
 .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100
 ```
+
+`requirements.in`、`requirements-test.in` 和 `requirements-build.in` 只用于人工维护顶层依赖；运行环境不得直接解析这些文件。`requirements.lock` 与 `requirements-test.lock` 固定全部传递依赖并逐制品绑定 SHA-256，前者用于生产，后者额外固定 pytest 等测试工具。`requirements-build.lock` 单独固定 pip、setuptools、wheel 及其传递依赖，只用于把锁内源码包预构建为 wheel，不进入生产应用环境。
+
+## Python 依赖锁与离线 wheelhouse
+
+依赖升级必须在 Python 3.12 环境中使用固定的 `uv 0.11.28`：
+
+```bash
+python scripts/compile_python_locks.py
+python scripts/python_supply_chain.py lock-metadata-verify \
+  --portal-dir .
+```
+
+生成后必须评审 `requirements.lock`、`requirements-test.lock` 和 `requirements-lock-metadata.json` 的差异。元数据把两个顶层输入、两份全传递锁和生成器身份绑定在一起；任何输入或锁的单边修改都会导致 CI 失败。该流程只解析依赖与生成哈希，不执行公共漏洞查询。
+
+CI 使用 Python 3.12 构建两个 wheelhouse：
+
+- 测试 wheelhouse 仅供同一流水线离线安装并执行测试，不发布。
+- 生产 wheelhouse 作为 `portal-python312-linux-x86_64-wheelhouse` 制品发布，目录中只允许 wheel、由最终 wheel 重新生成的 `wheelhouse-install.lock`、`wheelhouse-manifest.json` 和 `wheelhouse-manifest.sha256`。同一制品还包含目录外的 `portal-production-dependency-release-record.json`，记录 GitHub Actions 的事件、分支、精确 commit、运行编号及依赖身份。
+
+manifest 绑定应用锁、构建工具锁、最终 wheel 安装锁、Python ABI、操作系统、CPU 架构、制品精确文件集、大小和 SHA-256。生产安装必须从受控发布记录取得期望的 manifest SHA-256，不能只信任 wheelhouse 内部的摘要旁车：
+
+```bash
+EXPECTED_WHEELHOUSE_MANIFEST_SHA256=由受控发布记录注入
+new_release/.venv/bin/python \
+  new_release/scripts/python_supply_chain.py install \
+  --lock new_release/requirements.lock \
+  --build-lock new_release/requirements-build.lock \
+  --wheelhouse new_release/wheelhouse \
+  --expected-manifest-sha256 \
+  "${EXPECTED_WHEELHOUSE_MANIFEST_SHA256}"
+```
+
+构建命令只接受 CPython 3.12。构建阶段先以 `--require-hashes` 下载应用锁和构建工具锁中的精确制品；只发布源码包的依赖在固定 builder 中使用 `--no-index --no-build-isolation` 预构建，并禁用本地原生扩展编译。源码包如产出平台相关 wheel 会失败关闭；crcmod 因此使用其官方纯 Python 回退实现，避免编译器、临时路径和本机 ABI 造成不可复现 wheel。构建完成后再根据最终 wheel 重建逐 wheel 哈希安装锁。生产安装固定使用 `--no-index --require-hashes --only-binary=:all: --no-deps`。因此生产主机既不会访问包索引，也不会重新选择版本或构建源码包；锁、ABI、manifest、wheel 缺失或不一致时均失败关闭。构建 wheelhouse 是唯一允许访问包索引的阶段。
+
+受控发布在组装源码和 wheelhouse 后应执行：
+
+```bash
+python scripts/python_supply_chain.py verify \
+  --lock requirements.lock \
+  --build-lock requirements-build.lock \
+  --wheelhouse wheelhouse \
+  --expected-manifest-sha256 "${EXPECTED_WHEELHOUSE_MANIFEST_SHA256}" \
+  --identity-output dependency-build-identity.json
+```
+
+随后把 `dependency_identity_sha256`、`dependency_lock_sha256`、`dependency_build_lock_sha256`、`wheelhouse_install_lock_sha256`、`wheelhouse_manifest_sha256`、`wheelhouse_content_identity_sha256` 和依赖发布记录哈希纳入发布来源／构建身份。生产部署只接受 `push` 到 `refs/heads/main` 且 `source_commit` 与部署源码完全相同的 CI 记录；PR wheelhouse 不能直接部署。这样源码 commit 相同但应用锁、构建工具锁、最终安装锁或 wheelhouse 不同的构建也会被识别为不同产物。
 
 首次打开 `/setup`，输入初始化密钥并创建管理员账号。
 管理员可在控制台创建团队账号；成员首次登录后应立即修改初始密码。
@@ -194,13 +241,18 @@ python3 scripts/load_test_portal.py \
 
 ## 自动部署与生产冒烟测试
 
-部署脚本会校验生产环境变量、创建时间戳备份、上传应用、重启服务、执行固定路由检查，并在失败时恢复应用文件：
+部署脚本不会再原地覆盖应用，也不会读取或整理历史部署备份。每次部署都会写入唯一且不可覆盖的 `/opt/jiaotang-kb-release-slots/<deployment_id>`，完成离线校验后原子切换 `/opt/jiaotang-kb-runtime/current`，并让单一 `previous` 指针保留上一个运行槽。健康或固定路由校验失败时只把 `current` 指回 `previous`；失败的新槽保留待审，不自动删除：
 
 ```bash
 export JIAOTANG_DEPLOY_HOST=root@服务器地址
 export JIAOTANG_DEPLOY_KEY="$HOME/.ssh/jiaotang_kb_aliyun"
+export JIAOTANG_WHEELHOUSE_DIR=/受控下载目录/portal-production-wheelhouse
+export JIAOTANG_DEPENDENCY_RELEASE_RECORD=/受控下载目录/portal-production-dependency-release-record.json
+export JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256=由对应main分支CI记录独立核对的摘要
 ./scripts/deploy_production.sh
 ```
+
+部署脚本先在本地核验 wheelhouse、外部绑定摘要、依赖身份和 main 分支 CI 发布记录，再把源码、锁、wheelhouse 和发布记录一起写入新槽。服务器安装阶段设置 `PIP_NO_INDEX=1`，只从该槽内的 wheelhouse 安装；生产主机不会访问 PyPI。
 
 生产 Token 冒烟测试不会输出 Token，仅报告身份、检索、文档、调用统计和 Skills 状态：
 
@@ -219,14 +271,35 @@ export JIAOTANG_KB_TOKEN=jtk_xxx
 3. 使用 Nginx 反向代理 `127.0.0.1:8100`。
 4. 使用 Let's Encrypt 或阿里云证书启用 HTTPS 后，才开放登录页面。
 5. 服务器部署密钥可轮换；换电脑时追加新公钥，验证成功后再停用旧公钥。
-6. 安装 `jiaotang-kb-health.timer` 每五分钟执行健康探测；失败记录进入 systemd journal。
-7. 每日备份账号数据库、每周备份全文索引；阿里云磁盘快照负责原始资料目录的灾难恢复。可用 `JIAOTANG_BACKUP_INDEX=true` 手工强制执行索引备份。
+6. 安装 `jiaotang-kb-health.timer` 每五分钟执行综合健康探测；门禁覆盖 failed unit、索引状态新鲜度、磁盘阈值以及索引 current/previous 世代一致性。关键 oneshot 和门户服务通过 `OnFailure` 写入结构化失败状态。
+7. 既有日常备份配置和历史备份保持原样；本轮部署不会启动备份任务，也不会读取、盘点或处置备份目录。
+8. 门户主进程只读取 `/etc/jiaotang-kb-app.env`。OSS 发布和索引刷新只读取 root-only 的 `/etc/jiaotang-kb-ops.env`，门户进程不得继承 AccessKey、STS Token 或索引发布签名密钥。
 
-## OSS 增量灾备
+## OSS 原子索引发布
 
-生产服务器每天 04:10 比对本地同步清单，仅上传新增或发生变化的原始资料与索引。周日同步额外生成一份带时间戳的索引快照。SQLite 文件上传前通过在线备份接口生成一致性副本，避免同步写入中的数据库文件。
+旧式服务器相对路径 OSS 同步已永久停用，`jiaotang-kb-oss-sync.timer/path` 在部署时会被禁用。本轮不安装或启用任何快照保留、历史对象扫描、暂存迁移或部署备份整理单元，避免触及明确排除的存量处置流程。
 
-服务器保留最近 12 份索引热回滚快照，超过窗口的快照按年月移入 `/var/backups/jiaotang-kb/index-snapshot-archive`。归档策略不永久删除文件；OSS 原始资料沿用 `production/knowledge`，生产索引位于 `production/index/current`，周期快照位于 `production/index/snapshots`。
+生产索引以不可变世代发布：
+
+```text
+production/index/releases/<release_id>/<白名单文件>
+production/index/releases/<release_id>/release.json
+production/index/releases/<release_id>/release.sig
+production/index/current.json
+```
+
+每个 release 都绑定文件名、大小、SHA-256 和 CRC64。上传前后复算摘要，OSS 对象禁止覆盖，并执行下载抽验。全部文件和签名清单核验通过后，才使用 `If-Match` 或首次写入条件原子切换 `current.json`；并发发布发生 CAS 冲突时失败，不覆盖后来者。
+
+服务器下载并验签完整 release 后保存到 `JIAOTANG_INDEX_DIR/releases/<release_id>`，通过 `current` 符号链接一次切换整代文件，上一代由 `previous` 标识。若服务器仍使用既有根索引文件，首次 bootstrap 只在根文件与签名 release 逐项一致时建立只读身份，不移动、替换或隔离根文件；此兼容模式拒绝切换到不同 release，直至另行授权迁移。切换后索引或应用健康检查失败时自动回滚 previous 并再次复检。OSS 不可用时默认失败关闭；只有运维人员显式运行 `jiaotang-kb-refresh-index --allow-stale`，且本地 current 仍通过完整性校验时，才允许临时使用旧缓存。
+
+索引 release 使用 HMAC-SHA256 认证。首次迁移会在 root-only 运维环境文件中生成至少 32 字节的随机密钥。轮换时：
+
+1. 把旧的 `JIAOTANG_OSS_RELEASE_SIGNING_SECRET` 追加到逗号分隔的 `JIAOTANG_OSS_RELEASE_VERIFY_SECRETS`。
+2. 写入新的 `JIAOTANG_OSS_RELEASE_SIGNING_SECRET`。
+3. 发布并验证新 current。
+4. 仅在 current、previous 和保留 release 都不再引用旧 key ID 后，才移除旧验签密钥。
+
+不得先删除旧密钥，否则 previous 自动回滚会因无法验签而失效。
 
 所需环境变量：
 
@@ -234,6 +307,14 @@ export JIAOTANG_KB_TOKEN=jtk_xxx
 JIAOTANG_OSS_ENDPOINT=https://oss-cn-hangzhou.aliyuncs.com
 JIAOTANG_OSS_BUCKET=your-private-bucket
 JIAOTANG_OSS_PREFIX=production
+JIAOTANG_OSS_AUTH_MODE=static
 JIAOTANG_OSS_ACCESS_KEY_ID=通过服务器安全环境配置
 JIAOTANG_OSS_ACCESS_KEY_SECRET=通过服务器安全环境配置
+JIAOTANG_OSS_RELEASE_SIGNING_SECRET=至少32字节的root-only随机密钥
 ```
+
+`JIAOTANG_OSS_AUTH_MODE` 也支持 `sts` 和 `ram-role`。STS 必须同时提供 `JIAOTANG_OSS_SECURITY_TOKEN`；RAM Role 必须提供受控元数据地址 `JIAOTANG_OSS_RAM_ROLE_AUTH_HOST`。门户主进程环境中不得出现这些变量。
+
+脚本不会自动创建 RAM Role、访问日志、Inventory、跨区域复制或其他可能收费的云资源。可运行 `check_oss_governance.py` 只读检查版本控制、加密、职责分离、访问日志、Inventory 和 CRR，再由管理员决定是否启用。
+
+本轮代码不会读取、盘点、移动、隔离、恢复验证或删除既有历史对象、既有暂存和历史部署备份；这些工作保留到主人另行授权的“清单—隔离—恢复验证—确认处置”任务。同样，本说明不代表已经完成从备份恢复到临时实例的实际演练，也不据此宣称已取得 RPO/RTO 实测值。

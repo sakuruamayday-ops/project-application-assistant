@@ -112,6 +112,46 @@ try {
   await page.reload({waitUntil: "networkidle"});
   const mobileWidth = await page.evaluate(() => ({document: document.documentElement.scrollWidth, viewport: window.innerWidth}));
   assert.equal(mobileWidth.document, mobileWidth.viewport, "部署门禁详情移动端不应横向溢出");
+  await page.goto(`${baseUrl}/portal?mobile-layout-regression=1`, {waitUntil: "networkidle"});
+  await page.waitForTimeout(850);
+  const mobilePortalLayout = await page.evaluate(() => {
+    const sidebar = document.querySelector(".sidebar")?.getBoundingClientRect();
+    const topbar = document.querySelector(".topbar")?.getBoundingClientRect();
+    const content = document.querySelector(".content-wrap")?.getBoundingClientRect();
+    return {
+      sidebarBottom: Math.round(sidebar?.bottom || 0),
+      topbarTop: Math.round(topbar?.top || 0),
+      topbarBottom: Math.round(topbar?.bottom || 0),
+      contentTop: Math.round(content?.top || 0),
+    };
+  });
+  assert.ok(
+    mobilePortalLayout.topbarTop >= mobilePortalLayout.sidebarBottom - 1,
+    `移动端账号栏不得与横向导航重叠：${JSON.stringify(mobilePortalLayout)}`,
+  );
+  assert.ok(
+    mobilePortalLayout.contentTop >= mobilePortalLayout.topbarBottom - 1,
+    `移动端正文不得被账号栏遮挡：${JSON.stringify(mobilePortalLayout)}`,
+  );
+  await page.goto(`${baseUrl}/cockpit`, {waitUntil: "networkidle"});
+  await page.waitForTimeout(850);
+  const mobileTargetLayout = await page.evaluate(() => {
+    const sidebar = document.querySelector(".sidebar")?.getBoundingClientRect();
+    const section = document.querySelector("#cockpit")?.getBoundingClientRect();
+    return {
+      sidebarBottom: Math.round(sidebar?.bottom || 0),
+      sectionTop: Math.round(section?.top || 0),
+      sectionBottom: Math.round(section?.bottom || 0),
+    };
+  });
+  assert.ok(
+    mobileTargetLayout.sectionTop >= mobileTargetLayout.sidebarBottom - 1,
+    `移动端目标章节不得被横向导航遮挡：${JSON.stringify(mobileTargetLayout)}`,
+  );
+  assert.ok(
+    mobileTargetLayout.sectionTop < 844 && mobileTargetLayout.sectionBottom > 0,
+    `移动端目标章节必须进入可视区：${JSON.stringify(mobileTargetLayout)}`,
+  );
   console.log(`PASS browser route regression: ${routes.size} legacy routes`);
 } finally {
   if (browser) await browser.close();

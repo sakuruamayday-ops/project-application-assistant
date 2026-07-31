@@ -61,6 +61,77 @@ def complete_skill_release_fixture(skill_source_dir) -> bytes:
     return buffer.getvalue()
 
 
+def invalidly_signed_complete_skill_release_fixture(
+    skill_source_dir,
+    *,
+    version: str,
+) -> bytes:
+    """Build a structurally complete package whose publisher signature is invalid."""
+    suite = json.loads(
+        (skill_source_dir / "suite-manifest.json").read_text(encoding="utf-8")
+    )
+    suite["release"] = {"tag": f"V{version}", "version": version}
+    files: dict[str, bytes] = {
+        "skills/suite-manifest.json": json.dumps(
+            suite,
+            ensure_ascii=False,
+            sort_keys=True,
+        ).encode("utf-8"),
+    }
+    for skill_name in suite["skills"]:
+        skill_body = f"# {skill_name}\n".encode()
+        skill_root = f"skills/{skill_name}/"
+        skill_manifest = {
+            "skill_name": skill_name,
+            "required_paths": ["SKILL.md"],
+            "files": {"SKILL.md": hashlib.sha256(skill_body).hexdigest()},
+        }
+        files[f"{skill_root}SKILL.md"] = skill_body
+        files[f"{skill_root}release-manifest.json"] = json.dumps(
+            skill_manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+        ).encode("utf-8")
+        files[f"{skill_root}release-manifest.json.sig"] = b"invalid"
+        files[f"{skill_root}release-signature.json"] = b"{}"
+        files[f"{skill_root}publisher-ed25519.pub"] = b"invalid"
+
+    suite_manifest = {
+        "schema_version": 1,
+        "artifact_type": "skill-suite",
+        "release_tag": f"V{version}",
+        "release_version": version,
+        "skill_count": len(suite["skills"]),
+        "skills": suite["skills"],
+        "files": {
+            name: hashlib.sha256(content).hexdigest()
+            for name, content in files.items()
+        },
+    }
+    files["suite-release-manifest.json"] = json.dumps(
+        suite_manifest,
+        ensure_ascii=False,
+        sort_keys=True,
+    ).encode("utf-8")
+    files["suite-release-manifest.sig"] = b"invalid-publisher-signature"
+    files["publisher-ed25519.pub"] = b"invalid-publisher-key"
+    files["publisher-key.json"] = json.dumps(
+        {
+            "algorithm": "Ed25519",
+            "fingerprint_sha256": (
+                "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
+            ),
+        },
+        sort_keys=True,
+    ).encode("utf-8")
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, content in files.items():
+            archive.writestr(f"fixture/{name}", content)
+    return buffer.getvalue()
+
+
 def api_headers(token: str, device_id: str = TEST_DEVICE_ID) -> dict[str, str]:
     return {
         "Authorization": f"Bearer {token}",
@@ -455,6 +526,27 @@ def load_app(tmp_path):
     return module
 
 
+def issue_test_invitation(module, connection, authorization_id: int) -> str:
+    authorization = module.issue_registration_invite(
+        connection,
+        authorization_id,
+        issued_by=None,
+    )
+    return module.registration_invite_token(authorization)
+
+
+def allow_test_release_artifacts(monkeypatch, module) -> None:
+    monkeypatch.setattr(
+        module,
+        "validate_release_artifact_for_serving",
+        lambda artifact, *, target, require_signature: {
+            "status": "verified",
+            "signed_format": bool(require_signature),
+            "mcp_configuration_mode": "signed_external_plugin_mcp_file",
+        },
+    )
+
+
 def test_public_user_guide(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:
@@ -462,7 +554,10 @@ def test_public_user_guide(tmp_path):
         assert guide.status_code == 200
         assert "企业全生命周期助手用户使用手册" in guide.text
         assert "下载与安装" in guide.text
-        assert "Skills V1.4.1" in guide.text
+        assert "当前正式通用版" in guide.text
+        assert "尚未正式发布" in guide.text
+        assert "当前没有通过插件根 .mcp.json 能力门禁" in guide.text
+        assert "候选 V1.4.3 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -478,13 +573,15 @@ def test_public_user_guide(tmp_path):
         assert 'href="/guide"' in login.text
 
 
-def test_public_demo_describes_v141_execution_chain(tmp_path):
+def test_public_demo_uses_published_release_state_instead_of_hardcoded_version(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:
         response = client.get("/demo")
 
     assert response.status_code == 200
-    assert "V1.4.1 · PRODUCT DEMO" in response.text
+    assert "尚未正式发布 · PRODUCT DEMO" in response.text
+    assert "候选版本不会冒充正式下载" in response.text
+    assert "V1.4.1 · PRODUCT DEMO" not in response.text
     assert "企业项目身份、政策规则与交付质量" in response.text
     assert "统一进入可追溯执行链" in response.text
     assert "项目决策算法" in response.text
@@ -1005,10 +1102,10 @@ def test_setup_login_and_device_token(tmp_path):
         assert 'id="skills"' in portal.text
         assert 'class="page-continuation"' not in portal.text
         access_page = client.get("/access")
-        assert "连接焦糖知识库" in access_page.text
+        assert "WorkBuddy 新安装已暂停" in access_page.text
         assert "管理员 API Key" not in access_page.text
         assert "管理员豁免" not in access_page.text
-        assert "data-copy-agent-bootstrap" in access_page.text
+        assert "data-copy-agent-bootstrap" not in access_page.text
         assert 'data-skill-open="first-run-configuration"' in access_page.text
         cockpit_page = client.get("/cockpit")
         assert "驾驶舱智能看板" in cockpit_page.text
@@ -1112,7 +1209,7 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert token_page.status_code == 200
-        assert "连接焦糖知识库" in token_page.text
+        assert "WorkBuddy 新安装已暂停" in token_page.text
         assert "管理员凭据" not in token_page.text
         assert 'data-toggle-secret="personal-access"' not in token_page.text
         with closing(module.database()) as connection:
@@ -2235,6 +2332,16 @@ def test_user_supplied_model_api_is_unmetered_and_not_persisted(tmp_path, monkey
     module = load_app(tmp_path)
     monkeypatch.setattr(
         module,
+        "USER_AI_ALLOWED_HOSTS",
+        frozenset({"model.example.com"}),
+    )
+    monkeypatch.setattr(
+        module,
+        "public_model_addresses",
+        lambda hostname, port=443: ("203.0.113.10",),
+    )
+    monkeypatch.setattr(
+        module,
         "request_assistant_model",
         lambda messages, model_config=None: {"content": "自带API回答", "tool_calls": []},
     )
@@ -2368,6 +2475,15 @@ def test_registration_requires_english_account_name(tmp_path):
             "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
             ("owner", module.password_hasher.hash("owner-password-123"), module.isoformat(module.utc_now())),
         )
+        authorization_id = connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,created_at
+            ) VALUES (?,?,'pending',?)
+            """,
+            ("王小明", "0001", module.isoformat(module.utc_now())),
+        ).lastrowid
+        invite_token = issue_test_invitation(module, connection, authorization_id)
         connection.commit()
     with TestClient(module.app) as client:
         response = client.post(
@@ -2379,6 +2495,7 @@ def test_registration_requires_english_account_name(tmp_path):
                 "company_name": "共创集团",
                 "password": "member-password-123",
                 "confirm_password": "member-password-123",
+                "invite_token": invite_token,
             },
             follow_redirects=False,
         )
@@ -2441,6 +2558,10 @@ def test_registration_requires_company_verification(tmp_path):
             "INSERT INTO registration_authorizations(real_name, identity_code, status, created_at) VALUES (?, ?, 'pending', ?)",
             ("王小明", "0001", module.isoformat(module.utc_now())),
         )
+        authorization_id = connection.execute(
+            "SELECT id FROM registration_authorizations WHERE real_name='王小明'"
+        ).fetchone()["id"]
+        invite_token = issue_test_invitation(module, connection, authorization_id)
         connection.commit()
     with TestClient(module.app) as client:
         rejected = client.post(
@@ -2452,6 +2573,7 @@ def test_registration_requires_company_verification(tmp_path):
                 "company_name": "错误公司",
                 "password": "member-password-123",
                 "confirm_password": "member-password-123",
+                "invite_token": invite_token,
             },
         )
         assert rejected.status_code == 403
@@ -2464,6 +2586,7 @@ def test_registration_requires_company_verification(tmp_path):
                 "company_name": "共创集团",
                 "password": "member-password-123",
                 "confirm_password": "member-password-123",
+                "invite_token": invite_token,
             },
             follow_redirects=False,
         )
@@ -2522,8 +2645,16 @@ def test_member_import_template_overwrite_and_authorization_controls_access(tmp_
         )
         assert imported.status_code == 200
         assert "新增1人" in imported.text
-        assert "覆盖重复1人" in overwritten.text
+        assert "重新签发1人" in overwritten.text
         assert "王小明" in overwritten.text
+        with closing(module.database()) as connection:
+            authorization = connection.execute(
+                """
+                SELECT * FROM registration_authorizations
+                WHERE real_name='王小明' AND identity_code='0826'
+                """
+            ).fetchone()
+            invite_token = module.registration_invite_token(authorization)
 
         registered = client.post(
             "/register",
@@ -2534,6 +2665,7 @@ def test_member_import_template_overwrite_and_authorization_controls_access(tmp_
                 "company_name": "共创集团",
                 "password": "member-password-123",
                 "confirm_password": "member-password-123",
+                "invite_token": invite_token,
             },
             follow_redirects=False,
         )
@@ -2582,7 +2714,13 @@ def test_member_import_template_overwrite_and_authorization_controls_access(tmp_
             },
             follow_redirects=False,
         )
-        assert readded.status_code == 303
+        assert readded.status_code == 409
+        restored = client.post(
+            f"/admin/registration-authorizations/{authorization_id}/restore",
+            data={"csrf_token": owner["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert restored.status_code == 303
         restored_login = client.post(
             "/login",
             data={"username": "member-one", "password": "member-password-123"},
@@ -2601,7 +2739,7 @@ def test_member_import_template_overwrite_and_authorization_controls_access(tmp_
                 "confirm_password": "member-password-456",
             },
         )
-        assert duplicate_account.status_code == 409
+        assert duplicate_account.status_code == 403
 
 
 def test_signed_invitation_link_prefills_and_registers_authorized_member(tmp_path):
@@ -2615,11 +2753,14 @@ def test_signed_invitation_link_prefills_and_registers_authorized_member(tmp_pat
             "INSERT INTO registration_authorizations(real_name, identity_code, status, created_at) VALUES (?, ?, 'pending', ?)",
             ("王小明", "0826", module.isoformat(module.utc_now())),
         )
+        authorization_id = connection.execute(
+            "SELECT id FROM registration_authorizations WHERE real_name='王小明'"
+        ).fetchone()["id"]
+        invite_token = issue_test_invitation(module, connection, authorization_id)
         authorization = connection.execute(
             "SELECT * FROM registration_authorizations WHERE real_name='王小明'"
         ).fetchone()
         connection.commit()
-    invite_token = module.registration_invite_token(authorization)
 
     with TestClient(module.app) as client:
         invitation_page = client.get(f"/register?invite={invite_token}")
@@ -2655,7 +2796,7 @@ def test_signed_invitation_link_prefills_and_registers_authorized_member(tmp_pat
     assert status_row["status"] == "registered"
 
 
-def test_disabled_member_can_be_reinvited_and_set_new_password(tmp_path):
+def test_disabled_member_cannot_be_reinvited_to_take_over_password(tmp_path):
     module = load_app(tmp_path)
     now = module.isoformat(module.utc_now())
     with closing(module.database()) as connection:
@@ -2687,29 +2828,17 @@ def test_disabled_member_can_be_reinvited_and_set_new_password(tmp_path):
             data={"csrf_token": owner["csrf_token"]},
             follow_redirects=False,
         )
-        assert reinvite.status_code == 303
-        invitation_detail = client.get(reinvite.headers["location"])
-        invite_token = re.search(r"invite=([^\"&]+)", invitation_detail.text).group(1)
-        invitation_page = client.get(f"/register?invite={invite_token}")
-        assert 'value="member-one"' in invitation_page.text
-        assert "设置新密码并重新启用" in invitation_page.text
-        activated = client.post(
-            "/register",
-            data={
-                "invite_token": invite_token,
-                "username": "member-one",
-                "real_name": "王小明",
-                "identity_code": "0826",
-                "company_name": "共创集团",
-                "password": "new-password-456",
-                "confirm_password": "new-password-456",
-            },
+        assert reinvite.status_code == 409
+        assert "不能通过重新邀请重设密码" in reinvite.text
+        enabled = client.post(
+            f"/users/{member_id}/toggle",
+            data={"csrf_token": owner["csrf_token"]},
             follow_redirects=False,
         )
-        assert activated.status_code == 303
+        assert enabled.status_code == 303
         member_login = client.post(
             "/login",
-            data={"username": "member-one", "password": "new-password-456"},
+            data={"username": "member-one", "password": "old-password-123"},
             follow_redirects=False,
         )
         assert member_login.status_code == 303
@@ -3568,7 +3697,7 @@ def test_registration_rejects_name_outside_authorized_list(tmp_path):
             },
         )
         assert response.status_code == 403
-        assert "请联系管理员添加" in response.text
+        assert "注册邀请无效、已过期或已使用" in response.text
 
 
 def test_api_rejects_missing_token(tmp_path):
@@ -3599,6 +3728,11 @@ def test_admin_uses_same_transactional_agent_onboarding_as_members(
             if target == "workbuddy"
             else None
         ),
+    )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_has_signed_root_mcp",
+        lambda artifact: bool(artifact),
     )
     with TestClient(module.app) as client:
         client.post(
@@ -3752,6 +3886,7 @@ def test_connected_device_cross_version_upgrade_reuses_identity(
     monkeypatch,
 ):
     module = load_app(tmp_path)
+    allow_test_release_artifacts(monkeypatch, module)
     target_package = tmp_path / "workbuddy-v1.4.1.zip"
     target_package.write_bytes(b"signed-workbuddy-v1.4.1")
     target_sha256 = hashlib.sha256(target_package.read_bytes()).hexdigest()
@@ -3770,6 +3905,11 @@ def test_connected_device_cross_version_upgrade_reuses_identity(
             if target == "workbuddy"
             else None
         ),
+    )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_has_signed_root_mcp",
+        lambda artifact: bool(artifact),
     )
 
     with TestClient(module.app) as client:
@@ -4010,6 +4150,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
     monkeypatch,
 ):
     module = load_app(tmp_path)
+    allow_test_release_artifacts(monkeypatch, module)
     connector = module.BASE_DIR / "installers/jiaotang-agent.mjs"
     connector_sha256 = hashlib.sha256(connector.read_bytes()).hexdigest()
     workbuddy_package = tmp_path / "workbuddy-fixture.zip"
@@ -4034,6 +4175,11 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         module,
         "latest_skill_artifact",
         lambda target: dict(artifact_state) if target == "workbuddy" else None,
+    )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_has_signed_root_mcp",
+        lambda artifact: bool(artifact),
     )
     password = "member-password-123"
     with closing(module.database()) as connection:
@@ -4482,7 +4628,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
             "device_id": TEST_DEVICE_ID,
             "device_name": TEST_DEVICE_NAME,
             "platform": "darwin",
-            "agent_host": "codex",
+            "agent_host": "workbuddy",
             "public_key": public_key,
         }
         proof = private_key.sign(
@@ -4606,7 +4752,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "凭据保存" in access.text
         assert "首次验签" in access.text
         assert "MCP连接" in access.text
-        assert "codex" in access.text
+        assert "workbuddy" in access.text
 
         mcp_body = json.dumps(
             {"jsonrpc": "2.0", "id": 7, "method": "ping", "params": {}},
@@ -4950,6 +5096,11 @@ def test_legacy_device_registration_is_blocked_after_transactional_release(
             else None
         ),
     )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_has_signed_root_mcp",
+        lambda artifact: bool(artifact),
+    )
     private_key = Ed25519PrivateKey.generate()
     public_key = base64url_encode(
         private_key.public_key().public_bytes(
@@ -5140,6 +5291,11 @@ def test_bootstrap_recovers_unverified_partial_installation(tmp_path, monkeypatc
             else None
         ),
     )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_has_signed_root_mcp",
+        lambda artifact: bool(artifact),
+    )
     password = "member-password-123"
     with closing(module.database()) as connection:
         connection.execute(
@@ -5277,8 +5433,9 @@ def test_init_database_reopens_latest_incomplete_enrollment(tmp_path):
     assert enrollment["consumed_ip"] == ""
 
 
-def test_latest_skill_release_metadata_and_download(tmp_path):
+def test_latest_skill_release_metadata_and_download(tmp_path, monkeypatch):
     module = load_app(tmp_path)
+    allow_test_release_artifacts(monkeypatch, module)
     package = tmp_path / "project-assistant-skills.zip"
     package.write_bytes(b"test-skill-package")
     historical_package = tmp_path / "project-assistant-skills-v1.0.zip"
@@ -5360,8 +5517,12 @@ def test_latest_skill_release_metadata_and_download(tmp_path):
         assert historical_download.content == b"historical-skill-package"
 
 
-def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path):
+def test_workbuddy_downloads_show_platforms_without_confirmation_status(
+    tmp_path,
+    monkeypatch,
+):
     module = load_app(tmp_path)
+    allow_test_release_artifacts(monkeypatch, module)
     package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy.zip"
     package.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(package, "w") as archive:
@@ -5437,8 +5598,12 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(tmp_path
             assert download.content == package.read_bytes()
 
 
-def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(tmp_path):
+def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(
+    tmp_path,
+    monkeypatch,
+):
     module = load_app(tmp_path)
+    allow_test_release_artifacts(monkeypatch, module)
     generic = tmp_path / "generic-v1.3.1.zip"
     generic.write_bytes(b"generic-v1.3.1")
     macos = tmp_path / "workbuddy-macos-v1.3.1.zip"
@@ -5824,11 +5989,20 @@ def test_skills_manager_retirement_redirects_historical_downloads_to_package_cen
             follow_redirects=False,
         )
         assert unsupported_download.status_code == 404
-        assert unsupported_download.headers["cache-control"] == "no-store"
+        assert unsupported_download.headers["cache-control"] == "private, no-store"
 
 
-def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
+@pytest.mark.parametrize(
+    "stage_status",
+    ["releasing", "staged-awaiting-acceptance"],
+)
+def test_skills_page_shows_releasing_stage_without_replacing_latest(
+    tmp_path,
+    monkeypatch,
+    stage_status,
+):
     module = load_app(tmp_path)
+    allow_test_release_artifacts(monkeypatch, module)
     generic = tmp_path / "generic-v1.3.zip"
     generic.write_bytes(b"published-generic")
     staged_generic = tmp_path / "staged-generic-v1.4.zip"
@@ -5869,7 +6043,7 @@ def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
             """,
             (
                 "1.4",
-                "releasing",
+                stage_status,
                 str(staged_generic),
                 hashlib.sha256(staged_generic.read_bytes()).hexdigest(),
                 str(staged_workbuddy),
@@ -5891,7 +6065,7 @@ def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
         client.cookies.update(login.cookies)
         page = client.get("/skills")
         assert page.status_code == 200
-        assert 'data-release-stage="releasing"' in page.text
+        assert f'data-release-stage="{stage_status}"' in page.text
         assert "正式发布中" in page.text
         assert "企业全生命周期助手 V1.4" in page.text
         assert "等待主人确认正式发布" in page.text
@@ -5901,8 +6075,12 @@ def test_skills_page_shows_releasing_stage_without_replacing_latest(tmp_path):
         assert current_download.content == generic.read_bytes()
 
 
-def test_selective_macos_release_preserves_only_historical_client_downloads(tmp_path):
+def test_selective_macos_release_preserves_only_historical_client_downloads(
+    tmp_path,
+    monkeypatch,
+):
     module = load_app(tmp_path)
+    allow_test_release_artifacts(monkeypatch, module)
     old_generic = tmp_path / "generic-v1.3.1.zip"
     new_macos = tmp_path / "macos-v1.3.1.1.zip"
     old_generic.write_bytes(b"legacy-generic")
@@ -5991,8 +6169,7 @@ def test_selective_macos_release_preserves_only_historical_client_downloads(tmp_
         old_historical = client.get(
             f"/skills/releases/{old_release_id}/workbuddy/download"
         )
-        assert old_historical.status_code == 200
-        assert old_historical.content == old_workbuddy.read_bytes()
+        assert old_historical.status_code == 404
         macos_historical = client.get(
             f"/skills/releases/{new_release_id}/workbuddy/download"
         )
@@ -6050,8 +6227,9 @@ def test_release_announcement_appears_once_after_publish(tmp_path):
         assert "欢迎使用企业全生命周期助手 V1.0" not in client.get("/portal").text
 
 
-def test_admin_incremental_index_release_and_rollback(tmp_path):
+def test_admin_incremental_index_release_and_rollback(tmp_path, monkeypatch):
     module = load_app(tmp_path)
+    allow_test_release_artifacts(monkeypatch, module)
     with closing(module.database()) as connection:
         connection.execute(
             "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
@@ -6372,7 +6550,7 @@ def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
         health_portal = client.get("/admin/operations")
         assert "/admin/health/index" in health_portal.text
         assert "/admin/health/oss" in health_portal.text
-        assert "/admin/health/snapshot" in health_portal.text
+        assert "/admin/health/snapshot" not in health_portal.text
         assert "/admin/health/deploy-gate" in health_portal.text
         assert "/admin/knowledge" in portal.text
         health = client.get("/admin/health/index")
@@ -6475,3 +6653,782 @@ def test_pagination_window_has_numbers_and_ellipses(tmp_path):
     module = load_app(tmp_path)
     assert module.pagination_window(1, 1) == [1]
     assert module.pagination_window(6, 12) == [1, None, 4, 5, 6, 7, 8, None, 12]
+
+
+def test_login_rate_limit_is_ip_scoped_and_proxy_headers_are_fail_closed(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,password_hash,is_admin,created_at)
+            VALUES (?,?,1,?)
+            """,
+            ("owner", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.executemany(
+            """
+            INSERT INTO auth_attempts(
+                action,username,client_ip,succeeded,attempted_at
+            ) VALUES ('login',?,?,0,?)
+            """,
+            [
+                ("owner", "198.51.100.24", now)
+                for _ in range(10)
+            ],
+        )
+        connection.commit()
+        assert module.auth_attempts_blocked(
+            connection,
+            "login",
+            "unrelated-account",
+            "198.51.100.24",
+            10,
+        )
+        assert not module.auth_attempts_blocked(
+            connection,
+            "login",
+            "owner",
+            "203.0.113.25",
+            10,
+        )
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+    assert login.status_code == 303
+    assert module.client_ip_from_peer(
+        "203.0.113.25",
+        "10.0.0.8",
+    ) == "203.0.113.25"
+    assert module.client_ip_from_peer(
+        "127.0.0.1",
+        "198.51.100.24",
+    ) == "198.51.100.24"
+
+
+def test_registration_invite_reissue_expiry_entropy_and_one_use(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,password_hash,is_admin,created_at)
+            VALUES (?,?,1,?)
+            """,
+            ("owner", module.password_hasher.hash("owner-password-123"), now),
+        )
+        authorization_id = int(
+            connection.execute(
+                """
+                INSERT INTO registration_authorizations(
+                    real_name,identity_code,status,created_at
+                ) VALUES (?,?,'pending',?)
+                """,
+                ("王小明", "0826", now),
+            ).lastrowid
+        )
+        first = issue_test_invitation(module, connection, authorization_id)
+        second = issue_test_invitation(module, connection, authorization_id)
+        connection.commit()
+
+    first_parts = first.split(".")
+    second_parts = second.split(".")
+    assert len(first_parts) == len(second_parts) == 3
+    assert len(second_parts[1]) >= 40
+    assert len(second_parts[2]) >= 40
+    assert first != second
+    assert module.registration_authorization_from_invite(first) is None
+    assert module.registration_authorization_from_invite(second) is not None
+
+    with closing(module.database()) as connection:
+        connection.execute(
+            "UPDATE registration_authorizations SET invite_expires_at=? WHERE id=?",
+            (
+                module.isoformat(module.utc_now() - timedelta(seconds=1)),
+                authorization_id,
+            ),
+        )
+        connection.commit()
+    assert module.registration_authorization_from_invite(second) is None
+
+    with closing(module.database()) as connection:
+        third = module.registration_invite_token(
+            module.issue_registration_invite(
+                connection,
+                authorization_id,
+                issued_by=None,
+            )
+        )
+        connection.commit()
+
+    registration = {
+        "invite_token": third,
+        "username": "member-invited",
+        "real_name": "伪造姓名",
+        "identity_code": "9999",
+        "company_name": "共创集团",
+        "password": "member-password-123",
+        "confirm_password": "member-password-123",
+    }
+    with TestClient(module.app) as client:
+        accepted = client.post(
+            "/register",
+            data=registration,
+            follow_redirects=False,
+        )
+        replay = client.post(
+            "/register",
+            data={**registration, "username": "member-replay"},
+            follow_redirects=False,
+        )
+    assert accepted.status_code == 303
+    assert replay.status_code == 403
+    assert "无效、已过期或已使用" in replay.text
+
+
+def test_user_ai_network_guards_reject_private_redirect_large_and_concurrent(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+
+    monkeypatch.setattr(
+        module.socket,
+        "getaddrinfo",
+        lambda *args, **kwargs: [
+            (
+                module.socket.AF_INET,
+                module.socket.SOCK_STREAM,
+                module.socket.IPPROTO_TCP,
+                "",
+                ("127.0.0.1", 443),
+            )
+        ],
+    )
+    with pytest.raises(ValueError, match="本机、内网或保留地址"):
+        module.public_model_addresses("model.example.com")
+
+    class OversizedResponse:
+        def read(self, size):
+            return b"x" * size
+
+    with pytest.raises(ValueError, match="超过允许大小"):
+        module.read_bounded_response(OversizedResponse(), limit=32)
+
+    class RedirectResponseFixture:
+        status = 302
+
+        def read(self, size):
+            return b""
+
+    class RedirectingConnection:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def request(self, *args, **kwargs):
+            pass
+
+        def getresponse(self):
+            return RedirectResponseFixture()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(
+        module,
+        "public_model_addresses",
+        lambda hostname, port=443: ("8.8.8.8",),
+    )
+    monkeypatch.setattr(module, "PinnedHTTPSConnection", RedirectingConnection)
+    with pytest.raises(ValueError, match="不允许HTTP重定向"):
+        module.request_user_assistant_model(
+            b"{}",
+            {
+                "api_base": "https://model.example.com",
+                "api_key": "secret",
+                "model": "chat",
+                "user_id": 1,
+            },
+        )
+
+    monkeypatch.setattr(module, "USER_AI_GLOBAL_SEMAPHORE", module.threading.BoundedSemaphore(2))
+    monkeypatch.setattr(module, "USER_AI_PER_USER_CONCURRENCY", 1)
+    monkeypatch.setattr(module, "USER_AI_USER_SEMAPHORES", {})
+    with module.user_ai_request_slot(7):
+        with pytest.raises(module.HTTPException) as limited:
+            with module.user_ai_request_slot(7):
+                pass
+    assert limited.value.status_code == 429
+    assert "当前账号已有" in limited.value.detail
+
+
+def test_security_headers_storage_cache_robots_health_and_404_contract(tmp_path):
+    module = load_app(tmp_path)
+    template_source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted((module.BASE_DIR / "templates").glob("*.html"))
+    )
+    portal_script = (module.BASE_DIR / "static" / "portal.js").read_text(
+        encoding="utf-8"
+    )
+    assert re.search(r"\s(?:on[a-z]+|style)\s*=", template_source, re.I) is None
+    assert ".style." not in portal_script
+    assert "USER_API_SESSION_STORAGE_KEY" in portal_script
+    assert "sessionStorage.setItem(USER_API_SESSION_STORAGE_KEY" in portal_script
+    assert "sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY" in portal_script
+    assert "localStorage.setItem(USER_API_SESSION_STORAGE_KEY" not in portal_script
+    assert "localStorage.getItem(USER_API_SESSION_STORAGE_KEY" not in portal_script
+    assert "data-clear-sensitive-storage-on-load" in template_source
+    assert template_source.count("data-clear-sensitive-storage") >= 4
+
+    with TestClient(module.app) as client:
+        guide = client.get("/guide")
+        csp = guide.headers["content-security-policy"]
+        assert "script-src 'self'" in csp
+        assert "script-src-attr 'none'" in csp
+        assert "style-src 'self'" in csp
+        assert "style-src-attr 'none'" in csp
+        assert "'unsafe-inline'" not in csp
+        assert guide.headers["cache-control"] == "public, max-age=300"
+        assert guide.headers["x-robots-tag"] == "index, follow"
+
+        digest = hashlib.sha256(
+            (module.BASE_DIR / "static" / "portal.js").read_bytes()
+        ).hexdigest()[:16]
+        versioned_static = client.get(f"/static/portal.js?v={digest}")
+        unversioned_static = client.get("/static/portal.js")
+        assert versioned_static.headers["cache-control"] == (
+            "public, max-age=31536000, immutable"
+        )
+        assert unversioned_static.headers["cache-control"] == (
+            "public, max-age=300, must-revalidate"
+        )
+
+        robots = client.get("/robots.txt")
+        assert "Allow: /demo" in robots.text
+        assert "Allow: /guide" in robots.text
+        assert "Disallow: /" in robots.text
+        assert robots.headers["cache-control"] == "public, max-age=3600"
+
+        live = client.get("/livez")
+        ready = client.get("/readyz")
+        build = client.get("/build")
+        assert live.status_code == 200
+        assert ready.status_code == 200
+        assert build.status_code == 200
+        assert set(build.json()) >= {
+            "schema",
+            "commit",
+            "deployment_id",
+            "dependency_lock_sha256",
+            "dependency_build_lock_sha256",
+            "wheelhouse_install_lock_sha256",
+            "wheelhouse_manifest_sha256",
+            "wheelhouse_content_identity_sha256",
+            "dependency_identity_sha256",
+            "dependency_release_record_sha256",
+            "candidate_version",
+            "published_generic_version",
+            "published_workbuddy_version",
+            "workbuddy_installable",
+        }
+
+        html_missing = client.get("/missing-page")
+        api_missing = client.get("/v1/missing-page")
+        assert html_missing.status_code == 404
+        assert "不在当前档案中" in html_missing.text
+        assert html_missing.headers["cache-control"] == "private, no-store"
+        assert api_missing.status_code == 404
+        assert api_missing.json() == {"detail": "资源不存在"}
+        assert api_missing.headers["cache-control"] == "no-store"
+
+
+def test_privacy_worker_redacts_expired_question_without_new_request(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    old_started_at = module.isoformat(
+        module.utc_now()
+        - timedelta(hours=module.ASSISTANT_QUESTION_RETENTION_HOURS + 1)
+    )
+    with closing(module.database()) as connection:
+        user_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(username,password_hash,created_at)
+                VALUES (?,?,?)
+                """,
+                (
+                    "member",
+                    module.password_hasher.hash("member-password-123"),
+                    module.isoformat(module.utc_now()),
+                ),
+            ).lastrowid
+        )
+        usage_id = int(
+            connection.execute(
+                """
+                INSERT INTO assistant_usage(
+                    user_id,question,status,started_at,question_fingerprint
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    user_id,
+                    "这是一条等待定时清理的原始问题",
+                    "completed",
+                    old_started_at,
+                    module.assistant_question_fingerprint(
+                        "这是一条等待定时清理的原始问题"
+                    ),
+                ),
+            ).lastrowid
+        )
+        connection.commit()
+    monkeypatch.setattr(module, "ASSISTANT_REDACTION_INTERVAL_SECONDS", 0.01)
+
+    async def exercise_worker():
+        stop_event = module.asyncio.Event()
+        task = module.asyncio.create_task(
+            module.assistant_question_redaction_worker(stop_event)
+        )
+        for _ in range(50):
+            await module.asyncio.sleep(0.01)
+            with closing(module.database()) as connection:
+                row = connection.execute(
+                    """
+                    SELECT question,question_redacted_at
+                    FROM assistant_usage WHERE id=?
+                    """,
+                    (usage_id,),
+                ).fetchone()
+            if row["question_redacted_at"]:
+                break
+        stop_event.set()
+        await task
+        return row
+
+    redacted = module.asyncio.run(exercise_worker())
+    assert redacted["question"] == "[已按隐私策略清理]"
+    assert redacted["question_redacted_at"]
+    privacy_status = json.loads(
+        module.ASSISTANT_PRIVACY_STATUS_PATH.read_text(encoding="utf-8")
+    )
+    assert privacy_status["status"] == "正常"
+    assert privacy_status["redacted_rows"] == 1
+
+
+def test_unsafe_published_workbuddy_is_visible_but_not_installable(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    generic = tmp_path / "generic-v1.4.1.zip"
+    workbuddy = tmp_path / "workbuddy-v1.4.1.zip"
+    generic.write_bytes(b"generic-v1.4.1")
+    with zipfile.ZipFile(workbuddy, "w") as archive:
+        archive.writestr(
+            "jiaotang/.codebuddy-plugin/marketplace.json",
+            "{}",
+        )
+        archive.writestr(
+            "jiaotang/plugins/jiaotang-workbuddy-skills/"
+            ".codebuddy-plugin/plugin.json",
+            "{}",
+        )
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,password_hash,is_admin,created_at)
+            VALUES (?,?,1,?)
+            """,
+            ("owner", module.password_hasher.hash("owner-password-123"), now),
+        )
+        release_id = int(
+            connection.execute(
+                """
+                INSERT INTO skill_releases(
+                    version,file_name,file_path,sha256,release_notes,published_at
+                ) VALUES (?,?,?,?,?,?)
+                """,
+                (
+                    "1.4.1",
+                    generic.name,
+                    str(generic),
+                    hashlib.sha256(generic.read_bytes()).hexdigest(),
+                    "已发布但 WorkBuddy 安全能力不足",
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.executemany(
+            """
+            INSERT INTO skill_release_artifacts(
+                release_id,target,file_name,file_path,sha256
+            ) VALUES (?,?,?,?,?)
+            """,
+            [
+                (
+                    release_id,
+                    "generic",
+                    generic.name,
+                    str(generic),
+                    hashlib.sha256(generic.read_bytes()).hexdigest(),
+                ),
+                (
+                    release_id,
+                    "workbuddy",
+                    workbuddy.name,
+                    str(workbuddy),
+                    hashlib.sha256(workbuddy.read_bytes()).hexdigest(),
+                ),
+            ],
+        )
+        connection.commit()
+
+    def selective_validation(artifact, *, target, require_signature):
+        if target == "generic":
+            return {"status": "verified", "signed_format": True}
+        raise ValueError("missing signed root .mcp.json")
+
+    monkeypatch.setattr(
+        module,
+        "validate_release_artifact_for_serving",
+        selective_validation,
+    )
+    with TestClient(module.app) as client:
+        guide = client.get("/guide")
+        assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
+        assert "安全候选 V1.4.3 尚未正式发布" in guide.text
+
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        skills = client.get("/skills")
+        access = client.get("/access")
+        blocked_download = client.get("/skills/latest/workbuddy/download")
+        generic_download = client.get("/skills/latest/download")
+
+    assert "已暂停新安装" in skills.text
+    assert "等待安全正式版" in skills.text
+    assert "data-manual-package-download" not in skills.text
+    assert "data-copy-agent-bootstrap" not in access.text
+    assert blocked_download.status_code == 503
+    assert generic_download.status_code == 200
+    assert generic_download.content == generic.read_bytes()
+
+
+def test_operational_health_staleness_and_provenance_are_visible(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    stale = module.isoformat(module.utc_now() - timedelta(hours=3))
+    module.HEALTH_STATUS_PATH.write_text(
+        json.dumps(
+            {
+                "status": "正常",
+                "checked_at": stale,
+                "errors": ["数据库探测失败"],
+                "warnings": ["证书将在30天内到期"],
+                "failed_units": ["jiaotang-kb-index-refresh.service"],
+                "current_release_id": "release-current",
+                "previous_release_id": "release-previous",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    module.ASSISTANT_PRIVACY_STATUS_PATH.write_text(
+        json.dumps({"status": "正常", "checked_at": now}),
+        encoding="utf-8",
+    )
+    module.BACKUP_STATUS_PATH.write_text(
+        json.dumps(
+            {
+                "status": "正常",
+                "completed_at": now,
+                "offsite_mode": "oss",
+                "offsite_status": "verified",
+                "artifacts": [
+                    {
+                        "label": "数据库",
+                        "artifact": "knowledge.db.zst",
+                        "size": 1024,
+                        "sha256": "a" * 64,
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    module.OSS_INDEX_CACHE_STATUS_PATH.write_text(
+        json.dumps(
+            {
+                "status": "正常",
+                "checked_at": now,
+                "current_release_id": "oss-current",
+                "previous_release_id": "oss-previous",
+                "generation_consistent": False,
+                "pointer_sha256": "b" * 64,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,password_hash,is_admin,created_at)
+            VALUES (?,?,1,?)
+            """,
+            ("owner", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        portal = client.get("/portal")
+        runtime = client.get("/admin/health/runtime")
+        backup = client.get("/admin/health/backup")
+        oss = client.get("/admin/health/oss")
+
+    assert 'href="/admin/health/runtime" class="is-alert"' in portal.text
+    assert 'href="/admin/health/oss" class="is-alert"' in portal.text
+    assert "/admin/health/snapshot" not in portal.text
+    assert "状态过期" in runtime.text
+    assert "数据库探测失败" in runtime.text
+    assert "jiaotang-kb-index-refresh.service" in runtime.text
+    assert "release-current" in runtime.text
+    assert "release-previous" in runtime.text
+    assert "knowledge.db.zst" in backup.text
+    assert "oss" in backup.text
+    assert "verified" in backup.text
+    assert "oss-current" in oss.text
+    assert "oss-previous" in oss.text
+    assert "指针 SHA-256" in oss.text
+    assert "否" in oss.text
+
+
+def test_release_validation_uses_content_identity_and_snapshot_streaming(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    legacy = tmp_path / "legacy.zip"
+    with zipfile.ZipFile(legacy, "w") as archive:
+        archive.writestr("legacy/readme.txt", "legacy release")
+    legacy_artifact = {
+        "version": "1.0",
+        "file_name": legacy.name,
+        "file_path": str(legacy),
+        "sha256": hashlib.sha256(legacy.read_bytes()).hexdigest(),
+    }
+    first = module.validate_release_artifact_for_serving(
+        legacy_artifact,
+        target="generic",
+        require_signature=False,
+    )
+    assert first["status"] == "legacy_sha256_verified"
+    original_stat = legacy.stat()
+    tampered = bytearray(legacy.read_bytes())
+    tampered[len(tampered) // 2] ^= 1
+    legacy.write_bytes(tampered)
+    os.utime(
+        legacy,
+        ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns),
+    )
+    assert legacy.stat().st_size == original_stat.st_size
+    assert legacy.stat().st_mtime_ns == original_stat.st_mtime_ns
+    with pytest.raises(ValueError, match="SHA-256"):
+        module.validate_release_artifact_for_serving(
+            legacy_artifact,
+            target="generic",
+            require_signature=False,
+        )
+
+    package = tmp_path / "current.zip"
+    original_content = b"validated-content-addressed-release"
+    replacement_content = b"path-was-replaced-after-validation"
+    package.write_bytes(original_content)
+    artifact_sha256 = hashlib.sha256(original_content).hexdigest()
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,password_hash,is_admin,created_at)
+            VALUES (?,?,1,?)
+            """,
+            ("owner", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_releases(
+                version,file_name,file_path,sha256,release_notes,published_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.2.0",
+                package.name,
+                str(package),
+                artifact_sha256,
+                "snapshot regression",
+                now,
+            ),
+        )
+        connection.commit()
+
+    def validate_then_replace(artifact, *, target, require_signature):
+        package.write_bytes(replacement_content)
+        return {"status": "verified", "signed_format": True}
+
+    monkeypatch.setattr(
+        module,
+        "validate_release_artifact_for_serving",
+        validate_then_replace,
+    )
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        changed_before_snapshot = client.get("/skills/latest/download")
+        assert changed_before_snapshot.status_code == 503
+
+        package.write_bytes(original_content)
+        monkeypatch.setattr(
+            module,
+            "validate_release_artifact_for_serving",
+            lambda artifact, *, target, require_signature: {
+                "status": "verified",
+                "signed_format": True,
+            },
+        )
+        original_snapshot = module.snapshot_release_artifact
+
+        def snapshot_then_replace(artifact):
+            snapshot = original_snapshot(artifact)
+            package.write_bytes(replacement_content)
+            return snapshot
+
+        monkeypatch.setattr(
+            module,
+            "snapshot_release_artifact",
+            snapshot_then_replace,
+        )
+        stable_download = client.get("/skills/latest/download")
+    assert stable_download.status_code == 200
+    assert stable_download.content == original_content
+    assert package.read_bytes() == replacement_content
+
+
+def test_admin_invalid_signature_upload_keeps_previous_latest(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    old_package = tmp_path / "generic-v1.1.0.zip"
+    old_package.write_bytes(b"previous-verified-release")
+    old_sha256 = hashlib.sha256(old_package.read_bytes()).hexdigest()
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,password_hash,is_admin,created_at)
+            VALUES (?,?,1,?)
+            """,
+            ("owner", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_releases(
+                version,file_name,file_path,sha256,release_notes,published_at
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                "1.1.0",
+                old_package.name,
+                str(old_package),
+                old_sha256,
+                "previous release",
+                now,
+            ),
+        )
+        connection.commit()
+
+    production_validation = module.validate_release_artifact_for_serving
+
+    def validate_old_fixture_only(artifact, *, target, require_signature):
+        if artifact is not None and str(artifact["version"]) == "1.1.0":
+            return {"status": "verified", "signed_format": True}
+        return production_validation(
+            artifact,
+            target=target,
+            require_signature=require_signature,
+        )
+
+    monkeypatch.setattr(
+        module,
+        "validate_release_artifact_for_serving",
+        validate_old_fixture_only,
+    )
+    invalid_package = invalidly_signed_complete_skill_release_fixture(
+        module.SKILL_SOURCE_DIR,
+        version="1.2.0",
+    )
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(
+            login.cookies[module.SESSION_COOKIE]
+        )[0]
+        rejected = client.post(
+            "/admin/skill-releases",
+            data={
+                "version": "1.2.0",
+                "release_notes": "must be rejected",
+                "csrf_token": user["csrf_token"],
+            },
+            files={
+                "skill_package": (
+                    "generic-v1.2.0.zip",
+                    invalid_package,
+                    "application/zip",
+                )
+            },
+            follow_redirects=False,
+        )
+        current_download = client.get("/skills/latest/download")
+
+    assert rejected.status_code == 400
+    assert "Skills 发布包校验失败" in rejected.text
+    with closing(module.database()) as connection:
+        versions = [
+            row["version"]
+            for row in connection.execute(
+                "SELECT version FROM skill_releases ORDER BY id"
+            ).fetchall()
+        ]
+    assert versions == ["1.1.0"]
+    assert current_download.status_code == 200
+    assert current_download.content == old_package.read_bytes()
+    rejected_files = list((module.SKILL_RELEASE_DIR / "rejected").glob("*.zip"))
+    assert len(rejected_files) == 1
