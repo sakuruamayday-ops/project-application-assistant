@@ -245,7 +245,7 @@
         "--output-dir",
         "{gate_output}",
         "--workers",
-        "4"
+        "1"
       ],
       "timeout_seconds": 14400
     },

@@ -85,6 +85,22 @@ def main() -> int:
         command = gate.get("command") if isinstance(gate, dict) else None
         if not isinstance(command, list) or "{workbuddy_cli}" not in command:
             errors.append(f"缺少真实宿主行为门禁：{required}")
+    adversarial_command = post_gates.get(
+        "real-workbuddy-adversarial-routing", {}
+    ).get("command")
+    adversarial_workers = None
+    if (
+        isinstance(adversarial_command, list)
+        and "--workers" in adversarial_command
+    ):
+        worker_index = adversarial_command.index("--workers") + 1
+        if worker_index < len(adversarial_command):
+            adversarial_workers = adversarial_command[worker_index]
+    if adversarial_workers != "1":
+        errors.append(
+            "WorkBuddy 5.3.5真实对抗路由门禁必须单线程运行，"
+            "避免并发会话出现aborted或超时"
+        )
     adversarial = json.loads(
         (ROOT / "tests" / "adversarial-expected.json").read_text(
             encoding="utf-8"
