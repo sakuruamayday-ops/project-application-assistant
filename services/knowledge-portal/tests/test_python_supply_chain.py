@@ -215,16 +215,24 @@ def test_build_uses_pinned_offline_builder_and_preserves_partial_output(
 
     monkeypatch.setattr(module.subprocess, "run", fake_run)
     module.build_wheelhouse(lock, build_lock, wheelhouse)
-    for command in calls[:2]:
-        assert "download" in command
-        assert "--require-hashes" in command
-        assert "--no-deps" in command
-        assert "--dest" in command
-    builder_install = calls[3]
+    build_tool_download = calls[0]
+    assert "download" in build_tool_download
+    assert "--require-hashes" in build_tool_download
+    assert "--only-binary=:all:" in build_tool_download
+    assert "--no-deps" in build_tool_download
+    assert "--dest" in build_tool_download
+    builder_install = calls[2]
     assert "install" in builder_install
     assert "--no-index" in builder_install
     assert "--require-hashes" in builder_install
     assert "--only-binary=:all:" in builder_install
+    dependency_download = calls[3]
+    assert "download" in dependency_download
+    assert "--require-hashes" in dependency_download
+    assert "--no-build-isolation" in dependency_download
+    assert "--no-deps" in dependency_download
+    assert "--dest" in dependency_download
+    assert dependency_download[0].endswith("/builder/bin/python")
     wheel_build = calls[4]
     assert "wheel" in wheel_build
     assert "--no-index" in wheel_build

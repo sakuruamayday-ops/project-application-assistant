@@ -625,8 +625,8 @@ def build_wheelhouse(
     sourcehouse.mkdir()
     builder_dir = staging_root / "builder"
 
-    for current_lock in (build_lock_path, lock_path):
-        command = [
+    _run_or_fail(
+        [
             sys.executable,
             "-m",
             "pip",
@@ -634,23 +634,18 @@ def build_wheelhouse(
             "--disable-pip-version-check",
             "--no-cache-dir",
             "--require-hashes",
+            "--only-binary=:all:",
             "--no-deps",
             "--dest",
             str(sourcehouse),
             "-r",
-            str(current_lock),
-        ]
-        if current_lock == build_lock_path:
-            command.insert(-4, "--only-binary=:all:")
-        else:
-            command.insert(-4, "--no-build-isolation")
-        _run_or_fail(
-            command,
-            message=(
-                "hash-locked 构建输入下载失败；为便于审计，"
-                "已保留未完成目录"
-            ),
-        )
+            str(build_lock_path),
+        ],
+        message=(
+            "hash-locked 构建工具下载失败；为便于审计，"
+            "已保留未完成目录"
+        ),
+    )
 
     _run_or_fail(
         [
@@ -682,6 +677,27 @@ def build_wheelhouse(
             str(build_lock_path),
         ],
         message="无法从 hash-locked 构建工具锁创建隔离 builder",
+    )
+    _run_or_fail(
+        [
+            str(builder_python),
+            "-m",
+            "pip",
+            "download",
+            "--disable-pip-version-check",
+            "--no-cache-dir",
+            "--require-hashes",
+            "--no-build-isolation",
+            "--no-deps",
+            "--dest",
+            str(sourcehouse),
+            "-r",
+            str(lock_path),
+        ],
+        message=(
+            "隔离 builder 下载 hash-locked 应用依赖失败；"
+            "为便于审计，已保留未完成目录"
+        ),
     )
     build_env = dict(os.environ)
     build_env.update(
