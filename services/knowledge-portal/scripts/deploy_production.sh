@@ -304,6 +304,70 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
     | ssh "${ssh_args[@]}" "${deploy_host}" \
         "tar -C '${remote_release_dir}' -xf -"
 
+private_overlay_identity_sha256="$(
+    ssh "${ssh_args[@]}" "${deploy_host}" \
+        "RUNTIME_ROOT='${runtime_root}' RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
+import hashlib
+import json
+import os
+import shutil
+import stat
+from pathlib import Path
+
+runtime = Path(os.environ['RUNTIME_ROOT'])
+release = Path(os.environ['RELEASE_DIR'])
+current = (runtime / 'current').resolve(strict=True)
+allowlist = (
+    Path('app/kindle_library.py'),
+    Path('templates/admin_kindle.html'),
+    Path('templates/kindle_public.html'),
+    Path('templates/_private_admin_nav.html'),
+)
+files = []
+for relative in allowlist:
+    source = current / relative
+    if not source.exists():
+        continue
+    source_stat = source.lstat()
+    if not stat.S_ISREG(source_stat.st_mode) or source.is_symlink():
+        raise SystemExit(f'私有覆盖层只接受普通文件：{source}')
+    if source_stat.st_size > 2 * 1024 * 1024:
+        raise SystemExit(f'私有覆盖层文件异常过大：{source}')
+    destination = release / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, destination)
+    os.chmod(destination, 0o640)
+    digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+    files.append(
+        {
+            'path': relative.as_posix(),
+            'sha256': digest,
+            'size': destination.stat().st_size,
+        }
+    )
+guard = Path(
+    '/etc/systemd/system/jiaotang-kb.service.d/90-private-admin.conf'
+)
+if guard.is_file() and not (release / 'app/kindle_library.py').is_file():
+    raise SystemExit('私有管理员启动守卫已启用，但新release缺少Kindle覆盖层')
+manifest = {
+    'schema': 'jiaotang-private-overlay/v1',
+    'files': files,
+}
+payload = (
+    json.dumps(
+        manifest,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(',', ':'),
+    )
+    + '\n'
+).encode('utf-8')
+(release / 'private-overlay-manifest.json').write_bytes(payload)
+print(hashlib.sha256(payload).hexdigest())
+PY"
+)"
+
 echo "[3/7] 离线校验新release并构建独立运行环境"
 ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     python3 '${remote_release_dir}/scripts/python_supply_chain.py' \
@@ -338,6 +402,37 @@ for name, expected in checks.items():
     if actual != expected:
         raise SystemExit(f'新release静态清单校验失败：{name}')
 PY
+    SOURCE_ENV=/etc/jiaotang-kb-ops.env
+    [ -f \"\${SOURCE_ENV}\" ] || SOURCE_ENV=/etc/jiaotang-kb.env
+    set -a
+    source \"\${SOURCE_ENV}\"
+    set +a
+    RELEASE_DIR='${remote_release_dir}' \
+        '${remote_release_dir}/.venv/bin/python' - <<'PY'
+import os
+import sqlite3
+import sys
+from pathlib import Path
+
+release = Path(os.environ['RELEASE_DIR'])
+sys.path.insert(0, str(release / 'scripts'))
+from publish_index_to_oss import PRODUCTION_FILES, release_id_for
+from refresh_index_from_oss import valid_index
+
+index_dir = Path(os.environ['JIAOTANG_INDEX_DIR'])
+missing = [name for name in PRODUCTION_FILES if not (index_dir / name).is_file()]
+if missing:
+    raise SystemExit('本地索引release集合不完整：' + ', '.join(missing))
+for name in PRODUCTION_FILES:
+    path = index_dir / name
+    if path.suffix.lower() in {'.sqlite', '.sqlite3', '.db'}:
+        with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as connection:
+            if connection.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
+                raise SystemExit(f'本地SQLite完整性失败：{path.name}')
+if not valid_index(index_dir / 'knowledge_content.sqlite3'):
+    raise SystemExit('本地全文索引结构化专表校验失败')
+release_id_for(index_dir, checkpoint=False)
+PY
     chmod -R a-w '${remote_release_dir}'
     find '${remote_release_dir}' -type d -exec chmod a+rx {} +
     find '${remote_release_dir}' -type f -exec chmod a+r {} +"
@@ -353,6 +448,7 @@ ssh "${ssh_args[@]}" "${deploy_host}" \
     WHEELHOUSE_CONTENT_IDENTITY_SHA256='${wheelhouse_content_identity_sha256}' \
     DEPENDENCY_IDENTITY_SHA256='${dependency_identity_sha256}' \
     DEPENDENCY_RELEASE_RECORD_SHA256='${dependency_release_record_sha256}' \
+    PRIVATE_OVERLAY_IDENTITY_SHA256='${private_overlay_identity_sha256}' \
     RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
 import grp
 import os
@@ -399,6 +495,9 @@ overrides = {
     ],
     'JIAOTANG_DEPENDENCY_RELEASE_RECORD_SHA256': os.environ[
         'DEPENDENCY_RELEASE_RECORD_SHA256'
+    ],
+    'JIAOTANG_PRIVATE_OVERLAY_IDENTITY_SHA256': os.environ[
+        'PRIVATE_OVERLAY_IDENTITY_SHA256'
     ],
 }
 lines = [(key, value) for key, value in lines if key not in overrides]
@@ -518,6 +617,7 @@ PY
         curl --fail --silent --show-error --retry 10 --retry-delay 2 \
             http://127.0.0.1:8100/health >/dev/null
         echo '部署失败，应用current已指回previous；新release保留待审。' >&2
+        exit 1
     }
     trap rollback_on_error ERR
 
@@ -653,7 +753,8 @@ ssh "${ssh_args[@]}" "${deploy_host}" "set -e
         '${expected_wheelhouse_manifest_sha256}' \
         '${wheelhouse_content_identity_sha256}' \
         '${dependency_identity_sha256}' \
-        '${dependency_release_record_sha256}' <<'PY'
+        '${dependency_release_record_sha256}' \
+        '${private_overlay_identity_sha256}' <<'PY'
 import json
 import sys
 
@@ -681,6 +782,9 @@ assert payload.get('dependency_identity_sha256') == sys.argv[10], (
 )
 assert payload.get('dependency_release_record_sha256') == sys.argv[11], (
     '生产/build dependency_release_record_sha256不一致'
+)
+assert payload.get('private_overlay_identity_sha256') == sys.argv[12], (
+    '生产/build private_overlay_identity_sha256不一致'
 )
 PY
     curl --fail --silent --show-error \

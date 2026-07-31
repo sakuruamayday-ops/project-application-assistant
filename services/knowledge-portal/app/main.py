@@ -269,6 +269,10 @@ BUILD_DEPENDENCY_RELEASE_RECORD_SHA256 = os.environ.get(
     "JIAOTANG_DEPENDENCY_RELEASE_RECORD_SHA256",
     "unknown",
 ).strip() or "unknown"
+BUILD_PRIVATE_OVERLAY_IDENTITY_SHA256 = os.environ.get(
+    "JIAOTANG_PRIVATE_OVERLAY_IDENTITY_SHA256",
+    "none",
+).strip() or "none"
 WEB_SEARCH_RSS_URL = os.environ.get(
     "JIAOTANG_WEB_SEARCH_RSS_URL",
     "https://www.bing.com/search?format=rss&q={query}",
@@ -8712,6 +8716,9 @@ def build_provenance_payload() -> dict[str, object]:
         "dependency_identity_sha256": BUILD_DEPENDENCY_IDENTITY_SHA256,
         "dependency_release_record_sha256": (
             BUILD_DEPENDENCY_RELEASE_RECORD_SHA256
+        ),
+        "private_overlay_identity_sha256": (
+            BUILD_PRIVATE_OVERLAY_IDENTITY_SHA256
         ),
         "candidate_version": release["candidate_version"] or None,
         "published_generic_version": release["published_version"] or None,
