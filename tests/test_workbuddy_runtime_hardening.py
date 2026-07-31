@@ -771,6 +771,52 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertEqual(workspace.parent, root.resolve())
             self.assertTrue(workspace.is_dir())
 
+    def test_adversarial_gate_prompt_is_bounded_route_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            completed = Namespace(
+                stdout=(
+                    'ROUTE_JSON: {"primary_skill":"policy-retrieval",'
+                    '"activated_skills":["policy-retrieval"],'
+                    '"clarification_required":false,'
+                    '"policy_status":"stale","claims_limited":true}\n'
+                ),
+                stderr="",
+                returncode=0,
+            )
+            with mock.patch.object(
+                ADVERSARIAL_EVAL.subprocess,
+                "run",
+                return_value=completed,
+            ) as runner:
+                result = ADVERSARIAL_EVAL.run_case(
+                    item={
+                        "case_id": "ADV-TEST",
+                        "category": "stale-policy",
+                        "prompt": "只核验已截止政策的效力。",
+                    },
+                    expected={
+                        "expected_primary_skill": "policy-retrieval",
+                        "required_skills": ["policy-retrieval"],
+                        "forbidden_skills": ["project-feasibility"],
+                        "clarification_required": False,
+                        "category": "stale-policy",
+                    },
+                    output=root,
+                    plugin_root=root / "plugin",
+                    codebuddy_cli="/tmp/codebuddy",
+                    max_turns=6,
+                    timeout_seconds=120,
+                )
+            prompt = runner.call_args.args[0][2]
+            self.assertIn("只输出下面格式的一行", prompt)
+            self.assertIn("不要输出解释、标题、表格或建议", prompt)
+            self.assertEqual(result["status"], "pass")
+            self.assertEqual(
+                result["effective_primary_skill"],
+                "policy-retrieval",
+            )
+
     def test_runtime_exception_degrades_but_integrity_error_blocks(self):
         options = Namespace(command="prompt", plugin_root="/tmp/plugin")
         with mock.patch.object(BRIDGE, "arguments", return_value=options):

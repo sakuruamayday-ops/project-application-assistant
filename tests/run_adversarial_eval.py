@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
 import re
@@ -33,6 +34,12 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--max-turns", type=int, default=6)
     parser.add_argument("--timeout-seconds", type=int, default=120)
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="并行执行的隔离WorkBuddy用例数；默认1保持兼容。",
+    )
     return parser.parse_args()
 
 
@@ -175,6 +182,91 @@ def score_case(
     }
 
 
+def run_case(
+    *,
+    item: dict,
+    expected: dict,
+    output: Path,
+    plugin_root: Path,
+    codebuddy_cli: str,
+    max_turns: int,
+    timeout_seconds: int,
+) -> dict:
+    case_dir = output / item["case_id"]
+    case_dir.mkdir(parents=True)
+    data_root = case_dir / "isolated-data"
+    env = os.environ.copy()
+    env["JIAOTANG_WORKBUDDY_PLUGIN_DATA"] = str(data_root / "workbuddy")
+    env["JIAOTANG_SKILL_DATA_DIR"] = str(data_root / "profiles")
+    route_prompt = (
+        item["prompt"]
+        + "\n\n这是处理路径预检门禁，不是业务答复。请从当前加载的 "
+        "jiaotang-workbuddy-skills 插件中实际加载完成路由所需的最少技能，"
+        "但不要联网、不要检索外部资料、不要读取与路由无关的参考文件、"
+        "不要分析企业条件、不要写正式材料，也不要输出解释、标题、表格或建议。"
+        "完成必要的技能加载后，只输出下面格式的一行，不得输出其他内容："
+        'ROUTE_JSON: {"primary_skill":"技能目录名","activated_skills":'
+        '["实际加载的技能目录名"],"clarification_required":false,'
+        '"policy_status":"current|stale|unknown|not-applicable",'
+        '"claims_limited":false}'
+    )
+    command = [
+        codebuddy_cli,
+        "-p",
+        route_prompt,
+        "--output-format",
+        "json",
+        "--max-turns",
+        str(max_turns),
+        "--plugin-dir",
+        str(plugin_root),
+    ]
+    timed_out = False
+    try:
+        process = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+            timeout=timeout_seconds,
+        )
+        stdout = process.stdout
+        stderr = process.stderr
+        exit_code = process.returncode
+    except subprocess.TimeoutExpired as exc:
+        timed_out = True
+        stdout = exc.stdout or ""
+        stderr = (exc.stderr or "") + (
+            f"\n单题超过{timeout_seconds}秒，运行器已终止该题。"
+        )
+        exit_code = 124
+    if isinstance(stdout, bytes):
+        stdout = stdout.decode("utf-8", errors="replace")
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+    (case_dir / "stdout.json").write_text(stdout, encoding="utf-8")
+    (case_dir / "stderr.txt").write_text(stderr, encoding="utf-8")
+    route = parse_route_json(stdout)
+    active_skills = latest_active_skills(data_root)
+    score = score_case(
+        expected,
+        route,
+        active_skills,
+        exit_code,
+        timed_out,
+    )
+    return {
+        "case_id": item["case_id"],
+        "category": item["category"],
+        "exit_code": exit_code,
+        "timed_out": timed_out,
+        "route": route,
+        "hook_active_skills": active_skills,
+        **score,
+    }
+
+
 def main() -> int:
     options = arguments()
     output = Path(options.output_dir).expanduser().resolve()
@@ -207,92 +299,42 @@ def main() -> int:
     plugin_root = extract_plugin(
         Path(options.suite_zip).expanduser().resolve(), workspace / "plugin"
     )
-    results = []
-    for index, item in enumerate(prompts, start=1):
-        case_dir = output / item["case_id"]
-        case_dir.mkdir(parents=True)
-        data_root = case_dir / "isolated-data"
-        env = os.environ.copy()
-        env["JIAOTANG_WORKBUDDY_PLUGIN_DATA"] = str(data_root / "workbuddy")
-        env["JIAOTANG_SKILL_DATA_DIR"] = str(data_root / "profiles")
-        route_prompt = (
-            item["prompt"]
-            + "\n\n这是处理路径预检。请从当前加载的 jiaotang-workbuddy-skills "
-            "插件中实际加载完成任务所需的技能，但不要联网、"
-            "不要检索外部资料、不要写正式材料。最后必须单独输出一行："
-            'ROUTE_JSON: {"primary_skill":"技能目录名","activated_skills":'
-            '["实际加载的技能目录名"],"clarification_required":false,'
-            '"policy_status":"current|stale|unknown|not-applicable",'
-            '"claims_limited":false}'
-        )
-        command = [
-            str(Path(options.codebuddy_cli).expanduser().resolve()),
-            "-p",
-            route_prompt,
-            "--output-format",
-            "json",
-            "--max-turns",
-            str(options.max_turns),
-            "--plugin-dir",
-            str(plugin_root),
-        ]
-        timed_out = False
-        try:
-            process = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                check=False,
-                env=env,
-                timeout=options.timeout_seconds,
+    worker_count = max(1, min(options.workers, len(prompts)))
+    codebuddy_cli = str(Path(options.codebuddy_cli).expanduser().resolve())
+    results_by_case = {}
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=worker_count
+    ) as executor:
+        futures = {
+            executor.submit(
+                run_case,
+                item=item,
+                expected=answers[item["case_id"]],
+                output=output,
+                plugin_root=plugin_root,
+                codebuddy_cli=codebuddy_cli,
+                max_turns=options.max_turns,
+                timeout_seconds=options.timeout_seconds,
+            ): item["case_id"]
+            for item in prompts
+        }
+        for index, future in enumerate(
+            concurrent.futures.as_completed(futures), start=1
+        ):
+            result = future.result()
+            results_by_case[result["case_id"]] = result
+            print(
+                json.dumps(
+                    {
+                        "progress": f"{index}/{len(prompts)}",
+                        "case_id": result["case_id"],
+                        "status": result["status"],
+                    },
+                    ensure_ascii=False,
+                ),
+                flush=True,
             )
-            stdout = process.stdout
-            stderr = process.stderr
-            exit_code = process.returncode
-        except subprocess.TimeoutExpired as exc:
-            timed_out = True
-            stdout = exc.stdout or ""
-            stderr = (exc.stderr or "") + (
-                f"\n单题超过{options.timeout_seconds}秒，运行器已终止该题。"
-            )
-            exit_code = 124
-        if isinstance(stdout, bytes):
-            stdout = stdout.decode("utf-8", errors="replace")
-        if isinstance(stderr, bytes):
-            stderr = stderr.decode("utf-8", errors="replace")
-        (case_dir / "stdout.json").write_text(stdout, encoding="utf-8")
-        (case_dir / "stderr.txt").write_text(stderr, encoding="utf-8")
-        route = parse_route_json(stdout)
-        active_skills = latest_active_skills(data_root)
-        score = score_case(
-            answers[item["case_id"]],
-            route,
-            active_skills,
-            exit_code,
-            timed_out,
-        )
-        results.append(
-            {
-                "case_id": item["case_id"],
-                "category": item["category"],
-                "exit_code": exit_code,
-                "timed_out": timed_out,
-                "route": route,
-                "hook_active_skills": active_skills,
-                **score,
-            }
-        )
-        print(
-            json.dumps(
-                {
-                    "progress": f"{index}/{len(prompts)}",
-                    "case_id": item["case_id"],
-                    "status": score["status"],
-                },
-                ensure_ascii=False,
-            ),
-            flush=True,
-        )
+    results = [results_by_case[item["case_id"]] for item in prompts]
 
     passed = sum(item["status"] == "pass" for item in results)
     report = {

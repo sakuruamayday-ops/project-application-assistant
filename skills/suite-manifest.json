@@ -6,7 +6,7 @@
   "release": {
     "tag": "V1.4.3",
     "version": "1.4.3",
-    "summary": "V1.4.3 完成技能包、WorkBuddy 插件、发布事务、门户下载与 OSS 索引链路的纵深安全加固；49 项业务 Skills 与 V1.4.2 保持一致。",
+    "summary": "V1.4.3 完成技能包、WorkBuddy 插件、发布事务、门户下载与 OSS 索引链路的纵深安全加固，并固化旧政策效力核验的主路由优先级与并行真实宿主门禁；49 项业务 Skills 的主体能力与 V1.4.2 保持一致。",
     "changes": [
       "通用 Skills 与 WorkBuddy 包固定官方 Ed25519 发布者身份，严格校验完整签名文件集和逐文件 SHA-256；验签工具缺失、缓存异常或包被篡改时一律失败关闭。",
       "ZIP 处理拒绝反斜杠、绝对路径、父目录、盘符、NUL、符号链接、重复条目和大小写碰撞；内置秘密扫描支持 Unicode 归一化并递归检查嵌套 ZIP。",
@@ -243,7 +243,9 @@
         "--suite-zip",
         "{workbuddy_archive}",
         "--output-dir",
-        "{gate_output}"
+        "{gate_output}",
+        "--workers",
+        "4"
       ],
       "timeout_seconds": 14400
     },
