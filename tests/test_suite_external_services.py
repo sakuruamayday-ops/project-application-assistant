@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import re
+import unittest
 from pathlib import Path
 
 
@@ -12,6 +13,10 @@ VALIDATOR_PATH = (
     / "scripts"
     / "suite_validation.py"
 )
+if not VALIDATOR_PATH.is_file():
+    raise unittest.SkipTest(
+        "requires the separately installed skill-release-manager host integration"
+    )
 SPEC = importlib.util.spec_from_file_location("suite_validation", VALIDATOR_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

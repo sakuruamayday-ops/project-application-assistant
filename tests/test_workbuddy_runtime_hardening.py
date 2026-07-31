@@ -23,6 +23,18 @@ RELEASE_MANAGER = Path(
         Path.home() / ".codex/skills/skill-release-manager/scripts",
     )
 )
+REQUIRED_RELEASE_MANAGER_SCRIPTS = (
+    "workbuddy_preference_bridge.py",
+    "package_skill_release.py",
+    "package_workbuddy_suite.py",
+)
+if not all(
+    (RELEASE_MANAGER / filename).is_file()
+    for filename in REQUIRED_RELEASE_MANAGER_SCRIPTS
+):
+    raise unittest.SkipTest(
+        "requires the separately installed skill-release-manager host integration"
+    )
 
 
 def load_module(name: str, path: Path):
