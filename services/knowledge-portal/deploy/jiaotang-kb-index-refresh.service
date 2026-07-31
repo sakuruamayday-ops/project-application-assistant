@@ -1,0 +1,18 @@
+[Unit]
+Description=Refresh Jiaotang signed immutable index release from OSS
+After=network-online.target
+Wants=network-online.target
+Before=jiaotang-kb.service
+OnFailure=jiaotang-kb-failure-report@%n.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/jiaotang-kb-ops.env
+ExecStart=/usr/local/sbin/jiaotang-kb-refresh-index
+User=root
+Group=root
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jiaotang-kb /srv/jiaotang/knowledge-index
+NoNewPrivileges=true

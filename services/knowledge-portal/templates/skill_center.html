@@ -86,7 +86,7 @@
     <div class="skill-pane-heading"><span class="skill-kicker">Release Ledger</span><h2>版本与下载</h2><p>下载正式套件，核对版本说明与文件指纹。发布时执行完整清单校验，不以页面截图作为发布门禁。</p></div>
     <div class="skill-download-content">
       {% if release_stage %}
-      <article class="skill-current-release is-releasing" data-release-stage="releasing">
+      <article class="skill-current-release is-releasing" data-release-stage="{{ release_stage.status }}">
         <span class="download-icon">V{{ release_stage.version }}</span>
         <div>
           <span class="skill-status is-pending"><i></i>正式发布中</span>
@@ -103,15 +103,16 @@
         <article class="skill-platform-card is-generic">
           <span class="skill-platform-mark">通</span>
           <div><span class="skill-card-index">基础能力 · 通用 Skills</span><h3>通用版</h3><small>V{{ latest_release.version }} · SHA-256 {{ latest_release.sha256[:10] }}…{{ latest_release.sha256[-6:] }}</small><p>适用于能够导入 SKILL.md 或读取 Agent Skills 目录的宿主。只包含 49 项正式 Skills，不写宿主配置，也不附平台 Hooks。</p></div>
-          <div class="skill-platform-status is-ready"><i></i>正式包已发布</div>
-          <a class="button" href="/skills/latest/download">下载通用包</a>
+          <div class="skill-platform-status {{ 'is-ready' if latest_release.generic_available else 'is-validating' }}"><i></i>{{ '正式包可下载' if latest_release.generic_available else '完整性校验未通过' }}</div>
+          {% if latest_release.generic_available %}<a class="button" href="/skills/latest/download">下载通用包</a>{% else %}<span class="button secondary is-disabled">下载已暂停</span>{% endif %}
         </article>
         {% set workbuddy = latest_release.workbuddy %}
         <article class="skill-platform-card is-workbuddy" data-platform-version="{{ workbuddy.version or '' }}">
           <span class="skill-platform-mark">WB</span>
           <div><span class="skill-card-index">平台增强版 · WorkBuddy</span><h3>WorkBuddy</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% endif %}<p>macOS 与 Windows 共用同一个插件市场 ZIP，包含通用 Skills、Hooks 和 jiaotang-kb MCP 声明。解压后在 WorkBuddy 内添加本地插件市场并安装。</p>{% if workbuddy.distribution_notes_html %}<details class="skill-release-notes"><summary>查看 WorkBuddy 分发修订说明</summary><div class="manual-content">{{ workbuddy.distribution_notes_html }}</div>{% if workbuddy.distribution_url %}<a href="{{ workbuddy.distribution_url }}" target="_blank" rel="noreferrer">查看不可变发行记录</a>{% endif %}</details>{% endif %}</div>
-          <div class="skill-platform-status {{ 'is-ready' if workbuddy.included else 'is-validating' }}"><i></i>{{ '正式包已发布' if workbuddy.included else '尚未发布' }}</div>
-          {% if workbuddy.included %}<a class="button" href="{{ workbuddy.download_url }}">下载 WorkBuddy 包</a>{% else %}<span class="button secondary is-disabled">当前版本未包含</span>{% endif %}
+          <div class="skill-platform-status {{ 'is-ready' if workbuddy.installable else 'is-validating' }}"><i></i>{{ '正式包可安装' if workbuddy.installable else ('已暂停新安装' if workbuddy.included else '尚未发布') }}</div>
+          {% if workbuddy.installable %}<a class="button" href="{{ workbuddy.download_url }}">下载 WorkBuddy 包</a>{% else %}<span class="button secondary is-disabled">{{ '等待安全正式版' if workbuddy.included else '当前版本未包含' }}</span>{% endif %}
+          {% if workbuddy.included and not workbuddy.installable %}<p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>{% endif %}
         </article>
       </div>
       {% endif %}
@@ -152,6 +153,8 @@
           <button class="button agent-confirm-install" type="button" data-confirm-agent-upgrade hidden><span>我已审查，复制升级确认</span><small>第二步 · 明确授权</small></button>
           <p class="agent-copy-status" data-agent-upgrade-status aria-live="polite">升级不会重新登记设备；新包验签、启用和连接复核通过后才更新设备版本。</p>
         </div>
+        {% elif not release_guidance.workbuddy_installable %}
+        <p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>
         {% elif active_device_binding.installed_version %}
         <p class="agent-copy-status">当前设备已经是最新正式版本，无需升级。</p>
         {% else %}
@@ -159,6 +162,7 @@
         {% endif %}
         <a class="button secondary" href="/access">查看已连接设备</a>
         {% else %}
+        {% if release_guidance.workbuddy_installable %}
         <p>第一步先确认当前宿主是 WorkBuddy 5 或更高版本，再公开插件包来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法，不包含引导地址；若不是 WorkBuddy，流程会停止。只有你回到本页明确同意后，Agent 才能执行。</p>
         <div class="agent-install-actions">
           <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制审查说明</span><small>第一步 · 仅审查</small></button>
@@ -187,6 +191,10 @@
           <button class="button" type="button" data-confirm-manual-agent-bootstrap hidden>我已审查，生成并复制 bootstrap_url</button>
           <p>引导地址属于一次性敏感参数，只在当前页面确认后显示并复制；不要写入 settings.json，不要发送给他人，也不要把通用资源读取错误当作连接成功。</p>
         </section>
+        {% else %}
+        <p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>
+        <span class="button secondary is-disabled">新安装已暂停</span>
+        {% endif %}
         {% endif %}
       </article>
       <article class="skill-install-status" data-agent-install-status>
@@ -204,7 +212,7 @@
           <small data-agent-result-next>{{ latest_agent_install_result.result_next_action if latest_agent_install_result and latest_agent_install_result.result_next_action else (latest_agent_install_result.result_reported_at_display if latest_agent_install_result else '') }}</small>
         </div>
         {% if active_device_binding and not active_device_binding.mcp_connected_at %}
-        <form method="post" action="/device-binding/replace" onsubmit="return confirm('确认撤销这次未完成的设备登记？撤销后需要重新生成一次性配置。')">
+        <form method="post" action="/device-binding/replace" data-confirm="确认撤销这次未完成的设备登记？撤销后需要重新生成一次性配置。">
           <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
           <button class="button danger" type="submit">撤销未完成登记</button>
         </form>

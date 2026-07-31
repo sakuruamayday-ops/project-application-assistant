@@ -10,7 +10,7 @@
     <div class="release-modal-body manual-content">{{ announcement.body_html }}</div>
     <section class="release-phrases"><span>可以直接这样问</span><div>{% for phrase in announcement.quick_phrases %}<button type="button">{{ phrase }}</button>{% endfor %}</div></section>
     <p class="draft-note">请主人确认标题、正文和快捷短语；确认前保持草稿状态。</p>
-    {% if announcement.status != 'published' %}<form method="post" action="/admin/releases/{{ announcement.release_id }}/announcement/publish" onsubmit="return confirm('确认发布公告？所有尚未确认本版本的用户下次登录都会看到弹窗。')"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">确认文案并发布弹窗</button></form>{% endif %}
+    {% if announcement.status != 'published' %}<form method="post" action="/admin/releases/{{ announcement.release_id }}/announcement/publish" data-confirm="确认发布公告？所有尚未确认本版本的用户下次登录都会看到弹窗。"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">确认文案并发布弹窗</button></form>{% endif %}
   </article>
 </main>
 {% endblock %}

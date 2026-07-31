@@ -1863,7 +1863,7 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .sidebar > .side-nav { display: flex; }
   .side-nav a { min-height: 34px; flex: 0 0 auto; padding: 0 10px; font-size: 12px; }
   .app-main { min-width: 0; }
-  .topbar { min-height: 62px; padding: 0 16px; }
+  .topbar { position: relative; top: auto; min-height: 62px; padding: 0 16px; }
   .agent-install-actions { grid-template-columns: 1fr; width: 100%; }
   .agent-install-actions .button,
   .agent-confirm-install { width: 100%; }

@@ -38,11 +38,11 @@ def test_allowlist_only_returns_object_storage_rows(tmp_path: Path) -> None:
     allowlist = tmp_path / "upload_allowlist.csv"
     allowlist.write_text(
         "relative_path,sha256,object_storage_allowed\n"
-        "允许.pdf,abc,true\n"
-        "阻止.pdf,def,false\n",
+        f"允许.pdf,{'a' * 64},true\n"
+        f"阻止.pdf,{'b' * 64},false\n",
         encoding="utf-8",
     )
-    assert load_allowed_paths(allowlist) == {("允许.pdf", "abc")}
+    assert load_allowed_paths(allowlist) == {("允许.pdf", "a" * 64)}
 
 
 def test_verify_head_retries_transient_network_error(monkeypatch) -> None:

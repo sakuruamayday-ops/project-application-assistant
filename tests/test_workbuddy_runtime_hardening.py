@@ -6,6 +6,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -44,6 +45,15 @@ sys.path.insert(0, str(RELEASE_MANAGER))
 SUITE_PACKAGER = load_module(
     "package_workbuddy_suite",
     RELEASE_MANAGER / "package_workbuddy_suite.py",
+)
+REPOSITORY = Path(__file__).resolve().parents[1]
+ADVERSARIAL_EVAL = load_module(
+    "run_adversarial_eval",
+    REPOSITORY / "tests/run_adversarial_eval.py",
+)
+ALL_SKILL_EVAL = load_module(
+    "run_all_skill_activation_eval",
+    REPOSITORY / "tests/run_all_skill_activation_eval.py",
 )
 SIGNING_KEY = (
     Path.home()
@@ -175,10 +185,21 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 smoke_skill="enterprise-profile",
             )
             stdout = io.StringIO()
+
+            @contextlib.contextmanager
+            def isolated_release_workspace(prefix: str):
+                workspace = root / "release-work" / prefix
+                workspace.mkdir(parents=True, exist_ok=False)
+                yield workspace
+
             with mock.patch.object(
                 SUITE_PACKAGER,
                 "arguments",
                 return_value=options,
+            ), mock.patch.object(
+                SUITE_PACKAGER,
+                "recoverable_workspace",
+                isolated_release_workspace,
             ):
                 with contextlib.redirect_stdout(stdout):
                     returncode = SUITE_PACKAGER.main()
@@ -441,9 +462,18 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
 
             for attempt in range(1, 5):
                 output = io.StringIO()
-                with mock.patch.object(BRIDGE, "read_stdin", return_value=payload):
-                    with contextlib.redirect_stdout(output):
-                        code = BRIDGE.stop_event(data_dir, plugin_root)
+                with mock.patch.object(
+                    BRIDGE,
+                    "verify_plugin",
+                    return_value={"status": "pass"},
+                ):
+                    with mock.patch.object(
+                        BRIDGE,
+                        "read_stdin",
+                        return_value=payload,
+                    ):
+                        with contextlib.redirect_stdout(output):
+                            code = BRIDGE.stop_event(data_dir, plugin_root)
                 result = json.loads(output.getvalue())
                 self.assertEqual(code, 2)
                 self.assertIn(f"第{attempt}次校验", result["reason"])
@@ -663,6 +693,72 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                             root / f"extract-{archive.stem}",
                         )
 
+    def test_real_host_gate_extractors_reject_cross_platform_zip_attacks(self):
+        cases = {
+            "backslash.zip": [(r"folder\\escape.txt", b"x", None)],
+            "drive.zip": [("C:/escape.txt", b"x", None)],
+            "colon.zip": [("folder/stream:ads", b"x", None)],
+            "symlink.zip": [
+                (
+                    "plugin/link",
+                    b"target",
+                    (stat.S_IFLNK | 0o777) << 16,
+                )
+            ],
+            "duplicate.zip": [
+                ("plugin/same.txt", b"a", None),
+                ("plugin/same.txt", b"b", None),
+            ],
+            "case-collision.zip": [
+                ("plugin/SKILL.md", b"a", None),
+                ("plugin/skill.md", b"b", None),
+            ],
+        }
+        extractors = {
+            "adversarial": lambda archive, destination: (
+                ADVERSARIAL_EVAL.extract_plugin(archive, destination)
+            ),
+            "all-skills": ALL_SKILL_EVAL.safe_extract,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for archive_name, entries in cases.items():
+                archive = root / archive_name
+                with zipfile.ZipFile(archive, "w") as bundle:
+                    for name, payload, attributes in entries:
+                        info = zipfile.ZipInfo(name)
+                        if attributes is not None:
+                            info.create_system = 3
+                            info.external_attr = attributes
+                        bundle.writestr(info, payload)
+                for extractor_name, extractor in extractors.items():
+                    with self.subTest(
+                        archive=archive_name,
+                        extractor=extractor_name,
+                    ):
+                        with self.assertRaisesRegex(
+                            RuntimeError,
+                            "不安全|重复",
+                        ):
+                            extractor(
+                                archive,
+                                root
+                                / f"{archive.stem}-{extractor_name}",
+                            )
+
+    def test_adversarial_gate_workspace_honors_release_work_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with mock.patch.dict(
+                os.environ,
+                {"JIAOTANG_RELEASE_WORK_ROOT": str(root)},
+            ):
+                workspace = ADVERSARIAL_EVAL.recoverable_workspace(
+                    "adversarial-"
+                )
+            self.assertEqual(workspace.parent, root.resolve())
+            self.assertTrue(workspace.is_dir())
+
     def test_runtime_exception_degrades_but_integrity_error_blocks(self):
         options = Namespace(command="prompt", plugin_root="/tmp/plugin")
         with mock.patch.object(BRIDGE, "arguments", return_value=options):
@@ -698,7 +794,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     self.assertEqual(code, 2)
                     self.assertFalse(payload["continue"])
 
-    def test_plugin_verification_cache_skips_repeated_signature_process(self):
+    def test_plugin_verification_cache_never_replaces_signature_verification(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "plugin"
             data_dir = Path(directory) / "data"
@@ -706,6 +802,12 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             payload_path = root / "payload.txt"
             payload_path.write_text("verified", encoding="utf-8")
             manifest = {
+                "schema_version": 1,
+                "artifact_type": "workbuddy-plugin",
+                "plugin_name": "cache-fixture",
+                "integrity_excludes": list(
+                    BRIDGE.PLUGIN_INTEGRITY_COMPANIONS
+                ),
                 "files": {
                     "payload.txt": hashlib.sha256(
                         payload_path.read_bytes()
@@ -724,14 +826,30 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             (root / "plugin-release-signature.json").write_text(
                 json.dumps(
                     {
+                        "algorithm": "OpenSSH-Ed25519",
                         "signature_namespace": (
                             "codex-workbuddy-plugin-manifest"
-                        )
+                        ),
+                        "signed_file": "plugin-release-manifest.json",
+                        "signature": "plugin-release-manifest.json.sig",
+                        "public_key": "publisher-ed25519.pub",
+                        "public_key_fingerprint": (
+                            BRIDGE.OFFICIAL_PUBLISHER_FINGERPRINT
+                        ),
                     }
                 ),
                 encoding="utf-8",
             )
-            completed = Namespace(returncode=0, stdout=b"", stderr=b"")
+            fingerprint = Namespace(
+                returncode=0,
+                stdout=(
+                    "256 "
+                    + BRIDGE.OFFICIAL_PUBLISHER_FINGERPRINT
+                    + " publisher (ED25519)\n"
+                ),
+                stderr="",
+            )
+            verified = Namespace(returncode=0, stdout=b"", stderr=b"")
             with mock.patch.object(
                 BRIDGE.shutil,
                 "which",
@@ -740,7 +858,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 with mock.patch.object(
                     BRIDGE.subprocess,
                     "run",
-                    return_value=completed,
+                    side_effect=[fingerprint, verified],
                 ) as signer:
                     first = BRIDGE.verify_plugin(
                         root,
@@ -748,18 +866,22 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                         allow_cache=False,
                     )
                     self.assertEqual(first["verification"], "full")
-                    self.assertEqual(signer.call_count, 1)
+                    self.assertEqual(signer.call_count, 2)
                 with mock.patch.object(
                     BRIDGE.subprocess,
                     "run",
-                    side_effect=AssertionError("不得重复调用验签进程"),
-                ):
+                    side_effect=[fingerprint, verified],
+                ) as signer:
                     second = BRIDGE.verify_plugin(
                         root,
                         data_dir=data_dir,
                         allow_cache=True,
                     )
-                    self.assertEqual(second["verification"], "cached")
+                    self.assertEqual(
+                        second["verification"],
+                        "full-content-cache-hit",
+                    )
+                    self.assertEqual(signer.call_count, 2)
 
     def test_workbuddy_copy_uses_shared_runtime_manifest(self):
         with tempfile.TemporaryDirectory() as directory:

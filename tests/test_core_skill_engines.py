@@ -209,6 +209,10 @@ def test_release_gate_failure_blocks(tmp_path):
     skills.mkdir()
     source = skills / "source.txt"
     source.write_text("policy", encoding="utf-8")
+    (skills / "suite-manifest.json").write_text(
+        json.dumps({"schema_version": 1}),
+        encoding="utf-8",
+    )
     import hashlib
 
     manifest = {
@@ -242,6 +246,22 @@ def test_release_gate_failure_blocks(tmp_path):
             }
         ),
         encoding="utf-8",
+    )
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-qm",
+            "fixture",
+        ],
+        cwd=tmp_path,
+        check=True,
     )
     report = module.run_release_gates(tmp_path, skills, manifest)
     assert report["status"] == "fail"

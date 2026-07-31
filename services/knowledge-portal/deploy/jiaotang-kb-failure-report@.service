@@ -1,0 +1,14 @@
+[Unit]
+Description=Record Jiaotang systemd failure for %i
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/jiaotang-kb-app.env
+ExecStart=/opt/jiaotang-kb-runtime/current/.venv/bin/python /opt/jiaotang-kb-runtime/current/scripts/report_systemd_failure.py --unit %i
+User=root
+Group=root
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jiaotang-kb
+NoNewPrivileges=true

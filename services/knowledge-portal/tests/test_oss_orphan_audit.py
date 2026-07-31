@@ -6,6 +6,7 @@ from scripts.audit_oss_orphans import (
     classify,
     list_objects_page_with_network_retry,
     list_remote_objects,
+    load_history,
 )
 
 
@@ -91,3 +92,18 @@ def test_remote_object_listing_resumes_from_next_marker(monkeypatch) -> None:
             "last_modified_epoch": 2,
         },
     ]
+
+
+def test_manifest_history_is_discovered_recursively(tmp_path) -> None:
+    nested = tmp_path / "audits" / "2026" / "07"
+    nested.mkdir(parents=True)
+    digest = "ab" * 32
+    (nested / "manifest.before-policy-update.jsonl").write_text(
+        '{"sha256":"' + digest + '","relative_path":"历史/政策.pdf"}\n',
+        encoding="utf-8",
+    )
+
+    history, files = load_history(tmp_path)
+
+    assert history[digest]["paths"] == {"历史/政策.pdf"}
+    assert files == [nested / "manifest.before-policy-update.jsonl"]

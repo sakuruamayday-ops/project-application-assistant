@@ -1,0 +1,5 @@
+# Direct test dependencies. The generated requirements-test.lock includes the
+# complete production graph plus this explicitly pinned test toolchain.
+-r requirements.in
+
+pytest==8.4.1

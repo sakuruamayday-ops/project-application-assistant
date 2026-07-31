@@ -263,7 +263,10 @@ button { font: inherit; }
 .sample-badge { display: inline-flex; padding: 5px 9px; color: var(--demo-gold-bright); font-size: 9px; letter-spacing: .12em; border: 1px solid var(--demo-line); border-radius: 999px; }
 .stage-progress { margin-top: 26px; padding: 18px; border-radius: 14px; background: #0a0b09; }
 .progress-track { height: 3px; overflow: hidden; background: #292b25; border-radius: 2px; }
-.progress-track span { display: block; width: 100%; height: 100%; transform-origin: left; background: var(--demo-gold); transition: transform .45s ease; }
+.progress-track progress { display: block; width: 100%; height: 3px; border: 0; background: #292b25; appearance: none; }
+.progress-track progress::-webkit-progress-bar { background: #292b25; }
+.progress-track progress::-webkit-progress-value { background: var(--demo-gold); transition: width .45s ease; }
+.progress-track progress::-moz-progress-bar { background: var(--demo-gold); transition: width .45s ease; }
 .stage-progress p { margin: 12px 0 0; color: var(--demo-muted); font-size: 11px; }
 .stage-output { margin-top: 18px; opacity: 1; transform: translateY(0); transition: opacity .3s ease, transform .3s ease; }
 .stage-output.loading { opacity: .35; transform: translateY(8px); }

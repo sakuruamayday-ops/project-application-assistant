@@ -216,20 +216,28 @@ frozen_index_sha="$(shasum -a 256 "${index_dir}/knowledge_content.sqlite3" | awk
 echo "manifest=${frozen_manifest_sha} allowlist=${frozen_allowlist_sha} index=${frozen_index_sha}"
 
 echo "[发布1/5] 从服务器安全读取OSS运行凭据并执行容量预检"
+ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
+  "set -e
+   env_file=/etc/jiaotang-kb-ops.env
+   [ -f \"\${env_file}\" ] || env_file=/etc/jiaotang-kb.env
+   [ -f \"\${env_file}\" ] || { echo '缺少OSS运维环境文件' >&2; exit 1; }
+   if ! grep -q '^JIAOTANG_OSS_RELEASE_SIGNING_SECRET=' \"\${env_file}\"; then
+     umask 077
+     printf 'JIAOTANG_OSS_RELEASE_SIGNING_SECRET=%s\n' \"\$(openssl rand -hex 32)\" >>\"\${env_file}\"
+   fi
+   chmod 0600 \"\${env_file}\""
 while IFS='=' read -r key value; do
   case "${key}" in
-    JIAOTANG_OSS_ENDPOINT|JIAOTANG_OSS_BUCKET|JIAOTANG_OSS_ACCESS_KEY_ID|JIAOTANG_OSS_ACCESS_KEY_SECRET|JIAOTANG_OSS_PREFIX)
+    JIAOTANG_OSS_ENDPOINT|JIAOTANG_OSS_BUCKET|JIAOTANG_OSS_ACCESS_KEY_ID|JIAOTANG_OSS_ACCESS_KEY_SECRET|JIAOTANG_OSS_PREFIX|JIAOTANG_OSS_AUTH_MODE|JIAOTANG_OSS_SECURITY_TOKEN|JIAOTANG_OSS_RAM_ROLE_AUTH_HOST|JIAOTANG_OSS_RELEASE_SIGNING_SECRET|JIAOTANG_OSS_RELEASE_VERIFY_SECRETS)
       export "${key}=${value}"
       ;;
   esac
 done < <(ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
-  "grep -E '^JIAOTANG_OSS_(ENDPOINT|BUCKET|ACCESS_KEY_ID|ACCESS_KEY_SECRET|PREFIX)=' /etc/jiaotang-kb.env")
+  "env_file=/etc/jiaotang-kb-ops.env; [ -f \"\${env_file}\" ] || env_file=/etc/jiaotang-kb.env; grep -E '^JIAOTANG_OSS_(ENDPOINT|BUCKET|ACCESS_KEY_ID|ACCESS_KEY_SECRET|PREFIX|AUTH_MODE|SECURITY_TOKEN|RAM_ROLE_AUTH_HOST|RELEASE_SIGNING_SECRET|RELEASE_VERIFY_SECRETS)=' \"\${env_file}\"")
 JIAOTANG_OSS_ENDPOINT="${JIAOTANG_OSS_ENDPOINT/-internal/}"
 export JIAOTANG_OSS_ENDPOINT
-index_reserve_bytes="$(wc -c < "${index_dir}/knowledge_content.sqlite3" | tr -d ' ')"
-python3 "${script_dir}/audit_oss_capacity.py" \
-  --max-total-bytes "${JIAOTANG_OSS_CAPACITY_BUDGET_BYTES:-100000000000}" \
-  --reserve-bytes "${index_reserve_bytes}"
+python3 "${script_dir}/check_oss_governance.py" \
+  --mode "${JIAOTANG_OSS_GOVERNANCE_MODE:-warn}"
 echo "[发布2/5] 执行SHA-256去重上传"
 oss_upload_args=(
   --manifest "${manifest}"
@@ -251,15 +259,7 @@ python3 "${script_dir}/upload_manifest_to_oss.py" \
   --workers "${JIAOTANG_OSS_VERIFY_WORKERS:-8}" \
   --verify-only
 
-echo "[发布2/5] 生成OSS孤立对象完整待确认名单"
-orphan_audit_dir="${JIAOTANG_OSS_ORPHAN_AUDIT_ROOT:-/Users/zsh/JiaotangData/索引/audits/oss-orphans}/$(date '+%Y%m%d-%H%M%S')"
-python3 "${script_dir}/audit_oss_orphans.py" \
-  --manifest "${manifest}" \
-  --allowlist "${index_dir}/upload_allowlist.csv" \
-  --manifest-history-dir "${index_dir}" \
-  --cleanup-audit-root "${JIAOTANG_INDEX_ROOT:-/Users/zsh/JiaotangData/索引}/audits" \
-  --output-dir "${orphan_audit_dir}" \
-  --require-no-unmapped-orphans
+echo "[发布2/5] 跳过既有历史对象、既有暂存和历史部署备份盘点（本轮明确排除）"
 
 echo "[发布3/5] 复核冻结集合未变化且对象二次校验已经通过"
 [[ "$(shasum -a 256 "${manifest}" | awk '{print $1}')" == "${frozen_manifest_sha}" ]] \
@@ -270,13 +270,41 @@ echo "[发布3/5] 复核冻结集合未变化且对象二次校验已经通过"
   || { echo "生产索引冻结后发生变化，停止发布" >&2; exit 1; }
 
 echo "[发布4/5] 发布OSS索引并原子切换服务器查询索引"
-python3 "${script_dir}/publish_index_to_oss.py" \
-  --index-dir "${index_dir}" \
-  --index-policy always \
-  --prevalidated
-
 JIAOTANG_DEPLOY_HOST="${deploy_host}" JIAOTANG_DEPLOY_KEY="${deploy_key}" \
   "${script_dir}/deploy_production.sh"
+current_release_id="$(
+  python3 - "${script_dir}" <<'PY'
+import json
+import os
+import sys
+sys.path.insert(0, sys.argv[1])
+from oss_auth import build_bucket
+
+prefix = os.environ.get("JIAOTANG_OSS_PREFIX", "production").strip("/")
+bucket = build_bucket()
+try:
+    payload = json.loads(bucket.get_object(f"{prefix}/index/current.json").read())
+except Exception as error:
+    if error.__class__.__name__ == "NoSuchKey":
+        print("")
+    else:
+        raise
+else:
+    print(payload.get("release_id") or "")
+PY
+)"
+index_publish_args=(
+  --index-dir "${index_dir}"
+  --index-policy always
+  --prevalidated
+  --capacity-budget-bytes "${JIAOTANG_OSS_CAPACITY_BUDGET_BYTES:-100000000000}"
+)
+if [[ -n "${current_release_id}" ]]; then
+  index_publish_args+=(--expected-current-release-id "${current_release_id}")
+else
+  index_publish_args+=(--allow-initial-current)
+fi
+python3 "${script_dir}/publish_index_to_oss.py" "${index_publish_args[@]}"
 JIAOTANG_INDEX_PATH="${index_dir}/knowledge_content.sqlite3" \
 JIAOTANG_INDEX_PREVALIDATED=1 \
 JIAOTANG_DEPLOY_HOST="${deploy_host}" \
@@ -288,11 +316,10 @@ if [[ -n "${JIAOTANG_KB_ENDPOINT:-}" && -n "${JIAOTANG_KB_TOKEN:-}" && -n "${JIA
   "${script_dir}/smoke_test_production.sh"
 else
   ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
-    "set -e; source /etc/jiaotang-kb.env; curl --fail --silent http://127.0.0.1:8100/health >/dev/null; systemctl is-active --quiet jiaotang-kb"
+    "set -e; source /etc/jiaotang-kb-app.env; curl --fail --silent http://127.0.0.1:8100/health >/dev/null; systemctl is-active --quiet jiaotang-kb"
   echo "未提供本地Token或设备标识，已完成服务健康与部署固定路由冒烟；带凭据REST/MCP冒烟由deploy_production.sh固定路由检查覆盖。"
 fi
 
-echo "[发布5/5] 复核OSS容量、非当前版本、未完成分片和禁止前缀"
-python3 "${script_dir}/audit_oss_capacity.py"
+echo "[发布5/5] 容量熔断已由本次不可变release发布前后聚合校验完成；跳过历史对象与既有分片盘点"
 
 echo "manifest冻结、去重上传、二次校验、索引发布和容量复核五步流水线完成。"

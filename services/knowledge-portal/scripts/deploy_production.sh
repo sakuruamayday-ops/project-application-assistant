@@ -10,7 +10,10 @@ if [[ "${JIAOTANG_DEPLOY_LOCK_HELD:-false}" != "true" ]]; then
         -- "$0" "$@"
 fi
 
-canonical_deploy_root="$(git -C "${repository_dir}" config --local --get jiaotang.deployWorktree 2>/dev/null || true)"
+canonical_deploy_root="$(
+    git -C "${repository_dir}" config --local --get jiaotang.deployWorktree \
+        2>/dev/null || true
+)"
 if [[ -n "${canonical_deploy_root}" && "${JIAOTANG_ALLOW_NONCANONICAL_DEPLOY:-false}" != "true" ]]; then
     canonical_deploy_root="$(cd "${canonical_deploy_root}" && pwd -P)"
     current_deploy_root="$(cd "${repository_dir}" && pwd -P)"
@@ -25,18 +28,29 @@ fi
 if git -C "${repository_dir}" show-ref --verify --quiet refs/remotes/origin/main; then
     if ! git -C "${repository_dir}" merge-base --is-ancestor origin/main HEAD; then
         echo "拒绝部署：当前正式工作树尚未合入最新 origin/main。" >&2
-        echo "请先完成主线合并与冲突验收，再重新执行唯一正式部署。" >&2
         exit 77
     fi
 fi
 
 deploy_host="${JIAOTANG_DEPLOY_HOST:?请设置 JIAOTANG_DEPLOY_HOST，例如 root@server.example.com}"
 deploy_key="${JIAOTANG_DEPLOY_KEY:-${HOME}/.ssh/jiaotang_kb_aliyun}"
-remote_app_dir="${JIAOTANG_REMOTE_APP_DIR:-/opt/jiaotang-kb}"
-timestamp="$(date +%Y%m%d%H%M%S)"
-remote_backup_dir="/opt/jiaotang-kb-backups/${timestamp}"
-remote_index_snapshot="/srv/jiaotang/index-snapshots/pre-policy-upgrade-${timestamp}.sqlite3"
-upgrade_index="${JIAOTANG_UPGRADE_INDEX:-false}"
+wheelhouse_dir="${JIAOTANG_WHEELHOUSE_DIR:?请提供受控CI生成的生产wheelhouse目录}"
+expected_wheelhouse_manifest_sha256="${JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256:?请提供受控CI记录的wheelhouse manifest SHA-256}"
+dependency_release_record="${JIAOTANG_DEPENDENCY_RELEASE_RECORD:?请提供main分支CI生成的依赖发布记录}"
+legacy_app_dir="${JIAOTANG_REMOTE_APP_DIR:-/opt/jiaotang-kb}"
+runtime_root="${JIAOTANG_REMOTE_RUNTIME_ROOT:-/opt/jiaotang-kb-runtime}"
+release_root="${JIAOTANG_REMOTE_RELEASE_ROOT:-/opt/jiaotang-kb-release-slots}"
+build_commit="$(git -C "${repository_dir}" rev-parse HEAD)"
+build_created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+deployment_id="${timestamp}-${build_commit:0:12}-$(
+    python3 -c 'import secrets; print(secrets.token_hex(4))'
+)"
+remote_release_dir="${release_root}/${deployment_id}"
+if [[ "${JIAOTANG_UPGRADE_INDEX:-false}" == "true" ]]; then
+    echo "原地索引升级已停用；请构建、签名并发布新的不可变索引release。" >&2
+    exit 78
+fi
 ssh_args=(
     -i "${deploy_key}"
     -o BatchMode=yes
@@ -47,8 +61,111 @@ ssh_args=(
 )
 
 for command in ssh tar; do
-    command -v "${command}" >/dev/null || { echo "缺少命令：${command}" >&2; exit 1; }
+    command -v "${command}" >/dev/null || {
+        echo "缺少命令：${command}" >&2
+        exit 1
+    }
 done
+
+if [[ ! "${expected_wheelhouse_manifest_sha256}" =~ ^[0-9a-f]{64}$ ]]; then
+    echo "JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256格式非法。" >&2
+    exit 79
+fi
+wheelhouse_dir="$(cd "${wheelhouse_dir}" && pwd -P)"
+dependency_release_record="$(
+    cd "$(dirname "${dependency_release_record}")" \
+        && printf '%s/%s\n' "$(pwd -P)" "$(basename "${dependency_release_record}")"
+)"
+if [[ ! -f "${dependency_release_record}" || -L "${dependency_release_record}" ]]; then
+    echo "依赖发布记录必须是普通文件。" >&2
+    exit 80
+fi
+if [[ "$(basename "${dependency_release_record}")" != \
+    "portal-production-dependency-release-record.json" ]]; then
+    echo "依赖发布记录文件名不符合受控CI协议。" >&2
+    exit 81
+fi
+dependency_identity_json="$(
+    python3 "${service_dir}/scripts/python_supply_chain.py" verify \
+        --lock "${service_dir}/requirements.lock" \
+        --build-lock "${service_dir}/requirements-build.lock" \
+        --wheelhouse "${wheelhouse_dir}" \
+        --expected-manifest-sha256 \
+        "${expected_wheelhouse_manifest_sha256}" \
+        --allow-foreign-runtime
+)"
+dependency_lock_sha256="$(
+    python3 -c \
+        'import json,sys; print(json.loads(sys.argv[1])["dependency_lock_sha256"])' \
+        "${dependency_identity_json}"
+)"
+dependency_build_lock_sha256="$(
+    python3 -c \
+        'import json,sys; print(json.loads(sys.argv[1])["dependency_build_lock_sha256"])' \
+        "${dependency_identity_json}"
+)"
+wheelhouse_install_lock_sha256="$(
+    python3 -c \
+        'import json,sys; print(json.loads(sys.argv[1])["wheelhouse_install_lock_sha256"])' \
+        "${dependency_identity_json}"
+)"
+wheelhouse_content_identity_sha256="$(
+    python3 -c \
+        'import json,sys; print(json.loads(sys.argv[1])["wheelhouse_content_identity_sha256"])' \
+        "${dependency_identity_json}"
+)"
+dependency_identity_sha256="$(
+    python3 -c \
+        'import json,sys; print(json.loads(sys.argv[1])["dependency_identity_sha256"])' \
+        "${dependency_identity_json}"
+)"
+dependency_release_record_sha256="$(
+    python3 - "${dependency_release_record}" "${build_commit}" \
+        "${expected_wheelhouse_manifest_sha256}" \
+        "${dependency_identity_json}" <<'PY'
+import hashlib
+import json
+import re
+import sys
+from pathlib import Path
+
+
+def reject_duplicates(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise SystemExit(f"依赖发布记录包含重复字段：{key}")
+        result[key] = value
+    return result
+
+
+path = Path(sys.argv[1])
+payload = path.read_bytes()
+record = json.loads(payload, object_pairs_hook=reject_duplicates)
+identity = json.loads(sys.argv[4], object_pairs_hook=reject_duplicates)
+expected = {
+    "schema_version": 1,
+    "artifact_type": "jiaotang-python-dependency-release-record",
+    "source_commit": sys.argv[2],
+    "source_event": "push",
+    "source_ref": "refs/heads/main",
+    "dependency_identity": identity,
+}
+for key, value in expected.items():
+    if record.get(key) != value:
+        raise SystemExit(f"依赖发布记录字段不匹配：{key}")
+if identity.get("wheelhouse_manifest_sha256") != sys.argv[3]:
+    raise SystemExit("依赖发布记录与外部绑定的manifest摘要不一致")
+if not re.fullmatch(r"[0-9]+", str(record.get("workflow_run_id") or "")):
+    raise SystemExit("依赖发布记录缺少合法workflow_run_id")
+if not re.fullmatch(r"[0-9]+", str(record.get("workflow_run_attempt") or "")):
+    raise SystemExit("依赖发布记录缺少合法workflow_run_attempt")
+allowed = {*expected, "workflow_run_id", "workflow_run_attempt"}
+if set(record) != allowed:
+    raise SystemExit("依赖发布记录字段集合不符合固定协议")
+print(hashlib.sha256(payload).hexdigest())
+PY
+)"
 
 python3 "${service_dir}/scripts/build_static_assets.py"
 platform_capabilities_sha="$(
@@ -60,17 +177,29 @@ platform_adapters_sha="$(
         "${service_dir}/static/skills-manager/platform-adapters.json"
 )"
 
-echo "[1/7] 校验本地正式技能签名覆盖率"
+echo "[1/7] 校验本地技能签名和生产环境"
+python3 "${service_dir}/scripts/python_supply_chain.py" \
+    lock-metadata-verify --portal-dir "${service_dir}" >/dev/null
 python3 "${service_dir}/scripts/verify_skill_signature_coverage.py" \
     --skills-root "${repository_dir}/skills"
-
-echo "[2/7] 校验服务器环境变量"
-ssh "${ssh_args[@]}" "${deploy_host}" "python3 - <<'PY'
+ssh "${ssh_args[@]}" "${deploy_host}" "set -e
+    SOURCE_ENV=/etc/jiaotang-kb-ops.env
+    [ -f \"\${SOURCE_ENV}\" ] || SOURCE_ENV=/etc/jiaotang-kb.env
+    [ -f \"\${SOURCE_ENV}\" ] || { echo '缺少生产环境文件' >&2; exit 1; }
+    SOURCE_ENV=\"\${SOURCE_ENV}\" python3 - <<'PY'
+import os
+import platform
+import sys
 from pathlib import Path
 
-path = Path('/etc/jiaotang-kb.env')
+if platform.python_implementation() != 'CPython' or sys.version_info[:2] != (3, 12):
+    raise SystemExit(
+        '生产主机必须提供CPython 3.12，当前为'
+        f'{platform.python_implementation()} {platform.python_version()}'
+    )
+path = Path(os.environ['SOURCE_ENV'])
 values = {}
-for line in path.read_text().splitlines():
+for line in path.read_text(encoding='utf-8').splitlines():
     if '=' in line and not line.lstrip().startswith('#'):
         key, value = line.split('=', 1)
         values[key.strip()] = value.strip()
@@ -79,44 +208,72 @@ required = {
     'JIAOTANG_INDEX_DIR',
     'JIAOTANG_KNOWLEDGE_FILES_DIR',
     'JIAOTANG_SKILL_RELEASE_DIR',
-    'JIAOTANG_INDEX_SNAPSHOT_DIR',
     'JIAOTANG_MEMBER_COMPANY',
     'JIAOTANG_PUBLIC_HOST',
     'JIAOTANG_TOKEN_DERIVATION_SECRET',
     'JIAOTANG_SECURE_COOKIES',
     'JIAOTANG_OSS_ENDPOINT',
     'JIAOTANG_OSS_BUCKET',
-    'JIAOTANG_OSS_ACCESS_KEY_ID',
-    'JIAOTANG_OSS_ACCESS_KEY_SECRET',
 }
 missing = sorted(key for key in required if not values.get(key))
 if missing:
     raise SystemExit('缺少生产环境变量：' + ', '.join(missing))
+mode = values.get('JIAOTANG_OSS_AUTH_MODE', 'static').lower()
+auth_required = {
+    'static': {'JIAOTANG_OSS_ACCESS_KEY_ID', 'JIAOTANG_OSS_ACCESS_KEY_SECRET'},
+    'sts': {
+        'JIAOTANG_OSS_ACCESS_KEY_ID',
+        'JIAOTANG_OSS_ACCESS_KEY_SECRET',
+        'JIAOTANG_OSS_SECURITY_TOKEN',
+    },
+    'ram-role': {'JIAOTANG_OSS_RAM_ROLE_AUTH_HOST'},
+}.get(mode)
+if auth_required is None:
+    raise SystemExit('JIAOTANG_OSS_AUTH_MODE仅支持static、sts或ram-role')
+missing_auth = sorted(key for key in auth_required if not values.get(key))
+if missing_auth:
+    raise SystemExit('OSS认证配置缺失：' + ', '.join(missing_auth))
 if values['JIAOTANG_SECURE_COOKIES'].lower() != 'true':
     raise SystemExit('生产环境必须设置 JIAOTANG_SECURE_COOKIES=true')
-print('环境变量校验通过')
 PY"
 
-echo "[3/7] 创建不可覆盖的部署备份"
+echo "[2/7] 创建唯一不可变应用release槽"
 ssh "${ssh_args[@]}" "${deploy_host}" \
-    "set -e
-    /usr/local/sbin/jiaotang-kb-backup
-    install -d '${remote_backup_dir}'
-    cp -a '${remote_app_dir}/app' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/requirements.txt' '${remote_backup_dir}/'
-    if [ -d '${remote_app_dir}/scripts' ]; then cp -a '${remote_app_dir}/scripts' '${remote_backup_dir}/'; fi
-    if [ -d '${remote_app_dir}/references' ]; then cp -a '${remote_app_dir}/references' '${remote_backup_dir}/'; fi
-    if [ -d '${remote_app_dir}/installers' ]; then cp -a '${remote_app_dir}/installers' '${remote_backup_dir}/'; fi
-    if [ -d '${remote_app_dir}/docs' ]; then cp -a '${remote_app_dir}/docs' '${remote_backup_dir}/'; fi
-    if [ -d '${remote_app_dir}/skills' ]; then cp -a '${remote_app_dir}/skills' '${remote_backup_dir}/'; fi"
+    "LEGACY_APP_DIR='${legacy_app_dir}' RUNTIME_ROOT='${runtime_root}' RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
+import os
+import secrets
+from pathlib import Path
 
-echo "[4/7] 上传应用与运维文件"
-deployment_failed=0
+legacy = Path(os.environ['LEGACY_APP_DIR'])
+runtime = Path(os.environ['RUNTIME_ROOT'])
+release = Path(os.environ['RELEASE_DIR'])
+runtime.mkdir(parents=True, exist_ok=True)
+current = runtime / 'current'
+if not current.is_symlink():
+    if current.exists():
+        raise SystemExit(f'运行时current存在但不是符号链接：{current}')
+    if not (legacy / 'app' / 'main.py').is_file():
+        raise SystemExit(f'首次槽位化缺少可用legacy-current：{legacy}')
+    temporary = runtime / f'.current.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+    temporary.symlink_to(legacy)
+    os.replace(temporary, current)
+resolved = current.resolve(strict=True)
+if not (resolved / 'app' / 'main.py').is_file():
+    raise SystemExit(f'current不是有效应用release：{resolved}')
+if release.exists() or release.is_symlink():
+    raise SystemExit(f'不可变应用release已存在，拒绝覆盖：{release}')
+release.mkdir(parents=True, mode=0o755)
+PY"
+
 COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
-    app references templates static installers deploy scripts/build_knowledge_content_index.py \
-    scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py scripts/refresh_index_from_oss.py \
-    scripts/deploy_index_delta_to_server.sh \
-    scripts/verify_oss_mirror.py \
-    scripts/verify_authenticated_portal.py \
+    app references templates static installers deploy \
+    scripts/build_knowledge_content_index.py \
+    scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py \
+    scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
+    scripts/oss_auth.py \
+    scripts/validate_operational_health.py scripts/report_systemd_failure.py \
+    scripts/check_oss_governance.py scripts/deploy_index_delta_to_server.sh \
+    scripts/verify_oss_mirror.py scripts/verify_authenticated_portal.py \
     scripts/verify_skill_signature_coverage.py \
     scripts/build_policy_version_links.py \
     scripts/manage_project_algorithm_packs.py \
@@ -124,63 +281,54 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/upgrade_structured_knowledge_index.py \
     scripts/evaluate_structured_knowledge.py \
     scripts/project_catalog_matching.py \
-    scripts/migrate_first_public_release.py \
-    scripts/publish_skill_release.py \
-    scripts/release_transaction.py \
+    scripts/migrate_first_public_release.py scripts/publish_skill_release.py \
+    scripts/release_transaction.py scripts/smoke_test_production.sh \
+    scripts/python_supply_chain.py \
     tests/fixtures/structured_knowledge_gold.jsonl \
-    scripts/smoke_test_production.sh requirements.txt \
-    -C "${repository_dir}" docs/user-guide/企业全生命周期助手用户使用手册.md skills \
-    | ssh "${ssh_args[@]}" "${deploy_host}" "tar -C '${remote_app_dir}' -xf -" \
-    || deployment_failed=1
+    requirements.txt requirements.in requirements.lock \
+    requirements-build.in requirements-build.lock \
+    requirements-test.in requirements-test.lock \
+    requirements-lock-metadata.json \
+    -C "${repository_dir}" \
+    docs/user-guide/企业全生命周期助手用户使用手册.md skills \
+    | ssh "${ssh_args[@]}" "${deploy_host}" \
+        "tar -C '${remote_release_dir}' -xf -"
+ssh "${ssh_args[@]}" "${deploy_host}" \
+    "mkdir '${remote_release_dir}/dependency-wheelhouse'"
+COPYFILE_DISABLE=1 tar --no-xattrs -C "${wheelhouse_dir}" -cf - . \
+    | ssh "${ssh_args[@]}" "${deploy_host}" \
+        "tar -C '${remote_release_dir}/dependency-wheelhouse' -xf -"
+COPYFILE_DISABLE=1 tar --no-xattrs \
+    -C "$(dirname "${dependency_release_record}")" -cf - \
+    "$(basename "${dependency_release_record}")" \
+    | ssh "${ssh_args[@]}" "${deploy_host}" \
+        "tar -C '${remote_release_dir}' -xf -"
 
-echo "[5/7] 校验生产技能签名覆盖率并重启服务"
-if [[ "${deployment_failed}" -eq 0 ]]; then
-    ssh "${ssh_args[@]}" "${deploy_host}" "set -e
-        systemctl stop jiaotang-kb-health.timer jiaotang-kb-backup.timer jiaotang-kb-oss-sync.timer jiaotang-kb-oss-sync.path 2>/dev/null || true
-        REMOTE_APP_DIR='${remote_app_dir}' METADATA_QUARANTINE='/opt/jiaotang-kb-quarantine/macos-metadata-${timestamp}' python3 - <<'PY'
-import json
-import os
-from pathlib import Path
-
-root = Path(os.environ['REMOTE_APP_DIR'])
-quarantine = Path(os.environ['METADATA_QUARANTINE'])
-for path in sorted(root.rglob('*')):
-    if path.is_file() and (path.name.startswith('._') or path.name == '.DS_Store'):
-        target = quarantine / path.relative_to(root)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        path.replace(target)
-
-skills_root = root / 'skills'
-suite = json.loads((skills_root / 'suite-manifest.json').read_text(encoding='utf-8'))
-declared = set(suite['skills'])
-undeclared_quarantine = quarantine.parent / 'undeclared-skills-${timestamp}'
-for skill_dir in sorted(skills_root.iterdir()):
-    if (
-        skill_dir.is_dir()
-        and (skill_dir / 'SKILL.md').is_file()
-        and skill_dir.name not in declared
-    ):
-        undeclared_quarantine.mkdir(parents=True, exist_ok=True)
-        skill_dir.replace(undeclared_quarantine / skill_dir.name)
-PY
-        install -m 0755 '${remote_app_dir}/deploy/healthcheck.sh' '/usr/local/sbin/jiaotang-kb-healthcheck.${timestamp}'
-        install -m 0755 '${remote_app_dir}/deploy/backup.sh' '/usr/local/sbin/jiaotang-kb-backup.${timestamp}'
-        install -m 0755 '${remote_app_dir}/deploy/oss-sync.sh' '/usr/local/sbin/jiaotang-kb-oss-sync.${timestamp}'
-        install -m 0755 '${remote_app_dir}/deploy/refresh-index.sh' '/usr/local/sbin/jiaotang-kb-refresh-index.${timestamp}'
-        install -m 0755 '${remote_app_dir}/scripts/smoke_test_production.sh' '/usr/local/sbin/jiaotang-kb-smoke-test.${timestamp}'
-        mv '/usr/local/sbin/jiaotang-kb-healthcheck.${timestamp}' /usr/local/sbin/jiaotang-kb-healthcheck
-        mv '/usr/local/sbin/jiaotang-kb-backup.${timestamp}' /usr/local/sbin/jiaotang-kb-backup
-        mv '/usr/local/sbin/jiaotang-kb-oss-sync.${timestamp}' /usr/local/sbin/jiaotang-kb-oss-sync
-        mv '/usr/local/sbin/jiaotang-kb-refresh-index.${timestamp}' /usr/local/sbin/jiaotang-kb-refresh-index
-        mv '/usr/local/sbin/jiaotang-kb-smoke-test.${timestamp}' /usr/local/sbin/jiaotang-kb-smoke-test
-        cp '${remote_app_dir}/deploy/jiaotang-kb.service' '${remote_app_dir}/deploy/jiaotang-kb-health.service' '${remote_app_dir}/deploy/jiaotang-kb-backup.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.service' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.timer' '${remote_app_dir}/deploy/jiaotang-kb-oss-sync.path' /etc/systemd/system/
-        chown -R jiaotang:jiaotang '${remote_app_dir}/app' '${remote_app_dir}/references' '${remote_app_dir}/templates' '${remote_app_dir}/static' '${remote_app_dir}/installers' '${remote_app_dir}/docs' '${remote_app_dir}/skills' '${remote_app_dir}/scripts'
-        EXPECTED_PLATFORM_CAPABILITIES_SHA='${platform_capabilities_sha}' EXPECTED_PLATFORM_ADAPTERS_SHA='${platform_adapters_sha}' REMOTE_APP_DIR='${remote_app_dir}' python3 - <<'PY'
+echo "[3/7] 离线校验新release并构建独立运行环境"
+ssh "${ssh_args[@]}" "${deploy_host}" "set -e
+    python3 '${remote_release_dir}/scripts/python_supply_chain.py' \
+        lock-metadata-verify --portal-dir '${remote_release_dir}' >/dev/null
+    python3 -m venv '${remote_release_dir}/.venv'
+    PIP_NO_INDEX=1 '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/python_supply_chain.py' install \
+        --lock '${remote_release_dir}/requirements.lock' \
+        --build-lock '${remote_release_dir}/requirements-build.lock' \
+        --wheelhouse '${remote_release_dir}/dependency-wheelhouse' \
+        --expected-manifest-sha256 \
+        '${expected_wheelhouse_manifest_sha256}'
+    '${remote_release_dir}/.venv/bin/python' -m py_compile \
+        '${remote_release_dir}/app/main.py'
+    '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/verify_skill_signature_coverage.py' \
+        --skills-root '${remote_release_dir}/skills'
+    EXPECTED_PLATFORM_CAPABILITIES_SHA='${platform_capabilities_sha}' \
+    EXPECTED_PLATFORM_ADAPTERS_SHA='${platform_adapters_sha}' \
+    RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
 import hashlib
 import os
 from pathlib import Path
 
-root = Path(os.environ['REMOTE_APP_DIR']) / 'static' / 'skills-manager'
+root = Path(os.environ['RELEASE_DIR']) / 'static' / 'skills-manager'
 checks = {
     'platform-capabilities.json': os.environ['EXPECTED_PLATFORM_CAPABILITIES_SHA'],
     'platform-adapters.json': os.environ['EXPECTED_PLATFORM_ADAPTERS_SHA'],
@@ -188,90 +336,356 @@ checks = {
 for name, expected in checks.items():
     actual = hashlib.sha256((root / name).read_bytes()).hexdigest()
     if actual != expected:
-        raise SystemExit(f'生产静态清单未与部署源同步：{name}')
+        raise SystemExit(f'新release静态清单校验失败：{name}')
 PY
-        source /etc/jiaotang-kb.env
-        '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/verify_skill_signature_coverage.py' --skills-root '${remote_app_dir}/skills' --output "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json" --deployment-id '${timestamp}' --scope production
-        chown jiaotang:jiaotang "\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json"
-        SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt '${remote_app_dir}/.venv/bin/pip' install -r '${remote_app_dir}/requirements.txt'
-        '${remote_app_dir}/.venv/bin/python' -m py_compile '${remote_app_dir}/app/main.py'
-        set -a
-        source /etc/jiaotang-kb.env
-        set +a
-        runuser --preserve-environment -u jiaotang -- /usr/local/sbin/jiaotang-kb-refresh-index
-        if [ '${upgrade_index}' = 'true' ]; then
-            cp --reflink=auto "\${JIAOTANG_INDEX_DIR}/knowledge_content.sqlite3" '${remote_index_snapshot}'
-            '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/upgrade_structured_knowledge_index.py' \
-                "\${JIAOTANG_INDEX_DIR}/knowledge_content.sqlite3" \
-                --output "\${JIAOTANG_INDEX_DIR}/knowledge_content.upgraded-${timestamp}.sqlite3" \
-                --project-index '${remote_app_dir}/skills/project-matching/references/canonical-project-index.jsonl'
-            chown jiaotang:jiaotang "\${JIAOTANG_INDEX_DIR}/knowledge_content.upgraded-${timestamp}.sqlite3"
-            mv "\${JIAOTANG_INDEX_DIR}/knowledge_content.upgraded-${timestamp}.sqlite3" "\${JIAOTANG_INDEX_DIR}/knowledge_content.sqlite3"
+    chmod -R a-w '${remote_release_dir}'
+    find '${remote_release_dir}' -type d -exec chmod a+rx {} +
+    find '${remote_release_dir}' -type f -exec chmod a+r {} +"
+
+echo "[4/7] 写入职责分离环境并安装release感知入口"
+ssh "${ssh_args[@]}" "${deploy_host}" \
+    "BUILD_COMMIT='${build_commit}' DEPLOYMENT_ID='${deployment_id}' \
+    BUILD_CREATED_AT='${build_created_at}' RUNTIME_ROOT='${runtime_root}' \
+    DEPENDENCY_LOCK_SHA256='${dependency_lock_sha256}' \
+    DEPENDENCY_BUILD_LOCK_SHA256='${dependency_build_lock_sha256}' \
+    WHEELHOUSE_INSTALL_LOCK_SHA256='${wheelhouse_install_lock_sha256}' \
+    WHEELHOUSE_MANIFEST_SHA256='${expected_wheelhouse_manifest_sha256}' \
+    WHEELHOUSE_CONTENT_IDENTITY_SHA256='${wheelhouse_content_identity_sha256}' \
+    DEPENDENCY_IDENTITY_SHA256='${dependency_identity_sha256}' \
+    DEPENDENCY_RELEASE_RECORD_SHA256='${dependency_release_record_sha256}' \
+    RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
+import grp
+import os
+import secrets
+import shutil
+from pathlib import Path
+
+legacy_env = Path('/etc/jiaotang-kb.env')
+ops_env = Path('/etc/jiaotang-kb-ops.env')
+app_env = Path('/etc/jiaotang-kb-app.env')
+source = ops_env if ops_env.is_file() else legacy_env
+lines = []
+for line in source.read_text(encoding='utf-8').splitlines():
+    if '=' in line and not line.lstrip().startswith('#'):
+        key, value = line.split('=', 1)
+        lines.append((key.strip(), value.strip()))
+values = dict(lines)
+if not values.get('JIAOTANG_OSS_RELEASE_SIGNING_SECRET'):
+    lines.append(
+        ('JIAOTANG_OSS_RELEASE_SIGNING_SECRET', secrets.token_urlsafe(48))
+    )
+overrides = {
+    'JIAOTANG_APP_DIR': str(Path(os.environ['RUNTIME_ROOT']) / 'current'),
+    'JIAOTANG_BUILD_COMMIT': os.environ['BUILD_COMMIT'],
+    'JIAOTANG_DEPLOYMENT_ID': os.environ['DEPLOYMENT_ID'],
+    'JIAOTANG_BUILD_CREATED_AT': os.environ['BUILD_CREATED_AT'],
+    'JIAOTANG_DEPENDENCY_LOCK_SHA256': os.environ[
+        'DEPENDENCY_LOCK_SHA256'
+    ],
+    'JIAOTANG_DEPENDENCY_BUILD_LOCK_SHA256': os.environ[
+        'DEPENDENCY_BUILD_LOCK_SHA256'
+    ],
+    'JIAOTANG_WHEELHOUSE_INSTALL_LOCK_SHA256': os.environ[
+        'WHEELHOUSE_INSTALL_LOCK_SHA256'
+    ],
+    'JIAOTANG_WHEELHOUSE_MANIFEST_SHA256': os.environ[
+        'WHEELHOUSE_MANIFEST_SHA256'
+    ],
+    'JIAOTANG_WHEELHOUSE_CONTENT_IDENTITY_SHA256': os.environ[
+        'WHEELHOUSE_CONTENT_IDENTITY_SHA256'
+    ],
+    'JIAOTANG_DEPENDENCY_IDENTITY_SHA256': os.environ[
+        'DEPENDENCY_IDENTITY_SHA256'
+    ],
+    'JIAOTANG_DEPENDENCY_RELEASE_RECORD_SHA256': os.environ[
+        'DEPENDENCY_RELEASE_RECORD_SHA256'
+    ],
+}
+lines = [(key, value) for key, value in lines if key not in overrides]
+lines.extend(overrides.items())
+ops_text = ''.join(f'{key}={value}\n' for key, value in lines)
+app_text = ''.join(
+    f'{key}={value}\n'
+    for key, value in lines
+    if not key.startswith('JIAOTANG_OSS_')
+    and not key.startswith('JIAOTANG_BACKUP_OSS_')
+)
+for target, content, mode in (
+    (ops_env, ops_text, 0o600),
+    (app_env, app_text, 0o640),
+):
+    temporary = target.with_name(
+        f'.{target.name}.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+    )
+    temporary.write_text(content, encoding='utf-8')
+    os.chmod(temporary, mode)
+    os.replace(temporary, target)
+os.chown(app_env, 0, grp.getgrnam('jiaotang').gr_gid)
+if legacy_env.is_file():
+    os.chmod(legacy_env, 0o600)
+
+runtime = Path(os.environ['RUNTIME_ROOT'])
+release = Path(os.environ['RELEASE_DIR'])
+legacy_entries = runtime / 'legacy-entrypoints'
+unit_names = (
+    'jiaotang-kb.service',
+    'jiaotang-kb-health.service',
+    'jiaotang-kb-health.timer',
+    'jiaotang-kb-backup.service',
+    'jiaotang-kb-backup.timer',
+    'jiaotang-kb-index-refresh.service',
+    'jiaotang-kb-failure-report@.service',
+    'jiaotang-kb-oss-sync.service',
+    'jiaotang-kb-oss-sync.timer',
+    'jiaotang-kb-oss-sync.path',
+)
+wrapper_targets = {
+    '/usr/local/sbin/jiaotang-kb-healthcheck': 'deploy/healthcheck.sh',
+    '/usr/local/sbin/jiaotang-kb-backup': 'deploy/backup.sh',
+    '/usr/local/sbin/jiaotang-kb-oss-sync': 'deploy/oss-sync.sh',
+    '/usr/local/sbin/jiaotang-kb-refresh-index': 'deploy/refresh-index.sh',
+    '/usr/local/sbin/jiaotang-kb-smoke-test': 'scripts/smoke_test_production.sh',
+}
+entries = {
+    **{
+        f'/etc/systemd/system/{name}': f'deploy/{name}'
+        for name in unit_names
+    },
+    **wrapper_targets,
+}
+for target_value, relative in entries.items():
+    target = Path(target_value)
+    source_file = release / relative
+    if not source_file.is_file():
+        raise SystemExit(f'新release缺少运行入口：{source_file}')
+    dynamic = runtime / 'current' / relative
+    expected = str(dynamic)
+    if target.is_symlink() and os.readlink(target) == expected:
+        continue
+    if target.exists() or target.is_symlink():
+        preserved = legacy_entries / target.relative_to('/')
+        if not preserved.exists() and not preserved.is_symlink():
+            preserved.parent.mkdir(parents=True, exist_ok=True)
+            if target.is_symlink():
+                preserved.symlink_to(os.readlink(target))
+            elif target.is_file():
+                shutil.copy2(target, preserved)
+    temporary = target.with_name(
+        f'.{target.name}.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+    )
+    temporary.symlink_to(dynamic)
+    os.replace(temporary, target)
+PY
+    systemctl disable --now \
+        jiaotang-kb-oss-sync.timer jiaotang-kb-oss-sync.path \
+        2>/dev/null || true
+    systemctl stop jiaotang-kb-backup.timer 2>/dev/null || true"
+
+echo "[5/7] 发布签名索引、原子切换应用current并健康回滚"
+deployment_failed=0
+ssh "${ssh_args[@]}" "${deploy_host}" "set -Eeuo pipefail
+    set -a
+    source /etc/jiaotang-kb-ops.env
+    set +a
+    app_switched=0
+    index_switched=0
+    rollback_on_error() {
+        trap - ERR
+        set +e
+        if [ \"\${app_switched}\" -eq 1 ]; then
+            RUNTIME_ROOT='${runtime_root}' python3 - <<'PY'
+import os
+import secrets
+from pathlib import Path
+
+runtime = Path(os.environ['RUNTIME_ROOT'])
+previous = runtime / 'previous'
+if previous.is_symlink():
+    target = previous.resolve(strict=True)
+    temporary = runtime / f'.current.rollback.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+    temporary.symlink_to(target)
+    os.replace(temporary, runtime / 'current')
+PY
+        fi
+        if [ \"\${index_switched}\" -eq 1 ] \
+            && [ -L \"\${JIAOTANG_INDEX_DIR}/previous\" ]; then
+            '${remote_release_dir}/.venv/bin/python' \
+                '${remote_release_dir}/scripts/refresh_index_from_oss.py' \
+                --rollback
         fi
         systemctl daemon-reload
         systemctl restart jiaotang-kb
-        systemctl enable --now jiaotang-kb-health.timer jiaotang-kb-backup.timer jiaotang-kb-oss-sync.timer jiaotang-kb-oss-sync.path
-        healthy=0
-        for attempt in \$(seq 1 30); do
-            if curl --fail --silent --show-error http://127.0.0.1:8100/health >/dev/null 2>&1; then
-                healthy=1
-                break
-            fi
-            sleep 2
-        done
-        if [ "\${healthy}" -ne 1 ]; then
-            systemctl --no-pager --full status jiaotang-kb || true
-            journalctl -u jiaotang-kb -n 80 --no-pager || true
-            exit 1
+        curl --fail --silent --show-error --retry 10 --retry-delay 2 \
+            http://127.0.0.1:8100/health >/dev/null
+        echo '部署失败，应用current已指回previous；新release保留待审。' >&2
+    }
+    trap rollback_on_error ERR
+
+    bootstrap_release_id=\$(
+        RELEASE_DIR='${remote_release_dir}' \
+        '${remote_release_dir}/.venv/bin/python' - \
+        \"\${JIAOTANG_INDEX_DIR}\" <<'PY'
+import os
+import sqlite3
+import sys
+from pathlib import Path
+
+release = Path(os.environ['RELEASE_DIR'])
+sys.path.insert(0, str(release / 'scripts'))
+from oss_auth import build_bucket
+from publish_index_to_oss import PRODUCTION_FILES, pointer_state, release_id_for
+from refresh_index_from_oss import valid_index
+
+index_dir = Path(sys.argv[1])
+missing = [name for name in PRODUCTION_FILES if not (index_dir / name).is_file()]
+if missing:
+    raise SystemExit('本地索引release集合不完整：' + ', '.join(missing))
+for name in PRODUCTION_FILES:
+    path = index_dir / name
+    if path.suffix.lower() in {'.sqlite', '.sqlite3', '.db'}:
+        with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as connection:
+            if connection.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
+                raise SystemExit(f'本地SQLite完整性失败：{path.name}')
+if not valid_index(index_dir / 'knowledge_content.sqlite3'):
+    raise SystemExit('本地全文索引结构化专表校验失败')
+release_id = release_id_for(index_dir, checkpoint=False)
+prefix = os.environ.get('JIAOTANG_OSS_PREFIX', 'production').strip('/')
+current, _ = pointer_state(build_bucket(), f'{prefix}/index/current.json')
+current_id = str(current.get('release_id') or '') if current else ''
+if current_id and current_id != release_id:
+    raise SystemExit(
+        f'远端current已前移到{current_id}，本地为{release_id}；'
+        '拒绝用陈旧本地索引执行bootstrap'
+    )
+print(release_id)
+PY
+    )
+    '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/publish_index_to_oss.py' \
+        --index-dir \"\${JIAOTANG_INDEX_DIR}\" \
+        --release-id \"\${bootstrap_release_id}\" \
+        --allow-initial-current \
+        --index-policy always \
+        --prevalidated \
+        --capacity-budget-bytes \
+        \"\${JIAOTANG_OSS_CAPACITY_BUDGET_BYTES:-100000000000}\"
+
+    index_before=\$(readlink \"\${JIAOTANG_INDEX_DIR}/current\" 2>/dev/null || true)
+    '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/refresh_index_from_oss.py'
+    index_after=\$(readlink \"\${JIAOTANG_INDEX_DIR}/current\" 2>/dev/null || true)
+    if [ \"\${index_before}\" != \"\${index_after}\" ]; then
+        index_switched=1
+    fi
+
+    RUNTIME_ROOT='${runtime_root}' RELEASE_DIR='${remote_release_dir}' \
+        python3 - <<'PY'
+import os
+import secrets
+from pathlib import Path
+
+runtime = Path(os.environ['RUNTIME_ROOT'])
+release = Path(os.environ['RELEASE_DIR']).resolve(strict=True)
+current = runtime / 'current'
+old = current.resolve(strict=True)
+previous_tmp = runtime / f'.previous.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+previous_tmp.symlink_to(old)
+os.replace(previous_tmp, runtime / 'previous')
+current_tmp = runtime / f'.current.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+current_tmp.symlink_to(release)
+os.replace(current_tmp, current)
+PY
+    app_switched=1
+    systemctl daemon-reload
+    systemctl restart jiaotang-kb
+    systemctl enable --now jiaotang-kb-health.timer
+
+    healthy=0
+    for attempt in \$(seq 1 30); do
+        if curl --fail --silent --show-error \
+            http://127.0.0.1:8100/health >/dev/null 2>&1; then
+            healthy=1
+            break
         fi
-        source /etc/jiaotang-kb.env
-        '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/migrate_first_public_release.py' \
-            --database "\${JIAOTANG_DATA_DIR}/knowledge.db" \
-            --release-dir "\${JIAOTANG_SKILL_RELEASE_DIR}"
-        systemctl start jiaotang-kb-health.service
-        systemctl start --no-block jiaotang-kb-backup.service
-        '${remote_app_dir}/.venv/bin/python' '${remote_app_dir}/scripts/verify_authenticated_portal.py' \
-            --base-url http://127.0.0.1:8100" || deployment_failed=1
-fi
+        sleep 2
+    done
+    if [ \"\${healthy}\" -ne 1 ]; then
+        systemctl --no-pager --full status jiaotang-kb || true
+        journalctl -u jiaotang-kb -n 80 --no-pager || true
+        false
+    fi
+
+    source /etc/jiaotang-kb-app.env
+    '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/migrate_first_public_release.py' \
+        --database \"\${JIAOTANG_DATA_DIR}/knowledge.db\" \
+        --release-dir \"\${JIAOTANG_SKILL_RELEASE_DIR}\"
+    systemctl start jiaotang-kb-health.service
+    '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/verify_authenticated_portal.py' \
+        --base-url http://127.0.0.1:8100
+    trap - ERR" || deployment_failed=1
 
 if [[ "${deployment_failed}" -ne 0 ]]; then
-    echo "部署失败，正在恢复 ${remote_backup_dir}" >&2
-    ssh "${ssh_args[@]}" "${deploy_host}" \
-        "set -e
-        cp -a '${remote_backup_dir}/app/.' '${remote_app_dir}/app/'
-        if [ -d '${remote_backup_dir}/references' ]; then
-            install -d '${remote_app_dir}/references'
-            cp -a '${remote_backup_dir}/references/.' '${remote_app_dir}/references/'
-        fi
-        cp -a '${remote_backup_dir}/templates/.' '${remote_app_dir}/templates/'
-        cp -a '${remote_backup_dir}/static/.' '${remote_app_dir}/static/'
-        cp -a '${remote_backup_dir}/requirements.txt' '${remote_app_dir}/requirements.txt'
-        if [ -d '${remote_backup_dir}/scripts' ]; then install -d '${remote_app_dir}/scripts' && cp -a '${remote_backup_dir}/scripts/.' '${remote_app_dir}/scripts/'; fi
-        if [ -d '${remote_backup_dir}/installers' ]; then
-            install -d '${remote_app_dir}/installers'
-            cp -a '${remote_backup_dir}/installers/.' '${remote_app_dir}/installers/'
-        elif [ -d '${remote_app_dir}/installers' ]; then
-            install -d '/opt/jiaotang-kb-quarantine/rollback-${timestamp}'
-            mv '${remote_app_dir}/installers' '/opt/jiaotang-kb-quarantine/rollback-${timestamp}/installers'
-        fi
-        if [ -d '${remote_backup_dir}/docs' ]; then install -d '${remote_app_dir}/docs' && cp -a '${remote_backup_dir}/docs/.' '${remote_app_dir}/docs/'; fi
-        if [ -d '${remote_backup_dir}/skills' ]; then install -d '${remote_app_dir}/skills' && cp -a '${remote_backup_dir}/skills/.' '${remote_app_dir}/skills/'; fi
-        if [ -f '${remote_index_snapshot}' ]; then cp --reflink=auto '${remote_index_snapshot}' /srv/jiaotang/knowledge-index/knowledge_content.sqlite3; chown jiaotang:jiaotang /srv/jiaotang/knowledge-index/knowledge_content.sqlite3; fi
-        SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt '${remote_app_dir}/.venv/bin/pip' install -r '${remote_app_dir}/requirements.txt'
-        systemctl restart jiaotang-kb"
+    echo "部署失败；未读取、盘点、迁移或处置任何历史部署备份。" >&2
     exit 1
 fi
 
-echo "[6/7] 检查固定路由"
+echo "[6/7] 检查固定路由和精确构建身份"
 ssh "${ssh_args[@]}" "${deploy_host}" "set -e
-    source /etc/jiaotang-kb.env
+    source /etc/jiaotang-kb-app.env
     resolve=(--resolve \"\${JIAOTANG_PUBLIC_HOST}:443:127.0.0.1\")
-    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/login\")\" = 200
-    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/setup\")\" = 303
-    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/v1/me\")\" = 401
-    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/mcp/\")\" = 401"
+    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \
+        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/login\")\" = 200
+    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \
+        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/setup\")\" = 303
+    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \
+        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/v1/me\")\" = 401
+    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \
+        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/mcp/\")\" = 401
+    build_json=\$(curl --fail --silent --show-error \
+        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/build\")
+    python3 - \"\${build_json}\" '${build_commit}' \
+        '${deployment_id}' '${build_created_at}' \
+        '${dependency_lock_sha256}' \
+        '${dependency_build_lock_sha256}' \
+        '${wheelhouse_install_lock_sha256}' \
+        '${expected_wheelhouse_manifest_sha256}' \
+        '${wheelhouse_content_identity_sha256}' \
+        '${dependency_identity_sha256}' \
+        '${dependency_release_record_sha256}' <<'PY'
+import json
+import sys
 
-ssh "${ssh_args[@]}" "${deploy_host}" "set -e; source /etc/jiaotang-kb.env; curl --fail --silent --show-error --resolve \"\${JIAOTANG_PUBLIC_HOST}:443:127.0.0.1\" \"https://\${JIAOTANG_PUBLIC_HOST}/guide\" >/dev/null"
+payload = json.loads(sys.argv[1])
+assert payload.get('commit') == sys.argv[2], '生产/build commit与部署源不一致'
+assert payload.get('deployment_id') == sys.argv[3], '生产/build deployment_id不一致'
+assert payload.get('built_at') == sys.argv[4], '生产/build built_at不一致'
+assert payload.get('dependency_lock_sha256') == sys.argv[5], (
+    '生产/build dependency_lock_sha256不一致'
+)
+assert payload.get('dependency_build_lock_sha256') == sys.argv[6], (
+    '生产/build dependency_build_lock_sha256不一致'
+)
+assert payload.get('wheelhouse_install_lock_sha256') == sys.argv[7], (
+    '生产/build wheelhouse_install_lock_sha256不一致'
+)
+assert payload.get('wheelhouse_manifest_sha256') == sys.argv[8], (
+    '生产/build wheelhouse_manifest_sha256不一致'
+)
+assert payload.get('wheelhouse_content_identity_sha256') == sys.argv[9], (
+    '生产/build wheelhouse_content_identity_sha256不一致'
+)
+assert payload.get('dependency_identity_sha256') == sys.argv[10], (
+    '生产/build dependency_identity_sha256不一致'
+)
+assert payload.get('dependency_release_record_sha256') == sys.argv[11], (
+    '生产/build dependency_release_record_sha256不一致'
+)
+PY
+    curl --fail --silent --show-error \
+        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/guide\" >/dev/null"
 
-echo "[7/7] 部署完成：${timestamp}"
-echo "备份目录：${remote_backup_dir}"
+echo "[7/7] 部署完成：${deployment_id}"
+echo "应用current：${remote_release_dir}"
+echo "本轮未执行灾备恢复演练，也未处理历史对象、既有暂存或历史部署备份。"

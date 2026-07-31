@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}登录｜知识产权大脑{% endblock %}
 {% block content %}
-<main class="auth-shell">
+<main class="auth-shell" data-clear-sensitive-storage-on-load>
   <section class="auth-story">
     <a class="brand brand-on-dark" href="/login"><span class="brand-mark brand-mark-wide">GCIP</span><span><strong>知识产权大脑</strong><small>共创团队知识服务</small></span></a>
     <div class="archive-number">TEAM AI WORKSPACE</div>
@@ -15,7 +15,7 @@
       {% if registered %}<div class="notice success">注册成功，请使用新账号登录。</div>{% endif %}
       {% if password_reset %}<div class="notice success">密码已重置，请使用新密码登录。</div>{% endif %}
       {% if error %}<div class="notice alert">{{ error }}</div>{% endif %}
-      <form method="post" action="/login" class="form-stack">
+      <form method="post" action="/login" class="form-stack" data-clear-sensitive-storage>
         <input type="hidden" name="next" value="{{ next_url or '' }}">
         <label>英文登录账号<input name="username" required autocomplete="username" placeholder="例如 shichen"></label>
         <label>密码<input name="password" type="password" required autocomplete="current-password" placeholder="请输入密码"></label>

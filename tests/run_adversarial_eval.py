@@ -7,12 +7,13 @@ import argparse
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
 import zipfile
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,17 +38,47 @@ def arguments() -> argparse.Namespace:
 
 def extract_plugin(archive: Path, destination: Path) -> Path:
     destination.mkdir(parents=True, exist_ok=False)
+    root = destination.resolve()
+    seen: set[str] = set()
     with zipfile.ZipFile(archive) as bundle:
-        root = destination.resolve()
         for member in bundle.infolist():
-            target = (destination / member.filename).resolve()
+            name = member.filename.replace("\\", "/")
+            path = PurePosixPath(name)
+            mode = (member.external_attr >> 16) & 0o170000
+            canonical = "/".join(
+                part for part in path.parts if part not in {"", "."}
+            )
+            identity = canonical.casefold()
+            if (
+                name != member.filename
+                or not canonical
+                or path.is_absolute()
+                or ".." in path.parts
+                or ":" in name
+                or "\x00" in name
+                or mode == stat.S_IFLNK
+                or identity in seen
+            ):
+                raise RuntimeError(
+                    f"ZIP条目不安全或重复：{member.filename}"
+                )
+            seen.add(identity)
+            target = (destination / Path(*path.parts)).resolve()
             if target != root and root not in target.parents:
-                raise RuntimeError(f"ZIP包含不安全路径:{member.filename}")
+                raise RuntimeError(f"ZIP路径越界：{member.filename}")
         bundle.extractall(destination)
     manifests = list(destination.rglob(".codebuddy-plugin/plugin.json"))
     if len(manifests) != 1:
         raise RuntimeError(f"应有1个插件清单，实际{len(manifests)}")
     return manifests[0].parent.parent
+
+
+def recoverable_workspace(prefix: str) -> Path:
+    workspace_root = Path(
+        os.environ.get("JIAOTANG_RELEASE_WORK_ROOT", tempfile.gettempdir())
+    ).expanduser().resolve()
+    workspace_root.mkdir(parents=True, exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix=prefix, dir=workspace_root))
 
 
 def parse_route_json(stdout: str) -> dict:
@@ -172,7 +203,7 @@ def main() -> int:
     if not prompts:
         raise RuntimeError("没有选中任何测试用例")
 
-    workspace = Path(tempfile.mkdtemp(prefix="jiaotang-adversarial-eval-"))
+    workspace = recoverable_workspace("jiaotang-adversarial-eval-")
     plugin_root = extract_plugin(
         Path(options.suite_zip).expanduser().resolve(), workspace / "plugin"
     )
@@ -202,8 +233,6 @@ def main() -> int:
             "json",
             "--max-turns",
             str(options.max_turns),
-            "--permission-mode",
-            "bypassPermissions",
             "--plugin-dir",
             str(plugin_root),
         ]

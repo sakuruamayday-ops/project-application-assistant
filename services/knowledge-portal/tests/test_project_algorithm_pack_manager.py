@@ -737,6 +737,8 @@ def test_production_deployment_includes_algorithm_references_and_rollback():
     assert "app references templates static" in deploy_script
     assert "scripts/manage_project_algorithm_packs.py" in deploy_script
     assert "scripts/validate_project_algorithm_packs.py" in deploy_script
-    assert "remote_backup_dir}/scripts" in deploy_script
-    assert "remote_backup_dir}/references" in deploy_script
-    assert "remote_app_dir}/references" in deploy_script
+    assert "jiaotang-kb-release-slots" in deploy_script
+    assert "runtime / 'previous'" in deploy_script
+    assert "runtime / 'current'" in deploy_script
+    assert "应用current已指回previous" in deploy_script
+    assert "历史部署备份" in deploy_script

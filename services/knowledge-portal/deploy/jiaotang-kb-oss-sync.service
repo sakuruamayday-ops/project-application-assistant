@@ -1,16 +1,13 @@
 [Unit]
-Description=Incrementally sync Jiaotang production knowledge to OSS
-After=network-online.target jiaotang-kb.service
-Wants=network-online.target
+Description=DISABLED legacy Jiaotang relative-path OSS sync
+ConditionPathExists=/run/jiaotang-enable-legacy-oss-sync
 
 [Service]
 Type=oneshot
-EnvironmentFile=/etc/jiaotang-kb.env
 ExecStart=/usr/local/sbin/jiaotang-kb-oss-sync
-User=root
-Group=root
+User=nobody
+Group=nogroup
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/jiaotang-kb /var/backups/jiaotang-kb /srv/jiaotang/index-snapshots
 NoNewPrivileges=true

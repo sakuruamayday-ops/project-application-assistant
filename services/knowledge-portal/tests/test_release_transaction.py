@@ -328,3 +328,67 @@ def test_failed_state_cannot_skip_remaining_release_participants(
         )
         assert resumed["state"] == "portal_staged"
         assert resumed["last_success_state"] == "portal_staged"
+
+
+def test_portal_published_failure_resumes_at_github_without_state_loss(
+    tmp_path: Path,
+) -> None:
+    verification, signature, public_key = signed_transaction(tmp_path)
+    now = datetime(2026, 7, 30, tzinfo=timezone.utc)
+    with sqlite3.connect(":memory:") as connection:
+        connection.row_factory = sqlite3.Row
+        MODULE.acquire_release_lease(
+            connection,
+            verification=verification,
+            signature_payload=signature,
+            public_key_text=public_key,
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            ttl_seconds=3600,
+            now=now,
+        )
+        for offset, state in enumerate(
+            (
+                "github_staged",
+                "portal_staged",
+                "installing",
+                "installed",
+                "portal_published",
+            ),
+            start=1,
+        ):
+            MODULE.transition_release_transaction(
+                connection,
+                version="2.0.0",
+                transaction_sha256=verification["manifest_sha256"],
+                holder_id="thread-a",
+                lease_token="a" * 32,
+                target_state=state,
+                now=now + timedelta(seconds=offset),
+            )
+        failed = MODULE.transition_release_transaction(
+            connection,
+            version="2.0.0",
+            transaction_sha256=verification["manifest_sha256"],
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            target_state="failed",
+            evidence={
+                "partial_state": "portal-published-github-pending",
+            },
+            now=now + timedelta(seconds=6),
+        )
+        assert failed["state"] == "failed"
+        assert failed["last_success_state"] == "portal_published"
+
+        resumed = MODULE.transition_release_transaction(
+            connection,
+            version="2.0.0",
+            transaction_sha256=verification["manifest_sha256"],
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            target_state="github_published",
+            now=now + timedelta(seconds=7),
+        )
+        assert resumed["state"] == "github_published"
+        assert resumed["last_success_state"] == "github_published"
