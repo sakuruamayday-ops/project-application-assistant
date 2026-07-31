@@ -322,6 +322,7 @@ allowlist = (
     Path('templates/admin_kindle.html'),
     Path('templates/kindle_public.html'),
     Path('templates/_private_admin_nav.html'),
+    Path('static/kindle.css'),
 )
 files = []
 for relative in allowlist:
@@ -435,7 +436,11 @@ release_id_for(index_dir, checkpoint=False)
 PY
     chmod -R a-w '${remote_release_dir}'
     find '${remote_release_dir}' -type d -exec chmod a+rx {} +
-    find '${remote_release_dir}' -type f -exec chmod a+r {} +"
+    find '${remote_release_dir}' -type f -exec chmod a+r {} +
+    if [ -x /usr/local/sbin/jiaotang-kb-private-admin-guard ]; then
+        JIAOTANG_APP_DIR='${remote_release_dir}' \
+            /usr/local/sbin/jiaotang-kb-private-admin-guard
+    fi"
 
 echo "[4/7] 写入职责分离环境并安装release感知入口"
 ssh "${ssh_args[@]}" "${deploy_host}" \

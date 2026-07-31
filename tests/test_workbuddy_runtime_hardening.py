@@ -771,6 +771,77 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertEqual(workspace.parent, root.resolve())
             self.assertTrue(workspace.is_dir())
 
+    def test_adversarial_gate_prompt_is_bounded_route_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            completed = Namespace(
+                stdout=(
+                    'ROUTE_JSON: {"primary_skill":"policy-retrieval",'
+                    '"activated_skills":["policy-retrieval"],'
+                    '"clarification_required":false,'
+                    '"policy_status":"stale","claims_limited":true}\n'
+                ),
+                stderr="",
+                returncode=0,
+            )
+            with mock.patch.object(
+                ADVERSARIAL_EVAL.subprocess,
+                "run",
+                return_value=completed,
+            ) as runner:
+                result = ADVERSARIAL_EVAL.run_case(
+                    item={
+                        "case_id": "ADV-TEST",
+                        "category": "stale-policy",
+                        "prompt": "只核验已截止政策的效力。",
+                    },
+                    expected={
+                        "expected_primary_skill": "policy-retrieval",
+                        "required_skills": ["policy-retrieval"],
+                        "forbidden_skills": ["project-feasibility"],
+                        "clarification_required": False,
+                        "category": "stale-policy",
+                    },
+                    output=root,
+                    plugin_root=root / "plugin",
+                    codebuddy_cli="/tmp/codebuddy",
+                    max_turns=6,
+                    timeout_seconds=120,
+                )
+            prompt = runner.call_args.args[0][2]
+            self.assertIn("只输出下面格式的一行", prompt)
+            self.assertIn("不要输出解释、标题、表格或建议", prompt)
+            self.assertEqual(result["status"], "pass")
+            self.assertEqual(
+                result["effective_primary_skill"],
+                "policy-retrieval",
+            )
+
+    def test_stale_policy_competitors_defer_to_policy_retrieval(self):
+        competitors = (
+            "agriculture-and-rural-projects",
+            "digitalization-projects",
+            "green-development-projects",
+            "intellectual-property-projects",
+            "investment-subsidy-projects",
+            "peer-benchmarking",
+            "quality-brand-projects",
+            "regional-special-projects",
+            "talent-projects",
+            "technology-innovation-projects",
+            "trade-and-open-economy-projects",
+        )
+        expected = (
+            "若只核验旧通知、政策版本、效力或完整文件链，"
+            "本技能不适用，必须以policy-retrieval为主技能"
+        )
+        for skill in competitors:
+            with self.subTest(skill=skill):
+                source = (
+                    REPOSITORY / "skills" / skill / "SKILL.md"
+                ).read_text(encoding="utf-8")
+                self.assertIn(expected, source)
+
     def test_runtime_exception_degrades_but_integrity_error_blocks(self):
         options = Namespace(command="prompt", plugin_root="/tmp/plugin")
         with mock.patch.object(BRIDGE, "arguments", return_value=options):

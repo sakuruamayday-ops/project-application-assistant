@@ -136,6 +136,7 @@ def test_deploy_injects_and_verifies_exact_build_identity():
     assert "JIAOTANG_PRIVATE_OVERLAY_IDENTITY_SHA256" in deploy_script
     assert "jiaotang-private-overlay/v1" in deploy_script
     assert "app/kindle_library.py" in deploy_script
+    assert "static/kindle.css" in deploy_script
     assert "私有管理员启动守卫已启用" in deploy_script
     assert "/build" in deploy_script
     assert "生产/build commit与部署源不一致" in deploy_script
@@ -147,8 +148,11 @@ def test_deploy_preflights_index_and_aborts_after_rollback():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
 
     preflight = deploy_script.index("本地索引release集合不完整")
+    private_guard = deploy_script.index(
+        "JIAOTANG_APP_DIR='${remote_release_dir}'"
+    )
     entrypoint_install = deploy_script.index("legacy_entries = runtime / 'legacy-entrypoints'")
-    assert preflight < entrypoint_install
+    assert preflight < private_guard < entrypoint_install
     rollback = deploy_script.index("rollback_on_error()")
     rollback_exit = deploy_script.index("exit 1", rollback)
     bootstrap = deploy_script.index("bootstrap_release_id=")
