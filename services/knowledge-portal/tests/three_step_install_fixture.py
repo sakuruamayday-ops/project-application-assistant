@@ -32,14 +32,14 @@ PLATFORM_CASES = (
         runtime_platform="darwin",
         portal_platform="macos",
         expected_host_path="~/.workbuddy/plugins",
-        expected_mcp_mode="signed_external_plugin_mcp_file",
+        expected_mcp_mode="user_remote_streamable_http",
     ),
     InstallPlatformCase(
         test_id="windows",
         runtime_platform="win32",
         portal_platform="windows",
         expected_host_path="~/.workbuddy/plugins",
-        expected_mcp_mode="signed_external_plugin_mcp_file",
+        expected_mcp_mode="user_remote_streamable_http",
     ),
 )
 
@@ -70,40 +70,28 @@ def build_workbuddy_connector_fixture(
     fixture_dir: Path,
     connector_path: Path,
 ) -> dict[str, object]:
-    connector = connector_path.read_bytes()
-    connector_sha256 = hashlib.sha256(connector).hexdigest()
+    del connector_path
     package = fixture_dir / "three-step-workbuddy.zip"
     plugin_root = "fixture/plugins/jiaotang-workbuddy-skills"
-    manifest = {
-        "files": {
-            "mcp/jiaotang-agent.mjs": connector_sha256,
-        }
-    }
     with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(f"{plugin_root}/mcp/jiaotang-agent.mjs", connector)
         archive.writestr(
-            f"{plugin_root}/plugin-release-manifest.json",
-            json.dumps(manifest, sort_keys=True),
+            "fixture/.codebuddy-plugin/marketplace.json",
+            json.dumps({"name": "fixture"}, sort_keys=True),
         )
         archive.writestr(
-            f"{plugin_root}/.mcp.json",
+            f"{plugin_root}/.codebuddy-plugin/plugin.json",
             json.dumps(
                 {
-                    "mcpServers": {
-                        "jiaotang-kb": {
-                            "command": "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
-                            "args": [
-                                "${CODEBUDDY_PLUGIN_ROOT}/mcp/jiaotang-agent.mjs",
-                                "plugin-serve",
-                            ],
-                        }
-                    }
+                    "name": "jiaotang-workbuddy-skills",
+                    "version": "1.4.5",
+                    "hook_mode": "behavior_only_fail_open",
+                    "mcp_configuration_mode": "user_remote_streamable_http",
                 },
                 sort_keys=True,
             ),
         )
     return {
-        "version": "1.4.4",
+        "version": "1.4.5",
         "file_name": package.name,
         "file_path": str(package),
         "sha256": hashlib.sha256(package.read_bytes()).hexdigest(),
@@ -123,7 +111,8 @@ def allow_fixture_release(portal, monkeypatch, artifact: dict[str, object]) -> N
         lambda selected, *, target, require_signature: {
             "status": "verified",
             "signed_format": bool(require_signature),
-            "mcp_configuration_mode": "signed_external_plugin_mcp_file",
+            "mcp_configuration_mode": "user_remote_streamable_http",
+            "hook_mode": "behavior_only_fail_open",
             "sha256": str((selected or {}).get("sha256") or ""),
         },
     )

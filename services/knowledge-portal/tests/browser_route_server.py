@@ -110,7 +110,7 @@ def main() -> None:
         portal.release_artifact_is_servable = (
             lambda artifact, *, target, require_signature: artifact is not None
         )
-        portal.workbuddy_artifact_has_signed_root_mcp = (
+        portal.workbuddy_artifact_is_simple_remote_mcp = (
             lambda artifact: artifact is not None
         )
     uvicorn.run(portal.app, host="127.0.0.1", port=int(os.environ["JIAOTANG_BROWSER_TEST_PORT"]))

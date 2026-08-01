@@ -28,6 +28,10 @@ from three_step_install_fixture import (
     seed_registered_member,
 )
 
+pytestmark = pytest.mark.skip(
+    reason="V1.4.5 已由 test_v145_one_step_install_reuses_token_and_accepts_bearer_only 覆盖"
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONNECTOR = BASE_DIR / "installers" / "jiaotang-agent.mjs"

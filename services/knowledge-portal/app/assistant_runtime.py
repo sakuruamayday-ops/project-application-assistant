@@ -74,13 +74,10 @@ def quick_guide_answer(question: str, public_endpoint: str) -> tuple[str, str] |
 
     if matched == "api_mcp_import":
         return (
-            "普通成员无需填写 API、Token 或 MCP 请求头。\n\n"
-            "一、打开网站的“连接我的 Agent”页面，点击第一步“复制给 Agent”，把审查说明粘贴到当前本地 Agent 对话框。\n"
-            "二、核对后回到网站点击第二步“我已审查，复制安装指令”，再粘贴给同一个 Agent。Agent 会识别 macOS 或 Windows 和当前 WorkBuddy 宿主。\n"
-            "三、Agent 安装并加载插件后，回到网站点击第三步“复制知识库绑定指令”，再粘贴给同一个 Agent。自动三步流程无需提前手工下载插件包。\n"
-            "四、Agent 只将一次性 bootstrap_url 作为本地 jiaotang_kb_setup 工具参数调用一次，完成设备公钥登记、系统安全存储和 MCP 连接。\n"
-            "五、让当前 Agent 检查知识库连接状态；实际调用知识库状态工具成功后，首次配置才结束。\n\n"
-            "配置成功后直接使用 jiaotang-kb 工具。普通成员同一时间只能绑定一台设备；换机时先在门户点击“更换绑定设备”，再把新的配置发送给新设备 Agent。管理员账号不执行单设备限制，可继续使用管理员接入配置。",
+            "一、登录焦糖网站，打开“连接我的 Agent”。\n"
+            "二、点击“一键安装”，把网站生成的一段完整指令粘贴给 macOS 或 Windows 上的 WorkBuddy。该指令会安装或更新49项Skills、启用最小行为Hook、只替换 mcpServers.jiaotang-kb 并保留其他MCP。\n"
+            "三、WorkBuddy 重载一次后，应在 tools/list 中看到 knowledge_search、knowledge_document、knowledge_service_status，并实际调用 knowledge_service_status。只有返回 connected: true 才算完成。\n\n"
+            "手工配置页面会自动复用或生成当前登录用户的个人Token，并直接填入完整远程HTTP MCP配置；不需要设备绑定、bootstrap、钥匙串、DPAPI或用户侧签名校验。个人Token不要粘贴到公共代码或聊天回复中，怀疑泄露时在网站撤销，重新打开配置页即可生成新Token。",
             "first-run-configuration",
         )
 

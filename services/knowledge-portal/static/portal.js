@@ -260,60 +260,10 @@ const loadAgentInstallReview = async (card, {copyPrompt = false} = {}) => {
     body: form,
   });
   const payload = await response.json();
-  if (response.ok && payload.exempt) return payload;
-  if (!response.ok || !payload.prompt || !payload.review_code || !payload.review_url) {
-    throw new Error(payload.detail || "无法生成安装审查");
+  if (!response.ok || payload.phase !== "install_ready" || !payload.prompt) {
+    throw new Error(payload.detail || "无法生成完整安装指令");
   }
-  card.dataset.agentReviewCode = payload.review_code;
-  card.dataset.agentReviewUrl = payload.review_url;
   if (copyPrompt) await copyToClipboard(payload.prompt);
-  const protocolResponse = await fetch(payload.review_url, {
-    headers: {Accept: "application/vnd.jiaotang.agent-install+json"},
-    cache: "no-store",
-  });
-  if (protocolResponse.ok) await protocolResponse.json();
-  card.querySelector("[data-confirm-agent-bootstrap]")?.removeAttribute("hidden");
-  return payload;
-};
-
-const confirmAgentInstall = async (card) => {
-  const reviewCode = card?.dataset.agentReviewCode || "";
-  if (!reviewCode) throw new Error("请先生成并审查安装说明。");
-  const form = new URLSearchParams();
-  form.set("csrf_token", card?.dataset.csrfToken || "");
-  form.set("enrollment_code", reviewCode);
-  const reviewUrl = card?.dataset.agentReviewUrl || "";
-  if (reviewUrl) {
-    const platform = new URL(reviewUrl, window.location.origin).searchParams.get("platform");
-    if (platform) form.set("platform", platform);
-  }
-  const response = await fetch("/agent-bootstrap-codes/confirm", {
-    method: "POST",
-    headers: {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
-    body: form,
-  });
-  const payload = await response.json();
-  if (!response.ok || payload.phase !== "install_authorized") {
-    throw new Error(payload.detail || "无法确认安装");
-  }
-  return payload;
-};
-
-const loadAgentBinding = async (card) => {
-  const reviewCode = card?.dataset.agentReviewCode || "";
-  if (!reviewCode) throw new Error("请先生成并审查安装说明。");
-  const form = new URLSearchParams();
-  form.set("csrf_token", card?.dataset.csrfToken || "");
-  form.set("enrollment_code", reviewCode);
-  const response = await fetch("/agent-bootstrap-codes/binding", {
-    method: "POST",
-    headers: {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
-    body: form,
-  });
-  const payload = await response.json();
-  if (!response.ok || payload.phase !== "binding_authorized" || !payload.prompt) {
-    throw new Error(payload.detail || "无法生成第三步绑定指令");
-  }
   return payload;
 };
 
@@ -352,10 +302,6 @@ const confirmAgentUpgrade = async (card) => {
     throw new Error(payload.detail || "无法确认升级");
   }
   return payload;
-};
-
-const prepareAgentBindingStep = (card) => {
-  card.querySelector("[data-copy-agent-binding]")?.removeAttribute("hidden");
 };
 
 document.addEventListener("click", async (event) => {
@@ -424,20 +370,10 @@ document.addEventListener("click", async (event) => {
     agentBootstrapButton.innerHTML = "<span>正在生成安全配置…</span><small>请稍候</small>";
     try {
       const payload = await loadAgentInstallReview(card, {copyPrompt: true});
-      if (payload.exempt) {
-        agentBootstrapButton.classList.remove("is-loading");
-        agentBootstrapButton.innerHTML = "<span>管理员无需生成安装码</span><small>请使用管理员连接凭据</small>";
-        if (status) status.textContent = payload.detail;
-        window.setTimeout(() => {
-          agentBootstrapButton.innerHTML = originalMarkup;
-          agentBootstrapButton.disabled = false;
-        }, 4000);
-        return;
-      }
       agentBootstrapButton.classList.remove("is-loading");
-      agentBootstrapButton.innerHTML = "<span>审查说明已复制</span><small>回到本页确认后再安装</small>";
+      agentBootstrapButton.innerHTML = "<span>完整指令已复制</span><small>粘贴到 WorkBuddy 执行</small>";
       agentBootstrapButton.classList.add("copy-success");
-      if (status) status.textContent = "粘贴给 Agent 完成审查；核对无误后点击“我已审查，复制安装指令”。";
+      if (status) status.textContent = "请粘贴到 WorkBuddy；安装、远程 MCP 合并、一次重载和验收会在同一轮完成。";
       window.setTimeout(() => {
         agentBootstrapButton.innerHTML = originalMarkup;
         agentBootstrapButton.classList.remove("copy-success");
@@ -450,67 +386,6 @@ document.addEventListener("click", async (event) => {
       if (status) {
         status.classList.add("is-error");
         status.textContent = error.message || "生成失败，请稍后重试。";
-      }
-    }
-    return;
-  }
-  const confirmAgentButton = event.target.closest("[data-confirm-agent-bootstrap]");
-  if (confirmAgentButton) {
-    const card = confirmAgentButton.closest("[data-agent-bootstrap]");
-    const status = card?.querySelector("[data-agent-copy-status]");
-    confirmAgentButton.disabled = true;
-    status?.classList.remove("is-error");
-    try {
-      const payload = await confirmAgentInstall(card);
-      prepareAgentBindingStep(card);
-      try {
-        await copyToClipboard(payload.prompt);
-        confirmAgentButton.innerHTML = "<span>安装指令已复制</span><small>发送给同一个 Agent</small>";
-        if (status) status.textContent = "请先把安装指令粘贴给刚才完成审查的同一个 Agent；插件加载后回到本页点击第三步。";
-      } catch (_copyError) {
-        confirmAgentButton.innerHTML = "<span>安装已授权</span><small>浏览器未允许自动复制</small>";
-        if (status) status.textContent = "安装授权已生效，但浏览器未允许复制；请重新点击第二步，然后在插件加载后执行第三步。";
-      }
-      watchAgentInstallStatus(card);
-    } catch (error) {
-      if (status) {
-        status.classList.add("is-error");
-        status.textContent = error.message || "确认安装失败。";
-      }
-    } finally {
-      confirmAgentButton.disabled = false;
-    }
-    return;
-  }
-  const copyAgentBindingButton = event.target.closest("[data-copy-agent-binding]");
-  if (copyAgentBindingButton) {
-    const card = copyAgentBindingButton.closest("[data-agent-bootstrap]");
-    const status = card?.querySelector("[data-agent-copy-status]");
-    const originalMarkup = copyAgentBindingButton.innerHTML;
-    copyAgentBindingButton.disabled = true;
-    copyAgentBindingButton.classList.add("is-loading");
-    status?.classList.remove("is-error");
-    try {
-      const payload = await loadAgentBinding(card);
-      card.dataset.agentBindingBootstrapUrl = payload.workbuddy_configuration?.bootstrap_url || "";
-      await copyToClipboard(payload.prompt);
-      copyAgentBindingButton.classList.remove("is-loading");
-      copyAgentBindingButton.classList.add("copy-success");
-      copyAgentBindingButton.innerHTML = "<span>绑定指令已复制</span><small>发送给同一个 Agent</small>";
-      if (status) status.textContent = "请粘贴给同一个 Agent；bootstrap 只会作为本地 jiaotang_kb_setup 的单次参数传入，完成后门户将继续四阶段验收。";
-      watchAgentInstallStatus(card);
-      window.setTimeout(() => {
-        copyAgentBindingButton.innerHTML = originalMarkup;
-        copyAgentBindingButton.classList.remove("copy-success");
-        copyAgentBindingButton.disabled = false;
-      }, 4000);
-    } catch (error) {
-      copyAgentBindingButton.innerHTML = originalMarkup;
-      copyAgentBindingButton.disabled = false;
-      copyAgentBindingButton.classList.remove("is-loading");
-      if (status) {
-        status.classList.add("is-error");
-        status.textContent = error.message || "复制绑定指令失败。";
       }
     }
     return;

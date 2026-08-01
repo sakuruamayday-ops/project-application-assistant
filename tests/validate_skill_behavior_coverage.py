@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require a declared deterministic and real-host behavior gate for every Skill."""
+"""Require deterministic behavior and exact-candidate gates for every Skill."""
 
 from __future__ import annotations
 
@@ -78,7 +78,7 @@ def main() -> int:
         if isinstance(item, dict)
     }
     for required in (
-        "workbuddy-signed-candidate-contract",
+        "workbuddy-server-release-candidate-contract",
         "workbuddy-all-skill-package-coverage",
     ):
         gate = post_gates.get(required)

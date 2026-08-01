@@ -556,8 +556,8 @@ def test_public_user_guide(tmp_path):
         assert "下载与安装" in guide.text
         assert "当前正式通用版" in guide.text
         assert "尚未正式发布" in guide.text
-        assert "当前没有通过插件根 .mcp.json 能力门禁" in guide.text
-        assert "候选 V1.4.4 不等于已正式发布" in guide.text
+        assert "当前没有通过简化安装能力门禁" in guide.text
+        assert "候选 V1.4.5 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -1185,8 +1185,9 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert api_guide.status_code == 200
-        assert "复制给 Agent" in api_guide.json()["answer"]
-        assert "无需填写 API、Token 或 MCP 请求头" in api_guide.json()["answer"]
+        assert "点击“一键安装”" in api_guide.json()["answer"]
+        assert "不需要设备绑定" in api_guide.json()["answer"]
+        assert "自动复用或生成" in api_guide.json()["answer"]
         assert "macOS 或 Windows" in api_guide.json()["answer"]
 
         qcc_guide = client.post(
@@ -1318,7 +1319,8 @@ def test_setup_login_and_device_token(tmp_path):
 
         bound_page = client.get("/access")
         assert "管理员豁免" not in bound_page.text
-        assert "当前尚未绑定" in bound_page.text
+        assert "当前尚未绑定" not in bound_page.text
+        assert "DEVICE SIGNATURE" not in bound_page.text
         second_device = client.get(
             "/v1/me",
             headers=api_headers(token, "device:test-installation-0002"),
@@ -1329,9 +1331,8 @@ def test_setup_login_and_device_token(tmp_path):
             "/device-binding/replace",
             data={"csrf_token": user["csrf_token"]},
         )
-        assert replaced.status_code == 200
-        assert "旧设备、公钥和访问凭据已失效" in replaced.text
-        assert client.get("/v1/me", headers=api_headers(token)).status_code == 401
+        assert replaced.status_code == 410
+        assert client.get("/v1/me", headers=api_headers(token)).status_code == 200
         with closing(module.database()) as connection:
             bindings = connection.execute(
                 """
@@ -3896,6 +3897,92 @@ def test_api_rejects_missing_token(tmp_path):
         assert response.status_code == 401
 
 
+def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    workbuddy_package = tmp_path / "workbuddy-v1.4.5.zip"
+    workbuddy_package.write_bytes(b"workbuddy-v1.4.5")
+    artifact = {
+        "file_path": str(workbuddy_package),
+        "file_name": workbuddy_package.name,
+        "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
+        "target": "workbuddy",
+        "version": "1.4.5",
+    }
+    monkeypatch.setattr(
+        module,
+        "latest_skill_artifact",
+        lambda target: dict(artifact) if target == "workbuddy" else None,
+    )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_is_simple_remote_mcp",
+        lambda candidate: bool(candidate),
+    )
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        access = client.get("/access")
+        assert "一键安装" in access.text
+        assert "data-copy-agent-bootstrap" in access.text
+        first = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        second = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        assert first.status_code == second.status_code == 200
+        assert first.headers["cache-control"] == "no-store"
+        assert first.json()["phase"] == "install_ready"
+        prompt = first.json()["prompt"]
+        assert "V1.4.5" in prompt
+        assert "49 项 Skills" in prompt
+        assert "只替换当前用户配置中的 `mcpServers.jiaotang-kb`" in prompt
+        assert "保留所有其他 MCP 条目" in prompt
+        assert "只重载 WorkBuddy 一次" in prompt
+        assert "knowledge_service_status" in prompt
+        assert "connected: true" in prompt
+        first_token = re.search(r"jtk_[A-Za-z0-9_-]+", prompt).group(0)
+        second_token = re.search(
+            r"jtk_[A-Za-z0-9_-]+", second.json()["prompt"]
+        ).group(0)
+        assert first_token == second_token
+
+        guide = client.get("/mcp-guide")
+        assert guide.headers["cache-control"] == "private, no-store"
+        assert first_token in guide.text
+        assert "Bearer 你的个人Token" not in guide.text
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {first_token}"},
+        ).status_code == 200
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT COUNT(*) FROM device_tokens "
+                "WHERE user_id=? AND revoked_at IS NULL",
+                (int(user["id"]),),
+            ).fetchone()[0] == 1
+
+
+@pytest.mark.skip(reason="V1.4.5 已由单段安装指令替代三阶段设备绑定")
 def test_admin_uses_same_transactional_agent_onboarding_as_members(
     tmp_path,
     monkeypatch,
@@ -4079,6 +4166,7 @@ def test_admin_uses_same_transactional_agent_onboarding_as_members(
         assert all(stage["complete"] for stage in status["stages"].values())
 
 
+@pytest.mark.skip(reason="V1.4.5 覆盖升级不再复用设备身份")
 def test_connected_device_cross_version_upgrade_reuses_identity(
     tmp_path,
     monkeypatch,
@@ -4343,6 +4431,7 @@ def test_connected_device_cross_version_upgrade_reuses_identity(
         assert "当前设备已经是最新正式版本" in latest.text
 
 
+@pytest.mark.skip(reason="V1.4.5 已取消 bootstrap、设备公钥和逐请求签名")
 def test_member_agent_bootstrap_device_signature_and_replacement(
     tmp_path,
     monkeypatch,
@@ -5333,6 +5422,7 @@ def test_transactional_device_registration_activates_only_after_saved_credential
     assert enrollment["registered_key_id"] == key_id
 
 
+@pytest.mark.skip(reason="V1.4.5 一键安装不再进入设备登记流程")
 def test_legacy_device_registration_is_blocked_after_transactional_release(
     tmp_path,
     monkeypatch,
@@ -5525,6 +5615,7 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
         assert page.headers["cache-control"] == "private, no-store"
 
 
+@pytest.mark.skip(reason="V1.4.5 通过插件与 MCP 配置备份恢复，不再使用 bootstrap")
 def test_bootstrap_recovers_unverified_partial_installation(tmp_path, monkeypatch):
     module = load_app(tmp_path)
     workbuddy_package = tmp_path / "workbuddy-recovery-fixture.zip"
@@ -5776,6 +5867,11 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
 ):
     module = load_app(tmp_path)
     allow_test_release_artifacts(monkeypatch, module)
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_is_simple_remote_mcp",
+        lambda artifact: bool(artifact),
+    )
     package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy.zip"
     package.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(package, "w") as archive:
@@ -6646,15 +6742,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
     def mcp_request(client, payload):
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         headers = {
-            **signed_api_headers(
-                module,
-                raw_token,
-                private_key,
-                key_id,
-                method="POST",
-                request_target="/mcp/",
-                body=body,
-            ),
+            **api_headers(raw_token),
             "Accept": "application/json, text/event-stream",
             "Content-Type": "application/json",
         }
@@ -6667,14 +6755,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
         ).status_code == 401
         head_headers = {
-            **signed_api_headers(
-                module,
-                raw_token,
-                private_key,
-                key_id,
-                method="HEAD",
-                request_target="/mcp/",
-            ),
+            **api_headers(raw_token),
             "Accept": "application/json, text/event-stream",
         }
         assert client.head("/mcp/", headers=head_headers).status_code == 405
@@ -6761,8 +6842,8 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             """,
             (user_id, key_id),
         ).fetchone()
-    assert installation["first_verified_at"]
-    assert installation["mcp_connected_at"]
+    assert installation["first_verified_at"] is None
+    assert installation["mcp_connected_at"] is None
     assert [row["activity_type"] for row in usage_rows] == [
         "mcp_connection",
         "mcp_connection",
@@ -7403,7 +7484,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     with TestClient(module.app) as client:
         guide = client.get("/guide")
         assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.4.4 尚未正式发布" in guide.text
+        assert "安全候选 V1.4.5 尚未正式发布" in guide.text
 
         login = client.post(
             "/login",
