@@ -143,6 +143,15 @@ echo "[2/6] 双平台三步安装与高频项目检索金标准"
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests/test_portal.py \
     -q -k 'high_frequency or municipal_projects or local_green_factory or knowledge_search_filters_cross_project'
 )
+if [[ -f "${index_database}" ]]; then
+  (
+    cd "${service_dir}"
+    .venv/bin/python scripts/evaluate_authoritative_list_facts.py \
+      --database "${index_database}"
+  )
+else
+  echo "本地生产索引未挂载，跳过本机权威名单事实金标准；结构化专表存在性已在服务器校验。"
+fi
 
 echo "[3/6] REST API"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \

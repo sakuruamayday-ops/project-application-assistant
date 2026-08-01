@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "baseline_date": "2026-08-01",
+  "description": "权威名单事实查询固定金标准；同时校验总数、来源等级、官方匹配数和分页完整性。",
+  "cases": [
+    {
+      "id": "national-small-giant-2024-hangzhou",
+      "filters": {
+        "list_type": "national_small_giant",
+        "year": 2024,
+        "batch": "第六批",
+        "region": "杭州市"
+      },
+      "page_size": 50,
+      "expected": {
+        "total": 156,
+        "official_match_count": 154,
+        "source_tier_counts": {
+          "licensed_platform_pending": 2,
+          "official": 154
+        },
+        "page_sizes": [50, 50, 50, 6]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2024-hangzhou",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2024,
+        "region": "杭州市"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 619,
+        "official_match_count": 0,
+        "source_tier_counts": {
+          "official_publicity": 619
+        },
+        "page_sizes": [200, 200, 200, 19]
+      }
+    },
+    {
+      "id": "three-first-2025-first-version",
+      "filters": {
+        "list_type": "three_first",
+        "project_name": "浙江省首版次软件产品",
+        "year": 2025,
+        "region": "浙江省"
+      },
+      "page_size": 20,
+      "expected": {
+        "total": 85,
+        "official_match_count": 84,
+        "source_tier_counts": {
+          "licensed_platform": 1,
+          "official": 84
+        },
+        "page_sizes": [20, 20, 20, 20, 5]
+      }
+    }
+  ]
+}

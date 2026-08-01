@@ -158,8 +158,45 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
         {
             "type": "function",
             "function": {
+                "name": "authoritative_list_search",
+                "description": (
+                    "优先查询国家小巨人、省级专精特新中小企业和三首的权威结构化事实专表，"
+                    "返回完整命中总数、官方匹配数、来源等级与可分页结果。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "list_type": {
+                            "type": "string",
+                            "enum": [
+                                "national_small_giant",
+                                "provincial_specialized_sme",
+                                "three_first",
+                            ],
+                        },
+                        "enterprise_name": {"type": "string"},
+                        "product_name": {"type": "string"},
+                        "project_name": {"type": "string"},
+                        "year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+                        "batch": {"type": "string"},
+                        "region": {"type": "string"},
+                        "status": {"type": "string"},
+                        "verified_only": {"type": "boolean"},
+                        "offset": {"type": "integer", "minimum": 0, "maximum": 1000000},
+                        "limit": {"type": "integer", "minimum": 1, "maximum": 200},
+                    },
+                    "required": ["list_type"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "public_list_search",
-                "description": "按企业、标准项目、年度、批次或地区查询政府公示与认定名单实体。",
+                "description": (
+                    "查询通用政府名单实体。国家小巨人、省级专精特新中小企业和三首必须优先使用"
+                    " authoritative_list_search；命中专表项目时服务端也会自动安全路由。"
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -168,6 +205,7 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                         "year": {"type": "integer", "minimum": 2000, "maximum": 2100},
                         "batch": {"type": "string"},
                         "region": {"type": "string"},
+                        "offset": {"type": "integer", "minimum": 0, "maximum": 1000000},
                         "limit": {"type": "integer", "minimum": 1, "maximum": 50},
                     },
                 },

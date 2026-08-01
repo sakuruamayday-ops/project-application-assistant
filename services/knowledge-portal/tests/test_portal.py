@@ -1636,12 +1636,60 @@ def test_assistant_searches_web_only_after_knowledge_miss(tmp_path, monkeypatch)
 
 def test_structured_list_policy_and_project_tools(tmp_path):
     module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        document_id = connection.execute(
+            "SELECT id FROM documents WHERE source_key = 'doc-list'"
+        ).fetchone()[0]
+        connection.execute(
+            """
+            INSERT INTO public_list_entities(
+                document_id,enterprise_name,sequence_no,canonical_project_name,
+                policy_year,batch,region,list_status,context,confidence
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                document_id,
+                "杭州分页验证有限公司",
+                "2",
+                "国家专精特新“小巨人”企业",
+                2025,
+                "第六批",
+                "浙江省",
+                "认定名单",
+                "2 | 杭州分页验证有限公司",
+                "high",
+            ),
+        )
+        connection.commit()
 
     list_result = module.search_public_list_entities(
-        project_name="小巨人", year=2025, batch="第六批", region="浙江省"
+        project_name="小巨人",
+        year=2025,
+        batch="第六批",
+        region="浙江省",
+        offset=0,
+        limit=1,
     )
-    assert list_result["results"][0]["enterprise_name"] == "杭州测试装备有限公司"
     assert list_result["results"][0]["list_status"] == "认定名单"
+    assert list_result["total"] == 2
+    assert list_result["pagination"]["is_truncated"] is True
+    assert list_result["pagination"]["next_offset"] == 1
+
+    second_page = module.search_public_list_entities(
+        project_name="小巨人",
+        year=2025,
+        batch="第六批",
+        region="浙江省",
+        offset=1,
+        limit=1,
+    )
+    assert second_page["total"] == 2
+    assert {
+        list_result["results"][0]["enterprise_name"],
+        second_page["results"][0]["enterprise_name"],
+    } == {"杭州测试装备有限公司", "杭州分页验证有限公司"}
+    assert second_page["pagination"]["has_more"] is False
+    assert second_page["pagination"]["next_offset"] is None
 
     policy_result = module.search_policy_documents(
         project_name="小巨人",
@@ -1670,6 +1718,7 @@ def test_structured_list_policy_and_project_tools(tmp_path):
         item["function"]["name"] for item in module.assistant_tool_schemas()
     }
     assert {
+        "authoritative_list_search",
         "public_list_search",
         "policy_search",
         "project_catalog_match",
@@ -1678,11 +1727,67 @@ def test_structured_list_policy_and_project_tools(tmp_path):
     }.issubset(tool_names)
 
 
+def test_legacy_public_list_search_routes_authoritative_projects_to_master(tmp_path):
+    module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE national_small_giant_master(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT,normalized_name TEXT,unified_social_credit_code TEXT,qice_eid TEXT,
+                region TEXT,city TEXT,county TEXT,recognition_year INTEGER,batch TEXT,status TEXT,
+                official_url TEXT,official_url_role TEXT,official_fragment_key TEXT,verification_status TEXT,
+                sequence_no TEXT,platform_year_raw TEXT,former_names_json TEXT,
+                source_documents_json TEXT,source_paths_json TEXT
+            );
+            INSERT INTO national_small_giant_master VALUES
+                (1,'杭州权威甲公司','','','','浙江省','杭州市','余杭区',2024,'第六批','认定',
+                 'https://example.gov.cn/list','official_batch_notice','',
+                 'official_local_fragment_match','','','[]','[1]','["官方名单.pdf"]'),
+                (2,'杭州权威乙公司','','','','浙江省','杭州市','滨江区',2024,'第六批','认定',
+                 'https://example.gov.cn/list','official_batch_notice','',
+                 'dynamic_candidate_pending_official_fragment','','','[]','[]','[]');
+            """
+        )
+        connection.commit()
+
+    result = module.search_public_list_entities(
+        project_name="国家专精特新小巨人",
+        year=2024,
+        batch="第六批",
+        region="杭州市",
+        limit=1,
+    )
+    assert result["legacy_route"]["effective_tool"] == "authoritative_list_search"
+    assert result["authority"]["table"] == "national_small_giant_master"
+    assert result["total"] == 2
+    assert result["summary"]["official_match_count"] == 1
+    assert result["pagination"]["is_truncated"] is True
+
+
+def test_legacy_public_list_search_never_falls_back_when_authority_table_is_missing(tmp_path):
+    module = load_app(tmp_path)
+    with pytest.raises(module.HTTPException) as error:
+        module.search_public_list_entities(
+            project_name="国家专精特新小巨人",
+            year=2025,
+            batch="第六批",
+            region="浙江省",
+        )
+    assert error.value.status_code == 503
+    assert "national_small_giant_master" in str(error.value.detail)
+
+
 def test_three_first_directory_diff_and_product_match_tools(tmp_path):
     module = load_app(tmp_path)
     with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
         connection.executescript(
             """
+            CREATE TABLE three_first_project_awards(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT,product_name TEXT,project_name TEXT,list_status TEXT,
+                year INTEGER,province TEXT,city TEXT,county TEXT,source_tier TEXT,confidence TEXT
+            );
             CREATE TABLE three_first_guidance_directory_diffs(
                 id INTEGER PRIMARY KEY,
                 from_year INTEGER NOT NULL,
@@ -6481,6 +6586,25 @@ def test_extraction_cache_retries_non_success_statuses():
 
 def test_mcp_search_uses_personal_bearer_token(tmp_path):
     module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE national_small_giant_master(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT,normalized_name TEXT,unified_social_credit_code TEXT,qice_eid TEXT,
+                region TEXT,city TEXT,county TEXT,recognition_year INTEGER,batch TEXT,status TEXT,
+                official_url TEXT,official_url_role TEXT,official_fragment_key TEXT,verification_status TEXT,
+                sequence_no TEXT,platform_year_raw TEXT,former_names_json TEXT,
+                source_documents_json TEXT,source_paths_json TEXT
+            );
+            INSERT INTO national_small_giant_master VALUES(
+                1,'杭州MCP权威测试公司','','','','浙江省','杭州市','余杭区',2024,'第六批','认定',
+                'https://example.gov.cn/list','official_batch_notice','',
+                'official_local_fragment_match','','','[]','[1]','["官方名单.pdf"]'
+            );
+            """
+        )
+        connection.commit()
     with closing(module.database()) as connection:
         connection.execute(
             "INSERT INTO users(username, password_hash, created_at) VALUES (?, ?, ?)",
@@ -6564,6 +6688,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         tool_names = {
             item["name"] for item in tool_list.json()["result"]["tools"]
         }
+        assert "authoritative_list_search" in tool_names
         assert "three_first_analysis" in tool_names
         assert "three_first_directory_diff" not in tool_names
         assert "three_first_product_match" not in tool_names
@@ -6596,6 +6721,29 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             },
         )
         assert document.status_code == 200
+        authoritative = mcp_request(
+            client,
+            {
+                "jsonrpc": "2.0",
+                "id": 6,
+                "method": "tools/call",
+                "params": {
+                    "name": "authoritative_list_search",
+                    "arguments": {
+                        "list_type": "national_small_giant",
+                        "year": 2024,
+                        "batch": "第六批",
+                        "region": "杭州市",
+                        "limit": 1,
+                    },
+                },
+            },
+        )
+        assert authoritative.status_code == 200
+        authoritative_payload = authoritative.json()["result"]["structuredContent"]
+        assert authoritative_payload["total"] == 1
+        assert authoritative_payload["summary"]["official_match_count"] == 1
+        assert authoritative_payload["pagination"]["is_truncated"] is False
     with closing(module.database()) as connection:
         usage_rows = connection.execute(
             """
@@ -6618,6 +6766,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         "mcp_tools_list",
         "mcp_search",
         "mcp_document",
+        "mcp_search",
     ]
     assert [row["activity_name"] for row in usage_rows] == [
         "MCP连接检测",
@@ -6625,8 +6774,9 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         "工具列表",
         "实际检索",
         "文档读取",
+        "实际检索",
     ]
-    assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1]
+    assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1, 1]
 
 
 def test_admin_all_calls_shows_records_first_and_supports_pagination(tmp_path):

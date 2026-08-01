@@ -107,6 +107,11 @@ from app.policy_thresholds import (
 from app.policy_time import enrich_policy_time_context
 from app.policy_transition import resolve_policy_transition
 from app.three_first_routing import plan_three_first_analysis
+from app.authoritative_list_facts import (
+    AuthorityTableUnavailable,
+    infer_authoritative_list_type,
+    query_authoritative_list_facts,
+)
 
 # Production may supply this private extension as a server-managed overlay.
 try:
@@ -736,7 +741,24 @@ class PublicListSearchRequest(BaseModel):
     year: int | None = Field(default=None, ge=2000, le=2100)
     batch: str = Field(default="", max_length=50)
     region: str = Field(default="", max_length=100)
+    offset: int = Field(default=0, ge=0, le=1_000_000)
     limit: int = Field(default=20, ge=1, le=50)
+
+
+class AuthoritativeListSearchRequest(BaseModel):
+    list_type: str = Field(
+        pattern="^(national_small_giant|provincial_specialized_sme|three_first)$"
+    )
+    enterprise_name: str = Field(default="", max_length=200)
+    product_name: str = Field(default="", max_length=300)
+    project_name: str = Field(default="", max_length=200)
+    year: int | None = Field(default=None, ge=2000, le=2100)
+    batch: str = Field(default="", max_length=50)
+    region: str = Field(default="", max_length=100)
+    status: str = Field(default="", max_length=100)
+    verified_only: bool = False
+    offset: int = Field(default=0, ge=0, le=1_000_000)
+    limit: int = Field(default=50, ge=1, le=200)
 
 
 class PolicySearchRequest(BaseModel):
@@ -3205,16 +3227,71 @@ def _normalized_project_filter(
     parameters.append(f"%{escaped}%")
 
 
+def search_authoritative_list_facts(
+    list_type: str,
+    enterprise_name: str = "",
+    product_name: str = "",
+    project_name: str = "",
+    year: int | None = None,
+    batch: str = "",
+    region: str = "",
+    status: str = "",
+    verified_only: bool = False,
+    offset: int = 0,
+    limit: int = 50,
+) -> dict[str, object]:
+    try:
+        with closing(content_database()) as connection:
+            return query_authoritative_list_facts(
+                connection,
+                list_type=list_type,
+                enterprise_name=enterprise_name,
+                product_name=product_name,
+                project_name=project_name,
+                year=year,
+                batch=batch,
+                region=region,
+                status=status,
+                verified_only=verified_only,
+                offset=offset,
+                limit=limit,
+            )
+    except AuthorityTableUnavailable as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
 def search_public_list_entities(
     enterprise_name: str = "",
     project_name: str = "",
     year: int | None = None,
     batch: str = "",
     region: str = "",
+    offset: int = 0,
     limit: int = 20,
 ) -> dict[str, object]:
     if not any((enterprise_name.strip(), project_name.strip(), year, batch.strip(), region.strip())):
         raise HTTPException(status_code=422, detail="名单查询至少需要一个筛选条件")
+    authoritative_type = infer_authoritative_list_type(project_name)
+    if authoritative_type:
+        authoritative_project_name = project_name if authoritative_type == "three_first" else ""
+        if re.sub(r"[\s（）()]+", "", authoritative_project_name) in {"三首", "三首项目"}:
+            authoritative_project_name = ""
+        result = search_authoritative_list_facts(
+            authoritative_type,
+            enterprise_name=enterprise_name,
+            project_name=authoritative_project_name,
+            year=year,
+            batch=batch,
+            region=region,
+            offset=offset,
+            limit=limit,
+        )
+        result["legacy_route"] = {
+            "requested_tool": "public_list_search",
+            "effective_tool": "authoritative_list_search",
+            "reason": "权威名单项目强制使用事实专表，禁止通用文档实体降级覆盖。",
+        }
+        return result
     conditions = ["1 = 1"]
     parameters: list[object] = []
     _like_filter("e.enterprise_name", enterprise_name, conditions, parameters)
@@ -3226,6 +3303,7 @@ def search_public_list_entities(
     )
     _like_filter("e.batch", batch, conditions, parameters)
     _like_filter("e.region", region, conditions, parameters)
+    bounded_offset = max(0, min(int(offset), 1_000_000))
     bounded_limit = max(1, min(int(limit), 50))
     with closing(content_database()) as connection:
         canonical_clause = canonical_document_clause(connection, "d")
@@ -3250,6 +3328,18 @@ def search_public_list_entities(
             if has_entity_years
             else "'' AS matched_years,"
         )
+        total = int(
+            connection.execute(
+                f"""
+                SELECT COUNT(*)
+                FROM public_list_entities e
+                JOIN documents d ON d.id=e.document_id
+                WHERE {' AND '.join(conditions)}
+                {canonical_clause}
+                """,
+                parameters,
+            ).fetchone()[0]
+        )
         try:
             rows = connection.execute(
                 f"""
@@ -3264,16 +3354,17 @@ def search_public_list_entities(
                 ORDER BY COALESCE(e.policy_year, 0) DESC,
                          CASE e.confidence WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
                          e.enterprise_name
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """.format(
                     conditions=" AND ".join(conditions),
                     matched_years_select=matched_years_select,
                     canonical_clause=canonical_clause,
                 ),
-                [*parameters, bounded_limit],
+                [*parameters, bounded_limit, bounded_offset],
             ).fetchall()
         except sqlite3.OperationalError as error:
             raise HTTPException(status_code=503, detail="名单实体索引尚未重建") from error
+    has_more = bounded_offset + len(rows) < total
     return {
         "filters": {
             "enterprise_name": enterprise_name.strip(),
@@ -3281,6 +3372,16 @@ def search_public_list_entities(
             "year": year,
             "batch": batch.strip(),
             "region": region.strip(),
+        },
+        "total": total,
+        "pagination": {
+            "offset": bounded_offset,
+            "limit": bounded_limit,
+            "returned": len(rows),
+            "total": total,
+            "has_more": has_more,
+            "next_offset": bounded_offset + len(rows) if has_more else None,
+            "is_truncated": has_more,
         },
         "results": [dict(row) for row in rows],
     }
@@ -5187,6 +5288,21 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
         tool_document = dict(document)
         tool_document["content"] = str(tool_document["content"])[:12000]
         return tool_document, [document]
+    if name == "authoritative_list_search":
+        result = search_authoritative_list_facts(
+            list_type=str(arguments.get("list_type") or ""),
+            enterprise_name=str(arguments.get("enterprise_name") or "")[:200],
+            product_name=str(arguments.get("product_name") or "")[:300],
+            project_name=str(arguments.get("project_name") or "")[:200],
+            year=int(arguments["year"]) if arguments.get("year") is not None else None,
+            batch=str(arguments.get("batch") or "")[:50],
+            region=str(arguments.get("region") or "")[:100],
+            status=str(arguments.get("status") or "")[:100],
+            verified_only=bool(arguments.get("verified_only") or False),
+            offset=max(0, min(int(arguments.get("offset") or 0), 1_000_000)),
+            limit=max(1, min(int(arguments.get("limit") or 50), 200)),
+        )
+        return result, [dict(item) for item in result["results"]]
     if name == "public_list_search":
         result = search_public_list_entities(
             enterprise_name=str(arguments.get("enterprise_name") or "")[:200],
@@ -5194,6 +5310,7 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             year=int(arguments["year"]) if arguments.get("year") is not None else None,
             batch=str(arguments.get("batch") or "")[:50],
             region=str(arguments.get("region") or "")[:100],
+            offset=max(0, min(int(arguments.get("offset") or 0), 1_000_000)),
             limit=max(1, min(int(arguments.get("limit") or 20), 50)),
         )
         sources = [dict(item) for item in result["results"]]
@@ -7463,6 +7580,7 @@ MCP_SEARCH_TOOLS = {
     "knowledge_search",
     "policy_search",
     "public_list_search",
+    "authoritative_list_search",
     "project_catalog_match",
     "three_first_analysis",
 }
@@ -15150,6 +15268,15 @@ def list_search_api(
     return search_public_list_entities(**payload.model_dump())
 
 
+@app.post("/v1/lists/authoritative/search")
+def authoritative_list_search_api(
+    payload: AuthoritativeListSearchRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    return search_authoritative_list_facts(**payload.model_dump())
+
+
 @app.post("/v1/policies/search")
 def policy_search_api(
     payload: PolicySearchRequest,
@@ -16243,11 +16370,48 @@ def public_list_search(
     year: int | None = None,
     batch: str = "",
     region: str = "",
+    offset: int = 0,
     limit: int = 20,
 ) -> dict[str, object]:
     """按企业、项目、年度、批次或地区查询政府公示与认定名单实体。"""
     return search_public_list_entities(
-        enterprise_name, project_name, year, batch, region, limit
+        enterprise_name=enterprise_name,
+        project_name=project_name,
+        year=year,
+        batch=batch,
+        region=region,
+        offset=offset,
+        limit=limit,
+    )
+
+
+@knowledge_mcp.tool()
+def authoritative_list_search(
+    list_type: str,
+    enterprise_name: str = "",
+    product_name: str = "",
+    project_name: str = "",
+    year: int | None = None,
+    batch: str = "",
+    region: str = "",
+    status: str = "",
+    verified_only: bool = False,
+    offset: int = 0,
+    limit: int = 50,
+) -> dict[str, object]:
+    """查询小巨人、省级专精特新和三首权威事实，返回总数、来源等级和分页状态。"""
+    return search_authoritative_list_facts(
+        list_type=list_type,
+        enterprise_name=enterprise_name,
+        product_name=product_name,
+        project_name=project_name,
+        year=year,
+        batch=batch,
+        region=region,
+        status=status,
+        verified_only=verified_only,
+        offset=offset,
+        limit=limit,
     )
 
 

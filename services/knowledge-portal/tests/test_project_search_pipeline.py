@@ -44,6 +44,24 @@ def test_public_search_runs_fulltext_structured_list_and_deadline_paths(tmp_path
     updated_at = module.isoformat(module.utc_now())
 
     with closing(sqlite3.connect(content_path)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE national_small_giant_master(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT,normalized_name TEXT,unified_social_credit_code TEXT,qice_eid TEXT,
+                region TEXT,city TEXT,county TEXT,recognition_year INTEGER,batch TEXT,status TEXT,
+                official_url TEXT,official_url_role TEXT,official_fragment_key TEXT,verification_status TEXT,
+                sequence_no TEXT,platform_year_raw TEXT,former_names_json TEXT,
+                source_documents_json TEXT,source_paths_json TEXT
+            );
+            INSERT INTO national_small_giant_master VALUES(
+                1,'浙江测试制造有限公司','','','','浙江省','杭州市','余杭区',2026,'第八批','认定',
+                'https://example.gov.cn/little-giant','official_batch_notice','',
+                'official_local_fragment_match','1','2026年','[]','[1001]',
+                '["政策与目录/优质中小企业梯度培育/申报通知.pdf"]'
+            );
+            """
+        )
         connection.execute(
             """
             INSERT INTO documents(
