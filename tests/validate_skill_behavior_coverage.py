@@ -78,29 +78,15 @@ def main() -> int:
         if isinstance(item, dict)
     }
     for required in (
-        "real-workbuddy-adversarial-routing",
-        "real-workbuddy-all-skill-activation",
+        "workbuddy-signed-candidate-contract",
+        "workbuddy-all-skill-package-coverage",
     ):
         gate = post_gates.get(required)
         command = gate.get("command") if isinstance(gate, dict) else None
-        if not isinstance(command, list) or "{workbuddy_cli}" not in command:
-            errors.append(f"缺少真实宿主行为门禁：{required}")
-    adversarial_command = post_gates.get(
-        "real-workbuddy-adversarial-routing", {}
-    ).get("command")
-    adversarial_workers = None
-    if (
-        isinstance(adversarial_command, list)
-        and "--workers" in adversarial_command
-    ):
-        worker_index = adversarial_command.index("--workers") + 1
-        if worker_index < len(adversarial_command):
-            adversarial_workers = adversarial_command[worker_index]
-    if adversarial_workers != "1":
-        errors.append(
-            "WorkBuddy 5.3.5真实对抗路由门禁必须单线程运行，"
-            "避免并发会话出现aborted或超时"
-        )
+        if not isinstance(command, list) or "{workbuddy_archive}" not in command:
+            errors.append(f"缺少真实候选包门禁：{required}")
+        if isinstance(command, list) and "{workbuddy_cli}" in command:
+            errors.append(f"发布前候选包门禁不得启动真实 WorkBuddy CLI：{required}")
     adversarial = json.loads(
         (ROOT / "tests" / "adversarial-expected.json").read_text(
             encoding="utf-8"
@@ -119,7 +105,8 @@ def main() -> int:
         "declared_skills": len(declared),
         "explicit_behavior_baseline": len(EXPECTED_SKILLS),
         "adversarial_primary_skills": len(routed & declared),
-        "all_skill_real_host_gate": "declared",
+        "workbuddy_candidate_package_gates": "declared",
+        "real_host_acceptance": "post-release-required",
         "errors": errors,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
