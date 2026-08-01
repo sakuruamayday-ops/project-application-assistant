@@ -24,6 +24,7 @@ OFFICIAL_PUBLISHER_FINGERPRINT = (
     "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
 )
 GATE_SIGNATURE_NAMESPACE = "codex-skill-release-gate"
+REMOTE_RELEASE_ROOT = "/opt/jiaotang-kb-runtime/current"
 
 
 def run(
@@ -771,8 +772,8 @@ def remote_release_transaction_call(
         )
     remote_command = (
         "set -a; source /etc/jiaotang-kb.env; set +a; "
-        "/opt/jiaotang-kb/.venv/bin/python "
-        "/opt/jiaotang-kb/scripts/publish_skill_release.py "
+        f"{REMOTE_RELEASE_ROOT}/.venv/bin/python "
+        f"{REMOTE_RELEASE_ROOT}/scripts/publish_skill_release.py "
         + " ".join(options)
     )
     return json.loads(
@@ -838,8 +839,8 @@ def stage_portal(
     )
     remote_command = (
         "set -a; source /etc/jiaotang-kb.env; set +a; "
-        "/opt/jiaotang-kb/.venv/bin/python "
-        "/opt/jiaotang-kb/scripts/publish_skill_release.py "
+        f"{REMOTE_RELEASE_ROOT}/.venv/bin/python "
+        f"{REMOTE_RELEASE_ROOT}/scripts/publish_skill_release.py "
         "--mode stage "
         f"--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
         f"--release-dir \"$JIAOTANG_SKILL_RELEASE_DIR\" "
@@ -890,8 +891,8 @@ def promote_portal(
     )
     remote_command = (
         "set -a; source /etc/jiaotang-kb.env; set +a; "
-        "/opt/jiaotang-kb/.venv/bin/python "
-        "/opt/jiaotang-kb/scripts/publish_skill_release.py "
+        f"{REMOTE_RELEASE_ROOT}/.venv/bin/python "
+        f"{REMOTE_RELEASE_ROOT}/scripts/publish_skill_release.py "
         "--mode promote "
         f"--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
         f"--release-dir \"$JIAOTANG_SKILL_RELEASE_DIR\" "
