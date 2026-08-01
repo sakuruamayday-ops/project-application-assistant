@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import stat
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,6 +14,21 @@ SPEC = importlib.util.spec_from_file_location("controlled_release", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
+
+
+def test_release_json_serializes_nested_paths(tmp_path: Path) -> None:
+    payload = {
+        "status": "preflight-pass",
+        "gate_attestation": {
+            "signature": tmp_path / "release-gates.json.sig",
+        },
+    }
+
+    rendered = json.loads(MODULE.release_json(payload))
+
+    assert rendered["gate_attestation"]["signature"] == str(
+        tmp_path / "release-gates.json.sig"
+    )
 
 
 def fake_gate_attestation(
