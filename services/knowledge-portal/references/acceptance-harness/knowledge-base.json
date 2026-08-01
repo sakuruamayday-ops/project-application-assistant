@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "profile_id": "jiaotang-knowledge-base-v0.1",
+  "target_type": "knowledge-base",
+  "blocking_severities": ["P0", "P1"],
+  "suite_groups": {
+    "knowledge_base": ["classification", "privacy", "lifecycle", "retrieval"]
+  },
+  "checks": [
+    {
+      "id": "kb-ip-method-no-xiaobao-project",
+      "suite": "classification",
+      "severity": "P0",
+      "adapter": "path_glob_count",
+      "description": "知识产权方法库不得包含校宝首版次客户项目包",
+      "config": {
+        "pattern": "70_知识产权方法/首版次/3校宝在线（杭州）科技股份有限公司-首版次/**",
+        "kind": "file",
+        "max_count": 0
+      }
+    },
+    {
+      "id": "kb-xiaobao-restricted-files-preserved",
+      "suite": "classification",
+      "severity": "P0",
+      "adapter": "path_glob_count",
+      "description": "校宝首版次三份业务文件必须完整迁入受限资料",
+      "config": {
+        "pattern": "90_受限资料/客户项目/首版次软件/3校宝在线（杭州）科技股份有限公司-首版次/首版次资料 校宝/首版次资料10.17/软件具体性能指标（软著申请说明书）/*",
+        "kind": "file",
+        "min_count": 3,
+        "max_count": 3
+      }
+    },
+    {
+      "id": "kb-policy-layer-no-xiaobao-project-folder",
+      "suite": "classification",
+      "severity": "P0",
+      "adapter": "path_glob_count",
+      "description": "政策目录不得保留校宝客户项目文件夹",
+      "config": {
+        "pattern": "10_政策与目录/首版次/3校宝在线（杭州）科技股份有限公司-首版次/**/*",
+        "kind": "file",
+        "max_count": 0
+      }
+    },
+    {
+      "id": "kb-method-layer-no-xiaobao-project-folder",
+      "suite": "classification",
+      "severity": "P0",
+      "adapter": "path_glob_count",
+      "description": "内部方法目录不得保留校宝客户项目文件夹",
+      "config": {
+        "pattern": "40_内部培训与方法/首版次/3校宝在线（杭州）科技股份有限公司-首版次/**/*",
+        "kind": "file",
+        "max_count": 0
+      }
+    },
+    {
+      "id": "kb-benchmark-layer-no-xiaobao-original-folder",
+      "suite": "classification",
+      "severity": "P0",
+      "adapter": "path_glob_count",
+      "description": "名单与对标目录不得保留校宝客户人员原件",
+      "config": {
+        "pattern": "50_名单与对标/首版次/3校宝在线（杭州）科技股份有限公司-首版次/**/*",
+        "kind": "file",
+        "max_count": 0
+      }
+    },
+    {
+      "id": "kb-xiaobao-manifest-cloud-block",
+      "suite": "privacy",
+      "severity": "P0",
+      "adapter": "manifest_records",
+      "description": "校宝客户资料必须标记为受限且禁止上云",
+      "config": {
+        "path_regex": "^90_受限资料/客户项目/首版次软件/3校宝在线（杭州）科技股份有限公司-首版次/.+",
+        "min_count": 3,
+        "max_violations": 0,
+        "expected_fields": {
+          "document_role": "90_受限资料",
+          "sensitivity": "restricted",
+          "upload_action": "restricted_excluded"
+        }
+      }
+    },
+    {
+      "id": "kb-confidential-allowlist-cloud-block",
+      "suite": "privacy",
+      "severity": "P0",
+      "adapter": "csv_records",
+      "description": "所有机密和受限资料必须同时禁止对象存储与语义上云",
+      "config": {
+        "path": "upload_allowlist.csv",
+        "where_field": "sensitivity",
+        "where_in": ["confidential", "restricted"],
+        "min_count": 1,
+        "max_violations": 0,
+        "expected_fields": {
+          "object_storage_allowed": "false",
+          "semantic_index_allowed": "false"
+        }
+      }
+    },
+    {
+      "id": "kb-old-patent-materials-not-current",
+      "suite": "classification",
+      "severity": "P0",
+      "adapter": "path_glob_count",
+      "description": "已废止的杭州市专利试点示范资料不得留在现行政策和现行指南目录",
+      "config": {
+        "pattern": "10_政策与目录/杭州市专利试点示范培训/**/*",
+        "kind": "file",
+        "max_count": 0
+      }
+    },
+    {
+      "id": "kb-old-patent-guides-not-current",
+      "suite": "classification",
+      "severity": "P0",
+      "adapter": "path_glob_count",
+      "description": "旧专利试点示范表单不得留在现行知识产权项目指南根目录",
+      "config": {
+        "pattern": "20_申报指南与规则/知识产权项目/*专利*试点*",
+        "kind": "file",
+        "max_count": 0
+      }
+    },
+    {
+      "id": "kb-current-ip-strong-rule-present",
+      "suite": "lifecycle",
+      "severity": "P0",
+      "adapter": "file_contains",
+      "description": "知识库必须存在杭州市知识产权强企现行管理办法及明确废止依据",
+      "config": {
+        "path": "10_政策与目录/知识产权项目/杭州市知识产权强企/现行有效/2025-杭市管〔2025〕93号-杭州市知识产权强企认定管理办法.md",
+        "required_terms": [
+          "有效性：有效",
+          "2025年9月15日起施行",
+          "杭市管〔2020〕38号",
+          "同时废止",
+          "https://scjg.hangzhou.gov.cn/art/2025/8/19/art_1229144701_1858746.html"
+        ]
+      }
+    },
+    {
+      "id": "kb-old-patent-index-lifecycle-gated",
+      "suite": "lifecycle",
+      "severity": "P0",
+      "adapter": "sqlite_rows",
+      "description": "旧专利试点示范政策和表单不得在索引中保持现行状态",
+      "config": {
+        "database": "knowledge_content.sqlite3",
+        "query": "SELECT title,source,validity_status FROM documents WHERE (title LIKE '%专利试点%' OR title LIKE '%专利示范%' OR source LIKE '%专利试点示范%') AND title NOT LIKE '%知识产权强企%' AND COALESCE(validity_status,'active_candidate') NOT IN ('superseded','historical_reference','invalid')",
+        "max_rows": 0
+      }
+    },
+    {
+      "id": "kb-hangzhou-future-factory-historical",
+      "suite": "lifecycle",
+      "severity": "P0",
+      "adapter": "sqlite_rows",
+      "description": "杭州市旧未来工厂资料只能作为历史参考，不能作为2026当前市级申报依据",
+      "config": {
+        "database": "knowledge_content.sqlite3",
+        "query": "SELECT title,source,validity_status FROM documents WHERE (title LIKE '%杭州市%未来工厂%' OR source LIKE '%杭州市未来工厂%') AND title NOT LIKE '%浙江省未来工厂%' AND title NOT LIKE '%AI工厂%' AND COALESCE(validity_status,'active_candidate') NOT IN ('superseded','historical_reference','invalid')",
+        "max_rows": 0
+      }
+    },
+    {
+      "id": "kb-hangzhou-ai-factory-current-present",
+      "suite": "lifecycle",
+      "severity": "P0",
+      "adapter": "sqlite_rows",
+      "description": "2026年杭州市AI工厂申报通知必须作为当前市级入口存在",
+      "config": {
+        "database": "knowledge_content.sqlite3",
+        "query": "SELECT title,source,validity_status FROM documents WHERE title LIKE '%2026%杭州市AI工厂%' AND COALESCE(validity_status,'active_candidate') NOT IN ('superseded','historical_reference','invalid')",
+        "min_rows": 1
+      }
+    },
+    {
+      "id": "kb-zhejiang-future-factory-remains-current",
+      "suite": "lifecycle",
+      "severity": "P0",
+      "adapter": "sqlite_rows",
+      "description": "浙江省未来工厂不得因杭州市体系调整被全局标记失效",
+      "config": {
+        "database": "knowledge_content.sqlite3",
+        "query": "SELECT title,source,validity_status FROM documents WHERE title LIKE '%浙江省未来工厂%' AND COALESCE(validity_status,'active_candidate') NOT IN ('superseded','historical_reference','invalid')",
+        "min_rows": 1
+      }
+    },
+    {
+      "id": "kb-rag-current-ip-strong-not-old-pilot",
+      "suite": "retrieval",
+      "severity": "P1",
+      "adapter": "rag_query",
+      "description": "当前杭州市知识产权项目检索不得把旧专利试点示范作为现行入口",
+      "config": {
+        "query": "杭州市 知识产权强企 申报",
+        "limit": 8,
+        "required_source_terms_any": ["知识产权强企"],
+        "forbidden_source_terms": ["杭州市专利试点示范培训"]
+      }
+    },
+    {
+      "id": "kb-rag-old-patent-query-routes-to-ip-strong",
+      "suite": "retrieval",
+      "severity": "P1",
+      "adapter": "rag_query",
+      "description": "旧杭州市专利试点示范当前申报查询必须转向知识产权强企",
+      "config": {
+        "query": "杭州市 专利试点示范 当前申报",
+        "limit": 8,
+        "required_source_terms_any": ["知识产权强企"],
+        "forbidden_source_terms": ["历史政策/知识产权项目/杭州市专利试点示范"]
+      }
+    },
+    {
+      "id": "kb-rag-hangzhou-future-routes-to-ai-factory",
+      "suite": "retrieval",
+      "severity": "P1",
+      "adapter": "rag_query",
+      "description": "杭州市未来工厂当前申报查询必须转向杭州市AI工厂",
+      "config": {
+        "query": "杭州市 未来工厂 当前申报",
+        "limit": 8,
+        "required_source_terms_any": ["杭州市AI工厂"],
+        "forbidden_source_terms": ["/杭州市未来工厂/"]
+      }
+    },
+    {
+      "id": "kb-rag-zhejiang-future-remains-provincial",
+      "suite": "retrieval",
+      "severity": "P1",
+      "adapter": "rag_query",
+      "description": "浙江省未来工厂当前申报查询必须保留省级体系结果",
+      "config": {
+        "query": "浙江省 未来工厂 当前申报",
+        "limit": 8,
+        "required_source_terms_any": ["浙江省未来工厂"]
+      }
+    },
+    {
+      "id": "kb-rag-xiaobao-not-ip-method",
+      "suite": "retrieval",
+      "severity": "P0",
+      "adapter": "rag_query",
+      "description": "知识产权方法检索不得返回校宝客户原件",
+      "config": {
+        "query": "知识产权方法 校宝",
+        "limit": 8,
+        "forbidden_source_terms": ["校宝在线"]
+      }
+    }
+  ]
+}

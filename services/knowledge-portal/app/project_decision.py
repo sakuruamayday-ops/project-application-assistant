@@ -233,6 +233,11 @@ def requires_current_policy_sources(query: str) -> bool:
         "高新技术企业",
         "高企",
         "高新",
+        "未来工厂",
+        "AI工厂",
+        "知识产权强企",
+        "专利试点",
+        "专利示范",
     )
     return any(term in query for term in project_terms) and any(
         term in query for term in POLICY_INTENT_TERMS
@@ -300,6 +305,11 @@ def base_knowledge_search_query(query: str) -> str:
         "研发中心",
         "企业研究院",
         "高新技术企业",
+        "未来工厂",
+        "AI工厂",
+        "知识产权强企",
+        "专利试点",
+        "专利示范",
     ):
         if term in normalized and term not in terms:
             terms.append(term)

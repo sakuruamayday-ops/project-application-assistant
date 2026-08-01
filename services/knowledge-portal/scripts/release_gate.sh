@@ -47,6 +47,13 @@ fi
 echo "[1/6] 自动测试"
 index_database="${JIAOTANG_INDEX_DATABASE:-/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3}"
 if [[ -f "${index_database}" ]]; then
+  knowledge_root="${JIAOTANG_KNOWLEDGE_ROOT:-/Users/zsh/JiaotangData/知识库}"
+  index_root="$(cd "$(dirname "${index_database}")" && pwd -P)"
+  python3 "${script_dir}/run_acceptance_harness.py" \
+    --knowledge-root "${knowledge_root}" \
+    --index-root "${index_root}" \
+    --suite knowledge_base \
+    --output "${index_root}/acceptance-harness.json"
   python3 "${script_dir}/verify_structured_knowledge_tables.py" --database "${index_database}"
 else
   echo "本地生产索引未挂载，改为校验服务器当前生产索引"

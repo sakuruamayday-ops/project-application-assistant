@@ -370,7 +370,90 @@ def infer_policy_replacement(
         "replacement_basis": "",
         "replacement_url": "",
     }
-    if result["validity_status"] == "draft":
+    explicit_historical_path = any(
+        term in source for term in ("历史政策", "历史规则", "历史培训")
+    )
+    if result["validity_status"] == "draft" and not explicit_historical_path:
+        return result
+    title_and_source = f"{title}\n{metadata_source_name(source)}"
+    if (
+        "杭市管〔2025〕93号" in value
+        or "杭州市知识产权强企认定管理办法" in title_and_source
+    ):
+        result.update(
+            {
+                "validity_status": "active_candidate",
+                "replacement_title": "",
+                "replacement_basis": "",
+                "replacement_url": "",
+            }
+        )
+        return result
+    old_hangzhou_patent_program = (
+        "杭市管〔2020〕38号" in value
+        or "杭州市专利试点企业和示范企业认定管理办法" in title_and_source
+        or (
+            any(term in title_and_source for term in ("专利试点", "专利示范"))
+            and "知识产权强企" not in title_and_source
+        )
+    )
+    if old_hangzhou_patent_program:
+        result.update(
+            {
+                "validity_status": (
+                    "superseded"
+                    if any(
+                        term in title_and_source
+                        for term in ("管理办法", "杭市管〔2020〕38号")
+                    )
+                    else "historical_reference"
+                ),
+                "replacement_title": "《杭州市知识产权强企认定管理办法》（杭市管〔2025〕93号）",
+                "replacement_basis": "杭市管〔2025〕93号第十四条明确自2025年9月15日起施行，杭市管〔2020〕38号同时废止；旧表单、清单和培训资料仅作历史参考。",
+                "replacement_url": "https://scjg.hangzhou.gov.cn/art/2025/8/19/art_1229144701_1858746.html",
+            }
+        )
+        return result
+    if "杭州市AI工厂" in title_and_source:
+        result.update(
+            {
+                "validity_status": "active_candidate",
+                "replacement_title": "",
+                "replacement_basis": "",
+                "replacement_url": "",
+            }
+        )
+        return result
+    old_hangzhou_future_factory = (
+        "未来工厂" in title_and_source
+        and (
+            "杭州市" in title_and_source
+            or "杭州市未来工厂" in source
+        )
+        and "浙江省未来工厂" not in title_and_source
+    )
+    if old_hangzhou_future_factory:
+        result.update(
+            {
+                "validity_status": "historical_reference",
+                "replacement_title": "杭州市AI工厂",
+                "replacement_basis": "杭州市2026年市级培育申报入口已转为AI工厂；旧杭州市未来工厂通知、名单、申报书和培训资料保留为历史参考。浙江省未来工厂仍为独立省级体系，不受本规则影响。",
+                "replacement_url": "https://zfgb.hangzhou.gov.cn/148/102220263/t103220263024/530188.shtml",
+            }
+        )
+        return result
+    if explicit_historical_path:
+        result.update(
+            {
+                "validity_status": "historical_reference",
+                "replacement_title": result["replacement_title"],
+                "replacement_basis": (
+                    result["replacement_basis"]
+                    or "文件已进入明确的历史资料层，只能用于追溯历史规则、表单或方法，不得作为当前申报依据。"
+                ),
+                "replacement_url": result["replacement_url"],
+            }
+        )
         return result
     if "工信部企业〔2026〕2号" in value or (
         "优质中小企业梯度培育管理办法" in value
