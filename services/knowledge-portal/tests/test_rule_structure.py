@@ -77,10 +77,10 @@ def test_native_all_any_and_declared_assessment_conclusion_are_allowed():
     assert audit["formal_decision_allowed"] is True
 
 
-def test_all_29_formal_packs_pass_composite_structure_gate():
+def test_all_30_formal_packs_pass_composite_structure_gate():
     packs = sorted(PACK_DIR.glob("*.json"))
 
-    assert len(packs) == 29
+    assert len(packs) == 30
     blocked = {
         path.stem: audit
         for path in packs
@@ -93,10 +93,10 @@ def test_all_29_formal_packs_pass_composite_structure_gate():
     assert blocked == {}
 
 
-def test_all_29_confirmed_sources_pass_before_pack_generation():
+def test_all_30_confirmed_sources_pass_before_pack_generation():
     sources = sorted(SOURCE_DIR.glob("*.json"))
 
-    assert len(sources) == 29
+    assert len(sources) == 30
     blocked = {
         path.stem: audit
         for path in sources

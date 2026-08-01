@@ -1,41 +1,36 @@
 # WorkBuddy 应用内插件市场迁移
 
-状态：已进入产品代码，等待下一次正式发布时同步升级并重签 `skill-release-manager`。
+状态：V1.4.5 已实施，用户安装收敛为一次复制粘贴。
 
 ## 决策
 
 - 用户安装包不再包含或启动 macOS `.command`、Windows `.cmd`、`.ps1` 固定安装器。
 - macOS 与 Windows 共用一个跨平台 WorkBuddy 插件市场 ZIP，不再生成或维护系统专用版本。
 - 客户端不调用 WorkBuddy 外部 CLI，不检测 WorkBuddy 进程，也不要求退出 WorkBuddy。
-- 用户下载并核验本地插件市场 ZIP，解压后在 WorkBuddy 内执行：
+- 用户登录门户后点击“一键安装”，只需向 WorkBuddy 粘贴一段完整指令。
+- 该指令在 Agent 授权范围内完成以下操作：
 
 ```text
-/plugin marketplace add <解压目录>/jiaotang
-/plugin install jiaotang-workbuddy-skills@jiaotang
-/plugin enable jiaotang-workbuddy-skills@jiaotang
-/reload-plugins
+安装或更新 49 项 Skills
+启用失败放行的最小行为 Hook
+只替换 mcpServers.jiaotang-kb 并保留其他 MCP
+重载 WorkBuddy 一次
+枚举三个知识工具并调用 knowledge_service_status
 ```
 
-- 发布端仍须在隔离 `HOME` 与 `CODEBUDDY_CONFIG_DIR` 中使用真实宿主 CLI 完成
-  `validate → marketplace add → install → enable → Skill 触发`。该 CLI 只用于发布回归，
-  不进入用户安装流程。
+- 公共 WorkBuddy 包只包含市场清单、插件清单、49 项 Skills、最小行为 Hook、必要参考资料和业务脚本。个人 Token 不进入公共包。
 
-## 下一次正式发布门禁
+## V1.4.5 正式发布门禁
 
-1. 修改并重签 `skill-release-manager`，使 WorkBuddy 套件生成器只输出签名市场 ZIP，
-   不生成旁车安装器及其签名文件。
-2. 只生成一个 WorkBuddy 候选包，确认其同时声明 `darwin` 与 `win32` 兼容，并且归档中
-   没有 `.command`、`.cmd` 或 `.ps1` 安装入口。
-3. 保留 `.codebuddy-plugin/marketplace.json`、插件清单、MCP 连接器、Ed25519 签名清单
-   和逐文件 SHA-256。
-4. 对同一个候选包分别在 macOS 与 Windows WorkBuddy 内用斜杠命令完成真实安装、启用、
-   更新、卸载和技能触发，并核对两端下载哈希完全一致。
-5. 只有正式发布指令到达后才能重签发布器、生成候选包、递增版本或部署生产。
+1. 使用已重签的 `skill-release-manager` 生成唯一 WorkBuddy 候选包；服务端发布通道仍校验候选包完整性和固定发布者。
+2. 确认包内存在 49 项 Skills、市场清单、插件清单和最小行为 Hook，且最小 Hook 只声明 `UserPromptSubmit` 与 `Stop`。
+3. 确认插件声明 `mcp_configuration_mode: user_remote_streamable_http`，不内嵌用户 MCP 配置或真实个人 Token。
+4. 确认候选包没有旧本地知识库服务、启动器、便携运行时或用户侧逐轮哈希检查。
+5. 门户端到端测试必须验证 Token 复用、只替换 `jiaotang-kb`、保留其他 MCP、一次重载和 `connected: true` 验收。
 
 ## 兼容性
 
-既有 V1.3.1.2 包不会被远程修改。新版客户端即使下载到含旧安装器的历史包，也只定位 ZIP
-并显示 WorkBuddy 应用内市场指引，不会提取或执行旧安装器。
+既有历史包不会被远程修改。V1.4.5 安装指令会在处理前备份旧插件目录和用户 MCP 配置，更新或替换旧插件，只替换 `mcpServers.jiaotang-kb`，保留其他 MCP。
 
 历史数据库中的 `macos`、`windows` 目标只作为兼容来源保留；服务端将其中最新的
 WorkBuddy 签名包映射为统一 `workbuddy` 通道。旧平台下载 URL 使用临时兼容跳转，不再作为
@@ -43,11 +38,6 @@ WorkBuddy 签名包映射为统一 `workbuddy` 通道。旧平台下载 URL 使�
 
 ## 下载权限边界
 
-插件市场 ZIP 在用户登录后可以直接下载，技术上没有“不能直接下载”的限制。当前没有改成匿名
-公开下载，是因为该 ZIP 是完整商业套件，包含 49 项技能、共享运行时、Hooks 和 MCP 连接器，
-并受账号、设备与源码使用许可约束。市面上可匿名下载的单技能通常以公开 Git 仓库或公共市场
-发布，不包含焦糖的一次性 `bootstrap_url`、设备绑定和私有知识库访问能力。
+插件市场 ZIP 在用户登录后可以直接下载。当前没有改成匿名公开下载，是因为该 ZIP 是完整商业套件，包含 49 项技能、最小行为 Hook 和必要业务资料，并受账号与源码使用许可约束。公共 ZIP 不包含任何用户个人 Token。
 
-如以后决定开放匿名下载，应把“公开 Skills 内容”和“登录后签发的知识库访问配置”拆成两层，
-只公开不含凭据的签名插件市场包；设备绑定、`bootstrap_url` 和 MCP 授权继续要求登录。该调整
-属于授权与商业分发策略变化，不能在本次安装方式修复中默认放开。
+如以后决定开放匿名下载，应把“公开 Skills 内容”和“登录后签发的知识库访问配置”拆成两层。知识库授权仍由登录页生成个人 Token，该调整属于授权与商业分发策略变化，不在 V1.4.5 安装简化范围内。

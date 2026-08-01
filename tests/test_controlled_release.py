@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import stat
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,6 +14,29 @@ SPEC = importlib.util.spec_from_file_location("controlled_release", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
+
+
+def test_release_json_serializes_nested_paths(tmp_path: Path) -> None:
+    payload = {
+        "status": "preflight-pass",
+        "gate_attestation": {
+            "signature": tmp_path / "release-gates.json.sig",
+        },
+    }
+
+    rendered = json.loads(MODULE.release_json(payload))
+
+    assert rendered["gate_attestation"]["signature"] == str(
+        tmp_path / "release-gates.json.sig"
+    )
+
+
+def test_remote_release_commands_use_current_runtime_slot() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+
+    assert MODULE.REMOTE_RELEASE_ROOT == "/opt/jiaotang-kb-runtime/current"
+    assert source.count("REMOTE_RELEASE_ROOT") == 7
+    assert "/opt/jiaotang-kb/.venv/bin/python" not in source
 
 
 def fake_gate_attestation(

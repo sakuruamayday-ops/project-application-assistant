@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "algorithm_id": "project-decision-hangzhou-ai-factory",
+  "algorithm_name": "杭州市AI工厂项目决策算法",
+  "algorithm_version": "2026-notice-20260801",
+  "project_id": "hangzhou-ai-factory",
+  "project_name": "杭州市AI工厂",
+  "coverage_status": "rules-confirmed",
+  "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
+  "policy_version_id": "policy-a76aea3f650a7e37b5d6",
+  "inputs": {
+    "project_context": "项目名称、年度、申请类型与属地",
+    "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
+    "as_of": "判断或回放的时间点"
+  },
+  "outputs": {
+    "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
+    "conclusion": "eligible、conditional、ineligible或undetermined",
+    "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
+    "rule_trace": "选中的规则层、逐规则比较和证据引用",
+    "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
+  },
+  "shared_execution_kernels": [
+    "task-omission-preflight",
+    "conversation-continuity-preflight",
+    "project-router",
+    "policy-version-gate",
+    "policy-time-type-checker",
+    "policy-retrieval-cascade",
+    "fact-contract-normalizer",
+    "evidence-conflict-resolver",
+    "layer-selector",
+    "native-rule-combinator",
+    "composite-rule-structure-gate",
+    "requirement-comparator",
+    "lifecycle-state-machine",
+    "coverage-hash-planner",
+    "policy-change-impact-simulator",
+    "four-city-policy-transition-resolver",
+    "deliverable-contract-gate",
+    "deliverable-contract-auto-repair",
+    "explanation-trace"
+  ],
+  "project_specific_assets": {
+    "fact_fields": 4,
+    "confirmed_rules": 4,
+    "rule_layers": 2,
+    "gold_cases": 3
+  },
+  "explainability": {
+    "level": "field-and-source-trace",
+    "requirements": [
+      "结论必须回指规则ID和政策版本",
+      "事实必须保留证据状态与来源",
+      "未知或冲突事实不得静默转为满足"
+    ]
+  },
+  "incremental_update": {
+    "strategy": "content-addressed-compile",
+    "unchanged": "复用已编译项目节点和算法卡",
+    "changed": "仅重编译源内容哈希发生变化的项目节点"
+  },
+  "quality_gates": {
+    "task_preflight_required": true,
+    "conversation_continuity_required": true,
+    "policy_time_checked": true,
+    "native_rule_combinator": true,
+    "composite_rule_structure": {
+      "status": "passed",
+      "formal_decision_allowed": true,
+      "unresolved_composite_leaves": [],
+      "unresolved_count": 0,
+      "declared_atomic_fields": [],
+      "rule": "综合条件必须拆为原生all/any叶节点；只有证书状态、评价结论或单一证据断言可显式声明为原子事实"
+    },
+    "deliverable_contract_required": true,
+    "policy_retrieval_cascade_required": true,
+    "pack_validation": true,
+    "gold_case_count": 3,
+    "formal_decision_enabled": true,
+    "policy_baseline_complete": true
+  },
+  "limitations": [
+    "年度通知与属地覆盖仍须按查询时点选择",
+    "名单未披露或主体匹配冲突时只能输出待核验",
+    "算法不替代主管部门最终审核结论"
+  ],
+  "compile_input_hash": "6bcc4c7fc00f8bd7e3001b687b7a1bd0960e5cc92b8bf663413cff9974ed639f"
+}

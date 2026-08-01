@@ -4,26 +4,24 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.4.3",
-    "version": "1.4.3",
-    "summary": "V1.4.3 完成技能包、WorkBuddy 插件、发布事务、门户下载与 OSS 索引链路的纵深安全加固，并固化旧政策效力核验的主路由优先级与并行真实宿主门禁；49 项业务 Skills 的主体能力与 V1.4.2 保持一致。",
+    "tag": "V1.4.5",
+    "version": "1.4.5",
+    "summary": "V1.4.5 将 WorkBuddy 安装收敛为一次复制粘贴，同时完成 49 项 Skills、最小行为 Hook 和远程 jiaotang-kb MCP 连接。",
     "changes": [
-      "通用 Skills 与 WorkBuddy 包固定官方 Ed25519 发布者身份，严格校验完整签名文件集和逐文件 SHA-256；验签工具缺失、缓存异常或包被篡改时一律失败关闭。",
-      "ZIP 处理拒绝反斜杠、绝对路径、父目录、盘符、NUL、符号链接、重复条目和大小写碰撞；内置秘密扫描支持 Unicode 归一化并递归检查嵌套 ZIP。",
-      "安装器在创建回滚副本失败时不再继续替换，升级失败会恢复原目录；证据目录可显式配置，避免测试或受限环境误写用户目录。",
-      "发布门禁绑定 Git commit、tree、跟踪源码摘要、套件清单、发布管理器、工具链和最终包哈希；从仓库外启动仍强制检查唯一仓库根目录。",
-      "49 项 Skills 均有行为覆盖门禁；WorkBuddy 候选包必须通过真实宿主全技能激活及对抗路由测试，宿主 CLI 缺失计为失败而非跳过。",
-      "门户邀请改为一次性原子消费的 v2 令牌，移除姓名加手机号后四位的旧注册链路；登录、注册和问答接口增加可信来源限流与会话敏感信息清理。",
-      "自带模型接口限制为 HTTPS、公网地址、受控端口和禁止重定向，并限制响应体、并发和超时；问题明文按 24 小时后台周期清理。",
-      "门户下载在入库和发送前同时核验数据库 SHA-256、固定发布者签名及同一稳定文件内容，阻断无效候选包、验签缓存复用和校验后换包。",
-      "OSS 索引采用不可变 release、签名 current 指针、条件写入和 current/previous 本地世代；运行健康检查覆盖服务、磁盘、TLS、索引世代与构建身份。",
-      "49 项顶层 Skills 的业务规则、路由和交付契约与 V1.4.2 保持不变。"
+      "门户一键安装指令同时完成 49 项 Skills 安装或覆盖升级、最小行为 Hook 启用、用户级远程 MCP 合并、一次重载和 knowledge_service_status 验收。",
+      "登录用户的手工配置页自动复用有效个人 Token；无有效 Token 时自动生成，并直接填入完整 MCP JSON。",
+      "WorkBuddy 包不再内置本地 jiaotang-agent.mjs、.mcp.json、run-node 启动器、bootstrap、设备密钥、钥匙串或 Windows DPAPI 流程。",
+      "用户安装阶段不再执行安装包签名审查、用户侧签名校验或每轮插件目录哈希检查；受控发布链仍在服务器侧校验候选产物。",
+      "49 项 Skills 均有行为覆盖门禁；WorkBuddy 包只保留业务 Skills、插件清单、最小行为 Hook、必要参考资料和业务脚本。",
+      "49 项顶层 Skills 的业务规则、路由和交付契约与 V1.4.3 保持兼容。",
+      "旧版用户通过同一段指令自动覆盖插件、移除旧本地 MCP 连接，仅替换 jiaotang-kb，并保留其他 MCP 条目。",
+      "新增简化安装端到端验收，覆盖新装、旧版覆盖、Token 复用、保留其他 MCP、工具枚举和真实状态调用。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "新设备通过门户两步流程安装 V1.4.3 WorkBuddy 包；插件启用后由 Agent 调用本地 jiaotang_kb_setup 工具完成绑定。已绑定 V1.4.x 设备使用 Skills 中心升级按钮，不重新登记。",
-      "manual_fallback": "手工配置只作为自动两步流程的替代路径；核验签名包并启用插件后，仅将一次性 bootstrap_url 作为本地 jiaotang_kb_setup 工具参数。",
-      "verification": "门户四阶段完成后还必须确认 jiaotang-kb 已进入当前运行时，成功调用任一只读状态或检索工具，并抽样验证项目算法、交付契约或专利案卷入口；之后升级验收才完成。"
+      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.5 插件安装或覆盖升级和远程 MCP 连接。",
+      "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
+      "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
     "compatibility": [
       {
@@ -34,45 +32,35 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.4.3 保留 WorkBuddy 5.3.5 所需的插件根目录 .mcp.json，并要求真实宿主全技能激活及对抗路由门禁；既有已绑定设备无需重新登记。"
+        "note": "V1.4.5 使用 WorkBuddy 用户级远程 HTTP MCP，不依赖插件根 .mcp.json 或本地启动器。"
       },
       {
         "target": "Windows WorkBuddy",
         "status": "结构兼容，待主人实机验收",
-        "note": "V1.4.3 将 .mcp.json、跨平台 Node 启动器和 setup 运行时全部纳入固定发布者签名清单；真实 Windows 安装、绑定和重启继续由主人实机验收。"
+        "note": "V1.4.5 不依赖 ZIP 执行位、Node 启动器、系统凭据或设备签名；真实 Windows 安装由主人发布后验收。"
       }
     ],
-    "two_step_installation_protocol": {
+    "one_step_installation_protocol": {
       "scope": "workbuddy_only",
-      "phase_1_review": {
-        "writes_allowed": false,
-        "secret_included": false,
-        "required_checks": [
-          "确认宿主为 WorkBuddy 5 或更高版本",
-          "确认 WorkBuddy 内置插件管理器可用",
-          "核对包哈希、签名、联网范围、存储位置和回滚路径"
-        ],
-        "non_workbuddy_action": "停留在审查阶段，不得下载或安装 WorkBuddy 插件包"
-      },
-      "phase_2_install": {
-        "explicit_user_confirmation_required": true,
-        "pin_reviewed_workbuddy_version_and_sha256": true,
-        "dynamic_command_allowed": false,
-        "success_gate": [
-          "宿主完成原生注册",
-          "设备凭据写入系统安全存储并回读",
-          "tools/list 枚举真实远端工具",
-          "只读工具实际调用成功",
-          "门户四阶段状态完成"
-        ]
-      },
+      "copy_paste_rounds": 1,
+      "personal_token_prefilled": true,
+      "mcp_configuration_mode": "user_remote_streamable_http",
+      "preserve_other_mcp_servers": true,
+      "reload_count": 1,
+      "success_gate": [
+        "49 项 Skills 可识别",
+        "最小行为 Hook 已启用",
+        "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
+        "knowledge_service_status 返回 connected: true",
+        "其他 MCP 条目未被覆盖"
+      ],
       "released_adapters": [
         "workbuddy"
       ]
     },
     "rollback": [
       "通用 Skills 回滚时恢复上一版本 skills 目录，并重新运行安装完整性检查。",
-      "WorkBuddy 跨版本升级失败时优先恢复升级前插件目录和原版本包；不删除持久 jiaotang 市场、设备绑定、设备密钥、API Token 或 jiaotang-kb MCP 身份。",
+      "WorkBuddy 安装或升级失败时恢复原插件目录和用户 MCP 配置备份；不覆盖其他 MCP 条目。",
       "回滚不得覆盖个人项目资料、本地政策规则、个人偏好或系统凭据。"
     ]
   },
@@ -90,11 +78,13 @@
       "正式 Skills 为 {tag}，共 {skill_count} 项",
       "同一个跨平台包",
       "不再运行固定 .command、.cmd、PowerShell 或外部 CLI",
-      "bootstrap",
+      "远程 MCP",
+      "最小行为 Hook",
       "现有用户不受影响",
-      "SHA256SUMS.txt",
-      "release-audit.json",
-      "签名适配器",
+      "自动填入个人 Token",
+      "保留其他 MCP",
+      "只重载一次",
+      "knowledge_service_status",
       "回滚"
     ]
   },
@@ -230,38 +220,47 @@
         "--check"
       ],
       "timeout_seconds": 60
+    },
+    {
+      "name": "workbuddy-v145-one-step-install-contract",
+      "command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "services/knowledge-portal/tests/test_portal.py::test_v145_one_step_install_reuses_token_and_accepts_bearer_only"
+      ],
+      "environment": {
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+        "PYTHONPATH": "services/knowledge-portal"
+      },
+      "timeout_seconds": 180
     }
   ],
   "post_package_release_gates": [
     {
-      "name": "real-workbuddy-adversarial-routing",
+      "name": "workbuddy-server-release-candidate-contract",
       "command": [
         "{python}",
-        "tests/run_adversarial_eval.py",
-        "--codebuddy-cli",
-        "{workbuddy_cli}",
+        "tests/validate_workbuddy_release_candidate.py",
         "--suite-zip",
         "{workbuddy_archive}",
-        "--output-dir",
-        "{gate_output}",
-        "--workers",
-        "1"
+        "--check",
+        "server-release-contract"
       ],
-      "timeout_seconds": 14400
+      "timeout_seconds": 120
     },
     {
-      "name": "real-workbuddy-all-skill-activation",
+      "name": "workbuddy-all-skill-package-coverage",
       "command": [
         "{python}",
-        "tests/run_all_skill_activation_eval.py",
-        "--codebuddy-cli",
-        "{workbuddy_cli}",
+        "tests/validate_workbuddy_release_candidate.py",
         "--suite-zip",
         "{workbuddy_archive}",
-        "--output-dir",
-        "{gate_output}"
+        "--check",
+        "all-skill-coverage"
       ],
-      "timeout_seconds": 7200
+      "timeout_seconds": 120
     }
   ],
   "dependencies": {
@@ -365,14 +364,9 @@
     "jiaotang-kb"
   ],
   "workbuddy_plugin": {
-    "mcp_connector": {
-      "name": "jiaotang-kb",
-      "configuration_mode": "plugin_root_mcp_file",
-      "source": "_runtime/jiaotang-kb/jiaotang-agent.mjs",
-      "entry_command": "plugin-serve",
-      "bootstrap_option": "bootstrap_url",
-      "bootstrap_option_sensitive": true
-    },
+    "package_mode": "skills_minimal_behavior_hook",
+    "hook_mode": "behavior_only_fail_open",
+    "mcp_configuration_mode": "user_remote_streamable_http",
     "release_matrix": {
       "hosts": [
         "macos",
@@ -383,7 +377,7 @@
         "plugin-install",
         "plugin-enable",
         "skill-trigger",
-        "mcp-manifest-validation"
+        "user-remote-mcp-validation"
       ]
     }
   },

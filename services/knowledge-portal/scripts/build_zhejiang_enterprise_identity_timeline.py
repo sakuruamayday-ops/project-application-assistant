@@ -36,6 +36,7 @@ DEFAULT_THREE_FIRST = Path(
     "_结构化数据/三首项目企业产品年度记录.jsonl"
 )
 DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省")
+DEFAULT_SUPPLEMENTAL_EVENTS = DEFAULT_OUTPUT / "浙江省补充认定事件.jsonl"
 DEFAULT_TYC_ENRICHMENT = DEFAULT_OUTPUT / "天眼查企业身份核验结果.csv"
 DEFAULT_LIFECYCLE_RULES = (
     Path(__file__).resolve().parents[1]
@@ -99,6 +100,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--database", type=Path, default=DEFAULT_DB)
     parser.add_argument("--small-giant-master", type=Path, default=DEFAULT_SMALL_GIANT_MASTER)
     parser.add_argument("--three-first", type=Path, default=DEFAULT_THREE_FIRST)
+    parser.add_argument(
+        "--supplemental-events",
+        type=Path,
+        default=DEFAULT_SUPPLEMENTAL_EVENTS,
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--tyc-enrichment", type=Path, default=DEFAULT_TYC_ENRICHMENT)
     parser.add_argument("--lifecycle-rules", type=Path, default=DEFAULT_LIFECYCLE_RULES)
@@ -1508,7 +1514,9 @@ def load_list_events(
     rules: dict[str, dict[str, Any]],
     lifecycle_aliases: dict[str, str],
     exclusions: set[tuple[int, str]],
+    excluded_source_basenames: set[str] | None = None,
 ) -> None:
+    excluded_source_basenames = excluded_source_basenames or set()
     connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True)
     connection.row_factory = sqlite3.Row
     rows = connection.execute(
@@ -1528,6 +1536,9 @@ def load_list_events(
     ).fetchall()
     connection.close()
     for row in rows:
+        source_path = str(row["cloud_path"] or row["source"] or "")
+        if Path(source_path).name in excluded_source_basenames:
+            continue
         project_name = str(row["canonical_project_name"] or row["document_project"] or "").strip()
         project_name = canonical_lifecycle_project(project_name, lifecycle_aliases)
         if project_name == "国家专精特新“小巨人”企业":
@@ -1549,7 +1560,7 @@ def load_list_events(
             city=city,
             county=county,
             source_title=str(row["title"]),
-            source_path=str(row["cloud_path"] or row["source"] or ""),
+            source_path=source_path,
             source_url="",
             sequence_no=str(row["sequence_no"] or ""),
             event_type=event_type,
@@ -1591,6 +1602,64 @@ def load_three_first_events(
             ),
             lifecycle_rule=lifecycle_rule_for(project_name, rules),
         )
+
+
+def load_supplemental_events(
+    path: Path,
+    events: dict[EventKey, dict[str, Any]],
+    rules: dict[str, dict[str, Any]],
+    lifecycle_aliases: dict[str, str],
+) -> int:
+    loaded = 0
+    for row in read_jsonl(path):
+        project_name = canonical_lifecycle_project(
+            str(row.get("project_name") or ""),
+            lifecycle_aliases,
+        )
+        if project_name not in TARGET_PROJECTS and project_name not in rules:
+            continue
+        enterprise_name = str(row.get("enterprise_name") or "").strip()
+        if not enterprise_name:
+            continue
+        add_event(
+            events,
+            enterprise_name=enterprise_name,
+            project_name=project_name,
+            year=(
+                int(row["event_year"])
+                if str(row.get("event_year") or "").isdigit()
+                else None
+            ),
+            cohort_year=(
+                int(row["cohort_year"])
+                if str(row.get("cohort_year") or "").isdigit()
+                else None
+            ),
+            batch=str(row.get("batch") or ""),
+            status=str(row.get("status") or ""),
+            province=str(row.get("recognition_province") or "浙江省"),
+            city=str(row.get("recognition_city") or ""),
+            county=str(row.get("recognition_county") or ""),
+            source_title=str(row.get("source_title") or ""),
+            source_path=str(row.get("source_path") or ""),
+            source_url=str(row.get("source_url") or ""),
+            sequence_no=str(row.get("sequence_no") or ""),
+            source_kind=str(row.get("source_kind") or "supplemental_event"),
+            event_type=str(row.get("event_type") or ""),
+            event_scope=str(row.get("event_scope") or ""),
+            evidence_status=str(row.get("evidence_status") or ""),
+            lifecycle_rule=lifecycle_rule_for(project_name, rules),
+        )
+        loaded += 1
+    return loaded
+
+
+def supplemental_source_basenames(path: Path) -> set[str]:
+    return {
+        Path(str(row.get("source_path") or "")).name
+        for row in read_jsonl(path)
+        if str(row.get("source_path") or "")
+    }
 
 
 def load_tyc_enrichment(path: Path) -> dict[str, dict[str, Any]]:
@@ -2359,12 +2428,19 @@ def main() -> None:
         regional_coverage_discovery,
     )
     load_small_giant_events(args.small_giant_master, events, lifecycle_rules)
+    load_supplemental_events(
+        args.supplemental_events,
+        events,
+        lifecycle_rules,
+        lifecycle_aliases,
+    )
     load_list_events(
         args.database,
         events,
         lifecycle_rules,
         lifecycle_aliases,
         exclusions,
+        supplemental_source_basenames(args.supplemental_events),
     )
     load_three_first_events(args.three_first, events, lifecycle_rules)
     report = write_outputs(

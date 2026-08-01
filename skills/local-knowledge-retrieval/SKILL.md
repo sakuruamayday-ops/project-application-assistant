@@ -24,11 +24,11 @@ description: 检索团队统一云端知识服务。需要历史政策、相似�
 个人配置保存在技能目录外并自动备份。不得用个人偏好覆盖真实性、安全、验签、安装自检或本技能的强制质量门禁。完整规则见[跨平台技能运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
-先检查当前宿主是否已经连接 `jiaotang-kb` MCP。未连接时，引导用户登录门户点击“复制给 Agent”，并直接执行用户粘贴的一次性引导；不得要求普通成员提供 Token、私钥、静态设备 ID、终端命令或手工 MCP 配置。
+先检查当前宿主是否已经连接`jiaotang-kb` MCP。未连接时，引导用户登录门户点击“一键安装”，并直接执行用户粘贴的一段完整指令；手工配置页会自动填入当前登录用户的真实个人Token，不让用户去其他页面寻找后再回来填写。
 
-普通成员默认只通过本地 `jiaotang-kb` 签名代理访问团队知识。代理从系统安全存储读取凭据，逐请求生成 Ed25519 签名；Skill 不读取、不输出也不缓存这些秘密。通过固定协议调用团队知识服务：
+普通成员通过远程HTTP`jiaotang-kb`访问团队知识。个人Bearer Token只保存在当前用户的WorkBuddy MCP配置中；Skill不读取、不输出、不写入普通日志，也不在最终回复中复述。通过固定协议调用团队知识服务：
 
-1. 先调用 `knowledge_service_status` 或等价的 `/v1/me` 签名代理检查验证连接。
+1. 先调用`knowledge_service_status`检查连接，只有返回`connected: true`才视为连接成功。
 2. 解析企业、项目、地区、年份、批次和文件类型意图，读取 [检索编排协议](references/search-orchestration.md)。
    涉及首台套、首版次或首批次企业与产品名单时，同时读取 [三首项目名单数据协议](references/three-first-project-list-schema.md)。
 3. 名单问题并行调用 `POST /v1/lists/search` 与 `POST /v1/search`；三首项目统一调用 `POST /v1/three-first/analyze` 或 MCP `three_first_analysis`，由服务端自动组合目录差异、产品匹配、名单和全文结果；其他问题至少调用全文检索。
@@ -44,6 +44,10 @@ description: 检索团队统一云端知识服务。需要历史政策、相似�
 三首项目按“公示—认定—奖励—目录退出”分别记录状态事件，不以后序状态删除前序证据。没有明确目录退出原文时不得推断退出。无法取得具体产品名称时只返回企业、项目、年度和来源，固定提示用户自行查找并补充产品名称，不生成“未展开产品”等占位名称。
 
 通过 MCP 调用时使用同一流程：普通名单由 `public_list_search` 与 `knowledge_search` 并行，关键文档再调用 `knowledge_document`；三首任务只调用统一入口 `three_first_analysis`。不得因为任一工具返回空结果而跳过另一条路径。
+
+## 案例包分层调用
+
+需要历史案例、建设方案或附件结构时，先用 `knowledge_case_pack` 按 `project_id`、年度、行业、企业规模筛选三至五套案例。首轮只读取申报书或建设方案骨架；写到具体章节时，再用 `section` 展开对应佐证附件。案例只用于结构、指标组织和证据类型参考，不得把案例企业的财务、客户、技术、知识产权或人员事实复制给当前客户。返回 `auto_grouped` 时表示目录关系由系统自动归组，关键结论仍须回到原文件核验。
 
 ## 政策资料分层路由
 

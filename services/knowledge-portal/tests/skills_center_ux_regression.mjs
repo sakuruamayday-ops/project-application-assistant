@@ -48,7 +48,8 @@ async function waitForServer() {
 let browser;
 try {
   await waitForServer();
-  browser = await chromium.launch({headless: true});
+  const browserExecutable = process.env.JIAOTANG_BROWSER_EXECUTABLE || undefined;
+  browser = await chromium.launch({headless: true, executablePath: browserExecutable});
   const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
   const consoleErrors = [];
   page.on("console", (message) => {
@@ -196,8 +197,19 @@ try {
   }));
   assert.deepEqual(expandedButtonSizes, compactButtonSizes, "展开发布说明不应拉伸下载按钮");
   await page.locator('[data-skill-tab-target="install"]').first().click();
-  assert.equal(await page.locator('[data-skill-section-pane="install"]').isVisible(), true);
+  const installPane = page.locator('[data-skill-section-pane="install"]');
+  assert.equal(await installPane.isVisible(), true);
   assert.equal(new URL(page.url()).hash, "#skills-install");
+  const bindingButton = installPane.locator("[data-copy-agent-binding]");
+  assert.equal(await bindingButton.count(), 1, "安装页必须提供独立的第三步 bootstrap 绑定按钮");
+  assert.equal(await bindingButton.isHidden(), true, "第三步必须在第二步授权前保持隐藏");
+  const desktopInstallLayout = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    bindingLabel: document.querySelector('[data-skill-section-pane="install"] [data-copy-agent-binding]')?.textContent || "",
+  }));
+  assert.equal(desktopInstallLayout.documentWidth, desktopInstallLayout.viewportWidth, "桌面安装流程不应产生全局横向溢出");
+  assert.match(desktopInstallLayout.bindingLabel, /第三步.*bootstrap/s, "第三步按钮必须明确标注 bootstrap 绑定");
   if (process.env.SKILLS_QA_INSTALL_SCREENSHOT) {
     await page.screenshot({path: process.env.SKILLS_QA_INSTALL_SCREENSHOT, fullPage: true});
   }
@@ -227,6 +239,14 @@ try {
 
   await page.setViewportSize({width: 390, height: 844});
   await page.reload({waitUntil: "networkidle"});
+  await page.locator('[data-skill-tab-target="install"]').first().click();
+  const mobileInstallLayout = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    installColumns: getComputedStyle(document.querySelector(".skill-install-grid")).gridTemplateColumns,
+  }));
+  assert.equal(mobileInstallLayout.documentWidth, mobileInstallLayout.viewportWidth, "390px 安装流程不应产生全局横向溢出");
+  assert.equal(mobileInstallLayout.installColumns.split(" ").length, 1, "移动端安装与验收卡片必须使用单列布局");
   await page.locator('[data-skill-section-tab="downloads"]').click();
   const mobileDownloadLayout = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
@@ -270,7 +290,7 @@ try {
   await page.setViewportSize({width: 1920, height: 1080});
   await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
   assert.equal(await page.getByRole("heading", {name: "项目算法包"}).count(), 1, "算法包页面必须正常展示");
-  assert.equal(await page.getByText("当前首要补齐", {exact: true}).count(), 1, "算法包页面必须展示动态补齐重点");
+  assert.equal(await page.getByText("纯检索路由", {exact: true}).count(), 1, "算法包全部形成正式规则后必须展示零路由待补齐状态");
   assert.equal(await page.getByText("近7日查询", {exact: true}).count(), 1, "算法包页面必须展示真实查询频率");
   assert.equal(await page.getByText("它解决什么问题", {exact: true}).count(), 1, "算法包页面必须解释实际用途");
   const desktopAlgorithmFlow = await page.evaluate(() => {
@@ -295,7 +315,7 @@ try {
   await page.getByRole("link", {name: /正式规则包/}).click();
   await page.waitForLoadState("networkidle");
   assert.equal(new URL(page.url()).searchParams.get("coverage"), "rules-confirmed", "正式规则包卡片必须进入正式项目筛选");
-  assert.equal(await page.locator(".algorithm-table tbody tr").count(), 8, "正式规则包筛选必须只展示8个已确认项目");
+  assert.equal(await page.locator(".algorithm-table tbody tr").count(), 29, "正式规则包筛选必须展示29个已确认主项目");
   await page.getByRole("link", {name: /专精特新小巨人/}).first().click();
   await page.waitForLoadState("networkidle");
   assert.equal(new URL(page.url()).searchParams.get("project"), "little-giant", "项目点击必须真实切换详情路由");
@@ -308,7 +328,7 @@ try {
   assert.equal(new URL(page.url()).hash, "#algorithm-catalog", "返回按钮必须定位完整清单");
   assert.equal(await page.locator("#algorithm-detail").count(), 0, "返回完整清单后不得残留旧项目详情");
   assert.equal(
-    await page.locator(".algorithm-introduction").evaluate((element) => getComputedStyle(element).display),
+    await page.locator(".algorithm-introduction").first().evaluate((element) => getComputedStyle(element).display),
     "grid",
     "算法包用途说明必须加载正式构建样式",
   );

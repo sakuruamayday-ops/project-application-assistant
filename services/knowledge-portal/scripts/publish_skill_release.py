@@ -473,185 +473,38 @@ def _validate_workbuddy_integrity(
     file_names = {
         name for name in names if not archive.getinfo(name).is_dir()
     }
-    manifests = [
+    marketplace_names = [
         name
         for name in file_names
-        if name.endswith("/plugin-release-manifest.json")
+        if name.endswith("/.codebuddy-plugin/marketplace.json")
     ]
-    if len(manifests) != 1:
-        raise ValueError("WorkBuddy 包应且仅应包含一个插件签名清单")
-    manifest_name = manifests[0]
-    parts = PurePosixPath(manifest_name).parts
-    if len(parts) != 4 or parts[1] != "plugins":
-        raise ValueError("WorkBuddy 插件签名清单不在固定市场目录")
-    archive_root, _, plugin_directory, _ = parts
+    plugin_names = [
+        name
+        for name in file_names
+        if name.endswith("/.codebuddy-plugin/plugin.json")
+    ]
+    if len(marketplace_names) != 1 or len(plugin_names) != 1:
+        raise ValueError("WorkBuddy 包应且仅应包含一个市场清单和一个插件清单")
+    marketplace_name = marketplace_names[0]
+    marketplace_parts = PurePosixPath(marketplace_name).parts
+    plugin_json_name = plugin_names[0]
+    plugin_parts = PurePosixPath(plugin_json_name).parts
+    if (
+        len(marketplace_parts) != 3
+        or marketplace_parts[1] != ".codebuddy-plugin"
+        or len(plugin_parts) != 5
+        or plugin_parts[1] != "plugins"
+        or plugin_parts[3] != ".codebuddy-plugin"
+    ):
+        raise ValueError("WorkBuddy 市场或插件清单不在固定目录")
+    archive_root = marketplace_parts[0]
+    plugin_directory = plugin_parts[2]
+    if plugin_parts[0] != archive_root:
+        raise ValueError("WorkBuddy 市场与插件根目录不一致")
     plugin_prefix = f"{archive_root}/plugins/{plugin_directory}/"
-    marketplace_manifest_name = (
-        f"{archive_root}/marketplace-release-manifest.json"
-    )
-    marketplace_signature_name = marketplace_manifest_name + ".sig"
-    marketplace_metadata_name = (
-        f"{archive_root}/marketplace-release-signature.json"
-    )
-    marketplace_public_key_name = (
-        f"{archive_root}/marketplace-publisher-ed25519.pub"
-    )
-    marketplace_companions = {
-        marketplace_manifest_name,
-        marketplace_signature_name,
-        marketplace_metadata_name,
-        marketplace_public_key_name,
-    }
-    if not marketplace_companions.issubset(file_names):
-        raise ValueError("WorkBuddy 市场整包签名伴随物不完整")
-    marketplace_manifest_bytes = archive.read(marketplace_manifest_name)
-    marketplace_manifest = json.loads(
-        marketplace_manifest_bytes.decode("utf-8")
-    )
-    marketplace_metadata = json.loads(
-        archive.read(marketplace_metadata_name).decode("utf-8")
-    )
-    expected_marketplace_metadata = {
-        "algorithm": "OpenSSH-Ed25519",
-        "signature_namespace": WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE,
-        "signed_file": "marketplace-release-manifest.json",
-        "signature": "marketplace-release-manifest.json.sig",
-        "public_key": "marketplace-publisher-ed25519.pub",
-        "public_key_fingerprint": TRUSTED_PUBLISHER_FINGERPRINT,
-    }
-    if (
-        not isinstance(marketplace_metadata, dict)
-        or any(
-            marketplace_metadata.get(key) != value
-            for key, value in expected_marketplace_metadata.items()
-        )
-    ):
-        raise ValueError("WorkBuddy 市场整包签名元数据不合规")
-    _verify_manifest_signature(
-        marketplace_manifest_bytes,
-        archive.read(marketplace_signature_name),
-        archive.read(marketplace_public_key_name),
-        namespace=WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE,
-    )
-    if (
-        not isinstance(marketplace_manifest, dict)
-        or marketplace_manifest.get("artifact_type")
-        != "workbuddy-marketplace"
-        or marketplace_manifest.get("marketplace_name") != archive_root
-        or marketplace_manifest.get("plugin_name") != plugin_directory
-        or marketplace_manifest.get("release_tag")
-        != suite.get("release", {}).get("tag")
-    ):
-        raise ValueError("WorkBuddy 市场整包签名清单与套件不一致")
-    marketplace_files = marketplace_manifest.get("files")
-    if not isinstance(marketplace_files, dict) or not marketplace_files:
-        raise ValueError("WorkBuddy 市场整包签名清单缺少 files 哈希表")
-    verified_marketplace_files: set[str] = set()
-    for relative, expected_hash in marketplace_files.items():
-        relative_path = PurePosixPath(str(relative))
-        if (
-            not isinstance(relative, str)
-            or relative_path.is_absolute()
-            or ".." in relative_path.parts
-            or "\\" in relative
-            or ":" in relative
-            or not re.fullmatch(r"[0-9a-f]{64}", str(expected_hash))
-        ):
-            raise ValueError("WorkBuddy 市场整包签名清单包含非法路径或 SHA-256")
-        full_name = f"{archive_root}/{relative_path.as_posix()}"
-        if full_name not in file_names:
-            raise ValueError(f"WorkBuddy 市场整包签名文件缺失：{full_name}")
-        if hashlib.sha256(archive.read(full_name)).hexdigest() != expected_hash:
-            raise ValueError(f"WorkBuddy 市场整包签名文件哈希不一致：{full_name}")
-        verified_marketplace_files.add(full_name)
-    if file_names != verified_marketplace_files | marketplace_companions:
-        raise ValueError("WorkBuddy ZIP 文件集合与市场整包签名清单不一致")
-    signature_name = f"{manifest_name}.sig"
-    metadata_name = (
-        f"{plugin_prefix}plugin-release-signature.json"
-    )
-    public_key_name = f"{plugin_prefix}publisher-ed25519.pub"
-    companions = {
-        manifest_name,
-        signature_name,
-        metadata_name,
-        public_key_name,
-    }
-    if not companions.issubset(file_names):
-        raise ValueError("WorkBuddy 插件签名伴随物不完整")
-
-    manifest_bytes = archive.read(manifest_name)
-    manifest = json.loads(manifest_bytes.decode("utf-8"))
-    metadata = json.loads(archive.read(metadata_name).decode("utf-8"))
-    expected_metadata = {
-        "algorithm": "OpenSSH-Ed25519",
-        "signature_namespace": WORKBUDDY_SIGNATURE_NAMESPACE,
-        "signed_file": "plugin-release-manifest.json",
-        "signature": "plugin-release-manifest.json.sig",
-        "public_key": "publisher-ed25519.pub",
-        "public_key_fingerprint": TRUSTED_PUBLISHER_FINGERPRINT,
-    }
-    if (
-        not isinstance(metadata, dict)
-        or any(metadata.get(key) != value for key, value in expected_metadata.items())
-    ):
-        raise ValueError("WorkBuddy 插件签名元数据不合规")
-    _verify_manifest_signature(
-        manifest_bytes,
-        archive.read(signature_name),
-        archive.read(public_key_name),
-        namespace=WORKBUDDY_SIGNATURE_NAMESPACE,
-    )
-    if (
-        not isinstance(manifest, dict)
-        or manifest.get("artifact_type") != "workbuddy-plugin"
-        or manifest.get("plugin_name") != plugin_directory
-        or manifest.get("release_tag") != suite.get("release", {}).get("tag")
-        or manifest.get("skills") != suite.get("skills")
-    ):
-        raise ValueError("WorkBuddy 插件签名清单与套件清单不一致")
-    files = manifest.get("files")
-    if not isinstance(files, dict) or not files:
-        raise ValueError("WorkBuddy 插件签名清单缺少 files 哈希表")
-    verified_files: set[str] = set()
-    for relative, expected_hash in files.items():
-        if (
-            not isinstance(relative, str)
-            or not isinstance(expected_hash, str)
-            or not re.fullmatch(r"[0-9a-f]{64}", expected_hash)
-        ):
-            raise ValueError("WorkBuddy 插件签名清单包含非法文件或 SHA-256")
-        relative_path = PurePosixPath(relative)
-        if (
-            relative_path.is_absolute()
-            or ".." in relative_path.parts
-            or "\\" in relative
-            or ":" in relative
-            or not relative_path.parts
-        ):
-            raise ValueError(f"WorkBuddy 签名清单包含不安全路径：{relative}")
-        full_name = plugin_prefix + relative_path.as_posix()
-        if full_name not in file_names:
-            raise ValueError(f"WorkBuddy 签名文件缺失：{full_name}")
-        actual_hash = hashlib.sha256(archive.read(full_name)).hexdigest()
-        if actual_hash != expected_hash:
-            raise ValueError(f"WorkBuddy 签名文件哈希不一致：{full_name}")
-        verified_files.add(full_name)
-
-    plugin_files = {
-        name for name in file_names if name.startswith(plugin_prefix)
-    }
-    verified_allowlist = verified_files | companions
-    unexpected_plugin_files = sorted(plugin_files - verified_allowlist)
-    if unexpected_plugin_files:
-        raise ValueError(
-            "WorkBuddy 插件包含未签名文件："
-            + "、".join(unexpected_plugin_files[:5])
-        )
     outer_allowed = {
-        f"{archive_root}/.codebuddy-plugin/marketplace.json",
+        marketplace_name,
         f"{archive_root}/INSTALL.md",
-        *marketplace_companions,
     }
     unexpected_outer = sorted(
         name
@@ -660,7 +513,7 @@ def _validate_workbuddy_integrity(
     )
     if unexpected_outer:
         raise ValueError(
-            "WorkBuddy 包含未经允许的外层文件："
+            "WorkBuddy 包含简化安装不需要的外层文件："
             + "、".join(unexpected_outer[:5])
         )
     if any(
@@ -670,51 +523,87 @@ def _validate_workbuddy_integrity(
     ):
         raise ValueError("WorkBuddy 包外层仍包含固定安装器")
 
-    marketplace = json.loads(
-        archive.read(
-            f"{archive_root}/.codebuddy-plugin/marketplace.json"
-        ).decode("utf-8")
-    )
-    plugin_json_name = f"{plugin_prefix}.codebuddy-plugin/plugin.json"
-    if plugin_json_name not in verified_files:
-        raise ValueError("WorkBuddy plugin.json 未被签名清单覆盖")
-    plugin = json.loads(archive.read(plugin_json_name).decode("utf-8"))
-    mcp_declaration = plugin.get("mcpServers")
-    if isinstance(mcp_declaration, str):
-        if mcp_declaration != "./.mcp.json":
-            raise ValueError("WorkBuddy 外置 MCP 清单路径不合规")
-        mcp_name = f"{plugin_prefix}.mcp.json"
-        if mcp_name not in verified_files:
-            raise ValueError("WorkBuddy 外置 .mcp.json 未被签名清单覆盖")
-        mcp_payload = json.loads(archive.read(mcp_name).decode("utf-8"))
-        mcp_servers = mcp_payload.get("mcpServers")
-        mcp_configuration_mode = "signed_external_plugin_mcp_file"
-    elif isinstance(mcp_declaration, dict):
-        mcp_servers = mcp_declaration
-        mcp_configuration_mode = "signed_inline_plugin_manifest"
-    else:
-        raise ValueError("WorkBuddy 插件缺少 MCP 声明")
-    expected_server = {
-        "command": "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
-        "args": [
-            "${CODEBUDDY_PLUGIN_ROOT}/mcp/jiaotang-agent.mjs",
-            "plugin-serve",
-        ],
+    forbidden_names = {
+        ".mcp.json",
+        "jiaotang-agent.mjs",
+        "run-node",
+        "run-node.cmd",
+        "portable_skill_runtime.py",
+        "workbuddy_preference_bridge.py",
+        "plugin-release-manifest.json",
+        "plugin-release-manifest.json.sig",
+        "plugin-release-signature.json",
+        "marketplace-release-manifest.json",
+        "marketplace-release-manifest.json.sig",
+        "marketplace-release-signature.json",
+        "marketplace-publisher-ed25519.pub",
     }
+    included_forbidden = sorted(
+        name for name in file_names if PurePosixPath(name).name in forbidden_names
+    )
+    if included_forbidden:
+        raise ValueError(
+            "WorkBuddy 简化包仍包含旧机制："
+            + "、".join(included_forbidden[:5])
+        )
+    marketplace = json.loads(archive.read(marketplace_name).decode("utf-8"))
+    plugin = json.loads(archive.read(plugin_json_name).decode("utf-8"))
     if (
-        not isinstance(mcp_servers, dict)
-        or mcp_servers != {"jiaotang-kb": expected_server}
+        not isinstance(plugin, dict)
+        or plugin.get("hook_mode") != "behavior_only_fail_open"
+        or plugin.get("mcp_configuration_mode")
+        != "user_remote_streamable_http"
+        or "mcpServers" in plugin
     ):
-        raise ValueError("WorkBuddy jiaotang-kb MCP 声明不合规")
-    for required_runtime in (
-        "bin/run-node",
-        "bin/run-node.cmd",
-        "mcp/jiaotang-agent.mjs",
-    ):
-        if plugin_prefix + required_runtime not in verified_files:
-            raise ValueError(
-                f"WorkBuddy MCP 运行文件未被签名清单覆盖：{required_runtime}"
+        raise ValueError("WorkBuddy 插件未声明简化远程 MCP 与最小行为 Hook")
+    hook_name = f"{plugin_prefix}hooks/hooks.json"
+    behavior_hook_name = f"{plugin_prefix}scripts/workbuddy_behavior_hook.py"
+    if hook_name not in file_names or behavior_hook_name not in file_names:
+        raise ValueError("WorkBuddy 简化包缺少最小行为 Hook")
+    hooks = json.loads(archive.read(hook_name).decode("utf-8"))
+    hook_events = hooks.get("hooks") if isinstance(hooks, dict) else None
+    if not isinstance(hook_events, dict) or set(hook_events) != {
+        "UserPromptSubmit",
+        "Stop",
+    }:
+        raise ValueError("WorkBuddy 最小行为 Hook 事件范围不合规")
+    skills = suite.get("skills")
+    expected_skills = [f"./skills/{name}" for name in skills]
+    if plugin.get("skills") != expected_skills:
+        raise ValueError("WorkBuddy plugin.json 技能清单与套件不一致")
+    missing_skill_entries = [
+        name
+        for name in skills
+        if f"{plugin_prefix}skills/{name}/SKILL.md" not in file_names
+    ]
+    if missing_skill_entries:
+        raise ValueError(
+            "WorkBuddy 技能入口缺失：" + "、".join(missing_skill_entries[:5])
+        )
+    discovered_skills = {
+        PurePosixPath(name.removeprefix(plugin_prefix)).parts[1]
+        for name in file_names
+        if name.startswith(f"{plugin_prefix}skills/")
+        and name.endswith("/SKILL.md")
+    }
+    if discovered_skills != set(skills):
+        raise ValueError("WorkBuddy 包含未声明技能或技能清单不完整")
+    for name in file_names:
+        info = archive.getinfo(name)
+        if info.file_size > 4 * 1024 * 1024:
+            continue
+        content = archive.read(name)
+        if re.search(rb"jtk_[A-Za-z0-9_-]{16,}", content):
+            raise ValueError("WorkBuddy 公共包疑似包含个人 Token")
+        if any(
+            marker in content
+            for marker in (
+                b"${CODEBUDDY_PLUGIN_ROOT}",
+                b"jiaotang_kb_setup",
+                b"bootstrap_url",
             )
+        ):
+            raise ValueError("WorkBuddy 简化包仍引用旧本地 MCP 或运行路径协议")
     allowed_marketplace = {"name", "description", "owner", "plugins"}
     allowed_owner = {"name"}
     allowed_plugin = {"name", "description", "version", "source"}
@@ -740,18 +629,17 @@ def _validate_workbuddy_integrity(
         or marketplace_plugin.get("source")
         != f"./plugins/{plugin_directory}"
     ):
-        raise ValueError("WorkBuddy marketplace.json 未固定指向已验签插件")
+        raise ValueError("WorkBuddy marketplace.json 未固定指向目标插件")
     return {
         "status": "verified",
+        "verification_scope": "server_release_channel",
         "publisher_fingerprint": TRUSTED_PUBLISHER_FINGERPRINT,
-        "signature_namespace": WORKBUDDY_SIGNATURE_NAMESPACE,
-        "marketplace_signature_namespace": (
-            WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE
-        ),
-        "verified_files": len(verified_files),
+        "verified_files": len(file_names),
         "archive_entries": len(file_names),
         "outer_fixed_installers": False,
-        "mcp_configuration_mode": mcp_configuration_mode,
+        "hook_mode": "behavior_only_fail_open",
+        "mcp_configuration_mode": "user_remote_streamable_http",
+        "embedded_user_token": False,
     }
 
 

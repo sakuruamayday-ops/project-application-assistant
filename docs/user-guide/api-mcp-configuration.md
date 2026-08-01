@@ -4,17 +4,15 @@
 
 ## 零、普通成员只做一次复制
 
-普通成员无需运行命令、填写 Token 或修改 MCP 配置：
+普通成员原则上只复制粘贴一次，不需要去其他页面寻找Token：
 
 1. 登录团队门户，进入“连接我的 Agent”。
-2. 点击“复制给 Agent”。
-3. 将复制的整段文字粘贴到当前本地 Agent 对话框。
+2. 点击“一键安装”。
+3. 将网站生成的一段完整指令粘贴给当前WorkBuddy。
 
-Agent 会读取十分钟有效的一次性引导清单，识别 macOS 或 Windows 以及当前宿主，生成本机 Ed25519 设备密钥，完成 MCP 配置并验证连接。私钥不会上传；macOS 保存到系统钥匙串，Windows 使用当前用户 DPAPI 加密保存。
+WorkBuddy会安装或覆盖49项Skills、启用最小行为Hook，只替换用户配置中的`mcpServers.jiaotang-kb`并保留其他MCP，随后重载一次并调用`knowledge_service_status`验收。
 
-当前内置适配 WorkBuddy、Codex、Claude Code 和通用 MCP 配置。其他 Agent 只要具备本地命令执行、用户配置文件写入和 stdio MCP 能力，也可按引导清单自动完成。纯云端 Agent 不属于此接入范围。
-
-管理员账号不执行单设备限制，仍可在门户使用管理员 API Key。
+手工配置页适用于WorkBuddy和其他支持Streamable HTTP MCP的Agent。页面自动复用当前账号的有效个人Token；没有有效Token时自动生成，并直接填入完整配置。
 
 ## 一、团队云端知识API
 
@@ -25,9 +23,9 @@ Agent 会读取十分钟有效的一次性引导清单，识别 macOS 或 Window
 ### 配置步骤
 
 1. 登录团队门户并完成团队成员身份验证。
-2. 点击“复制给 Agent”，把文字发送给需要使用知识库的本地 Agent。
-3. Agent 自动登记本机公钥、保存本机私钥、配置 `jiaotang-kb` MCP，并调用 `/v1/me` 验证。
-4. Agent 报告“配置成功”后即可直接检索；成员不应接触或保存 Token、私钥和签名请求头。
+2. 点击“一键安装”，把完整指令发送给需要使用知识库的WorkBuddy。
+3. WorkBuddy安装插件并合并远程`jiaotang-kb` MCP，保留所有其他MCP条目。
+4. 只有49项Skills可识别、三个核心工具已枚举，且`knowledge_service_status`返回`connected: true`后，才报告配置成功。
 
 知识服务还提供三个结构化只读接口：
 
@@ -40,12 +38,13 @@ Agent 会读取十分钟有效的一次性引导清单，识别 macOS 或 Window
 ### 权限边界
 
 - 普通成员只能读取团队云端知识、查询自己的调用记录和下载最新版Skills。
-- 普通成员账号同一时间只能存在一组有效设备公钥。仅复制 Token 或静态设备 ID 无法调用。
-- 每个请求都必须包含短时设备签名和一次性 nonce；签名过期、伪造或重放会被拒绝。
-- 换机时先在门户执行“更换绑定设备”，旧 Token、旧 OAuth 授权、旧设备公钥和未使用安装码立即失效，再把新的“一键配置”发送给新设备 Agent。
+- 每个用户同时只保留一枚有效个人Token；有效Token稳定复用，不因反复打开配置页而变化。
+- 个人Token是完整Bearer凭据，不再叠加设备公钥、逐请求签名或nonce。
+- Token怀疑泄露时在门户撤销；下次打开手工配置页自动生成新Token。
+- Token会明文保存在当前用户的WorkBuddy MCP配置中，这是简化安装接受的取舍；不得写入公共插件包、公共代码、普通日志或最终回复。
 - 成员自行维护的地区政策保存在本地工作区 `project-rules/`，不会写入或覆盖团队云端知识库。
 - 云端资料上传、索引更新和Skills发布仍由网站管理员执行。
-- 云端知识服务是REST API，不是MCP地址，不要直接填入 `mcpServers`。
+- 焦糖远程MCP地址为`https://zshjiaotang.cn/mcp/`；不要把其他普通REST接口误填成MCP地址。
 
 ### 个人偏好接口
 
@@ -101,7 +100,7 @@ Agent 会读取十分钟有效的一次性引导清单，识别 macOS 或 Window
 }
 ```
 
-不要把普通REST API地址误填成MCP地址。焦糖知识库普通成员也不要手工采用此静态 Header 示例；设备签名由门户安装的本地 `jiaotang-kb` 代理逐请求生成。
+不要把普通REST API地址误填成MCP地址。焦糖知识库请直接从登录后的手工配置页复制完整配置，页面会填入当前用户的真实Token，不要使用公共文档中的占位符自行拼接。
 
 ### MCP验证步骤
 

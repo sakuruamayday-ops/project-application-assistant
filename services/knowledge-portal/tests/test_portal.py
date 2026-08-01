@@ -557,8 +557,8 @@ def test_public_user_guide(tmp_path):
         assert "下载与安装" in guide.text
         assert "当前正式通用版" in guide.text
         assert "尚未正式发布" in guide.text
-        assert "当前没有通过插件根 .mcp.json 能力门禁" in guide.text
-        assert "候选 V1.4.3 不等于已正式发布" in guide.text
+        assert "当前没有通过简化安装能力门禁" in guide.text
+        assert "候选 V1.4.5 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -922,14 +922,14 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert response.status_code == 200
     assert 'data-section-link="algorithms"' in response.text
     assert "项目算法包" in response.text
-    assert "显示 28 / 28 个主项目" in response.text
+    assert "显示 29 / 29 个主项目" in response.text
     assert "另有 1 个兼容别名包" in response.text
     assert "正式规则包" in response.text
     assert "政策基线包" in response.text
     assert "近7日查询" in response.text
     assert "纯检索路由" in response.text
     assert (
-        "28 类常规项目均已形成正式阈值规则包。系统会读取企业事实字段，"
+        "29 类常规项目均已形成正式阈值规则包。系统会读取企业事实字段，"
         "按稳定管理办法、年度通知、属地规则和已核验征求意见前瞻层逐项核对。"
         in response.text
     )
@@ -942,11 +942,11 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert 'href="/algorithms?coverage=rules-confirmed#algorithm-catalog"' in response.text
     assert 'href="/algorithms#algorithm-catalog" data-force-navigation' in response.text
     assert confirmed_response.status_code == 200
-    assert "显示 28 / 28 个主项目" in confirmed_response.text
+    assert "显示 29 / 29 个主项目" in confirmed_response.text
     assert "专精特新小巨人" in confirmed_response.text
     assert "区级绿色工厂" in confirmed_response.text
     assert baseline_catalog_response.status_code == 200
-    assert "显示 0 / 28 个主项目" in baseline_catalog_response.text
+    assert "显示 0 / 29 个主项目" in baseline_catalog_response.text
     assert "区级绿色工厂" not in baseline_catalog_response.text
     assert 'href="/algorithms?project=little-giant#algorithm-detail"' not in baseline_catalog_response.text
     assert detail_response.status_code == 200
@@ -1186,8 +1186,9 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert api_guide.status_code == 200
-        assert "复制给 Agent" in api_guide.json()["answer"]
-        assert "无需填写 API、Token 或 MCP 请求头" in api_guide.json()["answer"]
+        assert "点击“一键安装”" in api_guide.json()["answer"]
+        assert "不需要设备绑定" in api_guide.json()["answer"]
+        assert "自动复用或生成" in api_guide.json()["answer"]
         assert "macOS 或 Windows" in api_guide.json()["answer"]
 
         qcc_guide = client.post(
@@ -1319,7 +1320,8 @@ def test_setup_login_and_device_token(tmp_path):
 
         bound_page = client.get("/access")
         assert "管理员豁免" not in bound_page.text
-        assert "当前尚未绑定" in bound_page.text
+        assert "当前尚未绑定" not in bound_page.text
+        assert "DEVICE SIGNATURE" not in bound_page.text
         second_device = client.get(
             "/v1/me",
             headers=api_headers(token, "device:test-installation-0002"),
@@ -1330,9 +1332,8 @@ def test_setup_login_and_device_token(tmp_path):
             "/device-binding/replace",
             data={"csrf_token": user["csrf_token"]},
         )
-        assert replaced.status_code == 200
-        assert "旧设备、公钥和访问凭据已失效" in replaced.text
-        assert client.get("/v1/me", headers=api_headers(token)).status_code == 401
+        assert replaced.status_code == 410
+        assert client.get("/v1/me", headers=api_headers(token)).status_code == 200
         with closing(module.database()) as connection:
             bindings = connection.execute(
                 """
@@ -1637,12 +1638,60 @@ def test_assistant_searches_web_only_after_knowledge_miss(tmp_path, monkeypatch)
 
 def test_structured_list_policy_and_project_tools(tmp_path):
     module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        document_id = connection.execute(
+            "SELECT id FROM documents WHERE source_key = 'doc-list'"
+        ).fetchone()[0]
+        connection.execute(
+            """
+            INSERT INTO public_list_entities(
+                document_id,enterprise_name,sequence_no,canonical_project_name,
+                policy_year,batch,region,list_status,context,confidence
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                document_id,
+                "杭州分页验证有限公司",
+                "2",
+                "国家专精特新“小巨人”企业",
+                2025,
+                "第六批",
+                "浙江省",
+                "认定名单",
+                "2 | 杭州分页验证有限公司",
+                "high",
+            ),
+        )
+        connection.commit()
 
     list_result = module.search_public_list_entities(
-        project_name="小巨人", year=2025, batch="第六批", region="浙江省"
+        project_name="小巨人",
+        year=2025,
+        batch="第六批",
+        region="浙江省",
+        offset=0,
+        limit=1,
     )
-    assert list_result["results"][0]["enterprise_name"] == "杭州测试装备有限公司"
     assert list_result["results"][0]["list_status"] == "认定名单"
+    assert list_result["total"] == 2
+    assert list_result["pagination"]["is_truncated"] is True
+    assert list_result["pagination"]["next_offset"] == 1
+
+    second_page = module.search_public_list_entities(
+        project_name="小巨人",
+        year=2025,
+        batch="第六批",
+        region="浙江省",
+        offset=1,
+        limit=1,
+    )
+    assert second_page["total"] == 2
+    assert {
+        list_result["results"][0]["enterprise_name"],
+        second_page["results"][0]["enterprise_name"],
+    } == {"杭州测试装备有限公司", "杭州分页验证有限公司"}
+    assert second_page["pagination"]["has_more"] is False
+    assert second_page["pagination"]["next_offset"] is None
 
     policy_result = module.search_policy_documents(
         project_name="小巨人",
@@ -1671,6 +1720,7 @@ def test_structured_list_policy_and_project_tools(tmp_path):
         item["function"]["name"] for item in module.assistant_tool_schemas()
     }
     assert {
+        "authoritative_list_search",
         "public_list_search",
         "policy_search",
         "project_catalog_match",
@@ -1679,11 +1729,67 @@ def test_structured_list_policy_and_project_tools(tmp_path):
     }.issubset(tool_names)
 
 
+def test_legacy_public_list_search_routes_authoritative_projects_to_master(tmp_path):
+    module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE national_small_giant_master(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT,normalized_name TEXT,unified_social_credit_code TEXT,qice_eid TEXT,
+                region TEXT,city TEXT,county TEXT,recognition_year INTEGER,batch TEXT,status TEXT,
+                official_url TEXT,official_url_role TEXT,official_fragment_key TEXT,verification_status TEXT,
+                sequence_no TEXT,platform_year_raw TEXT,former_names_json TEXT,
+                source_documents_json TEXT,source_paths_json TEXT
+            );
+            INSERT INTO national_small_giant_master VALUES
+                (1,'杭州权威甲公司','','','','浙江省','杭州市','余杭区',2024,'第六批','认定',
+                 'https://example.gov.cn/list','official_batch_notice','',
+                 'official_local_fragment_match','','','[]','[1]','["官方名单.pdf"]'),
+                (2,'杭州权威乙公司','','','','浙江省','杭州市','滨江区',2024,'第六批','认定',
+                 'https://example.gov.cn/list','official_batch_notice','',
+                 'dynamic_candidate_pending_official_fragment','','','[]','[]','[]');
+            """
+        )
+        connection.commit()
+
+    result = module.search_public_list_entities(
+        project_name="国家专精特新小巨人",
+        year=2024,
+        batch="第六批",
+        region="杭州市",
+        limit=1,
+    )
+    assert result["legacy_route"]["effective_tool"] == "authoritative_list_search"
+    assert result["authority"]["table"] == "national_small_giant_master"
+    assert result["total"] == 2
+    assert result["summary"]["official_match_count"] == 1
+    assert result["pagination"]["is_truncated"] is True
+
+
+def test_legacy_public_list_search_never_falls_back_when_authority_table_is_missing(tmp_path):
+    module = load_app(tmp_path)
+    with pytest.raises(module.HTTPException) as error:
+        module.search_public_list_entities(
+            project_name="国家专精特新小巨人",
+            year=2025,
+            batch="第六批",
+            region="浙江省",
+        )
+    assert error.value.status_code == 503
+    assert "national_small_giant_master" in str(error.value.detail)
+
+
 def test_three_first_directory_diff_and_product_match_tools(tmp_path):
     module = load_app(tmp_path)
     with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
         connection.executescript(
             """
+            CREATE TABLE three_first_project_awards(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT,product_name TEXT,project_name TEXT,list_status TEXT,
+                year INTEGER,province TEXT,city TEXT,county TEXT,source_tier TEXT,confidence TEXT
+            );
             CREATE TABLE three_first_guidance_directory_diffs(
                 id INTEGER PRIMARY KEY,
                 from_year INTEGER NOT NULL,
@@ -2991,7 +3097,11 @@ def test_policy_queries_choose_expected_source_layer(tmp_path):
         "浙江省企业研究院",
         "浙江省重点企业研究院",
     ]
-    assert module.knowledge_search_query("未来工厂怎么申报") == "浙江省未来工厂"
+    assert module.project_selection_prompt("未来工厂怎么申报")
+    assert module.project_query_variants("未来工厂怎么申报") == [
+        "杭州市AI工厂",
+        "浙江省未来工厂",
+    ]
     assert module.project_query_variants("浙江省重点企业研究院申报要求") == [
         "浙江省重点企业研究院"
     ]
@@ -3788,6 +3898,92 @@ def test_api_rejects_missing_token(tmp_path):
         assert response.status_code == 401
 
 
+def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    workbuddy_package = tmp_path / "workbuddy-v1.4.5.zip"
+    workbuddy_package.write_bytes(b"workbuddy-v1.4.5")
+    artifact = {
+        "file_path": str(workbuddy_package),
+        "file_name": workbuddy_package.name,
+        "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
+        "target": "workbuddy",
+        "version": "1.4.5",
+    }
+    monkeypatch.setattr(
+        module,
+        "latest_skill_artifact",
+        lambda target: dict(artifact) if target == "workbuddy" else None,
+    )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_is_simple_remote_mcp",
+        lambda candidate: bool(candidate),
+    )
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        access = client.get("/access")
+        assert "一键安装" in access.text
+        assert "data-copy-agent-bootstrap" in access.text
+        first = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        second = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"]},
+        )
+        assert first.status_code == second.status_code == 200
+        assert first.headers["cache-control"] == "no-store"
+        assert first.json()["phase"] == "install_ready"
+        prompt = first.json()["prompt"]
+        assert "V1.4.5" in prompt
+        assert "49 项 Skills" in prompt
+        assert "只替换当前用户配置中的 `mcpServers.jiaotang-kb`" in prompt
+        assert "保留所有其他 MCP 条目" in prompt
+        assert "只重载 WorkBuddy 一次" in prompt
+        assert "knowledge_service_status" in prompt
+        assert "connected: true" in prompt
+        first_token = re.search(r"jtk_[A-Za-z0-9_-]+", prompt).group(0)
+        second_token = re.search(
+            r"jtk_[A-Za-z0-9_-]+", second.json()["prompt"]
+        ).group(0)
+        assert first_token == second_token
+
+        guide = client.get("/mcp-guide")
+        assert guide.headers["cache-control"] == "private, no-store"
+        assert first_token in guide.text
+        assert "Bearer 你的个人Token" not in guide.text
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {first_token}"},
+        ).status_code == 200
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT COUNT(*) FROM device_tokens "
+                "WHERE user_id=? AND revoked_at IS NULL",
+                (int(user["id"]),),
+            ).fetchone()[0] == 1
+
+
+@pytest.mark.skip(reason="V1.4.5 已由单段安装指令替代三阶段设备绑定")
 def test_admin_uses_same_transactional_agent_onboarding_as_members(
     tmp_path,
     monkeypatch,
@@ -3859,6 +4055,15 @@ def test_admin_uses_same_transactional_agent_onboarding_as_members(
         )
         assert confirmed.status_code == 200
         assert confirmed.json()["phase"] == "install_authorized"
+        binding = client.post(
+            "/agent-bootstrap-codes/binding",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+            },
+        )
+        assert binding.status_code == 200
+        assert binding.json()["phase"] == "binding_authorized"
 
         private_key = Ed25519PrivateKey.generate()
         public_key = base64url_encode(
@@ -3962,6 +4167,7 @@ def test_admin_uses_same_transactional_agent_onboarding_as_members(
         assert all(stage["complete"] for stage in status["stages"].values())
 
 
+@pytest.mark.skip(reason="V1.4.5 覆盖升级不再复用设备身份")
 def test_connected_device_cross_version_upgrade_reuses_identity(
     tmp_path,
     monkeypatch,
@@ -4226,6 +4432,7 @@ def test_connected_device_cross_version_upgrade_reuses_identity(
         assert "当前设备已经是最新正式版本" in latest.text
 
 
+@pytest.mark.skip(reason="V1.4.5 已取消 bootstrap、设备公钥和逐请求签名")
 def test_member_agent_bootstrap_device_signature_and_replacement(
     tmp_path,
     monkeypatch,
@@ -4309,32 +4516,36 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
 
         access = client.get("/access")
         assert "复制给 Agent" in access.text
-        assert "手工配置" in access.text
-        assert "data-toggle-manual-agent-config" in access.text
-        assert "data-confirm-manual-agent-bootstrap" in access.text
-        assert "前往 Skills 中心" in access.text
-        assert "macOS 与 Windows 插件市场包统一在 Skills 中心下载" in access.text
-        assert 'class="button secondary skill-center-link" href="/skills"' in access.text
-        assert access.text.count("data-manual-package-download") == 1
-        assert "我已审查，复制安装确认" in access.text
-        assert "一次性引导地址" in access.text
+        assert "非 WorkBuddy 手工配置 MCP" in access.text
+        assert "data-toggle-manual-agent-config" not in access.text
+        assert "data-confirm-manual-agent-bootstrap" not in access.text
+        assert "data-copy-agent-binding" in access.text
+        assert "第三步 · 执行 bootstrap" in access.text
+        assert 'href="/mcp-guide"' in access.text
+        assert "手工配置 WorkBuddy" not in access.text
+        assert "data-manual-package-download" not in access.text
+        assert "我已审查，复制安装指令" in access.text
         assert "等待配置" in access.text
         portal_script = client.get("/static/portal.js")
         assert portal_script.status_code == 200
-        assert "我已审查，生成并复制 bootstrap_url" in portal_script.text
-        assert (
-            "copyToClipboard(payload.manual_configuration.bootstrap_url)"
-            in portal_script.text
-        )
+        assert "生成手工配置失败" not in portal_script.text
+        assert "payload.workbuddy_configuration?.bootstrap_url" in portal_script.text
         assert "浏览器未允许自动复制" in portal_script.text
+        assert 'fetch("/agent-bootstrap-codes/binding"' in portal_script.text
+        assert "binding_authorized" in portal_script.text
         skills = client.get("/skills")
         assert skills.status_code == 200
-        assert "data-toggle-manual-agent-config" in skills.text
-        assert "data-confirm-manual-agent-bootstrap" in skills.text
-        assert "data-manual-package-download" in skills.text
-        assert "生成并复制 bootstrap_url" in skills.text
-        assert "/plugin marketplace add" in skills.text
-        assert "jiaotang-workbuddy-skills@jiaotang" in skills.text
+        assert "非 WorkBuddy 手工配置 MCP" in skills.text
+        assert "data-toggle-manual-agent-config" not in skills.text
+        assert "data-confirm-manual-agent-bootstrap" not in skills.text
+        assert "data-manual-package-download" not in skills.text
+        assert "data-copy-agent-binding" in skills.text
+        assert 'href="/mcp-guide"' in skills.text
+        mcp_guide = client.get("/mcp-guide")
+        assert mcp_guide.status_code == 200
+        assert "非 WorkBuddy 用户手工配置 MCP" in mcp_guide.text
+        assert "不下载插件包、不使用 bootstrap_url" in mcp_guide.text
+        assert "Authorization" in mcp_guide.text
 
         bootstrap = client.post(
             "/agent-bootstrap-codes",
@@ -4464,6 +4675,15 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         )
         assert unconfirmed_manifest.status_code == 403
         assert "尚未由用户确认" in unconfirmed_manifest.json()["detail"]
+        unconfirmed_binding = client.post(
+            "/agent-bootstrap-codes/binding",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+            },
+        )
+        assert unconfirmed_binding.status_code == 403
+        assert "先完成第二步" in unconfirmed_binding.json()["detail"]
 
         newer_package = tmp_path / "workbuddy-newer.zip"
         newer_package.write_bytes(b"newer-release-must-not-replace-pinned-package")
@@ -4492,28 +4712,51 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "不是必须出现在 Agent 工具列表中的工具" in confirmed.json()["prompt"]
         assert "`jiaotang_kb_setup`" in confirmed.json()["prompt"]
         assert "签名插件根目录 .mcp.json" in confirmed.json()["prompt"]
-        assert "不要另行创建或改写用户级、项目级" in confirmed.json()["prompt"]
+        assert "WorkBuddy 5.3.x" in confirmed.json()["prompt"]
+        assert "runtimeInjected=false" in confirmed.json()["prompt"]
+        assert "仅合并用户级 ~/.workbuddy/mcp.json" in confirmed.json()["prompt"]
         assert "不得直接注册临时下载或临时解压目录" in confirmed.json()["prompt"]
         assert "不得删除已注册的 jiaotang 市场" in confirmed.json()["prompt"]
-        assert "`knowledge_service_status`" in confirmed.json()["prompt"]
-        assert "no connector owns resource URI" in confirmed.json()["prompt"]
-        assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
-            confirmed.json()["prompt"]
-        )
-        manual = confirmed.json()["manual_configuration"]
-        assert manual["configuration_key"] == "bootstrap_url"
-        assert manual["mcp_server"] == "jiaotang-kb"
-        assert manual["setup_tool"] == "jiaotang_kb_setup"
-        assert manual["configuration_transport"] == "local_mcp_tool_argument"
-        assert manual["platform"] == "unified"
-        assert manual["plugin_download_url"] == scoped_download_url
-        assert manual["plugin_sha256"] == hashlib.sha256(
+        assert "第三步“复制知识库绑定指令”" in confirmed.json()["prompt"]
+        workbuddy_configuration = confirmed.json()["workbuddy_configuration"]
+        assert workbuddy_configuration["configuration_key"] == "bootstrap_url"
+        assert workbuddy_configuration["mcp_server"] == "jiaotang-kb"
+        assert workbuddy_configuration["setup_tool"] == "jiaotang_kb_setup"
+        assert workbuddy_configuration["configuration_transport"] == "local_mcp_tool_argument"
+        assert workbuddy_configuration["platform"] == "unified"
+        assert workbuddy_configuration["plugin_download_url"] == scoped_download_url
+        assert workbuddy_configuration["plugin_sha256"] == hashlib.sha256(
             workbuddy_package.read_bytes()
         ).hexdigest()
-        assert manual["bootstrap_url"].endswith(
+        assert "bootstrap_url" not in workbuddy_configuration
+        assert f"?platform=unified" in confirmed.json()["prompt"]
+
+        confirmed_without_binding = client.get(
+            f"/v1/agent-bootstrap/{enrollment_code}"
+        )
+        assert confirmed_without_binding.status_code == 403
+        assert "第三步知识库绑定授权" in confirmed_without_binding.json()["detail"]
+
+        binding = client.post(
+            "/agent-bootstrap-codes/binding",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+            },
+        )
+        assert binding.status_code == 200
+        assert binding.json()["phase"] == "binding_authorized"
+        assert "只调用一次本地 `jiaotang_kb_setup`" in binding.json()["prompt"]
+        assert "不要在回复中复述" in binding.json()["prompt"]
+        assert "`knowledge_service_status`" in binding.json()["prompt"]
+        assert "no connector owns resource URI" in binding.json()["prompt"]
+        assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
+            binding.json()["prompt"]
+        )
+        binding_configuration = binding.json()["workbuddy_configuration"]
+        assert binding_configuration["bootstrap_url"].endswith(
             f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
         )
-        assert f"?platform=unified" in confirmed.json()["prompt"]
 
         authorized_protocol = client.get(
             f"/v1/agent-install/{enrollment_code}?platform=macos"
@@ -4543,6 +4786,12 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "register_persisted_local_marketplace" in (
             host_installation["fixed_actions"]
         )
+        assert "apply_scoped_workbuddy_5_3_mcp_fallback_if_required" in (
+            host_installation["fixed_actions"]
+        )
+        assert "invoke_declared_local_setup_tool" not in (
+            host_installation["fixed_actions"]
+        )
         assert "cleanup_download_and_staging_only" in (
             host_installation["fixed_actions"]
         )
@@ -4565,9 +4814,20 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
             ),
             "server": "jiaotang-kb",
             "setup_tool": "jiaotang_kb_setup",
+            "binding_authorization": "separate_portal_third_step",
+            "write_user_config": (
+                "workbuddy_5_3_literal_placeholder_fallback_only"
+            ),
             "write_global_mcp_config": False,
             "write_project_mcp_config": False,
         }
+        compatibility = authorized_protocol.json()["installation"][
+            "workbuddy_5_3_compatibility"
+        ]
+        assert "${CODEBUDDY_PLUGIN_ROOT}" in compatibility["trigger"]
+        assert compatibility["scope"] == "user_mcp_jiaotang_kb_entry_only"
+        assert compatibility["preserve_other_servers"] is True
+        assert compatibility["modify_signed_plugin_files"] is False
         existing_install_policy = authorized_protocol.json()["installation"][
             "existing_install_policy"
         ]
@@ -4608,9 +4868,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
             authorized_protocol.json()["installation"]["plugin_download_url"]
             == scoped_download_url
         )
-        assert authorized_protocol.json()["installation"]["bootstrap_url"].endswith(
-            f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
-        )
+        assert "bootstrap_url" not in authorized_protocol.json()["installation"]
         anonymous_client = TestClient(module.app)
         authorized_download = anonymous_client.get(
             f"/v1/agent-install/{enrollment_code}/workbuddy/download"
@@ -4993,14 +5251,16 @@ def test_transactional_device_registration_activates_only_after_saved_credential
         connection.execute(
             """
             INSERT INTO agent_enrollment_codes(
-                user_id,code_hash,created_at,expires_at,confirmed_at
-            ) VALUES (?,?,?,?,?)
+                user_id,code_hash,created_at,expires_at,confirmed_at,
+                binding_authorized_at
+            ) VALUES (?,?,?,?,?,?)
             """,
             (
                 user_id,
                 module.token_hash(enrollment_code),
                 now,
                 expires_at,
+                now,
                 now,
             ),
         )
@@ -5163,6 +5423,7 @@ def test_transactional_device_registration_activates_only_after_saved_credential
     assert enrollment["registered_key_id"] == key_id
 
 
+@pytest.mark.skip(reason="V1.4.5 一键安装不再进入设备登记流程")
 def test_legacy_device_registration_is_blocked_after_transactional_release(
     tmp_path,
     monkeypatch,
@@ -5255,14 +5516,16 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
             connection.execute(
                 """
                 INSERT INTO agent_enrollment_codes(
-                    user_id,code_hash,created_at,expires_at,confirmed_at
-                ) VALUES (?,?,?,?,?)
+                    user_id,code_hash,created_at,expires_at,confirmed_at,
+                    binding_authorized_at
+                ) VALUES (?,?,?,?,?,?)
                 """,
                 (
                     user_id,
                     module.token_hash("jbe_supersecret-code"),
                     now,
                     expires_at,
+                    now,
                     now,
                 ),
             ).lastrowid
@@ -5353,6 +5616,7 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
         assert page.headers["cache-control"] == "private, no-store"
 
 
+@pytest.mark.skip(reason="V1.4.5 通过插件与 MCP 配置备份恢复，不再使用 bootstrap")
 def test_bootstrap_recovers_unverified_partial_installation(tmp_path, monkeypatch):
     module = load_app(tmp_path)
     workbuddy_package = tmp_path / "workbuddy-recovery-fixture.zip"
@@ -5604,6 +5868,11 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
 ):
     module = load_app(tmp_path)
     allow_test_release_artifacts(monkeypatch, module)
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_is_simple_remote_mcp",
+        lambda artifact: bool(artifact),
+    )
     package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy.zip"
     package.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(package, "w") as archive:
@@ -6417,6 +6686,25 @@ def test_extraction_cache_retries_non_success_statuses():
 
 def test_mcp_search_uses_personal_bearer_token(tmp_path):
     module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE national_small_giant_master(
+                id INTEGER PRIMARY KEY,
+                enterprise_name TEXT,normalized_name TEXT,unified_social_credit_code TEXT,qice_eid TEXT,
+                region TEXT,city TEXT,county TEXT,recognition_year INTEGER,batch TEXT,status TEXT,
+                official_url TEXT,official_url_role TEXT,official_fragment_key TEXT,verification_status TEXT,
+                sequence_no TEXT,platform_year_raw TEXT,former_names_json TEXT,
+                source_documents_json TEXT,source_paths_json TEXT
+            );
+            INSERT INTO national_small_giant_master VALUES(
+                1,'杭州MCP权威测试公司','','','','浙江省','杭州市','余杭区',2024,'第六批','认定',
+                'https://example.gov.cn/list','official_batch_notice','',
+                'official_local_fragment_match','','','[]','[1]','["官方名单.pdf"]'
+            );
+            """
+        )
+        connection.commit()
     with closing(module.database()) as connection:
         connection.execute(
             "INSERT INTO users(username, password_hash, created_at) VALUES (?, ?, ?)",
@@ -6455,15 +6743,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
     def mcp_request(client, payload):
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         headers = {
-            **signed_api_headers(
-                module,
-                raw_token,
-                private_key,
-                key_id,
-                method="POST",
-                request_target="/mcp/",
-                body=body,
-            ),
+            **api_headers(raw_token),
             "Accept": "application/json, text/event-stream",
             "Content-Type": "application/json",
         }
@@ -6476,14 +6756,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
         ).status_code == 401
         head_headers = {
-            **signed_api_headers(
-                module,
-                raw_token,
-                private_key,
-                key_id,
-                method="HEAD",
-                request_target="/mcp/",
-            ),
+            **api_headers(raw_token),
             "Accept": "application/json, text/event-stream",
         }
         assert client.head("/mcp/", headers=head_headers).status_code == 405
@@ -6500,6 +6773,7 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         tool_names = {
             item["name"] for item in tool_list.json()["result"]["tools"]
         }
+        assert "authoritative_list_search" in tool_names
         assert "three_first_analysis" in tool_names
         assert "three_first_directory_diff" not in tool_names
         assert "three_first_product_match" not in tool_names
@@ -6532,6 +6806,29 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             },
         )
         assert document.status_code == 200
+        authoritative = mcp_request(
+            client,
+            {
+                "jsonrpc": "2.0",
+                "id": 6,
+                "method": "tools/call",
+                "params": {
+                    "name": "authoritative_list_search",
+                    "arguments": {
+                        "list_type": "national_small_giant",
+                        "year": 2024,
+                        "batch": "第六批",
+                        "region": "杭州市",
+                        "limit": 1,
+                    },
+                },
+            },
+        )
+        assert authoritative.status_code == 200
+        authoritative_payload = authoritative.json()["result"]["structuredContent"]
+        assert authoritative_payload["total"] == 1
+        assert authoritative_payload["summary"]["official_match_count"] == 1
+        assert authoritative_payload["pagination"]["is_truncated"] is False
     with closing(module.database()) as connection:
         usage_rows = connection.execute(
             """
@@ -6546,14 +6843,15 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
             """,
             (user_id, key_id),
         ).fetchone()
-    assert installation["first_verified_at"]
-    assert installation["mcp_connected_at"]
+    assert installation["first_verified_at"] is None
+    assert installation["mcp_connected_at"] is None
     assert [row["activity_type"] for row in usage_rows] == [
         "mcp_connection",
         "mcp_connection",
         "mcp_tools_list",
         "mcp_search",
         "mcp_document",
+        "mcp_search",
     ]
     assert [row["activity_name"] for row in usage_rows] == [
         "MCP连接检测",
@@ -6561,8 +6859,9 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         "工具列表",
         "实际检索",
         "文档读取",
+        "实际检索",
     ]
-    assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1]
+    assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1, 1]
 
 
 def test_mcp_middleware_forwards_disconnect_after_replaying_body(tmp_path, monkeypatch):
@@ -7238,7 +7537,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     with TestClient(module.app) as client:
         guide = client.get("/guide")
         assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.4.3 尚未正式发布" in guide.text
+        assert "安全候选 V1.4.5 尚未正式发布" in guide.text
 
         login = client.post(
             "/login",

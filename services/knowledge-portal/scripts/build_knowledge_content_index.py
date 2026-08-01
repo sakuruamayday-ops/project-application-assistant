@@ -370,7 +370,90 @@ def infer_policy_replacement(
         "replacement_basis": "",
         "replacement_url": "",
     }
-    if result["validity_status"] == "draft":
+    explicit_historical_path = any(
+        term in source for term in ("历史政策", "历史规则", "历史培训")
+    )
+    if result["validity_status"] == "draft" and not explicit_historical_path:
+        return result
+    title_and_source = f"{title}\n{metadata_source_name(source)}"
+    if (
+        "杭市管〔2025〕93号" in value
+        or "杭州市知识产权强企认定管理办法" in title_and_source
+    ):
+        result.update(
+            {
+                "validity_status": "active_candidate",
+                "replacement_title": "",
+                "replacement_basis": "",
+                "replacement_url": "",
+            }
+        )
+        return result
+    old_hangzhou_patent_program = (
+        "杭市管〔2020〕38号" in value
+        or "杭州市专利试点企业和示范企业认定管理办法" in title_and_source
+        or (
+            any(term in title_and_source for term in ("专利试点", "专利示范"))
+            and "知识产权强企" not in title_and_source
+        )
+    )
+    if old_hangzhou_patent_program:
+        result.update(
+            {
+                "validity_status": (
+                    "superseded"
+                    if any(
+                        term in title_and_source
+                        for term in ("管理办法", "杭市管〔2020〕38号")
+                    )
+                    else "historical_reference"
+                ),
+                "replacement_title": "《杭州市知识产权强企认定管理办法》（杭市管〔2025〕93号）",
+                "replacement_basis": "杭市管〔2025〕93号第十四条明确自2025年9月15日起施行，杭市管〔2020〕38号同时废止；旧表单、清单和培训资料仅作历史参考。",
+                "replacement_url": "https://scjg.hangzhou.gov.cn/art/2025/8/19/art_1229144701_1858746.html",
+            }
+        )
+        return result
+    if "杭州市AI工厂" in title_and_source:
+        result.update(
+            {
+                "validity_status": "active_candidate",
+                "replacement_title": "",
+                "replacement_basis": "",
+                "replacement_url": "",
+            }
+        )
+        return result
+    old_hangzhou_future_factory = (
+        "未来工厂" in title_and_source
+        and (
+            "杭州市" in title_and_source
+            or "杭州市未来工厂" in source
+        )
+        and "浙江省未来工厂" not in title_and_source
+    )
+    if old_hangzhou_future_factory:
+        result.update(
+            {
+                "validity_status": "historical_reference",
+                "replacement_title": "杭州市AI工厂",
+                "replacement_basis": "杭州市2026年市级培育申报入口已转为AI工厂；旧杭州市未来工厂通知、名单、申报书和培训资料保留为历史参考。浙江省未来工厂仍为独立省级体系，不受本规则影响。",
+                "replacement_url": "https://zfgb.hangzhou.gov.cn/148/102220263/t103220263024/530188.shtml",
+            }
+        )
+        return result
+    if explicit_historical_path:
+        result.update(
+            {
+                "validity_status": "historical_reference",
+                "replacement_title": result["replacement_title"],
+                "replacement_basis": (
+                    result["replacement_basis"]
+                    or "文件已进入明确的历史资料层，只能用于追溯历史规则、表单或方法，不得作为当前申报依据。"
+                ),
+                "replacement_url": result["replacement_url"],
+            }
+        )
         return result
     if "工信部企业〔2026〕2号" in value or (
         "优质中小企业梯度培育管理办法" in value
@@ -574,7 +657,11 @@ def infer_document_metadata(
     )
     if list_region:
         region = list_region
+    project_id = infer_project_id(canonical_project_name, project_record)
+    case_pack = infer_case_pack_metadata(source, document_role, project_id, policy_year, batch)
     metadata: dict[str, object] = {
+        "project_id": project_id,
+        **case_pack,
         "canonical_project_name": canonical_project_name,
         "region": region,
         "document_stage": infer_document_stage(title, source, document_role),
@@ -597,6 +684,102 @@ def infer_document_metadata(
         title, source, content, metadata, correction, document_role
     )
     return metadata
+
+
+KNOWN_PROJECT_IDS = {
+    "杭州市企业技术中心": "hangzhou-enterprise-technology-center",
+    "浙江省企业技术中心": "zhejiang-enterprise-technology-center",
+    "浙江省重点企业研究院": "zhejiang-enterprise-institute",
+    "浙江省企业研究院": "zhejiang-enterprise-institute",
+}
+
+
+def infer_project_id(
+    canonical_project_name: str, project_record: dict[str, object] | None
+) -> str:
+    if canonical_project_name in KNOWN_PROJECT_IDS:
+        return KNOWN_PROJECT_IDS[canonical_project_name]
+    if not canonical_project_name:
+        return ""
+    explicit = str((project_record or {}).get("canonical_project_id") or "").strip()
+    if explicit:
+        return explicit
+    digest = hashlib.sha256(canonical_project_name.encode("utf-8")).hexdigest()[:16]
+    return f"project-{digest}"
+
+
+def infer_case_pack_metadata(
+    source: str,
+    document_role: str,
+    project_id: str,
+    policy_year: int | None,
+    batch: str,
+) -> dict[str, object]:
+    path = Path(source)
+    parts = path.parts
+    try:
+        case_index = next(
+            index for index, value in enumerate(parts) if value.startswith("60_申报案例与建设方案")
+        )
+    except StopIteration:
+        case_index = -1
+    in_case_library = document_role.startswith("60_") or case_index >= 0
+    if not in_case_library:
+        return {
+            "case_pack_id": "",
+            "document_type": infer_case_document_type(path.name, document_role),
+            "evidence_type": "",
+            "upload_action": "exclude" if document_role.startswith("90_") else "review",
+            "verification_status": "unreviewed",
+            "case_pack_title": "",
+            "case_pack_source_root": "",
+        }
+    relative = parts[case_index + 1 :] if case_index >= 0 else parts[-3:]
+    group_parts = relative[:-1]
+    group = "/".join(group_parts[:3]) or path.stem
+    identity = "|".join((project_id, str(policy_year or ""), batch, group))
+    case_pack_id = f"case-{hashlib.sha256(identity.encode('utf-8')).hexdigest()[:20]}"
+    document_type = infer_case_document_type(path.name, document_role)
+    evidence_type = infer_case_evidence_type(path.name, document_type)
+    return {
+        "case_pack_id": case_pack_id,
+        "document_type": document_type,
+        "evidence_type": evidence_type,
+        "upload_action": "local_only" if document_role.startswith("90_") else "review",
+        "verification_status": "auto_grouped",
+        "case_pack_title": group_parts[-1] if group_parts else path.stem,
+        "case_pack_source_root": "/".join(group_parts),
+    }
+
+
+def infer_case_document_type(file_name: str, document_role: str) -> str:
+    value = f"{file_name} {document_role}"
+    for terms, result in (
+        (("申报书", "申请书"), "application"),
+        (("建设方案",), "construction_plan"),
+        (("可研", "技术方案"), "technical_plan"),
+        (("专家意见", "评审意见"), "expert_review"),
+        (("公示", "认定", "结果"), "recognition_result"),
+        (("附件", "佐证", "证明"), "evidence_attachment"),
+    ):
+        if any(term in value for term in terms):
+            return result
+    return "reference_document"
+
+
+def infer_case_evidence_type(file_name: str, document_type: str) -> str:
+    if document_type != "evidence_attachment":
+        return ""
+    for terms, result in (
+        (("财务", "审计", "纳税"), "financial"),
+        (("研发人员", "人员名册"), "personnel"),
+        (("设备", "场地"), "equipment_site"),
+        (("专利", "软著", "知识产权"), "intellectual_property"),
+        (("制度",), "management_system"),
+    ):
+        if any(term in file_name for term in terms):
+            return result
+    return "other_evidence"
 
 
 def normalize_policy_document_number(value: str) -> str:
@@ -1306,7 +1489,10 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
             str(row["document_role"]),
             catalog,
         )
-        enriched_rows.append({**row, **metadata})
+        enriched = {**row, **metadata}
+        if str(row.get("sensitivity") or "") in {"restricted", "confidential"}:
+            enriched["upload_action"] = "restricted_excluded"
+        enriched_rows.append(enriched)
     with tempfile.TemporaryDirectory(prefix="jiaotang-kb-content-") as directory:
         temporary_path = Path(directory) / path.name
         connection = sqlite3.connect(temporary_path)
@@ -1332,7 +1518,16 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
                     batch TEXT NOT NULL DEFAULT '',
                     replacement_title TEXT NOT NULL DEFAULT '',
                     replacement_basis TEXT NOT NULL DEFAULT '',
-                    replacement_url TEXT NOT NULL DEFAULT ''
+                    replacement_url TEXT NOT NULL DEFAULT '',
+                    project_id TEXT NOT NULL DEFAULT '',
+                    case_pack_id TEXT NOT NULL DEFAULT '',
+                    document_type TEXT NOT NULL DEFAULT 'reference_document',
+                    evidence_type TEXT NOT NULL DEFAULT '',
+                    upload_action TEXT NOT NULL DEFAULT 'review',
+                    verification_status TEXT NOT NULL DEFAULT 'unreviewed',
+                    parent_document_id INTEGER REFERENCES documents(id),
+                    attachment_of INTEGER REFERENCES documents(id),
+                    supersedes INTEGER REFERENCES documents(id)
                 );
                 CREATE VIRTUAL TABLE documents_fts USING fts5(
                     title,
@@ -1406,6 +1601,41 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
                     ON public_list_entity_years(year, entity_id);
                 CREATE INDEX documents_policy_metadata_idx
                     ON documents(canonical_project_name, region, document_stage, validity_status);
+                CREATE INDEX documents_case_pack_idx
+                    ON documents(project_id,case_pack_id,document_type,verification_status);
+                CREATE TABLE case_packs (
+                    case_pack_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL DEFAULT '',
+                    project_name TEXT NOT NULL DEFAULT '',
+                    title TEXT NOT NULL,
+                    enterprise_name TEXT NOT NULL DEFAULT '',
+                    year INTEGER,
+                    batch TEXT NOT NULL DEFAULT '',
+                    industry TEXT NOT NULL DEFAULT '',
+                    enterprise_scale TEXT NOT NULL DEFAULT '',
+                    sensitivity TEXT NOT NULL DEFAULT 'internal',
+                    verification_status TEXT NOT NULL DEFAULT 'auto_grouped',
+                    source_root TEXT NOT NULL DEFAULT '',
+                    document_count INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX case_packs_project_idx
+                    ON case_packs(project_id,year,verification_status);
+                CREATE TABLE case_pack_documents (
+                    case_pack_id TEXT NOT NULL REFERENCES case_packs(case_pack_id),
+                    document_id INTEGER NOT NULL UNIQUE REFERENCES documents(id),
+                    document_type TEXT NOT NULL,
+                    evidence_type TEXT NOT NULL DEFAULT '',
+                    sequence INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY(case_pack_id,document_id)
+                );
+                CREATE TABLE document_relations (
+                    source_document_id INTEGER NOT NULL REFERENCES documents(id),
+                    target_document_id INTEGER NOT NULL REFERENCES documents(id),
+                    relation_type TEXT NOT NULL,
+                    evidence TEXT NOT NULL DEFAULT '',
+                    PRIMARY KEY(source_document_id,target_document_id,relation_type)
+                );
                 CREATE TABLE project_alias_corrections (
                     id INTEGER PRIMARY KEY,
                     raw_project_name TEXT NOT NULL,
@@ -1516,8 +1746,9 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
                     source_key,title,content,source,cloud_path,document_role,
                     sensitivity,sha256,updated_at,canonical_project_name,region,
                     document_stage,validity_status,policy_year,batch,replacement_title,
-                    replacement_basis,replacement_url
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    replacement_basis,replacement_url,project_id,case_pack_id,
+                    document_type,evidence_type,upload_action,verification_status
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
                     (
@@ -1539,6 +1770,12 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
                         row["replacement_title"],
                         row["replacement_basis"],
                         row["replacement_url"],
+                        row["project_id"],
+                        row["case_pack_id"],
+                        row["document_type"],
+                        row["evidence_type"],
+                        row["upload_action"],
+                        row["verification_status"],
                     )
                     for row in enriched_rows
                 ),
@@ -1550,6 +1787,97 @@ def create_database(path: Path, rows: list[dict[str, object]]) -> None:
             connection.execute(
                 "INSERT INTO documents_fts_trigram(rowid,title,content,source,document_role) "
                 "SELECT id,title,content,source,document_role FROM documents"
+            )
+            case_rows = [row for row in enriched_rows if row.get("case_pack_id")]
+            case_groups: dict[str, list[dict[str, object]]] = {}
+            for row in case_rows:
+                case_groups.setdefault(str(row["case_pack_id"]), []).append(row)
+            for case_pack_id, members in sorted(case_groups.items()):
+                first = members[0]
+                sensitivity = "restricted" if any(
+                    str(item.get("sensitivity")) in {"restricted", "confidential"}
+                    for item in members
+                ) else "internal"
+                connection.execute(
+                    """
+                    INSERT INTO case_packs(
+                        case_pack_id,project_id,project_name,title,year,batch,
+                        sensitivity,verification_status,source_root,document_count,created_at
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                    """,
+                    (
+                        case_pack_id,
+                        str(first.get("project_id") or ""),
+                        str(first.get("canonical_project_name") or ""),
+                        str(first.get("case_pack_title") or case_pack_id),
+                        first.get("policy_year"),
+                        str(first.get("batch") or ""),
+                        sensitivity,
+                        "auto_grouped",
+                        str(first.get("case_pack_source_root") or ""),
+                        len(members),
+                        str(first.get("updated_at") or ""),
+                    ),
+                )
+            connection.execute(
+                """
+                INSERT INTO case_pack_documents(
+                    case_pack_id,document_id,document_type,evidence_type,sequence
+                )
+                SELECT case_pack_id,id,document_type,evidence_type,
+                       ROW_NUMBER() OVER (PARTITION BY case_pack_id ORDER BY id)
+                FROM documents WHERE case_pack_id != ''
+                """
+            )
+            connection.execute(
+                """
+                WITH ranked AS (
+                    SELECT case_pack_id,document_id,document_type,
+                           FIRST_VALUE(document_id) OVER (
+                               PARTITION BY case_pack_id
+                               ORDER BY CASE document_type
+                                   WHEN 'application' THEN 0
+                                   WHEN 'construction_plan' THEN 1
+                                   WHEN 'technical_plan' THEN 2
+                                   WHEN 'reference_document' THEN 3
+                                   ELSE 4 END,
+                                   sequence,document_id
+                           ) AS root_document_id
+                    FROM case_pack_documents
+                )
+                INSERT INTO document_relations(
+                    source_document_id,target_document_id,relation_type,evidence
+                )
+                SELECT document_id,root_document_id,
+                       CASE WHEN document_type='evidence_attachment'
+                            THEN 'attachment_of' ELSE 'case_component_of' END,
+                       'auto_grouped_case_pack_v1'
+                FROM ranked
+                WHERE document_id<>root_document_id
+                """
+            )
+            connection.execute(
+                """
+                UPDATE documents
+                SET parent_document_id=(
+                    SELECT relations.target_document_id
+                    FROM document_relations relations
+                    WHERE relations.source_document_id=documents.id
+                      AND relations.relation_type IN ('attachment_of','case_component_of')
+                    ORDER BY relations.target_document_id LIMIT 1
+                ),
+                    attachment_of=(
+                    SELECT relations.target_document_id
+                    FROM document_relations relations
+                    WHERE relations.source_document_id=documents.id
+                      AND relations.relation_type='attachment_of'
+                    ORDER BY relations.target_document_id LIMIT 1
+                )
+                WHERE EXISTS(
+                    SELECT 1 FROM document_relations relations
+                    WHERE relations.source_document_id=documents.id
+                )
+                """
             )
             documents = connection.execute(
                 """

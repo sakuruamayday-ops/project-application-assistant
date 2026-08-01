@@ -47,6 +47,13 @@ fi
 echo "[1/6] 自动测试"
 index_database="${JIAOTANG_INDEX_DATABASE:-/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3}"
 if [[ -f "${index_database}" ]]; then
+  knowledge_root="${JIAOTANG_KNOWLEDGE_ROOT:-/Users/zsh/JiaotangData/知识库}"
+  index_root="$(cd "$(dirname "${index_database}")" && pwd -P)"
+  python3 "${script_dir}/run_acceptance_harness.py" \
+    --knowledge-root "${knowledge_root}" \
+    --index-root "${index_root}" \
+    --suite knowledge_base \
+    --output "${index_root}/acceptance-harness.json"
   python3 "${script_dir}/verify_structured_knowledge_tables.py" --database "${index_database}"
 else
   echo "本地生产索引未挂载，改为校验服务器当前生产索引"
@@ -131,12 +138,27 @@ python3 "${script_dir}/build_static_assets.py"
   NODE_PATH="${node_modules}" "${node_bin}" tests/skills_center_ux_regression.mjs
 )
 
-echo "[2/6] 高频项目检索金标准"
+echo "[2/6] 双平台三步安装与高频项目检索金标准"
+(
+  cd "${service_dir}"
+  JIAOTANG_E2E_NODE_BINARY="${node_bin}" \
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
+    tests/test_three_step_install_e2e.py -q
+)
 (
   cd "${service_dir}"
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests/test_portal.py \
     -q -k 'high_frequency or municipal_projects or local_green_factory or knowledge_search_filters_cross_project'
 )
+if [[ -f "${index_database}" ]]; then
+  (
+    cd "${service_dir}"
+    .venv/bin/python scripts/evaluate_authoritative_list_facts.py \
+      --database "${index_database}"
+  )
+else
+  echo "本地生产索引未挂载，跳过本机权威名单事实金标准；结构化专表存在性已在服务器校验。"
+fi
 
 echo "[3/6] REST API"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \

@@ -54,7 +54,7 @@
       "effective_until": null,
       "next_review_at": "2026-10-31",
       "source_locator": "项目地图与高频项目规则合并生成的规范项目索引",
-      "source_sha256": "6200830d5b0a3218ea0757f9321e6a08778d8bd4eb3360a1e869c59d482399b6",
+      "source_sha256": "368f67de07094d16d10b3e92e4ba50c70c86c058b603762c43f4655867ff4b99",
       "block_after_next_review": true
     },
     {
@@ -65,7 +65,7 @@
       "effective_until": null,
       "next_review_at": "2026-08-31",
       "source_locator": "高频项目简称召回、四市企业技术中心合并路由与排除规则本地快照",
-      "source_sha256": "cd482800c9330c97c64f8e5ea31355f0bfc49e81f7346a0a7e6965432734850b",
+      "source_sha256": "7748832c135f838e103d6176260e003d020602ffc05e72a6483a0ef68d599097",
       "block_after_next_review": true
     },
     {

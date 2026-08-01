@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sqlite3
 import zipfile
 from pathlib import Path
@@ -632,3 +633,105 @@ def test_regional_coverage_audit_accepts_complete_region_set():
     assert audits[0]["complete"] is True
     assert audits[0]["covered_region_count"] == 2
     assert audits[0]["entity_count"] == 1
+
+
+def test_supplemental_final_events_preserve_source_name_and_review_cohort(tmp_path):
+    path = tmp_path / "supplemental.jsonl"
+    row = {
+        "enterprise_name": "钱潮轴承有限公司-1005600",
+        "project_name": "浙江省专精特新中小企业",
+        "event_year": 2025,
+        "cohort_year": 2022,
+        "event_type": "review_passed",
+        "event_scope": "qualification",
+        "evidence_status": "official_final_list",
+        "batch": "第二批",
+        "status": "复核通过",
+        "recognition_province": "浙江省",
+        "recognition_city": "",
+        "recognition_county": "",
+        "source_title": "浙经信企业〔2026〕4号",
+        "source_path": "/tmp/source.pdf",
+        "source_url": "",
+        "sequence_no": "233",
+        "source_kind": "official_final_list_user_attachment",
+    }
+    path.write_text(json.dumps(row, ensure_ascii=False) + "\n", encoding="utf-8")
+    rules = {
+        "浙江省专精特新中小企业": {
+            "rule_id": "zhejiang-specialized-sme",
+            "cycle_type": "qualification_review",
+            "validity_years": 3,
+        }
+    }
+    aliases = {
+        MODULE.normalize_name("浙江省专精特新中小企业"): "浙江省专精特新中小企业"
+    }
+    events = {}
+    loaded = MODULE.load_supplemental_events(path, events, rules, aliases)
+    assert loaded == 1
+    event = next(iter(events.values()))
+    assert event["enterprise_name_at_event"] == "钱潮轴承有限公司-1005600"
+    assert event["event_type"] == "review_passed"
+    assert event["cohort_year"] == 2022
+    assert event["evidence_status"] == "official_final_list"
+    assert MODULE.supplemental_source_basenames(path) == {"source.pdf"}
+
+
+def test_generic_list_loader_skips_curated_supplemental_document(tmp_path):
+    database = tmp_path / "test.sqlite3"
+    connection = sqlite3.connect(database)
+    connection.executescript(
+        """
+        CREATE TABLE documents(
+          id INTEGER PRIMARY KEY,
+          document_role TEXT,
+          region TEXT,
+          title TEXT,
+          source TEXT,
+          cloud_path TEXT,
+          canonical_project_name TEXT,
+          policy_year INTEGER
+        );
+        CREATE TABLE public_list_entities(
+          id INTEGER PRIMARY KEY,
+          document_id INTEGER,
+          enterprise_name TEXT,
+          sequence_no TEXT,
+          canonical_project_name TEXT,
+          policy_year INTEGER,
+          batch TEXT,
+          region TEXT,
+          list_status TEXT
+        );
+        """
+    )
+    connection.execute(
+        "INSERT INTO documents VALUES(1,?,?,?,?,?,?,?)",
+        (
+            "50_名单与对标",
+            "浙江省",
+            "浙经信企业〔2026〕4号",
+            "",
+            "50_名单与对标/source.pdf",
+            "浙江省专精特新中小企业",
+            2026,
+        ),
+    )
+    connection.execute(
+        "INSERT INTO public_list_entities VALUES(1,1,?,?,?,?,?,?,?)",
+        (
+            "测试企业有限公司",
+            "1",
+            "浙江省专精特新中小企业",
+            2026,
+            "第二批",
+            "浙江省",
+            "认定名单",
+        ),
+    )
+    connection.commit()
+    connection.close()
+    events = {}
+    MODULE.load_list_events(database, events, {}, {}, set(), {"source.pdf"})
+    assert events == {}

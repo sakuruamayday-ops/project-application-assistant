@@ -102,6 +102,17 @@ def main() -> None:
                     ),
                 )
             connection.commit()
+        # This fixture exercises presentation and interaction only. The tiny
+        # synthetic archives intentionally omit the production publisher
+        # signature tree, so keep signature validation covered by pytest and
+        # expose these fixture artifacts as installable inside this isolated
+        # browser-test process.
+        portal.release_artifact_is_servable = (
+            lambda artifact, *, target, require_signature: artifact is not None
+        )
+        portal.workbuddy_artifact_is_simple_remote_mcp = (
+            lambda artifact: artifact is not None
+        )
     uvicorn.run(portal.app, host="127.0.0.1", port=int(os.environ["JIAOTANG_BROWSER_TEST_PORT"]))
 
 

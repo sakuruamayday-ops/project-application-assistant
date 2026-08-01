@@ -163,39 +163,19 @@
         <a class="button secondary" href="/access">查看已连接设备</a>
         {% else %}
         {% if release_guidance.workbuddy_installable %}
-        <p>第一步先确认当前宿主是 WorkBuddy 5 或更高版本，再公开插件包来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法，不包含引导地址；若不是 WorkBuddy，流程会停止。只有你回到本页明确同意后，Agent 才能执行。</p>
+        <p>第一步先确认当前宿主是 WorkBuddy 5 或更高版本，并审查插件包来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法；第二步明确授权安装签名插件；插件加载后，第三步再单独复制 bootstrap 绑定指令。若不是 WorkBuddy，流程会在审查阶段停止。</p>
         <div class="agent-install-actions">
           <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制审查说明</span><small>第一步 · 仅审查</small></button>
-          <button class="button secondary" type="button" data-toggle-manual-agent-config aria-expanded="false">手工配置</button>
         </div>
-        <button class="button agent-confirm-install" type="button" data-confirm-agent-bootstrap hidden><span>我已审查，复制安装确认</span><small>第二步 · 明确授权</small></button>
-        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">先把审查说明粘贴到本地 Agent，核对无误后再回到本页确认安装。</p>
-        <section class="manual-agent-config" data-manual-agent-config hidden>
-          <h4>手工配置 WorkBuddy</h4>
-          <ol>
-            <li>下载跨平台签名 WorkBuddy 插件市场包。</li>
-            <li>核对页面公布的 SHA-256 与包内 Ed25519 签名。</li>
-            <li>解压 ZIP，在 WorkBuddy 对话中执行 <code>/plugin marketplace add &lt;解压后的 jiaotang 目录&gt;</code>。</li>
-            <li>继续执行 <code>/plugin install jiaotang-workbuddy-skills@jiaotang</code>，然后按提示启用插件。</li>
-            <li>点击下方按钮生成并复制一次性引导地址；新建 WorkBuddy 会话，让 Agent 仅将它作为本地 <code>jiaotang_kb_setup</code> 工具参数调用一次。</li>
-            <li>确认工具清单出现 <code>knowledge_search</code>、<code>knowledge_document</code> 和 <code>knowledge_service_status</code>，并实际调用一个只读工具。</li>
-          </ol>
-          <div class="endpoint-list">
-            <div><span>插件包</span><code>跨平台签名 WorkBuddy ZIP</code><a class="button secondary" href="/skills/latest/workbuddy/download" data-manual-package-download>下载</a></div>
-            <div><span>MCP 服务名</span><code>jiaotang-kb</code><button type="button" data-copy-value="jiaotang-kb">复制</button></div>
-            <div><span>本地绑定工具</span><code>jiaotang_kb_setup</code><button type="button" data-copy-value="jiaotang_kb_setup">复制</button></div>
-            <div><span>一次性参数</span><code>bootstrap_url</code><button type="button" data-copy-value="bootstrap_url">复制</button></div>
-            <div data-manual-bootstrap-row hidden><span>一次性引导地址</span><code data-manual-bootstrap-value>确认审查后生成</code><button type="button" data-copy-manual-bootstrap>复制</button></div>
-            <div data-manual-package-hash-row hidden><span>插件包 SHA-256</span><code data-manual-package-hash></code><button type="button" data-copy-manual-package-hash>复制</button></div>
-          </div>
-          <button class="button" type="button" data-confirm-manual-agent-bootstrap hidden>我已审查，生成并复制 bootstrap_url</button>
-          <p>引导地址属于一次性敏感参数，只在当前页面确认后显示并复制；不要写入 settings.json，不要发送给他人，也不要把通用资源读取错误当作连接成功。</p>
-        </section>
+        <button class="button agent-confirm-install" type="button" data-confirm-agent-bootstrap hidden><span>我已审查，复制安装指令</span><small>第二步 · 安装插件</small></button>
+        <button class="button agent-binding-step" type="button" data-copy-agent-binding hidden><span>复制知识库绑定指令</span><small>第三步 · 执行 bootstrap</small></button>
+        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">先把审查说明粘贴到本地 Agent；核对无误后完成第二步安装，再回到本页执行第三步绑定。</p>
         {% else %}
         <p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>
         <span class="button secondary is-disabled">新安装已暂停</span>
         {% endif %}
         {% endif %}
+        <div class="non-workbuddy-mcp-entry"><strong>手工配置远程 MCP</strong><p>网站会为当前登录用户自动复用或生成个人 Token，并填入完整配置；WorkBuddy 和其他支持 Streamable HTTP MCP 的 Agent 均可直接复制。</p><a class="button secondary" href="/mcp-guide">复制完整 MCP 配置</a></div>
       </article>
       <article class="skill-install-status" data-agent-install-status>
         <span class="skill-card-index">02 / 回传验收</span>

@@ -221,13 +221,13 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertEqual(payload["fixed_installers"], [])
             self.assertEqual(
                 payload["install_mode"],
-                "workbuddy-in-app-local-marketplace",
+                "one-copy-workbuddy-prompt",
             )
             self.assertEqual(
                 payload["download_regression"][
                     "host_install_regression"
                 ]["status"],
-                "manual-in-app-required",
+                "prompt-driven-installation-required",
             )
             self.assertNotIn("installer", payload)
             self.assertNotIn("installers", payload)
@@ -249,71 +249,31 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 )
             )
             self.assertIn("WorkBuddy 应用内完成", guide)
-            self.assertIn("不需要退出", guide)
             self.assertIn("/plugin", guide)
             self.assertIn("plugins/marketplaces/jiaotang", guide)
             self.assertIn("不得直接注册临时下载", guide)
             self.assertIn("不得删除已注册的持久市场", guide)
+            self.assertIn("只替换用户配置中的 `mcpServers.jiaotang-kb`", guide)
+            self.assertIn("保留其他 MCP 条目", guide)
+            self.assertIn("重载 WorkBuddy 一次", guide)
+            self.assertIn("connected: true", guide)
 
-    def test_signed_plugin_uses_workbuddy_root_mcp_file_and_local_setup(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            skills_root = root / "skills"
-            plugin_root = root / "plugin"
-            source = skills_root / "_runtime/jiaotang-kb/jiaotang-agent.mjs"
-            source.parent.mkdir(parents=True)
-            source.write_text(
-                "#!/usr/bin/env node\n// plugin-serve\n",
-                encoding="utf-8",
+    def test_simplified_plugin_uses_user_remote_mcp_without_local_connector(self):
+        suite_manifest = json.loads(
+            (REPOSITORY / "skills/suite-manifest.json").read_text(
+                encoding="utf-8"
             )
-            (plugin_root / ".codebuddy-plugin").mkdir(parents=True)
-            manifest = SUITE_PACKAGER.embed_workbuddy_mcp_connector(
-                plugin_root=plugin_root,
-                skills_root=skills_root,
-                suite_manifest={
-                    "workbuddy_plugin": {
-                        "mcp_connector": {
-                            "name": "jiaotang-kb",
-                            "configuration_mode": (
-                                "plugin_root_mcp_file"
-                            ),
-                            "source": "_runtime/jiaotang-kb/jiaotang-agent.mjs",
-                            "entry_command": "plugin-serve",
-                            "bootstrap_option": "bootstrap_url",
-                            "bootstrap_option_sensitive": True,
-                        }
-                    }
-                },
-            )
-
-            self.assertEqual(manifest["mcpServers"], "./.mcp.json")
-            self.assertNotIn("userConfig", manifest)
-            mcp_path = plugin_root / ".mcp.json"
-            self.assertTrue(mcp_path.is_file())
-            mcp = json.loads(mcp_path.read_text(encoding="utf-8"))
-            server = mcp["mcpServers"]["jiaotang-kb"]
-            self.assertEqual(
-                server["command"],
-                "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
-            )
-            self.assertEqual(server["args"][-1], "plugin-serve")
-            self.assertTrue((plugin_root / "bin/run-node").is_file())
-            self.assertTrue((plugin_root / "bin/run-node.cmd").is_file())
-            self.assertEqual(
-                (plugin_root / "mcp/jiaotang-agent.mjs").read_bytes(),
-                source.read_bytes(),
-            )
-            plugin_manifest = {
-                "name": "jiaotang-mcp-regression",
-                "version": "1.2.3",
-                "description": "MCP清单回归",
-                "author": {"name": "Jiaotang"},
-                **manifest,
-            }
-            (plugin_root / ".codebuddy-plugin/plugin.json").write_text(
-                json.dumps(plugin_manifest, ensure_ascii=False),
-                encoding="utf-8",
-            )
+        )
+        plugin = suite_manifest["workbuddy_plugin"]
+        self.assertEqual(plugin["hook_mode"], "behavior_only_fail_open")
+        self.assertEqual(
+            plugin["mcp_configuration_mode"],
+            "user_remote_streamable_http",
+        )
+        self.assertNotIn("mcp_connector", plugin)
+        self.assertFalse(
+            hasattr(SUITE_PACKAGER, "embed_workbuddy_mcp_connector")
+        )
 
     def test_hook_json_transport_is_ascii_safe_on_windows(self):
         output = io.StringIO()
@@ -494,25 +454,19 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertEqual(state["quality_retry_count"], 4)
             self.assertEqual(state["status"], "quality-blocked")
 
-    def test_workbuddy_mcp_connector_has_only_one_packaged_runtime_copy(self):
+    def test_workbuddy_package_declares_no_local_mcp_runtime(self):
         skills_root = Path(__file__).resolve().parents[1] / "skills"
         suite_manifest = json.loads(
             (skills_root / "suite-manifest.json").read_text(encoding="utf-8")
         )
-        connector = suite_manifest["workbuddy_plugin"]["mcp_connector"]
+        plugin = suite_manifest["workbuddy_plugin"]
         self.assertEqual(
-            connector["configuration_mode"],
-            "plugin_root_mcp_file",
+            plugin["mcp_configuration_mode"],
+            "user_remote_streamable_http",
         )
-        source = Path(connector["source"])
-
-        self.assertTrue((skills_root / source).is_file())
+        self.assertNotIn("mcp_connector", plugin)
         self.assertFalse(
-            any(
-                source == Path(shared) or source.is_relative_to(Path(shared))
-                for shared in suite_manifest["shared_paths"]
-            ),
-            "MCP连接器已由打包器复制到mcp/，不得再作为shared_path重复入包",
+            any("jiaotang-kb" in Path(shared).parts for shared in suite_manifest["shared_paths"])
         )
 
     def test_workbuddy_connector_matches_portal_installer_and_preserves_query(self):
@@ -621,6 +575,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 text=True,
                 env={
                     **os.environ,
+                    "JIAOTANG_ENABLE_TEST_CREDENTIAL_FILE": "1",
                     "JIAOTANG_TEST_CREDENTIAL_FILE": str(credential_file),
                     "CODEBUDDY_PLUGIN_DATA": str(plugin_data),
                 },
@@ -966,7 +921,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     )
                     self.assertEqual(signer.call_count, 2)
 
-    def test_workbuddy_copy_uses_shared_runtime_manifest(self):
+    def test_workbuddy_copy_strips_portable_runtime_and_adds_minimal_hook(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "sample"
@@ -981,10 +936,12 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                         "description: 示例",
                         "---",
                         "# 示例",
+                        "<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->",
                         (
                             '!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/'
                             'portable_skill_runtime.py" prepare`'
                         ),
+                        "<!-- END MANAGED PORTABLE SKILL RUNTIME -->",
                     ]
                 ),
                 encoding="utf-8",
@@ -1033,17 +990,15 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 (destination / "scripts/verify_skill_installation.py").exists()
             )
             text = (destination / "SKILL.md").read_text(encoding="utf-8")
-            self.assertIn("${CODEBUDDY_PLUGIN_ROOT}/scripts/", text)
-            manifest = json.loads(
-                (destination / "release-manifest.json").read_text(
-                    encoding="utf-8"
-                )
+            self.assertIn("BEGIN WORKBUDDY BEHAVIOR HOOK", text)
+            self.assertIn("workbuddy_behavior_hook.py", text)
+            self.assertNotIn("portable_skill_runtime.py", text)
+            self.assertFalse(
+                (destination / "release-manifest.json").exists()
             )
-            self.assertEqual(
-                manifest["integrity_mode"],
-                "plugin-release-manifest",
+            self.assertFalse(
+                (destination / "release-manifest.json.sig").exists()
             )
-            self.assertEqual(manifest["required_paths"], ["SKILL.md"])
 
     def test_preference_migration_does_not_use_exec(self):
         script = (

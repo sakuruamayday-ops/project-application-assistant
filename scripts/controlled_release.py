@@ -24,6 +24,7 @@ OFFICIAL_PUBLISHER_FINGERPRINT = (
     "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
 )
 GATE_SIGNATURE_NAMESPACE = "codex-skill-release-gate"
+REMOTE_RELEASE_ROOT = "/opt/jiaotang-kb-runtime/current"
 
 
 def run(
@@ -44,6 +45,16 @@ def run(
 
 def json_command(arguments: list[str]) -> object:
     return json.loads(run(arguments))
+
+
+def release_json(payload: object) -> str:
+    """将发布结果统一输出为可序列化 JSON。"""
+    return json.dumps(
+        payload,
+        ensure_ascii=False,
+        indent=2,
+        default=str,
+    )
 
 
 def sha256(path: Path) -> str:
@@ -761,8 +772,8 @@ def remote_release_transaction_call(
         )
     remote_command = (
         "set -a; source /etc/jiaotang-kb.env; set +a; "
-        "/opt/jiaotang-kb/.venv/bin/python "
-        "/opt/jiaotang-kb/scripts/publish_skill_release.py "
+        f"{REMOTE_RELEASE_ROOT}/.venv/bin/python "
+        f"{REMOTE_RELEASE_ROOT}/scripts/publish_skill_release.py "
         + " ".join(options)
     )
     return json.loads(
@@ -828,8 +839,8 @@ def stage_portal(
     )
     remote_command = (
         "set -a; source /etc/jiaotang-kb.env; set +a; "
-        "/opt/jiaotang-kb/.venv/bin/python "
-        "/opt/jiaotang-kb/scripts/publish_skill_release.py "
+        f"{REMOTE_RELEASE_ROOT}/.venv/bin/python "
+        f"{REMOTE_RELEASE_ROOT}/scripts/publish_skill_release.py "
         "--mode stage "
         f"--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
         f"--release-dir \"$JIAOTANG_SKILL_RELEASE_DIR\" "
@@ -880,8 +891,8 @@ def promote_portal(
     )
     remote_command = (
         "set -a; source /etc/jiaotang-kb.env; set +a; "
-        "/opt/jiaotang-kb/.venv/bin/python "
-        "/opt/jiaotang-kb/scripts/publish_skill_release.py "
+        f"{REMOTE_RELEASE_ROOT}/.venv/bin/python "
+        f"{REMOTE_RELEASE_ROOT}/scripts/publish_skill_release.py "
         "--mode promote "
         f"--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
         f"--release-dir \"$JIAOTANG_SKILL_RELEASE_DIR\" "
@@ -1069,15 +1080,13 @@ def main() -> None:
             else {"status": "not-found"}
         )
         print(
-            json.dumps(
+            release_json(
                 {
                     "status": "read-only-monitor",
                     "version": short_version,
                     "portal_transaction": portal,
                     "github": github,
-                },
-                ensure_ascii=False,
-                indent=2,
+                }
             )
         )
         return
@@ -1180,7 +1189,7 @@ def main() -> None:
             },
         }
         if action_name == "preflight":
-            print(json.dumps(preflight, ensure_ascii=False, indent=2))
+            print(release_json(preflight))
             return
 
         holder = lease_holder_id(arguments.lease_owner)
@@ -1207,14 +1216,12 @@ def main() -> None:
                 lease_ttl_seconds=arguments.lease_ttl_seconds,
             )
             print(
-                json.dumps(
+                release_json(
                     {
                         **preflight,
                         "status": "read-only-monitor",
                         "release_transaction": monitored,
-                    },
-                    ensure_ascii=False,
-                    indent=2,
+                    }
                 )
             )
             return
@@ -1230,14 +1237,12 @@ def main() -> None:
         )
         if lease.get("mode") != "writer":
             print(
-                json.dumps(
+                release_json(
                     {
                         **preflight,
                         "status": "read-only-monitor",
                         "release_transaction": lease,
-                    },
-                    ensure_ascii=False,
-                    indent=2,
+                    }
                 )
             )
             return
@@ -1297,7 +1302,7 @@ def main() -> None:
                     pass
                 raise
             print(
-                json.dumps(
+                release_json(
                     {
                         **preflight,
                         "status": "staged-awaiting-acceptance",
@@ -1305,9 +1310,7 @@ def main() -> None:
                         "portal": portal_result,
                         "lease": lease,
                         "next_action": "等待主人明确说“确认正式发布”",
-                    },
-                    ensure_ascii=False,
-                    indent=2,
+                    }
                 )
             )
             return
@@ -1427,7 +1430,7 @@ def main() -> None:
                 pass
             raise
         print(
-            json.dumps(
+            release_json(
                 {
                     **preflight,
                     "status": "published",
@@ -1436,9 +1439,7 @@ def main() -> None:
                     "portal": portal_result,
                     "delivery": delivery,
                     "release_transaction": completed,
-                },
-                ensure_ascii=False,
-                indent=2,
+                }
             )
         )
 
@@ -1448,11 +1449,7 @@ if __name__ == "__main__":
         main()
     except (RuntimeError, ValueError, subprocess.CalledProcessError) as error:
         print(
-            json.dumps(
-                {"status": "blocked", "error": str(error)},
-                ensure_ascii=False,
-                indent=2,
-            ),
+            release_json({"status": "blocked", "error": str(error)}),
             file=sys.stderr,
         )
         raise SystemExit(1)

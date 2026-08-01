@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 from pathlib import Path
 
 
@@ -12,9 +13,26 @@ def build_cases() -> list[dict[str, object]]:
     payload = json.loads(RULES_PATH.read_text(encoding="utf-8"))
     cases: list[dict[str, object]] = []
     for rule in payload["rules"]:
-        allowed = rule["allowed_title_terms"][0]
-        excluded = rule["excluded_title_terms"][0]
         for alias in rule["aliases"]:
+            required_level = str(rule.get("required_region_level") or "")
+            jurisdiction_regions = [
+                str(region)
+                for region in rule.get("jurisdiction_title_terms", {})
+                if str(region) in alias
+            ]
+            title_rule = (
+                rule.get("jurisdiction_title_terms", {}).get(jurisdiction_regions[0], rule)
+                if jurisdiction_regions
+                else rule
+            )
+            allowed = title_rule["allowed_title_terms"][0]
+            excluded = title_rule["excluded_title_terms"][0]
+            region_is_explicit = bool(
+                required_level == "city"
+                and re.search(r"[\u4e00-\u9fff]{2,8}市", alias)
+                or required_level == "district"
+                and re.search(r"[\u4e00-\u9fff]{2,8}(?:区|县)", alias)
+            )
             cases.extend(
                 [
                     {
@@ -22,10 +40,15 @@ def build_cases() -> list[dict[str, object]]:
                         "kind": "positive",
                         "alias": alias,
                         "query": f"{alias}申报条件",
-                        "expected_targets": rule["targets"],
+                        "expected_targets": [
+                            " ".join((jurisdiction_regions[0], target))
+                            if jurisdiction_regions and jurisdiction_regions[0] not in target
+                            else target
+                            for target in rule["targets"]
+                        ],
                         "expected_clarification": bool(
                             rule.get("selection_required")
-                            or rule.get("required_region_level")
+                            or required_level and not region_is_explicit
                         ),
                     },
                     {
