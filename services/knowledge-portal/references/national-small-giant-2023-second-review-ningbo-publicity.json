@@ -1,0 +1,353 @@
+{
+  "schema_version": 1,
+  "source_id": "national-small-giant-2023-second-review-ningbo-publicity",
+  "document_title": "2.第二批专精特新“小巨人”复核通过企业公示名单.doc",
+  "event_year": 2023,
+  "cohort_year": 2020,
+  "batch": "第二批复核",
+  "official_url": "",
+  "evidence_archive_url": "",
+  "project_name": "国家专精特新“小巨人”企业",
+  "event_type": "review_publicity",
+  "status": "复核通过公示",
+  "coverage_basis": "official_review_publication_membership_plus_prior_cohort_identity_geography",
+  "expected_count": 48,
+  "entities": [
+    {
+      "sequence_no": 1,
+      "enterprise_name": "华缘新材料股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "海曙区"
+    },
+    {
+      "sequence_no": 2,
+      "enterprise_name": "宁波东海集团有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "海曙区"
+    },
+    {
+      "sequence_no": 3,
+      "enterprise_name": "宁波福特继电器有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "海曙区"
+    },
+    {
+      "sequence_no": 4,
+      "enterprise_name": "宁波艾克姆新材料股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "江北区"
+    },
+    {
+      "sequence_no": 5,
+      "enterprise_name": "宁波巨隆机械股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "江北区"
+    },
+    {
+      "sequence_no": 6,
+      "enterprise_name": "宁波蓝野医疗器械有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "江北区"
+    },
+    {
+      "sequence_no": 7,
+      "enterprise_name": "宁波宇洲液压设备有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "江北区"
+    },
+    {
+      "sequence_no": 8,
+      "enterprise_name": "宁波红杉高新材料有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "镇海区"
+    },
+    {
+      "sequence_no": 9,
+      "enterprise_name": "宁波金海电子有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "镇海区"
+    },
+    {
+      "sequence_no": 10,
+      "enterprise_name": "宁波市青湖弹性体科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "镇海区"
+    },
+    {
+      "sequence_no": 11,
+      "enterprise_name": "浙江夏厦精密制造股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "镇海区"
+    },
+    {
+      "sequence_no": 12,
+      "enterprise_name": "宁波澳玛特高精冲压机床股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 13,
+      "enterprise_name": "宁波宏协股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 14,
+      "enterprise_name": "宁波杰顺生物科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 15,
+      "enterprise_name": "宁波能之光新材料科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 16,
+      "enterprise_name": "宁波泰甬汽车零部件有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 17,
+      "enterprise_name": "宁波微科光电股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 18,
+      "enterprise_name": "宁波臻至机械模具有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 19,
+      "enterprise_name": "雪龙集团股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 20,
+      "enterprise_name": "宁波伏尔肯科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "鄞州区"
+    },
+    {
+      "sequence_no": 21,
+      "enterprise_name": "宁波精华电子科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "鄞州区"
+    },
+    {
+      "sequence_no": 22,
+      "enterprise_name": "宁波宁港永磁材料有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "鄞州区"
+    },
+    {
+      "sequence_no": 23,
+      "enterprise_name": "宁波创跃园林工具有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "奉化区"
+    },
+    {
+      "sequence_no": 24,
+      "enterprise_name": "宁波吉田智能洁具科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "奉化区"
+    },
+    {
+      "sequence_no": 25,
+      "enterprise_name": "宁波佳尔灵气动机械有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "奉化区"
+    },
+    {
+      "sequence_no": 26,
+      "enterprise_name": "宁波力品格工业机械有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "奉化区"
+    },
+    {
+      "sequence_no": 27,
+      "enterprise_name": "宁波松科磁材有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "奉化区"
+    },
+    {
+      "sequence_no": 28,
+      "enterprise_name": "星宇电子（宁波）有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "奉化区"
+    },
+    {
+      "sequence_no": 29,
+      "enterprise_name": "宁波赛特勒电子有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "余姚市"
+    },
+    {
+      "sequence_no": 30,
+      "enterprise_name": "宁波湛京光学仪器有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "余姚市"
+    },
+    {
+      "sequence_no": 31,
+      "enterprise_name": "浙江大丰轨道交通装备有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "余姚市"
+    },
+    {
+      "sequence_no": 32,
+      "enterprise_name": "慈溪汇丽机电股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 33,
+      "enterprise_name": "宁波宝工电器有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 34,
+      "enterprise_name": "宁波伏龙同步带有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 35,
+      "enterprise_name": "宁波恒隆车业有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 36,
+      "enterprise_name": "宁波速普电子有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 37,
+      "enterprise_name": "宁波望通锁业有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 38,
+      "enterprise_name": "宁波耀华电气科技有限责任公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 39,
+      "enterprise_name": "浙江亿日气动科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 40,
+      "enterprise_name": "宁波华平智控科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "宁海县"
+    },
+    {
+      "sequence_no": 41,
+      "enterprise_name": "宁海县第一注塑模具有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "宁海县"
+    },
+    {
+      "sequence_no": 42,
+      "enterprise_name": "宁波合力制动系统有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "象山县"
+    },
+    {
+      "sequence_no": 43,
+      "enterprise_name": "宁波恒富汽车部件发展有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "象山县"
+    },
+    {
+      "sequence_no": 44,
+      "enterprise_name": "宁波天安智能电网科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "象山县"
+    },
+    {
+      "sequence_no": 45,
+      "enterprise_name": "浙江易锻精密机械有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "象山县"
+    },
+    {
+      "sequence_no": 46,
+      "enterprise_name": "宁波市全盛壳体有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "慈溪市"
+    },
+    {
+      "sequence_no": 47,
+      "enterprise_name": "宁波赛耐比光电科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "鄞州区"
+    },
+    {
+      "sequence_no": 48,
+      "enterprise_name": "浙江德塔森特数据技术有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "鄞州区"
+    }
+  ]
+}

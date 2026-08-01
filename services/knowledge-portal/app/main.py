@@ -757,6 +757,7 @@ class AuthoritativeListSearchRequest(BaseModel):
     batch: str = Field(default="", max_length=50)
     region: str = Field(default="", max_length=100)
     status: str = Field(default="", max_length=100)
+    event_type: str = Field(default="", max_length=100)
     verified_only: bool = False
     offset: int = Field(default=0, ge=0, le=1_000_000)
     limit: int = Field(default=50, ge=1, le=200)
@@ -3343,6 +3344,7 @@ def search_authoritative_list_facts(
     batch: str = "",
     region: str = "",
     status: str = "",
+    event_type: str = "",
     verified_only: bool = False,
     offset: int = 0,
     limit: int = 50,
@@ -3359,6 +3361,7 @@ def search_authoritative_list_facts(
                 batch=batch,
                 region=region,
                 status=status,
+                event_type=event_type,
                 verified_only=verified_only,
                 offset=offset,
                 limit=limit,
@@ -5419,6 +5422,7 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             batch=str(arguments.get("batch") or "")[:50],
             region=str(arguments.get("region") or "")[:100],
             status=str(arguments.get("status") or "")[:100],
+            event_type=str(arguments.get("event_type") or "")[:100],
             verified_only=bool(arguments.get("verified_only") or False),
             offset=max(0, min(int(arguments.get("offset") or 0), 1_000_000)),
             limit=max(1, min(int(arguments.get("limit") or 50), 200)),
@@ -16627,11 +16631,12 @@ def authoritative_list_search(
     batch: str = "",
     region: str = "",
     status: str = "",
+    event_type: str = "",
     verified_only: bool = False,
     offset: int = 0,
     limit: int = 50,
 ) -> dict[str, object]:
-    """查询小巨人、省级专精特新和三首权威事实，返回总数、来源等级和分页状态。"""
+    """查询小巨人、省级专精特新和三首权威事实；全量名单必须按 next_offset 翻页至 has_more=false。"""
     return search_authoritative_list_facts(
         list_type=list_type,
         enterprise_name=enterprise_name,
@@ -16641,6 +16646,7 @@ def authoritative_list_search(
         batch=batch,
         region=region,
         status=status,
+        event_type=event_type,
         verified_only=verified_only,
         offset=offset,
         limit=limit,

@@ -1,0 +1,1529 @@
+{
+  "schema_version": 1,
+  "source_id": "zhejiang-specialized-sme-2022-first-reconstructed",
+  "document_title": "2022年度第一批浙江省专精特新中小企业名单—185家重建表",
+  "project_name": "浙江省专精特新中小企业",
+  "event_year": 2022,
+  "batch": "第一批",
+  "coverage_status": "reconstructed_original_attachment_missing",
+  "coverage_basis": [
+    "official_notice_announced_count_185",
+    "official_2025_first_review_passed_subset_176",
+    "current_library_plus_qice_crosschecked_gap_9"
+  ],
+  "city_counts": {
+    "杭州市": 92,
+    "温州市": 4,
+    "湖州市": 10,
+    "嘉兴市": 32,
+    "绍兴市": 11,
+    "金华市": 10,
+    "衢州市": 2,
+    "台州市": 19,
+    "丽水市": 5
+  },
+  "supplemental_entities": [
+    "浙江金固股份有限公司",
+    "杭州士兰明芯科技有限公司",
+    "浙江威罗德汽配股份有限公司",
+    "乐清市西街塑料制品有限公司",
+    "浙江福莱新材料股份有限公司",
+    "浙江昀丰新材料科技股份有限公司",
+    "鑫磊压缩机股份有限公司",
+    "大福泵业有限公司",
+    "浙江锐亿智能科技股份有限公司"
+  ],
+  "excluded_qice_false_differences": [
+    "杭州图软科技有限公司",
+    "杭州褐果生物科技有限公司",
+    "至晟（临海）微电子技术有限公司",
+    "阜时科技有限公司",
+    "浙江迦美信芯通讯技术有限公司",
+    "浙江苍南县金乡徽章厂有限公司",
+    "湖州机床厂有限公司",
+    "浙江斯乾智驾科技有限公司",
+    "玉环仪表机床制造厂"
+  ],
+  "entities": [
+    {
+      "sequence_no": 1,
+      "enterprise_name": "杭州朗迅科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 2,
+      "enterprise_name": "杭州五星铝业有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 3,
+      "enterprise_name": "浙江深蓝新材料科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 4,
+      "enterprise_name": "杭州诚道科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 5,
+      "enterprise_name": "杭州罗莱迪思科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 6,
+      "enterprise_name": "杭州鸿世电器股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 7,
+      "enterprise_name": "富阳通力机械制造有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 8,
+      "enterprise_name": "杭州方圆塑机股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 9,
+      "enterprise_name": "杭州正银电子材料有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 10,
+      "enterprise_name": "浙江泰林生命科学有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 11,
+      "enterprise_name": "杭州银湖电气设备有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 12,
+      "enterprise_name": "杭州润德车轮制造有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 13,
+      "enterprise_name": "浙江天杰实业股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 14,
+      "enterprise_name": "杭州源牌科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 15,
+      "enterprise_name": "杭州鑫泽源医疗科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 16,
+      "enterprise_name": "浙江三生蔓迪药业有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 17,
+      "enterprise_name": "鸿星科技（集团）股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 18,
+      "enterprise_name": "杭州蓝然技术股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 19,
+      "enterprise_name": "东辰智能科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 20,
+      "enterprise_name": "杭州汇萃智能科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 21,
+      "enterprise_name": "杭州万全金属软管有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 22,
+      "enterprise_name": "杭州嘉迈机械有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 23,
+      "enterprise_name": "杭州谐云科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 24,
+      "enterprise_name": "杭州比智科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 25,
+      "enterprise_name": "杭州宇谷科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 26,
+      "enterprise_name": "浙江星汉信息技术股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 27,
+      "enterprise_name": "杭州默安科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 28,
+      "enterprise_name": "杭州斯诺康技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 29,
+      "enterprise_name": "杭州天创环境科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 30,
+      "enterprise_name": "浙江鹏远新材料科技集团股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 31,
+      "enterprise_name": "杭州高烯科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 32,
+      "enterprise_name": "杭州杰毅生物技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 33,
+      "enterprise_name": "普昂（杭州）医疗科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 34,
+      "enterprise_name": "杭州高特电子设备股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 35,
+      "enterprise_name": "杭州云象网络技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 36,
+      "enterprise_name": "杭州华罡智能科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 37,
+      "enterprise_name": "新时达工控技术（杭州）有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 38,
+      "enterprise_name": "浙江厚达智能科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 39,
+      "enterprise_name": "浙江兆丰机电股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 40,
+      "enterprise_name": "杭州弹簧垫圈有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 41,
+      "enterprise_name": "杭州天启机械有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 42,
+      "enterprise_name": "浙江万龙机械有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 43,
+      "enterprise_name": "杭州赛富特设备有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 44,
+      "enterprise_name": "浙江地芯引力科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 45,
+      "enterprise_name": "杭州永磁集团有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 46,
+      "enterprise_name": "杭州行至云起科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 47,
+      "enterprise_name": "杭州奔马化纤纺丝有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 48,
+      "enterprise_name": "杭州大天数控机床有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 49,
+      "enterprise_name": "浙江正泰中自控制工程有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 50,
+      "enterprise_name": "杭州普络飞新材料科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 51,
+      "enterprise_name": "浙江伽奈维医疗科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 52,
+      "enterprise_name": "浙江景嘉医疗科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 53,
+      "enterprise_name": "杭州中科极光科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 54,
+      "enterprise_name": "杭州美迪凯光电科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 55,
+      "enterprise_name": "杭州天地数码科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 56,
+      "enterprise_name": "浙江迪谱诊断技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 57,
+      "enterprise_name": "杭州西子智能停车股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 58,
+      "enterprise_name": "杭州知存算力科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 59,
+      "enterprise_name": "杭州慧翔电液技术开发有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 60,
+      "enterprise_name": "杭州全盛机电科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 61,
+      "enterprise_name": "浙江齐治科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 62,
+      "enterprise_name": "杭州宏杉科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 63,
+      "enterprise_name": "杭州优云科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 64,
+      "enterprise_name": "杭州协能科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 65,
+      "enterprise_name": "杭州能工科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 66,
+      "enterprise_name": "蔚复来（浙江）科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 67,
+      "enterprise_name": "浙江金仪盛世生物工程有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 68,
+      "enterprise_name": "杭州华新机电工程有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 69,
+      "enterprise_name": "杭州德同生物技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 70,
+      "enterprise_name": "浙江远望信息股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 71,
+      "enterprise_name": "杭州视芯科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 72,
+      "enterprise_name": "杭州健海科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 73,
+      "enterprise_name": "高新兴创联科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 74,
+      "enterprise_name": "杭州国电大力机电工程有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 75,
+      "enterprise_name": "杭州远方光电信息股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 76,
+      "enterprise_name": "浙江大立科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 77,
+      "enterprise_name": "八维通科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 78,
+      "enterprise_name": "杭州联汇科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 79,
+      "enterprise_name": "杭州旗捷科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 80,
+      "enterprise_name": "杭州回水科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 81,
+      "enterprise_name": "杭州盾源聚芯半导体科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 82,
+      "enterprise_name": "杭州友旺电子有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 83,
+      "enterprise_name": "杭州友声科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 84,
+      "enterprise_name": "杭州奥盛仪器有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 85,
+      "enterprise_name": "杭州碱泵有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 86,
+      "enterprise_name": "康纳新型材料（杭州）有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 87,
+      "enterprise_name": "杭州丰禾石油科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 88,
+      "enterprise_name": "浙江远图技术股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 89,
+      "enterprise_name": "蒲惠智造科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 90,
+      "enterprise_name": "汉尔姆建筑科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 91,
+      "enterprise_name": "浙江利丰电器有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 92,
+      "enterprise_name": "常有电气有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 93,
+      "enterprise_name": "浙江世博新材料股份有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 94,
+      "enterprise_name": "赛迈科先进材料股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 95,
+      "enterprise_name": "浙江恒星传动科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 96,
+      "enterprise_name": "浙江湖州新京昌电子有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 97,
+      "enterprise_name": "中电科技德清华莹电子有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 98,
+      "enterprise_name": "浙江孔辉汽车科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 99,
+      "enterprise_name": "浙江安美德汽车配件有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 100,
+      "enterprise_name": "浙江华莎驰机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 101,
+      "enterprise_name": "安吉亚太制动系统有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 102,
+      "enterprise_name": "浙江龙虎锻造有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 103,
+      "enterprise_name": "湖州新南海织造厂",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 104,
+      "enterprise_name": "浙江蓝鸽科技有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 105,
+      "enterprise_name": "浙江群展精密紧固件股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 106,
+      "enterprise_name": "爱德曼氢能源装备有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 107,
+      "enterprise_name": "海宁奥通汽车零件有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 108,
+      "enterprise_name": "嘉兴敏实机械有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 109,
+      "enterprise_name": "嘉兴市兴嘉汽车零部件制造有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 110,
+      "enterprise_name": "法狮龙家居建材股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 111,
+      "enterprise_name": "浙江朝晖过滤技术股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 112,
+      "enterprise_name": "嘉兴市盛央电气股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 113,
+      "enterprise_name": "浙江博宇机电有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 114,
+      "enterprise_name": "双飞无油轴承集团股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 115,
+      "enterprise_name": "瑟维斯泵阀制造（浙江）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 116,
+      "enterprise_name": "浙江科峰有机硅股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 117,
+      "enterprise_name": "嘉兴五丰生态环境科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 118,
+      "enterprise_name": "海宁纺织机械有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 119,
+      "enterprise_name": "浙江晶阳机电股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 120,
+      "enterprise_name": "平湖英厚机械有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 121,
+      "enterprise_name": "嘉兴海棠电子有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 122,
+      "enterprise_name": "浙江禾欣新材料有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 123,
+      "enterprise_name": "浙江榆阳电子股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 124,
+      "enterprise_name": "博格隆（浙江）生物技术有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 125,
+      "enterprise_name": "泰康电子有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 126,
+      "enterprise_name": "浙江博凡动力装备股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 127,
+      "enterprise_name": "浙江华章科技有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 128,
+      "enterprise_name": "巨力自动化设备（浙江）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 129,
+      "enterprise_name": "浙江脉通智造科技（集团）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 130,
+      "enterprise_name": "宏达高科控股股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 131,
+      "enterprise_name": "海宁永力电子陶瓷有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 132,
+      "enterprise_name": "平湖市华海造船有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 133,
+      "enterprise_name": "浙江德康医疗器械有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 134,
+      "enterprise_name": "浙江中达精密部件股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 135,
+      "enterprise_name": "浙江越剑智能装备股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 136,
+      "enterprise_name": "浙江伊思灵双第弹簧有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 137,
+      "enterprise_name": "浙江灿根智能科技股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 138,
+      "enterprise_name": "浙江精工集成科技股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 139,
+      "enterprise_name": "浙江锦敦气体装备智造股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 140,
+      "enterprise_name": "浙江孚诺林化工新材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 141,
+      "enterprise_name": "浙江凯达机床股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 142,
+      "enterprise_name": "浙江新瑞铭装饰材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 143,
+      "enterprise_name": "浙江科达利实业有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 144,
+      "enterprise_name": "绍兴上虞华伦化工有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 145,
+      "enterprise_name": "浙江上能锅炉有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 146,
+      "enterprise_name": "浙江铂动工贸有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 147,
+      "enterprise_name": "浙江中坚科技股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 148,
+      "enterprise_name": "浙江中元磁业股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 149,
+      "enterprise_name": "浙江石金玄武岩纤维股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 150,
+      "enterprise_name": "浙江盘毂动力科技有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 151,
+      "enterprise_name": "浙江海河环境科技有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 152,
+      "enterprise_name": "浙江合糖科技有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 153,
+      "enterprise_name": "浙江升阳再生资源科技有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 154,
+      "enterprise_name": "浙江先导精密机械有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 155,
+      "enterprise_name": "浙江伦宝管业股份有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 156,
+      "enterprise_name": "台州贝力特机械有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 157,
+      "enterprise_name": "浙江方远新材料股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 158,
+      "enterprise_name": "三变科技股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 159,
+      "enterprise_name": "方力控股股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 160,
+      "enterprise_name": "浙江百纳橡塑设备有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 161,
+      "enterprise_name": "浙江车头制药股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 162,
+      "enterprise_name": "浙江康和机械科技有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 163,
+      "enterprise_name": "浙江金字机械电器股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 164,
+      "enterprise_name": "浙江卡博铜业有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 165,
+      "enterprise_name": "浙江艾迪西盛大暖通科技有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 166,
+      "enterprise_name": "浙江新富凌电气股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 167,
+      "enterprise_name": "浙江铭振电子股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 168,
+      "enterprise_name": "浙江兴益风机电器有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 169,
+      "enterprise_name": "浙江江鑫机电有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 170,
+      "enterprise_name": "浙江耐拓机电科技有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 171,
+      "enterprise_name": "台州安耐杰电力设备有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 172,
+      "enterprise_name": "浙江青风环境股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 173,
+      "enterprise_name": "浙江泰德新材料有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 174,
+      "enterprise_name": "浙江博聚新材料有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 175,
+      "enterprise_name": "浙江安益新材料有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 176,
+      "enterprise_name": "丽水市杰祥科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "",
+      "binding_basis": "official_2025_first_review_passed_subset"
+    },
+    {
+      "sequence_no": 177,
+      "enterprise_name": "浙江金固股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    },
+    {
+      "sequence_no": 178,
+      "enterprise_name": "杭州士兰明芯科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    },
+    {
+      "sequence_no": 179,
+      "enterprise_name": "浙江威罗德汽配股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "三门县",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    },
+    {
+      "sequence_no": 180,
+      "enterprise_name": "乐清市西街塑料制品有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    },
+    {
+      "sequence_no": 181,
+      "enterprise_name": "浙江福莱新材料股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    },
+    {
+      "sequence_no": 182,
+      "enterprise_name": "浙江昀丰新材料科技股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "金东区",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    },
+    {
+      "sequence_no": 183,
+      "enterprise_name": "鑫磊压缩机股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "温岭市",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    },
+    {
+      "sequence_no": 184,
+      "enterprise_name": "大福泵业有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "温岭市",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    },
+    {
+      "sequence_no": 185,
+      "enterprise_name": "浙江锐亿智能科技股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "武义县",
+      "binding_basis": "current_library_plus_qice_gap_crosscheck"
+    }
+  ]
+}

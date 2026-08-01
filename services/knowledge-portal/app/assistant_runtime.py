@@ -177,7 +177,8 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                 "name": "authoritative_list_search",
                 "description": (
                     "优先查询国家小巨人、省级专精特新中小企业和三首的权威结构化事实专表，"
-                    "返回完整命中总数、官方匹配数、来源等级与可分页结果。"
+                    "返回命中总数、官方匹配数、来源覆盖状态与可分页结果。用户要求完整名单时，"
+                    "必须按 next_offset 连续调用直至 has_more=false；coverage 不允许完整声明时必须明确报缺口。"
                 ),
                 "parameters": {
                     "type": "object",
@@ -197,6 +198,15 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                         "batch": {"type": "string"},
                         "region": {"type": "string"},
                         "status": {"type": "string"},
+                        "event_type": {
+                            "type": "string",
+                            "enum": [
+                                "recognition",
+                                "recognition_publicity",
+                                "review_passed",
+                                "review_publicity"
+                            ]
+                        },
                         "verified_only": {"type": "boolean"},
                         "offset": {"type": "integer", "minimum": 0, "maximum": 1000000},
                         "limit": {"type": "integer", "minimum": 1, "maximum": 200},

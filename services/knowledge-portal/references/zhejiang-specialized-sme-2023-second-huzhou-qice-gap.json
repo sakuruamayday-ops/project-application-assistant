@@ -1,0 +1,1762 @@
+{
+  "schema_version": 1,
+  "source_id": "zhejiang-specialized-sme-2023-second-huzhou-qice-gap",
+  "document_title": "2023年度第二批浙江省专精特新中小企业公示名单（湖州市）—企策缺口重建",
+  "project_name": "浙江省专精特新中小企业",
+  "event_year": 2023,
+  "batch": "第二批",
+  "city": "湖州市",
+  "coverage_status": "qice_gap_partial",
+  "coverage_basis": "official_announced_count_plus_qice_gap_after_local_source_subtraction",
+  "expected_count": 174,
+  "announced_count": 175,
+  "official_url": "",
+  "excluded_local_entity_keys": 3970,
+  "entities": [
+    {
+      "sequence_no": 1,
+      "enterprise_name": "天能新能源（湖州）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qda11340c74c711ebad1500163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 2,
+      "enterprise_name": "浙江物产中大线缆有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qf2a588815ac64bbab60de96763ca0a52",
+      "former_names": []
+    },
+    {
+      "sequence_no": 3,
+      "enterprise_name": "兰树化妆品股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q8e60358e91284d859e2a1eeebed3bcf9",
+      "former_names": [
+        "浙江兰树化妆品有限公司"
+      ]
+    },
+    {
+      "sequence_no": 4,
+      "enterprise_name": "浙江航兴建设集团有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qc3b2dea7a61c3b381960907b09129381",
+      "former_names": [
+        "浙江航兴建设有限公司",
+        "湖州鼎兴建设有限公司",
+        "湖州经济技术开发区中兴建筑工程有限公司",
+        "湖州市经济技术开发区中兴建筑工程有限公司"
+      ]
+    },
+    {
+      "sequence_no": 5,
+      "enterprise_name": "浙江东通光网物联科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qa6dcb868bac9272e43d8479af79685a8",
+      "former_names": [
+        "浙江亨通光网物联科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 6,
+      "enterprise_name": "嬴彻科技（浙江）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q5c1baa285030427bb2a15d8cdec8a02f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 7,
+      "enterprise_name": "湖州长城异形线材有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q2f8adef45a164879a6c569ec91175445",
+      "former_names": []
+    },
+    {
+      "sequence_no": 8,
+      "enterprise_name": "盈德气体工程（浙江）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q4db7fd3dc1c304f37ba12d7f15fc193b",
+      "former_names": [
+        "浙江智海化工设备工程有限公司"
+      ]
+    },
+    {
+      "sequence_no": 9,
+      "enterprise_name": "中奥电梯有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q150a430b8c1632e9d4dd096a3a7041d2",
+      "former_names": []
+    },
+    {
+      "sequence_no": 10,
+      "enterprise_name": "浙江浙能德清分布式能源有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q2d5cfc38dfbbee4ecf342d0c51419173",
+      "former_names": []
+    },
+    {
+      "sequence_no": 11,
+      "enterprise_name": "浙江富钢集团有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q944a51cf3aa5e686d54b7e9d0bf8dafc",
+      "former_names": [
+        "浙江富钢金属制品有限公司",
+        "浙江富钢金属轧制有限公司",
+        "浙江湖州富钢金属轧制有限公司"
+      ]
+    },
+    {
+      "sequence_no": 12,
+      "enterprise_name": "浙江省建材集团建筑产业化有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q7ef985ad117cfec882c84bbf5795627d",
+      "former_names": [
+        "浙江天和建设材料有限公司"
+      ]
+    },
+    {
+      "sequence_no": 13,
+      "enterprise_name": "浙江锂宸新材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q2fc8c396ba534697891afbf560318a18",
+      "former_names": []
+    },
+    {
+      "sequence_no": 14,
+      "enterprise_name": "湖州杭华功能材料有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q419e6d6ff857bce81d72c16a4e0602d6",
+      "former_names": []
+    },
+    {
+      "sequence_no": 15,
+      "enterprise_name": "浙江省军工集团股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qde2493c781d6174995345307bd347492",
+      "former_names": [
+        "浙江省军工集团有限公司",
+        "浙江解放机械制造有限公司",
+        "浙江仪表有限公司"
+      ]
+    },
+    {
+      "sequence_no": 16,
+      "enterprise_name": "浙江佳成和合建设有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qcb6ab482d9dba86243790c488aac3216",
+      "former_names": [
+        "浙江佳成建设有限公司",
+        "湖州佳成建设有限公司",
+        "湖州佳成建筑有限公司",
+        "湖州申湖装璜有限公司"
+      ]
+    },
+    {
+      "sequence_no": 17,
+      "enterprise_name": "浙江长兴合利光电科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qdc95c3707b1f975e2daac3f7f8f0792d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 18,
+      "enterprise_name": "菱电电梯有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q82adc6c6e7f01af49a612ca5c3666dcf",
+      "former_names": [
+        "浙江汇正木业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 19,
+      "enterprise_name": "兰芳园食品有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qe85c8f6fd540226b4996bf82a06504d2",
+      "former_names": [
+        "浙江兰芳园食品有限公司"
+      ]
+    },
+    {
+      "sequence_no": 20,
+      "enterprise_name": "安吉临港热电有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q09487239d6e92c31b8c01eae1f1e382c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 21,
+      "enterprise_name": "浙江泰瑞重型机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q38d65c80944190f84402b14f741d3edb",
+      "former_names": [
+        "浙江辉能风电科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 22,
+      "enterprise_name": "浙江大东吴杭萧绿建科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qdbacf5d1b1d1eddc393e724a82c65088",
+      "former_names": [
+        "浙江大东吴集团钢构有限公司",
+        "浙江大东吴建设集团湖州钢构建材有限公司",
+        "浙江大东吴建设集团湖州金属纺织有限公司",
+        "湖州大东吴荣达金属纺织有限公司"
+      ]
+    },
+    {
+      "sequence_no": 23,
+      "enterprise_name": "浙江中特化工有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qee72a824ccaa42a79eb9e6c8020b72a9",
+      "former_names": []
+    },
+    {
+      "sequence_no": 24,
+      "enterprise_name": "浙江中特智能装备股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q386a1b51fb568a843e2ecf62c16d6126",
+      "former_names": []
+    },
+    {
+      "sequence_no": 25,
+      "enterprise_name": "浙江智鑫科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q0895621e2c2149389b41582726ed9926",
+      "former_names": []
+    },
+    {
+      "sequence_no": 26,
+      "enterprise_name": "浙江大汇新材料有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q2846b864867e479f9a3182a07df6728c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 27,
+      "enterprise_name": "浙江五味和食品有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q1985e5d359b1cdf8b84b300d1c34c8bc",
+      "former_names": []
+    },
+    {
+      "sequence_no": 28,
+      "enterprise_name": "湖州南太湖热电有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qc5884af4300334d3b9b1b01aeb4bc1a0",
+      "former_names": []
+    },
+    {
+      "sequence_no": 29,
+      "enterprise_name": "莫霞家居有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qc72fcdfe3375a3cc362ab1808ffc960d",
+      "former_names": [
+        "浙江莫霞实业有限公司",
+        "浙江楚风家具有限公司"
+      ]
+    },
+    {
+      "sequence_no": 30,
+      "enterprise_name": "浙江集迈科微电子有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q0d97e2477487404ba247e07391349cd7",
+      "former_names": []
+    },
+    {
+      "sequence_no": 31,
+      "enterprise_name": "浙江才府玻璃股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q9d63bd4ea82aa64294293a8656114b23",
+      "former_names": [
+        "德清才府玻璃股份有限公司"
+      ]
+    },
+    {
+      "sequence_no": 32,
+      "enterprise_name": "浙江博泰家具股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qc3ccc77909af1a1831605abd455bf994",
+      "former_names": [
+        "浙江博泰家具有限公司"
+      ]
+    },
+    {
+      "sequence_no": 33,
+      "enterprise_name": "浙江顶天建材有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qaddec3ba417f6d905a1f5b9134efa021",
+      "former_names": []
+    },
+    {
+      "sequence_no": 34,
+      "enterprise_name": "浙江硕华生命科学研究股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q87d33b9ddb948e04c3fdc7a8f1f94415",
+      "former_names": [
+        "浙江硕华医用塑料有限公司"
+      ]
+    },
+    {
+      "sequence_no": 35,
+      "enterprise_name": "浙江铠甲建筑科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qf908a5be98a544b286e2c4d7c8477a04",
+      "former_names": []
+    },
+    {
+      "sequence_no": 36,
+      "enterprise_name": "湖州珍贝羊绒制品有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qf22bee95da4ffd0b68ad560b0753b58a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 37,
+      "enterprise_name": "浙江德易精密机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q114a6646f6f5732c834ed9906b05752f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 38,
+      "enterprise_name": "浙江远大钢构实业有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qd2f32121e78854f8a9710f6b9ee8112a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 39,
+      "enterprise_name": "莫诺特泵业（集团）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qae366d3e21c844509d218cf5f7fa7192",
+      "former_names": [
+        "莫诺特泵业（长兴）有限公司"
+      ]
+    },
+    {
+      "sequence_no": 40,
+      "enterprise_name": "安吉恒宜家具有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qd16b83d849521205751d2fdc3cf6f657",
+      "former_names": []
+    },
+    {
+      "sequence_no": 41,
+      "enterprise_name": "浙江达仕科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q8138b1ea32a24d9392986f9e0a296db9",
+      "former_names": []
+    },
+    {
+      "sequence_no": 42,
+      "enterprise_name": "浙江安吉华意科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qb4772ec8c29f429485940cc1f2282a86",
+      "former_names": []
+    },
+    {
+      "sequence_no": 43,
+      "enterprise_name": "浙江盛旺耐火材料股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qc5aa1b846dd6bab1b9303712097f63a6",
+      "former_names": [
+        "长兴盛旺锅炉耐火保温防腐工程有限公司"
+      ]
+    },
+    {
+      "sequence_no": 44,
+      "enterprise_name": "浙江奥氏芯材科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q6154a8885df24bdf955b888681b54c8f",
+      "former_names": [
+        "浙江奥氏环境科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 45,
+      "enterprise_name": "浙江立鑫新材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q14252768178847d9b924991d578d9d0f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 46,
+      "enterprise_name": "长兴晟博汽车部件有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q4fc2df77552046f28d22df8f7310b9dc",
+      "former_names": []
+    },
+    {
+      "sequence_no": 47,
+      "enterprise_name": "浙江意力管业科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q723b67c9fe1946a89ab6de08ab9b414c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 48,
+      "enterprise_name": "浙江浩天建设集团有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qb366cdd9175e1acb73d05d3e8fd3a83c",
+      "former_names": [
+        "湖州浩天建设有限公司"
+      ]
+    },
+    {
+      "sequence_no": 49,
+      "enterprise_name": "浙江华耀电气科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qdbef17b9a3d24202b2239adfe247de88",
+      "former_names": []
+    },
+    {
+      "sequence_no": 50,
+      "enterprise_name": "浙江英迪格智能工程有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q4405db5d8224fcc3306169916eb28d48",
+      "former_names": [
+        "湖州英迪格智能工程有限公司"
+      ]
+    },
+    {
+      "sequence_no": 51,
+      "enterprise_name": "迈莎锐汽车（浙江）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qc04ea49c8d1211eb8e8e00163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 52,
+      "enterprise_name": "浙江东洋环境科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qb6aa30e4821a11eb83b700163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 53,
+      "enterprise_name": "长兴永烜机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q9bba71dff5fd4f8983b04cf0563a8080",
+      "former_names": []
+    },
+    {
+      "sequence_no": 54,
+      "enterprise_name": "浙江德龙新材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q0d9795627e0c407f91e26b06eafeb2d7",
+      "former_names": []
+    },
+    {
+      "sequence_no": 55,
+      "enterprise_name": "浙江艾隆科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q80e902788f7c4234a2436ac20dea049e",
+      "former_names": []
+    },
+    {
+      "sequence_no": 56,
+      "enterprise_name": "浙江宏旭智能制造有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qbd481f5e3e4f4ad685b3bd83650c5a9d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 57,
+      "enterprise_name": "浙江鹿达科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q0db421f50ef44c7aa1bf9fb6a634c6de",
+      "former_names": [
+        "浙江鹿达包装制品有限公司"
+      ]
+    },
+    {
+      "sequence_no": 58,
+      "enterprise_name": "浙江普康智慧养老产业科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qb027c5d4d721996c43450f4963f2e065",
+      "former_names": [
+        "湖州普康智慧养老产业科技有限公司",
+        "湖州普康物联科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 59,
+      "enterprise_name": "湖州市湖芯物联网科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q89a81668a19b54b6b7eb173efb3c4bf7",
+      "former_names": []
+    },
+    {
+      "sequence_no": 60,
+      "enterprise_name": "浙江佶竹生物科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qa81c0ad563463fa3a6c3bb416137e83c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 61,
+      "enterprise_name": "长兴佰菲特机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q89ce1d53247eabd73836973b8a4b8b0b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 62,
+      "enterprise_name": "湖州旺能再生能源开发有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q29d91772091601e27782e86d77b5da0c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 63,
+      "enterprise_name": "浙江国千环境技术发展有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qe8a26f821c6d45f3da7eb0f90e8a2b29",
+      "former_names": [
+        "安吉国千环境科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 64,
+      "enterprise_name": "吉祥铝业（长兴）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qc7110659e1be41e1d899237ddebdb582",
+      "former_names": []
+    },
+    {
+      "sequence_no": 65,
+      "enterprise_name": "德清亚特新型建材有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q3e4c58e16f804f48aed58041837fd624",
+      "former_names": []
+    },
+    {
+      "sequence_no": 66,
+      "enterprise_name": "浙江宏途电气科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q9c48ccc147828a978d2a7b8a884dd4bb",
+      "former_names": [
+        "浙江宏途管业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 67,
+      "enterprise_name": "浙江美丽健乳业有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qe8b6a9228153727ca46b355ef01d461f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 68,
+      "enterprise_name": "湖州吉泰电力设备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q086ebc53b4cf12f0bcaee1e8fce20b18",
+      "former_names": []
+    },
+    {
+      "sequence_no": 69,
+      "enterprise_name": "协和华东干细胞基因工程有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qb87e4612abf2dd3e7764993fd006eb20",
+      "former_names": [
+        "协和湖州干细胞基因工程有限公司"
+      ]
+    },
+    {
+      "sequence_no": 70,
+      "enterprise_name": "浙江凯立特医疗器械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q648ae629162bc86ae9cfe6944f202fd0",
+      "former_names": [
+        "湖州凯立特医疗器械有限公司"
+      ]
+    },
+    {
+      "sequence_no": 71,
+      "enterprise_name": "浙江双银特材科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q925e63b9af034f25924ea5fd427f5545",
+      "former_names": []
+    },
+    {
+      "sequence_no": 72,
+      "enterprise_name": "安吉旺能再生资源利用有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q5a15b19aece2b7c4d4e102b7049ca63b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 73,
+      "enterprise_name": "湖州东科电子石英股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qd64ab74aab116c4e744eee847afc8711",
+      "former_names": [
+        "湖州东科电子石英有限公司"
+      ]
+    },
+    {
+      "sequence_no": 74,
+      "enterprise_name": "浙江冠华电气有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qc3cce3d1cc56caf9afea1131dc163692",
+      "former_names": []
+    },
+    {
+      "sequence_no": 75,
+      "enterprise_name": "湖州鑫冠纺织品科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q300707a5fad7367f332b6e561e38a3dc",
+      "former_names": [
+        "湖州南浔鑫冠纺织品有限公司"
+      ]
+    },
+    {
+      "sequence_no": 76,
+      "enterprise_name": "浙江凯润药业股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q772d96d47daa8be462b700f93ece8708",
+      "former_names": [
+        "浙江凯润制药有限公司"
+      ]
+    },
+    {
+      "sequence_no": 77,
+      "enterprise_name": "浙江鑫涛科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qe15fbd2633d9446343d087a3526ed551",
+      "former_names": [
+        "浙江鑫涛纺织科技有限公司",
+        "浙江鑫涛轻纺有限公司",
+        "长兴鑫涛轻纺有限公司"
+      ]
+    },
+    {
+      "sequence_no": 78,
+      "enterprise_name": "浙江缘德节能门窗有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qa61f9e657bc9b0d613d3cb0702b0863c",
+      "former_names": [
+        "湖州兴德瑞明节能门窗有限公司"
+      ]
+    },
+    {
+      "sequence_no": 79,
+      "enterprise_name": "浙江越千树数码科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qa108157258ae49aa8c74dc2d29345e12",
+      "former_names": []
+    },
+    {
+      "sequence_no": 80,
+      "enterprise_name": "浙江万昌家具股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q9997b9ab09b7acda79c79cb0c1ff2751",
+      "former_names": [
+        "安吉万昌家具有限公司"
+      ]
+    },
+    {
+      "sequence_no": 81,
+      "enterprise_name": "湖州金鼎精密科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q2ad3c121b7264b7b918d4f24578747b1",
+      "former_names": []
+    },
+    {
+      "sequence_no": 82,
+      "enterprise_name": "湖州乾诚不锈钢管制造有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q5110c9a56f689ea77c080b9636d16fbc",
+      "former_names": [
+        "湖州华特不锈钢管制造有限公司"
+      ]
+    },
+    {
+      "sequence_no": 83,
+      "enterprise_name": "湖州恒辉科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qf83aa7e5faed6f144996e036d88ee009",
+      "former_names": [
+        "湖州恒辉工业炉有限公司"
+      ]
+    },
+    {
+      "sequence_no": 84,
+      "enterprise_name": "浙江惠尔涂装环保设备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q57dd2c4088a691d156b3a8e1454a1e86",
+      "former_names": [
+        "德清惠尔涂装环保设备有限公司"
+      ]
+    },
+    {
+      "sequence_no": 85,
+      "enterprise_name": "浙江浩锐石英科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qd4f8191ea952435789e53f28978760ac",
+      "former_names": []
+    },
+    {
+      "sequence_no": 86,
+      "enterprise_name": "浙江科磊新材料有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q3606709cf38d4965ad4aec140ec40741",
+      "former_names": []
+    },
+    {
+      "sequence_no": 87,
+      "enterprise_name": "浙江匠心液压科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qf2d26db824a8487fba0802938e7809b7",
+      "former_names": []
+    },
+    {
+      "sequence_no": 88,
+      "enterprise_name": "浙江金麦特智能装备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qe09b0ed6f5644363b04e81a6c13d147f",
+      "former_names": [
+        "浙江佰斯特自动化科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 89,
+      "enterprise_name": "瑞希特（浙江）科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qd200ab1cbfde4c11b50e6959f22945b6",
+      "former_names": [
+        "浙江瑞希特泵阀股份有限公司"
+      ]
+    },
+    {
+      "sequence_no": 90,
+      "enterprise_name": "浙江德瑞新材科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q9d3f9111df414b1d8680296320633dcf",
+      "former_names": []
+    },
+    {
+      "sequence_no": 91,
+      "enterprise_name": "浙江陆博环境设备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qbe7b1518303445950c3235a5b82ed777",
+      "former_names": []
+    },
+    {
+      "sequence_no": 92,
+      "enterprise_name": "安吉万宝智能家居科技有限责任公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qb1eaaf0fabf83a7035cf2b384637d172",
+      "former_names": [
+        "安吉万宝智能家居科技有限公司",
+        "安吉万宝家具有限公司"
+      ]
+    },
+    {
+      "sequence_no": 93,
+      "enterprise_name": "浙江物产汽车安全科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q89c8b795b7fe36395bdd4795ca95411d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 94,
+      "enterprise_name": "湖州天丰电源有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qa102e569f395dea5a3f5d66bfa533ee4",
+      "former_names": []
+    },
+    {
+      "sequence_no": 95,
+      "enterprise_name": "浙江本凡机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q9263412839d0e4c1bf9178ef3a987a20",
+      "former_names": []
+    },
+    {
+      "sequence_no": 96,
+      "enterprise_name": "长兴明天炉料有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q4c2087f22dc4c3a1d537649e83bf42ef",
+      "former_names": []
+    },
+    {
+      "sequence_no": 97,
+      "enterprise_name": "湖州德尔福汽车部件有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qccf1f552a2c23fe9ae51a2cedbd6126e",
+      "former_names": []
+    },
+    {
+      "sequence_no": 98,
+      "enterprise_name": "浙江亚辰新材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q7c79dbbd309a419592529d02d835225f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 99,
+      "enterprise_name": "浙江诚泰化工机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qc9cd9efa8cfbfd101d4c774877d2f787",
+      "former_names": [
+        "杭州诚泰化工机械有限公司"
+      ]
+    },
+    {
+      "sequence_no": 100,
+      "enterprise_name": "浙江本源质品信息科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qe3ed15c281f14d22aa4fb1e1c192e501",
+      "former_names": [
+        "浙江本源质品信息科技有限公司",
+        "湖州本源质品信息科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 101,
+      "enterprise_name": "浙江峰晖竹木制品有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qb221e2714e092c220c4303ce4e0fe0d5",
+      "former_names": [
+        "浙江安吉峰晖竹艺服饰有限公司",
+        "安吉峰晖竹艺服饰有限公司"
+      ]
+    },
+    {
+      "sequence_no": 102,
+      "enterprise_name": "浙江天诚交通科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q759535624bff468c9865ec82e24e2b95",
+      "former_names": [
+        "浙江天诚交通科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 103,
+      "enterprise_name": "浙江唐锋能源科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q4441595dfb2543ea98cbca9fdba0135f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 104,
+      "enterprise_name": "浙江华轴科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qec440b37b0174b1fb841dfae1a5937e7",
+      "former_names": [
+        "浙江华轴自润科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 105,
+      "enterprise_name": "安吉嘉诚五金有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qcef11a94b3ff4d4986ec00d86dae0c90",
+      "former_names": []
+    },
+    {
+      "sequence_no": 106,
+      "enterprise_name": "浙江华力汽车配件科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qe84373a20a7b407db7280abce87ff76b",
+      "former_names": [
+        "浙江华力压铸科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 107,
+      "enterprise_name": "浙江谦达机电科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q9c65e4cb7c67d68b35868f046c86d4bf",
+      "former_names": [
+        "浙江湖州谦达机电科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 108,
+      "enterprise_name": "浙江德康环保科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q9ac2c6372d5590f2670795c0bb314d48",
+      "former_names": []
+    },
+    {
+      "sequence_no": 109,
+      "enterprise_name": "波士顿电梯（湖州）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q78594ce32eeff8911bd5cd6b12f3b894",
+      "former_names": [
+        "埃克森三洋电梯（中国）有限公司"
+      ]
+    },
+    {
+      "sequence_no": 110,
+      "enterprise_name": "浙江美易新材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qeb4f28d330a253c8e7913c90266cefac",
+      "former_names": [
+        "浙江美浓材料科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 111,
+      "enterprise_name": "浙江兆民玻璃技术有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qc1b4e98d702c46b7098a021d04de3a92",
+      "former_names": []
+    },
+    {
+      "sequence_no": 112,
+      "enterprise_name": "浙江长兴铁鹰电气有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qf9c465aea75b59df1ea0f4b121c94ca8",
+      "former_names": [
+        "长兴铁鹰电气有限公司"
+      ]
+    },
+    {
+      "sequence_no": 113,
+      "enterprise_name": "浙江华艺盛纺织有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qf15dd133abef0746929b1e3aeaa6e85d",
+      "former_names": [
+        "浙江华艺盛纺织股份有限公司",
+        "湖州华艺盛纺织刺绣有限公司"
+      ]
+    },
+    {
+      "sequence_no": 114,
+      "enterprise_name": "浙江嗨便利网络科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qfbff427bb7b5498195eab16480757f92",
+      "former_names": [
+        "温州星选供应链有限公司",
+        "温州爱驰供应链管理有限公司"
+      ]
+    },
+    {
+      "sequence_no": 115,
+      "enterprise_name": "浙江昊国家具有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q3a6c22360e213f990c723a3999f07da8",
+      "former_names": []
+    },
+    {
+      "sequence_no": 116,
+      "enterprise_name": "浙江正熙生物技术有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q17728ccc778a4e6a8fd1009ea596d1f7",
+      "former_names": [
+        "浙江正熙生物技术股份有限公司",
+        "浙江正熙生物医药有限公司"
+      ]
+    },
+    {
+      "sequence_no": 117,
+      "enterprise_name": "湖州立方实业有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qb5664c121b58299ea86f3ee1d25548c6",
+      "former_names": [
+        "湖州五方教育用品有限公司",
+        "湖州立方教育用品有限公司"
+      ]
+    },
+    {
+      "sequence_no": 118,
+      "enterprise_name": "湖州紫琅衬布有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qad0472b0c1f86bf7cef2ba1b15cc52cd",
+      "former_names": []
+    },
+    {
+      "sequence_no": 119,
+      "enterprise_name": "浙江正豪耐火材料股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q601c3ed2485a4b06b3ed21b8c764cdaa",
+      "former_names": [
+        "浙江正豪耐火材料有限公司",
+        "长兴正豪耐火材料有限公司"
+      ]
+    },
+    {
+      "sequence_no": 120,
+      "enterprise_name": "浙江科瑞信电子科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qecfd558cb414453e8f129c37c62b6f33",
+      "former_names": []
+    },
+    {
+      "sequence_no": 121,
+      "enterprise_name": "湖州数康生物科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qeb13718f81fd8186293089cbfcdadea7",
+      "former_names": []
+    },
+    {
+      "sequence_no": 122,
+      "enterprise_name": "浙江露熙科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q648d7f788d1911ebbbb000163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 123,
+      "enterprise_name": "湖州金钛导体技术有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q816ddc484bc9462d8ebbd4a0e9733db0",
+      "former_names": []
+    },
+    {
+      "sequence_no": 124,
+      "enterprise_name": "浙江中锂电科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qd6c4e486a94d4155bf1cedc5f729afbe",
+      "former_names": [
+        "安吉中锂电科技有限公司",
+        "安吉越力电子科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 125,
+      "enterprise_name": "浙江华顺炉业有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q2b23dd5c0950ca5aecd1d05bae4a29a2",
+      "former_names": [
+        "湖州华顺炉业有限公司",
+        "湖州华顺工业炉配件有限公司"
+      ]
+    },
+    {
+      "sequence_no": 126,
+      "enterprise_name": "浙江东田机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q71d41eaa5b7745e59740b2f6af2b7e82",
+      "former_names": [
+        "湖州东田机械有限公司"
+      ]
+    },
+    {
+      "sequence_no": 127,
+      "enterprise_name": "浙江易蓝科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q5e394eae825045698d1cd309d03be4eb",
+      "former_names": []
+    },
+    {
+      "sequence_no": 128,
+      "enterprise_name": "浙江百博机械科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q147a3be343b6dd340d038abba569c6fa",
+      "former_names": []
+    },
+    {
+      "sequence_no": 129,
+      "enterprise_name": "浙江拓邦液压科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q6f487884be6db201d45bc4e20f53c420",
+      "former_names": []
+    },
+    {
+      "sequence_no": 130,
+      "enterprise_name": "法德（浙江）机械科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qa77e82606b77457eb258e84a2eedb348",
+      "former_names": []
+    },
+    {
+      "sequence_no": 131,
+      "enterprise_name": "浙江金禾成汽车空调有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q45f36546496574ab49d8984601d85e9d",
+      "former_names": [
+        "浙江华瑞祥汽车空调有限公司",
+        "浙江松洋洁具有限公司"
+      ]
+    },
+    {
+      "sequence_no": 132,
+      "enterprise_name": "德清集通实业有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q930b69381d3d133f464b0da17e7424b4",
+      "former_names": []
+    },
+    {
+      "sequence_no": 133,
+      "enterprise_name": "浙江巨拓科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qe19f09fe399ac1e3dd2d506574e85b53",
+      "former_names": [
+        "浙江巨拓科技有限公司",
+        "湖州巨拓电梯配件有限公司"
+      ]
+    },
+    {
+      "sequence_no": 134,
+      "enterprise_name": "浙江伟博包装印刷品有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q8317b0ae45a7b61c35ccac380e75010d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 135,
+      "enterprise_name": "浙江中轴物流设备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qd91d0728eb04c2b51b888b9956c5873b",
+      "former_names": [
+        "湖州中轴物流设备有限公司"
+      ]
+    },
+    {
+      "sequence_no": 136,
+      "enterprise_name": "浙江湖州赤霄科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q7655a15ebc6711eba51500163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 137,
+      "enterprise_name": "湖州莱赛工业科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qe55dce964aed11eb8af700163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 138,
+      "enterprise_name": "浙江中科中创功能食品有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qd230a0441d094cb58cff87783f56026e",
+      "former_names": []
+    },
+    {
+      "sequence_no": 139,
+      "enterprise_name": "浙江汉纳新材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qe23ad954a41d47c8a10c856edbd56ae8",
+      "former_names": []
+    },
+    {
+      "sequence_no": 140,
+      "enterprise_name": "浙江新瓷智能科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "qed25276995a14e979021c3723f156a14",
+      "former_names": [
+        "浙江新瓷智能科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 141,
+      "enterprise_name": "长兴保隆新材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q9432b24b77344ad0a703bcd7f20ff2da",
+      "former_names": []
+    },
+    {
+      "sequence_no": 142,
+      "enterprise_name": "浙江胜途家具科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q74de647c31884e6cac5e458b472da744",
+      "former_names": []
+    },
+    {
+      "sequence_no": 143,
+      "enterprise_name": "浙江盛元航空器材有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q6069ad4df5bf4e8d8181758f0a7367b4",
+      "former_names": []
+    },
+    {
+      "sequence_no": 144,
+      "enterprise_name": "浙江鼎诚炉业科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q8bbcf2917490f753375bc9d91aa3c5a1",
+      "former_names": []
+    },
+    {
+      "sequence_no": 145,
+      "enterprise_name": "浙江中导北斗导航科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qecfa5214fcfff7d81442da6cb8d599c7",
+      "former_names": []
+    },
+    {
+      "sequence_no": 146,
+      "enterprise_name": "德清益众新材料有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q3d3fb543667443b12960acb6124c1b76",
+      "former_names": [
+        "德清县益众码头装卸有限公司"
+      ]
+    },
+    {
+      "sequence_no": 147,
+      "enterprise_name": "湖州欧利生物科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q9e75bf9440d0e82b70ef9d632695961a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 148,
+      "enterprise_name": "湖州意诺茶业有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "qec9adc89eb03d6ab1f6cb8f4b394d5d9",
+      "former_names": []
+    },
+    {
+      "sequence_no": 149,
+      "enterprise_name": "浙江博门汽车零配件有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q10061396a71da769151cbfe40db3b5ba",
+      "former_names": []
+    },
+    {
+      "sequence_no": 150,
+      "enterprise_name": "浙江中曼制冰系统有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q3df51123bbd8a151ee928e33d913ee9b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 151,
+      "enterprise_name": "湖州圣涛生物技术有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q0a1cc7459ff870b720041a38d4b35588",
+      "former_names": []
+    },
+    {
+      "sequence_no": 152,
+      "enterprise_name": "浙江柏尔木业有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q311753694847851acabb33de7ff71057",
+      "former_names": [
+        "湖州柏尔木业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 153,
+      "enterprise_name": "湖州恒通机械设备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q420c1b43e6c259350ad49ec5c2411407",
+      "former_names": []
+    },
+    {
+      "sequence_no": 154,
+      "enterprise_name": "湖州鑫润田新材料科技有限责任公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q7d4a944def48fbb58bd412d0c764cd69",
+      "former_names": [
+        "湖州鑫润田纺织有限公司",
+        "湖州林春喷织有限公司"
+      ]
+    },
+    {
+      "sequence_no": 155,
+      "enterprise_name": "欧美新材料（浙江）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q90ea0677bace730fe9315b5adbb908c1",
+      "former_names": [
+        "湖州欧美新材料有限公司",
+        "微宏新材料（湖州）有限公司"
+      ]
+    },
+    {
+      "sequence_no": 156,
+      "enterprise_name": "浙江依蕾毛纺织有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q51b5e146fc0c29bb8509c5f018e4989e",
+      "former_names": [
+        "德清县依蕾毛纺织有限公司"
+      ]
+    },
+    {
+      "sequence_no": 157,
+      "enterprise_name": "安吉恒友科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qd882bb6cb5ae66d3d69725825b80dfc6",
+      "former_names": [
+        "安吉恒友家具有限公司"
+      ]
+    },
+    {
+      "sequence_no": 158,
+      "enterprise_name": "浙江埃登达新能源材料有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q7e4777044dd147d6874c036e3060d174",
+      "former_names": []
+    },
+    {
+      "sequence_no": 159,
+      "enterprise_name": "长兴友畅电子有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q0358993d7e5c91bc57e67070b099f8d5",
+      "former_names": []
+    },
+    {
+      "sequence_no": 160,
+      "enterprise_name": "湖州胜僖电子科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q9f5b5273633043a6d717985938420cc7",
+      "former_names": []
+    },
+    {
+      "sequence_no": 161,
+      "enterprise_name": "湖州南浔新龙电机有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qb95bd0b0494a0cb9bb078c22551eed75",
+      "former_names": []
+    },
+    {
+      "sequence_no": 162,
+      "enterprise_name": "浙江豪韵塑竹木材料有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qf58d28d41267996bdfccf4a386cb0352",
+      "former_names": []
+    },
+    {
+      "sequence_no": 163,
+      "enterprise_name": "湖州飞鹿新能源科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q79c59c8a93184a178d7a9d685e757c0a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 164,
+      "enterprise_name": "长兴溪谷智能装备股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q4756c3eac7a043b4aaf4b645f1988aa3",
+      "former_names": [
+        "长兴溪谷智能装备有限公司"
+      ]
+    },
+    {
+      "sequence_no": 165,
+      "enterprise_name": "浙江迈雷科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "qice_eid": "q26e879232f72d1dc27a1afbd851b6882",
+      "former_names": []
+    },
+    {
+      "sequence_no": 166,
+      "enterprise_name": "湖州天洋线缆有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "qa08a0f5c49312b8288eced351ff86655",
+      "former_names": []
+    },
+    {
+      "sequence_no": 167,
+      "enterprise_name": "湖州东塑电梯配件有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "qice_eid": "q21fe3f1355e3c1c6ae6534017356c594",
+      "former_names": [
+        "湖州东塑容器包装有限公司"
+      ]
+    },
+    {
+      "sequence_no": 168,
+      "enterprise_name": "安吉明远锻造有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q944f8d790b590cd02d7e7f14b83311dd",
+      "former_names": []
+    },
+    {
+      "sequence_no": 169,
+      "enterprise_name": "浙江腾云制冷科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qd26349f9b721c28b194eca3c5c0f4ad8",
+      "former_names": [
+        "湖州腾云制冷设备有限公司",
+        "德清县腾云制冷设备有限公司",
+        "德清县腾云轻工机械实业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 170,
+      "enterprise_name": "德清精诚制药机械有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "qe1b4e45513d9de47a282e032a02d8426",
+      "former_names": []
+    },
+    {
+      "sequence_no": 171,
+      "enterprise_name": "湖州慧金材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "qice_eid": "q71dd4d65999cacd1454fec2ec07d6c1b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 172,
+      "enterprise_name": "安吉宏德医疗用品有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "q0d876b510329336ad4c5379d31a42dfd",
+      "former_names": []
+    },
+    {
+      "sequence_no": 173,
+      "enterprise_name": "湖州全都来了网络科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "qice_eid": "qc9af91677ac062a24ce6cf2a9af0777e",
+      "former_names": [
+        "杭州全都来了网络科技有限公司",
+        "杭州旅居星球网络科技有限公司",
+        "杭州易路营电子商务有限公司"
+      ]
+    },
+    {
+      "sequence_no": 174,
+      "enterprise_name": "长兴罗拉机电有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "qice_eid": "q6f5c7a7ddb95954ef12998e75dfe2dd4",
+      "former_names": [
+        "长兴华亿机电有限公司"
+      ]
+    }
+  ]
+}

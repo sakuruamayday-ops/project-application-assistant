@@ -1,8 +1,26 @@
 {
   "schema_version": 1,
-  "baseline_date": "2026-08-01",
+  "baseline_date": "2026-08-02",
   "description": "权威名单事实查询固定金标准；同时校验总数、来源等级、官方匹配数和分页完整性。",
   "cases": [
+    {
+      "id": "national-small-giant-2023-hangzhou-annual-publication",
+      "filters": {
+        "list_type": "national_small_giant",
+        "year": 2023,
+        "region": "杭州市"
+      },
+      "page_size": 50,
+      "expected": {
+        "total": 132,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 132
+        },
+        "page_sizes": [50, 50, 32]
+      }
+    },
     {
       "id": "national-small-giant-2024-hangzhou",
       "filters": {
@@ -13,13 +31,123 @@
       },
       "page_size": 50,
       "expected": {
-        "total": 156,
-        "official_match_count": 154,
+        "total": 157,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
         "source_tier_counts": {
-          "licensed_platform_pending": 2,
-          "official": 154
+          "official_publicity": 157
         },
-        "page_sizes": [50, 50, 50, 6]
+        "page_sizes": [50, 50, 50, 7]
+      }
+    },
+    {
+      "id": "national-small-giant-2022-fourth-ningbo-official-publication",
+      "filters": {
+        "list_type": "national_small_giant",
+        "year": 2022,
+        "batch": "第四批",
+        "region": "宁波市"
+      },
+      "page_size": 50,
+      "expected": {
+        "total": 101,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 101
+        },
+        "page_sizes": [50, 50, 1]
+      }
+    },
+    {
+      "id": "national-small-giant-2022-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "national_small_giant",
+        "year": 2022,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 619,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 619
+        },
+        "page_sizes": [200, 200, 200, 19]
+      }
+    },
+    {
+      "id": "national-small-giant-2023-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "national_small_giant",
+        "year": 2023,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 507,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 507
+        },
+        "page_sizes": [200, 200, 107]
+      }
+    },
+    {
+      "id": "national-small-giant-2024-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "national_small_giant",
+        "year": 2024,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 679,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 679
+        },
+        "page_sizes": [200, 200, 200, 79]
+      }
+    },
+    {
+      "id": "national-small-giant-2025-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "national_small_giant",
+        "year": 2025,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 974,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 974
+        },
+        "page_sizes": [200, 200, 200, 200, 174]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2023-hangzhou-annual-publication",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2023,
+        "region": "杭州市"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 1706,
+        "official_match_count": 676,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_final": 676,
+          "official_publicity": 1030
+        },
+        "page_sizes": [200, 200, 200, 200, 200, 200, 200, 200, 106]
       }
     },
     {
@@ -27,16 +155,190 @@
       "filters": {
         "list_type": "provincial_specialized_sme",
         "year": 2024,
-        "region": "杭州市"
+        "region": "杭州市",
+        "batch": "第一批",
+        "event_type": "recognition_publicity"
       },
       "page_size": 200,
       "expected": {
-        "total": 620,
+        "total": 621,
         "official_match_count": 0,
+        "completeness_claim_allowed": true,
         "source_tier_counts": {
-          "official_publicity": 620
+          "official_publicity": 621
         },
-        "page_sizes": [200, 200, 200, 20]
+        "page_sizes": [200, 200, 200, 21]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2022-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2022,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 3025,
+        "official_match_count": 2427,
+        "completeness_claim_allowed": false,
+        "source_tier_counts": {
+          "archived_structured_source": 185,
+          "official_final": 2427,
+          "official_publicity": 413
+        },
+        "page_sizes": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 25]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2023-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2023,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 5396,
+        "official_match_count": 1441,
+        "completeness_claim_allowed": false,
+        "source_tier_counts": {
+          "official_final": 1441,
+          "official_publicity": 3955
+        },
+        "page_sizes": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 196]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2023-second-huzhou-known-gap",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2023,
+        "batch": "第二批",
+        "region": "湖州市",
+        "event_type": "recognition_publicity"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 174,
+        "official_match_count": 0,
+        "completeness_claim_allowed": false,
+        "source_tier_counts": {
+          "official_publicity": 174
+        },
+        "page_sizes": [174]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2024-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2024,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 3026,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 3026
+        },
+        "page_sizes": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 26]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2025-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2025,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 4375,
+        "official_match_count": 4375,
+        "completeness_claim_allowed": false,
+        "source_tier_counts": {
+          "official_final": 4375
+        },
+        "page_sizes": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 175]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2025-second-review-known-blank",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2025,
+        "batch": "第二批",
+        "region": "浙江省",
+        "event_type": "review_passed"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 2157,
+        "official_match_count": 2157,
+        "completeness_claim_allowed": false,
+        "source_tier_counts": {
+          "official_final": 2157
+        },
+        "page_sizes": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 157]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2026-zhejiang-annual-publication",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2026,
+        "region": "浙江省"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 1696,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 1696
+        },
+        "page_sizes": [200, 200, 200, 200, 200, 200, 200, 200, 96]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2026-zhejiang-review-publicity",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2026,
+        "region": "浙江省",
+        "event_type": "review_publicity"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 1541,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 1541
+        },
+        "page_sizes": [200, 200, 200, 200, 200, 200, 200, 141]
+      }
+    },
+    {
+      "id": "provincial-specialized-sme-2026-zhejiang-recognition-publicity",
+      "filters": {
+        "list_type": "provincial_specialized_sme",
+        "year": 2026,
+        "region": "浙江省",
+        "event_type": "recognition_publicity"
+      },
+      "page_size": 200,
+      "expected": {
+        "total": 155,
+        "official_match_count": 0,
+        "completeness_claim_allowed": true,
+        "source_tier_counts": {
+          "official_publicity": 155
+        },
+        "page_sizes": [155]
       }
     },
     {
@@ -49,13 +351,13 @@
       },
       "page_size": 20,
       "expected": {
-        "total": 85,
+        "total": 84,
         "official_match_count": 84,
+        "completeness_claim_allowed": true,
         "source_tier_counts": {
-          "licensed_platform": 1,
           "official": 84
         },
-        "page_sizes": [20, 20, 20, 20, 5]
+        "page_sizes": [20, 20, 20, 20, 4]
       }
     }
   ]
