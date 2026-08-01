@@ -180,7 +180,7 @@ def test_three_step_install_reaches_verified_mcp_on_both_platforms(
             assert binding_response.status_code == 200
             binding = binding_response.json()
             assert binding["phase"] == "binding_authorized"
-            bootstrap_url = binding["manual_configuration"]["bootstrap_url"]
+            bootstrap_url = binding["workbuddy_configuration"]["bootstrap_url"]
             assert bootstrap_url.startswith(
                 f"{base_url}/v1/agent-bootstrap/{enrollment_code}"
             )

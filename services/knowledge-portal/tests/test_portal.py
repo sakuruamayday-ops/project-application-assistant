@@ -557,7 +557,7 @@ def test_public_user_guide(tmp_path):
         assert "当前正式通用版" in guide.text
         assert "尚未正式发布" in guide.text
         assert "当前没有通过插件根 .mcp.json 能力门禁" in guide.text
-        assert "候选 V1.4.3 不等于已正式发布" in guide.text
+        assert "候选 V1.4.4 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -921,14 +921,14 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert response.status_code == 200
     assert 'data-section-link="algorithms"' in response.text
     assert "项目算法包" in response.text
-    assert "显示 28 / 28 个主项目" in response.text
+    assert "显示 29 / 29 个主项目" in response.text
     assert "另有 1 个兼容别名包" in response.text
     assert "正式规则包" in response.text
     assert "政策基线包" in response.text
     assert "近7日查询" in response.text
     assert "纯检索路由" in response.text
     assert (
-        "28 类常规项目均已形成正式阈值规则包。系统会读取企业事实字段，"
+        "29 类常规项目均已形成正式阈值规则包。系统会读取企业事实字段，"
         "按稳定管理办法、年度通知、属地规则和已核验征求意见前瞻层逐项核对。"
         in response.text
     )
@@ -941,11 +941,11 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert 'href="/algorithms?coverage=rules-confirmed#algorithm-catalog"' in response.text
     assert 'href="/algorithms#algorithm-catalog" data-force-navigation' in response.text
     assert confirmed_response.status_code == 200
-    assert "显示 28 / 28 个主项目" in confirmed_response.text
+    assert "显示 29 / 29 个主项目" in confirmed_response.text
     assert "专精特新小巨人" in confirmed_response.text
     assert "区级绿色工厂" in confirmed_response.text
     assert baseline_catalog_response.status_code == 200
-    assert "显示 0 / 28 个主项目" in baseline_catalog_response.text
+    assert "显示 0 / 29 个主项目" in baseline_catalog_response.text
     assert "区级绿色工厂" not in baseline_catalog_response.text
     assert 'href="/algorithms?project=little-giant#algorithm-detail"' not in baseline_catalog_response.text
     assert detail_response.status_code == 200
@@ -3095,7 +3095,11 @@ def test_policy_queries_choose_expected_source_layer(tmp_path):
         "浙江省企业研究院",
         "浙江省重点企业研究院",
     ]
-    assert module.knowledge_search_query("未来工厂怎么申报") == "浙江省未来工厂"
+    assert module.project_selection_prompt("未来工厂怎么申报")
+    assert module.project_query_variants("未来工厂怎么申报") == [
+        "杭州市AI工厂",
+        "浙江省未来工厂",
+    ]
     assert module.project_query_variants("浙江省重点企业研究院申报要求") == [
         "浙江省重点企业研究院"
     ]
@@ -4422,37 +4426,36 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
 
         access = client.get("/access")
         assert "复制给 Agent" in access.text
-        assert "手工配置" in access.text
-        assert "data-toggle-manual-agent-config" in access.text
-        assert "data-confirm-manual-agent-bootstrap" in access.text
+        assert "非 WorkBuddy 手工配置 MCP" in access.text
+        assert "data-toggle-manual-agent-config" not in access.text
+        assert "data-confirm-manual-agent-bootstrap" not in access.text
         assert "data-copy-agent-binding" in access.text
         assert "第三步 · 执行 bootstrap" in access.text
-        assert "前往 Skills 中心" in access.text
-        assert "macOS 与 Windows 插件市场包统一在 Skills 中心下载" in access.text
-        assert 'class="button secondary skill-center-link" href="/skills"' in access.text
-        assert access.text.count("data-manual-package-download") == 1
+        assert 'href="/mcp-guide"' in access.text
+        assert "手工配置 WorkBuddy" not in access.text
+        assert "data-manual-package-download" not in access.text
         assert "我已审查，复制安装指令" in access.text
-        assert "一次性引导地址" in access.text
         assert "等待配置" in access.text
         portal_script = client.get("/static/portal.js")
         assert portal_script.status_code == 200
-        assert "我已审查，生成并复制 bootstrap_url" in portal_script.text
-        assert (
-            "copyToClipboard(bindingPayload.manual_configuration.bootstrap_url)"
-            in portal_script.text
-        )
+        assert "生成手工配置失败" not in portal_script.text
+        assert "payload.workbuddy_configuration?.bootstrap_url" in portal_script.text
         assert "浏览器未允许自动复制" in portal_script.text
         assert 'fetch("/agent-bootstrap-codes/binding"' in portal_script.text
         assert "binding_authorized" in portal_script.text
         skills = client.get("/skills")
         assert skills.status_code == 200
-        assert "data-toggle-manual-agent-config" in skills.text
-        assert "data-confirm-manual-agent-bootstrap" in skills.text
-        assert "data-manual-package-download" in skills.text
-        assert "生成并复制 bootstrap_url" in skills.text
+        assert "非 WorkBuddy 手工配置 MCP" in skills.text
+        assert "data-toggle-manual-agent-config" not in skills.text
+        assert "data-confirm-manual-agent-bootstrap" not in skills.text
+        assert "data-manual-package-download" not in skills.text
         assert "data-copy-agent-binding" in skills.text
-        assert "/plugin marketplace add" in skills.text
-        assert "jiaotang-workbuddy-skills@jiaotang" in skills.text
+        assert 'href="/mcp-guide"' in skills.text
+        mcp_guide = client.get("/mcp-guide")
+        assert mcp_guide.status_code == 200
+        assert "非 WorkBuddy 用户手工配置 MCP" in mcp_guide.text
+        assert "不下载插件包、不使用 bootstrap_url" in mcp_guide.text
+        assert "Authorization" in mcp_guide.text
 
         bootstrap = client.post(
             "/agent-bootstrap-codes",
@@ -4625,17 +4628,17 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "不得直接注册临时下载或临时解压目录" in confirmed.json()["prompt"]
         assert "不得删除已注册的 jiaotang 市场" in confirmed.json()["prompt"]
         assert "第三步“复制知识库绑定指令”" in confirmed.json()["prompt"]
-        manual = confirmed.json()["manual_configuration"]
-        assert manual["configuration_key"] == "bootstrap_url"
-        assert manual["mcp_server"] == "jiaotang-kb"
-        assert manual["setup_tool"] == "jiaotang_kb_setup"
-        assert manual["configuration_transport"] == "local_mcp_tool_argument"
-        assert manual["platform"] == "unified"
-        assert manual["plugin_download_url"] == scoped_download_url
-        assert manual["plugin_sha256"] == hashlib.sha256(
+        workbuddy_configuration = confirmed.json()["workbuddy_configuration"]
+        assert workbuddy_configuration["configuration_key"] == "bootstrap_url"
+        assert workbuddy_configuration["mcp_server"] == "jiaotang-kb"
+        assert workbuddy_configuration["setup_tool"] == "jiaotang_kb_setup"
+        assert workbuddy_configuration["configuration_transport"] == "local_mcp_tool_argument"
+        assert workbuddy_configuration["platform"] == "unified"
+        assert workbuddy_configuration["plugin_download_url"] == scoped_download_url
+        assert workbuddy_configuration["plugin_sha256"] == hashlib.sha256(
             workbuddy_package.read_bytes()
         ).hexdigest()
-        assert "bootstrap_url" not in manual
+        assert "bootstrap_url" not in workbuddy_configuration
         assert f"?platform=unified" in confirmed.json()["prompt"]
 
         confirmed_without_binding = client.get(
@@ -4660,8 +4663,8 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
             binding.json()["prompt"]
         )
-        binding_manual = binding.json()["manual_configuration"]
-        assert binding_manual["bootstrap_url"].endswith(
+        binding_configuration = binding.json()["workbuddy_configuration"]
+        assert binding_configuration["bootstrap_url"].endswith(
             f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
         )
 
@@ -7400,7 +7403,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     with TestClient(module.app) as client:
         guide = client.get("/guide")
         assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.4.3 尚未正式发布" in guide.text
+        assert "安全候选 V1.4.4 尚未正式发布" in guide.text
 
         login = client.post(
             "/login",

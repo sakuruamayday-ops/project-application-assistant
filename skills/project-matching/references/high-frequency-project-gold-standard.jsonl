@@ -49,6 +49,12 @@
 {"alias": "国科小", "expected_clarification": false, "expected_targets": ["国家科技型中小企业"], "id": "national-technology-sme:国科小:positive", "kind": "positive", "query": "国科小申报条件"}
 {"alias": "国科小", "allowed_title": "国家科技型中小企业申报通知", "excluded_title": "浙江省科技型中小企业申报通知", "id": "national-technology-sme:国科小:cross-project", "kind": "cross-project", "query": "国科小申报条件"}
 {"alias": "国科小", "current_title": "国家科技型中小企业管理办法", "id": "national-technology-sme:国科小:stale", "kind": "stale", "query": "国科小申报条件", "stale_title": "2022年国家科技型中小企业申报指南"}
+{"alias": "专精特新中小企业", "expected_clarification": false, "expected_targets": ["专精特新中小企业"], "id": "zhejiang-specialized-sme:专精特新中小企业:positive", "kind": "positive", "query": "专精特新中小企业申报条件"}
+{"alias": "专精特新中小企业", "allowed_title": "专精特新中小企业申报通知", "excluded_title": "专精特新小巨人申报通知", "id": "zhejiang-specialized-sme:专精特新中小企业:cross-project", "kind": "cross-project", "query": "专精特新中小企业申报条件"}
+{"alias": "专精特新中小企业", "current_title": "专精特新中小企业管理办法", "id": "zhejiang-specialized-sme:专精特新中小企业:stale", "kind": "stale", "query": "专精特新中小企业申报条件", "stale_title": "2022年专精特新中小企业申报指南"}
+{"alias": "省专", "expected_clarification": false, "expected_targets": ["专精特新中小企业"], "id": "zhejiang-specialized-sme:省专:positive", "kind": "positive", "query": "省专申报条件"}
+{"alias": "省专", "allowed_title": "专精特新中小企业申报通知", "excluded_title": "专精特新小巨人申报通知", "id": "zhejiang-specialized-sme:省专:cross-project", "kind": "cross-project", "query": "省专申报条件"}
+{"alias": "省专", "current_title": "专精特新中小企业管理办法", "id": "zhejiang-specialized-sme:省专:stale", "kind": "stale", "query": "省专申报条件", "stale_title": "2022年专精特新中小企业申报指南"}
 {"alias": "省专精特新", "expected_clarification": false, "expected_targets": ["专精特新中小企业"], "id": "zhejiang-specialized-sme:省专精特新:positive", "kind": "positive", "query": "省专精特新申报条件"}
 {"alias": "省专精特新", "allowed_title": "专精特新中小企业申报通知", "excluded_title": "专精特新小巨人申报通知", "id": "zhejiang-specialized-sme:省专精特新:cross-project", "kind": "cross-project", "query": "省专精特新申报条件"}
 {"alias": "省专精特新", "current_title": "专精特新中小企业管理办法", "id": "zhejiang-specialized-sme:省专精特新:stale", "kind": "stale", "query": "省专精特新申报条件", "stale_title": "2022年专精特新中小企业申报指南"}
@@ -87,22 +93,31 @@
 {"alias": "杭州市企业技术中心", "current_title": "杭州市企业技术中心管理办法", "id": "municipal-enterprise-technology-center:杭州市企业技术中心:stale", "kind": "stale", "query": "杭州市企业技术中心申报条件", "stale_title": "2022年杭州市企业技术中心申报指南"}
 {"alias": "宁波市企业技术中心", "expected_clarification": false, "expected_targets": ["宁波市 市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:宁波市企业技术中心:positive", "kind": "positive", "query": "宁波市企业技术中心申报条件"}
 {"alias": "宁波市企业技术中心", "allowed_title": "浙江省企业技术中心申报通知", "excluded_title": "杭州市企业技术中心申报通知", "id": "municipal-enterprise-technology-center:宁波市企业技术中心:cross-project", "kind": "cross-project", "query": "宁波市企业技术中心申报条件"}
-{"alias": "宁波市企业技术中心", "current_title": "浙江省企业技术中心管理办法及宁波年度推荐通知", "id": "municipal-enterprise-technology-center:宁波市企业技术中心:stale", "kind": "stale", "query": "宁波市企业技术中心申报条件", "stale_title": "2022年宁波市企业技术中心申报指南"}
+{"alias": "宁波市企业技术中心", "current_title": "浙江省企业技术中心管理办法", "id": "municipal-enterprise-technology-center:宁波市企业技术中心:stale", "kind": "stale", "query": "宁波市企业技术中心申报条件", "stale_title": "2022年浙江省企业技术中心申报指南"}
 {"alias": "绍兴市企业技术中心", "expected_clarification": false, "expected_targets": ["绍兴市 市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:绍兴市企业技术中心:positive", "kind": "positive", "query": "绍兴市企业技术中心申报条件"}
 {"alias": "绍兴市企业技术中心", "allowed_title": "绍兴市市级企业技术中心申报通知", "excluded_title": "浙江省企业技术中心申报通知", "id": "municipal-enterprise-technology-center:绍兴市企业技术中心:cross-project", "kind": "cross-project", "query": "绍兴市企业技术中心申报条件"}
-{"alias": "绍兴市企业技术中心", "current_title": "绍兴市市级企业技术中心管理办法", "id": "municipal-enterprise-technology-center:绍兴市企业技术中心:stale", "kind": "stale", "query": "绍兴市企业技术中心申报条件", "stale_title": "2022年绍兴市企业技术中心申报指南"}
+{"alias": "绍兴市企业技术中心", "current_title": "绍兴市市级企业技术中心管理办法", "id": "municipal-enterprise-technology-center:绍兴市企业技术中心:stale", "kind": "stale", "query": "绍兴市企业技术中心申报条件", "stale_title": "2022年绍兴市市级企业技术中心申报指南"}
 {"alias": "金华市企业技术中心", "expected_clarification": false, "expected_targets": ["金华市 市级企业技术中心（四市属地版）"], "id": "municipal-enterprise-technology-center:金华市企业技术中心:positive", "kind": "positive", "query": "金华市企业技术中心申报条件"}
 {"alias": "金华市企业技术中心", "allowed_title": "金华市企业技术中心申报通知", "excluded_title": "浙江省企业技术中心申报通知", "id": "municipal-enterprise-technology-center:金华市企业技术中心:cross-project", "kind": "cross-project", "query": "金华市企业技术中心申报条件"}
-{"alias": "金华市企业技术中心", "current_title": "金华市企业技术中心管理办法（2024年版）", "id": "municipal-enterprise-technology-center:金华市企业技术中心:stale", "kind": "stale", "query": "金华市企业技术中心申报条件", "stale_title": "2022年金华市企业技术中心申报指南"}
+{"alias": "金华市企业技术中心", "current_title": "金华市企业技术中心管理办法", "id": "municipal-enterprise-technology-center:金华市企业技术中心:stale", "kind": "stale", "query": "金华市企业技术中心申报条件", "stale_title": "2022年金华市企业技术中心申报指南"}
 {"alias": "制造精品", "expected_clarification": false, "expected_targets": ["浙江制造精品"], "id": "zhejiang-manufacturing-quality:制造精品:positive", "kind": "positive", "query": "制造精品申报条件"}
 {"alias": "制造精品", "allowed_title": "浙江制造精品申报通知", "excluded_title": "品字标浙江制造申报通知", "id": "zhejiang-manufacturing-quality:制造精品:cross-project", "kind": "cross-project", "query": "制造精品申报条件"}
 {"alias": "制造精品", "current_title": "浙江制造精品管理办法", "id": "zhejiang-manufacturing-quality:制造精品:stale", "kind": "stale", "query": "制造精品申报条件", "stale_title": "2022年浙江制造精品申报指南"}
 {"alias": "浙江制造", "expected_clarification": true, "expected_targets": ["浙江制造精品", "品字标浙江制造"], "id": "zhejiang-manufacturing:浙江制造:positive", "kind": "positive", "query": "浙江制造申报条件"}
 {"alias": "浙江制造", "allowed_title": "浙江制造精品申报通知", "excluded_title": "浙江省工业新产品申报通知", "id": "zhejiang-manufacturing:浙江制造:cross-project", "kind": "cross-project", "query": "浙江制造申报条件"}
 {"alias": "浙江制造", "current_title": "浙江制造精品管理办法", "id": "zhejiang-manufacturing:浙江制造:stale", "kind": "stale", "query": "浙江制造申报条件", "stale_title": "2022年浙江制造精品申报指南"}
-{"alias": "未来工厂", "expected_clarification": false, "expected_targets": ["浙江省未来工厂"], "id": "future-factory:未来工厂:positive", "kind": "positive", "query": "未来工厂申报条件"}
-{"alias": "未来工厂", "allowed_title": "未来工厂申报通知", "excluded_title": "智能工厂申报通知", "id": "future-factory:未来工厂:cross-project", "kind": "cross-project", "query": "未来工厂申报条件"}
-{"alias": "未来工厂", "current_title": "未来工厂管理办法", "id": "future-factory:未来工厂:stale", "kind": "stale", "query": "未来工厂申报条件", "stale_title": "2022年未来工厂申报指南"}
+{"alias": "未来工厂", "expected_clarification": true, "expected_targets": ["杭州市AI工厂", "浙江省未来工厂"], "id": "future-factory:未来工厂:positive", "kind": "positive", "query": "未来工厂申报条件"}
+{"alias": "未来工厂", "allowed_title": "AI工厂申报通知", "excluded_title": "智能工厂申报通知", "id": "future-factory:未来工厂:cross-project", "kind": "cross-project", "query": "未来工厂申报条件"}
+{"alias": "未来工厂", "current_title": "AI工厂管理办法", "id": "future-factory:未来工厂:stale", "kind": "stale", "query": "未来工厂申报条件", "stale_title": "2022年AI工厂申报指南"}
+{"alias": "AI工厂", "expected_clarification": false, "expected_targets": ["杭州市AI工厂"], "id": "hangzhou-ai-factory:AI工厂:positive", "kind": "positive", "query": "AI工厂申报条件"}
+{"alias": "AI工厂", "allowed_title": "杭州市AI工厂申报通知", "excluded_title": "浙江省未来工厂申报通知", "id": "hangzhou-ai-factory:AI工厂:cross-project", "kind": "cross-project", "query": "AI工厂申报条件"}
+{"alias": "AI工厂", "current_title": "杭州市AI工厂管理办法", "id": "hangzhou-ai-factory:AI工厂:stale", "kind": "stale", "query": "AI工厂申报条件", "stale_title": "2022年杭州市AI工厂申报指南"}
+{"alias": "杭州市AI工厂", "expected_clarification": false, "expected_targets": ["杭州市AI工厂"], "id": "hangzhou-ai-factory:杭州市AI工厂:positive", "kind": "positive", "query": "杭州市AI工厂申报条件"}
+{"alias": "杭州市AI工厂", "allowed_title": "杭州市AI工厂申报通知", "excluded_title": "浙江省未来工厂申报通知", "id": "hangzhou-ai-factory:杭州市AI工厂:cross-project", "kind": "cross-project", "query": "杭州市AI工厂申报条件"}
+{"alias": "杭州市AI工厂", "current_title": "杭州市AI工厂管理办法", "id": "hangzhou-ai-factory:杭州市AI工厂:stale", "kind": "stale", "query": "杭州市AI工厂申报条件", "stale_title": "2022年杭州市AI工厂申报指南"}
+{"alias": "杭州AI工厂", "expected_clarification": false, "expected_targets": ["杭州市AI工厂"], "id": "hangzhou-ai-factory:杭州AI工厂:positive", "kind": "positive", "query": "杭州AI工厂申报条件"}
+{"alias": "杭州AI工厂", "allowed_title": "杭州市AI工厂申报通知", "excluded_title": "浙江省未来工厂申报通知", "id": "hangzhou-ai-factory:杭州AI工厂:cross-project", "kind": "cross-project", "query": "杭州AI工厂申报条件"}
+{"alias": "杭州AI工厂", "current_title": "杭州市AI工厂管理办法", "id": "hangzhou-ai-factory:杭州AI工厂:stale", "kind": "stale", "query": "杭州AI工厂申报条件", "stale_title": "2022年杭州市AI工厂申报指南"}
 {"alias": "智能工厂", "expected_clarification": false, "expected_targets": ["浙江省智能工厂"], "id": "intelligent-factory:智能工厂:positive", "kind": "positive", "query": "智能工厂申报条件"}
 {"alias": "智能工厂", "allowed_title": "智能工厂申报通知", "excluded_title": "未来工厂申报通知", "id": "intelligent-factory:智能工厂:cross-project", "kind": "cross-project", "query": "智能工厂申报条件"}
 {"alias": "智能工厂", "current_title": "智能工厂管理办法", "id": "intelligent-factory:智能工厂:stale", "kind": "stale", "query": "智能工厂申报条件", "stale_title": "2022年智能工厂申报指南"}
@@ -130,9 +145,3 @@
 {"alias": "工业新产品", "expected_clarification": false, "expected_targets": ["浙江省工业新产品"], "id": "zhejiang-industrial-new-product:工业新产品:positive", "kind": "positive", "query": "工业新产品申报条件"}
 {"alias": "工业新产品", "allowed_title": "浙江省工业新产品申报通知", "excluded_title": "浙江制造精品申报通知", "id": "zhejiang-industrial-new-product:工业新产品:cross-project", "kind": "cross-project", "query": "工业新产品申报条件"}
 {"alias": "工业新产品", "current_title": "浙江省工业新产品管理办法", "id": "zhejiang-industrial-new-product:工业新产品:stale", "kind": "stale", "query": "工业新产品申报条件", "stale_title": "2022年浙江省工业新产品申报指南"}
-{"alias": "专精特新中小企业", "expected_clarification": false, "expected_targets": ["专精特新中小企业"], "id": "zhejiang-specialized-sme:专精特新中小企业:positive", "kind": "positive", "query": "专精特新中小企业申报条件"}
-{"alias": "专精特新中小企业", "allowed_title": "专精特新中小企业申报通知", "excluded_title": "专精特新小巨人申报通知", "id": "zhejiang-specialized-sme:专精特新中小企业:cross-project", "kind": "cross-project", "query": "专精特新中小企业申报条件"}
-{"alias": "专精特新中小企业", "current_title": "专精特新中小企业管理办法", "id": "zhejiang-specialized-sme:专精特新中小企业:stale", "kind": "stale", "query": "专精特新中小企业申报条件", "stale_title": "2022年专精特新中小企业申报指南"}
-{"alias": "省专", "expected_clarification": false, "expected_targets": ["专精特新中小企业"], "id": "zhejiang-specialized-sme:省专:positive", "kind": "positive", "query": "省专申报条件"}
-{"alias": "省专", "allowed_title": "专精特新中小企业申报通知", "excluded_title": "专精特新小巨人申报通知", "id": "zhejiang-specialized-sme:省专:cross-project", "kind": "cross-project", "query": "省专申报条件"}
-{"alias": "省专", "current_title": "专精特新中小企业管理办法", "id": "zhejiang-specialized-sme:省专:stale", "kind": "stale", "query": "省专申报条件", "stale_title": "2022年专精特新中小企业申报指南"}

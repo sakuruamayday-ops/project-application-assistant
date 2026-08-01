@@ -103,7 +103,7 @@ def build_workbuddy_connector_fixture(
             ),
         )
     return {
-        "version": "1.4.3",
+        "version": "1.4.4",
         "file_name": package.name,
         "file_path": str(package),
         "sha256": hashlib.sha256(package.read_bytes()).hexdigest(),

@@ -55,3 +55,5 @@ description: 对单个政府项目执行完整可行性分析，覆盖项目与�
 `python3 scripts/validate_feasibility_assessment.py <结果.json>`
 
 校验失败时不得交付确定性结论。
+
+案例包可用于比较材料结构、指标分布和证据类型，但不得把案例值当成政策阈值或当前企业事实。可行性结论仍以当期政策和当前企业证据为准。

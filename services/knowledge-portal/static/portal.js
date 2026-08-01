@@ -271,26 +271,8 @@ const loadAgentInstallReview = async (card, {copyPrompt = false} = {}) => {
     headers: {Accept: "application/vnd.jiaotang.agent-install+json"},
     cache: "no-store",
   });
-  if (protocolResponse.ok) {
-    const protocol = await protocolResponse.json();
-    const packageHash = protocol?.review?.plugin_package?.sha256 || "";
-    const packageUrl = protocol?.review?.plugin_package?.download_url || "";
-    const hashRow = card.querySelector("[data-manual-package-hash-row]");
-    const hashValue = card.querySelector("[data-manual-package-hash]");
-    const packageLink = card.querySelector("[data-manual-package-download]");
-    if (hashValue) hashValue.textContent = packageHash || "当前发布包未提供哈希";
-    if (hashRow) hashRow.hidden = false;
-    if (packageLink && packageUrl) packageLink.href = packageUrl;
-    card.dataset.manualPackageHash = packageHash;
-  }
-  card.querySelectorAll(
-    "[data-confirm-agent-bootstrap], [data-confirm-manual-agent-bootstrap]"
-  ).forEach((button) => {
-    if (button.matches("[data-confirm-manual-agent-bootstrap]")) {
-      button.textContent = "我已审查，生成并复制 bootstrap_url";
-    }
-    button.hidden = false;
-  });
+  if (protocolResponse.ok) await protocolResponse.json();
+  card.querySelector("[data-confirm-agent-bootstrap]")?.removeAttribute("hidden");
   return payload;
 };
 
@@ -372,23 +354,6 @@ const confirmAgentUpgrade = async (card) => {
   return payload;
 };
 
-const renderManualAgentConfiguration = (card, payload) => {
-  const manual = payload?.manual_configuration;
-  if (!manual?.bootstrap_url) throw new Error("手工配置缺少一次性引导地址。");
-  const bootstrapRow = card.querySelector("[data-manual-bootstrap-row]");
-  const bootstrapValue = card.querySelector("[data-manual-bootstrap-value]");
-  if (bootstrapValue) bootstrapValue.textContent = manual.bootstrap_url;
-  if (bootstrapRow) bootstrapRow.hidden = false;
-  if (manual.plugin_sha256) {
-    const hashRow = card.querySelector("[data-manual-package-hash-row]");
-    const hashValue = card.querySelector("[data-manual-package-hash]");
-    if (hashValue) hashValue.textContent = manual.plugin_sha256;
-    if (hashRow) hashRow.hidden = false;
-  }
-  card.dataset.manualBootstrapUrl = manual.bootstrap_url;
-  card.dataset.manualPackageHash = manual.plugin_sha256 || "";
-};
-
 const prepareAgentBindingStep = (card) => {
   card.querySelector("[data-copy-agent-binding]")?.removeAttribute("hidden");
 };
@@ -445,30 +410,6 @@ document.addEventListener("click", async (event) => {
       }
     } finally {
       confirmUpgradeButton.disabled = false;
-    }
-    return;
-  }
-  const manualToggle = event.target.closest("[data-toggle-manual-agent-config]");
-  if (manualToggle) {
-    const card = manualToggle.closest("[data-agent-bootstrap]");
-    const panel = card?.querySelector("[data-manual-agent-config]");
-    const status = card?.querySelector("[data-agent-copy-status]");
-    const shouldOpen = Boolean(panel?.hidden);
-    if (panel) panel.hidden = !shouldOpen;
-    manualToggle.setAttribute("aria-expanded", String(shouldOpen));
-    if (shouldOpen && card && !card.dataset.agentReviewCode) {
-      manualToggle.disabled = true;
-      try {
-        await loadAgentInstallReview(card);
-        if (status) status.textContent = "手工审查信息已加载；核对后生成一次性 bootstrap_url，并仅交给本地 jiaotang_kb_setup 工具。";
-      } catch (error) {
-        if (status) {
-          status.classList.add("is-error");
-          status.textContent = error.message || "无法加载手工审查信息。";
-        }
-      } finally {
-        manualToggle.disabled = false;
-      }
     }
     return;
   }
@@ -551,7 +492,7 @@ document.addEventListener("click", async (event) => {
     status?.classList.remove("is-error");
     try {
       const payload = await loadAgentBinding(card);
-      card.dataset.agentBindingBootstrapUrl = payload.manual_configuration?.bootstrap_url || "";
+      card.dataset.agentBindingBootstrapUrl = payload.workbuddy_configuration?.bootstrap_url || "";
       await copyToClipboard(payload.prompt);
       copyAgentBindingButton.classList.remove("is-loading");
       copyAgentBindingButton.classList.add("copy-success");
@@ -572,53 +513,6 @@ document.addEventListener("click", async (event) => {
         status.textContent = error.message || "复制绑定指令失败。";
       }
     }
-    return;
-  }
-  const confirmManualButton = event.target.closest("[data-confirm-manual-agent-bootstrap]");
-  if (confirmManualButton) {
-    const card = confirmManualButton.closest("[data-agent-bootstrap]");
-    const status = card?.querySelector("[data-agent-copy-status]");
-    confirmManualButton.disabled = true;
-    try {
-      const installPayload = await confirmAgentInstall(card);
-      const bindingPayload = await loadAgentBinding(card);
-      renderManualAgentConfiguration(card, {
-        manual_configuration: {
-          ...installPayload.manual_configuration,
-          ...bindingPayload.manual_configuration,
-        },
-      });
-      try {
-        await copyToClipboard(bindingPayload.manual_configuration.bootstrap_url);
-        confirmManualButton.textContent = "bootstrap_url 已复制";
-        if (status) status.textContent = "一次性引导地址已复制；请仅作为本地 jiaotang_kb_setup 工具的 bootstrap_url 参数调用一次。";
-      } catch (_copyError) {
-        confirmManualButton.textContent = "bootstrap_url 已生成";
-        if (status) status.textContent = "浏览器未允许自动复制；请复制下方一次性引导地址，并仅作为本地 jiaotang_kb_setup 工具参数调用一次。";
-      }
-      watchAgentInstallStatus(card);
-    } catch (error) {
-      if (status) {
-        status.classList.add("is-error");
-        status.textContent = error.message || "生成手工配置失败。";
-      }
-    } finally {
-      confirmManualButton.disabled = false;
-    }
-    return;
-  }
-  const copyManualBootstrap = event.target.closest("[data-copy-manual-bootstrap]");
-  if (copyManualBootstrap) {
-    const card = copyManualBootstrap.closest("[data-agent-bootstrap]");
-    const value = card?.dataset.manualBootstrapUrl || "";
-    if (value) await copyToClipboard(value);
-    return;
-  }
-  const copyManualPackageHash = event.target.closest("[data-copy-manual-package-hash]");
-  if (copyManualPackageHash) {
-    const card = copyManualPackageHash.closest("[data-agent-bootstrap]");
-    const value = card?.dataset.manualPackageHash || "";
-    if (value) await copyToClipboard(value);
     return;
   }
   const secretToggle = event.target.closest("[data-toggle-secret]");

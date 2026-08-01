@@ -4,25 +4,30 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.4.3",
-    "version": "1.4.3",
-    "summary": "V1.4.3 完成技能包、WorkBuddy 插件、发布事务、门户下载与 OSS 索引链路的纵深安全加固，并固化旧政策效力核验的主路由优先级与并行真实宿主门禁；49 项业务 Skills 的主体能力与 V1.4.2 保持一致。",
+    "tag": "V1.4.4",
+    "version": "1.4.4",
+    "summary": "V1.4.4 汇总三步安装、权威名单事实、AI 专利工作流、统一 Harness 及项目案例包能力；保持 49 项业务 Skills、固定发布者签名和受控发布链兼容。",
     "changes": [
       "通用 Skills 与 WorkBuddy 包固定官方 Ed25519 发布者身份，严格校验完整签名文件集和逐文件 SHA-256；验签工具缺失、缓存异常或包被篡改时一律失败关闭。",
       "ZIP 处理拒绝反斜杠、绝对路径、父目录、盘符、NUL、符号链接、重复条目和大小写碰撞；内置秘密扫描支持 Unicode 归一化并递归检查嵌套 ZIP。",
       "安装器在创建回滚副本失败时不再继续替换，升级失败会恢复原目录；证据目录可显式配置，避免测试或受限环境误写用户目录。",
       "发布门禁绑定 Git commit、tree、跟踪源码摘要、套件清单、发布管理器、工具链和最终包哈希；从仓库外启动仍强制检查唯一仓库根目录。",
       "49 项 Skills 均有行为覆盖门禁；WorkBuddy 候选包必须通过真实宿主全技能激活及对抗路由测试，宿主 CLI 缺失计为失败而非跳过。",
-      "门户邀请改为一次性原子消费的 v2 令牌，移除姓名加手机号后四位的旧注册链路；登录、注册和问答接口增加可信来源限流与会话敏感信息清理。",
+      "门户保留内部成员姓名加手机号后四位的自助注册，邀请注册继续使用一次性原子消费的 v2 令牌；登录、注册和问答接口增加可信来源限流与会话敏感信息清理。",
       "自带模型接口限制为 HTTPS、公网地址、受控端口和禁止重定向，并限制响应体、并发和超时；问题明文按 24 小时后台周期清理。",
       "门户下载在入库和发送前同时核验数据库 SHA-256、固定发布者签名及同一稳定文件内容，阻断无效候选包、验签缓存复用和校验后换包。",
       "OSS 索引采用不可变 release、签名 current 指针、条件写入和 current/previous 本地世代；运行健康检查覆盖服务、磁盘、TLS、索引世代与构建身份。",
-      "49 项顶层 Skills 的业务规则、路由和交付契约与 V1.4.2 保持不变。"
+      "49 项顶层 Skills 的业务规则、路由和交付契约与 V1.4.3 保持兼容。",
+      "新增三步安装端到端夹具，bootstrap 只在第三步授权后生成并完成四阶段连接验收。",
+      "新增权威名单事实专表查询，国家小巨人、省级专精特新和三首禁止降级到通用文档实体覆盖。",
+      "专利总路由新增技术特征证据图、分层检索和 AI 专利充分公开检查，不引入外部私有代码或模型。",
+      "新增统一知识库 Harness、敏感资料失败关闭、政策生命周期回归及案例包关系表。",
+      "新增 knowledge_case_pack，按项目、年度、行业、规模和章节分层调用案例，禁止串用案例企业事实。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "新设备通过门户审查、安装、bootstrap 绑定三步流程安装 V1.4.3 WorkBuddy 包；第三步由 Agent 调用本地 jiaotang_kb_setup 工具完成绑定。已绑定 V1.4.x 设备使用 Skills 中心升级按钮，不重新登记。",
-      "manual_fallback": "手工配置只作为自动三步流程的替代路径；核验签名包并启用插件后，仅将一次性 bootstrap_url 作为本地 jiaotang_kb_setup 工具参数。",
+      "workbuddy": "新设备通过门户审查、安装、bootstrap 绑定三步流程安装 V1.4.4 WorkBuddy 包；第三步由 Agent 调用本地 jiaotang_kb_setup 工具完成绑定。已绑定 V1.4.x 设备使用 Skills 中心升级按钮，不重新登记。",
+      "non_workbuddy_manual_mcp": "非 WorkBuddy 用户通过个人 Token 手工配置远程 Streamable HTTP MCP；不下载 WorkBuddy 插件包，不使用 bootstrap_url 或 jiaotang_kb_setup。",
       "verification": "门户四阶段完成后还必须确认 jiaotang-kb 已进入当前运行时，成功调用任一只读状态或检索工具，并抽样验证项目算法、交付契约或专利案卷入口；之后升级验收才完成。"
     },
     "compatibility": [
@@ -34,15 +39,15 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.4.3 保留 WorkBuddy 5.3.5 所需的插件根目录 .mcp.json，并要求真实宿主全技能激活及对抗路由门禁；既有已绑定设备无需重新登记。"
+        "note": "V1.4.4 保留 WorkBuddy 5.3.5 所需的插件根目录 .mcp.json；自动夹具通过后发布，真实双端由主人发布后验收。"
       },
       {
         "target": "Windows WorkBuddy",
         "status": "结构兼容，待主人实机验收",
-        "note": "V1.4.3 将 .mcp.json、跨平台 Node 启动器和 setup 运行时全部纳入固定发布者签名清单；真实 Windows 安装、绑定和重启继续由主人实机验收。"
+        "note": "V1.4.4 将 .mcp.json、跨平台 Node 启动器和 setup 运行时全部纳入固定发布者签名清单；真实 Windows 安装、绑定和重启由主人发布后验收。"
       }
     ],
-    "two_step_installation_protocol": {
+    "three_step_installation_protocol": {
       "scope": "workbuddy_only",
       "phase_1_review": {
         "writes_allowed": false,
@@ -52,12 +57,17 @@
           "确认 WorkBuddy 内置插件管理器可用",
           "核对包哈希、签名、联网范围、存储位置和回滚路径"
         ],
-        "non_workbuddy_action": "停留在审查阶段，不得下载或安装 WorkBuddy 插件包"
+        "non_workbuddy_action": "停止 WorkBuddy 安装流程，转到非 WorkBuddy MCP 接入页使用个人 Token 手工配置远程 MCP"
       },
       "phase_2_install": {
         "explicit_user_confirmation_required": true,
         "pin_reviewed_workbuddy_version_and_sha256": true,
-        "dynamic_command_allowed": false,
+        "dynamic_command_allowed": false
+      },
+      "phase_3_binding": {
+        "explicit_user_confirmation_required": true,
+        "bootstrap_generated_after_confirmation": true,
+        "bootstrap_storage_allowed": false,
         "success_gate": [
           "宿主完成原生注册",
           "设备凭据写入系统安全存储并回读",

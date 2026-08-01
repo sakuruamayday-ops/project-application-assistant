@@ -158,6 +158,25 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
         {
             "type": "function",
             "function": {
+                "name": "knowledge_case_pack",
+                "description": "按项目、年度、行业、企业规模和章节读取成套历史案例及附件关系；案例事实不得复制给当前客户。",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "project_id": {"type": "string"},
+                        "query": {"type": "string"},
+                        "year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+                        "industry": {"type": "string"},
+                        "enterprise_scale": {"type": "string"},
+                        "section": {"type": "string"},
+                        "limit": {"type": "integer", "minimum": 1, "maximum": 10},
+                    },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "authoritative_list_search",
                 "description": (
                     "优先查询国家小巨人、省级专精特新中小企业和三首的权威结构化事实专表，"

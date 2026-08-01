@@ -73,3 +73,5 @@ description: 从政府项目库中匹配企业可申报方向。适用于用户�
 - `scripts/build_project_map.py`：从本地 Markdown 项目目录重建脱敏地图，默认不输出来源字段、内部编号和第三方内容。
 - `scripts/build_high_frequency_rules.py`：从用户维护的政策更新表与新版 Markdown 规则重建高频条件卡。
 - `scripts/filter_project_map.py`：按用户默认地区范围和企业关键词过滤统一地图，避免将其他地区项目加载进上下文。
+
+匹配结果应返回稳定 `project_id`，供政策、模板、案例包和附件关系共用。市级与省级同名项目必须先完成地区层级澄清，再允许调用 `knowledge_case_pack`，不得把不同层级案例混成一组。

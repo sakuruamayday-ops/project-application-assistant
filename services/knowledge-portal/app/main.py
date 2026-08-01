@@ -112,6 +112,7 @@ from app.authoritative_list_facts import (
     infer_authoritative_list_type,
     query_authoritative_list_facts,
 )
+from app.knowledge_case_packs import case_pack_capability, query_case_packs
 
 # Production may supply this private extension as a server-managed overlay.
 try:
@@ -1447,6 +1448,31 @@ def sqlite_table_exists(connection: sqlite3.Connection, table_name: str) -> bool
     )
 
 
+CASE_PACK_DOCUMENT_FIELDS = (
+    "project_id",
+    "case_pack_id",
+    "document_type",
+    "evidence_type",
+    "upload_action",
+    "verification_status",
+)
+
+
+def supported_case_pack_document_fields(
+    connection: sqlite3.Connection,
+) -> tuple[str, ...]:
+    """Keep administrator mutations compatible with a read-only V1 index.
+
+    V1.4.4 rebuilds production indexes with all case-pack fields.  During the
+    rolling upgrade, snapshots and tests can still use the previous schema;
+    those copies must remain editable without pretending case packs exist.
+    """
+    columns = {
+        str(row[1]) for row in connection.execute("PRAGMA table_info(documents)")
+    }
+    return tuple(field for field in CASE_PACK_DOCUMENT_FIELDS if field in columns)
+
+
 def canonical_document_clause(
     connection: sqlite3.Connection,
     alias: str = "documents",
@@ -1825,20 +1851,44 @@ def save_upload(upload: UploadFile, directory: Path) -> tuple[Path, str, int]:
 
 def knowledge_index_stats() -> dict[str, object]:
     if not CONTENT_DATABASE_PATH.is_file():
-        return {"connected": False, "documents": 0, "characters": 0, "updated_at": None}
+        return {
+            "connected": False,
+            "documents": 0,
+            "characters": 0,
+            "updated_at": None,
+            "built_at": None,
+            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+            "knowledge_schema_version": "1.0",
+            "case_pack_capability": False,
+            "case_pack_count": 0,
+        }
     try:
         with closing(content_database()) as connection:
             row = connection.execute(
                 "SELECT COUNT(*) AS documents, COALESCE(SUM(length(content)), 0) AS characters, MAX(updated_at) AS updated_at FROM documents"
             ).fetchone()
+            capability = case_pack_capability(connection)
         return {
             "connected": True,
             "documents": int(row["documents"]),
             "characters": int(row["characters"]),
             "updated_at": row["updated_at"],
+            "built_at": row["updated_at"],
+            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+            **capability,
         }
     except (sqlite3.Error, HTTPException):
-        return {"connected": False, "documents": 0, "characters": 0, "updated_at": None}
+        return {
+            "connected": False,
+            "documents": 0,
+            "characters": 0,
+            "updated_at": None,
+            "built_at": None,
+            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+            "knowledge_schema_version": "1.0",
+            "case_pack_capability": False,
+            "case_pack_count": 0,
+        }
 
 
 def snapshot_content_database(job_id: int | str) -> Path:
@@ -1978,35 +2028,29 @@ def add_document_to_index(
             metadata = derive_document_metadata(
                 original_name, source, text, document_role
             )
+            base_values = {
+                "source_key": digest,
+                "title": original_name,
+                "content": text,
+                "source": source,
+                "cloud_path": source,
+                "document_role": document_role,
+                "sensitivity": "internal",
+                "sha256": digest,
+                "updated_at": updated_at,
+                **metadata,
+            }
+            columns = (
+                "source_key", "title", "content", "source", "cloud_path",
+                "document_role", "sensitivity", "sha256", "updated_at",
+                "canonical_project_name", "region", "document_stage",
+                "validity_status", "policy_year", "batch", "replacement_title",
+                "replacement_basis", "replacement_url",
+                *supported_case_pack_document_fields(connection),
+            )
             cursor = connection.execute(
-                """
-                INSERT INTO documents(
-                    source_key,title,content,source,cloud_path,document_role,
-                    sensitivity,sha256,updated_at,canonical_project_name,region,
-                    document_stage,validity_status,policy_year,batch,replacement_title,
-                    replacement_basis,replacement_url
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                """,
-                (
-                    digest,
-                    original_name,
-                    text,
-                    source,
-                    source,
-                    document_role,
-                    "internal",
-                    digest,
-                    updated_at,
-                    metadata["canonical_project_name"],
-                    metadata["region"],
-                    metadata["document_stage"],
-                    metadata["validity_status"],
-                    metadata["policy_year"],
-                    metadata["batch"],
-                    metadata["replacement_title"],
-                    metadata["replacement_basis"],
-                    metadata["replacement_url"],
-                ),
+                f"INSERT INTO documents({','.join(columns)}) VALUES ({','.join('?' for _ in columns)})",
+                tuple(base_values[column] for column in columns),
             )
             document_id = int(cursor.lastrowid)
             connection.execute(
@@ -2409,8 +2453,8 @@ def project_algorithm_catalog_payload(
             else "近7日暂无可识别项目查询，暂不人为指定优先级"
             if routing_only
             else (
-                "29个编译单元均已形成正式阈值规则包，"
-                "前台合并展示28个主项目"
+                "30个编译单元均已形成正式阈值规则包，"
+                "前台合并展示29个主项目"
             )
         ),
         "items": visible_items,
@@ -4086,19 +4130,15 @@ def create_project_alias_correction(
             )
             if metadata["canonical_project_name"] != payload.canonical_project_name.strip():
                 continue
+            metadata_fields = (
+                "canonical_project_name", "region", "document_stage",
+                "validity_status", "policy_year", "batch", "replacement_title",
+                "replacement_basis", "replacement_url",
+                *supported_case_pack_document_fields(connection),
+            )
             connection.execute(
-                """
-                UPDATE documents SET canonical_project_name=?,region=?,document_stage=?,
-                    validity_status=?,policy_year=?,batch=?,replacement_title=?,
-                    replacement_basis=?,replacement_url=? WHERE id=?
-                """,
-                (
-                    metadata["canonical_project_name"], metadata["region"],
-                    metadata["document_stage"], metadata["validity_status"],
-                    metadata["policy_year"], metadata["batch"],
-                    metadata["replacement_title"], metadata["replacement_basis"],
-                    metadata["replacement_url"], int(document["id"]),
-                ),
+                f"UPDATE documents SET {','.join(f'{field}=?' for field in metadata_fields)} WHERE id=?",
+                (*tuple(metadata[field] for field in metadata_fields), int(document["id"])),
             )
             connection.execute(
                 """
@@ -5288,6 +5328,24 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
         tool_document = dict(document)
         tool_document["content"] = str(tool_document["content"])[:12000]
         return tool_document, [document]
+    if name == "knowledge_case_pack":
+        with closing(content_database()) as connection:
+            result = query_case_packs(
+                connection,
+                project_id=str(arguments.get("project_id") or "")[:100],
+                query=str(arguments.get("query") or "")[:300],
+                year=int(arguments["year"]) if arguments.get("year") is not None else None,
+                industry=str(arguments.get("industry") or "")[:100],
+                enterprise_scale=str(arguments.get("enterprise_scale") or "")[:100],
+                section=str(arguments.get("section") or "")[:100],
+                limit=max(1, min(int(arguments.get("limit") or 5), 10)),
+            )
+        sources = [
+            dict(document)
+            for pack in result.get("results", [])
+            for document in pack.get("documents", [])
+        ]
+        return result, sources
     if name == "authoritative_list_search":
         result = search_authoritative_list_facts(
             list_type=str(arguments.get("list_type") or ""),
@@ -5946,6 +6004,7 @@ def restore_document_index_from_trash(payload: dict[str, object], trash_id: int)
                 "canonical_project_name", "region", "document_stage",
                 "validity_status", "policy_year", "batch", "replacement_title",
                 "replacement_basis", "replacement_url",
+                *supported_case_pack_document_fields(connection),
             )
             values = {
                 **payload,
@@ -6025,32 +6084,24 @@ def update_document_index(
                     f"INSERT INTO {table}({table},rowid,title,content,source,document_role) VALUES ('delete',?,?,?,?,?)",
                     (document_id, old["title"], old["content"], old["source"], old["document_role"]),
                 )
+            values = {
+                "title": title,
+                "content": content,
+                "source": source,
+                "document_role": document_role,
+                "updated_at": isoformat(utc_now()),
+                **metadata,
+            }
+            update_fields = (
+                "title", "content", "source", "document_role", "updated_at",
+                "canonical_project_name", "region", "document_stage",
+                "validity_status", "policy_year", "batch", "replacement_title",
+                "replacement_basis", "replacement_url",
+                *supported_case_pack_document_fields(connection),
+            )
             connection.execute(
-                """
-                UPDATE documents
-                SET title = ?, content = ?, source = ?, document_role = ?, updated_at = ?,
-                    canonical_project_name = ?, region = ?, document_stage = ?,
-                    validity_status = ?, policy_year = ?, batch = ?, replacement_title = ?,
-                    replacement_basis = ?, replacement_url = ?
-                WHERE id = ?
-                """,
-                (
-                    title,
-                    content,
-                    source,
-                    document_role,
-                    isoformat(utc_now()),
-                    metadata["canonical_project_name"],
-                    metadata["region"],
-                    metadata["document_stage"],
-                    metadata["validity_status"],
-                    metadata["policy_year"],
-                    metadata["batch"],
-                    metadata["replacement_title"],
-                    metadata["replacement_basis"],
-                    metadata["replacement_url"],
-                    document_id,
-                ),
+                f"UPDATE documents SET {','.join(f'{field}=?' for field in update_fields)} WHERE id=?",
+                (*tuple(values[field] for field in update_fields), document_id),
             )
             for table in ("documents_fts", "documents_fts_trigram"):
                 connection.execute(
@@ -7578,6 +7629,7 @@ def undo_user_preferences(user_id: int) -> dict[str, object]:
 
 MCP_SEARCH_TOOLS = {
     "knowledge_search",
+    "knowledge_case_pack",
     "policy_search",
     "public_list_search",
     "authoritative_list_search",
@@ -9760,6 +9812,23 @@ def cockpit_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_
 @app.get("/access", response_class=HTMLResponse)
 def access_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
     return portal_page_response(request, user, "access")
+
+
+@app.get("/mcp-guide", response_class=HTMLResponse)
+def mcp_guide_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    response = templates.TemplateResponse(
+        request,
+        "mcp_guide.html",
+        {
+            "user": user,
+            "mcp_url": f"{str(request.base_url).rstrip('/')}/mcp/",
+        },
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @app.get("/skills", response_class=HTMLResponse)
@@ -12623,7 +12692,7 @@ def confirm_agent_bootstrap_code(
         {
             "phase": "install_authorized",
             "prompt": build_agent_install_prompt(install_protocol_url),
-            "manual_configuration": {
+            "workbuddy_configuration": {
                 "platform": platform_name,
                 "plugin_download_url": plugin_download_url,
                 "plugin_sha256": artifact["sha256"],
@@ -12691,7 +12760,7 @@ def create_agent_binding_prompt(
         {
             "phase": "binding_authorized",
             "prompt": build_agent_binding_prompt(bootstrap_url),
-            "manual_configuration": {
+            "workbuddy_configuration": {
                 "platform": "unified",
                 "mcp_server": "jiaotang-kb",
                 "setup_tool": "jiaotang_kb_setup",
@@ -16361,6 +16430,30 @@ def knowledge_search(query: str, limit: int = 8) -> dict[str, object]:
 def knowledge_document(document_id: int) -> dict[str, object]:
     """按检索结果中的文档编号读取完整正文和来源信息。"""
     return get_knowledge_document(document_id)
+
+
+@knowledge_mcp.tool()
+def knowledge_case_pack(
+    project_id: str = "",
+    query: str = "",
+    year: int | None = None,
+    industry: str = "",
+    enterprise_scale: str = "",
+    section: str = "",
+    limit: int = 5,
+) -> dict[str, object]:
+    """按项目、年度、行业、企业规模或章节返回成套案例及附件关系。"""
+    with closing(content_database()) as connection:
+        return query_case_packs(
+            connection,
+            project_id=project_id,
+            query=query,
+            year=year,
+            industry=industry,
+            enterprise_scale=enterprise_scale,
+            section=section,
+            limit=limit,
+        )
 
 
 @knowledge_mcp.tool()

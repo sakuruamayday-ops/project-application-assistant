@@ -11,7 +11,7 @@
     "metrics"
   ],
   "compile_semantics": {
-    "policy_compile_once": "29个项目算法包、生命周期规则和事实契约共同形成唯一source_digest",
+    "policy_compile_once": "30个项目算法包、生命周期规则和事实契约共同形成唯一source_digest",
     "hash_reuse": "source_digest不变时复用已编译中间语言",
     "partial_update": "每个项目节点保留source_content_hash，只重编译发生变化的节点",
     "runtime": "线上运行时只加载编译产物，不重复解析29份源政策包"

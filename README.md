@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.4.3"><img src="https://img.shields.io/badge/Release-V1.4.3-C9A760?style=for-the-badge" alt="Release V1.4.3"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.4.4"><img src="https://img.shields.io/badge/Release-V1.4.4-C9A760?style=for-the-badge" alt="Release V1.4.4"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.4.3.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
+  <a href="docs/releases/V1.4.4.md"><img src="https://img.shields.io/badge/Signature-Ed25519-2F7D5C?style=for-the-badge" alt="Ed25519 signed"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -50,8 +50,11 @@
 |---|---|---|
 | 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
 | WorkBuddy 5 或更高版本，macOS 与 Windows | 跨平台 WorkBuddy 签名包 | 在 WorkBuddy 内添加本地插件市场并安装 |
+| 非 WorkBuddy 且支持 Streamable HTTP MCP | 通用 Skills 加远程 MCP | 导入通用 Skills，并用个人 Token 手工配置知识库 MCP |
 
 发布目标只有两个：通用 Skills 与跨平台 WorkBuddy 插件市场包。WorkBuddy 的 macOS 和 Windows 使用同一个签名 ZIP，不再分别维护版本。
+
+WorkBuddy 用户统一通过“审查、安装、绑定”三步流程完成插件包和 MCP 配置，不提供手工 WorkBuddy 配置。非 WorkBuddy 用户不下载插件包，通过门户 MCP 接入页使用个人 Token 手工连接远程 Streamable HTTP MCP。
 
 ### WorkBuddy 平台说明
 
@@ -86,7 +89,7 @@ WorkBuddy 的系统差异由同一个插件包内的运行时适配处理。发�
 |---|---|
 | [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.docx) | 下载、安装、首次配置和日常使用 |
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、设备凭据和连接器边界 |
-| [V1.4.3 发布说明](docs/releases/V1.4.3.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.4.4 发布说明](docs/releases/V1.4.4.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -139,8 +142,8 @@ Skill 全量验签以及开发源、正式包、实际安装目录三方哈希�
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.4.3` | 网站、GitHub Release 和用户可见版本 |
-| 组件版本 | `1.4.3` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.4.4` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.4.4` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 | 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1`、`V1.3.1.1`、`V1.3.1.2`、`V1.3.1.3`、`V1.3.1.4`、`V1.4.0`、`V1.4.1`、`V1.4.2` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
 

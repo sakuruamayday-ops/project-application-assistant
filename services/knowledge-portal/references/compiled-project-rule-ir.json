@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "ir_type": "jiaotang-unified-project-rule-ir",
-  "source_digest": "d4c13611ebdf48fcd564738c633da5b7e985e3f2d29a19f21ba610d8dcb6936f",
+  "source_digest": "095415ade247624d49efaea835c9717922fcdea516cc4271450ca79cb244f55a",
   "shared_kernel": {
     "version": "1.5",
     "components": [
@@ -9523,6 +9523,360 @@
         ],
         "rule_note": "国家绿色工厂实行动态名单管理，不虚构固定三年有效期。按年度自评价对标；现行年度规则明确连续三年得分处于后5%的从名单移出。"
       }
+    },
+    "hangzhou-ai-factory": {
+      "schema_version": 1,
+      "project_id": "hangzhou-ai-factory",
+      "project_name": "杭州市AI工厂",
+      "version": "2026-notice-20260801",
+      "coverage_status": "rules-confirmed",
+      "aliases": [
+        "AI工厂",
+        "杭州AI工厂",
+        "杭州市未来工厂",
+        "杭州未来工厂"
+      ],
+      "source_retrieval_rule_ids": [
+        "future-factory",
+        "hangzhou-ai-factory"
+      ],
+      "fact_fields": [
+        {
+          "field": "hangzhou_ai_factory_eligible_legal_entity",
+          "label": "申报主体依法设立且不属于分支机构",
+          "aliases": [
+            "依法设立",
+            "非分支机构"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "hangzhou_ai_factory_stable_manufacturing_operation",
+          "label": "稳定运行并具备完整生产制造环节和经营场地",
+          "aliases": [
+            "稳定运行",
+            "完整生产制造环节",
+            "经营场地"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "hangzhou_ai_factory_finance_credit_compliance",
+          "label": "财务信用和近三年合规要求满足",
+          "aliases": [
+            "财务制度健全",
+            "信用良好",
+            "近三年合规"
+          ],
+          "value_type": "boolean"
+        },
+        {
+          "field": "hangzhou_ai_factory_tier_assessment_passed",
+          "label": "所申报星级的建设和成熟度要求自评通过",
+          "aliases": [
+            "星级自评通过",
+            "成熟度要求通过"
+          ],
+          "value_type": "boolean",
+          "fact_semantics": "assessment-conclusion"
+        }
+      ],
+      "rule_cards": [
+        {
+          "rule_id": "hangzhou-ai-factory-entity",
+          "type": "hard-threshold",
+          "field": "hangzhou_ai_factory_eligible_legal_entity",
+          "operator": "truthy",
+          "expected": true,
+          "source": "2026年杭州市AI工厂培育申报通知",
+          "source_quote": "申报主体须依法设立且能以自己的名义从事民事活动，分支机构除外。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "焦糖依据杭州市经信局2026年申报通知及正式附件核验",
+          "approved_at": "2026-08-01 12:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html"
+        },
+        {
+          "rule_id": "hangzhou-ai-factory-operation",
+          "type": "hard-threshold",
+          "field": "hangzhou_ai_factory_stable_manufacturing_operation",
+          "operator": "truthy",
+          "expected": true,
+          "source": "2026年杭州市AI工厂培育申报通知",
+          "source_quote": "稳定运行且拥有完整生产制造环节和经营场地。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "焦糖依据杭州市经信局2026年申报通知及正式附件核验",
+          "approved_at": "2026-08-01 12:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html"
+        },
+        {
+          "rule_id": "hangzhou-ai-factory-compliance",
+          "type": "hard-threshold",
+          "field": "hangzhou_ai_factory_finance_credit_compliance",
+          "operator": "truthy",
+          "expected": true,
+          "source": "2026年杭州市AI工厂培育申报通知",
+          "source_quote": "财务管理制度健全，信用良好，近三年无严重违法失信和不正当竞争行为。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "焦糖依据杭州市经信局2026年申报通知及正式附件核验",
+          "approved_at": "2026-08-01 12:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html"
+        },
+        {
+          "rule_id": "hangzhou-ai-factory-tier",
+          "type": "hard-threshold",
+          "field": "hangzhou_ai_factory_tier_assessment_passed",
+          "operator": "truthy",
+          "expected": true,
+          "source": "2026年杭州市AI工厂培育申报通知及申报表",
+          "source_quote": "一星级和二星级成熟度达到二级以上，三星级达到三级以上，并满足对应建设要求。",
+          "policy_status": "current",
+          "review_status": "confirmed",
+          "approved_by": "焦糖依据杭州市经信局2026年申报通知及正式附件核验",
+          "approved_at": "2026-08-01 12:00:00",
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html"
+        }
+      ],
+      "rule_layers": [
+        {
+          "layer_id": "stable-management",
+          "layer_type": "stable",
+          "policy_time_type": "stable-management",
+          "label": "稳定管理办法",
+          "applicability": {
+            "regions": [
+              "杭州市"
+            ],
+            "application_types": [
+              "cultivation"
+            ]
+          },
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html",
+          "rules": [
+            {
+              "rule_id": "hangzhou-ai-factory-entity",
+              "type": "hard-threshold",
+              "field": "hangzhou_ai_factory_eligible_legal_entity",
+              "operator": "truthy",
+              "expected": true,
+              "source": "2026年杭州市AI工厂培育申报通知",
+              "source_quote": "申报主体须依法设立且能以自己的名义从事民事活动，分支机构除外。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "焦糖依据杭州市经信局2026年申报通知及正式附件核验",
+              "approved_at": "2026-08-01 12:00:00",
+              "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html"
+            },
+            {
+              "rule_id": "hangzhou-ai-factory-operation",
+              "type": "hard-threshold",
+              "field": "hangzhou_ai_factory_stable_manufacturing_operation",
+              "operator": "truthy",
+              "expected": true,
+              "source": "2026年杭州市AI工厂培育申报通知",
+              "source_quote": "稳定运行且拥有完整生产制造环节和经营场地。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "焦糖依据杭州市经信局2026年申报通知及正式附件核验",
+              "approved_at": "2026-08-01 12:00:00",
+              "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html"
+            },
+            {
+              "rule_id": "hangzhou-ai-factory-compliance",
+              "type": "hard-threshold",
+              "field": "hangzhou_ai_factory_finance_credit_compliance",
+              "operator": "truthy",
+              "expected": true,
+              "source": "2026年杭州市AI工厂培育申报通知",
+              "source_quote": "财务管理制度健全，信用良好，近三年无严重违法失信和不正当竞争行为。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "焦糖依据杭州市经信局2026年申报通知及正式附件核验",
+              "approved_at": "2026-08-01 12:00:00",
+              "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html"
+            },
+            {
+              "rule_id": "hangzhou-ai-factory-tier",
+              "type": "hard-threshold",
+              "field": "hangzhou_ai_factory_tier_assessment_passed",
+              "operator": "truthy",
+              "expected": true,
+              "source": "2026年杭州市AI工厂培育申报通知及申报表",
+              "source_quote": "一星级和二星级成熟度达到二级以上，三星级达到三级以上，并满足对应建设要求。",
+              "policy_status": "current",
+              "review_status": "confirmed",
+              "approved_by": "焦糖依据杭州市经信局2026年申报通知及正式附件核验",
+              "approved_at": "2026-08-01 12:00:00",
+              "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html"
+            }
+          ]
+        },
+        {
+          "layer_id": "hangzhou-ai-factory-2026",
+          "layer_type": "annual",
+          "policy_time_type": "annual-notice",
+          "label": "2026年度杭州市AI工厂培育申报通知",
+          "applicability": {
+            "years": [
+              "2026"
+            ],
+            "application_types": [
+              "cultivation"
+            ]
+          },
+          "source_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html",
+          "application_open_date": "2026-06-04",
+          "authority_recommendation_deadline": "2026-06-24 23:59:59",
+          "enterprise_deadline": "2026-06-22 23:59:59",
+          "rules": []
+        }
+      ],
+      "gold_cases": [
+        {
+          "case_id": "eligible-verified",
+          "facts": [
+            {
+              "field": "hangzhou_ai_factory_eligible_legal_entity",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_stable_manufacturing_operation",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_finance_credit_compliance",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_tier_assessment_passed",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            }
+          ],
+          "confirm_rule_ids": [
+            "hangzhou-ai-factory-entity",
+            "hangzhou-ai-factory-operation",
+            "hangzhou-ai-factory-compliance",
+            "hangzhou-ai-factory-tier"
+          ],
+          "expected_conclusion": "eligible"
+        },
+        {
+          "case_id": "conditional-pending",
+          "facts": [
+            {
+              "field": "hangzhou_ai_factory_eligible_legal_entity",
+              "value": true,
+              "evidence_state": "claimed",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_stable_manufacturing_operation",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_finance_credit_compliance",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_tier_assessment_passed",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            }
+          ],
+          "confirm_rule_ids": [
+            "hangzhou-ai-factory-entity",
+            "hangzhou-ai-factory-operation",
+            "hangzhou-ai-factory-compliance",
+            "hangzhou-ai-factory-tier"
+          ],
+          "expected_conclusion": "conditional"
+        },
+        {
+          "case_id": "ineligible-failed",
+          "facts": [
+            {
+              "field": "hangzhou_ai_factory_eligible_legal_entity",
+              "value": false,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_stable_manufacturing_operation",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_finance_credit_compliance",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            },
+            {
+              "field": "hangzhou_ai_factory_tier_assessment_passed",
+              "value": true,
+              "evidence_state": "verified",
+              "source": "金标准事实"
+            }
+          ],
+          "confirm_rule_ids": [
+            "hangzhou-ai-factory-entity",
+            "hangzhou-ai-factory-operation",
+            "hangzhou-ai-factory-compliance",
+            "hangzhou-ai-factory-tier"
+          ],
+          "expected_conclusion": "ineligible"
+        }
+      ],
+      "policy_baseline": {
+        "baseline_status": "complete",
+        "decision_mode": "confirmed-threshold-rules",
+        "policy_documents": [
+          {
+            "document_id": "hangzhou-ai-factory-confirmed-7181a9f9ac7b",
+            "title": "2026年杭州市AI工厂培育申报通知",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          },
+          {
+            "document_id": "hangzhou-ai-factory-confirmed-e38f4cf8ff80",
+            "title": "2026年杭州市AI工厂培育申报通知及申报表",
+            "issued_year": 2026,
+            "status": "current",
+            "authority": "正式规则源所载主管部门",
+            "official_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html",
+            "relation": "governed-by",
+            "current_upstream_basis": true
+          }
+        ],
+        "dependencies": [],
+        "provenance": "derived-from-confirmed-rule-cards"
+      },
+      "ir_node_id": "project:hangzhou-ai-factory",
+      "policy_version_id": "policy-a76aea3f650a7e37b5d6",
+      "source_content_hash": "513e37da1e3aa583d6724a12a5a6eb0e07dd04682a61d6e97f60b308b66290c6",
+      "compile_input_hash": "6bcc4c7fc00f8bd7e3001b687b7a1bd0960e5cc92b8bf663413cff9974ed639f",
+      "shared_kernel_version": "1.5",
+      "lifecycle_rule": {}
     },
     "hangzhou-enterprise-institute": {
       "schema_version": 1,
@@ -29085,6 +29439,9 @@
   },
   "indexes": {
     "alias_to_project_ids": {
+      "ai工厂": [
+        "hangzhou-ai-factory"
+      ],
       "digitalworkshop": [
         "digital-workshop"
       ],
@@ -29111,6 +29468,9 @@
       ],
       "greenfactory4": [
         "green-factory-4"
+      ],
+      "hangzhouaifactory": [
+        "hangzhou-ai-factory"
       ],
       "hangzhouenterpriseinstitute": [
         "hangzhou-enterprise-institute"
@@ -29278,9 +29638,15 @@
       "未来工厂": [
         "future-factory"
       ],
+      "杭州ai工厂": [
+        "hangzhou-ai-factory"
+      ],
       "杭州企业技术中心": [
         "hangzhou-enterprise-technology-center",
         "municipal-enterprise-technology-center"
+      ],
+      "杭州市ai工厂": [
+        "hangzhou-ai-factory"
       ],
       "杭州市企业技术中心": [
         "hangzhou-enterprise-technology-center",
@@ -29292,11 +29658,17 @@
       "杭州市企业高新技术研究开发中心": [
         "hangzhou-enterprise-institute"
       ],
+      "杭州市未来工厂": [
+        "hangzhou-ai-factory"
+      ],
       "杭州市研发中心": [
         "hangzhou-enterprise-institute"
       ],
       "杭州市重点企业研究院": [
         "hangzhou-enterprise-institute"
+      ],
+      "杭州未来工厂": [
+        "hangzhou-ai-factory"
       ],
       "杭州研发中心": [
         "hangzhou-enterprise-institute"
@@ -29475,6 +29847,7 @@
       "green-factory-2": "policy-57b81a993ca5570174af",
       "green-factory-3": "policy-014872608585cd65cdb3",
       "green-factory-4": "policy-7511e12cda0ed8abda6e",
+      "hangzhou-ai-factory": "policy-a76aea3f650a7e37b5d6",
       "hangzhou-enterprise-institute": "policy-6bd992eca402dca35b23",
       "hangzhou-enterprise-technology-center": "policy-c98e4015479d64be728c",
       "intelligent-factory": "policy-b47c249c68eed5649684",
@@ -30298,6 +30671,95 @@
         "算法不替代主管部门最终审核结论"
       ],
       "compile_input_hash": "ead395b9c6cfa5c36a10c36b3ebd10f902b85da8110f0baab3b63580a7906b26"
+    },
+    "hangzhou-ai-factory": {
+      "schema_version": 1,
+      "algorithm_id": "project-decision-hangzhou-ai-factory",
+      "algorithm_name": "杭州市AI工厂项目决策算法",
+      "algorithm_version": "2026-notice-20260801",
+      "project_id": "hangzhou-ai-factory",
+      "project_name": "杭州市AI工厂",
+      "coverage_status": "rules-confirmed",
+      "decision_boundary": "已确认政策规则可形成门槛判断；年度通知与属地规则仍按适用层选择。",
+      "policy_version_id": "policy-a76aea3f650a7e37b5d6",
+      "inputs": {
+        "project_context": "项目名称、年度、申请类型与属地",
+        "enterprise_facts": "统一事实契约中的字段、值、证据状态与来源",
+        "as_of": "判断或回放的时间点"
+      },
+      "outputs": {
+        "preflight_trace": "任务目标、高影响遗漏、低影响假设与单次最小追问",
+        "conclusion": "eligible、conditional、ineligible或undetermined",
+        "conclusion_semantics": "当前判断、历史事实、预测或回测模拟",
+        "rule_trace": "选中的规则层、逐规则比较和证据引用",
+        "lifecycle_trace": "认定、复核、重新认定、变更或撤销迁移"
+      },
+      "shared_execution_kernels": [
+        "task-omission-preflight",
+        "conversation-continuity-preflight",
+        "project-router",
+        "policy-version-gate",
+        "policy-time-type-checker",
+        "policy-retrieval-cascade",
+        "fact-contract-normalizer",
+        "evidence-conflict-resolver",
+        "layer-selector",
+        "native-rule-combinator",
+        "composite-rule-structure-gate",
+        "requirement-comparator",
+        "lifecycle-state-machine",
+        "coverage-hash-planner",
+        "policy-change-impact-simulator",
+        "four-city-policy-transition-resolver",
+        "deliverable-contract-gate",
+        "deliverable-contract-auto-repair",
+        "explanation-trace"
+      ],
+      "project_specific_assets": {
+        "fact_fields": 4,
+        "confirmed_rules": 4,
+        "rule_layers": 2,
+        "gold_cases": 3
+      },
+      "explainability": {
+        "level": "field-and-source-trace",
+        "requirements": [
+          "结论必须回指规则ID和政策版本",
+          "事实必须保留证据状态与来源",
+          "未知或冲突事实不得静默转为满足"
+        ]
+      },
+      "incremental_update": {
+        "strategy": "content-addressed-compile",
+        "unchanged": "复用已编译项目节点和算法卡",
+        "changed": "仅重编译源内容哈希发生变化的项目节点"
+      },
+      "quality_gates": {
+        "task_preflight_required": true,
+        "conversation_continuity_required": true,
+        "policy_time_checked": true,
+        "native_rule_combinator": true,
+        "composite_rule_structure": {
+          "status": "passed",
+          "formal_decision_allowed": true,
+          "unresolved_composite_leaves": [],
+          "unresolved_count": 0,
+          "declared_atomic_fields": [],
+          "rule": "综合条件必须拆为原生all/any叶节点；只有证书状态、评价结论或单一证据断言可显式声明为原子事实"
+        },
+        "deliverable_contract_required": true,
+        "policy_retrieval_cascade_required": true,
+        "pack_validation": true,
+        "gold_case_count": 3,
+        "formal_decision_enabled": true,
+        "policy_baseline_complete": true
+      },
+      "limitations": [
+        "年度通知与属地覆盖仍须按查询时点选择",
+        "名单未披露或主体匹配冲突时只能输出待核验",
+        "算法不替代主管部门最终审核结论"
+      ],
+      "compile_input_hash": "6bcc4c7fc00f8bd7e3001b687b7a1bd0960e5cc92b8bf663413cff9974ed639f"
     },
     "hangzhou-enterprise-institute": {
       "schema_version": 1,
@@ -32189,6 +32651,34 @@
         "content_hash": "5445b676f8df6006b183f11d1dd696d716764540a916b6b81ebc1d76d065096c"
       },
       {
+        "node_id": "policy:hangzhou-ai-factory-confirmed-7181a9f9ac7b",
+        "node_type": "policy",
+        "document_id": "hangzhou-ai-factory-confirmed-7181a9f9ac7b",
+        "title": "2026年杭州市AI工厂培育申报通知",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "5a3f1cc686f0f1f19cad25b26730876a8d1f533bf4f62a8fab0967229922192b"
+      },
+      {
+        "node_id": "policy:hangzhou-ai-factory-confirmed-e38f4cf8ff80",
+        "node_type": "policy",
+        "document_id": "hangzhou-ai-factory-confirmed-e38f4cf8ff80",
+        "title": "2026年杭州市AI工厂培育申报通知及申报表",
+        "issued_year": 2026,
+        "status": "current",
+        "authority": "正式规则源所载主管部门",
+        "official_url": "https://jxj.hangzhou.gov.cn/col/col1229252271/art/2026/art_74894cfd28e943bd96c64326fb22c990.html",
+        "relation": "governed-by",
+        "current_upstream_basis": true,
+        "selection_reason": "rolling-five-year-window",
+        "content_hash": "d2797f60d0b38879663ca0507ce27ba010dc5bf4d537315d9e2f9a5a72a0c01f"
+      },
+      {
         "node_id": "policy:hangzhou-enterprise-institute-consultation-2026",
         "node_type": "policy",
         "document_id": "hangzhou-enterprise-institute-consultation-2026",
@@ -33109,6 +33599,12 @@
         "title": "国家绿色工厂"
       },
       {
+        "node_id": "project:hangzhou-ai-factory",
+        "node_type": "project",
+        "project_id": "hangzhou-ai-factory",
+        "title": "杭州市AI工厂"
+      },
+      {
         "node_id": "project:hangzhou-enterprise-institute",
         "node_type": "project",
         "project_id": "hangzhou-enterprise-institute",
@@ -33368,6 +33864,16 @@
       {
         "from": "project:green-factory-4",
         "to": "policy:green-factory-4-confirmed-ecd28bef0f3d",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:hangzhou-ai-factory",
+        "to": "policy:hangzhou-ai-factory-confirmed-7181a9f9ac7b",
+        "relation": "governed-by"
+      },
+      {
+        "from": "project:hangzhou-ai-factory",
+        "to": "policy:hangzhou-ai-factory-confirmed-e38f4cf8ff80",
         "relation": "governed-by"
       },
       {
@@ -33679,6 +34185,8 @@
       "green-factory-4-confirmed-7ce4edf533b9",
       "green-factory-4-confirmed-bfcc47a315ca",
       "green-factory-4-confirmed-ecd28bef0f3d",
+      "hangzhou-ai-factory-confirmed-7181a9f9ac7b",
+      "hangzhou-ai-factory-confirmed-e38f4cf8ff80",
       "hangzhou-enterprise-institute-consultation-2026",
       "hangzhou-enterprise-rd-center-2022",
       "hangzhou-enterprise-tech-center-2018",
@@ -33743,13 +34251,12 @@
       "zj-technology-sme-method-2016"
     ],
     "cold_archive_document_ids": [],
-    "content_hash": "028288f8fe8d014a0cf5fc6bdf1adb35c25346dec23f5e5ccad850cdd92c87d9"
+    "content_hash": "035b3f1053623919f8d74f8588a488aa5cb171500e6f4110b86bdb27a33549c2"
   },
   "incremental_compilation": {
     "strategy": "project-dependency-content-hash",
     "compiled_project_ids": [
-      "green-factory-1",
-      "green-factory-2"
+      "hangzhou-ai-factory"
     ],
     "reused_project_ids": [
       "digital-workshop",
@@ -33757,6 +34264,8 @@
       "first-material-batch",
       "first-software-version",
       "future-factory",
+      "green-factory-1",
+      "green-factory-2",
       "green-factory-3",
       "green-factory-4",
       "hangzhou-enterprise-institute",
@@ -33781,8 +34290,8 @@
       "zhejiang-specialized-sme"
     ],
     "removed_project_ids": [],
-    "compiled_count": 2,
-    "reused_count": 27,
+    "compiled_count": 1,
+    "reused_count": 29,
     "removed_count": 0
   },
   "policy_execution_window": {
@@ -33797,17 +34306,17 @@
     ]
   },
   "metrics": {
-    "project_count": 29,
-    "rules_confirmed_count": 29,
+    "project_count": 30,
+    "rules_confirmed_count": 30,
     "policy_baseline_count": 0,
-    "policy_covered_count": 29,
+    "policy_covered_count": 30,
     "routing_only_count": 0,
     "shared_kernel_count": 19,
-    "policy_dependency_nodes": 98,
-    "policy_dependency_edges": 88,
-    "execution_policy_documents": 69,
+    "policy_dependency_nodes": 101,
+    "policy_dependency_edges": 90,
+    "execution_policy_documents": 71,
     "cold_archive_policy_documents": 0,
-    "compiled_projects": 2,
-    "reused_projects": 27
+    "compiled_projects": 1,
+    "reused_projects": 29
   }
 }

@@ -32,7 +32,7 @@ def write_card(path: Path, card: object) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="编译29项目统一规则中间语言")
+    parser = argparse.ArgumentParser(description="编译30项目统一规则中间语言")
     parser.add_argument(
         "--packs-dir",
         type=Path,

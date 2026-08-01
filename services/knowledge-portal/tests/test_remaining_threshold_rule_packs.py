@@ -39,12 +39,12 @@ def rule_map(
     }
 
 
-def test_all_twenty_nine_projects_have_auditable_formal_rule_sources():
+def test_all_thirty_projects_have_auditable_formal_rule_sources():
     packs = [load_json(path) for path in sorted(PACK_DIR.glob("*.json"))]
     sources = [load_json(path) for path in sorted(SOURCE_DIR.glob("*.json"))]
 
-    assert len(packs) == 29
-    assert len(sources) == 29
+    assert len(packs) == 30
+    assert len(sources) == 30
     assert all(item["coverage_status"] == "rules-confirmed" for item in packs)
     assert {item["project_id"] for item in packs} == {
         item["project_id"] for item in sources

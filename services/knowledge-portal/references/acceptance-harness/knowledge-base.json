@@ -4,7 +4,7 @@
   "target_type": "knowledge-base",
   "blocking_severities": ["P0", "P1"],
   "suite_groups": {
-    "knowledge_base": ["classification", "privacy", "lifecycle", "retrieval"]
+    "knowledge_base": ["classification", "privacy", "lifecycle", "retrieval", "case_pack"]
   },
   "checks": [
     {
@@ -253,6 +253,43 @@
         "query": "知识产权方法 校宝",
         "limit": 8,
         "forbidden_source_terms": ["校宝在线"]
+      }
+    },
+    {
+      "id": "kb-case-pack-schema-complete",
+      "suite": "case_pack",
+      "severity": "P0",
+      "adapter": "sqlite_rows",
+      "description": "V1.4.4 索引必须同时具备案例包、案例文档和文档关系三张表",
+      "config": {
+        "database": "knowledge_content.sqlite3",
+        "query": "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('case_packs','case_pack_documents','document_relations')",
+        "min_rows": 3,
+        "max_rows": 3
+      }
+    },
+    {
+      "id": "kb-case-pack-restricted-not-cloudable",
+      "suite": "case_pack",
+      "severity": "P0",
+      "adapter": "sqlite_rows",
+      "description": "受限或机密文档不得被案例包标为可上云",
+      "config": {
+        "database": "knowledge_content.sqlite3",
+        "query": "SELECT id,source,sensitivity,upload_action FROM documents WHERE sensitivity IN ('restricted','confidential') AND upload_action NOT IN ('exclude','local_only','restricted_excluded')",
+        "max_rows": 0
+      }
+    },
+    {
+      "id": "kb-case-pack-relations-present",
+      "suite": "case_pack",
+      "severity": "P0",
+      "adapter": "sqlite_rows",
+      "description": "多文档案例包必须建立主文档、附件和其他组成文档关系",
+      "config": {
+        "database": "knowledge_content.sqlite3",
+        "query": "SELECT relation_type,COUNT(*) AS relation_count FROM document_relations GROUP BY relation_type",
+        "min_rows": 1
       }
     }
   ]
