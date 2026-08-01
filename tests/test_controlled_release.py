@@ -31,6 +31,14 @@ def test_release_json_serializes_nested_paths(tmp_path: Path) -> None:
     )
 
 
+def test_remote_release_commands_use_current_runtime_slot() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+
+    assert MODULE.REMOTE_RELEASE_ROOT == "/opt/jiaotang-kb-runtime/current"
+    assert source.count("REMOTE_RELEASE_ROOT") == 7
+    assert "/opt/jiaotang-kb/.venv/bin/python" not in source
+
+
 def fake_gate_attestation(
     gate: Path,
     monkeypatch: pytest.MonkeyPatch,
