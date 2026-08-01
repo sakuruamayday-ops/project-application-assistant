@@ -7579,7 +7579,7 @@ class MCPBearerMiddleware:
         async def replay_receive():
             nonlocal replayed
             if replayed:
-                return {"type": "http.request", "body": b"", "more_body": False}
+                return await receive()
             replayed = True
             return {
                 "type": "http.request",

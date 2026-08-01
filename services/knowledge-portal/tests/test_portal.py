@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import importlib
 import io
@@ -6562,6 +6563,58 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         "文档读取",
     ]
     assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1]
+
+
+def test_mcp_middleware_forwards_disconnect_after_replaying_body(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    request_body = b'{"jsonrpc":"2.0","id":1,"method":"ping"}'
+    received_messages = []
+    upstream_messages = iter(
+        [
+            {"type": "http.request", "body": request_body, "more_body": False},
+            {"type": "http.disconnect"},
+        ]
+    )
+
+    async def receive():
+        return next(upstream_messages)
+
+    async def send(message):
+        del message
+
+    async def downstream(scope, downstream_receive, downstream_send):
+        del scope, downstream_send
+        received_messages.append(await downstream_receive())
+        received_messages.append(await downstream_receive())
+
+    monkeypatch.setattr(
+        module,
+        "authenticate_api_token",
+        lambda *args, **kwargs: {"id": 1, "device_token_id": 1},
+    )
+    monkeypatch.setattr(module, "record_api_usage", lambda *args, **kwargs: None)
+    monkeypatch.setattr(module, "mark_mcp_connected", lambda *args, **kwargs: None)
+
+    middleware = module.MCPBearerMiddleware(downstream)
+    asyncio.run(
+        middleware(
+            {
+                "type": "http",
+                "method": "POST",
+                "path": "/mcp/",
+                "query_string": b"",
+                "headers": [],
+                "client": ("127.0.0.1", 12345),
+            },
+            receive,
+            send,
+        )
+    )
+
+    assert received_messages == [
+        {"type": "http.request", "body": request_body, "more_body": False},
+        {"type": "http.disconnect"},
+    ]
 
 
 def test_admin_all_calls_shows_records_first_and_supports_pagination(tmp_path):
