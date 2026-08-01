@@ -1,0 +1,620 @@
+{
+  "schema_version": 1,
+  "project_name": "国家专精特新“小巨人”企业",
+  "event_year": 2022,
+  "batch": "第四批",
+  "city": "宁波市",
+  "status": "公示名单",
+  "source_role": "official_city_publicity_list",
+  "official_url": "http://jxj.ningbo.gov.cn/art/2022/8/8/art_1229561613_58934870.html",
+  "evidence_archive_url": "https://www.yeyahui.com/archives/36237.html",
+  "expected_count": 101,
+  "entities": [
+    {
+      "sequence_no": "1",
+      "enterprise_name": "宁波安信数控技术有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "2",
+      "enterprise_name": "宁波大智机械科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "3",
+      "enterprise_name": "宁波德业变频技术有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "4",
+      "enterprise_name": "宁波华热机械制造有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "5",
+      "enterprise_name": "宁波隆源精密机械有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "6",
+      "enterprise_name": "宁波顺兴机械制造有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "7",
+      "enterprise_name": "宁波一力减震器有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "8",
+      "enterprise_name": "意宁液压股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "9",
+      "enterprise_name": "宁波福天新材料科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "10",
+      "enterprise_name": "宁波合力磁材技术有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "11",
+      "enterprise_name": "宁波禾隆新材料股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "12",
+      "enterprise_name": "宁波横河精密工业股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "13",
+      "enterprise_name": "宁波迦南智能电气股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "14",
+      "enterprise_name": "宁波金轮磁材技术有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "15",
+      "enterprise_name": "宁波市龙嘉摩托车有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "16",
+      "enterprise_name": "宁波万丰轴承有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "17",
+      "enterprise_name": "宁波贞观电器有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "18",
+      "enterprise_name": "浙江太阳洲电气科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "19",
+      "enterprise_name": "力星金燕钢球（宁波）有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "20",
+      "enterprise_name": "宁波南海化学有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "21",
+      "enterprise_name": "宁波市哈雷换热设备有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "22",
+      "enterprise_name": "浙江恒基永昕新材料股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "23",
+      "enterprise_name": "宁波恒特汽车零部件有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "24",
+      "enterprise_name": "宁波宏大纺织仪器有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "25",
+      "enterprise_name": "宁波鸿腾精密制造股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "26",
+      "enterprise_name": "宁波联达绞盘有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "27",
+      "enterprise_name": "宁波同创强磁材料有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "28",
+      "enterprise_name": "宁波鑫其精密磁钢有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "29",
+      "enterprise_name": "宁波甬华塑料机械制造有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "30",
+      "enterprise_name": "浙江蓝卓工业互联网信息技术有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "31",
+      "enterprise_name": "宁波奥拉半导体股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "32",
+      "enterprise_name": "宁波华联电子科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "33",
+      "enterprise_name": "宁波金凤焊割机械制造有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "34",
+      "enterprise_name": "宁波群芯微电子股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "35",
+      "enterprise_name": "宁波水艺膜科技发展有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "36",
+      "enterprise_name": "宁波云德半导体材料有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "37",
+      "enterprise_name": "宁波惠尔顿婴童安全科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "38",
+      "enterprise_name": "宁波佳利塑胶有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "39",
+      "enterprise_name": "宁波开利控股集团股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "40",
+      "enterprise_name": "宁波欧达光电有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "41",
+      "enterprise_name": "宁波永久磁业有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "42",
+      "enterprise_name": "宁波甬微集团有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "43",
+      "enterprise_name": "宁波鸿雁包装材料有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "44",
+      "enterprise_name": "宁波升谱光电股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "45",
+      "enterprise_name": "浙江中之杰智能系统有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "46",
+      "enterprise_name": "宁波万安股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "47",
+      "enterprise_name": "宁波金汇精密铸造有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "48",
+      "enterprise_name": "宁波新华泰模塑电器有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "49",
+      "enterprise_name": "国研软件股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "50",
+      "enterprise_name": "立芯科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "51",
+      "enterprise_name": "宁波大东南万象科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "52",
+      "enterprise_name": "宁波大华砂轮有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "53",
+      "enterprise_name": "宁波得利时泵业有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "54",
+      "enterprise_name": "宁波东方电子有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "55",
+      "enterprise_name": "宁波东联密封件有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "56",
+      "enterprise_name": "宁波福士汽车部件有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "57",
+      "enterprise_name": "宁波港波电子有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "58",
+      "enterprise_name": "宁波高灵电子有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "59",
+      "enterprise_name": "宁波汉浦工具有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "60",
+      "enterprise_name": "宁波宏大电梯有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "61",
+      "enterprise_name": "宁波华液机器制造有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "62",
+      "enterprise_name": "宁波精成车业有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "63",
+      "enterprise_name": "宁波尼兰德磁业股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "64",
+      "enterprise_name": "宁波欧菱电梯配件有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "65",
+      "enterprise_name": "宁波视睿迪光电有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "66",
+      "enterprise_name": "宁波双能环保科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "67",
+      "enterprise_name": "宁波天工机械密封有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "68",
+      "enterprise_name": "宁波旭力金属制品有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "69",
+      "enterprise_name": "宁波旭泰橡胶工业有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "70",
+      "enterprise_name": "浙江明磊锂能源科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "71",
+      "enterprise_name": "卓尔博（宁波）精密机电股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "72",
+      "enterprise_name": "基合半导体（宁波）有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "73",
+      "enterprise_name": "宁波安拓实业有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "74",
+      "enterprise_name": "宁波创润新材料有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "75",
+      "enterprise_name": "宁波飞图自动技术有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "76",
+      "enterprise_name": "宁波佳音机电科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "77",
+      "enterprise_name": "宁波可可磁业股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "78",
+      "enterprise_name": "宁波舜韵电子有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "79",
+      "enterprise_name": "宁波远东制模有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "80",
+      "enterprise_name": "余姚市三力信电磁阀有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "81",
+      "enterprise_name": "浙江安统汽车部件有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "82",
+      "enterprise_name": "浙江阳明汽车部件有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "83",
+      "enterprise_name": "宁波博汇化工科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "84",
+      "enterprise_name": "宁波昌亚新材料科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "85",
+      "enterprise_name": "宁波德泰化学有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "86",
+      "enterprise_name": "宁波晶钻科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "87",
+      "enterprise_name": "宁波科曼电子科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "88",
+      "enterprise_name": "宁波上航测绘有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "89",
+      "enterprise_name": "宁波大央科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "90",
+      "enterprise_name": "宁波精达成形装备股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "91",
+      "enterprise_name": "宁波市锦泰橡塑有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "92",
+      "enterprise_name": "宁波索普橡塑有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "93",
+      "enterprise_name": "宁波爱音美电声科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "94",
+      "enterprise_name": "宁波康强电子股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "95",
+      "enterprise_name": "宁波锦隆电器有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "96",
+      "enterprise_name": "宁波卢米蓝新材料有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "97",
+      "enterprise_name": "宁波斯曼尔电器有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "98",
+      "enterprise_name": "宁波球冠电缆股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "99",
+      "enterprise_name": "宁波思明汽车科技股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "100",
+      "enterprise_name": "宁波哲能精密塑料有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    },
+    {
+      "sequence_no": "101",
+      "enterprise_name": "宁波市科技园区明天医网科技有限公司",
+      "province": "浙江省",
+      "city": "宁波市"
+    }
+  ]
+}

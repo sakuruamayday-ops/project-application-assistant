@@ -1,0 +1,15 @@
+[Unit]
+Description=Recover Jiaotang portal after consecutive health failures from %i
+After=jiaotang-kb-health.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/jiaotang-kb-app.env
+ExecStart=/usr/local/sbin/jiaotang-kb-health-recovery %i
+User=root
+Group=jiaotang
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jiaotang-kb
+NoNewPrivileges=true

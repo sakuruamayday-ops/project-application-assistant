@@ -237,7 +237,7 @@ def test_promote_cannot_create_a_missing_prerelease(tmp_path, monkeypatch) -> No
         )
 
 
-def test_local_skill_deployment_gate_is_fail_closed(
+def test_isolated_skill_acceptance_gate_is_fail_closed(
     tmp_path, monkeypatch
 ) -> None:
     captured = {}
@@ -251,7 +251,7 @@ def test_local_skill_deployment_gate_is_fail_closed(
         )
 
     monkeypatch.setattr(MODULE.subprocess, "run", pass_gate)
-    result = MODULE.run_local_skill_deployment_gate(
+    result = MODULE.run_isolated_skill_acceptance_gate(
         development_root=tmp_path / "development",
         generic_package=tmp_path / "generic.zip",
         install_root=tmp_path / "installed",
@@ -272,13 +272,28 @@ def test_local_skill_deployment_gate_is_fail_closed(
         ),
     )
     with pytest.raises(RuntimeError, match="hash mismatch"):
-        MODULE.run_local_skill_deployment_gate(
+        MODULE.run_isolated_skill_acceptance_gate(
             development_root=tmp_path / "development",
             generic_package=tmp_path / "generic.zip",
             install_root=tmp_path / "installed",
             config_dir=tmp_path / "config",
             audit_dir=tmp_path / "audit",
         )
+
+
+def test_release_installation_acceptance_uses_isolated_persistent_root(
+    tmp_path,
+) -> None:
+    active_skills = Path.home() / ".codex" / "skills"
+    acceptance_root = MODULE.create_isolated_skill_acceptance_root(
+        tmp_path / "audit"
+    )
+
+    assert acceptance_root.parent == (
+        tmp_path / "audit" / "isolated-installation-acceptance"
+    )
+    assert acceptance_root != active_skills
+    assert acceptance_root.is_dir()
 
 
 def test_controlled_release_requires_generic_package(

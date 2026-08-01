@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "approved_at": "2026-08-02",
+  "approved_by": "user",
+  "canonical_root": "/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育",
+  "runtime_contract_mirror": "services/knowledge-portal/references/authoritative-list-source-manifest.json",
+  "authority_precedence": [
+    "official_final_attachment",
+    "official_publicity_attachment",
+    "official_notice",
+    "user_confirmed_official_mirror",
+    "current_curated_library_source",
+    "licensed_platform_discovery"
+  ],
+  "global_rules": [
+    "认定、拟认定、复核通过、复核公示、财政支持和地方项目分别建事件。",
+    "企策等平台多年度标签只进入 discovery_only 声明表，不直接生成官方认定批次。",
+    "名单数量、来源附件和抽取实体三者未闭环时，禁止表述为完整名单。",
+    "企业改名通过 identity_key 归并；三首事件必须保留企业与产品双主体。",
+    "地市年度名单查询只汇总当年发布文件中的新认定与复核或复评通过企业；公示与正式认定分别标注，往年仍有效、变更、撤销、财政支持等其他身份事件仅进入身份时间轴，不并入年度名单。",
+    "同行对比必须先按同项目、同事件年度、同地区和同一行业口径收敛；行业字段来自平台时标记为 discovery_only。",
+    "三首同类产品不得仅按名称包含判断；必须同时返回产品名称、项目类型、产品分类或行业、年度、名单状态和来源层级。"
+  ],
+  "national_small_giant": {
+    "project_name": "国家专精特新“小巨人”企业",
+    "batch_source_registry": "services/knowledge-portal/references/official_national_small_giant_batches.json",
+    "derived_master_directory": "_全国小巨人批次主表",
+    "derived_files_are_authority": false,
+    "platform_year_claims_semantics": "discovery_only",
+    "batches": [
+      {"year": 2019, "batch": "第一批", "expected_count": 248, "current_extracted_count": 248, "completeness_claim_allowed": false, "reason": "数量对齐但企业名尚未逐条绑定官方附件"},
+      {"year": 2020, "batch": "第二批", "expected_count": 1744, "current_extracted_count": 1744, "completeness_claim_allowed": false, "reason": "数量对齐但企业名尚未全部逐条绑定官方附件"},
+      {"year": 2021, "batch": "第三批", "expected_count": 2930, "current_extracted_count": 2930, "completeness_claim_allowed": false, "reason": "数量对齐但企业名尚未全部逐条绑定官方附件"},
+      {"year": 2022, "batch": "第四批", "expected_count": 4357, "current_extracted_count": 4366, "completeness_claim_allowed": false},
+      {"year": 2023, "batch": "第五批", "expected_count": 3671, "current_extracted_count": 3669, "completeness_claim_allowed": false},
+      {"year": 2024, "batch": "第六批", "expected_count": 3012, "current_extracted_count": 2947, "completeness_claim_allowed": false},
+      {"year": 2025, "batch": "第七批", "expected_count": 3482, "current_extracted_count": 3377, "completeness_claim_allowed": false}
+    ],
+    "known_conflicts": [
+      {
+        "scope": "杭州市/2023/第五批",
+        "current_master_count": 121,
+        "licensed_platform_snapshot_count": 136,
+        "previous_user_observed_platform_count": 141,
+        "previous_observation_status": "本次按浙江省、杭州市全部13个现行区县、2023年条件无法复现",
+        "rechecked_live_platform_count": 136,
+        "rechecked_at": "2026-08-01T19:23:04+08:00",
+        "live_filter_semantics": "企策projectId=98，subsidyYear命中2023并按当前登记地筛选；136家中混入4家发布时不属于杭州范围的企业",
+        "new_recognition_count": 117,
+        "review_publicity_count": 15,
+        "annual_publication_scope_count": 132,
+        "current_geography_false_positives": [
+          "拿森智能科技（浙江）股份有限公司",
+          "杭州灵明光子科技有限公司",
+          "杭州高为装饰材料有限公司",
+          "浙江太湖能谷科技有限公司"
+        ],
+        "official_city_publicity_source_path": "_全国小巨人批次主表/官方地方分片/2023/浙江省/2023_第五批_杭州市_官方公示117家.json",
+      "decision": "2023年度杭州发布名单按第五批新入围117家加第二批复核通过公示15家，共132家列示；两类事件分别标注。企策136和此前观察141均不得作为年度权威总数。"
+    },
+    {
+      "scope": "浙江省/2022/第四批",
+      "current_master_count": 608,
+      "official_publication_count": 603,
+      "delta": 5,
+      "status": "official_event_identity_rebuilt",
+      "official_count_source": "http://jxj.ningbo.gov.cn/art/2022/8/8/art_1229561613_58934870.html",
+      "official_non_ningbo_attachment_document_id": 11890,
+      "official_non_ningbo_attachment_count": 502,
+      "official_ningbo_attachment_count": 101,
+      "official_ningbo_entity_source_path": "services/knowledge-portal/references/national-small-giant-2022-fourth-ningbo.json",
+      "rejected_count_semantics": "601是浙江省年度工作总结中的新增统计，不能用601减502倒算宁波名单为99家。",
+      "decision": "第四批发布口径按省经信厅非宁波502家加宁波经信局101家，共603家；宁波101家已逐企绑定，原99家推算口径作废。"
+    },
+    {
+      "scope": "浙江省/2023/第五批",
+      "current_master_count": 388,
+      "official_publication_count": 384,
+      "delta": 4,
+      "status": "official_event_identity_rebuilt",
+      "official_count_source": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=4473be78762b4e65957e10fbb4203a65.pdf",
+      "known_false_positives": [
+        "拿森智能科技（浙江）股份有限公司",
+        "杭州灵明光子科技有限公司",
+        "杭州高为装饰材料有限公司",
+        "浙江太湖能谷科技有限公司"
+      ],
+      "official_non_ningbo_entity_source_path": "services/knowledge-portal/references/national-small-giant-2023-fifth-zhejiang-non-ningbo-event-geocoded.json",
+      "decision": "第五批发布口径按省经信厅非宁波315家加宁波69家，共384家；4家现址误归不得进入历史发布名单。"
+    },
+    {
+      "scope": "浙江省/2024/第六批",
+      "current_master_count": 401,
+      "official_publication_count": 400,
+      "delta": 1,
+      "status": "official_event_identity_rebuilt",
+      "official_attachment_document_id": 11860,
+      "official_attachment_source_path": "50_名单与对标/优质中小企业梯度培育/附件1.第六批专精特新“小巨人”企业公示名单.pdf",
+      "official_attachment_url": "https://jxt.zj.gov.cn/module/download/downfile.jsp?classid=0&filename=08a8e17d155f4f66bac8c23575459453.pdf",
+      "official_entity_source_path": "services/knowledge-portal/references/national-small-giant-2024-sixth-zhejiang.json",
+      "decision": "官方附件400家已按附件企业名称重建事件；当前主表401家只保留为发现层，不再回答名单总数。"
+    },
+    {
+      "scope": "浙江省/2025/第七批",
+      "current_master_count": 403,
+      "official_publication_count": 398,
+      "official_non_ningbo_count": 306,
+      "official_ningbo_count": 92,
+      "delta": 5,
+      "status": "official_event_identity_rebuilt",
+      "official_non_ningbo_attachment_document_id": 318,
+      "official_provincial_page": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288758",
+      "ningbo_publication_mirror": "https://m.sme-gov.cn/ningbo/news/82279.html",
+      "official_non_ningbo_entity_source_path": "services/knowledge-portal/references/national-small-giant-2025-seventh-zhejiang-non-ningbo.json",
+      "known_ningbo_false_positive": "浙江扬铭科技发展有限公司",
+      "decision": "第七批发布口径为省经信厅306家加宁波92家，共398家；不得把2025年复核通过95家混入新认定名单。"
+    }
+    ],
+    "annual_list_semantics": {
+      "included_event_types": [
+        "recognition",
+        "recognition_publicity",
+        "review_passed",
+        "review_publicity"
+      ],
+      "excluded_event_types": [
+        "review_due",
+        "continued_support",
+        "changed",
+        "revoked"
+      ],
+      "deduplication": "同一企业同一年度同一事件目的同时存在公示与正式名单时，优先正式名单；新认定与复核事件不互相合并。"
+    },
+    "zhejiang_official_event_counts": [
+      {"event_year": 2022, "recognition_publicity": 603, "review_publicity": 16, "annual_publication_total": 619, "completeness_claim_allowed": true},
+      {"event_year": 2023, "recognition_publicity": 384, "review_publicity": 123, "annual_publication_total": 507, "completeness_claim_allowed": true},
+      {"event_year": 2024, "recognition_publicity": 400, "review_publicity": 279, "annual_publication_total": 679, "completeness_claim_allowed": true},
+      {"event_year": 2025, "recognition_publicity": 398, "review_publicity": 576, "annual_publication_total": 974, "completeness_claim_allowed": true}
+    ],
+    "zhejiang_review_sources": [
+      {"event_year": 2022, "batch": "第一批复核", "zhejiang_non_ningbo_count": 12, "ningbo_count": 4},
+      {"event_year": 2023, "batch": "第二批复核", "zhejiang_non_ningbo_count": 75, "ningbo_count": 48},
+      {"event_year": 2024, "batch": "第三批复核", "zhejiang_count": 279},
+      {"event_year": 2025, "batch": "2025年复核", "zhejiang_non_ningbo_count": 481, "ningbo_count": 95}
+    ]
+  },
+  "zhejiang_specialized_sme": {
+    "project_name": "浙江省专精特新中小企业",
+    "event_source_registry": "services/knowledge-portal/references/enterprise-lifecycle-rules.json",
+    "authoritative_table": "enterprise_recognition_events",
+    "required_identity_fields": [
+      "event_uid",
+      "identity_key",
+      "event_year",
+      "cohort_year",
+      "batch",
+      "event_type",
+      "status",
+      "recognition_province",
+      "recognition_city",
+      "recognition_county"
+    ],
+    "official_final_sources": [
+      {"event_year": 2022, "batch": "第二批", "event_type": "recognition", "expected_count": 2427},
+      {"event_year": 2023, "batch": "第一批", "event_type": "recognition", "expected_count": 1441},
+      {"event_year": 2025, "batch": "第一批", "event_type": "recognition", "expected_count": 804},
+      {"event_year": 2025, "batch": "第一批", "event_type": "review_passed", "expected_count": 176},
+      {"event_year": 2025, "batch": "第二批", "event_type": "recognition", "expected_count": 1238},
+      {
+        "event_year": 2025,
+        "batch": "第二批",
+        "event_type": "review_passed",
+        "announced_count": 2158,
+        "extractable_enterprise_count": 2157,
+        "known_blank_sequence": "782",
+        "completeness_claim_allowed": false
+      }
+    ],
+    "official_publicity_sources": [
+      {"event_year": 2023, "batch": "第二批", "event_type": "recognition_publicity", "city": "杭州市", "expected_count": 1030},
+      {"event_year": 2024, "batch": "第一批", "event_type": "recognition_publicity", "city": "杭州市", "expected_count": 621}
+    ],
+    "city_final_crosschecks": [
+      {
+        "event_year": 2023,
+        "batch": "第一批",
+        "event_type": "recognition",
+        "city": "杭州市",
+        "expected_count": 676,
+        "source_path": "services/knowledge-portal/references/zhejiang-specialized-sme-2023-first-hangzhou.json",
+        "basis": "杭州市官方公示分片逐企匹配省经信厅正式1441家附件"
+      }
+    ],
+    "licensed_platform_cross_checks": [
+      {
+        "project_id": 57,
+        "scope": "杭州市/2023",
+        "live_platform_count": 1696,
+        "rechecked_at": "2026-08-01T19:23:43+08:00",
+        "filter_semantics": "企策subsidyYear命中2023，并按当前登记地筛选；包含多年度标签，不区分第一批、第二批、首次认定与复核",
+        "authority_semantics": "discovery_only",
+        "local_official_comparison": "2023年第一批杭州公示676家已逐企匹配省经信厅正式名单；第二批杭州公示1030家，旧解析器曾遗漏1家研究院与2家带尾随编号的企业；两批无重叠，年度发布口径1706家",
+        "platform_official_match_breakdown": {
+          "first_batch_matched": 674,
+          "second_batch_matched": 1019,
+          "official_rows_missing_from_platform_filter": 13,
+          "platform_rows_outside_hangzhou_annual_official_scope": 3,
+          "net_shortfall": 10
+        },
+        "decision": "不得把1696解释为2023年杭州年度完整名单；权威年度口径为第一批正式认定676家加第二批公示1030家，共1706家"
+      }
+    ],
+    "annual_event_counts": [
+      {"event_year": 2022, "recognition_count": 3025, "review_count": 0, "annual_unique_total": 3025, "completeness_claim_allowed": false, "reason": "第一批185家已按官方总数重建，但尚缺官方原附件逐企闭环"},
+      {"event_year": 2023, "recognition_count": 5396, "review_count": 0, "annual_unique_total": 5396, "completeness_claim_allowed": false, "reason": "第二批湖州官方公告175家，当前库与企策只能绑定174家"},
+      {"event_year": 2024, "recognition_count": 3026, "review_count": 0, "annual_unique_total": 3026, "completeness_claim_allowed": true},
+      {"event_year": 2025, "recognition_count": 2042, "review_count": 2333, "annual_unique_total": 4375, "completeness_claim_allowed": false, "reason": "第二批复核官方附件序号782原文为空；公告2158、可提取2157"},
+      {"event_year": 2026, "recognition_publicity_count": 155, "review_publicity_count": 1541, "annual_unique_total": 1696, "completeness_claim_allowed": true}
+    ],
+    "fallback_policy": "官方正式附件或公示附件优先；官方原件暂不可得时按当前经结构化审计的库内事件源；仍有缺口时才使用企策补缺，并保留来源等级与完整性禁言。",
+    "policy": "查询必须显式区分 recognition、recognition_publicity、review_passed 和 review_publicity。"
+  },
+  "three_first": {
+    "projects": [
+      "浙江省制造业首台（套）装备",
+      "浙江省首批次新材料",
+      "浙江省首版次软件产品"
+    ],
+    "canonical_product_records": "/Users/zsh/JiaotangData/知识库/50_名单与对标/三首项目/_结构化数据/三首项目企业产品年度记录.jsonl",
+    "authoritative_table": "three_first_project_awards",
+    "timeline_table": "enterprise_recognition_events",
+    "identity_rule": "event_uid = identity_key + project + year + batch + status + event_type + normalized_product",
+    "discovery_only_in_default_lists": false
+  }
+}

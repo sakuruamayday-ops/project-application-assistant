@@ -1,0 +1,2462 @@
+{
+  "schema_version": 1,
+  "project_name": "国家专精特新“小巨人”企业",
+  "event_year": 2025,
+  "batch": "第七批",
+  "status": "公示名单",
+  "source_role": "official_provincial_publicity_list_non_ningbo",
+  "official_url": "https://zj87.jxt.zj.gov.cn/zlzq/web/views/article/news/detail.html?id=288758",
+  "expected_count": 306,
+  "membership_basis": "official_publicity_attachment",
+  "geography_basis": "current_library_identity_crosswalk_with_explicit_exception_correction",
+  "entities": [
+    {
+      "sequence_no": "1",
+      "enterprise_name": "杭州安普鲁薄膜科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "2",
+      "enterprise_name": "杭州程天科技发展有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "3",
+      "enterprise_name": "浙江豪中豪健康产品有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "平阳县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "4",
+      "enterprise_name": "浙江三时纪新材科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "5",
+      "enterprise_name": "浙江众凌科技有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海宁市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "6",
+      "enterprise_name": "杭州晨鹰军泰科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "7",
+      "enterprise_name": "杭州杭途科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "8",
+      "enterprise_name": "浙江振有电子股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临安区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "9",
+      "enterprise_name": "安佐化学有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "平湖市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "10",
+      "enterprise_name": "杭州得明电子有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "11",
+      "enterprise_name": "浙江豪声电子科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "12",
+      "enterprise_name": "杭州海康存储科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "13",
+      "enterprise_name": "杭州信多达智能科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "14",
+      "enterprise_name": "湖州慧金材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "15",
+      "enterprise_name": "芯越微电子材料（嘉兴）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "平湖市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "16",
+      "enterprise_name": "浙江创芯集成电路有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "17",
+      "enterprise_name": "浙江久易电子科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "桐乡市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "18",
+      "enterprise_name": "浙江芯科半导体有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "19",
+      "enterprise_name": "浙江新富尔电子有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "20",
+      "enterprise_name": "浙江中晶科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "21",
+      "enterprise_name": "国科光芯（海宁）科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海宁市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "22",
+      "enterprise_name": "杭州谱析光晶半导体科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "23",
+      "enterprise_name": "乐清昌德成电子有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "24",
+      "enterprise_name": "芯联先锋集成电路制造（绍兴）有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "25",
+      "enterprise_name": "浙江法拉第激光科技有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "26",
+      "enterprise_name": "杭州富芯半导体有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "27",
+      "enterprise_name": "三门康创电子科技有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "三门县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "28",
+      "enterprise_name": "温州锌芯钛晶科技有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "瓯海区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "29",
+      "enterprise_name": "浙江瑞特良微电子材料有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "30",
+      "enterprise_name": "浙江先导热电科技股份有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "常山县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "31",
+      "enterprise_name": "浙江星曜半导体有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "32",
+      "enterprise_name": "杭州奥能电源设备有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "33",
+      "enterprise_name": "杭州赛微电机有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "34",
+      "enterprise_name": "杭州天卓网络有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "35",
+      "enterprise_name": "杭州勇电照明有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "36",
+      "enterprise_name": "湖州南浔新龙电机有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "37",
+      "enterprise_name": "申达电气集团有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "江山市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "38",
+      "enterprise_name": "圣普电气有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "39",
+      "enterprise_name": "西门子能源高压开关（杭州）有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "40",
+      "enterprise_name": "浙江嘉恒科创有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "南湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "41",
+      "enterprise_name": "浙江雷亚电子有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "42",
+      "enterprise_name": "杭州三相科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "43",
+      "enterprise_name": "杭州微慕科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "44",
+      "enterprise_name": "杭州纤纳光电科技股份有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "衢江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "45",
+      "enterprise_name": "火炬电气集团有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "46",
+      "enterprise_name": "赛晶亚太半导体科技（浙江）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "47",
+      "enterprise_name": "泰姆电气（杭州）股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "48",
+      "enterprise_name": "浙江光大普特通讯科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临安区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "49",
+      "enterprise_name": "浙江三行电气科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "50",
+      "enterprise_name": "晨辉光宝科技股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "51",
+      "enterprise_name": "杭州杭科光电集团股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "52",
+      "enterprise_name": "杭州纳智电机有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "53",
+      "enterprise_name": "杭州天丰电源股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "拱墅区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "54",
+      "enterprise_name": "杭州永德电气有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "55",
+      "enterprise_name": "嘉善华瑞赛晶电气设备科技有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "56",
+      "enterprise_name": "盛中意电力科技有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "57",
+      "enterprise_name": "台州法雷奥温岭汽车零部件有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "温岭市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "58",
+      "enterprise_name": "浙江广天电力设备股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "黄岩区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "59",
+      "enterprise_name": "浙江华尔特机电股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "秀洲区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "60",
+      "enterprise_name": "浙江联和电子有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "61",
+      "enterprise_name": "浙江特意电气有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "62",
+      "enterprise_name": "博时达集团有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "63",
+      "enterprise_name": "杭州方千科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "64",
+      "enterprise_name": "杭州惠嘉信息科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "65",
+      "enterprise_name": "杭州普安科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "66",
+      "enterprise_name": "杭州优特电源有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "67",
+      "enterprise_name": "华辉电气集团股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "义乌市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "68",
+      "enterprise_name": "金锚电力控股有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "69",
+      "enterprise_name": "默飓电气有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "70",
+      "enterprise_name": "一能电气有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "洞头区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "71",
+      "enterprise_name": "浙江德菱科技股份有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "72",
+      "enterprise_name": "浙江三科线缆股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "秀洲区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "73",
+      "enterprise_name": "浙江恒百华化纤有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "74",
+      "enterprise_name": "杭州新天元织造有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "75",
+      "enterprise_name": "浙江创想节能科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "桐庐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "76",
+      "enterprise_name": "浙江衡美健康科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "77",
+      "enterprise_name": "浙江六方半导体科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "78",
+      "enterprise_name": "浙江石金玄武岩纤维股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "东阳市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "79",
+      "enterprise_name": "浙江宝泰电子有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "80",
+      "enterprise_name": "浙江德鸿碳纤维复合材料有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "81",
+      "enterprise_name": "浙江凯色丽科技发展有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "82",
+      "enterprise_name": "浙江罗克光电科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "秀洲区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "83",
+      "enterprise_name": "浙江荣星新材料科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "84",
+      "enterprise_name": "浙江四达新材料股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "85",
+      "enterprise_name": "浙江遂昌汇金有色金属有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "遂昌县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "86",
+      "enterprise_name": "浙江卓锦环保科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "拱墅区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "87",
+      "enterprise_name": "德清泰鑫金属制品有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "88",
+      "enterprise_name": "浙江海利环保科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海盐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "89",
+      "enterprise_name": "杭州博圣医学检验实验室有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "90",
+      "enterprise_name": "杭州意能电力技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "91",
+      "enterprise_name": "九洲药业（杭州）有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "92",
+      "enterprise_name": "天境生物科技（杭州）有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "93",
+      "enterprise_name": "嘉兴恒创电力设计研究院有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "南湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "94",
+      "enterprise_name": "嘉兴威凯检测技术有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "南湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "95",
+      "enterprise_name": "浙江勿忘农种业股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "上城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "96",
+      "enterprise_name": "杭州盈铭深冷真空工程有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "淳安县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "97",
+      "enterprise_name": "金华市亚虎工具有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "金东区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "98",
+      "enterprise_name": "晨龙集团有限责任公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "99",
+      "enterprise_name": "浙江飞剑工贸有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "永康市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "100",
+      "enterprise_name": "浙江浪潮精密机械有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "101",
+      "enterprise_name": "浙江泰昌实业有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "102",
+      "enterprise_name": "浙江永旺焊材制造有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "婺城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "103",
+      "enterprise_name": "温州益能电器有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "104",
+      "enterprise_name": "浙江德明汽车部件有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "105",
+      "enterprise_name": "浙江龙生汽车部件科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "桐庐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "106",
+      "enterprise_name": "杭州爱知工程车辆有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "107",
+      "enterprise_name": "玉环江宏机械有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "玉环市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "108",
+      "enterprise_name": "浙江德福精密驱动制造有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "平湖市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "109",
+      "enterprise_name": "浙江莱恩过滤系统有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "110",
+      "enterprise_name": "浙江六合实业有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海宁市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "111",
+      "enterprise_name": "浙江万超电器有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "瓯海区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "112",
+      "enterprise_name": "浙江万鼎精密科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "113",
+      "enterprise_name": "盾安汽车热管理科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "114",
+      "enterprise_name": "湖州求精汽车链传动有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "115",
+      "enterprise_name": "浙江博汇汽车部件有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "116",
+      "enterprise_name": "浙江吉尚汽车部件有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "平阳县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "117",
+      "enterprise_name": "浙江荣际科创股份有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "瑞安市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "118",
+      "enterprise_name": "浙江万里扬新能源驱动有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "婺城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "119",
+      "enterprise_name": "浙江众志汽车电器有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "120",
+      "enterprise_name": "杭州先为达生物科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "121",
+      "enterprise_name": "杭州鑫富科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临安区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "122",
+      "enterprise_name": "浙江海森药业股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "东阳市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "123",
+      "enterprise_name": "杭州创新生物检控技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "124",
+      "enterprise_name": "杭州科腾生物制品有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "125",
+      "enterprise_name": "浙江世纪康大医疗科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "126",
+      "enterprise_name": "浙江天台药业股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "天台县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "127",
+      "enterprise_name": "杭州美高华颐化工有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "128",
+      "enterprise_name": "杭州赛基生物科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "129",
+      "enterprise_name": "扬帆新材料（浙江）股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "130",
+      "enterprise_name": "浙江格派钴业新材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "131",
+      "enterprise_name": "浙江鸿盛新材料科技集团股份有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "柯城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "132",
+      "enterprise_name": "浙江凌志新能源科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "133",
+      "enterprise_name": "浙江物产光华民爆器材有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "龙游县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "134",
+      "enterprise_name": "杭州帝凡过滤技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "135",
+      "enterprise_name": "杭州环申新材料科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临安区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "136",
+      "enterprise_name": "合盛硅业（嘉兴）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "平湖市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "137",
+      "enterprise_name": "嘉兴北化高分子助剂有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "138",
+      "enterprise_name": "台州中浮新材料科技股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "临海市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "139",
+      "enterprise_name": "浙江澳宇新材料科技有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "江山市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "140",
+      "enterprise_name": "浙江德创环保科技股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "141",
+      "enterprise_name": "浙江光华科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海宁市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "142",
+      "enterprise_name": "浙江国能科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "143",
+      "enterprise_name": "浙江海洲制药股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "临海市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "144",
+      "enterprise_name": "浙江新和成药业有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "145",
+      "enterprise_name": "杭州崇耀科技发展有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "建德市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "146",
+      "enterprise_name": "杭州和韵科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "桐庐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "147",
+      "enterprise_name": "嘉兴华雯化工股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "平湖市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "148",
+      "enterprise_name": "浙江长鸿生物材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "嵊州市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "149",
+      "enterprise_name": "浙江伊诺环保集团股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "150",
+      "enterprise_name": "浙江誉隆科技发展有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "黄岩区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "151",
+      "enterprise_name": "杭州川禾机械有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "152",
+      "enterprise_name": "金华市金顺工具有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "金东区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "153",
+      "enterprise_name": "浙江安吉华意科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "154",
+      "enterprise_name": "浙江丰源泵业有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "温岭市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "155",
+      "enterprise_name": "浙江富春江水电设备有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "桐庐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "156",
+      "enterprise_name": "浙江哈特惠科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海盐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "157",
+      "enterprise_name": "浙江慧仓智能科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "158",
+      "enterprise_name": "浙江金轮机电实业有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "金东区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "159",
+      "enterprise_name": "浙江三可热交换系统有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "160",
+      "enterprise_name": "浙江天开实业有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海盐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "161",
+      "enterprise_name": "浙江中扬立库技术有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "162",
+      "enterprise_name": "方大控股有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "163",
+      "enterprise_name": "杭州金舟科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "164",
+      "enterprise_name": "杭州凯尔达焊接机器人股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "165",
+      "enterprise_name": "杭州凯维阀门集团有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "166",
+      "enterprise_name": "杭州灵智科技数字化装备有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "167",
+      "enterprise_name": "湖州德奥机械设备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "168",
+      "enterprise_name": "欧盾科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "169",
+      "enterprise_name": "青蛙泵业股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "黄岩区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "170",
+      "enterprise_name": "英普瑞科技（嘉兴）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "南湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "171",
+      "enterprise_name": "浙江博开机电科技有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "浦江县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "172",
+      "enterprise_name": "浙江福腾流体科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "173",
+      "enterprise_name": "浙江嘉诚动能设备有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "174",
+      "enterprise_name": "浙江衣拿智能科技股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "椒江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "175",
+      "enterprise_name": "杭州富春弹簧有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "176",
+      "enterprise_name": "杭州国能汽轮工程有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "177",
+      "enterprise_name": "临海市新睿电子科技股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "临海市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "178",
+      "enterprise_name": "替科斯科技集团丽水流体设备有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "179",
+      "enterprise_name": "浙江安耐杰科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "180",
+      "enterprise_name": "浙江晋吉汽车配件有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "181",
+      "enterprise_name": "浙江欧诺机械科技股份有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "平阳县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "182",
+      "enterprise_name": "浙江威格智能泵业股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "温岭市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "183",
+      "enterprise_name": "浙江中智鲸工智能装备有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "桐乡市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "184",
+      "enterprise_name": "杭州奥蒂电控有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "185",
+      "enterprise_name": "杭州大中泊奥科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "186",
+      "enterprise_name": "花园金波科技股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "东阳市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "187",
+      "enterprise_name": "黄鹄（浙江）精密机床有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "188",
+      "enterprise_name": "钱潮轴承有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "189",
+      "enterprise_name": "瑟维斯泵阀制造（浙江）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海盐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "190",
+      "enterprise_name": "浙江博来工具有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "武义县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "191",
+      "enterprise_name": "浙江高中压阀门有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临安区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "192",
+      "enterprise_name": "浙江金马逊智能制造股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "193",
+      "enterprise_name": "浙江巨源动力装备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "194",
+      "enterprise_name": "浙江铭仕兴新暖通科技股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "195",
+      "enterprise_name": "浙江欧伦电气股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "196",
+      "enterprise_name": "倍仕得电气科技（杭州）股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "197",
+      "enterprise_name": "常山县鑫龙轴承有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "常山县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "198",
+      "enterprise_name": "杭州贝特设备制造有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "上城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "199",
+      "enterprise_name": "杭州嘉悦智能设备有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "200",
+      "enterprise_name": "杭州天恒机械有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临安区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "201",
+      "enterprise_name": "华丽电器制造有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "武义县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "202",
+      "enterprise_name": "金华精研机电股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "金东区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "203",
+      "enterprise_name": "温岭市三和数控机床设备有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "温岭市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "204",
+      "enterprise_name": "浙江联大阀门有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "瑞安市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "205",
+      "enterprise_name": "浙江麦迪制冷科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "206",
+      "enterprise_name": "浙江青霄科技股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "温岭市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "207",
+      "enterprise_name": "浙江日井泵业股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "路桥区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "208",
+      "enterprise_name": "浙江裕泰汽车配件有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "209",
+      "enterprise_name": "浙江赛迅环保科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "210",
+      "enterprise_name": "温州强润新材料科技有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙港市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "211",
+      "enterprise_name": "浙江汇锋智造科技有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海宁市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "212",
+      "enterprise_name": "杭州海康消防科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "213",
+      "enterprise_name": "杭州天谷信息科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "214",
+      "enterprise_name": "浙江浙达能源科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "215",
+      "enterprise_name": "杭州华望系统科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "216",
+      "enterprise_name": "杭州健培科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "217",
+      "enterprise_name": "杭州数创自动化控制技术有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "上城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "218",
+      "enterprise_name": "闪捷信息科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "219",
+      "enterprise_name": "浙江西图盟数字科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "220",
+      "enterprise_name": "杭州博联智能科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "221",
+      "enterprise_name": "杭州观远数据有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "222",
+      "enterprise_name": "浙江星汉信息技术股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "223",
+      "enterprise_name": "浙江屹晶微电子股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "椒江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "224",
+      "enterprise_name": "杭州零零科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "225",
+      "enterprise_name": "杭州相芯科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "拱墅区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "226",
+      "enterprise_name": "杭州优云科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "227",
+      "enterprise_name": "浙江英集动力科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "228",
+      "enterprise_name": "比科奇微电子（杭州）有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "229",
+      "enterprise_name": "杭州炽橙数字科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "上城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "230",
+      "enterprise_name": "杭州品联科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "231",
+      "enterprise_name": "杭州虚之实科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "232",
+      "enterprise_name": "杭州盈高科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "233",
+      "enterprise_name": "杭州知衣科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "234",
+      "enterprise_name": "杭州致成电子科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "235",
+      "enterprise_name": "蓝象智联（杭州）科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "236",
+      "enterprise_name": "易联云计算（杭州）有限责任公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "237",
+      "enterprise_name": "浙江卡易智慧医疗科技有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "238",
+      "enterprise_name": "杭州鑫泽源医疗科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临安区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "239",
+      "enterprise_name": "杭州惠耳听力技术设备有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "拱墅区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "240",
+      "enterprise_name": "浙江桐轩医疗科技有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "仙居县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "241",
+      "enterprise_name": "浙江医高医疗科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "242",
+      "enterprise_name": "德力西集团仪器仪表有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "243",
+      "enterprise_name": "杭州超钜科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "244",
+      "enterprise_name": "杭州美仪自动化有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "钱塘区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "245",
+      "enterprise_name": "杭州乔戈里科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "246",
+      "enterprise_name": "杭州亿恒科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "上城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "247",
+      "enterprise_name": "杭州应敏科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "248",
+      "enterprise_name": "凯瑞特阀业集团有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "瑞安市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "249",
+      "enterprise_name": "温州日益机电科技有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "250",
+      "enterprise_name": "浙江贝尔控制阀门有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "瑞安市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "251",
+      "enterprise_name": "浙江陆恒环境科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "上城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "252",
+      "enterprise_name": "浙江荣鑫智能仪表股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "临海市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "253",
+      "enterprise_name": "浙江盛迪科技股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海盐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "254",
+      "enterprise_name": "中南仪表有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "255",
+      "enterprise_name": "彩谱科技（浙江）有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "路桥区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "256",
+      "enterprise_name": "杭州高坤电子科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "257",
+      "enterprise_name": "万沙电气有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "258",
+      "enterprise_name": "温州合力自动化仪表有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "259",
+      "enterprise_name": "浙江恒业电子股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "平湖市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "260",
+      "enterprise_name": "浙江红谱科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "西湖区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "261",
+      "enterprise_name": "浙江华采科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "262",
+      "enterprise_name": "浙江康格电气有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "263",
+      "enterprise_name": "鹏业控股集团有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "264",
+      "enterprise_name": "杭州新川新材料有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "265",
+      "enterprise_name": "湖州永兴特种不锈钢有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "266",
+      "enterprise_name": "浙江富日进材料科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "267",
+      "enterprise_name": "浙江申吉钛业股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "268",
+      "enterprise_name": "浙江松发复合新材料有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "平湖市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "269",
+      "enterprise_name": "嘉兴市科讯电子有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "秀洲区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "270",
+      "enterprise_name": "浙江晨华科技有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "吴兴区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "271",
+      "enterprise_name": "杭州土星动力科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "272",
+      "enterprise_name": "龙兴（杭州）航空电子有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "273",
+      "enterprise_name": "浙江华飞智能科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "274",
+      "enterprise_name": "浙江万丰飞机制造有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "275",
+      "enterprise_name": "杭州赛得林智能装备有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "富阳区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "276",
+      "enterprise_name": "轻工业杭州机电设计研究院有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "277",
+      "enterprise_name": "咸亨国际（杭州）电气制造有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "拱墅区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "278",
+      "enterprise_name": "星光农机股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "南浔区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "279",
+      "enterprise_name": "浙江钙科科技股份有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "280",
+      "enterprise_name": "浙江祥邦科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "281",
+      "enterprise_name": "中汽商用汽车有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "桐庐县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "282",
+      "enterprise_name": "台州市黄岩星泰塑料模具有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "黄岩区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "283",
+      "enterprise_name": "伟明环保装备集团有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "龙湾区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "284",
+      "enterprise_name": "浙江艾领创矿业科技股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "金东区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "285",
+      "enterprise_name": "浙江晶阳机电股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海宁市",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "286",
+      "enterprise_name": "浙江普兰卡钎具股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "路桥区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "287",
+      "enterprise_name": "开源环境科技集团有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "288",
+      "enterprise_name": "马丁科瑞半导体（浙江）有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "安吉县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "289",
+      "enterprise_name": "四维生态科技（杭州）有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "滨江区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "290",
+      "enterprise_name": "浙江恒道科技股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "291",
+      "enterprise_name": "浙江中科尚弘离子装备工程有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "292",
+      "enterprise_name": "德清申达机器制造有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "德清县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "293",
+      "enterprise_name": "浙江德硕科技股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "永康市",
+      "geography_basis": "official_local_policy_plus_qice_crosscheck"
+    },
+    {
+      "sequence_no": "294",
+      "enterprise_name": "浙江海印数码科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "295",
+      "enterprise_name": "浙江环耀环境建设有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "拱墅区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "296",
+      "enterprise_name": "浙江田中精机股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "嘉善县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "297",
+      "enterprise_name": "浙江亿帆自动化设备有限公司",
+      "province": "浙江省",
+      "city": "湖州市",
+      "county": "长兴县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "298",
+      "enterprise_name": "杭州凯美模具有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "299",
+      "enterprise_name": "杭州新诺微电子有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "300",
+      "enterprise_name": "台州市点睛模业有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "黄岩区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "301",
+      "enterprise_name": "浙江汉信科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "临平区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "302",
+      "enterprise_name": "浙江启明海洋电力工程有限公司",
+      "province": "浙江省",
+      "city": "舟山市",
+      "county": "定海区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "303",
+      "enterprise_name": "浙江金昌特种纸股份有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "龙游县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "304",
+      "enterprise_name": "浙江哲丰新材料有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "常山县",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "305",
+      "enterprise_name": "浙江弄潮儿智慧科技有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "拱墅区",
+      "geography_basis": "current_library_identity_crosswalk"
+    },
+    {
+      "sequence_no": "306",
+      "enterprise_name": "墨卓生物科技（浙江）有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "桐乡市",
+      "geography_basis": "current_library_identity_crosswalk"
+    }
+  ]
+}

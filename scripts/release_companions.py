@@ -295,7 +295,7 @@ def _remove_existing_brand_watermarks(document: Document) -> None:
 
 
 def _build_simplified_manager_manual(spec: dict[str, Any]) -> Document:
-    """Build the V1.4.5 compact reference guide without legacy sections."""
+    """Build the current compact reference guide without legacy sections."""
 
     document = Document()
     section = document.sections[0]
@@ -390,7 +390,7 @@ def _build_simplified_manager_manual(spec: dict[str, Any]) -> Document:
 
     sections = [
         (
-            "1 V1.4.5 安装边界",
+            f"1 {spec['tag']} 安装边界",
             [
                 "当前目标。本版本只处理安装简单和 MCP 能直接连上。算法程序化执行已拆分为后续独立项目。",
                 "安装包内容。只保留 49 项 Skills、WorkBuddy 插件清单、最小行为 Hook，以及必要的参考资料和业务脚本。",
@@ -402,8 +402,9 @@ def _build_simplified_manager_manual(spec: dict[str, Any]) -> Document:
             [
                 "第一步。用户登录焦糖网站，点击一键安装，把网站生成的一段完整指令粘贴给 WorkBuddy。",
                 "第二步。WorkBuddy 自动安装或更新 49 项 Skills，启用失败放行的最小行为 Hook。",
-                "第三步。WorkBuddy 把远程 MCP 合并到用户配置。只替换 mcpServers.jiaotang-kb，保留其他 MCP。",
+                "第三步。WorkBuddy 把远程 MCP 合并到用户配置。Windows 使用 %USERPROFILE%\\.workbuddy\\mcp.json，macOS 使用 ~/.workbuddy/mcp.json，文件名必须为不带点前缀的 mcp.json。只替换 mcpServers.jiaotang-kb，保留其他 MCP。",
                 "第四步。安装或更新后只重载一次 WorkBuddy，然后进入状态验收。",
+                "安全确认。连接器出现后仍由用户在 WorkBuddy 界面手动信任，不绕过宿主安全确认。",
                 "网页入口。如果 WorkBuddy 尚未提供网页直装协议，一键安装就是一次复制粘贴；官方支持深链后再升级网页按钮。",
             ],
         ),
@@ -586,7 +587,7 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
 
         sections = [
             (
-                "1 V1.4.5 安装边界",
+                f"1 {spec['tag']} 安装边界",
                 [
                     "本版本只处理安装简单和 MCP 能直接连上。算法程序化执行已拆分为后续独立项目。",
                     "安装包只保留 49 项 Skills、WorkBuddy 插件清单、最小行为 Hook，以及必要的参考资料和业务脚本。",
@@ -598,8 +599,9 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
                 [
                     "用户登录焦糖网站，点击一键安装，把网站生成的一段完整指令粘贴给 WorkBuddy。",
                     "WorkBuddy 自动安装或更新 49 项 Skills，启用失败放行的最小行为 Hook。",
-                    "WorkBuddy 把远程 MCP 合并到用户配置。只替换 mcpServers.jiaotang-kb，保留其他 MCP。",
+                    "WorkBuddy 把远程 MCP 合并到用户配置。Windows 使用 %USERPROFILE%\\.workbuddy\\mcp.json，macOS 使用 ~/.workbuddy/mcp.json，文件名必须为不带点前缀的 mcp.json。只替换 mcpServers.jiaotang-kb，保留其他 MCP。",
                     "安装或更新后只重载一次 WorkBuddy，然后进入状态验收。",
+                    "连接器出现后仍由用户在 WorkBuddy 界面手动信任，不绕过宿主安全确认。",
                     "如果 WorkBuddy 尚未提供网页直装协议，一键安装就是一次复制粘贴；后续官方支持深链后再升级网页按钮。",
                 ],
             ),

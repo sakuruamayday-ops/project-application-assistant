@@ -187,13 +187,29 @@ def test_oss_cache_rejects_index_without_structured_tables(tmp_path):
     assert valid_cached_index(database_path, quick_check=False) is True
 
 
-def test_list_entity_extraction_keeps_factory_and_plain_company_suffixes():
+def test_list_entity_extraction_keeps_factory_research_institute_and_qualifier():
     mentions = enterprise_mentions(
-        "120\n石嘴山市塑料厂\n石嘴山市 惠农区\n293\n宁夏石炭井炭化实业公司\n石嘴山市 大武口区"
+        "368.0 | 杭州华润传感器厂\n"
+        "403.0 | 杭州西湖电子研究所\n"
+        "605.0 | 中汽商用汽车有限公司（杭州）"
     )
-    assert [item[0] for item in mentions] == [
-        "石嘴山市塑料厂",
-        "宁夏石炭井炭化实业公司",
+    assert [(item[0], item[1]) for item in mentions] == [
+        ("杭州华润传感器厂", "368"),
+        ("杭州西湖电子研究所", "403"),
+        ("中汽商用汽车有限公司（杭州）", "605"),
+    ]
+
+
+def test_list_entity_extraction_keeps_current_name_and_sequence_across_region_line():
+    mentions = enterprise_mentions(
+        "114\n浙江省\n宇恒电池有限公司（原名：浙江凯恩电池有限公司）\n"
+        "117\n浙江省\n精工阀门集团有限公司（原名：精工阀门有限公司）\n"
+        "297\n广西壮族\n自治区\n柳州源创电喷技术有限公司"
+    )
+    assert [(item[0], item[1]) for item in mentions] == [
+        ("宇恒电池有限公司", "114"),
+        ("精工阀门集团有限公司", "117"),
+        ("柳州源创电喷技术有限公司", "297"),
     ]
 
 
@@ -1201,9 +1217,10 @@ def test_gold_standard_contains_sixty_cases_and_metadata_is_exact():
     assert evaluate(metadata_cases)["core_field_accuracy"] == 1.0
 
 
-def test_small_giant_platform_year_uses_earliest_recognition_year():
-    from scripts.build_national_small_giant_master import record_year
+def test_small_giant_platform_year_claims_are_split_without_promoting_cohorts():
+    from scripts.build_national_small_giant_master import record_year, record_years
 
+    assert record_years("2025年,2021年") == [2021, 2025]
     assert record_year("2025年,2021年") == 2021
     assert record_year("2024年,2020年") == 2020
     assert record_year("2026年") is None

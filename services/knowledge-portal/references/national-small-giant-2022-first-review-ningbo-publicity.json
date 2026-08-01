@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "source_id": "national-small-giant-2022-first-review-ningbo-publicity",
+  "document_title": "第一批专精特新“小巨人”复核通过企业公示名单—宁波市4家",
+  "event_year": 2022,
+  "cohort_year": 2019,
+  "batch": "第一批复核",
+  "official_url": "http://jxj.ningbo.gov.cn/art/2022/8/8/art_1229561613_58934870.html",
+  "evidence_archive_url": "https://finance.sina.cn/2022-08-11/detail-imizmscv5788060.d.html",
+  "project_name": "国家专精特新“小巨人”企业",
+  "event_type": "review_publicity",
+  "status": "复核通过公示",
+  "coverage_basis": "official_review_publication_membership_plus_prior_cohort_identity_geography",
+  "expected_count": 4,
+  "entities": [
+    {
+      "sequence_no": 1,
+      "enterprise_name": "宁波中意液压马达有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "镇海区"
+    },
+    {
+      "sequence_no": 2,
+      "enterprise_name": "宁波菲仕技术股份有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "北仑区"
+    },
+    {
+      "sequence_no": 3,
+      "enterprise_name": "宁波索诺工业自控设备有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "奉化区"
+    },
+    {
+      "sequence_no": 4,
+      "enterprise_name": "宁波长城精工实业有限公司",
+      "province": "浙江省",
+      "city": "宁波市",
+      "county": "余姚市"
+    }
+  ]
+}

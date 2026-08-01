@@ -91,8 +91,8 @@ ZHEJIANG_PREFECTURE_CITIES = (
 COVERAGE_MATRIX_JSON = "省级项目年度设区市覆盖矩阵.json"
 COVERAGE_MATRIX_CSV = "省级项目年度设区市覆盖矩阵.csv"
 COVERAGE_COLLECTION_QUEUE = "省级项目年度设区市增量采集队列.jsonl"
-EventKey = tuple[str, str, int | None, str, str, str]
-IdentityEventKey = tuple[str, str, int | None, str, str, str]
+EventKey = tuple[str, str, int | None, str, str, str, str]
+IdentityEventKey = tuple[str, str, int | None, str, str, str, str]
 
 
 def parse_args() -> argparse.Namespace:
@@ -166,6 +166,7 @@ def merge_identity_event_rows(
             str(row.get("batch") or ""),
             str(row.get("status") or ""),
             str(row.get("event_type") or ""),
+            str(row.get("subject_key") or "enterprise"),
         )
         current = merged.get(key)
         if current is None:
@@ -976,6 +977,10 @@ def add_event(
     evidence_status: str = "",
     cohort_year: int | None = None,
     lifecycle_rule: dict[str, Any] | None = None,
+    subject_type: str = "enterprise",
+    subject_key: str = "",
+    subject_name: str = "",
+    product_name: str = "",
 ) -> None:
     enterprise_name = enterprise_name.strip()
     if not enterprise_name:
@@ -989,13 +994,30 @@ def add_event(
             if event_type in {"recognition_publicity", "review_publicity"}
             else "official_or_archived_list"
         )
-    key = (normalize_name(enterprise_name), project_name, year, batch, status, event_type)
+    subject_type = subject_type or "enterprise"
+    subject_name = subject_name.strip() or enterprise_name
+    subject_key = subject_key.strip() or (
+        normalize_name(subject_name) if subject_type != "enterprise" else "enterprise"
+    )
+    key = (
+        normalize_name(enterprise_name),
+        project_name,
+        year,
+        batch,
+        status,
+        event_type,
+        subject_key,
+    )
     item = events.setdefault(
         key,
         {
             "enterprise_name_at_event": enterprise_name,
             "normalized_name": normalize_name(enterprise_name),
             "project_name": project_name,
+            "subject_type": subject_type,
+            "subject_key": subject_key,
+            "subject_name": subject_name,
+            "product_name": product_name.strip(),
             "event_year": year,
             "recognition_year": year,
             "cohort_year": cohort_year,
@@ -1051,23 +1073,50 @@ def lifecycle_section(content: str, start_pattern: str, end_pattern: str) -> str
 
 def numbered_organization_lines(content: str) -> list[tuple[str, str]]:
     rows: list[tuple[str, str]] = []
+    pending_sequence = ""
     for line in content.splitlines():
         # Official attachments are commonly extracted as ``1 企业名称`` while
         # normalized evidence archives use Markdown's ``1. 企业名称`` form.
         match = re.match(r"^\s*(\d+)(?:\s*[.．、）)]\s*|\s+)(.+?)\s*$", line)
         if not match:
+            stripped = line.strip()
+            if stripped.isdigit():
+                pending_sequence = stripped
+                continue
+            if pending_sequence and re.search(
+                r"(公司|研究院|研究所|合作社|厂|中心|事务所|学院)(?:-\d+)?$",
+                stripped,
+            ):
+                rows.append((stripped, pending_sequence))
+            pending_sequence = ""
             continue
         name = match.group(2).strip()
         if not re.search(
-            r"(公司|研究院|合作社|厂|中心|事务所|学院)$",
+            r"(公司|研究院|研究所|合作社|厂|中心|事务所|学院)(?:-\d+)?$",
             name,
         ):
             continue
         rows.append((name, match.group(1)))
+        pending_sequence = ""
     return rows
 
 
-def xlsx_enterprise_column(path: Path) -> list[tuple[str, str]]:
+def _organization_name(value: str) -> bool:
+    value = re.sub(r"-\d+$", "", value.strip())
+    return bool(
+        value
+        and re.search(
+            r"(公司|研究院|研究所|合作社|厂|中心|事务所|学院|院)$",
+            value,
+        )
+    )
+
+
+def xlsx_enterprise_column(
+    path: Path,
+    start_pattern: str = "",
+    end_pattern: str = "",
+) -> list[tuple[str, str]]:
     """Read an enterprise-name column without depending on a workbook runtime."""
     if not path.is_file():
         raise ValueError(f"spreadsheet lifecycle source not found: {path}")
@@ -1117,8 +1166,24 @@ def xlsx_enterprise_column(path: Path) -> list[tuple[str, str]]:
                     parsed[column_index] = value.strip()
                 if parsed:
                     parsed_rows.append(parsed)
+            section_start = 0
+            if start_pattern:
+                section_start_match = next(
+                    (
+                        row_index
+                        for row_index, parsed in enumerate(parsed_rows)
+                        if any(
+                            re.search(start_pattern, value)
+                            for value in parsed.values()
+                        )
+                    ),
+                    None,
+                )
+                if section_start_match is None:
+                    continue
+                section_start = section_start_match
             header_position: tuple[int, int] | None = None
-            for row_index, parsed in enumerate(parsed_rows):
+            for row_index, parsed in enumerate(parsed_rows[section_start:], start=section_start):
                 for column_index, value in parsed.items():
                     if normalize_name(value) in {"企业名称", "企业名单"}:
                         header_position = (row_index, column_index)
@@ -1129,21 +1194,77 @@ def xlsx_enterprise_column(path: Path) -> list[tuple[str, str]]:
                 continue
             header_row, enterprise_column = header_position
             names: list[tuple[str, str]] = []
-            for sequence, parsed in enumerate(
-                parsed_rows[header_row + 1 :],
-                start=1,
-            ):
-                name = str(parsed.get(enterprise_column) or "").strip()
-                if not name or not re.search(
-                    r"(公司|研究院|合作社|厂|中心|事务所|学院)$",
-                    name,
+            for sequence, parsed in enumerate(parsed_rows[header_row + 1 :], start=1):
+                if end_pattern and any(
+                    re.search(end_pattern, value) for value in parsed.values()
                 ):
+                    break
+                name = re.sub(
+                    r"-\d+$",
+                    "",
+                    str(parsed.get(enterprise_column) or "").strip(),
+                )
+                if not _organization_name(name):
                     continue
                 sequence_no = str(parsed.get(enterprise_column - 1) or sequence)
                 names.append((name, sequence_no))
             if names:
                 return names
     raise ValueError(f"spreadsheet enterprise-name column not found: {path}")
+
+
+def docx_enterprise_rows(path: Path) -> list[tuple[str, str]]:
+    """Read enterprise rows from official DOCX tables or paragraph lists."""
+    if not path.is_file():
+        raise ValueError(f"docx lifecycle source not found: {path}")
+    namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    with zipfile.ZipFile(path) as archive:
+        try:
+            root = ET.fromstring(archive.read("word/document.xml"))
+        except KeyError as error:
+            raise ValueError(f"invalid docx lifecycle source: {path}") from error
+
+    def node_text(node: ET.Element) -> str:
+        return "".join(
+            str(text.text or "") for text in node.findall(".//w:t", namespace)
+        ).strip()
+
+    for table in root.findall(".//w:tbl", namespace):
+        rows = [
+            [node_text(cell) for cell in row.findall("w:tc", namespace)]
+            for row in table.findall("w:tr", namespace)
+        ]
+        header_position: tuple[int, int] | None = None
+        for row_index, row in enumerate(rows):
+            for column_index, value in enumerate(row):
+                if normalize_name(value) in {"企业名称", "企业名单"}:
+                    header_position = (row_index, column_index)
+                    break
+            if header_position:
+                break
+        if not header_position:
+            continue
+        header_row, enterprise_column = header_position
+        names: list[tuple[str, str]] = []
+        for sequence, row in enumerate(rows[header_row + 1 :], start=1):
+            name = row[enterprise_column].strip() if enterprise_column < len(row) else ""
+            if not _organization_name(name):
+                continue
+            sequence_no = row[enterprise_column - 1].strip() if enterprise_column else ""
+            if not sequence_no.isdigit():
+                sequence_no = str(sequence)
+            names.append((name, sequence_no))
+        if names:
+            return names
+
+    paragraph_names = [
+        node_text(paragraph)
+        for paragraph in root.findall(".//w:body/w:p", namespace)
+    ]
+    names = [value for value in paragraph_names if _organization_name(value)]
+    if names:
+        return [(name, str(index)) for index, name in enumerate(names, start=1)]
+    raise ValueError(f"docx enterprise rows not found: {path}")
 
 
 def load_manifest_lifecycle_events(
@@ -1171,23 +1292,64 @@ def load_manifest_lifecycle_events(
         has_spreadsheet_entities = (
             source.get("entity_extraction") == "spreadsheet_enterprise_column"
         )
+        has_docx_entities = source.get("entity_extraction") == "docx_enterprise_rows"
+        has_structured_entities = (
+            source.get("entity_extraction") == "structured_entities_json"
+        )
         inline_entities = list(source.get("entities") or [])
+        entity_regions: dict[str, dict[str, str]] = {}
         if has_inline_entities:
             for index, entity in enumerate(inline_entities, start=1):
                 if isinstance(entity, dict):
                     name = str(entity.get("enterprise_name") or "").strip()
                     sequence_no = str(entity.get("sequence_no") or index)
+                    entity_regions[normalize_name(name)] = {
+                        "province": str(entity.get("province") or ""),
+                        "city": str(entity.get("city") or ""),
+                        "county": str(entity.get("county") or ""),
+                    }
                 else:
                     name = str(entity).strip()
                     sequence_no = str(index)
                 if name:
                     names.append((name, sequence_no))
+        elif has_structured_entities:
+            structured_path = Path(source_path).expanduser()
+            if not structured_path.is_absolute():
+                structured_path = Path(__file__).resolve().parents[1] / structured_path
+            payload = json.loads(structured_path.read_text(encoding="utf-8"))
+            structured_entities = list(payload.get("entities") or [])
+            for index, entity in enumerate(structured_entities, start=1):
+                if isinstance(entity, dict):
+                    name = str(entity.get("enterprise_name") or "").strip()
+                    sequence_no = str(entity.get("sequence_no") or index)
+                    entity_regions[normalize_name(name)] = {
+                        "province": str(entity.get("province") or ""),
+                        "city": str(entity.get("city") or ""),
+                        "county": str(entity.get("county") or ""),
+                    }
+                else:
+                    name = str(entity).strip()
+                    sequence_no = str(index)
+                if not name:
+                    continue
+                names.append((name, sequence_no))
+            source_path = str(structured_path)
+            document_sha256 = hashlib.sha256(structured_path.read_bytes()).hexdigest()
         elif has_spreadsheet_entities:
             spreadsheet_path = Path(source_path).expanduser()
-            names = xlsx_enterprise_column(spreadsheet_path)
+            names = xlsx_enterprise_column(
+                spreadsheet_path,
+                str(source.get("start_pattern") or ""),
+                str(source.get("end_pattern") or ""),
+            )
             document_sha256 = hashlib.sha256(
                 spreadsheet_path.read_bytes()
             ).hexdigest()
+        elif has_docx_entities:
+            docx_path = Path(source_path).expanduser()
+            names = docx_enterprise_rows(docx_path)
+            document_sha256 = hashlib.sha256(docx_path.read_bytes()).hexdigest()
         else:
             documents = connection.execute(
                 f"""
@@ -1237,6 +1399,27 @@ def load_manifest_lifecycle_events(
                     continue
                 seen.add(normalized)
                 names.append((name, str(mention["sequence_no"] or "")))
+        # External structured/spreadsheet sources may be a cleaned extraction of
+        # a document that is also indexed in ``documents``.  Resolve that source
+        # document for exclusions without replacing the cleaned source path;
+        # otherwise the generic loader would create a second event for the same
+        # attachment (and, for late-published final notices, sometimes in the
+        # publication year instead of the policy year).
+        if document_id is None and "title" in document_columns and (
+            has_structured_entities or has_spreadsheet_entities or has_docx_entities
+        ):
+            indexed_document = connection.execute(
+                """
+                SELECT d.id
+                FROM documents d
+                WHERE d.title=?
+                ORDER BY d.id
+                LIMIT 1
+                """,
+                (source_title,),
+            ).fetchone()
+            if indexed_document is not None:
+                document_id = int(indexed_document["id"])
         expected_count_configured = "expected_count" in source
         expected_count = int(source.get("expected_count") or 0)
         count_aligned = not expected_count_configured or expected_count == len(names)
@@ -1277,6 +1460,7 @@ def load_manifest_lifecycle_events(
         for name, sequence_no in names:
             if document_id is not None:
                 exclusions.add((document_id, normalize_name(name)))
+            entity_region = entity_regions.get(normalize_name(name), {})
             add_event(
                 events,
                 enterprise_name=name,
@@ -1289,9 +1473,9 @@ def load_manifest_lifecycle_events(
                 ),
                 batch=str(source.get("batch") or ""),
                 status=str(source.get("status") or ""),
-                province="浙江省",
-                city=str(source.get("city") or ""),
-                county="",
+                province=str(entity_region.get("province") or "浙江省"),
+                city=str(entity_region.get("city") or source.get("city") or ""),
+                county=str(entity_region.get("county") or ""),
                 source_title=source_title,
                 source_path=source_path,
                 source_url=str(
@@ -1341,8 +1525,19 @@ def load_manifest_lifecycle_events(
                     source.get("coverage_confirmed_empty")
                 ),
                 "expected_count": expected_count,
+                "announced_count": int(source.get("announced_count") or expected_count),
+                "known_blank_sequences": [
+                    str(value) for value in source.get("known_blank_sequences", [])
+                ],
                 "actual_count": len(names),
                 "count_aligned": count_aligned,
+                "completeness_claim_allowed": bool(
+                    source.get(
+                        "completeness_claim_allowed",
+                        bool(count_aligned)
+                        and not bool(source.get("known_blank_sequences")),
+                    )
+                ),
                 "source_fingerprint": source_fingerprint,
                 "registration_source": "configured_manifest",
             }
@@ -1381,10 +1576,13 @@ def audit_regional_source_coverage(
         for source in matching_sources:
             sources_by_region[str(source.get("city") or "")].append(source)
 
+        allow_multiple_sources_per_region = bool(
+            rule.get("allow_multiple_sources_per_region")
+        )
         duplicate_regions = sorted(
             region
             for region, items in sources_by_region.items()
-            if region and len(items) > 1
+            if region and len(items) > 1 and not allow_multiple_sources_per_region
         )
         unexpected_regions = sorted(
             region
@@ -1404,7 +1602,12 @@ def audit_regional_source_coverage(
         count_mismatch_regions = sorted(
             region
             for region, items in sources_by_region.items()
-            if region and not all(bool(item["count_aligned"]) for item in items)
+            if region
+            and not all(
+                bool(item["count_aligned"])
+                and bool(item.get("completeness_claim_allowed", True))
+                for item in items
+            )
         )
         complete = not any(
             (
@@ -1463,6 +1666,7 @@ def audit_regional_source_coverage(
             ],
             "complete": complete,
             "strict": bool(rule.get("strict", True)),
+            "allow_multiple_sources_per_region": allow_multiple_sources_per_region,
         }
         audits.append(audit)
         if audit["strict"] and not complete:
@@ -1480,18 +1684,34 @@ def load_small_giant_events(
     path: Path,
     events: dict[EventKey, dict[str, Any]],
     rules: dict[str, dict[str, Any]],
+    authoritative_cohorts: set[tuple[int, str]] | None = None,
 ) -> None:
+    authoritative_cohorts = authoritative_cohorts or set()
     project_name = "国家专精特新“小巨人”企业"
     rule = lifecycle_rule_for(project_name, rules)
     for row in read_csv(path):
         if row.get("region") != "浙江省":
             continue
+        event_year = (
+            int(row["recognition_year"])
+            if row.get("recognition_year", "").isdigit()
+            else None
+        )
+        batch = str(row.get("batch") or "")
+        # Once an official provincial/city attachment has been bound entity by
+        # entity, the derived national master must no longer create a parallel
+        # event with a different status.  Keeping both used to double annual
+        # and city counts even though both rows described the same cohort.
+        if event_year is not None and (event_year, batch) in authoritative_cohorts:
+            continue
+        verification_status = row.get("verification_status", "")
+        officially_matched = verification_status == "official_local_fragment_match"
         add_event(
             events,
             enterprise_name=row.get("enterprise_name", ""),
             project_name=project_name,
-            year=int(row["recognition_year"]) if row.get("recognition_year", "").isdigit() else None,
-            batch=row.get("batch", ""),
+            year=event_year,
+            batch=batch,
             status=row.get("status", ""),
             province="浙江省",
             city=row.get("city", ""),
@@ -1501,9 +1721,13 @@ def load_small_giant_events(
             source_url=row.get("official_url", ""),
             sequence_no=row.get("sequence_no", ""),
             source_kind=row.get("official_url_role", "") or "official_batch_master",
-            event_type="recognition",
-            event_scope="qualification",
-            evidence_status="official_final_list",
+            event_type="recognition_publicity" if officially_matched else "discovery_claim",
+            event_scope="qualification" if officially_matched else "discovery",
+            evidence_status=(
+                "official_publicity_fragment_match"
+                if officially_matched
+                else "licensed_platform_pending"
+            ),
             lifecycle_rule=rule,
         )
 
@@ -1543,6 +1767,20 @@ def load_list_events(
         project_name = canonical_lifecycle_project(project_name, lifecycle_aliases)
         if project_name == "国家专精特新“小巨人”企业":
             continue
+        if (
+            project_name == "浙江省专精特新中小企业"
+            and re.search(r"(奖励|奖补|财政支持|重点支持)", str(row["title"] or ""))
+        ):
+            # Reward/support lists describe a fiscal event, not a new
+            # qualification event.  They must never inflate recognition lists.
+            continue
+        if project_name in {
+            "浙江省首版次软件产品",
+            "浙江省首批次新材料",
+            "浙江省制造业首台（套）装备",
+        }:
+            # 三首必须从企业＋产品专表进入时间轴，禁止通用名单实体生成企业级重复事件。
+            continue
         if project_name not in TARGET_PROJECTS and project_name not in rules:
             continue
         if (int(row["document_id"]), normalize_name(str(row["enterprise_name"]))) in exclusions:
@@ -1575,11 +1813,16 @@ def load_three_first_events(
     rules: dict[str, dict[str, Any]],
 ) -> None:
     for row in read_jsonl(path):
+        if str(row.get("confidence") or "") == "discovery_only":
+            continue
         province = str(row.get("province") or "")
         if province not in {"浙江", "浙江省", ""}:
             continue
         project_name = str(row.get("project_name") or "")
         if project_name not in TARGET_PROJECTS:
+            continue
+        product_name = str(row.get("product_name") or "").strip()
+        if not product_name:
             continue
         add_event(
             events,
@@ -1601,6 +1844,10 @@ def load_three_first_events(
                 project_name,
             ),
             lifecycle_rule=lifecycle_rule_for(project_name, rules),
+            subject_type="product",
+            subject_key=normalize_name(product_name),
+            subject_name=product_name,
+            product_name=product_name,
         )
 
 
@@ -1854,6 +2101,19 @@ def write_outputs(
             {
                 **item,
                 "identity_key": identity_key,
+                "event_uid": hashlib.sha256(
+                    "|".join(
+                        (
+                            identity_key,
+                            str(item["project_name"]),
+                            str(item.get("event_year") or ""),
+                            str(item.get("batch") or ""),
+                            str(item.get("status") or ""),
+                            str(item.get("event_type") or ""),
+                            str(item.get("subject_key") or "enterprise"),
+                        )
+                    ).encode("utf-8")
+                ).hexdigest(),
                 "source_paths": sorted(item["source_paths"]),
                 "source_urls": sorted(item["source_urls"]),
                 "sequence_numbers": sorted(item["sequence_numbers"]),
@@ -2043,6 +2303,8 @@ def write_outputs(
         DROP TABLE IF EXISTS enterprise_identity_profiles;
         DROP TABLE IF EXISTS enterprise_identity_names;
         DROP TABLE IF EXISTS enterprise_recognition_events;
+        DROP TABLE IF EXISTS enterprise_lifecycle_source_audits;
+        DROP TABLE IF EXISTS enterprise_regional_coverage_audits;
         DROP TABLE IF EXISTS enterprise_project_identity_twins;
         DROP TABLE IF EXISTS enterprise_project_identity_twin_steps;
         CREATE TABLE enterprise_identity_profiles(
@@ -2077,10 +2339,15 @@ def write_outputs(
         );
         CREATE TABLE enterprise_recognition_events(
             id INTEGER PRIMARY KEY,
+            event_uid TEXT NOT NULL UNIQUE,
             identity_key TEXT NOT NULL,
             enterprise_name_at_event TEXT NOT NULL,
             normalized_name TEXT NOT NULL,
             project_name TEXT NOT NULL,
+            subject_type TEXT NOT NULL DEFAULT 'enterprise',
+            subject_key TEXT NOT NULL DEFAULT 'enterprise',
+            subject_name TEXT NOT NULL DEFAULT '',
+            product_name TEXT NOT NULL DEFAULT '',
             event_year INTEGER,
             recognition_year INTEGER,
             cohort_year INTEGER,
@@ -2100,7 +2367,43 @@ def write_outputs(
             source_urls_json TEXT NOT NULL DEFAULT '[]',
             sequence_numbers_json TEXT NOT NULL DEFAULT '[]',
             source_kinds_json TEXT NOT NULL DEFAULT '[]',
-            UNIQUE(identity_key,project_name,event_year,batch,status,event_type)
+            UNIQUE(identity_key,project_name,event_year,batch,status,event_type,subject_key)
+        );
+        CREATE TABLE enterprise_lifecycle_source_audits(
+            source_id TEXT PRIMARY KEY,
+            document_id INTEGER,
+            document_title TEXT NOT NULL,
+            project_name TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            event_year INTEGER,
+            batch TEXT NOT NULL DEFAULT '',
+            city TEXT NOT NULL DEFAULT '',
+            covered_cities_json TEXT NOT NULL DEFAULT '[]',
+            expected_count INTEGER NOT NULL,
+            announced_count INTEGER NOT NULL,
+            actual_count INTEGER NOT NULL,
+            count_aligned INTEGER NOT NULL,
+            completeness_claim_allowed INTEGER NOT NULL,
+            known_blank_sequences_json TEXT NOT NULL DEFAULT '[]',
+            source_path TEXT NOT NULL DEFAULT '',
+            official_url TEXT NOT NULL DEFAULT '',
+            source_fingerprint TEXT NOT NULL DEFAULT ''
+        );
+        CREATE TABLE enterprise_regional_coverage_audits(
+            coverage_group_id TEXT PRIMARY KEY,
+            project_name TEXT NOT NULL,
+            event_year INTEGER,
+            event_type TEXT NOT NULL,
+            scope TEXT NOT NULL DEFAULT '',
+            expected_region_count INTEGER NOT NULL,
+            covered_region_count INTEGER NOT NULL,
+            entity_count INTEGER NOT NULL,
+            complete INTEGER NOT NULL,
+            strict INTEGER NOT NULL,
+            expected_regions_json TEXT NOT NULL DEFAULT '[]',
+            covered_regions_json TEXT NOT NULL DEFAULT '[]',
+            missing_regions_json TEXT NOT NULL DEFAULT '[]',
+            count_mismatch_regions_json TEXT NOT NULL DEFAULT '[]'
         );
         CREATE TABLE enterprise_project_identity_twins(
             twin_id TEXT PRIMARY KEY,
@@ -2143,6 +2446,46 @@ def write_outputs(
         CREATE INDEX enterprise_project_twin_step_lookup_idx
         ON enterprise_project_identity_twin_steps(twin_id,event_year,event_type);
         """
+    )
+    connection.executemany(
+        """
+        INSERT INTO enterprise_lifecycle_source_audits VALUES(
+            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        )
+        """,
+        [
+            (
+                row["source_id"], row["document_id"], row["document_title"],
+                row["project_name"], row["event_type"], row["event_year"],
+                row["batch"], row["city"],
+                json.dumps(row["covered_cities"], ensure_ascii=False),
+                row["expected_count"], row["announced_count"], row["actual_count"],
+                int(row["count_aligned"]), int(row["completeness_claim_allowed"]),
+                json.dumps(row["known_blank_sequences"], ensure_ascii=False),
+                row["source_path"], row["official_url"], row["source_fingerprint"],
+            )
+            for row in lifecycle_source_audits
+        ],
+    )
+    connection.executemany(
+        """
+        INSERT INTO enterprise_regional_coverage_audits VALUES(
+            ?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        )
+        """,
+        [
+            (
+                row["coverage_group_id"], row["project_name"], row["event_year"],
+                row["event_type"], row["scope"], row["expected_region_count"],
+                row["covered_region_count"], row["entity_count"],
+                int(row["complete"]), int(row["strict"]),
+                json.dumps(row["expected_regions"], ensure_ascii=False),
+                json.dumps(row["covered_regions"], ensure_ascii=False),
+                json.dumps(row["missing_regions"], ensure_ascii=False),
+                json.dumps(row["count_mismatch_regions"], ensure_ascii=False),
+            )
+            for row in regional_coverage_audits
+        ],
     )
     connection.executemany(
         """
@@ -2243,19 +2586,25 @@ def write_outputs(
     connection.executemany(
         """
         INSERT OR IGNORE INTO enterprise_recognition_events(
-            identity_key,enterprise_name_at_event,normalized_name,project_name,
+            event_uid,identity_key,enterprise_name_at_event,normalized_name,project_name,
+            subject_type,subject_key,subject_name,product_name,
             event_year,recognition_year,cohort_year,event_type,event_scope,evidence_status,
             lifecycle_rule_id,cycle_type,validity_years,batch,status,recognition_province,
             recognition_city,recognition_county,source_title,source_paths_json,
             source_urls_json,sequence_numbers_json,source_kinds_json
-        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         [
             (
+                row["event_uid"],
                 row["identity_key"],
                 row["enterprise_name_at_event"],
                 row["normalized_name"],
                 row["project_name"],
+                row["subject_type"],
+                row["subject_key"],
+                row["subject_name"],
+                row["product_name"],
                 row["event_year"],
                 row["recognition_year"],
                 row["cohort_year"],
@@ -2427,7 +2776,20 @@ def main() -> None:
         discovered_coverage_sources,
         regional_coverage_discovery,
     )
-    load_small_giant_events(args.small_giant_master, events, lifecycle_rules)
+    authoritative_small_giant_cohorts = {
+        (int(source["event_year"]), str(source.get("batch") or ""))
+        for source in lifecycle_sources
+        if source.get("project_name") == "国家专精特新“小巨人”企业"
+        and source.get("event_type") == "recognition_publicity"
+        and source.get("event_year") is not None
+        and str(source.get("evidence_status") or "").startswith("official")
+    }
+    load_small_giant_events(
+        args.small_giant_master,
+        events,
+        lifecycle_rules,
+        authoritative_small_giant_cohorts,
+    )
     load_supplemental_events(
         args.supplemental_events,
         events,

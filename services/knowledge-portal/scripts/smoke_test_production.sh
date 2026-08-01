@@ -3,8 +3,6 @@ set -euo pipefail
 
 endpoint="${JIAOTANG_KB_ENDPOINT:?请设置 JIAOTANG_KB_ENDPOINT}"
 token="${JIAOTANG_KB_TOKEN:?请设置 JIAOTANG_KB_TOKEN}"
-device_id="${JIAOTANG_KB_DEVICE_ID:?请设置 JIAOTANG_KB_DEVICE_ID}"
-device_name="${JIAOTANG_KB_DEVICE_NAME:-Production Smoke Device}"
 query="${JIAOTANG_SMOKE_QUERY:-小巨人}"
 endpoint="${endpoint%/}"
 curl_args=(--fail-with-body --silent --show-error --max-time 30)
@@ -22,8 +20,6 @@ fi
 
 auth=(
     -H "Authorization: Bearer ${token}"
-    -H "X-Jiaotang-Device-ID: ${device_id}"
-    -H "X-Jiaotang-Device-Name: ${device_name}"
 )
 header_file="$(mktemp)"
 trap 'rm -f "${header_file}"' EXIT

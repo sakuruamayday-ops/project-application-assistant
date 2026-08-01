@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "source_id": "national-small-giant-2022-first-review-zhejiang-non-ningbo-publicity",
+  "document_title": "附件2：第一批专精特新“小巨人”复核通过企业公示名单_1 (1).xls",
+  "event_year": 2022,
+  "cohort_year": 2019,
+  "batch": "第一批复核",
+  "official_url": "",
+  "evidence_archive_url": "",
+  "project_name": "国家专精特新“小巨人”企业",
+  "event_type": "review_publicity",
+  "status": "复核通过公示",
+  "coverage_basis": "official_review_publication_membership_plus_prior_cohort_identity_geography",
+  "expected_count": 12,
+  "entities": [
+    {
+      "sequence_no": 1,
+      "enterprise_name": "杭州新坐标科技股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "余杭区"
+    },
+    {
+      "sequence_no": 2,
+      "enterprise_name": "杭州华澜微电子股份有限公司",
+      "province": "浙江省",
+      "city": "杭州市",
+      "county": "萧山区"
+    },
+    {
+      "sequence_no": 3,
+      "enterprise_name": "浙江金石包装有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "乐清市"
+    },
+    {
+      "sequence_no": 4,
+      "enterprise_name": "浙江朝隆纺织机械股份有限公司",
+      "province": "浙江省",
+      "city": "温州市",
+      "county": "瓯海区"
+    },
+    {
+      "sequence_no": 5,
+      "enterprise_name": "宇星紧固件（嘉兴）股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海盐县"
+    },
+    {
+      "sequence_no": 6,
+      "enterprise_name": "恒锋工具股份有限公司",
+      "province": "浙江省",
+      "city": "嘉兴市",
+      "county": "海盐县"
+    },
+    {
+      "sequence_no": 7,
+      "enterprise_name": "浙江双鸟机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "嵊州市"
+    },
+    {
+      "sequence_no": 8,
+      "enterprise_name": "浙江科惠医疗器械股份有限公司",
+      "province": "浙江省",
+      "city": "金华市",
+      "county": "婺城区"
+    },
+    {
+      "sequence_no": 9,
+      "enterprise_name": "浙江天际互感器有限公司",
+      "province": "浙江省",
+      "city": "衢州市",
+      "county": "江山市"
+    },
+    {
+      "sequence_no": 10,
+      "enterprise_name": "浙江格凌实业有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "温岭市"
+    },
+    {
+      "sequence_no": 11,
+      "enterprise_name": "迈得医疗工业设备股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "玉环市"
+    },
+    {
+      "sequence_no": 12,
+      "enterprise_name": "浙江沪龙科技股份有限公司",
+      "province": "浙江省",
+      "city": "台州市",
+      "county": "玉环市"
+    }
+  ]
+}

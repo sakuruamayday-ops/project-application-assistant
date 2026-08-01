@@ -49,6 +49,8 @@ def test_xlsx_enterprise_column_reads_unindexed_official_attachment(
               <si><t>序号</t></si><si><t>企业名称</t></si>
               <si><t>浙江示例科技有限公司</t></si>
               <si><t>嘉兴示例制造厂</t></si>
+              <si><t>浙江省示例勘测设计院</t></si>
+              <si><t>浙江示例新材料科技有限公司-1006217</t></si>
             </sst>""",
         )
         archive.writestr(
@@ -59,6 +61,8 @@ def test_xlsx_enterprise_column_reads_unindexed_official_attachment(
                 <row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>
                 <row r="2"><c r="A2"><v>1</v></c><c r="B2" t="s"><v>2</v></c></row>
                 <row r="3"><c r="A3"><v>2</v></c><c r="B3" t="s"><v>3</v></c></row>
+                <row r="4"><c r="A4"><v>3</v></c><c r="B4" t="s"><v>4</v></c></row>
+                <row r="5"><c r="A5"><v>4</v></c><c r="B5" t="s"><v>5</v></c></row>
               </sheetData>
             </worksheet>""",
         )
@@ -66,7 +70,130 @@ def test_xlsx_enterprise_column_reads_unindexed_official_attachment(
     assert MODULE.xlsx_enterprise_column(workbook) == [
         ("浙江示例科技有限公司", "1"),
         ("嘉兴示例制造厂", "2"),
+        ("浙江省示例勘测设计院", "3"),
+        ("浙江示例新材料科技有限公司", "4"),
     ]
+
+
+def test_xlsx_enterprise_column_splits_review_and_active_discovery_sections(
+    tmp_path: Path,
+):
+    workbook = tmp_path / "合并名单.xlsx"
+    with zipfile.ZipFile(workbook, "w") as archive:
+        archive.writestr(
+            "xl/sharedStrings.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+              <si><t>拟复核通过名单</t></si><si><t>序号</t></si>
+              <si><t>企业名称</t></si><si><t>浙江复核企业有限公司</t></si>
+              <si><t>主动发现机制拟新增名单</t></si>
+              <si><t>浙江新增企业有限公司</t></si>
+            </sst>""",
+        )
+        archive.writestr(
+            "xl/worksheets/sheet1.xml",
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+              <sheetData>
+                <row r="1"><c r="A1" t="s"><v>0</v></c></row>
+                <row r="2"><c r="A2" t="s"><v>1</v></c><c r="B2" t="s"><v>2</v></c></row>
+                <row r="3"><c r="A3"><v>1</v></c><c r="B3" t="s"><v>3</v></c></row>
+                <row r="4"><c r="A4" t="s"><v>4</v></c></row>
+                <row r="5"><c r="A5" t="s"><v>1</v></c><c r="B5" t="s"><v>2</v></c></row>
+                <row r="6"><c r="A6"><v>1</v></c><c r="B6" t="s"><v>5</v></c></row>
+              </sheetData>
+            </worksheet>""",
+        )
+
+    assert MODULE.xlsx_enterprise_column(
+        workbook,
+        "拟复核通过名单",
+        "主动发现机制拟新增名单",
+    ) == [("浙江复核企业有限公司", "1")]
+    assert MODULE.xlsx_enterprise_column(
+        workbook,
+        "主动发现机制拟新增名单",
+    ) == [("浙江新增企业有限公司", "1")]
+
+
+def test_docx_enterprise_rows_reads_table_and_paragraph_lists(tmp_path: Path):
+    table_docx = tmp_path / "表格名单.docx"
+    paragraph_docx = tmp_path / "段落名单.docx"
+    document_xml = """<?xml version="1.0" encoding="UTF-8"?>
+      <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+        <w:body><w:tbl>
+          <w:tr><w:tc><w:p><w:r><w:t>序号</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>企业名称</w:t></w:r></w:p></w:tc></w:tr>
+          <w:tr><w:tc><w:p><w:r><w:t>1</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>浙江表格企业有限公司</w:t></w:r></w:p></w:tc></w:tr>
+        </w:tbl></w:body></w:document>"""
+    with zipfile.ZipFile(table_docx, "w") as archive:
+        archive.writestr("word/document.xml", document_xml)
+    paragraph_xml = """<?xml version="1.0" encoding="UTF-8"?>
+      <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+        <w:body><w:p><w:r><w:t>拟认定名单</w:t></w:r></w:p>
+        <w:p><w:r><w:t>浙江段落企业有限公司</w:t></w:r></w:p></w:body></w:document>"""
+    with zipfile.ZipFile(paragraph_docx, "w") as archive:
+        archive.writestr("word/document.xml", paragraph_xml)
+
+    assert MODULE.docx_enterprise_rows(table_docx) == [
+        ("浙江表格企业有限公司", "1")
+    ]
+    assert MODULE.docx_enterprise_rows(paragraph_docx) == [
+        ("浙江段落企业有限公司", "1")
+    ]
+
+
+def test_structured_entity_source_preserves_event_city_and_county(tmp_path: Path):
+    database = tmp_path / "knowledge.sqlite3"
+    connection = sqlite3.connect(database)
+    connection.execute("CREATE TABLE documents(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
+    entities_path = tmp_path / "entities.json"
+    entities_path.write_text(
+        json.dumps(
+            {
+                "entities": [
+                    {
+                        "sequence_no": 1,
+                        "enterprise_name": "杭州示例科技有限公司",
+                        "province": "浙江省",
+                        "city": "杭州市",
+                        "county": "余杭区",
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    events = {}
+    _, audits = MODULE.load_manifest_lifecycle_events(
+        database,
+        [
+            {
+                "source_id": "structured-source",
+                "document_title": "结构化地市名单",
+                "source_path": str(entities_path),
+                "project_name": "浙江省专精特新中小企业",
+                "event_year": 2023,
+                "batch": "第一批",
+                "status": "认定",
+                "event_type": "recognition",
+                "event_scope": "qualification",
+                "evidence_status": "official_final_list",
+                "entity_extraction": "structured_entities_json",
+                "expected_count": 1,
+                "city": "杭州市",
+            }
+        ],
+        {},
+        events,
+    )
+    event = next(iter(events.values()))
+    assert event["recognition_city"] == "杭州市"
+    assert event["recognition_county"] == "余杭区"
+    assert audits[0]["actual_count"] == 1
+    assert audits[0]["completeness_claim_allowed"] is True
 
 
 def test_identity_matched_aliases_collapse_to_one_project_event():
@@ -103,13 +230,37 @@ def test_identity_matched_aliases_collapse_to_one_project_event():
     assert rows[0]["source_paths"] == ["名单.pdf", "名单镜像.pdf"]
 
 
+def test_product_subjects_do_not_collapse_in_same_enterprise_year():
+    base = {
+        "identity_key": "91330000TEST000001",
+        "project_name": "浙江省首版次软件产品",
+        "event_year": 2025,
+        "batch": "",
+        "status": "认定",
+        "event_type": "recognition",
+        "enterprise_name_at_event": "浙江示例软件有限公司",
+        "normalized_name": "浙江示例软件有限公司",
+        "source_paths": ["名单.pdf"],
+        "source_urls": [],
+        "sequence_numbers": [],
+        "source_kinds": ["three_first_product_record"],
+    }
+    rows = MODULE.merge_identity_event_rows(
+        [
+            {**base, "subject_key": "产品甲", "product_name": "产品甲"},
+            {**base, "subject_key": "产品乙", "product_name": "产品乙"},
+        ]
+    )
+    assert len(rows) == 2
+
+
 def test_lifecycle_rules_cover_four_core_projects():
     rules_path = (
         Path(__file__).resolve().parents[1]
         / "references"
         / "enterprise-lifecycle-rules.json"
     )
-    rules, _, _, aliases, discovery = MODULE.load_lifecycle_config(rules_path)
+    rules, lifecycle_sources, _, aliases, discovery = MODULE.load_lifecycle_config(rules_path)
     assert {
         "国家专精特新“小巨人”企业",
         "浙江省专精特新中小企业",
@@ -128,6 +279,55 @@ def test_lifecycle_rules_cover_four_core_projects():
     assert set(discovery["expected_regions"]) == set(
         MODULE.ZHEJIANG_PREFECTURE_CITIES
     )
+    hangzhou_2023_second = next(
+        source
+        for source in lifecycle_sources
+        if source["source_id"]
+        == "zhejiang-specialized-sme-2023-second-hangzhou-publicity"
+    )
+    assert hangzhou_2023_second["expected_count"] == 1030
+    assert hangzhou_2023_second["city"] == "杭州市"
+    assert (
+        hangzhou_2023_second["entity_extraction"]
+        == "spreadsheet_enterprise_column"
+    )
+    hangzhou_2023_new_small_giant = next(
+        source
+        for source in lifecycle_sources
+        if source["source_id"]
+        == "national-small-giant-2023-fifth-hangzhou-publicity"
+    )
+    assert hangzhou_2023_new_small_giant["event_type"] == "recognition_publicity"
+    assert hangzhou_2023_new_small_giant["expected_count"] == 117
+    assert (
+        hangzhou_2023_new_small_giant["entity_extraction"]
+        == "structured_entities_json"
+    )
+    zhejiang_2023_review = next(
+        source
+        for source in lifecycle_sources
+        if source["source_id"]
+        == "national-small-giant-2023-second-review-zhejiang-non-ningbo-publicity"
+    )
+    assert zhejiang_2023_review["event_type"] == "review_publicity"
+    assert zhejiang_2023_review["cohort_year"] == 2020
+    assert zhejiang_2023_review["expected_count"] == 75
+    ningbo_2022_review = next(
+        source
+        for source in lifecycle_sources
+        if source["source_id"]
+        == "national-small-giant-2022-first-review-ningbo-publicity"
+    )
+    assert ningbo_2022_review["expected_count"] == 4
+    assert ningbo_2022_review["city"] == "宁波市"
+    hangzhou_2023_first = next(
+        source
+        for source in lifecycle_sources
+        if source["source_id"]
+        == "zhejiang-specialized-sme-2023-first-hangzhou-final-crosscheck"
+    )
+    assert hangzhou_2023_first["expected_count"] == 676
+    assert hangzhou_2023_first["entity_extraction"] == "structured_entities_json"
 
 
 def test_event_type_keeps_high_tech_rerecognition_separate_from_review():

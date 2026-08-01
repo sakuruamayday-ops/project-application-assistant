@@ -36,9 +36,19 @@ def normalize_name(value: str) -> str:
     return re.sub(r"[\s·•（）()\-—_，,。．]+", "", value or "").lower()
 
 
+def record_years(value: str) -> list[int]:
+    """Return every platform year claim; claims are not official cohort evidence."""
+    return sorted(
+        year
+        for year in {int(item) for item in re.findall(r"20\d{2}", value or "")}
+        if year in YEAR_BATCHES
+    )
+
+
 def record_year(value: str) -> int | None:
-    years = sorted({int(item) for item in re.findall(r"20\d{2}", value or "")})
-    return years[0] if years and years[0] in YEAR_BATCHES else None
+    """Legacy discovery cohort only; the official cohort still requires source reconciliation."""
+    years = record_years(value)
+    return years[0] if years else None
 
 
 def official_evidence(connection: sqlite3.Connection) -> dict[tuple[str, str], list[dict[str, object]]]:
@@ -139,6 +149,37 @@ def qice_records(path: Path) -> list[dict[str, object]]:
     return records
 
 
+def qice_year_claims(path: Path) -> list[dict[str, object]]:
+    """Keep multi-year platform labels as discovery claims instead of false official recognitions."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    claims: list[dict[str, object]] = []
+    seen: set[tuple[str, str, int]] = set()
+    for item in payload.get("records", []):
+        if not isinstance(item, dict):
+            continue
+        enterprise_name = str(item.get("entName") or "").strip()
+        normalized_name = normalize_name(enterprise_name)
+        qice_eid = str(item.get("eid") or "")
+        raw_years = str(item.get("subsidyYear") or "")
+        for year in record_years(raw_years):
+            key = (qice_eid, normalized_name, year)
+            if not enterprise_name or key in seen:
+                continue
+            seen.add(key)
+            claims.append(
+                {
+                    "enterprise_name": enterprise_name,
+                    "normalized_name": normalized_name,
+                    "qice_eid": qice_eid,
+                    "claim_year": year,
+                    "mapped_batch": YEAR_BATCHES[year],
+                    "platform_year_raw": raw_years,
+                    "evidence_status": "discovery_only",
+                }
+            )
+    return claims
+
+
 def write_outputs(
     output: Path,
     records: list[dict[str, object]],
@@ -178,7 +219,11 @@ def write_outputs(
     )
 
 
-def replace_database_table(connection: sqlite3.Connection, records: list[dict[str, object]]) -> None:
+def replace_database_table(
+    connection: sqlite3.Connection,
+    records: list[dict[str, object]],
+    platform_claims: list[dict[str, object]] | None = None,
+) -> None:
     connection.executescript(
         """
         DROP TABLE IF EXISTS national_small_giant_master;
@@ -207,6 +252,20 @@ def replace_database_table(connection: sqlite3.Connection, records: list[dict[st
         );
         CREATE INDEX national_small_giant_master_lookup_idx
         ON national_small_giant_master(enterprise_name,recognition_year,batch,region,status);
+        DROP TABLE IF EXISTS national_small_giant_platform_year_claims;
+        CREATE TABLE national_small_giant_platform_year_claims(
+            id INTEGER PRIMARY KEY,
+            enterprise_name TEXT NOT NULL,
+            normalized_name TEXT NOT NULL,
+            qice_eid TEXT NOT NULL DEFAULT '',
+            claim_year INTEGER NOT NULL,
+            mapped_batch TEXT NOT NULL,
+            platform_year_raw TEXT NOT NULL DEFAULT '',
+            evidence_status TEXT NOT NULL DEFAULT 'discovery_only',
+            UNIQUE(qice_eid,normalized_name,claim_year)
+        );
+        CREATE INDEX national_small_giant_platform_year_claims_lookup_idx
+        ON national_small_giant_platform_year_claims(enterprise_name,claim_year,mapped_batch);
         """
     )
     connection.executemany(
@@ -231,6 +290,63 @@ def replace_database_table(connection: sqlite3.Connection, records: list[dict[st
             for item in records
         ),
     )
+    connection.executemany(
+        """
+        INSERT INTO national_small_giant_platform_year_claims(
+            enterprise_name,normalized_name,qice_eid,claim_year,mapped_batch,
+            platform_year_raw,evidence_status
+        ) VALUES(?,?,?,?,?,?,?)
+        """,
+        (
+            (
+                item["enterprise_name"], item["normalized_name"], item["qice_eid"],
+                item["claim_year"], item["mapped_batch"], item["platform_year_raw"],
+                item["evidence_status"],
+            )
+            for item in (platform_claims or [])
+        ),
+    )
+    connection.commit()
+
+
+def replace_batch_coverage_table(
+    connection: sqlite3.Connection,
+    summaries: list[dict[str, object]],
+) -> None:
+    connection.executescript(
+        """
+        DROP TABLE IF EXISTS national_small_giant_batch_coverage;
+        CREATE TABLE national_small_giant_batch_coverage(
+            batch TEXT PRIMARY KEY,
+            recognition_year INTEGER NOT NULL,
+            expected_official_count INTEGER NOT NULL,
+            extracted_count INTEGER NOT NULL,
+            count_delta INTEGER NOT NULL,
+            official_local_match_count INTEGER NOT NULL,
+            completeness_state TEXT NOT NULL,
+            completeness_claim_allowed INTEGER NOT NULL,
+            official_url TEXT NOT NULL DEFAULT ''
+        );
+        """
+    )
+    connection.executemany(
+        """
+        INSERT INTO national_small_giant_batch_coverage VALUES(?,?,?,?,?,?,?,?,?)
+        """,
+        [
+            (
+                item["batch"], item["year"], item["expected_official_count"],
+                item["candidate_count"], item["count_delta"],
+                item["official_local_match_count"], item["completeness_state"],
+                int(
+                    item["count_delta"] == 0
+                    and item["official_local_match_count"] == item["expected_official_count"]
+                ),
+                item["official_url"],
+            )
+            for item in summaries
+        ],
+    )
     connection.commit()
 
 
@@ -242,6 +358,7 @@ def main() -> None:
     evidence = official_evidence(connection)
     fragments = fragment_evidence(connection)
     records = qice_records(args.qice_dataset)
+    platform_claims = qice_year_claims(args.qice_dataset)
     batch_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"candidate": 0, "official_match": 0})
     for record in records:
         batch = str(record["batch"])
@@ -303,12 +420,14 @@ def main() -> None:
                 "official_url": source.get("official_url", ""),
             }
         )
-    replace_database_table(connection, records)
+    replace_database_table(connection, records, platform_claims)
+    replace_batch_coverage_table(connection, summaries)
     connection.close()
     report = {
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "schema_version": 2,
         "record_count": len(records),
+        "platform_year_claim_count": len(platform_claims),
         "batches": summaries,
         "mandatory_fields": ["region", "recognition_year", "batch", "status", "official_url"],
         "rules": [
@@ -316,6 +435,7 @@ def main() -> None:
             "企策数据仅作发现与补全，不替代官方名单。",
             "官方链接缺失时保留空值并进入核验，不允许伪造或用平台链接冒充。",
             "后续导入必须保留地区、年度、批次、状态和官方链接。",
+            "平台多年度标签逐年保留在 discovery_only 声明表，不得直接升级为官方认定批次。",
         ],
     }
     write_outputs(args.output, records, report)

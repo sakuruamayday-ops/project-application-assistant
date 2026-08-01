@@ -1,0 +1,1072 @@
+{
+  "schema_version": 1,
+  "source_id": "zhejiang-specialized-sme-2023-second-lishui-qice-gap",
+  "document_title": "2023年度第二批浙江省专精特新中小企业公示名单（丽水市）—企策缺口重建",
+  "project_name": "浙江省专精特新中小企业",
+  "event_year": 2023,
+  "batch": "第二批",
+  "city": "丽水市",
+  "coverage_status": "qice_gap_complete",
+  "coverage_basis": "official_announced_count_plus_qice_gap_after_local_source_subtraction",
+  "expected_count": 106,
+  "announced_count": 106,
+  "official_url": "",
+  "excluded_local_entity_keys": 3970,
+  "entities": [
+    {
+      "sequence_no": 1,
+      "enterprise_name": "中诚阀门集团有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qf66049c91a3e77d3faf4956cb74fcf59",
+      "former_names": [
+        "中诚阀门有限公司",
+        "浙江中诚阀门有限公司",
+        "永嘉县中诚阀门有限公司"
+      ]
+    },
+    {
+      "sequence_no": 2,
+      "enterprise_name": "浙江远旺电力设备有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q8a7a2a1f1a734bd3cf83439ce98709b2",
+      "former_names": [
+        "青田振宏电力复合管道有限公司"
+      ]
+    },
+    {
+      "sequence_no": 3,
+      "enterprise_name": "浙江景昌建设有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "景宁县",
+      "qice_eid": "q7c03d138fbb7c7468b00a43380a9faaf",
+      "former_names": [
+        "景宁畲族自治县景昌水利水电建筑有限公司"
+      ]
+    },
+    {
+      "sequence_no": 4,
+      "enterprise_name": "浙江兴核智能控制技术有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "青田县",
+      "qice_eid": "q320418d51c9541ca9a625aaac2437147",
+      "former_names": [
+        "浙江兴核阀业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 5,
+      "enterprise_name": "浙江鼎尚不锈钢有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "qce4a906dac0f19f181f35235cc0bf4b6",
+      "former_names": []
+    },
+    {
+      "sequence_no": 6,
+      "enterprise_name": "浙江环联电力设备有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q2b45ddfaaa74dad43acab53c26b2213d",
+      "former_names": [
+        "浙江永固输配电设备有限公司"
+      ]
+    },
+    {
+      "sequence_no": 7,
+      "enterprise_name": "浙江德瑞不锈钢有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q60871efdbc8ecc76ccd3c52e52a5db41",
+      "former_names": [
+        "松阳县鸿跃金属制品有限公司"
+      ]
+    },
+    {
+      "sequence_no": 8,
+      "enterprise_name": "西普阀门有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "青田县",
+      "qice_eid": "q9e72a8803e9373fb5776de7b83573640",
+      "former_names": [
+        "浙江西普阀门有限公司",
+        "青田县西普阀门有限公司"
+      ]
+    },
+    {
+      "sequence_no": 9,
+      "enterprise_name": "浙江瑞鑫达实业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "qc132918ce049fe9dc54a9b7d73592143",
+      "former_names": []
+    },
+    {
+      "sequence_no": 10,
+      "enterprise_name": "浙江国邦钢业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q24ed6c3c466b3afe92238f8012b5d33a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 11,
+      "enterprise_name": "博业阀门集团有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q375de7e76d70b1db3e6b9abc744af05f",
+      "former_names": [
+        "浙江博大阀门有限公司"
+      ]
+    },
+    {
+      "sequence_no": 12,
+      "enterprise_name": "鹏业控股集团有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q66218941ddd9738d3777057a043c3b8e",
+      "former_names": [
+        "浙江鹏业不锈钢有限公司"
+      ]
+    },
+    {
+      "sequence_no": 13,
+      "enterprise_name": "浙江金信不锈钢制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q698ec0da39a83614d203585337728e86",
+      "former_names": []
+    },
+    {
+      "sequence_no": 14,
+      "enterprise_name": "杭萧钢构（丽水）有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q2d970d3fac114b578f83b7ea95199e58",
+      "former_names": [
+        "丽水龙都杭萧钢构有限公司"
+      ]
+    },
+    {
+      "sequence_no": 15,
+      "enterprise_name": "航迅信息技术有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q556c0453ebbc70e680f4a672f78804c9",
+      "former_names": [
+        "航迅张家口信息技术有限公司"
+      ]
+    },
+    {
+      "sequence_no": 16,
+      "enterprise_name": "浙江中仪电力科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q08fd40e4990b78948b96a6a195427a93",
+      "former_names": [
+        "温州中仪电气有限公司"
+      ]
+    },
+    {
+      "sequence_no": 17,
+      "enterprise_name": "浙江可思克高新材料股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q08f64cccac8a421325521905e9ab214e",
+      "former_names": [
+        "浙江可思克化工新材料有限公司"
+      ]
+    },
+    {
+      "sequence_no": 18,
+      "enterprise_name": "凯意得阀门有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "q4cec81401f0816e550df3979939d9999",
+      "former_names": [
+        "浙江凯意得阀门有限公司",
+        "云和县凯东阀门有限公司"
+      ]
+    },
+    {
+      "sequence_no": 19,
+      "enterprise_name": "浙江交投丽新矿业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q9ac8dec00f7e422883a49cc7d951327b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 20,
+      "enterprise_name": "浙江瑞力电气有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q53dfa1338de62ce18d535b177f2a047a",
+      "former_names": [
+        "温州瑞力电气有限公司"
+      ]
+    },
+    {
+      "sequence_no": 21,
+      "enterprise_name": "浙江遂金特种铸造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "遂昌县",
+      "qice_eid": "q573b9156b244c500091d10aa80cdd3e2",
+      "former_names": []
+    },
+    {
+      "sequence_no": 22,
+      "enterprise_name": "浙江奔富新能源股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q8384be2c0138426d859e4b060a748fd6",
+      "former_names": []
+    },
+    {
+      "sequence_no": 23,
+      "enterprise_name": "跃丰阀门制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "q20980232c05081cad41f0d25f954cd17",
+      "former_names": [
+        "浙江永得利气动阀门有限公司"
+      ]
+    },
+    {
+      "sequence_no": 24,
+      "enterprise_name": "浙江兄弟之星汽配有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q04e49335e230a903ca70c55a554fafd5",
+      "former_names": [
+        "浙江顶星汽配有限公司"
+      ]
+    },
+    {
+      "sequence_no": 25,
+      "enterprise_name": "浙江省遂昌金矿有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "遂昌县",
+      "qice_eid": "qcaf12fd3c3ae0fc287f0d7a5cef4f56f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 26,
+      "enterprise_name": "巨特钢业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q6bcd9e7852d0f8d6d55115f835549eea",
+      "former_names": [
+        "浙江巨特钢业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 27,
+      "enterprise_name": "埃孚特阀门科技股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q57ba48c371ad2acdae45b9dcc69ce7d8",
+      "former_names": [
+        "大高石化科技股份有限公司",
+        "浙江英博阀门科技股份有限公司"
+      ]
+    },
+    {
+      "sequence_no": 28,
+      "enterprise_name": "浙江地中海新能源设备有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q08e9cad75178af517e8fc3a9e4f4e826",
+      "former_names": []
+    },
+    {
+      "sequence_no": 29,
+      "enterprise_name": "浙江益宏不锈钢有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q7c8cac05b7ae45180fa5073a818e4638",
+      "former_names": [
+        "丽水新益大特钢有限公司"
+      ]
+    },
+    {
+      "sequence_no": 30,
+      "enterprise_name": "浙江凯恩新材料有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "遂昌县",
+      "qice_eid": "q2d68cf3de40b4d729478f6290943254d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 31,
+      "enterprise_name": "浙江润莱净水科技股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q3ec7bd9342b849b8b82f35b0ecf5a4af",
+      "former_names": [
+        "浙江润莱净水科技股份有限公司"
+      ]
+    },
+    {
+      "sequence_no": 32,
+      "enterprise_name": "浙江道远工贸有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "qa738a2ed810095f2d28367b8833abb1e",
+      "former_names": [
+        "浙江道远交通科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 33,
+      "enterprise_name": "瑞达自控阀门股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "青田县",
+      "qice_eid": "qcf2789f32cb5f84394196e9d2cc875c2",
+      "former_names": [
+        "青田瑞达自控阀门有限公司"
+      ]
+    },
+    {
+      "sequence_no": 34,
+      "enterprise_name": "浙江昊昌特材集团有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "遂昌县",
+      "qice_eid": "q841b417087e823883438640c2e4bfbc4",
+      "former_names": [
+        "浙江昊昌特材科技有限公司",
+        "浙江聚泰新能源有限公司"
+      ]
+    },
+    {
+      "sequence_no": 35,
+      "enterprise_name": "浙江瑞新药业股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q483c8b074837a076d11ca8a90494304b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 36,
+      "enterprise_name": "浙江友泰电气股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qad6b0aa885cd6e5e999457fdc680cc7f",
+      "former_names": [
+        "浙江友泰电气科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 37,
+      "enterprise_name": "浙江晶睿电子科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qd3fca23c43044ed9aade8eeacb5fa79d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 38,
+      "enterprise_name": "浙江科熊智能科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "q1db3fde0a4ac4ec6a42b80afc9c3173c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 39,
+      "enterprise_name": "浙江华润三九众益制药有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q10402565c51fb37dd436288a481a1fcd",
+      "former_names": [
+        "浙江众益制药有限公司",
+        "浙江众益制药股份有限公司",
+        "浙江丽水众益药业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 40,
+      "enterprise_name": "缙云县盛大实业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "q28ac7b8bcd73037ce52f2e310ab7d0f4",
+      "former_names": []
+    },
+    {
+      "sequence_no": 41,
+      "enterprise_name": "丽水吉德实业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qd05d01caa929b52129de4f4ccb50c41c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 42,
+      "enterprise_name": "浙江正达模具有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "q5bc3eb9baf8b7936d25149764bfd6238",
+      "former_names": [
+        "浙江正达特钢有限公司"
+      ]
+    },
+    {
+      "sequence_no": 43,
+      "enterprise_name": "浙江弘汇钢管制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q15a8c7ec7a444f4484ba75dffc9bee7a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 44,
+      "enterprise_name": "浙江泰鑫合成革有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "qa04e4b7ad1e79840ec2399053fb7e09b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 45,
+      "enterprise_name": "浙江恒源钢业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "qb6d418a52e193506777371a685c06a01",
+      "former_names": []
+    },
+    {
+      "sequence_no": 46,
+      "enterprise_name": "浙江爱柯美缝纫机有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "qcb4a5a39b6b144f5aa99663a630a8360",
+      "former_names": []
+    },
+    {
+      "sequence_no": 47,
+      "enterprise_name": "丽水州通电气科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "景宁县",
+      "qice_eid": "qaa1b6db5ee104afe8ee755f3e8d2939a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 48,
+      "enterprise_name": "浙江皓邦通讯科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q85c9a752727641d5ae1bd5d44f0c9fa6",
+      "former_names": [
+        "丽水市光速精密机械科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 49,
+      "enterprise_name": "浙江旭丰纺织科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "q6a0058ac216943e9aae4ebd1694e908f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 50,
+      "enterprise_name": "浙江上工阀门有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qd3225950b8c4bba4142e6d9003558f01",
+      "former_names": []
+    },
+    {
+      "sequence_no": 51,
+      "enterprise_name": "浙江木艺工艺品有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "qc92d83bffc65fa51c5cb7ef647719f9c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 52,
+      "enterprise_name": "浙江奥来电器有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "青田县",
+      "qice_eid": "qc8898cef8cd604c881c99d0a362931f9",
+      "former_names": [
+        "青田奥来电器有限公司"
+      ]
+    },
+    {
+      "sequence_no": 53,
+      "enterprise_name": "云和立信泵阀制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "q7af77e4686f6acbbbc88aebd114955d4",
+      "former_names": []
+    },
+    {
+      "sequence_no": 54,
+      "enterprise_name": "浙江浩鸿不锈钢有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q74e4116502ce0d829aebe33078d60f8d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 55,
+      "enterprise_name": "上海英雄金笔厂丽水有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q4355e7f81d93856846cdbe6cd90b3a6f",
+      "former_names": []
+    },
+    {
+      "sequence_no": 56,
+      "enterprise_name": "浙江恒诺阀门制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qbd878607963a216465b3b95be650b831",
+      "former_names": []
+    },
+    {
+      "sequence_no": 57,
+      "enterprise_name": "浙江嵘汇流体智能装备有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q77428d5da6194ea6bf768ef04fba2365",
+      "former_names": [
+        "浙江嵘汇流体控制科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 58,
+      "enterprise_name": "浙江景宁华寅工艺品有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "景宁县",
+      "qice_eid": "q1f4a7df36714a2ae4730b5a829288e9b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 59,
+      "enterprise_name": "浙江宏博汽配有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "景宁县",
+      "qice_eid": "q44679780ced948c387b277cdb47e990a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 60,
+      "enterprise_name": "浙江泉舜流体控制科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qb823fe9b3b98d3ecfa460770ed35ccc3",
+      "former_names": [
+        "浙江中一机械制造有限公司"
+      ]
+    },
+    {
+      "sequence_no": 61,
+      "enterprise_name": "浙江骏达钢管制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q0b8dfc9c07e136b2b52920c321424302",
+      "former_names": []
+    },
+    {
+      "sequence_no": 62,
+      "enterprise_name": "同创（丽水）特种材料有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qb79a5307bd4a42c7bc93ec172221cf2e",
+      "former_names": []
+    },
+    {
+      "sequence_no": 63,
+      "enterprise_name": "丽水市日峰电器有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q5c6f2ea954d3b3dda40438fec13897f5",
+      "former_names": []
+    },
+    {
+      "sequence_no": 64,
+      "enterprise_name": "浙江龙腾空调有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "龙泉市",
+      "qice_eid": "q30986e4689f49df671b352db26977d18",
+      "former_names": []
+    },
+    {
+      "sequence_no": 65,
+      "enterprise_name": "浙江英博电气股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q515ab07b821756df570662cea38fa435",
+      "former_names": [
+        "浙江英博电气有限公司"
+      ]
+    },
+    {
+      "sequence_no": 66,
+      "enterprise_name": "浙江精锐智能传动有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q6d191ad6ad3a44a583ad8d8cc8a84a5c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 67,
+      "enterprise_name": "浙江嘉宏工具制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "qc436cc73c9e74331961c447c62dd8c26",
+      "former_names": []
+    },
+    {
+      "sequence_no": 68,
+      "enterprise_name": "浙江上河茶叶机械有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "q324eca84d4bd74345b7ffd6a7525754e",
+      "former_names": [
+        "松阳县上河茶叶机械有限公司"
+      ]
+    },
+    {
+      "sequence_no": 69,
+      "enterprise_name": "浙江江南景洁铝业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qf0c98f49bac7cc0405ec4794da082bcc",
+      "former_names": []
+    },
+    {
+      "sequence_no": 70,
+      "enterprise_name": "浙江捷博智能科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "qce67e808ca942f4c3208230664f8ec52",
+      "former_names": []
+    },
+    {
+      "sequence_no": 71,
+      "enterprise_name": "缙云县中美达工具有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "qf4ad4748d3d3d318401ffe97e104b813",
+      "former_names": []
+    },
+    {
+      "sequence_no": 72,
+      "enterprise_name": "浙江智木玩具股份有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "q5d993a84eae547b88232715bd9d35623",
+      "former_names": [
+        "浙江智木玩具有限公司"
+      ]
+    },
+    {
+      "sequence_no": 73,
+      "enterprise_name": "浙江艾特佳文化用品有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "庆元县",
+      "qice_eid": "q04bd4338b7affd262b3cc969034a0626",
+      "former_names": [
+        "庆元县金泰文具有限公司",
+        "庆元县汉光笔业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 74,
+      "enterprise_name": "缙云县先锋工具有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "q282d0bd6b549e91b506592558d08b4f0",
+      "former_names": []
+    },
+    {
+      "sequence_no": 75,
+      "enterprise_name": "浙江浩琦机车部件有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "景宁县",
+      "qice_eid": "q2148cb94904a4b6fb5ce8f38f537ca83",
+      "former_names": []
+    },
+    {
+      "sequence_no": 76,
+      "enterprise_name": "浙江立琪机械有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q2de95fef10104ac3b3e6f6a4d8b93fde",
+      "former_names": []
+    },
+    {
+      "sequence_no": 77,
+      "enterprise_name": "浙江美希化妆品有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "庆元县",
+      "qice_eid": "q6887e55b95124461ae71de4435491b78",
+      "former_names": []
+    },
+    {
+      "sequence_no": 78,
+      "enterprise_name": "浙江望泰特种纸业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "遂昌县",
+      "qice_eid": "qf4a77800a0c7793eef21fbc2f3d1c209",
+      "former_names": []
+    },
+    {
+      "sequence_no": 79,
+      "enterprise_name": "浙江坤亿佳机械制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qc1e2bac3b68816b10f4ae27ff5de5e90",
+      "former_names": []
+    },
+    {
+      "sequence_no": 80,
+      "enterprise_name": "浙江永业钢管有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "松阳县",
+      "qice_eid": "qf6f0a56035215b8e274d02eeb0c24164",
+      "former_names": []
+    },
+    {
+      "sequence_no": 81,
+      "enterprise_name": "浙江富利达木制工艺品有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "景宁县",
+      "qice_eid": "q0a72e0780fbc442f55612c5ce3b56b0b",
+      "former_names": [
+        "景宁畲族自治县富利达木制工艺品有限公司"
+      ]
+    },
+    {
+      "sequence_no": 82,
+      "enterprise_name": "浙江光辉工具有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "庆元县",
+      "qice_eid": "qa61d61b707a38837f3eb94ccafb54ffc",
+      "former_names": []
+    },
+    {
+      "sequence_no": 83,
+      "enterprise_name": "浙江圣峰汽车部件有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q09ed53145c80fb4d02d4050a82fcb61a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 84,
+      "enterprise_name": "浙江永发合成革有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q31367b4fcd0b44813b8936ab0dae9891",
+      "former_names": []
+    },
+    {
+      "sequence_no": 85,
+      "enterprise_name": "云和县金成木业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "q48115ed44a3da47984982151ad153ac4",
+      "former_names": []
+    },
+    {
+      "sequence_no": 86,
+      "enterprise_name": "浙江童园玩具有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "qf40ac79007b5f1b1d61dbe8b34a6442c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 87,
+      "enterprise_name": "浙江庆元欧迪实业有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "庆元县",
+      "qice_eid": "qc4c6580a231883891ecddd67ef75c867",
+      "former_names": [
+        "浙江省庆元浙南铅笔有限公司"
+      ]
+    },
+    {
+      "sequence_no": 88,
+      "enterprise_name": "丽水蓝城农业发展有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q19b766a459db0dd0b5f17038ff0b5171",
+      "former_names": [
+        "庆元秀丽农业发展有限公司"
+      ]
+    },
+    {
+      "sequence_no": 89,
+      "enterprise_name": "浙江鼎达阀门有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "q7e7747b0ae0670e64181f047dc1520c8",
+      "former_names": [
+        "鼎达阀门有限公司",
+        "浙江鼎达阀门有限公司",
+        "缙云县鼎达阀门有限公司"
+      ]
+    },
+    {
+      "sequence_no": 90,
+      "enterprise_name": "浙江新兴汽车空调有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "龙泉市",
+      "qice_eid": "qc4cab387fc5575e0b9138be29e40b08b",
+      "former_names": [
+        "龙泉市新兴汽车空调配件有限公司"
+      ]
+    },
+    {
+      "sequence_no": 91,
+      "enterprise_name": "浙江名球轴承有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "青田县",
+      "qice_eid": "q2c378ed1db9e4ba7a22e8908b35827ee",
+      "former_names": []
+    },
+    {
+      "sequence_no": 92,
+      "enterprise_name": "浙江酷耐自动化科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qb3eaadf15eda4cf7a3c98914818910a3",
+      "former_names": []
+    },
+    {
+      "sequence_no": 93,
+      "enterprise_name": "龙泉市精艺特种玻璃有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "龙泉市",
+      "qice_eid": "q87a70551187d7458682c39b7027cc556",
+      "former_names": []
+    },
+    {
+      "sequence_no": 94,
+      "enterprise_name": "浙江品超汽车零部件有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "q4c1030068205f5a401b7de69cc4cde98",
+      "former_names": []
+    },
+    {
+      "sequence_no": 95,
+      "enterprise_name": "浙江飞越新材料有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "青田县",
+      "qice_eid": "q155293e9bc7c21b566b791e945131319",
+      "former_names": [
+        "青田飞越鞋材有限公司"
+      ]
+    },
+    {
+      "sequence_no": 96,
+      "enterprise_name": "浙江诚昌机械配件有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "青田县",
+      "qice_eid": "q529ab6e6aaee8f27be79345feb799d45",
+      "former_names": [
+        "青田诚昌机械配件有限公司"
+      ]
+    },
+    {
+      "sequence_no": 97,
+      "enterprise_name": "浙江东和阀门制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "云和县",
+      "qice_eid": "qbfa29ab9cb6aa8645b820c9a70f4c3d5",
+      "former_names": []
+    },
+    {
+      "sequence_no": 98,
+      "enterprise_name": "浙江森雕电器有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "青田县",
+      "qice_eid": "q8c7b7603a616bd6b808ebca03ce689dd",
+      "former_names": []
+    },
+    {
+      "sequence_no": 99,
+      "enterprise_name": "浙江龙泰缝纫设备有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "q661dc78c4573f617738b2ad816ba69a4",
+      "former_names": [
+        "缙云县龙泰缝纫设备有限公司"
+      ]
+    },
+    {
+      "sequence_no": 100,
+      "enterprise_name": "缙云县志合电子科技有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "缙云县",
+      "qice_eid": "qa38d21e70a7349d1bdaaad938d528941",
+      "former_names": []
+    },
+    {
+      "sequence_no": 101,
+      "enterprise_name": "浙江誉达汽车配件有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "龙泉市",
+      "qice_eid": "q27874f0afdd2e56b56a6b6e19d0dca1b",
+      "former_names": [
+        "龙泉市誉达汽车配件有限公司"
+      ]
+    },
+    {
+      "sequence_no": 102,
+      "enterprise_name": "浙江南星汽车空调有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "龙泉市",
+      "qice_eid": "q5b7b36284d154b722bf7cbddd783a512",
+      "former_names": []
+    },
+    {
+      "sequence_no": 103,
+      "enterprise_name": "浙江铁霸精密五金制造有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "莲都区",
+      "qice_eid": "qaa51bed620617d7042acd05c8f33f67b",
+      "former_names": [
+        "丽水市星际标准件制造有限公司"
+      ]
+    },
+    {
+      "sequence_no": 104,
+      "enterprise_name": "龙泉市恒丰汽车空调配件有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "龙泉市",
+      "qice_eid": "q8111bbaa932b12ceed0932a1ec23b270",
+      "former_names": []
+    },
+    {
+      "sequence_no": 105,
+      "enterprise_name": "龙泉奥翔汽车空调有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "龙泉市",
+      "qice_eid": "qf56bbc62200b67304b881edd9c0ac086",
+      "former_names": []
+    },
+    {
+      "sequence_no": 106,
+      "enterprise_name": "龙泉市中天制冷设备有限公司",
+      "province": "浙江省",
+      "city": "丽水市",
+      "county": "龙泉市",
+      "qice_eid": "qa57d45115a14401daf90c81c4851b713",
+      "former_names": []
+    }
+  ]
+}

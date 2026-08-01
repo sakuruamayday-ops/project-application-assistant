@@ -25,7 +25,7 @@ from publish_skill_release import validate_release_packages  # noqa: E402
 
 OFFICIAL_FINGERPRINT = "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
 EXPECTED_SKILL_COUNT = 49
-EXPECTED_VERSION = "1.4.5"
+EXPECTED_VERSION = "1.4.6"
 FORBIDDEN_PATH_SUFFIXES = (
     "/.mcp.json",
     "/bin/run-node",

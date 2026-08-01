@@ -44,6 +44,8 @@ python3 "${script_dir}/build_document_scopes.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 
 echo "[4/10] 重建名单覆盖矩阵、官方分片、全国批次主表、身份图谱、浙江企业身份时间轴和三首跨年图谱"
+python3 "${script_dir}/rebuild_list_entity_extractions.py" \
+  --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/build_specialized_sme_coverage_matrix.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/build_small_giant_official_fragments.py" \
@@ -64,8 +66,6 @@ fi
 python3 "${script_dir}/prepare_enterprise_identity_mapping.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/build_small_giant_identity_graph.py" \
-  --database "${index_dir}/knowledge_content.sqlite3"
-python3 "${script_dir}/build_zhejiang_enterprise_identity_timeline.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/audit_small_giant_weekly_delta.py" \
   --database "${index_dir}/knowledge_content.sqlite3" \
@@ -88,6 +88,8 @@ elif [[ -f "${structured_source_root}/qice_three_first_product_details.json" ]];
   three_first_args+=(--details "${structured_source_root}/qice_three_first_product_details.json")
 fi
 python3 "${script_dir}/build_three_first_benchmark_graph.py" "${three_first_args[@]}"
+python3 "${script_dir}/build_zhejiang_enterprise_identity_timeline.py" \
+  --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/audit_three_first_directory_exit.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/audit_specialized_lists_and_three_first.py" \
@@ -184,6 +186,11 @@ fi
 echo "[5/10] 依据已收敛的manifest与索引重建OSS白名单"
 python3 "${script_dir}/build_cloud_upload_allowlist.py" \
   --index-root "${index_dir}"
+
+echo "[5/10] 依据已收敛的manifest重建文件库存索引"
+python3 "${script_dir}/build_knowledge_inventory_from_manifest.py" \
+  --manifest "${manifest}" \
+  --output "${index_dir}/knowledge_inventory.sqlite3"
 
 echo "[6/10] 重建政策版本与替代关系"
 python3 "${script_dir}/build_policy_version_links.py" \

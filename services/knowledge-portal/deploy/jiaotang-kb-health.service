@@ -1,7 +1,7 @@
 [Unit]
 Description=Check Jiaotang knowledge portal health
 After=jiaotang-kb.service
-OnFailure=jiaotang-kb-failure-report@%n.service
+OnFailure=jiaotang-kb-failure-report@%n.service jiaotang-kb-health-recovery@%n.service
 
 [Service]
 Type=oneshot

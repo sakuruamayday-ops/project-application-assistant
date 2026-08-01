@@ -1,0 +1,944 @@
+{
+  "schema_version": 1,
+  "source_id": "zhejiang-specialized-sme-2024-second-shaoxing-qice-gap",
+  "document_title": "2024年度第二批浙江省专精特新中小企业公示名单（绍兴市）—企策缺口重建",
+  "project_name": "浙江省专精特新中小企业",
+  "event_year": 2024,
+  "batch": "第二批",
+  "city": "绍兴市",
+  "coverage_status": "qice_gap_complete",
+  "coverage_basis": "official_announced_count_plus_qice_gap_after_local_source_subtraction",
+  "expected_count": 91,
+  "announced_count": 91,
+  "official_url": "",
+  "excluded_local_entity_keys": 2289,
+  "entities": [
+    {
+      "sequence_no": 1,
+      "enterprise_name": "芯联先锋集成电路制造（绍兴）有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "q1b6b2770679111ec8cf500163e0ee983",
+      "former_names": [
+        "中芯先锋集成电路制造（绍兴）有限公司"
+      ]
+    },
+    {
+      "sequence_no": 2,
+      "enterprise_name": "浙江华孚色纺有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q2894b6a896e93e005e87a64d0177f869",
+      "former_names": []
+    },
+    {
+      "sequence_no": 3,
+      "enterprise_name": "浙江新和成特种材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qa9f75146bc6f6cdbb6daddc47df6adeb",
+      "former_names": []
+    },
+    {
+      "sequence_no": 4,
+      "enterprise_name": "浙江世纪华通车业有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q4f7dec7ec1a3e4608f81f80b32565eb9",
+      "former_names": []
+    },
+    {
+      "sequence_no": 5,
+      "enterprise_name": "浙江润昇新能源有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "qice_eid": "qa58f587b05faa2703f3b1b8506c1eecd",
+      "former_names": []
+    },
+    {
+      "sequence_no": 6,
+      "enterprise_name": "盾安汽车热管理科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qddf612c6a6a418a4733fa844a0c3ead5",
+      "former_names": []
+    },
+    {
+      "sequence_no": 7,
+      "enterprise_name": "浙江震元制药有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "q2efe192ef72dc0f2ef46099f3fd9fd69",
+      "former_names": []
+    },
+    {
+      "sequence_no": 8,
+      "enterprise_name": "浙江泰坦股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "qe15e815a52cf985ed9329e4824d13659",
+      "former_names": []
+    },
+    {
+      "sequence_no": 9,
+      "enterprise_name": "浙江晶鸿精密机械制造有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q6aa5a878737cc257328819976e949819",
+      "former_names": [
+        "绍兴上虞晶鸿机械制造有限公司",
+        "上虞晶鸿机械制造有限公司"
+      ]
+    },
+    {
+      "sequence_no": 10,
+      "enterprise_name": "浙江舜云互联技术有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q571a5fea0c9f11ec9e9600163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 11,
+      "enterprise_name": "浙江致为新材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qd1cbf385b68f8f21b296a367ef027df8",
+      "former_names": [
+        "绍兴市科创新材料有限公司"
+      ]
+    },
+    {
+      "sequence_no": 12,
+      "enterprise_name": "浙江万丰化工股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "qice_eid": "q21e6fa6d1878bb2fd815354636218499",
+      "former_names": [
+        "浙江万丰化工有限公司"
+      ]
+    },
+    {
+      "sequence_no": 13,
+      "enterprise_name": "浙江自立高分子化工材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q4e265763335d82dc23453bb5d20a180c",
+      "former_names": [
+        "绍兴上虞自强高分子化工材料有限公司",
+        "上虞自强高分子化工材料有限公司"
+      ]
+    },
+    {
+      "sequence_no": 14,
+      "enterprise_name": "浙江吉泰新材料股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qf3a1a2e498ee6249122a779c3a2493f5",
+      "former_names": [
+        "浙江林江化工股份有限公司",
+        "上虞市临江化工有限公司"
+      ]
+    },
+    {
+      "sequence_no": 15,
+      "enterprise_name": "嵊州天脉导热科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "嵊州市",
+      "qice_eid": "q9b9915077a4743b691db803772842f10",
+      "former_names": []
+    },
+    {
+      "sequence_no": 16,
+      "enterprise_name": "浙江宏达化学制品有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q0c9e458b04a2096dc756c2ef649ae1b0",
+      "former_names": []
+    },
+    {
+      "sequence_no": 17,
+      "enterprise_name": "浙江锦宇枫叶管业有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q7187fb8c849ccf6e732609b4a5caeaea",
+      "former_names": [
+        "诸暨市枫叶管业厂",
+        "诸暨市福利织造厂"
+      ]
+    },
+    {
+      "sequence_no": 18,
+      "enterprise_name": "浙江万丰飞机制造有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "qaa431830593311eba4c500163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 19,
+      "enterprise_name": "浙江知行药业有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "qf02432eb52094be8a6342a9ea60c46d5",
+      "former_names": []
+    },
+    {
+      "sequence_no": 20,
+      "enterprise_name": "浙江高压开关厂有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qc6a0ccdbabf6a2049be4ae523cd535a7",
+      "former_names": []
+    },
+    {
+      "sequence_no": 21,
+      "enterprise_name": "浙江金昊新材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q03b65904b3761a99e07f3251c349df42",
+      "former_names": [
+        "浙江金昊特种纤维有限公司",
+        "上虞腾龙机电有限公司"
+      ]
+    },
+    {
+      "sequence_no": 22,
+      "enterprise_name": "新昌县四通机电有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "qf7c232080a435cb31ae65c1725192b04",
+      "former_names": []
+    },
+    {
+      "sequence_no": 23,
+      "enterprise_name": "浙江海亮新材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q44ea3011deba6c93a218b41080ff1aec",
+      "former_names": []
+    },
+    {
+      "sequence_no": 24,
+      "enterprise_name": "浙江万安智驭汽车控制系统有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q4825bc501fe3a6512090aa7cb2d8c465",
+      "former_names": [
+        "浙江诸暨万宝机械有限公司"
+      ]
+    },
+    {
+      "sequence_no": 25,
+      "enterprise_name": "浙江双成电气有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "q1648002777f8a9d3232a90b207b0b1d0",
+      "former_names": [
+        "绍兴电力设备成套公司"
+      ]
+    },
+    {
+      "sequence_no": 26,
+      "enterprise_name": "浙江天行健水务有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qc012d8a3936cbf733a8a9cd9eb3159b0",
+      "former_names": []
+    },
+    {
+      "sequence_no": 27,
+      "enterprise_name": "盛吉盛精密制造（绍兴）有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "q319d76c091d511ebba8700163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 28,
+      "enterprise_name": "诸暨玛雅电器机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qcd9a656adf28fbb66ddd9975070d20b4",
+      "former_names": []
+    },
+    {
+      "sequence_no": 29,
+      "enterprise_name": "浙江龙华工具有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "qice_eid": "q1e1264b884f34e6f2225a96ff87de23b",
+      "former_names": [
+        "绍兴龙华工具有限公司",
+        "绍兴县龙华工具有限公司",
+        "绍兴县龙华工具有限责任公司"
+      ]
+    },
+    {
+      "sequence_no": 30,
+      "enterprise_name": "绍兴奥美电子科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "q6a2a85d124a932dd278ac19944037183",
+      "former_names": [
+        "深圳奥斯力特电子信息集团有限公司",
+        "深圳奥斯力特自动化技术有限公司"
+      ]
+    },
+    {
+      "sequence_no": 31,
+      "enterprise_name": "绍兴怡华电子科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "q96016bbfd219e85b4b9ba6f98364f7e8",
+      "former_names": []
+    },
+    {
+      "sequence_no": 32,
+      "enterprise_name": "浙江中博信息工程有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qf01cc533ff950e6600581b46d8112bb9",
+      "former_names": [
+        "绍兴市中博景观环境建设有限公司",
+        "绍兴市中博建设有限公司"
+      ]
+    },
+    {
+      "sequence_no": 33,
+      "enterprise_name": "浙江远大机电有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q4c3378f4b9d9a40adbca0b1971ed9b94",
+      "former_names": [
+        "上虞市远大机电有限公司",
+        "上虞市远大电机有限公司"
+      ]
+    },
+    {
+      "sequence_no": 34,
+      "enterprise_name": "浙江金马包装材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q7f7d40cf56f680d632deeb72d532c61a",
+      "former_names": []
+    },
+    {
+      "sequence_no": 35,
+      "enterprise_name": "浙江天洁环境工程有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q716470c3e1a880fc295cf3bbac31765f",
+      "former_names": [
+        "诸暨市天洁电子科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 36,
+      "enterprise_name": "浙江日发纺机技术有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "qdc318dd091c2b4e09102428fbbfe482c",
+      "former_names": [
+        "新昌县日发纺机技术有限公司"
+      ]
+    },
+    {
+      "sequence_no": 37,
+      "enterprise_name": "上虞新和成生物化工有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qe88bc07557206b7d4a3f36c56f4f0073",
+      "former_names": []
+    },
+    {
+      "sequence_no": 38,
+      "enterprise_name": "绍兴盛鑫印染有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "qice_eid": "q842e05ee354d866d1675721abc82ffc4",
+      "former_names": [
+        "绍兴县盛鑫印染有限公司"
+      ]
+    },
+    {
+      "sequence_no": 39,
+      "enterprise_name": "浙江海创锂电科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qf68e1645c433e17580eeb0b5bdcdbe60",
+      "former_names": [
+        "浙江美都海创锂电科技有限公司",
+        "浙江新时代海创锂电科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 40,
+      "enterprise_name": "诸暨意创磁性技术有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q8b0c0065928d0537684fff4b99764872",
+      "former_names": []
+    },
+    {
+      "sequence_no": 41,
+      "enterprise_name": "浙江力嘉电子科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qb2c188c46ad09b5440bfab5fd62a3081",
+      "former_names": [
+        "诸暨市力嘉电子科技有限公司",
+        "诸暨市力嘉计算机系统集成有限责任公司"
+      ]
+    },
+    {
+      "sequence_no": 42,
+      "enterprise_name": "浙江捷罡科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "嵊州市",
+      "qice_eid": "q3fe2e64e0dbd2c476ade47131d369a27",
+      "former_names": [
+        "浙江龙威粉体工程有限公司",
+        "嵊州市龙威阀门有限公司"
+      ]
+    },
+    {
+      "sequence_no": 43,
+      "enterprise_name": "浙江新春宇航轴承有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "qad8869c6befb1dbf540953f18dbb2c3a",
+      "former_names": [
+        "新昌县富盛轴承配件有限公司"
+      ]
+    },
+    {
+      "sequence_no": 44,
+      "enterprise_name": "浙江希望包装有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "q61ea37a83d11aef2184a0653535565e3",
+      "former_names": [
+        "绍兴市纸品有限责任公司"
+      ]
+    },
+    {
+      "sequence_no": 45,
+      "enterprise_name": "浙江风神风机制造有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q8103cfe111068c2e6c1e6db0fbed1063",
+      "former_names": [
+        "上虞市风神实业有限公司"
+      ]
+    },
+    {
+      "sequence_no": 46,
+      "enterprise_name": "浙江大业新材料股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qb06bf4e82c6c458181d2f11b7ea2852a",
+      "former_names": [
+        "浙江大业新材料有限公司"
+      ]
+    },
+    {
+      "sequence_no": 47,
+      "enterprise_name": "绍兴欣业机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "qice_eid": "q436759e3d5b78e8932b3bfd62030e9ca",
+      "former_names": [
+        "绍兴县欣业传动机械有限公司"
+      ]
+    },
+    {
+      "sequence_no": 48,
+      "enterprise_name": "浙江奇峰水暖管业有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qe5e896d93a83d298093c38ac34efbf23",
+      "former_names": [
+        "诸暨市奇峰水暖有限公司"
+      ]
+    },
+    {
+      "sequence_no": 49,
+      "enterprise_name": "绍兴市华润铜业制造有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q5d4b04a6c86dcda957b4a93cac5dc18b",
+      "former_names": []
+    },
+    {
+      "sequence_no": 50,
+      "enterprise_name": "绍兴中新电器有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "qd2a3cc31804fb134c206455978ca1360",
+      "former_names": []
+    },
+    {
+      "sequence_no": 51,
+      "enterprise_name": "绍兴市三丰化工有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qb7837eb7b317f65a0c15a0a7744c9b67",
+      "former_names": [
+        "上虞市三丰化工有限公司"
+      ]
+    },
+    {
+      "sequence_no": 52,
+      "enterprise_name": "浙江今晖新材料股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qb46e6cc242fb8d7839612e037f8e2d10",
+      "former_names": [
+        "上虞盛晖化工股份有限公司",
+        "上虞盛晖化工有限公司"
+      ]
+    },
+    {
+      "sequence_no": 53,
+      "enterprise_name": "绍兴勇舜印染有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "qice_eid": "qc5227b5739a84fb92e39c867fc91375c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 54,
+      "enterprise_name": "浙江华锦焊接设备有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qe9d52d6835c6c1226dd17e1747e13102",
+      "former_names": []
+    },
+    {
+      "sequence_no": 55,
+      "enterprise_name": "科迪华显示技术（绍兴）有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "qfb395ea6110411eba16b00163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 56,
+      "enterprise_name": "新昌连尚网络科技集团有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "qbf37305ddb1b469f8b36942d19f7b2c6",
+      "former_names": [
+        "连尚（新昌）网络科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 57,
+      "enterprise_name": "诸暨伍凯机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qbade3cab47918df6296e63baeeaaccec",
+      "former_names": []
+    },
+    {
+      "sequence_no": 58,
+      "enterprise_name": "浙江普尔树脂有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q9fe8a285d165649a26e83b85ad6b7acb",
+      "former_names": [
+        "上虞普尔树脂有限公司"
+      ]
+    },
+    {
+      "sequence_no": 59,
+      "enterprise_name": "浙江铜加工研究院有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qc53a7e8271fa23d4843e62a20da19392",
+      "former_names": [
+        "海亮集团浙江铜加工研究院有限公司",
+        "海亮集团浙江铜加工研究所有限公司"
+      ]
+    },
+    {
+      "sequence_no": 60,
+      "enterprise_name": "浙江佩洁尔医疗科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qbbebe1792d37db059d2ff00387bcfc18",
+      "former_names": [
+        "上虞市佩吉尔净化设备有限公司"
+      ]
+    },
+    {
+      "sequence_no": 61,
+      "enterprise_name": "绍兴市华富科创纸业有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "qac34e721c0104f4faeff5bfdb39f46a0",
+      "former_names": []
+    },
+    {
+      "sequence_no": 62,
+      "enterprise_name": "浙江国祥冷却科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q1c18111b23b34a18f83363eb73576679",
+      "former_names": [
+        "绍兴国祥冷却科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 63,
+      "enterprise_name": "诸暨市宝仁染整有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "qe6d7bfa02ee24931a8238b30a3c7957c",
+      "former_names": []
+    },
+    {
+      "sequence_no": 64,
+      "enterprise_name": "浙江锦菲电子科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "嵊州市",
+      "qice_eid": "qc9a8d78fec764d84afa492f3110dc41d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 65,
+      "enterprise_name": "浙江国正安全技术有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "qice_eid": "q8d40a4445ab9eda00134774004dcd58b",
+      "former_names": [
+        "绍兴国正安全技术检测有限公司"
+      ]
+    },
+    {
+      "sequence_no": 66,
+      "enterprise_name": "绍兴金创意塑化电器有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qe8bde5ec0b4d7c3c7dd5e8b0ad846098",
+      "former_names": []
+    },
+    {
+      "sequence_no": 67,
+      "enterprise_name": "绍兴上虞浙柯风机有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q15146e092e574d8baa0c3327562f83b0",
+      "former_names": [
+        "浙江浙柯风机有限公司"
+      ]
+    },
+    {
+      "sequence_no": 68,
+      "enterprise_name": "浙江鼎牛自动化科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q8e25d983e89d4833b01dc5a9b38241b7",
+      "former_names": [
+        "诸暨市鼎牛自动化科技有限公司"
+      ]
+    },
+    {
+      "sequence_no": 69,
+      "enterprise_name": "浙江上清风机有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qde735f9e942fb2d2953dd4b5ed91ad95",
+      "former_names": [
+        "上虞清华风机有限公司"
+      ]
+    },
+    {
+      "sequence_no": 70,
+      "enterprise_name": "诸暨弘德新材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q6cb119f6f27411eb977f00163e0ee983",
+      "former_names": []
+    },
+    {
+      "sequence_no": 71,
+      "enterprise_name": "浙江尧亮照明科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qa4ad1cbd4003abd99a313fa1656e6f91",
+      "former_names": [
+        "浙江尧亮照明工程有限公司"
+      ]
+    },
+    {
+      "sequence_no": 72,
+      "enterprise_name": "新昌县恒盛机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "q24f692f3d9a8df46017f7704256218ce",
+      "former_names": []
+    },
+    {
+      "sequence_no": 73,
+      "enterprise_name": "浙江万叶绝缘材料有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q00de3102b9b9402822049c2a47fc1be7",
+      "former_names": [
+        "绍兴市万叶绝缘材料有限公司",
+        "绍兴市新盛净化设备有限公司"
+      ]
+    },
+    {
+      "sequence_no": 74,
+      "enterprise_name": "浙江聚森检测科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qa01ad2203c831e4ab20194ba9025d36e",
+      "former_names": []
+    },
+    {
+      "sequence_no": 75,
+      "enterprise_name": "浙江德立信微纳科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "qc79d6e933fdcae777e2d23d77c0468bb",
+      "former_names": []
+    },
+    {
+      "sequence_no": 76,
+      "enterprise_name": "浙江联科机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "q8a2a5a05e1dd9408a68c7b0d7f45e8b4",
+      "former_names": [
+        "绍兴市联科机械有限公司"
+      ]
+    },
+    {
+      "sequence_no": 77,
+      "enterprise_name": "绍兴市上虞永生汽车部件有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q571389b78c71417483bb87f057b04211",
+      "former_names": [
+        "上虞永生汽车部件有限公司"
+      ]
+    },
+    {
+      "sequence_no": 78,
+      "enterprise_name": "浙江亚利大胶丸有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "q99b23acfe1e123570f013a730a875d09",
+      "former_names": [
+        "新昌县亚利大胶丸有限公司"
+      ]
+    },
+    {
+      "sequence_no": 79,
+      "enterprise_name": "新昌县正大制冷配件有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "qa6543caa5f4bf70d5b644c64b75d90ca",
+      "former_names": []
+    },
+    {
+      "sequence_no": 80,
+      "enterprise_name": "嵊州市恒润电机制造有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "嵊州市",
+      "qice_eid": "q9f53466a355e20a2dfd1de50a2298437",
+      "former_names": []
+    },
+    {
+      "sequence_no": 81,
+      "enterprise_name": "绍兴市上虞舜东橡塑制品有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "上虞区",
+      "qice_eid": "q69c33a5f45ec5032c419adc3e909fef8",
+      "former_names": [
+        "上虞市舜东橡塑制品有限公司"
+      ]
+    },
+    {
+      "sequence_no": 82,
+      "enterprise_name": "绍兴梅奥心磁医疗科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "qacc3aab8bd3448cdadceee998aa9debd",
+      "former_names": []
+    },
+    {
+      "sequence_no": 83,
+      "enterprise_name": "浙江桢利汽车零部件有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q31131de72190d5e72990db71743bc8ab",
+      "former_names": [
+        "诸暨市桢利汽车零部件有限公司"
+      ]
+    },
+    {
+      "sequence_no": 84,
+      "enterprise_name": "绍兴海纳膜技术有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "qecd19ec5939eb95476343be08726eaba",
+      "former_names": []
+    },
+    {
+      "sequence_no": 85,
+      "enterprise_name": "绍兴市恒兴亚麻纺织科技有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "q1f89a988b3e2866e22a2e88205e363bb",
+      "former_names": []
+    },
+    {
+      "sequence_no": 86,
+      "enterprise_name": "新昌县恒博机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "q1f5860747365482d875106cc71a5bea0",
+      "former_names": []
+    },
+    {
+      "sequence_no": 87,
+      "enterprise_name": "诸暨三灵环保设备股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q8efa9fcb4e9479d8ce127309662125a2",
+      "former_names": [
+        "诸暨三灵环保设备有限公司"
+      ]
+    },
+    {
+      "sequence_no": 88,
+      "enterprise_name": "绍兴宏通机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "柯桥区",
+      "qice_eid": "q7316bbe8d77f6881ef04bfeb434dd058",
+      "former_names": []
+    },
+    {
+      "sequence_no": 89,
+      "enterprise_name": "诸暨市海道机械股份有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "诸暨市",
+      "qice_eid": "q2eeb99df7f206f1317cb99f900ef5dc7",
+      "former_names": [
+        "诸暨市海道机械有限公司"
+      ]
+    },
+    {
+      "sequence_no": 90,
+      "enterprise_name": "新昌县凯德堡机械有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "新昌县",
+      "qice_eid": "qd0e10a7b42950e948b8da1045e2fe56d",
+      "former_names": []
+    },
+    {
+      "sequence_no": 91,
+      "enterprise_name": "绍兴镭斯特光学仪器有限公司",
+      "province": "浙江省",
+      "city": "绍兴市",
+      "county": "越城区",
+      "qice_eid": "qb97e039d149948e46f90e1b7d6e3a3a8",
+      "former_names": []
+    }
+  ]
+}

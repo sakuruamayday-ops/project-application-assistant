@@ -9,30 +9,38 @@ if [[ -n "${canonical_deploy_root}" ]]; then
   canonical_deploy_root="$(cd "${canonical_deploy_root}" && pwd -P)"
   current_root="$(cd "${root_dir}" && pwd -P)"
   if [[ "${current_root}" != "${canonical_deploy_root}" ]]; then
-    echo "六项发布门禁只能从唯一正式工作树执行：${canonical_deploy_root}" >&2
+    echo "四层发布门禁只能从唯一正式工作树执行：${canonical_deploy_root}" >&2
     exit 76
   fi
 fi
 if git -C "${root_dir}" show-ref --verify --quiet refs/remotes/origin/main; then
   if ! git -C "${root_dir}" merge-base --is-ancestor origin/main HEAD; then
-    echo "六项发布门禁阻断：当前工作树尚未合入最新 origin/main。" >&2
+    echo "四层发布门禁阻断：当前工作树尚未合入最新 origin/main。" >&2
     exit 77
   fi
 fi
 endpoint="${JIAOTANG_KB_ENDPOINT:?请设置 JIAOTANG_KB_ENDPOINT}"
 token="${JIAOTANG_KB_TOKEN:?请设置 JIAOTANG_KB_TOKEN}"
-device_id="${JIAOTANG_KB_DEVICE_ID:?请设置 JIAOTANG_KB_DEVICE_ID}"
-device_name="${JIAOTANG_KB_DEVICE_NAME:-Release Gate Device}"
 deploy_host="${JIAOTANG_DEPLOY_HOST:?请设置 JIAOTANG_DEPLOY_HOST}"
 deploy_key="${JIAOTANG_DEPLOY_KEY:-${HOME}/.ssh/jiaotang_kb_aliyun}"
-remote_online_gate="${JIAOTANG_REMOTE_ONLINE_GATE:-false}"
 endpoint="${endpoint%/}"
 auth=(
   -H "Authorization: Bearer ${token}"
-  -H "X-Jiaotang-Device-ID: ${device_id}"
-  -H "X-Jiaotang-Device-Name: ${device_name}"
 )
 curl_args=(--fail-with-body --silent --show-error --max-time 45)
+gate_started_at="$(date +%s)"
+phase_started_at="${gate_started_at}"
+
+start_phase() {
+  phase_started_at="$(date +%s)"
+  echo "$1"
+}
+
+finish_phase() {
+  local finished_at
+  finished_at="$(date +%s)"
+  echo "$1 通过，墙钟 $((finished_at - phase_started_at)) 秒。"
+}
 if [[ -n "${JIAOTANG_RESOLVE_IP:-}" ]]; then
   endpoint_authority="${endpoint#*://}"
   endpoint_authority="${endpoint_authority%%/*}"
@@ -44,217 +52,64 @@ if [[ -n "${JIAOTANG_RESOLVE_IP:-}" ]]; then
   curl_args+=(--resolve "${endpoint_host}:${endpoint_port}:${JIAOTANG_RESOLVE_IP}")
 fi
 
-echo "[1/6] 自动测试"
+start_phase "[1/4] 代码与 Harness 收据"
 index_database="${JIAOTANG_INDEX_DATABASE:-/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3}"
-if [[ -f "${index_database}" ]]; then
-  knowledge_root="${JIAOTANG_KNOWLEDGE_ROOT:-/Users/zsh/JiaotangData/知识库}"
-  index_root="$(cd "$(dirname "${index_database}")" && pwd -P)"
-  python3 "${script_dir}/run_acceptance_harness.py" \
-    --knowledge-root "${knowledge_root}" \
-    --index-root "${index_root}" \
-    --suite knowledge_base \
-    --output "${index_root}/acceptance-harness.json"
-  python3 "${script_dir}/verify_structured_knowledge_tables.py" --database "${index_database}"
-else
-  echo "本地生产索引未挂载，改为校验服务器当前生产索引"
-  {
-    cat <<'REMOTE_INDEX_VERIFY'
-set -e
-set -a
-source /etc/jiaotang-kb-app.env
-set +a
-python3 - "$JIAOTANG_INDEX_DIR/knowledge_content.sqlite3" <<'PY'
-import json
-import sqlite3
-import sys
+if [[ ! -f "${index_database}" ]]; then
+  echo "Harness 收据验证需要挂载与发布目标一致的本地索引：${index_database}" >&2
+  exit 78
+fi
+index_root="$(cd "$(dirname "${index_database}")" && pwd -P)"
+acceptance_receipt="${JIAOTANG_ACCEPTANCE_RECEIPT:-${index_root}/acceptance-harness.json}"
+if [[ ! -f "${acceptance_receipt}" ]]; then
+  echo "缺少 Harness 收据：${acceptance_receipt}。只在知识库、索引或上传策略变化后重新生成。" >&2
+  exit 79
+fi
+python3 "${script_dir}/verify_acceptance_receipt.py" \
+  --receipt "${acceptance_receipt}" \
+  --index-root "${index_root}" \
+  --required-suite knowledge_base
+finish_phase "代码与 Harness 收据"
 
-database = sys.argv[1]
-required = {
-    "list_coverage_matrix": 384,
-    "list_entity_reconciliation": 1,
-    "national_small_giant_master": 1,
-    "three_first_project_awards": 1,
-    "three_first_status_timeline": 1,
-    "enterprise_product_graph_nodes": 1,
-    "enterprise_product_graph_edges": 1,
-}
-with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as connection:
-    existing = {
-        row[0]
-        for row in connection.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        )
-    }
-    missing = sorted(set(required) - existing)
-    if missing:
-        raise SystemExit("缺少结构化专表：" + "、".join(missing))
-    counts = {
-        table: int(connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0])
-        for table in required
-    }
-insufficient = {
-    table: {"actual": counts[table], "minimum": minimum}
-    for table, minimum in required.items()
-    if counts[table] < minimum
-}
-if insufficient:
-    raise SystemExit("结构化专表记录不足：" + json.dumps(insufficient, ensure_ascii=False))
-print(json.dumps({"database": database, "tables": counts}, ensure_ascii=False))
-PY
-REMOTE_INDEX_VERIFY
-  } | ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" bash
-fi
-(
-  cd "${root_dir}"
-  PYTHONPATH=src:. uv run --with pytest --with pyyaml pytest -q tests
-)
-(
-  cd "${service_dir}"
-  PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests -q
-)
-(
-  cd "${service_dir}"
-  .venv/bin/python scripts/manage_project_algorithm_packs.py generate-all
-  .venv/bin/python scripts/validate_project_algorithm_packs.py
-)
-node_bin="${JIAOTANG_NODE_BIN:-$(command -v node || true)}"
-node_modules="${JIAOTANG_NODE_MODULES:-}"
-if [[ -z "${node_modules}" ]]; then
-  bundled_node_root="${HOME}/.cache/codex-runtimes/codex-primary-runtime/dependencies/node"
-  if [[ -d "${bundled_node_root}/node_modules" ]]; then
-    node_modules="${bundled_node_root}/node_modules"
-    if [[ -x "${bundled_node_root}/bin/node" ]]; then
-      node_bin="${bundled_node_root}/bin/node"
-    fi
-  fi
-fi
-if [[ -z "${node_bin}" || -z "${node_modules}" ]]; then
-  echo "缺少 Node.js 或 Playwright 依赖，无法执行 Skills 浏览器视觉门禁" >&2
-  exit 1
-fi
-python3 "${script_dir}/build_static_assets.py"
-(
-  cd "${service_dir}"
-  NODE_PATH="${node_modules}" "${node_bin}" tests/skills_center_ux_regression.mjs
-)
-
-echo "[2/6] 双平台三步安装与高频项目检索金标准"
-(
-  cd "${service_dir}"
-  JIAOTANG_E2E_NODE_BINARY="${node_bin}" \
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
-    tests/test_three_step_install_e2e.py -q
-)
-(
-  cd "${service_dir}"
-  PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests/test_portal.py \
-    -q -k 'high_frequency or municipal_projects or local_green_factory or knowledge_search_filters_cross_project'
-)
-if [[ -f "${index_database}" ]]; then
-  (
-    cd "${service_dir}"
-    .venv/bin/python scripts/evaluate_authoritative_list_facts.py \
-      --database "${index_database}"
-  )
-else
-  echo "本地生产索引未挂载，跳过本机权威名单事实金标准；结构化专表存在性已在服务器校验。"
-fi
-
-echo "[3/6] REST API"
+start_phase "[2/4] 预发布运行时与远程 MCP"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
   "set -e; source /etc/jiaotang-kb-app.env; \
   \"\${JIAOTANG_APP_DIR}/.venv/bin/python\" \"\${JIAOTANG_APP_DIR}/scripts/verify_authenticated_portal.py\" \
   --base-url http://127.0.0.1:8100"
-if [[ "${remote_online_gate}" = "true" ]]; then
-  {
-    printf 'export JIAOTANG_KB_ENDPOINT=%q\n' "${endpoint}"
-    printf 'export JIAOTANG_KB_TOKEN=%q\n' "${token}"
-    printf 'export JIAOTANG_KB_DEVICE_ID=%q\n' "${device_id}"
-    printf 'export JIAOTANG_KB_DEVICE_NAME=%q\n' "${device_name}"
-    cat <<'REMOTE_REST'
-source /etc/jiaotang-kb-app.env
-export JIAOTANG_RESOLVE_IP=127.0.0.1
-"${JIAOTANG_APP_DIR}/scripts/smoke_test_production.sh"
-curl --fail-with-body --silent --show-error --max-time 45 \
-  --resolve "zshjiaotang.cn:443:127.0.0.1" \
-  -H "Authorization: Bearer ${JIAOTANG_KB_TOKEN}" \
-  -H "X-Jiaotang-Device-ID: ${JIAOTANG_KB_DEVICE_ID}" \
-  -H "X-Jiaotang-Device-Name: ${JIAOTANG_KB_DEVICE_NAME}" \
-  "${JIAOTANG_KB_ENDPOINT}/v1/preferences"
-REMOTE_REST
-  } | ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" bash | tail -n 1 | python3 -c '
-import json,sys
-payload=json.load(sys.stdin)
-assert payload.get("schema_version") == 1, "偏好API结构版本异常"
-workflow=payload.get("preferences",{}).get("workflow",{})
-assert workflow.get("knowledge_first") is True, "知识库优先核心规则异常"
-assert workflow.get("four_question_review") is True, "四问复盘核心规则异常"
-'
-else
-  JIAOTANG_KB_ENDPOINT="${endpoint}" JIAOTANG_KB_TOKEN="${token}" \
-    JIAOTANG_KB_DEVICE_ID="${device_id}" JIAOTANG_KB_DEVICE_NAME="${device_name}" \
-    "${script_dir}/smoke_test_production.sh"
-  curl "${curl_args[@]}" "${auth[@]}" "${endpoint}/v1/preferences" | python3 -c '
-import json,sys
-payload=json.load(sys.stdin)
-assert payload.get("schema_version") == 1, "偏好API结构版本异常"
-workflow=payload.get("preferences",{}).get("workflow",{})
-assert workflow.get("knowledge_first") is True, "知识库优先核心规则异常"
-assert workflow.get("four_question_review") is True, "四问复盘核心规则异常"
-'
-fi
-
-echo "[4/6] Streamable HTTP MCP"
-if [[ "${remote_online_gate}" = "true" ]]; then
-  {
-    printf 'export JIAOTANG_KB_ENDPOINT=%q\n' "${endpoint}"
-    printf 'export JIAOTANG_KB_TOKEN=%q\n' "${token}"
-    printf 'export JIAOTANG_KB_DEVICE_ID=%q\n' "${device_id}"
-    printf 'export JIAOTANG_KB_DEVICE_NAME=%q\n' "${device_name}"
-    cat <<'REMOTE_MCP'
-curl --fail-with-body --silent --show-error --max-time 45 \
-  --resolve "zshjiaotang.cn:443:127.0.0.1" \
-  -H "Authorization: Bearer ${JIAOTANG_KB_TOKEN}" \
-  -H "X-Jiaotang-Device-ID: ${JIAOTANG_KB_DEVICE_ID}" \
-  -H "X-Jiaotang-Device-Name: ${JIAOTANG_KB_DEVICE_NAME}" \
+JIAOTANG_KB_ENDPOINT="${endpoint}" JIAOTANG_KB_TOKEN="${token}" \
+  "${script_dir}/smoke_test_production.sh"
+curl "${curl_args[@]}" "${auth[@]}" \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"knowledge_search","arguments":{"query":"小巨人","limit":1}}}' \
-  "${JIAOTANG_KB_ENDPOINT}/mcp/"
-REMOTE_MCP
-  } | ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" bash | python3 -c 'import json,sys; payload=json.load(sys.stdin); assert payload.get("result",{}).get("structuredContent",{}).get("results"), "MCP检索未命中"'
-else
-  curl "${curl_args[@]}" "${auth[@]}" \
-    -H 'Accept: application/json, text/event-stream' \
-    -H 'Content-Type: application/json' \
-    -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"knowledge_search","arguments":{"query":"小巨人","limit":1}}}' \
-    "${endpoint}/mcp/" | python3 -c 'import json,sys; payload=json.load(sys.stdin); assert payload.get("result",{}).get("structuredContent",{}).get("results"), "MCP检索未命中"'
-fi
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+  "${endpoint}/mcp/" | python3 -c '
+import json,sys
+payload=json.load(sys.stdin)
+tools={item.get("name") for item in payload.get("result",{}).get("tools",[])}
+required={"knowledge_search","knowledge_document","knowledge_service_status"}
+missing=sorted(required-tools)
+assert not missing, "MCP 缺少必要工具："+"、".join(missing)
+'
+curl "${curl_args[@]}" "${auth[@]}" \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"knowledge_service_status","arguments":{}}}' \
+  "${endpoint}/mcp/" | python3 -c '
+import json,sys
+payload=json.load(sys.stdin)
+status=payload.get("result",{}).get("structuredContent",{})
+assert status.get("connected") is True, "knowledge_service_status 未连接"
+'
+finish_phase "预发布运行时与远程 MCP"
 
-echo "[5/6] 最新下载包"
-release_archive="$(mktemp -t jiaotang-skills-release.XXXXXX.zip)"
-trap 'rm -f "${release_archive}"' EXIT
-if [[ "${remote_online_gate}" = "true" ]]; then
-  {
-    printf 'export JIAOTANG_KB_ENDPOINT=%q\n' "${endpoint}"
-    printf 'export JIAOTANG_KB_TOKEN=%q\n' "${token}"
-    printf 'export JIAOTANG_KB_DEVICE_ID=%q\n' "${device_id}"
-    printf 'export JIAOTANG_KB_DEVICE_NAME=%q\n' "${device_name}"
-    cat <<'REMOTE_DOWNLOAD'
-curl --fail-with-body --silent --show-error --max-time 45 \
-  --resolve "zshjiaotang.cn:443:127.0.0.1" \
-  -H "Authorization: Bearer ${JIAOTANG_KB_TOKEN}" \
-  -H "X-Jiaotang-Device-ID: ${JIAOTANG_KB_DEVICE_ID}" \
-  -H "X-Jiaotang-Device-Name: ${JIAOTANG_KB_DEVICE_NAME}" \
-  "${JIAOTANG_KB_ENDPOINT}/v1/skills/latest/download"
-REMOTE_DOWNLOAD
-  } | ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" bash > "${release_archive}"
-else
-  curl "${curl_args[@]}" "${auth[@]}" \
-    "${endpoint}/v1/skills/latest/download" -o "${release_archive}"
-fi
-JIAOTANG_RELEASE_ARCHIVE="${release_archive}" python3 - <<'PY'
-import json
+start_phase "[3/4] 服务端发布产物"
+release_workspace="$(mktemp -d -t jiaotang-release-evidence.XXXXXX)"
+generic_archive="${release_workspace}/jiaotang-skills.zip"
+workbuddy_archive="${release_workspace}/jiaotang-workbuddy.zip"
+curl "${curl_args[@]}" "${auth[@]}" \
+  "${endpoint}/v1/skills/latest/download" -o "${generic_archive}"
+curl "${curl_args[@]}" "${auth[@]}" \
+  "${endpoint}/v1/skills/latest/workbuddy/download" -o "${workbuddy_archive}"
+JIAOTANG_RELEASE_ARCHIVE="${generic_archive}" python3 - <<'PY'
 import os
 import zipfile
 from pathlib import Path
@@ -264,73 +119,31 @@ assert payload, "下载包为空"
 with zipfile.ZipFile(os.environ["JIAOTANG_RELEASE_ARCHIVE"]) as archive:
     assert archive.testzip() is None, "ZIP完整性失败"
     names = set(archive.namelist())
-    manifest_name = next(
-        (
-            name
-            for name in (
-                "manifest.json",
-                "suite-release-manifest.json",
-                "jiaotang-skills/manifest.json",
-                "jiaotang-skills/suite-release-manifest.json",
-            )
-            if name in names
-        ),
-        None,
-    )
-    assert manifest_name is not None, "下载包缺少套件清单"
-    manifest = json.loads(archive.read(manifest_name))
-    archive_prefix = (
-        "jiaotang-skills/" if manifest_name.startswith("jiaotang-skills/") else ""
-    )
-    required = {
-        archive_prefix + "skills/first-run-configuration/scripts/manage_preferences.py",
-        archive_prefix + "skills/first-run-configuration/scripts/migrate_skill_preferences.py",
-        archive_prefix + "skills/first-run-configuration/scripts/upgrade_inheritance.py",
+    skill_manifests = {
+        name for name in names
+        if "/skills/" in f"/{name}" and name.endswith("/SKILL.md")
     }
-    assert required <= names, "下载包缺少偏好继承脚本"
-    merge_scope = {
-        "__name__": "release_gate_merge",
-        "__file__": "skills/first-run-configuration/scripts/manage_preferences.py",
-    }
-    exec(
-        archive.read(
-            archive_prefix + "skills/first-run-configuration/scripts/manage_preferences.py"
-        ),
-        merge_scope,
+    assert len(skill_manifests) == 49, f"Skills 数量异常：{len(skill_manifests)}"
+    forbidden = (
+        "jiaotang-agent.mjs",
+        "run-node.cmd",
+        "run-node",
+        "bootstrap_url",
+        "jiaotang_kb_setup",
     )
-    merged, conflicts = merge_scope["merge_three_way"](
-        {"output": {"tone": "professional"}, "region": {"city": "杭州"}},
-        {"output": {"tone": "direct"}, "region": {"city": "杭州"}},
-        {"output": {"tone": "professional"}, "region": {"city": "宁波"}},
-    )
-    assert not conflicts and merged["output"]["tone"] == "direct" and merged["region"]["city"] == "宁波", "三方合并门禁失败"
-    upgrade_scope = {
-        "__name__": "release_gate_upgrade",
-        "__file__": "skills/first-run-configuration/scripts/upgrade_inheritance.py",
-    }
-    exec(
-        archive.read(
-            archive_prefix + "skills/first-run-configuration/scripts/upgrade_inheritance.py"
-        ),
-        upgrade_scope,
-    )
-    assert upgrade_scope["classify"]("old", "local", "new") == "用户直改与官方更新冲突", "直改检测门禁失败"
-    migration_scope = {
-        "__name__": "release_gate_migration",
-        "__file__": "skills/first-run-configuration/scripts/migrate_skill_preferences.py",
-    }
-    exec(
-        archive.read(
-            archive_prefix
-            + "skills/first-run-configuration/scripts/migrate_skill_preferences.py"
-        ),
-        migration_scope,
-    )
-    inferred = migration_scope["infer_global_preferences"]("默认政策地区为浙江省杭州市，输出使用详细版")
-    assert inferred["region"]["city"] == "杭州市" and inferred["output"]["detail_level"] == "detailed", "旧Skill偏好迁移门禁失败"
+    hits = sorted(name for name in names if any(term in name for term in forbidden))
+    assert not hits, "通用包仍包含旧安装组件：" + "、".join(hits)
 PY
+python3 "${root_dir}/tests/validate_workbuddy_release_candidate.py" \
+  --suite-zip "${workbuddy_archive}" \
+  --check server-release-contract
+python3 "${root_dir}/tests/validate_workbuddy_release_candidate.py" \
+  --suite-zip "${workbuddy_archive}" \
+  --check all-skill-coverage
+echo "产物证据保留于：${release_workspace}"
+finish_phase "服务端发布产物"
 
-echo "[6/6] 当前签名索引release（按本轮边界跳过历史部署备份盘点）"
+start_phase "[4/4] 当前签名索引 release"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
   "python3 - <<'PY'
 import json
@@ -343,4 +156,6 @@ assert cache.get('generation_consistent') is True, '索引世代不一致'
 print('当前签名索引release正常：' + cache['current_release_id'])
 PY"
 
-echo "六项发布门禁全部通过。"
+finish_phase "当前签名索引 release"
+gate_finished_at="$(date +%s)"
+echo "四层发布门禁全部通过，总墙钟 $((gate_finished_at - gate_started_at)) 秒。"

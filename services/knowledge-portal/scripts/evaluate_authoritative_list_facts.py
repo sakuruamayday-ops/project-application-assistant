@@ -39,6 +39,7 @@ def evaluate(database: Path, gold_path: Path) -> dict[str, object]:
             page_sizes: list[int] = []
             fact_ids: list[str] = []
             first_summary: dict[str, object] | None = None
+            first_coverage: dict[str, object] | None = None
             first_total: int | None = None
             try:
                 while True:
@@ -50,6 +51,7 @@ def evaluate(database: Path, gold_path: Path) -> dict[str, object]:
                     )
                     if first_summary is None:
                         first_summary = dict(response["summary"])
+                        first_coverage = dict(response["coverage"])
                         first_total = int(response["total"])
                     page = list(response["results"])
                     page_sizes.append(len(page))
@@ -72,6 +74,9 @@ def evaluate(database: Path, gold_path: Path) -> dict[str, object]:
             actual = {
                 "total": first_total,
                 "official_match_count": int((first_summary or {}).get("official_match_count", -1)),
+                "completeness_claim_allowed": bool(
+                    (first_coverage or {}).get("completeness_claim_allowed")
+                ),
                 "source_tier_counts": dict((first_summary or {}).get("source_tier_counts", {})),
                 "page_sizes": page_sizes,
                 "unique_fact_count": len(set(fact_ids)),
@@ -80,6 +85,9 @@ def evaluate(database: Path, gold_path: Path) -> dict[str, object]:
             expected_actual = {
                 "total": expected["total"],
                 "official_match_count": expected["official_match_count"],
+                "completeness_claim_allowed": expected[
+                    "completeness_claim_allowed"
+                ],
                 "source_tier_counts": expected["source_tier_counts"],
                 "page_sizes": expected["page_sizes"],
                 "unique_fact_count": expected["total"],

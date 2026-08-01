@@ -37,15 +37,22 @@ LEGACY_CONVERSION_ROOT = Path(
 SOFFICE = Path(os.environ.get("SOFFICE_PATH") or shutil.which("soffice") or "soffice")
 ENTERPRISE_PATTERN = re.compile(
     r"[\u4e00-\u9fffA-Za-z0-9（）()·—\-\u0020\u3000]{2,80}?"
-    r"(?:股份有限公司|有限责任公司|集团有限公司|有限公司|厂)"
+    r"(?:股份有限公司|有限责任公司|集团有限公司|有限公司|研究院|研究所|学院|中心|"
+    r"合作社|事务所|公司|厂)"
+    r"(?:[（(][\u4e00-\u9fffA-Za-z0-9·—\-\u0020]{1,20}[）)])?"
+    r"(?=$|[\s|,，、;；。])"
 )
 LIST_ENTITY_LINE_PATTERN = re.compile(
     r"[\u4e00-\u9fffA-Za-z0-9（）()·—\-]{2,100}"
-    r"(?:公司|厂|研究院|中心|合作社|集团|事务所)$"
+    r"(?:公司|厂|研究院|研究所|学院|中心|合作社|集团|事务所)"
+    r"(?:[（(][\u4e00-\u9fffA-Za-z0-9·—\-]{1,20}[）)])?$"
 )
 HTML_ROW_PATTERN = re.compile(r"<tr\b[^>]*>(.*?)</tr>", re.IGNORECASE | re.DOTALL)
 HTML_CELL_PATTERN = re.compile(r"<t[dh]\b[^>]*>(.*?)</t[dh]>", re.IGNORECASE | re.DOTALL)
 HTML_TAG_PATTERN = re.compile(r"<[^>]+>")
+ENTERPRISE_ALIAS_QUALIFIER_PATTERN = re.compile(
+    r"[（(](?:原名|曾用名)\s*[：:]?\s*[^（）()]{1,80}[）)]"
+)
 YEAR_PATTERN = re.compile(r"(?<!\d)(20\d{2})(?!\d)")
 BATCH_PATTERN = re.compile(r"第[一二三四五六七八九十百零〇两\d]+批(?:次)?")
 DEPLOYED_PROJECT_INDEX = (
@@ -1379,6 +1386,7 @@ def iter_chunks(text: str, size: int = 1_200, overlap: int = 180):
 def enterprise_mentions(text: str) -> list[tuple[str, str, str]]:
     mentions: list[tuple[str, str, str]] = []
     previous_sequence = ""
+    pending_sequence_lines = 0
     seen: set[tuple[str, str]] = set()
 
     for row_html in HTML_ROW_PATTERN.findall(text):
@@ -1386,10 +1394,11 @@ def enterprise_mentions(text: str) -> list[tuple[str, str, str]]:
             html.unescape(HTML_TAG_PATTERN.sub("", cell)).strip()
             for cell in HTML_CELL_PATTERN.findall(row_html)
         ]
-        sequence = cells[0] if cells and cells[0].isdigit() else ""
+        sequence = _normalized_sequence(cells[0]) if cells else ""
         context = " | ".join(cells)[:500]
         for cell in cells:
-            for match in ENTERPRISE_PATTERN.finditer(cell):
+            current_name_cell = ENTERPRISE_ALIAS_QUALIFIER_PATTERN.sub("", cell)
+            for match in ENTERPRISE_PATTERN.finditer(current_name_cell):
                 name = match.group(0).strip(" ：:，,、；;。")
                 key = (name, sequence)
                 if len(name) >= 6 and key not in seen:
@@ -1399,15 +1408,19 @@ def enterprise_mentions(text: str) -> list[tuple[str, str, str]]:
     plain_text = HTML_ROW_PATTERN.sub("", text)
     for line in plain_text.splitlines():
         stripped = line.strip()
-        if stripped.isdigit():
-            previous_sequence = stripped
+        standalone_sequence = _normalized_sequence(stripped)
+        if standalone_sequence:
+            previous_sequence = standalone_sequence
+            pending_sequence_lines = 3
             continue
         cells = [cell.strip() for cell in stripped.split("|")]
-        sequence = cells[0] if cells and cells[0].isdigit() else previous_sequence
+        sequence = _normalized_sequence(cells[0]) if cells else ""
+        sequence = sequence or previous_sequence
         matched_enterprise = False
-        for match in ENTERPRISE_PATTERN.finditer(stripped):
+        current_name_line = ENTERPRISE_ALIAS_QUALIFIER_PATTERN.sub("", stripped)
+        for match in ENTERPRISE_PATTERN.finditer(current_name_line):
             name = match.group(0).strip(" ：:，,、；;。")
-            name = re.sub(r"^\d+[.、\s]*", "", name)
+            name = re.sub(r"^\d+(?:\.0)?[.、\s]*", "", name)
             key = (name, sequence)
             if len(name) < 6 or key in seen:
                 continue
@@ -1415,14 +1428,28 @@ def enterprise_mentions(text: str) -> list[tuple[str, str, str]]:
             mentions.append((name, sequence, stripped[:500]))
             matched_enterprise = True
         if sequence and not matched_enterprise:
-            candidate = re.sub(r"^\d+[.、\s]*", "", stripped).strip(" ：:，,、；;。")
+            candidate = re.sub(
+                r"^\d+(?:\.0)?[.、\s]*", "", current_name_line
+            ).strip(" ：:，,、；;。")
             key = (candidate, sequence)
             if LIST_ENTITY_LINE_PATTERN.fullmatch(candidate) and key not in seen:
                 seen.add(key)
                 mentions.append((candidate, sequence, stripped[:500]))
-        if stripped and not stripped.isdigit():
+                matched_enterprise = True
+        if matched_enterprise:
             previous_sequence = ""
+            pending_sequence_lines = 0
+        elif previous_sequence and stripped:
+            pending_sequence_lines -= 1
+            if pending_sequence_lines <= 0:
+                previous_sequence = ""
     return mentions
+
+
+def _normalized_sequence(value: str) -> str:
+    """Normalize spreadsheet row numbers such as ``368.0`` without treating prose as a sequence."""
+    match = re.fullmatch(r"\s*(\d+)(?:\.0+)?\s*", value or "")
+    return match.group(1) if match else ""
 
 
 def structured_small_giant_entities(text: str) -> list[tuple[object, ...]]:

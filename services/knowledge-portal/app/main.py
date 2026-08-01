@@ -757,6 +757,7 @@ class AuthoritativeListSearchRequest(BaseModel):
     batch: str = Field(default="", max_length=50)
     region: str = Field(default="", max_length=100)
     status: str = Field(default="", max_length=100)
+    event_type: str = Field(default="", max_length=100)
     verified_only: bool = False
     offset: int = Field(default=0, ge=0, le=1_000_000)
     limit: int = Field(default=50, ge=1, le=200)
@@ -3343,6 +3344,7 @@ def search_authoritative_list_facts(
     batch: str = "",
     region: str = "",
     status: str = "",
+    event_type: str = "",
     verified_only: bool = False,
     offset: int = 0,
     limit: int = 50,
@@ -3359,6 +3361,7 @@ def search_authoritative_list_facts(
                 batch=batch,
                 region=region,
                 status=status,
+                event_type=event_type,
                 verified_only=verified_only,
                 offset=offset,
                 limit=limit,
@@ -5419,6 +5422,7 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             batch=str(arguments.get("batch") or "")[:50],
             region=str(arguments.get("region") or "")[:100],
             status=str(arguments.get("status") or "")[:100],
+            event_type=str(arguments.get("event_type") or "")[:100],
             verified_only=bool(arguments.get("verified_only") or False),
             offset=max(0, min(int(arguments.get("offset") or 0), 1_000_000)),
             limit=max(1, min(int(arguments.get("limit") or 50), 200)),
@@ -7801,7 +7805,7 @@ class MCPBearerMiddleware:
         async def replay_receive():
             nonlocal replayed
             if replayed:
-                return {"type": "http.request", "body": b"", "more_body": False}
+                return await receive()
             replayed = True
             return {
                 "type": "http.request",
@@ -12343,10 +12347,16 @@ def build_agent_bootstrap_prompt(
         "请一次性完成以下动作：使用 WorkBuddy 内置插件管理安装或替换焦糖插件，"
         "确认 49 项 Skills 可识别并启用包内最小行为约束 Hook；若检测到旧版，自动替换旧插件，"
         "移除旧的本地 jiaotang-kb command/args 连接方式，不读取旧钥匙串、Windows DPAPI、"
-        "设备密钥或 bootstrap 配置。随后只替换当前用户配置中的 `mcpServers.jiaotang-kb`，"
-        "保留所有其他 MCP 条目。完整远程 MCP 配置如下：\n\n"
+        "设备密钥或 bootstrap 配置。不要把新文件直接覆盖解压到旧插件目录；先把旧插件目录移动到"
+        "带时间戳的可恢复备份，再安装干净的新目录，并确认新插件根目录不含 `.mcp.json`、`bin` 或"
+        " `mcp` 旧本地启动器残留。随后只替换当前用户配置中的 `mcpServers.jiaotang-kb`，保留所有"
+        "其他 MCP 条目。Windows 必须写入 `%USERPROFILE%\\.workbuddy\\mcp.json`，macOS 必须写入"
+        " `~/.workbuddy/mcp.json`；文件名都是不带点前缀的 `mcp.json`。`.workbuddy/.mcp.json` 是"
+        " WorkBuddy 托管的代理配置，禁止读取、修改或覆盖。目标 `mcp.json` 不存在时创建，存在时"
+        "解析原 JSON 后只合并 `jiaotang-kb`，不得重建整个 `mcpServers`。完整远程 MCP 配置如下：\n\n"
         f"{configuration}\n\n"
-        "保存后只重载 WorkBuddy 一次。执行 tools/list，确认 knowledge_search、"
+        "保存后只重载 WorkBuddy 一次。打开连接器管理，确认自定义连接器中出现 `jiaotang-kb`；"
+        "若显示未信任，提示用户在界面手动点击信任，不得尝试绕过宿主安全确认。信任后执行 tools/list，确认 knowledge_search、"
         "knowledge_document、knowledge_service_status 已出现，再实际调用 "
         "knowledge_service_status；只有返回 connected: true、49 项 Skills 可识别且其他 MCP "
         "未被覆盖时，才报告安装完成。不要执行安装包签名审查、用户侧签名校验、设备登记、"
@@ -16621,11 +16631,12 @@ def authoritative_list_search(
     batch: str = "",
     region: str = "",
     status: str = "",
+    event_type: str = "",
     verified_only: bool = False,
     offset: int = 0,
     limit: int = 50,
 ) -> dict[str, object]:
-    """查询小巨人、省级专精特新和三首权威事实，返回总数、来源等级和分页状态。"""
+    """查询小巨人、省级专精特新和三首权威事实；全量名单必须按 next_offset 翻页至 has_more=false。"""
     return search_authoritative_list_facts(
         list_type=list_type,
         enterprise_name=enterprise_name,
@@ -16635,6 +16646,7 @@ def authoritative_list_search(
         batch=batch,
         region=region,
         status=status,
+        event_type=event_type,
         verified_only=verified_only,
         offset=offset,
         limit=limit,

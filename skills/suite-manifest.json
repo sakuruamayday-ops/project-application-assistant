@@ -4,9 +4,9 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.4.5",
-    "version": "1.4.5",
-    "summary": "V1.4.5 将 WorkBuddy 安装收敛为一次复制粘贴，同时完成 49 项 Skills、最小行为 Hook 和远程 jiaotang-kb MCP 连接。",
+    "tag": "V1.4.6",
+    "version": "1.4.6",
+    "summary": "V1.4.6 联合修复 WorkBuddy 连接、网站健康自愈和知识索引治理，并精简默认发布门禁。",
     "changes": [
       "门户一键安装指令同时完成 49 项 Skills 安装或覆盖升级、最小行为 Hook 启用、用户级远程 MCP 合并、一次重载和 knowledge_service_status 验收。",
       "登录用户的手工配置页自动复用有效个人 Token；无有效 Token 时自动生成，并直接填入完整 MCP JSON。",
@@ -15,11 +15,17 @@
       "49 项 Skills 均有行为覆盖门禁；WorkBuddy 包只保留业务 Skills、插件清单、最小行为 Hook、必要参考资料和业务脚本。",
       "49 项顶层 Skills 的业务规则、路由和交付契约与 V1.4.3 保持兼容。",
       "旧版用户通过同一段指令自动覆盖插件、移除旧本地 MCP 连接，仅替换 jiaotang-kb，并保留其他 MCP 条目。",
-      "新增简化安装端到端验收，覆盖新装、旧版覆盖、Token 复用、保留其他 MCP、工具枚举和真实状态调用。"
+      "新增简化安装端到端验收，覆盖新装、旧版覆盖、Token 复用、保留其他 MCP、工具枚举和真实状态调用。",
+      "Windows 明确写入 %USERPROFILE%\\.workbuddy\\mcp.json，macOS 写入 ~/.workbuddy/mcp.json，不再误写 WorkBuddy 托管的 .mcp.json。",
+      "MCP 中间件在重放请求体后继续等待真实断开事件，避免单 worker 忙循环拖垮网站。",
+      "生产健康检查改为每分钟执行，连续两次失败自动重启，30 分钟最多 3 次并熔断 60 分钟。",
+      "知识索引重建隐私白名单、旧资料生命周期和案例包关系，验收收据绑定全部关键索引产物。",
+      "小巨人与浙江省专名单改用官方发布事件口径，认定、认定公示、复核公示和复核通过分开记录，地域约束使用事件发生时归属。",
+      "默认发布门禁收敛为快速静态、一次主测试、必要产物验收和主机验收四层，相同输入使用内容寻址收据避免重复运行。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.5 插件安装或覆盖升级和远程 MCP 连接。",
+      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.6 插件安装或覆盖升级和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -32,12 +38,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.4.5 使用 WorkBuddy 用户级远程 HTTP MCP，不依赖插件根 .mcp.json 或本地启动器。"
+        "note": "V1.4.6 使用 WorkBuddy 用户级远程 HTTP MCP，不依赖插件根 .mcp.json 或本地启动器。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "结构兼容，待主人实机验收",
-        "note": "V1.4.5 不依赖 ZIP 执行位、Node 启动器、系统凭据或设备签名；真实 Windows 安装由主人发布后验收。"
+        "status": "结构与 CI 已验证，待发布后实机验收",
+        "note": "V1.4.6 固定使用 %USERPROFILE%\\.workbuddy\\mcp.json，不修改 WorkBuddy 托管的 .workbuddy/.mcp.json。"
       }
     ],
     "one_step_installation_protocol": {
@@ -222,7 +228,7 @@
       "timeout_seconds": 60
     },
     {
-      "name": "workbuddy-v145-one-step-install-contract",
+      "name": "workbuddy-one-step-install-contract",
       "command": [
         "{python}",
         "-m",

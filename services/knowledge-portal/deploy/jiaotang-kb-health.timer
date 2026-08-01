@@ -1,9 +1,10 @@
 [Unit]
-Description=Monitor Jiaotang knowledge portal every five minutes
+Description=Monitor Jiaotang knowledge portal every minute
 
 [Timer]
 OnBootSec=2m
-OnUnitActiveSec=5m
+OnUnitActiveSec=1m
+AccuracySec=10s
 Persistent=true
 
 [Install]
