@@ -200,6 +200,19 @@ def test_list_entity_extraction_keeps_factory_research_institute_and_qualifier()
     ]
 
 
+def test_list_entity_extraction_keeps_current_name_and_sequence_across_region_line():
+    mentions = enterprise_mentions(
+        "114\n浙江省\n宇恒电池有限公司（原名：浙江凯恩电池有限公司）\n"
+        "117\n浙江省\n精工阀门集团有限公司（原名：精工阀门有限公司）\n"
+        "297\n广西壮族\n自治区\n柳州源创电喷技术有限公司"
+    )
+    assert [(item[0], item[1]) for item in mentions] == [
+        ("宇恒电池有限公司", "114"),
+        ("精工阀门集团有限公司", "117"),
+        ("柳州源创电喷技术有限公司", "297"),
+    ]
+
+
 def test_document_scopes_deduplicate_and_propagate_province_to_cities(tmp_path):
     database_path = tmp_path / "document-scopes.sqlite3"
     create_database(
