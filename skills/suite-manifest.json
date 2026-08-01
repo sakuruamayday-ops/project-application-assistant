@@ -12,7 +12,7 @@
       "ZIP 处理拒绝反斜杠、绝对路径、父目录、盘符、NUL、符号链接、重复条目和大小写碰撞；内置秘密扫描支持 Unicode 归一化并递归检查嵌套 ZIP。",
       "安装器在创建回滚副本失败时不再继续替换，升级失败会恢复原目录；证据目录可显式配置，避免测试或受限环境误写用户目录。",
       "发布门禁绑定 Git commit、tree、跟踪源码摘要、套件清单、发布管理器、工具链和最终包哈希；从仓库外启动仍强制检查唯一仓库根目录。",
-      "49 项 Skills 均有行为覆盖门禁；WorkBuddy 候选包必须通过真实宿主全技能激活及对抗路由测试，宿主 CLI 缺失计为失败而非跳过。",
+      "49 项 Skills 均有行为覆盖门禁；WorkBuddy 发布前校验真实候选包的固定发布者签名、49 项技能覆盖、插件根 MCP 配置和跨平台启动器，真实 macOS 与 Windows 宿主验收在发布后执行。",
       "门户保留内部成员姓名加手机号后四位的自助注册，邀请注册继续使用一次性原子消费的 v2 令牌；登录、注册和问答接口增加可信来源限流与会话敏感信息清理。",
       "自带模型接口限制为 HTTPS、公网地址、受控端口和禁止重定向，并限制响应体、并发和超时；问题明文按 24 小时后台周期清理。",
       "门户下载在入库和发送前同时核验数据库 SHA-256、固定发布者签名及同一稳定文件内容，阻断无效候选包、验签缓存复用和校验后换包。",
@@ -240,38 +240,47 @@
         "--check"
       ],
       "timeout_seconds": 60
+    },
+    {
+      "name": "workbuddy-three-step-cross-platform-fixture",
+      "command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "services/knowledge-portal/tests/test_three_step_install_e2e.py"
+      ],
+      "environment": {
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+        "PYTHONPATH": "services/knowledge-portal"
+      },
+      "timeout_seconds": 180
     }
   ],
   "post_package_release_gates": [
     {
-      "name": "real-workbuddy-adversarial-routing",
+      "name": "workbuddy-signed-candidate-contract",
       "command": [
         "{python}",
-        "tests/run_adversarial_eval.py",
-        "--codebuddy-cli",
-        "{workbuddy_cli}",
+        "tests/validate_workbuddy_release_candidate.py",
         "--suite-zip",
         "{workbuddy_archive}",
-        "--output-dir",
-        "{gate_output}",
-        "--workers",
-        "1"
+        "--check",
+        "signed-contract"
       ],
-      "timeout_seconds": 14400
+      "timeout_seconds": 120
     },
     {
-      "name": "real-workbuddy-all-skill-activation",
+      "name": "workbuddy-all-skill-package-coverage",
       "command": [
         "{python}",
-        "tests/run_all_skill_activation_eval.py",
-        "--codebuddy-cli",
-        "{workbuddy_cli}",
+        "tests/validate_workbuddy_release_candidate.py",
         "--suite-zip",
         "{workbuddy_archive}",
-        "--output-dir",
-        "{gate_output}"
+        "--check",
+        "all-skill-coverage"
       ],
-      "timeout_seconds": 7200
+      "timeout_seconds": 120
     }
   ],
   "dependencies": {
