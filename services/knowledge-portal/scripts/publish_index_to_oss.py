@@ -39,6 +39,7 @@ FULL_INDEX_NAME = "knowledge_content.sqlite3"
 RELEASE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$")
 MANIFEST_SCHEMA = "jiaotang-index-release/v1"
 POINTER_SCHEMA = "jiaotang-index-pointer/v1"
+TRANSITION_SCHEMA = "jiaotang-index-transition/v1"
 
 
 def canonical_json(payload: dict[str, object]) -> bytes:
@@ -445,7 +446,7 @@ def switch_pointer_cas(
     expected_release_id: str | None,
     allow_initial: bool,
 ) -> str:
-    current, etag = pointer_state(bucket, key)
+    current, _ = pointer_state(bucket, key)
     target_release = str(pointer["release_id"])
     if current and current.get("release_id") == target_release:
         if current != pointer:
@@ -463,7 +464,54 @@ def switch_pointer_cas(
             raise RuntimeError(
                 f"current CAS冲突：预期{expected_release_id}，实际{actual_release}"
             )
-        headers = {"If-Match": etag}
+        body = canonical_json(pointer)
+        transition = {
+            "schema": TRANSITION_SCHEMA,
+            "expected_release_id": expected_release_id,
+            "target_release_id": target_release,
+            "target_pointer_sha256": sha256_bytes(body),
+        }
+        transition_body = canonical_json(transition)
+        transition_key = (
+            f"{key.rsplit('/', 1)[0]}/transitions/"
+            f"{expected_release_id}.json"
+        )
+        transition_headers = {
+            "x-oss-forbid-overwrite": "true",
+            "x-oss-meta-sha256": sha256_bytes(transition_body),
+            "x-oss-meta-source-size": str(len(transition_body)),
+            "x-oss-meta-expected-release-id": expected_release_id,
+            "x-oss-meta-target-release-id": target_release,
+        }
+        try:
+            bucket.put_object(
+                transition_key,
+                transition_body,
+                headers=transition_headers,
+            )
+        except Exception as error:
+            existing_transition = head_optional(bucket, transition_key)
+            if existing_transition is None:
+                raise
+            if remote_bytes(bucket, transition_key) != transition_body:
+                raise RuntimeError(
+                    "current转换声明冲突：同一前驱release已绑定其他目标"
+                ) from error
+
+        confirmed_current, _ = pointer_state(bucket, key)
+        if confirmed_current == pointer:
+            return "unchanged"
+        confirmed_release = (
+            str(confirmed_current.get("release_id") or "")
+            if confirmed_current
+            else ""
+        )
+        if confirmed_release != expected_release_id:
+            raise RuntimeError(
+                "current CAS冲突：转换声明写入后指针已变化，"
+                f"预期{expected_release_id}，实际{confirmed_release}"
+            )
+        headers = {}
     body = canonical_json(pointer)
     headers.update(
         {

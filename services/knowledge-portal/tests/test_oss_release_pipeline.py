@@ -182,6 +182,86 @@ def test_pointer_cas_rejects_concurrent_release() -> None:
         )
 
 
+def test_pointer_cas_uses_immutable_transition_claim() -> None:
+    secret = b"a" * 48
+    bucket = FakeBucket()
+    manifest = b"{}\n"
+    current = signed_pointer(secret, "release-0001", manifest)
+    bucket.put_object(
+        "production/index/current.json",
+        canonical_json(current),
+        headers={"x-oss-forbid-overwrite": "true"},
+    )
+    target = signed_pointer(secret, "release-0002", manifest, "release-0001")
+
+    assert (
+        switch_pointer_cas(
+            bucket,
+            "production/index/current.json",
+            target,
+            expected_release_id="release-0001",
+            allow_initial=False,
+        )
+        == "switched"
+    )
+    transition_key = "production/index/transitions/release-0001.json"
+    transition = json.loads(bucket.objects[transition_key].payload)
+    assert transition["expected_release_id"] == "release-0001"
+    assert transition["target_release_id"] == "release-0002"
+    assert all(
+        "If-Match" not in remote.headers
+        for remote in bucket.objects.values()
+    )
+
+
+def test_pointer_cas_rejects_conflicting_transition_claim() -> None:
+    secret = b"a" * 48
+    bucket = FakeBucket()
+    manifest = b"{}\n"
+    current = signed_pointer(secret, "release-0001", manifest)
+    bucket.put_object(
+        "production/index/current.json",
+        canonical_json(current),
+        headers={"x-oss-forbid-overwrite": "true"},
+    )
+    first_target = signed_pointer(
+        secret,
+        "release-0002",
+        manifest,
+        "release-0001",
+    )
+    assert (
+        switch_pointer_cas(
+            bucket,
+            "production/index/current.json",
+            first_target,
+            expected_release_id="release-0001",
+            allow_initial=False,
+        )
+        == "switched"
+    )
+
+    bucket.objects["production/index/current.json"] = FakeRemote(
+        canonical_json(current),
+        {},
+        "etag-restored-for-race",
+    )
+    other_target = signed_pointer(
+        secret,
+        "release-0003",
+        manifest,
+        "release-0001",
+    )
+    with pytest.raises(RuntimeError, match="转换声明冲突"):
+        switch_pointer_cas(
+            bucket,
+            "production/index/current.json",
+            other_target,
+            expected_release_id="release-0001",
+            allow_initial=False,
+        )
+
+
 def test_release_object_whitelist_rejects_extra_remote_file(monkeypatch) -> None:
     prefix = "production/index/releases/release-0001"
     keys = [
