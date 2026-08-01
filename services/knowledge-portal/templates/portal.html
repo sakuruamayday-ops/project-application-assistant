@@ -170,27 +170,25 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
       {% endif %}
 
       {% if single_page or active_page == 'access' %}<section id="api-access" class="section-block">
-        <div class="section-heading"><div><p class="eyebrow">Access Center</p><h2>连接我的 Agent</h2></div><p>只需复制一次并发送给当前本地 Agent。</p></div>
+        <div class="section-heading"><div><p class="eyebrow">Access Center</p><h2>连接我的 Agent</h2></div><p>点击一次，复制一段完整指令给 WorkBuddy。</p></div>
         {% if release_guidance.workbuddy_installable %}
         <article class="panel agent-bootstrap-card" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}">
           <div class="agent-bootstrap-copy">
-            <span class="file-tab">REVIEWED SETUP</span>
-            <h3>连接焦糖知识库</h3>
-            <p>先把公开审查说明发送给 Agent。第一步审查当前 WorkBuddy 宿主与签名插件包；第二步明确授权安装；插件加载后，第三步再单独复制 bootstrap 绑定指令。审查阶段不包含引导地址，也不会安装。</p>
+            <span class="file-tab">ONE-STEP SETUP</span>
+            <h3>一键安装 Skills 并连接知识库</h3>
+            <p>同一段指令会完成 49 项 Skills 安装或覆盖升级、最小行为 Hook 启用、远程 MCP 合并、一次重载和状态验收。</p>
             <div class="button-row compact agent-install-actions">
-              <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>一键复制给 Agent</span><small>第一步 · 仅审查</small></button>
+              <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>一键安装</span><small>复制完整指令给 WorkBuddy</small></button>
             </div>
-            <button class="button agent-confirm-install" type="button" data-confirm-agent-bootstrap hidden><span>我已审查，复制安装指令</span><small>第二步 · 安装插件</small></button>
-            <button class="button agent-binding-step" type="button" data-copy-agent-binding hidden><span>复制知识库绑定指令</span><small>第三步 · 执行 bootstrap</small></button>
-            <p class="agent-copy-status" data-agent-copy-status aria-live="polite">先复制审查说明；核对无误后完成第二步安装，再回到本页执行第三步绑定。</p>
+            <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到 WorkBuddy；安装结果以 49 项 Skills、tools/list 和 knowledge_service_status 为准。</p>
           </div>
-          <ol class="agent-setup-flow" aria-label="配置流程"><li><b>01</b><span><strong>审查</strong><small>公开信息，无引导地址</small></span></li><li><b>02</b><span><strong>安装</strong><small>明确授权签名插件</small></span></li><li><b>03</b><span><strong>绑定</strong><small>bootstrap 仅作为工具参数传入</small></span></li><li><b>04</b><span><strong>验收</strong><small>四阶段和真实工具调用全部通过</small></span></li></ol>
+          <ol class="agent-setup-flow" aria-label="配置流程"><li><b>01</b><span><strong>安装</strong><small>49 项 Skills 与最小行为 Hook</small></span></li><li><b>02</b><span><strong>连接</strong><small>只替换 jiaotang-kb，保留其他 MCP</small></span></li><li><b>03</b><span><strong>验收</strong><small>一次重载并调用状态工具</small></span></li></ol>
         </article>
         {% else %}
         <article class="panel agent-bootstrap-card"><div class="agent-bootstrap-copy"><span class="file-tab">INSTALL PAUSED</span><h3>WorkBuddy 新安装已暂停</h3><p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p><a class="button secondary" href="/guide">查看发布状态</a></div></article>
         {% endif %}
-        <article class="panel non-workbuddy-mcp-card"><div class="panel-head"><div><span class="file-tab">NON-WORKBUDDY</span><h3>非 WorkBuddy 手工配置 MCP</h3></div></div><p>适用于支持远程 Streamable HTTP MCP 的其他 Agent。使用个人 Token 连接，不下载 WorkBuddy 插件包，也不使用 bootstrap。</p><a class="button secondary" href="/mcp-guide">查看手工配置</a></article>
-        <article class="panel device-binding-card">
+        <article class="panel non-workbuddy-mcp-card"><div class="panel-head"><div><span class="file-tab">REMOTE MCP</span><h3>手工配置 MCP</h3></div></div><p>页面会自动填入当前账号的真实个人 Token，WorkBuddy 和其他兼容 Agent 均可直接复制。</p><a class="button secondary" href="/mcp-guide">复制完整配置</a></article>
+        {% if false %}<article class="panel device-binding-card">
           <div class="panel-head">
             <div><span class="file-tab">DEVICE SIGNATURE</span><h3>当前绑定设备</h3></div>
             <span class="device-state {{ 'is-bound' if active_device_binding and active_device_binding.mcp_connected_at else 'is-pending' }}">{{ '安装成功' if active_device_binding and active_device_binding.mcp_connected_at else ('安装未完成' if active_device_binding else '等待配置') }}</span>
@@ -209,7 +207,7 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           <p class="muted">当前尚未绑定。点击“复制给 Agent”，粘贴到需要使用知识库的本地 Agent 即可。</p>
           {% endif %}
           {% if device_binding_history %}<details class="device-history"><summary>查看历史绑定记录</summary><div class="table-wrap"><table><thead><tr><th>设备</th><th>首次绑定</th><th>最后使用</th><th>解绑时间</th></tr></thead><tbody>{% for binding in device_binding_history %}<tr><td>{{ binding.device_name }} <code>{{ binding.device_id_prefix }}…</code></td><td>{{ binding.first_bound_at_display }}</td><td>{{ binding.last_seen_at_display }}</td><td>{{ binding.revoked_at_display }}</td></tr>{% endfor %}</tbody></table></div></details>{% endif %}
-        </article>
+        </article>{% endif %}
         <article class="panel external-access"><div class="panel-head"><h3>外部服务注册入口</h3><span>按需注册后在首次配置向导中接入</span></div><div class="external-link-grid"><a href="https://www.tianyancha.com/ai" target="_blank" rel="noopener"><strong>天眼查 AI</strong><small>注册并授权企业主体、工商变更与历史名称查询能力</small></a><a href="https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY" target="_blank" rel="noopener"><strong>企查查智能体数据平台</strong><small>通过邀请入口注册并申请企业数据能力</small></a><a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" target="_blank" rel="noopener"><strong>Google BigQuery MCP</strong><small>连接官方托管MCP并查询公开专利数据集</small></a></div></article>
         <article id="recent-calls" class="panel table-panel detail-anchor"><div class="panel-head"><h3>最近调用记录</h3><span>最近12条；连接检测不计入累计调用</span></div><div class="table-wrap"><table><thead><tr><th>用户</th><th>类型</th><th>方法</th><th>接口</th><th>时间</th></tr></thead><tbody>{% for call in recent_calls %}<tr><td>{{ call.label }}</td><td><strong>{{ call.activity_display }}</strong></td><td><code>{{ call.method }}</code></td><td><code>{{ call.endpoint }}</code></td><td>{{ call.called_at|cn_datetime }}</td></tr>{% else %}<tr><td colspan="5" class="empty">暂无调用记录</td></tr>{% endfor %}</tbody></table></div></article>
       </section>{% endif %}

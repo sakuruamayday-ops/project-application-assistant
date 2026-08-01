@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Validate the signed WorkBuddy candidate without launching a real host.
+"""Validate the exact WorkBuddy candidate without launching a real host.
 
-Real macOS and Windows WorkBuddy installation, binding, restart, and tool-call
-acceptance are deliberately post-release checks.  These pre-release gates only
-inspect the exact signed candidate that will be published.
+Real macOS and Windows WorkBuddy installation and tool-call acceptance are
+deliberately post-release checks. These pre-release gates inspect the exact
+server-verified candidate that will be published.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -24,16 +25,33 @@ from publish_skill_release import validate_release_packages  # noqa: E402
 
 OFFICIAL_FINGERPRINT = "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
 EXPECTED_SKILL_COUNT = 49
+EXPECTED_VERSION = "1.4.5"
+FORBIDDEN_PATH_SUFFIXES = (
+    "/.mcp.json",
+    "/bin/run-node",
+    "/bin/run-node.cmd",
+    "/mcp/jiaotang-agent.mjs",
+    "/scripts/plugin_preference_bridge.py",
+    "/plugin-release-manifest.json",
+    "/plugin-release-manifest.sig",
+)
+FORBIDDEN_TEXT_MARKERS = (
+    "${CODEBUDDY_PLUGIN_ROOT}",
+    "jiaotang_kb_setup",
+    "bootstrap_url",
+    "macOS 钥匙串",
+    "Windows DPAPI",
+)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="校验正式 WorkBuddy 候选包的签名、结构与技能覆盖"
+        description="校验正式 WorkBuddy 候选包的服务端完整性、结构与技能覆盖"
     )
     parser.add_argument("--suite-zip", type=Path, required=True)
     parser.add_argument(
         "--check",
-        choices=("signed-contract", "all-skill-coverage"),
+        choices=("server-release-contract", "all-skill-coverage"),
         required=True,
     )
     return parser.parse_args()
@@ -53,8 +71,8 @@ def load_json(archive: zipfile.ZipFile, name: str) -> dict[str, object]:
     return payload
 
 
-def validate_signed_contract(suite_zip: Path) -> dict[str, object]:
-    validation = validate_release_packages({"workbuddy": suite_zip}, "1.4.4")
+def validate_server_release_contract(suite_zip: Path) -> dict[str, object]:
+    validation = validate_release_packages({"workbuddy": suite_zip}, EXPECTED_VERSION)
     artifact = validation["artifacts"]["workbuddy"]
     integrity = artifact["integrity"]
     if integrity.get("status") != "verified":
@@ -63,14 +81,23 @@ def validate_signed_contract(suite_zip: Path) -> dict[str, object]:
         raise RuntimeError("WorkBuddy 候选包发布者指纹不匹配")
     if integrity.get("outer_fixed_installers") is not False:
         raise RuntimeError("WorkBuddy 候选包不得包含外层固定安装器")
-    if integrity.get("mcp_configuration_mode") != "signed_external_plugin_mcp_file":
-        raise RuntimeError("WorkBuddy MCP 必须由插件根签名 .mcp.json 配置")
+    if integrity.get("verification_scope") != "server_release_channel":
+        raise RuntimeError("WorkBuddy 候选包未经服务端发布通道验证")
+    if integrity.get("hook_mode") != "behavior_only_fail_open":
+        raise RuntimeError("WorkBuddy 必须使用失败放行的最小行为 Hook")
+    if integrity.get("mcp_configuration_mode") != "user_remote_streamable_http":
+        raise RuntimeError("WorkBuddy 必须使用用户级远程 HTTP MCP")
+    if integrity.get("embedded_user_token") is not False:
+        raise RuntimeError("WorkBuddy 公共候选包不得内置用户 Token")
     return {
         "status": "pass",
-        "check": "signed-contract",
+        "check": "server-release-contract",
         "sha256": artifact["sha256"],
         "publisher_fingerprint": integrity["publisher_fingerprint"],
         "verified_files": integrity["verified_files"],
+        "verification_scope": integrity["verification_scope"],
+        "hook_mode": integrity["hook_mode"],
+        "mcp_configuration_mode": integrity["mcp_configuration_mode"],
     }
 
 
@@ -82,19 +109,24 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         plugin_name = unique_name(names, "/.codebuddy-plugin/plugin.json")
         plugin_root = str(PurePosixPath(plugin_name).parent.parent)
         suite_name = f"{plugin_root}/skills/suite-manifest.json"
-        mcp_name = f"{plugin_root}/.mcp.json"
-        required_runtime = {
-            f"{plugin_root}/bin/run-node",
-            f"{plugin_root}/bin/run-node.cmd",
-            f"{plugin_root}/mcp/jiaotang-agent.mjs",
-        }
-        missing_runtime = sorted(required_runtime - names)
-        if missing_runtime:
-            raise RuntimeError(f"跨平台 MCP 运行时不完整：{missing_runtime}")
+        hooks_name = f"{plugin_root}/hooks/hooks.json"
+        behavior_hook_name = f"{plugin_root}/scripts/workbuddy_behavior_hook.py"
+        forbidden_paths = sorted(
+            name
+            for name in names
+            if any(name.endswith(suffix) for suffix in FORBIDDEN_PATH_SUFFIXES)
+        )
+        if forbidden_paths:
+            raise RuntimeError(f"候选包含已停用组件：{forbidden_paths}")
+        missing_minimal_files = sorted(
+            {suite_name, hooks_name, behavior_hook_name} - names
+        )
+        if missing_minimal_files:
+            raise RuntimeError(f"候选包缺少最小运行文件：{missing_minimal_files}")
 
         plugin = load_json(archive, plugin_name)
         suite = load_json(archive, suite_name)
-        mcp = load_json(archive, mcp_name)
+        hooks = load_json(archive, hooks_name)
         declared_skills = list(suite.get("skills") or [])
         plugin_skills = [
             str(item).removeprefix("./skills/")
@@ -113,23 +145,44 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         )
         if missing_skills:
             raise RuntimeError(f"候选包缺少技能入口：{missing_skills}")
+        if plugin.get("hook_mode") != "behavior_only_fail_open":
+            raise RuntimeError("插件未声明最小行为 Hook 模式")
+        if plugin.get("mcp_configuration_mode") != "user_remote_streamable_http":
+            raise RuntimeError("插件未声明用户级远程 MCP 模式")
+        if "mcpServers" in plugin:
+            raise RuntimeError("公共插件清单不得内嵌用户 MCP 配置")
+        hook_events = set(dict(hooks.get("hooks") or {}))
+        if hook_events != {"UserPromptSubmit", "Stop"}:
+            raise RuntimeError(f"最小行为 Hook 事件不合规：{sorted(hook_events)}")
 
-        server = dict(mcp.get("mcpServers") or {}).get("jiaotang-kb")
-        if not isinstance(server, dict):
-            raise RuntimeError("插件根 .mcp.json 缺少 jiaotang-kb")
-        if server.get("command") != "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node":
-            raise RuntimeError("MCP 启动器不是插件内跨平台 Node 启动器")
-        if server.get("args") != [
-            "${CODEBUDDY_PLUGIN_ROOT}/mcp/jiaotang-agent.mjs",
-            "plugin-serve",
-        ]:
-            raise RuntimeError("MCP 启动参数与签名连接器契约不一致")
+        scanned_text = []
+        executable_text = []
+        for name in sorted(names):
+            if not name.endswith((".json", ".md", ".py", ".txt")):
+                continue
+            content = archive.read(name).decode("utf-8", errors="ignore")
+            scanned_text.append(content)
+            if name in {plugin_name, hooks_name, behavior_hook_name}:
+                executable_text.append(content)
+        joined_text = "\n".join(scanned_text)
+        joined_executable_text = "\n".join(executable_text)
+        forbidden_markers = [
+            marker
+            for marker in FORBIDDEN_TEXT_MARKERS
+            if marker in joined_executable_text
+        ]
+        if forbidden_markers:
+            raise RuntimeError(f"候选包含已停用流程标记：{forbidden_markers}")
+        if re.search(r"jtk_[A-Za-z0-9_-]{16,}", joined_text):
+            raise RuntimeError("公共候选包不得内置真实个人 Token")
 
     return {
         "status": "pass",
         "check": "all-skill-coverage",
         "skill_count": len(declared_skills),
-        "cross_platform_launchers": ["macos", "windows"],
+        "hook_mode": plugin["hook_mode"],
+        "mcp_configuration_mode": plugin["mcp_configuration_mode"],
+        "forbidden_components": "absent",
         "real_host_acceptance": "post-release-required",
     }
 
@@ -140,8 +193,8 @@ def main() -> int:
     if not suite_zip.is_file():
         raise FileNotFoundError(suite_zip)
     result = (
-        validate_signed_contract(suite_zip)
-        if options.check == "signed-contract"
+        validate_server_release_contract(suite_zip)
+        if options.check == "server-release-contract"
         else validate_all_skill_coverage(suite_zip)
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))

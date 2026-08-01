@@ -93,7 +93,7 @@ def make_packages(
     workbuddy = root / "workbuddy.zip"
     suite = {
         "release": {"tag": tag, "version": semantic_version},
-        "skills": [f"skill-{index}" for index in range(48)],
+        "skills": [f"skill-{index}" for index in range(49)],
     }
     generic_files = {
         "skills/suite-manifest.json": json.dumps(suite).encode("utf-8"),
@@ -143,65 +143,6 @@ def make_packages(
                 }
             ),
         )
-    plugin_files = {
-        ".codebuddy-plugin/plugin.json": json.dumps(
-            {
-                "name": "jiaotang-workbuddy-skills",
-                "version": semantic_version,
-                "mcpServers": "./.mcp.json",
-            }
-        ).encode("utf-8"),
-        ".mcp.json": json.dumps(
-            {
-                "mcpServers": {
-                    "jiaotang-kb": {
-                        "command": "${CODEBUDDY_PLUGIN_ROOT}/bin/run-node",
-                        "args": [
-                            (
-                                "${CODEBUDDY_PLUGIN_ROOT}/mcp/"
-                                "jiaotang-agent.mjs"
-                            ),
-                            "plugin-serve",
-                        ],
-                    }
-                },
-            }
-        ).encode("utf-8"),
-        "bin/run-node": b"#!/bin/sh\n",
-        "bin/run-node.cmd": b"@echo off\r\n",
-        "mcp/jiaotang-agent.mjs": b"#!/usr/bin/env node\n",
-        "skills/suite-manifest.json": json.dumps(suite).encode("utf-8"),
-    }
-    plugin_manifest = {
-        "schema_version": 1,
-        "artifact_type": "workbuddy-plugin",
-        "plugin_name": "jiaotang-workbuddy-skills",
-        "release_tag": tag,
-        "skills": suite["skills"],
-        "binding_key": ["session_id", "turn_id", "skill_name"],
-        "files": {
-            name: hashlib.sha256(content).hexdigest()
-            for name, content in plugin_files.items()
-        },
-        "integrity_excludes": [
-            "plugin-release-manifest.json",
-            "plugin-release-manifest.json.sig",
-            "plugin-release-signature.json",
-            "publisher-ed25519.pub",
-        ],
-    }
-    plugin_manifest_bytes = (
-        json.dumps(plugin_manifest, ensure_ascii=False, indent=2) + "\n"
-    ).encode("utf-8")
-    signature_metadata = {
-        "schema_version": 1,
-        "algorithm": "OpenSSH-Ed25519",
-        "signature_namespace": MODULE.WORKBUDDY_SIGNATURE_NAMESPACE,
-        "signed_file": "plugin-release-manifest.json",
-        "signature": "plugin-release-manifest.json.sig",
-        "public_key": "publisher-ed25519.pub",
-        "public_key_fingerprint": TEST_FINGERPRINT,
-    }
     marketplace_bytes = json.dumps(
         {
             "name": "jiaotang",
@@ -218,6 +159,36 @@ def make_packages(
         }
     ).encode("utf-8")
     plugin_relative_prefix = "plugins/jiaotang-workbuddy-skills/"
+    plugin_files = {
+        ".codebuddy-plugin/plugin.json": json.dumps(
+            {
+                "name": "jiaotang-workbuddy-skills",
+                "version": semantic_version,
+                "description": "test",
+                "author": {"name": "Jiaotang"},
+                "skills": [f"./skills/{name}" for name in suite["skills"]],
+                "hooks": "./hooks/hooks.json",
+                "hook_mode": "behavior_only_fail_open",
+                "mcp_configuration_mode": "user_remote_streamable_http",
+            }
+        ).encode("utf-8"),
+        "hooks/hooks.json": json.dumps(
+            {
+                "hooks": {
+                    "UserPromptSubmit": [{"hooks": []}],
+                    "Stop": [{"hooks": []}],
+                }
+            }
+        ).encode("utf-8"),
+        "scripts/workbuddy_behavior_hook.py": b"print('behavior only')\n",
+        "skills/suite-manifest.json": json.dumps(suite).encode("utf-8"),
+        **{
+            f"skills/{skill}/SKILL.md": (
+                f"---\nname: {skill}\n---\n".encode("utf-8")
+            )
+            for skill in suite["skills"]
+        },
+    }
     marketplace_files = {
         ".codebuddy-plugin/marketplace.json": marketplace_bytes,
         "INSTALL.md": b"test",
@@ -225,72 +196,10 @@ def make_packages(
             plugin_relative_prefix + name: content
             for name, content in plugin_files.items()
         },
-        plugin_relative_prefix
-        + "plugin-release-manifest.json": plugin_manifest_bytes,
-        plugin_relative_prefix
-        + "plugin-release-manifest.json.sig": sign_manifest(
-            plugin_manifest_bytes
-        ),
-        plugin_relative_prefix
-        + "plugin-release-signature.json": json.dumps(
-            signature_metadata
-        ).encode("utf-8"),
-        plugin_relative_prefix
-        + "publisher-ed25519.pub": TEST_PUBLIC_TEXT.encode("utf-8"),
-    }
-    marketplace_manifest = {
-        "schema_version": 1,
-        "artifact_type": "workbuddy-marketplace",
-        "marketplace_name": "jiaotang",
-        "plugin_name": "jiaotang-workbuddy-skills",
-        "release_tag": tag,
-        "files": {
-            name: hashlib.sha256(content).hexdigest()
-            for name, content in marketplace_files.items()
-        },
-        "integrity_excludes": [
-            "marketplace-publisher-ed25519.pub",
-            "marketplace-release-manifest.json",
-            "marketplace-release-manifest.json.sig",
-            "marketplace-release-signature.json",
-        ],
-    }
-    marketplace_manifest_bytes = (
-        json.dumps(marketplace_manifest, ensure_ascii=False, indent=2) + "\n"
-    ).encode("utf-8")
-    marketplace_metadata = {
-        "schema_version": 1,
-        "algorithm": "OpenSSH-Ed25519",
-        "signature_namespace": (
-            MODULE.WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE
-        ),
-        "signed_file": "marketplace-release-manifest.json",
-        "signature": "marketplace-release-manifest.json.sig",
-        "public_key": "marketplace-publisher-ed25519.pub",
-        "public_key_fingerprint": TEST_FINGERPRINT,
     }
     with zipfile.ZipFile(workbuddy, "w") as archive:
         for name, content in marketplace_files.items():
             archive.writestr("jiaotang/" + name, content)
-        archive.writestr(
-            "jiaotang/marketplace-release-manifest.json",
-            marketplace_manifest_bytes,
-        )
-        archive.writestr(
-            "jiaotang/marketplace-release-manifest.json.sig",
-            sign_manifest(
-                marketplace_manifest_bytes,
-                MODULE.WORKBUDDY_MARKETPLACE_SIGNATURE_NAMESPACE,
-            ),
-        )
-        archive.writestr(
-            "jiaotang/marketplace-release-signature.json",
-            json.dumps(marketplace_metadata),
-        )
-        archive.writestr(
-            "jiaotang/marketplace-publisher-ed25519.pub",
-            TEST_PUBLIC_TEXT,
-        )
     return generic, workbuddy
 
 
@@ -338,7 +247,7 @@ def test_publish_is_validated_and_idempotent(tmp_path: Path) -> None:
 
     result = MODULE.publish(database, release_dir, generic, workbuddy, "1.2", "notes")
     assert result["status"] == "published"
-    assert result["skill_count"] == 48
+    assert result["skill_count"] == 49
     assert (release_dir / "企业全生命周期助手-V1.2.zip").is_file()
     assert (release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip").is_file()
 
@@ -420,7 +329,7 @@ def test_validate_packages_accepts_patch_release(tmp_path: Path) -> None:
     )
     result = MODULE.validate_packages(generic, workbuddy, "1.3.1")
     assert result["version"] == "1.3.1"
-    assert result["skill_count"] == 48
+    assert result["skill_count"] == 49
 
 
 def test_workbuddy_hotfix_accepts_four_part_version(tmp_path: Path) -> None:
@@ -434,7 +343,7 @@ def test_workbuddy_hotfix_accepts_four_part_version(tmp_path: Path) -> None:
         "1.3.1.1",
     )
     assert result["targets"] == ["workbuddy"]
-    assert result["skill_count"] == 48
+    assert result["skill_count"] == 49
     assert (
         result["artifacts"]["workbuddy"]["integrity"]["status"]
         == "verified"
@@ -443,7 +352,7 @@ def test_workbuddy_hotfix_accepts_four_part_version(tmp_path: Path) -> None:
         result["artifacts"]["workbuddy"]["integrity"][
             "mcp_configuration_mode"
         ]
-        == "signed_external_plugin_mcp_file"
+        == "user_remote_streamable_http"
     )
 
 
@@ -469,7 +378,7 @@ def test_workbuddy_publish_rejects_tampered_signed_file(tmp_path: Path) -> None:
             "1.3.1.2",
         )
     except ValueError as error:
-        assert "哈希不一致" in str(error)
+        assert "简化远程 MCP" in str(error)
     else:
         raise AssertionError("tampered signed file must be rejected")
 
@@ -493,7 +402,7 @@ def test_workbuddy_publish_rejects_outer_fixed_installer(tmp_path: Path) -> None
             "1.3.1.2",
         )
     except ValueError as error:
-        assert "整包签名清单不一致" in str(error)
+        assert "简化安装不需要的外层文件" in str(error)
     else:
         raise AssertionError("outer fixed installer must be rejected")
 
@@ -510,7 +419,9 @@ def test_workbuddy_publish_rejects_tampered_outer_install_guide(
     rewrite_zip(
         workbuddy,
         tampered,
-        replacements={"jiaotang/INSTALL.md": b"run attacker command"},
+        replacements={
+            "jiaotang/INSTALL.md": b"Bearer jtk_abcdefghijklmnopqrstuvwxyz123456"
+        },
     )
     try:
         MODULE.validate_release_packages(
@@ -518,7 +429,7 @@ def test_workbuddy_publish_rejects_tampered_outer_install_guide(
             "1.3.1.2",
         )
     except ValueError as error:
-        assert "整包签名文件哈希不一致" in str(error)
+        assert "个人 Token" in str(error)
     else:
         raise AssertionError("tampered outer INSTALL.md must be rejected")
 

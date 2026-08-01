@@ -991,6 +991,69 @@ def user_access_token(user_id: int, token_seed: str) -> str:
     return "jtk_" + urlsafe_b64encode(digest).decode("ascii").rstrip("=")
 
 
+def ensure_personal_access_token(user_id: int, label: str = "") -> str:
+    """Reuse the active personal token, or create one after revocation."""
+    normalized_label = (label or "个人 Token").strip()[:100] or "个人 Token"
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        active_token = connection.execute(
+            "SELECT id,token_seed FROM device_tokens "
+            "WHERE user_id=? AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+        if active_token is None:
+            seed = secrets.token_urlsafe(24)
+            raw_token = user_access_token(user_id, seed)
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at
+                ) VALUES (?,?,?,?,?,?)
+                """,
+                (
+                    user_id,
+                    normalized_label,
+                    raw_token[:12],
+                    token_hash(raw_token),
+                    seed,
+                    isoformat(utc_now()),
+                ),
+            )
+        else:
+            seed = str(active_token["token_seed"] or secrets.token_urlsafe(24))
+            raw_token = user_access_token(user_id, seed)
+            connection.execute(
+                """
+                UPDATE device_tokens
+                SET label=?,token_seed=?,token_prefix=?,token_hash=?
+                WHERE id=?
+                """,
+                (
+                    normalized_label,
+                    seed,
+                    raw_token[:12],
+                    token_hash(raw_token),
+                    int(active_token["id"]),
+                ),
+            )
+        connection.commit()
+    return raw_token
+
+
+def remote_mcp_configuration(mcp_url: str, raw_token: str) -> dict[str, object]:
+    return {
+        "mcpServers": {
+            "jiaotang-kb": {
+                "type": "http",
+                "url": mcp_url,
+                "headers": {"Authorization": f"Bearer {raw_token}"},
+                "timeout": 60000,
+                "disabled": False,
+            }
+        }
+    }
+
+
 def normalize_account_name(value: str) -> str:
     normalized = value.strip().lower()
     if not ACCOUNT_NAME_PATTERN.fullmatch(normalized):
@@ -7384,34 +7447,19 @@ def authenticate_api_token(
         ).fetchone()
         if row is None:
             raise access_error(401, "用户访问凭据无效、过期或已吊销")
-        signature_parts = (
-            str(device_key_id or "").strip(),
-            str(device_timestamp or "").strip(),
-            str(device_nonce or "").strip(),
-            str(device_signature_value or "").strip(),
-        )
-        device_signature = (
-            DeviceSignature(
-                key_id=signature_parts[0],
-                timestamp=signature_parts[1],
-                nonce=signature_parts[2],
-                signature=signature_parts[3],
-            )
-            if all(signature_parts)
-            else None
-        )
-        enforce_device_binding(
-            connection,
-            row,
-            device_id=device_id,
-            device_name=device_name,
-            device_signature=device_signature,
-            method=method,
-            request_target=request_target or endpoint,
-            body=body,
-            token_fingerprint=token_hash(raw_token),
-            client_ip=client_ip,
-            user_agent=user_agent,
+        # V1.4.5: a valid personal Bearer token is the complete client
+        # credential. Legacy device headers are accepted but deliberately
+        # ignored so old clients can migrate without a binding ceremony.
+        del (
+            device_id,
+            device_name,
+            device_key_id,
+            device_timestamp,
+            device_nonce,
+            device_signature_value,
+            request_target,
+            client_ip,
+            user_agent,
         )
         connection.execute(
             "UPDATE device_tokens SET last_used_at = ? WHERE id = ?",
@@ -8275,7 +8323,7 @@ def portal_payload(
             if latest_workbuddy_upgrade_artifact
             else ""
         )
-        latest_workbuddy_installable = workbuddy_artifact_has_signed_root_mcp(
+        latest_workbuddy_installable = workbuddy_artifact_is_simple_remote_mcp(
             latest_workbuddy_upgrade_artifact
         )
         upgrade_available = bool(
@@ -8783,7 +8831,7 @@ def portal_payload(
     }
 
 
-def workbuddy_artifact_has_signed_root_mcp(
+def workbuddy_artifact_is_simple_remote_mcp(
     artifact: dict[str, object] | None,
 ) -> bool:
     try:
@@ -8797,7 +8845,8 @@ def workbuddy_artifact_has_signed_root_mcp(
     return (
         integrity.get("status") == "verified"
         and integrity.get("mcp_configuration_mode")
-        == "signed_external_plugin_mcp_file"
+        == "user_remote_streamable_http"
+        and integrity.get("hook_mode") == "behavior_only_fail_open"
     )
 
 
@@ -8807,14 +8856,14 @@ def require_installable_workbuddy_artifact(
     selected = artifact or latest_skill_artifact("workbuddy")
     if selected is None:
         raise HTTPException(status_code=503, detail="当前没有可安装的 WorkBuddy 正式包。")
-    if not workbuddy_artifact_has_signed_root_mcp(selected):
+    if not workbuddy_artifact_is_simple_remote_mcp(selected):
         version = str(selected.get("version") or "")
         version_label = f" V{version}" if version else ""
         raise HTTPException(
             status_code=503,
             detail=(
-                f"WorkBuddy 正式包{version_label}未通过签名插件根 .mcp.json "
-                "能力门禁，新安装与升级已暂停，请等待安全正式版。"
+                f"WorkBuddy 正式包{version_label}未通过简化远程 MCP 与最小行为 Hook "
+                "能力门禁，新安装与升级已暂停，请等待正式版。"
             ),
         )
     return selected
@@ -8834,11 +8883,11 @@ def public_release_guidance() -> dict[str, object]:
         target="generic",
         require_signature=True,
     )
-    workbuddy_installable = workbuddy_artifact_has_signed_root_mcp(workbuddy)
+    workbuddy_installable = workbuddy_artifact_is_simple_remote_mcp(workbuddy)
     if workbuddy_installable:
         workbuddy_notice = (
             f"WorkBuddy 正式包 V{workbuddy_version} 可安装。"
-            "插件包必须包含签名插件根 .mcp.json，并在启用后完成真实工具枚举。"
+            "一段指令完成49项Skills安装、远程MCP合并、一次重载和真实工具验收。"
         )
     elif workbuddy_version:
         pending = (
@@ -8848,11 +8897,11 @@ def public_release_guidance() -> dict[str, object]:
         )
         workbuddy_notice = (
             f"WorkBuddy 正式包 V{workbuddy_version} 已暂停新安装，"
-            f"当前包未满足签名插件根 .mcp.json 能力门禁{pending}。"
+            f"当前包未满足简化远程 MCP 与最小行为 Hook 能力门禁{pending}。"
             "请等待网站恢复“可安装”状态。"
         )
     else:
-        workbuddy_notice = "当前没有通过插件根 .mcp.json 能力门禁的 WorkBuddy 正式包。"
+        workbuddy_notice = "当前没有通过简化安装能力门禁的 WorkBuddy 正式包。"
     return {
         "published_version": generic_version,
         "published_label": f"V{generic_version}" if generic_version else "尚未正式发布",
@@ -9819,12 +9868,22 @@ def mcp_guide_page(
     request: Request,
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
+    raw_token = ensure_personal_access_token(
+        int(user["id"]),
+        str(user["real_name"] or user["username"] or "个人 Token"),
+    )
+    mcp_url = f"{str(request.base_url).rstrip('/')}/mcp/"
     response = templates.TemplateResponse(
         request,
         "mcp_guide.html",
         {
             "user": user,
-            "mcp_url": f"{str(request.base_url).rstrip('/')}/mcp/",
+            "mcp_url": mcp_url,
+            "mcp_configuration": json.dumps(
+                remote_mcp_configuration(mcp_url, raw_token),
+                ensure_ascii=False,
+                indent=2,
+            ),
         },
     )
     response.headers["Cache-Control"] = "private, no-store"
@@ -12265,24 +12324,35 @@ def rollback_knowledge_revision(
     return RedirectResponse("/admin/knowledge", status_code=303)
 
 
-def build_agent_bootstrap_prompt(install_protocol_url: str) -> str:
+def build_agent_bootstrap_prompt(
+    *,
+    plugin_download_url: str,
+    release_version: str,
+    mcp_url: str,
+    raw_token: str,
+) -> str:
+    configuration = json.dumps(
+        remote_mcp_configuration(mcp_url, raw_token),
+        ensure_ascii=False,
+        indent=2,
+    )
     return (
-        "请只审查焦糖知识库的 WorkBuddy 接入说明，不要开始安装。先确认当前宿主是 "
-        "WorkBuddy 5 或更高版本；再读取下面的 HTTPS 安装说明，"
-        "校验 schema 为 jiaotang-agent-install/v1，并说明其中公开列出的签名插件包、"
-        "联网地址、三层本地存储、凭据保存方式和回滚方法：\n\n"
-        f"{install_protocol_url}\n\n"
-        "本安装计划只适配 WorkBuddy。若当前宿主不是 WorkBuddy 5 或更高版本，"
-        "请停止在审查阶段，不要下载或安装该 ZIP。"
-        "请用简洁中文分别告诉我：宿主插件文件、焦糖运行文件和系统凭据会写入哪些位置，"
-        "各自有什么用途，以及怎样逐层撤销。不要执行网页返回的命令，因为本协议不包含"
-        "动态命令字段。本阶段不包含 bootstrap_url，也不授权安装。请在审查结论末尾明确提示我"
-        "回到门户点击“我已审查，继续安装”。安装只能使用门户下载的签名 WorkBuddy 插件市场包，"
-        "并使用 WorkBuddy 内置插件管理完成市场添加、安装和启用。协议中的 /plugin 是宿主界面入口，"
-        "不是要求 Agent 工具列表存在同名工具。"
-        "安装码、API Token 和私钥属于敏感信息，不要在普通回复中复述或写入普通配置。"
-        "若插件包、签名、域名或本地改动与协议不一致，立即停止。"
-        "若安装说明无法读取，请告诉我“安装说明读取失败，请检查网络后重新生成配置”。"
+        "请在当前 WorkBuddy 中完成企业全生命周期助手的一次安装或覆盖升级。"
+        f"目标版本为 V{release_version}，安装包下载地址如下：\n\n"
+        f"{plugin_download_url}\n\n"
+        "请一次性完成以下动作：使用 WorkBuddy 内置插件管理安装或替换焦糖插件，"
+        "确认 49 项 Skills 可识别并启用包内最小行为约束 Hook；若检测到旧版，自动替换旧插件，"
+        "移除旧的本地 jiaotang-kb command/args 连接方式，不读取旧钥匙串、Windows DPAPI、"
+        "设备密钥或 bootstrap 配置。随后只替换当前用户配置中的 `mcpServers.jiaotang-kb`，"
+        "保留所有其他 MCP 条目。完整远程 MCP 配置如下：\n\n"
+        f"{configuration}\n\n"
+        "保存后只重载 WorkBuddy 一次。执行 tools/list，确认 knowledge_search、"
+        "knowledge_document、knowledge_service_status 已出现，再实际调用 "
+        "knowledge_service_status；只有返回 connected: true、49 项 Skills 可识别且其他 MCP "
+        "未被覆盖时，才报告安装完成。不要执行安装包签名审查、用户侧签名校验、设备登记、"
+        "bootstrap 或本地 MCP 启动器步骤。Authorization 中的个人 Token 仅可写入当前用户的 "
+        "WorkBuddy MCP 配置，不得在最终回复、普通日志或其他文件中复述。失败时保留原插件目录和"
+        "原 MCP 配置备份，并说明恢复方法。"
     )
 
 
@@ -12533,31 +12603,13 @@ def create_agent_bootstrap_code(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
-    require_installable_workbuddy_artifact()
+    artifact = require_installable_workbuddy_artifact()
     now_value = utc_now()
     now = isoformat(now_value)
     raw_code = "jbe_" + secrets.token_urlsafe(32)
+    confirmed_ip = (client_ip_from(request) or "unknown")[:100]
     with closing(database()) as connection:
-        active_binding = connection.execute(
-            """
-            SELECT device_bindings.id,device_keys.mcp_connected_at
-            FROM device_bindings
-            LEFT JOIN device_keys
-              ON device_keys.binding_id=device_bindings.id
-             AND device_keys.revoked_at IS NULL
-            WHERE device_bindings.user_id=? AND device_bindings.revoked_at IS NULL
-            LIMIT 1
-            """,
-            (int(user["id"]),),
-        ).fetchone()
-        if active_binding and active_binding["mcp_connected_at"]:
-            return JSONResponse(
-                {
-                    "detail": "当前账号已有绑定设备。更换电脑时请先点击“更换绑定设备”。"
-                },
-                status_code=409,
-                headers={"Cache-Control": "no-store"},
-            )
+        connection.execute("BEGIN IMMEDIATE")
         connection.execute(
             """
             UPDATE agent_enrollment_codes
@@ -12569,25 +12621,48 @@ def create_agent_bootstrap_code(
         connection.execute(
             """
             INSERT INTO agent_enrollment_codes(
-                user_id,code_hash,created_at,expires_at
-            ) VALUES (?,?,?,?)
+                user_id,code_hash,created_at,expires_at,
+                confirmed_at,confirmed_ip,binding_authorized_at,binding_authorized_ip,
+                workbuddy_version,workbuddy_file_name,workbuddy_file_path,workbuddy_sha256
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 int(user["id"]),
                 token_hash(raw_code),
                 now,
                 isoformat(now_value + timedelta(minutes=AGENT_BOOTSTRAP_MINUTES)),
+                now,
+                confirmed_ip,
+                now,
+                confirmed_ip,
+                str(artifact.get("version") or ""),
+                str(
+                    artifact.get("file_name")
+                    or Path(str(artifact.get("file_path") or "")).name
+                ),
+                str(artifact.get("file_path") or ""),
+                str(artifact.get("sha256") or ""),
             ),
         )
         connection.commit()
     public_endpoint = str(request.base_url).rstrip("/")
-    install_protocol_url = f"{public_endpoint}/v1/agent-install/{quote(raw_code)}"
+    plugin_download_url = (
+        f"{public_endpoint}/v1/agent-install/{quote(raw_code)}/workbuddy/download"
+    )
+    raw_token = ensure_personal_access_token(
+        int(user["id"]),
+        str(user["real_name"] or user["username"] or "个人 Token"),
+    )
     return JSONResponse(
         {
-            "prompt": build_agent_bootstrap_prompt(install_protocol_url),
-            "review_code": raw_code,
-            "review_url": install_protocol_url,
-            "phase": "review",
+            "prompt": build_agent_bootstrap_prompt(
+                plugin_download_url=plugin_download_url,
+                release_version=str(artifact.get("version") or ""),
+                mcp_url=f"{public_endpoint}/mcp/",
+                raw_token=raw_token,
+            ),
+            "phase": "install_ready",
+            "release_version": str(artifact.get("version") or ""),
             "expires_in_seconds": AGENT_BOOTSTRAP_MINUTES * 60,
         },
         headers={"Cache-Control": "no-store"},
@@ -12603,6 +12678,10 @@ def confirm_agent_bootstrap_code(
     platform: Annotated[str, Form()] = "",
 ):
     validate_csrf(user, csrf_token)
+    raise HTTPException(
+        status_code=410,
+        detail="V1.4.5 已取消分步安装确认，请回到门户重新复制一键安装指令。",
+    )
     now = isoformat(utc_now())
     client_ip = client_ip_from(request)
     with closing(database()) as connection:
@@ -12715,6 +12794,10 @@ def create_agent_binding_prompt(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
+    raise HTTPException(
+        status_code=410,
+        detail="V1.4.5 已取消设备绑定，请回到门户重新复制一键安装指令。",
+    )
     now_value = utc_now()
     refreshed_expires_at = isoformat(
         now_value + timedelta(minutes=AGENT_BOOTSTRAP_MINUTES)
@@ -13050,6 +13133,49 @@ def agent_install_protocol(
     plugin_download_url = (
         f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
         "/workbuddy/download"
+    )
+    return JSONResponse(
+        {
+            "schema": "jiaotang-agent-install/v2",
+            "phase": "install_ready",
+            "review_required": False,
+            "user_confirmation_required": False,
+            "expires_at": enrollment["expires_at"],
+            "release": {
+                "version": str(artifact["version"]),
+                "download_url": plugin_download_url,
+                "sha256": str(artifact["sha256"]),
+                "verification_scope": "server_release_channel",
+            },
+            "installation": {
+                "mode": "one_copy_workbuddy_prompt",
+                "skill_count": 49,
+                "hook_mode": "behavior_only_fail_open",
+                "mcp_configuration_mode": "user_remote_streamable_http",
+                "replace_only_mcp_server": "jiaotang-kb",
+                "preserve_other_mcp_servers": True,
+                "reload_count": 1,
+            },
+            "completion": {
+                "required_tools": [
+                    "knowledge_search",
+                    "knowledge_document",
+                    "knowledge_service_status",
+                ],
+                "status_call": "knowledge_service_status",
+                "connected": True,
+            },
+            "forbidden_legacy_steps": [
+                "bootstrap",
+                "device_binding",
+                "keychain",
+                "dpapi",
+                "local_mcp_service",
+                "user_signature_check",
+            ],
+        },
+        media_type="application/vnd.jiaotang.agent-install+json",
+        headers={"Cache-Control": "private, no-store"},
     )
     package_sha256 = str(artifact["sha256"])
     storage_layers = workbuddy_storage_layers()
@@ -13586,6 +13712,11 @@ def agent_bootstrap_manifest(
     request: Request,
     platform: str = "",
 ):
+    del enrollment_code, request, platform
+    raise HTTPException(
+        status_code=410,
+        detail="V1.4.5 已停用 bootstrap 与设备绑定，请使用门户一键安装指令。",
+    )
     enrollment, workbuddy_artifact = pinned_agent_install_artifact(
         enrollment_code,
         require_confirmed=True,
@@ -13650,14 +13781,9 @@ def agent_bootstrap_manifest(
 
 @app.get("/install/jiaotang-agent.mjs")
 def download_jiaotang_agent():
-    installer_path = BASE_DIR / "installers" / "jiaotang-agent.mjs"
-    if not installer_path.is_file():
-        raise HTTPException(status_code=503, detail="Agent 安装组件尚未就绪")
-    return FileResponse(
-        installer_path,
-        media_type="text/javascript; charset=utf-8",
-        filename="jiaotang-agent.mjs",
-        headers={"Cache-Control": "no-store"},
+    raise HTTPException(
+        status_code=410,
+        detail="V1.4.5 已停用本地 Agent 安装组件，请使用门户一键安装指令。",
     )
 
 
@@ -14537,6 +14663,13 @@ def replace_device_binding(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "V1.4.5 已停用设备绑定更换流程；如怀疑凭据泄露，"
+            "请撤销个人 Token 后重新打开手工配置页。"
+        ),
+    )
     now = isoformat(utc_now())
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
@@ -16243,7 +16376,7 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
         any(name.endswith("/.codebuddy-plugin/marketplace.json") for name in names)
         and any(name.endswith("/.codebuddy-plugin/plugin.json") for name in names)
     )
-    installable = included and workbuddy_artifact_has_signed_root_mcp(
+    installable = included and workbuddy_artifact_is_simple_remote_mcp(
         artifact_record
     )
     return {
@@ -16322,7 +16455,7 @@ def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
         require_signature=True,
     ):
         return SkillChannelArtifactResponse(id=target, available=False)
-    if target == "workbuddy" and not workbuddy_artifact_has_signed_root_mcp(release):
+    if target == "workbuddy" and not workbuddy_artifact_is_simple_remote_mcp(release):
         return SkillChannelArtifactResponse(id=target, available=False)
     download_url = (
         "/v1/skills/latest/download"
