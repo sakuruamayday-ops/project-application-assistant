@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import importlib
 import io
@@ -3957,6 +3958,16 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         assert "49 项 Skills" in prompt
         assert "只替换当前用户配置中的 `mcpServers.jiaotang-kb`" in prompt
         assert "保留所有其他 MCP 条目" in prompt
+        assert r"%USERPROFILE%\.workbuddy\mcp.json" in prompt
+        assert "`~/.workbuddy/mcp.json`" in prompt
+        assert "文件名都是不带点前缀的 `mcp.json`" in prompt
+        assert "`.workbuddy/.mcp.json`" in prompt
+        assert "禁止读取、修改或覆盖" in prompt
+        assert "只合并 `jiaotang-kb`" in prompt
+        assert "移动到带时间戳的可恢复备份" in prompt
+        assert "不含 `.mcp.json`、`bin` 或 `mcp`" in prompt
+        assert "手动点击信任" in prompt
+        assert "不得尝试绕过宿主安全确认" in prompt
         assert "只重载 WorkBuddy 一次" in prompt
         assert "knowledge_service_status" in prompt
         assert "connected: true" in prompt
@@ -3970,6 +3981,10 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         assert guide.headers["cache-control"] == "private, no-store"
         assert first_token in guide.text
         assert "Bearer 你的个人Token" not in guide.text
+        assert r"%USERPROFILE%\.workbuddy\mcp.json" in guide.text
+        assert "~/.workbuddy/mcp.json" in guide.text
+        assert ".workbuddy/.mcp.json" in guide.text
+        assert "手动信任" in guide.text
         assert client.get(
             "/v1/me",
             headers={"Authorization": f"Bearer {first_token}"},
@@ -6861,6 +6876,58 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         "实际检索",
     ]
     assert [row["counts_toward_usage"] for row in usage_rows] == [0, 0, 0, 1, 1, 1]
+
+
+def test_mcp_middleware_forwards_disconnect_after_replaying_body(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    request_body = b'{"jsonrpc":"2.0","id":1,"method":"ping"}'
+    received_messages = []
+    upstream_messages = iter(
+        [
+            {"type": "http.request", "body": request_body, "more_body": False},
+            {"type": "http.disconnect"},
+        ]
+    )
+
+    async def receive():
+        return next(upstream_messages)
+
+    async def send(message):
+        del message
+
+    async def downstream(scope, downstream_receive, downstream_send):
+        del scope, downstream_send
+        received_messages.append(await downstream_receive())
+        received_messages.append(await downstream_receive())
+
+    monkeypatch.setattr(
+        module,
+        "authenticate_api_token",
+        lambda *args, **kwargs: {"id": 1, "device_token_id": 1},
+    )
+    monkeypatch.setattr(module, "record_api_usage", lambda *args, **kwargs: None)
+    monkeypatch.setattr(module, "mark_mcp_connected", lambda *args, **kwargs: None)
+
+    middleware = module.MCPBearerMiddleware(downstream)
+    asyncio.run(
+        middleware(
+            {
+                "type": "http",
+                "method": "POST",
+                "path": "/mcp/",
+                "query_string": b"",
+                "headers": [],
+                "client": ("127.0.0.1", 12345),
+            },
+            receive,
+            send,
+        )
+    )
+
+    assert received_messages == [
+        {"type": "http.request", "body": request_body, "more_body": False},
+        {"type": "http.disconnect"},
+    ]
 
 
 def test_admin_all_calls_shows_records_first_and_supports_pagination(tmp_path):

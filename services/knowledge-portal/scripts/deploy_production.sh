@@ -272,6 +272,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
     scripts/oss_auth.py \
     scripts/validate_operational_health.py scripts/report_systemd_failure.py \
+    scripts/health_recovery_state.py \
     scripts/check_oss_governance.py scripts/deploy_index_delta_to_server.sh \
     scripts/verify_oss_mirror.py scripts/verify_authenticated_portal.py \
     scripts/verify_skill_signature_coverage.py \
@@ -535,6 +536,7 @@ unit_names = (
     'jiaotang-kb.service',
     'jiaotang-kb-health.service',
     'jiaotang-kb-health.timer',
+    'jiaotang-kb-health-recovery@.service',
     'jiaotang-kb-backup.service',
     'jiaotang-kb-backup.timer',
     'jiaotang-kb-index-refresh.service',
@@ -545,6 +547,7 @@ unit_names = (
 )
 wrapper_targets = {
     '/usr/local/sbin/jiaotang-kb-healthcheck': 'deploy/healthcheck.sh',
+    '/usr/local/sbin/jiaotang-kb-health-recovery': 'deploy/health-recovery.sh',
     '/usr/local/sbin/jiaotang-kb-backup': 'deploy/backup.sh',
     '/usr/local/sbin/jiaotang-kb-oss-sync': 'deploy/oss-sync.sh',
     '/usr/local/sbin/jiaotang-kb-refresh-index': 'deploy/refresh-index.sh',

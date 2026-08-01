@@ -13,7 +13,7 @@
 ```text
 安装或更新 49 项 Skills
 启用失败放行的最小行为 Hook
-只替换 mcpServers.jiaotang-kb 并保留其他 MCP
+只替换 mcpServers.jiaotang-kb 并保留其他 MCP。Windows 写入 `%USERPROFILE%\.workbuddy\mcp.json`，macOS 写入 `~/.workbuddy/mcp.json`，不得修改 WorkBuddy 托管的 `.workbuddy/.mcp.json`
 重载 WorkBuddy 一次
 枚举三个知识工具并调用 knowledge_service_status
 ```
@@ -30,7 +30,7 @@
 
 ## 兼容性
 
-既有历史包不会被远程修改。V1.4.5 安装指令会在处理前备份旧插件目录和用户 MCP 配置，更新或替换旧插件，只替换 `mcpServers.jiaotang-kb`，保留其他 MCP。
+既有历史包不会被远程修改。V1.4.5 安装指令会在处理前把旧插件目录和用户 MCP 配置移动或复制到带时间戳的可恢复备份，再从干净目录安装，避免旧 `.mcp.json`、`bin` 或 `mcp` 启动器残留；随后只替换 `mcpServers.jiaotang-kb`，保留其他 MCP。连接器出现后仍由用户在 WorkBuddy 界面手动信任。
 
 历史数据库中的 `macos`、`windows` 目标只作为兼容来源保留；服务端将其中最新的
 WorkBuddy 签名包映射为统一 `workbuddy` 通道。旧平台下载 URL 使用临时兼容跳转，不再作为
