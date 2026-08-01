@@ -76,9 +76,10 @@ def quick_guide_answer(question: str, public_endpoint: str) -> tuple[str, str] |
         return (
             "普通成员无需填写 API、Token 或 MCP 请求头。\n\n"
             "一、打开网站的“连接我的 Agent”页面，点击第一步“复制给 Agent”，把审查说明粘贴到当前本地 Agent 对话框。\n"
-            "二、核对后回到网站点击第二步“我已审查，复制安装确认”，再粘贴给同一个 Agent。自动两步流程无需提前手工下载插件包。\n"
-            "三、Agent 会自动识别 macOS 或 Windows 和当前宿主，下载安装包并完成设备公钥登记、系统安全存储、MCP 配置和连接验证。\n"
-            "四、让当前 Agent 检查知识库连接状态；实际调用知识库状态工具成功后，首次配置才结束。\n\n"
+            "二、核对后回到网站点击第二步“我已审查，复制安装指令”，再粘贴给同一个 Agent。Agent 会识别 macOS 或 Windows 和当前 WorkBuddy 宿主。\n"
+            "三、Agent 安装并加载插件后，回到网站点击第三步“复制知识库绑定指令”，再粘贴给同一个 Agent。自动三步流程无需提前手工下载插件包。\n"
+            "四、Agent 只将一次性 bootstrap_url 作为本地 jiaotang_kb_setup 工具参数调用一次，完成设备公钥登记、系统安全存储和 MCP 连接。\n"
+            "五、让当前 Agent 检查知识库连接状态；实际调用知识库状态工具成功后，首次配置才结束。\n\n"
             "配置成功后直接使用 jiaotang-kb 工具。普通成员同一时间只能绑定一台设备；换机时先在门户点击“更换绑定设备”，再把新的配置发送给新设备 Agent。管理员账号不执行单设备限制，可继续使用管理员接入配置。",
             "first-run-configuration",
         )

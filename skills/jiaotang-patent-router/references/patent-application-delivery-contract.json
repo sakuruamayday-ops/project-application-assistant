@@ -1,11 +1,12 @@
 {
   "schema_version": "patent-application-delivery-contract/v1",
-  "contract_id": "jiaotang-patent-application-case-v1",
+  "contract_id": "jiaotang-patent-application-case-v2",
   "manifest_schema": "patent-case-manifest/v1",
   "milestones": {
     "draft-ready": {
       "required_roles": [
         "task_header",
+        "technical_feature_map",
         "technical_disclosure",
         "search_plan",
         "prior_art_evidence",
@@ -17,6 +18,7 @@
     "fixture": {
       "required_roles": [
         "task_header",
+        "technical_feature_map",
         "technical_disclosure",
         "search_plan",
         "prior_art_evidence",
@@ -34,6 +36,7 @@
     "filing-ready": {
       "required_roles": [
         "task_header",
+        "technical_feature_map",
         "technical_disclosure",
         "search_plan",
         "prior_art_evidence",
@@ -56,17 +59,23 @@
       "requires_current_revision": true,
       "depends_on": []
     },
+    "technical_feature_map": {
+      "stage": "P0",
+      "formats": ["json"],
+      "requires_current_revision": true,
+      "depends_on": ["task_header"]
+    },
     "technical_disclosure": {
       "stage": "P2",
       "formats": ["md", "json", "docx"],
       "requires_current_revision": true,
-      "depends_on": ["task_header"]
+      "depends_on": ["task_header", "technical_feature_map"]
     },
     "search_plan": {
       "stage": "P1",
       "formats": ["json"],
       "requires_current_revision": true,
-      "depends_on": ["task_header", "technical_disclosure"]
+      "depends_on": ["task_header", "technical_feature_map", "technical_disclosure"]
     },
     "prior_art_evidence": {
       "stage": "P1",
@@ -79,6 +88,7 @@
       "formats": ["json"],
       "requires_current_revision": true,
       "depends_on": [
+        "technical_feature_map",
         "technical_disclosure",
         "search_plan",
         "prior_art_evidence"
@@ -126,6 +136,7 @@
       "requires_current_revision": true,
       "depends_on": [
         "task_header",
+        "technical_feature_map",
         "technical_disclosure",
         "search_plan",
         "prior_art_evidence",

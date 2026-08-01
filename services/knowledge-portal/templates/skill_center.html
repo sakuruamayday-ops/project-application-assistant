@@ -163,13 +163,14 @@
         <a class="button secondary" href="/access">查看已连接设备</a>
         {% else %}
         {% if release_guidance.workbuddy_installable %}
-        <p>第一步先确认当前宿主是 WorkBuddy 5 或更高版本，再公开插件包来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法，不包含引导地址；若不是 WorkBuddy，流程会停止。只有你回到本页明确同意后，Agent 才能执行。</p>
+        <p>第一步先确认当前宿主是 WorkBuddy 5 或更高版本，并审查插件包来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法；第二步明确授权安装签名插件；插件加载后，第三步再单独复制 bootstrap 绑定指令。若不是 WorkBuddy，流程会在审查阶段停止。</p>
         <div class="agent-install-actions">
           <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制审查说明</span><small>第一步 · 仅审查</small></button>
           <button class="button secondary" type="button" data-toggle-manual-agent-config aria-expanded="false">手工配置</button>
         </div>
-        <button class="button agent-confirm-install" type="button" data-confirm-agent-bootstrap hidden><span>我已审查，复制安装确认</span><small>第二步 · 明确授权</small></button>
-        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">先把审查说明粘贴到本地 Agent，核对无误后再回到本页确认安装。</p>
+        <button class="button agent-confirm-install" type="button" data-confirm-agent-bootstrap hidden><span>我已审查，复制安装指令</span><small>第二步 · 安装插件</small></button>
+        <button class="button agent-binding-step" type="button" data-copy-agent-binding hidden><span>复制知识库绑定指令</span><small>第三步 · 执行 bootstrap</small></button>
+        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">先把审查说明粘贴到本地 Agent；核对无误后完成第二步安装，再回到本页执行第三步绑定。</p>
         <section class="manual-agent-config" data-manual-agent-config hidden>
           <h4>手工配置 WorkBuddy</h4>
           <ol>

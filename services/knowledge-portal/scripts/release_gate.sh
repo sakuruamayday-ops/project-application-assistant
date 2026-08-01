@@ -131,7 +131,13 @@ python3 "${script_dir}/build_static_assets.py"
   NODE_PATH="${node_modules}" "${node_bin}" tests/skills_center_ux_regression.mjs
 )
 
-echo "[2/6] 高频项目检索金标准"
+echo "[2/6] 双平台三步安装与高频项目检索金标准"
+(
+  cd "${service_dir}"
+  JIAOTANG_E2E_NODE_BINARY="${node_bin}" \
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
+    tests/test_three_step_install_e2e.py -q
+)
 (
   cd "${service_dir}"
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests/test_portal.py \

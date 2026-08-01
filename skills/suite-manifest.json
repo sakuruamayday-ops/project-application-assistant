@@ -21,8 +21,8 @@
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "新设备通过门户两步流程安装 V1.4.3 WorkBuddy 包；插件启用后由 Agent 调用本地 jiaotang_kb_setup 工具完成绑定。已绑定 V1.4.x 设备使用 Skills 中心升级按钮，不重新登记。",
-      "manual_fallback": "手工配置只作为自动两步流程的替代路径；核验签名包并启用插件后，仅将一次性 bootstrap_url 作为本地 jiaotang_kb_setup 工具参数。",
+      "workbuddy": "新设备通过门户审查、安装、bootstrap 绑定三步流程安装 V1.4.3 WorkBuddy 包；第三步由 Agent 调用本地 jiaotang_kb_setup 工具完成绑定。已绑定 V1.4.x 设备使用 Skills 中心升级按钮，不重新登记。",
+      "manual_fallback": "手工配置只作为自动三步流程的替代路径；核验签名包并启用插件后，仅将一次性 bootstrap_url 作为本地 jiaotang_kb_setup 工具参数。",
       "verification": "门户四阶段完成后还必须确认 jiaotang-kb 已进入当前运行时，成功调用任一只读状态或检索工具，并抽样验证项目算法、交付契约或专利案卷入口；之后升级验收才完成。"
     },
     "compatibility": [

@@ -3858,6 +3858,15 @@ def test_admin_uses_same_transactional_agent_onboarding_as_members(
         )
         assert confirmed.status_code == 200
         assert confirmed.json()["phase"] == "install_authorized"
+        binding = client.post(
+            "/agent-bootstrap-codes/binding",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+            },
+        )
+        assert binding.status_code == 200
+        assert binding.json()["phase"] == "binding_authorized"
 
         private_key = Ed25519PrivateKey.generate()
         public_key = base64url_encode(
@@ -4311,27 +4320,32 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "手工配置" in access.text
         assert "data-toggle-manual-agent-config" in access.text
         assert "data-confirm-manual-agent-bootstrap" in access.text
+        assert "data-copy-agent-binding" in access.text
+        assert "第三步 · 执行 bootstrap" in access.text
         assert "前往 Skills 中心" in access.text
         assert "macOS 与 Windows 插件市场包统一在 Skills 中心下载" in access.text
         assert 'class="button secondary skill-center-link" href="/skills"' in access.text
         assert access.text.count("data-manual-package-download") == 1
-        assert "我已审查，复制安装确认" in access.text
+        assert "我已审查，复制安装指令" in access.text
         assert "一次性引导地址" in access.text
         assert "等待配置" in access.text
         portal_script = client.get("/static/portal.js")
         assert portal_script.status_code == 200
         assert "我已审查，生成并复制 bootstrap_url" in portal_script.text
         assert (
-            "copyToClipboard(payload.manual_configuration.bootstrap_url)"
+            "copyToClipboard(bindingPayload.manual_configuration.bootstrap_url)"
             in portal_script.text
         )
         assert "浏览器未允许自动复制" in portal_script.text
+        assert 'fetch("/agent-bootstrap-codes/binding"' in portal_script.text
+        assert "binding_authorized" in portal_script.text
         skills = client.get("/skills")
         assert skills.status_code == 200
         assert "data-toggle-manual-agent-config" in skills.text
         assert "data-confirm-manual-agent-bootstrap" in skills.text
         assert "data-manual-package-download" in skills.text
         assert "生成并复制 bootstrap_url" in skills.text
+        assert "data-copy-agent-binding" in skills.text
         assert "/plugin marketplace add" in skills.text
         assert "jiaotang-workbuddy-skills@jiaotang" in skills.text
 
@@ -4463,6 +4477,15 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         )
         assert unconfirmed_manifest.status_code == 403
         assert "尚未由用户确认" in unconfirmed_manifest.json()["detail"]
+        unconfirmed_binding = client.post(
+            "/agent-bootstrap-codes/binding",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+            },
+        )
+        assert unconfirmed_binding.status_code == 403
+        assert "先完成第二步" in unconfirmed_binding.json()["detail"]
 
         newer_package = tmp_path / "workbuddy-newer.zip"
         newer_package.write_bytes(b"newer-release-must-not-replace-pinned-package")
@@ -4491,14 +4514,12 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "不是必须出现在 Agent 工具列表中的工具" in confirmed.json()["prompt"]
         assert "`jiaotang_kb_setup`" in confirmed.json()["prompt"]
         assert "签名插件根目录 .mcp.json" in confirmed.json()["prompt"]
-        assert "不要另行创建或改写用户级、项目级" in confirmed.json()["prompt"]
+        assert "WorkBuddy 5.3.x" in confirmed.json()["prompt"]
+        assert "runtimeInjected=false" in confirmed.json()["prompt"]
+        assert "仅合并用户级 ~/.workbuddy/mcp.json" in confirmed.json()["prompt"]
         assert "不得直接注册临时下载或临时解压目录" in confirmed.json()["prompt"]
         assert "不得删除已注册的 jiaotang 市场" in confirmed.json()["prompt"]
-        assert "`knowledge_service_status`" in confirmed.json()["prompt"]
-        assert "no connector owns resource URI" in confirmed.json()["prompt"]
-        assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
-            confirmed.json()["prompt"]
-        )
+        assert "第三步“复制知识库绑定指令”" in confirmed.json()["prompt"]
         manual = confirmed.json()["manual_configuration"]
         assert manual["configuration_key"] == "bootstrap_url"
         assert manual["mcp_server"] == "jiaotang-kb"
@@ -4509,10 +4530,35 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert manual["plugin_sha256"] == hashlib.sha256(
             workbuddy_package.read_bytes()
         ).hexdigest()
-        assert manual["bootstrap_url"].endswith(
+        assert "bootstrap_url" not in manual
+        assert f"?platform=unified" in confirmed.json()["prompt"]
+
+        confirmed_without_binding = client.get(
+            f"/v1/agent-bootstrap/{enrollment_code}"
+        )
+        assert confirmed_without_binding.status_code == 403
+        assert "第三步知识库绑定授权" in confirmed_without_binding.json()["detail"]
+
+        binding = client.post(
+            "/agent-bootstrap-codes/binding",
+            data={
+                "csrf_token": user["csrf_token"],
+                "enrollment_code": enrollment_code,
+            },
+        )
+        assert binding.status_code == 200
+        assert binding.json()["phase"] == "binding_authorized"
+        assert "只调用一次本地 `jiaotang_kb_setup`" in binding.json()["prompt"]
+        assert "不要在回复中复述" in binding.json()["prompt"]
+        assert "`knowledge_service_status`" in binding.json()["prompt"]
+        assert "no connector owns resource URI" in binding.json()["prompt"]
+        assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in (
+            binding.json()["prompt"]
+        )
+        binding_manual = binding.json()["manual_configuration"]
+        assert binding_manual["bootstrap_url"].endswith(
             f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
         )
-        assert f"?platform=unified" in confirmed.json()["prompt"]
 
         authorized_protocol = client.get(
             f"/v1/agent-install/{enrollment_code}?platform=macos"
@@ -4542,6 +4588,12 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "register_persisted_local_marketplace" in (
             host_installation["fixed_actions"]
         )
+        assert "apply_scoped_workbuddy_5_3_mcp_fallback_if_required" in (
+            host_installation["fixed_actions"]
+        )
+        assert "invoke_declared_local_setup_tool" not in (
+            host_installation["fixed_actions"]
+        )
         assert "cleanup_download_and_staging_only" in (
             host_installation["fixed_actions"]
         )
@@ -4564,9 +4616,20 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
             ),
             "server": "jiaotang-kb",
             "setup_tool": "jiaotang_kb_setup",
+            "binding_authorization": "separate_portal_third_step",
+            "write_user_config": (
+                "workbuddy_5_3_literal_placeholder_fallback_only"
+            ),
             "write_global_mcp_config": False,
             "write_project_mcp_config": False,
         }
+        compatibility = authorized_protocol.json()["installation"][
+            "workbuddy_5_3_compatibility"
+        ]
+        assert "${CODEBUDDY_PLUGIN_ROOT}" in compatibility["trigger"]
+        assert compatibility["scope"] == "user_mcp_jiaotang_kb_entry_only"
+        assert compatibility["preserve_other_servers"] is True
+        assert compatibility["modify_signed_plugin_files"] is False
         existing_install_policy = authorized_protocol.json()["installation"][
             "existing_install_policy"
         ]
@@ -4607,9 +4670,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
             authorized_protocol.json()["installation"]["plugin_download_url"]
             == scoped_download_url
         )
-        assert authorized_protocol.json()["installation"]["bootstrap_url"].endswith(
-            f"/v1/agent-bootstrap/{enrollment_code}?platform=unified"
-        )
+        assert "bootstrap_url" not in authorized_protocol.json()["installation"]
         anonymous_client = TestClient(module.app)
         authorized_download = anonymous_client.get(
             f"/v1/agent-install/{enrollment_code}/workbuddy/download"
@@ -4992,14 +5053,16 @@ def test_transactional_device_registration_activates_only_after_saved_credential
         connection.execute(
             """
             INSERT INTO agent_enrollment_codes(
-                user_id,code_hash,created_at,expires_at,confirmed_at
-            ) VALUES (?,?,?,?,?)
+                user_id,code_hash,created_at,expires_at,confirmed_at,
+                binding_authorized_at
+            ) VALUES (?,?,?,?,?,?)
             """,
             (
                 user_id,
                 module.token_hash(enrollment_code),
                 now,
                 expires_at,
+                now,
                 now,
             ),
         )
@@ -5254,14 +5317,16 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
             connection.execute(
                 """
                 INSERT INTO agent_enrollment_codes(
-                    user_id,code_hash,created_at,expires_at,confirmed_at
-                ) VALUES (?,?,?,?,?)
+                    user_id,code_hash,created_at,expires_at,confirmed_at,
+                    binding_authorized_at
+                ) VALUES (?,?,?,?,?,?)
                 """,
                 (
                     user_id,
                     module.token_hash("jbe_supersecret-code"),
                     now,
                     expires_at,
+                    now,
                     now,
                 ),
             ).lastrowid

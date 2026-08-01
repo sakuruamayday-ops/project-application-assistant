@@ -198,7 +198,8 @@
   margin-top:28px;
 }
 .skill-install-plan .agent-copy-primary,
-.skill-install-plan .agent-confirm-install {
+.skill-install-plan .agent-confirm-install,
+.skill-install-plan .agent-binding-step {
   display:grid;
   align-content:center;
   min-height:52px;
@@ -207,9 +208,14 @@
 }
 .skill-install-plan .agent-copy-primary { width:100%; }
 .skill-install-plan .agent-install-actions .button.secondary { min-height:52px; }
-.skill-install-plan .agent-confirm-install { width:min(100%,320px); margin-top:10px; }
+.skill-install-plan .agent-confirm-install,
+.skill-install-plan .agent-binding-step { width:min(100%,320px); margin-top:10px; }
+.skill-install-plan .agent-binding-step { border-color:rgba(207,169,92,.54); background:rgba(207,169,92,.08); color:var(--skill-gold-light); }
+.skill-install-plan .agent-confirm-install[hidden],
+.skill-install-plan .agent-binding-step[hidden] { display:none; }
 .skill-install-plan .agent-copy-primary small,
-.skill-install-plan .agent-confirm-install small { color:inherit; opacity:1; }
+.skill-install-plan .agent-confirm-install small,
+.skill-install-plan .agent-binding-step small { color:inherit; opacity:1; }
 .skill-install-plan .manual-agent-config { margin-top:18px; padding:18px; border:1px solid var(--skill-line); border-radius:14px; background:#0c0d0e; }
 .skill-install-plan .manual-agent-config h4 { margin:0 0 10px; color:var(--skill-ink); }
 .skill-install-plan .manual-agent-config ol { margin:0 0 16px; padding-left:20px; color:var(--skill-muted); line-height:1.75; }
@@ -325,7 +331,8 @@
   .skill-install-plan,.skill-install-status { min-height:auto; padding:20px; }
   .skill-install-plan .agent-install-actions { grid-template-columns:1fr; width:100%; }
   .skill-install-plan .agent-install-actions .button,
-  .skill-install-plan .agent-confirm-install { width:100%; }
+  .skill-install-plan .agent-confirm-install,
+  .skill-install-plan .agent-binding-step { width:100%; }
   .skill-install-safety { grid-template-columns:1fr; }
   .skill-detail-dialog { width:calc(100vw - 12px); max-height:calc(100vh - 12px); }
   .skill-detail-card { max-height:calc(100vh - 14px); }

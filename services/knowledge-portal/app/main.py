@@ -6079,6 +6079,8 @@ def init_database() -> None:
                 expires_at TEXT NOT NULL,
                 confirmed_at TEXT,
                 confirmed_ip TEXT NOT NULL DEFAULT '',
+                binding_authorized_at TEXT,
+                binding_authorized_ip TEXT NOT NULL DEFAULT '',
                 registered_at TEXT,
                 registered_key_id TEXT,
                 registered_ip TEXT NOT NULL DEFAULT '',
@@ -6611,6 +6613,8 @@ def init_database() -> None:
         enrollment_migrations = {
             "confirmed_at": "TEXT",
             "confirmed_ip": "TEXT NOT NULL DEFAULT ''",
+            "binding_authorized_at": "TEXT",
+            "binding_authorized_ip": "TEXT NOT NULL DEFAULT ''",
             "registered_at": "TEXT",
             "registered_key_id": "TEXT",
             "registered_ip": "TEXT NOT NULL DEFAULT ''",
@@ -12112,15 +12116,32 @@ def build_agent_install_prompt(install_protocol_url: str) -> str:
         "列出的固定步骤。安全解压后必须先把完整 jiaotang 市场持久保存到当前 WorkBuddy 实际使用的"
         "用户插件市场目录，再从该持久目录注册；不得直接注册临时下载或临时解压目录，清理时也不得"
         "删除已注册的 jiaotang 市场。`jiaotang-kb` 的 MCP 声明位于签名插件根目录 .mcp.json，"
-        "plugin.json 只保留相对路径声明；不要另行创建或改写用户级、项目级 mcp.json 或 .mcp.json。"
-        "bootstrap_url、安装码、API Token 与私钥均为敏感信息，"
-        "不要在普通回复中复述，不要写入 settings.json。插件首次加载时如仅枚举出 "
-        "`jiaotang_kb_setup` 和 `jiaotang_kb_setup_status`，应把 bootstrap_url 仅作为本地 "
-        "`jiaotang_kb_setup` 工具参数调用一次；工具结果不得回显该地址。绑定完成后重新执行 "
-        "`tools/list`，必须看到 `knowledge_search`、`knowledge_document` 和 "
-        "`knowledge_service_status` 等远端工具，再实际调用 `knowledge_service_status` 或任一只读检索。"
-        "通用资源读取器返回 `no connector owns resource URI` 不能作为连接成功证据。只有门户"
-        "确认设备登记、凭据保存、首次验签和 MCP 连接四个阶段全部完成，且运行时连接检查通过后，"
+        "plugin.json 只保留相对路径声明。先让宿主直接加载签名声明；如 WorkBuddy 5.3.x 日志明确显示"
+        " `command=${CODEBUDDY_PLUGIN_ROOT}/bin/run-node`、`runtimeInjected=false` 或因字面量占位符导致 "
+        "MCP -32000，允许执行一次限定兼容修复：仅合并用户级 ~/.workbuddy/mcp.json 的 `jiaotang-kb` 条目，"
+        "command 与 args 必须是指向已验签持久插件目录中 run-node 和 jiaotang-agent.mjs 的绝对路径，"
+        "保留其他用户 MCP 条目，不改签名插件文件，不写项目级或全局配置。"
+        "本步只安装并启用插件，不执行设备绑定。bootstrap_url、安装码、API Token 与私钥"
+        "均为敏感信息，不要在普通回复中复述，不要写入 settings.json。插件首次加载后，"
+        "如枚举出 `jiaotang_kb_setup` 和 `jiaotang_kb_setup_status`，即可报告安装已完成，然后停止并提示用户"
+        "回到门户点击第三步“复制知识库绑定指令”。不得从安装协议中自行推导、提取或调用 bootstrap_url。"
+    )
+
+
+def build_agent_binding_prompt(bootstrap_url: str) -> str:
+    binding_arguments = json.dumps(
+        {"bootstrap_url": bootstrap_url},
+        ensure_ascii=False,
+    )
+    return (
+        "插件安装完成，现在执行第三步知识库绑定。请只调用一次本地 "
+        "`jiaotang_kb_setup` 工具，将下列内容原样作为工具参数：\n\n"
+        f"{binding_arguments}\n\n"
+        "bootstrap_url 仅可作为本次工具参数传入，不要在回复中复述，不要记录到日志或写入普通配置。"
+        "绑定完成后重新执行 `tools/list`，确认 `knowledge_search`、`knowledge_document` 和 "
+        "`knowledge_service_status` 已枚举，再实际调用 `knowledge_service_status` 或任一只读检索完成验收。"
+        "通用资源读取器返回 `no connector owns resource URI` 不能作为连接成功证据。"
+        "只有门户的设备登记、凭据保存、首次验签和 MCP 连接四个阶段全部完成，且只读工具调用成功后，"
         "才能报告首次配置完成，并提示用户输入“帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills”。"
     )
 
@@ -12230,12 +12251,13 @@ def pinned_agent_install_artifact(
     enrollment_code: str,
     *,
     require_confirmed: bool = False,
+    require_binding_authorized: bool = False,
 ) -> tuple[dict[str, object], dict[str, object]]:
     now = isoformat(utc_now())
     with closing(database()) as connection:
         enrollment = connection.execute(
             """
-            SELECT id,expires_at,consumed_at,confirmed_at,
+            SELECT id,expires_at,consumed_at,confirmed_at,binding_authorized_at,
                    workbuddy_version,workbuddy_file_name,
                    workbuddy_file_path,workbuddy_sha256
             FROM agent_enrollment_codes
@@ -12255,6 +12277,9 @@ def pinned_agent_install_artifact(
         if require_confirmed and not enrollment["confirmed_at"]:
             connection.rollback()
             raise HTTPException(status_code=403, detail="安装说明尚未由用户确认，不能下载插件包。")
+        if require_binding_authorized and not enrollment["binding_authorized_at"]:
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="请先回到门户执行第三步知识库绑定授权。")
 
         pinned_fields = (
             enrollment["workbuddy_file_name"],
@@ -12468,10 +12493,6 @@ def confirm_agent_bootstrap_code(
         f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
         f"?platform={platform_name}"
     )
-    bootstrap_url = (
-        f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
-        f"?platform={platform_name}"
-    )
     _, artifact = pinned_agent_install_artifact(
         enrollment_code,
         require_confirmed=True,
@@ -12492,9 +12513,75 @@ def confirm_agent_bootstrap_code(
                 "setup_tool": "jiaotang_kb_setup",
                 "configuration_transport": "local_mcp_tool_argument",
                 "configuration_key": "bootstrap_url",
-                "bootstrap_url": bootstrap_url,
             },
             "expires_at": enrollment["expires_at"],
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.post("/agent-bootstrap-codes/binding")
+def create_agent_binding_prompt(
+    request: Request,
+    enrollment_code: Annotated[str, Form(min_length=20, max_length=200)],
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    now_value = utc_now()
+    refreshed_expires_at = isoformat(
+        now_value + timedelta(minutes=AGENT_BOOTSTRAP_MINUTES)
+    )
+    authorized_at = isoformat(now_value)
+    client_ip = client_ip_from(request)
+    with closing(database()) as connection:
+        enrollment = connection.execute(
+            """
+            SELECT id,consumed_at,confirmed_at
+            FROM agent_enrollment_codes
+            WHERE code_hash=? AND user_id=?
+            """,
+            (token_hash(enrollment_code), int(user["id"])),
+        ).fetchone()
+        if enrollment is None:
+            raise HTTPException(status_code=404, detail="安装审查记录不存在，请重新生成")
+        if enrollment["consumed_at"]:
+            raise HTTPException(status_code=410, detail="一次性绑定配置已使用，请重新生成")
+        if not enrollment["confirmed_at"]:
+            raise HTTPException(status_code=403, detail="请先完成第二步安装授权")
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET expires_at=?,binding_authorized_at=?,binding_authorized_ip=?
+            WHERE id=?
+            """,
+            (
+                refreshed_expires_at,
+                authorized_at,
+                (client_ip or "unknown")[:100],
+                int(enrollment["id"]),
+            ),
+        )
+        connection.commit()
+
+    public_endpoint = str(request.base_url).rstrip("/")
+    bootstrap_url = (
+        f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
+        "?platform=unified"
+    )
+    return JSONResponse(
+        {
+            "phase": "binding_authorized",
+            "prompt": build_agent_binding_prompt(bootstrap_url),
+            "manual_configuration": {
+                "platform": "unified",
+                "mcp_server": "jiaotang-kb",
+                "setup_tool": "jiaotang_kb_setup",
+                "configuration_transport": "local_mcp_tool_argument",
+                "configuration_key": "bootstrap_url",
+                "bootstrap_url": bootstrap_url,
+            },
+            "expires_at": refreshed_expires_at,
         },
         headers={"Cache-Control": "no-store"},
     )
@@ -12772,10 +12859,6 @@ def agent_install_protocol(
     install_authorized = bool(enrollment["confirmed_at"])
     del platform
     platform_name = "unified"
-    bootstrap_url = (
-        f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
-        f"?platform={platform_name}"
-    )
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
     plugin_download_url = (
         f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
@@ -12898,7 +12981,7 @@ def agent_install_protocol(
                             "persist_declared_local_marketplace",
                             "register_persisted_local_marketplace",
                             "install_and_enable_declared_plugin",
-                            "invoke_declared_local_setup_tool",
+                            "apply_scoped_workbuddy_5_3_mcp_fallback_if_required",
                             "cleanup_download_and_staging_only",
                         ],
                         "persistent_marketplace": {
@@ -12919,8 +13002,24 @@ def agent_install_protocol(
                         ),
                         "server": "jiaotang-kb",
                         "setup_tool": "jiaotang_kb_setup",
+                        "binding_authorization": "separate_portal_third_step",
+                        "write_user_config": "workbuddy_5_3_literal_placeholder_fallback_only",
                         "write_global_mcp_config": False,
                         "write_project_mcp_config": False,
+                    },
+                    "workbuddy_5_3_compatibility": {
+                        "trigger": (
+                            "日志显示 ${CODEBUDDY_PLUGIN_ROOT} 未展开且 "
+                            "runtimeInjected=false，或 jiaotang-kb 因该字面量命令返回 MCP -32000"
+                        ),
+                        "scope": "user_mcp_jiaotang_kb_entry_only",
+                        "command": "absolute_signed_plugin_run_node_path",
+                        "args": [
+                            "absolute_signed_plugin_jiaotang_agent_path",
+                            "plugin-serve",
+                        ],
+                        "preserve_other_servers": True,
+                        "modify_signed_plugin_files": False,
                     },
                     "existing_install_policy": {
                         "same_package_sha256": (
@@ -12932,7 +13031,6 @@ def agent_install_protocol(
                         ),
                     },
                     "plugin_download_url": plugin_download_url,
-                    "bootstrap_url": bootstrap_url,
                     "steps": [
                         "从安装协议的一次性受限地址下载签名 WorkBuddy 插件包。",
                         "核对发布包 SHA-256、固定发布者指纹和 Ed25519 签名。",
@@ -12943,15 +13041,13 @@ def agent_install_protocol(
                         "使用 WorkBuddy 内置插件管理添加上述持久 jiaotang 本地市场；/plugin 是界面入口，不是 Agent 工具名。",
                         "在 WorkBuddy 内安装并启用 jiaotang-workbuddy-skills@jiaotang；"
                         "由宿主读取签名插件根目录 .mcp.json 中的 jiaotang-kb MCP 声明，"
-                        "不要另写用户级或项目级 MCP 配置。",
+                        "正常情况不另写用户级或项目级 MCP 配置。",
+                        "若 WorkBuddy 5.3.x 把 ${CODEBUDDY_PLUGIN_ROOT} 作为字面量命令导致 MCP -32000，"
+                        "仅将 ~/.workbuddy/mcp.json 中 jiaotang-kb 的 command 和 args 合并为已验签持久插件运行文件的绝对路径；"
+                        "保留其他 MCP，不修改签名插件副本。",
                         "首次加载时由未绑定的本地 MCP 仅枚举 jiaotang_kb_setup 与状态工具；"
-                        "将 bootstrap_url 仅作为 jiaotang_kb_setup 工具参数调用一次，不写入普通配置。",
-                        "插件先预登记，再将凭据写入系统安全存储并回读校验。",
-                        "回读成功后由本机私钥签名激活，服务器再原子创建有效绑定。",
-                        "由插件内置 jiaotang-kb MCP 完成首次签名连接；重新执行 tools/list，"
-                        "确认 knowledge_search、knowledge_document 和 knowledge_service_status 已枚举。",
-                        "实际调用 knowledge_service_status 或任一只读检索；"
-                        "通用资源读取器返回业务错误不能作为连接成功证据。",
+                        "确认本地 setup 工具已枚举后停止，不在安装步骤调用 bootstrap_url。",
+                        "返回门户点击第三步“复制知识库绑定指令”，再由用户将单次绑定指令发送给同一 Agent。",
                         "只清理下载 ZIP 和未注册的中转目录；不得删除已注册的持久 jiaotang 市场、"
                         "插件运行文件或系统凭据。",
                     ],
@@ -13013,7 +13109,8 @@ def agent_install_protocol(
                     ],
                     "workbuddy_instruction": (
                         "插件启用后会自动启动内置 `jiaotang-kb` MCP；"
-                        "未绑定时先调用本地 `jiaotang_kb_setup`；绑定后必须确认 "
+                        "未绑定时先停在本地 `jiaotang_kb_setup` 已枚举的状态，"
+                        "等待用户从门户发送第三步绑定指令；绑定后必须确认 "
                         "`tools/list` 包含 `knowledge_search`、`knowledge_document` 和 "
                         "`knowledge_service_status`，并实际调用一个只读工具验收。"
                         "门户显示四个阶段完成后才算接入成功。"
@@ -13305,6 +13402,7 @@ def agent_bootstrap_manifest(
     enrollment, workbuddy_artifact = pinned_agent_install_artifact(
         enrollment_code,
         require_confirmed=True,
+        require_binding_authorized=True,
     )
     public_endpoint = str(request.base_url).rstrip("/")
     del platform
@@ -13578,6 +13676,12 @@ def register_agent_device(
             raise HTTPException(
                 status_code=403,
                 detail="安装说明尚未由用户确认，请回到门户点击“我已审查，继续安装”。",
+            )
+        if not enrollment["binding_authorized_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=403,
+                detail="请先回到门户执行第三步知识库绑定授权。",
             )
         user = connection.execute(
             "SELECT * FROM users WHERE id=? AND active=1",
@@ -13915,6 +14019,12 @@ def activate_agent_device(
             raise HTTPException(
                 status_code=403,
                 detail="安装说明尚未由用户确认，请回到门户点击“我已审查，继续安装”。",
+            )
+        if not enrollment["binding_authorized_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=403,
+                detail="请先回到门户执行第三步知识库绑定授权。",
             )
         intent = connection.execute(
             """

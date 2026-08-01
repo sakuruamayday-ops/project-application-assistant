@@ -39,6 +39,8 @@ def test_core_patent_skill_count_and_internal_components():
         "p1-search-analysis.md",
         "p2-mining-disclosure.md",
         "p3-preexam.md",
+        "technical-feature-evidence-map.md",
+        "ai-patent-practice.md",
     ):
         assert (ROUTER / "references" / method).is_file()
     assert not (ROUTER / "components").exists()
@@ -196,13 +198,35 @@ def build_complete_fixture(tmp_path: Path) -> Path:
         "fixture-case",
         "--fixture",
     )
-    for role, filename in (
-        ("task_header", "task-header.json"),
-        ("technical_disclosure", "technical-disclosure.md"),
-        ("search_plan", "search-plan.json"),
-        ("prior_art_evidence", "prior-art.json"),
-    ):
-        register(case_dir, role, filename)
+    register(case_dir, "task_header", "task-header.json")
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROUTER / "scripts" / "build_technical_feature_map.py"),
+            str(case_dir / "technical-feature-input.json"),
+            str(case_dir / "technical-feature-map.json"),
+            "--strict",
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    register(case_dir, "technical_feature_map", "technical-feature-map.json")
+    register(case_dir, "technical_disclosure", "technical-disclosure.md")
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROUTER / "scripts" / "build_search_plan.py"),
+            str(case_dir / "technical-feature-map.json"),
+            str(case_dir / "search-plan.json"),
+            "--strict",
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    register(case_dir, "search_plan", "search-plan.json")
+    register(case_dir, "prior_art_evidence", "prior-art.json")
 
     subprocess.run(
         [
@@ -250,6 +274,7 @@ def test_full_case_fixture_passes_one_manifest_and_generator_contract(tmp_path: 
     )
     assert set(manifest["artifacts"]) == {
         "task_header",
+        "technical_feature_map",
         "technical_disclosure",
         "search_plan",
         "prior_art_evidence",
@@ -304,6 +329,26 @@ def test_fixture_cannot_be_misrepresented_as_filing_ready(tmp_path: Path):
     }
 
 
+def test_old_case_contract_is_blocked_after_feature_map_gate_upgrade(tmp_path: Path):
+    case_dir = tmp_path / "old-contract-case"
+    run_manifest(case_dir, "init", "--case-id", "old-contract-fixture", "--fixture")
+    path = case_dir / "patent-case-manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    manifest["contract"]["contract_id"] = "jiaotang-patent-application-case-v1"
+    path.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+    result = run_manifest(
+        case_dir,
+        "validate",
+        "--milestone",
+        "draft-ready",
+        check=False,
+    )
+    audit = json.loads(result.stdout)
+    assert "CONTRACT_VERSION_MISMATCH" in {
+        item["code"] for item in audit["errors"]
+    }
+
+
 def test_changed_upstream_file_invalidates_downstream_case_files(tmp_path: Path):
     case_dir = build_complete_fixture(tmp_path)
     disclosure = case_dir / "technical-disclosure.md"
@@ -353,6 +398,7 @@ def test_case_revision_change_blocks_every_old_stage_file(tmp_path: Path):
     }
     assert wrong_revision_roles == {
         "task_header",
+        "technical_feature_map",
         "technical_disclosure",
         "search_plan",
         "prior_art_evidence",
@@ -404,3 +450,128 @@ def test_fixture_contains_no_archived_case_technology_or_real_patent_number():
     assert "政策版本图" not in content
     assert "企业项目检索推荐" not in content
     assert not re.search(r"CN\d{7,}[A-Z]\d?", content)
+
+
+def test_ai_feature_map_and_layered_search_plan_are_traceable(tmp_path: Path):
+    feature_map = tmp_path / "technical-feature-map.json"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROUTER / "scripts" / "build_technical_feature_map.py"),
+            str(CASE_FIXTURE / "technical-feature-input.json"),
+            str(feature_map),
+            "--strict",
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    result = json.loads(feature_map.read_text(encoding="utf-8"))
+    assert result["schema_version"] == "technical-feature-map/v1"
+    assert result["readiness"]["search"] == "READY"
+    assert result["readiness"]["drafting"] == "READY"
+    assert result["ai_disclosure_audit"]["status"] == "pass"
+    assert all(item["evidence"] for item in result["features"] if item["role"] == "core")
+
+    plan_path = tmp_path / "search-plan.json"
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROUTER / "scripts" / "build_search_plan.py"),
+            str(feature_map),
+            str(plan_path),
+            "--strict",
+        ],
+        check=True,
+    )
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    kinds = {item["kind"] for item in plan["search_units"]}
+    assert {"single_feature", "core_combination", "classification_cross"} <= kinds
+    assert plan["evidence_requirements"]["mapping_fields"]
+    assert plan["readiness"]["status"] == "READY"
+
+
+def test_feature_map_blocks_unsupported_core_feature_and_nonhuman_inventor(tmp_path: Path):
+    payload = json.loads(
+        (CASE_FIXTURE / "technical-feature-input.json").read_text(encoding="utf-8")
+    )
+    payload["features"][0]["evidence"] = []
+    payload["ai_disclosure"]["inventor_candidates"].append(
+        {"candidate_ref": "AI系统", "entity_type": "artificial_intelligence"}
+    )
+    source = tmp_path / "input.json"
+    target = tmp_path / "map.json"
+    source.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROUTER / "scripts" / "build_technical_feature_map.py"),
+            str(source),
+            str(target),
+            "--strict",
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    assert result.returncode == 2
+    report = json.loads(target.read_text(encoding="utf-8"))
+    codes = {item["code"] for item in report["readiness"]["blockers"]}
+    assert {"CORE_FEATURE_UNSUPPORTED", "NON_HUMAN_INVENTOR"} <= codes
+
+
+def test_feature_map_rejects_software_copyright_and_sensitive_personal_fields(tmp_path: Path):
+    payload = json.loads(
+        (CASE_FIXTURE / "technical-feature-input.json").read_text(encoding="utf-8")
+    )
+    payload["purpose"] = "software_copyright"
+    payload["id_card"] = "不应进入技术底稿"
+    source = tmp_path / "input.json"
+    target = tmp_path / "map.json"
+    source.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROUTER / "scripts" / "build_technical_feature_map.py"),
+            str(source),
+            str(target),
+        ],
+        check=True,
+    )
+    report = json.loads(target.read_text(encoding="utf-8"))
+    codes = {item["code"] for item in report["readiness"]["blockers"]}
+    assert {"OUT_OF_SCOPE_SOFTWARE_COPYRIGHT", "SENSITIVE_PERSONAL_FIELD"} <= codes
+
+
+def test_blocked_feature_map_cannot_become_strict_search_plan(tmp_path: Path):
+    payload = json.loads(
+        (CASE_FIXTURE / "technical-feature-input.json").read_text(encoding="utf-8")
+    )
+    payload["features"][0]["evidence"] = []
+    source = tmp_path / "input.json"
+    feature_map = tmp_path / "map.json"
+    plan_path = tmp_path / "search-plan.json"
+    source.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROUTER / "scripts" / "build_technical_feature_map.py"),
+            str(source),
+            str(feature_map),
+        ],
+        check=True,
+    )
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(ROUTER / "scripts" / "build_search_plan.py"),
+            str(feature_map),
+            str(plan_path),
+            "--strict",
+        ],
+        check=False,
+    )
+    assert completed.returncode == 2
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    assert plan["readiness"]["status"] == "BLOCKED"
+    assert plan["readiness"]["source_blockers"]

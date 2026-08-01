@@ -1,0 +1,113 @@
+{
+  "schema_version": "technical-feature-input/v1",
+  "case_id": "fixture-case",
+  "case_revision": 1,
+  "purpose": "patent",
+  "technology_domain": "artificial_intelligence",
+  "sources": [
+    {
+      "source_id": "S1",
+      "kind": "anonymized_design_record",
+      "title": "匿名技术结构夹具",
+      "confidentiality": "匿名测试夹具"
+    }
+  ],
+  "technical_problem": {
+    "text": "在资源受限的计算环境中，输入记录的处理链无法同时满足时延约束与状态一致性约束。",
+    "constraints": ["受限计算资源", "固定响应时间"],
+    "evidence": [
+      {
+        "source_id": "S1",
+        "locator": "第2节"
+      }
+    ]
+  },
+  "features": [
+    {
+      "feature_id": "F1",
+      "role": "core",
+      "text": "处理单元根据输入记录和当前状态生成中间状态标记",
+      "relationship": "输入记录和当前状态共同约束中间状态标记",
+      "search_terms": ["中间状态标记", "intermediate state marker"],
+      "ipc_candidates": ["G06F"],
+      "evidence": [
+        {
+          "source_id": "S1",
+          "locator": "第3.1节"
+        }
+      ]
+    },
+    {
+      "feature_id": "F2",
+      "role": "core",
+      "text": "校验单元在输出前按状态约束校验中间状态标记",
+      "relationship": "校验结果决定是否进入输出步骤",
+      "search_terms": ["状态约束校验", "state constraint validation"],
+      "evidence": [
+        {
+          "source_id": "S1",
+          "locator": "第3.2节"
+        }
+      ]
+    }
+  ],
+  "technical_effects": [
+    {
+      "effect_id": "E1",
+      "kind": "measured",
+      "text": "在匿名测试条件下减少状态不一致记录",
+      "related_features": ["F1", "F2"],
+      "metric": {
+        "name": "状态不一致记录数",
+        "value": "夹具占位值",
+        "condition": "仅用于验证数据结构，不是真实技术数据"
+      },
+      "evidence": [
+        {
+          "source_id": "S1",
+          "locator": "第4节"
+        }
+      ]
+    }
+  ],
+  "ai_disclosure": {
+    "mode": "hybrid",
+    "evidence": [
+      {
+        "source_id": "S1",
+        "locator": "第3节"
+      }
+    ],
+    "modules": ["处理单元", "校验单元"],
+    "connections": ["处理单元输出连接校验单元输入"],
+    "training_steps": ["读取匿名训练记录", "更新模型参数"],
+    "training_parameters": ["迭代终止条件"],
+    "application_binding": {
+      "scenario": "受限计算资源下的记录处理",
+      "input_definition": "待处理记录和当前状态",
+      "output_definition": "经状态约束校验的输出记录",
+      "input_output_relationship": "先生成中间状态标记，经校验通过后生成输出记录"
+    },
+    "data_governance": {
+      "personal_data_involved": false
+    },
+    "human_inventive_contributions": [
+      {
+        "contributor_ref": "匿名自然人A",
+        "contribution": "确定中间状态标记与输出前校验的组合关系",
+        "evidence": [
+          {
+            "source_id": "S1",
+            "locator": "访谈记录第1项"
+          }
+        ]
+      }
+    ],
+    "inventor_candidates": [
+      {
+        "candidate_ref": "匿名自然人A",
+        "entity_type": "natural_person"
+      }
+    ]
+  }
+}
