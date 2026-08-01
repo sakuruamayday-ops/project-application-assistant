@@ -295,7 +295,7 @@ def _remove_existing_brand_watermarks(document: Document) -> None:
 
 
 def _build_simplified_manager_manual(spec: dict[str, Any]) -> Document:
-    """Build the V1.4.5 compact reference guide without legacy sections."""
+    """Build the current compact reference guide without legacy sections."""
 
     document = Document()
     section = document.sections[0]
@@ -390,7 +390,7 @@ def _build_simplified_manager_manual(spec: dict[str, Any]) -> Document:
 
     sections = [
         (
-            "1 V1.4.5 安装边界",
+            f"1 {spec['tag']} 安装边界",
             [
                 "当前目标。本版本只处理安装简单和 MCP 能直接连上。算法程序化执行已拆分为后续独立项目。",
                 "安装包内容。只保留 49 项 Skills、WorkBuddy 插件清单、最小行为 Hook，以及必要的参考资料和业务脚本。",
@@ -587,7 +587,7 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
 
         sections = [
             (
-                "1 V1.4.5 安装边界",
+                f"1 {spec['tag']} 安装边界",
                 [
                     "本版本只处理安装简单和 MCP 能直接连上。算法程序化执行已拆分为后续独立项目。",
                     "安装包只保留 49 项 Skills、WorkBuddy 插件清单、最小行为 Hook，以及必要的参考资料和业务脚本。",
