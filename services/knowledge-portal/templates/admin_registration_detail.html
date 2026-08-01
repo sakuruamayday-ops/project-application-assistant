@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block title %}注册邀请详情｜知识产权大脑{% endblock %}
+{% block title %}注册权限详情｜知识产权大脑{% endblock %}
 {% block body_class %}app-body{% endblock %}
 {% block content %}
 <main class="standalone-admin">
-  <header class="admin-page-head"><div><p class="eyebrow">Invitation Detail</p><h1>{{ authorization.real_name }}</h1><p>注册邀请、识别信息与账号绑定状态。</p></div><a class="button secondary" href="/portal#members">返回成员管理</a></header>
+  <header class="admin-page-head"><div><p class="eyebrow">Registration Detail</p><h1>{{ authorization.real_name }}</h1><p>自助注册权限、识别信息与账号绑定状态。</p></div><a class="button secondary" href="/portal#members">返回成员管理</a></header>
   <section class="detail-grid">
-    <article><span>邀请编号</span><strong>#{{ authorization.id }}</strong></article>
+    <article><span>授权编号</span><strong>#{{ authorization.id }}</strong></article>
     <article><span>企微手机号后四位</span><strong>{{ authorization.identity_code }}</strong></article>
-    <article><span>邀请状态</span><strong>{{ {'pending':'待接受','registered':'已注册','revoked':'已撤销'}.get(authorization.status, authorization.status) }}</strong></article>
+    <article><span>注册状态</span><strong>{{ {'pending':'待注册','registered':'已注册','revoked':'已撤销'}.get(authorization.status, authorization.status) }}</strong></article>
     <article><span>绑定账号</span><strong>{{ authorization.username or '尚未注册' }}</strong></article>
-    <article><span>邀请时间</span><strong>{{ authorization.created_at_display }}</strong></article>
-    <article><span>邀请有效期</span><strong>{{ authorization.invite_expires_at_display or '—' }}</strong></article>
+    <article><span>授权时间</span><strong>{{ authorization.created_at_display }}</strong></article>
+    <article><span>可选链接有效期</span><strong>{{ authorization.invite_expires_at_display or '—' }}</strong></article>
     <article><span>注册时间</span><strong>{{ authorization.registered_at_display or '—' }}</strong></article>
   </section>
-  {% if authorization.invitation_url %}<section class="panel"><div class="panel-head"><h3>专属邀请链接</h3><span>仅当前待接受邀请有效</span></div><div class="invite-link-cell"><input value="{{ authorization.invitation_url }}" readonly aria-label="{{ authorization.real_name }}的注册邀请链接"><button class="button" type="button" data-copy-value="{{ authorization.invitation_url }}">复制邀请链接</button></div></section>{% endif %}
-  {% if authorization.status == 'pending' and not authorization.invite_active and not authorization.deleted_at %}<section class="panel"><div class="panel-head"><h3>邀请已过期</h3><span>旧链接继续保持无效</span></div><form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/reissue"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">签发新的单次邀请链接</button></form></section>{% endif %}
-  <section class="panel danger-zone"><div><h3>{{ '恢复邀请' if authorization.deleted_at else '邀请管理' }}</h3><p class="muted">删除操作仅移入成员回收站，可恢复，不做永久删除。</p></div><div class="button-row">{% if authorization.deleted_at %}<form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">恢复并重新签发邀请</button></form>{% else %}{% if authorization.status == 'pending' %}<form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/revoke"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button secondary" type="submit">撤销邀请</button></form>{% endif %}<form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/trash" data-confirm="确认将该邀请移入成员回收站？"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button danger" type="submit">删除到回收站</button></form>{% endif %}</div></section>
+  {% if authorization.invitation_url %}<section class="panel"><div class="panel-head"><h3>可选预填链接</h3><span>成员无需链接也可凭姓名和手机后四位注册</span></div><div class="invite-link-cell"><input value="{{ authorization.invitation_url }}" readonly aria-label="{{ authorization.real_name }}的注册预填链接"><button class="button" type="button" data-copy-value="{{ authorization.invitation_url }}">复制预填链接</button></div></section>{% endif %}
+  {% if authorization.status == 'pending' and not authorization.invite_active and not authorization.deleted_at %}<section class="panel"><div class="panel-head"><h3>可选链接已过期</h3><span>自助注册权限仍以名单状态为准</span></div><form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/reissue"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">重新生成预填链接</button></form></section>{% endif %}
+  <section class="panel danger-zone"><div><h3>{{ '恢复注册权限' if authorization.deleted_at else '注册权限管理' }}</h3><p class="muted">删除操作仅移入成员回收站，可恢复，不做永久删除。</p></div><div class="button-row">{% if authorization.deleted_at %}<form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/restore"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button" type="submit">恢复自助注册权限</button></form>{% else %}{% if authorization.status == 'pending' %}<form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/revoke"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button secondary" type="submit">撤销注册权限</button></form>{% endif %}<form method="post" action="/admin/registration-authorizations/{{ authorization.id }}/trash" data-confirm="确认将该注册权限移入成员回收站？"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><button class="button danger" type="submit">删除到回收站</button></form>{% endif %}</div></section>
 </main>
 {% endblock %}

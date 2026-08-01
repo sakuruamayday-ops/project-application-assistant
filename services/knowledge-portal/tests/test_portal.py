@@ -2609,6 +2609,94 @@ def test_registration_requires_company_verification(tmp_path):
         assert authorization["status"] == "registered"
 
 
+def test_internal_member_can_self_register_with_name_and_phone_tail(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username, password_hash, is_admin, created_at) VALUES (?, ?, 1, ?)",
+            ("owner", module.password_hasher.hash("owner-password-123"), now),
+        )
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,created_at,invite_secret,
+                invite_issued_at,invite_expires_at
+            ) VALUES (?,?,'pending',?,?,?,?)
+            """,
+            (
+                "王小明",
+                "0826",
+                now,
+                "x" * 43,
+                now,
+                module.isoformat(module.utc_now() + timedelta(hours=48)),
+            ),
+        )
+        connection.commit()
+
+    registration = {
+        "username": "member-self-service",
+        "real_name": "王小明",
+        "identity_code": "13800000826",
+        "company_name": "共创集团",
+        "password": "member-password-123",
+        "confirm_password": "member-password-123",
+    }
+    with TestClient(module.app) as client:
+        registration_page = client.get("/register")
+        assert registration_page.status_code == 200
+        assert "名单中的内部成员无需等待邀请链接" in registration_page.text
+        assert "核验名单并注册" in registration_page.text
+
+        wrong_tail = client.post(
+            "/register",
+            data={**registration, "identity_code": "9999"},
+            follow_redirects=False,
+        )
+        assert wrong_tail.status_code == 403
+        assert "未获得注册权限" in wrong_tail.text
+
+        accepted = client.post(
+            "/register",
+            data=registration,
+            follow_redirects=False,
+        )
+        assert accepted.status_code == 303
+        assert accepted.headers["location"] == "/login?registered=1"
+
+        duplicate = client.post(
+            "/register",
+            data={**registration, "username": "member-self-service-copy"},
+            follow_redirects=False,
+        )
+        assert duplicate.status_code == 409
+        assert "已完成注册" in duplicate.text
+
+    with closing(module.database()) as connection:
+        user = connection.execute(
+            "SELECT id,real_name FROM users WHERE username=?",
+            ("member-self-service",),
+        ).fetchone()
+        authorization = connection.execute(
+            """
+            SELECT status,user_id,invite_secret,invite_consumed_at
+            FROM registration_authorizations
+            WHERE real_name='王小明' AND identity_code='0826'
+            """
+        ).fetchone()
+        duplicate_count = connection.execute(
+            "SELECT COUNT(*) FROM users WHERE real_name='王小明'"
+        ).fetchone()[0]
+    assert user is not None
+    assert user["real_name"] == "王小明"
+    assert authorization["status"] == "registered"
+    assert authorization["user_id"] == user["id"]
+    assert authorization["invite_secret"] == ""
+    assert authorization["invite_consumed_at"]
+    assert duplicate_count == 1
+
+
 def test_member_import_template_overwrite_and_authorization_controls_access(tmp_path):
     module = load_app(tmp_path)
     with closing(module.database()) as connection:
@@ -2645,16 +2733,8 @@ def test_member_import_template_overwrite_and_authorization_controls_access(tmp_
         )
         assert imported.status_code == 200
         assert "新增1人" in imported.text
-        assert "重新签发1人" in overwritten.text
+        assert "刷新注册权限1人" in overwritten.text
         assert "王小明" in overwritten.text
-        with closing(module.database()) as connection:
-            authorization = connection.execute(
-                """
-                SELECT * FROM registration_authorizations
-                WHERE real_name='王小明' AND identity_code='0826'
-                """
-            ).fetchone()
-            invite_token = module.registration_invite_token(authorization)
 
         registered = client.post(
             "/register",
@@ -2665,7 +2745,6 @@ def test_member_import_template_overwrite_and_authorization_controls_access(tmp_
                 "company_name": "共创集团",
                 "password": "member-password-123",
                 "confirm_password": "member-password-123",
-                "invite_token": invite_token,
             },
             follow_redirects=False,
         )
@@ -2739,7 +2818,8 @@ def test_member_import_template_overwrite_and_authorization_controls_access(tmp_
                 "confirm_password": "member-password-456",
             },
         )
-        assert duplicate_account.status_code == 403
+        assert duplicate_account.status_code == 409
+        assert "已完成注册" in duplicate_account.text
 
 
 def test_signed_invitation_link_prefills_and_registers_authorized_member(tmp_path):
@@ -3274,7 +3354,7 @@ def test_admin_can_search_registration_authorizations(tmp_path):
         assert f'id="invite-{authorization_ids["张三"]}"' not in by_status.text
 
         empty = client.get("/admin/members?invite_query=不存在")
-        assert "未找到匹配的邀请记录" in empty.text
+        assert "未找到匹配的注册授权记录" in empty.text
 
 
 def test_admin_can_open_member_details_and_restore_soft_deleted_records(tmp_path):
@@ -3451,7 +3531,7 @@ def test_admin_can_search_registration_authorizations(tmp_path):
         assert f'/admin/registration-authorizations/{authorization_ids["张三"]}' not in by_status.text
 
         no_match = client.get("/admin/members", params={"invite_query": "不存在"})
-        assert "未找到匹配的邀请记录" in no_match.text
+        assert "未找到匹配的注册授权记录" in no_match.text
 
 
 def test_admin_can_search_registered_members(tmp_path):
@@ -3673,7 +3753,7 @@ def test_admin_can_search_member_trash(tmp_path):
 
         no_match = client.get("/admin/members/trash", params={"trash_query": "不存在"})
         assert "未找到匹配的账号" in no_match.text
-        assert "未找到匹配的邀请" in no_match.text
+        assert "未找到匹配的注册权限" in no_match.text
 
 
 def test_registration_rejects_name_outside_authorized_list(tmp_path):
@@ -3697,7 +3777,7 @@ def test_registration_rejects_name_outside_authorized_list(tmp_path):
             },
         )
         assert response.status_code == 403
-        assert "注册邀请无效、已过期或已使用" in response.text
+        assert "姓名或企微手机号后四位未获得注册权限" in response.text
 
 
 def test_api_rejects_missing_token(tmp_path):
