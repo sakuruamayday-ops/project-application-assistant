@@ -1114,7 +1114,7 @@ def issue_registration_invite(
         (authorization_id,),
     ).fetchone()
     if authorization is None or authorization["user_id"]:
-        raise ValueError("已注册账号不能重新签发注册邀请")
+        raise ValueError("已注册账号不能重新生成注册预填链接")
     return authorization
 
 
@@ -8304,7 +8304,7 @@ def portal_payload(
             if normalized_invite_query:
                 query_key = normalized_invite_query.casefold()
                 status_labels = {
-                    "pending": "待接受",
+                    "pending": "待注册",
                     "registered": "已注册",
                     "revoked": "已撤销",
                 }
@@ -9018,7 +9018,10 @@ def register_page(request: Request, invite: str = ""):
     authorization = registration_authorization_from_invite(invite) if invite else None
     error = None
     if invite and (authorization is None or authorization["status"] != "pending"):
-        error = "注册邀请链接无效、已使用或已撤销，请联系管理员重新发送。"
+        error = (
+            "注册邀请链接无效、已使用或已撤销。"
+            "内部成员仍可填写管理员名单中的真实姓名和手机后四位自助注册。"
+        )
         authorization = None
     return templates.TemplateResponse(
         request,
@@ -9029,7 +9032,7 @@ def register_page(request: Request, invite: str = ""):
             "invited_member": dict(authorization) if authorization else None,
             "registration_invite_hours": REGISTRATION_INVITE_HOURS,
         },
-        status_code=400 if error else 200,
+        status_code=200,
     )
 
 
@@ -9037,14 +9040,13 @@ def register_page(request: Request, invite: str = ""):
 def register_submit(
     request: Request,
     username: Annotated[str, Form(min_length=3, max_length=64)],
-    real_name: Annotated[str, Form(max_length=20)],
-    identity_code: Annotated[str, Form(max_length=24)],
+    real_name: Annotated[str, Form(min_length=2, max_length=20)],
+    identity_code: Annotated[str, Form(min_length=4, max_length=24)],
     company_name: Annotated[str, Form(min_length=2, max_length=100)],
     password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
     confirm_password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
     invite_token: Annotated[str, Form()] = "",
 ):
-    del real_name, identity_code
     normalized_attempt_username = username.strip().lower()[:64] or "[unknown]"
     client_ip = client_ip_from(request)
     with closing(database()) as connection:
@@ -9058,21 +9060,29 @@ def register_submit(
             return registration_error_response(
                 request,
                 status_code=429,
-                error="注册尝试次数过多，请30分钟后使用最新邀请链接重试。",
+                error="注册尝试次数过多，请30分钟后重试。",
             )
     invited_authorization = (
         registration_authorization_from_invite(invite_token) if invite_token else None
     )
-    if invited_authorization is None:
+    if invite_token and invited_authorization is None:
         record_registration_attempt(request, normalized_attempt_username, succeeded=False)
         return registration_error_response(
             request,
-            error="注册邀请无效、已过期或已使用，请联系管理员获取新的专属邀请链接。",
+            error=(
+                "注册邀请无效、已过期或已使用。"
+                "请返回注册页，使用管理员名单中的真实姓名和手机后四位自助注册。"
+            ),
             status_code=403,
         )
     try:
         normalized_username = normalize_account_name(username)
-        normalized_real_name = str(invited_authorization["real_name"])
+        if invited_authorization is not None:
+            normalized_real_name = str(invited_authorization["real_name"])
+            normalized_identity_code = str(invited_authorization["identity_code"])
+        else:
+            normalized_real_name = normalize_real_name(real_name)
+            normalized_identity_code = normalize_identity_code(identity_code)
     except ValueError as exc:
         record_registration_attempt(request, normalized_attempt_username, succeeded=False)
         return registration_error_response(
@@ -9103,9 +9113,23 @@ def register_submit(
     try:
         with closing(database()) as connection:
             connection.execute("BEGIN IMMEDIATE")
-            authorization = registration_authorization_from_invite(
-                invite_token, connection
-            )
+            if invite_token:
+                authorization = registration_authorization_from_invite(
+                    invite_token, connection
+                )
+            else:
+                authorization = connection.execute(
+                    """
+                    SELECT registration_authorizations.*,
+                           users.username AS existing_username
+                    FROM registration_authorizations
+                    LEFT JOIN users ON users.id=registration_authorizations.user_id
+                    WHERE registration_authorizations.real_name=?
+                      AND registration_authorizations.identity_code=?
+                      AND registration_authorizations.deleted_at IS NULL
+                    """,
+                    (normalized_real_name, normalized_identity_code),
+                ).fetchone()
             if authorization is None:
                 connection.rollback()
                 record_registration_attempt(
@@ -9114,10 +9138,33 @@ def register_submit(
                 return registration_error_response(
                     request,
                     error=(
-                        "注册邀请无效、已过期或已使用，"
-                        "请联系管理员获取新的专属邀请链接。"
+                        "姓名或企微手机号后四位未获得注册权限，"
+                        "请联系管理员添加或核对名单。"
                     ),
                     status_code=403,
+                )
+            if authorization["status"] == "revoked":
+                connection.rollback()
+                record_registration_attempt(
+                    request, normalized_attempt_username, succeeded=False
+                )
+                return registration_error_response(
+                    request,
+                    error=(
+                        "姓名或企微手机号后四位未获得注册权限，"
+                        "请联系管理员添加或核对名单。"
+                    ),
+                    status_code=403,
+                )
+            if authorization["status"] != "pending" or authorization["user_id"] is not None:
+                connection.rollback()
+                record_registration_attempt(
+                    request, normalized_attempt_username, succeeded=False
+                )
+                return registration_error_response(
+                    request,
+                    error="该成员身份已完成注册；如需启用或重置密码，请联系管理员。",
+                    status_code=409,
                 )
             cursor = connection.execute(
                 """
@@ -9141,7 +9188,7 @@ def register_submit(
                 SET status='registered',user_id=?,registered_at=?,
                     invite_consumed_at=?,invite_secret='',revoked_at=NULL
                 WHERE id=? AND status='pending' AND user_id IS NULL
-                  AND invite_consumed_at IS NULL
+                  AND invite_consumed_at IS NULL AND deleted_at IS NULL
                 """,
                 (
                     new_user_id,
@@ -9158,17 +9205,17 @@ def register_submit(
                 return registration_error_response(
                     request,
                     error=(
-                        "注册邀请无效、已过期或已使用，"
-                        "请联系管理员获取新的专属邀请链接。"
+                        "该成员注册权限已被使用或状态已变化，"
+                        "请联系管理员核对名单。"
                     ),
-                    status_code=403,
+                    status_code=409,
                 )
             connection.commit()
     except sqlite3.IntegrityError:
         record_registration_attempt(request, normalized_attempt_username, succeeded=False)
         return registration_error_response(
             request,
-            error="无法完成注册，请更换英文账号或联系管理员核对邀请。",
+            error="无法完成注册，请更换英文账号或联系管理员核对名单。",
             status_code=409,
             invite_token=invite_token,
             invited_authorization=invited_authorization,
@@ -9924,8 +9971,7 @@ def create_registration_authorization(
                 raise HTTPException(
                     status_code=409,
                     detail=(
-                        "该成员身份已绑定账号。请在账号详情中直接启用或由管理员重置密码，"
-                        "不能重新签发注册邀请。"
+                        "该成员身份已绑定账号。请在账号详情中直接启用或由管理员重置密码。"
                     ),
                 )
             issue_registration_invite(
@@ -10101,7 +10147,7 @@ async def import_registration_authorizations(
             request,
             user,
             message=(
-                f"名单导入完成：新增{inserted}人，重新签发{restored + overwritten}人，"
+                f"名单导入完成：新增{inserted}人，刷新注册权限{restored + overwritten}人，"
                 f"跳过已绑定账号{linked}人。已绑定账号请直接启用或由管理员重置密码。"
             ),
             active_page="members",
@@ -10157,7 +10203,7 @@ def reissue_registration_authorization(
         if authorization is None:
             raise HTTPException(
                 status_code=409,
-                detail="只有尚未绑定账号的成员可以重新签发邀请。",
+                detail="只有尚未绑定账号的成员可以重新生成预填链接。",
             )
         issue_registration_invite(
             connection,
@@ -10189,7 +10235,7 @@ def registration_authorization_detail(
             (authorization_id,),
         ).fetchone()
     if authorization is None:
-        raise HTTPException(status_code=404, detail="注册邀请不存在")
+        raise HTTPException(status_code=404, detail="注册权限不存在")
     invitation_url = None
     if (
         not authorization["deleted_at"]
@@ -10235,7 +10281,7 @@ def trash_registration_authorization(
             (authorization_id,),
         ).fetchone()
         if authorization is None:
-            raise HTTPException(status_code=404, detail="注册邀请不存在")
+            raise HTTPException(status_code=404, detail="注册权限不存在")
         connection.execute(
             """
             UPDATE registration_authorizations
