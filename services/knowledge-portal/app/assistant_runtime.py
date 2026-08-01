@@ -76,9 +76,10 @@ def quick_guide_answer(question: str, public_endpoint: str) -> tuple[str, str] |
         return (
             "普通成员无需填写 API、Token 或 MCP 请求头。\n\n"
             "一、打开网站的“连接我的 Agent”页面，点击第一步“复制给 Agent”，把审查说明粘贴到当前本地 Agent 对话框。\n"
-            "二、核对后回到网站点击第二步“我已审查，复制安装确认”，再粘贴给同一个 Agent。自动两步流程无需提前手工下载插件包。\n"
-            "三、Agent 会自动识别 macOS 或 Windows 和当前宿主，下载安装包并完成设备公钥登记、系统安全存储、MCP 配置和连接验证。\n"
-            "四、让当前 Agent 检查知识库连接状态；实际调用知识库状态工具成功后，首次配置才结束。\n\n"
+            "二、核对后回到网站点击第二步“我已审查，复制安装指令”，再粘贴给同一个 Agent。Agent 会识别 macOS 或 Windows 和当前 WorkBuddy 宿主。\n"
+            "三、Agent 安装并加载插件后，回到网站点击第三步“复制知识库绑定指令”，再粘贴给同一个 Agent。自动三步流程无需提前手工下载插件包。\n"
+            "四、Agent 只将一次性 bootstrap_url 作为本地 jiaotang_kb_setup 工具参数调用一次，完成设备公钥登记、系统安全存储和 MCP 连接。\n"
+            "五、让当前 Agent 检查知识库连接状态；实际调用知识库状态工具成功后，首次配置才结束。\n\n"
             "配置成功后直接使用 jiaotang-kb 工具。普通成员同一时间只能绑定一台设备；换机时先在门户点击“更换绑定设备”，再把新的配置发送给新设备 Agent。管理员账号不执行单设备限制，可继续使用管理员接入配置。",
             "first-run-configuration",
         )
@@ -157,8 +158,64 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
         {
             "type": "function",
             "function": {
+                "name": "knowledge_case_pack",
+                "description": "按项目、年度、行业、企业规模和章节读取成套历史案例及附件关系；案例事实不得复制给当前客户。",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "project_id": {"type": "string"},
+                        "query": {"type": "string"},
+                        "year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+                        "industry": {"type": "string"},
+                        "enterprise_scale": {"type": "string"},
+                        "section": {"type": "string"},
+                        "limit": {"type": "integer", "minimum": 1, "maximum": 10},
+                    },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "authoritative_list_search",
+                "description": (
+                    "优先查询国家小巨人、省级专精特新中小企业和三首的权威结构化事实专表，"
+                    "返回完整命中总数、官方匹配数、来源等级与可分页结果。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "list_type": {
+                            "type": "string",
+                            "enum": [
+                                "national_small_giant",
+                                "provincial_specialized_sme",
+                                "three_first",
+                            ],
+                        },
+                        "enterprise_name": {"type": "string"},
+                        "product_name": {"type": "string"},
+                        "project_name": {"type": "string"},
+                        "year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+                        "batch": {"type": "string"},
+                        "region": {"type": "string"},
+                        "status": {"type": "string"},
+                        "verified_only": {"type": "boolean"},
+                        "offset": {"type": "integer", "minimum": 0, "maximum": 1000000},
+                        "limit": {"type": "integer", "minimum": 1, "maximum": 200},
+                    },
+                    "required": ["list_type"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "public_list_search",
-                "description": "按企业、标准项目、年度、批次或地区查询政府公示与认定名单实体。",
+                "description": (
+                    "查询通用政府名单实体。国家小巨人、省级专精特新中小企业和三首必须优先使用"
+                    " authoritative_list_search；命中专表项目时服务端也会自动安全路由。"
+                ),
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -167,6 +224,7 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                         "year": {"type": "integer", "minimum": 2000, "maximum": 2100},
                         "batch": {"type": "string"},
                         "region": {"type": "string"},
+                        "offset": {"type": "integer", "minimum": 0, "maximum": 1000000},
                         "limit": {"type": "integer", "minimum": 1, "maximum": 50},
                     },
                 },

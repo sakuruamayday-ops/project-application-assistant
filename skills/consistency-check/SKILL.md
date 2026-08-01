@@ -46,3 +46,5 @@ description: 在政府项目材料提交前执行括号、数据、事实、四�
 按位置列出原文、问题、证据、影响和建议修改。规则见
 `references/consistency-gates.md`；纯文本初筛运行
 `scripts/scan_formal_material.py`，脚本通过不等于专业检查通过。
+
+增加案例串用检查：正文中的企业名称、数字、客户、专利和技术指标必须能回溯到当前企业事实台账；仅出现在 `case_reference` 或其他案例包中的内容一律阻断终稿。

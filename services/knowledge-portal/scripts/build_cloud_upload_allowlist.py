@@ -99,6 +99,8 @@ def main() -> None:
             decision = "metadata_sidecar"
         elif layer == "90_受限资料" or item["upload_action"] == "restricted_excluded":
             decision = "restricted_excluded"
+        elif item["sensitivity"] in {"confidential", "restricted"}:
+            decision = "confidential_excluded"
         elif high_hits:
             decision = "blocked_high_risk_dlp"
         elif extraction_status in NO_SEMANTIC_TEXT_STATUSES:

@@ -398,7 +398,7 @@ def test_repository_policy_baselines_are_compiled_into_formal_rule_sources():
     assert len(baseline_ids) == 21
     assert baseline_ids <= source_ids
     assert source_ids == formal_ids
-    assert len(formal_ids) == 29
+    assert len(formal_ids) == 30
     assert all(
         str(document.get("official_url") or "").startswith("https://")
         for item in baseline_registry["baselines"]

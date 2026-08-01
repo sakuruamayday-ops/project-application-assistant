@@ -621,6 +621,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 text=True,
                 env={
                     **os.environ,
+                    "JIAOTANG_ENABLE_TEST_CREDENTIAL_FILE": "1",
                     "JIAOTANG_TEST_CREDENTIAL_FILE": str(credential_file),
                     "CODEBUDDY_PLUGIN_DATA": str(plugin_data),
                 },

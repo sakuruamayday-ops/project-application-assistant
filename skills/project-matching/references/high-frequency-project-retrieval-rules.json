@@ -150,9 +150,25 @@
     {
       "id": "future-factory",
       "aliases": ["未来工厂"],
-      "targets": ["浙江省未来工厂"],
-      "allowed_title_terms": ["未来工厂"],
+      "targets": ["杭州市AI工厂", "浙江省未来工厂"],
+      "selection_required": true,
+      "selection_prompt": "请选择杭州市AI工厂，还是浙江省未来工厂；两个项目属于不同层级。",
+      "selectors": {
+        "杭州市": "杭州市AI工厂",
+        "杭州": "杭州市AI工厂",
+        "浙江省": "浙江省未来工厂",
+        "浙江": "浙江省未来工厂",
+        "省级": "浙江省未来工厂"
+      },
+      "allowed_title_terms": ["AI工厂", "未来工厂"],
       "excluded_title_terms": ["智能工厂", "数字化车间", "技术改造"]
+    },
+    {
+      "id": "hangzhou-ai-factory",
+      "aliases": ["AI工厂", "杭州市AI工厂", "杭州AI工厂"],
+      "targets": ["杭州市AI工厂"],
+      "allowed_title_terms": ["杭州市AI工厂", "AI工厂"],
+      "excluded_title_terms": ["浙江省未来工厂", "智能工厂", "数字化车间"]
     },
     {
       "id": "intelligent-factory",

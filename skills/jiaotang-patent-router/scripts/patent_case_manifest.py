@@ -285,6 +285,20 @@ def validate_manifest(
             }
         )
 
+    recorded_contract = manifest.get("contract")
+    recorded_contract_id = (
+        recorded_contract.get("contract_id")
+        if isinstance(recorded_contract, dict)
+        else None
+    )
+    if recorded_contract_id != contract.get("contract_id"):
+        add(
+            "CONTRACT_VERSION_MISMATCH",
+            "manifest",
+            f"案卷使用的交付契约为{recorded_contract_id or '未记录'}，当前要求为{contract.get('contract_id')}。",
+            "保留旧案卷快照，按当前契约新建案卷清单，生成技术特征证据图并重建下游文件。",
+        )
+
     if (
         manifest.get("anonymized_test_fixture")
         and not specification.get("allow_anonymized_test_fixture")

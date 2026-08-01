@@ -107,6 +107,12 @@ from app.policy_thresholds import (
 from app.policy_time import enrich_policy_time_context
 from app.policy_transition import resolve_policy_transition
 from app.three_first_routing import plan_three_first_analysis
+from app.authoritative_list_facts import (
+    AuthorityTableUnavailable,
+    infer_authoritative_list_type,
+    query_authoritative_list_facts,
+)
+from app.knowledge_case_packs import case_pack_capability, query_case_packs
 
 # Production may supply this private extension as a server-managed overlay.
 try:
@@ -736,7 +742,24 @@ class PublicListSearchRequest(BaseModel):
     year: int | None = Field(default=None, ge=2000, le=2100)
     batch: str = Field(default="", max_length=50)
     region: str = Field(default="", max_length=100)
+    offset: int = Field(default=0, ge=0, le=1_000_000)
     limit: int = Field(default=20, ge=1, le=50)
+
+
+class AuthoritativeListSearchRequest(BaseModel):
+    list_type: str = Field(
+        pattern="^(national_small_giant|provincial_specialized_sme|three_first)$"
+    )
+    enterprise_name: str = Field(default="", max_length=200)
+    product_name: str = Field(default="", max_length=300)
+    project_name: str = Field(default="", max_length=200)
+    year: int | None = Field(default=None, ge=2000, le=2100)
+    batch: str = Field(default="", max_length=50)
+    region: str = Field(default="", max_length=100)
+    status: str = Field(default="", max_length=100)
+    verified_only: bool = False
+    offset: int = Field(default=0, ge=0, le=1_000_000)
+    limit: int = Field(default=50, ge=1, le=200)
 
 
 class PolicySearchRequest(BaseModel):
@@ -1425,6 +1448,31 @@ def sqlite_table_exists(connection: sqlite3.Connection, table_name: str) -> bool
     )
 
 
+CASE_PACK_DOCUMENT_FIELDS = (
+    "project_id",
+    "case_pack_id",
+    "document_type",
+    "evidence_type",
+    "upload_action",
+    "verification_status",
+)
+
+
+def supported_case_pack_document_fields(
+    connection: sqlite3.Connection,
+) -> tuple[str, ...]:
+    """Keep administrator mutations compatible with a read-only V1 index.
+
+    V1.4.4 rebuilds production indexes with all case-pack fields.  During the
+    rolling upgrade, snapshots and tests can still use the previous schema;
+    those copies must remain editable without pretending case packs exist.
+    """
+    columns = {
+        str(row[1]) for row in connection.execute("PRAGMA table_info(documents)")
+    }
+    return tuple(field for field in CASE_PACK_DOCUMENT_FIELDS if field in columns)
+
+
 def canonical_document_clause(
     connection: sqlite3.Connection,
     alias: str = "documents",
@@ -1803,20 +1851,44 @@ def save_upload(upload: UploadFile, directory: Path) -> tuple[Path, str, int]:
 
 def knowledge_index_stats() -> dict[str, object]:
     if not CONTENT_DATABASE_PATH.is_file():
-        return {"connected": False, "documents": 0, "characters": 0, "updated_at": None}
+        return {
+            "connected": False,
+            "documents": 0,
+            "characters": 0,
+            "updated_at": None,
+            "built_at": None,
+            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+            "knowledge_schema_version": "1.0",
+            "case_pack_capability": False,
+            "case_pack_count": 0,
+        }
     try:
         with closing(content_database()) as connection:
             row = connection.execute(
                 "SELECT COUNT(*) AS documents, COALESCE(SUM(length(content)), 0) AS characters, MAX(updated_at) AS updated_at FROM documents"
             ).fetchone()
+            capability = case_pack_capability(connection)
         return {
             "connected": True,
             "documents": int(row["documents"]),
             "characters": int(row["characters"]),
             "updated_at": row["updated_at"],
+            "built_at": row["updated_at"],
+            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+            **capability,
         }
     except (sqlite3.Error, HTTPException):
-        return {"connected": False, "documents": 0, "characters": 0, "updated_at": None}
+        return {
+            "connected": False,
+            "documents": 0,
+            "characters": 0,
+            "updated_at": None,
+            "built_at": None,
+            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+            "knowledge_schema_version": "1.0",
+            "case_pack_capability": False,
+            "case_pack_count": 0,
+        }
 
 
 def snapshot_content_database(job_id: int | str) -> Path:
@@ -1956,35 +2028,29 @@ def add_document_to_index(
             metadata = derive_document_metadata(
                 original_name, source, text, document_role
             )
+            base_values = {
+                "source_key": digest,
+                "title": original_name,
+                "content": text,
+                "source": source,
+                "cloud_path": source,
+                "document_role": document_role,
+                "sensitivity": "internal",
+                "sha256": digest,
+                "updated_at": updated_at,
+                **metadata,
+            }
+            columns = (
+                "source_key", "title", "content", "source", "cloud_path",
+                "document_role", "sensitivity", "sha256", "updated_at",
+                "canonical_project_name", "region", "document_stage",
+                "validity_status", "policy_year", "batch", "replacement_title",
+                "replacement_basis", "replacement_url",
+                *supported_case_pack_document_fields(connection),
+            )
             cursor = connection.execute(
-                """
-                INSERT INTO documents(
-                    source_key,title,content,source,cloud_path,document_role,
-                    sensitivity,sha256,updated_at,canonical_project_name,region,
-                    document_stage,validity_status,policy_year,batch,replacement_title,
-                    replacement_basis,replacement_url
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                """,
-                (
-                    digest,
-                    original_name,
-                    text,
-                    source,
-                    source,
-                    document_role,
-                    "internal",
-                    digest,
-                    updated_at,
-                    metadata["canonical_project_name"],
-                    metadata["region"],
-                    metadata["document_stage"],
-                    metadata["validity_status"],
-                    metadata["policy_year"],
-                    metadata["batch"],
-                    metadata["replacement_title"],
-                    metadata["replacement_basis"],
-                    metadata["replacement_url"],
-                ),
+                f"INSERT INTO documents({','.join(columns)}) VALUES ({','.join('?' for _ in columns)})",
+                tuple(base_values[column] for column in columns),
             )
             document_id = int(cursor.lastrowid)
             connection.execute(
@@ -2387,8 +2453,8 @@ def project_algorithm_catalog_payload(
             else "近7日暂无可识别项目查询，暂不人为指定优先级"
             if routing_only
             else (
-                "29个编译单元均已形成正式阈值规则包，"
-                "前台合并展示28个主项目"
+                "30个编译单元均已形成正式阈值规则包，"
+                "前台合并展示29个主项目"
             )
         ),
         "items": visible_items,
@@ -3205,16 +3271,71 @@ def _normalized_project_filter(
     parameters.append(f"%{escaped}%")
 
 
+def search_authoritative_list_facts(
+    list_type: str,
+    enterprise_name: str = "",
+    product_name: str = "",
+    project_name: str = "",
+    year: int | None = None,
+    batch: str = "",
+    region: str = "",
+    status: str = "",
+    verified_only: bool = False,
+    offset: int = 0,
+    limit: int = 50,
+) -> dict[str, object]:
+    try:
+        with closing(content_database()) as connection:
+            return query_authoritative_list_facts(
+                connection,
+                list_type=list_type,
+                enterprise_name=enterprise_name,
+                product_name=product_name,
+                project_name=project_name,
+                year=year,
+                batch=batch,
+                region=region,
+                status=status,
+                verified_only=verified_only,
+                offset=offset,
+                limit=limit,
+            )
+    except AuthorityTableUnavailable as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
 def search_public_list_entities(
     enterprise_name: str = "",
     project_name: str = "",
     year: int | None = None,
     batch: str = "",
     region: str = "",
+    offset: int = 0,
     limit: int = 20,
 ) -> dict[str, object]:
     if not any((enterprise_name.strip(), project_name.strip(), year, batch.strip(), region.strip())):
         raise HTTPException(status_code=422, detail="名单查询至少需要一个筛选条件")
+    authoritative_type = infer_authoritative_list_type(project_name)
+    if authoritative_type:
+        authoritative_project_name = project_name if authoritative_type == "three_first" else ""
+        if re.sub(r"[\s（）()]+", "", authoritative_project_name) in {"三首", "三首项目"}:
+            authoritative_project_name = ""
+        result = search_authoritative_list_facts(
+            authoritative_type,
+            enterprise_name=enterprise_name,
+            project_name=authoritative_project_name,
+            year=year,
+            batch=batch,
+            region=region,
+            offset=offset,
+            limit=limit,
+        )
+        result["legacy_route"] = {
+            "requested_tool": "public_list_search",
+            "effective_tool": "authoritative_list_search",
+            "reason": "权威名单项目强制使用事实专表，禁止通用文档实体降级覆盖。",
+        }
+        return result
     conditions = ["1 = 1"]
     parameters: list[object] = []
     _like_filter("e.enterprise_name", enterprise_name, conditions, parameters)
@@ -3226,6 +3347,7 @@ def search_public_list_entities(
     )
     _like_filter("e.batch", batch, conditions, parameters)
     _like_filter("e.region", region, conditions, parameters)
+    bounded_offset = max(0, min(int(offset), 1_000_000))
     bounded_limit = max(1, min(int(limit), 50))
     with closing(content_database()) as connection:
         canonical_clause = canonical_document_clause(connection, "d")
@@ -3250,6 +3372,18 @@ def search_public_list_entities(
             if has_entity_years
             else "'' AS matched_years,"
         )
+        total = int(
+            connection.execute(
+                f"""
+                SELECT COUNT(*)
+                FROM public_list_entities e
+                JOIN documents d ON d.id=e.document_id
+                WHERE {' AND '.join(conditions)}
+                {canonical_clause}
+                """,
+                parameters,
+            ).fetchone()[0]
+        )
         try:
             rows = connection.execute(
                 f"""
@@ -3264,16 +3398,17 @@ def search_public_list_entities(
                 ORDER BY COALESCE(e.policy_year, 0) DESC,
                          CASE e.confidence WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
                          e.enterprise_name
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """.format(
                     conditions=" AND ".join(conditions),
                     matched_years_select=matched_years_select,
                     canonical_clause=canonical_clause,
                 ),
-                [*parameters, bounded_limit],
+                [*parameters, bounded_limit, bounded_offset],
             ).fetchall()
         except sqlite3.OperationalError as error:
             raise HTTPException(status_code=503, detail="名单实体索引尚未重建") from error
+    has_more = bounded_offset + len(rows) < total
     return {
         "filters": {
             "enterprise_name": enterprise_name.strip(),
@@ -3281,6 +3416,16 @@ def search_public_list_entities(
             "year": year,
             "batch": batch.strip(),
             "region": region.strip(),
+        },
+        "total": total,
+        "pagination": {
+            "offset": bounded_offset,
+            "limit": bounded_limit,
+            "returned": len(rows),
+            "total": total,
+            "has_more": has_more,
+            "next_offset": bounded_offset + len(rows) if has_more else None,
+            "is_truncated": has_more,
         },
         "results": [dict(row) for row in rows],
     }
@@ -3985,19 +4130,15 @@ def create_project_alias_correction(
             )
             if metadata["canonical_project_name"] != payload.canonical_project_name.strip():
                 continue
+            metadata_fields = (
+                "canonical_project_name", "region", "document_stage",
+                "validity_status", "policy_year", "batch", "replacement_title",
+                "replacement_basis", "replacement_url",
+                *supported_case_pack_document_fields(connection),
+            )
             connection.execute(
-                """
-                UPDATE documents SET canonical_project_name=?,region=?,document_stage=?,
-                    validity_status=?,policy_year=?,batch=?,replacement_title=?,
-                    replacement_basis=?,replacement_url=? WHERE id=?
-                """,
-                (
-                    metadata["canonical_project_name"], metadata["region"],
-                    metadata["document_stage"], metadata["validity_status"],
-                    metadata["policy_year"], metadata["batch"],
-                    metadata["replacement_title"], metadata["replacement_basis"],
-                    metadata["replacement_url"], int(document["id"]),
-                ),
+                f"UPDATE documents SET {','.join(f'{field}=?' for field in metadata_fields)} WHERE id=?",
+                (*tuple(metadata[field] for field in metadata_fields), int(document["id"])),
             )
             connection.execute(
                 """
@@ -5187,6 +5328,39 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
         tool_document = dict(document)
         tool_document["content"] = str(tool_document["content"])[:12000]
         return tool_document, [document]
+    if name == "knowledge_case_pack":
+        with closing(content_database()) as connection:
+            result = query_case_packs(
+                connection,
+                project_id=str(arguments.get("project_id") or "")[:100],
+                query=str(arguments.get("query") or "")[:300],
+                year=int(arguments["year"]) if arguments.get("year") is not None else None,
+                industry=str(arguments.get("industry") or "")[:100],
+                enterprise_scale=str(arguments.get("enterprise_scale") or "")[:100],
+                section=str(arguments.get("section") or "")[:100],
+                limit=max(1, min(int(arguments.get("limit") or 5), 10)),
+            )
+        sources = [
+            dict(document)
+            for pack in result.get("results", [])
+            for document in pack.get("documents", [])
+        ]
+        return result, sources
+    if name == "authoritative_list_search":
+        result = search_authoritative_list_facts(
+            list_type=str(arguments.get("list_type") or ""),
+            enterprise_name=str(arguments.get("enterprise_name") or "")[:200],
+            product_name=str(arguments.get("product_name") or "")[:300],
+            project_name=str(arguments.get("project_name") or "")[:200],
+            year=int(arguments["year"]) if arguments.get("year") is not None else None,
+            batch=str(arguments.get("batch") or "")[:50],
+            region=str(arguments.get("region") or "")[:100],
+            status=str(arguments.get("status") or "")[:100],
+            verified_only=bool(arguments.get("verified_only") or False),
+            offset=max(0, min(int(arguments.get("offset") or 0), 1_000_000)),
+            limit=max(1, min(int(arguments.get("limit") or 50), 200)),
+        )
+        return result, [dict(item) for item in result["results"]]
     if name == "public_list_search":
         result = search_public_list_entities(
             enterprise_name=str(arguments.get("enterprise_name") or "")[:200],
@@ -5194,6 +5368,7 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             year=int(arguments["year"]) if arguments.get("year") is not None else None,
             batch=str(arguments.get("batch") or "")[:50],
             region=str(arguments.get("region") or "")[:100],
+            offset=max(0, min(int(arguments.get("offset") or 0), 1_000_000)),
             limit=max(1, min(int(arguments.get("limit") or 20), 50)),
         )
         sources = [dict(item) for item in result["results"]]
@@ -5829,6 +6004,7 @@ def restore_document_index_from_trash(payload: dict[str, object], trash_id: int)
                 "canonical_project_name", "region", "document_stage",
                 "validity_status", "policy_year", "batch", "replacement_title",
                 "replacement_basis", "replacement_url",
+                *supported_case_pack_document_fields(connection),
             )
             values = {
                 **payload,
@@ -5908,32 +6084,24 @@ def update_document_index(
                     f"INSERT INTO {table}({table},rowid,title,content,source,document_role) VALUES ('delete',?,?,?,?,?)",
                     (document_id, old["title"], old["content"], old["source"], old["document_role"]),
                 )
+            values = {
+                "title": title,
+                "content": content,
+                "source": source,
+                "document_role": document_role,
+                "updated_at": isoformat(utc_now()),
+                **metadata,
+            }
+            update_fields = (
+                "title", "content", "source", "document_role", "updated_at",
+                "canonical_project_name", "region", "document_stage",
+                "validity_status", "policy_year", "batch", "replacement_title",
+                "replacement_basis", "replacement_url",
+                *supported_case_pack_document_fields(connection),
+            )
             connection.execute(
-                """
-                UPDATE documents
-                SET title = ?, content = ?, source = ?, document_role = ?, updated_at = ?,
-                    canonical_project_name = ?, region = ?, document_stage = ?,
-                    validity_status = ?, policy_year = ?, batch = ?, replacement_title = ?,
-                    replacement_basis = ?, replacement_url = ?
-                WHERE id = ?
-                """,
-                (
-                    title,
-                    content,
-                    source,
-                    document_role,
-                    isoformat(utc_now()),
-                    metadata["canonical_project_name"],
-                    metadata["region"],
-                    metadata["document_stage"],
-                    metadata["validity_status"],
-                    metadata["policy_year"],
-                    metadata["batch"],
-                    metadata["replacement_title"],
-                    metadata["replacement_basis"],
-                    metadata["replacement_url"],
-                    document_id,
-                ),
+                f"UPDATE documents SET {','.join(f'{field}=?' for field in update_fields)} WHERE id=?",
+                (*tuple(values[field] for field in update_fields), document_id),
             )
             for table in ("documents_fts", "documents_fts_trigram"):
                 connection.execute(
@@ -6079,6 +6247,8 @@ def init_database() -> None:
                 expires_at TEXT NOT NULL,
                 confirmed_at TEXT,
                 confirmed_ip TEXT NOT NULL DEFAULT '',
+                binding_authorized_at TEXT,
+                binding_authorized_ip TEXT NOT NULL DEFAULT '',
                 registered_at TEXT,
                 registered_key_id TEXT,
                 registered_ip TEXT NOT NULL DEFAULT '',
@@ -6611,6 +6781,8 @@ def init_database() -> None:
         enrollment_migrations = {
             "confirmed_at": "TEXT",
             "confirmed_ip": "TEXT NOT NULL DEFAULT ''",
+            "binding_authorized_at": "TEXT",
+            "binding_authorized_ip": "TEXT NOT NULL DEFAULT ''",
             "registered_at": "TEXT",
             "registered_key_id": "TEXT",
             "registered_ip": "TEXT NOT NULL DEFAULT ''",
@@ -7457,8 +7629,10 @@ def undo_user_preferences(user_id: int) -> dict[str, object]:
 
 MCP_SEARCH_TOOLS = {
     "knowledge_search",
+    "knowledge_case_pack",
     "policy_search",
     "public_list_search",
+    "authoritative_list_search",
     "project_catalog_match",
     "three_first_analysis",
 }
@@ -9638,6 +9812,23 @@ def cockpit_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_
 @app.get("/access", response_class=HTMLResponse)
 def access_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
     return portal_page_response(request, user, "access")
+
+
+@app.get("/mcp-guide", response_class=HTMLResponse)
+def mcp_guide_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    response = templates.TemplateResponse(
+        request,
+        "mcp_guide.html",
+        {
+            "user": user,
+            "mcp_url": f"{str(request.base_url).rstrip('/')}/mcp/",
+        },
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @app.get("/skills", response_class=HTMLResponse)
@@ -12112,15 +12303,32 @@ def build_agent_install_prompt(install_protocol_url: str) -> str:
         "列出的固定步骤。安全解压后必须先把完整 jiaotang 市场持久保存到当前 WorkBuddy 实际使用的"
         "用户插件市场目录，再从该持久目录注册；不得直接注册临时下载或临时解压目录，清理时也不得"
         "删除已注册的 jiaotang 市场。`jiaotang-kb` 的 MCP 声明位于签名插件根目录 .mcp.json，"
-        "plugin.json 只保留相对路径声明；不要另行创建或改写用户级、项目级 mcp.json 或 .mcp.json。"
-        "bootstrap_url、安装码、API Token 与私钥均为敏感信息，"
-        "不要在普通回复中复述，不要写入 settings.json。插件首次加载时如仅枚举出 "
-        "`jiaotang_kb_setup` 和 `jiaotang_kb_setup_status`，应把 bootstrap_url 仅作为本地 "
-        "`jiaotang_kb_setup` 工具参数调用一次；工具结果不得回显该地址。绑定完成后重新执行 "
-        "`tools/list`，必须看到 `knowledge_search`、`knowledge_document` 和 "
-        "`knowledge_service_status` 等远端工具，再实际调用 `knowledge_service_status` 或任一只读检索。"
-        "通用资源读取器返回 `no connector owns resource URI` 不能作为连接成功证据。只有门户"
-        "确认设备登记、凭据保存、首次验签和 MCP 连接四个阶段全部完成，且运行时连接检查通过后，"
+        "plugin.json 只保留相对路径声明。先让宿主直接加载签名声明；如 WorkBuddy 5.3.x 日志明确显示"
+        " `command=${CODEBUDDY_PLUGIN_ROOT}/bin/run-node`、`runtimeInjected=false` 或因字面量占位符导致 "
+        "MCP -32000，允许执行一次限定兼容修复：仅合并用户级 ~/.workbuddy/mcp.json 的 `jiaotang-kb` 条目，"
+        "command 与 args 必须是指向已验签持久插件目录中 run-node 和 jiaotang-agent.mjs 的绝对路径，"
+        "保留其他用户 MCP 条目，不改签名插件文件，不写项目级或全局配置。"
+        "本步只安装并启用插件，不执行设备绑定。bootstrap_url、安装码、API Token 与私钥"
+        "均为敏感信息，不要在普通回复中复述，不要写入 settings.json。插件首次加载后，"
+        "如枚举出 `jiaotang_kb_setup` 和 `jiaotang_kb_setup_status`，即可报告安装已完成，然后停止并提示用户"
+        "回到门户点击第三步“复制知识库绑定指令”。不得从安装协议中自行推导、提取或调用 bootstrap_url。"
+    )
+
+
+def build_agent_binding_prompt(bootstrap_url: str) -> str:
+    binding_arguments = json.dumps(
+        {"bootstrap_url": bootstrap_url},
+        ensure_ascii=False,
+    )
+    return (
+        "插件安装完成，现在执行第三步知识库绑定。请只调用一次本地 "
+        "`jiaotang_kb_setup` 工具，将下列内容原样作为工具参数：\n\n"
+        f"{binding_arguments}\n\n"
+        "bootstrap_url 仅可作为本次工具参数传入，不要在回复中复述，不要记录到日志或写入普通配置。"
+        "绑定完成后重新执行 `tools/list`，确认 `knowledge_search`、`knowledge_document` 和 "
+        "`knowledge_service_status` 已枚举，再实际调用 `knowledge_service_status` 或任一只读检索完成验收。"
+        "通用资源读取器返回 `no connector owns resource URI` 不能作为连接成功证据。"
+        "只有门户的设备登记、凭据保存、首次验签和 MCP 连接四个阶段全部完成，且只读工具调用成功后，"
         "才能报告首次配置完成，并提示用户输入“帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills”。"
     )
 
@@ -12230,12 +12438,13 @@ def pinned_agent_install_artifact(
     enrollment_code: str,
     *,
     require_confirmed: bool = False,
+    require_binding_authorized: bool = False,
 ) -> tuple[dict[str, object], dict[str, object]]:
     now = isoformat(utc_now())
     with closing(database()) as connection:
         enrollment = connection.execute(
             """
-            SELECT id,expires_at,consumed_at,confirmed_at,
+            SELECT id,expires_at,consumed_at,confirmed_at,binding_authorized_at,
                    workbuddy_version,workbuddy_file_name,
                    workbuddy_file_path,workbuddy_sha256
             FROM agent_enrollment_codes
@@ -12255,6 +12464,9 @@ def pinned_agent_install_artifact(
         if require_confirmed and not enrollment["confirmed_at"]:
             connection.rollback()
             raise HTTPException(status_code=403, detail="安装说明尚未由用户确认，不能下载插件包。")
+        if require_binding_authorized and not enrollment["binding_authorized_at"]:
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="请先回到门户执行第三步知识库绑定授权。")
 
         pinned_fields = (
             enrollment["workbuddy_file_name"],
@@ -12468,10 +12680,6 @@ def confirm_agent_bootstrap_code(
         f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
         f"?platform={platform_name}"
     )
-    bootstrap_url = (
-        f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
-        f"?platform={platform_name}"
-    )
     _, artifact = pinned_agent_install_artifact(
         enrollment_code,
         require_confirmed=True,
@@ -12484,7 +12692,7 @@ def confirm_agent_bootstrap_code(
         {
             "phase": "install_authorized",
             "prompt": build_agent_install_prompt(install_protocol_url),
-            "manual_configuration": {
+            "workbuddy_configuration": {
                 "platform": platform_name,
                 "plugin_download_url": plugin_download_url,
                 "plugin_sha256": artifact["sha256"],
@@ -12492,9 +12700,75 @@ def confirm_agent_bootstrap_code(
                 "setup_tool": "jiaotang_kb_setup",
                 "configuration_transport": "local_mcp_tool_argument",
                 "configuration_key": "bootstrap_url",
-                "bootstrap_url": bootstrap_url,
             },
             "expires_at": enrollment["expires_at"],
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.post("/agent-bootstrap-codes/binding")
+def create_agent_binding_prompt(
+    request: Request,
+    enrollment_code: Annotated[str, Form(min_length=20, max_length=200)],
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    now_value = utc_now()
+    refreshed_expires_at = isoformat(
+        now_value + timedelta(minutes=AGENT_BOOTSTRAP_MINUTES)
+    )
+    authorized_at = isoformat(now_value)
+    client_ip = client_ip_from(request)
+    with closing(database()) as connection:
+        enrollment = connection.execute(
+            """
+            SELECT id,consumed_at,confirmed_at
+            FROM agent_enrollment_codes
+            WHERE code_hash=? AND user_id=?
+            """,
+            (token_hash(enrollment_code), int(user["id"])),
+        ).fetchone()
+        if enrollment is None:
+            raise HTTPException(status_code=404, detail="安装审查记录不存在，请重新生成")
+        if enrollment["consumed_at"]:
+            raise HTTPException(status_code=410, detail="一次性绑定配置已使用，请重新生成")
+        if not enrollment["confirmed_at"]:
+            raise HTTPException(status_code=403, detail="请先完成第二步安装授权")
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET expires_at=?,binding_authorized_at=?,binding_authorized_ip=?
+            WHERE id=?
+            """,
+            (
+                refreshed_expires_at,
+                authorized_at,
+                (client_ip or "unknown")[:100],
+                int(enrollment["id"]),
+            ),
+        )
+        connection.commit()
+
+    public_endpoint = str(request.base_url).rstrip("/")
+    bootstrap_url = (
+        f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
+        "?platform=unified"
+    )
+    return JSONResponse(
+        {
+            "phase": "binding_authorized",
+            "prompt": build_agent_binding_prompt(bootstrap_url),
+            "workbuddy_configuration": {
+                "platform": "unified",
+                "mcp_server": "jiaotang-kb",
+                "setup_tool": "jiaotang_kb_setup",
+                "configuration_transport": "local_mcp_tool_argument",
+                "configuration_key": "bootstrap_url",
+                "bootstrap_url": bootstrap_url,
+            },
+            "expires_at": refreshed_expires_at,
         },
         headers={"Cache-Control": "no-store"},
     )
@@ -12772,10 +13046,6 @@ def agent_install_protocol(
     install_authorized = bool(enrollment["confirmed_at"])
     del platform
     platform_name = "unified"
-    bootstrap_url = (
-        f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
-        f"?platform={platform_name}"
-    )
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
     plugin_download_url = (
         f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
@@ -12898,7 +13168,7 @@ def agent_install_protocol(
                             "persist_declared_local_marketplace",
                             "register_persisted_local_marketplace",
                             "install_and_enable_declared_plugin",
-                            "invoke_declared_local_setup_tool",
+                            "apply_scoped_workbuddy_5_3_mcp_fallback_if_required",
                             "cleanup_download_and_staging_only",
                         ],
                         "persistent_marketplace": {
@@ -12919,8 +13189,24 @@ def agent_install_protocol(
                         ),
                         "server": "jiaotang-kb",
                         "setup_tool": "jiaotang_kb_setup",
+                        "binding_authorization": "separate_portal_third_step",
+                        "write_user_config": "workbuddy_5_3_literal_placeholder_fallback_only",
                         "write_global_mcp_config": False,
                         "write_project_mcp_config": False,
+                    },
+                    "workbuddy_5_3_compatibility": {
+                        "trigger": (
+                            "日志显示 ${CODEBUDDY_PLUGIN_ROOT} 未展开且 "
+                            "runtimeInjected=false，或 jiaotang-kb 因该字面量命令返回 MCP -32000"
+                        ),
+                        "scope": "user_mcp_jiaotang_kb_entry_only",
+                        "command": "absolute_signed_plugin_run_node_path",
+                        "args": [
+                            "absolute_signed_plugin_jiaotang_agent_path",
+                            "plugin-serve",
+                        ],
+                        "preserve_other_servers": True,
+                        "modify_signed_plugin_files": False,
                     },
                     "existing_install_policy": {
                         "same_package_sha256": (
@@ -12932,7 +13218,6 @@ def agent_install_protocol(
                         ),
                     },
                     "plugin_download_url": plugin_download_url,
-                    "bootstrap_url": bootstrap_url,
                     "steps": [
                         "从安装协议的一次性受限地址下载签名 WorkBuddy 插件包。",
                         "核对发布包 SHA-256、固定发布者指纹和 Ed25519 签名。",
@@ -12943,15 +13228,13 @@ def agent_install_protocol(
                         "使用 WorkBuddy 内置插件管理添加上述持久 jiaotang 本地市场；/plugin 是界面入口，不是 Agent 工具名。",
                         "在 WorkBuddy 内安装并启用 jiaotang-workbuddy-skills@jiaotang；"
                         "由宿主读取签名插件根目录 .mcp.json 中的 jiaotang-kb MCP 声明，"
-                        "不要另写用户级或项目级 MCP 配置。",
+                        "正常情况不另写用户级或项目级 MCP 配置。",
+                        "若 WorkBuddy 5.3.x 把 ${CODEBUDDY_PLUGIN_ROOT} 作为字面量命令导致 MCP -32000，"
+                        "仅将 ~/.workbuddy/mcp.json 中 jiaotang-kb 的 command 和 args 合并为已验签持久插件运行文件的绝对路径；"
+                        "保留其他 MCP，不修改签名插件副本。",
                         "首次加载时由未绑定的本地 MCP 仅枚举 jiaotang_kb_setup 与状态工具；"
-                        "将 bootstrap_url 仅作为 jiaotang_kb_setup 工具参数调用一次，不写入普通配置。",
-                        "插件先预登记，再将凭据写入系统安全存储并回读校验。",
-                        "回读成功后由本机私钥签名激活，服务器再原子创建有效绑定。",
-                        "由插件内置 jiaotang-kb MCP 完成首次签名连接；重新执行 tools/list，"
-                        "确认 knowledge_search、knowledge_document 和 knowledge_service_status 已枚举。",
-                        "实际调用 knowledge_service_status 或任一只读检索；"
-                        "通用资源读取器返回业务错误不能作为连接成功证据。",
+                        "确认本地 setup 工具已枚举后停止，不在安装步骤调用 bootstrap_url。",
+                        "返回门户点击第三步“复制知识库绑定指令”，再由用户将单次绑定指令发送给同一 Agent。",
                         "只清理下载 ZIP 和未注册的中转目录；不得删除已注册的持久 jiaotang 市场、"
                         "插件运行文件或系统凭据。",
                     ],
@@ -13013,7 +13296,8 @@ def agent_install_protocol(
                     ],
                     "workbuddy_instruction": (
                         "插件启用后会自动启动内置 `jiaotang-kb` MCP；"
-                        "未绑定时先调用本地 `jiaotang_kb_setup`；绑定后必须确认 "
+                        "未绑定时先停在本地 `jiaotang_kb_setup` 已枚举的状态，"
+                        "等待用户从门户发送第三步绑定指令；绑定后必须确认 "
                         "`tools/list` 包含 `knowledge_search`、`knowledge_document` 和 "
                         "`knowledge_service_status`，并实际调用一个只读工具验收。"
                         "门户显示四个阶段完成后才算接入成功。"
@@ -13305,6 +13589,7 @@ def agent_bootstrap_manifest(
     enrollment, workbuddy_artifact = pinned_agent_install_artifact(
         enrollment_code,
         require_confirmed=True,
+        require_binding_authorized=True,
     )
     public_endpoint = str(request.base_url).rstrip("/")
     del platform
@@ -13578,6 +13863,12 @@ def register_agent_device(
             raise HTTPException(
                 status_code=403,
                 detail="安装说明尚未由用户确认，请回到门户点击“我已审查，继续安装”。",
+            )
+        if not enrollment["binding_authorized_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=403,
+                detail="请先回到门户执行第三步知识库绑定授权。",
             )
         user = connection.execute(
             "SELECT * FROM users WHERE id=? AND active=1",
@@ -13915,6 +14206,12 @@ def activate_agent_device(
             raise HTTPException(
                 status_code=403,
                 detail="安装说明尚未由用户确认，请回到门户点击“我已审查，继续安装”。",
+            )
+        if not enrollment["binding_authorized_at"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=403,
+                detail="请先回到门户执行第三步知识库绑定授权。",
             )
         intent = connection.execute(
             """
@@ -15040,6 +15337,15 @@ def list_search_api(
     return search_public_list_entities(**payload.model_dump())
 
 
+@app.post("/v1/lists/authoritative/search")
+def authoritative_list_search_api(
+    payload: AuthoritativeListSearchRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    return search_authoritative_list_facts(**payload.model_dump())
+
+
 @app.post("/v1/policies/search")
 def policy_search_api(
     payload: PolicySearchRequest,
@@ -16127,17 +16433,78 @@ def knowledge_document(document_id: int) -> dict[str, object]:
 
 
 @knowledge_mcp.tool()
+def knowledge_case_pack(
+    project_id: str = "",
+    query: str = "",
+    year: int | None = None,
+    industry: str = "",
+    enterprise_scale: str = "",
+    section: str = "",
+    limit: int = 5,
+) -> dict[str, object]:
+    """按项目、年度、行业、企业规模或章节返回成套案例及附件关系。"""
+    with closing(content_database()) as connection:
+        return query_case_packs(
+            connection,
+            project_id=project_id,
+            query=query,
+            year=year,
+            industry=industry,
+            enterprise_scale=enterprise_scale,
+            section=section,
+            limit=limit,
+        )
+
+
+@knowledge_mcp.tool()
 def public_list_search(
     enterprise_name: str = "",
     project_name: str = "",
     year: int | None = None,
     batch: str = "",
     region: str = "",
+    offset: int = 0,
     limit: int = 20,
 ) -> dict[str, object]:
     """按企业、项目、年度、批次或地区查询政府公示与认定名单实体。"""
     return search_public_list_entities(
-        enterprise_name, project_name, year, batch, region, limit
+        enterprise_name=enterprise_name,
+        project_name=project_name,
+        year=year,
+        batch=batch,
+        region=region,
+        offset=offset,
+        limit=limit,
+    )
+
+
+@knowledge_mcp.tool()
+def authoritative_list_search(
+    list_type: str,
+    enterprise_name: str = "",
+    product_name: str = "",
+    project_name: str = "",
+    year: int | None = None,
+    batch: str = "",
+    region: str = "",
+    status: str = "",
+    verified_only: bool = False,
+    offset: int = 0,
+    limit: int = 50,
+) -> dict[str, object]:
+    """查询小巨人、省级专精特新和三首权威事实，返回总数、来源等级和分页状态。"""
+    return search_authoritative_list_facts(
+        list_type=list_type,
+        enterprise_name=enterprise_name,
+        product_name=product_name,
+        project_name=project_name,
+        year=year,
+        batch=batch,
+        region=region,
+        status=status,
+        verified_only=verified_only,
+        offset=offset,
+        limit=limit,
     )
 
 

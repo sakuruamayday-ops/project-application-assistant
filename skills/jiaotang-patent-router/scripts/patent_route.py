@@ -12,6 +12,7 @@ ROUTES = {
     "layout": ("jiaotang-patent-router", ["P1"]),
     "mining": ("jiaotang-patent-router", ["P2"]),
     "disclosure": ("jiaotang-patent-router", ["P2"]),
+    "ai_patent": ("jiaotang-patent-router", ["TECHNICAL_FEATURE_MAP", "P1", "P2"]),
     "preexam": ("jiaotang-patent-router", ["P3"]),
     "review": ("checking-patdocx-cn-single-agent", ["DOCUMENT_REVIEW"]),
     "project": ("jiaotang-patent-router", ["P1", "P2", "P3", "PROJECT_LINK"]),
@@ -60,6 +61,7 @@ def main():
         "evidence_sources": a.source,
         "confidentiality": a.confidentiality,
         "mutual_exclusion": "integrated_analysis_or_document_review",
+        "out_of_scope": ["software_copyright_registration_materials"],
         "target_center_required_when": "formal_preexam_submission_check; recommendation may compare candidate pool first",
     }
     payload = json.dumps(record, ensure_ascii=False, indent=2)

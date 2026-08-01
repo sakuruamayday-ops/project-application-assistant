@@ -48,7 +48,8 @@ async function waitForServer() {
 let browser;
 try {
   await waitForServer();
-  browser = await chromium.launch({headless: true});
+  const browserExecutable = process.env.JIAOTANG_BROWSER_EXECUTABLE || undefined;
+  browser = await chromium.launch({headless: true, executablePath: browserExecutable});
   const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
   const consoleErrors = [];
   page.on("console", (message) => {
@@ -196,8 +197,19 @@ try {
   }));
   assert.deepEqual(expandedButtonSizes, compactButtonSizes, "展开发布说明不应拉伸下载按钮");
   await page.locator('[data-skill-tab-target="install"]').first().click();
-  assert.equal(await page.locator('[data-skill-section-pane="install"]').isVisible(), true);
+  const installPane = page.locator('[data-skill-section-pane="install"]');
+  assert.equal(await installPane.isVisible(), true);
   assert.equal(new URL(page.url()).hash, "#skills-install");
+  const bindingButton = installPane.locator("[data-copy-agent-binding]");
+  assert.equal(await bindingButton.count(), 1, "安装页必须提供独立的第三步 bootstrap 绑定按钮");
+  assert.equal(await bindingButton.isHidden(), true, "第三步必须在第二步授权前保持隐藏");
+  const desktopInstallLayout = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    bindingLabel: document.querySelector('[data-skill-section-pane="install"] [data-copy-agent-binding]')?.textContent || "",
+  }));
+  assert.equal(desktopInstallLayout.documentWidth, desktopInstallLayout.viewportWidth, "桌面安装流程不应产生全局横向溢出");
+  assert.match(desktopInstallLayout.bindingLabel, /第三步.*bootstrap/s, "第三步按钮必须明确标注 bootstrap 绑定");
   if (process.env.SKILLS_QA_INSTALL_SCREENSHOT) {
     await page.screenshot({path: process.env.SKILLS_QA_INSTALL_SCREENSHOT, fullPage: true});
   }
@@ -227,6 +239,14 @@ try {
 
   await page.setViewportSize({width: 390, height: 844});
   await page.reload({waitUntil: "networkidle"});
+  await page.locator('[data-skill-tab-target="install"]').first().click();
+  const mobileInstallLayout = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+    installColumns: getComputedStyle(document.querySelector(".skill-install-grid")).gridTemplateColumns,
+  }));
+  assert.equal(mobileInstallLayout.documentWidth, mobileInstallLayout.viewportWidth, "390px 安装流程不应产生全局横向溢出");
+  assert.equal(mobileInstallLayout.installColumns.split(" ").length, 1, "移动端安装与验收卡片必须使用单列布局");
   await page.locator('[data-skill-section-tab="downloads"]').click();
   const mobileDownloadLayout = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,

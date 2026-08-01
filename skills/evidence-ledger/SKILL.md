@@ -48,3 +48,5 @@ description: 建立事实、计算、推断和待核验四类证据台账，记�
 
 台账字段、来源等级和冲突规则见 `references/evidence-ledger-schema.md`。
 形成JSON台账时运行 `scripts/validate_evidence_ledger.py`；校验失败不得进入正式写作。
+
+历史案例证据单独标记为 `case_reference`，记录 `case_pack_id` 和文档编号；它只能证明参考结构或证据类型，不能证明当前企业事实，也不能提升政策来源等级。

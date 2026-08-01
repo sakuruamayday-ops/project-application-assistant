@@ -209,6 +209,13 @@ PY
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests/test_portal.py tests/test_structured_knowledge.py -q
 )
 
+echo "[8/10] 执行知识库Acceptance Harness"
+python3 "${script_dir}/run_acceptance_harness.py" \
+  --knowledge-root "${knowledge_root}" \
+  --index-root "${index_dir}" \
+  --suite knowledge_base \
+  --output "${index_dir}/acceptance-harness.json"
+
 echo "[发布1/5] 冻结manifest、OSS白名单和生产索引哈希"
 frozen_manifest_sha="$(shasum -a 256 "${manifest}" | awk '{print $1}')"
 frozen_allowlist_sha="$(shasum -a 256 "${index_dir}/upload_allowlist.csv" | awk '{print $1}')"
