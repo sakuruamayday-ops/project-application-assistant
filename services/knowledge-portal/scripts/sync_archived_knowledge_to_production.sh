@@ -185,6 +185,11 @@ echo "[5/10] 依据已收敛的manifest与索引重建OSS白名单"
 python3 "${script_dir}/build_cloud_upload_allowlist.py" \
   --index-root "${index_dir}"
 
+echo "[5/10] 依据已收敛的manifest重建文件库存索引"
+python3 "${script_dir}/build_knowledge_inventory_from_manifest.py" \
+  --manifest "${manifest}" \
+  --output "${index_dir}/knowledge_inventory.sqlite3"
+
 echo "[6/10] 重建政策版本与替代关系"
 python3 "${script_dir}/build_policy_version_links.py" \
   --manifest "${manifest}" \

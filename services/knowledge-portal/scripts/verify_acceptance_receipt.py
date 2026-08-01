@@ -17,9 +17,15 @@ EVIDENCE_SOURCES = {
     "index_builder_sha256": BASE_DIR
     / "scripts"
     / "build_knowledge_content_index.py",
+    "inventory_builder_sha256": BASE_DIR
+    / "scripts"
+    / "build_knowledge_inventory_from_manifest.py",
     "allowlist_builder_sha256": BASE_DIR
     / "scripts"
     / "build_cloud_upload_allowlist.py",
+    "policy_version_builder_sha256": BASE_DIR
+    / "scripts"
+    / "build_policy_version_links.py",
     "harness_runner_sha256": BASE_DIR
     / "scripts"
     / "run_acceptance_harness.py",
@@ -40,6 +46,9 @@ def expected_evidence(profile: Path, index_root: Path) -> dict[str, str]:
         "profile_sha256": profile,
         "manifest_sha256": index_root / "manifest.jsonl",
         "content_index_sha256": index_root / "knowledge_content.sqlite3",
+        "inventory_index_sha256": index_root / "knowledge_inventory.sqlite3",
+        "policy_versions_sha256": index_root / "policy_versions.sqlite3",
+        "upload_allowlist_sha256": index_root / "upload_allowlist.csv",
         **EVIDENCE_SOURCES,
     }
     missing = [str(path) for path in paths.values() if not path.is_file()]

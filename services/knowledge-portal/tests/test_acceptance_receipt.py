@@ -23,6 +23,11 @@ def test_receipt_is_reused_only_when_all_inputs_match(tmp_path):
     index_root.mkdir()
     (index_root / "manifest.jsonl").write_text("{}\n", encoding="utf-8")
     (index_root / "knowledge_content.sqlite3").write_bytes(b"sqlite")
+    (index_root / "knowledge_inventory.sqlite3").write_bytes(b"inventory")
+    (index_root / "policy_versions.sqlite3").write_bytes(b"versions")
+    (index_root / "upload_allowlist.csv").write_text(
+        "relative_path,cloud_object_allowed\n", encoding="utf-8"
+    )
     receipt = tmp_path / "acceptance-harness.json"
     payload = {
         "receipt_schema": "jiaotang-acceptance-receipt/v1",
@@ -46,3 +51,11 @@ def test_receipt_is_reused_only_when_all_inputs_match(tmp_path):
     )
     assert result["status"] == "fail"
     assert "manifest_sha256" in result["mismatches"]
+
+    receipt.write_text(json.dumps(payload), encoding="utf-8")
+    (index_root / "knowledge_inventory.sqlite3").write_bytes(b"changed")
+    result = MODULE.verify_receipt(
+        receipt, profile, index_root, "knowledge_base"
+    )
+    assert result["status"] == "fail"
+    assert "inventory_index_sha256" in result["mismatches"]

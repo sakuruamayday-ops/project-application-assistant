@@ -24,7 +24,11 @@ DEFAULT_PROFILE = (
     BASE_DIR / "references" / "acceptance-harness" / "knowledge-base.json"
 )
 INDEX_BUILDER = BASE_DIR / "scripts" / "build_knowledge_content_index.py"
+INVENTORY_BUILDER = (
+    BASE_DIR / "scripts" / "build_knowledge_inventory_from_manifest.py"
+)
 ALLOWLIST_BUILDER = BASE_DIR / "scripts" / "build_cloud_upload_allowlist.py"
+POLICY_VERSION_BUILDER = BASE_DIR / "scripts" / "build_policy_version_links.py"
 HARNESS_RUNNER = Path(__file__).resolve()
 HARNESS_ENGINE = BASE_DIR / "app" / "acceptance_harness.py"
 
@@ -322,8 +326,21 @@ def main() -> None:
         "content_index_sha256": sha256_file(
             index_root / "knowledge_content.sqlite3"
         ),
+        "inventory_index_sha256": sha256_file(
+            index_root / "knowledge_inventory.sqlite3"
+        ),
+        "policy_versions_sha256": sha256_file(
+            index_root / "policy_versions.sqlite3"
+        ),
+        "upload_allowlist_sha256": sha256_file(
+            index_root / "upload_allowlist.csv"
+        ),
         "index_builder_sha256": sha256_file(INDEX_BUILDER),
+        "inventory_builder_sha256": sha256_file(INVENTORY_BUILDER),
         "allowlist_builder_sha256": sha256_file(ALLOWLIST_BUILDER),
+        "policy_version_builder_sha256": sha256_file(
+            POLICY_VERSION_BUILDER
+        ),
         "harness_runner_sha256": sha256_file(HARNESS_RUNNER),
         "harness_engine_sha256": sha256_file(HARNESS_ENGINE),
     }
