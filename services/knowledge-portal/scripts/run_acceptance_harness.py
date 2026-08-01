@@ -23,6 +23,10 @@ from app.acceptance_harness import AcceptanceHarness
 DEFAULT_PROFILE = (
     BASE_DIR / "references" / "acceptance-harness" / "knowledge-base.json"
 )
+INDEX_BUILDER = BASE_DIR / "scripts" / "build_knowledge_content_index.py"
+ALLOWLIST_BUILDER = BASE_DIR / "scripts" / "build_cloud_upload_allowlist.py"
+HARNESS_RUNNER = Path(__file__).resolve()
+HARNESS_ENGINE = BASE_DIR / "app" / "acceptance_harness.py"
 
 
 def sha256_file(path: Path) -> str:
@@ -311,12 +315,17 @@ def main() -> None:
         context,
         suites=args.suite,
     )
+    report["receipt_schema"] = "jiaotang-acceptance-receipt/v1"
     report["target_evidence"] = {
         "profile_sha256": sha256_file(profile_path),
         "manifest_sha256": sha256_file(index_root / "manifest.jsonl"),
         "content_index_sha256": sha256_file(
             index_root / "knowledge_content.sqlite3"
         ),
+        "index_builder_sha256": sha256_file(INDEX_BUILDER),
+        "allowlist_builder_sha256": sha256_file(ALLOWLIST_BUILDER),
+        "harness_runner_sha256": sha256_file(HARNESS_RUNNER),
+        "harness_engine_sha256": sha256_file(HARNESS_ENGINE),
     }
     output = args.output
     if output:

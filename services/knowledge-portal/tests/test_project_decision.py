@@ -975,9 +975,10 @@ def test_project_algorithm_pack_gate_runs_all_gold_cases():
     assert payload["validated_packs"] >= 1
 
 
-def test_release_gate_includes_project_algorithm_pack_validation():
+def test_release_gate_keeps_deferred_algorithm_pack_out_of_default_flow():
     release_gate = (
         Path(__file__).resolve().parents[1] / "scripts" / "release_gate.sh"
     ).read_text(encoding="utf-8")
 
-    assert "validate_project_algorithm_packs.py" in release_gate
+    assert "validate_project_algorithm_packs.py" not in release_gate
+    assert "manage_project_algorithm_packs.py" not in release_gate

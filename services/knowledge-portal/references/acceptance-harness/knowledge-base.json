@@ -274,6 +274,9 @@
       "severity": "P0",
       "adapter": "sqlite_rows",
       "description": "受限或机密文档不得被案例包标为可上云",
+      "depends_on": [
+        "kb-case-pack-schema-complete"
+      ],
       "config": {
         "database": "knowledge_content.sqlite3",
         "query": "SELECT id,source,sensitivity,upload_action FROM documents WHERE sensitivity IN ('restricted','confidential') AND upload_action NOT IN ('exclude','local_only','restricted_excluded')",
@@ -286,6 +289,9 @@
       "severity": "P0",
       "adapter": "sqlite_rows",
       "description": "多文档案例包必须建立主文档、附件和其他组成文档关系",
+      "depends_on": [
+        "kb-case-pack-schema-complete"
+      ],
       "config": {
         "database": "knowledge_content.sqlite3",
         "query": "SELECT relation_type,COUNT(*) AS relation_count FROM document_relations GROUP BY relation_type",

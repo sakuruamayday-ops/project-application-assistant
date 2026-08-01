@@ -914,7 +914,7 @@ def promote_portal(
     )
 
 
-def run_local_skill_deployment_gate(
+def run_isolated_skill_acceptance_gate(
     *,
     development_root: Path,
     generic_package: Path,
@@ -947,15 +947,27 @@ def run_local_skill_deployment_gate(
         payload = json.loads(process.stdout or process.stderr)
     except json.JSONDecodeError as exc:
         raise RuntimeError(
-            "本机Skills部署后门禁未返回有效JSON："
+            "隔离 Skills 安装验收未返回有效 JSON："
             + (process.stdout or process.stderr)[-2000:]
         ) from exc
     if process.returncode or payload.get("status") != "pass":
         raise RuntimeError(
-            "本机Skills原子升级或部署后门禁失败："
+            "隔离 Skills 安装、验签或三方门禁失败："
             + str(payload.get("error") or payload)
         )
     return payload
+
+
+def create_isolated_skill_acceptance_root(audit_dir: Path) -> Path:
+    """Create a release-specific sandbox without touching active user Skills."""
+    parent = audit_dir / "isolated-installation-acceptance"
+    parent.mkdir(parents=True, exist_ok=True)
+    return Path(
+        tempfile.mkdtemp(
+            prefix="candidate-",
+            dir=parent,
+        )
+    ).resolve()
 
 
 def main() -> None:
@@ -976,16 +988,10 @@ def main() -> None:
         default="sakuruamayday-ops/project-application-assistant",
     )
     parser.add_argument(
-        "--local-skills-target",
-        type=Path,
-        default=Path.home() / ".codex" / "skills",
-        help="正式提升前必须完成原子升级和三方验签的本机Skills目录",
-    )
-    parser.add_argument(
-        "--local-install-config-dir",
+        "--release-state-dir",
         type=Path,
         default=Path.home() / ".config" / "project-assistant",
-        help="安装日志、备份和事务证据目录",
+        help="发布租约凭证与恢复状态目录",
     )
     parser.add_argument(
         "--deployment-audit-dir",
@@ -994,7 +1000,7 @@ def main() -> None:
         / ".config"
         / "project-assistant"
         / "deployment-audits",
-        help="开发源、正式包、实际安装目录三方审计报告目录",
+        help="开发源、正式包、隔离验收目录三方审计报告目录",
     )
     action = parser.add_mutually_exclusive_group()
     action.add_argument(
@@ -1045,6 +1051,17 @@ def main() -> None:
         default=4 * 60 * 60,
     )
     arguments = parser.parse_args()
+    operation_started_at = time.monotonic()
+
+    def timed_result(payload: dict[str, object]) -> dict[str, object]:
+        return {
+            **payload,
+            "operation_wall_clock_seconds": round(
+                time.monotonic() - operation_started_at,
+                3,
+            ),
+        }
+
     action_name = release_action(
         stage=arguments.stage,
         promote=arguments.promote,
@@ -1081,12 +1098,12 @@ def main() -> None:
         )
         print(
             release_json(
-                {
+                timed_result({
                     "status": "read-only-monitor",
                     "version": short_version,
                     "portal_transaction": portal,
                     "github": github,
-                }
+                })
             )
         )
         return
@@ -1103,7 +1120,7 @@ def main() -> None:
     if "generic" not in packages:
         parser.error(
             "受控发布必须提供--generic-package，"
-            "用于正式提升前的本机原子升级、全量验签和三方哈希门禁"
+            "用于正式提升前的隔离安装、全量验签和三方哈希门禁"
         )
     if arguments.gate_report is None or arguments.release_notes is None:
         parser.error("发布预检、暂存和提升必须提供门禁报告与发布说明")
@@ -1189,13 +1206,13 @@ def main() -> None:
             },
         }
         if action_name == "preflight":
-            print(release_json(preflight))
+            print(release_json(timed_result(preflight)))
             return
 
         holder = lease_holder_id(arguments.lease_owner)
         credential_path = lease_checkpoint_path(
             config_dir=(
-                arguments.local_install_config_dir.expanduser().resolve()
+                arguments.release_state_dir.expanduser().resolve()
             ),
             tag=str(validation["tag"]),
             holder_id=holder,
@@ -1217,11 +1234,11 @@ def main() -> None:
             )
             print(
                 release_json(
-                    {
+                    timed_result({
                         **preflight,
                         "status": "read-only-monitor",
                         "release_transaction": monitored,
-                    }
+                    })
                 )
             )
             return
@@ -1238,11 +1255,11 @@ def main() -> None:
         if lease.get("mode") != "writer":
             print(
                 release_json(
-                    {
+                    timed_result({
                         **preflight,
                         "status": "read-only-monitor",
                         "release_transaction": lease,
-                    }
+                    })
                 )
             )
             return
@@ -1303,14 +1320,14 @@ def main() -> None:
                 raise
             print(
                 release_json(
-                    {
+                    timed_result({
                         **preflight,
                         "status": "staged-awaiting-acceptance",
                         "release_url": release_url,
                         "portal": portal_result,
                         "lease": lease,
                         "next_action": "等待主人明确说“确认正式发布”",
-                    }
+                    })
                 )
             )
             return
@@ -1325,36 +1342,38 @@ def main() -> None:
                 create_if_missing=False,
                 allow_published=True,
             )
+            acceptance_root = create_isolated_skill_acceptance_root(
+                arguments.deployment_audit_dir.expanduser().resolve()
+            )
             transition(
                 "installing",
                 {
                     "generic_package_sha256": validation["artifacts"][
                         "generic"
                     ]["sha256"],
-                    "install_root": str(
-                        arguments.local_skills_target.expanduser().resolve()
-                    ),
+                    "acceptance_scope": "isolated",
+                    "acceptance_root": str(acceptance_root),
                 },
             )
-            local_deployment = run_local_skill_deployment_gate(
+            installation_acceptance = run_isolated_skill_acceptance_gate(
                 development_root=ROOT / "skills",
                 generic_package=packages["generic"],
-                install_root=(
-                    arguments.local_skills_target.expanduser().resolve()
-                ),
-                config_dir=(
-                    arguments.local_install_config_dir.expanduser().resolve()
-                ),
+                install_root=acceptance_root / "skills",
+                config_dir=acceptance_root / "config",
                 audit_dir=(
                     arguments.deployment_audit_dir.expanduser().resolve()
                 ),
             )
-            audit_path = Path(str(local_deployment.get("report") or ""))
+            installation_acceptance["acceptance_scope"] = "isolated"
+            installation_acceptance["acceptance_root"] = str(acceptance_root)
+            audit_path = Path(
+                str(installation_acceptance.get("report") or "")
+            )
             transition(
                 "installed",
                 {
-                    "status": local_deployment.get("status"),
-                    "summary": local_deployment.get("summary"),
+                    "status": installation_acceptance.get("status"),
+                    "summary": installation_acceptance.get("summary"),
                     "audit_report": str(audit_path),
                     "audit_sha256": (
                         sha256(audit_path) if audit_path.is_file() else ""
@@ -1396,7 +1415,7 @@ def main() -> None:
                 {
                     "github": "published",
                     "portal": portal_result.get("release_state"),
-                    "installation": local_deployment.get("status"),
+                    "installation": installation_acceptance.get("status"),
                     "delivery": delivery.get("status"),
                 },
             )
@@ -1431,15 +1450,15 @@ def main() -> None:
             raise
         print(
             release_json(
-                {
+                timed_result({
                     **preflight,
                     "status": "published",
                     "release_url": release_url,
-                    "local_skill_deployment": local_deployment,
+                    "isolated_skill_acceptance": installation_acceptance,
                     "portal": portal_result,
                     "delivery": delivery,
                     "release_transaction": completed,
-                }
+                })
             )
         )
 
