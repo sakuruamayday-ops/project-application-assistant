@@ -290,7 +290,7 @@ try {
   await page.setViewportSize({width: 1920, height: 1080});
   await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
   assert.equal(await page.getByRole("heading", {name: "项目算法包"}).count(), 1, "算法包页面必须正常展示");
-  assert.equal(await page.getByText("当前首要补齐", {exact: true}).count(), 1, "算法包页面必须展示动态补齐重点");
+  assert.equal(await page.getByText("纯检索路由", {exact: true}).count(), 1, "算法包全部形成正式规则后必须展示零路由待补齐状态");
   assert.equal(await page.getByText("近7日查询", {exact: true}).count(), 1, "算法包页面必须展示真实查询频率");
   assert.equal(await page.getByText("它解决什么问题", {exact: true}).count(), 1, "算法包页面必须解释实际用途");
   const desktopAlgorithmFlow = await page.evaluate(() => {
@@ -315,7 +315,7 @@ try {
   await page.getByRole("link", {name: /正式规则包/}).click();
   await page.waitForLoadState("networkidle");
   assert.equal(new URL(page.url()).searchParams.get("coverage"), "rules-confirmed", "正式规则包卡片必须进入正式项目筛选");
-  assert.equal(await page.locator(".algorithm-table tbody tr").count(), 8, "正式规则包筛选必须只展示8个已确认项目");
+  assert.equal(await page.locator(".algorithm-table tbody tr").count(), 29, "正式规则包筛选必须展示29个已确认主项目");
   await page.getByRole("link", {name: /专精特新小巨人/}).first().click();
   await page.waitForLoadState("networkidle");
   assert.equal(new URL(page.url()).searchParams.get("project"), "little-giant", "项目点击必须真实切换详情路由");
@@ -328,7 +328,7 @@ try {
   assert.equal(new URL(page.url()).hash, "#algorithm-catalog", "返回按钮必须定位完整清单");
   assert.equal(await page.locator("#algorithm-detail").count(), 0, "返回完整清单后不得残留旧项目详情");
   assert.equal(
-    await page.locator(".algorithm-introduction").evaluate((element) => getComputedStyle(element).display),
+    await page.locator(".algorithm-introduction").first().evaluate((element) => getComputedStyle(element).display),
     "grid",
     "算法包用途说明必须加载正式构建样式",
   );
