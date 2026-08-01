@@ -31,12 +31,12 @@
       },
       "page_size": 200,
       "expected": {
-        "total": 619,
+        "total": 620,
         "official_match_count": 0,
         "source_tier_counts": {
-          "official_publicity": 619
+          "official_publicity": 620
         },
-        "page_sizes": [200, 200, 200, 19]
+        "page_sizes": [200, 200, 200, 20]
       }
     },
     {
