@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import shutil
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -167,6 +168,26 @@ def _copy_entry(source: Path, target: Path, mode: str) -> None:
         )
     else:
         shutil.copy2(source, target)
+
+
+def _rename_preserving_mode(source: Path, target: Path) -> Path:
+    """Rename frozen directories without leaving either side writable."""
+    original_mode: int | None = None
+    thawed = False
+    if source.is_dir() and not source.is_symlink():
+        original_mode = stat.S_IMODE(source.stat().st_mode)
+        if not original_mode & stat.S_IWUSR:
+            source.chmod(original_mode | stat.S_IWUSR)
+            thawed = True
+    try:
+        renamed = source.rename(target)
+    except Exception:
+        if thawed and source.exists() and original_mode is not None:
+            source.chmod(original_mode)
+        raise
+    if thawed and original_mode is not None:
+        target.chmod(original_mode)
+    return renamed
 
 
 def _item_report(
@@ -375,7 +396,7 @@ def install_skills(
             if entry["exists"]:
                 backup = backup_root / entry["relative"]
                 backup.parent.mkdir(parents=True, exist_ok=True)
-                target.rename(backup)
+                _rename_preserving_mode(target, backup)
                 moved_backups.append((target, backup))
                 entry["backup"] = backup
             else:
@@ -385,7 +406,7 @@ def install_skills(
         for entry in selected:
             target = entry["target"]
             target.parent.mkdir(parents=True, exist_ok=True)
-            entry["staged"].rename(target)
+            _rename_preserving_mode(entry["staged"], target)
             deployed_targets.append((target, rollback_root / entry["relative"]))
         transaction_status = "new-install-swapped"
 
@@ -472,7 +493,7 @@ def install_skills(
             try:
                 if target.exists() or target.is_symlink():
                     rollback.parent.mkdir(parents=True, exist_ok=True)
-                    target.rename(rollback)
+                    _rename_preserving_mode(target, rollback)
             except Exception as rollback_exc:
                 rollback_errors.append(
                     f"隔离新安装失败 {target}：{rollback_exc}"
@@ -483,7 +504,7 @@ def install_skills(
                     target.parent.mkdir(parents=True, exist_ok=True)
                     if target.exists() or target.is_symlink():
                         raise RuntimeError("恢复目标仍被占用")
-                    backup.rename(target)
+                    _rename_preserving_mode(backup, target)
             except Exception as rollback_exc:
                 rollback_errors.append(
                     f"恢复旧安装失败 {target}：{rollback_exc}"

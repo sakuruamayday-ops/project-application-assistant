@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import stat
 import sys
 import tempfile
 import unittest
@@ -462,6 +463,71 @@ class InstallTests(unittest.TestCase):
                         if path.exists() and not path.is_symlink():
                             os.chmod(path, path.stat().st_mode | 0o700)
                     os.chmod(destination, destination.stat().st_mode | 0o700)
+
+    @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
+    def test_signed_upgrade_temporarily_thaws_read_only_directory(self):
+        repository = Path(__file__).resolve().parents[1]
+        signed_source = (
+            repository / "skills/high-tech-enterprise-application-drafting"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            shutil.copytree(signed_source, source / signed_source.name)
+            destination = root / "destination"
+            config_dir = root / "config"
+            try:
+                install_skills(
+                    source,
+                    destination,
+                    "copy",
+                    True,
+                    config_dir,
+                    "1.1",
+                    require_signatures=True,
+                )
+                target = destination / signed_source.name
+                self.assertEqual(target.stat().st_mode & 0o222, 0)
+
+                original_rename = Path.rename
+
+                def reject_frozen_directory(path: Path, target_path: Path):
+                    if (
+                        path.is_dir()
+                        and not path.is_symlink()
+                        and not stat.S_IMODE(path.stat().st_mode)
+                        & stat.S_IWUSR
+                    ):
+                        raise PermissionError("simulated-frozen-directory")
+                    return original_rename(path, target_path)
+
+                with mock.patch.object(Path, "rename", reject_frozen_directory):
+                    installed = install_skills(
+                        source,
+                        destination,
+                        "copy",
+                        True,
+                        config_dir,
+                        "1.2",
+                        require_signatures=True,
+                    )
+
+                self.assertEqual(installed, [signed_source.name])
+                self.assertEqual(target.stat().st_mode & 0o222, 0)
+                report_path = sorted(
+                    (config_dir / "upgrade-reports").glob("*.json")
+                )[-1]
+                report = json.loads(report_path.read_text(encoding="utf-8"))
+                backup = Path(report["items"][0]["backup"])
+                self.assertEqual(backup.stat().st_mode & 0o222, 0)
+            finally:
+                for path in sorted(
+                    root.rglob("*"),
+                    key=lambda item: len(item.parts),
+                    reverse=True,
+                ):
+                    if path.exists() and not path.is_symlink():
+                        os.chmod(path, path.stat().st_mode | 0o700)
 
     def test_direct_skill_edit_is_detected_and_backed_up(self):
         with tempfile.TemporaryDirectory() as directory:
