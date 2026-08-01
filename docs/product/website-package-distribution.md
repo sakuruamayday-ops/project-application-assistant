@@ -59,7 +59,7 @@ WorkBuddy 包已经包含通用 Skills。用户只安装一个包，不叠加安
 - 已有用户不手工删除旧插件目录。一键安装指令在处理前备份旧插件目录和用户 MCP 配置，更新或替换旧插件。
 - 门户从已发布 artifact 记录读取通用版和 WorkBuddy 版本，并对 WorkBuddy ZIP 执行服务端完整性、49 项 Skills、最小行为 Hook 和远程 MCP 模式检查。
 - 公共 WorkBuddy 包不内置用户 Token、本地知识库服务或启动器。远程 MCP 配置由登录门户为当前用户生成并合并到用户配置。
-- 升级只替换 `mcpServers.jiaotang-kb`，保留其他 MCP，并只重载一次。验收失败时恢复升级前插件目录和用户 MCP 配置备份。
+- 升级只替换 `mcpServers.jiaotang-kb`，保留其他 MCP，并只重载一次。Windows 固定写入 `%USERPROFILE%\.workbuddy\mcp.json`，macOS 固定写入 `~/.workbuddy/mcp.json`；不得修改 WorkBuddy 托管的 `.workbuddy/.mcp.json`。验收失败时恢复升级前插件目录和用户 MCP 配置备份。
 - 原生客户端 v0.2.0 的 GitHub Release 不删除、不替换，只停止门户转发。
 - 旧 `/skills-manager`、原生客户端下载和客户端手册地址统一跳转到
   `/skills#skills-downloads`。

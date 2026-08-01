@@ -108,6 +108,44 @@ def test_legacy_oss_sync_is_disabled_without_touching_historical_snapshots():
     assert "exit 78" in legacy_wrapper
 
 
+def test_health_monitor_restarts_only_after_consecutive_failures_with_circuit_breaker():
+    health_service = (DEPLOY_DIR / "jiaotang-kb-health.service").read_text(
+        encoding="utf-8"
+    )
+    recovery_service = (
+        DEPLOY_DIR / "jiaotang-kb-health-recovery@.service"
+    ).read_text(encoding="utf-8")
+    recovery_wrapper = (DEPLOY_DIR / "health-recovery.sh").read_text(
+        encoding="utf-8"
+    )
+    health_wrapper = (DEPLOY_DIR / "healthcheck.sh").read_text(
+        encoding="utf-8"
+    )
+    timer = (DEPLOY_DIR / "jiaotang-kb-health.timer").read_text(
+        encoding="utf-8"
+    )
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "jiaotang-kb-health-recovery@%n.service" in health_service
+    assert "ExecStart=/usr/local/sbin/jiaotang-kb-health-recovery %i" in recovery_service
+    assert "User=root" in recovery_service
+    assert "health_recovery_state.py\" failure" in recovery_wrapper
+    assert 'JIAOTANG_HEALTH_FAILURE_THRESHOLD:-2' in recovery_wrapper
+    assert 'JIAOTANG_HEALTH_MAX_RESTARTS:-3' in recovery_wrapper
+    assert 'JIAOTANG_HEALTH_RESTART_WINDOW_SECONDS:-1800' in recovery_wrapper
+    assert 'JIAOTANG_HEALTH_CIRCUIT_COOLDOWN_SECONDS:-3600' in recovery_wrapper
+    assert '[[ "${action}" == "restart" ]]' in recovery_wrapper
+    assert "systemctl restart jiaotang-kb.service" in recovery_wrapper
+    assert "health_recovery_state.py\" success" in health_wrapper
+    assert "OnUnitActiveSec=1m" in timer
+    assert "AccuracySec=10s" in timer
+    assert "scripts/health_recovery_state.py" in deploy_script
+    assert "'jiaotang-kb-health-recovery@.service'" in deploy_script
+    assert "'/usr/local/sbin/jiaotang-kb-health-recovery'" in deploy_script
+
+
 def test_deploy_rolls_back_previous_release_when_new_index_health_fails():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
     delta_script = (

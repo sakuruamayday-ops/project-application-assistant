@@ -3958,6 +3958,16 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         assert "49 项 Skills" in prompt
         assert "只替换当前用户配置中的 `mcpServers.jiaotang-kb`" in prompt
         assert "保留所有其他 MCP 条目" in prompt
+        assert r"%USERPROFILE%\.workbuddy\mcp.json" in prompt
+        assert "`~/.workbuddy/mcp.json`" in prompt
+        assert "文件名都是不带点前缀的 `mcp.json`" in prompt
+        assert "`.workbuddy/.mcp.json`" in prompt
+        assert "禁止读取、修改或覆盖" in prompt
+        assert "只合并 `jiaotang-kb`" in prompt
+        assert "移动到带时间戳的可恢复备份" in prompt
+        assert "不含 `.mcp.json`、`bin` 或 `mcp`" in prompt
+        assert "手动点击信任" in prompt
+        assert "不得尝试绕过宿主安全确认" in prompt
         assert "只重载 WorkBuddy 一次" in prompt
         assert "knowledge_service_status" in prompt
         assert "connected: true" in prompt
@@ -3971,6 +3981,10 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         assert guide.headers["cache-control"] == "private, no-store"
         assert first_token in guide.text
         assert "Bearer 你的个人Token" not in guide.text
+        assert r"%USERPROFILE%\.workbuddy\mcp.json" in guide.text
+        assert "~/.workbuddy/mcp.json" in guide.text
+        assert ".workbuddy/.mcp.json" in guide.text
+        assert "手动信任" in guide.text
         assert client.get(
             "/v1/me",
             headers={"Authorization": f"Bearer {first_token}"},

@@ -24,7 +24,7 @@ for unit in "${units[@]}"; do
     fi
 done
 
-exec "${app_dir}/.venv/bin/python" \
+"${app_dir}/.venv/bin/python" \
     "${app_dir}/scripts/validate_operational_health.py" \
     --response-json "${response}" \
     --disk-percent "${disk_percent}" \
@@ -33,3 +33,12 @@ exec "${app_dir}/.venv/bin/python" \
     --index-dir "${index_dir}" \
     --output "${data_dir}/health-status.json" \
     "${failed_args[@]}"
+
+"${app_dir}/.venv/bin/python" \
+    "${app_dir}/scripts/health_recovery_state.py" success \
+    --state-file "${JIAOTANG_HEALTH_RECOVERY_STATE:-${data_dir}/health-recovery-state.json}" \
+    --failure-threshold "${JIAOTANG_HEALTH_FAILURE_THRESHOLD:-2}" \
+    --max-restarts "${JIAOTANG_HEALTH_MAX_RESTARTS:-3}" \
+    --restart-window-seconds "${JIAOTANG_HEALTH_RESTART_WINDOW_SECONDS:-1800}" \
+    --circuit-cooldown-seconds "${JIAOTANG_HEALTH_CIRCUIT_COOLDOWN_SECONDS:-3600}" \
+    >/dev/null

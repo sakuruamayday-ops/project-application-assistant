@@ -279,7 +279,7 @@ export JIAOTANG_KB_TOKEN=jtk_xxx
 3. 使用 Nginx 反向代理 `127.0.0.1:8100`。
 4. 使用 Let's Encrypt 或阿里云证书启用 HTTPS 后，才开放登录页面。
 5. 服务器部署密钥可轮换；换电脑时追加新公钥，验证成功后再停用旧公钥。
-6. 安装 `jiaotang-kb-health.timer` 每五分钟执行综合健康探测；门禁覆盖 failed unit、索引状态新鲜度、磁盘阈值以及索引 current/previous 世代一致性。关键 oneshot 和门户服务通过 `OnFailure` 写入结构化失败状态。
+6. 安装 `jiaotang-kb-health.timer` 每分钟执行综合健康探测；门禁覆盖 failed unit、索引状态新鲜度、磁盘阈值以及索引 current/previous 世代一致性。连续两次失败后自动重启门户；30 分钟内最多自动重启 3 次，达到上限后熔断 60 分钟，任一次健康成功会清零连续失败计数。关键 oneshot 和门户服务通过 `OnFailure` 写入结构化失败状态。
 7. 既有日常备份配置和历史备份保持原样；本轮部署不会启动备份任务，也不会读取、盘点或处置备份目录。
 8. 门户主进程只读取 `/etc/jiaotang-kb-app.env`。OSS 发布和索引刷新只读取 root-only 的 `/etc/jiaotang-kb-ops.env`，门户进程不得继承 AccessKey、STS Token 或索引发布签名密钥。
 
