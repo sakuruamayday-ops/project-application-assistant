@@ -30,53 +30,6 @@ def test_high_risk_matrix_has_existing_scripts_and_tests() -> None:
         assert test_file.is_file()
 
 
-def test_sme_score_core_validation_and_industry_mapping() -> None:
-    core = ROOT / "skills/sme-score-preassessment/scripts/score_core.mjs"
-    javascript = f"""
-      import {{ validateInput, resolveIndustry }} from {json.dumps(core.as_uri())};
-      const metrics = {{
-        revenue: [100, 120, 150],
-        operating_cost: [60, 70, 80],
-        selling_expense: [5, 6, 7],
-        admin_expense: [8, 9, 10],
-        total_profit: [10, 12, 15],
-        total_assets: [200, 220, 250],
-        total_liabilities: [80, 90, 100],
-        average_employees: [20, 22, 25],
-      }};
-      validateInput({{
-        company_name: "示例企业有限公司",
-        latest_year: 2025,
-        project_level: "省级专精特新中小企业",
-      }}, metrics);
-      const mapped = resolveIndustry({{
-        industries: [
-          {{ code: "C34", name: "通用设备制造业", keywords: ["装备", "机械"] }},
-          {{ code: "C39", name: "计算机通信和其他电子设备制造业", keywords: ["芯片"] }},
-        ],
-      }}, {{ main_product: "智能机械装备", industry_hint: "" }}, {{}});
-      if (mapped.code !== "C34") throw new Error("行业映射错误");
-      let blocked = false;
-      try {{
-        validateInput({{
-          company_name: "",
-          latest_year: 2025,
-          project_level: "",
-        }}, metrics);
-      }} catch (error) {{
-        blocked = error.message.includes("企业完整名称为空")
-          && error.message.includes("评估版本未确认");
-      }}
-      if (!blocked) throw new Error("无效输入未被阻断");
-    """
-    subprocess.run(
-        ["node", "--input-type=module", "--eval", javascript],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-
-
 def test_financial_assessment_validator() -> None:
     validator = load_python_module(
         "skills/financial-verification/scripts/validate_financial_assessment.py"

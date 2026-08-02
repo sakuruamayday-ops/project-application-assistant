@@ -2,10 +2,10 @@
   "schema_version": 1,
   "scripts": [
     {
-      "path": "skills/sme-score-preassessment/scripts/score_core.mjs",
+      "path": "skills/sme-score-preassessment/scripts/preflight.py",
       "risk": "high",
-      "reason": "决定专精特新与小巨人前期评分的输入有效性和行业映射。",
-      "test": "tests/test_high_risk_scripts.py::test_sme_score_core_validation_and_industry_mapping"
+      "reason": "决定专精特新与小巨人2026门槛预评估能否启动，并强制平台质量分边界。",
+      "test": "tests/test_sme_score_preflight.py::test_preflight_never_issues_internal_score"
     },
     {
       "path": "skills/financial-verification/scripts/validate_financial_assessment.py",

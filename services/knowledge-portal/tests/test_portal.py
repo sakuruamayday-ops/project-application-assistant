@@ -558,7 +558,7 @@ def test_public_user_guide(tmp_path):
         assert "当前正式通用版" in guide.text
         assert "尚未正式发布" in guide.text
         assert "当前没有通过简化安装能力门禁" in guide.text
-        assert "候选 V1.4.9 不等于已正式发布" in guide.text
+        assert "候选 V1.5.0 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -4080,19 +4080,19 @@ def test_api_rejects_missing_token(tmp_path):
         assert response.status_code == 401
 
 
-def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
+def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bearer_only(
     tmp_path,
     monkeypatch,
 ):
     module = load_app(tmp_path)
-    workbuddy_package = tmp_path / "workbuddy-v1.4.5.zip"
-    workbuddy_package.write_bytes(b"workbuddy-v1.4.5")
+    workbuddy_package = tmp_path / "workbuddy-v1.5.0.zip"
+    workbuddy_package.write_bytes(b"workbuddy-v1.5.0")
     artifact = {
         "file_path": str(workbuddy_package),
         "file_name": workbuddy_package.name,
         "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
         "target": "workbuddy",
-        "version": "1.4.5",
+        "version": "1.5.0",
     }
     monkeypatch.setattr(
         module,
@@ -4145,7 +4145,7 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         assert first.headers["cache-control"] == "no-store"
         assert first.json()["phase"] == "install_ready"
         prompt = first.json()["prompt"]
-        assert "V1.4.5" in prompt
+        assert "V1.5.0" in prompt
         assert "49 项 Skills" in prompt
         assert "只替换当前用户配置中的 `mcpServers.jiaotang-kb`" in prompt
         assert "保留所有其他 MCP 条目" in prompt
@@ -4155,7 +4155,13 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         assert "`.workbuddy/.mcp.json`" in prompt
         assert "禁止读取、修改或覆盖" in prompt
         assert "只合并 `jiaotang-kb`" in prompt
-        assert "移动到带时间戳的可恢复备份" in prompt
+        assert "plugin-backups/jiaotang-<旧版本>-<时间戳>" in prompt
+        assert "位于 plugins 与 plugins/marketplaces 之外" in prompt
+        assert "最终只能保留一个" in prompt
+        assert "移入系统回收站" in prompt
+        assert "不得永久删除" in prompt
+        assert "同时检查当前用户目录下" in prompt
+        assert "`.workbuddy` 与 `.codebuddy`" in prompt
         assert "不含 `.mcp.json`、`bin` 或 `mcp`" in prompt
         assert "手动点击信任" in prompt
         assert "不得尝试绕过宿主安全确认" in prompt
@@ -7645,7 +7651,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     with TestClient(module.app) as client:
         guide = client.get("/guide")
         assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.4.9 尚未正式发布" in guide.text
+        assert "安全候选 V1.5.0 尚未正式发布" in guide.text
 
         login = client.post(
             "/login",

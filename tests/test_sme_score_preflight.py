@@ -42,8 +42,8 @@ def quality_threshold(source_name: str, rule_id: str) -> object:
     )
 
 
-def test_full_score_blocks_once_on_high_impact_omissions():
-    returncode, result = run_preflight("--task-type", "full-score")
+def test_quality_preassessment_blocks_once_on_high_impact_omissions():
+    returncode, result = run_preflight("--task-type", "quality-preassessment")
 
     assert returncode == 2
     assert result["status"] == "needs-user-input"
@@ -51,7 +51,6 @@ def test_full_score_blocks_once_on_high_impact_omissions():
     assert [gap["key"] for gap in result["high_impact_gaps"]] == [
         "project_level",
         "application_type",
-        "standard_input",
     ]
     assert result["blocking_question"].count("请主人一次确认") == 1
 
@@ -65,27 +64,25 @@ def test_automatic_policy_injection_requires_task_specific_rerun():
     assert returncode == 0
     assert result["requires_task_specific_rerun"] is True
     assert result["can_issue_full_score"] is False
-    assert "prohibited_for_current_recognition" in result["method_boundary"]
+    assert "prohibited_outputs" in result["method_boundary"]
 
 
 def test_current_recognition_thresholds_are_selected_deterministically():
     provincial_code, provincial = run_preflight(
         "--task-type",
-        "full-score",
+        "quality-preassessment",
         "--project-level",
         "省级专精特新",
         "--application-type",
         "新申报",
-        "--has-standard-input",
     )
     giant_code, giant = run_preflight(
         "--task-type",
-        "full-score",
+        "quality-preassessment",
         "--project-level",
         "小巨人",
         "--application-type",
         "recognition",
-        "--has-standard-input",
     )
 
     assert provincial_code == giant_code == 0
@@ -96,7 +93,7 @@ def test_current_recognition_thresholds_are_selected_deterministically():
 def test_little_giant_review_does_not_reuse_recognition_threshold():
     returncode, result = run_preflight(
         "--task-type",
-        "non-financial-preview",
+        "gate-only",
         "--project-level",
         "专精特新小巨人",
         "--application-type",
@@ -104,9 +101,7 @@ def test_little_giant_review_does_not_reuse_recognition_threshold():
     )
 
     assert returncode == 0
-    assert result["selected_policy"]["rule_branch"] == (
-        "2022-transition-for-2026-review"
-    )
+    assert result["selected_policy"]["rule_branch"] == "2026-notice-review-transition"
     assert result["selected_policy"]["quality_score_threshold"] is None
 
 
@@ -138,5 +133,21 @@ def test_skill_contract_requires_preflight_and_current_baseline():
         in skill_text
     )
     assert "current-policy-baseline-2026.md" in skill_text
-    assert "省级专精特新中小企业质量得分不低于50分" in skill_text
-    assert "禁止把2022年四个二十五分维度" in skill_text
+    assert "省级质量分门槛为 50 分" in skill_text
+    assert "内部二十二项百分制" in skill_text
+    assert "can_issue_full_score" not in skill_text
+
+
+def test_preflight_never_issues_internal_score():
+    returncode, result = run_preflight(
+        "--task-type",
+        "quality-preassessment",
+        "--project-level",
+        "省级专精特新",
+        "--application-type",
+        "新申报",
+    )
+
+    assert returncode == 0
+    assert result["can_issue_full_score"] is False
+    assert result["quality_score_mode"] == "platform-only"

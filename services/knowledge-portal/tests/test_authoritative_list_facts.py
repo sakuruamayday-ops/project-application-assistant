@@ -354,6 +354,44 @@ def test_provincial_year_default_excludes_other_validity_events():
     assert result["filters"]["event_type"] == "annual_published"
 
 
+def test_provincial_query_accepts_legacy_event_table_without_subject_type():
+    connection = memory_database()
+    connection.executescript(
+        """
+        CREATE TABLE enterprise_recognition_events(
+            id INTEGER PRIMARY KEY,event_uid TEXT,identity_key TEXT,
+            enterprise_name_at_event TEXT,normalized_name TEXT,project_name TEXT,
+            subject_key TEXT,subject_name TEXT,product_name TEXT,event_year INTEGER,
+            recognition_year INTEGER,cohort_year INTEGER,event_type TEXT,event_scope TEXT,
+            evidence_status TEXT,lifecycle_rule_id TEXT,cycle_type TEXT,
+            validity_years INTEGER,batch TEXT,status TEXT,recognition_province TEXT,
+            recognition_city TEXT,recognition_county TEXT,source_title TEXT,
+            source_paths_json TEXT,source_urls_json TEXT,sequence_numbers_json TEXT,
+            source_kinds_json TEXT
+        );
+        INSERT INTO enterprise_recognition_events VALUES(
+            1,'legacy-1','id-1','杭州兼容有限公司','杭州兼容有限公司',
+            '浙江省专精特新中小企业','enterprise','杭州兼容有限公司','',
+            2026,2026,2026,'recognition','qualification','official_final_list',
+            '','',3,'第一批','认定','浙江省','杭州市','','正式名单',
+            '[\"名单.pdf\"]','[]','[\"1\"]','[\"lifecycle_manifest\"]'
+        );
+        """
+    )
+
+    result = query_authoritative_list_facts(
+        connection,
+        list_type="provincial_specialized_sme",
+        year=2026,
+        region="杭州市",
+        event_type="recognition",
+        limit=10,
+    )
+
+    assert result["total"] == 1
+    assert result["results"][0]["enterprise_name"] == "杭州兼容有限公司"
+
+
 def test_three_first_default_list_excludes_discovery_records():
     connection = memory_database()
     connection.executescript(

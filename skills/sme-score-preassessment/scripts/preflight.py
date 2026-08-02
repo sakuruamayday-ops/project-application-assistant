@@ -10,7 +10,7 @@ SKILL_DIR = Path(__file__).resolve().parents[1]
 BASELINE_PATH = (
     SKILL_DIR / "references" / "current-policy-baseline-2026.json"
 )
-TASK_TYPES = ("full-score", "non-financial-preview", "explanation")
+TASK_TYPES = ("quality-preassessment", "gate-only", "explanation")
 APPLICATION_TYPE_ALIASES = {
     "recognition": "recognition",
     "new-recognition": "recognition",
@@ -60,23 +60,20 @@ def run_preflight(
                 "key": "task_type",
                 "label": "任务类型",
                 "allowed_values": list(TASK_TYPES),
-                "impact": "决定是否允许形成完整总分",
+                "impact": "决定是否执行2026门槛预评估；旧版测分任务已停用",
             }
         )
 
     canonical_level = normalize_project_level(project_level, baseline)
     canonical_application_type = normalize_application_type(application_type)
-    requires_scoring_context = task_type in {
-        "full-score",
-        "non-financial-preview",
-    }
+    requires_scoring_context = task_type in {"quality-preassessment", "gate-only"}
     if requires_scoring_context and not canonical_level:
         high_impact_gaps.append(
             {
                 "key": "project_level",
                 "label": "项目层级",
                 "allowed_values": list(baseline["project_levels"]),
-                "impact": "决定50分或60分门槛及行业基准地域",
+                "impact": "决定50分或60分平台质量门槛及适用通知",
             }
         )
     if requires_scoring_context and not canonical_application_type:
@@ -88,16 +85,6 @@ def run_preflight(
                 "impact": "2026年新申报与复核可能适用不同规则",
             }
         )
-    if task_type == "full-score" and not has_standard_input:
-        high_impact_gaps.append(
-            {
-                "key": "standard_input",
-                "label": "已填写的标准三年财务底表",
-                "allowed_values": [],
-                "impact": "缺少企业财务输入时禁止形成完整总分",
-            }
-        )
-
     selected_policy = None
     if canonical_level and canonical_application_type:
         level_config = baseline["project_levels"][canonical_level]
@@ -117,16 +104,16 @@ def run_preflight(
                 f"{gap['label']}{f'，可选：{allowed}' if allowed else ''}"
             )
         blocking_question = (
-            "开始评分前，请主人一次确认或补充：" + "；".join(prompts) + "。"
+            "开始2026门槛预评估前，请主人一次确认或补充：" + "；".join(prompts) + "。"
         )
 
     low_impact_assumptions = []
-    if task_type in {"full-score", "non-financial-preview"}:
+    if task_type in {"quality-preassessment", "gate-only"}:
         low_impact_assumptions.append(
             {
                 "key": "output_format",
-                "assumed_value": "Excel",
-                "reason": "技能默认交付可复算工作簿",
+                "assumed_value": "结构化预评估表",
+                "reason": "技能不再生成内部评分工作簿",
             }
         )
 
@@ -134,7 +121,8 @@ def run_preflight(
         "schema_version": 1,
         "status": "needs-user-input" if high_impact_gaps else "ready",
         "can_start_substantive_work": not high_impact_gaps,
-        "can_issue_full_score": task_type == "full-score" and not high_impact_gaps,
+        "can_issue_full_score": False,
+        "quality_score_mode": "platform-only",
         "requires_task_specific_rerun": task_type == "explanation",
         "policy_version": baseline["policy_version"],
         "policy_as_of": baseline["as_of"],
@@ -148,7 +136,7 @@ def run_preflight(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="专精特新评分任务前置遗漏扫描"
+        description="2026年专精特新门槛预评估前置遗漏扫描"
     )
     parser.add_argument("--task-type", default="")
     parser.add_argument("--project-level", default="")
