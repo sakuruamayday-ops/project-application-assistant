@@ -10,12 +10,12 @@ description: 按2026年现行政策执行专精特新中小企业与专精特新
 
 !`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/preflight.py" --task-type explanation`
-
 !`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "sme-score-preassessment" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
 
 每次触发先执行 `prepare` 并应用 `active_preferences`；失败时停止，受限时明确能力边界。长期偏好不能覆盖真实性、安全和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/preflight.py" --task-type explanation`
 
 ## 目标与边界
 
