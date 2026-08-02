@@ -4,6 +4,22 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 service_dir="$(cd "${script_dir}/.." && pwd)"
 repository_dir="$(cd "${service_dir}/../.." && pwd)"
+release_mode="${JIAOTANG_RELEASE_MODE:-}"
+case "${release_mode}" in
+    code|index) ;;
+    *)
+        echo "必须显式设置 JIAOTANG_RELEASE_MODE=code 或 index。" >&2
+        exit 74
+        ;;
+esac
+if [[ -n "${JIAOTANG_INDEX_ALREADY_DEPLOYED:-}" ]]; then
+    echo "JIAOTANG_INDEX_ALREADY_DEPLOYED 已停用；请使用显式发布模式。" >&2
+    exit 74
+fi
+index_rollback_enabled=0
+if [[ "${release_mode}" == "index" ]]; then
+    index_rollback_enabled=1
+fi
 if [[ "${JIAOTANG_DEPLOY_LOCK_HELD:-false}" != "true" ]]; then
     exec python3 "${script_dir}/with_deployment_lock.py" \
         --lock-file "${JIAOTANG_DEPLOY_LOCK_FILE:-${HOME}/.cache/jiaotang/deploy-production.lock}" \
@@ -262,7 +278,8 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/build_knowledge_content_index.py \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py \
     scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
-    scripts/oss_auth.py \
+    scripts/oss_auth.py scripts/verify_acceptance_receipt.py \
+    scripts/verify_index_release_binding.py \
     scripts/validate_operational_health.py scripts/report_systemd_failure.py \
     scripts/health_recovery_state.py \
     scripts/check_oss_governance.py scripts/deploy_index_delta_to_server.sh \
@@ -362,7 +379,7 @@ print(hashlib.sha256(payload).hexdigest())
 PY"
 )"
 
-echo "[3/7] 离线校验新release并构建独立运行环境"
+echo "[3/7] 离线校验新release并验证当前签名索引绑定（${release_mode}）"
 ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     python3 '${remote_release_dir}/scripts/python_supply_chain.py' \
         lock-metadata-verify --portal-dir '${remote_release_dir}' >/dev/null
@@ -384,32 +401,10 @@ ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     set -a
     source \"\${SOURCE_ENV}\"
     set +a
-    RELEASE_DIR='${remote_release_dir}' \
-        '${remote_release_dir}/.venv/bin/python' - <<'PY'
-import os
-import sqlite3
-import sys
-from pathlib import Path
-
-release = Path(os.environ['RELEASE_DIR'])
-sys.path.insert(0, str(release / 'scripts'))
-from publish_index_to_oss import PRODUCTION_FILES, release_id_for
-from refresh_index_from_oss import valid_index
-
-index_dir = Path(os.environ['JIAOTANG_INDEX_DIR'])
-missing = [name for name in PRODUCTION_FILES if not (index_dir / name).is_file()]
-if missing:
-    raise SystemExit('本地索引release集合不完整：' + ', '.join(missing))
-for name in PRODUCTION_FILES:
-    path = index_dir / name
-    if path.suffix.lower() in {'.sqlite', '.sqlite3', '.db'}:
-        with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as connection:
-            if connection.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
-                raise SystemExit(f'本地SQLite完整性失败：{path.name}')
-if not valid_index(index_dir / 'knowledge_content.sqlite3'):
-    raise SystemExit('本地全文索引结构化专表校验失败')
-release_id_for(index_dir, checkpoint=False)
-PY
+    '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/verify_index_release_binding.py' \
+        --index-root \"\${JIAOTANG_INDEX_DIR}\" \
+        --profile '${remote_release_dir}/references/acceptance-harness/knowledge-base.json'
     chmod -R a-w '${remote_release_dir}'
     find '${remote_release_dir}' -type d -exec chmod a+rx {} +
     find '${remote_release_dir}' -type f -exec chmod a+r {} +
@@ -563,15 +558,14 @@ PY
         2>/dev/null || true
     systemctl stop jiaotang-kb-backup.timer 2>/dev/null || true"
 
-echo "[5/7] 发布签名索引、原子切换应用current并健康回滚"
+echo "[5/7] 按 ${release_mode} 模式原子切换应用current并健康回滚"
 deployment_failed=0
-predeployed_index="${JIAOTANG_INDEX_ALREADY_DEPLOYED:-0}"
 ssh "${ssh_args[@]}" "${deploy_host}" "set -Eeuo pipefail
     set -a
     source /etc/jiaotang-kb-ops.env
     set +a
     app_switched=0
-    index_switched=${predeployed_index}
+    index_switched=${index_rollback_enabled}
     rollback_on_error() {
         trap - ERR
         set +e
@@ -604,67 +598,7 @@ PY
         exit 1
     }
     trap rollback_on_error ERR
-
-    if [ '${predeployed_index}' != '1' ]; then
-    bootstrap_release_id=\$(
-        RELEASE_DIR='${remote_release_dir}' \
-        '${remote_release_dir}/.venv/bin/python' - \
-        \"\${JIAOTANG_INDEX_DIR}\" <<'PY'
-import os
-import sqlite3
-import sys
-from pathlib import Path
-
-release = Path(os.environ['RELEASE_DIR'])
-sys.path.insert(0, str(release / 'scripts'))
-from oss_auth import build_bucket
-from publish_index_to_oss import PRODUCTION_FILES, pointer_state, release_id_for
-from refresh_index_from_oss import valid_index
-
-index_dir = Path(sys.argv[1])
-missing = [name for name in PRODUCTION_FILES if not (index_dir / name).is_file()]
-if missing:
-    raise SystemExit('本地索引release集合不完整：' + ', '.join(missing))
-for name in PRODUCTION_FILES:
-    path = index_dir / name
-    if path.suffix.lower() in {'.sqlite', '.sqlite3', '.db'}:
-        with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as connection:
-            if connection.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
-                raise SystemExit(f'本地SQLite完整性失败：{path.name}')
-if not valid_index(index_dir / 'knowledge_content.sqlite3'):
-    raise SystemExit('本地全文索引结构化专表校验失败')
-release_id = release_id_for(index_dir, checkpoint=False)
-prefix = os.environ.get('JIAOTANG_OSS_PREFIX', 'production').strip('/')
-current, _ = pointer_state(build_bucket(), f'{prefix}/index/current.json')
-current_id = str(current.get('release_id') or '') if current else ''
-if current_id and current_id != release_id:
-    raise SystemExit(
-        f'远端current已前移到{current_id}，本地为{release_id}；'
-        '拒绝用陈旧本地索引执行bootstrap'
-    )
-print(release_id)
-PY
-    )
-    '${remote_release_dir}/.venv/bin/python' \
-        '${remote_release_dir}/scripts/publish_index_to_oss.py' \
-        --index-dir \"\${JIAOTANG_INDEX_DIR}\" \
-        --release-id \"\${bootstrap_release_id}\" \
-        --allow-initial-current \
-        --index-policy always \
-        --prevalidated \
-        --capacity-budget-bytes \
-        \"\${JIAOTANG_OSS_CAPACITY_BUDGET_BYTES:-100000000000}\"
-
-    index_before=\$(readlink \"\${JIAOTANG_INDEX_DIR}/current\" 2>/dev/null || true)
-    '${remote_release_dir}/.venv/bin/python' \
-        '${remote_release_dir}/scripts/refresh_index_from_oss.py'
-    index_after=\$(readlink \"\${JIAOTANG_INDEX_DIR}/current\" 2>/dev/null || true)
-    if [ \"\${index_before}\" != \"\${index_after}\" ]; then
-        index_switched=1
-    fi
-    else
-        echo '索引已由统一发布编排预先验收并切换；跳过重复发布与刷新。'
-    fi
+    echo '代码部署不发布或刷新索引；索引模式仅承接上游已扫描并切换的release。'
 
     RUNTIME_ROOT='${runtime_root}' RELEASE_DIR='${remote_release_dir}' \
         python3 - <<'PY'

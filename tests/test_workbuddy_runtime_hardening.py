@@ -1178,6 +1178,38 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 ["sample"],
             )
 
+    def test_workbuddy_activation_rejects_fallback_outside_plugin_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            plugin_root.mkdir()
+            external = root / "external" / "policy-retrieval"
+            external.mkdir(parents=True)
+            (external / "SKILL.md").write_text(
+                "---\nname: policy-retrieval\ndescription: test\n---\n",
+                encoding="utf-8",
+            )
+            data_root = root / "behavior"
+            data_root.mkdir()
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                result = BEHAVIOR.activate(
+                    data_root,
+                    plugin_root,
+                    "session-3",
+                    "policy-retrieval",
+                    external,
+                )
+
+            self.assertEqual(result, 0)
+            receipt = json.loads(output.getvalue())
+            self.assertFalse(receipt["activation_ok"])
+            self.assertEqual(
+                receipt["error_code"],
+                "SKILL_DIRECTORY_UNAVAILABLE",
+            )
+
     def test_preference_migration_does_not_use_exec(self):
         script = (
             Path(__file__).resolve().parents[1]

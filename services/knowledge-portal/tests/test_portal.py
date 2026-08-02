@@ -3942,6 +3942,15 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         access = client.get("/access")
         assert "一键安装" in access.text
         assert "data-copy-agent-bootstrap" in access.text
+        skills = client.get("/skills")
+        assert skills.status_code == 200
+        assert "一键安装" in skills.text
+        assert "只替换" in skills.text
+        assert "knowledge_service_status" in skills.text
+        assert "data-copy-agent-binding" not in skills.text
+        assert "第三步 · 执行 bootstrap" not in skills.text
+        assert "设备登记" not in skills.text
+        assert "设备签名验证" not in skills.text
         first = client.post(
             "/agent-bootstrap-codes",
             data={"csrf_token": user["csrf_token"]},
@@ -5617,9 +5626,11 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
         assert package_sha256 in page.text
         assert "Ed25519 签名有效" in page.text
         assert "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI" in page.text
-        assert "[一次性安装码已隐藏]" in page.text
-        assert "四阶段连接状态" in page.text
-        assert "等待本地凭据保存并激活" in page.text
+        assert "安装包边界" in page.text
+        assert "运行时完成标准" in page.text
+        assert "knowledge_service_status" in page.text
+        assert "四阶段连接状态" not in page.text
+        assert "设备登记 URL" not in page.text
         for sensitive in (
             "jbe_supersecret-code",
             "jtk_supersecret-token",

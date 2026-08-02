@@ -49,6 +49,15 @@ def test_suite_release_tag_and_semver_are_consistent() -> None:
     ) == version_match.groups()
 
 
+def test_delivery_contract_rule_version_matches_suite_release() -> None:
+    manifest = load_manifest()
+    contract = json.loads(
+        (SKILLS_ROOT / "delivery-contracts.json").read_text(encoding="utf-8")
+    )
+
+    assert contract["rule_version"] == manifest["release"]["version"]
+
+
 def test_call_graph_covers_manifest_skill_set() -> None:
     manifest = load_manifest()
     graph_path = SKILLS_ROOT / manifest["skill_call_graph"]

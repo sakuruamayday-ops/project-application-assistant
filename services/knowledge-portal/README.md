@@ -1,15 +1,14 @@
 # 企业全生命周期助手知识库服务
 
-面向团队的统一权限知识库入口。网站使用英文账号和密码登录；普通成员通过本地 Agent 的设备公钥签名访问 API 和 MCP，管理员账号保留多设备 API Key 豁免。
+面向团队的统一权限知识库入口。网站使用英文账号和密码登录；普通成员使用门户签发的个人 Token 访问 REST API 和远程 Streamable HTTP MCP。
 
 ## 安全边界
 
 - 不设置部门或技能等级，所有有效用户拥有相同知识检索能力。
 - 普通成员使用团队大模型时默认每天5次，管理员问答不限次数；用户自带API不计团队额度。
-- 管理员不执行单设备限制；普通成员同一时间只允许一组有效设备公钥。
 - 登录密码使用 Argon2 哈希保存。
-- Session 和用户凭据仅保存 SHA-256 哈希；普通成员的明文 Token 只返回给本地安装代理，不在门户显示。
-- 普通成员使用 Ed25519 逐请求签名，云端保存公钥和 nonce；私钥在 macOS 系统钥匙串或 Windows 当前用户 DPAPI 中保存。
+- Session 和用户凭据仅保存 SHA-256 哈希；普通成员的明文 Token 只在本人登录后的手工配置页和一键安装指令中返回。
+- 手工配置页自动复用有效个人 Token；不存在或已撤销时才生成新值，并使用 `Cache-Control: private, no-store`。
 - 登录账号使用英文；生成 API Token 时填写中文真实姓名，公司全称用于团队成员身份验证。
 - 登录时可选择七天自动登录，未选择时沿用短会话时长。
 - OSS、SSH、数据库密码和阿里云 AccessKey 不进入 Skills。
@@ -86,29 +85,15 @@ python scripts/python_supply_chain.py verify \
 
 普通成员：
 
-1. 在门户点击“复制给 Agent”。
-2. 把复制的文字粘贴到本地 Agent。
-3. 门户先向 Agent 提供 `jiaotang-agent-install/v1` 审查说明。Agent 必须先确认当前宿主是 WorkBuddy 5 或更高版本。审查阶段只包含签名 WorkBuddy 插件包、联网地址、本地改动、凭据保存方式和回滚方法，不包含 `bootstrap_url`，也不包含任何动态命令字段。
-4. 用户核对审查结果后，必须回到门户点击“我已审查，复制安装指令”；第二步只明确授权 WorkBuddy 应用内的签名插件安装。
-5. 第二阶段协议提供与本次安装码及已审查发布包绑定的一次性受限下载地址，无需复用浏览器 Cookie；用户核验 SHA-256 与 Ed25519 签名，解压后在 WorkBuddy 内通过 `/plugin marketplace add` 和 `/plugin install` 完成安装。
-6. WorkBuddy 从签名插件根目录 `.mcp.json` 加载 `jiaotang-kb`。若 5.3.x 把 `${CODEBUDDY_PLUGIN_ROOT}` 当成字面量导致 MCP -32000，安装指令允许仅将用户级 `jiaotang-kb` 条目合并为指向已验签持久插件文件的绝对路径，保留其他 MCP 且不改签名插件副本。
-7. 插件加载并枚举本地 setup 工具后，用户回到门户点击第三步“复制知识库绑定指令”。门户此时才生成并刷新一次性 `bootstrap_url`；该地址仅作为 setup 工具参数使用，不写入普通配置。
-8. 只有服务器记录到首次成功的签名 MCP 连接，门户和安装器才会报告“安装成功”；此前统一显示“安装未完成”。
-9. 设备登记使用“预登记—系统凭据保存与回读—本机签名激活”两阶段事务。预登记不创建有效 Token、设备绑定或公钥；只有凭据回读成功后，服务器才在单个事务中激活。
-10. 同一预登记和激活请求必须幂等；凭据保存失败只留下会过期的预登记意图，不形成半绑定。
-11. 安装码、API Token 和设备私钥不得显示、复制到普通聊天回复或写入普通配置；设备私钥只在本机生成并进入系统凭据存储。
-12. 插件启用后会自动启动 `jiaotang-kb`；门户登记、凭据保存、首次验签和 MCP 连接四个阶段都完成，且 `tools/list` 实际枚举出 `knowledge_search`、`knowledge_document` 和 `knowledge_service_status` 并成功调用任一只读工具后，才算真实接入。
-13. 登录用户可在 Skills 中心打开一键诊断页，查看正式包摘要、Ed25519 签名状态、脱敏登记 URL 与四阶段状态；诊断页不包含安装码、Token、私钥或完整设备公钥。
-14. 管理员可在“成员管理”查看安装阶段和最近结果；若安装说明未读到，门户显示“未收到结果”。
+1. 在门户点击“一键安装”，把生成的一段完整指令粘贴给 WorkBuddy。
+2. WorkBuddy 安装或更新 49 项 Skills，启用失败放行的最小行为 Hook。
+3. WorkBuddy 只替换用户配置中的 `mcpServers.jiaotang-kb`，保留其他 MCP 条目；公共包不包含个人 Token、本地 MCP 服务或启动器。
+4. 保存后只重载一次；用户在 WorkBuddy 连接器管理中手动信任 `jiaotang-kb`。
+5. 执行 `tools/list`，确认 `knowledge_search`、`knowledge_document`、`knowledge_service_status` 全部出现，再实际调用 `knowledge_service_status`；只有返回 `connected: true` 才报告完成。
 
-自动三步安装只适配 WorkBuddy 5 的 macOS 与 Windows 宿主。其他 Agent 不进入本流程，也不得使用 WorkBuddy 插件包。
+旧版覆盖升级使用同一段一键安装指令：先把旧插件目录和用户 MCP 配置移到带时间戳的可恢复备份，移除旧本地 `jiaotang-kb` 连接方式，只替换新 `jiaotang-kb` 条目，并保留其他 MCP。不得读取旧钥匙串、DPAPI、设备凭据或 bootstrap 配置。
 
-跨平台三步安装回归使用同一套参数化夹具，分别执行 `darwin` 和 `win32` 运行分支。夹具会启动隔离门户、以普通成员完成审查、安装授权和 bootstrap 绑定，再运行真实 Node 连接器，自动断言设备登记、凭据回读、首次验签、MCP 连接、工具枚举和只读调用。第三步前的清单、注册和激活请求必须全部返回 403。该门禁不依赖截图或人工日志判读：
-
-```bash
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q \
-  tests/test_three_step_install_e2e.py
-```
+其他支持 Streamable HTTP MCP 的 Agent 使用 `/mcp-guide`。该页面自动复用或生成当前登录用户的个人 Token，并直接填入完整配置；用户无需到其他页面查找 Token。
 
 管理员可在门户生成管理员 API Key：
 
@@ -257,8 +242,11 @@ export JIAOTANG_DEPLOY_KEY="$HOME/.ssh/jiaotang_kb_aliyun"
 export JIAOTANG_WHEELHOUSE_DIR=/受控下载目录/portal-production-wheelhouse
 export JIAOTANG_DEPENDENCY_RELEASE_RECORD=/受控下载目录/portal-production-dependency-release-record.json
 export JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256=由对应main分支CI记录独立核对的摘要
+export JIAOTANG_RELEASE_MODE=code
 ./scripts/deploy_production.sh
 ```
+
+`JIAOTANG_RELEASE_MODE=code` 只验签当前 OSS 指针、不可变 release 清单及其绑定的 Acceptance Harness 回执，不读取或散列大型索引文件，也不会发布、刷新或回滚索引。索引发生变化时，必须改用 `sync_archived_knowledge_to_production.sh`；该编排执行全库扫描、生成 Harness 回执、把回执纳入签名索引 release，切换索引后再以 `JIAOTANG_RELEASE_MODE=index` 部署应用。禁止直接把 `deploy_production.sh` 当作索引发布入口。
 
 部署脚本先在本地核验 wheelhouse、外部绑定摘要、依赖身份和 main 分支 CI 发布记录，再把源码、锁、wheelhouse 和发布记录一起写入新槽。服务器安装阶段设置 `PIP_NO_INDEX=1`，只从该槽内的 wheelhouse 安装；生产主机不会访问 PyPI。若服务器启用了私有 Kindle 管理扩展，部署只会把 `app/kindle_library.py`、对应两个页面模板和私有导航模板四个白名单文件复制到新槽，并生成只含路径、大小和 SHA-256 的 `private-overlay-manifest.json`；其身份摘要会进入 `/build`，私有内容不会回传本地或进入公开仓库。
 

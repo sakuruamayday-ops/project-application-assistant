@@ -6,11 +6,13 @@
   "release": {
     "tag": "V1.4.8",
     "version": "1.4.8",
-    "summary": "V1.4.8 热修 WorkBuddy Skill 激活登记，保留 49 项原生加载与远程 MCP 简化安装边界。",
+    "summary": "V1.4.8 热修 WorkBuddy Skill 激活登记，并拆分代码发布与索引发布门禁。",
     "changes": [
       "Skill 激活块优先使用宿主稳定注入的 CODEBUDDY_PLUGIN_ROOT，并仅在可用时回退 CODEBUDDY_SKILL_DIR，不再因 Skill 目录环境变量缺失而静默跳过登记。",
       "激活脚本从插件根目录和 Skill 名称确定性解析真实目录，成功后复读会话状态确认持久化，并返回 activation_ok、Skill 名称和轮次 ID。",
       "激活失败返回可审计的错误码，不再与成功共用无差别 continue 回执；普通问答与 Hook 内部异常仍保持失败开放。",
+      "代码发布只验证签名 Acceptance Harness 回执、OSS current 指针和本机 current 绑定，不再读取或散列大型索引文件。",
+      "索引发布保留 Harness、SQLite 完整性、全量哈希、OSS 不可变 release 和原子切换；V1.4.8 首次以 index 模式完成签名回执协议迁移。",
       "继续保持 49 项 Skill 首字节 YAML frontmatter、真实名称原生加载、正式业务零 Skill 激活阻断和提示词只存摘要的 V1.4.7 修复。",
       "继续保持 49 项 Skills、用户级远程 HTTP MCP、自动填入个人 Token、只替换 jiaotang-kb、保留其他 MCP 和一次重载的简化安装边界。"
     ],

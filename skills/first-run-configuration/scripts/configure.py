@@ -347,7 +347,7 @@ def render_markdown(report: dict[str, object], credentials_file: Path) -> str:
             "",
             f"凭据文件：`{credentials_file}`",
             "",
-            "团队知识库Token和设备私钥只允许保存在系统凭据库，不写入该文件。该报告不包含Token、API Key、密码、Cookie或认证Header。启动Agent前，将第三方供应商凭据导入宿主安全环境；不要把凭据文件发送给他人。",
+            "团队知识库个人Token只写入当前用户的宿主MCP配置，不写入该文件；其他第三方凭据优先保存在宿主安全环境。该报告不包含Token、API Key、密码、Cookie或认证Header；不要把凭据文件发送给他人。",
             "",
             "## 后续规则",
             "",

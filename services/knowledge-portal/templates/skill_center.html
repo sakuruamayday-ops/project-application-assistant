@@ -140,66 +140,35 @@
   </div>
 
   <div id="skills-panel-install" class="skill-section-pane" data-skill-section-pane="install" role="tabpanel" aria-labelledby="skills-tab-install" hidden>
-    <div class="skill-pane-heading"><span class="skill-kicker">Local Agent Handshake</span><h2>安装与设备</h2><p>网页无法可靠拉起所有 Agent 客户端，因此这里生成一次性安全安装计划。你把指令粘贴给本地 Agent，审查改动并确认后执行，Agent 再把验收结果回传本站。</p><a class="button secondary" href="/skills/diagnostics">打开无敏感信息一键诊断</a></div>
+    <div class="skill-pane-heading"><span class="skill-kicker">ONE-STEP SETUP</span><h2>安装与连接</h2><p>网页暂未提供 WorkBuddy 深链，因此“一键安装”表示只复制粘贴一次；同一段指令完成 Skills、最小 Hook、远程 MCP 和验收。</p><a class="button secondary" href="/skills/diagnostics">打开无敏感信息一键诊断</a></div>
     <div class="skill-install-grid">
-      <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
-        <span class="skill-card-index">01 / 安装计划</span>
-        <h3>生成一次性安全安装指令</h3>
-        {% if active_device_binding and active_device_binding.mcp_connected_at %}
-        <p>当前账号已有通过服务器验收的本地 Agent。已安装版本为 <strong>V{{ active_device_binding.installed_version or '待核验' }}</strong>；升级会复用现有设备身份、密钥、访问凭据和 jiaotang-kb 连接。</p>
-        {% if active_device_binding.upgrade_available %}
-        <div class="agent-install-actions" data-agent-upgrade data-csrf-token="{{ user.csrf_token }}">
-          <button class="button agent-copy-primary" type="button" data-copy-agent-upgrade><span>升级到 V{{ active_device_binding.latest_workbuddy_version }}</span><small>第一步 · 生成审查计划</small></button>
-          <button class="button agent-confirm-install" type="button" data-confirm-agent-upgrade hidden><span>我已审查，复制升级确认</span><small>第二步 · 明确授权</small></button>
-          <p class="agent-copy-status" data-agent-upgrade-status aria-live="polite">升级不会重新登记设备；新包验签、启用和连接复核通过后才更新设备版本。</p>
-        </div>
-        {% elif not release_guidance.workbuddy_installable %}
-        <p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>
-        {% elif active_device_binding.installed_version %}
-        <p class="agent-copy-status">当前设备已经是最新正式版本，无需升级。</p>
-        {% else %}
-        <p class="agent-copy-status is-error">当前设备尚未回传已安装版本和包哈希，请联系管理员核验原安装记录；系统不会猜测源版本。</p>
-        {% endif %}
-        <a class="button secondary" href="/access">查看已连接设备</a>
-        {% else %}
+      <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}">
+        <span class="skill-card-index">01 / 一键安装</span>
+        <h3>复制完整指令给 WorkBuddy</h3>
         {% if release_guidance.workbuddy_installable %}
-        <p>第一步先确认当前宿主是 WorkBuddy 5 或更高版本，并审查插件包来源、SHA-256、联网地址、本地改动、凭据保存位置与撤销方法；第二步明确授权安装签名插件；插件加载后，第三步再单独复制 bootstrap 绑定指令。若不是 WorkBuddy，流程会在审查阶段停止。</p>
+        <p>安装或覆盖升级 49 项 Skills，启用失败放行的最小行为 Hook，只替换 <code>mcpServers.jiaotang-kb</code> 并保留其他 MCP，随后只重载一次。</p>
         <div class="agent-install-actions">
-          <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>生成并复制审查说明</span><small>第一步 · 仅审查</small></button>
+          <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>一键安装</span><small>复制完整指令给 WorkBuddy</small></button>
         </div>
-        <button class="button agent-confirm-install" type="button" data-confirm-agent-bootstrap hidden><span>我已审查，复制安装指令</span><small>第二步 · 安装插件</small></button>
-        <button class="button agent-binding-step" type="button" data-copy-agent-binding hidden><span>复制知识库绑定指令</span><small>第三步 · 执行 bootstrap</small></button>
-        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">先把审查说明粘贴到本地 Agent；核对无误后完成第二步安装，再回到本页执行第三步绑定。</p>
+        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到 WorkBuddy；只有 49 项 Skills、tools/list 和 knowledge_service_status 全部通过才算完成。</p>
         {% else %}
         <p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>
         <span class="button secondary is-disabled">新安装已暂停</span>
         {% endif %}
-        {% endif %}
         <div class="non-workbuddy-mcp-entry"><strong>手工配置远程 MCP</strong><p>网站会为当前登录用户自动复用或生成个人 Token，并填入完整配置；WorkBuddy 和其他支持 Streamable HTTP MCP 的 Agent 均可直接复制。</p><a class="button secondary" href="/mcp-guide">复制完整 MCP 配置</a></div>
       </article>
-      <article class="skill-install-status" data-agent-install-status>
-        <span class="skill-card-index">02 / 回传验收</span>
-        <h3>本机 Agent 状态</h3>
+      <article class="skill-install-status">
+        <span class="skill-card-index">02 / 完成标准</span>
+        <h3>WorkBuddy 运行时验收</h3>
         <ol class="skill-install-stages">
-          <li class="{{ 'is-complete' if active_device_binding and active_device_binding.key_id else '' }}" data-agent-stage="registration"><i></i><span><strong>设备登记</strong><small>{{ active_device_binding.first_bound_at_display if active_device_binding and active_device_binding.key_id else '等待 Agent 回传' }}</small></span></li>
-          <li class="{{ 'is-complete' if active_device_binding and active_device_binding.credential_saved_at else '' }}" data-agent-stage="credential_saved"><i></i><span><strong>凭据安全保存</strong><small>{{ active_device_binding.credential_saved_at_display if active_device_binding and active_device_binding.credential_saved_at else '尚未验收' }}</small></span></li>
-          <li class="{{ 'is-complete' if active_device_binding and active_device_binding.first_verified_at else '' }}" data-agent-stage="first_signature"><i></i><span><strong>设备签名验证</strong><small>{{ active_device_binding.first_verified_at_display if active_device_binding and active_device_binding.first_verified_at else '尚未验收' }}</small></span></li>
-          <li class="{{ 'is-complete' if active_device_binding and active_device_binding.mcp_connected_at else '' }}" data-agent-stage="mcp_connection"><i></i><span><strong>MCP 首次连接</strong><small>{{ active_device_binding.mcp_connected_at_display if active_device_binding and active_device_binding.mcp_connected_at else '尚未验收' }}</small></span></li>
+          <li><i></i><span><strong>49 项 Skills</strong><small>全部安装并可识别</small></span></li>
+          <li><i></i><span><strong>tools/list</strong><small>出现三个核心知识工具</small></span></li>
+          <li><i></i><span><strong>knowledge_service_status</strong><small>实际调用返回 connected: true</small></span></li>
+          <li><i></i><span><strong>配置合并</strong><small>其他 MCP 条目未被覆盖</small></span></li>
         </ol>
-        <div class="skill-install-result {{ 'is-success' if latest_agent_install_result and latest_agent_install_result.result_ok else ('is-error' if latest_agent_install_result else '') }}" data-agent-result>
-          <strong data-agent-result-title>{% if latest_agent_install_result %}最近一次{{ '升级' if latest_agent_install_result.operation == 'upgrade' else '安装' }}{{ '已通过' if latest_agent_install_result.result_ok else '未完成' }}{% else %}等待本地 Agent 回传{% endif %}</strong>
-          <p data-agent-result-message>{{ latest_agent_install_result.result_user_message if latest_agent_install_result else '生成安装计划后，本页会自动刷新设备登记、签名和 MCP 连接结果。' }}</p>
-          <small data-agent-result-next>{{ latest_agent_install_result.result_next_action if latest_agent_install_result and latest_agent_install_result.result_next_action else (latest_agent_install_result.result_reported_at_display if latest_agent_install_result else '') }}</small>
-        </div>
-        {% if active_device_binding and not active_device_binding.mcp_connected_at %}
-        <form method="post" action="/device-binding/replace" data-confirm="确认撤销这次未完成的设备登记？撤销后需要重新生成一次性配置。">
-          <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
-          <button class="button danger" type="submit">撤销未完成登记</button>
-        </form>
-        {% endif %}
       </article>
     </div>
-    <div class="skill-install-safety"><span>安全边界</span><p>安装器必须先校验 SHA-256；私钥只在本机生成且不上传；凭据进入系统安全存储；失败时回传阶段和下一步，但不回传密钥。</p></div>
+    <div class="skill-install-safety"><span>安全边界</span><p>个人 Token 只出现在当前登录用户的一键安装指令和手工配置页，不写入公共包或公共代码；Agent 最终回复不得复述 Token。</p></div>
   </div>
 
   <dialog class="skill-detail-dialog" data-skill-dialog aria-labelledby="skill-detail-title">

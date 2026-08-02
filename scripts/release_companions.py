@@ -401,6 +401,18 @@ def validate_manual_content(path: Path, spec: dict[str, Any]) -> dict[str, Any]:
     missing = [item for item in required if item.rstrip("。；; ") not in text]
     if missing:
         raise ValueError("Word 手册缺少清单事实：" + "、".join(missing))
+    forbidden_legacy_text = (
+        "jiaotang_kb_setup",
+        "bootstrap_url",
+        "设备私钥",
+        "设备密钥",
+        "更换绑定设备",
+        "已绑定设备通过门户升级事务",
+        "签名插件根目录 .mcp.json",
+    )
+    legacy_hits = [item for item in forbidden_legacy_text if item in text]
+    if legacy_hits:
+        raise ValueError("Word 手册仍包含旧安装机制：" + "、".join(legacy_hits))
     return {
         "status": "pass",
         "version": spec["tag"],

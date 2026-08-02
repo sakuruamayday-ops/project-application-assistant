@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 
@@ -59,3 +60,72 @@ def test_receipt_is_reused_only_when_all_inputs_match(tmp_path):
     )
     assert result["status"] == "fail"
     assert "inventory_index_sha256" in result["mismatches"]
+
+
+def test_signed_receipt_verification_never_hashes_large_index_files(
+    tmp_path,
+    monkeypatch,
+):
+    profile = tmp_path / "profile.json"
+    profile.write_text("{}", encoding="utf-8")
+    evidence = MODULE.expected_static_evidence(profile)
+    signed_index_hashes = {
+        evidence_name: hashlib.sha256(filename.encode()).hexdigest()
+        for evidence_name, filename in MODULE.INDEX_EVIDENCE_FILES.items()
+    }
+    payload = {
+        "receipt_schema": "jiaotang-acceptance-receipt/v1",
+        "profile_id": "test",
+        "generated_at": "2026-08-02T00:00:00+00:00",
+        "requested_suites": ["knowledge_base"],
+        "status": "pass",
+        "release_allowed": True,
+        "target_evidence": {**evidence, **signed_index_hashes},
+    }
+    receipt = tmp_path / "acceptance-harness.json"
+    receipt.write_text(json.dumps(payload), encoding="utf-8")
+    rows = [
+        {
+            "name": filename,
+            "sha256": signed_index_hashes[evidence_name],
+        }
+        for evidence_name, filename in MODULE.INDEX_EVIDENCE_FILES.items()
+    ]
+    rows.append(
+        {
+            "name": "acceptance-harness.json",
+            "sha256": hashlib.sha256(receipt.read_bytes()).hexdigest(),
+        }
+    )
+    release = {"files": rows}
+    original_sha256_file = MODULE.sha256_file
+    hashed_paths = []
+
+    def tracking_sha256(path):
+        hashed_paths.append(Path(path).name)
+        return original_sha256_file(path)
+
+    monkeypatch.setattr(MODULE, "sha256_file", tracking_sha256)
+    result = MODULE.verify_signed_receipt(
+        receipt,
+        profile,
+        release,
+        "knowledge_base",
+    )
+
+    assert result["status"] == "pass"
+    assert result["large_files_hashed"] == 0
+    assert not set(MODULE.INDEX_EVIDENCE_FILES.values()) & set(hashed_paths)
+
+    receipt.write_text(
+        json.dumps(payload | {"profile_id": "tampered"}),
+        encoding="utf-8",
+    )
+    tampered = MODULE.verify_signed_receipt(
+        receipt,
+        profile,
+        release,
+        "knowledge_base",
+    )
+    assert tampered["status"] == "fail"
+    assert "acceptance receipt digest differs from signed pointer" in tampered["errors"]
