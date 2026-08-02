@@ -1425,7 +1425,7 @@ def main() -> None:
             )
             delivery = companion_builder.deliver(
                 ROOT,
-                Path(companion_workspace.name),
+                companion_workspace,
             )
             completed = transition(
                 "completed",
