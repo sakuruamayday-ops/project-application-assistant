@@ -39,6 +39,13 @@ def test_remote_release_commands_use_current_runtime_slot() -> None:
     assert "/opt/jiaotang-kb/.venv/bin/python" not in source
 
 
+def test_companion_delivery_uses_absolute_recoverable_workspace() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+
+    assert "Path(companion_workspace.name)" not in source
+    assert "companion_builder.deliver(\n                ROOT,\n                companion_workspace," in source
+
+
 def fake_gate_attestation(
     gate: Path,
     monkeypatch: pytest.MonkeyPatch,

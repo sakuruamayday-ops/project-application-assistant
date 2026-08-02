@@ -276,6 +276,9 @@ PY"
 COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     app references templates static installers deploy \
     scripts/build_knowledge_content_index.py \
+    scripts/build_knowledge_inventory_from_manifest.py \
+    scripts/build_cloud_upload_allowlist.py \
+    scripts/run_acceptance_harness.py \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py \
     scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
     scripts/oss_auth.py scripts/verify_acceptance_receipt.py \

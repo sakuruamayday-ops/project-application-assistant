@@ -84,6 +84,12 @@ def test_deploy_verifies_signed_index_binding_without_refreshing_index():
     assert "EnvironmentFile=/etc/jiaotang-kb-ops.env" in refresh_service
     verifier = "scripts/verify_index_release_binding.py"
     assert verifier in deploy_script
+    for receipt_dependency in (
+        "scripts/build_knowledge_inventory_from_manifest.py",
+        "scripts/build_cloud_upload_allowlist.py",
+        "scripts/run_acceptance_harness.py",
+    ):
+        assert receipt_dependency in deploy_script
     assert "JIAOTANG_RELEASE_MODE=code 或 index" in deploy_script
     assert "bootstrap_release_id=" not in deploy_script
     assert "--allow-initial-current" not in deploy_script
