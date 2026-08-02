@@ -211,16 +211,14 @@ try {
   const installPane = page.locator('[data-skill-section-pane="install"]');
   assert.equal(await installPane.isVisible(), true);
   assert.equal(new URL(page.url()).hash, "#skills-install");
-  const bindingButton = installPane.locator("[data-copy-agent-binding]");
-  assert.equal(await bindingButton.count(), 1, "安装页必须提供独立的第三步 bootstrap 绑定按钮");
-  assert.equal(await bindingButton.isHidden(), true, "第三步必须在第二步授权前保持隐藏");
+  assert.equal(await installPane.locator("[data-copy-agent-binding]").count(), 0, "简化安装不得出现独立 bootstrap 绑定按钮");
+  assert.equal(await installPane.locator("[data-agent-install-status]").count(), 1, "安装页必须展示 MCP 状态");
+  assert.match(await installPane.locator("[data-agent-connection-label]").innerText(), /等待 MCP 连接|MCP 已连接|MCP 最近活跃|安装验收已通过/);
   const desktopInstallLayout = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
-    bindingLabel: document.querySelector('[data-skill-section-pane="install"] [data-copy-agent-binding]')?.textContent || "",
   }));
   assert.equal(desktopInstallLayout.documentWidth, desktopInstallLayout.viewportWidth, "桌面安装流程不应产生全局横向溢出");
-  assert.match(desktopInstallLayout.bindingLabel, /第三步.*bootstrap/s, "第三步按钮必须明确标注 bootstrap 绑定");
   if (process.env.SKILLS_QA_INSTALL_SCREENSHOT) {
     await page.screenshot({path: process.env.SKILLS_QA_INSTALL_SCREENSHOT, fullPage: true});
   }

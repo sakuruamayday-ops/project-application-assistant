@@ -786,7 +786,7 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
         assert "正式发布清单" in catalog.text
         assert "技能清单" in catalog.text
         assert "版本与下载" in catalog.text
-        assert "安装与设备" in catalog.text
+        assert "安装与连接" in catalog.text
         assert "生成安全安装计划" in catalog.text
         assert 'data-skill-open="project-application-assistant"' in catalog.text
         assert 'data-skill-row' in catalog.text
@@ -794,13 +794,13 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
 
         installation_status = client.get("/agent-installation-status")
         assert installation_status.status_code == 200
-        assert installation_status.json()["schema"] == "jiaotang-web-install-status/v1"
+        assert installation_status.json()["schema"] == "jiaotang-web-install-status/v2"
         assert not installation_status.json()["configured"]
         assert set(installation_status.json()["stages"]) == {
-            "registration",
-            "credential_saved",
-            "first_signature",
-            "mcp_connection",
+            "skills",
+            "tools_list",
+            "service_status",
+            "configuration_merge",
         }
 
         detail = client.get("/skills/catalog/project-application-assistant")
@@ -815,6 +815,68 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
 
         assert client.get("/skills/catalog/not-a-real-skill").status_code == 404
         assert client.get("/skills/catalog/%2E%2E%2Fapp%2Fmain.py").status_code == 404
+
+
+def test_admin_portal_section_order_and_mcp_activity_status(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        module.ensure_personal_access_token(int(user["id"]), "管理员个人 Token")
+        now = module.isoformat(module.utc_now())
+        with closing(module.database()) as connection:
+            token_id = int(
+                connection.execute(
+                    "SELECT id FROM device_tokens WHERE user_id=? AND revoked_at IS NULL",
+                    (int(user["id"]),),
+                ).fetchone()["id"]
+            )
+            connection.execute(
+                """
+                INSERT INTO api_usage(
+                    user_id,device_token_id,endpoint,method,activity_type,
+                    activity_name,counts_toward_usage,called_at
+                ) VALUES (?,?,'/mcp','POST','mcp_connection','MCP连接检测',0,?)
+                """,
+                (int(user["id"]), token_id, now),
+            )
+            connection.commit()
+
+        portal = client.get("/portal")
+        assert portal.status_code == 200
+        section_order = [
+            portal.text.index('id="algorithms"'),
+            portal.text.index('id="api-access"'),
+            portal.text.index('id="feedback"'),
+            portal.text.index('id="skills"'),
+            portal.text.index('id="health-admin"'),
+        ]
+        assert section_order == sorted(section_order)
+        assert "MCP 最近活跃" in portal.text
+        assert "评价插件包" in portal.text
+        assert "查看常用指令" in portal.text
+
+        status = client.get("/agent-installation-status")
+        assert status.status_code == 200
+        payload = status.json()
+        assert payload["schema"] == "jiaotang-web-install-status/v2"
+        assert payload["configured"] is True
+        assert payload["connection"]["state"] == "recently_active"
+        assert payload["connection"]["last_activity_type"] == "mcp_connection"
+        assert payload["stages"]["service_status"]["complete"] is True
 
 
 def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
@@ -1578,10 +1640,12 @@ def test_assistant_skill_router_and_read_only_tool_loop(tmp_path, monkeypatch):
     assert "project-matching" in skills
     assert set(module.route_assistant_skills("分析专利侵权和法律状态")) >= {"jiaotang-patent-router"}
 
-    monkeypatch.setattr(
-        module,
-        "request_assistant_model",
-        lambda messages, model_config=None: {
+    repeated_calls = 0
+
+    def repeat_search(messages, model_config=None):
+        nonlocal repeated_calls
+        repeated_calls += 1
+        return {
             "role": "assistant",
             "content": "",
             "tool_calls": [
@@ -1591,12 +1655,130 @@ def test_assistant_skill_router_and_read_only_tool_loop(tmp_path, monkeypatch):
                     "function": {"name": "knowledge_search", "arguments": '{"query":"小巨人","limit":3}'},
                 }
             ],
-        },
-    )
+        }
+
+    monkeypatch.setattr(module, "request_assistant_model", repeat_search)
     fallback_answer, fallback_mode, fallback_sources, _ = module.answer_with_knowledge("继续检索小巨人", [])
     assert fallback_mode == "policy-guardrail"
     assert "现行版本" in fallback_answer
     assert "小巨人" in fallback_sources[0]["title"]
+    assert repeated_calls == 4
+
+
+def test_assistant_execution_policy_uses_dynamic_12_or_16_rounds(tmp_path):
+    module = load_app(tmp_path)
+
+    default_policy = module.assistant_execution_policy("查询一条政策", ["policy-retrieval"])
+    complex_policy = module.assistant_execution_policy(
+        "请撰写完整的金税四期分析报告",
+        ["manufacturing-tax-risk-analysis"],
+    )
+
+    assert default_policy == {
+        "tier": "default",
+        "complex": False,
+        "max_rounds": 12,
+        "max_seconds": 180,
+        "max_tool_calls": 24,
+        "max_no_progress_rounds": 3,
+    }
+    assert complex_policy == {
+        "tier": "complex",
+        "complex": True,
+        "max_rounds": 16,
+        "max_seconds": 300,
+        "max_tool_calls": 40,
+        "max_no_progress_rounds": 3,
+    }
+
+
+def test_assistant_stops_at_round_and_tool_call_budgets(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    monkeypatch.setattr(module, "AI_API_BASE", "https://model.example.com")
+    monkeypatch.setattr(module, "AI_API_KEY", "test-key")
+    monkeypatch.setattr(module, "AI_MODEL", "test-model")
+    monkeypatch.setattr(module, "ASSISTANT_MAX_NO_PROGRESS_ROUNDS", 100)
+    source = {
+        "document_id": 901,
+        "title": "测试知识资料",
+        "excerpt": "用于验证动态执行门禁。",
+        "source": "test",
+    }
+    model_calls = 0
+    tool_results = 0
+
+    def endless_model(messages, model_config=None):
+        nonlocal model_calls
+        model_calls += 1
+        return {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": f"call-{model_calls}",
+                    "type": "function",
+                    "function": {
+                        "name": "knowledge_search",
+                        "arguments": json.dumps({"query": f"轮次{model_calls}"}),
+                    },
+                }
+            ],
+        }
+
+    def unique_tool_result(name, arguments):
+        nonlocal tool_results
+        tool_results += 1
+        return {"sequence": tool_results}, []
+
+    monkeypatch.setattr(module, "request_assistant_model", endless_model)
+    monkeypatch.setattr(module, "execute_assistant_tool", unique_tool_result)
+    answer, mode, _, _ = module.answer_with_knowledge("普通资料整理", [source])
+    assert mode == "knowledge-search"
+    assert "达到12轮安全上限" in answer
+    assert model_calls == 12
+    assert tool_results == 12
+
+    monkeypatch.setattr(module, "ASSISTANT_DEFAULT_MAX_TOOL_CALLS", 2)
+    monkeypatch.setattr(
+        module,
+        "request_assistant_model",
+        lambda messages, model_config=None: {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": f"batch-{index}",
+                    "type": "function",
+                    "function": {
+                        "name": "knowledge_search",
+                        "arguments": json.dumps({"query": f"批次{index}"}),
+                    },
+                }
+                for index in range(3)
+            ],
+        },
+    )
+    tool_results = 0
+    answer, mode, _, _ = module.answer_with_knowledge("普通资料整理", [source])
+    assert mode == "knowledge-search"
+    assert "达到2次上限" in answer
+    assert tool_results == 2
+
+    clock = iter((0.0, 0.0, 181.0))
+    monkeypatch.setattr(module, "ASSISTANT_DEFAULT_MAX_TOOL_CALLS", 24)
+    monkeypatch.setattr(module, "assistant_monotonic", lambda: next(clock))
+    monkeypatch.setattr(
+        module,
+        "request_assistant_model",
+        lambda messages, model_config=None: {
+            "role": "assistant",
+            "content": "本应被总时限门禁拦截",
+            "tool_calls": [],
+        },
+    )
+    answer, mode, _, _ = module.answer_with_knowledge("普通资料整理", [source])
+    assert mode == "knowledge-search"
+    assert "达到180秒总时限" in answer
 
 
 def test_assistant_searches_web_only_after_knowledge_miss(tmp_path, monkeypatch):
@@ -3980,6 +4162,11 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         assert "只重载 WorkBuddy 一次" in prompt
         assert "knowledge_service_status" in prompt
         assert "connected: true" in prompt
+        assert "欢迎评价这套Skills插件包" in prompt.replace(" ", "")
+        assert "查看常用指令" in prompt
+        assert "专精特新前期评估与后期体检" in prompt
+        assert "企业分析报告 A 标准版" in prompt
+        assert "金税四期分析报告" in prompt
         first_token = re.search(r"jtk_[A-Za-z0-9_-]+", prompt).group(0)
         second_token = re.search(
             r"jtk_[A-Za-z0-9_-]+", second.json()["prompt"]

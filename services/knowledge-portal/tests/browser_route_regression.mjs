@@ -55,7 +55,10 @@ async function waitForServer() {
 let browser;
 try {
   await waitForServer();
-  browser = await chromium.launch({headless: true});
+  browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.JIAOTANG_BROWSER_EXECUTABLE || undefined,
+  });
   const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
   await page.goto(`${baseUrl}/setup`);
   await page.fill('input[name="setup_key"]', "browser-route-setup");
@@ -71,6 +74,13 @@ try {
     page.waitForURL("**/portal"),
     page.click('button[type="submit"]'),
   ]);
+
+  const orderedSectionIds = ["overview", "cockpit", "algorithms", "api-access", "feedback", "skills", "health-admin"];
+  const renderedSectionIds = await page.evaluate((ids) => {
+    const sections = [...document.querySelectorAll("main section[id]")];
+    return sections.map((section) => section.id).filter((id) => ids.includes(id));
+  }, orderedSectionIds);
+  assert.deepEqual(renderedSectionIds, orderedSectionIds, "管理员单页区块顺序必须与左侧导航一致");
 
   for (const [legacyPath, sectionId] of routes) {
     const response = await page.goto(`${baseUrl}${legacyPath}`, {waitUntil: "networkidle"});

@@ -148,6 +148,48 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
         </article>
       </section>{% endif %}
 
+      {% if single_page or active_page == 'access' %}<section id="api-access" class="section-block">
+        <div class="section-heading"><div><p class="eyebrow">Access Center</p><h2>连接我的 Agent</h2></div><p>点击一次，复制一段完整指令给 WorkBuddy。</p></div>
+        {% if release_guidance.workbuddy_installable %}
+        <article class="panel agent-bootstrap-card" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
+          <div class="agent-bootstrap-copy">
+            <span class="file-tab">ONE-STEP SETUP</span>
+            <h3>一键安装 Skills 并连接知识库</h3>
+            <p>同一段指令会完成 49 项 Skills 安装或覆盖升级、最小行为 Hook 启用、远程 MCP 合并、一次重载和状态验收。</p>
+            <div class="button-row compact agent-install-actions">
+              <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>一键安装</span><small>复制完整指令给 WorkBuddy</small></button>
+            </div>
+            <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到 WorkBuddy；安装结果以 49 项 Skills、tools/list 和 knowledge_service_status 为准。</p>
+            <div class="agent-connection-summary is-{{ agent_connection_status.state }}" data-agent-install-status aria-live="polite">
+              <i></i><div><strong data-agent-connection-label>{{ agent_connection_status.label }}</strong><small data-agent-connection-detail>{{ agent_connection_status.detail }}</small></div>
+            </div>
+            <div class="agent-success-guidance" data-agent-success-guidance {% if not agent_connection_status.configured %}hidden{% endif %}>
+              <strong>连接成功后，可以继续体验</strong>
+              <p>欢迎评价这套 Skills 插件包，或查看内置常用指令。</p>
+              <div><button type="button" data-question="请评价这套企业全生命周期 Skills 插件包，并告诉我最值得改进的三点。">评价插件包</button><button type="button" data-question="请列出这套 Skills 插件包的常用指令，并按专精特新、高新、标准、企业分析和财税分类。">查看常用指令</button></div>
+              <small>覆盖专精特新前期评估与后期体检、高新申请书、标准撰写、企业分析 A/B/C 交付选择、金税四期分析报告等。</small>
+            </div>
+          </div>
+          <ol class="agent-setup-flow" aria-label="配置流程"><li><b>01</b><span><strong>安装</strong><small>49 项 Skills 与最小行为 Hook</small></span></li><li><b>02</b><span><strong>连接</strong><small>只替换 jiaotang-kb，保留其他 MCP</small></span></li><li><b>03</b><span><strong>验收</strong><small>一次重载并调用状态工具</small></span></li></ol>
+        </article>
+        {% else %}
+        <article class="panel agent-bootstrap-card"><div class="agent-bootstrap-copy"><span class="file-tab">INSTALL PAUSED</span><h3>WorkBuddy 新安装已暂停</h3><p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p><a class="button secondary" href="/guide">查看发布状态</a></div></article>
+        {% endif %}
+        <article class="panel non-workbuddy-mcp-card"><div class="panel-head"><div><span class="file-tab">REMOTE MCP</span><h3>手工配置 MCP</h3></div></div><p>页面会自动填入当前账号的真实个人 Token，WorkBuddy 和其他兼容 Agent 均可直接复制。</p><a class="button secondary" href="/mcp-guide">复制完整配置</a></article>
+        <article class="panel external-access"><div class="panel-head"><h3>外部服务注册入口</h3><span>按需注册后在首次配置向导中接入</span></div><div class="external-link-grid"><a href="https://www.tianyancha.com/ai" target="_blank" rel="noopener"><strong>天眼查 AI</strong><small>注册并授权企业主体、工商变更与历史名称查询能力</small></a><a href="https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY" target="_blank" rel="noopener"><strong>企查查智能体数据平台</strong><small>通过邀请入口注册并申请企业数据能力</small></a><a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" target="_blank" rel="noopener"><strong>Google BigQuery MCP</strong><small>连接官方托管MCP并查询公开专利数据集</small></a></div></article>
+        <article id="recent-calls" class="panel table-panel detail-anchor"><div class="panel-head"><h3>最近调用记录</h3><span>最近12条；连接检测不计入累计调用</span></div><div class="table-wrap"><table><thead><tr><th>用户</th><th>类型</th><th>方法</th><th>接口</th><th>时间</th></tr></thead><tbody>{% for call in recent_calls %}<tr><td>{{ call.label }}</td><td><strong>{{ call.activity_display }}</strong></td><td><code>{{ call.method }}</code></td><td><code>{{ call.endpoint }}</code></td><td>{{ call.called_at|cn_datetime }}</td></tr>{% else %}<tr><td colspan="5" class="empty">暂无调用记录</td></tr>{% endfor %}</tbody></table></div></article>
+      </section>{% endif %}
+
+      {% if single_page or active_page == 'feedback' %}<section id="feedback" class="section-block feedback-section">
+        <div class="section-heading"><div><p class="eyebrow">Feedback Board</p><h2>留言反馈</h2></div><p>提交功能建议、内容纠错或故障信息，管理员可在此跟进处理。</p></div>
+        <div class="feedback-layout">
+          <article class="panel feedback-compose"><div class="panel-head"><h3>新建留言</h3><span>请尽量描述复现步骤</span></div><form method="post" action="/feedback" class="form-stack"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><input type="hidden" name="page_url" value=""><label>留言类型<select name="category" required><option value="bug">故障与 Bug</option><option value="content">知识内容纠错</option><option value="suggestion">功能建议</option><option value="other">其他反馈</option></select></label><label>主题<input name="subject" required minlength="2" maxlength="100" placeholder="一句话概括问题"></label><label>详细说明<textarea name="content" required minlength="5" maxlength="3000" rows="7" placeholder="说明发生位置、操作步骤、期望结果；如涉及知识内容，请写明政策或文件名称。"></textarea></label><button class="button" type="submit">提交留言</button></form></article>
+          <article class="panel feedback-list"><div class="panel-head"><h3>{{ '全部团队留言' if user.is_admin else '我的留言' }}</h3><span>{% if feedback_status or feedback_query %}筛选 {{ feedback_messages|length }} / {% endif %}{{ feedback_total }} 条</span></div>{% if user.is_admin %}<form class="knowledge-filter" method="get" action="/feedback"><label>状态筛选<select name="feedback_status"><option value="" {{ 'selected' if not feedback_status else '' }}>全部状态</option><option value="pending" {{ 'selected' if feedback_status == 'pending' else '' }}>待处理</option><option value="reviewing" {{ 'selected' if feedback_status == 'reviewing' else '' }}>处理中</option><option value="resolved" {{ 'selected' if feedback_status == 'resolved' else '' }}>已解决</option><option value="closed" {{ 'selected' if feedback_status == 'closed' else '' }}>已关闭</option></select></label><label>关键词<input name="feedback_query" value="{{ feedback_query }}" maxlength="100" placeholder="主题、内容或提交人"></label><button class="button" type="submit">筛选</button>{% if feedback_status or feedback_query %}<a class="button secondary" href="/feedback">清除筛选</a>{% else %}<span></span>{% endif %}</form>{% endif %}<div class="feedback-items">{% for feedback in feedback_messages %}<article class="feedback-item"><div class="feedback-item-head"><div><span class="feedback-category category-{{ feedback.category }}">{{ {'bug':'Bug','content':'内容纠错','suggestion':'功能建议','other':'其他'}.get(feedback.category, feedback.category) }}</span><strong>{{ feedback.subject }}</strong></div><span class="feedback-status status-{{ feedback.status }}">{{ {'pending':'待处理','reviewing':'处理中','resolved':'已解决','closed':'已关闭'}.get(feedback.status, feedback.status) }}</span></div><p>{{ feedback.content }}</p><dl><div><dt>提交人</dt><dd>{{ feedback.real_name or feedback.username }}</dd></div><div><dt>提交时间</dt><dd>{{ feedback.created_at }}</dd></div>{% if feedback.admin_note %}<div><dt>管理员回复</dt><dd>{{ feedback.admin_note }}</dd></div>{% endif %}</dl>{% if user.is_admin %}<form method="post" action="/admin/feedback/{{ feedback.id }}" class="feedback-admin-form"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><select name="feedback_status"><option value="pending" {{ 'selected' if feedback.status == 'pending' else '' }}>待处理</option><option value="reviewing" {{ 'selected' if feedback.status == 'reviewing' else '' }}>处理中</option><option value="resolved" {{ 'selected' if feedback.status == 'resolved' else '' }}>已解决</option><option value="closed" {{ 'selected' if feedback.status == 'closed' else '' }}>已关闭</option></select><input name="admin_note" maxlength="2000" value="{{ feedback.admin_note }}" placeholder="处理说明或回复"><button class="button secondary" type="submit">更新</button></form>{% endif %}</article>{% else %}<div class="empty">{{ '未找到匹配的留言' if feedback_status or feedback_query else '暂无留言记录' }}</div>{% endfor %}</div></article>
+        </div>
+      </section>{% endif %}
+
+      {% if single_page or active_page == 'skills' %}{% include "skill_center.html" %}{% endif %}
+
       {% if user.is_admin and (single_page or active_page == 'health') %}
       <section id="health-admin" class="section-block admin-section">
         {% set operations_healthy = knowledge_stats.connected and admin_health.runtime.is_fresh and admin_health.runtime.status == '正常' and admin_health.backup.is_fresh and admin_health.backup.status in ['正常', '告警'] and admin_health.oss_cache.is_fresh and admin_health.oss_cache.status == '正常' and admin_health.oss_cache.generation_consistent %}
@@ -168,39 +210,6 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
         </div>
       </section>
       {% endif %}
-
-      {% if single_page or active_page == 'access' %}<section id="api-access" class="section-block">
-        <div class="section-heading"><div><p class="eyebrow">Access Center</p><h2>连接我的 Agent</h2></div><p>点击一次，复制一段完整指令给 WorkBuddy。</p></div>
-        {% if release_guidance.workbuddy_installable %}
-        <article class="panel agent-bootstrap-card" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}">
-          <div class="agent-bootstrap-copy">
-            <span class="file-tab">ONE-STEP SETUP</span>
-            <h3>一键安装 Skills 并连接知识库</h3>
-            <p>同一段指令会完成 49 项 Skills 安装或覆盖升级、最小行为 Hook 启用、远程 MCP 合并、一次重载和状态验收。</p>
-            <div class="button-row compact agent-install-actions">
-              <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>一键安装</span><small>复制完整指令给 WorkBuddy</small></button>
-            </div>
-            <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到 WorkBuddy；安装结果以 49 项 Skills、tools/list 和 knowledge_service_status 为准。</p>
-          </div>
-          <ol class="agent-setup-flow" aria-label="配置流程"><li><b>01</b><span><strong>安装</strong><small>49 项 Skills 与最小行为 Hook</small></span></li><li><b>02</b><span><strong>连接</strong><small>只替换 jiaotang-kb，保留其他 MCP</small></span></li><li><b>03</b><span><strong>验收</strong><small>一次重载并调用状态工具</small></span></li></ol>
-        </article>
-        {% else %}
-        <article class="panel agent-bootstrap-card"><div class="agent-bootstrap-copy"><span class="file-tab">INSTALL PAUSED</span><h3>WorkBuddy 新安装已暂停</h3><p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p><a class="button secondary" href="/guide">查看发布状态</a></div></article>
-        {% endif %}
-        <article class="panel non-workbuddy-mcp-card"><div class="panel-head"><div><span class="file-tab">REMOTE MCP</span><h3>手工配置 MCP</h3></div></div><p>页面会自动填入当前账号的真实个人 Token，WorkBuddy 和其他兼容 Agent 均可直接复制。</p><a class="button secondary" href="/mcp-guide">复制完整配置</a></article>
-        <article class="panel external-access"><div class="panel-head"><h3>外部服务注册入口</h3><span>按需注册后在首次配置向导中接入</span></div><div class="external-link-grid"><a href="https://www.tianyancha.com/ai" target="_blank" rel="noopener"><strong>天眼查 AI</strong><small>注册并授权企业主体、工商变更与历史名称查询能力</small></a><a href="https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY" target="_blank" rel="noopener"><strong>企查查智能体数据平台</strong><small>通过邀请入口注册并申请企业数据能力</small></a><a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" target="_blank" rel="noopener"><strong>Google BigQuery MCP</strong><small>连接官方托管MCP并查询公开专利数据集</small></a></div></article>
-        <article id="recent-calls" class="panel table-panel detail-anchor"><div class="panel-head"><h3>最近调用记录</h3><span>最近12条；连接检测不计入累计调用</span></div><div class="table-wrap"><table><thead><tr><th>用户</th><th>类型</th><th>方法</th><th>接口</th><th>时间</th></tr></thead><tbody>{% for call in recent_calls %}<tr><td>{{ call.label }}</td><td><strong>{{ call.activity_display }}</strong></td><td><code>{{ call.method }}</code></td><td><code>{{ call.endpoint }}</code></td><td>{{ call.called_at|cn_datetime }}</td></tr>{% else %}<tr><td colspan="5" class="empty">暂无调用记录</td></tr>{% endfor %}</tbody></table></div></article>
-      </section>{% endif %}
-
-      {% if single_page or active_page == 'feedback' %}<section id="feedback" class="section-block feedback-section">
-        <div class="section-heading"><div><p class="eyebrow">Feedback Board</p><h2>留言反馈</h2></div><p>提交功能建议、内容纠错或故障信息，管理员可在此跟进处理。</p></div>
-        <div class="feedback-layout">
-          <article class="panel feedback-compose"><div class="panel-head"><h3>新建留言</h3><span>请尽量描述复现步骤</span></div><form method="post" action="/feedback" class="form-stack"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><input type="hidden" name="page_url" value=""><label>留言类型<select name="category" required><option value="bug">故障与 Bug</option><option value="content">知识内容纠错</option><option value="suggestion">功能建议</option><option value="other">其他反馈</option></select></label><label>主题<input name="subject" required minlength="2" maxlength="100" placeholder="一句话概括问题"></label><label>详细说明<textarea name="content" required minlength="5" maxlength="3000" rows="7" placeholder="说明发生位置、操作步骤、期望结果；如涉及知识内容，请写明政策或文件名称。"></textarea></label><button class="button" type="submit">提交留言</button></form></article>
-          <article class="panel feedback-list"><div class="panel-head"><h3>{{ '全部团队留言' if user.is_admin else '我的留言' }}</h3><span>{% if feedback_status or feedback_query %}筛选 {{ feedback_messages|length }} / {% endif %}{{ feedback_total }} 条</span></div>{% if user.is_admin %}<form class="knowledge-filter" method="get" action="/feedback"><label>状态筛选<select name="feedback_status"><option value="" {{ 'selected' if not feedback_status else '' }}>全部状态</option><option value="pending" {{ 'selected' if feedback_status == 'pending' else '' }}>待处理</option><option value="reviewing" {{ 'selected' if feedback_status == 'reviewing' else '' }}>处理中</option><option value="resolved" {{ 'selected' if feedback_status == 'resolved' else '' }}>已解决</option><option value="closed" {{ 'selected' if feedback_status == 'closed' else '' }}>已关闭</option></select></label><label>关键词<input name="feedback_query" value="{{ feedback_query }}" maxlength="100" placeholder="主题、内容或提交人"></label><button class="button" type="submit">筛选</button>{% if feedback_status or feedback_query %}<a class="button secondary" href="/feedback">清除筛选</a>{% else %}<span></span>{% endif %}</form>{% endif %}<div class="feedback-items">{% for feedback in feedback_messages %}<article class="feedback-item"><div class="feedback-item-head"><div><span class="feedback-category category-{{ feedback.category }}">{{ {'bug':'Bug','content':'内容纠错','suggestion':'功能建议','other':'其他'}.get(feedback.category, feedback.category) }}</span><strong>{{ feedback.subject }}</strong></div><span class="feedback-status status-{{ feedback.status }}">{{ {'pending':'待处理','reviewing':'处理中','resolved':'已解决','closed':'已关闭'}.get(feedback.status, feedback.status) }}</span></div><p>{{ feedback.content }}</p><dl><div><dt>提交人</dt><dd>{{ feedback.real_name or feedback.username }}</dd></div><div><dt>提交时间</dt><dd>{{ feedback.created_at }}</dd></div>{% if feedback.admin_note %}<div><dt>管理员回复</dt><dd>{{ feedback.admin_note }}</dd></div>{% endif %}</dl>{% if user.is_admin %}<form method="post" action="/admin/feedback/{{ feedback.id }}" class="feedback-admin-form"><input type="hidden" name="csrf_token" value="{{ user.csrf_token }}"><select name="feedback_status"><option value="pending" {{ 'selected' if feedback.status == 'pending' else '' }}>待处理</option><option value="reviewing" {{ 'selected' if feedback.status == 'reviewing' else '' }}>处理中</option><option value="resolved" {{ 'selected' if feedback.status == 'resolved' else '' }}>已解决</option><option value="closed" {{ 'selected' if feedback.status == 'closed' else '' }}>已关闭</option></select><input name="admin_note" maxlength="2000" value="{{ feedback.admin_note }}" placeholder="处理说明或回复"><button class="button secondary" type="submit">更新</button></form>{% endif %}</article>{% else %}<div class="empty">{{ '未找到匹配的留言' if feedback_status or feedback_query else '暂无留言记录' }}</div>{% endfor %}</div></article>
-        </div>
-      </section>{% endif %}
-
-      {% if active_page == 'skills' %}{% include "skill_center.html" %}{% endif %}
 
       {# account 区块已移除：路由从不生成 active_page='account'，且该区块始终被 CSS 隐藏，属死代码。账号安全入口在右上角账户菜单内。 #}
 
