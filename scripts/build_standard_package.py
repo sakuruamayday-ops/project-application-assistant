@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import hashlib
-import importlib.util
 import json
 import re
 import subprocess
 import sys
-import tempfile
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -108,7 +106,6 @@ REQUIRED = [
     "skills/standard-drafting/assets/compilation-note-template.md",
     "skills/standard-drafting/scripts/audit_standard_draft.py",
     "docs/user-guide/api-mcp-configuration.md",
-    "docs/user-guide/企业全生命周期助手用户使用手册.docx",
 ]
 
 HOST_SKILL_INSTALL_PROMPT = "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
@@ -170,18 +167,6 @@ PACKAGE_DOCS = [
     "docs/config/paddle-ocr.md",
     "docs/config/qcc.md",
 ]
-
-
-def load_release_companion_builder(root: Path):
-    path = root / "scripts/release_companions.py"
-    specification = importlib.util.spec_from_file_location(
-        "standard_package_release_companions", path
-    )
-    if specification is None or specification.loader is None:
-        raise SystemExit("无法加载发布伴随物生成器")
-    module = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(module)
-    return module
 
 
 def included(path):
@@ -384,37 +369,10 @@ def main():
         raise SystemExit(f"缺少必需资源: {missing}")
     validate_release_source(args.root)
     files = sorted(path for path in (args.root / "skills").rglob("*") if path.is_file() and included(path.relative_to(args.root)))
-    companion_builder = load_release_companion_builder(args.root)
-    companion_root = companion_builder._recovery_root()
-    companion_root.mkdir(parents=True, exist_ok=True)
-    companion_workspace = Path(
-        tempfile.mkdtemp(
-            prefix="standard-package-release-companions-",
-            dir=companion_root,
-        )
-    )
-    companion_result = companion_builder.generate(
-        args.root,
-        companion_workspace,
-        apply_brand=True,
-        render=True,
-    )
     documentation = [
         (args.root / path, path)
         for path in PACKAGE_DOCS
     ]
-    documentation.extend(
-        [
-            (
-                Path(companion_result["manual"]),
-                f"docs/user-guide/{Path(companion_result['manual']).name}",
-            ),
-            (
-                Path(companion_result["companion"]),
-                f"docs/releases/{Path(companion_result['companion']).name}",
-            ),
-        ]
-    )
     official_skill_hashes = {
         path.parent.name: hashlib.sha256(path.read_bytes()).hexdigest()
         for path in files
@@ -452,8 +410,6 @@ def main():
             "enterprise_panorama_report": True,
             "automatic_workspace_archive": True,
             "api_mcp_user_guide": True,
-            "word_user_manual": True,
-            "release_companion_audit": True,
             "unified_first_run_configuration": True,
             "knowledge_graph": True,
             "controlled_skill_evolution": True,

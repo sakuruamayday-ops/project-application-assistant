@@ -25,7 +25,6 @@
       <a href="#api-access" data-section-link="api-access">API 与用户</a>
       <a href="#feedback" data-section-link="feedback">留言反馈</a>
       <a href="#skills" data-section-link="skills">Skills 中心</a>
-      <a href="/guide">使用手册</a>
     </nav>
     {% if user.is_admin %}
     <p class="nav-label">管理员</p>
@@ -167,7 +166,7 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           <ol class="agent-setup-flow" aria-label="配置流程"><li><b>01</b><span><strong>安装</strong><small>49 项 Skills 与最小行为 Hook</small></span></li><li><b>02</b><span><strong>连接</strong><small>只替换 jiaotang-kb，保留其他 MCP</small></span></li><li><b>03</b><span><strong>验收</strong><small>一次重载并调用状态工具</small></span></li></ol>
         </article>
         {% else %}
-        <article class="panel agent-bootstrap-card"><div class="agent-bootstrap-copy"><span class="file-tab">INSTALL PAUSED</span><h3>WorkBuddy 新安装已暂停</h3><p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p><a class="button secondary" href="/guide">查看发布状态</a></div></article>
+        <article class="panel agent-bootstrap-card"><div class="agent-bootstrap-copy"><span class="file-tab">INSTALL PAUSED</span><h3>WorkBuddy 新安装已暂停</h3><p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p><a class="button secondary" href="#skills">查看最新版</a></div></article>
         {% endif %}
         <article class="panel non-workbuddy-mcp-card"><div class="panel-head"><div><span class="file-tab">REMOTE MCP</span><h3>手工配置 MCP</h3></div></div><p>页面会自动填入当前账号的真实个人 Token，WorkBuddy 和其他兼容 Agent 均可直接复制。</p><a class="button secondary" href="/mcp-guide">复制完整配置</a></article>
         <article class="panel external-access"><div class="panel-head"><h3>外部服务注册入口</h3><span>按需注册后在首次配置向导中接入</span></div><div class="external-link-grid"><a href="https://www.tianyancha.com/ai" target="_blank" rel="noopener"><strong>天眼查 AI</strong><small>注册并授权企业主体、工商变更与历史名称查询能力</small></a><a href="https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY" target="_blank" rel="noopener"><strong>企查查智能体数据平台</strong><small>通过邀请入口注册并申请企业数据能力</small></a><a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" target="_blank" rel="noopener"><strong>Google BigQuery MCP</strong><small>连接官方托管MCP并查询公开专利数据集</small></a></div></article>

@@ -304,7 +304,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     requirements-test.in requirements-test.lock \
     requirements-lock-metadata.json \
     -C "${repository_dir}" \
-    docs/user-guide/企业全生命周期助手用户使用手册.md skills \
+    skills \
     | ssh "${ssh_args[@]}" "${deploy_host}" \
         "tar -C '${remote_release_dir}' -xf -"
 ssh "${ssh_args[@]}" "${deploy_host}" \
@@ -714,7 +714,7 @@ assert payload.get('private_overlay_identity_sha256') == sys.argv[12], (
 )
 PY
     curl --fail --silent --show-error \
-        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/guide\" >/dev/null"
+        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/demo\" >/dev/null"
 
 echo "[7/7] 部署完成：${deployment_id}"
 echo "应用current：${remote_release_dir}"

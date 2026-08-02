@@ -45,17 +45,6 @@ def fixture_inputs(tmp_path: Path):
     generic.write_bytes(b"generic")
     workbuddy.write_bytes(b"workbuddy")
     packages = {"generic": generic, "workbuddy": workbuddy}
-    companion = tmp_path / "companion.json"
-    companion.write_text("{}", encoding="utf-8")
-    companions = {
-        "payload": {
-            "release_tag": "V1.4.3",
-            "release_version": "1.4.3",
-            "skill_count": 1,
-            "manual": {"sha256": "manual-sha"},
-        },
-        "companion": companion,
-    }
     provenance = {
         "git_commit": "abc123",
         "git_tree": "tree123",
@@ -80,7 +69,7 @@ def fixture_inputs(tmp_path: Path):
     }
     gate_path = tmp_path / "gate.json"
     gate_path.write_text(json.dumps(gate), encoding="utf-8")
-    return root, packages, gate_path, notes, companions, gate
+    return root, packages, gate_path, notes, gate
 
 
 def install_fakes(monkeypatch: pytest.MonkeyPatch, packages: dict[str, Path]):
@@ -129,7 +118,7 @@ def test_gate_provenance_matches_commit_source_and_final_packages(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    root, packages, gate, notes, companions, _payload = fixture_inputs(tmp_path)
+    root, packages, gate, notes, _payload = fixture_inputs(tmp_path)
     install_fakes(monkeypatch, packages)
     result = MODULE.validate_inputs(
         root,
@@ -137,7 +126,6 @@ def test_gate_provenance_matches_commit_source_and_final_packages(
         packages,
         gate,
         notes,
-        companions,
         "abc123",
     )
     assert result["source_provenance"]["git_commit"] == "abc123"
@@ -243,7 +231,7 @@ def test_gate_provenance_rejects_replay_or_package_substitution(
     monkeypatch: pytest.MonkeyPatch,
     mutation: str,
 ):
-    root, packages, gate_path, notes, companions, gate = fixture_inputs(tmp_path)
+    root, packages, gate_path, notes, gate = fixture_inputs(tmp_path)
     install_fakes(monkeypatch, packages)
     if mutation == "commit":
         gate["source_provenance"]["git_commit"] = "old-commit"
@@ -257,6 +245,5 @@ def test_gate_provenance_rejects_replay_or_package_substitution(
             packages,
             gate_path,
             notes,
-            companions,
             "abc123",
         )

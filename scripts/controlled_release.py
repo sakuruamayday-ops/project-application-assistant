@@ -272,18 +272,6 @@ def load_portal_publisher(root: Path):
     return module
 
 
-def load_release_companion_builder(root: Path):
-    path = root / "scripts/release_companions.py"
-    specification = importlib.util.spec_from_file_location(
-        "release_companion_builder", path
-    )
-    if specification is None or specification.loader is None:
-        raise RuntimeError("无法加载发布伴随物生成器")
-    module = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(module)
-    return module
-
-
 def load_release_transaction_module(root: Path):
     path = (
         root
@@ -492,7 +480,6 @@ def validate_inputs(
     packages: dict[str, Path],
     gate_report: Path,
     notes: Path,
-    companions: dict[str, object],
     expected_commit: str,
 ) -> dict[str, object]:
     short, semantic, tag = normalize_version(version)
@@ -562,15 +549,6 @@ def validate_inputs(
             raise RuntimeError(
                 f"发布门禁报告绑定的{target}包与当前候选包不一致"
             )
-    payload = companions.get("payload")
-    if not isinstance(payload, dict):
-        raise RuntimeError("发布伴随物没有返回机器可读清单")
-    if (
-        payload.get("release_tag") != tag
-        or payload.get("release_version") != semantic
-        or payload.get("skill_count") != len(manifest.get("skills", []))
-    ):
-        raise RuntimeError("发布伴随物与 suite-manifest 不一致")
     return {
         "short_version": short,
         "semantic_version": semantic,
@@ -581,8 +559,6 @@ def validate_inputs(
         "gate_sha256": sha256(gate_report),
         "gate_attestation": gate_attestation,
         "source_provenance": provenance,
-        "manual_sha256": payload["manual"]["sha256"],
-        "companion_sha256": sha256(Path(str(companions["companion"]))),
     }
 
 
@@ -612,7 +588,6 @@ def prepare_ascii_assets(
     tag: str,
     packages: dict[str, Path],
     gate_report: Path,
-    companions: dict[str, Path] | None = None,
 ) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
     names = {
@@ -631,16 +606,6 @@ def prepare_ascii_assets(
     for key in ("signature", "metadata", "public_key"):
         source = Path(str(gate_attestation[key]))
         target = directory / source.name
-        shutil.copy2(source, target)
-        targets.append(target)
-    companion_names = {
-        "manual": f"jiaotang-user-manual-{tag}.docx",
-        "companion": f"jiaotang-release-companions-{tag}.json",
-    }
-    for companion_type, source in (companions or {}).items():
-        if companion_type not in companion_names:
-            raise RuntimeError(f"不支持的发布伴随物：{companion_type}")
-        target = directory / companion_names[companion_type]
         shutil.copy2(source, target)
         targets.append(target)
     return targets
@@ -1142,20 +1107,6 @@ def main() -> None:
         )
     if arguments.gate_report is None or arguments.release_notes is None:
         parser.error("发布预检、暂存和提升必须提供门禁报告与发布说明")
-    companion_workspace = recoverable_workspace_path(
-        "jiaotang-release-companions-"
-    )
-    companion_builder = load_release_companion_builder(ROOT)
-    companion_result = companion_builder.generate(
-        ROOT,
-        companion_workspace,
-        apply_brand=True,
-        render=True,
-    )
-    companion_files = {
-        "manual": Path(str(companion_result["manual"])),
-        "companion": Path(str(companion_result["companion"])),
-    }
     gate_report = arguments.gate_report.resolve()
     release_notes = arguments.release_notes.resolve()
     commit = validate_clean_default_branch(arguments.repository)
@@ -1165,7 +1116,6 @@ def main() -> None:
         packages,
         gate_report,
         release_notes,
-        companion_result,
         commit,
     )
     with recoverable_workspace(
@@ -1176,7 +1126,6 @@ def main() -> None:
             validation["tag"],
             packages,
             gate_report,
-            companion_files,
         )
         package_fingerprint = generic_publisher_fingerprint(
             packages["generic"]
@@ -1423,17 +1372,12 @@ def main() -> None:
                     "target_commit": commit,
                 },
             )
-            delivery = companion_builder.deliver(
-                ROOT,
-                companion_workspace,
-            )
             completed = transition(
                 "completed",
                 {
                     "github": "published",
                     "portal": portal_result.get("release_state"),
                     "installation": installation_acceptance.get("status"),
-                    "delivery": delivery.get("status"),
                 },
             )
         except Exception as exc:

@@ -200,14 +200,6 @@ PROTECTED_PREFERENCE_KEYS = {
     "approval_guarantee",
     "safety",
 }
-DEPLOYED_USER_GUIDE_PATH = BASE_DIR / "docs" / "user-guide" / "企业全生命周期助手用户使用手册.md"
-SOURCE_USER_GUIDE_PATH = BASE_DIR.parents[1] / "docs" / "user-guide" / "企业全生命周期助手用户使用手册.md"
-USER_GUIDE_PATH = Path(
-    os.environ.get(
-        "JIAOTANG_USER_GUIDE_PATH",
-        DEPLOYED_USER_GUIDE_PATH if DEPLOYED_USER_GUIDE_PATH.is_file() else SOURCE_USER_GUIDE_PATH,
-    )
-)
 AI_API_BASE = os.environ.get("JIAOTANG_AI_API_BASE", "").strip()
 AI_API_KEY = os.environ.get("JIAOTANG_AI_API_KEY", "").strip()
 AI_MODEL = os.environ.get("JIAOTANG_AI_MODEL", "").strip()
@@ -7292,7 +7284,7 @@ async def security_headers(request: Request, call_next):
             if re.fullmatch(r"[0-9a-f]{12,64}", version)
             else "public, max-age=300, must-revalidate"
         )
-    elif request.url.path in {"/demo", "/guide"}:
+    elif request.url.path == "/demo":
         response.headers.setdefault("Cache-Control", "public, max-age=300")
         response.headers.setdefault("X-Robots-Tag", "index, follow")
     elif request.url.path == "/robots.txt":
@@ -9047,29 +9039,6 @@ def portal_payload(
             if latest_release
             else None
         )
-        historical_release_rows = connection.execute(
-            """
-            SELECT id, version, file_name, sha256, release_notes, published_at
-            FROM skill_releases
-            WHERE id != COALESCE(?, -1)
-            ORDER BY published_at DESC, id DESC
-            """,
-            (latest_release["id"] if latest_release else None,),
-        ).fetchall()
-        historical_releases = []
-        for row in historical_release_rows:
-            if not is_public_skill_release_version(str(row["version"])):
-                continue
-            historical_workbuddy = workbuddy_artifact(str(row["version"]))
-            historical_releases.append(
-                {
-                    **dict(row),
-                    "published_at_display": format_chinese_datetime(row["published_at"]),
-                    "release_notes_html": render_guide_markdown(str(row["release_notes"])),
-                    "workbuddy_available": historical_workbuddy["installable"],
-                    "workbuddy": historical_workbuddy,
-                }
-            )
         release_announcement = None
         if latest_release:
             release_announcement = connection.execute(
@@ -9123,7 +9092,6 @@ def portal_payload(
         "releases": releases,
         "latest_release": latest_release_payload,
         "release_stage": release_stage_payload,
-        "historical_releases": historical_releases,
         "skill_center": skill_catalog_payload(),
         "project_algorithms": project_algorithm_catalog_payload(algorithm_coverage),
         "project_algorithm_detail": project_algorithm_detail_payload(
@@ -9335,7 +9303,7 @@ def build_provenance():
 @app.get("/robots.txt")
 def robots():
     return Response(
-        "User-agent: *\nAllow: /demo\nAllow: /guide\nDisallow: /\n",
+        "User-agent: *\nAllow: /demo\nDisallow: /\n",
         media_type="text/plain; charset=utf-8",
     )
 
@@ -9375,21 +9343,6 @@ def public_demo(request: Request):
         headers={
             "Cache-Control": "public, max-age=300",
             "X-Robots-Tag": "index, follow",
-        },
-    )
-
-
-@app.get("/guide", response_class=HTMLResponse)
-def user_guide(request: Request):
-    if not USER_GUIDE_PATH.is_file():
-        raise HTTPException(status_code=503, detail="用户使用手册暂不可用")
-    source = USER_GUIDE_PATH.read_text(encoding="utf-8")
-    return templates.TemplateResponse(
-        request,
-        "user_guide.html",
-        {
-            "guide_html": render_guide_markdown(source),
-            "release_guidance": public_release_guidance(),
         },
     )
 

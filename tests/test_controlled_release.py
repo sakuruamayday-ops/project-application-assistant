@@ -39,13 +39,6 @@ def test_remote_release_commands_use_current_runtime_slot() -> None:
     assert "/opt/jiaotang-kb/.venv/bin/python" not in source
 
 
-def test_companion_delivery_uses_absolute_recoverable_workspace() -> None:
-    source = SCRIPT.read_text(encoding="utf-8")
-
-    assert "Path(companion_workspace.name)" not in source
-    assert "companion_builder.deliver(\n                ROOT,\n                companion_workspace," in source
-
-
 def fake_gate_attestation(
     gate: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -108,37 +101,6 @@ def test_prepare_assets_contains_only_release_files(
         "gate.json.sig",
         "gate.json.signature.json",
         "gate-publisher-ed25519.pub",
-    ]
-
-
-def test_prepare_assets_includes_word_manual_and_companion_audit(
-    tmp_path,
-    monkeypatch,
-) -> None:
-    generic = tmp_path / "generic.zip"
-    gate = tmp_path / "gate.json"
-    manual = tmp_path / "manual.docx"
-    companion = tmp_path / "companion.json"
-    for path in (generic, gate, manual, companion):
-        path.write_text(path.name, encoding="utf-8")
-    fake_gate_attestation(gate, monkeypatch)
-
-    assets = MODULE.prepare_ascii_assets(
-        tmp_path / "assets",
-        "V1.3.1.1",
-        {"generic": generic},
-        gate,
-        {"manual": manual, "companion": companion},
-    )
-
-    assert [path.name for path in assets] == [
-        "jiaotang-skills-V1.3.1.1.zip",
-        "gate.json",
-        "gate.json.sig",
-        "gate.json.signature.json",
-        "gate-publisher-ed25519.pub",
-        "jiaotang-user-manual-V1.3.1.1.docx",
-        "jiaotang-release-companions-V1.3.1.1.json",
     ]
 
 

@@ -549,22 +549,11 @@ def allow_test_release_artifacts(monkeypatch, module) -> None:
     )
 
 
-def test_public_user_guide(tmp_path):
+def test_user_guide_is_removed_from_public_site(tmp_path):
     module = load_app(tmp_path)
     with TestClient(module.app) as client:
         guide = client.get("/guide")
-        assert guide.status_code == 200
-        assert "企业全生命周期助手用户使用手册" in guide.text
-        assert "下载与安装" in guide.text
-        assert "当前正式通用版" in guide.text
-        assert "尚未正式发布" in guide.text
-        assert "当前没有通过简化安装能力门禁" in guide.text
-        assert "候选 V1.5.1 不等于已正式发布" in guide.text
-        assert "项目算法与政策版本" in guide.text
-        assert "企业项目身份数字孪生" in guide.text
-        assert "patent-case-manifest" in guide.text
-        assert "53项 Skills 能力导航" not in guide.text
-        assert "2.1.5版本" not in guide.text
+        assert guide.status_code == 404
 
         client.post(
             "/setup",
@@ -572,7 +561,7 @@ def test_public_user_guide(tmp_path):
         )
         login = client.get("/login")
         assert login.status_code == 200
-        assert 'href="/guide"' in login.text
+        assert 'href="/guide"' not in login.text
 
 
 def test_public_demo_uses_published_release_state_instead_of_hardcoded_version(tmp_path):
@@ -6107,8 +6096,8 @@ def test_latest_skill_release_metadata_and_download(tmp_path, monkeypatch):
         client.cookies.update(login.cookies)
         skills_page = client.get("/skills")
         assert skills_page.status_code == 200
-        assert "企业全生命周期助手 V1.0" in skills_page.text
-        assert "下载 V1.0 通用包" in skills_page.text
+        assert "企业全生命周期助手 V1.0" not in skills_page.text
+        assert "下载 V1.0 通用包" not in skills_page.text
         with closing(module.database()) as connection:
             historical_id = connection.execute(
                 "SELECT id FROM skill_releases WHERE version='1.0'"
@@ -7433,15 +7422,15 @@ def test_security_headers_storage_cache_robots_health_and_404_contract(tmp_path)
     assert template_source.count("data-clear-sensitive-storage") >= 4
 
     with TestClient(module.app) as client:
-        guide = client.get("/guide")
-        csp = guide.headers["content-security-policy"]
+        demo = client.get("/demo")
+        csp = demo.headers["content-security-policy"]
         assert "script-src 'self'" in csp
         assert "script-src-attr 'none'" in csp
         assert "style-src 'self'" in csp
         assert "style-src-attr 'none'" in csp
         assert "'unsafe-inline'" not in csp
-        assert guide.headers["cache-control"] == "public, max-age=300"
-        assert guide.headers["x-robots-tag"] == "index, follow"
+        assert demo.headers["cache-control"] == "public, max-age=300"
+        assert demo.headers["x-robots-tag"] == "index, follow"
 
         digest = hashlib.sha256(
             (module.BASE_DIR / "static" / "portal.js").read_bytes()
@@ -7457,7 +7446,7 @@ def test_security_headers_storage_cache_robots_health_and_404_contract(tmp_path)
 
         robots = client.get("/robots.txt")
         assert "Allow: /demo" in robots.text
-        assert "Allow: /guide" in robots.text
+        assert "Allow: /guide" not in robots.text
         assert "Disallow: /" in robots.text
         assert robots.headers["cache-control"] == "public, max-age=3600"
 
@@ -7651,10 +7640,6 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
         selective_validation,
     )
     with TestClient(module.app) as client:
-        guide = client.get("/guide")
-        assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.5.1 尚未正式发布" in guide.text
-
         login = client.post(
             "/login",
             data={"username": "owner", "password": "owner-password-123"},
@@ -7936,7 +7921,7 @@ def test_release_display_validation_cache_rechecks_changed_file(
     assert calls == [("generic", True), ("generic", True)]
 
 
-def test_portal_hides_releases_before_first_public_version(tmp_path, monkeypatch):
+def test_portal_displays_only_latest_release(tmp_path, monkeypatch):
     module = load_app(tmp_path)
     module.FIRST_PUBLIC_SKILL_VERSION = "1.5.0"
     allow_test_release_artifacts(monkeypatch, module)
@@ -7981,7 +7966,7 @@ def test_portal_hides_releases_before_first_public_version(tmp_path, monkeypatch
 
     assert page.status_code == 200
     assert "企业全生命周期助手 V1.5.1" in page.text
-    assert "企业全生命周期助手 V1.5.0" in page.text
+    assert "企业全生命周期助手 V1.5.0" not in page.text
     assert "企业全生命周期助手 V1.4.9" not in page.text
 
 

@@ -133,18 +133,15 @@ class InstallTests(unittest.TestCase):
                 set(PORTABLE_REPORT_REQUIRED),
             )
             self.assertIn("skills/manufacturing-tax-risk-analysis/SKILL.md", names)
-            release_tag = suite_manifest["release"]["tag"]
-            self.assertIn(
-                f"docs/user-guide/企业全生命周期助手用户使用手册-{release_tag}.docx",
-                names,
-            )
-            self.assertIn(
-                f"docs/releases/企业全生命周期助手发布伴随物-{release_tag}.json",
-                names,
-            )
             self.assertNotIn(
                 "docs/user-guide/企业全生命周期助手用户使用手册.md",
                 names,
+            )
+            self.assertFalse(
+                any("用户使用手册" in name for name in names)
+            )
+            self.assertFalse(
+                any("发布伴随物" in name for name in names)
             )
             self.assertIn("skills/jiaotang-legal-regulations/SKILL.md", names)
             self.assertIn("skills/standard-drafting/SKILL.md", names)

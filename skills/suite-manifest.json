@@ -6,9 +6,8 @@
   "release": {
     "tag": "V1.5.1",
     "version": "1.5.1",
-    "summary": "V1.5.1 修复正式交付的主业务Skill识别、模板误触发和Stop Hook机器回执，并合并门户性能优化；V1.5.0继续作为首个对外正式版本保留。",
+    "summary": "V1.5.1 修复正式交付的主业务Skill识别、模板误触发和Stop Hook机器回执，并合并门户性能优化。",
     "changes": [
-      "V1.5.0 作为首个对外正式版本独立发布，V1.4.9及更早产物保持不可变历史。",
       "一键安装同时检查 .workbuddy 与 .codebuddy，把旧版、旧名称和重复副本移出活动搜索路径，在搜索路径外保留一个回滚快照，验收后其余副本移入系统回收站。",
       "Skill 与 Hook 根目录发现只接受固定 jiaotang 市场，不再使用会命中备份市场的通配搜索。",
       "专精特新前期评估只保留2026政策：核验硬门槛和平台质量分，删除历史四维评分、内部22项百分制、统计局折算与三档总分引擎。",
@@ -77,15 +76,6 @@
       "WorkBuddy 安装或升级失败时从 plugins 之外的回滚快照恢复原插件目录和用户 MCP 配置；不覆盖其他 MCP 条目。",
       "回滚不得覆盖个人项目资料、本地政策规则、个人偏好或系统凭据。"
     ]
-  },
-  "release_companions": {
-    "manual_template": "docs/user-guide/企业全生命周期助手用户使用手册.docx",
-    "manual_filename": "企业全生命周期助手用户使用手册-{tag}.docx",
-    "companion_filename": "企业全生命周期助手发布伴随物-{tag}.json",
-    "delivery_directory": "Desktop/焦糖待处理",
-    "word_manual_only": true,
-    "require_branding": true,
-    "require_render_qa": true
   },
   "skills": [
     "agriculture-and-rural-projects",
@@ -208,15 +198,6 @@
       "command": [
         "{python}",
         "tests/validate_three_first_gold.py"
-      ],
-      "timeout_seconds": 60
-    },
-    {
-      "name": "release-companion-contract",
-      "command": [
-        "{python}",
-        "scripts/release_companions.py",
-        "--check"
       ],
       "timeout_seconds": 60
     },
