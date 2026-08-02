@@ -558,7 +558,7 @@ def test_public_user_guide(tmp_path):
         assert "当前正式通用版" in guide.text
         assert "尚未正式发布" in guide.text
         assert "当前没有通过简化安装能力门禁" in guide.text
-        assert "候选 V1.4.7 不等于已正式发布" in guide.text
+        assert "候选 V1.4.8 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -7410,7 +7410,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     with TestClient(module.app) as client:
         guide = client.get("/guide")
         assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.4.7 尚未正式发布" in guide.text
+        assert "安全候选 V1.4.8 尚未正式发布" in guide.text
 
         login = client.post(
             "/login",
