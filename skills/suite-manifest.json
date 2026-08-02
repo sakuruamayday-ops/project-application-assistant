@@ -382,6 +382,8 @@
     "ip-evidence",
     "client-dossier",
     "filing-ready",
-    "needs-user-input"
+    "needs-user-input",
+    "verified-platform-score",
+    "pending-platform-evaluation"
   ]
 }
