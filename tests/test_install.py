@@ -49,6 +49,23 @@ class InstallTests(unittest.TestCase):
         )
         self.assertTrue(included(Path("skills/example/SKILL.md")))
 
+    def test_v150_active_skill_excludes_legacy_sme_scoring_engine(self):
+        repository = Path(__file__).resolve().parents[1]
+        skill = repository / "skills/sme-score-preassessment"
+        for relative in (
+            "scripts/run_score.sh",
+            "scripts/score_core.mjs",
+            "scripts/score_engine.mjs",
+            "scripts/nbs_fetch.mjs",
+            "scripts/zhejiang_fetch.mjs",
+            "assets/专精特新与小巨人前期评分预评估模板.xlsx",
+            "assets/专精特新与小巨人客户评分_三年财务底表模板.xlsx",
+        ):
+            self.assertFalse((skill / relative).exists(), relative)
+        text = (skill / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("pending-platform-evaluation", text)
+        self.assertIn("不得生成估算总分", text)
+
     @unittest.skipUnless(
         Path(
             os.environ.get(

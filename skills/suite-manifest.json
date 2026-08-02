@@ -4,12 +4,17 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.4.9",
-    "version": "1.4.9",
-    "summary": "V1.4.9 修复 WorkBuddy 默认安装布局下的 Hook 根目录发现，补齐激活持久化回执，并优化门户 MCP 状态、安装后引导与网站助手动态执行门禁。",
+    "tag": "V1.5.0",
+    "version": "1.5.0",
+    "summary": "V1.5.0 是首个对外正式版本：安装时清理活动路径旧版，只保留2026年专精特新预评估，并修复名单兼容、公式语义校验与Hook目录误选。",
     "changes": [
-      "Skill 激活启动器在宿主未注入 CODEBUDDY_PLUGIN_ROOT 和 CODEBUDDY_SKILL_DIR 时，会从用户目录下的 .workbuddy 与 .codebuddy 插件市场布局确定性发现当前插件。",
-      "根目录候选必须同时满足插件目录名、plugin.json、行为 Hook 脚本和目标 SKILL.md 校验；无效同名目录会被跳过，不会误执行当前工作目录中的脚本。",
+      "V1.5.0 作为首个对外正式版本独立发布，V1.4.9及更早产物保持不可变历史。",
+      "一键安装同时检查 .workbuddy 与 .codebuddy，把旧版、旧名称和重复副本移出活动搜索路径，在搜索路径外保留一个回滚快照，验收后其余副本移入系统回收站。",
+      "Skill 与 Hook 根目录发现只接受固定 jiaotang 市场，不再使用会命中备份市场的通配搜索。",
+      "专精特新前期评估只保留2026政策：核验硬门槛和平台质量分，删除历史四维评分、内部22项百分制、统计局折算与三档总分引擎。",
+      "public_list_search 兼容缺少 subject_type 列的历史名单表，不再因旧结构直接失败。",
+      "项目计算验证器新增公式语义复算，拒绝字段齐全但结果伪造的计算；高企三年成长性口径和2026至2029重新认定时间线固化为回归。",
+      "国产替代、补短板和填空白的外部型号、客户证明与第三方检测只作为增强证据，不再被设为企业自述成立前提。",
       "插件级 UserPromptSubmit 与 Stop Hook 使用同一套跨平台根目录发现逻辑，不再单独依赖宿主环境变量。",
       "Skill 激活成功回执新增 root_source、state_persisted、active_skills_after 和 active_skill_count，可直接证明激活状态已经持久化，无需依赖宿主未公开的 active_skills 查询接口。",
       "49 项生成后 Skill 已在默认 WorkBuddy 市场布局中逐项执行激活回归，最终同一会话状态精确记录 49 项。",
@@ -22,7 +27,7 @@
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.9 插件安装或覆盖升级和远程 MCP 连接。",
+      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.5.0 干净安装、活动路径旧版清理和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -56,6 +61,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖"
+        ,"活动搜索路径只保留一个 V1.5.0 jiaotang 市场"
       ],
       "released_adapters": [
         "workbuddy"
@@ -63,7 +69,7 @@
     },
     "rollback": [
       "通用 Skills 回滚时恢复上一版本 skills 目录，并重新运行安装完整性检查。",
-      "WorkBuddy 安装或升级失败时恢复原插件目录和用户 MCP 配置备份；不覆盖其他 MCP 条目。",
+      "WorkBuddy 安装或升级失败时从 plugins 之外的回滚快照恢复原插件目录和用户 MCP 配置；不覆盖其他 MCP 条目。",
       "回滚不得覆盖个人项目资料、本地政策规则、个人偏好或系统凭据。"
     ]
   },
@@ -216,7 +222,7 @@
         "-m",
         "pytest",
         "-q",
-        "services/knowledge-portal/tests/test_portal.py::test_v145_one_step_install_reuses_token_and_accepts_bearer_only"
+        "services/knowledge-portal/tests/test_portal.py::test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bearer_only"
       ],
       "environment": {
         "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
@@ -344,7 +350,7 @@
         "enterprise-profile"
       ],
       "required_paths": [],
-      "reason": "专精特新与小巨人前期评分复用项目口径和企业事实；成稿体检仍交由后期体检流程。"
+      "reason": "专精特新与小巨人前期预评估复用项目口径和企业事实；只核验2026硬门槛与平台质量分，成稿体检仍交由后期体检流程。"
     }
   },
   "allowed_external_skills": [],

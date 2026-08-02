@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""阻断已停用政策被重新写入当前申报、复核、评分或写作链。"""
+"""阻断历史专精评分引擎重新进入活动 Skills 包。"""
 
 from __future__ import annotations
 
@@ -10,67 +10,52 @@ from pathlib import Path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+ACTIVE_SKILL = REPOSITORY_ROOT / "skills" / "sme-score-preassessment"
+REMOVED_ACTIVE_PATHS = (
+    "scripts/run_score.sh",
+    "scripts/score_core.mjs",
+    "scripts/score_engine.mjs",
+    "scripts/nbs_fetch.mjs",
+    "scripts/zhejiang_fetch.mjs",
+    "assets/专精特新与小巨人前期评分预评估模板.xlsx",
+    "assets/专精特新与小巨人客户评分_三年财务底表模板.xlsx",
+)
+REQUIRED_CURRENT_MARKERS = {
+    "skills/sme-score-preassessment/SKILL.md": (
+        "2026 年政策",
+        "pending-platform-evaluation",
+        "不得生成估算总分",
+        "内部二十二项百分制",
+    ),
+    "skills/sme-score-preassessment/references/current-policy-baseline-2026.md": (
+        "2026 年新办法",
+        "待平台评价",
+        "2026 年小巨人复核过渡规则",
+    ),
+    "skills/sme-development-projects/SKILL.md": (
+        "活动技能只保留 2026 政策分支",
+        "不能扩展到新申报或未来年度",
+    ),
+}
+FORBIDDEN_ACTIVE_MARKERS = (
+    "--task-type full-score",
+    "三档总分唯一来源",
+    "固定22项、满分100分",
+    "2022-transition-for-2026-review",
+)
 OLD_POLICY_MARKERS = (
     "工信部企业〔2022〕63号",
     "2022年评价标准",
     "2022年评分表",
     "2022年标准",
-    "旧标准",
-    "旧评分表",
 )
-ACTIVE_ACTIONS = (
-    "使用",
-    "执行",
-    "沿用",
-    "适用",
-    "核验",
-    "计算",
-    "评分",
-    "补充",
-    "提取",
-)
-DENIAL_OR_HISTORY = (
-    "禁止",
-    "不得",
-    "不再",
-    "只保留为历史",
-    "仅用于历史",
-    "只用于历史",
+HISTORY_OR_DENIAL_MARKERS = (
     "历史事实",
     "曾按",
-    "已经结束",
+    "不得",
+    "禁止",
     "不构成",
-    "退出当前评价链",
-)
-
-ACTIVE_FILES = (
-    "skills/sme-development-projects/SKILL.md",
-    "skills/sme-development-projects/references/current-policy-baseline-2026.md",
-    "services/knowledge-portal/app/main.py",
-    "services/knowledge-portal/scripts/build_knowledge_content_index.py",
-)
-
-REQUIRED_RULES = {
-    "skills/sme-development-projects/SKILL.md": (
-        "不得用于当前或未来的新申报、复核、评分和材料写作",
-        "不得补充现行标准没有规定的条件",
-        "仅用于历史追溯",
-    ),
-    "skills/sme-development-projects/references/current-policy-baseline-2026.md": (
-        "禁止使用2022年评分表计算当前分数",
-        "禁止从旧标准提取现行标准没有规定的条件",
-        "不得据此启动当前评价",
-    ),
-    "services/knowledge-portal/app/main.py": (
-        "不得用于当前或未来的新申报、复核、评分和材料写作",
-        "不得补充现行标准没有规定的条件",
-        "不构成当前或以后年度的适用依据",
-    ),
-}
-
-EXPLICITLY_FORBIDDEN = (
-    "复核过渡情形可按旧标准",
-    "复核仅在当期通知明确的过渡范围内继续使用旧标准",
+    "不再",
 )
 
 
@@ -78,39 +63,38 @@ def line_has_active_old_policy_semantics(line: str) -> bool:
     normalized = re.sub(r"\s+", "", line)
     if not any(marker in normalized for marker in OLD_POLICY_MARKERS):
         return False
-    if not any(action in normalized for action in ACTIVE_ACTIONS):
+    if any(marker in normalized for marker in HISTORY_OR_DENIAL_MARKERS):
         return False
-    return not any(marker in normalized for marker in DENIAL_OR_HISTORY)
+    return any(action in normalized for action in ("使用", "执行", "适用", "计算", "评分"))
 
 
 def validate_repository(root: Path = REPOSITORY_ROOT) -> dict[str, object]:
     errors: list[str] = []
     checked: list[str] = []
+    active_skill = root / "skills" / "sme-score-preassessment"
+    for relative in REMOVED_ACTIVE_PATHS:
+        path = active_skill / relative
+        if path.exists():
+            errors.append(f"历史评分资产仍在活动技能中：{path.relative_to(root)}")
+        checked.append(str(path.relative_to(root)))
 
-    for relative in ACTIVE_FILES:
+    for relative, markers in REQUIRED_CURRENT_MARKERS.items():
         path = root / relative
         if not path.is_file():
             errors.append(f"缺少受控文件：{relative}")
             continue
         checked.append(relative)
         text = path.read_text(encoding="utf-8")
-        for phrase in EXPLICITLY_FORBIDDEN:
-            if phrase in text:
-                errors.append(f"{relative}包含禁止表述：{phrase}")
-        for line_number, line in enumerate(text.splitlines(), start=1):
-            if line_has_active_old_policy_semantics(line):
-                errors.append(
-                    f"{relative}:{line_number}疑似重新启用旧标准：{line.strip()}"
-                )
+        for marker in markers:
+            if marker not in text:
+                errors.append(f"{relative}缺少2026边界：{marker}")
+        for marker in FORBIDDEN_ACTIVE_MARKERS:
+            if marker in text:
+                errors.append(f"{relative}重新启用历史评分：{marker}")
 
-    for relative, phrases in REQUIRED_RULES.items():
-        path = root / relative
-        if not path.is_file():
-            continue
-        text = path.read_text(encoding="utf-8")
-        for phrase in phrases:
-            if phrase not in text:
-                errors.append(f"{relative}缺少强制停用规则：{phrase}")
+    archive = root / "docs/archive/sme-score-preassessment-legacy-before-v1.5.0"
+    if not (archive / "README.md").is_file():
+        errors.append("历史评分工具缺少可恢复审计归档")
 
     return {
         "status": "pass" if not errors else "fail",

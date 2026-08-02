@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.4.9"><img src="https://img.shields.io/badge/Release-V1.4.9-C9A760?style=for-the-badge" alt="Release V1.4.9"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.5.0"><img src="https://img.shields.io/badge/Release-V1.5.0-C9A760?style=for-the-badge" alt="Release V1.5.0"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.4.9.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
+  <a href="docs/releases/V1.5.0.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -56,6 +56,8 @@
 
 WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启动器、bootstrap、设备登记、钥匙串或DPAPI；用户侧不执行签名审查和插件目录哈希检查。手工配置页自动复用或生成当前登录用户的个人Token并填入完整远程HTTP MCP配置。
 
+V1.5.0 是首个面向外部用户的正式版本。此前版本继续保留为内部演进与审计历史，不覆盖、不改写。V1.5.0 一键安装会把旧版和重复副本移出活动插件搜索路径，在搜索路径外保留一个回滚快照，并在验收后把其余旧副本移入系统回收站，避免旧 Hook 被再次选中。
+
 ### WorkBuddy 平台说明
 
 WorkBuddy的系统差异由同一个插件市场包处理。安装完成标准统一为：49项Skills可识别，`tools/list`出现`knowledge_search`、`knowledge_document`、`knowledge_service_status`，并实际调用状态工具返回`connected: true`。
@@ -89,7 +91,7 @@ WorkBuddy的系统差异由同一个插件市场包处理。安装完成标准�
 |---|---|
 | [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.docx) | 下载、安装、首次配置和日常使用 |
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.4.9 发布说明](docs/releases/V1.4.9.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.5.0 发布说明](docs/releases/V1.5.0.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -142,10 +144,10 @@ Skill 全量验签以及开发源、正式包、隔离验收目录三方哈希�
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.4.9` | 网站、GitHub Release 和用户可见版本 |
-| 组件版本 | `1.4.9` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.5.0` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.5.0` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
-| 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1`、`V1.3.1.1`、`V1.3.1.2`、`V1.3.1.3`、`V1.3.1.4`、`V1.4.0`、`V1.4.1`、`V1.4.2`、`V1.4.3`、`V1.4.4`、`V1.4.5`、`V1.4.6`、`V1.4.7`、`V1.4.8` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
+| 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1`、`V1.3.1.1`、`V1.3.1.2`、`V1.3.1.3`、`V1.3.1.4`、`V1.4.0`、`V1.4.1`、`V1.4.2`、`V1.4.3`、`V1.4.4`、`V1.4.5`、`V1.4.6`、`V1.4.7`、`V1.4.8`、`V1.4.9` | 仅保留在历史 Release、迁移脚本、审计和测试中；不覆盖既有产物 |
 
 GitHub 文件列表右侧显示的是“最后修改该路径的提交标题”，不是该目录的当前版本。
 

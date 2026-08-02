@@ -412,8 +412,8 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 ("财务总览", "四项交付产物", "居中金色水印"),
             ),
             "sme-score-preassessment": (
-                "请生成专精特新前期评分报告。",
-                ("全指标评分底稿", "run_score.sh", "工作簿水印"),
+                "请生成专精特新前期预评估报告。",
+                ("2026质量评价输入清单", "平台质量分状态", "四项独立判断"),
             ),
             "sme-development-projects": (
                 "请生成专精特新后期体检报告。",
@@ -1304,7 +1304,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 json.dumps(
                     {
                         "name": "jiaotang-workbuddy-skills",
-                        "version": "1.4.9",
+                        "version": "1.5.0",
                     }
                 ),
                 encoding="utf-8",

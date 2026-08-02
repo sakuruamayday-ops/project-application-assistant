@@ -297,7 +297,7 @@ def test_tax_report_profile_requires_four_artifacts_and_gold_branding():
 
 def test_sme_pre_and_post_profiles_bind_builtin_tables_and_validators():
     preflight = build_delivery_contract(
-        "生成专精特新前期评分报告",
+        "生成2026年专精特新前期预评估报告",
         {
             "skill_id": "sme-score-preassessment",
             "task_type": "analysis-report",
@@ -313,17 +313,12 @@ def test_sme_pre_and_post_profiles_bind_builtin_tables_and_validators():
 
     assert preflight["delivery_profile"] == "sme-score-preassessment-workbook"
     assert [item["id"] for item in preflight["required_tables"]] == [
-        "评分总览",
-        "三年财务底表",
-        "行业映射",
-        "统计局行业基准",
-        "八项对标评分",
-        "全指标评分底稿",
-        "目标反推",
-        "三档总分",
-        "数据源与校验",
+        "硬门槛表",
+        "2026质量评价输入清单",
+        "平台质量分状态",
+        "四项独立判断",
     ]
-    assert preflight["required_artifacts"][0]["validation_gate"] == "run_score.sh"
+    assert preflight["required_artifacts"] == []
     assert (
         postflight["delivery_profile"]
         == "sme-application-checkup-report"

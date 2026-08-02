@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "contract_id": "jiaotang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.4.9",
+  "rule_version": "1.5.0",
   "formal_business_delivery_markers": [
     "生成报告",
     "形成报告",
@@ -347,44 +347,20 @@
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
       "required_sections": [
-        "结论",
-        "保守分",
-        "基准粗评分",
-        "条件情景分",
-        "待系统评价项",
-        "前三项行动",
-        "数据缺口"
+        "项目与政策版本",
+        "总体结论",
+        "平台质量分状态",
+        "数据冲突与证据缺口",
+        "优先行动"
       ],
       "required_tables": [
-        {"id": "评分总览", "required_columns": ["关键结果", "数值"], "min_rows": 1},
-        {"id": "三年财务底表", "required_columns": ["指标", "单位", "近三年", "近两年", "近一年", "口径"], "min_rows": 1},
-        {"id": "行业映射", "required_columns": ["项目", "结果"], "min_rows": 1},
-        {"id": "统计局行业基准", "required_columns": ["年份", "数据层级", "来源"], "min_rows": 1},
-        {"id": "八项对标评分", "required_columns": ["指标", "满分", "企业值", "行业采用值", "档位", "得分"], "min_rows": 8},
-        {
-          "id": "全指标评分底稿",
-          "required_columns": ["序号", "维度", "指标", "满分", "企业值", "评分规则", "保守档", "基准档", "条件档", "证据来源", "证据状态", "缺口及提升动作"],
-          "min_rows": 22
-        },
-        {"id": "目标反推", "required_columns": ["指标", "当前档位", "下一目标", "当前值", "目标值", "需改善金额"], "min_rows": 3},
-        {"id": "三档总分", "required_columns": ["评分层", "全指标总分", "状态", "说明"], "min_rows": 3},
-        {"id": "数据源与校验", "required_columns": ["检查项", "实际值", "预期", "状态", "修复位置"], "min_rows": 1}
+        {"id": "硬门槛表", "required_columns": ["规则", "企业值", "证据状态", "结论", "来源"], "min_rows": 1},
+        {"id": "2026质量评价输入清单", "required_columns": ["输入项", "企业值", "证据状态", "缺口动作"], "min_rows": 1},
+        {"id": "平台质量分状态", "required_columns": ["状态", "分值", "来源", "门槛比较"], "min_rows": 1},
+        {"id": "四项独立判断", "required_columns": ["判断项", "对象", "结论", "依据", "动作"], "min_rows": 4}
       ],
-      "required_artifacts": [
-        {
-          "role": "score_workbook",
-          "formats": ["xlsx"],
-          "requires_sha256": true,
-          "validation_gate": "run_score.sh"
-        }
-      ],
-      "branding_contracts": [
-        {
-          "mode": "required",
-          "variant": "default",
-          "artifact_roles": ["score_workbook"]
-        }
-      ]
+      "required_artifacts": [],
+      "branding_contracts": []
     },
     "sme-application-checkup-report": {
       "skill_id": "sme-development-projects",
@@ -553,18 +529,14 @@
       "required_marker_groups": [
         ["项目层级", "省级专精特新", "专精特新小巨人"],
         ["申请类型", "新申报", "复核"],
-        ["评分总览"],
-        ["三年财务底表"],
-        ["行业映射"],
-        ["统计局行业基准"],
-        ["八项对标评分"],
-        ["全指标评分底稿"],
-        ["目标反推"],
-        ["三档总分"],
-        ["数据源与校验"],
+        ["2026政策", "政策版本"],
+        ["硬门槛表"],
+        ["2026质量评价输入清单"],
+        ["平台质量分状态", "待平台评价"],
+        ["四项独立判断"],
         ["证据来源", "证据状态"],
-        ["run_score.sh通过", "工作簿校验通过"],
-        ["品牌审计通过", "工作簿水印审计通过"]
+        ["数据冲突", "证据缺口"],
+        ["优先行动"]
       ]
     },
     "sme-development-projects": {

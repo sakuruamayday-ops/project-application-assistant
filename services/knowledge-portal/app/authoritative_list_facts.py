@@ -174,6 +174,28 @@ def _table_exists(connection: sqlite3.Connection, table: str) -> bool:
     )
 
 
+def _column_exists(
+    connection: sqlite3.Connection,
+    table: str,
+    column: str,
+) -> bool:
+    """兼容尚未补齐新列的历史权威名单表。"""
+    if table not in AUTHORITATIVE_LIST_TABLES.values():
+        return False
+    return any(
+        str(row[1]) == column
+        for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
+    )
+
+
+def _append_enterprise_subject_filter(
+    connection: sqlite3.Connection,
+    conditions: list[str],
+) -> None:
+    if _column_exists(connection, "enterprise_recognition_events", "subject_type"):
+        conditions.append("subject_type='enterprise'")
+
+
 def _national_coverage(
     connection: sqlite3.Connection,
     *,
@@ -395,9 +417,9 @@ def _national_small_giant_publication_facts(
             direct_conditions = [
                 "project_name='国家专精特新“小巨人”企业'",
                 f"event_type IN ({placeholders})",
-                "subject_type='enterprise'",
                 "source_kinds_json LIKE '%\"lifecycle_manifest\"%'",
             ]
+            _append_enterprise_subject_filter(connection, direct_conditions)
             direct_parameters: list[object] = list(recognition_event_types)
             _append_like(
                 "enterprise_name_at_event",
@@ -482,8 +504,8 @@ def _national_small_giant_publication_facts(
         conditions = [
             "project_name='国家专精特新“小巨人”企业'",
             f"event_type IN ({placeholders})",
-            "subject_type='enterprise'",
         ]
+        _append_enterprise_subject_filter(connection, conditions)
         parameters = list(review_event_types)
         _append_like("enterprise_name_at_event", enterprise_name, conditions, parameters)
         _append_like("status", status, conditions, parameters)
@@ -1223,9 +1245,9 @@ def _provincial_specialized_sme_facts(
     annual_publication = effective_event_type == "annual_published"
     conditions = [
         "project_name IN ('浙江省专精特新中小企业','专精特新中小企业')",
-        "subject_type='enterprise'",
         "source_kinds_json LIKE '%\"lifecycle_manifest\"%'",
     ]
+    _append_enterprise_subject_filter(connection, conditions)
     parameters: list[object] = []
     if annual_publication:
         placeholders = ",".join("?" for _ in ANNUAL_PUBLICATION_EVENT_TYPES)
