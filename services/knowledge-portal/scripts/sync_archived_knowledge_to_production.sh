@@ -42,11 +42,18 @@ if [[ -n "${JIAOTANG_CANDIDATE_ROOT:-}" ]]; then
   fi
 fi
 
+if [[ "${JIAOTANG_RELEASE_LOCK_HELD:-0}" != "1" ]]; then
+  mkdir -p "$(dirname "${release_lock}")"
+  exec lockf -k -t "${JIAOTANG_RELEASE_LOCK_WAIT_SECONDS:-600}" \
+    "${release_lock}" env JIAOTANG_RELEASE_LOCK_HELD=1 "$0" "$@"
+fi
+
 release_run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 timing_file="${JIAOTANG_DEPLOY_TIMING_FILE:-/Users/zsh/JiaotangData/索引/release-timings/${release_run_id}.jsonl}"
 mkdir -p "$(dirname "${timing_file}")"
 release_started_epoch="$(date +%s)"
 previous_stage_epoch="${release_started_epoch}"
+active_stage=""
 stage_mark() {
   local stage="$1"
   local status="$2"
@@ -63,30 +70,40 @@ path = Path(sys.argv[1])
 now = int(sys.argv[5])
 started = int(sys.argv[6])
 previous = int(sys.argv[7])
+event = {
+    "run_id": sys.argv[2],
+    "stage": sys.argv[3],
+    "status": sys.argv[4],
+    "at": datetime.fromtimestamp(now, timezone.utc).isoformat(),
+    "stage_elapsed_seconds": now - previous,
+    "total_elapsed_seconds": now - started,
+}
 with path.open("a", encoding="utf-8") as stream:
-    stream.write(json.dumps({
-        "run_id": sys.argv[2],
-        "stage": sys.argv[3],
-        "status": sys.argv[4],
-        "at": datetime.fromtimestamp(now, timezone.utc).isoformat(),
-        "stage_elapsed_seconds": now - previous,
-        "total_elapsed_seconds": now - started,
-    }, ensure_ascii=False) + "\n")
+    stream.write(json.dumps(event, ensure_ascii=False) + "\n")
+print("[release-stage] " + json.dumps(event, ensure_ascii=False), flush=True)
 PY
   previous_stage_epoch="${current_epoch}"
+  if [[ "${status}" == "started" ]]; then
+    active_stage="${stage}"
+  elif [[ "${active_stage}" == "${stage}" ]]; then
+    active_stage=""
+  fi
 }
-stage_mark "build" "started"
-
-if [[ "${JIAOTANG_RELEASE_LOCK_HELD:-0}" != "1" ]]; then
-  mkdir -p "$(dirname "${release_lock}")"
-  exec lockf -k -t "${JIAOTANG_RELEASE_LOCK_WAIT_SECONDS:-600}" \
-    "${release_lock}" env JIAOTANG_RELEASE_LOCK_HELD=1 "$0" "$@"
-fi
+record_stage_failure() {
+  local exit_code="$?"
+  trap - ERR
+  if [[ -n "${active_stage}" ]]; then
+    stage_mark "${active_stage}" "failed"
+  fi
+  exit "${exit_code}"
+}
+trap record_stage_failure ERR
 
 for required in "${manifest}" "${knowledge_root}" "${index_dir}"; do
   [[ -e "${required}" ]] || { echo "路径不存在：${required}" >&2; exit 1; }
 done
 
+stage_mark "manifest-and-ocr" "started"
 echo "[1/10] 更新生产manifest并归并OCR伴生Markdown"
 python3 "${script_dir}/update_cloud_policy_manifest.py"
 
@@ -97,12 +114,16 @@ python3 "${script_dir}/audit_ocr_samples.py" \
   --priority-audit "/Users/zsh/JiaotangData/索引/priority_ocr_completion_2026-07-17.csv" \
   --list-audit "/Users/zsh/JiaotangData/索引/list_ocr_sequence_audit_2026-07-17.csv" \
   --output "${index_dir}/OCR资料抽检报告_2026-07-21.md"
+stage_mark "manifest-and-ocr" "passed"
 
+stage_mark "content-index-build" "started"
 echo "[3/10] 重建全文富索引"
 python3 "${script_dir}/build_knowledge_content_index.py" --manifest "${manifest}" --output "${index_dir}"
 python3 "${script_dir}/build_document_scopes.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
+stage_mark "content-index-build" "passed"
 
+stage_mark "structured-index-build" "started"
 echo "[4/10] 重建名单覆盖矩阵、官方分片、全国批次主表、身份图谱、浙江企业身份时间轴和三首跨年图谱"
 python3 "${script_dir}/rebuild_list_entity_extractions.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
@@ -156,7 +177,9 @@ python3 "${script_dir}/audit_specialized_lists_and_three_first.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/verify_structured_knowledge_tables.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
+stage_mark "structured-index-build" "passed"
 
+stage_mark "convergence-and-aux-indexes" "started"
 echo "[5/10] 将派生矩阵与图谱加入生产manifest"
 python3 "${script_dir}/update_cloud_policy_manifest.py"
 
@@ -257,7 +280,9 @@ python3 "${script_dir}/build_policy_version_links.py" \
   --manifest "${manifest}" \
   --content-db "${index_dir}/knowledge_content.sqlite3" \
   --output "${index_dir}"
+stage_mark "convergence-and-aux-indexes" "passed"
 
+stage_mark "validation-and-tests" "started"
 echo "[7/10] 校验SQLite与服务端测试"
 python3 - "${index_dir}/knowledge_content.sqlite3" <<'PY'
 import sqlite3
@@ -275,7 +300,9 @@ PY
   cd "${service_dir}"
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests/test_portal.py tests/test_structured_knowledge.py -q
 )
+stage_mark "validation-and-tests" "passed"
 
+stage_mark "acceptance-harness" "started"
 echo "[8/10] 执行知识库Acceptance Harness"
 python3 "${script_dir}/run_acceptance_harness.py" \
   --knowledge-root "${knowledge_root}" \
@@ -286,13 +313,29 @@ python3 "${script_dir}/verify_acceptance_receipt.py" \
   --receipt "${index_dir}/acceptance-harness.json" \
   --index-root "${index_dir}" \
   --required-suite knowledge_base
-stage_mark "build-and-acceptance" "passed"
+stage_mark "acceptance-harness" "passed"
 
-echo "[发布1/5] 冻结manifest、OSS白名单和生产索引哈希"
+echo "[发布1/5] 冻结manifest、OSS白名单和生产索引文件身份"
 frozen_manifest_sha="$(shasum -a 256 "${manifest}" | awk '{print $1}')"
 frozen_allowlist_sha="$(shasum -a 256 "${index_dir}/upload_allowlist.csv" | awk '{print $1}')"
-frozen_index_sha="$(shasum -a 256 "${index_dir}/knowledge_content.sqlite3" | awk '{print $1}')"
-echo "manifest=${frozen_manifest_sha} allowlist=${frozen_allowlist_sha} index=${frozen_index_sha}"
+index_file_identity() {
+  python3 - "$1" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+stat = Path(sys.argv[1]).stat()
+print(json.dumps({
+    "device": stat.st_dev,
+    "inode": stat.st_ino,
+    "size": stat.st_size,
+    "mtime_ns": stat.st_mtime_ns,
+    "ctime_ns": stat.st_ctime_ns,
+}, sort_keys=True, separators=(",", ":")))
+PY
+}
+frozen_index_identity="$(index_file_identity "${index_dir}/knowledge_content.sqlite3")"
+echo "manifest=${frozen_manifest_sha} allowlist=${frozen_allowlist_sha} index_identity=${frozen_index_identity}"
 
 echo "[发布1/5] 从服务器安全读取OSS运行凭据并执行容量预检"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
@@ -347,11 +390,11 @@ echo "[发布3/5] 复核冻结集合未变化且对象二次校验已经通过"
   || { echo "manifest冻结后发生变化，停止发布" >&2; exit 1; }
 [[ "$(shasum -a 256 "${index_dir}/upload_allowlist.csv" | awk '{print $1}')" == "${frozen_allowlist_sha}" ]] \
   || { echo "OSS白名单冻结后发生变化，停止发布" >&2; exit 1; }
-[[ "$(shasum -a 256 "${index_dir}/knowledge_content.sqlite3" | awk '{print $1}')" == "${frozen_index_sha}" ]] \
+[[ "$(index_file_identity "${index_dir}/knowledge_content.sqlite3")" == "${frozen_index_identity}" ]] \
   || { echo "生产索引冻结后发生变化，停止发布" >&2; exit 1; }
 
 echo "[发布4/5] 先发布OSS索引并原子切换服务器查询索引，再部署应用"
-stage_mark "index-release" "started"
+stage_mark "signed-index-release" "started"
 current_release_id="$(
   python3 - "${script_dir}" <<'PY'
 import json
@@ -385,12 +428,15 @@ else
   index_publish_args+=(--allow-initial-current)
 fi
 python3 "${script_dir}/publish_index_to_oss.py" "${index_publish_args[@]}"
+stage_mark "signed-index-release" "passed"
+
+stage_mark "server-index-refresh" "started"
 JIAOTANG_INDEX_PATH="${index_dir}/knowledge_content.sqlite3" \
 JIAOTANG_INDEX_PREVALIDATED=1 \
 JIAOTANG_DEPLOY_HOST="${deploy_host}" \
 JIAOTANG_DEPLOY_KEY="${deploy_key}" \
   "${script_dir}/deploy_index_delta_to_server.sh"
-stage_mark "index-release" "passed"
+stage_mark "server-index-refresh" "passed"
 
 stage_mark "application-release" "started"
 JIAOTANG_RELEASE_MODE=index \
@@ -401,6 +447,7 @@ JIAOTANG_DEPLOY_KEY="${deploy_key}" \
 stage_mark "application-release" "passed"
 
 echo "[发布4/5] 运行生产冒烟测试"
+stage_mark "production-smoke" "started"
 if [[ -n "${JIAOTANG_KB_ENDPOINT:-}" && -n "${JIAOTANG_KB_TOKEN:-}" && -n "${JIAOTANG_KB_DEVICE_ID:-}" ]]; then
   "${script_dir}/smoke_test_production.sh"
 else
@@ -408,6 +455,7 @@ else
     "set -e; source /etc/jiaotang-kb-app.env; curl --fail --silent http://127.0.0.1:8100/health >/dev/null; systemctl is-active --quiet jiaotang-kb"
   echo "未提供本地Token或设备标识，已完成服务健康与部署固定路由冒烟；带凭据REST/MCP冒烟由deploy_production.sh固定路由检查覆盖。"
 fi
+stage_mark "production-smoke" "passed"
 
 echo "[发布5/5] 容量熔断已由本次不可变release发布前后聚合校验完成；跳过历史对象与既有分片盘点"
 

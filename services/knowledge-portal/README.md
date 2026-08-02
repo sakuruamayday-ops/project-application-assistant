@@ -242,11 +242,12 @@ export JIAOTANG_DEPLOY_KEY="$HOME/.ssh/jiaotang_kb_aliyun"
 export JIAOTANG_WHEELHOUSE_DIR=/受控下载目录/portal-production-wheelhouse
 export JIAOTANG_DEPENDENCY_RELEASE_RECORD=/受控下载目录/portal-production-dependency-release-record.json
 export JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256=由对应main分支CI记录独立核对的摘要
-export JIAOTANG_RELEASE_MODE=code
-./scripts/deploy_production.sh
+./scripts/deploy_code_to_production.sh
 ```
 
-`JIAOTANG_RELEASE_MODE=code` 只验签当前 OSS 指针、不可变 release 清单及其绑定的 Acceptance Harness 回执，不读取或散列大型索引文件，也不会发布、刷新或回滚索引。索引发生变化时，必须改用 `sync_archived_knowledge_to_production.sh`；该编排执行全库扫描、生成 Harness 回执、把回执纳入签名索引 release，切换索引后再以 `JIAOTANG_RELEASE_MODE=index` 部署应用。禁止直接把 `deploy_production.sh` 当作索引发布入口。
+`deploy_code_to_production.sh` 是后续纯代码发布的固定入口，它自动设置 `JIAOTANG_RELEASE_MODE=code`，只验签当前 OSS 指针、不可变 release 清单及其绑定的 Acceptance Harness 回执，不读取或散列大型索引文件，也不会发布、刷新或回滚索引。如果外部误传 `index` 模式，入口会直接阻断。
+
+索引发生变化时，必须改用 `sync_archived_knowledge_to_production.sh`；该编排执行全库扫描、生成 Harness 回执、把回执纳入签名索引 release，切换索引后再以 `JIAOTANG_RELEASE_MODE=index` 部署应用。禁止直接把 `deploy_production.sh` 当作索引发布入口。索引编排会把各阶段墙钟写入 `release-timings/*.jsonl` 并同步输出；SHA-256 与 CRC64 在同一遍读取中计算，OSS 上传、OSS 下载和服务器刷新持续输出字节数、百分比及已用时间。已由当前 Harness 回执验证的候选索引不会再重复运行 SQLite 全库检查，但它的摘要仍必须与签名回执一致。可用 `JIAOTANG_RELEASE_PROGRESS_INTERVAL_SECONDS` 调整本地传输回报间隔，用 `JIAOTANG_INDEX_REFRESH_PROGRESS_INTERVAL_SECONDS` 调整服务器轮询间隔。
 
 部署脚本先在本地核验 wheelhouse、外部绑定摘要、依赖身份和 main 分支 CI 发布记录，再把源码、锁、wheelhouse 和发布记录一起写入新槽。服务器安装阶段设置 `PIP_NO_INDEX=1`，只从该槽内的 wheelhouse 安装；生产主机不会访问 PyPI。若服务器启用了私有 Kindle 管理扩展，部署只会把 `app/kindle_library.py`、对应两个页面模板和私有导航模板四个白名单文件复制到新槽，并生成只含路径、大小和 SHA-256 的 `private-overlay-manifest.json`；其身份摘要会进入 `/build`，私有内容不会回传本地或进入公开仓库。
 

@@ -15,8 +15,10 @@ import oss2
 
 try:
     from scripts.oss_auth import build_bucket
+    from scripts.release_progress import TransferProgress
 except ImportError:  # direct script execution
     from oss_auth import build_bucket
+    from release_progress import TransferProgress
 
 
 THREAD_LOCAL = threading.local()
@@ -83,12 +85,51 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def crc64_file(path: Path) -> int:
-    digest = oss2.utils.Crc64()
+def sha256_crc64_file(
+    path: Path,
+    relative: str,
+    *,
+    progress_item: str | None = None,
+) -> tuple[str, int, tuple[int, int, int, int, int]]:
+    sha256_digest = hashlib.sha256()
+    crc64_digest = oss2.utils.Crc64()
+    initial = path.stat()
+    identity = (
+        initial.st_dev,
+        initial.st_ino,
+        initial.st_size,
+        initial.st_mtime_ns,
+        initial.st_ctime_ns,
+    )
+    reporter = (
+        TransferProgress(
+            "knowledge-object-hash",
+            progress_item or relative,
+            initial.st_size,
+        )
+        if initial.st_size >= 64 * 1024 * 1024
+        else None
+    )
+    consumed = 0
     with path.open("rb") as source:
         for chunk in iter(lambda: source.read(8 * 1024 * 1024), b""):
-            digest.update(chunk)
-    return int(digest.crc)
+            sha256_digest.update(chunk)
+            crc64_digest.update(chunk)
+            consumed += len(chunk)
+            if reporter:
+                reporter.update(consumed)
+    if reporter:
+        reporter.finish()
+    final = path.stat()
+    if identity != (
+        final.st_dev,
+        final.st_ino,
+        final.st_size,
+        final.st_mtime_ns,
+        final.st_ctime_ns,
+    ):
+        raise RuntimeError(f"计算摘要期间文件发生变化：{relative}")
+    return sha256_digest.hexdigest(), int(crc64_digest.crc), identity
 
 
 def bucket() -> oss2.Bucket:
@@ -116,16 +157,29 @@ def upload_once(row: dict[str, object], layout: str) -> tuple[str, int]:
     digest = str(row.get("sha256") or "")
     if not digest:
         raise RuntimeError(f"冻结清单缺少SHA-256：{relative}")
-    initial_size = source.stat().st_size
-    if sha256_file(source) != digest:
+    actual_digest, local_crc64, initial_identity = sha256_crc64_file(
+        source,
+        relative,
+        progress_item=f"sha256:{digest[:16]}",
+    )
+    initial_size = initial_identity[2]
+    if actual_digest != digest:
         raise RuntimeError(f"上传前SHA-256复算不一致：{relative}")
-    local_crc64 = crc64_file(source)
     object_key = object_key_for(row, layout)
     current_bucket = bucket()
     try:
         metadata = current_bucket.head_object(object_key)
         remote_digest = str(metadata.headers.get("x-oss-meta-sha256", ""))
         if remote_digest == digest and int(metadata.content_length) == initial_size:
+            final = source.stat()
+            if initial_identity != (
+                final.st_dev,
+                final.st_ino,
+                final.st_size,
+                final.st_mtime_ns,
+                final.st_ctime_ns,
+            ):
+                raise RuntimeError(f"发布期间文件发生变化：{relative}")
             return "skipped", 0
         raise RuntimeError(f"内容寻址对象已存在但身份冲突，禁止覆盖：{object_key}")
     except oss2.exceptions.NoSuchKey:
@@ -136,19 +190,47 @@ def upload_once(row: dict[str, object], layout: str) -> tuple[str, int]:
         "x-oss-meta-source-size": str(initial_size),
         "x-oss-meta-crc64": str(local_crc64),
     }
-    if initial_size >= 64 * 1024 * 1024:
-        oss2.resumable_upload(
-            current_bucket,
-            object_key,
-            str(source),
-            multipart_threshold=64 * 1024 * 1024,
-            part_size=16 * 1024 * 1024,
-            headers=headers,
-            num_threads=2,
+    reporter = (
+        TransferProgress(
+            "knowledge-object-upload",
+            f"sha256:{digest[:16]}",
+            initial_size,
         )
-    else:
-        current_bucket.put_object_from_file(object_key, str(source), headers=headers)
-    if source.stat().st_size != initial_size or sha256_file(source) != digest:
+        if initial_size >= 64 * 1024 * 1024
+        else None
+    )
+    try:
+        if initial_size >= 64 * 1024 * 1024:
+            oss2.resumable_upload(
+                current_bucket,
+                object_key,
+                str(source),
+                multipart_threshold=64 * 1024 * 1024,
+                part_size=16 * 1024 * 1024,
+                headers=headers,
+                num_threads=2,
+                progress_callback=reporter,
+            )
+        else:
+            current_bucket.put_object_from_file(
+                object_key,
+                str(source),
+                headers=headers,
+            )
+    except Exception:
+        if reporter:
+            reporter.finish(status="failed")
+        raise
+    if reporter:
+        reporter.finish()
+    final = source.stat()
+    if initial_identity != (
+        final.st_dev,
+        final.st_ino,
+        final.st_size,
+        final.st_mtime_ns,
+        final.st_ctime_ns,
+    ):
         raise RuntimeError(f"上传期间内容变化：{relative}")
     remote = current_bucket.head_object(object_key)
     if (
