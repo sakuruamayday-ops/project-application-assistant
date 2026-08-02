@@ -580,6 +580,28 @@ def _validate_workbuddy_integrity(
         raise ValueError(
             "WorkBuddy 技能入口缺失：" + "、".join(missing_skill_entries[:5])
         )
+    frontmatter_names = []
+    for skill in skills:
+        entry = f"{plugin_prefix}skills/{skill}/SKILL.md"
+        text = archive.read(entry).decode("utf-8")
+        if not text.startswith("---\n"):
+            raise ValueError(f"WorkBuddy 技能frontmatter不是首字节内容：{skill}")
+        frontmatter = re.match(r"\A---\n(.*?)\n---(?:\n|\Z)", text, re.DOTALL)
+        if not frontmatter:
+            raise ValueError(f"WorkBuddy 技能frontmatter不完整：{skill}")
+        declared_names = [
+            line.split(":", 1)[1].strip().strip("'\"")
+            for line in frontmatter.group(1).splitlines()
+            if line.startswith("name:")
+        ]
+        if declared_names != [skill]:
+            raise ValueError(f"WorkBuddy 技能名称与目录不一致：{skill}")
+        hook_position = text.find("<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->")
+        if hook_position < frontmatter.end():
+            raise ValueError(f"WorkBuddy 行为Hook未位于frontmatter之后：{skill}")
+        frontmatter_names.append(declared_names[0])
+    if len(set(frontmatter_names)) != len(skills):
+        raise ValueError("WorkBuddy 技能frontmatter名称存在重复")
     discovered_skills = {
         PurePosixPath(name.removeprefix(plugin_prefix)).parts[1]
         for name in file_names
@@ -638,6 +660,7 @@ def _validate_workbuddy_integrity(
         "archive_entries": len(file_names),
         "outer_fixed_installers": False,
         "hook_mode": "behavior_only_fail_open",
+        "skill_entry_contract": "frontmatter-first-name-bound",
         "mcp_configuration_mode": "user_remote_streamable_http",
         "embedded_user_token": False,
     }

@@ -58,6 +58,10 @@ SUITE_PACKAGER = load_module(
     "package_workbuddy_suite",
     RELEASE_MANAGER / "package_workbuddy_suite.py",
 )
+BEHAVIOR = load_module(
+    "workbuddy_behavior_hook",
+    RELEASE_MANAGER / "workbuddy_behavior_hook.py",
+)
 REPOSITORY = Path(__file__).resolve().parents[1]
 ADVERSARIAL_EVAL = load_module(
     "run_adversarial_eval",
@@ -238,6 +242,10 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 guide = bundle.read(
                     "jiaotang-regression/INSTALL.md"
                 ).decode("utf-8")
+                skill_entry = bundle.read(
+                    "jiaotang-regression/plugins/jiaotang-regression-skills/"
+                    "skills/enterprise-profile/SKILL.md"
+                ).decode("utf-8")
             self.assertFalse(
                 any(
                     name.endswith((".command", ".ps1"))
@@ -257,6 +265,43 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertIn("保留其他 MCP 条目", guide)
             self.assertIn("重载 WorkBuddy 一次", guide)
             self.assertIn("connected: true", guide)
+            self.assertTrue(skill_entry.startswith("---\nname: enterprise-profile\n"))
+            self.assertGreater(
+                skill_entry.index("<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->"),
+                skill_entry.index("\n---\n"),
+            )
+
+    def test_behavior_hook_uses_signals_and_blocks_unrouted_formal_delivery(self):
+        contract = json.loads(
+            (REPOSITORY / "skills/delivery-contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        signals = BEHAVIOR.prompt_signals(
+            "请按现行政策形成报告并交付文件。", contract
+        )
+
+        self.assertTrue(signals["formal_business_delivery"])
+        self.assertTrue(signals["business_domain"])
+        self.assertEqual(
+            BEHAVIOR.audit_delivery_completion(
+                prompt="",
+                answer="已经完成。",
+                active_skills=[],
+                contract=contract,
+                signals=signals,
+            ),
+            ["NO_ACTIVE_BUSINESS_SKILL：正式业务交付未激活任何Skill"],
+        )
+        self.assertEqual(
+            BEHAVIOR.audit_delivery_completion(
+                prompt="解释一下今天的安排。",
+                answer="说明如下。",
+                active_skills=[],
+                contract=contract,
+            ),
+            [],
+        )
 
     def test_simplified_plugin_uses_user_remote_mcp_without_local_connector(self):
         suite_manifest = json.loads(

@@ -16,6 +16,7 @@ import sys
 import tempfile
 import time
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -25,6 +26,23 @@ OFFICIAL_PUBLISHER_FINGERPRINT = (
 )
 GATE_SIGNATURE_NAMESPACE = "codex-skill-release-gate"
 REMOTE_RELEASE_ROOT = "/opt/jiaotang-kb-runtime/current"
+
+
+def recoverable_workspace_path(prefix: str) -> Path:
+    configured = os.environ.get("JIAOTANG_RELEASE_WORK_ROOT", "").strip()
+    if configured:
+        root = Path(configured).expanduser().resolve()
+    elif sys.platform == "darwin":
+        root = Path.home() / ".Trash" / "jiaotang-release-workspaces"
+    else:
+        root = Path(tempfile.gettempdir()) / "jiaotang-release-workspaces"
+    root.mkdir(parents=True, exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix=prefix, dir=root))
+
+
+@contextmanager
+def recoverable_workspace(prefix: str):
+    yield recoverable_workspace_path(prefix)
 
 
 def run(
@@ -1124,13 +1142,13 @@ def main() -> None:
         )
     if arguments.gate_report is None or arguments.release_notes is None:
         parser.error("发布预检、暂存和提升必须提供门禁报告与发布说明")
-    companion_workspace = tempfile.TemporaryDirectory(
-        prefix="jiaotang-release-companions-"
+    companion_workspace = recoverable_workspace_path(
+        "jiaotang-release-companions-"
     )
     companion_builder = load_release_companion_builder(ROOT)
     companion_result = companion_builder.generate(
         ROOT,
-        Path(companion_workspace.name),
+        companion_workspace,
         apply_brand=True,
         render=True,
     )
@@ -1150,10 +1168,9 @@ def main() -> None:
         companion_result,
         commit,
     )
-    with tempfile.TemporaryDirectory(
-        prefix="jiaotang-controlled-release-transaction-"
-    ) as directory:
-        workspace = Path(directory)
+    with recoverable_workspace(
+        "jiaotang-controlled-release-transaction-"
+    ) as workspace:
         assets = prepare_ascii_assets(
             workspace / "assets",
             validation["tag"],

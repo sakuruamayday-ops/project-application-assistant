@@ -36,12 +36,24 @@ SUPPLEMENTARY_ROOTS = (
     KNOWLEDGE_ROOT / "90_方法与复盘",
     KNOWLEDGE_ROOT / "10_政策与目录/三首项目/浙江省首批次新材料/应用示范指导目录",
 )
-MANIFEST_PATH = Path(
-    os.environ.get(
-        "JIAOTANG_KNOWLEDGE_MANIFEST_PATH",
-        KNOWLEDGE_ROOT.parent / "索引/current/manifest.jsonl",
+_manifest_path = os.environ.get("JIAOTANG_MANIFEST_PATH", "").strip()
+_legacy_manifest_path = os.environ.get(
+    "JIAOTANG_KNOWLEDGE_MANIFEST_PATH", ""
+).strip()
+if (
+    _manifest_path
+    and _legacy_manifest_path
+    and Path(_manifest_path).expanduser().resolve()
+    != Path(_legacy_manifest_path).expanduser().resolve()
+):
+    raise RuntimeError(
+        "JIAOTANG_MANIFEST_PATH与JIAOTANG_KNOWLEDGE_MANIFEST_PATH不一致"
     )
-)
+MANIFEST_PATH = Path(
+    _manifest_path
+    or _legacy_manifest_path
+    or KNOWLEDGE_ROOT.parent / "索引/current/manifest.jsonl"
+).expanduser().resolve()
 MANIFEST_CSV_PATH = MANIFEST_PATH.with_suffix(".csv")
 CONTROL_FILES = {"README.md", "整理摘要.json", "网站上传索引.csv", "网站上传索引.json"}
 EXTRACT_EXTENSIONS = {

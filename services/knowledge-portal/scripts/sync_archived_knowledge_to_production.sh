@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+requested_manifest="${JIAOTANG_MANIFEST_PATH:-}"
+requested_legacy_manifest="${JIAOTANG_KNOWLEDGE_MANIFEST_PATH:-}"
+requested_index_dir="${JIAOTANG_INDEX_BUILD_DIR:-}"
+if [[ -n "${requested_manifest}" && -n "${requested_legacy_manifest}" \
+  && "${requested_manifest}" != "${requested_legacy_manifest}" ]]; then
+  echo "JIAOTANG_MANIFEST_PATH与JIAOTANG_KNOWLEDGE_MANIFEST_PATH不一致" >&2
+  exit 64
+fi
 path_config="${JIAOTANG_PATH_CONFIG:-/Users/zsh/JiaotangData/索引/config/paths.env}"
 if [[ -f "${path_config}" ]]; then
   # shellcheck disable=SC1090
@@ -9,13 +17,65 @@ fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 service_dir="$(cd "${script_dir}/.." && pwd)"
-manifest="${JIAOTANG_MANIFEST_PATH:-/Users/zsh/JiaotangData/索引/current/manifest.jsonl}"
-index_dir="${JIAOTANG_INDEX_BUILD_DIR:-/Users/zsh/JiaotangData/索引/current}"
+manifest="${requested_manifest:-${requested_legacy_manifest:-${JIAOTANG_MANIFEST_PATH:-${JIAOTANG_KNOWLEDGE_MANIFEST_PATH:-/Users/zsh/JiaotangData/索引/current/manifest.jsonl}}}}"
+index_dir="${requested_index_dir:-${JIAOTANG_INDEX_BUILD_DIR:-/Users/zsh/JiaotangData/索引/current}}"
 knowledge_root="${JIAOTANG_KNOWLEDGE_ROOT:-/Users/zsh/JiaotangData/知识库}"
 structured_source_root="${JIAOTANG_STRUCTURED_SOURCE_ROOT:-${knowledge_root}/10_政策与目录/政策数据库/企策顾问/_结构化源}"
 deploy_host="${JIAOTANG_DEPLOY_HOST:?请设置JIAOTANG_DEPLOY_HOST}"
 deploy_key="${JIAOTANG_DEPLOY_KEY:-${HOME}/.ssh/jiaotang_kb_aliyun}"
 release_lock="${JIAOTANG_RELEASE_LOCK:-/Users/zsh/JiaotangData/索引/.locks/production-release.lock}"
+export JIAOTANG_MANIFEST_PATH="${manifest}"
+export JIAOTANG_KNOWLEDGE_MANIFEST_PATH="${manifest}"
+export JIAOTANG_INDEX_BUILD_DIR="${index_dir}"
+
+if [[ -n "${JIAOTANG_CANDIDATE_ROOT:-}" ]]; then
+  candidate_root="$(cd "${JIAOTANG_CANDIDATE_ROOT}" && pwd -P)"
+  candidate_index="${candidate_root}/index"
+  candidate_manifest="${candidate_index}/manifest.jsonl"
+  if [[ "${index_dir}" != "${candidate_index}" || "${manifest}" != "${candidate_manifest}" ]]; then
+    echo "候选路径必须统一为JIAOTANG_CANDIDATE_ROOT/index及其manifest.jsonl" >&2
+    exit 65
+  fi
+  if [[ "${candidate_index}" == "/Users/zsh/JiaotangData/索引/current" ]]; then
+    echo "候选发布不得指向可变current目录" >&2
+    exit 66
+  fi
+fi
+
+release_run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+timing_file="${JIAOTANG_DEPLOY_TIMING_FILE:-/Users/zsh/JiaotangData/索引/release-timings/${release_run_id}.jsonl}"
+mkdir -p "$(dirname "${timing_file}")"
+release_started_epoch="$(date +%s)"
+previous_stage_epoch="${release_started_epoch}"
+stage_mark() {
+  local stage="$1"
+  local status="$2"
+  local current_epoch
+  current_epoch="$(date +%s)"
+  python3 - "${timing_file}" "${release_run_id}" "${stage}" "${status}" \
+    "${current_epoch}" "${release_started_epoch}" "${previous_stage_epoch}" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+now = int(sys.argv[5])
+started = int(sys.argv[6])
+previous = int(sys.argv[7])
+with path.open("a", encoding="utf-8") as stream:
+    stream.write(json.dumps({
+        "run_id": sys.argv[2],
+        "stage": sys.argv[3],
+        "status": sys.argv[4],
+        "at": datetime.fromtimestamp(now, timezone.utc).isoformat(),
+        "stage_elapsed_seconds": now - previous,
+        "total_elapsed_seconds": now - started,
+    }, ensure_ascii=False) + "\n")
+PY
+  previous_stage_epoch="${current_epoch}"
+}
+stage_mark "build" "started"
 
 if [[ "${JIAOTANG_RELEASE_LOCK_HELD:-0}" != "1" ]]; then
   mkdir -p "$(dirname "${release_lock}")"
@@ -222,6 +282,11 @@ python3 "${script_dir}/run_acceptance_harness.py" \
   --index-root "${index_dir}" \
   --suite knowledge_base \
   --output "${index_dir}/acceptance-harness.json"
+python3 "${script_dir}/verify_acceptance_receipt.py" \
+  --receipt "${index_dir}/acceptance-harness.json" \
+  --index-root "${index_dir}" \
+  --required-suite knowledge_base
+stage_mark "build-and-acceptance" "passed"
 
 echo "[发布1/5] 冻结manifest、OSS白名单和生产索引哈希"
 frozen_manifest_sha="$(shasum -a 256 "${manifest}" | awk '{print $1}')"
@@ -253,6 +318,7 @@ export JIAOTANG_OSS_ENDPOINT
 python3 "${script_dir}/check_oss_governance.py" \
   --mode "${JIAOTANG_OSS_GOVERNANCE_MODE:-warn}"
 echo "[发布2/5] 执行SHA-256去重上传"
+stage_mark "oss-object-upload" "started"
 oss_upload_args=(
   --manifest "${manifest}"
   --allowlist "${index_dir}/upload_allowlist.csv"
@@ -272,6 +338,7 @@ python3 "${script_dir}/upload_manifest_to_oss.py" \
   --object-layout sha256 \
   --workers "${JIAOTANG_OSS_VERIFY_WORKERS:-8}" \
   --verify-only
+stage_mark "oss-object-upload" "passed"
 
 echo "[发布2/5] 跳过既有历史对象、既有暂存和历史部署备份盘点（本轮明确排除）"
 
@@ -283,9 +350,8 @@ echo "[发布3/5] 复核冻结集合未变化且对象二次校验已经通过"
 [[ "$(shasum -a 256 "${index_dir}/knowledge_content.sqlite3" | awk '{print $1}')" == "${frozen_index_sha}" ]] \
   || { echo "生产索引冻结后发生变化，停止发布" >&2; exit 1; }
 
-echo "[发布4/5] 发布OSS索引并原子切换服务器查询索引"
-JIAOTANG_DEPLOY_HOST="${deploy_host}" JIAOTANG_DEPLOY_KEY="${deploy_key}" \
-  "${script_dir}/deploy_production.sh"
+echo "[发布4/5] 先发布OSS索引并原子切换服务器查询索引，再部署应用"
+stage_mark "index-release" "started"
 current_release_id="$(
   python3 - "${script_dir}" <<'PY'
 import json
@@ -324,6 +390,15 @@ JIAOTANG_INDEX_PREVALIDATED=1 \
 JIAOTANG_DEPLOY_HOST="${deploy_host}" \
 JIAOTANG_DEPLOY_KEY="${deploy_key}" \
   "${script_dir}/deploy_index_delta_to_server.sh"
+stage_mark "index-release" "passed"
+
+stage_mark "application-release" "started"
+JIAOTANG_INDEX_ALREADY_DEPLOYED=1 \
+JIAOTANG_INDEX_PREVALIDATED=1 \
+JIAOTANG_DEPLOY_HOST="${deploy_host}" \
+JIAOTANG_DEPLOY_KEY="${deploy_key}" \
+  "${script_dir}/deploy_production.sh"
+stage_mark "application-release" "passed"
 
 echo "[发布4/5] 运行生产冒烟测试"
 if [[ -n "${JIAOTANG_KB_ENDPOINT:-}" && -n "${JIAOTANG_KB_TOKEN:-}" && -n "${JIAOTANG_KB_DEVICE_ID:-}" ]]; then
@@ -337,3 +412,4 @@ fi
 echo "[发布5/5] 容量熔断已由本次不可变release发布前后聚合校验完成；跳过历史对象与既有分片盘点"
 
 echo "manifest冻结、去重上传、二次校验、索引发布和容量复核五步流水线完成。"
+echo "阶段计时记录：${timing_file}"

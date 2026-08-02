@@ -17,7 +17,7 @@
 - [产品基线与定位](product-brief.md)：回答产品为谁服务、解决什么问题、当前已经做到哪里，以及哪些边界不能突破。
 - [V1.2 PRD Lite](prd-v1.2.md)：V1.2 发布前形成的历史建议稿，仅用于追溯需求判断，不再代表当前待发布版本。
 - [产品路线图](roadmap.md)：明确当前阶段优先级、暂不推进项、发布节奏和评审条件。
-- [网站安装包分发策略](website-package-distribution.md)：定义通用版、平台增强版、开放下载门禁和原生客户端退役边界。
+- [网站安装包分发策略](website-package-distribution.md)：定义通用版、平台增强版和开放下载门禁。
 - [Skills 原子升级与部署后审计](atomic-skill-upgrade-and-audit.md)：定义安装日志、事务替换、全量验签、三方哈希和签名安装目录只读约束。
 - [外部产品与研发技能评估](external-tools-evaluation.md)：记录本轮对 pm-workbench、Spec Kit、UI UX Pro Max 及研发类 Skills 的核验与采用结论。
 

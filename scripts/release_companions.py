@@ -174,15 +174,6 @@ def release_spec(manifest: dict[str, Any]) -> dict[str, Any]:
         "word_manual_only": bool(companion.get("word_manual_only")),
         "require_branding": bool(companion.get("require_branding")),
         "require_render_qa": bool(companion.get("require_render_qa")),
-        "manual_profile": str(companion.get("manual_profile") or "legacy-release"),
-        "manual_required_markers": [
-            str(item).format(
-                tag=release["tag"],
-                version=release["version"],
-                skill_count=len(skills),
-            )
-            for item in companion.get("manual_required_markers", [])
-        ],
     }
 
 
@@ -211,16 +202,6 @@ def _insert_after(paragraph: Any, text: str) -> Any:
     new_element.addnext(created._p)
     created._p.getparent().remove(created._p)
     new_element.getparent().replace(new_element, created._p)
-    created.add_run(text)
-    return created
-
-
-def _insert_before(paragraph: Any, text: str, style: str | None = None) -> Any:
-    new_element = OxmlElement("w:p")
-    paragraph._p.addprevious(new_element)
-    created = Paragraph(new_element, paragraph._parent)
-    if style:
-        created.style = style
     created.add_run(text)
     return created
 
@@ -294,163 +275,6 @@ def _remove_existing_brand_watermarks(document: Document) -> None:
                     parent.remove(child)
 
 
-def _build_simplified_manager_manual(spec: dict[str, Any]) -> Document:
-    """Build the current compact reference guide without legacy sections."""
-
-    document = Document()
-    section = document.sections[0]
-    section.page_width = Inches(8.5)
-    section.page_height = Inches(11)
-    section.top_margin = Inches(1)
-    section.right_margin = Inches(1)
-    section.bottom_margin = Inches(1)
-    section.left_margin = Inches(1)
-    section.header_distance = Inches(0.492)
-    section.footer_distance = Inches(0.492)
-
-    normal = document.styles["Normal"]
-    normal.font.name = "Calibri"
-    normal.font.size = Pt(11)
-    normal.paragraph_format.space_before = Pt(0)
-    normal.paragraph_format.space_after = Pt(6)
-    normal.paragraph_format.line_spacing = 1.25
-    for style_name, size, before, after, color in (
-        ("Heading 1", 16, 18, 10, "2E74B5"),
-        ("Heading 2", 13, 14, 7, "2E74B5"),
-        ("Heading 3", 12, 10, 5, "1F4D78"),
-    ):
-        style = document.styles[style_name]
-        style.font.name = "Calibri"
-        style.font.size = Pt(size)
-        style.font.bold = True
-        style.font.color.rgb = RGBColor.from_string(color)
-        style.paragraph_format.space_before = Pt(before)
-        style.paragraph_format.space_after = Pt(after)
-
-    header = section.header.paragraphs[0]
-    header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    header_run = header.add_run(f"企业全生命周期助手 · {spec['tag']}")
-    header_run.font.name = "Calibri"
-    header_run.font.size = Pt(9)
-    header_run.font.color.rgb = RGBColor.from_string("6B7280")
-    footer = section.footer.paragraphs[0]
-    footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    footer_run = footer.add_run("焦糖 · 安装操作手册")
-    footer_run.font.name = "Calibri"
-    footer_run.font.size = Pt(9)
-    footer_run.font.color.rgb = RGBColor.from_string("6B7280")
-
-    cover_space = document.add_paragraph()
-    cover_space.paragraph_format.space_after = Pt(94)
-    kicker = document.add_paragraph()
-    kicker.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    kicker.paragraph_format.space_after = Pt(18)
-    kicker_run = kicker.add_run("FOCUS GUIDE / 0.2.0")
-    kicker_run.bold = True
-    kicker_run.font.size = Pt(12)
-    kicker_run.font.color.rgb = RGBColor.from_string("B7791F")
-    title = document.add_paragraph()
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title.paragraph_format.space_after = Pt(8)
-    title_run = title.add_run("企业全生命周期助手")
-    title_run.bold = True
-    title_run.font.size = Pt(30)
-    title_run.font.color.rgb = RGBColor.from_string("203748")
-    subtitle = document.add_paragraph()
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    subtitle.paragraph_format.space_after = Pt(28)
-    subtitle_run = subtitle.add_run("Skills 管理器 0.2.0 用户手册")
-    subtitle_run.bold = True
-    subtitle_run.font.size = Pt(15)
-    subtitle_run.font.color.rgb = RGBColor.from_string("2E74B5")
-    descriptor = document.add_paragraph()
-    descriptor.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    descriptor.paragraph_format.space_after = Pt(42)
-    descriptor_run = descriptor.add_run(
-        "macOS 与 Windows · 一次复制粘贴 · 远程 MCP · 可恢复升级"
-    )
-    descriptor_run.font.size = Pt(11)
-    descriptor_run.font.color.rgb = RGBColor.from_string("6B7280")
-    facts = document.add_paragraph()
-    facts.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    facts.paragraph_format.space_after = Pt(34)
-    facts_run = facts.add_run(
-        f"正式 Skills 为 {spec['tag']}，共 {spec['skill_count']} 项\n"
-        "一段指令同时完成 Skills 安装和远程知识服务连接"
-    )
-    facts_run.bold = True
-    facts_run.font.size = Pt(11)
-    facts_run.font.color.rgb = RGBColor.from_string("203748")
-    metadata = document.add_paragraph()
-    metadata.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    metadata_run = metadata.add_run("更新日期：2026 年 8 月 1 日")
-    metadata_run.font.size = Pt(9.5)
-    metadata_run.font.color.rgb = RGBColor.from_string("6B7280")
-    metadata.add_run().add_break(WD_BREAK.PAGE)
-
-    sections = [
-        (
-            f"1 {spec['tag']} 安装边界",
-            [
-                "当前目标。本版本只处理安装简单和 MCP 能直接连上。算法程序化执行已拆分为后续独立项目。",
-                "安装包内容。只保留 49 项 Skills、WorkBuddy 插件清单、最小行为 Hook，以及必要的参考资料和业务脚本。",
-                "跨平台。macOS 和 Windows 使用同一个跨平台包，不再运行固定 .command、.cmd、PowerShell 或外部 CLI。",
-            ],
-        ),
-        (
-            "2 WorkBuddy 一次复制粘贴",
-            [
-                "第一步。用户登录焦糖网站，点击一键安装，把网站生成的一段完整指令粘贴给 WorkBuddy。",
-                "第二步。WorkBuddy 自动安装或更新 49 项 Skills，启用失败放行的最小行为 Hook。",
-                "第三步。WorkBuddy 把远程 MCP 合并到用户配置。Windows 使用 %USERPROFILE%\\.workbuddy\\mcp.json，macOS 使用 ~/.workbuddy/mcp.json，文件名必须为不带点前缀的 mcp.json。只替换 mcpServers.jiaotang-kb，保留其他 MCP。",
-                "第四步。安装或更新后只重载一次 WorkBuddy，然后进入状态验收。",
-                "安全确认。连接器出现后仍由用户在 WorkBuddy 界面手动信任，不绕过宿主安全确认。",
-                "网页入口。如果 WorkBuddy 尚未提供网页直装协议，一键安装就是一次复制粘贴；官方支持深链后再升级网页按钮。",
-            ],
-        ),
-        (
-            "3 手工配置与个人 Token",
-            [
-                "自动填入。登录后打开手工配置页，网站会自动填入个人 Token，并生成可直接复制的完整 MCP 配置。",
-                "复用规则。当前账号存在有效 Token 时直接复用；只有在没有有效 Token 或原 Token 已撤销时才生成新值。",
-                "出现范围。真实 Token 只出现在当前登录用户的手工配置页和一键安装指令中，不写入公共插件包或公共代码。",
-                "缓存和日志。页面使用 private, no-store 禁止缓存；服务端普通日志和 Agent 最终回复不得记录或复述完整 Token。",
-                "明文保存。Token 会明文保存在当前用户的 WorkBuddy MCP 配置中。怀疑泄露时撤销旧 Token，下次打开配置页时自动生成新值。",
-            ],
-        ),
-        (
-            "4 旧版迁移",
-            [
-                "目录处理。现有用户不受影响，不要手工删除旧插件目录。",
-                "自动替换。同一段安装指令会更新或替换旧插件，移除旧本地知识库连接方式，并改用用户级远程 HTTP MCP。",
-                "配置保护。迁移只替换 mcpServers.jiaotang-kb，保留其他 MCP 配置，并在处理前建立插件目录和用户 MCP 配置备份。",
-            ],
-        ),
-        (
-            "5 完成标准与回滚",
-            [
-                "Skills 验收。49 项 Skills 已安装并可识别。",
-                "工具验收。tools/list 出现 knowledge_search、knowledge_document 和 knowledge_service_status。",
-                "连接验收。实际调用 knowledge_service_status 返回 connected: true。",
-                "兼容验收。安装前已存在的其他 MCP 条目未被覆盖。",
-                "失败回滚。任一验收项失败时先保全现场，停止报告安装完成，并回滚到安装前的插件目录和用户 MCP 配置备份。",
-            ],
-        ),
-    ]
-    for heading, paragraphs in sections:
-        document.add_paragraph(heading, style="Heading 1")
-        for text in paragraphs:
-            paragraph = document.add_paragraph()
-            label, separator, detail = text.partition("。")
-            if separator and len(label) <= 12:
-                lead = paragraph.add_run(label + separator)
-                lead.bold = True
-                paragraph.add_run(detail)
-            else:
-                paragraph.add_run(text)
-
-    _set_east_asia_font(document, "Hiragino Sans GB")
-    return document
 
 
 def release_lines(spec: dict[str, Any]) -> list[str]:
@@ -461,12 +285,16 @@ def release_lines(spec: dict[str, Any]) -> list[str]:
         f"{item['target']}：{item['status']}，{clean(item['note'])}"
         for item in spec["compatibility"]
     ) + "。"
+    manual_access = spec["installation"].get(
+        "non_workbuddy_manual_mcp",
+        spec["installation"].get("manual_fallback", ""),
+    )
     return [
         f"本版本更新：{spec['summary']}",
         "能力变化：" + "；".join(clean(item) for item in spec["changes"]) + "。",
         f"通用安装：{spec['installation']['generic']}",
         f"WorkBuddy 安装：{spec['installation']['workbuddy']}",
-        f"手工接入：{spec['installation']['manual_fallback']}",
+        f"手工接入：{manual_access}",
         f"安装验收：{spec['installation']['verification']}",
         f"兼容性：{compatibility}",
         "回滚：" + "；".join(clean(item) for item in spec["rollback"]) + "。",
@@ -476,27 +304,14 @@ def release_lines(spec: dict[str, Any]) -> list[str]:
 def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
     document = Document(template)
     paragraphs = list(_all_paragraphs(document))
-    manager_profile = spec["manual_profile"] == "skills-manager-guide"
-    if manager_profile:
-        version_paragraph = next(
-            (
-                paragraph
-                for paragraph in paragraphs
-                if "Skills" in paragraph.text
-                and re.search(r"V\d+(?:\.\d+){1,3}", paragraph.text)
-                and ("正式" in paragraph.text or "共" in paragraph.text)
-            ),
-            None,
-        )
-    else:
-        version_paragraph = next(
-            (
-                paragraph
-                for paragraph in paragraphs
-                if paragraph.text.strip().startswith("适用版本：")
-            ),
-            None,
-        )
+    version_paragraph = next(
+        (
+            paragraph
+            for paragraph in paragraphs
+            if paragraph.text.strip().startswith("适用版本：")
+        ),
+        None,
+    )
     if version_paragraph is None:
         raise ValueError("Word 手册缺少可识别的 Skills 版本段落")
     old_tag_match = re.search(r"V\d+(?:\.\d+){1,3}", version_paragraph.text)
@@ -529,121 +344,6 @@ def update_manual(template: Path, output: Path, spec: dict[str, Any]) -> None:
             )
         if updated != text:
             _replace_paragraph_text(paragraph, updated)
-
-    if manager_profile:
-        if document.tables:
-            document = _build_simplified_manager_manual(spec)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            document.save(output)
-            canonicalize_docx(output)
-            return
-        cover_replacements = {
-            "macOS 与 Windows · Agent 扫描 · 一键导入 · 可恢复更新": (
-                "macOS 与 Windows · 一次复制粘贴 · 远程 MCP · 可恢复升级"
-            ),
-            "下载 · 校验 · 本机授权 · 扫描 · 导入 · 验收": (
-                "登录 · 复制指令 · 自动安装 · 一次重载 · 状态验收"
-            ),
-        }
-        for paragraph in document.paragraphs:
-            replacement = cover_replacements.get(paragraph.text.strip())
-            if replacement:
-                _replace_paragraph_text(paragraph, replacement)
-
-        if not document.tables:
-            _set_east_asia_font(document, "Hiragino Sans GB")
-            output.parent.mkdir(parents=True, exist_ok=True)
-            document.save(output)
-            canonicalize_docx(output)
-            return
-        _replace_paragraph_text(
-            document.tables[0].cell(0, 0).paragraphs[0],
-            (
-                "先记住三件事\n"
-                f"管理器版本与 Skills 内容版本相互独立。当前管理器为 0.2.0，"
-                f"正式 Skills 为 {spec['tag']}，共 {spec['skill_count']} 项。"
-                "WorkBuddy 使用一段完整指令安装 Skills 并连接远程知识服务；"
-                "项目算法程序化执行不属于本版本安装范围。"
-            ),
-        )
-
-        first_heading = next(
-            (
-                paragraph
-                for paragraph in document.paragraphs
-                if paragraph.style.name == "Heading 1"
-            ),
-            None,
-        )
-        if first_heading is None:
-            raise ValueError("Word 手册缺少可识别的正文起点")
-        body = document.element.body
-        removing = False
-        for child in list(body):
-            if child is first_heading._p:
-                removing = True
-            if removing and child.tag != qn("w:sectPr"):
-                body.remove(child)
-
-        sections = [
-            (
-                f"1 {spec['tag']} 安装边界",
-                [
-                    "本版本只处理安装简单和 MCP 能直接连上。算法程序化执行已拆分为后续独立项目。",
-                    "安装包只保留 49 项 Skills、WorkBuddy 插件清单、最小行为 Hook，以及必要的参考资料和业务脚本。",
-                    "macOS 和 Windows 使用同一个跨平台包，不再运行固定 .command、.cmd、PowerShell 或外部 CLI。",
-                ],
-            ),
-            (
-                "2 WorkBuddy 一次复制粘贴",
-                [
-                    "用户登录焦糖网站，点击一键安装，把网站生成的一段完整指令粘贴给 WorkBuddy。",
-                    "WorkBuddy 自动安装或更新 49 项 Skills，启用失败放行的最小行为 Hook。",
-                    "WorkBuddy 把远程 MCP 合并到用户配置。Windows 使用 %USERPROFILE%\\.workbuddy\\mcp.json，macOS 使用 ~/.workbuddy/mcp.json，文件名必须为不带点前缀的 mcp.json。只替换 mcpServers.jiaotang-kb，保留其他 MCP。",
-                    "安装或更新后只重载一次 WorkBuddy，然后进入状态验收。",
-                    "连接器出现后仍由用户在 WorkBuddy 界面手动信任，不绕过宿主安全确认。",
-                    "如果 WorkBuddy 尚未提供网页直装协议，一键安装就是一次复制粘贴；后续官方支持深链后再升级网页按钮。",
-                ],
-            ),
-            (
-                "3 手工配置与个人 Token",
-                [
-                    "登录后打开手工配置页，网站会自动填入个人 Token，并生成可直接复制的完整 MCP 配置。",
-                    "当前账号存在有效 Token 时直接复用；只有在没有有效 Token 或原 Token 已撤销时才生成新值。",
-                    "真实 Token 只出现在当前登录用户的手工配置页和一键安装指令中，不写入公共插件包或公共代码。",
-                    "页面使用 private, no-store 禁止缓存；服务端普通日志和 Agent 最终回复不得记录或复述完整 Token。",
-                    "Token 会明文保存在当前用户的 WorkBuddy MCP 配置中。怀疑泄露时先撤销旧 Token，下次打开配置页时自动生成新值。",
-                ],
-            ),
-            (
-                "4 旧版迁移",
-                [
-                    "现有用户不受影响，不要手工删除旧插件目录。",
-                    "同一段安装指令会更新或替换旧插件，移除旧本地知识库连接方式，并改用用户级远程 HTTP MCP。",
-                    "迁移只替换 mcpServers.jiaotang-kb，保留其他 MCP 配置，并在处理前建立插件目录和用户 MCP 配置备份。",
-                ],
-            ),
-            (
-                "5 完成标准与回滚",
-                [
-                    "49 项 Skills 已安装并可识别。",
-                    "tools/list 出现 knowledge_search、knowledge_document 和 knowledge_service_status。",
-                    "实际调用 knowledge_service_status 返回 connected: true。",
-                    "安装前已存在的其他 MCP 条目未被覆盖。",
-                    "任一验收项失败时先保全现场，停止报告安装完成，并回滚到安装前的插件目录和用户 MCP 配置备份。",
-                ],
-            ),
-        ]
-        for heading, items in sections:
-            document.add_paragraph(heading, style="Heading 1")
-            for item in items:
-                document.add_paragraph(item, style="List Bullet")
-        _remove_existing_brand_watermarks(document)
-        _set_east_asia_font(document, "Hiragino Sans GB")
-        output.parent.mkdir(parents=True, exist_ok=True)
-        document.save(output)
-        canonicalize_docx(output)
-        return
 
     existing = {
         prefix: next(
@@ -689,46 +389,6 @@ def extracted_text(path: Path) -> str:
 
 def validate_manual_content(path: Path, spec: dict[str, Any]) -> dict[str, Any]:
     text = extracted_text(path)
-    if spec["manual_profile"] == "skills-manager-guide":
-        required = [
-            spec["tag"],
-            *spec["manual_required_markers"],
-        ]
-        missing = [item for item in required if item not in text]
-        count_match = re.search(
-            rf"共\s*{spec['skill_count']}\s*项",
-            text,
-        )
-        if not count_match:
-            missing.append(f"共 {spec['skill_count']} 项")
-        if missing:
-            raise ValueError("Word 手册缺少清单事实：" + "、".join(missing))
-        forbidden = [
-            marker
-            for marker in (
-                "bootstrap_url",
-                "jiaotang_kb_setup",
-                ".mcp.json",
-                "设备绑定",
-                "钥匙串",
-                "DPAPI",
-                "三步安装",
-                "项目算法、交付契约与专利案卷",
-                "Bearer 你的个人Token",
-            )
-            if marker in text
-        ]
-        if forbidden:
-            raise ValueError("Word 手册仍含已停用内容：" + "、".join(forbidden))
-        return {
-            "status": "pass",
-            "profile": spec["manual_profile"],
-            "version": spec["tag"],
-            "skill_count": spec["skill_count"],
-            "required_facts": len(required) + 1,
-            "sha256": sha256(path),
-        }
-
     required = [
         f"适用版本：{spec['tag']}",
         f"由{spec['skill_count']}个",

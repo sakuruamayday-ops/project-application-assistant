@@ -6,8 +6,6 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 build/
-!apps/skills-manager/build/
-!apps/skills-manager/build/**
 dist/
 cache/
 logs/

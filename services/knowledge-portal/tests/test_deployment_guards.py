@@ -235,17 +235,35 @@ def test_deploy_uses_future_release_slots_without_historical_backup_governance()
     assert "tar -C '${legacy_app_dir}' -xf -" not in deploy_script
 
 
-def test_index_sync_bootstraps_server_before_advancing_remote_current():
+def test_index_sync_publishes_and_switches_index_before_application():
     sync_script = (
         SCRIPT_DIR / "sync_archived_knowledge_to_production.sh"
     ).read_text(encoding="utf-8")
 
     deploy = '"${script_dir}/deploy_production.sh"'
     publish = 'python3 "${script_dir}/publish_index_to_oss.py"'
-    assert sync_script.index(deploy) < sync_script.index(publish)
-    assert sync_script.index(publish) < sync_script.index(
-        '"${script_dir}/deploy_index_delta_to_server.sh"'
+    delta = '"${script_dir}/deploy_index_delta_to_server.sh"'
+    assert sync_script.index(publish) < sync_script.index(delta)
+    assert sync_script.index(delta) < sync_script.index(deploy)
+    assert "JIAOTANG_INDEX_ALREADY_DEPLOYED=1" in sync_script
+    assert "verify_acceptance_receipt.py" in sync_script
+    assert "release-timings" in sync_script
+
+
+def test_index_sync_uses_one_canonical_manifest_and_candidate_root():
+    sync_script = (
+        SCRIPT_DIR / "sync_archived_knowledge_to_production.sh"
+    ).read_text(encoding="utf-8")
+    updater = (SCRIPT_DIR / "update_cloud_policy_manifest.py").read_text(
+        encoding="utf-8"
     )
+
+    assert 'export JIAOTANG_MANIFEST_PATH="${manifest}"' in sync_script
+    assert 'export JIAOTANG_KNOWLEDGE_MANIFEST_PATH="${manifest}"' in sync_script
+    assert "JIAOTANG_CANDIDATE_ROOT/index" in sync_script
+    assert "候选发布不得指向可变current目录" in sync_script
+    assert 'os.environ.get("JIAOTANG_MANIFEST_PATH"' in updater
+    assert "JIAOTANG_MANIFEST_PATH与JIAOTANG_KNOWLEDGE_MANIFEST_PATH不一致" in updater
 
 
 def test_deployment_lock_rejects_second_process(tmp_path: Path):

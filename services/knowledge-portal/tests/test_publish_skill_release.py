@@ -99,8 +99,10 @@ def make_packages(
         "skills/suite-manifest.json": json.dumps(suite).encode("utf-8"),
         **{
             f"skills/{skill}/SKILL.md": (
-                f"---\nname: {skill}\n---\n".encode("utf-8")
-            )
+                f"---\nname: {skill}\n---\n"
+                "<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->\n"
+                "<!-- END WORKBUDDY BEHAVIOR HOOK -->\n"
+            ).encode("utf-8")
             for skill in suite["skills"]
         },
     }
@@ -184,8 +186,10 @@ def make_packages(
         "skills/suite-manifest.json": json.dumps(suite).encode("utf-8"),
         **{
             f"skills/{skill}/SKILL.md": (
-                f"---\nname: {skill}\n---\n".encode("utf-8")
-            )
+                f"---\nname: {skill}\n---\n"
+                "<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->\n"
+                "<!-- END WORKBUDDY BEHAVIOR HOOK -->\n"
+            ).encode("utf-8")
             for skill in suite["skills"]
         },
     }
@@ -405,6 +409,36 @@ def test_workbuddy_publish_rejects_outer_fixed_installer(tmp_path: Path) -> None
         assert "简化安装不需要的外层文件" in str(error)
     else:
         raise AssertionError("outer fixed installer must be rejected")
+
+
+def test_workbuddy_publish_rejects_hook_before_frontmatter(tmp_path: Path) -> None:
+    _, workbuddy = make_packages(
+        tmp_path,
+        tag="V1.3.1.2",
+        semantic_version="1.3.1.2",
+    )
+    tampered = tmp_path / "hook-before-frontmatter.zip"
+    entry = (
+        "jiaotang/plugins/jiaotang-workbuddy-skills/"
+        "skills/skill-0/SKILL.md"
+    )
+    rewrite_zip(
+        workbuddy,
+        tampered,
+        replacements={
+            entry: (
+                b"<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->\n"
+                b"---\nname: skill-0\n---\n"
+            )
+        },
+    )
+
+    try:
+        MODULE.validate_release_packages({"workbuddy": tampered}, "1.3.1.2")
+    except ValueError as error:
+        assert "frontmatter不是首字节" in str(error)
+    else:
+        raise AssertionError("hook before frontmatter must be rejected")
 
 
 def test_workbuddy_publish_rejects_tampered_outer_install_guide(
