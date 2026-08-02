@@ -163,12 +163,6 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
             <div class="agent-connection-summary is-{{ agent_connection_status.state }}" data-agent-install-status aria-live="polite">
               <i></i><div><strong data-agent-connection-label>{{ agent_connection_status.label }}</strong><small data-agent-connection-detail>{{ agent_connection_status.detail }}</small></div>
             </div>
-            <div class="agent-success-guidance" data-agent-success-guidance {% if not agent_connection_status.configured %}hidden{% endif %}>
-              <strong>连接成功后，可以继续体验</strong>
-              <p>欢迎评价这套 Skills 插件包，或查看内置常用指令。</p>
-              <div><button type="button" data-question="请评价这套企业全生命周期 Skills 插件包，并告诉我最值得改进的三点。">评价插件包</button><button type="button" data-question="请列出这套 Skills 插件包的常用指令，并按专精特新、高新、标准、企业分析和财税分类。">查看常用指令</button></div>
-              <small>覆盖专精特新前期评估与后期体检、高新申请书、标准撰写、企业分析 A/B/C 交付选择、金税四期分析报告等。</small>
-            </div>
           </div>
           <ol class="agent-setup-flow" aria-label="配置流程"><li><b>01</b><span><strong>安装</strong><small>49 项 Skills 与最小行为 Hook</small></span></li><li><b>02</b><span><strong>连接</strong><small>只替换 jiaotang-kb，保留其他 MCP</small></span></li><li><b>03</b><span><strong>验收</strong><small>一次重载并调用状态工具</small></span></li></ol>
         </article>

@@ -1953,30 +1953,6 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 .agent-connection-summary.is-connected > i,
 .agent-connection-summary.is-recently_active > i,
 .agent-connection-summary.is-verified > i { background:#75c69b; box-shadow:0 0 0 5px rgba(117,198,155,.09); }
-.agent-success-guidance {
-  margin-top:14px;
-  padding:15px;
-  border:1px solid rgba(202,169,105,.2);
-  border-radius:12px;
-  background:rgba(0,0,0,.18);
-}
-.agent-success-guidance[hidden] { display:none; }
-.agent-success-guidance > strong { color:#f1d79e; font-size:13px; }
-.agent-success-guidance > p,.agent-success-guidance > small { color:#aaa49a; line-height:1.65; }
-.agent-success-guidance > p { margin:7px 0 10px; }
-.agent-success-guidance > small { display:block; margin-top:10px; font-size:11px; }
-.agent-success-guidance > div { display:flex; flex-wrap:wrap; gap:8px; }
-.agent-success-guidance button {
-  padding:8px 11px;
-  border:1px solid rgba(202,169,105,.32);
-  border-radius:999px;
-  background:rgba(202,169,105,.08);
-  color:#dfc17f;
-  cursor:pointer;
-  font:inherit;
-  font-size:11px;
-}
-.agent-success-guidance button:hover { border-color:rgba(202,169,105,.7); background:rgba(202,169,105,.14); }
 .manual-agent-config { margin-top:18px; padding:18px; border:1px solid var(--atelier-line); border-radius:16px; background:rgba(255,255,255,.025); }
 .manual-agent-config h4 { margin:0 0 10px; }
 .manual-agent-config ol { margin:0 0 16px; padding-left:20px; color:var(--atelier-muted); line-height:1.75; }

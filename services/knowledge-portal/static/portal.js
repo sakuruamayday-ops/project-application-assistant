@@ -195,7 +195,7 @@ document.querySelectorAll("[data-device-id-display]").forEach((element) => {
   element.textContent = knowledgeDeviceId;
 });
 
-const renderAgentInstallStatus = (card, payload) => {
+const renderAgentInstallStatus = (payload) => {
   if (!payload?.connection) return;
   document.querySelectorAll("[data-agent-install-status]").forEach((statusPanel) => {
     statusPanel.classList.remove("is-waiting", "is-verified", "is-connected", "is-recently_active");
@@ -204,9 +204,6 @@ const renderAgentInstallStatus = (card, payload) => {
     const detail = statusPanel.querySelector("[data-agent-connection-detail]");
     if (label) label.textContent = payload.connection.label || "等待 MCP 连接";
     if (detail) detail.textContent = payload.connection.detail || "等待 WorkBuddy 完成验收";
-  });
-  document.querySelectorAll("[data-agent-success-guidance]").forEach((guidance) => {
-    guidance.hidden = !payload.configured;
   });
 };
 
@@ -221,7 +218,7 @@ const watchAgentInstallStatus = (card) => {
       const response = await fetch(statusUrl, {headers: {Accept: "application/json"}, cache: "no-store"});
       if (response.ok) {
         const payload = await response.json();
-        renderAgentInstallStatus(card, payload);
+        renderAgentInstallStatus(payload);
         if (payload.configured || payload.result?.result_status === "failed") {
           card.dataset.installPolling = "false";
           return;
@@ -247,7 +244,7 @@ const watchAgentUpgradeStatus = (card) => {
       const response = await fetch(statusUrl, {headers: {Accept: "application/json"}, cache: "no-store"});
       if (response.ok) {
         const payload = await response.json();
-        renderAgentInstallStatus(card, payload);
+        renderAgentInstallStatus(payload);
         if (
           payload.result?.operation === "upgrade"
           && ["upgraded", "failed"].includes(payload.result?.result_status)
@@ -586,6 +583,7 @@ if (userApiForm) {
 const ROUTE_SECTIONS = {
   "/portal": "overview",
   "/cockpit": "cockpit",
+  "/algorithms": "algorithms",
   "/access": "api-access",
   "/skills": "skills",
   "/feedback": "feedback",
