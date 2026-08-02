@@ -6,7 +6,7 @@
   "release": {
     "tag": "V1.4.9",
     "version": "1.4.9",
-    "summary": "V1.4.9 修复 WorkBuddy 默认安装布局下的 Hook 根目录发现，并补齐可独立核验的激活持久化回执。",
+    "summary": "V1.4.9 修复 WorkBuddy 默认安装布局下的 Hook 根目录发现，补齐激活持久化回执，并优化门户 MCP 状态、安装后引导与网站助手动态执行门禁。",
     "changes": [
       "Skill 激活启动器在宿主未注入 CODEBUDDY_PLUGIN_ROOT 和 CODEBUDDY_SKILL_DIR 时，会从用户目录下的 .workbuddy 与 .codebuddy 插件市场布局确定性发现当前插件。",
       "根目录候选必须同时满足插件目录名、plugin.json、行为 Hook 脚本和目标 SKILL.md 校验；无效同名目录会被跳过，不会误执行当前工作目录中的脚本。",
@@ -14,7 +14,11 @@
       "Skill 激活成功回执新增 root_source、state_persisted、active_skills_after 和 active_skill_count，可直接证明激活状态已经持久化，无需依赖宿主未公开的 active_skills 查询接口。",
       "49 项生成后 Skill 已在默认 WorkBuddy 市场布局中逐项执行激活回归，最终同一会话状态精确记录 49 项。",
       "继续保持 49 项 Skill 首字节 YAML frontmatter、真实名称原生加载、正式业务零 Skill 激活阻断和提示词只存摘要的既有边界。",
-      "继续保持 49 项 Skills、用户级远程 HTTP MCP、自动填入个人 Token、只替换 jiaotang-kb、保留其他 MCP 和一次重载的简化安装边界。"
+      "继续保持 49 项 Skills、用户级远程 HTTP MCP、自动填入个人 Token、只替换 jiaotang-kb、保留其他 MCP 和一次重载的简化安装边界。",
+      "管理员单页导航恢复为项目算法包、API 与用户、Skills、健康看板的稳定页面顺序，并修复移动端导航滚动定位偏移。",
+      "门户 MCP 状态改为依据当前用户的实际 MCP 调用和安装验收记录，不再依赖已经停用的设备绑定状态。",
+      "安装成功后新增插件包评价与常用指令入口，覆盖专精特新前期评估和后期体检、高新申请书、标准撰写、企业分析三种交付与金税四期分析报告。",
+      "网站助手默认采用动态 12 轮、复杂任务最多 16 轮，并同时执行总时长、工具调用次数和连续无进展停止条件，不使用无限循环。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",

@@ -209,6 +209,31 @@ AI_API_BASE = os.environ.get("JIAOTANG_AI_API_BASE", "").strip()
 AI_API_KEY = os.environ.get("JIAOTANG_AI_API_KEY", "").strip()
 AI_MODEL = os.environ.get("JIAOTANG_AI_MODEL", "").strip()
 AI_TIMEOUT_SECONDS = int(os.environ.get("JIAOTANG_AI_TIMEOUT_SECONDS", "45"))
+ASSISTANT_DEFAULT_MAX_ROUNDS = max(
+    1, int(os.environ.get("JIAOTANG_ASSISTANT_DEFAULT_MAX_ROUNDS", "12"))
+)
+ASSISTANT_COMPLEX_MAX_ROUNDS = max(
+    ASSISTANT_DEFAULT_MAX_ROUNDS,
+    int(os.environ.get("JIAOTANG_ASSISTANT_COMPLEX_MAX_ROUNDS", "16")),
+)
+ASSISTANT_DEFAULT_MAX_SECONDS = max(
+    AI_TIMEOUT_SECONDS,
+    int(os.environ.get("JIAOTANG_ASSISTANT_DEFAULT_MAX_SECONDS", "180")),
+)
+ASSISTANT_COMPLEX_MAX_SECONDS = max(
+    ASSISTANT_DEFAULT_MAX_SECONDS,
+    int(os.environ.get("JIAOTANG_ASSISTANT_COMPLEX_MAX_SECONDS", "300")),
+)
+ASSISTANT_DEFAULT_MAX_TOOL_CALLS = max(
+    1, int(os.environ.get("JIAOTANG_ASSISTANT_DEFAULT_MAX_TOOL_CALLS", "24"))
+)
+ASSISTANT_COMPLEX_MAX_TOOL_CALLS = max(
+    ASSISTANT_DEFAULT_MAX_TOOL_CALLS,
+    int(os.environ.get("JIAOTANG_ASSISTANT_COMPLEX_MAX_TOOL_CALLS", "40")),
+)
+ASSISTANT_MAX_NO_PROGRESS_ROUNDS = max(
+    1, int(os.environ.get("JIAOTANG_ASSISTANT_MAX_NO_PROGRESS_ROUNDS", "3"))
+)
 USER_AI_ALLOWED_HOSTS = frozenset(
     host.strip().lower().rstrip(".")
     for host in os.environ.get(
@@ -5543,13 +5568,80 @@ def merge_assistant_sources_for_question(
     return list(filter_project_results(question, merge_assistant_sources(*groups)))
 
 
+class AssistantExecutionStopped(RuntimeError):
+    def __init__(self, reason: str, user_message: str):
+        super().__init__(user_message)
+        self.reason = reason
+        self.user_message = user_message
+
+
+ASSISTANT_COMPLEX_TERMS = (
+    "完整报告",
+    "分析报告",
+    "申请书",
+    "撰写",
+    "体检",
+    "预评估",
+    "前期评估",
+    "可行性分析",
+    "尽调",
+    "全景",
+    "三版本",
+    "金税四期",
+    "标准草案",
+    "编制说明",
+    "逐项",
+    "多项目",
+    "对比分析",
+)
+
+
+def assistant_execution_policy(
+    question: str,
+    routed_skills: list[str] | None = None,
+) -> dict[str, object]:
+    normalized = " ".join(str(question or "").split())
+    skills = routed_skills or []
+    complex_task = bool(
+        len(normalized) >= 120
+        or len(skills) >= 3
+        or any(term in normalized for term in ASSISTANT_COMPLEX_TERMS)
+    )
+    return {
+        "tier": "complex" if complex_task else "default",
+        "complex": complex_task,
+        "max_rounds": (
+            ASSISTANT_COMPLEX_MAX_ROUNDS
+            if complex_task
+            else ASSISTANT_DEFAULT_MAX_ROUNDS
+        ),
+        "max_seconds": (
+            ASSISTANT_COMPLEX_MAX_SECONDS
+            if complex_task
+            else ASSISTANT_DEFAULT_MAX_SECONDS
+        ),
+        "max_tool_calls": (
+            ASSISTANT_COMPLEX_MAX_TOOL_CALLS
+            if complex_task
+            else ASSISTANT_DEFAULT_MAX_TOOL_CALLS
+        ),
+        "max_no_progress_rounds": ASSISTANT_MAX_NO_PROGRESS_ROUNDS,
+    }
+
+
+def assistant_monotonic() -> float:
+    return time.monotonic()
+
+
 def assistant_model_error_reason(error: Exception) -> tuple[str, str]:
+    if isinstance(error, AssistantExecutionStopped):
+        return error.reason, error.user_message
     if isinstance(error, urllib.error.HTTPError):
         return f"model_http_{error.code}", f"上游模型接口返回HTTP {error.code}"
     if isinstance(error, (urllib.error.URLError, TimeoutError)):
         return "model_network_or_timeout", "模型网络连接或响应超时"
     if isinstance(error, RuntimeError):
-        return "tool_round_limit", "模型连续工具调用达到安全轮次上限"
+        return "model_runtime_error", "模型或只读工具运行未正常完成"
     if isinstance(error, (KeyError, IndexError, json.JSONDecodeError)):
         return "model_response_invalid", "模型返回格式不完整"
     return type(error).__name__, "模型请求未正常完成"
@@ -5710,12 +5802,53 @@ def answer_with_knowledge(
                 ),
             },
             {"role": "user", "content": f"问题：{question}\n\n团队知识片段：\n{context or '当前未命中资料'}"},
-        ]
+    ]
     collected_sources: list[list[dict[str, object]]] = [results]
+    execution_policy = assistant_execution_policy(question, routed_skills)
+    max_rounds = int(execution_policy["max_rounds"])
+    max_seconds = int(execution_policy["max_seconds"])
+    max_tool_calls = int(execution_policy["max_tool_calls"])
+    max_no_progress_rounds = int(execution_policy["max_no_progress_rounds"])
+    started_at = assistant_monotonic()
+    tool_call_count = 0
+    no_progress_rounds = 0
+    seen_tool_results: set[str] = set()
+    seen_source_ids = {
+        int(item["document_id"])
+        for item in results
+        if item.get("document_id") is not None
+    }
+    emit(
+        "budget",
+        (
+            f"已启用{'复杂' if execution_policy['complex'] else '普通'}任务动态执行门禁："
+            f"最多{max_rounds}轮"
+        ),
+        execution_policy,
+    )
+
+    def require_remaining_time() -> None:
+        if assistant_monotonic() - started_at >= max_seconds:
+            raise AssistantExecutionStopped(
+                "time_limit",
+                f"模型执行达到{max_seconds}秒总时限",
+            )
+
     try:
-        for round_number in range(1, 7):
-            emit("model", f"模型正在进行第{round_number}轮证据判断", {"round": round_number})
+        for round_number in range(1, max_rounds + 1):
+            require_remaining_time()
+            emit(
+                "model",
+                f"模型正在进行第{round_number}/{max_rounds}轮证据判断",
+                {
+                    "round": round_number,
+                    "max_rounds": max_rounds,
+                    "tool_calls": tool_call_count,
+                    "max_tool_calls": max_tool_calls,
+                },
+            )
             message = request_assistant_model(messages, active_model_config)
+            require_remaining_time()
             tool_calls = message.get("tool_calls") or []
             if not tool_calls:
                 answer = str(message.get("content") or "").strip()
@@ -5733,7 +5866,15 @@ def answer_with_knowledge(
                     routed_skills,
                 )
             messages.append(message)
+            round_made_progress = False
             for tool_call in tool_calls:
+                tool_call_count += 1
+                if tool_call_count > max_tool_calls:
+                    raise AssistantExecutionStopped(
+                        "tool_call_limit",
+                        f"只读工具调用达到{max_tool_calls}次上限",
+                    )
+                require_remaining_time()
                 function = tool_call.get("function") or {}
                 name = str(function.get("name") or "")
                 try:
@@ -5762,6 +5903,18 @@ def answer_with_knowledge(
                     tool_result, sources = execute_assistant_tool(name, arguments)
                     collected_sources.append(sources)
                     content = json.dumps(tool_result, ensure_ascii=False)
+                    result_fingerprint = hashlib.sha256(
+                        f"{name}\n{content}".encode("utf-8")
+                    ).hexdigest()
+                    if result_fingerprint not in seen_tool_results:
+                        round_made_progress = True
+                        seen_tool_results.add(result_fingerprint)
+                    for source in sources:
+                        document_id = source.get("document_id")
+                        if document_id is None or int(document_id) in seen_source_ids:
+                            continue
+                        seen_source_ids.add(int(document_id))
+                        round_made_progress = True
                     emit(
                         "evidence",
                         f"工具{name}返回完成",
@@ -5777,7 +5930,28 @@ def answer_with_knowledge(
                         "content": content,
                     }
                 )
-        raise RuntimeError("模型工具调用轮次超过限制")
+            require_remaining_time()
+            if round_made_progress:
+                no_progress_rounds = 0
+            else:
+                no_progress_rounds += 1
+                emit(
+                    "guard",
+                    f"连续{no_progress_rounds}轮未取得新证据",
+                    {
+                        "no_progress_rounds": no_progress_rounds,
+                        "max_no_progress_rounds": max_no_progress_rounds,
+                    },
+                )
+                if no_progress_rounds >= max_no_progress_rounds:
+                    raise AssistantExecutionStopped(
+                        "no_progress_limit",
+                        f"连续{max_no_progress_rounds}轮没有取得新证据，已停止重复调用",
+                    )
+        raise AssistantExecutionStopped(
+            "round_limit",
+            f"模型连续工具调用达到{max_rounds}轮安全上限",
+        )
     except (
         urllib.error.URLError,
         urllib.error.HTTPError,
@@ -5808,7 +5982,7 @@ def answer_with_knowledge(
         if policy_fallback:
             emit(
                 "fallback",
-                "模型工具轮次已停止，改用现行政策硬门禁直接回答",
+                "模型动态执行已按安全门禁停止，改用现行政策硬门禁直接回答",
                 {"reason": fallback_code},
             )
             return (
@@ -8263,6 +8437,110 @@ def latest_agent_install_result_payload(
     }
 
 
+def agent_connection_status_payload(
+    connection: sqlite3.Connection,
+    user_id: int,
+    latest_result: dict[str, object] | None = None,
+) -> dict[str, object]:
+    result = latest_result or latest_agent_install_result_payload(connection, user_id)
+    activity = connection.execute(
+        """
+        SELECT activity_type,activity_name,called_at
+        FROM api_usage
+        WHERE user_id=?
+          AND activity_type IN (
+            'mcp_connection','mcp_tools_list','mcp_search','mcp_document','mcp_tool'
+          )
+        ORDER BY called_at DESC,id DESC
+        LIMIT 1
+        """,
+        (user_id,),
+    ).fetchone()
+    tools_list = connection.execute(
+        """
+        SELECT called_at FROM api_usage
+        WHERE user_id=? AND activity_type='mcp_tools_list'
+        ORDER BY called_at DESC,id DESC LIMIT 1
+        """,
+        (user_id,),
+    ).fetchone()
+    result_verified = bool(
+        result
+        and result.get("result_ok")
+        and result.get("result_status") in {"configured", "upgraded"}
+    )
+    activity_at = str(activity["called_at"] or "") if activity else ""
+    recently_active = bool(
+        activity_at
+        and activity_at >= isoformat(utc_now() - timedelta(minutes=15))
+    )
+    connected = bool(activity or result_verified)
+    if recently_active:
+        label = "MCP 最近活跃"
+        detail = f"最近调用：{format_chinese_datetime(activity_at)}"
+    elif activity:
+        label = "MCP 已连接"
+        detail = f"最近连接记录：{format_chinese_datetime(activity_at)}"
+    elif result_verified:
+        label = "安装验收已通过"
+        detail = str(result.get("result_reported_at_display") or "等待首次 MCP 调用")
+    else:
+        label = "等待 MCP 连接"
+        detail = "完成 WorkBuddy 重载和 knowledge_service_status 验收后自动显示"
+    verified_at = activity_at or (
+        str(result.get("result_reported_at") or "") if result_verified and result else ""
+    )
+    return {
+        "configured": connected,
+        "recently_active": recently_active,
+        "state": (
+            "recently_active"
+            if recently_active
+            else ("connected" if activity else ("verified" if result_verified else "waiting"))
+        ),
+        "label": label,
+        "detail": detail,
+        "last_activity_type": str(activity["activity_type"] or "") if activity else "",
+        "last_activity_name": str(activity["activity_name"] or "") if activity else "",
+        "verified_at": verified_at,
+        "verified_at_display": format_chinese_datetime(verified_at) if verified_at else "",
+        "checks": {
+            "skills": {
+                "complete": result_verified,
+                "completed_at": (
+                    str(result.get("result_reported_at_display") or "")
+                    if result_verified and result
+                    else ""
+                ),
+            },
+            "tools_list": {
+                "complete": bool(tools_list or result_verified),
+                "completed_at": (
+                    format_chinese_datetime(tools_list["called_at"])
+                    if tools_list
+                    else (
+                        str(result.get("result_reported_at_display") or "")
+                        if result_verified and result
+                        else ""
+                    )
+                ),
+            },
+            "service_status": {
+                "complete": connected,
+                "completed_at": format_chinese_datetime(verified_at) if verified_at else "",
+            },
+            "configuration_merge": {
+                "complete": result_verified,
+                "completed_at": (
+                    str(result.get("result_reported_at_display") or "")
+                    if result_verified and result
+                    else ""
+                ),
+            },
+        },
+    }
+
+
 def portal_payload(
     request: Request,
     user: sqlite3.Row,
@@ -8379,6 +8657,11 @@ def portal_payload(
         latest_agent_install_result = latest_agent_install_result_payload(
             connection,
             int(user["id"]),
+        )
+        agent_connection_status = agent_connection_status_payload(
+            connection,
+            int(user["id"]),
+            latest_agent_install_result,
         )
         device_binding_history = [
             {
@@ -8772,6 +9055,7 @@ def portal_payload(
         "active_device_token": active_device_token,
         "active_device_binding": active_device_binding_payload,
         "latest_agent_install_result": latest_agent_install_result,
+        "agent_connection_status": agent_connection_status,
         "device_binding_history": device_binding_history,
         "recent_calls": recent_calls,
         "usage_total": usage_total,
@@ -12133,7 +12417,10 @@ def build_agent_bootstrap_prompt(
         "未被覆盖时，才报告安装完成。不要执行安装包签名审查、用户侧签名校验、设备登记、"
         "bootstrap 或本地 MCP 启动器步骤。Authorization 中的个人 Token 仅可写入当前用户的 "
         "WorkBuddy MCP 配置，不得在最终回复、普通日志或其他文件中复述。失败时保留原插件目录和"
-        "原 MCP 配置备份，并说明恢复方法。"
+        "原 MCP 配置备份，并说明恢复方法。安装验收成功后的最终回复必须补充一句：欢迎评价这套"
+        "Skills 插件包，也可以回复“查看常用指令”；随后简要列出内置能力示例，包括专精特新前期"
+        "评估与后期体检、高新技术企业申请书撰写、按现行 GB/T 1.1 撰写标准、企业分析报告 A 标准版、"
+        "B 深度版或 C 两版齐出，以及金税四期分析报告。不得在这段完成提示中复述个人 Token。"
     )
 
 
@@ -12858,41 +13145,18 @@ def web_agent_installation_status(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     with closing(database()) as connection:
-        binding = connection.execute(
-            """
-            SELECT device_bindings.first_bound_at,
-                   device_keys.key_id,device_keys.credential_saved_at,
-                   device_keys.first_verified_at,device_keys.mcp_connected_at
-            FROM device_bindings
-            LEFT JOIN device_keys
-              ON device_keys.binding_id=device_bindings.id
-             AND device_keys.revoked_at IS NULL
-            WHERE device_bindings.user_id=? AND device_bindings.revoked_at IS NULL
-            ORDER BY device_bindings.id DESC LIMIT 1
-            """,
-            (int(user["id"]),),
-        ).fetchone()
         result = latest_agent_install_result_payload(connection, int(user["id"]))
-    stage_fields = {
-        "registration": "first_bound_at",
-        "credential_saved": "credential_saved_at",
-        "first_signature": "first_verified_at",
-        "mcp_connection": "mcp_connected_at",
-    }
-    stages = {
-        stage: {
-            "complete": bool(binding and binding[field]),
-            "completed_at": (
-                format_chinese_datetime(binding[field]) if binding and binding[field] else ""
-            ),
-        }
-        for stage, field in stage_fields.items()
-    }
+        connection_status = agent_connection_status_payload(
+            connection,
+            int(user["id"]),
+            result,
+        )
     return JSONResponse(
         {
-            "schema": "jiaotang-web-install-status/v1",
-            "configured": stages["mcp_connection"]["complete"],
-            "stages": stages,
+            "schema": "jiaotang-web-install-status/v2",
+            "configured": connection_status["configured"],
+            "connection": connection_status,
+            "stages": connection_status["checks"],
             "result": result,
         },
         headers={"Cache-Control": "no-store"},

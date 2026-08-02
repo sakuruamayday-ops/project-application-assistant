@@ -45,7 +45,7 @@
   <nav class="skill-section-tabs" role="tablist" aria-label="Skills 页面内容">
     <button id="skills-tab-catalog" class="is-active" type="button" role="tab" data-skill-section-tab="catalog" aria-selected="true" aria-controls="skills-panel-catalog" tabindex="0">技能目录 <small>{{ skill_center.summary.total }}</small></button>
     <button id="skills-tab-downloads" type="button" role="tab" data-skill-section-tab="downloads" aria-selected="false" aria-controls="skills-panel-downloads" tabindex="-1">版本与下载 <small>{{ 'V' ~ latest_release.version if latest_release else '—' }}</small></button>
-    <button id="skills-tab-install" type="button" role="tab" data-skill-section-tab="install" aria-selected="false" aria-controls="skills-panel-install" tabindex="-1">安装与设备 <small>{{ '已连接' if active_device_binding and active_device_binding.mcp_connected_at else '待配置' }}</small></button>
+    <button id="skills-tab-install" type="button" role="tab" data-skill-section-tab="install" aria-selected="false" aria-controls="skills-panel-install" tabindex="-1">安装与连接 <small>{{ '已连接' if agent_connection_status.configured else '待配置' }}</small></button>
   </nav>
 
   <div id="skills-panel-catalog" class="skill-section-pane is-active" data-skill-section-pane="catalog" role="tabpanel" aria-labelledby="skills-tab-catalog">
@@ -142,7 +142,7 @@
   <div id="skills-panel-install" class="skill-section-pane" data-skill-section-pane="install" role="tabpanel" aria-labelledby="skills-tab-install" hidden>
     <div class="skill-pane-heading"><span class="skill-kicker">ONE-STEP SETUP</span><h2>安装与连接</h2><p>网页暂未提供 WorkBuddy 深链，因此“一键安装”表示只复制粘贴一次；同一段指令完成 Skills、最小 Hook、远程 MCP 和验收。</p><a class="button secondary" href="/skills/diagnostics">打开无敏感信息一键诊断</a></div>
     <div class="skill-install-grid">
-      <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}">
+      <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
         <span class="skill-card-index">01 / 一键安装</span>
         <h3>复制完整指令给 WorkBuddy</h3>
         {% if release_guidance.workbuddy_installable %}
@@ -160,12 +160,21 @@
       <article class="skill-install-status">
         <span class="skill-card-index">02 / 完成标准</span>
         <h3>WorkBuddy 运行时验收</h3>
+        <div class="agent-connection-summary is-{{ agent_connection_status.state }}" data-agent-install-status aria-live="polite">
+          <i></i><div><strong data-agent-connection-label>{{ agent_connection_status.label }}</strong><small data-agent-connection-detail>{{ agent_connection_status.detail }}</small></div>
+        </div>
         <ol class="skill-install-stages">
           <li><i></i><span><strong>49 项 Skills</strong><small>全部安装并可识别</small></span></li>
           <li><i></i><span><strong>tools/list</strong><small>出现三个核心知识工具</small></span></li>
           <li><i></i><span><strong>knowledge_service_status</strong><small>实际调用返回 connected: true</small></span></li>
           <li><i></i><span><strong>配置合并</strong><small>其他 MCP 条目未被覆盖</small></span></li>
         </ol>
+        <div class="agent-success-guidance" data-agent-success-guidance {% if not agent_connection_status.configured %}hidden{% endif %}>
+          <strong>下一步：评价或直接开始工作</strong>
+          <p>可以评价这套 Skills 插件包，也可以查看常用指令。</p>
+          <div><button type="button" data-question="请评价这套企业全生命周期 Skills 插件包，并告诉我最值得改进的三点。">评价插件包</button><button type="button" data-question="请列出这套 Skills 插件包的常用指令，并按专精特新、高新、标准、企业分析和财税分类。">查看常用指令</button></div>
+          <small>内置专精特新前期评估与后期体检、高新申请书、标准撰写、企业分析 A/B/C 交付选择、金税四期分析报告等。</small>
+        </div>
       </article>
     </div>
     <div class="skill-install-safety"><span>安全边界</span><p>个人 Token 只出现在当前登录用户的一键安装指令和手工配置页，不写入公共包或公共代码；Agent 最终回复不得复述 Token。</p></div>

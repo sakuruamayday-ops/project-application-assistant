@@ -196,26 +196,18 @@ document.querySelectorAll("[data-device-id-display]").forEach((element) => {
 });
 
 const renderAgentInstallStatus = (card, payload) => {
-  const statusPanel = card?.closest("[data-skill-section-pane]")?.querySelector("[data-agent-install-status]");
-  if (!statusPanel || !payload?.stages) return;
-  Object.entries(payload.stages).forEach(([name, stage]) => {
-    const item = statusPanel.querySelector(`[data-agent-stage="${name}"]`);
-    if (!item) return;
-    item.classList.toggle("is-complete", Boolean(stage.complete));
-    const detail = item.querySelector("small");
-    if (detail) detail.textContent = stage.complete ? (stage.completed_at || "已通过") : "等待 Agent 回传";
+  if (!payload?.connection) return;
+  document.querySelectorAll("[data-agent-install-status]").forEach((statusPanel) => {
+    statusPanel.classList.remove("is-waiting", "is-verified", "is-connected", "is-recently_active");
+    statusPanel.classList.add(`is-${payload.connection.state || "waiting"}`);
+    const label = statusPanel.querySelector("[data-agent-connection-label]");
+    const detail = statusPanel.querySelector("[data-agent-connection-detail]");
+    if (label) label.textContent = payload.connection.label || "等待 MCP 连接";
+    if (detail) detail.textContent = payload.connection.detail || "等待 WorkBuddy 完成验收";
   });
-  const resultBox = statusPanel.querySelector("[data-agent-result]");
-  const title = statusPanel.querySelector("[data-agent-result-title]");
-  const message = statusPanel.querySelector("[data-agent-result-message]");
-  const next = statusPanel.querySelector("[data-agent-result-next]");
-  const result = payload.result;
-  resultBox?.classList.toggle("is-success", Boolean(result?.result_ok));
-  resultBox?.classList.toggle("is-error", Boolean(result && !result.result_ok));
-  const resultAction = result?.operation === "upgrade" ? "升级" : "安装";
-  if (title) title.textContent = result ? (result.result_ok ? `最近一次${resultAction}已通过` : `最近一次${resultAction}未完成`) : "等待本地 Agent 回传";
-  if (message) message.textContent = result?.result_user_message || "本页正在等待设备登记、签名和 MCP 连接结果。";
-  if (next) next.textContent = result?.result_next_action || result?.result_reported_at_display || "";
+  document.querySelectorAll("[data-agent-success-guidance]").forEach((guidance) => {
+    guidance.hidden = !payload.configured;
+  });
 };
 
 const watchAgentInstallStatus = (card) => {
@@ -396,6 +388,7 @@ document.addEventListener("click", async (event) => {
       agentBootstrapButton.innerHTML = "<span>完整指令已复制</span><small>粘贴到 WorkBuddy 执行</small>";
       agentBootstrapButton.classList.add("copy-success");
       if (status) status.textContent = "请粘贴到 WorkBuddy；安装、远程 MCP 合并、一次重载和验收会在同一轮完成。";
+      watchAgentInstallStatus(card);
       window.setTimeout(() => {
         agentBootstrapButton.innerHTML = originalMarkup;
         agentBootstrapButton.classList.remove("copy-success");
@@ -618,6 +611,14 @@ const scrollToPortalSection = (section, behavior) => {
     const stickyOffset = (sidebar?.getBoundingClientRect().height || 0) + 12;
     const targetTop = window.scrollY + section.getBoundingClientRect().top - stickyOffset;
     window.scrollTo({top: Math.max(0, targetTop), behavior: instant ? "auto" : behavior});
+    window.setTimeout(() => {
+      const currentSidebarBottom = sidebar?.getBoundingClientRect().bottom || 0;
+      const currentSectionTop = section.getBoundingClientRect().top;
+      const desiredTop = currentSidebarBottom + 12;
+      if (Math.abs(currentSectionTop - desiredTop) > 2) {
+        window.scrollBy({top: currentSectionTop - desiredTop, behavior: "auto"});
+      }
+    }, instant ? 160 : 520);
   } else {
     section.scrollIntoView({behavior: instant ? "auto" : behavior, block: "start"});
   }

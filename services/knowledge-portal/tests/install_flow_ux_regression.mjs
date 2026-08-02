@@ -67,19 +67,18 @@ try {
   await page.goto(`${baseUrl}/skills`, {waitUntil: "networkidle"});
   await page.locator('[data-skill-tab-target="install"]').first().click();
   const installPane = page.locator('[data-skill-section-pane="install"]');
-  assert.equal(await installPane.isVisible(), true, "安装与设备页必须可见");
-  const bindingButton = installPane.locator("[data-copy-agent-binding]");
-  assert.equal(await bindingButton.count(), 1, "必须有独立的第三步绑定按钮");
-  assert.equal(await bindingButton.isHidden(), true, "第二步授权前第三步必须隐藏");
+  assert.equal(await installPane.isVisible(), true, "安装与连接页必须可见");
+  assert.equal(await installPane.locator("[data-copy-agent-binding]").count(), 0, "简化安装不得恢复独立绑定步骤");
+  assert.equal(await installPane.locator("[data-agent-install-status]").count(), 1, "安装页必须展示当前 MCP 状态");
+  assert.match(await installPane.locator("[data-agent-connection-label]").innerText(), /等待 MCP 连接|MCP 已连接|MCP 最近活跃|安装验收已通过/);
+  assert.equal(await installPane.locator("[data-agent-success-guidance]").isHidden(), true, "尚未连接时不应提前显示完成引导");
   const desktop = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
     columns: getComputedStyle(document.querySelector(".skill-install-grid")).gridTemplateColumns,
-    label: document.querySelector("[data-copy-agent-binding]")?.textContent || "",
   }));
   assert.equal(desktop.documentWidth, desktop.viewportWidth, "桌面安装流程不得横向溢出");
   assert.equal(desktop.columns.split(" ").length, 2, "桌面安装与验收应为双栏");
-  assert.match(desktop.label, /第三步.*bootstrap/s, "第三步按钮必须明确标注 bootstrap");
   if (process.env.JIAOTANG_INSTALL_DESKTOP_SCREENSHOT) {
     await page.screenshot({path: process.env.JIAOTANG_INSTALL_DESKTOP_SCREENSHOT, fullPage: true});
   }
