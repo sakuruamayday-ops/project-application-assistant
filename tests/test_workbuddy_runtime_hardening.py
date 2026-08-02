@@ -270,6 +270,12 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 skill_entry.index("<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->"),
                 skill_entry.index("\n---\n"),
             )
+            self.assertIn("os.path.expanduser('~')", skill_entry)
+            self.assertIn("'.workbuddy'", skill_entry)
+            self.assertIn("'.codebuddy'", skill_entry)
+            self.assertIn("os.path.join", skill_entry)
+            self.assertNotIn("/Users/", skill_entry)
+            self.assertNotRegex(skill_entry, r"[A-Za-z]:\\\\Users\\\\")
 
     def test_behavior_hook_uses_signals_and_blocks_unrouted_formal_delivery(self):
         contract = json.loads(
@@ -1100,82 +1106,250 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertTrue(receipt["activation_ok"])
             self.assertEqual(receipt["skill"], "policy-retrieval")
             self.assertEqual(receipt["turn_id"], "turn-1")
+            self.assertEqual(receipt["root_source"], "direct")
+            self.assertTrue(receipt["state_persisted"])
+            self.assertEqual(
+                receipt["active_skills_after"],
+                ["policy-retrieval"],
+            )
+            self.assertEqual(receipt["active_skill_count"], 1)
             state = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 [item["skill"] for item in state["active_skills"]],
                 ["policy-retrieval"],
             )
 
-    def test_generated_activation_runner_works_without_skill_dir_environment(self):
+    def test_generated_activation_runner_discovers_default_marketplace_layouts(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source = root / "sample"
-            destination = root / "plugin" / "skills" / "sample"
-            source.mkdir()
-            (source / "SKILL.md").write_text(
-                "---\nname: sample\ndescription: test\n---\n# test\n",
+            for home_name, storage, expected_source in (
+                ("home-workbuddy", ".workbuddy", "workbuddy-marketplace"),
+                ("home-codebuddy", ".codebuddy", "codebuddy-marketplace"),
+            ):
+                with self.subTest(storage=storage):
+                    home = root / home_name
+                    plugin_root = (
+                        home
+                        / storage
+                        / "plugins/marketplaces/jiaotang/plugins/plugin"
+                    )
+                    source = root / f"source-{storage[1:]}" / "sample"
+                    destination = plugin_root / "skills" / "sample"
+                    source.mkdir(parents=True)
+                    (source / "SKILL.md").write_text(
+                        "---\nname: sample\ndescription: test\n---\n# test\n",
+                        encoding="utf-8",
+                    )
+                    PACKAGER.copy_workbuddy_skill(source, destination)
+                    (plugin_root / "scripts").mkdir()
+                    shutil.copy2(
+                        RELEASE_MANAGER / "workbuddy_behavior_hook.py",
+                        plugin_root / "scripts" / "workbuddy_behavior_hook.py",
+                    )
+                    (plugin_root / ".codebuddy-plugin").mkdir()
+                    (plugin_root / ".codebuddy-plugin/plugin.json").write_text(
+                        json.dumps({"name": "plugin", "version": "9.9.0"}),
+                        encoding="utf-8",
+                    )
+                    if storage == ".codebuddy":
+                        decoy = (
+                            home
+                            / ".workbuddy/plugins/marketplaces/decoy/plugins/plugin"
+                        )
+                        (decoy / "scripts").mkdir(parents=True)
+                        shutil.copy2(
+                            RELEASE_MANAGER / "workbuddy_behavior_hook.py",
+                            decoy / "scripts/workbuddy_behavior_hook.py",
+                        )
+                    data_root = plugin_root / ".behavior-data"
+                    data_root.mkdir()
+                    (data_root / "current-turn.json").write_text(
+                        json.dumps(
+                            {
+                                "session_id": "session-2",
+                                "turn_id": f"turn-{storage[1:]}",
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                    state_path, _ = BEHAVIOR.state_paths(data_root, "session-2")
+                    state_path.parent.mkdir(parents=True)
+                    state_path.write_text(
+                        json.dumps(
+                            {
+                                "schema_version": 2,
+                                "session_id": "session-2",
+                                "turn_id": f"turn-{storage[1:]}",
+                                "prompt_sha256": "",
+                                "prompt_signals": {},
+                                "active_skills": [],
+                                "status": "pending",
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                    text = (destination / "SKILL.md").read_text(encoding="utf-8")
+                    match = re.search(r"!`(.+?)`", text)
+                    self.assertIsNotNone(match)
+                    environment = os.environ.copy()
+                    environment["HOME"] = str(home)
+                    environment.pop("CODEBUDDY_PLUGIN_ROOT", None)
+                    environment.pop("CODEBUDDY_SKILL_DIR", None)
+                    environment.pop("CODEBUDDY_SESSION_ID", None)
+
+                    process = subprocess.run(
+                        match.group(1),
+                        shell=True,
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                        env=environment,
+                        cwd=root,
+                    )
+
+                    self.assertEqual(process.returncode, 0, process.stderr)
+                    receipt = json.loads(process.stdout)
+                    self.assertTrue(receipt["activation_ok"])
+                    self.assertEqual(receipt["skill"], "sample")
+                    self.assertEqual(receipt["root_source"], expected_source)
+                    self.assertTrue(receipt["state_persisted"])
+                    self.assertEqual(receipt["active_skills_after"], ["sample"])
+                    state = json.loads(state_path.read_text(encoding="utf-8"))
+                    self.assertEqual(
+                        [item["skill"] for item in state["active_skills"]],
+                        ["sample"],
+                    )
+
+    def test_behavior_hook_runner_discovers_workbuddy_layout_without_host_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / "home"
+            plugin_root = (
+                home
+                / ".workbuddy/plugins/marketplaces/jiaotang/plugins/plugin"
+            )
+            (plugin_root / "scripts").mkdir(parents=True)
+            (plugin_root / ".codebuddy-plugin").mkdir()
+            (plugin_root / ".codebuddy-plugin/plugin.json").write_text(
+                json.dumps({"name": "plugin", "version": "9.9.0"}),
                 encoding="utf-8",
             )
-            PACKAGER.copy_workbuddy_skill(source, destination)
-            plugin_root = root / "plugin"
-            (plugin_root / "scripts").mkdir()
             shutil.copy2(
                 RELEASE_MANAGER / "workbuddy_behavior_hook.py",
-                plugin_root / "scripts" / "workbuddy_behavior_hook.py",
+                plugin_root / "scripts/workbuddy_behavior_hook.py",
             )
-            data_root = plugin_root / ".behavior-data"
-            data_root.mkdir()
-            (data_root / "current-turn.json").write_text(
-                json.dumps(
-                    {
-                        "session_id": "session-2",
-                        "turn_id": "turn-2",
-                    }
-                ),
-                encoding="utf-8",
-            )
-            state_path, _ = BEHAVIOR.state_paths(data_root, "session-2")
-            state_path.parent.mkdir(parents=True)
-            state_path.write_text(
-                json.dumps(
-                    {
-                        "schema_version": 2,
-                        "session_id": "session-2",
-                        "turn_id": "turn-2",
-                        "prompt_sha256": "",
-                        "prompt_signals": {},
-                        "active_skills": [],
-                        "status": "pending",
-                    }
-                ),
-                encoding="utf-8",
-            )
-            text = (destination / "SKILL.md").read_text(encoding="utf-8")
-            match = re.search(r"!`(.+?)`", text)
-            self.assertIsNotNone(match)
+            command = PACKAGER.workbuddy_behavior_hooks("plugin")["hooks"][
+                "UserPromptSubmit"
+            ][0]["hooks"][0]["command"]
             environment = os.environ.copy()
-            environment["CODEBUDDY_PLUGIN_ROOT"] = str(plugin_root)
+            environment["HOME"] = str(home)
+            environment.pop("CODEBUDDY_PLUGIN_ROOT", None)
             environment.pop("CODEBUDDY_SKILL_DIR", None)
-            environment.pop("CODEBUDDY_SESSION_ID", None)
 
             process = subprocess.run(
-                match.group(1),
+                command,
                 shell=True,
                 check=False,
                 capture_output=True,
                 text=True,
+                input=json.dumps(
+                    {"session_id": "session-hook", "prompt": "测试提示词"}
+                ),
                 env=environment,
                 cwd=root,
             )
 
             self.assertEqual(process.returncode, 0, process.stderr)
             receipt = json.loads(process.stdout)
-            self.assertTrue(receipt["activation_ok"])
-            self.assertEqual(receipt["skill"], "sample")
+            self.assertIn("hookSpecificOutput", receipt)
+            state_path, _ = BEHAVIOR.state_paths(
+                plugin_root / ".behavior-data",
+                "session-hook",
+            )
+            self.assertTrue(state_path.is_file())
+
+    def test_all_49_generated_skill_runners_activate_from_default_layout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / "home"
+            plugin_root = (
+                home
+                / ".workbuddy/plugins/marketplaces/jiaotang/plugins/"
+                "jiaotang-workbuddy-skills"
+            )
+            suite = json.loads(
+                (REPOSITORY / "skills/suite-manifest.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            skills = list(suite["skills"])
+            self.assertEqual(len(skills), 49)
+            self.assertEqual(len(set(skills)), 49)
+            commands = {}
+            for skill in skills:
+                source = REPOSITORY / "skills" / skill
+                destination = plugin_root / "skills" / skill
+                PACKAGER.copy_workbuddy_skill(source, destination)
+                text = (destination / "SKILL.md").read_text(encoding="utf-8")
+                match = re.search(r"!`(.+?)`", text)
+                self.assertIsNotNone(match, skill)
+                commands[skill] = match.group(1)
+            (plugin_root / "scripts").mkdir()
+            shutil.copy2(
+                RELEASE_MANAGER / "workbuddy_behavior_hook.py",
+                plugin_root / "scripts/workbuddy_behavior_hook.py",
+            )
+            (plugin_root / ".codebuddy-plugin").mkdir()
+            (plugin_root / ".codebuddy-plugin/plugin.json").write_text(
+                json.dumps(
+                    {
+                        "name": "jiaotang-workbuddy-skills",
+                        "version": "1.4.9",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            environment = os.environ.copy()
+            environment["HOME"] = str(home)
+            environment["CODEBUDDY_SESSION_ID"] = "suite-session"
+            environment.pop("CODEBUDDY_PLUGIN_ROOT", None)
+            environment.pop("CODEBUDDY_SKILL_DIR", None)
+            environment.pop("CODEBUDDY_PLUGIN_DATA", None)
+            receipts = []
+            for skill in skills:
+                process = subprocess.run(
+                    commands[skill],
+                    shell=True,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    env=environment,
+                    cwd=root,
+                )
+                self.assertEqual(process.returncode, 0, process.stderr)
+                receipt = json.loads(process.stdout)
+                self.assertTrue(receipt["activation_ok"], skill)
+                self.assertEqual(receipt["skill"], skill)
+                self.assertEqual(
+                    receipt["root_source"],
+                    "workbuddy-marketplace",
+                )
+                self.assertTrue(receipt["state_persisted"])
+                receipts.append(receipt)
+
+            self.assertEqual(receipts[-1]["active_skill_count"], 49)
+            self.assertEqual(
+                set(receipts[-1]["active_skills_after"]),
+                set(skills),
+            )
+            state_path, _ = BEHAVIOR.state_paths(
+                plugin_root / ".behavior-data",
+                "suite-session",
+            )
             state = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(
-                [item["skill"] for item in state["active_skills"]],
-                ["sample"],
+                {item["skill"] for item in state["active_skills"]},
+                set(skills),
             )
 
     def test_workbuddy_activation_rejects_fallback_outside_plugin_root(self):

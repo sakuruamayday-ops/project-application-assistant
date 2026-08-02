@@ -4,21 +4,21 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.4.8",
-    "version": "1.4.8",
-    "summary": "V1.4.8 热修 WorkBuddy Skill 激活登记，并拆分代码发布与索引发布门禁。",
+    "tag": "V1.4.9",
+    "version": "1.4.9",
+    "summary": "V1.4.9 修复 WorkBuddy 默认安装布局下的 Hook 根目录发现，并补齐可独立核验的激活持久化回执。",
     "changes": [
-      "Skill 激活块优先使用宿主稳定注入的 CODEBUDDY_PLUGIN_ROOT，并仅在可用时回退 CODEBUDDY_SKILL_DIR，不再因 Skill 目录环境变量缺失而静默跳过登记。",
-      "激活脚本从插件根目录和 Skill 名称确定性解析真实目录，成功后复读会话状态确认持久化，并返回 activation_ok、Skill 名称和轮次 ID。",
-      "激活失败返回可审计的错误码，不再与成功共用无差别 continue 回执；普通问答与 Hook 内部异常仍保持失败开放。",
-      "代码发布只验证签名 Acceptance Harness 回执、OSS current 指针和本机 current 绑定，不再读取或散列大型索引文件。",
-      "索引发布保留 Harness、SQLite 完整性、全量哈希、OSS 不可变 release 和原子切换；V1.4.8 首次以 index 模式完成签名回执协议迁移。",
-      "继续保持 49 项 Skill 首字节 YAML frontmatter、真实名称原生加载、正式业务零 Skill 激活阻断和提示词只存摘要的 V1.4.7 修复。",
+      "Skill 激活启动器在宿主未注入 CODEBUDDY_PLUGIN_ROOT 和 CODEBUDDY_SKILL_DIR 时，会从用户目录下的 .workbuddy 与 .codebuddy 插件市场布局确定性发现当前插件。",
+      "根目录候选必须同时满足插件目录名、plugin.json、行为 Hook 脚本和目标 SKILL.md 校验；无效同名目录会被跳过，不会误执行当前工作目录中的脚本。",
+      "插件级 UserPromptSubmit 与 Stop Hook 使用同一套跨平台根目录发现逻辑，不再单独依赖宿主环境变量。",
+      "Skill 激活成功回执新增 root_source、state_persisted、active_skills_after 和 active_skill_count，可直接证明激活状态已经持久化，无需依赖宿主未公开的 active_skills 查询接口。",
+      "49 项生成后 Skill 已在默认 WorkBuddy 市场布局中逐项执行激活回归，最终同一会话状态精确记录 49 项。",
+      "继续保持 49 项 Skill 首字节 YAML frontmatter、真实名称原生加载、正式业务零 Skill 激活阻断和提示词只存摘要的既有边界。",
       "继续保持 49 项 Skills、用户级远程 HTTP MCP、自动填入个人 Token、只替换 jiaotang-kb、保留其他 MCP 和一次重载的简化安装边界。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.8 插件安装或覆盖升级和远程 MCP 连接。",
+      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.9 插件安装或覆盖升级和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -31,12 +31,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.4.7 已通过 macOS 49 项原生枚举与按名加载；V1.4.8 热修 Skill 激活登记，继续使用用户级远程 HTTP MCP。"
+        "note": "已通过默认 .workbuddy 与兼容 .codebuddy 市场布局的自动化回归，49 项生成后 Skill 均能在无宿主根目录变量时完成激活持久化；发布后仍执行一次 macOS WorkBuddy 黑箱复验。"
       },
       {
         "target": "Windows WorkBuddy",
         "status": "结构与 CI 已验证，待发布后实机验收",
-        "note": "保持结构与 CI 验证状态；V1.4.8 固定使用 %USERPROFILE%\\.workbuddy\\mcp.json，并等待发布后 Windows 实机复验 Skill 激活登记。"
+        "note": "根目录发现仅使用 Path.home 等跨平台路径能力且保持同一 ZIP；结构与 CI 已验证，Windows WorkBuddy 实机激活仍待发布后复验。"
       }
     ],
     "one_step_installation_protocol": {

@@ -237,7 +237,7 @@ wheels = [
 
 [[package]]
 name = "project-application-assistant"
-version = "1.4.8"
+version = "1.4.9"
 source = { editable = "." }
 dependencies = [
     { name = "openpyxl" },
