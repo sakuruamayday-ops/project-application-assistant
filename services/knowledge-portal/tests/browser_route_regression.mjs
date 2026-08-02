@@ -13,6 +13,7 @@ const {chromium} = require("playwright");
 const routes = new Map([
   ["/portal", "overview"],
   ["/cockpit", "cockpit"],
+  ["/algorithms", "algorithms"],
   ["/access", "api-access"],
   ["/skills", "skills"],
   ["/feedback", "feedback"],
@@ -52,6 +53,44 @@ async function waitForServer() {
   throw new Error(`浏览器测试服务启动超时\n${serverLog}`);
 }
 
+async function assertPortalSequence(page, expectedIds, roleLabel) {
+  await page.waitForTimeout(180);
+  const state = await page.evaluate((ids) => {
+    const rendered = [...document.querySelectorAll("main section[id]")]
+      .map((section) => section.id)
+      .filter((id) => ids.includes(id));
+    const navigation = [...document.querySelectorAll("[data-section-link]")]
+      .map((link) => link.dataset.sectionLink)
+      .filter((id) => ids.includes(id) && document.getElementById(id));
+    const positions = ids.map((id) => ({
+      id,
+      top: document.getElementById(id)?.getBoundingClientRect().top ?? null,
+    }));
+    return {rendered, navigation, positions};
+  }, expectedIds);
+  assert.deepEqual(state.rendered, expectedIds, `${roleLabel}单页区块顺序必须与产品信息架构一致`);
+  assert.deepEqual(state.navigation, expectedIds, `${roleLabel}侧栏顺序必须与单页区块一致`);
+  assert.ok(
+    state.positions.every((item, index) => index === 0 || item.top > state.positions[index - 1].top),
+    `${roleLabel}区块的实际纵向位置必须严格递增：${JSON.stringify(state.positions)}`,
+  );
+
+  for (const sectionId of expectedIds) {
+    await page.evaluate((expectedId) => {
+      const section = document.getElementById(expectedId);
+      if (!section) return;
+      const rect = section.getBoundingClientRect();
+      const absoluteTop = window.scrollY + rect.top;
+      const viewportAnchor = Math.min(window.innerHeight * .36, 340);
+      const insideOffset = Math.min(Math.max(rect.height / 2, 2), viewportAnchor);
+      window.scrollTo({top: Math.max(0, absoluteTop + insideOffset - viewportAnchor), behavior: "auto"});
+    }, sectionId);
+    await page.waitForFunction((expectedId) => (
+      document.querySelector(`[data-section-link="${expectedId}"].active`) !== null
+    ), sectionId);
+  }
+}
+
 let browser;
 try {
   await waitForServer();
@@ -74,13 +113,19 @@ try {
     page.waitForURL("**/portal"),
     page.click('button[type="submit"]'),
   ]);
+  await page.goto(`${baseUrl}/admin/members`, {waitUntil: "networkidle"});
+  const authorizationForm = page.locator('form[action="/admin/registration-authorizations"]');
+  await authorizationForm.locator('input[name="real_name"]').fill("普通成员");
+  await authorizationForm.locator('input[name="identity_code"]').fill("0826");
+  await Promise.all([
+    page.waitForURL(/\/admin\/members#invite-\d+$/),
+    authorizationForm.locator('button[type="submit"]').click(),
+  ]);
+  assert.match(await page.locator("main").innerText(), /普通成员/, "普通成员自助注册权限必须创建成功");
+  await page.goto(`${baseUrl}/portal`, {waitUntil: "networkidle"});
 
   const orderedSectionIds = ["overview", "cockpit", "algorithms", "api-access", "feedback", "skills", "health-admin"];
-  const renderedSectionIds = await page.evaluate((ids) => {
-    const sections = [...document.querySelectorAll("main section[id]")];
-    return sections.map((section) => section.id).filter((id) => ids.includes(id));
-  }, orderedSectionIds);
-  assert.deepEqual(renderedSectionIds, orderedSectionIds, "管理员单页区块顺序必须与左侧导航一致");
+  await assertPortalSequence(page, orderedSectionIds, "管理员");
 
   for (const [legacyPath, sectionId] of routes) {
     const response = await page.goto(`${baseUrl}${legacyPath}`, {waitUntil: "networkidle"});
@@ -162,7 +207,66 @@ try {
     mobileTargetLayout.sectionTop < 844 && mobileTargetLayout.sectionBottom > 0,
     `移动端目标章节必须进入可视区：${JSON.stringify(mobileTargetLayout)}`,
   );
-  console.log(`PASS browser route regression: ${routes.size} legacy routes`);
+
+  await page.context().clearCookies();
+  await page.setViewportSize({width: 1440, height: 1000});
+  await page.goto(`${baseUrl}/register`, {waitUntil: "networkidle"});
+  await page.fill('input[name="username"]', "route-member");
+  await page.fill('input[name="real_name"]', "普通成员");
+  await page.fill('input[name="identity_code"]', "0826");
+  await page.fill('input[name="company_name"]', "共创集团");
+  await page.fill('input[name="password"]', "browser-member-password-123");
+  await page.fill('input[name="confirm_password"]', "browser-member-password-123");
+  await Promise.all([
+    page.waitForURL("**/login?registered=1"),
+    page.click('button[type="submit"]'),
+  ]);
+  await page.goto(`${baseUrl}/login`, {waitUntil: "networkidle"});
+  await page.fill('input[name="username"]', "route-member");
+  await page.fill('input[name="password"]', "browser-member-password-123");
+  await page.click('button[type="submit"]');
+  await page.waitForLoadState("networkidle");
+  const memberLoginError = await page.locator(".notice.alert").textContent().catch(() => "");
+  assert.match(page.url(), /\/portal(?:#.*)?$/, `普通成员登录失败：${memberLoginError || page.url()}`);
+
+  const memberSectionIds = ["overview", "cockpit", "algorithms", "api-access", "feedback", "skills"];
+  await assertPortalSequence(page, memberSectionIds, "普通成员");
+  assert.equal(await page.locator('[data-section-link="health-admin"]').count(), 0, "普通成员不得看到管理员健康看板导航");
+  assert.equal(await page.locator("#health-admin").count(), 0, "普通成员不得渲染管理员健康看板区块");
+
+  for (const [legacyPath, sectionId] of [...routes].filter(([path]) => !path.startsWith("/admin/"))) {
+    const response = await page.goto(`${baseUrl}${legacyPath}`, {waitUntil: "networkidle"});
+    assert.equal(response?.status(), 200, `普通成员访问 ${legacyPath} 应返回 200`);
+    await page.waitForURL(`**/portal#${sectionId}`);
+    await page.waitForFunction((expectedId) => {
+      const section = document.getElementById(expectedId);
+      const activeLink = document.querySelector(`[data-section-link="${expectedId}"].active`);
+      const rect = section?.getBoundingClientRect();
+      return Boolean(activeLink && rect && rect.bottom > 0 && rect.top < window.innerHeight);
+    }, sectionId);
+  }
+
+  await page.setViewportSize({width: 390, height: 844});
+  await page.goto(`${baseUrl}/access`, {waitUntil: "networkidle"});
+  await page.waitForTimeout(850);
+  const mobileMemberLayout = await page.evaluate(() => {
+    const sidebar = document.querySelector(".sidebar")?.getBoundingClientRect();
+    const section = document.querySelector("#api-access")?.getBoundingClientRect();
+    return {
+      sidebarBottom: Math.round(sidebar?.bottom || 0),
+      sectionTop: Math.round(section?.top || 0),
+      sectionBottom: Math.round(section?.bottom || 0),
+    };
+  });
+  assert.ok(
+    mobileMemberLayout.sectionTop >= mobileMemberLayout.sidebarBottom - 1,
+    `普通成员移动端目标章节不得被横向导航遮挡：${JSON.stringify(mobileMemberLayout)}`,
+  );
+  assert.ok(
+    mobileMemberLayout.sectionTop < 844 && mobileMemberLayout.sectionBottom > 0,
+    `普通成员移动端目标章节必须进入可视区：${JSON.stringify(mobileMemberLayout)}`,
+  );
+  console.log(`PASS browser route regression: ${routes.size} admin routes and ${memberSectionIds.length} member sections`);
 } finally {
   if (browser) await browser.close();
   server.kill("SIGTERM");

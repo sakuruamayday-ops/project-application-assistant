@@ -866,8 +866,8 @@ def test_admin_portal_section_order_and_mcp_activity_status(tmp_path):
         ]
         assert section_order == sorted(section_order)
         assert "MCP 最近活跃" in portal.text
-        assert "评价插件包" in portal.text
-        assert "查看常用指令" in portal.text
+        assert "评价插件包" not in portal.text
+        assert "查看常用指令" not in portal.text
 
         status = client.get("/agent-installation-status")
         assert status.status_code == 200
@@ -4167,6 +4167,43 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         assert "专精特新前期评估与后期体检" in prompt
         assert "企业分析报告 A 标准版" in prompt
         assert "金税四期分析报告" in prompt
+        for capability_group in (
+            "总控与配置",
+            "知识与证据",
+            "企业与项目",
+            "专利专业",
+            "交付与质检",
+            "治理与进化",
+        ):
+            assert capability_group in prompt
+        for capability in (
+            "政策现行性与历史资料检索",
+            "项目匹配和单项目可行性",
+            "高企预评估与申请书撰写",
+            "产业链定位",
+            "专利检索布局/FTO/交底与申请文件核稿",
+            "申报材料撰写/版本对比/一致性检查",
+            "证据台账与交付归档",
+        ):
+            assert capability in prompt
+        suite = json.loads(
+            (module.SKILL_SOURCE_DIR / "suite-manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        graph = json.loads(
+            (module.SKILL_SOURCE_DIR / "skill-call-graph.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        grouped_skills = [
+            skill_name
+            for group_skills in graph["groups"].values()
+            for skill_name in group_skills
+        ]
+        assert len(suite["skills"]) == 49
+        assert len(grouped_skills) == len(set(grouped_skills)) == 49
+        assert set(grouped_skills) == set(suite["skills"])
         first_token = re.search(r"jtk_[A-Za-z0-9_-]+", prompt).group(0)
         second_token = re.search(
             r"jtk_[A-Za-z0-9_-]+", second.json()["prompt"]
