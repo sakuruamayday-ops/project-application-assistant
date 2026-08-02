@@ -113,7 +113,9 @@ try {
     // text metrics and browser rounding without representing a sticky defect.
     window.scrollTo({top: window.scrollY + shell.getBoundingClientRect().top + 640, behavior: "instant"});
   });
-  await page.waitForTimeout(100);
+  // Returning to the catalog restarts the 240ms pane-enter animation. Wait
+  // for its translateY(7px) phase to settle before sampling sticky offsets.
+  await page.waitForTimeout(300);
   const stickyBarsState = await page.evaluate(() => {
     const center = document.querySelector(".skill-center");
     const switcher = document.querySelector(".skill-group-switcher");
