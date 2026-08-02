@@ -511,6 +511,7 @@ def create_test_content_index(path):
 def load_app(tmp_path):
     os.environ["JIAOTANG_DATA_DIR"] = str(tmp_path)
     os.environ["JIAOTANG_INDEX_DIR"] = str(tmp_path / "knowledge-index")
+    os.environ["JIAOTANG_FIRST_PUBLIC_SKILL_VERSION"] = "1.0"
     os.environ["JIAOTANG_SETUP_KEY"] = "setup-secret"
     os.environ["JIAOTANG_TOKEN_DERIVATION_SECRET"] = "test-token-derivation-secret"
     os.environ["JIAOTANG_SECURE_COOKIES"] = "false"
@@ -558,7 +559,7 @@ def test_public_user_guide(tmp_path):
         assert "当前正式通用版" in guide.text
         assert "尚未正式发布" in guide.text
         assert "当前没有通过简化安装能力门禁" in guide.text
-        assert "候选 V1.5.0 不等于已正式发布" in guide.text
+        assert "候选 V1.5.1 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -7466,6 +7467,7 @@ def test_security_headers_storage_cache_robots_health_and_404_contract(tmp_path)
         assert live.status_code == 200
         assert ready.status_code == 200
         assert build.status_code == 200
+        assert build.headers["server-timing"].startswith("app;dur=")
         assert set(build.json()) >= {
             "schema",
             "commit",
@@ -7651,7 +7653,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     with TestClient(module.app) as client:
         guide = client.get("/guide")
         assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.5.0 尚未正式发布" in guide.text
+        assert "安全候选 V1.5.1 尚未正式发布" in guide.text
 
         login = client.post(
             "/login",
@@ -7881,6 +7883,106 @@ def test_release_validation_uses_content_identity_and_snapshot_streaming(
     assert stable_download.status_code == 200
     assert stable_download.content == original_content
     assert package.read_bytes() == replacement_content
+
+
+def test_release_display_validation_cache_rechecks_changed_file(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    package = tmp_path / "display-cache.zip"
+    package.write_bytes(b"immutable-display-artifact")
+    expected_sha256 = hashlib.sha256(package.read_bytes()).hexdigest()
+    artifact = {
+        "version": "1.5.0",
+        "file_path": str(package),
+        "sha256": expected_sha256,
+    }
+    calls = []
+
+    def validate(candidate, *, target, require_signature):
+        calls.append((target, require_signature))
+        actual = hashlib.sha256(package.read_bytes()).hexdigest()
+        if actual != candidate["sha256"]:
+            raise ValueError("SHA-256 mismatch")
+        return {"status": "verified", "signed_format": True}
+
+    monkeypatch.setattr(module, "validate_release_artifact_for_serving", validate)
+    module.validate_release_artifact_for_display_cached.cache_clear()
+    assert module.release_artifact_is_servable(
+        artifact,
+        target="generic",
+        require_signature=True,
+    )
+    assert module.release_artifact_is_servable(
+        artifact,
+        target="generic",
+        require_signature=True,
+    )
+    assert calls == [("generic", True)]
+
+    original_stat = package.stat()
+    changed = bytearray(package.read_bytes())
+    changed[0] ^= 1
+    package.write_bytes(changed)
+    os.utime(package, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns))
+    assert package.stat().st_size == original_stat.st_size
+    assert package.stat().st_mtime_ns == original_stat.st_mtime_ns
+    assert not module.release_artifact_is_servable(
+        artifact,
+        target="generic",
+        require_signature=True,
+    )
+    assert calls == [("generic", True), ("generic", True)]
+
+
+def test_portal_hides_releases_before_first_public_version(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    module.FIRST_PUBLIC_SKILL_VERSION = "1.5.0"
+    allow_test_release_artifacts(monkeypatch, module)
+    now = module.utc_now()
+    with closing(module.database()) as connection:
+        connection.execute(
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            (
+                "owner",
+                module.password_hasher.hash("owner-password-123"),
+                module.isoformat(now),
+            ),
+        )
+        for offset, version in enumerate(("1.4.9", "1.5.0", "1.5.1")):
+            package = tmp_path / f"skills-{version}.zip"
+            package.write_bytes(f"skills-{version}".encode())
+            connection.execute(
+                """
+                INSERT INTO skill_releases(
+                    version,file_name,file_path,sha256,release_notes,published_at
+                ) VALUES (?,?,?,?,?,?)
+                """,
+                (
+                    version,
+                    package.name,
+                    str(package),
+                    hashlib.sha256(package.read_bytes()).hexdigest(),
+                    f"release {version}",
+                    module.isoformat(now + timedelta(minutes=offset)),
+                ),
+            )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        page = client.get("/portal")
+
+    assert page.status_code == 200
+    assert "企业全生命周期助手 V1.5.1" in page.text
+    assert "企业全生命周期助手 V1.5.0" in page.text
+    assert "企业全生命周期助手 V1.4.9" not in page.text
 
 
 def test_admin_invalid_signature_upload_keeps_previous_latest(

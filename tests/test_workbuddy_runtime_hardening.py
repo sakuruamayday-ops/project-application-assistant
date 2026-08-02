@@ -297,7 +297,10 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 contract=contract,
                 signals=signals,
             ),
-            ["NO_ACTIVE_BUSINESS_SKILL：正式业务交付未激活任何Skill"],
+            [
+                "NO_PRIMARY_BUSINESS_SKILL：正式业务交付未激活主业务Skill；"
+                "辅助Skill和质量闸门不能替代主业务Skill"
+            ],
         )
         self.assertEqual(
             BEHAVIOR.audit_delivery_completion(
@@ -308,6 +311,175 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             ),
             [],
         )
+
+    def test_behavior_hook_requires_primary_role_and_classifies_all_49_skills(self):
+        contract = json.loads(
+            (REPOSITORY / "skills/delivery-contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        suite = json.loads(
+            (REPOSITORY / "skills/suite-manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        roles = contract["skill_roles"]
+        self.assertEqual(set(roles), set(suite["skills"]))
+        self.assertEqual(
+            {
+                str(definition.get("role") or "")
+                for definition in roles.values()
+            },
+            {
+                "primary_business",
+                "supporting_business",
+                "quality_gate",
+                "infrastructure",
+            },
+        )
+
+        signals = BEHAVIOR.prompt_signals(
+            "请按现行政策形成报告并交付文件。", contract
+        )
+        quality_only = BEHAVIOR.audit_delivery_receipt(
+            prompt="",
+            answer="已经完成。",
+            active_skills=[{"skill": "consistency-check"}],
+            contract=contract,
+            signals=signals,
+        )
+        self.assertFalse(quality_only["delivery_check_ok"])
+        self.assertEqual(
+            quality_only["error_code"], "NO_PRIMARY_BUSINESS_SKILL"
+        )
+        self.assertEqual(
+            quality_only["quality_gate_skills"], ["consistency-check"]
+        )
+
+        supporting_only = BEHAVIOR.audit_delivery_receipt(
+            prompt="",
+            answer="已经完成。",
+            active_skills=[{"skill": "policy-retrieval"}],
+            contract=contract,
+            signals=signals,
+        )
+        self.assertFalse(supporting_only["delivery_check_ok"])
+        self.assertEqual(
+            supporting_only["error_code"], "NO_PRIMARY_BUSINESS_SKILL"
+        )
+
+        primary = BEHAVIOR.audit_delivery_receipt(
+            prompt="",
+            answer="已经完成。",
+            active_skills=[{"skill": "application-writing"}],
+            contract=contract,
+            signals=signals,
+        )
+        self.assertTrue(primary["delivery_check_ok"])
+        self.assertEqual(
+            primary["primary_business_skills"], ["application-writing"]
+        )
+
+    def test_behavior_hook_rejects_na_and_negative_completion_markers(self):
+        contract = {
+            "formal_business_delivery_markers": ["形成报告"],
+            "business_domain_markers": ["政策"],
+            "skill_roles": {
+                "sample-primary": {
+                    "role": "primary_business",
+                    "owns": ["sample-report"],
+                }
+            },
+            "skills": {
+                "sample-primary": {
+                    "applies_when_prompt_contains": ["专项"],
+                    "required_marker_groups": [
+                        ["交付PDF"],
+                        ["品牌审计通过"],
+                    ],
+                }
+            },
+        }
+        receipt = BEHAVIOR.audit_delivery_receipt(
+            prompt="请按政策形成专项报告。",
+            answer="N/A：未生成交付PDF；未运行品牌审计通过。",
+            active_skills=[{"skill": "sample-primary"}],
+            contract=contract,
+        )
+        self.assertFalse(receipt["delivery_check_ok"])
+        self.assertEqual(
+            receipt["missing_requirement_ids"],
+            ["skills.sample-primary.1", "skills.sample-primary.2"],
+        )
+        self.assertEqual(receipt["accepted_na_items"], [])
+
+    def test_behavior_stop_returns_machine_readable_success_receipt(self):
+        contract_path = REPOSITORY / "skills/delivery-contracts.json"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            data_root = root / "behavior"
+            plugin_root.mkdir()
+            (plugin_root / "delivery-contracts.json").write_bytes(
+                contract_path.read_bytes()
+            )
+            state_path, _ = BEHAVIOR.state_paths(data_root, "session-success")
+            BEHAVIOR.atomic_json(
+                state_path,
+                {
+                    "schema_version": 2,
+                    "session_id": "session-success",
+                    "turn_id": "turn-success",
+                    "prompt_signals": {
+                        "formal_business_delivery": True,
+                        "business_domain": True,
+                        "complex_task": False,
+                        "policy_task": False,
+                        "peer_task": False,
+                        "skill_applicability": {},
+                    },
+                    "active_skills": [
+                        {"skill": "application-writing"},
+                        {"skill": "consistency-check"},
+                    ],
+                    "status": "pending",
+                },
+            )
+            output = io.StringIO()
+            with mock.patch.object(
+                BEHAVIOR,
+                "read_stdin",
+                return_value={
+                    "session_id": "session-success",
+                    "last_assistant_message": "正式材料已经完成。",
+                },
+            ), contextlib.redirect_stdout(output):
+                self.assertEqual(BEHAVIOR.stop_event(data_root, plugin_root), 0)
+
+            receipt = json.loads(output.getvalue())
+            self.assertTrue(receipt["delivery_check_ok"])
+            self.assertEqual(
+                receipt["primary_business_skills"], ["application-writing"]
+            )
+            self.assertEqual(
+                receipt["quality_gate_skills"], ["consistency-check"]
+            )
+            self.assertEqual(receipt["missing_requirement_ids"], [])
+            self.assertEqual(
+                BEHAVIOR.load_state(state_path)["status"], "completed"
+            )
+
+    def test_delivery_contract_uses_specific_not_generic_trigger_markers(self):
+        contract = json.loads(
+            (REPOSITORY / "skills/delivery-contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        forbidden = {"报告", "分析", "材料", "比较"}
+        for skill, specification in contract["skills"].items():
+            with self.subTest(skill=skill):
+                markers = set(specification["applies_when_prompt_contains"])
+                self.assertFalse(markers & forbidden)
 
     def test_simplified_plugin_uses_user_remote_mcp_without_local_connector(self):
         suite_manifest = json.loads(
@@ -344,7 +516,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
         )
         missing = BRIDGE.audit_delivery_completion(
-            prompt="请形成企业分析报告，核对政策并做同行对标。",
+            prompt="请形成企业全景分析报告，核对政策并做同行对标。",
             answer="总体结论：企业可以继续准备。",
             active_skills=[
                 {"skill": "project-application-assistant"},
@@ -384,7 +556,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         提高本次任务效率：复用政策内容哈希。
         """
         missing = BRIDGE.audit_delivery_completion(
-            prompt="请形成企业分析报告，核对政策并做同行对标。",
+            prompt="请形成企业全景分析报告，核对政策并做同行对标。",
             answer=answer,
             active_skills=[
                 {"skill": "project-application-assistant"},
@@ -471,7 +643,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 state_path,
                 {
                     "status": "active",
-                    "prompt": "请形成企业分析报告，核对政策并做同行对标。",
+                    "prompt": "请形成企业全景分析报告，核对政策并做同行对标。",
                     "active_skills": [
                         {"skill": "project-application-assistant"},
                         {"skill": "enterprise-panorama-analysis"},

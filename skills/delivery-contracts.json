@@ -1,7 +1,58 @@
 {
   "schema_version": 2,
   "contract_id": "jiaotang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.5.0",
+  "rule_version": "1.5.1",
+  "skill_roles": {
+    "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
+    "application-version-diff": {"role": "primary_business", "owns": []},
+    "application-writing": {"role": "primary_business", "owns": []},
+    "checking-patdocx-cn-single-agent": {"role": "primary_business", "owns": []},
+    "consistency-check": {"role": "quality_gate", "owns": []},
+    "digitalization-projects": {"role": "primary_business", "owns": []},
+    "enterprise-panorama-analysis": {"role": "primary_business", "owns": ["enterprise-panorama-standard", "enterprise-panorama-professional", "enterprise-panorama-dual"]},
+    "enterprise-profile": {"role": "primary_business", "owns": []},
+    "evidence-ledger": {"role": "quality_gate", "owns": []},
+    "evolution-governance": {"role": "infrastructure", "owns": []},
+    "experience-recorder": {"role": "infrastructure", "owns": []},
+    "financial-verification": {"role": "quality_gate", "owns": []},
+    "first-run-configuration": {"role": "infrastructure", "owns": []},
+    "graphify": {"role": "supporting_business", "owns": []},
+    "green-development-projects": {"role": "primary_business", "owns": []},
+    "high-tech-enterprise-application-drafting": {"role": "primary_business", "owns": []},
+    "high-tech-enterprise-preassessment": {"role": "primary_business", "owns": []},
+    "industrialization-projects": {"role": "primary_business", "owns": []},
+    "industry-chain-foundation-matcher": {"role": "primary_business", "owns": []},
+    "industry-positioning": {"role": "primary_business", "owns": []},
+    "intellectual-property-projects": {"role": "primary_business", "owns": []},
+    "investment-subsidy-projects": {"role": "primary_business", "owns": []},
+    "ip-assessment": {"role": "primary_business", "owns": []},
+    "jiaotang-legal-regulations": {"role": "supporting_business", "owns": []},
+    "jiaotang-patent-router": {"role": "primary_business", "owns": ["patent-application-case"]},
+    "local-knowledge-retrieval": {"role": "supporting_business", "owns": []},
+    "manufacturing-tax-risk-analysis": {"role": "primary_business", "owns": ["manufacturing-tax-risk-report"]},
+    "peer-benchmarking": {"role": "supporting_business", "owns": []},
+    "policy-retrieval": {"role": "supporting_business", "owns": []},
+    "project-application-assistant": {"role": "primary_business", "owns": []},
+    "project-deliverable-archive": {"role": "infrastructure", "owns": []},
+    "project-feasibility": {"role": "primary_business", "owns": ["project-feasibility-report"]},
+    "project-matching": {"role": "primary_business", "owns": []},
+    "project-memory": {"role": "infrastructure", "owns": []},
+    "project-rule-manager": {"role": "infrastructure", "owns": []},
+    "project-task-router": {"role": "infrastructure", "owns": []},
+    "quality-brand-projects": {"role": "primary_business", "owns": []},
+    "regional-special-projects": {"role": "primary_business", "owns": []},
+    "skill-authoring": {"role": "infrastructure", "owns": []},
+    "skill-curator": {"role": "infrastructure", "owns": []},
+    "skill-evolution": {"role": "infrastructure", "owns": []},
+    "sme-development-projects": {"role": "primary_business", "owns": ["sme-application-checkup-report"]},
+    "sme-score-preassessment": {"role": "primary_business", "owns": ["sme-score-preassessment-workbook"]},
+    "standard-drafting": {"role": "primary_business", "owns": []},
+    "talent-projects": {"role": "primary_business", "owns": []},
+    "technology-innovation-projects": {"role": "primary_business", "owns": []},
+    "third-party-data-indexing": {"role": "infrastructure", "owns": []},
+    "trade-and-open-economy-projects": {"role": "primary_business", "owns": []},
+    "web-task-operator": {"role": "infrastructure", "owns": []}
+  },
   "formal_business_delivery_markers": [
     "生成报告",
     "形成报告",
@@ -483,7 +534,7 @@
   },
   "skills": {
     "project-feasibility": {
-      "applies_when_prompt_contains": ["报告", "分析", "可行性", "能不能报", "差距"],
+      "applies_when_prompt_contains": ["项目可行性", "申报可行性", "能不能申报", "硬门槛", "申报差距"],
       "required_marker_groups": [
         ["项目版本", "适用版本"],
         ["总体结论", "可申报", "有条件申报", "不可申报", "暂无法判断"],
@@ -495,7 +546,7 @@
       ]
     },
     "enterprise-panorama-analysis": {
-      "applies_when_prompt_contains": ["报告", "分析", "尽调", "合作"],
+      "applies_when_prompt_contains": ["企业全景", "合作前尽调", "全景调研", "A版", "B版", "C版"],
       "required_marker_groups": [
         ["A标准销售版", "B深度顾问版", "C两版", "标准销售版", "GCIP深度顾问版"],
         ["企业主体", "工商信息", "主体锚定"],
@@ -510,7 +561,7 @@
       ]
     },
     "manufacturing-tax-risk-analysis": {
-      "applies_when_prompt_contains": ["报告", "分析", "金税四期", "税务", "财务"],
+      "applies_when_prompt_contains": ["税务风险", "金税四期", "制造业财税", "纳税风险"],
       "required_marker_groups": [
         ["enterprise-financial-facts/v1", "共享财务事实"],
         ["九个固定专题", "profitability"],
@@ -525,7 +576,7 @@
       ]
     },
     "sme-score-preassessment": {
-      "applies_when_prompt_contains": ["评分", "测分", "差距", "分析", "报告"],
+      "applies_when_prompt_contains": ["专精特新评分", "专精特新测分", "小巨人测分", "前期预评估"],
       "required_marker_groups": [
         ["项目层级", "省级专精特新", "专精特新小巨人"],
         ["申请类型", "新申报", "复核"],
@@ -540,7 +591,7 @@
       ]
     },
     "sme-development-projects": {
-      "applies_when_prompt_contains": ["体检", "审核", "核对", "分析", "报告", "专精特新", "小巨人"],
+      "applies_when_prompt_contains": ["专精特新体检", "申请书审核", "小巨人材料核稿", "后期体检"],
       "required_marker_groups": [
         ["申请版本与政策口径", "申请书版本已确认"],
         ["总体结论"],
@@ -575,7 +626,7 @@
       ]
     },
     "peer-benchmarking": {
-      "applies_when_prompt_contains": ["同行", "对标", "比较", "竞争"],
+      "applies_when_prompt_contains": ["同行对标", "可比企业", "竞争企业", "公示名单对比"],
       "required_marker_groups": [
         ["来源清单", "来源"],
         ["可比性评分", "可比性"],
@@ -585,7 +636,7 @@
       ]
     },
     "project-application-assistant": {
-      "applies_when_prompt_contains": ["报告", "分析", "材料", "规则", "迁移"],
+      "applies_when_prompt_contains": ["政府项目申报", "申报策略", "项目匹配", "申报材料总控", "企业全生命周期"],
       "required_marker_groups": [
         ["结论", "完成结果"],
         ["依据", "来源", "证据"],

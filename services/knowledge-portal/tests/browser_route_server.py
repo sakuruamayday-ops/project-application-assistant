@@ -24,6 +24,7 @@ def main() -> None:
         {
             "JIAOTANG_DATA_DIR": str(data_dir),
             "JIAOTANG_INDEX_DIR": str(data_dir / "knowledge-index"),
+            "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION": "1.0",
             "JIAOTANG_SETUP_KEY": "browser-route-setup",
             "JIAOTANG_TOKEN_DERIVATION_SECRET": "browser-route-test-secret",
             "JIAOTANG_SECURE_COOKIES": "false",

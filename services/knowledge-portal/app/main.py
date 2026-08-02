@@ -136,7 +136,10 @@ INDEX_DIR = Path(
 CONTENT_DATABASE_PATH = INDEX_DIR / "knowledge_content.sqlite3"
 KNOWLEDGE_FILES_DIR = Path(os.environ.get("JIAOTANG_KNOWLEDGE_FILES_DIR", DATA_DIR / "knowledge-files"))
 SKILL_RELEASE_DIR = Path(os.environ.get("JIAOTANG_SKILL_RELEASE_DIR", DATA_DIR / "skill-releases"))
-FIRST_PUBLIC_SKILL_VERSION = os.environ.get("JIAOTANG_FIRST_PUBLIC_SKILL_VERSION", "1.0").strip()
+FIRST_PUBLIC_SKILL_VERSION = os.environ.get(
+    "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION",
+    "1.5.0",
+).strip()
 SECURE_COOKIES = os.environ.get("JIAOTANG_SECURE_COOKIES", "true").lower() == "true"
 TOKEN_DERIVATION_SECRET = os.environ.get("JIAOTANG_TOKEN_DERIVATION_SECRET", "").encode("utf-8")
 if not TOKEN_DERIVATION_SECRET:
@@ -499,6 +502,7 @@ def format_file_size(size: int) -> str:
     return f"{size / (1024 * 1024):.1f} MB"
 
 
+@lru_cache(maxsize=1)
 def skill_catalog_payload() -> dict[str, object]:
     suite = read_json_object(SKILL_SOURCE_DIR / "suite-manifest.json")
     graph = read_json_object(SKILL_SOURCE_DIR / "skill-call-graph.json")
@@ -699,6 +703,7 @@ knowledge_mcp = FastMCP(
 async def lifespan(application: FastAPI):
     del application
     init_database()
+    await asyncio.to_thread(prewarm_portal_read_caches)
     async with knowledge_mcp.session_manager.run():
         redaction_stop = asyncio.Event()
         redaction_task = asyncio.create_task(
@@ -1935,19 +1940,32 @@ def save_upload(upload: UploadFile, directory: Path) -> tuple[Path, str, int]:
     return final_path, digest, final_path.stat().st_size
 
 
-def knowledge_index_stats() -> dict[str, object]:
-    if not CONTENT_DATABASE_PATH.is_file():
-        return {
-            "connected": False,
-            "documents": 0,
-            "characters": 0,
-            "updated_at": None,
-            "built_at": None,
-            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
-            "knowledge_schema_version": "1.0",
-            "case_pack_capability": False,
-            "case_pack_count": 0,
-        }
+def disconnected_knowledge_index_stats() -> dict[str, object]:
+    return {
+        "connected": False,
+        "documents": 0,
+        "characters": 0,
+        "updated_at": None,
+        "built_at": None,
+        "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+        "knowledge_schema_version": "1.0",
+        "case_pack_capability": False,
+        "case_pack_count": 0,
+    }
+
+
+@lru_cache(maxsize=8)
+def knowledge_index_stats_for_identity(
+    path: str,
+    device: int,
+    inode: int,
+    size: int,
+    modified_ns: int,
+    changed_ns: int,
+) -> dict[str, object]:
+    # The content index is immutable within a release and atomically replaced.
+    # Its filesystem identity therefore provides a safe cache invalidation key.
+    del path, device, inode, size, modified_ns, changed_ns
     try:
         with closing(content_database()) as connection:
             row = connection.execute(
@@ -1964,17 +1982,24 @@ def knowledge_index_stats() -> dict[str, object]:
             **capability,
         }
     except (sqlite3.Error, HTTPException):
-        return {
-            "connected": False,
-            "documents": 0,
-            "characters": 0,
-            "updated_at": None,
-            "built_at": None,
-            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
-            "knowledge_schema_version": "1.0",
-            "case_pack_capability": False,
-            "case_pack_count": 0,
-        }
+        return disconnected_knowledge_index_stats()
+
+
+def knowledge_index_stats() -> dict[str, object]:
+    try:
+        stat = CONTENT_DATABASE_PATH.stat()
+    except OSError:
+        return disconnected_knowledge_index_stats()
+    return deepcopy(
+        knowledge_index_stats_for_identity(
+            str(CONTENT_DATABASE_PATH),
+            int(stat.st_dev),
+            int(stat.st_ino),
+            int(stat.st_size),
+            int(stat.st_mtime_ns),
+            int(stat.st_ctime_ns),
+        )
+    )
 
 
 def snapshot_content_database(job_id: int | str) -> Path:
@@ -7230,7 +7255,11 @@ def init_database() -> None:
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
+    started_at = time.perf_counter()
     response = await call_next(request)
+    response.headers["Server-Timing"] = (
+        f"app;dur={(time.perf_counter() - started_at) * 1000:.1f}"
+    )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
@@ -8405,6 +8434,16 @@ def valid_release_version(value: str) -> bool:
     )
 
 
+def is_public_skill_release_version(value: str) -> bool:
+    normalized = str(value or "").strip()
+    return (
+        valid_release_version(normalized)
+        and valid_release_version(FIRST_PUBLIC_SKILL_VERSION)
+        and release_version_key(normalized)
+        >= release_version_key(FIRST_PUBLIC_SKILL_VERSION)
+    )
+
+
 def latest_agent_install_result_payload(
     connection: sqlite3.Connection,
     user_id: int,
@@ -8880,16 +8919,12 @@ def portal_payload(
                 """
             ).fetchall(), "created_at", "completed_at", "rolled_back_at")
         if user["is_admin"]:
-            public_version_pattern = f"{FIRST_PUBLIC_SKILL_VERSION.split('.', 1)[0]}.%"
             release_rows = connection.execute(
                 """
                 SELECT id, version, file_name, sha256, release_notes, published_at
                 FROM skill_releases
-                WHERE version = ? OR version LIKE ?
                 ORDER BY published_at DESC, id DESC
-                LIMIT 20
                 """,
-                (FIRST_PUBLIC_SKILL_VERSION, public_version_pattern),
             ).fetchall()
             releases = [
                 {
@@ -8898,7 +8933,9 @@ def portal_payload(
                     "release_notes_html": render_guide_markdown(str(row["release_notes"])),
                 }
                 for row in release_rows
+                if is_public_skill_release_version(str(row["version"]))
             ]
+            releases = releases[:20]
         if user["is_admin"]:
             since_24_hours = isoformat(utc_now() - timedelta(hours=24))
             since_7_days = isoformat(utc_now() - timedelta(days=7))
@@ -8957,14 +8994,20 @@ def portal_payload(
                 ),
                 "deploy_gate": skill_deploy_gate_status(),
             }
-        latest_release = connection.execute(
-            """
-            SELECT id, version, file_name, sha256, release_notes, published_at
-            FROM skill_releases
-            ORDER BY published_at DESC, id DESC
-            LIMIT 1
-            """
-        ).fetchone()
+        latest_release = next(
+            (
+                row
+                for row in connection.execute(
+                    """
+                    SELECT id, version, file_name, sha256, release_notes, published_at
+                    FROM skill_releases
+                    ORDER BY published_at DESC, id DESC
+                    """
+                ).fetchall()
+                if is_public_skill_release_version(str(row["version"]))
+            ),
+            None,
+        )
         release_stage = connection.execute(
             """
             SELECT version,status,generic_sha256,workbuddy_sha256,
@@ -8991,43 +9034,42 @@ def portal_payload(
             target="generic",
             require_signature=True,
         )
+        latest_workbuddy = latest_workbuddy_artifact()
         latest_release_payload = (
             {
                 **dict(latest_release),
                 "published_at_display": format_chinese_datetime(latest_release["published_at"]),
                 "release_notes_html": render_guide_markdown(str(latest_release["release_notes"])),
                 "generic_available": latest_generic_available,
-                "workbuddy_available": latest_workbuddy_artifact()["installable"],
-                "workbuddy": latest_workbuddy_artifact(),
+                "workbuddy_available": latest_workbuddy["installable"],
+                "workbuddy": latest_workbuddy,
             }
             if latest_release
             else None
         )
-        public_version_pattern = f"{FIRST_PUBLIC_SKILL_VERSION.split('.', 1)[0]}.%"
         historical_release_rows = connection.execute(
             """
             SELECT id, version, file_name, sha256, release_notes, published_at
             FROM skill_releases
             WHERE id != COALESCE(?, -1)
-              AND (version = ? OR version LIKE ?)
             ORDER BY published_at DESC, id DESC
             """,
-            (
-                latest_release["id"] if latest_release else None,
-                FIRST_PUBLIC_SKILL_VERSION,
-                public_version_pattern,
-            ),
+            (latest_release["id"] if latest_release else None,),
         ).fetchall()
-        historical_releases = [
-            {
-                **dict(row),
-                "published_at_display": format_chinese_datetime(row["published_at"]),
-                "release_notes_html": render_guide_markdown(str(row["release_notes"])),
-                "workbuddy_available": workbuddy_artifact(str(row["version"]))["installable"],
-                "workbuddy": workbuddy_artifact(str(row["version"])),
-            }
-            for row in historical_release_rows
-        ]
+        historical_releases = []
+        for row in historical_release_rows:
+            if not is_public_skill_release_version(str(row["version"])):
+                continue
+            historical_workbuddy = workbuddy_artifact(str(row["version"]))
+            historical_releases.append(
+                {
+                    **dict(row),
+                    "published_at_display": format_chinese_datetime(row["published_at"]),
+                    "release_notes_html": render_guide_markdown(str(row["release_notes"])),
+                    "workbuddy_available": historical_workbuddy["installable"],
+                    "workbuddy": historical_workbuddy,
+                }
+            )
         release_announcement = None
         if latest_release:
             release_announcement = connection.execute(
@@ -9120,7 +9162,7 @@ def workbuddy_artifact_is_simple_remote_mcp(
     artifact: dict[str, object] | None,
 ) -> bool:
     try:
-        integrity = validate_release_artifact_for_serving(
+        integrity = validate_release_artifact_for_display(
             artifact,
             target="workbuddy",
             require_signature=True,
@@ -9201,6 +9243,13 @@ def public_release_guidance() -> dict[str, object]:
         if isinstance(suite.get("skills"), list)
         else 0,
     }
+
+
+def prewarm_portal_read_caches() -> None:
+    """Pay immutable catalog and integrity costs before accepting traffic."""
+    skill_catalog_payload()
+    knowledge_index_stats()
+    public_release_guidance()
 
 
 def build_provenance_payload() -> dict[str, object]:
@@ -15775,21 +15824,28 @@ def usage(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
 
 def latest_skill_release() -> sqlite3.Row | None:
     with closing(database()) as connection:
-        return connection.execute(
+        rows = connection.execute(
             """
             SELECT id, version, file_name, file_path, sha256, release_notes, published_at
             FROM skill_releases
             ORDER BY published_at DESC, id DESC
-            LIMIT 1
             """
-        ).fetchone()
+        ).fetchall()
+    return next(
+        (
+            row
+            for row in rows
+            if is_public_skill_release_version(str(row["version"]))
+        ),
+        None,
+    )
 
 
 def latest_skill_artifact(target: str) -> dict[str, object] | None:
     if target not in {"generic", "workbuddy", "macos", "windows"}:
         raise ValueError(f"未知发布目标：{target}")
     with closing(database()) as connection:
-        row = connection.execute(
+        rows = connection.execute(
             """
             SELECT r.id,r.version,r.release_notes,r.published_at,
                    a.file_name,a.file_path,a.sha256,a.target
@@ -15797,10 +15853,17 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
             JOIN skill_releases r ON r.id=a.release_id
             WHERE a.target=?
             ORDER BY r.published_at DESC,r.id DESC
-            LIMIT 1
             """,
             (target,),
-        ).fetchone()
+        ).fetchall()
+        row = next(
+            (
+                candidate
+                for candidate in rows
+                if is_public_skill_release_version(str(candidate["version"]))
+            ),
+            None,
+        )
         if row is not None:
             return dict(row)
         if target == "workbuddy":
@@ -15819,6 +15882,8 @@ def latest_skill_artifact(target: str) -> dict[str, object] | None:
             """
         ).fetchall()
     for release in releases:
+        if not is_public_skill_release_version(str(release["version"])):
+            continue
         if bool(release["has_targeted_artifacts"]):
             continue
         if target == "generic" and Path(str(release["file_path"])).is_file():
@@ -16018,6 +16083,73 @@ def validate_release_artifact_for_serving(
         close_release_artifact_snapshot(snapshot, snapshot_path)
 
 
+@lru_cache(maxsize=128)
+def validate_release_artifact_for_display_cached(
+    file_path: str,
+    target: str,
+    version: str,
+    expected_sha256: str,
+    require_signature: bool,
+    device: int,
+    inode: int,
+    size: int,
+    modified_ns: int,
+    changed_ns: int,
+) -> dict[str, object]:
+    """Cache page-level availability by an immutable artifact identity.
+
+    Downloads and release gates still snapshot, hash and verify the complete
+    archive on every operation.  Page rendering may reuse a prior validation
+    only while path, expected digest and all filesystem identity fields remain
+    unchanged; in-place writes change ctime even if size and mtime are restored.
+    """
+    del device, inode, size, modified_ns, changed_ns
+    return validate_release_artifact_for_serving(
+        {
+            "file_path": file_path,
+            "version": version,
+            "sha256": expected_sha256,
+        },
+        target=target,
+        require_signature=require_signature,
+    )
+
+
+def validate_release_artifact_for_display(
+    artifact: dict[str, object] | sqlite3.Row | None,
+    *,
+    target: str,
+    require_signature: bool,
+) -> dict[str, object]:
+    if artifact is None:
+        raise ValueError("发布产物不存在")
+    file_path = str(artifact["file_path"] or "")
+    version = str(artifact["version"] or "")
+    expected_sha256 = str(artifact["sha256"] or "")
+    package_path = Path(file_path)
+    if (
+        not package_path.is_file()
+        or not valid_release_version(version)
+        or not re.fullmatch(r"[a-f0-9]{64}", expected_sha256)
+    ):
+        raise ValueError("发布产物记录不完整")
+    stat = package_path.stat()
+    return deepcopy(
+        validate_release_artifact_for_display_cached(
+            file_path,
+            target,
+            version,
+            expected_sha256,
+            require_signature,
+            int(stat.st_dev),
+            int(stat.st_ino),
+            int(stat.st_size),
+            int(stat.st_mtime_ns),
+            int(stat.st_ctime_ns),
+        )
+    )
+
+
 def validated_release_artifact_download(
     artifact: dict[str, object] | sqlite3.Row | None,
     *,
@@ -16099,7 +16231,7 @@ def release_artifact_is_servable(
     require_signature: bool,
 ) -> bool:
     try:
-        validate_release_artifact_for_serving(
+        validate_release_artifact_for_display(
             artifact,
             target=target,
             require_signature=require_signature,
