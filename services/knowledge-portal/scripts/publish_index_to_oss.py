@@ -18,12 +18,14 @@ import oss2
 
 try:
     from scripts.oss_auth import build_bucket
+    from scripts.release_progress import TransferProgress, emit_progress
     from scripts.verify_acceptance_receipt import (
         DEFAULT_PROFILE,
         verify_receipt_against_release,
     )
 except ImportError:  # direct script execution
     from oss_auth import build_bucket
+    from release_progress import TransferProgress, emit_progress
     from verify_acceptance_receipt import (
         DEFAULT_PROFILE,
         verify_receipt_against_release,
@@ -48,6 +50,7 @@ RELEASE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$")
 MANIFEST_SCHEMA = "jiaotang-index-release/v1"
 POINTER_SCHEMA = "jiaotang-index-pointer/v1"
 TRANSITION_SCHEMA = "jiaotang-index-transition/v1"
+SourceIdentity = tuple[int, int, int, int, int]
 
 
 def canonical_json(payload: dict[str, object]) -> bytes:
@@ -80,6 +83,40 @@ def crc64_file(path: Path) -> int:
         for chunk in iter(lambda: source.read(8 * 1024 * 1024), b""):
             digest.update(chunk)
     return int(digest.crc)
+
+
+def source_identity(path: Path) -> SourceIdentity:
+    stat = path.stat()
+    return (
+        int(stat.st_dev),
+        int(stat.st_ino),
+        int(stat.st_size),
+        int(stat.st_mtime_ns),
+        int(stat.st_ctime_ns),
+    )
+
+
+def sha256_crc64_file(
+    path: Path,
+    *,
+    stage: str,
+) -> tuple[str, int, SourceIdentity]:
+    before = source_identity(path)
+    sha256_digest = hashlib.sha256()
+    crc64_digest = oss2.utils.Crc64()
+    reporter = TransferProgress(stage, path.name, before[2])
+    consumed = 0
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(8 * 1024 * 1024), b""):
+            sha256_digest.update(chunk)
+            crc64_digest.update(chunk)
+            consumed += len(chunk)
+            reporter.update(consumed)
+    reporter.finish()
+    after = source_identity(path)
+    if before != after or consumed != before[2]:
+        raise RuntimeError(f"计算摘要期间文件发生变化：{path.name}")
+    return sha256_digest.hexdigest(), int(crc64_digest.crc), after
 
 
 def verify_sqlite(path: Path) -> None:
@@ -290,7 +327,9 @@ def put_immutable_file(
     digest: str,
     size: int,
     crc64: int,
+    expected_source_identity: SourceIdentity | None = None,
 ) -> str:
+    frozen_identity = expected_source_identity or source_identity(source)
     existing = head_optional(bucket, object_key)
     if existing is not None:
         verify_remote_object(
@@ -301,6 +340,16 @@ def put_immutable_file(
             crc64=crc64,
         )
         verify_download_sample(bucket, object_key, source)
+        if source_identity(source) != frozen_identity:
+            raise RuntimeError(f"发布期间文件发生变化：{source.name}")
+        emit_progress(
+            "oss-upload",
+            "existing",
+            item=source.name,
+            bytes_processed=size,
+            total_bytes=size,
+            elapsed_seconds=0,
+        )
         return "existing"
     headers = {
         "x-oss-forbid-overwrite": "true",
@@ -308,27 +357,39 @@ def put_immutable_file(
         "x-oss-meta-source-size": str(size),
         "x-oss-meta-crc64": str(crc64),
     }
-    if size >= 64 * 1024 * 1024:
-        checkpoint_store = oss2.ResumableStore(
-            root=os.environ.get(
-                "JIAOTANG_OSS_CHECKPOINT_DIR",
-                "/tmp/jiaotang-oss-checkpoints",
-            ),
-            dir=digest,
-        )
-        oss2.resumable_upload(
-            bucket,
-            object_key,
-            str(source),
-            store=checkpoint_store,
-            multipart_threshold=64 * 1024 * 1024,
-            part_size=16 * 1024 * 1024,
-            headers=headers,
-            num_threads=4,
-        )
-    else:
-        bucket.put_object_from_file(object_key, str(source), headers=headers)
-    if sha256_file(source) != digest or source.stat().st_size != size:
+    reporter = TransferProgress("oss-upload", source.name, size)
+    try:
+        if size >= 64 * 1024 * 1024:
+            checkpoint_store = oss2.ResumableStore(
+                root=os.environ.get(
+                    "JIAOTANG_OSS_CHECKPOINT_DIR",
+                    "/tmp/jiaotang-oss-checkpoints",
+                ),
+                dir=digest,
+            )
+            oss2.resumable_upload(
+                bucket,
+                object_key,
+                str(source),
+                store=checkpoint_store,
+                multipart_threshold=64 * 1024 * 1024,
+                part_size=16 * 1024 * 1024,
+                headers=headers,
+                num_threads=4,
+                progress_callback=reporter,
+            )
+        else:
+            bucket.put_object_from_file(
+                object_key,
+                str(source),
+                headers=headers,
+                progress_callback=reporter,
+            )
+    except Exception:
+        reporter.finish(status="failed")
+        raise
+    reporter.finish()
+    if source_identity(source) != frozen_identity:
         raise RuntimeError(f"发布期间文件发生变化：{source.name}")
     verify_remote_object(
         bucket,
@@ -571,29 +632,11 @@ def build_release(
     release_id: str,
     previous_release_id: str | None,
     prevalidated: bool,
+    prepared_files: list[tuple[Path, dict[str, object]]] | None = None,
 ) -> tuple[dict[str, object], list[tuple[Path, dict[str, object]]]]:
-    missing = [name for name in PRODUCTION_FILES if not (index_dir / name).is_file()]
-    if missing:
-        raise RuntimeError("生产索引发布集合不完整：" + ", ".join(missing))
-    files: list[tuple[Path, dict[str, object]]] = []
-    for name in PRODUCTION_FILES:
-        path = index_dir / name
-        if not prevalidated:
-            checkpoint_sqlite(path)
-        verify_sqlite(path)
-        size = path.stat().st_size
-        digest = sha256_file(path)
-        files.append(
-            (
-                path,
-                {
-                    "name": name,
-                    "size": size,
-                    "sha256": digest,
-                    "crc64": str(crc64_file(path)),
-                },
-            )
-        )
+    files = prepared_files
+    if files is None:
+        files, _ = prepare_release_files(index_dir, prevalidated=prevalidated)
     manifest: dict[str, object] = {
         "schema": MANIFEST_SCHEMA,
         "release_id": release_id,
@@ -606,6 +649,56 @@ def build_release(
         "file_whitelist": list(PRODUCTION_FILES),
     }
     return manifest, files
+
+
+def prepare_release_files(
+    index_dir: Path,
+    *,
+    prevalidated: bool,
+) -> tuple[
+    list[tuple[Path, dict[str, object]]],
+    dict[Path, SourceIdentity],
+]:
+    missing = [name for name in PRODUCTION_FILES if not (index_dir / name).is_file()]
+    if missing:
+        raise RuntimeError("生产索引发布集合不完整：" + ", ".join(missing))
+    files: list[tuple[Path, dict[str, object]]] = []
+    identities: dict[Path, SourceIdentity] = {}
+    for name in PRODUCTION_FILES:
+        path = index_dir / name
+        if not prevalidated:
+            # 未经 Harness 绑定的独立调用仍完整执行 SQLite 复检。
+            checkpoint_sqlite(path)
+            verify_sqlite(path)
+        digest, crc64, identity = sha256_crc64_file(
+            path,
+            stage="index-hash",
+        )
+        files.append(
+            (
+                path,
+                {
+                    "name": name,
+                    "size": identity[2],
+                    "sha256": digest,
+                    "crc64": str(crc64),
+                },
+            )
+        )
+        identities[path] = identity
+    return files, identities
+
+
+def release_id_from_files(
+    files: list[tuple[Path, dict[str, object]]],
+) -> str:
+    digest = hashlib.sha256()
+    for _, metadata in files:
+        digest.update(str(metadata["name"]).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(metadata["sha256"]).encode("ascii"))
+        digest.update(b"\0")
+    return "index-" + digest.hexdigest()[:40]
 
 
 def main() -> None:
@@ -673,10 +766,12 @@ def main() -> None:
             raise RuntimeError("Acceptance Harness回执必须是JSON对象")
         receipt_body, receipt_signature_body = signed_document(receipt, secret)
         receipt_digest = sha256_bytes(receipt_body)
-        base_release_id = release_id_for(
+        emit_progress("index-release", "started", item="prepare-metadata")
+        files, source_identities = prepare_release_files(
             args.index_dir,
-            checkpoint=not args.prevalidated,
+            prevalidated=args.prevalidated,
         )
+        base_release_id = release_id_from_files(files)
         release_id = "index-" + hashlib.sha256(
             (base_release_id + "\0" + receipt_digest).encode("ascii")
         ).hexdigest()[:40]
@@ -697,6 +792,7 @@ def main() -> None:
             release_id=release_id,
             previous_release_id=manifest_previous,
             prevalidated=args.prevalidated,
+            prepared_files=files,
         )
         receipt_validation = verify_receipt_against_release(
             receipt,
@@ -780,6 +876,7 @@ def main() -> None:
                 digest=str(metadata["sha256"]),
                 size=int(metadata["size"]),
                 crc64=int(str(metadata["crc64"])),
+                expected_source_identity=source_identities[path],
             )
             uploaded += int(status == "uploaded")
             existing += int(status == "existing")
@@ -843,6 +940,7 @@ def main() -> None:
             budget=args.capacity_budget_bytes,
             reserve=max(args.reserve_bytes, 0),
         )
+        emit_progress("index-release", "completed", item=release_id)
     print(
         json.dumps(
             {

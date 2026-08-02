@@ -22,11 +22,12 @@ try:
         POINTER_SCHEMA,
         PRODUCTION_FILES,
         canonical_json,
-        crc64_file,
         sha256_bytes,
+        sha256_crc64_file,
         sha256_file,
         signing_key_id,
     )
+    from scripts.release_progress import TransferProgress, emit_progress
 except ImportError:  # direct script execution
     from oss_auth import build_bucket
     from publish_index_to_oss import (
@@ -34,11 +35,12 @@ except ImportError:  # direct script execution
         POINTER_SCHEMA,
         PRODUCTION_FILES,
         canonical_json,
-        crc64_file,
         sha256_bytes,
+        sha256_crc64_file,
         sha256_file,
         signing_key_id,
     )
+    from release_progress import TransferProgress, emit_progress
 
 
 REQUIRED_STRUCTURED_TABLES = {
@@ -238,15 +240,40 @@ def download_release(
             name = str(row["name"])
             path = target / name
             key = f"{prefix}/index/releases/{release_id}/{name}"
-            bucket.get_object_to_file(key, str(path))
+            expected_size = int(row["size"])
+            reporter = TransferProgress("oss-download", name, expected_size)
+            try:
+                bucket.get_object_to_file(
+                    key,
+                    str(path),
+                    progress_callback=reporter,
+                )
+            except Exception:
+                reporter.finish(status="failed")
+                raise
+            reporter.finish()
             if path.stat().st_size != int(row["size"]):
                 raise RuntimeError(f"下载大小不一致：{name}")
-            if not hmac.compare_digest(sha256_file(path), str(row["sha256"])):
+            digest, crc64, _ = sha256_crc64_file(
+                path,
+                stage="download-verify",
+            )
+            if not hmac.compare_digest(digest, str(row["sha256"])):
                 raise RuntimeError(f"下载SHA-256不一致：{name}")
-            if crc64_file(path) != int(str(row["crc64"])):
+            if crc64 != int(str(row["crc64"])):
                 raise RuntimeError(f"下载CRC64不一致：{name}")
+        emit_progress(
+            "sqlite-validation",
+            "started",
+            item="knowledge_content.sqlite3",
+        )
         if not valid_index(target / "knowledge_content.sqlite3"):
             raise RuntimeError("下载索引完整性或结构化专表校验失败")
+        emit_progress(
+            "sqlite-validation",
+            "completed",
+            item="knowledge_content.sqlite3",
+        )
         (target / "release.json").write_bytes(canonical_json(release))
     except Exception:
         if target.exists():
@@ -417,10 +444,18 @@ def runtime_binding_mode(index_dir: Path, release_id: str) -> str | None:
     return None
 
 
-def activate_release(index_dir: Path, release_id: str) -> tuple[str | None, str | None]:
+def activate_release(
+    index_dir: Path,
+    release_id: str,
+    *,
+    prevalidated: bool = False,
+) -> tuple[str | None, str | None]:
     releases_dir = index_dir / "releases"
     releases_dir.mkdir(parents=True, exist_ok=True)
-    if not local_generation_valid(index_dir, release_id):
+    validation = (
+        local_generation_metadata_valid if prevalidated else local_generation_valid
+    )
+    if not validation(index_dir, release_id):
         raise RuntimeError(f"待激活release本地校验失败：{release_id}")
     current_link = index_dir / "current"
     previous_link = index_dir / "previous"
@@ -446,7 +481,7 @@ def activate_release(index_dir: Path, release_id: str) -> tuple[str | None, str 
         replace_symlink(previous_link, f"releases/{old_current}")
     replace_symlink(current_link, f"releases/{release_id}")
     ensure_root_aliases(index_dir)
-    if not local_generation_valid(index_dir, release_id):
+    if not validation(index_dir, release_id):
         if old_current and local_generation_valid(index_dir, old_current):
             replace_symlink(current_link, f"releases/{old_current}")
             if old_previous and local_generation_valid(index_dir, old_previous):
@@ -498,6 +533,23 @@ def status_payload(
 ) -> dict[str, object]:
     current = release_id_from_link(index_dir / "current")
     previous = release_id_from_link(index_dir / "previous")
+    current_metadata = (
+        local_release_metadata(index_dir, current) if current else None
+    )
+    current_files = (
+        current_metadata.get("files") if current_metadata else None
+    )
+    index_sha256 = None
+    if isinstance(current_files, list):
+        index_sha256 = next(
+            (
+                str(row.get("sha256") or "")
+                for row in current_files
+                if isinstance(row, dict)
+                and row.get("name") == "knowledge_content.sqlite3"
+            ),
+            None,
+        )
     payload: dict[str, object] = {
         "status": status,
         "mode": "OSS不可变release + 本地原子current/previous",
@@ -506,15 +558,11 @@ def status_payload(
         "source": source,
         "current_release_id": current,
         "previous_release_id": previous,
-        "index_sha256": (
-            sha256_file(index_dir / "knowledge_content.sqlite3")
-            if (index_dir / "knowledge_content.sqlite3").is_file()
-            else None
-        ),
+        "index_sha256": index_sha256,
         "pointer_sha256": pointer_sha256,
         "generation_consistent": bool(
             current
-            and local_generation_valid(index_dir, current)
+            and local_generation_metadata_valid(index_dir, current)
             and runtime_binding_mode(index_dir, current)
         ),
         "runtime_mode": (
@@ -561,8 +609,10 @@ def main() -> int:
     prefix = os.environ.get("JIAOTANG_OSS_PREFIX", "production").strip("/")
     pointer_key = f"{prefix}/index/current.json"
     try:
+        emit_progress("server-index-refresh", "started", item="signed-current")
         secrets = signing_secrets()
         bucket = build_bucket()
+        emit_progress("pointer-verification", "started", item=pointer_key)
         pointer_body = remote_bytes(bucket, pointer_key)
         pointer = verify_pointer(pointer_body, secrets)
         manifest_key = str(pointer.get("release_manifest_key") or "")
@@ -580,6 +630,11 @@ def main() -> int:
             signature_body,
             pointer,
             secrets,
+        )
+        emit_progress(
+            "pointer-verification",
+            "completed",
+            item=str(pointer["release_id"]),
         )
         release_id = str(release["release_id"])
         expected_keys = {
@@ -619,7 +674,8 @@ def main() -> int:
                 if not local_generation_valid(index_dir, release_id):
                     raise RuntimeError("并发刷新产生同名但无效release")
         old_current = release_id_from_link(index_dir / "current")
-        activate_release(index_dir, release_id)
+        emit_progress("index-activation", "started", item=release_id)
+        activate_release(index_dir, release_id, prevalidated=True)
         write_status(
             status_path,
             status_payload(
@@ -634,8 +690,15 @@ def main() -> int:
                 "release_manifest_key": manifest_key,
             },
         )
+        emit_progress("index-activation", "completed", item=release_id)
+        emit_progress("server-index-refresh", "completed", item=release_id)
         return 0
     except Exception as error:
+        emit_progress(
+            "server-index-refresh",
+            "failed",
+            item=error.__class__.__name__,
+        )
         write_status(
             status_path,
             status_payload(

@@ -88,6 +88,7 @@ def test_deploy_verifies_signed_index_binding_without_refreshing_index():
         "scripts/build_knowledge_inventory_from_manifest.py",
         "scripts/build_cloud_upload_allowlist.py",
         "scripts/run_acceptance_harness.py",
+        "scripts/release_progress.py",
     ):
         assert receipt_dependency in deploy_script
     assert "JIAOTANG_RELEASE_MODE=code 或 index" in deploy_script
@@ -101,6 +102,17 @@ def test_deploy_verifies_signed_index_binding_without_refreshing_index():
         verify_execution,
     )
     assert verify_execution < restart
+
+
+def test_code_deploy_entrypoint_fixes_code_mode_without_index_work():
+    wrapper = (SCRIPT_DIR / "deploy_code_to_production.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "export JIAOTANG_RELEASE_MODE=code" in wrapper
+    assert 'JIAOTANG_RELEASE_MODE}" != "code"' in wrapper
+    assert 'exec "${script_dir}/deploy_production.sh"' in wrapper
+    assert "sync_archived_knowledge_to_production" not in wrapper
 
 
 def test_legacy_oss_sync_is_disabled_without_touching_historical_snapshots():
@@ -258,6 +270,28 @@ def test_index_sync_publishes_and_switches_index_before_application():
     assert "JIAOTANG_INDEX_ALREADY_DEPLOYED" not in sync_script
     assert "verify_acceptance_receipt.py" in sync_script
     assert "release-timings" in sync_script
+    assert "[release-stage]" in sync_script
+    assert 'stage_mark "signed-index-release" "started"' in sync_script
+    assert 'stage_mark "server-index-refresh" "started"' in sync_script
+
+
+def test_index_refresh_streams_transfer_progress_and_has_a_bounded_runtime():
+    delta_script = (
+        SCRIPT_DIR / "deploy_index_delta_to_server.sh"
+    ).read_text(encoding="utf-8")
+    refresh = (SCRIPT_DIR / "refresh_index_from_oss.py").read_text(
+        encoding="utf-8"
+    )
+    service = (
+        DEPLOY_DIR / "jiaotang-kb-index-refresh.service"
+    ).read_text(encoding="utf-8")
+
+    assert "systemctl start --no-block" in delta_script
+    assert "[index-refresh] elapsed_seconds=" in delta_script
+    assert "release-progress" in delta_script
+    assert "progress_callback=reporter" in refresh
+    assert 'stage="download-verify"' in refresh
+    assert "TimeoutStartSec=45min" in service
 
 
 def test_index_sync_uses_one_canonical_manifest_and_candidate_root():

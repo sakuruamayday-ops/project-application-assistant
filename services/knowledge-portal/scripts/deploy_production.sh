@@ -281,6 +281,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/run_acceptance_harness.py \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py \
     scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
+    scripts/release_progress.py \
     scripts/oss_auth.py scripts/verify_acceptance_receipt.py \
     scripts/verify_index_release_binding.py \
     scripts/validate_operational_health.py scripts/report_systemd_failure.py \

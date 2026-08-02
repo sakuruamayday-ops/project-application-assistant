@@ -7,6 +7,7 @@ OnFailure=jiaotang-kb-failure-report@%n.service
 
 [Service]
 Type=oneshot
+TimeoutStartSec=45min
 EnvironmentFile=/etc/jiaotang-kb-ops.env
 ExecStart=/usr/local/sbin/jiaotang-kb-refresh-index
 User=root

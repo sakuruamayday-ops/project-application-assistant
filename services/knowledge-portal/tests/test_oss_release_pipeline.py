@@ -17,7 +17,11 @@ from scripts.publish_index_to_oss import (
     POINTER_SCHEMA,
     PRODUCTION_FILES,
     canonical_json,
+    prepare_release_files,
     put_immutable_bytes,
+    release_id_for,
+    release_id_from_files,
+    sha256_crc64_file,
     sha256_bytes,
     signed_document,
     signing_key_id,
@@ -33,6 +37,7 @@ from scripts.refresh_index_from_oss import (
     require_unused_staging,
     release_id_from_link,
     rollback_release,
+    status_payload,
     verify_pointer,
     verify_release,
 )
@@ -104,7 +109,11 @@ class FakeBucket:
         key: str,
         source: str,
         headers: dict[str, str],
+        progress_callback=None,
     ):
+        if progress_callback:
+            size = Path(source).stat().st_size
+            progress_callback(size, size)
         return self.put_object(key, Path(source).read_bytes(), headers)
 
 
@@ -411,12 +420,18 @@ def test_empty_bucket_first_publish_recovers_from_interrupted_upload(
             key: str,
             source: str,
             headers: dict[str, str],
+            progress_callback=None,
         ):
             self.file_attempts += 1
             if self.fail_once and self.file_attempts == 2:
                 self.fail_once = False
                 raise RuntimeError("simulated interrupted upload")
-            return super().put_object_from_file(key, source, headers)
+            return super().put_object_from_file(
+                key,
+                source,
+                headers,
+                progress_callback=progress_callback,
+            )
 
     bucket = FlakyBucket()
 
@@ -592,6 +607,49 @@ def test_metadata_health_check_avoids_deep_hash_and_sqlite_scan(
     assert not local_generation_metadata_valid(index_dir, "release-0001")
 
 
+def test_prevalidated_activation_and_status_do_not_repeat_deep_scan(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    index_dir = tmp_path / "index"
+    index_dir.mkdir()
+    create_local_release(index_dir, "release-0001")
+
+    def unexpected_deep_check(*_args, **_kwargs):
+        raise AssertionError("prevalidated activation must not repeat deep scan")
+
+    monkeypatch.setattr(
+        refresh_module,
+        "local_generation_valid",
+        unexpected_deep_check,
+    )
+    activate_release(index_dir, "release-0001", prevalidated=True)
+    monkeypatch.setattr(refresh_module, "sha256_file", unexpected_deep_check)
+
+    status = status_payload(index_dir, status="正常", source="test")
+    assert status["generation_consistent"] is True
+    assert status["index_sha256"]
+
+
+def test_prevalidated_publish_skips_duplicate_sqlite_validation(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    index_dir = tmp_path / "index"
+    index_dir.mkdir()
+    for name in PRODUCTION_FILES:
+        (index_dir / name).write_bytes(name.encode())
+
+    def unexpected_sqlite_check(*_args, **_kwargs):
+        raise AssertionError("signed prevalidated candidate must not repeat quick_check")
+
+    monkeypatch.setattr(publish_module, "verify_sqlite", unexpected_sqlite_check)
+    files, identities = prepare_release_files(index_dir, prevalidated=True)
+
+    assert len(files) == len(PRODUCTION_FILES)
+    assert len(identities) == len(PRODUCTION_FILES)
+
+
 def test_interrupted_release_download_removes_only_transaction_staging(
     tmp_path: Path,
 ) -> None:
@@ -599,11 +657,18 @@ def test_interrupted_release_download_removes_only_transaction_staging(
         def __init__(self) -> None:
             self.calls = 0
 
-        def get_object_to_file(self, key: str, target: str) -> None:
+        def get_object_to_file(
+            self,
+            key: str,
+            target: str,
+            progress_callback=None,
+        ) -> None:
             self.calls += 1
             if self.calls == 2:
                 raise RuntimeError("network interrupted")
             Path(target).write_bytes(b"partial")
+            if progress_callback:
+                progress_callback(7, 7)
 
     release = {
         "release_id": "release-interrupted",
@@ -622,6 +687,41 @@ def test_interrupted_release_download_removes_only_transaction_staging(
         )
     assert not staging.exists()
     assert len(list(tmp_path.glob(".release-interrupted.staging.failed-download.*"))) == 1
+
+
+def test_combined_checksum_keeps_release_identity_and_reports_progress(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    index_dir = tmp_path / "index"
+    index_dir.mkdir()
+    files = []
+    for name in PRODUCTION_FILES:
+        path = index_dir / name
+        path.write_bytes((name * 3).encode())
+        digest, crc64, identity = sha256_crc64_file(
+            path,
+            stage="index-hash",
+        )
+        files.append(
+            (
+                path,
+                {
+                    "name": name,
+                    "size": identity[2],
+                    "sha256": digest,
+                    "crc64": str(crc64),
+                },
+            )
+        )
+
+    assert release_id_from_files(files) == release_id_for(
+        index_dir,
+        checkpoint=False,
+    )
+    progress = capsys.readouterr().err
+    assert '"stage":"index-hash"' in progress
+    assert '"percent":100.0' in progress
 
 
 def test_existing_staging_is_not_modified_or_removed(
