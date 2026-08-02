@@ -1037,12 +1037,177 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             text = (destination / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("BEGIN WORKBUDDY BEHAVIOR HOOK", text)
             self.assertIn("workbuddy_behavior_hook.py", text)
+            self.assertIn("CODEBUDDY_PLUGIN_ROOT", text)
+            self.assertIn("activation_ok", text)
             self.assertNotIn("portable_skill_runtime.py", text)
             self.assertFalse(
                 (destination / "release-manifest.json").exists()
             )
             self.assertFalse(
                 (destination / "release-manifest.json.sig").exists()
+            )
+
+    def test_workbuddy_activation_uses_plugin_root_and_confirms_persistence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            skill_root = plugin_root / "skills" / "policy-retrieval"
+            skill_root.mkdir(parents=True)
+            (skill_root / "SKILL.md").write_text(
+                "---\nname: policy-retrieval\ndescription: test\n---\n",
+                encoding="utf-8",
+            )
+            data_root = root / "behavior"
+            data_root.mkdir()
+            (data_root / "current-turn.json").write_text(
+                json.dumps(
+                    {
+                        "session_id": "session-1",
+                        "turn_id": "turn-1",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            state_path, _ = BEHAVIOR.state_paths(data_root, "session-1")
+            state_path.parent.mkdir(parents=True)
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "session_id": "session-1",
+                        "turn_id": "turn-1",
+                        "prompt_sha256": "",
+                        "prompt_signals": {},
+                        "active_skills": [],
+                        "status": "pending",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                result = BEHAVIOR.activate(
+                    data_root,
+                    plugin_root,
+                    "",
+                    "policy-retrieval",
+                    Path(""),
+                )
+
+            self.assertEqual(result, 0)
+            receipt = json.loads(output.getvalue())
+            self.assertTrue(receipt["activation_ok"])
+            self.assertEqual(receipt["skill"], "policy-retrieval")
+            self.assertEqual(receipt["turn_id"], "turn-1")
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                [item["skill"] for item in state["active_skills"]],
+                ["policy-retrieval"],
+            )
+
+    def test_generated_activation_runner_works_without_skill_dir_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "sample"
+            destination = root / "plugin" / "skills" / "sample"
+            source.mkdir()
+            (source / "SKILL.md").write_text(
+                "---\nname: sample\ndescription: test\n---\n# test\n",
+                encoding="utf-8",
+            )
+            PACKAGER.copy_workbuddy_skill(source, destination)
+            plugin_root = root / "plugin"
+            (plugin_root / "scripts").mkdir()
+            shutil.copy2(
+                RELEASE_MANAGER / "workbuddy_behavior_hook.py",
+                plugin_root / "scripts" / "workbuddy_behavior_hook.py",
+            )
+            data_root = plugin_root / ".behavior-data"
+            data_root.mkdir()
+            (data_root / "current-turn.json").write_text(
+                json.dumps(
+                    {
+                        "session_id": "session-2",
+                        "turn_id": "turn-2",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            state_path, _ = BEHAVIOR.state_paths(data_root, "session-2")
+            state_path.parent.mkdir(parents=True)
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "session_id": "session-2",
+                        "turn_id": "turn-2",
+                        "prompt_sha256": "",
+                        "prompt_signals": {},
+                        "active_skills": [],
+                        "status": "pending",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            text = (destination / "SKILL.md").read_text(encoding="utf-8")
+            match = re.search(r"!`(.+?)`", text)
+            self.assertIsNotNone(match)
+            environment = os.environ.copy()
+            environment["CODEBUDDY_PLUGIN_ROOT"] = str(plugin_root)
+            environment.pop("CODEBUDDY_SKILL_DIR", None)
+            environment.pop("CODEBUDDY_SESSION_ID", None)
+
+            process = subprocess.run(
+                match.group(1),
+                shell=True,
+                check=False,
+                capture_output=True,
+                text=True,
+                env=environment,
+                cwd=root,
+            )
+
+            self.assertEqual(process.returncode, 0, process.stderr)
+            receipt = json.loads(process.stdout)
+            self.assertTrue(receipt["activation_ok"])
+            self.assertEqual(receipt["skill"], "sample")
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                [item["skill"] for item in state["active_skills"]],
+                ["sample"],
+            )
+
+    def test_workbuddy_activation_rejects_fallback_outside_plugin_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            plugin_root.mkdir()
+            external = root / "external" / "policy-retrieval"
+            external.mkdir(parents=True)
+            (external / "SKILL.md").write_text(
+                "---\nname: policy-retrieval\ndescription: test\n---\n",
+                encoding="utf-8",
+            )
+            data_root = root / "behavior"
+            data_root.mkdir()
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                result = BEHAVIOR.activate(
+                    data_root,
+                    plugin_root,
+                    "session-3",
+                    "policy-retrieval",
+                    external,
+                )
+
+            self.assertEqual(result, 0)
+            receipt = json.loads(output.getvalue())
+            self.assertFalse(receipt["activation_ok"])
+            self.assertEqual(
+                receipt["error_code"],
+                "SKILL_DIRECTORY_UNAVAILABLE",
             )
 
     def test_preference_migration_does_not_use_exec(self):

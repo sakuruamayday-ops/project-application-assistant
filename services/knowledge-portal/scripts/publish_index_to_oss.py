@@ -18,8 +18,16 @@ import oss2
 
 try:
     from scripts.oss_auth import build_bucket
+    from scripts.verify_acceptance_receipt import (
+        DEFAULT_PROFILE,
+        verify_receipt_against_release,
+    )
 except ImportError:  # direct script execution
     from oss_auth import build_bucket
+    from verify_acceptance_receipt import (
+        DEFAULT_PROFILE,
+        verify_receipt_against_release,
+    )
 
 
 PRODUCTION_FILES = (
@@ -605,6 +613,8 @@ def main() -> None:
         description="以不可变release发布生产索引，并通过CAS原子切换current指针"
     )
     parser.add_argument("--index-dir", type=Path, required=True)
+    parser.add_argument("--acceptance-receipt", type=Path)
+    parser.add_argument("--acceptance-profile", type=Path, default=DEFAULT_PROFILE)
     parser.add_argument("--release-id")
     parser.add_argument("--expected-current-release-id")
     parser.add_argument("--allow-initial-current", action="store_true")
@@ -645,17 +655,6 @@ def main() -> None:
             f"预期{args.expected_current_release_id}，实际{actual_previous or '不存在'}"
         )
     now = datetime.now(timezone.utc)
-    release_id = args.release_id or release_id_for(
-        args.index_dir,
-        checkpoint=not args.prevalidated,
-    )
-    if not RELEASE_ID_PATTERN.fullmatch(release_id):
-        raise SystemExit("release_id格式非法")
-    manifest_previous = (
-        str(current.get("previous_release_id") or "") or None
-        if current and current.get("release_id") == release_id
-        else actual_previous
-    )
     lock_path = args.lock_file or Path(
         os.environ.get(
             "JIAOTANG_INDEX_PUBLISH_LOCK",
@@ -663,12 +662,54 @@ def main() -> None:
         )
     )
     with local_publish_lock(lock_path):
+        receipt_path = (
+            args.acceptance_receipt or args.index_dir / "acceptance-harness.json"
+        ).expanduser().resolve()
+        try:
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise RuntimeError(f"Acceptance Harness回执不可用：{receipt_path}") from error
+        if not isinstance(receipt, dict):
+            raise RuntimeError("Acceptance Harness回执必须是JSON对象")
+        receipt_body, receipt_signature_body = signed_document(receipt, secret)
+        receipt_digest = sha256_bytes(receipt_body)
+        base_release_id = release_id_for(
+            args.index_dir,
+            checkpoint=not args.prevalidated,
+        )
+        release_id = "index-" + hashlib.sha256(
+            (base_release_id + "\0" + receipt_digest).encode("ascii")
+        ).hexdigest()[:40]
+        if args.release_id and args.release_id != release_id:
+            raise RuntimeError(
+                "显式release_id与索引及签名回执计算结果不一致："
+                f"预期{release_id}，收到{args.release_id}"
+            )
+        if not RELEASE_ID_PATTERN.fullmatch(release_id):
+            raise SystemExit("release_id格式非法")
+        manifest_previous = (
+            str(current.get("previous_release_id") or "") or None
+            if current and current.get("release_id") == release_id
+            else actual_previous
+        )
         manifest, files = build_release(
             args.index_dir,
             release_id=release_id,
             previous_release_id=manifest_previous,
             prevalidated=args.prevalidated,
         )
+        receipt_validation = verify_receipt_against_release(
+            receipt,
+            args.acceptance_profile.expanduser().resolve(),
+            manifest,
+            "knowledge_base",
+        )
+        if receipt_validation["status"] != "pass":
+            raise RuntimeError(
+                "Acceptance Harness回执与待签名索引不一致："
+                + "; ".join(str(item) for item in receipt_validation["errors"])
+            )
+        receipt_prefix = f"{prefix}/index/acceptance-receipts/{receipt_digest}"
         release_prefix = f"{prefix}/index/releases/{release_id}"
         existing_manifest = head_optional(
             bucket,
@@ -715,8 +756,15 @@ def main() -> None:
         for name, payload in (
             ("release.json", manifest_body),
             ("release.sig", signature_body),
+            ("acceptance-receipt.json", receipt_body),
+            ("acceptance-receipt.sig", receipt_signature_body),
         ):
-            if head_optional(bucket, f"{release_prefix}/{name}") is None:
+            object_prefix = (
+                receipt_prefix
+                if name.startswith("acceptance-receipt.")
+                else release_prefix
+            )
+            if head_optional(bucket, f"{object_prefix}/{name}") is None:
                 required_capacity += len(payload)
         capacity_guard(
             bucket,
@@ -738,10 +786,17 @@ def main() -> None:
         for name, payload in (
             ("release.json", manifest_body),
             ("release.sig", signature_body),
+            ("acceptance-receipt.json", receipt_body),
+            ("acceptance-receipt.sig", receipt_signature_body),
         ):
+            object_prefix = (
+                receipt_prefix
+                if name.startswith("acceptance-receipt.")
+                else release_prefix
+            )
             status = put_immutable_bytes(
                 bucket,
-                f"{release_prefix}/{name}",
+                f"{object_prefix}/{name}",
                 payload,
             )
             uploaded += int(status == "uploaded")
@@ -758,6 +813,13 @@ def main() -> None:
                 "release_manifest_key": f"{release_prefix}/release.json",
                 "release_signature_key": f"{release_prefix}/release.sig",
                 "release_manifest_sha256": manifest_digest,
+                "acceptance_receipt_key": (
+                    f"{receipt_prefix}/acceptance-receipt.json"
+                ),
+                "acceptance_receipt_signature_key": (
+                    f"{receipt_prefix}/acceptance-receipt.sig"
+                ),
+                "acceptance_receipt_sha256": receipt_digest,
                 "previous_release_id": manifest_previous,
                 "signing_key_id": signing_key_id(secret),
                 "switched_at": now.replace(microsecond=0)
@@ -788,6 +850,7 @@ def main() -> None:
                 "release_id": release_id,
                 "previous_release_id": manifest_previous,
                 "release_manifest_sha256": manifest_digest,
+                "acceptance_receipt_sha256": receipt_digest,
                 "objects_uploaded": uploaded,
                 "objects_existing": existing,
                 "pointer": switch_status,

@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.4.7"><img src="https://img.shields.io/badge/Release-V1.4.7-C9A760?style=for-the-badge" alt="Release V1.4.7"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.4.8"><img src="https://img.shields.io/badge/Release-V1.4.8-C9A760?style=for-the-badge" alt="Release V1.4.8"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.4.7.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
+  <a href="docs/releases/V1.4.8.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -89,7 +89,7 @@ WorkBuddy的系统差异由同一个插件市场包处理。安装完成标准�
 |---|---|
 | [用户使用手册](docs/user-guide/企业全生命周期助手用户使用手册.docx) | 下载、安装、首次配置和日常使用 |
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.4.7 发布说明](docs/releases/V1.4.7.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.4.8 发布说明](docs/releases/V1.4.8.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -142,8 +142,8 @@ Skill 全量验签以及开发源、正式包、隔离验收目录三方哈希�
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.4.7` | 网站、GitHub Release 和用户可见版本 |
-| 组件版本 | `1.4.7` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.4.8` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.4.8` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 | 历史版本 | `V1.0`、`V1.1`、`V1.2`、`V1.3`、`V1.3.1`、`V1.3.1.1`、`V1.3.1.2`、`V1.3.1.3`、`V1.3.1.4`、`V1.4.0`、`V1.4.1`、`V1.4.2`、`V1.4.3`、`V1.4.4`、`V1.4.5`、`V1.4.6` | 仅保留在历史 Release、迁移脚本、审计和测试中 |
 

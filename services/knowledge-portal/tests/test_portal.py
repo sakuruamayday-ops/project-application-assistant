@@ -558,7 +558,7 @@ def test_public_user_guide(tmp_path):
         assert "当前正式通用版" in guide.text
         assert "尚未正式发布" in guide.text
         assert "当前没有通过简化安装能力门禁" in guide.text
-        assert "候选 V1.4.7 不等于已正式发布" in guide.text
+        assert "候选 V1.4.8 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -3942,6 +3942,15 @@ def test_v145_one_step_install_reuses_token_and_accepts_bearer_only(
         access = client.get("/access")
         assert "一键安装" in access.text
         assert "data-copy-agent-bootstrap" in access.text
+        skills = client.get("/skills")
+        assert skills.status_code == 200
+        assert "一键安装" in skills.text
+        assert "只替换" in skills.text
+        assert "knowledge_service_status" in skills.text
+        assert "data-copy-agent-binding" not in skills.text
+        assert "第三步 · 执行 bootstrap" not in skills.text
+        assert "设备登记" not in skills.text
+        assert "设备签名验证" not in skills.text
         first = client.post(
             "/agent-bootstrap-codes",
             data={"csrf_token": user["csrf_token"]},
@@ -5617,9 +5626,11 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
         assert package_sha256 in page.text
         assert "Ed25519 签名有效" in page.text
         assert "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI" in page.text
-        assert "[一次性安装码已隐藏]" in page.text
-        assert "四阶段连接状态" in page.text
-        assert "等待本地凭据保存并激活" in page.text
+        assert "安装包边界" in page.text
+        assert "运行时完成标准" in page.text
+        assert "knowledge_service_status" in page.text
+        assert "四阶段连接状态" not in page.text
+        assert "设备登记 URL" not in page.text
         for sensitive in (
             "jbe_supersecret-code",
             "jtk_supersecret-token",
@@ -7410,7 +7421,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     with TestClient(module.app) as client:
         guide = client.get("/guide")
         assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.4.7 尚未正式发布" in guide.text
+        assert "安全候选 V1.4.8 尚未正式发布" in guide.text
 
         login = client.post(
             "/login",

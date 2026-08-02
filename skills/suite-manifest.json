@@ -4,22 +4,21 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.4.7",
-    "version": "1.4.7",
-    "summary": "V1.4.7 修复 WorkBuddy 原生 Skill 注册与 Hook 闭环，优化发布编排，并完成门户黑金体系收口。",
+    "tag": "V1.4.8",
+    "version": "1.4.8",
+    "summary": "V1.4.8 热修 WorkBuddy Skill 激活登记，并拆分代码发布与索引发布门禁。",
     "changes": [
-      "修复 WorkBuddy 包中行为 Hook 被写到 YAML frontmatter 之前的问题，49 个 SKILL.md 均以合法 frontmatter 开头，name 与目录一一对应且全套唯一。",
-      "发布端和门户下载端新增 Skill 原生注册静态门禁，错误前置内容、名称错配、重复名称或 Hook 位置异常都会在正式发布前阻断。",
-      "最小行为 Hook 的激活记录绑定 Skill、规则版本、轮次 ID 和时间；正式业务交付零 Skill 激活时返回 NO_ACTIVE_BUSINESS_SKILL，普通问答及 Hook 内部异常仍失败开放。",
-      "Hook 会话只保存提示词摘要和契约信号，不再持久化完整用户提示词；算法程序化执行继续保留为后续独立项目。",
-      "知识发布固定为索引先发布并切换、应用后部署；复用 Acceptance Harness 收据，统一 manifest 路径，拒绝候选回落到可变 current 目录，并记录逐阶段耗时。",
-      "退役独立 Skills Manager、PWA 路由和专属发布流程，网站分发统一回到 Skills 中心与一次复制粘贴安装。",
-      "门户删除被黑金主题覆盖的第二套浅色组件 CSS，将仍在使用的规则迁入黑金语义层，并保留桌面与移动端回归门禁。",
+      "Skill 激活块优先使用宿主稳定注入的 CODEBUDDY_PLUGIN_ROOT，并仅在可用时回退 CODEBUDDY_SKILL_DIR，不再因 Skill 目录环境变量缺失而静默跳过登记。",
+      "激活脚本从插件根目录和 Skill 名称确定性解析真实目录，成功后复读会话状态确认持久化，并返回 activation_ok、Skill 名称和轮次 ID。",
+      "激活失败返回可审计的错误码，不再与成功共用无差别 continue 回执；普通问答与 Hook 内部异常仍保持失败开放。",
+      "代码发布只验证签名 Acceptance Harness 回执、OSS current 指针和本机 current 绑定，不再读取或散列大型索引文件。",
+      "索引发布保留 Harness、SQLite 完整性、全量哈希、OSS 不可变 release 和原子切换；V1.4.8 首次以 index 模式完成签名回执协议迁移。",
+      "继续保持 49 项 Skill 首字节 YAML frontmatter、真实名称原生加载、正式业务零 Skill 激活阻断和提示词只存摘要的 V1.4.7 修复。",
       "继续保持 49 项 Skills、用户级远程 HTTP MCP、自动填入个人 Token、只替换 jiaotang-kb、保留其他 MCP 和一次重载的简化安装边界。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.7 插件安装或覆盖升级和远程 MCP 连接。",
+      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.8 插件安装或覆盖升级和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -32,12 +31,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.4.6 双端实机基线已通过；V1.4.7 继续使用用户级远程 HTTP MCP，并新增原生 Skill 注册门禁。"
+        "note": "V1.4.7 已通过 macOS 49 项原生枚举与按名加载；V1.4.8 热修 Skill 激活登记，继续使用用户级远程 HTTP MCP。"
       },
       {
         "target": "Windows WorkBuddy",
         "status": "结构与 CI 已验证，待发布后实机验收",
-        "note": "V1.4.6 双端实机基线已通过；V1.4.7 固定使用 %USERPROFILE%\\.workbuddy\\mcp.json，并修复 Skill frontmatter 与 Hook 激活闭环。"
+        "note": "保持结构与 CI 验证状态；V1.4.8 固定使用 %USERPROFILE%\\.workbuddy\\mcp.json，并等待发布后 Windows 实机复验 Skill 激活登记。"
       }
     ],
     "one_step_installation_protocol": {

@@ -11,6 +11,7 @@ import pytest
 
 import scripts.refresh_index_from_oss as refresh_module
 import scripts.publish_index_to_oss as publish_module
+import scripts.verify_index_release_binding as binding_module
 from scripts.publish_index_to_oss import (
     MANIFEST_SCHEMA,
     POINTER_SCHEMA,
@@ -34,6 +35,11 @@ from scripts.refresh_index_from_oss import (
     rollback_release,
     verify_pointer,
     verify_release,
+)
+from scripts.verify_acceptance_receipt import (
+    DEFAULT_PROFILE,
+    INDEX_EVIDENCE_FILES,
+    expected_static_evidence,
 )
 
 
@@ -100,6 +106,32 @@ class FakeBucket:
         headers: dict[str, str],
     ):
         return self.put_object(key, Path(source).read_bytes(), headers)
+
+
+def write_valid_acceptance_receipt(index_dir: Path) -> None:
+    evidence = expected_static_evidence(DEFAULT_PROFILE)
+    evidence.update(
+        {
+            evidence_name: hashlib.sha256(
+                (index_dir / filename).read_bytes()
+            ).hexdigest()
+            for evidence_name, filename in INDEX_EVIDENCE_FILES.items()
+        }
+    )
+    (index_dir / "acceptance-harness.json").write_text(
+        json.dumps(
+            {
+                "receipt_schema": "jiaotang-acceptance-receipt/v1",
+                "profile_id": "test",
+                "generated_at": "2026-08-02T00:00:00Z",
+                "requested_suites": ["knowledge_base"],
+                "status": "pass",
+                "release_allowed": True,
+                "target_evidence": evidence,
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def signed_pointer(
@@ -294,6 +326,7 @@ def test_new_release_uploads_signed_documents_before_whitelist_check(
                     connection.execute("CREATE TABLE fixture(id INTEGER PRIMARY KEY)")
         else:
             path.write_bytes(name.encode())
+    write_valid_acceptance_receipt(index_dir)
     bucket = FakeBucket()
     checked: list[str] = []
 
@@ -326,6 +359,27 @@ def test_new_release_uploads_signed_documents_before_whitelist_check(
     assert len(checked) == 1
     pointer = json.loads(bucket.objects["production/index/current.json"].payload)
     assert pointer["release_id"].startswith("index-")
+    receipt_key = pointer["acceptance_receipt_key"]
+    receipt_signature_key = pointer["acceptance_receipt_signature_key"]
+    assert receipt_key in bucket.objects
+    assert receipt_signature_key in bucket.objects
+
+    release_id = pointer["release_id"]
+    release_dir = index_dir / "releases" / release_id
+    release_dir.mkdir(parents=True)
+    manifest_key = pointer["release_manifest_key"]
+    (release_dir / "release.json").write_bytes(bucket.objects[manifest_key].payload)
+    (index_dir / "current").symlink_to(f"releases/{release_id}")
+    monkeypatch.setattr(binding_module, "build_bucket", lambda: bucket)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "verify_index_release_binding.py",
+            "--index-root",
+            str(index_dir),
+        ],
+    )
+    assert binding_module.main() == 0
 
 
 def test_empty_bucket_first_publish_recovers_from_interrupted_upload(
@@ -344,6 +398,7 @@ def test_empty_bucket_first_publish_recovers_from_interrupted_upload(
                     connection.execute("CREATE TABLE fixture(id INTEGER PRIMARY KEY)")
         else:
             path.write_bytes(name.encode())
+    write_valid_acceptance_receipt(index_dir)
 
     class FlakyBucket(FakeBucket):
         def __init__(self) -> None:
@@ -399,6 +454,8 @@ def test_empty_bucket_first_publish_recovers_from_interrupted_upload(
 
     pointer = json.loads(bucket.objects["production/index/current.json"].payload)
     assert pointer["release_id"].startswith("index-")
+    monkeypatch.setattr("sys.argv", argv)
+    publish_module.main()
 
 
 def test_signed_release_supports_key_rotation_and_strict_whitelist() -> None:

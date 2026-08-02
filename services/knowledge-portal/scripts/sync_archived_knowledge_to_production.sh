@@ -393,7 +393,7 @@ JIAOTANG_DEPLOY_KEY="${deploy_key}" \
 stage_mark "index-release" "passed"
 
 stage_mark "application-release" "started"
-JIAOTANG_INDEX_ALREADY_DEPLOYED=1 \
+JIAOTANG_RELEASE_MODE=index \
 JIAOTANG_INDEX_PREVALIDATED=1 \
 JIAOTANG_DEPLOY_HOST="${deploy_host}" \
 JIAOTANG_DEPLOY_KEY="${deploy_key}" \

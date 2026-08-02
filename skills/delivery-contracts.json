@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "contract_id": "jiaotang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.4.7",
+  "rule_version": "1.4.8",
   "formal_business_delivery_markers": [
     "生成报告",
     "形成报告",

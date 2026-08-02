@@ -23,6 +23,14 @@ endpoint="${JIAOTANG_KB_ENDPOINT:?请设置 JIAOTANG_KB_ENDPOINT}"
 token="${JIAOTANG_KB_TOKEN:?请设置 JIAOTANG_KB_TOKEN}"
 deploy_host="${JIAOTANG_DEPLOY_HOST:?请设置 JIAOTANG_DEPLOY_HOST}"
 deploy_key="${JIAOTANG_DEPLOY_KEY:-${HOME}/.ssh/jiaotang_kb_aliyun}"
+release_mode="${JIAOTANG_RELEASE_MODE:-}"
+case "${release_mode}" in
+  code|index) ;;
+  *)
+    echo "必须显式设置 JIAOTANG_RELEASE_MODE=code 或 index。" >&2
+    exit 74
+    ;;
+esac
 endpoint="${endpoint%/}"
 auth=(
   -H "Authorization: Bearer ${token}"
@@ -52,23 +60,32 @@ if [[ -n "${JIAOTANG_RESOLVE_IP:-}" ]]; then
   curl_args+=(--resolve "${endpoint_host}:${endpoint_port}:${JIAOTANG_RESOLVE_IP}")
 fi
 
-start_phase "[1/4] 代码与 Harness 收据"
-index_database="${JIAOTANG_INDEX_DATABASE:-/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3}"
-if [[ ! -f "${index_database}" ]]; then
-  echo "Harness 收据验证需要挂载与发布目标一致的本地索引：${index_database}" >&2
-  exit 78
+start_phase "[1/4] ${release_mode} 发布索引门禁"
+if [[ "${release_mode}" == "index" ]]; then
+  index_database="${JIAOTANG_INDEX_DATABASE:-/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3}"
+  if [[ ! -f "${index_database}" ]]; then
+    echo "索引发布需要挂载与发布目标一致的本地索引：${index_database}" >&2
+    exit 78
+  fi
+  index_root="$(cd "$(dirname "${index_database}")" && pwd -P)"
+  acceptance_receipt="${JIAOTANG_ACCEPTANCE_RECEIPT:-${index_root}/acceptance-harness.json}"
+  if [[ ! -f "${acceptance_receipt}" ]]; then
+    echo "索引发布缺少 Harness 收据：${acceptance_receipt}" >&2
+    exit 79
+  fi
+  python3 "${script_dir}/verify_acceptance_receipt.py" \
+    --receipt "${acceptance_receipt}" \
+    --index-root "${index_root}" \
+    --required-suite knowledge_base
+else
+  ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
+    "set -e; set -a; source /etc/jiaotang-kb-ops.env; set +a; \
+    \"\${JIAOTANG_APP_DIR}/.venv/bin/python\" \
+    \"\${JIAOTANG_APP_DIR}/scripts/verify_index_release_binding.py\" \
+    --index-root \"\${JIAOTANG_INDEX_DIR}\" \
+    --profile \"\${JIAOTANG_APP_DIR}/references/acceptance-harness/knowledge-base.json\""
 fi
-index_root="$(cd "$(dirname "${index_database}")" && pwd -P)"
-acceptance_receipt="${JIAOTANG_ACCEPTANCE_RECEIPT:-${index_root}/acceptance-harness.json}"
-if [[ ! -f "${acceptance_receipt}" ]]; then
-  echo "缺少 Harness 收据：${acceptance_receipt}。只在知识库、索引或上传策略变化后重新生成。" >&2
-  exit 79
-fi
-python3 "${script_dir}/verify_acceptance_receipt.py" \
-  --receipt "${acceptance_receipt}" \
-  --index-root "${index_root}" \
-  --required-suite knowledge_base
-finish_phase "代码与 Harness 收据"
+finish_phase "${release_mode} 发布索引门禁"
 
 start_phase "[2/4] 预发布运行时与远程 MCP"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \

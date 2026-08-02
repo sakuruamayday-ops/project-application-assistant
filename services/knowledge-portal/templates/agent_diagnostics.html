@@ -7,7 +7,7 @@
     <div>
       <span class="eyebrow">Safe Connection Diagnostics</span>
       <h1>WorkBuddy 一键诊断</h1>
-      <p>只展示可公开核验的摘要和连接状态，不读取或显示安装码、访问凭据、私钥与完整设备公钥。</p>
+      <p>只展示正式包摘要、发布签名和简化安装边界，不读取或显示个人 Token。</p>
     </div>
     <div class="button-row">
       <a class="button secondary" href="/skills">返回 Skills 中心</a>
@@ -26,10 +26,10 @@
       <strong>{{ diagnostics.signature.label }}</strong>
       <small>{{ diagnostics.signature.verified_files }} 个文件已核验</small>
     </article>
-    <article class="{{ 'is-ok' if diagnostics.configured else 'is-pending' }}">
-      <span>连接状态</span>
-      <strong>{{ '已完成' if diagnostics.configured else '进行中' }}</strong>
-      <small>{{ diagnostics.enrollment.label }}</small>
+    <article class="is-ok">
+      <span>MCP 模式</span>
+      <strong>远程 HTTP</strong>
+      <small>用户级 jiaotang-kb</small>
     </article>
   </section>
 
@@ -39,7 +39,6 @@
       <dl class="diagnostics-values">
         <div><dt>发布记录 SHA-256</dt><dd><code>{{ diagnostics.package.expected_sha256 or '未发布' }}</code></dd></div>
         <div><dt>服务器文件 SHA-256</dt><dd><code>{{ diagnostics.package.actual_sha256 or '文件不可用' }}</code></dd></div>
-        <div><dt>连接器 SHA-256</dt><dd><code>{{ diagnostics.package.connector_sha256 or '无法读取' }}</code></dd></div>
       </dl>
     </article>
 
@@ -53,24 +52,22 @@
     </article>
 
     <article class="panel diagnostics-card diagnostics-enrollment">
-      <div class="panel-head"><div><span class="file-tab">REDACTED ENROLLMENT</span><h2>设备登记 URL</h2></div></div>
-      <p class="diagnostics-state is-pending">{{ diagnostics.enrollment.label }}</p>
-      <code class="diagnostics-url">{{ diagnostics.enrollment.url }}</code>
-      {% if diagnostics.enrollment.expires_at %}<small>有效期至 {{ diagnostics.enrollment.expires_at }}</small>{% endif %}
-      <p class="muted">一次性安装码已在服务器端脱敏，页面源代码中也不包含原值。</p>
+      <div class="panel-head"><div><span class="file-tab">PACKAGE BOUNDARY</span><h2>安装包边界</h2></div></div>
+      <p class="diagnostics-state is-ok">49 项 Skills 与最小行为 Hook</p>
+      <p>公共包不包含个人 Token、本地 MCP 服务、Node 启动器或插件根目录 MCP 配置。</p>
+      <p class="muted">一键安装只替换用户配置中的 jiaotang-kb，保留其他 MCP。</p>
     </article>
 
     <article class="panel diagnostics-card">
-      <div class="panel-head"><div><span class="file-tab">FOUR STAGES</span><h2>四阶段连接状态</h2></div></div>
+      <div class="panel-head"><div><span class="file-tab">RUNTIME ACCEPTANCE</span><h2>运行时完成标准</h2></div></div>
       <ol class="diagnostics-stages">
-        {% for stage in diagnostics.stages %}
-        <li class="{{ 'is-complete' if stage.complete else 'is-pending' }}">
-          <i></i><span><strong>{{ loop.index }}. {{ stage.label }}</strong><small>{{ stage.completed_at if stage.complete else '尚未完成' }}</small></span>
-        </li>
-        {% endfor %}
+        <li><i></i><span><strong>1. 49 项 Skills 可识别</strong><small>不得少项</small></span></li>
+        <li><i></i><span><strong>2. tools/list 枚举三个核心工具</strong><small>knowledge_search、knowledge_document、knowledge_service_status</small></span></li>
+        <li><i></i><span><strong>3. knowledge_service_status 实际调用成功</strong><small>返回 connected: true</small></span></li>
+        <li><i></i><span><strong>4. 其他 MCP 条目保留</strong><small>只替换 jiaotang-kb</small></span></li>
       </ol>
     </article>
   </section>
-  <footer class="diagnostics-footnote">诊断生成时间：{{ diagnostics.generated_at }}。本页不执行设备变更，也不回传任何本地敏感信息。</footer>
+  <footer class="diagnostics-footnote">诊断生成时间：{{ diagnostics.generated_at }}。本页不执行本地变更，也不回传任何敏感信息。</footer>
 </main>
 {% endblock %}

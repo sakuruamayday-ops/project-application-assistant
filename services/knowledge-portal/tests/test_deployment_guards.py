@@ -61,7 +61,7 @@ def test_server_managed_private_template_hooks_survive_public_deploys():
     )
 
 
-def test_deploy_refreshes_signed_release_before_restart_without_leaking_oss_credentials():
+def test_deploy_verifies_signed_index_binding_without_refreshing_index():
     service = (DEPLOY_DIR / "jiaotang-kb.service").read_text(encoding="utf-8")
     refresh_wrapper = (DEPLOY_DIR / "refresh-index.sh").read_text(encoding="utf-8")
     refresh_service = (
@@ -82,19 +82,19 @@ def test_deploy_refreshes_signed_release_before_restart_without_leaking_oss_cred
     assert "/srv/jiaotang/index-snapshots" not in writable_paths
     assert 'if [[ "${mode}" == "--if-missing" ]]' in refresh_wrapper
     assert "EnvironmentFile=/etc/jiaotang-kb-ops.env" in refresh_service
-    refresh_command = "index_before="
-    assert "scripts/refresh_index_from_oss.py" in deploy_script
-    bootstrap_command = "scripts/publish_index_to_oss.py"
-    assert bootstrap_command in deploy_script
-    assert "--allow-initial-current" in deploy_script
-    assert "拒绝用陈旧本地索引执行bootstrap" in deploy_script
-    bootstrap_execution = deploy_script.index("bootstrap_release_id=")
-    refresh_execution = deploy_script.index(refresh_command)
+    verifier = "scripts/verify_index_release_binding.py"
+    assert verifier in deploy_script
+    assert "JIAOTANG_RELEASE_MODE=code 或 index" in deploy_script
+    assert "bootstrap_release_id=" not in deploy_script
+    assert "--allow-initial-current" not in deploy_script
+    assert "release_id_for(index_dir" not in deploy_script
+    assert "PRAGMA quick_check" not in deploy_script
+    verify_execution = deploy_script.index(verifier)
     restart = deploy_script.index(
         "systemctl restart jiaotang-kb",
-        refresh_execution,
+        verify_execution,
     )
-    assert bootstrap_execution < refresh_execution < restart
+    assert verify_execution < restart
 
 
 def test_legacy_oss_sync_is_disabled_without_touching_historical_snapshots():
@@ -182,10 +182,10 @@ def test_deploy_injects_and_verifies_exact_build_identity():
     assert "生产/build private_overlay_identity_sha256不一致" in deploy_script
 
 
-def test_deploy_preflights_index_and_aborts_after_rollback():
+def test_deploy_preflights_signed_binding_and_aborts_after_rollback():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
 
-    preflight = deploy_script.index("本地索引release集合不完整")
+    preflight = deploy_script.index("verify_index_release_binding.py")
     private_guard = deploy_script.index(
         "JIAOTANG_APP_DIR='${remote_release_dir}'"
     )
@@ -193,8 +193,11 @@ def test_deploy_preflights_index_and_aborts_after_rollback():
     assert preflight < private_guard < entrypoint_install
     rollback = deploy_script.index("rollback_on_error()")
     rollback_exit = deploy_script.index("exit 1", rollback)
-    bootstrap = deploy_script.index("bootstrap_release_id=")
-    assert rollback < rollback_exit < bootstrap
+    app_switch = deploy_script.index(
+        "RUNTIME_ROOT='${runtime_root}' RELEASE_DIR",
+        rollback,
+    )
+    assert rollback < rollback_exit < app_switch
 
 
 def test_deploy_requires_main_ci_wheelhouse_and_installs_without_index():
@@ -245,7 +248,8 @@ def test_index_sync_publishes_and_switches_index_before_application():
     delta = '"${script_dir}/deploy_index_delta_to_server.sh"'
     assert sync_script.index(publish) < sync_script.index(delta)
     assert sync_script.index(delta) < sync_script.index(deploy)
-    assert "JIAOTANG_INDEX_ALREADY_DEPLOYED=1" in sync_script
+    assert "JIAOTANG_RELEASE_MODE=index" in sync_script
+    assert "JIAOTANG_INDEX_ALREADY_DEPLOYED" not in sync_script
     assert "verify_acceptance_receipt.py" in sync_script
     assert "release-timings" in sync_script
 
