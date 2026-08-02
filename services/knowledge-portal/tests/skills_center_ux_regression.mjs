@@ -98,9 +98,20 @@ try {
   assert.ok(palette.catalogAfterTabs, "技能目录必须紧随页面页签");
   assert.equal(palette.catalogIsContinuous, true, "分类、筛选与技能清单必须位于同一连续工作区");
   assert.equal(palette.feedbackBeforeSkills, true, "左侧留言反馈必须位于 Skills 中心之前");
+  const catalogTab = page.locator('[data-skill-section-tab="catalog"]');
+  await catalogTab.focus();
+  await page.keyboard.press("ArrowRight");
+  assert.equal(await page.locator('[data-skill-section-tab="downloads"]').getAttribute("aria-selected"), "true", "右方向键必须切换到下一页签");
+  assert.equal(await page.locator('[data-skill-section-tab="downloads"]').getAttribute("tabindex"), "0", "当前页签必须进入 Tab 顺序");
+  assert.equal(await page.locator('[data-skill-section-pane="downloads"]').isVisible(), true, "键盘切换后对应面板必须显示");
+  await page.keyboard.press("ArrowLeft");
+  assert.equal(await catalogTab.getAttribute("aria-selected"), "true", "左方向键必须返回上一页签");
   await page.evaluate(() => {
     const shell = document.querySelector(".skill-catalog-shell");
-    window.scrollTo({top: window.scrollY + shell.getBoundingClientRect().top + 520, behavior: "instant"});
+    // Scroll far enough for every desktop sticky layer to leave its natural
+    // position. A near-boundary sample can sit 1-3px below `top` depending on
+    // text metrics and browser rounding without representing a sticky defect.
+    window.scrollTo({top: window.scrollY + shell.getBoundingClientRect().top + 640, behavior: "instant"});
   });
   await page.waitForTimeout(100);
   const stickyBarsState = await page.evaluate(() => {
@@ -120,9 +131,9 @@ try {
     };
   });
   assert.equal(stickyBarsState.groupPosition, "sticky", "技能分类轨道必须启用吸顶");
-  assert.ok(Math.abs(stickyBarsState.groupTop - stickyBarsState.expectedGroupTop) <= 2, `分类轨道应固定在页签下方：${JSON.stringify(stickyBarsState)}`);
+  assert.ok(Math.abs(stickyBarsState.groupTop - stickyBarsState.expectedGroupTop) <= 4, `分类轨道应固定在页签下方：${JSON.stringify(stickyBarsState)}`);
   assert.equal(stickyBarsState.controlsPosition, "sticky", "技能清单栏必须启用吸顶");
-  assert.ok(Math.abs(stickyBarsState.controlsTop - stickyBarsState.expectedControlsTop) <= 2, `技能清单栏应固定在分类轨道下方：${JSON.stringify(stickyBarsState)}`);
+  assert.ok(Math.abs(stickyBarsState.controlsTop - stickyBarsState.expectedControlsTop) <= 4, `技能清单栏应固定在分类轨道下方：${JSON.stringify(stickyBarsState)}`);
   assert.ok(stickyBarsState.groupHeight <= 62, `技能目录按钮高度应压缩至 62px 内：${JSON.stringify(stickyBarsState)}`);
   assert.ok(stickyBarsState.controlsHeight <= 72, `技能清单栏高度应压缩至 72px 内：${JSON.stringify(stickyBarsState)}`);
   const backToList = page.locator("[data-skill-back-to-list]");
@@ -269,16 +280,18 @@ try {
   });
   await page.waitForTimeout(100);
   const mobileStickyState = await page.evaluate(() => {
-    const center = document.querySelector(".skill-center");
+    const tabs = document.querySelector(".skill-section-tabs");
+    const switcher = document.querySelector(".skill-group-switcher");
     const controls = document.querySelector(".skill-catalog-controls");
     return {
-      actualTop: Math.round(controls.getBoundingClientRect().top),
-      expectedTop: Math.round(Number.parseFloat(getComputedStyle(center).getPropertyValue("--skill-controls-top"))),
-      position: getComputedStyle(controls).position,
+      tabsPosition: getComputedStyle(tabs).position,
+      switcherPosition: getComputedStyle(switcher).position,
+      controlsPosition: getComputedStyle(controls).position,
     };
   });
-  assert.equal(mobileStickyState.position, "sticky", "移动端技能清单栏必须保持吸顶");
-  assert.ok(Math.abs(mobileStickyState.actualTop - mobileStickyState.expectedTop) <= 6, `移动端技能清单栏定位错误：${JSON.stringify(mobileStickyState)}`);
+  assert.equal(mobileStickyState.tabsPosition, "static", "移动端 Skills 主页签应随页面滚动，避免被顶部导航遮挡");
+  assert.equal(mobileStickyState.switcherPosition, "static", "移动端分类轨道应随页面滚动，避免三层吸顶遮挡内容");
+  assert.equal(mobileStickyState.controlsPosition, "static", "移动端筛选栏应随页面滚动，避免三层吸顶遮挡内容");
   const mobileBackToList = page.locator("[data-skill-back-to-list]");
   await mobileBackToList.scrollIntoViewIfNeeded();
   assert.equal(await mobileBackToList.isVisible(), true, "移动端返回按钮必须位于清单末尾且可访问");

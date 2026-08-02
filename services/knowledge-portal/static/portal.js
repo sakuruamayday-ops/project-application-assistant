@@ -14,10 +14,32 @@ try {
   document.documentElement.dataset.pageDirection = "next";
 }
 
+const RISK_CONTROL_SELECTOR = ".text-danger,.text-button.danger,.button.danger,.button.danger-outline,.account-logout-button";
+const RISK_SUBMIT_SELECTOR = "button[type='submit'].text-danger,button[type='submit'].text-button.danger,button[type='submit'].button.danger";
+const RISK_CONFIRMATIONS = {
+  confirm: "这是需要明确确认的风险操作。确认继续？",
+  verify: "这是最高等级风险操作。请确认核验信息无误后继续。",
+};
+
+const riskLevelForControl = (control) => {
+  const form = control.closest("form");
+  if (form?.querySelector("input[name='confirmation']") || form?.action.includes("/purge")) return "verify";
+  if (form?.dataset.confirm || control.matches(RISK_SUBMIT_SELECTOR)) return "confirm";
+  return "caution";
+};
+
+document.querySelectorAll(RISK_CONTROL_SELECTOR).forEach((control) => {
+  const level = control.dataset.riskLevel || riskLevelForControl(control);
+  control.dataset.riskLevel = level;
+  control.closest("form")?.setAttribute("data-risk-level", level);
+});
+
 document.addEventListener("submit", (event) => {
   const form = event.target;
   if (!(form instanceof HTMLFormElement)) return;
-  const confirmation = form.dataset.confirm;
+  const riskControl = form.querySelector(RISK_SUBMIT_SELECTOR);
+  const riskLevel = form.dataset.riskLevel || (riskControl ? riskLevelForControl(riskControl) : "");
+  const confirmation = form.dataset.confirm || RISK_CONFIRMATIONS[riskLevel];
   if (confirmation && !window.confirm(confirmation)) {
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -582,29 +604,38 @@ const ROUTE_SECTIONS = {
 
 const singlePage = document.querySelector(".single-page");
 const sectionLinks = [...document.querySelectorAll("[data-section-link]")];
+const portalMobileQuery = window.matchMedia("(max-width: 760px)");
 const activateSectionLink = (sectionId) => {
   sectionLinks.forEach((link) => {
     link.classList.toggle("active", link.dataset.sectionLink === sectionId);
   });
 };
 const scrollToPortalSection = (section, behavior) => {
-  if (window.matchMedia("(max-width: 760px)").matches) {
+  const instant = behavior === "instant";
+  if (instant) document.documentElement.classList.add("is-instant-scroll");
+  if (portalMobileQuery.matches) {
     const sidebar = document.querySelector(".sidebar");
     const stickyOffset = (sidebar?.getBoundingClientRect().height || 0) + 12;
     const targetTop = window.scrollY + section.getBoundingClientRect().top - stickyOffset;
-    window.scrollTo({top: Math.max(0, targetTop), behavior});
-    return;
+    window.scrollTo({top: Math.max(0, targetTop), behavior: instant ? "auto" : behavior});
+  } else {
+    section.scrollIntoView({behavior: instant ? "auto" : behavior, block: "start"});
   }
-  section.scrollIntoView({behavior, block: "start"});
+  if (instant) {
+    window.requestAnimationFrame(() => {
+      document.documentElement.classList.remove("is-instant-scroll");
+    });
+  }
 };
-const initialSectionId = window.location.hash.slice(1) || ROUTE_SECTIONS[window.location.pathname];
+const initialRouteId = window.location.hash.slice(1) || ROUTE_SECTIONS[window.location.pathname];
+const initialSectionId = initialRouteId?.startsWith("skills-") ? "skills" : initialRouteId;
 const initialSection = initialSectionId ? document.getElementById(initialSectionId) : null;
 let initialRouteAnchorLocked = Boolean(singlePage && initialSection);
 if (singlePage && initialSection) {
   window.requestAnimationFrame(() => {
     const isDefaultOverview = window.location.pathname === "/portal" && !window.location.hash;
     if (!isDefaultOverview) {
-      scrollToPortalSection(initialSection, "auto");
+      scrollToPortalSection(initialSection, "instant");
     }
     activateSectionLink(initialSectionId);
     if (!window.location.hash) {
@@ -613,7 +644,8 @@ if (singlePage && initialSection) {
     window.setTimeout(() => {
       activateSectionLink(initialSectionId);
       initialRouteAnchorLocked = false;
-    }, 750);
+      updateActiveSectionLink();
+    }, 120);
   });
 }
 
@@ -657,101 +689,37 @@ document.querySelector(".single-page")?.addEventListener("click", (event) => {
 const observedSections = sectionLinks
   .map((link) => document.getElementById(link.dataset.sectionLink))
   .filter(Boolean);
-if (sectionLinks.length && observedSections.length && "IntersectionObserver" in window) {
-  const sectionObserver = new IntersectionObserver((entries) => {
-    if (initialRouteAnchorLocked) return;
-    const visible = entries
-      .filter((entry) => entry.isIntersecting)
-      .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
-    if (!visible) return;
-    activateSectionLink(visible.target.id);
-  }, {rootMargin: "-28% 0px -58%", threshold: [0.05, 0.2, 0.45]});
-  observedSections.forEach((section) => sectionObserver.observe(section));
-}
-
-const waterfallBoundary = document.querySelector(".portal-page:not(.single-page) .page-continuation[data-auto-next]");
-if (waterfallBoundary) {
-  let wheelProgress = 0;
-  let touchStartY = null;
-  let navigating = false;
-  let resetTimer = null;
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const pageAtTop = () => window.scrollY <= 2;
-  const pageAtBottom = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 3;
-  const nestedScrollerConsumes = (target, delta) => {
-    const scroller = target instanceof Element ? target.closest(".table-wrap,.release-modal-card,.account-menu-panel,.manual-content") : null;
-    if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 2) return false;
-    return delta > 0
-      ? scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 2
-      : scroller.scrollTop > 2;
-  };
-  const destinationFor = (direction) => direction === "next"
-    ? waterfallBoundary.dataset.autoNext
-    : waterfallBoundary.dataset.autoPrevious;
-  const resetWaterfall = () => {
-    wheelProgress = 0;
-    waterfallBoundary.classList.remove("is-armed");
-  };
-  const navigateWaterfall = (direction) => {
-    const destination = destinationFor(direction);
-    if (!destination || navigating) return;
-    navigating = true;
-    sessionStorage.setItem("jiaotang-page-direction", direction);
-    document.body.classList.add("is-page-leaving");
-    document.body.classList.toggle("is-page-leaving-previous", direction === "previous");
-    window.setTimeout(() => { window.location.href = destination; }, reducedMotion ? 10 : 430);
-  };
-  const accumulateWaterfall = (direction, amount) => {
-    if (!destinationFor(direction)) return;
-    wheelProgress += Math.min(Math.abs(amount), 70);
-    if (wheelProgress >= 38) waterfallBoundary.classList.add("is-armed");
-    window.clearTimeout(resetTimer);
-    resetTimer = window.setTimeout(resetWaterfall, 420);
-    if (wheelProgress >= 130) navigateWaterfall(direction);
-  };
-
-  window.addEventListener("wheel", (event) => {
-    if (navigating || event.ctrlKey || nestedScrollerConsumes(event.target, event.deltaY)) return;
-    const direction = event.deltaY > 0 ? "next" : "previous";
-    const atBoundary = direction === "next" ? pageAtBottom() : pageAtTop();
-    if (!atBoundary || !destinationFor(direction)) {
-      resetWaterfall();
-      return;
-    }
-    event.preventDefault();
-    accumulateWaterfall(direction, event.deltaY);
-  }, {passive: false});
-
-  window.addEventListener("touchstart", (event) => {
-    touchStartY = event.touches[0]?.clientY ?? null;
-  }, {passive: true});
-  window.addEventListener("touchend", (event) => {
-    if (touchStartY === null || navigating) return;
-    const endY = event.changedTouches[0]?.clientY ?? touchStartY;
-    const delta = touchStartY - endY;
-    touchStartY = null;
-    if (Math.abs(delta) < 80) return;
-    const direction = delta > 0 ? "next" : "previous";
-    const atBoundary = direction === "next" ? pageAtBottom() : pageAtTop();
-    if (atBoundary) navigateWaterfall(direction);
-  }, {passive: true});
-
-  window.addEventListener("keydown", (event) => {
-    const targetIsInteractive = event.target instanceof Element
-      && event.target.closest("input,textarea,select,button,[contenteditable='true']");
-    if (navigating || targetIsInteractive) return;
-    const nextKey = event.key === "PageDown" || event.key === "ArrowDown";
-    const previousKey = event.key === "PageUp" || event.key === "ArrowUp";
-    if (nextKey && pageAtBottom() && destinationFor("next")) {
-      event.preventDefault();
-      navigateWaterfall("next");
-    } else if (previousKey && pageAtTop() && destinationFor("previous")) {
-      event.preventDefault();
-      navigateWaterfall("previous");
-    }
+let sectionActivationFrame = 0;
+function updateActiveSectionLink() {
+  sectionActivationFrame = 0;
+  if (initialRouteAnchorLocked || !observedSections.length) return;
+  const sidebarHeight = portalMobileQuery.matches
+    ? document.querySelector(".sidebar")?.getBoundingClientRect().height || 0
+    : 0;
+  const viewportAnchor = portalMobileQuery.matches
+    ? Math.min(window.innerHeight - 1, sidebarHeight + 88)
+    : Math.min(window.innerHeight * .36, 340);
+  const containing = observedSections.find((section) => {
+    const rect = section.getBoundingClientRect();
+    return rect.top <= viewportAnchor && rect.bottom > viewportAnchor;
   });
+  const activeSection = containing || observedSections
+    .map((section) => ({section, distance: Math.abs(section.getBoundingClientRect().top - viewportAnchor)}))
+    .sort((left, right) => left.distance - right.distance)[0]?.section;
+  if (activeSection) activateSectionLink(activeSection.id);
 }
+const scheduleSectionActivation = () => {
+  if (sectionActivationFrame) return;
+  sectionActivationFrame = window.requestAnimationFrame(updateActiveSectionLink);
+};
+if (sectionLinks.length && observedSections.length) {
+  window.addEventListener("scroll", scheduleSectionActivation, {passive: true});
+  window.addEventListener("resize", scheduleSectionActivation, {passive: true});
+  scheduleSectionActivation();
+}
+
+// 滚轮/触摸/方向键自动翻页已移除：滚动到边界即跳页容易误触。
+// 翻页改为页面底部显式的「上一页 / 下一页」链接（portal.html 的 .page-continuation）。
 
 const skillCenter = document.querySelector("[data-skill-center]");
 if (skillCenter) {
@@ -773,11 +741,28 @@ if (skillCenter) {
   let activeGroup = "all";
   let activeStatus = "all";
 
+  const bindTabKeyboard = (tabs, activate) => {
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("keydown", (event) => {
+        let nextIndex = null;
+        if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+        if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === "Home") nextIndex = 0;
+        if (event.key === "End") nextIndex = tabs.length - 1;
+        if (nextIndex === null) return;
+        event.preventDefault();
+        tabs[nextIndex].focus();
+        activate(tabs[nextIndex]);
+      });
+    });
+  };
+
   const showSkillSection = (name, {updateHash = true} = {}) => {
     sectionTabs.forEach((tab) => {
       const active = tab.dataset.skillSectionTab === name;
       tab.classList.toggle("is-active", active);
       tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
     });
     sectionPanes.forEach((pane) => {
       const active = pane.dataset.skillSectionPane === name;
@@ -794,6 +779,7 @@ if (skillCenter) {
   sectionTabs.forEach((tab) => tab.addEventListener("click", () => {
     showSkillSection(tab.dataset.skillSectionTab);
   }));
+  bindTabKeyboard(sectionTabs, (tab) => showSkillSection(tab.dataset.skillSectionTab));
   skillCenter.querySelectorAll("[data-skill-tab-target]").forEach((button) => {
     button.addEventListener("click", () => {
       showSkillSection(button.dataset.skillTabTarget);
@@ -874,8 +860,13 @@ if (skillCenter) {
       const active = tab.dataset.skillDetailTab === name;
       tab.classList.toggle("is-active", active);
       tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
     });
-    panes.forEach((pane) => pane.classList.toggle("is-active", pane.dataset.skillDetailPane === name));
+    panes.forEach((pane) => {
+      const active = pane.dataset.skillDetailPane === name;
+      pane.classList.toggle("is-active", active);
+      pane.hidden = !active;
+    });
   };
 
   const renderSkillDetail = (payload) => {
@@ -932,9 +923,11 @@ if (skillCenter) {
     showSkillPane("preview");
   };
 
-  dialog?.querySelectorAll("[data-skill-detail-tab]").forEach((tab) => {
+  const detailTabs = [...(dialog?.querySelectorAll("[data-skill-detail-tab]") || [])];
+  detailTabs.forEach((tab) => {
     tab.addEventListener("click", () => showSkillPane(tab.dataset.skillDetailTab));
   });
+  bindTabKeyboard(detailTabs, (tab) => showSkillPane(tab.dataset.skillDetailTab));
   dialog?.querySelectorAll("[data-skill-dialog-close]").forEach((button) => {
     button.addEventListener("click", () => dialog.close());
   });

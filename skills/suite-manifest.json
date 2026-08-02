@@ -4,28 +4,22 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.4.6",
-    "version": "1.4.6",
-    "summary": "V1.4.6 联合修复 WorkBuddy 连接、网站健康自愈和知识索引治理，并精简默认发布门禁。",
+    "tag": "V1.4.7",
+    "version": "1.4.7",
+    "summary": "V1.4.7 修复 WorkBuddy 原生 Skill 注册与 Hook 闭环，优化发布编排，并完成门户黑金体系收口。",
     "changes": [
-      "门户一键安装指令同时完成 49 项 Skills 安装或覆盖升级、最小行为 Hook 启用、用户级远程 MCP 合并、一次重载和 knowledge_service_status 验收。",
-      "登录用户的手工配置页自动复用有效个人 Token；无有效 Token 时自动生成，并直接填入完整 MCP JSON。",
-      "WorkBuddy 包不再内置本地 jiaotang-agent.mjs、.mcp.json、run-node 启动器、bootstrap、设备密钥、钥匙串或 Windows DPAPI 流程。",
-      "用户安装阶段不再执行安装包签名审查、用户侧签名校验或每轮插件目录哈希检查；受控发布链仍在服务器侧校验候选产物。",
-      "49 项 Skills 均有行为覆盖门禁；WorkBuddy 包只保留业务 Skills、插件清单、最小行为 Hook、必要参考资料和业务脚本。",
-      "49 项顶层 Skills 的业务规则、路由和交付契约与 V1.4.3 保持兼容。",
-      "旧版用户通过同一段指令自动覆盖插件、移除旧本地 MCP 连接，仅替换 jiaotang-kb，并保留其他 MCP 条目。",
-      "新增简化安装端到端验收，覆盖新装、旧版覆盖、Token 复用、保留其他 MCP、工具枚举和真实状态调用。",
-      "Windows 明确写入 %USERPROFILE%\\.workbuddy\\mcp.json，macOS 写入 ~/.workbuddy/mcp.json，不再误写 WorkBuddy 托管的 .mcp.json。",
-      "MCP 中间件在重放请求体后继续等待真实断开事件，避免单 worker 忙循环拖垮网站。",
-      "生产健康检查改为每分钟执行，连续两次失败自动重启，30 分钟最多 3 次并熔断 60 分钟。",
-      "知识索引重建隐私白名单、旧资料生命周期和案例包关系，验收收据绑定全部关键索引产物。",
-      "小巨人与浙江省专名单改用官方发布事件口径，认定、认定公示、复核公示和复核通过分开记录，地域约束使用事件发生时归属。",
-      "默认发布门禁收敛为快速静态、一次主测试、必要产物验收和主机验收四层，相同输入使用内容寻址收据避免重复运行。"
+      "修复 WorkBuddy 包中行为 Hook 被写到 YAML frontmatter 之前的问题，49 个 SKILL.md 均以合法 frontmatter 开头，name 与目录一一对应且全套唯一。",
+      "发布端和门户下载端新增 Skill 原生注册静态门禁，错误前置内容、名称错配、重复名称或 Hook 位置异常都会在正式发布前阻断。",
+      "最小行为 Hook 的激活记录绑定 Skill、规则版本、轮次 ID 和时间；正式业务交付零 Skill 激活时返回 NO_ACTIVE_BUSINESS_SKILL，普通问答及 Hook 内部异常仍失败开放。",
+      "Hook 会话只保存提示词摘要和契约信号，不再持久化完整用户提示词；算法程序化执行继续保留为后续独立项目。",
+      "知识发布固定为索引先发布并切换、应用后部署；复用 Acceptance Harness 收据，统一 manifest 路径，拒绝候选回落到可变 current 目录，并记录逐阶段耗时。",
+      "退役独立 Skills Manager、PWA 路由和专属发布流程，网站分发统一回到 Skills 中心与一次复制粘贴安装。",
+      "门户删除被黑金主题覆盖的第二套浅色组件 CSS，将仍在使用的规则迁入黑金语义层，并保留桌面与移动端回归门禁。",
+      "继续保持 49 项 Skills、用户级远程 HTTP MCP、自动填入个人 Token、只替换 jiaotang-kb、保留其他 MCP 和一次重载的简化安装边界。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.6 插件安装或覆盖升级和远程 MCP 连接。",
+      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.4.7 插件安装或覆盖升级和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -38,12 +32,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "跨平台通用包",
-        "note": "V1.4.6 使用 WorkBuddy 用户级远程 HTTP MCP，不依赖插件根 .mcp.json 或本地启动器。"
+        "note": "V1.4.6 双端实机基线已通过；V1.4.7 继续使用用户级远程 HTTP MCP，并新增原生 Skill 注册门禁。"
       },
       {
         "target": "Windows WorkBuddy",
         "status": "结构与 CI 已验证，待发布后实机验收",
-        "note": "V1.4.6 固定使用 %USERPROFILE%\\.workbuddy\\mcp.json，不修改 WorkBuddy 托管的 .workbuddy/.mcp.json。"
+        "note": "V1.4.6 双端实机基线已通过；V1.4.7 固定使用 %USERPROFILE%\\.workbuddy\\mcp.json，并修复 Skill frontmatter 与 Hook 激活闭环。"
       }
     ],
     "one_step_installation_protocol": {
@@ -77,22 +71,7 @@
     "delivery_directory": "Desktop/焦糖待处理",
     "word_manual_only": true,
     "require_branding": true,
-    "require_render_qa": true,
-    "manual_profile": "skills-manager-guide",
-    "manual_required_markers": [
-      "Skills 管理器 0.2.0 用户手册",
-      "正式 Skills 为 {tag}，共 {skill_count} 项",
-      "同一个跨平台包",
-      "不再运行固定 .command、.cmd、PowerShell 或外部 CLI",
-      "远程 MCP",
-      "最小行为 Hook",
-      "现有用户不受影响",
-      "自动填入个人 Token",
-      "保留其他 MCP",
-      "只重载一次",
-      "knowledge_service_status",
-      "回滚"
-    ]
+    "require_render_qa": true
   },
   "skills": [
     "agriculture-and-rural-projects",

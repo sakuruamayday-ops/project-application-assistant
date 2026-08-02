@@ -25,7 +25,9 @@ from publish_skill_release import validate_release_packages  # noqa: E402
 
 OFFICIAL_FINGERPRINT = "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
 EXPECTED_SKILL_COUNT = 49
-EXPECTED_VERSION = "1.4.6"
+EXPECTED_VERSION = json.loads(
+    (ROOT / "skills/suite-manifest.json").read_text(encoding="utf-8")
+)["release"]["version"]
 FORBIDDEN_PATH_SUFFIXES = (
     "/.mcp.json",
     "/bin/run-node",
@@ -145,6 +147,28 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         )
         if missing_skills:
             raise RuntimeError(f"候选包缺少技能入口：{missing_skills}")
+        skill_names_from_frontmatter = []
+        for skill in declared_skills:
+            entry = f"{plugin_root}/skills/{skill}/SKILL.md"
+            content = archive.read(entry).decode("utf-8")
+            if not content.startswith("---\n"):
+                raise RuntimeError(f"技能frontmatter不是首字节内容：{skill}")
+            frontmatter = re.match(r"\A---\n(.*?)\n---(?:\n|\Z)", content, re.DOTALL)
+            if not frontmatter:
+                raise RuntimeError(f"技能frontmatter不完整：{skill}")
+            names_in_entry = [
+                line.split(":", 1)[1].strip().strip("'\"")
+                for line in frontmatter.group(1).splitlines()
+                if line.startswith("name:")
+            ]
+            if names_in_entry != [skill]:
+                raise RuntimeError(f"技能名称与目录不一致：{skill}")
+            hook_position = content.find("<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->")
+            if hook_position < frontmatter.end():
+                raise RuntimeError(f"行为Hook未位于frontmatter之后：{skill}")
+            skill_names_from_frontmatter.append(names_in_entry[0])
+        if len(set(skill_names_from_frontmatter)) != EXPECTED_SKILL_COUNT:
+            raise RuntimeError("技能frontmatter名称不是49项唯一值")
         if plugin.get("hook_mode") != "behavior_only_fail_open":
             raise RuntimeError("插件未声明最小行为 Hook 模式")
         if plugin.get("mcp_configuration_mode") != "user_remote_streamable_http":
@@ -184,6 +208,7 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         "mcp_configuration_mode": plugin["mcp_configuration_mode"],
         "forbidden_components": "absent",
         "real_host_acceptance": "post-release-required",
+        "skill_entry_contract": "frontmatter-first-name-bound",
     }
 
 

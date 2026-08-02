@@ -9,7 +9,7 @@ WORKFLOW = (
     REPOSITORY_DIR
     / ".github"
     / "workflows"
-    / "skills-manager-release-gates.yml"
+    / "website-package-release-gates.yml"
 )
 
 

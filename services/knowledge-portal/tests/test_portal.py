@@ -558,7 +558,7 @@ def test_public_user_guide(tmp_path):
         assert "当前正式通用版" in guide.text
         assert "尚未正式发布" in guide.text
         assert "当前没有通过简化安装能力门禁" in guide.text
-        assert "候选 V1.4.6 不等于已正式发布" in guide.text
+        assert "候选 V1.4.7 不等于已正式发布" in guide.text
         assert "项目算法与政策版本" in guide.text
         assert "企业项目身份数字孪生" in guide.text
         assert "patent-case-manifest" in guide.text
@@ -5962,7 +5962,7 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
             assert download.content == package.read_bytes()
 
 
-def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(
+def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
     tmp_path,
     monkeypatch,
 ):
@@ -5987,7 +5987,7 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(
                 module.isoformat(module.utc_now()),
             ),
         )
-        token_seed = "skills-manager-channel-token"
+        token_seed = "legacy-platform-channel-token"
         raw_token = module.user_access_token(user_cursor.lastrowid, token_seed)
         connection.execute(
             """
@@ -5997,7 +5997,7 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(
             """,
             (
                 user_cursor.lastrowid,
-                "skills-manager",
+                "legacy-platform-client",
                 raw_token[:12],
                 module.token_hash(raw_token),
                 token_seed,
@@ -6068,87 +6068,12 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(
         connection.commit()
 
     with TestClient(module.app) as client:
-        unauthenticated_manager = client.get(
-            "/skills-manager",
-            follow_redirects=False,
-        )
-        assert unauthenticated_manager.status_code == 303
-        assert unauthenticated_manager.headers["location"].startswith("/login")
-        unauthenticated_release = client.get(
-            "/v1/web/skills-manager/native-release",
-            follow_redirects=False,
-        )
-        assert unauthenticated_release.status_code == 303
-        assert unauthenticated_release.headers["location"].startswith("/login")
-        for path in (
-            "/skills-manager/download/macos/arm64",
-            "/skills-manager/download/macos/x64",
-            "/skills-manager/download/windows/x64",
-            "/skills-manager/download/user-manual",
-        ):
-            unauthenticated_download = client.get(path, follow_redirects=False)
-            assert unauthenticated_download.status_code == 303
-            assert unauthenticated_download.headers["location"].startswith("/login")
         login = client.post(
             "/login",
             data={"username": "member", "password": "member-password-123"},
             follow_redirects=False,
         )
         client.cookies.update(login.cookies)
-        manager = client.get("/skills-manager", follow_redirects=False)
-        assert manager.status_code == 303
-        assert manager.headers["cache-control"] == "no-store"
-        assert manager.headers["location"] == "/skills#skills-downloads"
-        assert manager.headers["x-jiaotang-client-status"] == "retired"
-        native_release_response = client.get(
-            "/v1/web/skills-manager/native-release"
-        )
-        assert native_release_response.status_code == 200
-        assert native_release_response.headers["cache-control"] == "no-store"
-        native_release = native_release_response.json()
-        assert native_release["schema"] == (
-            "jiaotang-skills-manager-native-release/v1"
-        )
-        assert native_release["version"] == "0.2.0"
-        assert native_release["state"] == "retired"
-        assert native_release["publication_policy"] == (
-            "release_then_reviewed_portal_backfill"
-        )
-        assert native_release["available"] is False
-        assert native_release["replacement_url"] == "/skills#skills-downloads"
-        assert native_release["retired_at"]
-        native_artifacts = {
-            item["id"]: item for item in native_release["artifacts"]
-        }
-        assert set(native_artifacts) == {
-            "macos-arm64",
-            "macos-x64",
-            "windows-x64",
-        }
-        for artifact in native_artifacts.values():
-            assert artifact["available"] is False
-            assert re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"])
-            native_download = client.get(
-                artifact["download_url"],
-                follow_redirects=False,
-            )
-            assert native_download.status_code == 303
-            assert native_download.headers["cache-control"] == "no-store"
-            assert native_download.headers["location"] == "/skills#skills-downloads"
-            assert native_download.headers["x-jiaotang-client-status"] == "retired"
-        assert native_release["user_manual"]["available"] is False
-        assert re.fullmatch(
-            r"[0-9a-f]{64}",
-            native_release["user_manual"]["sha256"],
-        )
-        native_manual = client.get(
-            native_release["user_manual"]["download_url"],
-            follow_redirects=False,
-        )
-        assert native_manual.status_code == 303
-        assert native_manual.headers["cache-control"] == "no-store"
-        assert native_manual.headers["location"] == "/skills#skills-downloads"
-        assert native_manual.headers["x-jiaotang-client-status"] == "retired"
         web_channels = client.get("/v1/web/skills/channels")
         assert web_channels.status_code == 200
         web_artifacts = {
@@ -6159,15 +6084,6 @@ def test_legacy_client_artifacts_do_not_feed_unified_workbuddy_channel(
         assert web_artifacts["workbuddy"]["available"] is False
         assert web_artifacts["workbuddy"]["version"] is None
         assert web_artifacts["workbuddy"]["download_url"] is None
-        pwa_manifest = client.get("/skills-manager/manifest.webmanifest")
-        assert pwa_manifest.status_code == 200
-        assert pwa_manifest.json()["display"] == "browser"
-        assert pwa_manifest.json()["start_url"] == "/skills#skills-downloads"
-        service_worker = client.get("/skills-manager/sw.js")
-        assert service_worker.status_code == 200
-        assert service_worker.headers["service-worker-allowed"] == "/skills-manager"
-        assert "self.registration.unregister()" in service_worker.text
-        assert "cache.addAll" not in service_worker.text
         assert client.get("/skills/latest/download").content == generic.read_bytes()
         for path in (
             "/skills/latest/workbuddy/macos/download",
@@ -6297,63 +6213,6 @@ def test_workbuddy_distribution_revision_is_visible_without_rewriting_content_no
         assert "跨平台分发修订：移除外层固定安装器。" in page.text
         assert "查看不可变发行记录" in page.text
         assert "初始 Windows 历史说明" in page.text
-
-
-def test_skills_manager_retirement_redirects_historical_downloads_to_package_center(
-    tmp_path,
-):
-    module = load_app(tmp_path)
-    now = module.isoformat(module.utc_now())
-    with closing(module.database()) as connection:
-        connection.execute(
-            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
-            (
-                "member",
-                module.password_hasher.hash("member-password-123"),
-                now,
-            ),
-        )
-        connection.commit()
-
-    native_release = json.loads(
-        module.SKILLS_MANAGER_NATIVE_RELEASE_PATH.read_text(encoding="utf-8")
-    )
-    assert native_release["state"] == "retired"
-
-    with TestClient(module.app) as client:
-        login = client.post(
-            "/login",
-            data={"username": "member", "password": "member-password-123"},
-            follow_redirects=False,
-        )
-        client.cookies.update(login.cookies)
-        metadata = client.get("/v1/web/skills-manager/native-release")
-        assert metadata.status_code == 200
-        assert metadata.json()["state"] == "retired"
-        assert metadata.json()["available"] is False
-        for artifact in native_release["artifacts"]:
-            download = client.get(
-                artifact["download_url"],
-                follow_redirects=False,
-            )
-            assert download.status_code == 303
-            assert download.headers["cache-control"] == "no-store"
-            assert download.headers["location"] == "/skills#skills-downloads"
-            assert download.headers["x-jiaotang-client-status"] == "retired"
-        manual = client.get(
-            native_release["user_manual"]["download_url"],
-            follow_redirects=False,
-        )
-        assert manual.status_code == 303
-        assert manual.headers["cache-control"] == "no-store"
-        assert manual.headers["location"] == "/skills#skills-downloads"
-        assert manual.headers["x-jiaotang-client-status"] == "retired"
-        unsupported_download = client.get(
-            "/skills-manager/download/linux/x64",
-            follow_redirects=False,
-        )
-        assert unsupported_download.status_code == 404
-        assert unsupported_download.headers["cache-control"] == "private, no-store"
 
 
 @pytest.mark.parametrize(
@@ -7551,7 +7410,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     with TestClient(module.app) as client:
         guide = client.get("/guide")
         assert "WorkBuddy 正式包 V1.4.1 已暂停新安装" in guide.text
-        assert "安全候选 V1.4.6 尚未正式发布" in guide.text
+        assert "安全候选 V1.4.7 尚未正式发布" in guide.text
 
         login = client.post(
             "/login",

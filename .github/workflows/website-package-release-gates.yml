@@ -16,7 +16,7 @@ on:
       - "docs/product/**"
       - "docs/releases/**"
       - "pyproject.toml"
-      - ".github/workflows/skills-manager-release-gates.yml"
+      - ".github/workflows/website-package-release-gates.yml"
   pull_request:
     paths:
       - "services/knowledge-portal/**"
@@ -27,7 +27,7 @@ on:
       - "docs/product/**"
       - "docs/releases/**"
       - "pyproject.toml"
-      - ".github/workflows/skills-manager-release-gates.yml"
+      - ".github/workflows/website-package-release-gates.yml"
   workflow_dispatch:
 
 concurrency:
@@ -82,7 +82,6 @@ jobs:
         working-directory: services/knowledge-portal
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
-      - run: node --check services/knowledge-portal/static/skills-manager/sw.js
       - run: node services/knowledge-portal/scripts/check_website_package_center.mjs
       - name: Record production dependency identity
         env:

@@ -168,14 +168,6 @@ PY
 )"
 
 python3 "${service_dir}/scripts/build_static_assets.py"
-platform_capabilities_sha="$(
-    python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' \
-        "${service_dir}/static/skills-manager/platform-capabilities.json"
-)"
-platform_adapters_sha="$(
-    python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' \
-        "${service_dir}/static/skills-manager/platform-adapters.json"
-)"
 
 echo "[1/7] 校验本地技能签名和生产环境"
 python3 "${service_dir}/scripts/python_supply_chain.py" \
@@ -387,23 +379,6 @@ ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     '${remote_release_dir}/.venv/bin/python' \
         '${remote_release_dir}/scripts/verify_skill_signature_coverage.py' \
         --skills-root '${remote_release_dir}/skills'
-    EXPECTED_PLATFORM_CAPABILITIES_SHA='${platform_capabilities_sha}' \
-    EXPECTED_PLATFORM_ADAPTERS_SHA='${platform_adapters_sha}' \
-    RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
-import hashlib
-import os
-from pathlib import Path
-
-root = Path(os.environ['RELEASE_DIR']) / 'static' / 'skills-manager'
-checks = {
-    'platform-capabilities.json': os.environ['EXPECTED_PLATFORM_CAPABILITIES_SHA'],
-    'platform-adapters.json': os.environ['EXPECTED_PLATFORM_ADAPTERS_SHA'],
-}
-for name, expected in checks.items():
-    actual = hashlib.sha256((root / name).read_bytes()).hexdigest()
-    if actual != expected:
-        raise SystemExit(f'新release静态清单校验失败：{name}')
-PY
     SOURCE_ENV=/etc/jiaotang-kb-ops.env
     [ -f \"\${SOURCE_ENV}\" ] || SOURCE_ENV=/etc/jiaotang-kb.env
     set -a
@@ -590,12 +565,13 @@ PY
 
 echo "[5/7] 发布签名索引、原子切换应用current并健康回滚"
 deployment_failed=0
+predeployed_index="${JIAOTANG_INDEX_ALREADY_DEPLOYED:-0}"
 ssh "${ssh_args[@]}" "${deploy_host}" "set -Eeuo pipefail
     set -a
     source /etc/jiaotang-kb-ops.env
     set +a
     app_switched=0
-    index_switched=0
+    index_switched=${predeployed_index}
     rollback_on_error() {
         trap - ERR
         set +e
@@ -629,6 +605,7 @@ PY
     }
     trap rollback_on_error ERR
 
+    if [ '${predeployed_index}' != '1' ]; then
     bootstrap_release_id=\$(
         RELEASE_DIR='${remote_release_dir}' \
         '${remote_release_dir}/.venv/bin/python' - \
@@ -684,6 +661,9 @@ PY
     index_after=\$(readlink \"\${JIAOTANG_INDEX_DIR}/current\" 2>/dev/null || true)
     if [ \"\${index_before}\" != \"\${index_after}\" ]; then
         index_switched=1
+    fi
+    else
+        echo '索引已由统一发布编排预先验收并切换；跳过重复发布与刷新。'
     fi
 
     RUNTIME_ROOT='${runtime_root}' RELEASE_DIR='${remote_release_dir}' \

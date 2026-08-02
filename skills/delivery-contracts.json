@@ -1,6 +1,30 @@
 {
   "schema_version": 2,
   "contract_id": "jiaotang-workbuddy-delivery-contract-v1",
+  "rule_version": "1.4.7",
+  "formal_business_delivery_markers": [
+    "生成报告",
+    "形成报告",
+    "撰写报告",
+    "出具报告",
+    "正式申报材料",
+    "生成申请书",
+    "撰写申请书",
+    "提交稿",
+    "交付文件",
+    "体检报告"
+  ],
+  "business_domain_markers": [
+    "政府项目",
+    "政策",
+    "申报",
+    "专利",
+    "知识产权",
+    "财务",
+    "税务",
+    "企业分析",
+    "同行对标"
+  ],
   "complex_task_markers": [
     "客户项目分析",
     "正式申报材料",
