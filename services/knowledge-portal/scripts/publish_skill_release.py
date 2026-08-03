@@ -184,7 +184,17 @@ def semantic_version(value: str) -> str:
     return f"{match.group(1)}.{match.group(2)}.{patch}{hotfix}"
 
 
-ARTIFACT_TARGETS = ("generic", "workbuddy")
+ARTIFACT_TARGETS = ("generic", "workbuddy", "macos", "windows")
+
+
+def require_complete_workbuddy_platform_set(packages: dict[str, Path]) -> None:
+    platform_targets = {
+        target for target in packages if target in {"macos", "windows"}
+    }
+    if platform_targets and platform_targets != {"macos", "windows"}:
+        raise ValueError("macOS与Windows WorkBuddy包必须同一事务成对发布")
+    if platform_targets and "workbuddy" in packages:
+        raise ValueError("分平台WorkBuddy包不得与旧统一包混合发布")
 
 
 def _ssh_string(value: bytes | str) -> bytes:
@@ -469,6 +479,7 @@ def _validate_workbuddy_integrity(
     archive: zipfile.ZipFile,
     names: list[str],
     suite: dict[str, object],
+    target: str,
 ) -> dict[str, object]:
     file_names = {
         name for name in names if not archive.getinfo(name).is_dir()
@@ -567,6 +578,39 @@ def _validate_workbuddy_integrity(
         "Stop",
     }:
         raise ValueError("WorkBuddy 最小行为 Hook 事件范围不合规")
+    hook_commands = json.dumps(hooks, ensure_ascii=False).casefold()
+    windows_adapter = f"{plugin_prefix}scripts/workbuddy_hook_windows.cmd"
+    macos_adapter = f"{plugin_prefix}scripts/workbuddy_hook_macos.sh"
+    launcher = f"{plugin_prefix}scripts/workbuddy_hook_launcher.sh"
+    if target == "windows":
+        if plugin.get("platform") != "windows":
+            raise ValueError("Windows包未声明Windows平台")
+        if windows_adapter not in file_names:
+            raise ValueError("Windows包缺少原生.cmd Hook入口")
+        if macos_adapter in file_names or launcher in file_names:
+            raise ValueError("Windows包混入macOS/Bash Hook适配器")
+        if any(
+            marker in hook_commands
+            for marker in (
+                "bash",
+                ".sh",
+                "python3 -c",
+                "powershell",
+                "'cmd.exe",
+            )
+        ):
+            raise ValueError("Windows hooks.json仍依赖shell或动态Python命令")
+        if "cmd.exe" not in hook_commands or ".cmd" not in hook_commands:
+            raise ValueError("Windows hooks.json未进入原生cmd适配器")
+    elif target == "macos":
+        if plugin.get("platform") != "macos":
+            raise ValueError("macOS包未声明macOS平台")
+        if macos_adapter not in file_names or launcher not in file_names:
+            raise ValueError("macOS包缺少shell Hook适配器")
+        if windows_adapter in file_names:
+            raise ValueError("macOS包混入Windows cmd Hook适配器")
+        if "cmd.exe" in hook_commands or ".cmd" in hook_commands:
+            raise ValueError("macOS hooks.json混入Windows入口")
     skills = suite.get("skills")
     expected_skills = [f"./skills/{name}" for name in skills]
     if plugin.get("skills") != expected_skills:
@@ -660,6 +704,7 @@ def _validate_workbuddy_integrity(
         "archive_entries": len(file_names),
         "outer_fixed_installers": False,
         "hook_mode": "behavior_only_fail_open",
+        "platform": target,
         "skill_entry_contract": "frontmatter-first-name-bound",
         "mcp_configuration_mode": "user_remote_streamable_http",
         "embedded_user_token": False,
@@ -680,6 +725,7 @@ def validate_release_packages(
     release_tag = f"V{version}"
     expected_version = semantic_version(version)
     canonical_skills: list[str] | None = None
+    workbuddy_core_hashes: dict[str, str] = {}
     hashes: dict[str, str] = {}
     integrity: dict[str, dict[str, object]] = {}
     for target, package in packages.items():
@@ -742,8 +788,32 @@ def validate_release_packages(
                     archive,
                     names,
                     suite,
+                    target,
                 )
+                core_names = [
+                    name
+                    for name in names
+                    if name.endswith("/scripts/workbuddy_behavior_hook.py")
+                ]
+                if len(core_names) != 1:
+                    raise ValueError(
+                        f"{target}包共享Python行为核心数量不为1"
+                    )
+                workbuddy_core_hashes[target] = hashlib.sha256(
+                    archive.read(core_names[0])
+                ).hexdigest()
         hashes[target] = sha256(package)
+
+    platform_core_hashes = {
+        target: digest
+        for target, digest in workbuddy_core_hashes.items()
+        if target in {"macos", "windows"}
+    }
+    if (
+        len(platform_core_hashes) == 2
+        and len(set(platform_core_hashes.values())) != 1
+    ):
+        raise ValueError("macOS与Windows包的共享Python行为核心不一致")
 
     return {
         "version": version,
@@ -861,6 +931,8 @@ def _artifact_name(version: str, target: str) -> str:
     suffix = {
         "generic": "",
         "workbuddy": "-WorkBuddy",
+        "macos": "-macOS-WorkBuddy",
+        "windows": "-Windows-WorkBuddy",
     }[target]
     return f"企业全生命周期助手-V{version}{suffix}.zip"
 
@@ -1078,6 +1150,7 @@ def stage_selective(
     git_commit: str,
     github_url: str,
 ) -> dict[str, object]:
+    require_complete_workbuddy_platform_set(packages)
     validation = validate_release_packages(packages, version)
     stage_directory = release_directory / ".staging" / f"V{version}"
     release_directory.mkdir(parents=True, exist_ok=True)
@@ -1201,6 +1274,7 @@ def publish_selective(
     version: str,
     release_notes: str,
 ) -> dict[str, object]:
+    require_complete_workbuddy_platform_set(packages)
     validation = validate_release_packages(packages, version)
     release_directory.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(database_path) as connection:
@@ -1332,17 +1406,8 @@ def promote_selective(
         raise RuntimeError("正式发布中的候选包缺失或哈希发生变化")
     packages: dict[str, Path] = {}
     for row in rows:
-        legacy_target = str(row["target"])
-        target = (
-            "workbuddy"
-            if legacy_target in {"macos", "windows"}
-            else legacy_target
-        )
+        target = str(row["target"])
         path = Path(str(row["file_path"]))
-        if target in packages and packages[target] != path:
-            raise RuntimeError(
-                "发布中记录仍包含两个系统专用 WorkBuddy 包，请撤销后按统一包重新暂存"
-            )
         packages[target] = path
     result = publish_selective(
         database_path,
@@ -1592,6 +1657,8 @@ def main() -> None:
     parser.add_argument("--release-dir", type=Path, required=True)
     parser.add_argument("--generic-package", type=Path)
     parser.add_argument("--workbuddy-package", type=Path)
+    parser.add_argument("--macos-package", type=Path)
+    parser.add_argument("--windows-package", type=Path)
     parser.add_argument("--version", required=True)
     parser.add_argument("--release-notes-file", type=Path)
     parser.add_argument("--git-commit", default="")
@@ -1691,6 +1758,8 @@ def main() -> None:
             for target, package in (
                 ("generic", arguments.generic_package),
                 ("workbuddy", arguments.workbuddy_package),
+                ("macos", arguments.macos_package),
+                ("windows", arguments.windows_package),
             )
             if package is not None
         }

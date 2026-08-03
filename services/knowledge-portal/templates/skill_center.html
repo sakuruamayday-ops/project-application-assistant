@@ -83,7 +83,7 @@
       {% endif %}
       <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
-      <div class="skill-platform-note"><strong>固定双产物</strong><p>正式发布只保留通用版与 WorkBuddy 跨平台版。通用版适用于支持标准 Agent Skills 的宿主；WorkBuddy 版已经包含同一套 Skills、Hooks 与 MCP 配置，不需要重复安装通用版。其他宿主不再规划或展示平台专用版本。</p></div>
+      <div class="skill-platform-note"><strong>固定三产物</strong><p>正式发布只保留通用版、macOS WorkBuddy 版与 Windows WorkBuddy 版。两个 WorkBuddy 包包含同一套 Skills、业务规则与 Python 行为核心，只保留各自系统需要的 Hook 启动器；不需要重复安装通用版。其他宿主不再规划或展示平台专用版本。</p></div>
       <div class="skill-platform-downloads">
         <article class="skill-platform-card is-generic">
           <span class="skill-platform-mark">通</span>
@@ -94,9 +94,9 @@
         {% set workbuddy = latest_release.workbuddy %}
         <article class="skill-platform-card is-workbuddy" data-platform-version="{{ workbuddy.version or '' }}">
           <span class="skill-platform-mark">WB</span>
-          <div><span class="skill-card-index">平台增强版 · WorkBuddy</span><h3>WorkBuddy</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% endif %}<p>macOS 与 Windows 共用同一个插件市场 ZIP，包含通用 Skills、Hooks 和 jiaotang-kb MCP 声明。解压后在 WorkBuddy 内添加本地插件市场并安装。</p>{% if workbuddy.distribution_notes_html %}<details class="skill-release-notes"><summary>查看 WorkBuddy 分发修订说明</summary><div class="manual-content">{{ workbuddy.distribution_notes_html }}</div>{% if workbuddy.distribution_url %}<a href="{{ workbuddy.distribution_url }}" target="_blank" rel="noreferrer">查看不可变发行记录</a>{% endif %}</details>{% endif %}</div>
+          <div><span class="skill-card-index">平台增强版 · WorkBuddy</span><h3>WorkBuddy</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% endif %}<p>macOS 与 Windows 使用两个独立签名插件市场 ZIP，共用 49 项 Skills、业务规则、远程 MCP 与 Python 行为核心；macOS 使用 shell Hook，Windows 使用原生 cmd Hook。</p>{% if workbuddy.distribution_notes_html %}<details class="skill-release-notes"><summary>查看 WorkBuddy 分发修订说明</summary><div class="manual-content">{{ workbuddy.distribution_notes_html }}</div>{% if workbuddy.distribution_url %}<a href="{{ workbuddy.distribution_url }}" target="_blank" rel="noreferrer">查看不可变发行记录</a>{% endif %}</details>{% endif %}</div>
           <div class="skill-platform-status {{ 'is-ready' if workbuddy.installable else 'is-validating' }}"><i></i>{{ '正式包可安装' if workbuddy.installable else ('已暂停新安装' if workbuddy.included else '尚未发布') }}</div>
-          {% if workbuddy.installable %}<a class="button" href="{{ workbuddy.download_url }}">下载 WorkBuddy 包</a>{% else %}<span class="button secondary is-disabled">{{ '等待安全正式版' if workbuddy.included else '当前版本未包含' }}</span>{% endif %}
+          {% if workbuddy.installable %}<a class="button" href="{{ workbuddy.download_urls.macos }}">下载 macOS 包</a><a class="button secondary" href="{{ workbuddy.download_urls.windows }}">下载 Windows 包</a>{% else %}<span class="button secondary is-disabled">{{ '等待安全正式版' if workbuddy.included else '当前版本未包含' }}</span>{% endif %}
           {% if workbuddy.included and not workbuddy.installable %}<p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>{% endif %}
         </article>
       </div>

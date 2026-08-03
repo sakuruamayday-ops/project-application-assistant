@@ -4075,19 +4075,21 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
     monkeypatch,
 ):
     module = load_app(tmp_path)
-    workbuddy_package = tmp_path / "workbuddy-v1.5.0.zip"
-    workbuddy_package.write_bytes(b"workbuddy-v1.5.0")
-    artifact = {
-        "file_path": str(workbuddy_package),
-        "file_name": workbuddy_package.name,
-        "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
-        "target": "workbuddy",
-        "version": "1.5.0",
-    }
+    platform_artifacts = {}
+    for platform in ("macos", "windows"):
+        workbuddy_package = tmp_path / f"workbuddy-{platform}-v1.5.0.zip"
+        workbuddy_package.write_bytes(f"workbuddy-{platform}-v1.5.0".encode())
+        platform_artifacts[platform] = {
+            "file_path": str(workbuddy_package),
+            "file_name": workbuddy_package.name,
+            "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
+            "target": platform,
+            "version": "1.5.0",
+        }
     monkeypatch.setattr(
         module,
         "latest_skill_artifact",
-        lambda target: dict(artifact) if target == "workbuddy" else None,
+        lambda target: dict(platform_artifacts[target]) if target in platform_artifacts else None,
     )
     monkeypatch.setattr(
         module,
@@ -6154,11 +6156,17 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
         "workbuddy_artifact_is_simple_remote_mcp",
         lambda artifact: bool(artifact),
     )
-    package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy.zip"
-    package.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(package, "w") as archive:
+    macos_package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy-macOS.zip"
+    windows_package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy-Windows.zip"
+    macos_package.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(macos_package, "w") as archive:
         archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
         archive.writestr("jiaotang/plugins/plugin/.codebuddy-plugin/plugin.json", "{}")
+        archive.writestr("jiaotang/plugins/plugin/hooks/workbuddy-hook.sh", "#!/bin/sh\n")
+    with zipfile.ZipFile(windows_package, "w") as archive:
+        archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
+        archive.writestr("jiaotang/plugins/plugin/.codebuddy-plugin/plugin.json", "{}")
+        archive.writestr("jiaotang/plugins/plugin/hooks/workbuddy-hook.cmd", "@echo off\r\n")
     generic = tmp_path / "generic.zip"
     generic.write_bytes(b"generic")
     with closing(module.database()) as connection:
@@ -6184,19 +6192,28 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
                 module.isoformat(module.utc_now()),
             ),
         )
-        connection.execute(
+        connection.executemany(
             """
             INSERT INTO skill_release_artifacts(
                 release_id,target,file_name,file_path,sha256
             ) VALUES (?,?,?,?,?)
             """,
-            (
-                release_cursor.lastrowid,
-                "workbuddy",
-                package.name,
-                str(package),
-                hashlib.sha256(package.read_bytes()).hexdigest(),
-            ),
+            [
+                (
+                    release_cursor.lastrowid,
+                    "macos",
+                    macos_package.name,
+                    str(macos_package),
+                    hashlib.sha256(macos_package.read_bytes()).hexdigest(),
+                ),
+                (
+                    release_cursor.lastrowid,
+                    "windows",
+                    windows_package.name,
+                    str(windows_package),
+                    hashlib.sha256(windows_package.read_bytes()).hexdigest(),
+                ),
+            ],
         )
         connection.commit()
 
@@ -6210,9 +6227,8 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
         page = client.get("/skills")
         assert "macOS" in page.text
         assert "Windows" in page.text
-        assert "macOS 与 Windows 共用同一个插件市场 ZIP" in page.text
-        assert "WorkBuddy 内添加本地插件市场" in page.text
-        assert "固定双产物" in page.text
+        assert "macOS 与 Windows 使用两个独立签名插件市场 ZIP" in page.text
+        assert "固定三产物" in page.text
         assert "其他宿主不再规划或展示平台专用版本" in page.text
         assert "平台增强版 · TRAE" not in page.text
         assert "平台插件版 · Kimi Code" not in page.text
@@ -6221,12 +6237,14 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
         assert "自动实机证据" not in page.text
         assert "GitHub Job" not in page.text
         assert "OIDC 签名证明" not in page.text
-        for platform_name in ("macos", "windows"):
-            download = client.get(
-                f"/skills/latest/workbuddy/{platform_name}/download"
-            )
-            assert download.status_code == 200
-            assert download.content == package.read_bytes()
+        macos_download = client.get("/skills/latest/workbuddy/macos/download")
+        windows_download = client.get("/skills/latest/workbuddy/windows/download")
+        assert macos_download.status_code == 200
+        assert windows_download.status_code == 200
+        assert macos_download.content == macos_package.read_bytes()
+        assert windows_download.content == windows_package.read_bytes()
+        assert macos_download.content != windows_download.content
+        assert client.get("/skills/latest/workbuddy/download").status_code == 409
 
 
 def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
@@ -6347,17 +6365,16 @@ def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
             item["id"]: item for item in web_channels.json()["channels"]
         }
         assert web_artifacts["generic"]["download_url"] == "/skills/latest/download"
-        assert set(web_artifacts) == {"generic", "workbuddy"}
-        assert web_artifacts["workbuddy"]["available"] is False
-        assert web_artifacts["workbuddy"]["version"] is None
-        assert web_artifacts["workbuddy"]["download_url"] is None
+        assert set(web_artifacts) == {"generic", "macos", "windows"}
+        assert web_artifacts["macos"]["available"] is False
+        assert web_artifacts["windows"]["available"] is False
         assert client.get("/skills/latest/download").content == generic.read_bytes()
         for path in (
             "/skills/latest/workbuddy/macos/download",
             "/skills/latest/workbuddy/windows/download",
-            "/skills/latest/workbuddy/download",
         ):
             assert client.get(path).status_code == 404
+        assert client.get("/skills/latest/workbuddy/download").status_code == 409
         historical = client.get(
             f"/skills/releases/{windows_release_id}/workbuddy/download"
         )
@@ -6366,7 +6383,7 @@ def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
         page = client.get("/skills")
         assert page.status_code == 200
         assert "打开双端管理器" not in page.text
-        assert "固定双产物" in page.text
+        assert "固定三产物" in page.text
         assert "平台增强版 · TRAE" not in page.text
         assert "平台增强版 · Qoder" not in page.text
         assert "平台增强版 · 通义灵码" not in page.text
@@ -6389,10 +6406,9 @@ def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
         assert channels.json()["schema"] == "jiaotang-skill-channels/v1"
         artifacts = {item["id"]: item for item in channels.json()["channels"]}
         assert artifacts["generic"]["version"] == "1.3.1"
-        assert set(artifacts) == {"generic", "workbuddy"}
-        assert artifacts["workbuddy"]["available"] is False
-        assert artifacts["workbuddy"]["version"] is None
-        assert artifacts["workbuddy"]["download_url"] is None
+        assert set(artifacts) == {"generic", "macos", "windows"}
+        assert artifacts["macos"]["available"] is False
+        assert artifacts["windows"]["available"] is False
 
 
 def test_workbuddy_distribution_revision_is_visible_without_rewriting_content_notes(
@@ -6651,11 +6667,11 @@ def test_selective_macos_release_preserves_only_historical_client_downloads(
         client.cookies.update(login.cookies)
         assert client.get("/skills/latest/download").content == old_generic.read_bytes()
         for path in (
-            "/skills/latest/workbuddy/download",
             "/skills/latest/workbuddy/macos/download",
             "/skills/latest/workbuddy/windows/download",
         ):
             assert client.get(path).status_code == 404
+        assert client.get("/skills/latest/workbuddy/download").status_code == 409
         old_historical = client.get(
             f"/skills/releases/{old_release_id}/workbuddy/download"
         )
@@ -7083,6 +7099,35 @@ def test_admin_all_calls_shows_records_first_and_supports_pagination(tmp_path):
                 for index in range(55)
             ],
         )
+        mcp_rows = []
+        for activity_type, activity_name, count in (
+            ("mcp_connection", "MCP连接检测", 2),
+            ("mcp_tools_list", "工具列表", 3),
+            ("mcp_search", "实际检索", 4),
+            ("mcp_document", "文档读取", 5),
+        ):
+            mcp_rows.extend(
+                (
+                    user_id,
+                    token_id,
+                    "/mcp/",
+                    "POST",
+                    activity_type,
+                    activity_name,
+                    0,
+                    now,
+                )
+                for index in range(count)
+            )
+        connection.executemany(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,?,?)
+            """,
+            mcp_rows,
+        )
         connection.commit()
     with TestClient(module.app) as client:
         login = client.post(
@@ -7094,11 +7139,14 @@ def test_admin_all_calls_shows_records_first_and_supports_pagination(tmp_path):
         first_page = client.get("/admin/health/calls")
         assert first_page.status_code == 200
         assert first_page.text.index("全部调用明细") < first_page.text.index("24小时业务调用")
-        assert "第 1/2 页 · 共 55 条" in first_page.text
+        assert "按用户账号合并多台电脑" in first_page.text
+        assert "</td><td>55</td><td>55</td><td>55</td><td>55</td><td>2</td><td>3</td><td>4</td><td>5</td>" in first_page.text
+        assert "test-token-hash" not in first_page.text
+        assert "第 1/2 页 · 共 69 条" in first_page.text
         assert "/v1/search/54" in first_page.text
         assert 'aria-current="page">1</a>' in first_page.text
         second_page = client.get("/admin/health/calls?page=2")
-        assert "第 2/2 页 · 共 55 条" in second_page.text
+        assert "第 2/2 页 · 共 69 条" in second_page.text
         assert "/v1/search/0" in second_page.text
 
 
@@ -7691,7 +7739,7 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
     assert "等待安全正式版" in skills.text
     assert "data-manual-package-download" not in skills.text
     assert "data-copy-agent-bootstrap" not in access.text
-    assert blocked_download.status_code == 503
+    assert blocked_download.status_code == 409
     assert generic_download.status_code == 200
     assert generic_download.content == generic.read_bytes()
 

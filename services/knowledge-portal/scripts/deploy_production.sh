@@ -514,6 +514,8 @@ unit_names = (
     'jiaotang-kb-backup.service',
     'jiaotang-kb-backup.timer',
     'jiaotang-kb-index-refresh.service',
+    'jiaotang-kb-oss-verify.service',
+    'jiaotang-kb-oss-verify.timer',
     'jiaotang-kb-failure-report@.service',
     'jiaotang-kb-oss-sync.service',
     'jiaotang-kb-oss-sync.timer',
@@ -595,6 +597,8 @@ PY
                 --rollback
         fi
         systemctl daemon-reload
+        systemctl enable --now jiaotang-kb-backup.timer
+        systemctl enable --now jiaotang-kb-oss-verify.timer
         systemctl restart jiaotang-kb
         curl --fail --silent --show-error --retry 10 --retry-delay 2 \
             http://127.0.0.1:8100/health >/dev/null
@@ -625,6 +629,8 @@ PY
     systemctl daemon-reload
     systemctl restart jiaotang-kb
     systemctl enable --now jiaotang-kb-health.timer
+    systemctl enable --now jiaotang-kb-backup.timer
+    systemctl enable --now jiaotang-kb-oss-verify.timer
 
     healthy=0
     for attempt in \$(seq 1 30); do

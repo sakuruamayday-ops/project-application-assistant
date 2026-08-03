@@ -1,0 +1,18 @@
+[Unit]
+Description=Verify Jiaotang signed OSS index authority pointer
+After=network-online.target
+Wants=network-online.target
+OnFailure=jiaotang-kb-failure-report@%n.service
+
+[Service]
+Type=oneshot
+TimeoutStartSec=45min
+EnvironmentFile=/etc/jiaotang-kb-ops.env
+ExecStart=/usr/local/sbin/jiaotang-kb-refresh-index --verify-only
+User=root
+Group=root
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jiaotang-kb /srv/jiaotang/knowledge-index
+NoNewPrivileges=true

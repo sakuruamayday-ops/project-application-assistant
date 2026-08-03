@@ -575,6 +575,31 @@ def test_selective_stage_and_promote_workbuddy_only(tmp_path: Path) -> None:
         ).fetchall() == [("workbuddy",)]
 
 
+def test_selective_stage_rejects_unpaired_platform_package(tmp_path: Path) -> None:
+    database = tmp_path / "portal.db"
+    release_dir = tmp_path / "releases"
+    _, workbuddy = make_packages(
+        tmp_path,
+        tag="V1.5.3",
+        semantic_version="1.5.3",
+    )
+    make_database(database)
+
+    try:
+        MODULE.stage_selective(
+            database,
+            release_dir,
+            {"macos": workbuddy},
+            "1.5.3",
+            "unpaired",
+            "abc123",
+            "https://github.example/releases/V1.5.3",
+        )
+    except ValueError as error:
+        assert "必须同一事务成对发布" in str(error)
+    else:
+        raise AssertionError("unpaired platform package must be rejected")
+
 def test_existing_release_can_add_universal_workbuddy_without_replacing_generic(
     tmp_path: Path,
 ) -> None:

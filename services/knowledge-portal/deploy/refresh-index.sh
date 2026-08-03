@@ -9,7 +9,7 @@ if [[ "${mode}" == "--if-missing" ]]; then
         exit 0
     fi
     mode=""
-elif [[ "${mode}" == "--allow-stale" || "${mode}" == "--rollback" ]]; then
+elif [[ "${mode}" == "--allow-stale" || "${mode}" == "--rollback" || "${mode}" == "--verify-only" ]]; then
     :
 elif [[ -n "${mode}" ]]; then
     echo "未知参数：${mode}" >&2

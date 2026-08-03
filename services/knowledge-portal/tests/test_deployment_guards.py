@@ -294,6 +294,36 @@ def test_index_refresh_streams_transfer_progress_and_has_a_bounded_runtime():
     assert "TimeoutStartSec=45min" in service
 
 
+def test_lightweight_oss_verification_and_backup_timer_survive_deploys():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(
+        encoding="utf-8"
+    )
+    refresh_wrapper = (DEPLOY_DIR / "refresh-index.sh").read_text(
+        encoding="utf-8"
+    )
+    refresh = (SCRIPT_DIR / "refresh_index_from_oss.py").read_text(
+        encoding="utf-8"
+    )
+    verify_service = (
+        DEPLOY_DIR / "jiaotang-kb-oss-verify.service"
+    ).read_text(encoding="utf-8")
+    verify_timer = (
+        DEPLOY_DIR / "jiaotang-kb-oss-verify.timer"
+    ).read_text(encoding="utf-8")
+
+    assert '"--verify-only"' in refresh_wrapper
+    assert "args.verify_only" in refresh
+    assert 'verification_mode": "metadata-only"' in refresh
+    assert "ExecStart=/usr/local/sbin/jiaotang-kb-refresh-index --verify-only" in verify_service
+    assert "OnUnitActiveSec=1h" in verify_timer
+    assert deploy_script.count(
+        "systemctl enable --now jiaotang-kb-backup.timer"
+    ) >= 2
+    assert deploy_script.count(
+        "systemctl enable --now jiaotang-kb-oss-verify.timer"
+    ) >= 2
+
+
 def test_index_sync_uses_one_canonical_manifest_and_candidate_root():
     sync_script = (
         SCRIPT_DIR / "sync_archived_knowledge_to_production.sh"

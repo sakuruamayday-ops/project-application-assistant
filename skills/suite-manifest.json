@@ -4,23 +4,24 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.5.2",
-    "version": "1.5.2",
-    "summary": "V1.5.2 修复 Windows Hook 新消息轮次未重置，并增加 macOS 与 Windows 双平台一键安装入口。",
+    "tag": "V1.5.3",
+    "version": "1.5.3",
+    "summary": "V1.5.3 修复 WorkBuddy Hook 真实误阻断和 Windows 启动失效，补齐管理员用户调用统计、备份定时器恢复与 OSS 轻量校验。",
     "changes": [
-      "WorkBuddy Hook 改为共享状态核心加 macOS、Windows 两个极薄启动适配器，hooks.json 不再承载超长内联 Python。",
-      "Windows 适配器在 Git Bash 中依次选择 py -3、python 和 python3，并把 Hook 事件 JSON 原样从 stdin 转交共享核心。",
-      "每次 UserPromptSubmit 原子生成新的 turn_id、提示摘要和提示信号，并清空上一轮 active_skills。",
-      "同一轮多 Skill 继续累计；下一条用户消息的 active_skill_count 从 1 重新开始。",
-      "激活回执增加 state_origin、prompt_context_ok 和 prompt_sha256_present，可区分真实提示状态与激活兜底状态。",
-      "缺少当前提示上下文时 Stop 失败开放并返回 PROMPT_CONTEXT_UNAVAILABLE、delivery_check_ok=null，不再暗示交付检查通过。",
-      "网站明确提供一键安装 macOS 版和一键安装 Windows 版两个并排入口，不自动识别系统；安装码和下载链接绑定所选平台，误用返回 HTTP 409。",
-      "两个入口继续共用一个 WorkBuddy ZIP、49 项 Skills、业务规则和远程 jiaotang-kb MCP，不复制业务包。",
+      "WorkBuddy 改为 macOS 与 Windows 两个独立签名包，49 项 Skills 和共享 Python 行为核心保持逐字节一致。",
+      "Windows 包使用原生 CMD 启动器，依次选择 py -3、python 和 python3，检查 .workbuddy 与 .codebuddy 活动路径，不依赖 Bash 或 PowerShell。",
+      "明确否定生成报告或正式材料以及只解释、只回答时，Hook 将 formal_business_delivery 设为 false，不再误触发正式交付门禁。",
+      "主业务 Skill、政策四项、同行对比和正式报告章节检查统一以 formal_business_delivery=true 为前提，普通政策答疑不再被误阻断。",
+      "管理员调用统计按用户 ID 合并多台电脑，分别展示今日、7日、30日业务调用和 MCP 连接、工具列表、检索、文档调用及最后活跃时间。",
+      "MCP 连接和 tools/list 独立计数，不计入业务调用；管理员页面不展示完整个人 Token。",
+      "代码部署成功或回滚后都会重新启用备份定时器，避免部署流程停止定时器后未恢复。",
+      "生产环境新增每小时 OSS 签名指针与元数据轻量校验；仅在远端版本变化时下载并执行完整索引验证。",
+      "网站为 macOS 与 Windows 分别下发对应安装包，统一入口不再含糊返回跨平台 ZIP。",
       "本次不修改知识索引；纯代码与 Skills 发布不运行全库扫描。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.2 干净安装、活动路径旧版清理和远程 MCP 连接。",
+      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.3 干净安装、活动路径旧版清理和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -32,13 +33,13 @@
       },
       {
         "target": "macOS WorkBuddy",
-        "status": "候选自动化已验证，正式发布前实机验收",
-        "note": "使用独立 macOS Hook 启动适配器和同一套共享状态核心；须验证新消息重置、同轮累计、49 项 Skills 与 MCP。"
+        "status": "自动化已验证，实机验收发布后补录",
+        "note": "使用独立 macOS 签名包和同一套共享状态核心；发布后补测新消息重置、同轮累计、49 项 Skills 与 MCP。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "候选自动化与 Windows CI 已验证，正式发布前实机验收",
-        "note": "使用独立 Windows Hook 启动适配器；须验证每条新消息 turn_id 更新、上一轮 Skill 不残留、同轮累计和 MCP。"
+        "status": "候选自动化与 Windows CI 已验证，实机验收发布后补录",
+        "note": "使用独立 Windows 签名包和原生 CMD 启动适配器；发布后补测每条新消息 turn_id 更新、上一轮 Skill 不残留、同轮累计和 MCP。"
       }
     ],
     "one_step_installation_protocol": {
@@ -54,7 +55,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "活动搜索路径只保留一个 V1.5.2 jiaotang 市场"
+        "活动搜索路径只保留一个 V1.5.3 jiaotang 市场"
       ],
       "released_adapters": [
         "workbuddy-macos",

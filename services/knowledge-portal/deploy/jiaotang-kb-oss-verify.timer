@@ -1,0 +1,12 @@
+[Unit]
+Description=Hourly Jiaotang signed OSS index authority verification
+
+[Timer]
+OnBootSec=3m
+OnUnitActiveSec=1h
+AccuracySec=5m
+Persistent=true
+RandomizedDelaySec=5m
+
+[Install]
+WantedBy=timers.target

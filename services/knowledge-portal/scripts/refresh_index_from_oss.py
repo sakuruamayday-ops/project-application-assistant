@@ -581,6 +581,14 @@ def main() -> int:
     )
     parser.add_argument("--allow-stale", action="store_true")
     parser.add_argument("--rollback", action="store_true")
+    parser.add_argument(
+        "--verify-only",
+        action="store_true",
+        help=(
+            "只验签OSS current指针、release元数据和对象集；"
+            "当远程release变化时才继续下载并切换"
+        ),
+    )
     args = parser.parse_args()
     index_dir = Path(
         os.environ.get("JIAOTANG_INDEX_DIR", "/srv/jiaotang/knowledge-index")
@@ -659,6 +667,42 @@ def main() -> int:
                 f"额外={sorted(actual_keys - expected_keys)[:10]}"
             )
         release_dir = index_dir / "releases" / release_id
+        local_current = release_id_from_link(index_dir / "current")
+        if (
+            args.verify_only
+            and local_current == release_id
+            and local_generation_metadata_valid(index_dir, release_id)
+            and runtime_binding_mode(index_dir, release_id)
+        ):
+            existing_status: dict[str, object] = {}
+            try:
+                existing_status = load_json(
+                    status_path.read_bytes(),
+                    "本地OSS校验状态",
+                )
+            except (OSError, RuntimeError):
+                existing_status = {}
+            payload = status_payload(
+                index_dir,
+                status="正常",
+                source="OSS签名release轻量巡检",
+                cache_updated=False,
+                pointer_sha256=sha256_bytes(pointer_body),
+            ) | {
+                "object_key": pointer_key,
+                "release_manifest_key": manifest_key,
+                "verification_mode": "metadata-only",
+            }
+            payload["cache_updated_at"] = existing_status.get(
+                "cache_updated_at"
+            ) or payload["checked_at"]
+            write_status(status_path, payload)
+            emit_progress(
+                "server-index-refresh",
+                "completed",
+                item=f"{release_id}:metadata-only",
+            )
+            return 0
         if not local_generation_valid(index_dir, release_id):
             staging = index_dir / "releases" / f".{release_id}.{os.getpid()}.staging"
             require_unused_staging(staging)

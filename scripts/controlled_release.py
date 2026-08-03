@@ -593,6 +593,8 @@ def prepare_ascii_assets(
     names = {
         "generic": f"jiaotang-skills-{tag}.zip",
         "workbuddy": f"jiaotang-skills-{tag}-WorkBuddy.zip",
+        "macos": f"jiaotang-skills-{tag}-macOS-WorkBuddy.zip",
+        "windows": f"jiaotang-skills-{tag}-Windows-WorkBuddy.zip",
     }
     targets: list[Path] = []
     for target_name, source in packages.items():
@@ -814,10 +816,8 @@ def stage_portal(
         ]
     )
     package_flags = " ".join(
-        f"--workbuddy-package "
+        f"--{target}-package "
         f"{shlex.quote(f'{remote_stage}/{package.name}')}"
-        if target != "generic"
-        else f"--generic-package {shlex.quote(f'{remote_stage}/{package.name}')}"
         for target, package in packages.items()
     )
     remote_command = (
@@ -964,6 +964,16 @@ def main() -> None:
         type=Path,
         help="同时适用于macOS和Windows的WorkBuddy插件市场包",
     )
+    parser.add_argument(
+        "--macos-package",
+        type=Path,
+        help="macOS原生Hook入口的WorkBuddy插件市场包",
+    )
+    parser.add_argument(
+        "--windows-package",
+        type=Path,
+        help="Windows原生cmd Hook入口的WorkBuddy插件市场包",
+    )
     parser.add_argument("--gate-report", type=Path)
     parser.add_argument("--release-notes", type=Path)
     parser.add_argument(
@@ -1095,6 +1105,8 @@ def main() -> None:
         for target, package in (
             ("generic", arguments.generic_package),
             ("workbuddy", arguments.workbuddy_package),
+            ("macos", arguments.macos_package),
+            ("windows", arguments.windows_package),
         )
         if package is not None
     }
@@ -1105,6 +1117,11 @@ def main() -> None:
             "受控发布必须提供--generic-package，"
             "用于正式提升前的隔离安装、全量验签和三方哈希门禁"
         )
+    platform_targets = {target for target in packages if target in {"macos", "windows"}}
+    if platform_targets and platform_targets != {"macos", "windows"}:
+        parser.error("macOS与Windows WorkBuddy包必须同一事务成对发布")
+    if platform_targets and "workbuddy" in packages:
+        parser.error("分平台WorkBuddy包不得与旧统一包混合发布")
     if arguments.gate_report is None or arguments.release_notes is None:
         parser.error("发布预检、暂存和提升必须提供门禁报告与发布说明")
     gate_report = arguments.gate_report.resolve()

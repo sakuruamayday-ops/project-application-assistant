@@ -9131,10 +9131,13 @@ def portal_payload(
 def workbuddy_artifact_is_simple_remote_mcp(
     artifact: dict[str, object] | None,
 ) -> bool:
+    target = str((artifact or {}).get("target") or "workbuddy")
+    if target not in {"workbuddy", "macos", "windows"}:
+        return False
     try:
         integrity = validate_release_artifact_for_display(
             artifact,
-            target="workbuddy",
+            target=target,
             require_signature=True,
         )
     except (OSError, ValueError, zipfile.BadZipFile):
@@ -9149,8 +9152,11 @@ def workbuddy_artifact_is_simple_remote_mcp(
 
 def require_installable_workbuddy_artifact(
     artifact: dict[str, object] | None = None,
+    *,
+    platform: str = "",
 ) -> dict[str, object]:
-    selected = artifact or latest_skill_artifact("workbuddy")
+    target = platform if platform in {"macos", "windows"} else "workbuddy"
+    selected = artifact or latest_skill_artifact(target)
     if selected is None:
         raise HTTPException(status_code=503, detail="当前没有可安装的 WorkBuddy 正式包。")
     if not workbuddy_artifact_is_simple_remote_mcp(selected):
@@ -9171,19 +9177,37 @@ def public_release_guidance() -> dict[str, object]:
     candidate = suite.get("release", {})
     candidate = candidate if isinstance(candidate, dict) else {}
     generic = latest_skill_artifact("generic")
-    workbuddy = latest_skill_artifact("workbuddy")
+    macos = latest_skill_artifact("macos")
+    windows = latest_skill_artifact("windows")
+    legacy_workbuddy = latest_skill_artifact("workbuddy")
     generic_version = str((generic or {}).get("version") or "")
-    workbuddy_version = str((workbuddy or {}).get("version") or "")
+    platform_versions = {
+        str((artifact or {}).get("version") or "")
+        for artifact in (macos, windows)
+        if artifact
+    }
+    platform_complete = bool(macos and windows and len(platform_versions) == 1)
+    workbuddy = macos if platform_complete else legacy_workbuddy
+    workbuddy_version = (
+        next(iter(platform_versions))
+        if platform_complete
+        else str((legacy_workbuddy or {}).get("version") or "")
+    )
     candidate_version = str(candidate.get("version") or "")
     generic_available = release_artifact_is_servable(
         generic,
         target="generic",
         require_signature=True,
     )
-    workbuddy_installable = workbuddy_artifact_is_simple_remote_mcp(workbuddy)
+    workbuddy_installable = (
+        workbuddy_artifact_is_simple_remote_mcp(macos)
+        and workbuddy_artifact_is_simple_remote_mcp(windows)
+        if platform_complete
+        else workbuddy_artifact_is_simple_remote_mcp(workbuddy)
+    )
     if workbuddy_installable:
         workbuddy_notice = (
-            f"WorkBuddy 正式包 V{workbuddy_version} 可安装。"
+            f"WorkBuddy macOS/Windows 正式包 V{workbuddy_version} 可安装。"
             "一段指令完成49项Skills安装、远程MCP合并、一次重载和真实工具验收。"
         )
     elif workbuddy_version:
@@ -11351,6 +11375,52 @@ def admin_health_detail(
                 (calls_since_24_hours,),
             ).fetchall()
         }
+        usage_day_start, usage_day_end = assistant_day_bounds()
+        usage_since_7_days = isoformat(utc_now() - timedelta(days=7))
+        usage_since_30_days = isoformat(utc_now() - timedelta(days=30))
+        usage_user_rows = connection.execute(
+            """
+            SELECT users.id,users.username,users.real_name,users.company_name,
+                   users.active,
+                   COUNT(CASE
+                       WHEN api_usage.called_at >= ? AND api_usage.called_at < ?
+                        AND api_usage.counts_toward_usage = 1 THEN 1 END
+                   ) AS calls_today,
+                   COUNT(CASE
+                       WHEN api_usage.called_at >= ?
+                        AND api_usage.counts_toward_usage = 1 THEN 1 END
+                   ) AS calls_7d,
+                   COUNT(CASE
+                       WHEN api_usage.called_at >= ?
+                        AND api_usage.counts_toward_usage = 1 THEN 1 END
+                   ) AS calls_30d,
+                   COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END)
+                       AS business_calls,
+                   COUNT(CASE WHEN api_usage.activity_type = 'mcp_connection' THEN 1 END)
+                       AS mcp_connection,
+                   COUNT(CASE WHEN api_usage.activity_type = 'mcp_tools_list' THEN 1 END)
+                       AS mcp_tools_list,
+                   COUNT(CASE WHEN api_usage.activity_type = 'mcp_search' THEN 1 END)
+                       AS mcp_search,
+                   COUNT(CASE WHEN api_usage.activity_type = 'mcp_document' THEN 1 END)
+                       AS mcp_document,
+                   MAX(api_usage.called_at) AS last_active_at
+            FROM users
+            LEFT JOIN api_usage ON api_usage.user_id = users.id
+            GROUP BY users.id
+            ORDER BY calls_30d DESC,last_active_at DESC,users.id
+            """,
+            (
+                usage_day_start,
+                usage_day_end,
+                usage_since_7_days,
+                usage_since_30_days,
+            ),
+        ).fetchall()
+        usage_users = format_row_datetimes(
+            usage_user_rows,
+            "last_active_at",
+        )
         failed_updates = format_row_datetimes(connection.execute(
             """
             SELECT id, original_name, status, error_message, created_at, completed_at
@@ -11722,6 +11792,7 @@ def admin_health_detail(
             "details": details,
             "deploy_gate": deploy_gate if section == "deploy-gate" else {},
             "recent_calls": recent_calls if section == "calls" else [],
+            "usage_users": usage_users if section == "calls" else [],
             "activity_filter_label": activity_filter_label,
             "activity_description": activity_description,
             "selected_activity": selected_activity,
@@ -12658,15 +12729,21 @@ def pinned_agent_install_artifact(
             enrollment["workbuddy_sha256"],
         )
         if all(pinned_fields):
+            pinned_target = str(enrollment["install_platform"] or "workbuddy")
+            if pinned_target not in {"macos", "windows"}:
+                pinned_target = "workbuddy"
             artifact = {
                 "version": str(enrollment["workbuddy_version"] or ""),
                 "file_name": str(enrollment["workbuddy_file_name"]),
                 "file_path": str(enrollment["workbuddy_file_path"]),
                 "sha256": str(enrollment["workbuddy_sha256"]),
-                "target": "workbuddy",
+                "target": pinned_target,
             }
         else:
-            current = latest_skill_artifact("workbuddy")
+            requested_target = str(enrollment["install_platform"] or "")
+            if requested_target not in {"macos", "windows"}:
+                requested_target = "workbuddy"
+            current = latest_skill_artifact(requested_target)
             if current is None:
                 connection.rollback()
                 raise HTTPException(status_code=503, detail="当前 WorkBuddy 签名包暂不可用。")
@@ -12678,7 +12755,7 @@ def pinned_agent_install_artifact(
                 ),
                 "file_path": str(current.get("file_path") or ""),
                 "sha256": str(current.get("sha256") or ""),
-                "target": "workbuddy",
+                "target": requested_target,
             }
             connection.execute(
                 """
@@ -12721,7 +12798,7 @@ def create_agent_bootstrap_code(
     platform_name = platform.strip().lower()
     if platform_name not in {"macos", "windows"}:
         raise HTTPException(status_code=400, detail="请选择 macOS 版或 Windows 版安装器。")
-    artifact = require_installable_workbuddy_artifact()
+    artifact = require_installable_workbuddy_artifact(platform=platform_name)
     now_value = utc_now()
     now = isoformat(now_value)
     raw_code = "jbe_" + secrets.token_urlsafe(32)
@@ -13575,7 +13652,7 @@ def download_authorized_workbuddy_plugin(
         )
     return validated_release_artifact_download(
         artifact,
-        target="workbuddy",
+        target=str(artifact.get("target") or "workbuddy"),
         require_signature=True,
         filename=str(
             artifact["file_name"]
@@ -15369,15 +15446,9 @@ def web_download_latest_workbuddy_skills(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     del user
-    release = latest_skill_artifact("workbuddy")
-    if release is None:
-        raise HTTPException(status_code=404, detail="尚未发布 WorkBuddy 版本")
-    require_installable_workbuddy_artifact(release)
-    return validated_release_artifact_download(
-        release,
-        target="workbuddy",
-        require_signature=True,
-        filename=f"企业全生命周期助手-V{release['version']}-WorkBuddy.zip",
+    raise HTTPException(
+        status_code=409,
+        detail="WorkBuddy已分为macOS与Windows原生包，请选择当前操作系统。",
     )
 
 
@@ -15389,9 +15460,16 @@ def web_download_latest_workbuddy_platform(
     del user
     if platform_name not in {"macos", "windows"}:
         raise HTTPException(status_code=404, detail="不支持的 WorkBuddy 平台")
-    return RedirectResponse(
-        "/skills/latest/workbuddy/download",
-        status_code=307,
+    platform_pair = latest_workbuddy_platform_pair()
+    release = platform_pair.get(platform_name) if platform_pair else None
+    if release is None:
+        raise HTTPException(status_code=404, detail="尚未发布同版本双平台 WorkBuddy 正式包")
+    require_installable_workbuddy_artifact(release, platform=platform_name)
+    return validated_release_artifact_download(
+        release,
+        target=platform_name,
+        require_signature=True,
+        filename=str(release["file_name"]),
     )
 
 
@@ -15943,7 +16021,7 @@ def validate_release_artifact_for_serving_cached(
     cannot be reused for different bytes without breaking the digest.
     """
     package_path = Path(snapshot_path_value)
-    if target not in {"generic", "workbuddy"}:
+    if target not in {"generic", "workbuddy", "macos", "windows"}:
         raise ValueError("不支持的发布产物类型")
     if (
         not package_path.is_file()
@@ -16540,34 +16618,32 @@ def historical_workbuddy_skill_package(version: str) -> Path:
 
 def workbuddy_artifact(version: str) -> dict[str, object]:
     with closing(database()) as connection:
-        artifact_row = connection.execute(
+        artifact_rows = connection.execute(
             """
             SELECT r.version,a.file_name,a.file_path,a.sha256,a.target
             FROM skill_release_artifacts a
             JOIN skill_releases r ON r.id=a.release_id
             WHERE r.version=? AND a.target IN ('workbuddy','windows','macos')
-            ORDER BY CASE a.target
-                WHEN 'workbuddy' THEN 0
-                WHEN 'windows' THEN 1
-                ELSE 2
-            END
-            LIMIT 1
+            ORDER BY a.target
             """,
             (version,),
-        ).fetchone()
-    artifact_record = dict(artifact_row) if artifact_row is not None else None
-    package_path = (
-        Path(str(artifact_record["file_path"]))
-        if artifact_record
-        else workbuddy_skill_package(version)
+        ).fetchall()
+    artifacts = {str(row["target"]): dict(row) for row in artifact_rows}
+    platform_artifacts = {
+        target: artifacts.get(target)
+        for target in ("macos", "windows")
+    }
+    platform_complete = all(platform_artifacts.values())
+    legacy = artifacts.get("workbuddy")
+    included = bool(platform_complete or legacy)
+    installable = (
+        all(
+            workbuddy_artifact_is_simple_remote_mcp(artifact)
+            for artifact in platform_artifacts.values()
+        )
+        if platform_complete
+        else workbuddy_artifact_is_simple_remote_mcp(legacy)
     )
-    names: set[str] = set()
-    if package_path.is_file():
-        try:
-            with zipfile.ZipFile(package_path) as archive:
-                names = set(archive.namelist())
-        except zipfile.BadZipFile:
-            names = set()
     distribution_revision = None
     try:
         with closing(database()) as connection:
@@ -16583,20 +16659,18 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
             ).fetchone()
     except sqlite3.OperationalError:
         distribution_revision = None
-    included = (
-        any(name.endswith("/.codebuddy-plugin/marketplace.json") for name in names)
-        and any(name.endswith("/.codebuddy-plugin/plugin.json") for name in names)
-    )
-    installable = included and workbuddy_artifact_is_simple_remote_mcp(
-        artifact_record
-    )
     return {
         "id": "workbuddy",
         "name": "WorkBuddy",
         "version": version if included else None,
         "included": included,
         "installable": installable,
-        "download_url": "/skills/latest/workbuddy/download",
+        "download_url": "/skills/latest/workbuddy/macos/download",
+        "download_urls": {
+            "macos": "/skills/latest/workbuddy/macos/download",
+            "windows": "/skills/latest/workbuddy/windows/download",
+        },
+        "platform_specific": bool(platform_complete),
         "distribution_notes_html": (
             render_guide_markdown(str(distribution_revision["release_notes"]))
             if distribution_revision is not None
@@ -16621,10 +16695,40 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
 
 
 def latest_workbuddy_artifact() -> dict[str, object]:
+    macos = latest_skill_artifact("macos")
+    windows = latest_skill_artifact("windows")
+    versions = {
+        str(artifact.get("version") or "")
+        for artifact in (macos, windows)
+        if artifact
+    }
+    if macos and windows and len(versions) == 1:
+        return workbuddy_artifact(next(iter(versions)))
     artifact = latest_skill_artifact("workbuddy")
     if artifact is None:
         return workbuddy_artifact("0.0.0")
     return workbuddy_artifact(str(artifact["version"]))
+
+
+def latest_workbuddy_platform_pair() -> dict[str, dict[str, object]] | None:
+    artifacts = {
+        target: latest_skill_artifact(target)
+        for target in ("macos", "windows")
+    }
+    if not all(artifacts.values()):
+        return None
+    versions = {
+        str(artifact.get("version") or "")
+        for artifact in artifacts.values()
+        if artifact is not None
+    }
+    if len(versions) != 1:
+        return None
+    return {
+        target: artifact
+        for target, artifact in artifacts.items()
+        if artifact is not None
+    }
 
 
 @app.get("/v1/skills/latest", response_model=SkillLatestResponse)
@@ -16653,26 +16757,31 @@ def latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
 
 
 def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
-    release = latest_skill_artifact(target)
+    if target in {"macos", "windows"}:
+        platform_pair = latest_workbuddy_platform_pair()
+        release = platform_pair.get(target) if platform_pair else None
+    else:
+        release = latest_skill_artifact(target)
     if release is None:
         return SkillChannelArtifactResponse(id=target, available=False)
     package_path = Path(str(release["file_path"]))
     if not package_path.is_file():
         return SkillChannelArtifactResponse(id=target, available=False)
-    validation_target = "generic" if target == "generic" else "workbuddy"
+    validation_target = target
     if not release_artifact_is_servable(
         release,
         target=validation_target,
         require_signature=True,
     ):
         return SkillChannelArtifactResponse(id=target, available=False)
-    if target == "workbuddy" and not workbuddy_artifact_is_simple_remote_mcp(release):
+    if target != "generic" and not workbuddy_artifact_is_simple_remote_mcp(release):
         return SkillChannelArtifactResponse(id=target, available=False)
-    download_url = (
-        "/v1/skills/latest/download"
-        if target == "generic"
-        else "/v1/skills/latest/workbuddy/download"
-    )
+    download_url = {
+        "generic": "/v1/skills/latest/download",
+        "workbuddy": "/v1/skills/latest/workbuddy/download",
+        "macos": "/v1/skills/latest/workbuddy/macos/download",
+        "windows": "/v1/skills/latest/workbuddy/windows/download",
+    }[target]
     return SkillChannelArtifactResponse(
         id=target,
         available=True,
@@ -16694,7 +16803,8 @@ def latest_skill_channels(
     return SkillChannelsResponse(
         channels=[
             skill_channel_artifact("generic"),
-            skill_channel_artifact("workbuddy"),
+            skill_channel_artifact("macos"),
+            skill_channel_artifact("windows"),
         ]
     )
 
@@ -16706,16 +16816,17 @@ def web_skill_channels(
     del user
     channels = [
         skill_channel_artifact("generic"),
-        skill_channel_artifact("workbuddy"),
+        skill_channel_artifact("macos"),
+        skill_channel_artifact("windows"),
     ]
     for channel in channels:
         if not channel.available:
             continue
-        channel.download_url = (
-            "/skills/latest/download"
-            if channel.id == "generic"
-            else "/skills/latest/workbuddy/download"
-        )
+        channel.download_url = {
+            "generic": "/skills/latest/download",
+            "macos": "/skills/latest/workbuddy/macos/download",
+            "windows": "/skills/latest/workbuddy/windows/download",
+        }[channel.id]
     return SkillChannelsResponse(channels=channels)
 
 
@@ -16738,15 +16849,9 @@ def download_latest_workbuddy_skills(
     user: Annotated[sqlite3.Row, Depends(require_api_user)],
 ):
     del user
-    release = latest_skill_artifact("workbuddy")
-    if release is None:
-        raise HTTPException(status_code=404, detail="尚未发布 WorkBuddy 版本")
-    require_installable_workbuddy_artifact(release)
-    return validated_release_artifact_download(
-        release,
-        target="workbuddy",
-        require_signature=True,
-        filename=f"企业全生命周期助手-V{release['version']}-WorkBuddy.zip",
+    raise HTTPException(
+        status_code=409,
+        detail="WorkBuddy已分为macOS与Windows原生包，请选择当前操作系统。",
     )
 
 
@@ -16758,9 +16863,16 @@ def download_latest_workbuddy_platform_skills(
     del user
     if platform_name not in {"macos", "windows"}:
         raise HTTPException(status_code=404, detail="未知 WorkBuddy 客户端")
-    return RedirectResponse(
-        "/v1/skills/latest/workbuddy/download",
-        status_code=307,
+    platform_pair = latest_workbuddy_platform_pair()
+    release = platform_pair.get(platform_name) if platform_pair else None
+    if release is None:
+        raise HTTPException(status_code=404, detail="尚未发布同版本双平台 WorkBuddy 正式包")
+    require_installable_workbuddy_artifact(release, platform=platform_name)
+    return validated_release_artifact_download(
+        release,
+        target=platform_name,
+        require_signature=True,
+        filename=str(release["file_name"]),
     )
 
 

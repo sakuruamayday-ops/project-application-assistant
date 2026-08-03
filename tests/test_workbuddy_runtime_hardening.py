@@ -26,9 +26,8 @@ RELEASE_MANAGER = Path(
 REQUIRED_RELEASE_MANAGER_SCRIPTS = (
     "workbuddy_preference_bridge.py",
     "workbuddy_behavior_hook.py",
-    "workbuddy_hook_launcher.sh",
     "workbuddy_hook_macos.sh",
-    "workbuddy_hook_windows.sh",
+    "workbuddy_hook_windows.cmd",
     "package_skill_release.py",
     "package_workbuddy_suite.py",
 )
@@ -147,7 +146,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         SIGNING_KEY.is_file() and PUBLIC_KEY.is_file(),
         "发布签名密钥不可用，跳过WorkBuddy市场包构建回归",
     )
-    def test_packager_emits_only_cross_platform_marketplace_package(self):
+    def test_packager_emits_windows_native_marketplace_package(self):
         source_skill = (
             Path(__file__).resolve().parents[1]
             / "skills/enterprise-profile"
@@ -203,6 +202,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 plugin_name="jiaotang-regression-skills",
                 marketplace_name="jiaotang-regression",
                 smoke_skill="enterprise-profile",
+                platform="windows",
             )
             stdout = io.StringIO()
 
@@ -239,6 +239,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             )
             self.assertNotIn("installer", payload)
             self.assertNotIn("installers", payload)
+            self.assertEqual(payload["platform"], "windows")
             archive = Path(payload["archive"])
             self.assertTrue(archive.is_file())
             with zipfile.ZipFile(archive) as bundle:
@@ -252,13 +253,12 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 ).decode("utf-8")
             self.assertFalse(
                 any(
-                    name.endswith((".command", ".ps1"))
-                    or (
-                        name.endswith(".cmd")
-                        and "/plugins/" not in name
-                    )
+                    name.endswith((".command", ".ps1", ".sh"))
                     for name in names
                 )
+            )
+            self.assertTrue(
+                any(name.endswith("/scripts/workbuddy_hook_windows.cmd") for name in names)
             )
             self.assertIn("WorkBuddy 应用内完成", guide)
             self.assertIn("/plugin", guide)
@@ -405,7 +405,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             },
         }
         receipt = BEHAVIOR.audit_delivery_receipt(
-            prompt="请按政策形成专项报告。",
+            prompt="请按政策形成报告并完成专项交付。",
             answer="N/A：未生成交付PDF；未运行品牌审计通过。",
             active_skills=[{"skill": "sample-primary"}],
             contract=contract,
