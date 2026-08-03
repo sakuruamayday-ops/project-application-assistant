@@ -63,6 +63,9 @@ def test_server_managed_private_template_hooks_survive_public_deploys():
 
 def test_deploy_verifies_signed_index_binding_without_refreshing_index():
     service = (DEPLOY_DIR / "jiaotang-kb.service").read_text(encoding="utf-8")
+    deployment_service = (
+        DEPLOY_DIR / "jiaotang-kb-application-deploy@.service"
+    ).read_text(encoding="utf-8")
     transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(
         encoding="utf-8"
     )
@@ -83,6 +86,15 @@ def test_deploy_verifies_signed_index_binding_without_refreshing_index():
     assert "/srv/jiaotang/skill-releases" not in writable_paths
     assert "/var/backups/jiaotang-kb" not in writable_paths
     assert "/srv/jiaotang/index-snapshots" not in writable_paths
+    deployment_writable_paths = next(
+        line
+        for line in deployment_service.splitlines()
+        if line.startswith("ReadWritePaths=")
+    ).split("=", 1)[1].split()
+    assert "/etc" in deployment_writable_paths
+    assert "/etc/jiaotang-kb-ops.env" not in deployment_writable_paths
+    assert "/etc/jiaotang-kb-app.env" not in deployment_writable_paths
+    assert "replaces both environment files atomically" in deployment_service
     assert 'if [[ "${mode}" == "--if-missing" ]]' in refresh_wrapper
     assert "EnvironmentFile=/etc/jiaotang-kb-ops.env" in refresh_service
     verifier = "scripts/verify_index_release_binding.py"
