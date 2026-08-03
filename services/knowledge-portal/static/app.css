@@ -41,6 +41,8 @@ textarea { font: inherit; }
   min-height: 54px;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 16px 24px;
   color: #aaa397;
   border-top: 1px solid rgba(202, 169, 105, .2);
@@ -59,6 +61,18 @@ textarea { font: inherit; }
 .site-compliance-footer a:focus-visible {
   color: #ead9b2;
   text-decoration: underline;
+}
+
+.site-police-filing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.site-police-filing img {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 }
 
