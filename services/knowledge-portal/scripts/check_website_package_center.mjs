@@ -9,8 +9,9 @@ const template = read("templates/skill_center.html");
 const portalScript = read("static/portal.js");
 for (const required of [
   "下载通用包",
-  "下载 WorkBuddy 包",
-  "固定双产物",
+  "下载 macOS 包",
+  "下载 Windows 包",
+  "固定三产物",
   "其他宿主不再规划或展示平台专用版本",
   'data-agent-platform="macos"',
   'data-agent-platform="windows"',
@@ -27,6 +28,7 @@ for (const forbidden of [
   'data-platform-package="lingma"',
   'data-platform-package="kimi-code"',
   'data-platform-package="cherry-studio"',
+  "下载 WorkBuddy 包",
 ]) {
   if (template.includes(forbidden)) {
     throw new Error(`网站安装包下载中心仍包含已停用的平台入口：${forbidden}`);
@@ -41,5 +43,5 @@ for (const required of [
   }
 }
 console.log(
-  "Website package center gate: generic + WorkBuddy core packages with explicit macOS/Windows install entries",
+  "Website package center gate: generic + native macOS/Windows WorkBuddy packages with explicit install entries",
 );
