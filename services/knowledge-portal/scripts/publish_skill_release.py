@@ -579,17 +579,24 @@ def _validate_workbuddy_integrity(
     }:
         raise ValueError("WorkBuddy 最小行为 Hook 事件范围不合规")
     hook_commands = json.dumps(hooks, ensure_ascii=False).casefold()
-    windows_adapter = f"{plugin_prefix}scripts/workbuddy_hook_windows.cmd"
-    windows_bridge = f"{plugin_prefix}scripts/workbuddy_hook_windows.sh"
+    windows_adapter = f"{plugin_prefix}scripts/workbuddy_hook_windows.ps1"
+    windows_legacy = {
+        f"{plugin_prefix}scripts/workbuddy_hook_windows.cmd",
+        f"{plugin_prefix}scripts/workbuddy_hook_windows.sh",
+    }
     macos_adapter = f"{plugin_prefix}scripts/workbuddy_hook_macos.sh"
     launcher = f"{plugin_prefix}scripts/workbuddy_hook_launcher.sh"
     if target == "windows":
         if plugin.get("platform") != "windows":
             raise ValueError("Windows包未声明Windows平台")
-        if windows_adapter not in file_names or windows_bridge not in file_names:
-            raise ValueError("Windows包缺少宿主Bash兼容桥或原生.cmd Hook入口")
-        if macos_adapter in file_names or launcher in file_names:
-            raise ValueError("Windows包混入macOS Hook适配器")
+        if windows_adapter not in file_names:
+            raise ValueError("Windows包缺少独立PowerShell行为Hook")
+        if (
+            windows_legacy & file_names
+            or macos_adapter in file_names
+            or launcher in file_names
+        ):
+            raise ValueError("Windows包混入旧桥接链或macOS Hook适配器")
         if any(
             marker in hook_commands
             for marker in (
@@ -597,20 +604,30 @@ def _validate_workbuddy_integrity(
                 "/d /s /c",
                 "if exist",
                 "python3 -c",
-                "powershell",
+                "workbuddy_hook_windows.sh",
+                "workbuddy_hook_windows.cmd",
+                "workbuddy_behavior_hook.py",
+                "executionpolicy",
+                "bypass",
             )
         ):
-            raise ValueError("Windows hooks.json仍内联CMD条件或动态解释器命令")
-        if "bash" not in hook_commands or "workbuddy_hook_windows.sh" not in hook_commands:
-            raise ValueError("Windows hooks.json未进入宿主Bash兼容桥")
+            raise ValueError("Windows hooks.json仍使用旧桥接链或权限绕过")
+        if (
+            "powershell.exe" not in hook_commands
+            or "workbuddy_hook_windows.ps1" not in hook_commands
+        ):
+            raise ValueError("Windows hooks.json未进入独立PowerShell行为Hook")
     elif target == "macos":
         if plugin.get("platform") != "macos":
             raise ValueError("macOS包未声明macOS平台")
         if macos_adapter not in file_names or launcher not in file_names:
             raise ValueError("macOS包缺少shell Hook适配器")
-        if windows_adapter in file_names or windows_bridge in file_names:
+        if windows_adapter in file_names or windows_legacy & file_names:
             raise ValueError("macOS包混入Windows Hook适配器")
-        if "cmd.exe" in hook_commands or ".cmd" in hook_commands:
+        if any(
+            marker in hook_commands
+            for marker in ("cmd.exe", ".cmd", "powershell.exe", ".ps1")
+        ):
             raise ValueError("macOS hooks.json混入Windows入口")
     skills = suite.get("skills")
     expected_skills = [f"./skills/{name}" for name in skills]

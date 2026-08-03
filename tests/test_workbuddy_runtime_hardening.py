@@ -27,7 +27,7 @@ REQUIRED_RELEASE_MANAGER_SCRIPTS = (
     "workbuddy_preference_bridge.py",
     "workbuddy_behavior_hook.py",
     "workbuddy_hook_macos.sh",
-    "workbuddy_hook_windows.cmd",
+    "workbuddy_hook_windows.ps1",
     "package_skill_release.py",
     "package_workbuddy_suite.py",
 )
@@ -257,25 +257,26 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 ).decode("utf-8")
             self.assertFalse(
                 any(
-                    name.endswith((".command", ".ps1"))
+                    name.endswith(".command")
                     for name in names
                 )
             )
             self.assertFalse(
+                any(name.endswith((".sh", ".cmd")) for name in names)
+            )
+            self.assertTrue(
                 any(
-                    name.endswith(".sh")
-                    and not name.endswith("/scripts/workbuddy_hook_windows.sh")
+                    name.endswith("/scripts/workbuddy_hook_windows.ps1")
                     for name in names
                 )
             )
-            self.assertTrue(
-                any(name.endswith("/scripts/workbuddy_hook_windows.cmd") for name in names)
-            )
-            self.assertTrue(
-                any(name.endswith("/scripts/workbuddy_hook_windows.sh") for name in names)
-            )
-            self.assertIn("workbuddy_hook_windows.sh", hooks)
-            self.assertNotIn("cmd.exe /d /s /c", hooks.casefold())
+            self.assertIn("powershell.exe", hooks.casefold())
+            self.assertIn("workbuddy_hook_windows.ps1", hooks)
+            self.assertNotIn("workbuddy_hook_windows.sh", hooks)
+            self.assertNotIn("workbuddy_hook_windows.cmd", hooks)
+            self.assertNotIn("python", hooks.casefold())
+            self.assertNotIn("executionpolicy", hooks.casefold())
+            self.assertNotIn("bypass", hooks.casefold())
             self.assertIn("WorkBuddy 应用内完成", guide)
             self.assertIn("/plugin", guide)
             self.assertIn("plugins/marketplaces/jiaotang", guide)
@@ -387,6 +388,27 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             "skills.project-feasibility.7",
             missing_template["missing_requirement_ids"],
         )
+
+    def test_behavior_hook_clause_local_formal_delivery_matrix(self):
+        cases = (
+            ("不要生成报告，只解释条件", False),
+            ("不要只解释，直接生成报告", True),
+            ("先解释条件，确认后再生成", False),
+            ("解释完以后直接生成报告", True),
+            ("“生成报告”是什么意思？", False),
+            ("给我生成政府项目可行性报告", True),
+            ("报告不用太长，生成简版", True),
+            ("只列材料清单，不生成文件", False),
+            ("如果需要，可以生成报告", False),
+            ("If needed, 以后请生成 PDF。", False),
+            ("现在直接输出 PDF", True),
+        )
+        for prompt, expected in cases:
+            with self.subTest(prompt=prompt):
+                self.assertIs(
+                    BEHAVIOR.formal_delivery_intent(prompt, {}),
+                    expected,
+                )
 
     def test_behavior_hook_requires_primary_role_and_classifies_all_49_skills(self):
         contract = json.loads(
