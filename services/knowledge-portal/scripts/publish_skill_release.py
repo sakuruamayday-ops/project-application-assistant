@@ -31,6 +31,7 @@ from release_transaction import (  # noqa: E402
     STATE_RANK,
     acquire_release_lease,
     monitor_release_transaction,
+    supersede_failed_release_transaction,
     transition_release_transaction,
     verify_transaction_files,
 )
@@ -1667,6 +1668,7 @@ def main() -> None:
             "promote-artifact",
             "lease-acquire",
             "lease-monitor",
+            "lease-supersede-failed",
             "lease-transition",
         ),
         required=True,
@@ -1688,6 +1690,7 @@ def main() -> None:
     parser.add_argument("--lease-credential-file", type=Path)
     parser.add_argument("--lease-credential-stdin", action="store_true")
     parser.add_argument("--transaction-sha256", default="")
+    parser.add_argument("--superseded-transaction-sha256", default="")
     parser.add_argument("--transaction-state", default="")
     parser.add_argument("--transaction-evidence-file", type=Path)
     parser.add_argument(
@@ -1732,6 +1735,37 @@ def main() -> None:
                 public_key_text=public_key_text,
                 holder_id=holder_id,
                 lease_token=lease_token,
+                ttl_seconds=arguments.lease_ttl_seconds,
+            )
+    elif arguments.mode == "lease-supersede-failed":
+        if (
+            (arguments.lease_credential_file is None and not arguments.lease_credential_stdin)
+            or not arguments.superseded_transaction_sha256
+            or arguments.transaction_evidence_file is None
+        ):
+            parser.error(
+                "lease-supersede-failed必须提供原租约凭证、旧事务哈希和替换证据"
+            )
+        verification, signature_payload, public_key_text = (
+            _load_verified_transaction(arguments)
+        )
+        holder_id, lease_token = _load_lease_credential(arguments)
+        evidence = json.loads(
+            arguments.transaction_evidence_file.read_text(encoding="utf-8")
+        )
+        if not isinstance(evidence, dict):
+            raise RuntimeError("替换失败事务证据根节点必须是对象")
+        with sqlite3.connect(arguments.database) as connection:
+            connection.row_factory = sqlite3.Row
+            result = supersede_failed_release_transaction(
+                connection,
+                verification=verification,
+                signature_payload=signature_payload,
+                public_key_text=public_key_text,
+                previous_transaction_sha256=arguments.superseded_transaction_sha256,
+                holder_id=holder_id,
+                lease_token=lease_token,
+                evidence=evidence,
                 ttl_seconds=arguments.lease_ttl_seconds,
             )
     elif arguments.mode == "lease-transition":

@@ -541,6 +541,145 @@ def acquire_release_lease(
     return result
 
 
+def supersede_failed_release_transaction(
+    connection: sqlite3.Connection,
+    *,
+    verification: dict[str, Any],
+    signature_payload: dict[str, Any],
+    public_key_text: str,
+    previous_transaction_sha256: str,
+    holder_id: str,
+    lease_token: str,
+    evidence: dict[str, Any],
+    ttl_seconds: int = DEFAULT_LEASE_TTL_SECONDS,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Replace an early failed transaction without erasing its audit trail."""
+    if ttl_seconds < 60 or ttl_seconds > 7 * 24 * 60 * 60:
+        raise RuntimeError("发布租约有效期必须在60秒至7天之间")
+    required_evidence = {
+        "reason": lambda value: isinstance(value, str) and bool(value.strip()),
+        "github_prerelease_removed": lambda value: value is True,
+        "portal_release_absent": lambda value: value is True,
+    }
+    if any(not check(evidence.get(key)) for key, check in required_evidence.items()):
+        raise RuntimeError("替换失败事务缺少旧预发布撤销、门户无记录或原因证据")
+
+    manifest = verification["manifest"]
+    version = str(manifest.get("version") or "")
+    replacement_sha = str(verification["manifest_sha256"])
+    if not version or replacement_sha == previous_transaction_sha256:
+        raise RuntimeError("替换事务必须是同版本的不同签名事务")
+    current = _utc_now(now)
+    expires = current + timedelta(seconds=ttl_seconds)
+    token_hash = _token_hash(lease_token)
+    ensure_release_transaction_tables(connection)
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        connection.row_factory = sqlite3.Row
+        row = connection.execute(
+            "SELECT * FROM release_transaction_leases WHERE version=?",
+            (version,),
+        ).fetchone()
+        if row is None:
+            raise RuntimeError("待替换的失败发布事务不存在")
+        if str(row["transaction_sha256"]) != previous_transaction_sha256:
+            raise RuntimeError("待替换事务哈希与服务器记录不一致")
+        if str(row["state"]) != "failed":
+            raise RuntimeError("只有明确失败的发布事务可以被替换")
+        if str(row["last_success_state"]) not in {"leased", "github_staged"}:
+            raise RuntimeError("门户已进入暂存或发布阶段，禁止替换签名事务")
+        if (
+            str(row["holder_id"]) != holder_id
+            or str(row["lease_token_sha256"]) != token_hash
+        ):
+            raise RuntimeError("只有原失败事务租约持有者可以执行替换")
+
+        for table in (
+            "skill_releases",
+            "skill_release_stages",
+            "skill_release_stage_artifacts",
+            "skill_release_artifact_stages",
+        ):
+            exists = connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                (table,),
+            ).fetchone()
+            if exists and connection.execute(
+                f"SELECT 1 FROM {table} WHERE version=? LIMIT 1",
+                (version,),
+            ).fetchone():
+                raise RuntimeError("门户已有该版本记录，禁止替换签名事务")
+
+        _record_event(
+            connection,
+            version=version,
+            transaction_sha256=previous_transaction_sha256,
+            holder_id=holder_id,
+            event_type="transaction-superseded",
+            state="failed",
+            detail={
+                "replacement_transaction_sha256": replacement_sha,
+                "evidence": evidence,
+            },
+            now=current,
+        )
+        replacement_evidence = {
+            "supersedes": {
+                "transaction_sha256": previous_transaction_sha256,
+                **evidence,
+            }
+        }
+        connection.execute(
+            """
+            UPDATE release_transaction_leases
+            SET transaction_sha256=?,manifest_json=?,signature_json=?,
+                publisher_public_key=?,publisher_fingerprint=?,state='leased',
+                last_success_state='leased',lease_acquired_at=?,
+                lease_renewed_at=?,lease_expires_at=?,evidence_json=?,
+                completed_at=NULL,updated_at=?
+            WHERE version=? AND transaction_sha256=?
+            """,
+            (
+                replacement_sha,
+                canonical_json_bytes(manifest).decode("utf-8"),
+                json.dumps(signature_payload, ensure_ascii=False, sort_keys=True),
+                public_key_text.strip(),
+                str(verification["publisher_fingerprint"]),
+                current.isoformat(),
+                current.isoformat(),
+                expires.isoformat(),
+                json.dumps(replacement_evidence, ensure_ascii=False, sort_keys=True),
+                current.isoformat(),
+                version,
+                previous_transaction_sha256,
+            ),
+        )
+        _record_event(
+            connection,
+            version=version,
+            transaction_sha256=replacement_sha,
+            holder_id=holder_id,
+            event_type="lease-acquired-after-supersede",
+            state="leased",
+            detail={"previous_transaction_sha256": previous_transaction_sha256},
+            now=current,
+        )
+        connection.commit()
+    except Exception:
+        if connection.in_transaction:
+            connection.rollback()
+        raise
+    result = monitor_release_transaction(
+        connection,
+        version=version,
+        observer_id=holder_id,
+        now=current,
+    )
+    result.update({"status": "superseded", "mode": "writer"})
+    return result
+
+
 def transition_release_transaction(
     connection: sqlite3.Connection,
     *,
