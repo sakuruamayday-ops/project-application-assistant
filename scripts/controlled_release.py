@@ -1417,7 +1417,6 @@ def main() -> None:
                     "release_url": release_url,
                     "isolated_skill_acceptance": installation_acceptance,
                     "portal": portal_result,
-                    "delivery": delivery,
                     "release_transaction": completed,
                 })
             )

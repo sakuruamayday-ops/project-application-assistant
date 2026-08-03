@@ -39,6 +39,12 @@ def test_remote_release_commands_use_current_runtime_slot() -> None:
     assert "/opt/jiaotang-kb/.venv/bin/python" not in source
 
 
+def test_published_receipt_does_not_reference_removed_delivery_state() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+
+    assert '"delivery": delivery' not in source
+
+
 def fake_gate_attestation(
     gate: Path,
     monkeypatch: pytest.MonkeyPatch,
