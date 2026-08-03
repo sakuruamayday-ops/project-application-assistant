@@ -4113,10 +4113,13 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
 
         access = client.get("/access")
         assert "一键安装" in access.text
-        assert "data-copy-agent-bootstrap" in access.text
+        assert access.text.count("data-copy-agent-bootstrap") >= 2
+        assert 'data-agent-platform="macos"' in access.text
+        assert 'data-agent-platform="windows"' in access.text
         skills = client.get("/skills")
         assert skills.status_code == 200
         assert "一键安装" in skills.text
+        assert skills.text.count("data-copy-agent-bootstrap") >= 2
         assert "只替换" in skills.text
         assert "knowledge_service_status" in skills.text
         assert "data-copy-agent-binding" not in skills.text
@@ -4125,24 +4128,57 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
         assert "设备签名验证" not in skills.text
         first = client.post(
             "/agent-bootstrap-codes",
-            data={"csrf_token": user["csrf_token"]},
+            data={"csrf_token": user["csrf_token"], "platform": "macos"},
         )
+        assert first.status_code == 200
+        assert first.json()["platform"] == "macos"
+        assert first.json()["hook_adapter"] == "workbuddy-macos"
+        prompt = first.json()["prompt"]
+        assert "macOS Hook 启动适配器" in prompt
+        assert "`~/.workbuddy/mcp.json`" in prompt
+        assert "`~/.workbuddy/.mcp.json`" in prompt
+        assert r"%USERPROFILE%\.workbuddy" not in prompt
+        assert "Windows Hook 启动适配器" not in prompt
+        enrollment_code = re.search(
+            r"/v1/agent-install/(jbe_[A-Za-z0-9_-]+)/workbuddy/download",
+            prompt,
+        ).group(1)
+        protocol = client.get(f"/v1/agent-install/{enrollment_code}")
+        assert protocol.status_code == 200
+        assert protocol.json()["platform"] == {
+            "id": "macos",
+            "label": "macOS",
+            "hook_adapter": "workbuddy-macos",
+            "pinned": True,
+        }
+        assert protocol.json()["installation"]["platform_adapter"] == (
+            "workbuddy-macos"
+        )
+        mismatch = client.get(
+            f"/v1/agent-install/{enrollment_code}?platform=windows"
+        )
+        assert mismatch.status_code == 409
         second = client.post(
             "/agent-bootstrap-codes",
-            data={"csrf_token": user["csrf_token"]},
+            data={"csrf_token": user["csrf_token"], "platform": "windows"},
         )
-        assert first.status_code == second.status_code == 200
+        assert second.status_code == 200
+        assert second.json()["platform"] == "windows"
+        assert second.json()["hook_adapter"] == "workbuddy-windows"
+        windows_prompt = second.json()["prompt"]
+        assert "Windows Hook 启动适配器" in windows_prompt
+        assert r"`%USERPROFILE%\.workbuddy\mcp.json`" in windows_prompt
+        assert r"`%USERPROFILE%\.workbuddy\.mcp.json`" in windows_prompt
+        assert "`~/.workbuddy" not in windows_prompt
+        assert "macOS Hook 启动适配器" not in windows_prompt
         assert first.headers["cache-control"] == "no-store"
         assert first.json()["phase"] == "install_ready"
-        prompt = first.json()["prompt"]
         assert "V1.5.0" in prompt
         assert "49 项 Skills" in prompt
         assert "只替换当前用户配置中的 `mcpServers.jiaotang-kb`" in prompt
         assert "保留所有其他 MCP 条目" in prompt
-        assert r"%USERPROFILE%\.workbuddy\mcp.json" in prompt
-        assert "`~/.workbuddy/mcp.json`" in prompt
-        assert "文件名都是不带点前缀的 `mcp.json`" in prompt
-        assert "`.workbuddy/.mcp.json`" in prompt
+        assert "文件名是不带点前缀的 `mcp.json`" in prompt
+        assert "`~/.workbuddy/.mcp.json`" in prompt
         assert "禁止读取、修改或覆盖" in prompt
         assert "只合并 `jiaotang-kb`" in prompt
         assert "plugin-backups/jiaotang-<旧版本>-<时间戳>" in prompt
@@ -4151,7 +4187,7 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
         assert "移入系统回收站" in prompt
         assert "不得永久删除" in prompt
         assert "同时检查当前用户目录下" in prompt
-        assert "`.workbuddy` 与 `.codebuddy`" in prompt
+        assert "`~/.workbuddy` 与 `~/.codebuddy`" in prompt
         assert "不含 `.mcp.json`、`bin` 或 `mcp`" in prompt
         assert "手动点击信任" in prompt
         assert "不得尝试绕过宿主安全确认" in prompt
@@ -4202,7 +4238,7 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
         assert set(grouped_skills) == set(suite["skills"])
         first_token = re.search(r"jtk_[A-Za-z0-9_-]+", prompt).group(0)
         second_token = re.search(
-            r"jtk_[A-Za-z0-9_-]+", second.json()["prompt"]
+            r"jtk_[A-Za-z0-9_-]+", windows_prompt
         ).group(0)
         assert first_token == second_token
 
@@ -7935,7 +7971,7 @@ def test_portal_displays_only_latest_release(tmp_path, monkeypatch):
                 module.isoformat(now),
             ),
         )
-        for offset, version in enumerate(("1.4.9", "1.5.0", "1.5.1")):
+        for offset, version in enumerate(("1.5.0", "1.5.1", "1.5.2")):
             package = tmp_path / f"skills-{version}.zip"
             package.write_bytes(f"skills-{version}".encode())
             connection.execute(
@@ -7965,7 +8001,8 @@ def test_portal_displays_only_latest_release(tmp_path, monkeypatch):
         page = client.get("/portal")
 
     assert page.status_code == 200
-    assert "企业全生命周期助手 V1.5.1" in page.text
+    assert "企业全生命周期助手 V1.5.2" in page.text
+    assert "企业全生命周期助手 V1.5.1" not in page.text
     assert "企业全生命周期助手 V1.5.0" not in page.text
     assert "企业全生命周期助手 V1.4.9" not in page.text
 

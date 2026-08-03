@@ -72,13 +72,21 @@ try {
   assert.equal(await installPane.locator("[data-agent-install-status]").count(), 1, "安装页必须展示当前 MCP 状态");
   assert.match(await installPane.locator("[data-agent-connection-label]").innerText(), /等待 MCP 连接|MCP 已连接|MCP 最近活跃|安装验收已通过/);
   assert.equal(await installPane.locator("[data-agent-success-guidance]").isHidden(), true, "尚未连接时不应提前显示完成引导");
+  const macInstallButton = installPane.locator('[data-copy-agent-bootstrap][data-agent-platform="macos"]');
+  const windowsInstallButton = installPane.locator('[data-copy-agent-bootstrap][data-agent-platform="windows"]');
+  assert.equal(await macInstallButton.count(), 1, "安装页必须只提供一个 macOS 一键安装入口");
+  assert.equal(await windowsInstallButton.count(), 1, "安装页必须只提供一个 Windows 一键安装入口");
+  assert.match(await macInstallButton.innerText(), /一键安装 macOS 版/);
+  assert.match(await windowsInstallButton.innerText(), /一键安装 Windows 版/);
   const desktop = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
     columns: getComputedStyle(document.querySelector(".skill-install-grid")).gridTemplateColumns,
+    platformColumns: getComputedStyle(document.querySelector(".agent-install-actions")).gridTemplateColumns,
   }));
   assert.equal(desktop.documentWidth, desktop.viewportWidth, "桌面安装流程不得横向溢出");
   assert.equal(desktop.columns.split(" ").length, 2, "桌面安装与验收应为双栏");
+  assert.equal(desktop.platformColumns.split(" ").length, 2, "macOS 与 Windows 一键安装按钮应桌面并排");
   if (process.env.JIAOTANG_INSTALL_DESKTOP_SCREENSHOT) {
     await page.screenshot({path: process.env.JIAOTANG_INSTALL_DESKTOP_SCREENSHOT, fullPage: true});
   }
@@ -90,9 +98,11 @@ try {
     documentWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
     columns: getComputedStyle(document.querySelector(".skill-install-grid")).gridTemplateColumns,
+    platformColumns: getComputedStyle(document.querySelector(".agent-install-actions")).gridTemplateColumns,
   }));
   assert.equal(mobile.documentWidth, mobile.viewportWidth, "390px 安装流程不得横向溢出");
   assert.equal(mobile.columns.split(" ").length, 1, "移动端安装与验收应为单栏");
+  assert.equal(mobile.platformColumns.split(" ").length, 1, "移动端两个平台按钮应改为单列，避免文字挤压");
   if (process.env.JIAOTANG_INSTALL_MOBILE_SCREENSHOT) {
     await page.screenshot({path: process.env.JIAOTANG_INSTALL_MOBILE_SCREENSHOT, fullPage: true});
   }

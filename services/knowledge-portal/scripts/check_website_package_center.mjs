@@ -6,11 +6,16 @@ const portalRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 const read = (relative) => fs.readFileSync(path.join(portalRoot, relative), "utf8");
 
 const template = read("templates/skill_center.html");
+const portalScript = read("static/portal.js");
 for (const required of [
   "下载通用包",
   "下载 WorkBuddy 包",
   "固定双产物",
   "其他宿主不再规划或展示平台专用版本",
+  'data-agent-platform="macos"',
+  'data-agent-platform="windows"',
+  "一键安装 macOS 版",
+  "一键安装 Windows 版",
 ]) {
   if (!template.includes(required)) {
     throw new Error(`网站安装包下载中心缺少必要内容：${required}`);
@@ -27,6 +32,14 @@ for (const forbidden of [
     throw new Error(`网站安装包下载中心仍包含已停用的平台入口：${forbidden}`);
   }
 }
+for (const required of [
+  'form.set("platform", platform)',
+  '["macos", "windows"].includes(platform)',
+]) {
+  if (!portalScript.includes(required)) {
+    throw new Error(`网站一键安装入口未绑定用户选择的平台：${required}`);
+  }
+}
 console.log(
-  "Website package center gate: only generic + WorkBuddy packages are presented",
+  "Website package center gate: generic + WorkBuddy core packages with explicit macOS/Windows install entries",
 );

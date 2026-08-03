@@ -14,7 +14,7 @@
 | 包型 | 内容 | 用户选择 |
 |---|---|---|
 | 通用 Skills 包 | 49 项正式 Skills 与服务端发布完整性材料 | 宿主支持标准 Agent Skills 时使用 |
-| WorkBuddy 跨平台包 | 49 项 Skills、插件清单、最小行为 Hook、必要参考资料和业务脚本 | 由门户一段完整指令在 macOS 或 Windows WorkBuddy 中安装 |
+| WorkBuddy 跨平台包 | 49 项 Skills、插件清单、最小行为 Hook、必要参考资料和业务脚本 | 门户提供 macOS 与 Windows 两个并列入口，分别生成对应平台的安装适配指令 |
 
 WorkBuddy 包已经包含通用 Skills。用户只安装一个包，不叠加安装。
 
@@ -23,9 +23,9 @@ WorkBuddy 包已经包含通用 Skills。用户只安装一个包，不叠加安
 | 平台 | 官方能力基线 | 网站状态 |
 |---|---|---|
 | 通用 Agent Skills | `SKILL.md` 目录或导入机制 | 正式可下载 |
-| WorkBuddy | 本地插件市场、最小行为 Hook、用户级远程 HTTP MCP | macOS 与 Windows 共用一个跨平台包和一次复制粘贴流程 |
+| WorkBuddy | 本地插件市场、最小行为 Hook、用户级远程 HTTP MCP | macOS 与 Windows 共用一个核心包；网站提供两个独立按钮，安装码与选定平台绑定 |
 
-正式发布矩阵固定为以上两个产物，不增加其他平台专用版本、占位 ZIP 或适配状态卡片。
+正式发布矩阵固定为以上两个核心产物，不复制 49 项 Skills 或业务规则。macOS 与 Windows 只分离网站安装入口、路径协议和 Hook 启动适配层。
 
 ## 版本号授权
 

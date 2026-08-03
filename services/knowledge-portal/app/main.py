@@ -6521,6 +6521,7 @@ def init_database() -> None:
                 result_reported_at TEXT,
                 result_ip TEXT NOT NULL DEFAULT '',
                 operation TEXT NOT NULL DEFAULT 'install',
+                install_platform TEXT NOT NULL DEFAULT 'unified',
                 source_workbuddy_version TEXT,
                 source_workbuddy_sha256 TEXT,
                 target_binding_id INTEGER,
@@ -7053,6 +7054,7 @@ def init_database() -> None:
             "result_reported_at": "TEXT",
             "result_ip": "TEXT NOT NULL DEFAULT ''",
             "operation": "TEXT NOT NULL DEFAULT 'install'",
+            "install_platform": "TEXT NOT NULL DEFAULT 'unified'",
             "source_workbuddy_version": "TEXT",
             "source_workbuddy_sha256": "TEXT",
             "target_binding_id": "INTEGER",
@@ -12391,7 +12393,30 @@ def build_agent_bootstrap_prompt(
     release_version: str,
     mcp_url: str,
     raw_token: str,
+    platform: str,
 ) -> str:
+    platform_profiles = {
+        "macos": {
+            "label": "macOS",
+            "adapter": "macOS Hook 启动适配器",
+            "host_roots": "`~/.workbuddy` 与 `~/.codebuddy`",
+            "mcp_path": "`~/.workbuddy/mcp.json`",
+            "managed_mcp_path": "`~/.workbuddy/.mcp.json`",
+        },
+        "windows": {
+            "label": "Windows",
+            "adapter": "Windows Hook 启动适配器",
+            "host_roots": (
+                "`%USERPROFILE%\\.workbuddy` 与 "
+                "`%USERPROFILE%\\.codebuddy`"
+            ),
+            "mcp_path": "`%USERPROFILE%\\.workbuddy\\mcp.json`",
+            "managed_mcp_path": "`%USERPROFILE%\\.workbuddy\\.mcp.json`",
+        },
+    }
+    profile = platform_profiles.get(platform)
+    if profile is None:
+        raise ValueError("不支持的 WorkBuddy 安装平台")
     configuration = json.dumps(
         remote_mcp_configuration(mcp_url, raw_token),
         ensure_ascii=False,
@@ -12399,11 +12424,14 @@ def build_agent_bootstrap_prompt(
     )
     return (
         "请在当前 WorkBuddy 中完成企业全生命周期助手的一次安装或覆盖升级。"
+        f"本次选择的是 {profile['label']} 版，只能使用{profile['adapter']}。"
+        f"开始前先确认当前操作系统为 {profile['label']}；如果不匹配，立即停止并"
+        "提示用户回到门户选择另一个安装按钮，不得改用其他平台的路径或启动方式。"
         f"目标版本为 V{release_version}，安装包下载地址如下：\n\n"
         f"{plugin_download_url}\n\n"
         "请一次性完成以下动作：使用 WorkBuddy 内置插件管理安装或替换焦糖插件，"
         "确认 49 项 Skills 可识别并启用包内最小行为约束 Hook。安装前同时检查当前用户目录下"
-        " `.workbuddy` 与 `.codebuddy` 的 plugins、plugins/marketplaces 以及宿主已登记的本地市场，"
+        f" {profile['host_roots']} 的 plugins、plugins/marketplaces 以及宿主已登记的本地市场，"
         "识别所有焦糖旧版、重复副本和旧名称副本；不得扫描或改动无关插件。先把命中的旧版移出"
         "活动插件搜索路径，保存到当前宿主目录下 `plugin-backups/jiaotang-<旧版本>-<时间戳>`，"
         "该备份目录必须位于 plugins 与 plugins/marketplaces 之外。活动搜索路径中最终只能保留一个"
@@ -12412,8 +12440,8 @@ def build_agent_bootstrap_prompt(
         "设备密钥或 bootstrap 配置。不要把新文件直接覆盖解压到旧插件目录；先把旧插件目录移动到"
         "上述搜索路径外的可恢复备份，再安装干净的新目录，并确认新插件根目录不含 `.mcp.json`、`bin` 或"
         " `mcp` 旧本地启动器残留。随后只替换当前用户配置中的 `mcpServers.jiaotang-kb`，保留所有"
-        "其他 MCP 条目。Windows 必须写入 `%USERPROFILE%\\.workbuddy\\mcp.json`，macOS 必须写入"
-        " `~/.workbuddy/mcp.json`；文件名都是不带点前缀的 `mcp.json`。`.workbuddy/.mcp.json` 是"
+        f"其他 MCP 条目。本次只能写入 {profile['mcp_path']}；文件名是不带点前缀的 "
+        f"`mcp.json`。{profile['managed_mcp_path']} 是"
         " WorkBuddy 托管的代理配置，禁止读取、修改或覆盖。目标 `mcp.json` 不存在时创建，存在时"
         "解析原 JSON 后只合并 `jiaotang-kb`，不得重建整个 `mcpServers`。完整远程 MCP 配置如下：\n\n"
         f"{configuration}\n\n"
@@ -12600,6 +12628,7 @@ def pinned_agent_install_artifact(
         enrollment = connection.execute(
             """
             SELECT id,expires_at,consumed_at,confirmed_at,binding_authorized_at,
+                   install_platform,
                    workbuddy_version,workbuddy_file_name,
                    workbuddy_file_path,workbuddy_sha256
             FROM agent_enrollment_codes
@@ -12685,9 +12714,13 @@ def pinned_agent_install_artifact(
 def create_agent_bootstrap_code(
     request: Request,
     csrf_token: Annotated[str, Form()],
+    platform: Annotated[str, Form(min_length=5, max_length=7)],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     validate_csrf(user, csrf_token)
+    platform_name = platform.strip().lower()
+    if platform_name not in {"macos", "windows"}:
+        raise HTTPException(status_code=400, detail="请选择 macOS 版或 Windows 版安装器。")
     artifact = require_installable_workbuddy_artifact()
     now_value = utc_now()
     now = isoformat(now_value)
@@ -12708,8 +12741,9 @@ def create_agent_bootstrap_code(
             INSERT INTO agent_enrollment_codes(
                 user_id,code_hash,created_at,expires_at,
                 confirmed_at,confirmed_ip,binding_authorized_at,binding_authorized_ip,
-                workbuddy_version,workbuddy_file_name,workbuddy_file_path,workbuddy_sha256
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                install_platform,workbuddy_version,workbuddy_file_name,
+                workbuddy_file_path,workbuddy_sha256
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 int(user["id"]),
@@ -12720,6 +12754,7 @@ def create_agent_bootstrap_code(
                 confirmed_ip,
                 now,
                 confirmed_ip,
+                platform_name,
                 str(artifact.get("version") or ""),
                 str(
                     artifact.get("file_name")
@@ -12733,6 +12768,7 @@ def create_agent_bootstrap_code(
     public_endpoint = str(request.base_url).rstrip("/")
     plugin_download_url = (
         f"{public_endpoint}/v1/agent-install/{quote(raw_code)}/workbuddy/download"
+        f"?platform={platform_name}"
     )
     raw_token = ensure_personal_access_token(
         int(user["id"]),
@@ -12745,8 +12781,12 @@ def create_agent_bootstrap_code(
                 release_version=str(artifact.get("version") or ""),
                 mcp_url=f"{public_endpoint}/mcp/",
                 raw_token=raw_token,
+                platform=platform_name,
             ),
             "phase": "install_ready",
+            "platform": platform_name,
+            "platform_label": "macOS" if platform_name == "macos" else "Windows",
+            "hook_adapter": f"workbuddy-{platform_name}",
             "release_version": str(artifact.get("version") or ""),
             "expires_in_seconds": AGENT_BOOTSTRAP_MINUTES * 60,
         },
@@ -13189,8 +13229,13 @@ def agent_install_protocol(
     enrollment, artifact = pinned_agent_install_artifact(enrollment_code)
     public_endpoint = str(request.base_url).rstrip("/")
     install_authorized = bool(enrollment["confirmed_at"])
-    del platform
-    platform_name = "unified"
+    platform_name = str(enrollment.get("install_platform") or "unified")
+    requested_platform = platform.strip().lower()
+    if requested_platform and requested_platform != platform_name:
+        raise HTTPException(
+            status_code=409,
+            detail="本安装指令已绑定其他操作系统，请回到门户重新选择。",
+        )
     result_url = f"{public_endpoint}/v1/agent-install-result/{quote(enrollment_code)}"
     plugin_download_url = (
         f"{public_endpoint}/v1/agent-install/{quote(enrollment_code)}"
@@ -13209,8 +13254,18 @@ def agent_install_protocol(
                 "sha256": str(artifact["sha256"]),
                 "verification_scope": "server_release_channel",
             },
+            "platform": {
+                "id": platform_name,
+                "label": {
+                    "macos": "macOS",
+                    "windows": "Windows",
+                }.get(platform_name, "旧版通用入口"),
+                "hook_adapter": f"workbuddy-{platform_name}",
+                "pinned": platform_name in {"macos", "windows"},
+            },
             "installation": {
                 "mode": "one_copy_workbuddy_prompt",
+                "platform_adapter": f"workbuddy-{platform_name}",
                 "skill_count": 49,
                 "hook_mode": "behavior_only_fail_open",
                 "mcp_configuration_mode": "user_remote_streamable_http",
@@ -13503,11 +13558,21 @@ def agent_install_protocol(
 
 
 @app.get("/v1/agent-install/{enrollment_code}/workbuddy/download")
-def download_authorized_workbuddy_plugin(enrollment_code: str):
-    _, artifact = pinned_agent_install_artifact(
+def download_authorized_workbuddy_plugin(
+    enrollment_code: str,
+    platform: str = "",
+):
+    enrollment, artifact = pinned_agent_install_artifact(
         enrollment_code,
         require_confirmed=True,
     )
+    platform_name = str(enrollment.get("install_platform") or "unified")
+    requested_platform = platform.strip().lower()
+    if requested_platform and requested_platform != platform_name:
+        raise HTTPException(
+            status_code=409,
+            detail="本下载地址已绑定其他操作系统，请回到门户重新选择。",
+        )
     return validated_release_artifact_download(
         artifact,
         target="workbuddy",
@@ -13519,6 +13584,7 @@ def download_authorized_workbuddy_plugin(enrollment_code: str):
         headers={
             "Cache-Control": "private, no-store",
             "X-Jiaotang-Package-SHA256": str(artifact["sha256"]),
+            "X-Jiaotang-Install-Platform": platform_name,
         },
     )
 

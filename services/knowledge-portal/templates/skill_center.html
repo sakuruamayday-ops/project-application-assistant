@@ -105,17 +105,18 @@
   </div>
 
   <div id="skills-panel-install" class="skill-section-pane" data-skill-section-pane="install" role="tabpanel" aria-labelledby="skills-tab-install" hidden>
-    <div class="skill-pane-heading"><span class="skill-kicker">ONE-STEP SETUP</span><h2>安装与连接</h2><p>网页暂未提供 WorkBuddy 深链，因此“一键安装”表示只复制粘贴一次；同一段指令完成 Skills、最小 Hook、远程 MCP 和验收。</p><a class="button secondary" href="/skills/diagnostics">打开无敏感信息一键诊断</a></div>
+    <div class="skill-pane-heading"><span class="skill-kicker">ONE-STEP SETUP</span><h2>安装与连接</h2><p>网页暂未提供 WorkBuddy 深链，因此“一键安装”表示只复制粘贴一次；请按当前电脑选择 macOS 版或 Windows 版。</p><a class="button secondary" href="/skills/diagnostics">打开无敏感信息一键诊断</a></div>
     <div class="skill-install-grid">
       <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
         <span class="skill-card-index">01 / 一键安装</span>
         <h3>复制完整指令给 WorkBuddy</h3>
         {% if release_guidance.workbuddy_installable %}
-        <p>安装或覆盖升级 49 项 Skills，启用失败放行的最小行为 Hook，只替换 <code>mcpServers.jiaotang-kb</code> 并保留其他 MCP，随后只重载一次。</p>
+        <p>两个入口共用 49 项 Skills、业务规则和 <code>mcpServers.jiaotang-kb</code>；操作系统路径与 Hook 启动适配指令相互独立。</p>
         <div class="agent-install-actions">
-          <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>一键安装</span><small>复制完整指令给 WorkBuddy</small></button>
+          <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap data-agent-platform="macos"><span>一键安装 macOS 版</span><small>复制 macOS 启动适配指令</small></button>
+          <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap data-agent-platform="windows"><span>一键安装 Windows 版</span><small>复制 Windows 启动适配指令</small></button>
         </div>
-        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到 WorkBuddy；只有 49 项 Skills、tools/list 和 knowledge_service_status 全部通过才算完成。</p>
+        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">请只选择当前电脑对应的版本；只有 49 项 Skills、tools/list 和 knowledge_service_status 全部通过才算完成。</p>
         {% else %}
         <p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>
         <span class="button secondary is-disabled">新安装已暂停</span>

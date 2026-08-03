@@ -262,9 +262,11 @@ const watchAgentUpgradeStatus = (card) => {
   poll();
 };
 
-const loadAgentInstallReview = async (card, {copyPrompt = false} = {}) => {
+const loadAgentInstallReview = async (card, {copyPrompt = false, platform = ""} = {}) => {
+  if (!["macos", "windows"].includes(platform)) throw new Error("请选择 macOS 版或 Windows 版。");
   const form = new URLSearchParams();
   form.set("csrf_token", card?.dataset.csrfToken || "");
+  form.set("platform", platform);
   const response = await fetch("/agent-bootstrap-codes", {
     method: "POST",
     headers: {"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
@@ -374,26 +376,29 @@ document.addEventListener("click", async (event) => {
   if (agentBootstrapButton) {
     const card = agentBootstrapButton.closest("[data-agent-bootstrap]");
     const status = card?.querySelector("[data-agent-copy-status]");
+    const platform = agentBootstrapButton.dataset.agentPlatform || "";
+    const platformLabel = platform === "macos" ? "macOS" : platform === "windows" ? "Windows" : "";
+    const installButtons = Array.from(card?.querySelectorAll("[data-copy-agent-bootstrap]") || []);
     const originalMarkup = agentBootstrapButton.innerHTML;
-    agentBootstrapButton.disabled = true;
+    installButtons.forEach((button) => { button.disabled = true; });
     agentBootstrapButton.classList.add("is-loading");
     status?.classList.remove("is-error");
-    agentBootstrapButton.innerHTML = "<span>正在生成安全配置…</span><small>请稍候</small>";
+    agentBootstrapButton.innerHTML = `<span>正在生成 ${platformLabel} 配置…</span><small>请稍候</small>`;
     try {
-      const payload = await loadAgentInstallReview(card, {copyPrompt: true});
+      const payload = await loadAgentInstallReview(card, {copyPrompt: true, platform});
       agentBootstrapButton.classList.remove("is-loading");
-      agentBootstrapButton.innerHTML = "<span>完整指令已复制</span><small>粘贴到 WorkBuddy 执行</small>";
+      agentBootstrapButton.innerHTML = `<span>${platformLabel} 指令已复制</span><small>粘贴到 WorkBuddy 执行</small>`;
       agentBootstrapButton.classList.add("copy-success");
-      if (status) status.textContent = "请粘贴到 WorkBuddy；安装、远程 MCP 合并、一次重载和验收会在同一轮完成。";
+      if (status) status.textContent = `请粘贴到 ${platformLabel} 版 WorkBuddy；安装、远程 MCP 合并、一次重载和验收会在同一轮完成。`;
       watchAgentInstallStatus(card);
       window.setTimeout(() => {
         agentBootstrapButton.innerHTML = originalMarkup;
         agentBootstrapButton.classList.remove("copy-success");
-        agentBootstrapButton.disabled = false;
+        installButtons.forEach((button) => { button.disabled = false; });
       }, 4000);
     } catch (error) {
       agentBootstrapButton.innerHTML = originalMarkup;
-      agentBootstrapButton.disabled = false;
+      installButtons.forEach((button) => { button.disabled = false; });
       agentBootstrapButton.classList.remove("is-loading");
       if (status) {
         status.classList.add("is-error");

@@ -4,34 +4,23 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.5.1",
-    "version": "1.5.1",
-    "summary": "V1.5.1 修复正式交付的主业务Skill识别、模板误触发和Stop Hook机器回执，并合并门户性能优化。",
+    "tag": "V1.5.2",
+    "version": "1.5.2",
+    "summary": "V1.5.2 修复 Windows Hook 新消息轮次未重置，并增加 macOS 与 Windows 双平台一键安装入口。",
     "changes": [
-      "一键安装同时检查 .workbuddy 与 .codebuddy，把旧版、旧名称和重复副本移出活动搜索路径，在搜索路径外保留一个回滚快照，验收后其余副本移入系统回收站。",
-      "Skill 与 Hook 根目录发现只接受固定 jiaotang 市场，不再使用会命中备份市场的通配搜索。",
-      "专精特新前期评估只保留2026政策：核验硬门槛和平台质量分，删除历史四维评分、内部22项百分制、统计局折算与三档总分引擎。",
-      "public_list_search 兼容缺少 subject_type 列的历史名单表，不再因旧结构直接失败。",
-      "项目计算验证器新增公式语义复算，拒绝字段齐全但结果伪造的计算；高企三年成长性口径和2026至2029重新认定时间线固化为回归。",
-      "国产替代、补短板和填空白的外部型号、客户证明与第三方检测只作为增强证据，不再被设为企业自述成立前提。",
-      "插件级 UserPromptSubmit 与 Stop Hook 使用同一套跨平台根目录发现逻辑，不再单独依赖宿主环境变量。",
-      "Skill 激活成功回执新增 root_source、state_persisted、active_skills_after 和 active_skill_count，可直接证明激活状态已经持久化，无需依赖宿主未公开的 active_skills 查询接口。",
-      "49 项生成后 Skill 已在默认 WorkBuddy 市场布局中逐项执行激活回归，最终同一会话状态精确记录 49 项。",
-      "继续保持 49 项 Skill 首字节 YAML frontmatter、真实名称原生加载、正式业务零 Skill 激活阻断和提示词只存摘要的既有边界。",
-      "继续保持 49 项 Skills、用户级远程 HTTP MCP、自动填入个人 Token、只替换 jiaotang-kb、保留其他 MCP 和一次重载的简化安装边界。",
-      "管理员单页导航恢复为项目算法包、API 与用户、Skills、健康看板的稳定页面顺序，并修复移动端导航滚动定位偏移。",
-      "门户 MCP 状态改为依据当前用户的实际 MCP 调用和安装验收记录，不再依赖已经停用的设备绑定状态。",
-      "安装成功后新增插件包评价与常用指令入口，覆盖专精特新前期评估和后期体检、高新申请书、标准撰写、企业分析三种交付与金税四期分析报告。",
-      "网站助手默认采用动态 12 轮、复杂任务最多 16 轮，并同时执行总时长、工具调用次数和连续无进展停止条件，不使用无限循环。",
-      "49 项 Skill 全量划分为主业务、辅助业务、质量闸门和基础设施四类；正式业务交付必须激活主业务 Skill，辅助 Skill 与质量闸门不能替代。",
-      "删除交付合同中的报告、分析、材料、比较等泛词触发，改为项目可行性、企业全景、金税四期、专精特新前评后检等业务特征组合。",
-      "Stop Hook 成功和失败均返回主业务 Skill、辅助 Skill、质量闸门、适用合同、通过项、缺失项和错误代码等机器可读字段。",
-      "N/A、不适用、未生成、未运行和未通过等否定表述不能冒充交付要求已完成。",
-      "门户缓存不可变目录、知识索引统计和签名产物展示校验，代码下载与正式发布仍逐次执行完整快照、哈希和签名校验。"
+      "WorkBuddy Hook 改为共享状态核心加 macOS、Windows 两个极薄启动适配器，hooks.json 不再承载超长内联 Python。",
+      "Windows 适配器在 Git Bash 中依次选择 py -3、python 和 python3，并把 Hook 事件 JSON 原样从 stdin 转交共享核心。",
+      "每次 UserPromptSubmit 原子生成新的 turn_id、提示摘要和提示信号，并清空上一轮 active_skills。",
+      "同一轮多 Skill 继续累计；下一条用户消息的 active_skill_count 从 1 重新开始。",
+      "激活回执增加 state_origin、prompt_context_ok 和 prompt_sha256_present，可区分真实提示状态与激活兜底状态。",
+      "缺少当前提示上下文时 Stop 失败开放并返回 PROMPT_CONTEXT_UNAVAILABLE、delivery_check_ok=null，不再暗示交付检查通过。",
+      "网站明确提供一键安装 macOS 版和一键安装 Windows 版两个并排入口，不自动识别系统；安装码和下载链接绑定所选平台，误用返回 HTTP 409。",
+      "两个入口继续共用一个 WorkBuddy ZIP、49 项 Skills、业务规则和远程 jiaotang-kb MCP，不复制业务包。",
+      "本次不修改知识索引；纯代码与 Skills 发布不运行全库扫描。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户复制一段完整指令给 WorkBuddy，一次完成 V1.5.1 干净安装、活动路径旧版清理和远程 MCP 连接。",
+      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.2 干净安装、活动路径旧版清理和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -43,13 +32,13 @@
       },
       {
         "target": "macOS WorkBuddy",
-        "status": "跨平台通用包",
-        "note": "已通过默认 .workbuddy 与兼容 .codebuddy 市场布局的自动化回归，49 项生成后 Skill 均能在无宿主根目录变量时完成激活持久化；发布后仍执行一次 macOS WorkBuddy 黑箱复验。"
+        "status": "候选自动化已验证，正式发布前实机验收",
+        "note": "使用独立 macOS Hook 启动适配器和同一套共享状态核心；须验证新消息重置、同轮累计、49 项 Skills 与 MCP。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "结构与 CI 已验证，待发布后实机验收",
-        "note": "根目录发现仅使用 Path.home 等跨平台路径能力且保持同一 ZIP；结构与 CI 已验证，Windows WorkBuddy 实机激活仍待发布后复验。"
+        "status": "候选自动化与 Windows CI 已验证，正式发布前实机验收",
+        "note": "使用独立 Windows Hook 启动适配器；须验证每条新消息 turn_id 更新、上一轮 Skill 不残留、同轮累计和 MCP。"
       }
     ],
     "one_step_installation_protocol": {
@@ -65,10 +54,11 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "活动搜索路径只保留一个 V1.5.1 jiaotang 市场"
+        "活动搜索路径只保留一个 V1.5.2 jiaotang 市场"
       ],
       "released_adapters": [
-        "workbuddy"
+        "workbuddy-macos",
+        "workbuddy-windows"
       ]
     },
     "rollback": [

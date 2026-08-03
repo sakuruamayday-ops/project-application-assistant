@@ -25,6 +25,10 @@ RELEASE_MANAGER = Path(
 )
 REQUIRED_RELEASE_MANAGER_SCRIPTS = (
     "workbuddy_preference_bridge.py",
+    "workbuddy_behavior_hook.py",
+    "workbuddy_hook_launcher.sh",
+    "workbuddy_hook_macos.sh",
+    "workbuddy_hook_windows.sh",
     "package_skill_release.py",
     "package_workbuddy_suite.py",
 )
@@ -427,9 +431,12 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             BEHAVIOR.atomic_json(
                 state_path,
                 {
-                    "schema_version": 2,
+                    "schema_version": 3,
                     "session_id": "session-success",
                     "turn_id": "turn-success",
+                    "state_origin": "user_prompt_submit",
+                    "prompt_context_ok": True,
+                    "prompt_sha256": "abc",
                     "prompt_signals": {
                         "formal_business_delivery": True,
                         "business_domain": True,
@@ -454,7 +461,15 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     "last_assistant_message": "正式材料已经完成。",
                 },
             ), contextlib.redirect_stdout(output):
-                self.assertEqual(BEHAVIOR.stop_event(data_root, plugin_root), 0)
+                self.assertEqual(
+                    BEHAVIOR.stop_event(
+                        data_root,
+                        plugin_root,
+                        "workbuddy-marketplace",
+                        "workbuddy-macos",
+                    ),
+                    0,
+                )
 
             receipt = json.loads(output.getvalue())
             self.assertTrue(receipt["delivery_check_ok"])
@@ -1251,10 +1266,12 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             state_path.write_text(
                 json.dumps(
                     {
-                        "schema_version": 2,
+                        "schema_version": 3,
                         "session_id": "session-1",
                         "turn_id": "turn-1",
-                        "prompt_sha256": "",
+                        "state_origin": "user_prompt_submit",
+                        "prompt_context_ok": True,
+                        "prompt_sha256": "abc",
                         "prompt_signals": {},
                         "active_skills": [],
                         "status": "pending",
@@ -1406,10 +1423,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 json.dumps({"name": "plugin", "version": "9.9.0"}),
                 encoding="utf-8",
             )
-            shutil.copy2(
-                RELEASE_MANAGER / "workbuddy_behavior_hook.py",
-                plugin_root / "scripts/workbuddy_behavior_hook.py",
-            )
+            PACKAGER.deploy_workbuddy_behavior_runtime(plugin_root)
             command = PACKAGER.workbuddy_behavior_hooks("plugin")["hooks"][
                 "UserPromptSubmit"
             ][0]["hooks"][0]["command"]

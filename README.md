@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.5.1"><img src="https://img.shields.io/badge/Release-V1.5.1-C9A760?style=for-the-badge" alt="Release V1.5.1"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.5.2"><img src="https://img.shields.io/badge/Release-V1.5.2-C9A760?style=for-the-badge" alt="Release V1.5.2"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.5.1.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
+  <a href="docs/releases/V1.5.2.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -42,7 +42,7 @@
 
 ### 团队成员
 
-登录[团队门户](https://zshjiaotang.cn/)，进入「连接我的 Agent」，点击“一键安装”，把网站生成的一段完整指令粘贴给 WorkBuddy。该指令同时完成49项Skills安装或覆盖、最小行为Hook、远程MCP合并、一次重载和状态验收。
+登录[团队门户](https://zshjiaotang.cn/)，进入「连接我的 Agent」，按电脑系统点击“一键安装 macOS 版”或“一键安装 Windows 版”，把网站生成的一段完整指令粘贴给 WorkBuddy。该指令同时完成49项Skills安装或覆盖、最小行为Hook、远程MCP合并、一次重载和状态验收。
 
 ### GitHub 下载
 
@@ -56,11 +56,11 @@
 
 WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启动器、bootstrap、设备登记、钥匙串或DPAPI；用户侧不执行签名审查和插件目录哈希检查。手工配置页自动复用或生成当前登录用户的个人Token并填入完整远程HTTP MCP配置。
 
-V1.5.1 是当前对外发布的唯一最新版本。一键安装会把旧版和重复副本移出活动插件搜索路径，在搜索路径外保留一个回滚快照，并在验收后把其余旧副本移入系统回收站，避免旧 Hook 被再次选中。
+V1.5.2 是当前对外发布的唯一最新版本。它修复 Windows 新消息未可靠重建 Hook 轮次的问题；网站提供 macOS 与 Windows 两个明确入口，但两端仍使用同一个 ZIP、49项Skills、业务规则和远程MCP。
 
 ### WorkBuddy 平台说明
 
-WorkBuddy的系统差异由同一个插件市场包处理。安装完成标准统一为：49项Skills可识别，`tools/list`出现`knowledge_search`、`knowledge_document`、`knowledge_service_status`，并实际调用状态工具返回`connected: true`。
+WorkBuddy的系统差异由包内两个极薄 Hook 启动适配器处理。安装完成标准统一为：49项Skills可识别，新消息轮次不继承上一轮Skill，`tools/list`出现`knowledge_search`、`knowledge_document`、`knowledge_service_status`，并实际调用状态工具返回`connected: true`。
 
 ## 安全边界
 
@@ -90,7 +90,7 @@ WorkBuddy的系统差异由同一个插件市场包处理。安装完成标准�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.5.1 发布说明](docs/releases/V1.5.1.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.5.2 发布说明](docs/releases/V1.5.2.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -107,8 +107,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.5.1` | 网站、GitHub Release 和用户可见版本 |
-| 组件版本 | `1.5.1` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.5.2` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.5.2` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界

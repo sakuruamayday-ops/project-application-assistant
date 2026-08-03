@@ -148,17 +148,18 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
       </section>{% endif %}
 
       {% if single_page or active_page == 'access' %}<section id="api-access" class="section-block">
-        <div class="section-heading"><div><p class="eyebrow">Access Center</p><h2>连接我的 Agent</h2></div><p>点击一次，复制一段完整指令给 WorkBuddy。</p></div>
+        <div class="section-heading"><div><p class="eyebrow">Access Center</p><h2>连接我的 Agent</h2></div><p>根据电脑系统选择对应按钮，复制完整指令给 WorkBuddy。</p></div>
         {% if release_guidance.workbuddy_installable %}
         <article class="panel agent-bootstrap-card" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
           <div class="agent-bootstrap-copy">
             <span class="file-tab">ONE-STEP SETUP</span>
             <h3>一键安装 Skills 并连接知识库</h3>
-            <p>同一段指令会完成 49 项 Skills 安装或覆盖升级、最小行为 Hook 启用、远程 MCP 合并、一次重载和状态验收。</p>
+            <p>macOS 与 Windows 分别使用独立启动适配指令；两端共用 49 项 Skills、业务规则和远程 MCP。</p>
             <div class="button-row compact agent-install-actions">
-              <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap><span>一键安装</span><small>复制完整指令给 WorkBuddy</small></button>
+              <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap data-agent-platform="macos"><span>一键安装 macOS 版</span><small>复制 macOS 启动适配指令</small></button>
+              <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap data-agent-platform="windows"><span>一键安装 Windows 版</span><small>复制 Windows 启动适配指令</small></button>
             </div>
-            <p class="agent-copy-status" data-agent-copy-status aria-live="polite">复制后粘贴到 WorkBuddy；安装结果以 49 项 Skills、tools/list 和 knowledge_service_status 为准。</p>
+            <p class="agent-copy-status" data-agent-copy-status aria-live="polite">请只选择当前电脑对应的版本；安装结果以 49 项 Skills、tools/list 和 knowledge_service_status 为准。</p>
             <div class="agent-connection-summary is-{{ agent_connection_status.state }}" data-agent-install-status aria-live="polite">
               <i></i><div><strong data-agent-connection-label>{{ agent_connection_status.label }}</strong><small data-agent-connection-detail>{{ agent_connection_status.detail }}</small></div>
             </div>
