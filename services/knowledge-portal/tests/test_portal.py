@@ -6931,6 +6931,8 @@ def test_mcp_search_uses_personal_bearer_token(tmp_path):
         }
         assert "authoritative_list_search" in tool_names
         assert "three_first_analysis" in tool_names
+        assert "recognition_search" in tool_names
+        assert "enterprise_lifecycle_decision" in tool_names
         assert "three_first_directory_diff" not in tool_names
         assert "three_first_product_match" not in tool_names
         response = mcp_request(

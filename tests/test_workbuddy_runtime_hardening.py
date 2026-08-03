@@ -316,6 +316,62 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             [],
         )
 
+    def test_behavior_hook_formal_delivery_negation_and_policy_qa_regressions(self):
+        contract = json.loads(
+            (REPOSITORY / "skills/delivery-contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        negated = BEHAVIOR.prompt_signals(
+            "不要生成报告，只解释申报条件",
+            contract,
+        )
+        self.assertFalse(negated["formal_business_delivery"])
+        self.assertEqual(
+            BEHAVIOR.audit_delivery_completion(
+                prompt="",
+                answer="这里只解释通常条件。",
+                active_skills=[{"skill": "policy-retrieval"}],
+                contract=contract,
+                signals=negated,
+            ),
+            [],
+        )
+
+        simple_policy = BEHAVIOR.prompt_signals("简单解释申报条件", contract)
+        self.assertFalse(simple_policy["formal_business_delivery"])
+        self.assertEqual(
+            BEHAVIOR.audit_delivery_completion(
+                prompt="",
+                answer="申报条件通常包括主体、门槛和排除项。",
+                active_skills=[{"skill": "policy-retrieval"}],
+                contract=contract,
+                signals=simple_policy,
+            ),
+            [],
+        )
+
+        no_primary = BEHAVIOR.audit_delivery_receipt(
+            prompt="请生成政府项目报告",
+            answer="已经生成。",
+            active_skills=[{"skill": "consistency-check"}],
+            contract=contract,
+        )
+        self.assertEqual(no_primary["error_code"], "NO_PRIMARY_BUSINESS_SKILL")
+
+        missing_template = BEHAVIOR.audit_delivery_receipt(
+            prompt="请生成政府项目可行性报告",
+            answer="总体结论：可申报。",
+            active_skills=[{"skill": "project-feasibility"}],
+            contract=contract,
+        )
+        self.assertFalse(missing_template["delivery_check_ok"])
+        self.assertIn(
+            "skills.project-feasibility.7",
+            missing_template["missing_requirement_ids"],
+        )
+
     def test_behavior_hook_requires_primary_role_and_classifies_all_49_skills(self):
         contract = json.loads(
             (REPOSITORY / "skills/delivery-contracts.json").read_text(

@@ -39,7 +39,7 @@ description: 企业全生命周期总控技能。用于政府项目匹配、政�
 
 1. 信息不足时列出缺口，不自行补造。
 2. 先调用 `local-knowledge-retrieval` 检索团队云端知识库，再按默认地区加载当地、上级省级和国家级项目地图。用户已明确启用 `third-party-data-indexing` 时可将其作为发现线索；无论是否启用，都必须继续核验管理办法和官方当期通知。
-   三首项目的历年目录差异和企业产品匹配由 `local-knowledge-retrieval` 在既有知识库 MCP 内部完成，用户仍按自然语言提问，不新增 MCP、不重新配置凭据，也不向用户展示内部工具选择过程。
+   “哪些企业已认定”“某产品或行业有哪些获评企业”等名单反向发现统一由 `local-knowledge-retrieval` 调用 `recognition_search`，不得误路由成企业可行性分析；三首项目的历年目录差异和企业产品匹配继续由 `three_first_analysis` 完成。用户仍按自然语言提问，不新增 MCP、不重新配置凭据，也不向用户展示内部工具选择过程。
 3. 项目涉及营收、利润、研发投入、资产或负债门槛时，先查找当前企业的 `enterprise-financial-facts/v1` 共享事实文件；通过 `financial-verification` 校验后复用，不重复索要已有可靠财务数据。
 4. 依次调用 `project-matching`、`project-feasibility`、`application-writing` 和 `consistency-check` 完成项目匹配、可行性分析、材料写作与提交前检查。
 5. 数字、日期、政策和知识产权结论进入证据链。
@@ -71,3 +71,5 @@ description: 企业全生命周期总控技能。用于政府项目匹配、政�
 - 当前不设置独立的 `project-handoff` Skill；真实业务出现结构化交接需求后再评估。
 
 涉及历史案例时，先锁定标准 `project_id`，再调用 `knowledge_case_pack`。政策事实、当前企业事实、历史案例参考必须分账记录；案例包只提供结构和证据组织，不进入当前企业事实锁。
+
+需要同时判断多个项目时，调用 `enterprise_lifecycle_decision`，将每个项目作为独立对象放入 `project_context.projects`。必须逐项目读取结果和 `coverage_ledger`；“仅路由”状态只表示已经识别项目并列出待核验项，不得写成已经完成算法资格判断。

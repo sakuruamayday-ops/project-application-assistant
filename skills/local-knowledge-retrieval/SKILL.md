@@ -31,7 +31,7 @@ description: 检索团队统一云端知识服务。需要历史政策、相似�
 1. 先调用`knowledge_service_status`检查连接，只有返回`connected: true`才视为连接成功。
 2. 解析企业、项目、地区、年份、批次和文件类型意图，读取 [检索编排协议](references/search-orchestration.md)。
    涉及首台套、首版次或首批次企业与产品名单时，同时读取 [三首项目名单数据协议](references/three-first-project-list-schema.md)。
-3. 名单问题并行调用 `POST /v1/lists/search` 与 `POST /v1/search`；三首项目统一调用 `POST /v1/three-first/analyze` 或 MCP `three_first_analysis`，由服务端自动组合目录差异、产品匹配、名单和全文结果；其他问题至少调用全文检索。
+3. 已知企业查名单时并行调用 `POST /v1/lists/search` 与 `POST /v1/search`；按产品、行业或技术方向反向找已认定企业时，统一调用 `POST /v1/recognition/search` 或 MCP `recognition_search`，由服务端解析全部项目、主题词、地区、年度与状态，并分开返回确切、相关和待核验结果。三首项目统一调用 `POST /v1/three-first/analyze` 或 MCP `three_first_analysis`，一次保留全部项目和地区，由服务端组合产品名单、目录差异和全文结果；其他问题至少调用全文检索。
 4. 首轮未命中时自动执行简称、全称、年份、批次、文件类型和地区层级变体，不得停止。
 5. 涉及企业跨年名单、复核状态或城市归属时，读取企业身份时间轴；缺少当前身份时优先用天眼查补充统一社会信用代码、现名、曾用名和当前登记地区，企查查补齐缺失或高影响字段，最终冲突回到官方来源裁决。
 6. 对关键命中调用 `GET /v1/documents/{id}` 读取完整提取文本和来源路径。
@@ -43,7 +43,9 @@ description: 检索团队统一云端知识服务。需要历史政策、相似�
 
 三首项目按“公示—认定—奖励—目录退出”分别记录状态事件，不以后序状态删除前序证据。没有明确目录退出原文时不得推断退出。无法取得具体产品名称时只返回企业、项目、年度和来源，固定提示用户自行查找并补充产品名称，不生成“未展开产品”等占位名称。
 
-通过 MCP 调用时使用同一流程：普通名单由 `public_list_search` 与 `knowledge_search` 并行，关键文档再调用 `knowledge_document`；三首任务只调用统一入口 `three_first_analysis`。不得因为任一工具返回空结果而跳过另一条路径。
+通过 MCP 调用时使用同一流程：普通名单由 `public_list_search` 与 `knowledge_search` 并行，关键文档再调用 `knowledge_document`；三首组合任务调用统一入口 `three_first_analysis`；产品或行业反查调用 `recognition_search`。必须检查 `coverage`、`pagination`、全部项目分组和三档结果，不得静默只取第一个项目、地区或第一页，也不得因为任一工具返回空结果而跳过另一条路径。
+
+反向发现结果必须分开保存“产品或行业证据”和“正式认定证据”。`verified_matches` 才能进入已认定主表；`pending_candidates` 只能列为待核验线索。当前知识证据没有覆盖的行业、地区、年度或同义词必须明示，未命中只能写“当前检索层未命中”。
 
 ## 案例包分层调用
 

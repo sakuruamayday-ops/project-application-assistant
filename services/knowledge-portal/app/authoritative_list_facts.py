@@ -12,6 +12,25 @@ AUTHORITATIVE_LIST_TABLES = {
     "three_first": "three_first_project_awards",
 }
 
+AUTHORITATIVE_LIST_TYPE_ALIASES = {
+    "national_small_giant": "national_small_giant",
+    "国家小巨人": "national_small_giant",
+    "国家专精特新小巨人": "national_small_giant",
+    "专精特新小巨人": "national_small_giant",
+    "小巨人": "national_small_giant",
+    "provincial_specialized_sme": "provincial_specialized_sme",
+    "省级专精特新": "provincial_specialized_sme",
+    "省专": "provincial_specialized_sme",
+    "专精特新中小企业": "provincial_specialized_sme",
+    "three_first": "three_first",
+    "三首": "three_first",
+    "三首项目": "three_first",
+    "首台套": "three_first",
+    "首台（套）": "three_first",
+    "首版次": "three_first",
+    "首批次": "three_first",
+}
+
 ANNUAL_PUBLICATION_EVENT_TYPES = (
     "recognition",
     "recognition_publicity",
@@ -24,6 +43,16 @@ RECOGNITION_PUBLICATION_EVENT_TYPES = ("recognition", "recognition_publicity")
 
 class AuthorityTableUnavailable(RuntimeError):
     pass
+
+
+def normalize_authoritative_list_type(list_type: str) -> str:
+    compact = re.sub(r"[\s\"'“”‘’《》〈〉（）()·•]+", "", list_type or "")
+    normalized = AUTHORITATIVE_LIST_TYPE_ALIASES.get(compact)
+    if normalized:
+        return normalized
+    if compact in AUTHORITATIVE_LIST_TABLES:
+        return compact
+    raise ValueError(f"不支持的权威名单类型：{list_type}")
 
 
 def infer_authoritative_list_type(project_name: str) -> str | None:
@@ -1397,6 +1426,7 @@ def _three_first_facts(
     *,
     enterprise_name: str,
     product_name: str,
+    industry: str,
     project_name: str,
     year: int | None,
     region: str,
@@ -1409,6 +1439,7 @@ def _three_first_facts(
     parameters: list[object] = []
     _append_like("enterprise_name", enterprise_name, conditions, parameters)
     _append_like("product_name", product_name, conditions, parameters)
+    _append_like("industry", industry, conditions, parameters)
     _append_like("project_name", project_name, conditions, parameters)
     _append_like("list_status", status, conditions, parameters)
     if year is not None:
@@ -1528,6 +1559,7 @@ def _three_first_facts(
         filters={
             "enterprise_name": enterprise_name.strip(),
             "product_name": product_name.strip(),
+            "industry": industry.strip(),
             "project_name": project_name.strip(),
             "year": year,
             "batch": "",
@@ -1573,6 +1605,7 @@ def query_authoritative_list_facts(
     list_type: str,
     enterprise_name: str = "",
     product_name: str = "",
+    industry: str = "",
     project_name: str = "",
     year: int | None = None,
     batch: str = "",
@@ -1583,6 +1616,7 @@ def query_authoritative_list_facts(
     offset: int = 0,
     limit: int = 50,
 ) -> dict[str, object]:
+    list_type = normalize_authoritative_list_type(list_type)
     _require_authority_table(connection, list_type)
     bounded_offset = max(0, min(int(offset), 1_000_000))
     bounded_limit = max(1, min(int(limit), 200))
@@ -1616,6 +1650,7 @@ def query_authoritative_list_facts(
         connection,
         enterprise_name=enterprise_name,
         product_name=product_name,
+        industry=industry,
         project_name=project_name,
         year=year,
         region=region,

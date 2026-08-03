@@ -79,6 +79,7 @@ from app.project_decision import (
     evaluate_policy_evidence,
     explicit_project_regions as decide_explicit_project_regions,
     matched_project_retrieval_rule as decide_matched_project_retrieval_rule,
+    matched_project_retrieval_rules as decide_matched_project_retrieval_rules,
     normalize_search_text as decide_normalize_search_text,
     parse_deadline_candidates as decide_deadline_candidates,
     project_region_prompt as decide_project_region_prompt,
@@ -113,6 +114,10 @@ from app.authoritative_list_facts import (
     query_authoritative_list_facts,
 )
 from app.knowledge_case_packs import case_pack_capability, query_case_packs
+from app.recognized_enterprise_discovery import (
+    discover_recognized_enterprises,
+    recognition_search as execute_recognition_search,
+)
 
 # Production may supply this private extension as a server-managed overlay.
 try:
@@ -767,10 +772,12 @@ class PublicListSearchRequest(BaseModel):
 
 class AuthoritativeListSearchRequest(BaseModel):
     list_type: str = Field(
-        pattern="^(national_small_giant|provincial_specialized_sme|three_first)$"
+        min_length=2,
+        max_length=100,
     )
     enterprise_name: str = Field(default="", max_length=200)
     product_name: str = Field(default="", max_length=300)
+    industry: str = Field(default="", max_length=200)
     project_name: str = Field(default="", max_length=200)
     year: int | None = Field(default=None, ge=2000, le=2100)
     batch: str = Field(default="", max_length=50)
@@ -827,6 +834,42 @@ class ThreeFirstAnalysisRequest(BaseModel):
     to_year: int | None = Field(default=None, ge=2000, le=2100)
     include_review_candidates: bool = False
     limit: int = Field(default=20, ge=1, le=50)
+    region: str = Field(default="", max_length=100)
+    regions: list[str] = Field(default_factory=list, max_length=20)
+
+
+class RecognizedEnterpriseDiscoveryRequest(BaseModel):
+    projects: list[str] = Field(min_length=1, max_length=20)
+    subject_terms: list[str] = Field(min_length=1, max_length=50)
+    regions: list[str] = Field(default_factory=list, max_length=20)
+    year: int | None = Field(default=None, ge=2000, le=2100)
+    verified_only: bool = True
+    limit: int = Field(default=50, ge=1, le=200)
+
+
+class RecognitionSearchRequest(BaseModel):
+    query: str = Field(min_length=2, max_length=500)
+    projects: list[str] = Field(default_factory=list, max_length=20)
+    subject_terms: list[str] = Field(default_factory=list, max_length=50)
+    regions: list[str] = Field(default_factory=list, max_length=20)
+    years: list[int] = Field(default_factory=list, max_length=20)
+    status: str = Field(default="final_recognition", max_length=100)
+    limit: int = Field(default=50, ge=1, le=200)
+
+
+class EnterpriseLifecycleDecisionRequest(BaseModel):
+    query: str = Field(min_length=2, max_length=1000)
+    enterprise_facts: list[dict[str, object]] = Field(default_factory=list, max_length=1000)
+    project_context: dict[str, object]
+    requirements: list[dict[str, object]] = Field(default_factory=list, max_length=1000)
+    growth_projects: list[dict[str, object]] = Field(default_factory=list, max_length=100)
+    deliverable: dict[str, object] | None = None
+    enterprise_materials: list[dict[str, object]] = Field(default_factory=list, max_length=500)
+    policy_text: str = Field(default="", max_length=200000)
+    policy_source: str = Field(default="", max_length=1000)
+    policy_status: str = Field(default="", max_length=100)
+    rule_confirmations: dict[str, object] = Field(default_factory=dict)
+    host_extractions: list[dict[str, object]] = Field(default_factory=list, max_length=500)
 
 
 class ProjectAliasCorrectionRequest(BaseModel):
@@ -1817,42 +1860,66 @@ def filter_project_results(
     if not rows or not project_query_is_resolved(question):
         return rows
     retrieval_queries = project_query_variants(question)
-    retrieval_rule = matched_project_retrieval_rule(question)
-    if retrieval_rule:
-        title_term_source = retrieval_rule
-        jurisdiction_terms = retrieval_rule.get("jurisdiction_title_terms")
-        if isinstance(jurisdiction_terms, dict):
-            title_term_source = next(
-                (
-                    override
-                    for region in explicit_project_regions(question)
-                    for city, override in jurisdiction_terms.items()
-                    if region == city and isinstance(override, dict)
-                ),
-                retrieval_rule,
+    retrieval_rules = matched_project_retrieval_rules(question)
+    if retrieval_rules:
+        title_term_sources: list[dict[str, object]] = []
+        for retrieval_rule in retrieval_rules:
+            title_term_source = retrieval_rule
+            jurisdiction_terms = retrieval_rule.get("jurisdiction_title_terms")
+            if isinstance(jurisdiction_terms, dict):
+                title_term_source = next(
+                    (
+                        override
+                        for region in explicit_project_regions(question)
+                        for city, override in jurisdiction_terms.items()
+                        if region == city and isinstance(override, dict)
+                    ),
+                    retrieval_rule,
+                )
+            title_term_sources.append(dict(title_term_source))
+        term_contracts = [
+            {
+                "allowed": [
+                    normalize_search_text(term)
+                    for term in source.get("allowed_title_terms", [])
+                    if normalize_search_text(term)
+                ],
+                "excluded": [
+                    normalize_search_text(term)
+                    for term in source.get("excluded_title_terms", [])
+                    if normalize_search_text(term)
+                ],
+            }
+            for source in title_term_sources
+        ]
+
+        def allowed_by_any_contract(row: sqlite3.Row | dict[str, object]) -> bool:
+            searchable = normalize_search_text(f"{row['title']} {row['source']}")
+            title = normalize_search_text(row["title"])
+            return any(
+                any(term in searchable for term in contract["allowed"])
+                and not any(term in title for term in contract["excluded"])
+                for contract in term_contracts
             )
-        allowed_terms = [
-            normalize_search_text(term)
-            for term in title_term_source.get("allowed_title_terms", [])
-        ]
-        excluded_terms = [
-            normalize_search_text(term)
-            for term in title_term_source.get("excluded_title_terms", [])
-        ]
+
+        def excluded_by_every_contract(row: sqlite3.Row | dict[str, object]) -> bool:
+            title = normalize_search_text(row["title"])
+            return all(
+                any(term in title for term in contract["excluded"])
+                for contract in term_contracts
+            )
+
         allowed_rows = [
             row
             for row in rows
-            if any(
-                term in normalize_search_text(f"{row['title']} {row['source']}")
-                for term in allowed_terms
-            )
+            if allowed_by_any_contract(row)
         ]
         if allowed_rows:
             rows = allowed_rows
         rows = [
             row
             for row in rows
-            if not any(term in normalize_search_text(row["title"]) for term in excluded_terms)
+            if allowed_by_any_contract(row) or not excluded_by_every_contract(row)
         ]
     strict_rows = [row for row in rows if project_result_priority(row, retrieval_queries) < 2]
     selected = strict_rows or rows
@@ -2816,6 +2883,16 @@ def matched_project_retrieval_rule(query: str) -> dict[str, object] | None:
     return dict(rule) if rule else None
 
 
+def matched_project_retrieval_rules(query: str) -> list[dict[str, object]]:
+    return [
+        dict(rule)
+        for rule in decide_matched_project_retrieval_rules(
+            query,
+            load_project_retrieval_rules(),
+        )
+    ]
+
+
 def matched_project_alias(query: str, rule: dict[str, object]) -> str:
     aliases = [str(alias).strip() for alias in rule.get("aliases", []) if str(alias).strip()]
     matches = [alias for alias in aliases if alias in query]
@@ -2871,6 +2948,58 @@ def enterprise_lifecycle_decision(
     rule_confirmations: dict[str, object] | None = None,
     host_extractions: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
+    raw_projects = project_context.get("projects")
+    if isinstance(raw_projects, list) and raw_projects:
+        base_context = {
+            key: value for key, value in project_context.items() if key != "projects"
+        }
+        decisions: list[dict[str, object]] = []
+        skipped: list[dict[str, object]] = []
+        for index, raw_project in enumerate(raw_projects):
+            if not isinstance(raw_project, dict):
+                skipped.append(
+                    {"index": index, "reason": "项目上下文必须为对象"}
+                )
+                continue
+            effective_context = {**base_context, **raw_project}
+            project_identifiers = {
+                str(effective_context.get("project_id") or ""),
+                str(effective_context.get("project_name") or ""),
+            } - {""}
+            scoped_requirements = [
+                requirement
+                for requirement in requirements
+                if not str(requirement.get("project_id") or "")
+                or str(requirement.get("project_id") or "") in project_identifiers
+            ]
+            decisions.append(
+                enterprise_lifecycle_decision(
+                    query,
+                    enterprise_facts=enterprise_facts,
+                    project_context=effective_context,
+                    requirements=scoped_requirements,
+                    growth_projects=growth_projects,
+                    deliverable=deliverable,
+                    enterprise_materials=enterprise_materials,
+                    policy_text=policy_text,
+                    policy_source=policy_source,
+                    policy_status=policy_status,
+                    rule_confirmations=rule_confirmations,
+                    host_extractions=host_extractions,
+                )
+            )
+        return {
+            "decision_type": "multi-project-enterprise-lifecycle",
+            "query": query,
+            "project_decisions": decisions,
+            "coverage_ledger": {
+                "requested": len(raw_projects),
+                "processed": len(decisions),
+                "skipped": skipped,
+                "is_truncated": False,
+            },
+        }
+
     host_conversion = convert_host_extractions_to_materials(host_extractions or [])
     time_aware_project_context = enrich_policy_time_context(
         query,
@@ -2940,6 +3069,10 @@ def enterprise_lifecycle_decision(
             "project_id": selected_pack.get("project_id"),
             "project_name": selected_pack.get("project_name"),
             "version": selected_pack.get("version"),
+            "coverage_status": selected_pack.get("coverage_status", "routing-only"),
+            "formal_algorithm_decision_available": (
+                selected_pack.get("coverage_status") == "rules-confirmed"
+            ),
             "selected_layers": selected_algorithm_rules["selected_layers"],
             "policy_time": selected_algorithm_rules["policy_time"],
             "policy_time_audits": selected_algorithm_rules[
@@ -3378,6 +3511,7 @@ def search_authoritative_list_facts(
     list_type: str,
     enterprise_name: str = "",
     product_name: str = "",
+    industry: str = "",
     project_name: str = "",
     year: int | None = None,
     batch: str = "",
@@ -3395,6 +3529,7 @@ def search_authoritative_list_facts(
                 list_type=list_type,
                 enterprise_name=enterprise_name,
                 product_name=product_name,
+                industry=industry,
                 project_name=project_name,
                 year=year,
                 batch=batch,
@@ -3708,13 +3843,25 @@ def analyze_three_first(
     to_year: int | None = None,
     include_review_candidates: bool = False,
     limit: int = 20,
+    region: str = "",
+    regions: list[str] | None = None,
 ) -> dict[str, object]:
     normalized_query = normalize_search_text(query)
     bounded_limit = max(1, min(int(limit), 50))
+    requested_regions = list(
+        dict.fromkeys(
+            [
+                *explicit_project_regions(normalized_query),
+                *([region.strip()] if region.strip() else []),
+                *(str(item).strip() for item in (regions or []) if str(item).strip()),
+            ]
+        )
+    )
     plan = plan_three_first_analysis(
         normalized_query,
         enterprise_name=enterprise_name,
         product_name=product_name,
+        regions=requested_regions,
         award_year=award_year,
         from_year=from_year,
         to_year=to_year,
@@ -3722,18 +3869,52 @@ def analyze_three_first(
     )
     project_name = str(plan["project_name"])
     project_type = str(plan["project_type"])
+    project_names = [str(item) for item in plan.get("project_names", [])]
+    project_types = [str(item) for item in plan.get("project_types", [])]
     effective_from_year = plan["from_year"]
     effective_to_year = plan["to_year"]
     list_year = plan["list_year"]
     knowledge = public_search_knowledge(normalized_query, bounded_limit)
     list_results: dict[str, object] = {"filters": {}, "results": []}
+    list_groups: list[dict[str, object]] = []
     if plan["routes"]["public_list_search"]:
-        list_results = search_public_list_entities(
-            enterprise_name=enterprise_name,
-            project_name=project_name,
-            year=list_year,
-            limit=bounded_limit,
-        )
+        requested_projects = project_names or ([project_name] if project_name else [""])
+        requested_region_scopes = requested_regions or [""]
+        flattened_results: list[dict[str, object]] = []
+        for requested_project in requested_projects:
+            for requested_region in requested_region_scopes:
+                group = search_authoritative_list_facts(
+                    "three_first",
+                    enterprise_name=enterprise_name,
+                    product_name=product_name,
+                    project_name=requested_project,
+                    year=list_year,
+                    region=requested_region,
+                    verified_only=not include_review_candidates,
+                    limit=bounded_limit,
+                )
+                group_results = [dict(item) for item in group.get("results", [])]
+                flattened_results.extend(group_results)
+                list_groups.append(
+                    {
+                        "project_name": requested_project,
+                        "region": requested_region,
+                        "results": group_results,
+                        "pagination": group.get("pagination", {}),
+                        "coverage": group.get("coverage", {}),
+                        "warnings": group.get("warnings", []),
+                    }
+                )
+        list_results = {
+            "filters": {
+                "enterprise_name": enterprise_name.strip(),
+                "product_name": product_name.strip(),
+                "project_names": requested_projects,
+                "regions": requested_regions,
+                "year": list_year,
+            },
+            "results": flattened_results,
+        }
 
     directory_diffs: dict[str, object] = {"filters": {}, "results": []}
     product_matches: dict[str, object] = {"filters": {}, "results": []}
@@ -3757,13 +3938,27 @@ def analyze_three_first(
         "query": normalized_query,
         "project_type": project_type,
         "project_name": project_name,
+        "project_types": project_types,
+        "project_names": project_names,
+        "regions": requested_regions,
         "knowledge_results": knowledge.get("results", []),
         "structured_results": knowledge.get("structured_results", []),
         "list_results": list_results.get("results", []),
+        "list_groups": list_groups,
         "directory_diffs": directory_diffs.get("results", []),
         "product_matches": product_matches.get("results", []),
         "deadline_reminders": knowledge.get("deadline_reminders", []),
         "clarifications": plan["clarifications"],
+        "coverage_ledger": {
+            "requested": len(project_names or [project_name or "三首项目"])
+            * max(1, len(requested_regions)),
+            "processed": len(list_groups),
+            "skipped": [],
+            "is_truncated": any(
+                bool(group.get("pagination", {}).get("is_truncated"))
+                for group in list_groups
+            ),
+        },
         "internal_routing": {
             "knowledge_search": True,
             "public_list_search": bool(plan["routes"]["public_list_search"]),
@@ -5456,6 +5651,7 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             list_type=str(arguments.get("list_type") or ""),
             enterprise_name=str(arguments.get("enterprise_name") or "")[:200],
             product_name=str(arguments.get("product_name") or "")[:300],
+            industry=str(arguments.get("industry") or "")[:200],
             project_name=str(arguments.get("project_name") or "")[:200],
             year=int(arguments["year"]) if arguments.get("year") is not None else None,
             batch=str(arguments.get("batch") or "")[:50],
@@ -5467,6 +5663,79 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             limit=max(1, min(int(arguments.get("limit") or 50), 200)),
         )
         return result, [dict(item) for item in result["results"]]
+    if name == "three_first_analysis":
+        raw_regions = arguments.get("regions") or []
+        if not isinstance(raw_regions, list):
+            raise ValueError("地区必须使用数组")
+        result = analyze_three_first(
+            query=str(arguments.get("query") or "")[:500],
+            enterprise_name=str(arguments.get("enterprise_name") or "")[:200],
+            product_name=str(arguments.get("product_name") or "")[:300],
+            award_year=int(arguments["award_year"]) if arguments.get("award_year") is not None else None,
+            from_year=int(arguments["from_year"]) if arguments.get("from_year") is not None else None,
+            to_year=int(arguments["to_year"]) if arguments.get("to_year") is not None else None,
+            include_review_candidates=bool(arguments.get("include_review_candidates") or False),
+            limit=max(1, min(int(arguments.get("limit") or 20), 50)),
+            region=str(arguments.get("region") or "")[:100],
+            regions=[str(item)[:100] for item in raw_regions[:20]],
+        )
+        sources = [
+            dict(item)
+            for item in result.get("list_results", [])
+            if isinstance(item, dict)
+        ]
+        return result, sources
+    if name == "recognition_search":
+        raw_projects = arguments.get("projects") or []
+        raw_terms = arguments.get("subject_terms") or []
+        raw_regions = arguments.get("regions") or []
+        raw_years = arguments.get("years") or []
+        if not all(
+            isinstance(item, list)
+            for item in (raw_projects, raw_terms, raw_regions, raw_years)
+        ):
+            raise ValueError("项目、主题词、地区和年度必须使用数组")
+        with closing(content_database()) as connection:
+            result = execute_recognition_search(
+                connection,
+                query=str(arguments.get("query") or "")[:500],
+                projects=[str(item)[:100] for item in raw_projects[:20]],
+                subject_terms=[str(item)[:100] for item in raw_terms[:50]],
+                regions=[str(item)[:100] for item in raw_regions[:20]],
+                years=[int(item) for item in raw_years[:20]],
+                status=str(arguments.get("status") or "final_recognition")[:100],
+                limit=max(1, min(int(arguments.get("limit") or 50), 200)),
+            )
+        sources = [
+            dict(item.get("recognition_fact") or {})
+            for group in ("exact_results", "related_results")
+            for item in result.get(group, [])
+            if isinstance(item, dict)
+        ]
+        return result, sources
+    if name == "enterprise_lifecycle_decision":
+        enterprise_facts = arguments.get("enterprise_facts") or []
+        project_context = arguments.get("project_context") or {}
+        requirements = arguments.get("requirements") or []
+        growth_projects = arguments.get("growth_projects") or []
+        deliverable = arguments.get("deliverable")
+        if not isinstance(enterprise_facts, list) or not isinstance(requirements, list):
+            raise ValueError("企业事实和项目要求必须使用数组")
+        if not isinstance(project_context, dict):
+            raise ValueError("项目上下文必须使用对象")
+        if not isinstance(growth_projects, list):
+            raise ValueError("成长项目必须使用数组")
+        if deliverable is not None and not isinstance(deliverable, dict):
+            raise ValueError("交付物必须使用对象")
+        result = enterprise_lifecycle_decision(
+            str(arguments.get("query") or "")[:1000],
+            enterprise_facts=[item for item in enterprise_facts[:1000] if isinstance(item, dict)],
+            project_context=project_context,
+            requirements=[item for item in requirements[:1000] if isinstance(item, dict)],
+            growth_projects=[item for item in growth_projects[:100] if isinstance(item, dict)],
+            deliverable=deliverable,
+        )
+        return result, []
     if name == "public_list_search":
         result = search_public_list_entities(
             enterprise_name=str(arguments.get("enterprise_name") or "")[:200],
@@ -5812,6 +6081,9 @@ def answer_with_knowledge(
                     "资料不足时明确说明，不承诺企业一定符合或项目一定获批。禁止调用写入、上传、删除、提交或外部联络能力。"
                     "政策任务取得候选原文后必须调用policy_evidence_select，"
                     "不得用管理办法生成当年度截止时间、批次或材料结论。"
+                    "查询已认定企业时必须调用recognition_search，由统一查询计划完整保留项目、产品或行业、地区、年度和状态；"
+                    "确切、相关和待核验结果不得混写，未命中不得写成不存在；"
+                    "三首组合必须调用three_first_analysis并完整处理所有项目和地区，不能只取第一个。"
                     "分析报告或复杂任务结束前必须调用delivery_contract_audit；"
                     "completion_allowed为false时先补齐，不得直接结束。"
                     f"\n\n现行政策硬门禁：{policy_guardrail or '按知识库政策版本字段和当期官方通知核验。'}"
@@ -5906,7 +6178,11 @@ def answer_with_knowledge(
                             "document_id",
                             "skill_name",
                             "enterprise_name",
+                            "product_name",
+                            "industry",
                             "project_name",
+                            "projects",
+                            "subject_terms",
                             "year",
                             "batch",
                             "region",
@@ -7881,6 +8157,8 @@ MCP_SEARCH_TOOLS = {
     "authoritative_list_search",
     "project_catalog_match",
     "three_first_analysis",
+    "recognition_search",
+    "enterprise_lifecycle_decision",
 }
 
 
@@ -15730,6 +16008,35 @@ def three_first_analysis_api(
     return analyze_three_first(**payload.model_dump())
 
 
+@app.post("/v1/recognized-enterprises/discover")
+def recognized_enterprise_discovery_api(
+    payload: RecognizedEnterpriseDiscoveryRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    with closing(content_database()) as connection:
+        return discover_recognized_enterprises(connection, **payload.model_dump())
+
+
+@app.post("/v1/recognition/search")
+def recognition_search_api(
+    payload: RecognitionSearchRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    with closing(content_database()) as connection:
+        return execute_recognition_search(connection, **payload.model_dump())
+
+
+@app.post("/v1/enterprise-lifecycle/decide")
+def enterprise_lifecycle_decision_api(
+    payload: EnterpriseLifecycleDecisionRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    return enterprise_lifecycle_decision(**payload.model_dump())
+
+
 @app.get("/v1/admin/project-aliases")
 def project_aliases_api(
     user: Annotated[sqlite3.Row, Depends(require_api_user)],
@@ -16939,6 +17246,7 @@ def authoritative_list_search(
     list_type: str,
     enterprise_name: str = "",
     product_name: str = "",
+    industry: str = "",
     project_name: str = "",
     year: int | None = None,
     batch: str = "",
@@ -16949,11 +17257,12 @@ def authoritative_list_search(
     offset: int = 0,
     limit: int = 50,
 ) -> dict[str, object]:
-    """查询小巨人、省级专精特新和三首权威事实；全量名单必须按 next_offset 翻页至 has_more=false。"""
+    """查询小巨人、省级专精特新和三首权威事实；list_type兼容英文枚举与中文项目名，全量名单必须翻页至has_more=false。"""
     return search_authoritative_list_facts(
         list_type=list_type,
         enterprise_name=enterprise_name,
         product_name=product_name,
+        industry=industry,
         project_name=project_name,
         year=year,
         batch=batch,
@@ -17034,6 +17343,8 @@ def three_first_analysis(
     to_year: int | None = None,
     include_review_candidates: bool = False,
     limit: int = 20,
+    region: str = "",
+    regions: list[str] | None = None,
 ) -> dict[str, object]:
     """统一分析首台套、首版次和首批次；自动组合知识检索、名单、目录差异与产品匹配。"""
     return analyze_three_first(
@@ -17045,6 +17356,52 @@ def three_first_analysis(
         to_year,
         include_review_candidates,
         limit,
+        region,
+        regions,
+    )
+
+
+@knowledge_mcp.tool(name="recognition_search")
+def recognition_search_tool(
+    query: str,
+    projects: list[str] | None = None,
+    subject_terms: list[str] | None = None,
+    regions: list[str] | None = None,
+    years: list[int] | None = None,
+    status: str = "final_recognition",
+    limit: int = 50,
+) -> dict[str, object]:
+    """将自然语言解析为完整认定查询计划，区分确切、相关和待核验结果；未命中不等于不存在。"""
+    with closing(content_database()) as connection:
+        return execute_recognition_search(
+            connection,
+            query=query,
+            projects=projects or [],
+            subject_terms=subject_terms or [],
+            regions=regions or [],
+            years=years or [],
+            status=status,
+            limit=limit,
+        )
+
+
+@knowledge_mcp.tool(name="enterprise_lifecycle_decision")
+def enterprise_lifecycle_decision_tool(
+    query: str,
+    enterprise_facts: list[dict[str, object]],
+    project_context: dict[str, object],
+    requirements: list[dict[str, object]],
+    growth_projects: list[dict[str, object]] | None = None,
+    deliverable: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """对一个或多个项目执行确定性生命周期决策；多项目必须放在project_context.projects中，返回逐项目覆盖台账。"""
+    return enterprise_lifecycle_decision(
+        query,
+        enterprise_facts=enterprise_facts,
+        project_context=project_context,
+        requirements=requirements,
+        growth_projects=growth_projects or [],
+        deliverable=deliverable,
     )
 
 

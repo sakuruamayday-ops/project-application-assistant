@@ -171,6 +171,8 @@ fi
 python3 "${script_dir}/build_three_first_benchmark_graph.py" "${three_first_args[@]}"
 python3 "${script_dir}/build_zhejiang_enterprise_identity_timeline.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
+python3 "${script_dir}/build_recognition_search_index.py" \
+  --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/audit_three_first_directory_exit.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/audit_specialized_lists_and_three_first.py" \

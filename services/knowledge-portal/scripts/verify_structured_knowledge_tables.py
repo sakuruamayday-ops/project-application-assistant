@@ -25,6 +25,9 @@ REQUIRED_TABLES = {
     "three_first_award_directory_links": 1,
     "enterprise_product_graph_nodes": 1,
     "enterprise_product_graph_edges": 1,
+    "subject_taxonomy": 2,
+    "recognition_records": 1,
+    "enterprise_subject_evidence": 1,
 }
 
 

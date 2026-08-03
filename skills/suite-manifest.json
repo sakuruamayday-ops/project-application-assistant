@@ -4,9 +4,9 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.5.3",
-    "version": "1.5.3",
-    "summary": "V1.5.3 修复 WorkBuddy Hook 真实误阻断和 Windows 启动失效，补齐管理员用户调用统计、备份定时器恢复与 OSS 轻量校验。",
+    "tag": "V1.5.4",
+    "version": "1.5.4",
+    "summary": "V1.5.4 交付双平台 Hook、普通答疑误阻断修复、管理员统计、生产保障、多项目路由、统一认定反向检索与索引、三首组合查询、中文名单参数与多项目算法入口。",
     "changes": [
       "WorkBuddy 改为 macOS 与 Windows 两个独立签名包，49 项 Skills 和共享 Python 行为核心保持逐字节一致。",
       "Windows 包使用原生 CMD 启动器，依次选择 py -3、python 和 python3，检查 .workbuddy 与 .codebuddy 活动路径，不依赖 Bash 或 PowerShell。",
@@ -17,11 +17,15 @@
       "代码部署成功或回滚后都会重新启用备份定时器，避免部署流程停止定时器后未恢复。",
       "生产环境新增每小时 OSS 签名指针与元数据轻量校验；仅在远端版本变化时下载并执行完整索引验证。",
       "网站为 macOS 与 Windows 分别下发对应安装包，统一入口不再含糊返回跨平台 ZIP。",
-      "本次不修改知识索引；纯代码与 Skills 发布不运行全库扫描。"
+      "多项目问题按用户原始顺序保留全部明确项目，地区解析不再吞入查询前缀或多个地区。",
+      "新增统一 recognition_search，完整解析项目、主题、地区、年度和状态，确切、相关与待核验结果严格分账。",
+      "三首统一入口支持多个项目、多个地区以及产品和行业筛选，并返回分组分页与覆盖台账。",
+      "权威名单工具兼容中英文项目类型；网站助手与 WorkBuddy 共享三首、反向发现和多项目算法入口。",
+      "新增统一认定事实、企业主题证据与主题词典索引；索引单独发布一次，随后纯代码与 Skills 发布不重复全库扫描。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.3 干净安装、活动路径旧版清理和远程 MCP 连接。",
+      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.4 干净安装、活动路径旧版清理和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -55,7 +59,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "活动搜索路径只保留一个 V1.5.3 jiaotang 市场"
+        "活动搜索路径只保留一个 V1.5.4 jiaotang 市场"
       ],
       "released_adapters": [
         "workbuddy-macos",

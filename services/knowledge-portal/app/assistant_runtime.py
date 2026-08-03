@@ -13,6 +13,14 @@ QUICK_GUIDE_QUESTIONS = {
 }
 
 SKILL_PROFILES = {
+    "local-knowledge-retrieval": {
+        "keywords": ("名单", "认定企业", "入选企业", "通过企业", "获批企业", "列出", "查找企业", "同行企业", "首版次", "首台套", "首批次"),
+        "summary": "从权威名单和知识库中检索已认定企业、产品与来源，保留覆盖边界且不把未命中写成不存在。",
+    },
+    "industrialization-projects": {
+        "keywords": ("首台套", "首版次", "首批次", "工业新产品", "装备", "软件产品", "新材料"),
+        "summary": "区分装备、软件与新材料项目类型，并核对产品级认定边界。",
+    },
     "enterprise-profile": {
         "keywords": ("企业画像", "工商", "股权", "经营风险", "企业情况", "公司情况"),
         "summary": "核验企业工商、股权、风险、资质与知识产权等事实，不使用不可靠财务推算。",
@@ -174,6 +182,82 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
         {
             "type": "function",
             "function": {
+                "name": "enterprise_lifecycle_decision",
+                "description": (
+                    "对一个或多个明确项目执行确定性企业生命周期决策。多项目通过project_context.projects传入，"
+                    "服务端逐项目返回且不静默截断；routing-only项目只返回待核验，不得宣称已算法判断。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "enterprise_facts": {"type": "array", "items": {"type": "object"}},
+                        "project_context": {"type": "object"},
+                        "requirements": {"type": "array", "items": {"type": "object"}},
+                        "growth_projects": {"type": "array", "items": {"type": "object"}},
+                        "deliverable": {"type": "object"},
+                    },
+                    "required": ["query", "enterprise_facts", "project_context", "requirements"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "recognition_search",
+                "description": (
+                    "统一处理认定名单反向发现：从自然语言提取全部项目、产品或行业、地区、年度和状态，"
+                    "返回确切、相关、待核验三档结果及覆盖边界；政策答疑和可行性问题只返回确定性路由。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "projects": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
+                        "subject_terms": {"type": "array", "items": {"type": "string"}, "maxItems": 50},
+                        "regions": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
+                        "years": {
+                            "type": "array",
+                            "items": {"type": "integer", "minimum": 2000, "maximum": 2100},
+                            "maxItems": 20,
+                        },
+                        "status": {"type": "string", "default": "final_recognition"},
+                        "limit": {"type": "integer", "minimum": 1, "maximum": 200},
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "three_first_analysis",
+                "description": (
+                    "统一查询首台套、首版次和首批次，可一次处理多个项目和多个地区；"
+                    "按产品找企业时必须传 product_name，并检查 coverage_ledger 与各组分页状态。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "enterprise_name": {"type": "string"},
+                        "product_name": {"type": "string"},
+                        "industry": {"type": "string"},
+                        "award_year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+                        "from_year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+                        "to_year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+                        "include_review_candidates": {"type": "boolean"},
+                        "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+                        "region": {"type": "string"},
+                        "regions": {"type": "array", "items": {"type": "string"}, "maxItems": 20},
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "authoritative_list_search",
                 "description": (
                     "优先查询国家小巨人、省级专精特新中小企业和三首的权威结构化事实专表，"
@@ -189,6 +273,12 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                                 "national_small_giant",
                                 "provincial_specialized_sme",
                                 "three_first",
+                                "小巨人",
+                                "专精特新中小企业",
+                                "三首",
+                                "首台套",
+                                "首版次",
+                                "首批次",
                             ],
                         },
                         "enterprise_name": {"type": "string"},

@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.5.3"><img src="https://img.shields.io/badge/Release-V1.5.3-C9A760?style=for-the-badge" alt="Release V1.5.3"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.5.4"><img src="https://img.shields.io/badge/Release-V1.5.4-C9A760?style=for-the-badge" alt="Release V1.5.4"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.5.3.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
+  <a href="docs/releases/V1.5.4.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -56,7 +56,7 @@
 
 WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启动器、bootstrap、设备登记、钥匙串或DPAPI；用户侧不执行签名审查和插件目录哈希检查。手工配置页自动复用或生成当前登录用户的个人Token并填入完整远程HTTP MCP配置。
 
-V1.5.3 是当前对外发布的唯一最新版本。它修复普通答疑被正式交付门禁误阻断和 Windows Hook 未实际启动的问题，并补齐管理员调用统计、备份定时器恢复与 OSS 轻量校验。
+V1.5.4 是当前对外发布的唯一最新版本。它同时交付双平台 Hook、普通答疑误阻断修复、管理员统计、生产保障、多项目路由、统一认定反向检索与索引、三首组合查询、中文名单参数与多项目算法入口。
 
 ### WorkBuddy 平台说明
 
@@ -90,7 +90,7 @@ WorkBuddy的系统差异由两个独立签名包内的极薄 Hook 启动适配�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.5.3 发布说明](docs/releases/V1.5.3.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.5.4 发布说明](docs/releases/V1.5.4.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -107,8 +107,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.5.3` | 网站、GitHub Release 和用户可见版本 |
-| 组件版本 | `1.5.3` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.5.4` | 网站、GitHub Release 和用户可见版本 |
+| 组件版本 | `1.5.4` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界

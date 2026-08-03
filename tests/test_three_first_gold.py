@@ -38,3 +38,18 @@ def test_three_first_gold_cases():
         clarification = case["expected"].get("clarification_contains")
         if clarification:
             assert clarification in result["clarifications"], case["id"]
+
+
+def test_three_first_combination_keeps_all_projects_and_regions():
+    result = plan_three_first_analysis(
+        "列出浙江省和江苏省智能水表相关的首台套和首版次产品及企业",
+        product_name="智能水表",
+        regions=["浙江省", "江苏省"],
+    )
+    assert result["project_types"] == ["首台套", "首版次"]
+    assert result["project_names"] == [
+        "浙江省制造业首台（套）装备",
+        "浙江省首版次软件产品",
+    ]
+    assert result["regions"] == ["浙江省", "江苏省"]
+    assert result["routes"]["public_list_search"] is True

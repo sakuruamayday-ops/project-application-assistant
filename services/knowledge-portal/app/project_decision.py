@@ -123,37 +123,73 @@ def normalize_project_query(query: str) -> str:
 
 def explicit_project_regions(query: str) -> list[str]:
     normalized_query = re.sub(r"(?<!\d)20\d{2}(?:年|年度)?", " ", query)
-    return list(
-        dict.fromkeys(
-            region
-            for region in re.findall(
-                r"[\u4e00-\u9fff]{2,8}(?:省|自治区|市|区|县)",
-                normalized_query,
+    regions: list[str] = []
+    for segment in re.split(r"(?:以及|并且|和|与|及|、|，|,|；|;|/)", normalized_query):
+        for raw_region in re.findall(
+            r"[\u4e00-\u9fff]{2,8}(?:省|自治区|市|区|县)",
+            segment,
+        ):
+            region = re.sub(
+                r"^(?:请帮我|麻烦帮我|帮我|请|麻烦|查询|查找|查下|查一下|查|检索|搜索|列出|看看)+",
+                "",
+                raw_region,
             )
-            if not region.startswith(("重点", "省级", "市级", "区级", "国家"))
-        )
-    )
+            if (
+                region
+                and not region.startswith(("重点", "省级", "市级", "区级", "国家"))
+                and len(region) >= 3
+            ):
+                regions.append(region)
+    return list(dict.fromkeys(regions))
+
+
+def matched_project_retrieval_rules(
+    query: str,
+    rules: Sequence[Mapping[str, object]],
+) -> list[Mapping[str, object]]:
+    """Return every explicit project family without losing adjacent intents.
+
+    A longer alias owns an overlapping span (for example ``重点小巨人`` owns the
+    embedded ``小巨人``), while aliases in separate spans are all preserved.
+    ``excluded_title_terms`` are result-filtering rules and must not suppress a
+    second project explicitly requested in the same question.
+    """
+
+    candidates: list[tuple[int, int, int, int, Mapping[str, object]]] = []
+    for rule_index, rule in enumerate(rules):
+        for raw_alias in rule.get("aliases", []):
+            alias = str(raw_alias).strip()
+            if not alias:
+                continue
+            for match in re.finditer(re.escape(alias), query):
+                candidates.append(
+                    (match.start(), match.end(), len(alias), rule_index, rule)
+                )
+    candidates.sort(key=lambda item: (-item[2], item[0], item[3]))
+    selected: list[tuple[int, int, int, int, Mapping[str, object]]] = []
+    for candidate in candidates:
+        start, end = candidate[0], candidate[1]
+        if any(start >= kept[0] and end <= kept[1] for kept in selected):
+            continue
+        selected.append(candidate)
+    selected.sort(key=lambda item: (item[0], item[3]))
+    matches: list[Mapping[str, object]] = []
+    seen_rule_ids: set[str] = set()
+    for candidate in selected:
+        rule = candidate[4]
+        rule_id = str(rule.get("id") or id(rule))
+        if rule_id not in seen_rule_ids:
+            seen_rule_ids.add(rule_id)
+            matches.append(rule)
+    return matches
 
 
 def matched_project_retrieval_rule(
     query: str,
     rules: Sequence[Mapping[str, object]],
 ) -> Mapping[str, object] | None:
-    matches: list[tuple[int, Mapping[str, object]]] = []
-    normalized_query = normalize_search_text(query)
-    for rule in rules:
-        excluded_terms = [
-            normalize_search_text(term)
-            for term in rule.get("excluded_title_terms", [])
-            if str(term).strip()
-        ]
-        if any(term and term in normalized_query for term in excluded_terms):
-            continue
-        for alias in rule.get("aliases", []):
-            normalized_alias = str(alias).strip()
-            if normalized_alias and normalized_alias in query:
-                matches.append((len(normalized_alias), rule))
-    return max(matches, key=lambda item: item[0])[1] if matches else None
+    matches = matched_project_retrieval_rules(query, rules)
+    return matches[0] if matches else None
 
 
 def selected_project_targets(
@@ -208,19 +244,22 @@ def project_selection_prompt(
     query: str,
     rules: Sequence[Mapping[str, object]],
 ) -> str | None:
-    rule = matched_project_retrieval_rule(query, rules)
-    if not rule:
-        return None
-    targets = selected_project_targets(query, rule)
-    region_prompt = project_region_prompt(query, rule, targets)
-    if region_prompt:
-        return region_prompt
-    if not bool(rule.get("selection_required")) or len(targets) == 1:
-        return None
-    all_targets = unique_strings(rule.get("targets", []))
-    return str(
-        rule.get("selection_prompt") or f"请选择具体项目：{'、'.join(all_targets)}。"
-    )
+    prompts: list[str] = []
+    for rule in matched_project_retrieval_rules(query, rules):
+        targets = selected_project_targets(query, rule)
+        region_prompt = project_region_prompt(query, rule, targets)
+        if region_prompt:
+            prompts.append(region_prompt)
+            continue
+        if bool(rule.get("selection_required")) and len(targets) > 1:
+            all_targets = unique_strings(rule.get("targets", []))
+            prompts.append(
+                str(
+                    rule.get("selection_prompt")
+                    or f"请选择具体项目：{'、'.join(all_targets)}。"
+                )
+            )
+    return " ".join(unique_strings(prompts)) or None
 
 
 def requires_current_policy_sources(query: str) -> bool:
@@ -330,28 +369,96 @@ def project_query_variants(
         prefixes = [region for region in region_terms if region not in project_name]
         return " ".join((*prefixes, project_name))
 
-    retrieval_rule = matched_project_retrieval_rule(query, rules)
-    if retrieval_rule:
-        targets = selected_project_targets(query, retrieval_rule)
-        if targets:
-            return list(dict.fromkeys(with_regions(name) for name in targets))
+    retrieval_rules = matched_project_retrieval_rules(query, rules)
+    explicit_targets = [
+        target
+        for rule in retrieval_rules
+        for target in selected_project_targets(query, rule)
+    ]
+
+    query_segments = [
+        segment.strip()
+        for segment in re.split(r"(?:以及|并且|和|与|及|、|，|,|；|;|/)", query)
+        if segment.strip()
+    ]
+    uncovered_normalized_segments = [
+        normalize_project_query(segment)
+        for segment in query_segments
+        if not matched_project_retrieval_rules(segment, rules)
+    ]
+    if any(
+        "高新技术企业" in segment
+        and not any(
+            term in segment
+            for term in ("研究开发中心", "研究院", "产业园", "产品")
+        )
+        for segment in uncovered_normalized_segments
+    ):
+        explicit_targets.append("高新技术企业")
 
     formal_matches: list[str] = []
     indexed_alias_matches: list[str] = []
     for record in project_records:
         canonical_name = str(record.get("canonical_project_name") or "").strip()
-        if canonical_name and canonical_name in normalized:
+        if canonical_name and any(
+            canonical_name in segment for segment in uncovered_normalized_segments
+        ):
             formal_matches.append(canonical_name)
             continue
         for alias in record.get("aliases", []):
             normalized_alias = str(alias).strip()
-            if normalized_alias and normalized_alias in normalized:
+            if normalized_alias and any(
+                normalized_alias in segment for segment in uncovered_normalized_segments
+            ):
                 indexed_alias_matches.append(canonical_name)
                 break
-    if formal_matches:
-        return list(dict.fromkeys(with_regions(name) for name in formal_matches))
-    if indexed_alias_matches:
-        return list(dict.fromkeys(with_regions(name) for name in indexed_alias_matches))
+    if explicit_targets:
+        normalized_explicit_targets = [
+            normalize_search_text(target) for target in explicit_targets
+        ]
+        formal_matches = [
+            canonical
+            for canonical in formal_matches
+            if not any(
+                normalize_search_text(canonical) in target
+                or target in normalize_search_text(canonical)
+                for target in normalized_explicit_targets
+            )
+        ]
+        indexed_alias_matches = [
+            canonical
+            for canonical in indexed_alias_matches
+            if not any(
+                normalize_search_text(canonical) in target
+                or target in normalize_search_text(canonical)
+                for target in normalized_explicit_targets
+            )
+        ]
+    combined_matches = unique_strings(
+        [*explicit_targets, *formal_matches, *indexed_alias_matches]
+    )
+    if re.search(r"(?:^|和|与|及|、)专精特新(?:和|与|及|、|$)", normalized):
+        combined_matches.append("专精特新中小企业")
+        combined_matches = unique_strings(combined_matches)
+    if combined_matches:
+        fallback_positions = {
+            target: index for index, target in enumerate(combined_matches)
+        }
+
+        def target_position(target: str) -> int:
+            terms = [target]
+            if target == "高新技术企业":
+                terms.extend(("高企", "国家高企", "国高", "高新技术企业"))
+            if target == "专精特新中小企业":
+                terms.extend(("专精特新中小企业", "专精特新", "省专"))
+            for rule in rules:
+                if target in selected_project_targets(query, rule):
+                    terms.extend(str(alias) for alias in rule.get("aliases", []))
+            positions = [query.find(term) for term in terms if term and term in query]
+            return min(positions) if positions else len(query) + fallback_positions[target]
+
+        combined_matches.sort(key=target_position)
+        return list(dict.fromkeys(with_regions(name) for name in combined_matches))
 
     matched_aliases = [alias for alias in configured_aliases if alias in normalized]
     if matched_aliases:
@@ -385,7 +492,7 @@ def project_query_is_resolved(
     project_records: Sequence[Mapping[str, object]],
     configured_aliases: Mapping[str, Sequence[str]],
 ) -> bool:
-    if matched_project_retrieval_rule(query, rules):
+    if matched_project_retrieval_rules(query, rules):
         return True
     normalized = normalize_project_query(query)
     if "高新技术企业" in normalized and not any(
@@ -448,9 +555,14 @@ def build_project_decision(
     year_match = re.search(r"(?<!\d)(20\d{2})(?:年|年度)?", normalized_query)
     requested_year = int(year_match.group(1)) if year_match else None
     requested_batch = small_giant_recognition_batch(normalized_query)
-    retrieval_rule = matched_project_retrieval_rule(normalized_query, rules)
-    if retrieval_rule:
-        targets = selected_project_targets(normalized_query, retrieval_rule)
+    retrieval_rules = matched_project_retrieval_rules(normalized_query, rules)
+    retrieval_rule = retrieval_rules[0] if retrieval_rules else None
+    if retrieval_rules:
+        targets = [
+            target
+            for rule in retrieval_rules
+            for target in selected_project_targets(normalized_query, rule)
+        ]
     else:
         targets = resolved_canonical_projects(
             normalized_query,
@@ -562,22 +674,21 @@ def build_project_decision(
         and not requested_batch
         and requires_current_sme_policy_sources(normalized_query)
     )
-    rule_id = str(retrieval_rule.get("id") or "") if retrieval_rule else ""
-    matched_aliases = (
-        [
-            str(alias)
-            for alias in retrieval_rule.get("aliases", [])
-            if str(alias) in normalized_query
-        ]
-        if retrieval_rule
-        else []
-    )
+    rule_ids = [str(rule.get("id") or "") for rule in retrieval_rules]
+    rule_id = rule_ids[0] if rule_ids else ""
+    matched_aliases = [
+        str(alias)
+        for rule in retrieval_rules
+        for alias in rule.get("aliases", [])
+        if str(alias) in normalized_query
+    ]
     matched_alias = max(matched_aliases, key=len) if matched_aliases else ""
     return {
         "schema_version": 1,
         "query": normalized_query,
         "normalized_query": normalize_project_query(normalized_query),
         "rule_id": rule_id,
+        "rule_ids": rule_ids,
         "matched_alias": matched_alias,
         "resolved": resolved,
         "clarification": clarification,

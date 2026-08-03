@@ -218,6 +218,38 @@ def test_portal_exposes_one_internal_lifecycle_decision_entry(tmp_path):
     assert result["scoring"]["enabled"] is False
 
 
+def test_portal_multi_project_lifecycle_decision_never_selects_only_first(tmp_path):
+    module = load_app(tmp_path)
+    result = module.enterprise_lifecycle_decision(
+        "同时评估小巨人和首版次",
+        enterprise_facts=[],
+        project_context={
+            "policy_status": "current",
+            "projects": [
+                {"project_id": "little-giant", "project_name": "专精特新小巨人"},
+                {"project_id": "first-software-version", "project_name": "首版次软件"},
+            ],
+        },
+        requirements=[],
+    )
+    assert result["decision_type"] == "multi-project-enterprise-lifecycle"
+    assert result["coverage_ledger"] == {
+        "requested": 2,
+        "processed": 2,
+        "skipped": [],
+        "is_truncated": False,
+    }
+    assert [
+        item["project_algorithm_pack"]["project_id"]
+        for item in result["project_decisions"]
+    ] == ["little-giant", "first-software-version"]
+    second_pack = result["project_decisions"][1]["project_algorithm_pack"]
+    assert second_pack["coverage_status"] in {"routing-only", "rules-confirmed"}
+    assert second_pack["formal_algorithm_decision_available"] is (
+        second_pack["coverage_status"] == "rules-confirmed"
+    )
+
+
 def test_portal_lifecycle_entry_compiles_materials_and_requires_rule_confirmation(
     tmp_path,
 ):
