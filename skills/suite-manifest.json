@@ -4,23 +4,20 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.5.5",
-    "version": "1.5.5",
-    "summary": "V1.5.5 修复 Windows WorkBuddy Hook 执行器兼容问题，向所有登录用户展示只读历史版本，并把三首产品名称与小巨人行业分类动态编入中文主题词典。",
+    "tag": "V1.5.6",
+    "version": "1.5.6",
+    "summary": "V1.5.6 将 Windows WorkBuddy 行为 Hook 收敛为独立 PowerShell 入口，修复正式交付意图误判，并为生产代码部署增加可恢复阶段回执。",
     "changes": [
-      "Windows Hook 改为 WorkBuddy PortableGit Bash 可执行的最小桥接脚本，再进入原生 CMD 适配器；hooks.json 不再内联 CMD 条件表达式。",
-      "Windows 桥接器从宿主插件根变量或脚本所在目录确定活动插件根，继续复用共享 Python 行为核心，macOS 与业务规则保持不变。",
-      "管理员和普通成员均可查看全部正式历史版本、发布时间与发布说明；历史记录只读且不提供旧版安装入口，所有安装始终指向最新版。",
-      "统一认定索引从已核验三首产品名称提取中文产品主题词，并保留原始产品名、修饰属性和来源证据。",
-      "小巨人企业按企策顾问 industryName 生成受控中文行业主题；该字段明确标为来源行业分类，不冒充官方主营业务。",
-      "其他未列明、研究试验、技术推广等宽泛分类不提升为精确主题，统一检索继续按确切、相关、待核验三层返回。",
-      "主题词典优先从当前知识索引 subject_taxonomy 表加载，旧索引缺表时仅回退到包内静态词典。",
-      "主题证据构建使用一次编译的多模式匹配器，避免动态词典扩充后对每条企业提及重复全表扫描。",
-      "代码发布和索引发布继续独立执行；本版本因主题索引变化运行一次分阶段全库扫描，后续纯代码发布不重复扫描。"
+      "Windows hooks.json 直接调用独立 PowerShell Hook 处理 UserPromptSubmit 与 Stop，不再经过 Bash、CMD、路径转换或 Python 解释器发现。",
+      "Windows PowerShell Hook 与 Skill 内联 Python 激活共享 schema 3 状态协议，支持新轮重置、同轮 Skill 累计、原子写和进程锁。",
+      "正式交付意图改为确定性分句判断：否定、条件、引号讨论只影响局部分句，后置明确交付动作可以重新触发。",
+      "主业务 Skill、政策四项、同行对比和正式模板门禁统一仅在 formal_business_delivery=true 时运行，普通政策答疑不再误阻断。",
+      "生产应用部署改为服务端事务、持久阶段回执与断线续验，长时间优雅退出不再造成生产成功但控制端误报失败。",
+      "代码发布和索引发布继续独立执行；本版本没有知识内容或索引结构变化，只使用 code 模式，不运行全库扫描。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.5 干净安装、活动路径旧版清理和远程 MCP 连接。",
+      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.6 干净安装、活动路径旧版清理和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -38,7 +35,7 @@
       {
         "target": "Windows WorkBuddy",
         "status": "候选自动化已验证，实机验收发布后补录",
-        "note": "使用 PortableGit Bash 最小桥接脚本进入原生 CMD 适配器；发布后补测每条新消息 turn_id 更新、上一轮 Skill 不残留、同轮累计和 MCP。"
+        "note": "使用独立 PowerShell Hook 处理提示与停止事件，不经过 Bash、CMD 或 Python 解释器发现；发布后补测轮次状态、同轮累计和 MCP。"
       }
     ],
     "one_step_installation_protocol": {
@@ -54,7 +51,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "活动搜索路径只保留一个 V1.5.5 jiaotang 市场"
+        "活动搜索路径只保留一个 V1.5.6 jiaotang 市场"
       ],
       "released_adapters": [
         "workbuddy-macos",

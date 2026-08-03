@@ -1,0 +1,16 @@
+[Unit]
+Description=Run resumable Jiaotang application deployment %i
+After=network-online.target
+Wants=network-online.target
+OnFailure=jiaotang-kb-failure-report@%n.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+TimeoutStartSec=7min
+ExecStart=/usr/bin/python3 /usr/local/libexec/jiaotang-kb-application-deploy --deployment-id %i
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/etc/jiaotang-kb-ops.env /etc/jiaotang-kb-app.env /opt/jiaotang-kb-runtime /var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /run/lock

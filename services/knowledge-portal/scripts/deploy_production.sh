@@ -63,6 +63,8 @@ deployment_id="${timestamp}-${build_commit:0:12}-$(
     python3 -c 'import secrets; print(secrets.token_hex(4))'
 )"
 remote_release_dir="${release_root}/${deployment_id}"
+echo "本轮应用部署编号：${deployment_id}"
+echo "控制端中断后可用 scripts/resume_application_deployment.sh ${deployment_id} 续验。"
 if [[ "${JIAOTANG_UPGRADE_INDEX:-false}" == "true" ]]; then
     echo "原地索引升级已停用；请构建、签名并发布新的不可变索引release。" >&2
     exit 78
@@ -289,6 +291,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/check_oss_governance.py scripts/deploy_index_delta_to_server.sh \
     scripts/verify_oss_mirror.py scripts/verify_authenticated_portal.py \
     scripts/verify_skill_signature_coverage.py \
+    scripts/run_application_deployment.py \
     scripts/build_policy_version_links.py \
     scripts/manage_project_algorithm_packs.py \
     scripts/validate_project_algorithm_packs.py \
@@ -431,6 +434,7 @@ ssh "${ssh_args[@]}" "${deploy_host}" \
     PRIVATE_OVERLAY_IDENTITY_SHA256='${private_overlay_identity_sha256}' \
     RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
 import grp
+import json
 import os
 import secrets
 import shutil
@@ -480,6 +484,47 @@ overrides = {
         'PRIVATE_OVERLAY_IDENTITY_SHA256'
     ],
 }
+deployment_state_dir = Path('/var/lib/jiaotang-kb/deployments')
+deployment_state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+previous_build_path = deployment_state_dir / (
+    os.environ['DEPLOYMENT_ID'] + '.previous-build.json'
+)
+previous_build = {
+    'commit': values.get('JIAOTANG_BUILD_COMMIT'),
+    'deployment_id': values.get('JIAOTANG_DEPLOYMENT_ID'),
+    'built_at': values.get('JIAOTANG_BUILD_CREATED_AT'),
+    'dependency_lock_sha256': values.get('JIAOTANG_DEPENDENCY_LOCK_SHA256'),
+    'dependency_build_lock_sha256': values.get(
+        'JIAOTANG_DEPENDENCY_BUILD_LOCK_SHA256'
+    ),
+    'wheelhouse_install_lock_sha256': values.get(
+        'JIAOTANG_WHEELHOUSE_INSTALL_LOCK_SHA256'
+    ),
+    'wheelhouse_manifest_sha256': values.get(
+        'JIAOTANG_WHEELHOUSE_MANIFEST_SHA256'
+    ),
+    'wheelhouse_content_identity_sha256': values.get(
+        'JIAOTANG_WHEELHOUSE_CONTENT_IDENTITY_SHA256'
+    ),
+    'dependency_identity_sha256': values.get(
+        'JIAOTANG_DEPENDENCY_IDENTITY_SHA256'
+    ),
+    'dependency_release_record_sha256': values.get(
+        'JIAOTANG_DEPENDENCY_RELEASE_RECORD_SHA256'
+    ),
+    'private_overlay_identity_sha256': values.get(
+        'JIAOTANG_PRIVATE_OVERLAY_IDENTITY_SHA256'
+    ),
+}
+previous_build_temporary = previous_build_path.with_name(
+    f'.{previous_build_path.name}.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+)
+previous_build_temporary.write_text(
+    json.dumps(previous_build, ensure_ascii=False, sort_keys=True) + '\n',
+    encoding='utf-8',
+)
+os.chmod(previous_build_temporary, 0o600)
+os.replace(previous_build_temporary, previous_build_path)
 lines = [(key, value) for key, value in lines if key not in overrides]
 lines.extend(overrides.items())
 ops_text = ''.join(f'{key}={value}\n' for key, value in lines)
@@ -490,8 +535,18 @@ app_text = ''.join(
     and not key.startswith('JIAOTANG_BACKUP_OSS_')
 )
 for target, content, mode in (
-    (ops_env, ops_text, 0o600),
-    (app_env, app_text, 0o640),
+    (
+        deployment_state_dir
+        / (os.environ['DEPLOYMENT_ID'] + '.candidate-ops.env'),
+        ops_text,
+        0o600,
+    ),
+    (
+        deployment_state_dir
+        / (os.environ['DEPLOYMENT_ID'] + '.candidate-app.env'),
+        app_text,
+        0o600,
+    ),
 ):
     temporary = target.with_name(
         f'.{target.name}.{os.getpid()}.{secrets.token_hex(4)}.tmp'
@@ -499,7 +554,8 @@ for target, content, mode in (
     temporary.write_text(content, encoding='utf-8')
     os.chmod(temporary, mode)
     os.replace(temporary, target)
-os.chown(app_env, 0, grp.getgrnam('jiaotang').gr_gid)
+if app_env.is_file():
+    os.chown(app_env, 0, grp.getgrnam('jiaotang').gr_gid)
 if legacy_env.is_file():
     os.chmod(legacy_env, 0o600)
 
@@ -528,6 +584,7 @@ wrapper_targets = {
     '/usr/local/sbin/jiaotang-kb-oss-sync': 'deploy/oss-sync.sh',
     '/usr/local/sbin/jiaotang-kb-refresh-index': 'deploy/refresh-index.sh',
     '/usr/local/sbin/jiaotang-kb-smoke-test': 'scripts/smoke_test_production.sh',
+    '/usr/local/sbin/jiaotang-kb-wait-ready': 'deploy/wait-ready.sh',
 }
 entries = {
     **{
@@ -558,169 +615,145 @@ for target_value, relative in entries.items():
     )
     temporary.symlink_to(dynamic)
     os.replace(temporary, target)
+
+stable_entries = {
+    '/etc/systemd/system/jiaotang-kb-application-deploy@.service': (
+        'deploy/jiaotang-kb-application-deploy@.service', 0o644
+    ),
+    '/usr/local/libexec/jiaotang-kb-application-deploy': (
+        'scripts/run_application_deployment.py', 0o755
+    ),
+}
+for target_value, (relative, mode) in stable_entries.items():
+    target = Path(target_value)
+    source_file = release / relative
+    if not source_file.is_file() or source_file.is_symlink():
+        raise SystemExit(f'新release缺少稳定部署入口：{source_file}')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(
+        f'.{target.name}.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+    )
+    shutil.copyfile(source_file, temporary)
+    os.chmod(temporary, mode)
+    os.replace(temporary, target)
 PY
     systemctl disable --now \
         jiaotang-kb-oss-sync.timer jiaotang-kb-oss-sync.path \
-        2>/dev/null || true
-    systemctl stop jiaotang-kb-backup.timer 2>/dev/null || true"
+        2>/dev/null || true"
 
-echo "[5/7] 按 ${release_mode} 模式原子切换应用current并健康回滚"
-deployment_failed=0
-ssh "${ssh_args[@]}" "${deploy_host}" "set -Eeuo pipefail
-    set -a
-    source /etc/jiaotang-kb-ops.env
-    set +a
-    app_switched=0
-    index_switched=${index_rollback_enabled}
-    rollback_on_error() {
-        trap - ERR
-        set +e
-        if [ \"\${app_switched}\" -eq 1 ]; then
-            RUNTIME_ROOT='${runtime_root}' python3 - <<'PY'
-import os
-import secrets
-from pathlib import Path
-
-runtime = Path(os.environ['RUNTIME_ROOT'])
-previous = runtime / 'previous'
-if previous.is_symlink():
-    target = previous.resolve(strict=True)
-    temporary = runtime / f'.current.rollback.{os.getpid()}.{secrets.token_hex(4)}.tmp'
-    temporary.symlink_to(target)
-    os.replace(temporary, runtime / 'current')
-PY
-        fi
-        if [ \"\${index_switched}\" -eq 1 ] \
-            && [ -L \"\${JIAOTANG_INDEX_DIR}/previous\" ]; then
-            '${remote_release_dir}/.venv/bin/python' \
-                '${remote_release_dir}/scripts/refresh_index_from_oss.py' \
-                --rollback
-        fi
-        systemctl daemon-reload
-        systemctl enable --now jiaotang-kb-backup.timer
-        systemctl enable --now jiaotang-kb-oss-verify.timer
-        systemctl restart jiaotang-kb
-        curl --fail --silent --show-error --retry 10 --retry-delay 2 \
-            http://127.0.0.1:8100/health >/dev/null
-        echo '部署失败，应用current已指回previous；新release保留待审。' >&2
-        exit 1
-    }
-    trap rollback_on_error ERR
-    echo '代码部署不发布或刷新索引；索引模式仅承接上游已扫描并切换的release。'
-
-    RUNTIME_ROOT='${runtime_root}' RELEASE_DIR='${remote_release_dir}' \
+echo "[5/7] 创建服务器持久化部署事务并脱离SSH执行"
+launch_status=1
+for launch_attempt in 1 2 3; do
+    if ssh "${ssh_args[@]}" "${deploy_host}" \
+        "DEPLOYMENT_ID='${deployment_id}' RELEASE_MODE='${release_mode}' \
+        RUNTIME_ROOT='${runtime_root}' RELEASE_ROOT='${release_root}' \
+        RELEASE_DIR='${remote_release_dir}' CREATED_AT='${build_created_at}' \
+        BUILD_COMMIT='${build_commit}' \
+        DEPENDENCY_LOCK_SHA256='${dependency_lock_sha256}' \
+        DEPENDENCY_BUILD_LOCK_SHA256='${dependency_build_lock_sha256}' \
+        WHEELHOUSE_INSTALL_LOCK_SHA256='${wheelhouse_install_lock_sha256}' \
+        WHEELHOUSE_MANIFEST_SHA256='${expected_wheelhouse_manifest_sha256}' \
+        WHEELHOUSE_CONTENT_IDENTITY_SHA256='${wheelhouse_content_identity_sha256}' \
+        DEPENDENCY_IDENTITY_SHA256='${dependency_identity_sha256}' \
+        DEPENDENCY_RELEASE_RECORD_SHA256='${dependency_release_record_sha256}' \
+        PRIVATE_OVERLAY_IDENTITY_SHA256='${private_overlay_identity_sha256}' \
         python3 - <<'PY'
+import json
 import os
 import secrets
 from pathlib import Path
 
-runtime = Path(os.environ['RUNTIME_ROOT'])
-release = Path(os.environ['RELEASE_DIR']).resolve(strict=True)
-current = runtime / 'current'
-old = current.resolve(strict=True)
-previous_tmp = runtime / f'.previous.{os.getpid()}.{secrets.token_hex(4)}.tmp'
-previous_tmp.symlink_to(old)
-os.replace(previous_tmp, runtime / 'previous')
-current_tmp = runtime / f'.current.{os.getpid()}.{secrets.token_hex(4)}.tmp'
-current_tmp.symlink_to(release)
-os.replace(current_tmp, current)
+state_dir = Path('/var/lib/jiaotang-kb/deployments')
+state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+deployment_id = os.environ['DEPLOYMENT_ID']
+previous_build = json.loads(
+    (state_dir / f'{deployment_id}.previous-build.json').read_text(
+        encoding='utf-8'
+    )
+)
+expected_build = {
+    'commit': os.environ['BUILD_COMMIT'],
+    'deployment_id': deployment_id,
+    'built_at': os.environ['CREATED_AT'],
+    'dependency_lock_sha256': os.environ['DEPENDENCY_LOCK_SHA256'],
+    'dependency_build_lock_sha256': os.environ[
+        'DEPENDENCY_BUILD_LOCK_SHA256'
+    ],
+    'wheelhouse_install_lock_sha256': os.environ[
+        'WHEELHOUSE_INSTALL_LOCK_SHA256'
+    ],
+    'wheelhouse_manifest_sha256': os.environ['WHEELHOUSE_MANIFEST_SHA256'],
+    'wheelhouse_content_identity_sha256': os.environ[
+        'WHEELHOUSE_CONTENT_IDENTITY_SHA256'
+    ],
+    'dependency_identity_sha256': os.environ['DEPENDENCY_IDENTITY_SHA256'],
+    'dependency_release_record_sha256': os.environ[
+        'DEPENDENCY_RELEASE_RECORD_SHA256'
+    ],
+    'private_overlay_identity_sha256': os.environ[
+        'PRIVATE_OVERLAY_IDENTITY_SHA256'
+    ],
+}
+request = {
+    'schema': 'jiaotang-application-deployment-request/v1',
+    'deployment_id': deployment_id,
+    'release_mode': os.environ['RELEASE_MODE'],
+    'runtime_root': os.environ['RUNTIME_ROOT'],
+    'release_root': os.environ['RELEASE_ROOT'],
+    'release_dir': os.environ['RELEASE_DIR'],
+    'previous_release_dir': str(
+        (Path(os.environ['RUNTIME_ROOT']) / 'current').resolve(strict=True)
+    ),
+    'expected_build': expected_build,
+    'previous_build': previous_build,
+    'candidate_ops_env': str(
+        state_dir / f'{deployment_id}.candidate-ops.env'
+    ),
+    'candidate_app_env': str(
+        state_dir / f'{deployment_id}.candidate-app.env'
+    ),
+    'created_at': os.environ['CREATED_AT'],
+}
+path = state_dir / f'{deployment_id}.request.json'
+payload = (json.dumps(request, ensure_ascii=False, sort_keys=True) + '\n').encode()
+if path.is_file():
+    if path.read_bytes() != payload:
+        raise SystemExit('同一部署编号已存在不同请求')
+else:
+    temporary = path.with_name(
+        f'.{path.name}.{os.getpid()}.{secrets.token_hex(4)}.tmp'
+    )
+    temporary.write_bytes(payload)
+    os.chmod(temporary, 0o600)
+    os.replace(temporary, path)
 PY
-    app_switched=1
-    systemctl daemon-reload
-    systemctl restart jiaotang-kb
-    systemctl enable --now jiaotang-kb-health.timer
-    systemctl enable --now jiaotang-kb-backup.timer
-    systemctl enable --now jiaotang-kb-oss-verify.timer
-
-    healthy=0
-    for attempt in \$(seq 1 30); do
-        if curl --fail --silent --show-error \
-            http://127.0.0.1:8100/health >/dev/null 2>&1; then
-            healthy=1
-            break
-        fi
-        sleep 2
-    done
-    if [ \"\${healthy}\" -ne 1 ]; then
-        systemctl --no-pager --full status jiaotang-kb || true
-        journalctl -u jiaotang-kb -n 80 --no-pager || true
-        false
+        systemctl daemon-reload
+        systemctl reset-failed 'jiaotang-kb-application-deploy@${deployment_id}.service' \
+            >/dev/null 2>&1 || true
+        systemctl start --no-block 'jiaotang-kb-application-deploy@${deployment_id}.service'"; then
+        launch_status=0
+        break
     fi
-
-    source /etc/jiaotang-kb-app.env
-    '${remote_release_dir}/.venv/bin/python' \
-        '${remote_release_dir}/scripts/migrate_first_public_release.py' \
-        --database \"\${JIAOTANG_DATA_DIR}/knowledge.db\" \
-        --release-dir \"\${JIAOTANG_SKILL_RELEASE_DIR}\"
-    systemctl start jiaotang-kb-health.service
-    '${remote_release_dir}/.venv/bin/python' \
-        '${remote_release_dir}/scripts/verify_authenticated_portal.py' \
-        --base-url http://127.0.0.1:8100
-    trap - ERR" || deployment_failed=1
-
-if [[ "${deployment_failed}" -ne 0 ]]; then
-    echo "部署失败；未读取、盘点、迁移或处置任何历史部署备份。" >&2
-    exit 1
+    echo "部署启动回执中断，第${launch_attempt}次重连确认。" >&2
+done
+if [[ "${launch_status}" -ne 0 ]]; then
+    echo "启动SSH连续中断；仍进入服务器回执续验，不直接判定生产失败。" >&2
 fi
 
-echo "[6/7] 检查固定路由和精确构建身份"
-ssh "${ssh_args[@]}" "${deploy_host}" "set -e
-    source /etc/jiaotang-kb-app.env
-    resolve=(--resolve \"\${JIAOTANG_PUBLIC_HOST}:443:127.0.0.1\")
-    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \
-        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/login\")\" = 200
-    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \
-        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/setup\")\" = 303
-    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \
-        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/v1/me\")\" = 401
-    test \"\$(curl -sS -o /dev/null -w '%{http_code}' \
-        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/mcp/\")\" = 401
-    build_json=\$(curl --fail --silent --show-error \
-        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/build\")
-    python3 - \"\${build_json}\" '${build_commit}' \
-        '${deployment_id}' '${build_created_at}' \
-        '${dependency_lock_sha256}' \
-        '${dependency_build_lock_sha256}' \
-        '${wheelhouse_install_lock_sha256}' \
-        '${expected_wheelhouse_manifest_sha256}' \
-        '${wheelhouse_content_identity_sha256}' \
-        '${dependency_identity_sha256}' \
-        '${dependency_release_record_sha256}' \
-        '${private_overlay_identity_sha256}' <<'PY'
-import json
-import sys
-
-payload = json.loads(sys.argv[1])
-assert payload.get('commit') == sys.argv[2], '生产/build commit与部署源不一致'
-assert payload.get('deployment_id') == sys.argv[3], '生产/build deployment_id不一致'
-assert payload.get('built_at') == sys.argv[4], '生产/build built_at不一致'
-assert payload.get('dependency_lock_sha256') == sys.argv[5], (
-    '生产/build dependency_lock_sha256不一致'
-)
-assert payload.get('dependency_build_lock_sha256') == sys.argv[6], (
-    '生产/build dependency_build_lock_sha256不一致'
-)
-assert payload.get('wheelhouse_install_lock_sha256') == sys.argv[7], (
-    '生产/build wheelhouse_install_lock_sha256不一致'
-)
-assert payload.get('wheelhouse_manifest_sha256') == sys.argv[8], (
-    '生产/build wheelhouse_manifest_sha256不一致'
-)
-assert payload.get('wheelhouse_content_identity_sha256') == sys.argv[9], (
-    '生产/build wheelhouse_content_identity_sha256不一致'
-)
-assert payload.get('dependency_identity_sha256') == sys.argv[10], (
-    '生产/build dependency_identity_sha256不一致'
-)
-assert payload.get('dependency_release_record_sha256') == sys.argv[11], (
-    '生产/build dependency_release_record_sha256不一致'
-)
-assert payload.get('private_overlay_identity_sha256') == sys.argv[12], (
-    '生产/build private_overlay_identity_sha256不一致'
-)
-PY
-    curl --fail --silent --show-error \
-        \"\${resolve[@]}\" \"https://\${JIAOTANG_PUBLIC_HOST}/demo\" >/dev/null"
+echo "[6/7] 断线重连并续验服务器阶段回执"
+if ! python3 "${script_dir}/wait_for_application_deployment.py" \
+    --host "${deploy_host}" \
+    --key "${deploy_key}" \
+    --deployment-id "${deployment_id}" \
+    --timeout-seconds "${JIAOTANG_DEPLOY_RECEIPT_TIMEOUT_SECONDS:-420}"; then
+    ssh "${ssh_args[@]}" "${deploy_host}" \
+        "systemctl --no-pager --full status \
+            'jiaotang-kb-application-deploy@${deployment_id}.service' || true
+         journalctl -u 'jiaotang-kb-application-deploy@${deployment_id}.service' \
+            -n 100 --no-pager || true" || true
+    echo "部署事务未返回成功回执；已保留服务器状态供续验。" >&2
+    exit 1
+fi
 
 echo "[7/7] 部署完成：${deployment_id}"
 echo "应用current：${remote_release_dir}"

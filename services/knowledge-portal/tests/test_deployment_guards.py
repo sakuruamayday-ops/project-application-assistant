@@ -63,6 +63,9 @@ def test_server_managed_private_template_hooks_survive_public_deploys():
 
 def test_deploy_verifies_signed_index_binding_without_refreshing_index():
     service = (DEPLOY_DIR / "jiaotang-kb.service").read_text(encoding="utf-8")
+    transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(
+        encoding="utf-8"
+    )
     refresh_wrapper = (DEPLOY_DIR / "refresh-index.sh").read_text(encoding="utf-8")
     refresh_service = (
         DEPLOY_DIR / "jiaotang-kb-index-refresh.service"
@@ -97,11 +100,11 @@ def test_deploy_verifies_signed_index_binding_without_refreshing_index():
     assert "release_id_for(index_dir" not in deploy_script
     assert "PRAGMA quick_check" not in deploy_script
     verify_execution = deploy_script.index(verifier)
-    restart = deploy_script.index(
-        "systemctl restart jiaotang-kb",
-        verify_execution,
+    transaction_launch = deploy_script.index(
+        "jiaotang-kb-application-deploy@${deployment_id}.service"
     )
-    assert verify_execution < restart
+    assert verify_execution < transaction_launch
+    assert '["systemctl", "restart", "jiaotang-kb.service"]' in transaction
 
 
 def test_code_deploy_entrypoint_fixes_code_mode_without_index_work():
@@ -166,17 +169,28 @@ def test_health_monitor_restarts_only_after_consecutive_failures_with_circuit_br
 
 def test_deploy_rolls_back_previous_release_when_new_index_health_fails():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+    transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(
+        encoding="utf-8"
+    )
     delta_script = (
         SCRIPT_DIR / "deploy_index_delta_to_server.sh"
     ).read_text(encoding="utf-8")
 
-    assert "scripts/refresh_index_from_oss.py' \\\n                --rollback" in deploy_script
+    assert 'request["release_mode"] == "index"' in transaction
+    assert '"scripts/refresh_index_from_oss.py"' in transaction
+    assert '"--rollback"' in transaction
+    assert "refresh_index_from_oss.py" not in deploy_script[
+        deploy_script.index("[5/7]") :
+    ]
     assert "jiaotang-kb-refresh-index --rollback" in delta_script
     assert "rsync " not in delta_script
 
 
 def test_deploy_injects_and_verifies_exact_build_identity():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+    transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(
+        encoding="utf-8"
+    )
 
     assert 'build_commit="$(git -C "${repository_dir}" rev-parse HEAD)"' in deploy_script
     assert "JIAOTANG_BUILD_COMMIT" in deploy_script
@@ -195,12 +209,11 @@ def test_deploy_injects_and_verifies_exact_build_identity():
     assert "static/kindle.css" in deploy_script
     assert "私有管理员启动守卫已启用" in deploy_script
     assert "/build" in deploy_script
-    assert "生产/build commit与部署源不一致" in deploy_script
-    assert "生产/build dependency_identity_sha256不一致" in deploy_script
-    assert "生产/build private_overlay_identity_sha256不一致" in deploy_script
+    assert "生产/build {key}与部署请求不一致" in transaction
+    assert 'verify_build(request["expected_build"])' in transaction
 
 
-def test_deploy_preflights_signed_binding_and_aborts_after_rollback():
+def test_deploy_preflights_signed_binding_before_detached_transaction():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
 
     preflight = deploy_script.index("verify_index_release_binding.py")
@@ -209,13 +222,14 @@ def test_deploy_preflights_signed_binding_and_aborts_after_rollback():
     )
     entrypoint_install = deploy_script.index("legacy_entries = runtime / 'legacy-entrypoints'")
     assert preflight < private_guard < entrypoint_install
-    rollback = deploy_script.index("rollback_on_error()")
-    rollback_exit = deploy_script.index("exit 1", rollback)
-    app_switch = deploy_script.index(
-        "RUNTIME_ROOT='${runtime_root}' RELEASE_DIR",
-        rollback,
+    stable_worker = deploy_script.index(
+        "'/usr/local/libexec/jiaotang-kb-application-deploy'"
     )
-    assert rollback < rollback_exit < app_switch
+    transaction_launch = deploy_script.index(
+        "systemctl start --no-block 'jiaotang-kb-application-deploy@"
+    )
+    assert preflight < private_guard < entrypoint_install < stable_worker
+    assert stable_worker < transaction_launch
 
 
 def test_deploy_requires_main_ci_wheelhouse_and_installs_without_index():
@@ -241,9 +255,12 @@ def test_deploy_uses_future_release_slots_without_historical_backup_governance()
     assert "/opt/jiaotang-kb-release-slots" in deploy_script
     assert "/opt/jiaotang-kb-runtime" in deploy_script
     assert "runtime / 'current'" in deploy_script
-    assert "runtime / 'previous'" in deploy_script
     assert "不可变应用release已存在，拒绝覆盖" in deploy_script
-    assert "应用current已指回previous" in deploy_script
+    transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'runtime / "previous"' in transaction
+    assert "atomic_symlink(previous, current)" in transaction
     for forbidden in (
         "runtime-transaction",
         "failed-new-state",
@@ -310,18 +327,46 @@ def test_lightweight_oss_verification_and_backup_timer_survive_deploys():
     verify_timer = (
         DEPLOY_DIR / "jiaotang-kb-oss-verify.timer"
     ).read_text(encoding="utf-8")
+    transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(
+        encoding="utf-8"
+    )
 
     assert '"--verify-only"' in refresh_wrapper
     assert "args.verify_only" in refresh
     assert 'verification_mode": "metadata-only"' in refresh
     assert "ExecStart=/usr/local/sbin/jiaotang-kb-refresh-index --verify-only" in verify_service
     assert "OnUnitActiveSec=1h" in verify_timer
-    assert deploy_script.count(
-        "systemctl enable --now jiaotang-kb-backup.timer"
-    ) >= 2
-    assert deploy_script.count(
-        "systemctl enable --now jiaotang-kb-oss-verify.timer"
-    ) >= 2
+    assert '"jiaotang-kb-backup.timer"' in transaction
+    assert '"jiaotang-kb-oss-verify.timer"' in transaction
+
+
+def test_application_deploy_is_resumable_and_shutdown_is_bounded():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(
+        encoding="utf-8"
+    )
+    service = (DEPLOY_DIR / "jiaotang-kb.service").read_text(encoding="utf-8")
+    transaction_unit = (
+        DEPLOY_DIR / "jiaotang-kb-application-deploy@.service"
+    ).read_text(encoding="utf-8")
+    waiter = (SCRIPT_DIR / "wait_for_application_deployment.py").read_text(
+        encoding="utf-8"
+    )
+    resume = (SCRIPT_DIR / "resume_application_deployment.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "systemctl start --no-block" in deploy_script
+    assert "wait_for_application_deployment.py" in deploy_script
+    assert "不直接判定生产失败" in deploy_script
+    assert "transport_retry" in waiter
+    assert "jiaotang-application-deployment-state/v1" in waiter
+    assert "systemctl start --no-block" in resume
+    assert "wait_for_application_deployment.py" in resume
+    assert "Type=oneshot" in transaction_unit
+    assert "TimeoutStartSec=7min" in transaction_unit
+    assert "--timeout-graceful-shutdown 20" in service
+    assert "TimeoutStopSec=30s" in service
+    assert "ExecStartPost=/usr/local/sbin/jiaotang-kb-wait-ready" in service
 
 
 def test_index_sync_uses_one_canonical_manifest_and_candidate_root():
