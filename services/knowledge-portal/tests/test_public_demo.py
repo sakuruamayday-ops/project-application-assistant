@@ -1,3 +1,5 @@
+import hashlib
+
 from fastapi.testclient import TestClient
 
 from test_portal import load_app
@@ -20,7 +22,7 @@ def test_public_demo_requires_no_registration_or_session(tmp_path):
     assert 'href="https://beian.miit.gov.cn/"' in response.text
     assert "浙公网安备33011002020199号" in response.text
     assert 'href="https://beian.mps.gov.cn/#/query/webSearch?code=33011002020199"' in response.text
-    assert 'src="https://beian.mps.gov.cn/file/ghs.png"' in response.text
+    assert 'src="/static/ghs.png"' in response.text
     assert response.headers["cache-control"] == "public, max-age=300"
 
 
@@ -46,4 +48,18 @@ def test_login_links_to_public_demo(tmp_path):
     assert 'href="https://beian.miit.gov.cn/"' in response.text
     assert "浙公网安备33011002020199号" in response.text
     assert 'href="https://beian.mps.gov.cn/#/query/webSearch?code=33011002020199"' in response.text
-    assert 'src="https://beian.mps.gov.cn/file/ghs.png"' in response.text
+    assert 'src="/static/ghs.png"' in response.text
+
+
+def test_public_security_filing_icon_is_served_locally(tmp_path):
+    module = load_app(tmp_path)
+
+    with TestClient(module.app) as client:
+        response = client.get("/static/ghs.png")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content.startswith(b"\x89PNG\r\n\x1a\n")
+    assert hashlib.sha256(response.content).hexdigest() == (
+        "a20583c81805fe64f7fa210851ce29754af9d25fd6aa5a3225a9557529602513"
+    )
