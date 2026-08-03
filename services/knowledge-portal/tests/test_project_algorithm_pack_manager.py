@@ -728,17 +728,17 @@ def test_release_validator_accepts_renamed_project_through_registered_alias(tmp_
 
 
 def test_production_deployment_includes_algorithm_references_and_rollback():
-    deploy_script = (
-        Path(__file__).resolve().parents[1]
-        / "scripts"
-        / "deploy_production.sh"
-    ).read_text(encoding="utf-8")
+    scripts = Path(__file__).resolve().parents[1] / "scripts"
+    deploy_script = (scripts / "deploy_production.sh").read_text(encoding="utf-8")
+    transaction = (scripts / "run_application_deployment.py").read_text(
+        encoding="utf-8"
+    )
 
     assert "app references templates static" in deploy_script
     assert "scripts/manage_project_algorithm_packs.py" in deploy_script
     assert "scripts/validate_project_algorithm_packs.py" in deploy_script
     assert "jiaotang-kb-release-slots" in deploy_script
-    assert "runtime / 'previous'" in deploy_script
     assert "runtime / 'current'" in deploy_script
-    assert "应用current已指回previous" in deploy_script
+    assert 'runtime / "previous"' in transaction
+    assert "atomic_symlink(previous, current)" in transaction
     assert "历史部署备份" in deploy_script
