@@ -340,6 +340,20 @@ def test_index_sync_uses_one_canonical_manifest_and_candidate_root():
     assert "JIAOTANG_MANIFEST_PATH与JIAOTANG_KNOWLEDGE_MANIFEST_PATH不一致" in updater
 
 
+def test_index_convergence_accepts_expected_nonzero_status_before_restoring_err_trap():
+    sync_script = (
+        SCRIPT_DIR / "sync_archived_knowledge_to_production.sh"
+    ).read_text(encoding="utf-8")
+
+    check_start = sync_script.index('echo "[5/10] 校验manifest与本轮提取报告是否收敛"')
+    branch_start = sync_script.index("if (( convergence_status == 2 )); then")
+    check_block = sync_script[check_start:branch_start]
+
+    assert check_block.index("trap - ERR") < check_block.index("set +e")
+    assert check_block.index('convergence_status="$?"') < check_block.index("set -e")
+    assert check_block.index("set -e") < check_block.index("trap record_stage_failure ERR")
+
+
 def test_deployment_lock_rejects_second_process(tmp_path: Path):
     lock_script = SCRIPT_DIR / "with_deployment_lock.py"
     lock_file = tmp_path / "deploy.lock"

@@ -186,6 +186,7 @@ echo "[5/10] 将派生矩阵与图谱加入生产manifest"
 python3 "${script_dir}/update_cloud_policy_manifest.py"
 
 echo "[5/10] 校验manifest与本轮提取报告是否收敛"
+trap - ERR
 set +e
 python3 - "${manifest}" "${index_dir}/extraction_report.csv" <<'PY'
 import csv
@@ -232,6 +233,7 @@ raise SystemExit(0)
 PY
 convergence_status="$?"
 set -e
+trap record_stage_failure ERR
 
 if (( convergence_status == 2 )); then
   convergence_pass="${JIAOTANG_RELEASE_CONVERGENCE_PASS:-0}"
