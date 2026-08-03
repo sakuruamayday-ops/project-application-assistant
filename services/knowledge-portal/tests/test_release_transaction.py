@@ -206,6 +206,131 @@ def test_expired_lease_only_allows_same_signed_transaction_takeover(
             )
 
 
+def test_early_failed_transaction_can_be_superseded_with_audit_evidence(
+    tmp_path: Path,
+) -> None:
+    verification, signature, public_key = signed_transaction(tmp_path)
+    replacement, replacement_signature, replacement_key = signed_transaction(
+        tmp_path,
+        commit="fixed-commit",
+    )
+    now = datetime(2026, 7, 30, tzinfo=timezone.utc)
+    with sqlite3.connect(":memory:") as connection:
+        connection.row_factory = sqlite3.Row
+        MODULE.acquire_release_lease(
+            connection,
+            verification=verification,
+            signature_payload=signature,
+            public_key_text=public_key,
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            ttl_seconds=3600,
+            now=now,
+        )
+        MODULE.transition_release_transaction(
+            connection,
+            version="2.0.0",
+            transaction_sha256=verification["manifest_sha256"],
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            target_state="github_staged",
+            now=now + timedelta(seconds=1),
+        )
+        MODULE.transition_release_transaction(
+            connection,
+            version="2.0.0",
+            transaction_sha256=verification["manifest_sha256"],
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            target_state="failed",
+            now=now + timedelta(seconds=2),
+        )
+
+        result = MODULE.supersede_failed_release_transaction(
+            connection,
+            verification=replacement,
+            signature_payload=replacement_signature,
+            public_key_text=replacement_key,
+            previous_transaction_sha256=verification["manifest_sha256"],
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            evidence={
+                "reason": "candidate source was repaired",
+                "github_prerelease_removed": True,
+                "portal_release_absent": True,
+            },
+            ttl_seconds=3600,
+            now=now + timedelta(seconds=3),
+        )
+
+        assert result["status"] == "superseded"
+        assert result["state"] == "leased"
+        assert result["transaction_sha256"] == replacement["manifest_sha256"]
+        assert {item["event_type"] for item in result["events"]} >= {
+            "transaction-superseded",
+            "lease-acquired-after-supersede",
+        }
+
+
+def test_failed_transaction_with_portal_state_cannot_be_superseded(
+    tmp_path: Path,
+) -> None:
+    verification, signature, public_key = signed_transaction(tmp_path)
+    replacement, replacement_signature, replacement_key = signed_transaction(
+        tmp_path,
+        commit="fixed-commit",
+    )
+    now = datetime(2026, 7, 30, tzinfo=timezone.utc)
+    with sqlite3.connect(":memory:") as connection:
+        connection.row_factory = sqlite3.Row
+        MODULE.acquire_release_lease(
+            connection,
+            verification=verification,
+            signature_payload=signature,
+            public_key_text=public_key,
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            ttl_seconds=3600,
+            now=now,
+        )
+        for offset, state in enumerate(("github_staged", "portal_staged"), 1):
+            MODULE.transition_release_transaction(
+                connection,
+                version="2.0.0",
+                transaction_sha256=verification["manifest_sha256"],
+                holder_id="thread-a",
+                lease_token="a" * 32,
+                target_state=state,
+                now=now + timedelta(seconds=offset),
+            )
+        MODULE.transition_release_transaction(
+            connection,
+            version="2.0.0",
+            transaction_sha256=verification["manifest_sha256"],
+            holder_id="thread-a",
+            lease_token="a" * 32,
+            target_state="failed",
+            now=now + timedelta(seconds=3),
+        )
+
+        with pytest.raises(RuntimeError, match="门户已进入暂存或发布阶段"):
+            MODULE.supersede_failed_release_transaction(
+                connection,
+                verification=replacement,
+                signature_payload=replacement_signature,
+                public_key_text=replacement_key,
+                previous_transaction_sha256=verification["manifest_sha256"],
+                holder_id="thread-a",
+                lease_token="a" * 32,
+                evidence={
+                    "reason": "candidate source was repaired",
+                    "github_prerelease_removed": True,
+                    "portal_release_absent": True,
+                },
+                now=now + timedelta(seconds=4),
+            )
+
+
 def test_release_transaction_requires_ordered_three_party_completion(
     tmp_path: Path,
 ) -> None:
