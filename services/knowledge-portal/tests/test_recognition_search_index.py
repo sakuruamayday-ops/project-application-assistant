@@ -2,8 +2,33 @@ from __future__ import annotations
 
 import sqlite3
 
-from scripts.build_recognition_search_index import build_index
+from scripts.build_recognition_search_index import TaxonomyMatcher, build_index, canonical_matches
 from app.recognized_enterprise_discovery import recognition_search
+
+
+def test_taxonomy_matcher_preserves_nested_exact_and_related_matches():
+    taxonomy = [
+        {
+            "canonical_subject": "汽车零部件",
+            "exact_terms": ["汽车零部件", "汽车零部件及配件"],
+            "related_terms": ["汽车配件"],
+        },
+        {
+            "canonical_subject": "配电开关设备",
+            "exact_terms": ["配电开关设备"],
+            "related_terms": [],
+        },
+    ]
+    matcher = TaxonomyMatcher(taxonomy)
+
+    assert canonical_matches("汽车零部件及配件制造", matcher) == [
+        ("汽车零部件", "汽车零部件", "exact"),
+        ("汽车零部件", "汽车零部件及配件", "exact"),
+    ]
+    assert canonical_matches("汽车配件与配电开关设备", matcher) == [
+        ("汽车零部件", "汽车配件", "related"),
+        ("配电开关设备", "配电开关设备", "exact"),
+    ]
 
 
 def test_build_recognition_search_index_backfills_authority_and_subject_evidence():

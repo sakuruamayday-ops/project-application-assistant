@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import sqlite3
+from collections import deque
 from pathlib import Path
 from typing import Iterable
 
@@ -151,22 +152,68 @@ def derived_taxonomy_entries(
     return entries
 
 
+class TaxonomyMatcher:
+    """Compile taxonomy terms once for linear-time multi-pattern matching."""
+
+    def __init__(self, taxonomy: list[dict[str, object]]) -> None:
+        self.transitions: list[dict[str, int]] = [{}]
+        self.failures: list[int] = [0]
+        self.outputs: list[list[tuple[str, str, str]]] = [[]]
+        declared: set[tuple[str, str, str]] = set()
+        for subject in taxonomy:
+            canonical = str(subject.get("canonical_subject") or "")
+            for level, field in (("exact", "exact_terms"), ("related", "related_terms")):
+                terms = subject.get(field, [])
+                if not isinstance(terms, list):
+                    continue
+                for term in (str(value).strip() for value in terms):
+                    output = (canonical, term, level)
+                    if not term or output in declared:
+                        continue
+                    declared.add(output)
+                    state = 0
+                    for character in term:
+                        target = self.transitions[state].get(character)
+                        if target is None:
+                            target = len(self.transitions)
+                            self.transitions[state][character] = target
+                            self.transitions.append({})
+                            self.failures.append(0)
+                            self.outputs.append([])
+                        state = target
+                    self.outputs[state].append(output)
+
+        queue: deque[int] = deque(self.transitions[0].values())
+        while queue:
+            state = queue.popleft()
+            for character, target in self.transitions[state].items():
+                queue.append(target)
+                fallback = self.failures[state]
+                while fallback and character not in self.transitions[fallback]:
+                    fallback = self.failures[fallback]
+                self.failures[target] = self.transitions[fallback].get(character, 0)
+                inherited = self.outputs[self.failures[target]]
+                if inherited:
+                    self.outputs[target].extend(inherited)
+
+    def find(self, text: object) -> list[tuple[str, str, str]]:
+        state = 0
+        matches: list[tuple[str, str, str]] = []
+        for character in str(text or ""):
+            while state and character not in self.transitions[state]:
+                state = self.failures[state]
+            state = self.transitions[state].get(character, 0)
+            matches.extend(self.outputs[state])
+        return list(dict.fromkeys(matches))
+
+
 def canonical_matches(
     text: object,
-    taxonomy: list[dict[str, object]],
+    taxonomy: list[dict[str, object]] | TaxonomyMatcher,
 ) -> list[tuple[str, str, str]]:
-    haystack = str(text or "")
-    matches: list[tuple[str, str, str]] = []
-    for subject in taxonomy:
-        canonical = str(subject.get("canonical_subject") or "")
-        for level, field in (("exact", "exact_terms"), ("related", "related_terms")):
-            terms = subject.get(field, [])
-            if not isinstance(terms, list):
-                continue
-            for term in (str(value).strip() for value in terms):
-                if term and term in haystack:
-                    matches.append((canonical, term, level))
-    return list(dict.fromkeys(matches))
+    if isinstance(taxonomy, TaxonomyMatcher):
+        return taxonomy.find(text)
+    return TaxonomyMatcher(taxonomy).find(text)
 
 
 def ensure_schema(connection: sqlite3.Connection) -> None:
@@ -323,7 +370,7 @@ def insert_recognition_record(
 
 def insert_subject_evidence(
     connection: sqlite3.Connection,
-    taxonomy: list[dict[str, object]],
+    taxonomy: list[dict[str, object]] | TaxonomyMatcher,
     *,
     source_table: str,
     source_row_id: object,
@@ -450,6 +497,7 @@ def build_index(
         load_taxonomy(taxonomy_path),
         derived_taxonomy_entries(three_first_rows, small_giant_rows),
     )
+    taxonomy_matcher = TaxonomyMatcher(taxonomy)
     ensure_schema(connection)
     insert_taxonomy(connection, taxonomy)
 
@@ -478,7 +526,7 @@ def build_index(
         )
         insert_subject_evidence(
             connection,
-            taxonomy,
+            taxonomy_matcher,
             source_table="three_first_project_awards",
             source_row_id=row_id,
             enterprise_name=row.get("enterprise_name"),
@@ -590,7 +638,7 @@ def build_index(
             row = dict(raw_row)
             insert_subject_evidence(
                 connection,
-                taxonomy,
+                taxonomy_matcher,
                 source_table="enterprise_mentions",
                 source_row_id=row["id"],
                 enterprise_name=row["enterprise_name"],
@@ -605,7 +653,7 @@ def build_index(
     for row in table_rows(connection, "case_packs"):
         insert_subject_evidence(
             connection,
-            taxonomy,
+            taxonomy_matcher,
             source_table="case_packs",
             source_row_id=row.get("case_pack_id"),
             enterprise_name=row.get("enterprise_name"),
