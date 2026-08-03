@@ -580,35 +580,36 @@ def _validate_workbuddy_integrity(
         raise ValueError("WorkBuddy 最小行为 Hook 事件范围不合规")
     hook_commands = json.dumps(hooks, ensure_ascii=False).casefold()
     windows_adapter = f"{plugin_prefix}scripts/workbuddy_hook_windows.cmd"
+    windows_bridge = f"{plugin_prefix}scripts/workbuddy_hook_windows.sh"
     macos_adapter = f"{plugin_prefix}scripts/workbuddy_hook_macos.sh"
     launcher = f"{plugin_prefix}scripts/workbuddy_hook_launcher.sh"
     if target == "windows":
         if plugin.get("platform") != "windows":
             raise ValueError("Windows包未声明Windows平台")
-        if windows_adapter not in file_names:
-            raise ValueError("Windows包缺少原生.cmd Hook入口")
+        if windows_adapter not in file_names or windows_bridge not in file_names:
+            raise ValueError("Windows包缺少宿主Bash兼容桥或原生.cmd Hook入口")
         if macos_adapter in file_names or launcher in file_names:
-            raise ValueError("Windows包混入macOS/Bash Hook适配器")
+            raise ValueError("Windows包混入macOS Hook适配器")
         if any(
             marker in hook_commands
             for marker in (
-                "bash",
-                ".sh",
+                "cmd.exe",
+                "/d /s /c",
+                "if exist",
                 "python3 -c",
                 "powershell",
-                "'cmd.exe",
             )
         ):
-            raise ValueError("Windows hooks.json仍依赖shell或动态Python命令")
-        if "cmd.exe" not in hook_commands or ".cmd" not in hook_commands:
-            raise ValueError("Windows hooks.json未进入原生cmd适配器")
+            raise ValueError("Windows hooks.json仍内联CMD条件或动态解释器命令")
+        if "bash" not in hook_commands or "workbuddy_hook_windows.sh" not in hook_commands:
+            raise ValueError("Windows hooks.json未进入宿主Bash兼容桥")
     elif target == "macos":
         if plugin.get("platform") != "macos":
             raise ValueError("macOS包未声明macOS平台")
         if macos_adapter not in file_names or launcher not in file_names:
             raise ValueError("macOS包缺少shell Hook适配器")
-        if windows_adapter in file_names:
-            raise ValueError("macOS包混入Windows cmd Hook适配器")
+        if windows_adapter in file_names or windows_bridge in file_names:
+            raise ValueError("macOS包混入Windows Hook适配器")
         if "cmd.exe" in hook_commands or ".cmd" in hook_commands:
             raise ValueError("macOS hooks.json混入Windows入口")
     skills = suite.get("skills")

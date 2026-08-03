@@ -139,6 +139,7 @@ def qice_records(path: Path) -> list[dict[str, object]]:
                 "region": str(item.get("province") or "待核验"),
                 "city": str(item.get("city") or ""),
                 "county": str(item.get("county") or ""),
+                "industry_name": str(item.get("industryName") or "").strip(),
                 "recognition_year": year,
                 "batch": batch,
                 "status": "认定",
@@ -195,7 +196,7 @@ def write_outputs(
                 handle.write(json.dumps(record, ensure_ascii=False) + "\n")
     fieldnames = [
         "enterprise_name", "unified_social_credit_code", "region", "city", "county",
-        "recognition_year", "batch", "status", "official_url", "official_url_role",
+        "industry_name", "recognition_year", "batch", "status", "official_url", "official_url_role",
         "official_fragment_key", "verification_status", "sequence_no", "qice_eid", "platform_year_raw",
         "former_names", "source_documents", "source_paths",
     ]
@@ -236,6 +237,7 @@ def replace_database_table(
             region TEXT NOT NULL,
             city TEXT NOT NULL DEFAULT '',
             county TEXT NOT NULL DEFAULT '',
+            industry_name TEXT NOT NULL DEFAULT '',
             recognition_year INTEGER NOT NULL,
             batch TEXT NOT NULL,
             status TEXT NOT NULL,
@@ -272,15 +274,15 @@ def replace_database_table(
         """
         INSERT INTO national_small_giant_master(
             enterprise_name,normalized_name,unified_social_credit_code,qice_eid,
-            region,city,county,recognition_year,batch,status,official_url,
+            region,city,county,industry_name,recognition_year,batch,status,official_url,
             official_url_role,official_fragment_key,verification_status,sequence_no,platform_year_raw,
             former_names_json,source_documents_json,source_paths_json
-        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         (
             (
                 item["enterprise_name"], item["normalized_name"], item["unified_social_credit_code"],
-                item["qice_eid"], item["region"], item["city"], item["county"],
+                item["qice_eid"], item["region"], item["city"], item["county"], item.get("industry_name", ""),
                 item["recognition_year"], item["batch"], item["status"], item["official_url"],
                 item["official_url_role"], item["official_fragment_key"], item["verification_status"], item["sequence_no"],
                 item["platform_year_raw"], json.dumps(item["former_names"], ensure_ascii=False),
@@ -429,10 +431,11 @@ def main() -> None:
         "record_count": len(records),
         "platform_year_claim_count": len(platform_claims),
         "batches": summaries,
-        "mandatory_fields": ["region", "recognition_year", "batch", "status", "official_url"],
+        "mandatory_fields": ["region", "industry_name", "recognition_year", "batch", "status", "official_url"],
         "rules": [
             "认定、复核、重点支持和地方小巨人分别建记录，禁止扁平合并。",
             "企策数据仅作发现与补全，不替代官方名单。",
+            "企策 industryName 仅作为行业分类来源，不改写成官方主营业务事实。",
             "官方链接缺失时保留空值并进入核验，不允许伪造或用平台链接冒充。",
             "后续导入必须保留地区、年度、批次、状态和官方链接。",
             "平台多年度标签逐年保留在 discovery_only 声明表，不得直接升级为官方认定批次。",

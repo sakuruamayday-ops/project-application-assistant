@@ -1226,6 +1226,36 @@ def test_small_giant_platform_year_claims_are_split_without_promoting_cohorts():
     assert record_year("2026年") is None
 
 
+def test_small_giant_qice_records_preserve_source_industry_classification(tmp_path):
+    from scripts.build_national_small_giant_master import qice_records
+
+    dataset = tmp_path / "qice.json"
+    dataset.write_text(
+        json.dumps(
+            {
+                "records": [
+                    {
+                        "entName": "浙江示例科技有限公司",
+                        "eid": "qice-example",
+                        "province": "浙江省",
+                        "city": "杭州市",
+                        "county": "余杭区",
+                        "industryName": "工业自动控制系统装置制造",
+                        "subsidyYear": "2025年",
+                        "entHisList": [],
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    records = qice_records(dataset)
+    assert len(records) == 1
+    assert records[0]["industry_name"] == "工业自动控制系统装置制造"
+
+
 def test_small_giant_batch_sources_preserve_required_provenance():
     from scripts.build_national_small_giant_master import DEFAULT_SOURCES
 

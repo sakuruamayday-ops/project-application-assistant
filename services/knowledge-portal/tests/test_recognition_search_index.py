@@ -42,6 +42,7 @@ def test_build_recognition_search_index_backfills_authority_and_subject_evidence
             region TEXT NOT NULL,
             city TEXT NOT NULL,
             county TEXT NOT NULL,
+            industry_name TEXT NOT NULL,
             recognition_year INTEGER,
             batch TEXT NOT NULL,
             status TEXT NOT NULL,
@@ -50,7 +51,7 @@ def test_build_recognition_search_index_backfills_authority_and_subject_evidence
             verification_status TEXT NOT NULL
         );
         INSERT INTO national_small_giant_master VALUES(
-            1,'乙湿巾有限公司','浙江省','杭州市','临平区',2024,'第六批',
+            1,'乙湿巾有限公司','浙江省','杭州市','临平区','汽车零部件及配件制造',2024,'第六批',
             '正式认定','https://example.gov.cn/giant','official_attachment',
             'official_local_fragment_match'
         );
@@ -70,7 +71,7 @@ def test_build_recognition_search_index_backfills_authority_and_subject_evidence
         """
     )
     counts = build_index(connection)
-    assert counts["subject_taxonomy"] == 2
+    assert counts["subject_taxonomy"] >= 4
     assert counts["recognition_records"] == 2
     assert counts["enterprise_subject_evidence"] >= 5
     joined = connection.execute(
@@ -92,3 +93,13 @@ def test_build_recognition_search_index_backfills_authority_and_subject_evidence
         for item in result["exact_results"]
     ] == ["乙湿巾有限公司"]
     assert result["related_results"] == []
+
+    industry_result = recognition_search(
+        connection,
+        query="有哪些做汽车零部件的小巨人企业",
+    )
+    assert industry_result["query_plan"]["subjects"] == ["汽车零部件"]
+    assert [
+        item["recognition_fact"]["enterprise_name"]
+        for item in industry_result["exact_results"]
+    ] == ["乙湿巾有限公司"]

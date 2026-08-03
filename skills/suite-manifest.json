@@ -4,28 +4,22 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.5.4",
-    "version": "1.5.4",
-    "summary": "V1.5.4 交付双平台 Hook、普通答疑误阻断修复、管理员统计、生产保障、多项目路由、统一认定反向检索与索引、三首组合查询、中文名单参数与多项目算法入口。",
+    "tag": "V1.5.5",
+    "version": "1.5.5",
+    "summary": "V1.5.5 修复 Windows WorkBuddy Hook 执行器兼容问题，向所有登录用户展示只读历史版本，并把三首产品名称与小巨人行业分类动态编入中文主题词典。",
     "changes": [
-      "WorkBuddy 改为 macOS 与 Windows 两个独立签名包，49 项 Skills 和共享 Python 行为核心保持逐字节一致。",
-      "Windows 包使用原生 CMD 启动器，依次选择 py -3、python 和 python3，检查 .workbuddy 与 .codebuddy 活动路径，不依赖 Bash 或 PowerShell。",
-      "明确否定生成报告或正式材料以及只解释、只回答时，Hook 将 formal_business_delivery 设为 false，不再误触发正式交付门禁。",
-      "主业务 Skill、政策四项、同行对比和正式报告章节检查统一以 formal_business_delivery=true 为前提，普通政策答疑不再被误阻断。",
-      "管理员调用统计按用户 ID 合并多台电脑，分别展示今日、7日、30日业务调用和 MCP 连接、工具列表、检索、文档调用及最后活跃时间。",
-      "MCP 连接和 tools/list 独立计数，不计入业务调用；管理员页面不展示完整个人 Token。",
-      "代码部署成功或回滚后都会重新启用备份定时器，避免部署流程停止定时器后未恢复。",
-      "生产环境新增每小时 OSS 签名指针与元数据轻量校验；仅在远端版本变化时下载并执行完整索引验证。",
-      "网站为 macOS 与 Windows 分别下发对应安装包，统一入口不再含糊返回跨平台 ZIP。",
-      "多项目问题按用户原始顺序保留全部明确项目，地区解析不再吞入查询前缀或多个地区。",
-      "新增统一 recognition_search，完整解析项目、主题、地区、年度和状态，确切、相关与待核验结果严格分账。",
-      "三首统一入口支持多个项目、多个地区以及产品和行业筛选，并返回分组分页与覆盖台账。",
-      "权威名单工具兼容中英文项目类型；网站助手与 WorkBuddy 共享三首、反向发现和多项目算法入口。",
-      "新增统一认定事实、企业主题证据与主题词典索引；索引单独发布一次，随后纯代码与 Skills 发布不重复全库扫描。"
+      "Windows Hook 改为 WorkBuddy PortableGit Bash 可执行的最小桥接脚本，再进入原生 CMD 适配器；hooks.json 不再内联 CMD 条件表达式。",
+      "Windows 桥接器从宿主插件根变量或脚本所在目录确定活动插件根，继续复用共享 Python 行为核心，macOS 与业务规则保持不变。",
+      "管理员和普通成员均可查看全部正式历史版本、发布时间与发布说明；历史记录只读且不提供旧版安装入口，所有安装始终指向最新版。",
+      "统一认定索引从已核验三首产品名称提取中文产品主题词，并保留原始产品名、修饰属性和来源证据。",
+      "小巨人企业按企策顾问 industryName 生成受控中文行业主题；该字段明确标为来源行业分类，不冒充官方主营业务。",
+      "其他未列明、研究试验、技术推广等宽泛分类不提升为精确主题，统一检索继续按确切、相关、待核验三层返回。",
+      "主题词典优先从当前知识索引 subject_taxonomy 表加载，旧索引缺表时仅回退到包内静态词典。",
+      "代码发布和索引发布继续独立执行；本版本因主题索引变化运行一次分阶段全库扫描，后续纯代码发布不重复扫描。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.4 干净安装、活动路径旧版清理和远程 MCP 连接。",
+      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，一次完成 V1.5.5 干净安装、活动路径旧版清理和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -42,8 +36,8 @@
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "候选自动化与 Windows CI 已验证，实机验收发布后补录",
-        "note": "使用独立 Windows 签名包和原生 CMD 启动适配器；发布后补测每条新消息 turn_id 更新、上一轮 Skill 不残留、同轮累计和 MCP。"
+        "status": "候选自动化已验证，实机验收发布后补录",
+        "note": "使用 PortableGit Bash 最小桥接脚本进入原生 CMD 适配器；发布后补测每条新消息 turn_id 更新、上一轮 Skill 不残留、同轮累计和 MCP。"
       }
     ],
     "one_step_installation_protocol": {
@@ -59,7 +53,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "活动搜索路径只保留一个 V1.5.4 jiaotang 市场"
+        "活动搜索路径只保留一个 V1.5.5 jiaotang 市场"
       ],
       "released_adapters": [
         "workbuddy-macos",

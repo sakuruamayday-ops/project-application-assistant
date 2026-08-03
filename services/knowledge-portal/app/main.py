@@ -9026,6 +9026,7 @@ def portal_payload(
         feedback_messages = []
         update_jobs = []
         releases = []
+        historical_releases = []
         admin_health: dict[str, object] = {}
         if user["is_admin"]:
             users = format_row_datetimes(connection.execute(
@@ -9190,24 +9191,22 @@ def portal_payload(
                 LIMIT 20
                 """
             ).fetchall(), "created_at", "completed_at", "rolled_back_at")
-        if user["is_admin"]:
-            release_rows = connection.execute(
-                """
-                SELECT id, version, file_name, sha256, release_notes, published_at
-                FROM skill_releases
-                ORDER BY published_at DESC, id DESC
-                """,
-            ).fetchall()
-            releases = [
-                {
-                    **dict(row),
-                    "published_at_display": format_chinese_datetime(row["published_at"]),
-                    "release_notes_html": render_guide_markdown(str(row["release_notes"])),
-                }
-                for row in release_rows
-                if is_public_skill_release_version(str(row["version"]))
-            ]
-            releases = releases[:20]
+        release_rows = connection.execute(
+            """
+            SELECT id, version, file_name, sha256, release_notes, published_at
+            FROM skill_releases
+            ORDER BY published_at DESC, id DESC
+            """,
+        ).fetchall()
+        releases = [
+            {
+                **dict(row),
+                "published_at_display": format_chinese_datetime(row["published_at"]),
+                "release_notes_html": render_guide_markdown(str(row["release_notes"])),
+            }
+            for row in release_rows
+            if is_public_skill_release_version(str(row["version"]))
+        ]
         if user["is_admin"]:
             since_24_hours = isoformat(utc_now() - timedelta(hours=24))
             since_7_days = isoformat(utc_now() - timedelta(days=7))
@@ -9319,6 +9318,11 @@ def portal_payload(
             if latest_release
             else None
         )
+        historical_releases = [
+            release
+            for release in releases
+            if latest_release is None or int(release["id"]) != int(latest_release["id"])
+        ]
         release_announcement = None
         if latest_release:
             release_announcement = connection.execute(
@@ -9372,6 +9376,7 @@ def portal_payload(
         "releases": releases,
         "latest_release": latest_release_payload,
         "release_stage": release_stage_payload,
+        "historical_releases": historical_releases,
         "skill_center": skill_catalog_payload(),
         "project_algorithms": project_algorithm_catalog_payload(algorithm_coverage),
         "project_algorithm_detail": project_algorithm_detail_payload(

@@ -92,6 +92,49 @@ def load_subject_taxonomy() -> list[dict[str, object]]:
     return [dict(item) for item in subjects if isinstance(item, dict)]
 
 
+def load_indexed_subject_taxonomy(
+    connection: sqlite3.Connection,
+) -> list[dict[str, object]]:
+    if not _table_exists(connection, "subject_taxonomy"):
+        return load_subject_taxonomy()
+    try:
+        rows = connection.execute(
+            """
+            SELECT canonical_subject,exact_terms_json,related_terms_json,
+                   excluded_terms_json,notes
+            FROM subject_taxonomy
+            ORDER BY canonical_subject
+            """
+        ).fetchall()
+    except sqlite3.Error:
+        return load_subject_taxonomy()
+    taxonomy: list[dict[str, object]] = []
+    for raw_row in rows:
+        row = dict(raw_row) if isinstance(raw_row, sqlite3.Row) else {
+            "canonical_subject": raw_row[0],
+            "exact_terms_json": raw_row[1],
+            "related_terms_json": raw_row[2],
+            "excluded_terms_json": raw_row[3],
+            "notes": raw_row[4],
+        }
+        try:
+            exact_terms = json.loads(str(row["exact_terms_json"] or "[]"))
+            related_terms = json.loads(str(row["related_terms_json"] or "[]"))
+            excluded_terms = json.loads(str(row["excluded_terms_json"] or "[]"))
+        except json.JSONDecodeError:
+            continue
+        taxonomy.append(
+            {
+                "canonical_subject": str(row["canonical_subject"] or ""),
+                "exact_terms": exact_terms if isinstance(exact_terms, list) else [],
+                "related_terms": related_terms if isinstance(related_terms, list) else [],
+                "excluded_terms": excluded_terms if isinstance(excluded_terms, list) else [],
+                "notes": str(row["notes"] or ""),
+            }
+        )
+    return taxonomy or load_subject_taxonomy()
+
+
 def _project_terms_in_query(query: str) -> list[str]:
     ordered: list[tuple[int, str]] = []
     for alias in sorted(PROJECT_ALIASES, key=len, reverse=True):
@@ -115,6 +158,7 @@ def build_recognition_query_plan(
     regions: Sequence[object] = (),
     years: Sequence[object] = (),
     status: str = "final_recognition",
+    taxonomy: Sequence[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     normalized_query = re.sub(r"\s+", "", query.strip())
     project_values = _unique(projects) or _project_terms_in_query(normalized_query)
@@ -151,7 +195,7 @@ def build_recognition_query_plan(
 
     requested_subjects = _unique(subject_terms)
     taxonomy_matches: list[dict[str, object]] = []
-    for subject in load_subject_taxonomy():
+    for subject in taxonomy or load_subject_taxonomy():
         searchable_terms = _unique(
             [
                 subject.get("canonical_subject", ""),
@@ -812,6 +856,7 @@ def recognition_search(
         regions=regions,
         years=years,
         status=status,
+        taxonomy=load_indexed_subject_taxonomy(connection),
     )
     bounded_limit = max(1, min(int(limit), 200))
     route_by_intent = {

@@ -251,15 +251,31 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     "jiaotang-regression/plugins/jiaotang-regression-skills/"
                     "skills/enterprise-profile/SKILL.md"
                 ).decode("utf-8")
+                hooks = bundle.read(
+                    "jiaotang-regression/plugins/jiaotang-regression-skills/"
+                    "hooks/hooks.json"
+                ).decode("utf-8")
             self.assertFalse(
                 any(
-                    name.endswith((".command", ".ps1", ".sh"))
+                    name.endswith((".command", ".ps1"))
+                    for name in names
+                )
+            )
+            self.assertFalse(
+                any(
+                    name.endswith(".sh")
+                    and not name.endswith("/scripts/workbuddy_hook_windows.sh")
                     for name in names
                 )
             )
             self.assertTrue(
                 any(name.endswith("/scripts/workbuddy_hook_windows.cmd") for name in names)
             )
+            self.assertTrue(
+                any(name.endswith("/scripts/workbuddy_hook_windows.sh") for name in names)
+            )
+            self.assertIn("workbuddy_hook_windows.sh", hooks)
+            self.assertNotIn("cmd.exe /d /s /c", hooks.casefold())
             self.assertIn("WorkBuddy 应用内完成", guide)
             self.assertIn("/plugin", guide)
             self.assertIn("plugins/marketplaces/jiaotang", guide)

@@ -6134,7 +6134,7 @@ def test_latest_skill_release_metadata_and_download(tmp_path, monkeypatch):
         client.cookies.update(login.cookies)
         skills_page = client.get("/skills")
         assert skills_page.status_code == 200
-        assert "企业全生命周期助手 V1.0" not in skills_page.text
+        assert "企业全生命周期助手 V1.0" in skills_page.text
         assert "下载 V1.0 通用包" not in skills_page.text
         with closing(module.database()) as connection:
             historical_id = connection.execute(
@@ -8007,20 +8007,47 @@ def test_release_display_validation_cache_rechecks_changed_file(
     assert calls == [("generic", True), ("generic", True)]
 
 
-def test_portal_displays_only_latest_release(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    ("username", "password", "is_admin"),
+    (
+        ("owner", "owner-password-123", 1),
+        ("member", "member-password-123", 0),
+    ),
+)
+def test_portal_displays_latest_and_full_public_release_history_for_all_roles(
+    tmp_path,
+    monkeypatch,
+    username,
+    password,
+    is_admin,
+):
     module = load_app(tmp_path)
     module.FIRST_PUBLIC_SKILL_VERSION = "1.5.0"
     allow_test_release_artifacts(monkeypatch, module)
     now = module.utc_now()
     with closing(module.database()) as connection:
         connection.execute(
-            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,1,?)",
+            "INSERT INTO users(username,password_hash,is_admin,created_at) VALUES (?,?,?,?)",
             (
-                "owner",
-                module.password_hasher.hash("owner-password-123"),
+                username,
+                module.password_hasher.hash(password),
+                is_admin,
                 module.isoformat(now),
             ),
         )
+        if not is_admin:
+            member_id = connection.execute(
+                "SELECT id FROM users WHERE username=?",
+                (username,),
+            ).fetchone()["id"]
+            connection.execute(
+                """
+                INSERT INTO registration_authorizations(
+                    real_name,identity_code,status,user_id,created_at,registered_at
+                ) VALUES (?,?,'registered',?,?,?)
+                """,
+                ("普通成员", "1550", member_id, module.isoformat(now), module.isoformat(now)),
+            )
         for offset, version in enumerate(("1.5.0", "1.5.1", "1.5.2")):
             package = tmp_path / f"skills-{version}.zip"
             package.write_bytes(f"skills-{version}".encode())
@@ -8044,17 +8071,19 @@ def test_portal_displays_only_latest_release(tmp_path, monkeypatch):
     with TestClient(module.app) as client:
         login = client.post(
             "/login",
-            data={"username": "owner", "password": "owner-password-123"},
+            data={"username": username, "password": password},
             follow_redirects=False,
         )
         client.cookies.update(login.cookies)
-        page = client.get("/portal")
+        page = client.get("/skills")
 
-    assert page.status_code == 200
-    assert "企业全生命周期助手 V1.5.2" in page.text
-    assert "企业全生命周期助手 V1.5.1" not in page.text
-    assert "企业全生命周期助手 V1.5.0" not in page.text
-    assert "企业全生命周期助手 V1.4.9" not in page.text
+        assert page.status_code == 200
+        assert "企业全生命周期助手 V1.5.2" in page.text
+        assert "企业全生命周期助手 V1.5.1" in page.text
+        assert "企业全生命周期助手 V1.5.0" in page.text
+        assert "release 1.5.1" in page.text
+        assert "历史记录只读" in page.text
+        assert "企业全生命周期助手 V1.4.9" not in page.text
 
 
 def test_admin_invalid_signature_upload_keeps_previous_latest(

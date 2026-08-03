@@ -9,6 +9,19 @@ import sqlite3
 from pathlib import Path
 from typing import Iterable
 
+try:
+    from scripts.recognized_subject_derivation import (
+        DerivedSubject,
+        derive_industry_subject,
+        derive_product_subject,
+    )
+except ModuleNotFoundError:
+    from recognized_subject_derivation import (
+        DerivedSubject,
+        derive_industry_subject,
+        derive_product_subject,
+    )
+
 
 DEFAULT_TAXONOMY = (
     Path(__file__).resolve().parents[1]
@@ -54,6 +67,88 @@ def load_taxonomy(path: Path) -> list[dict[str, object]]:
     payload = json.loads(path.expanduser().resolve().read_text(encoding="utf-8"))
     subjects = payload.get("subjects", []) if isinstance(payload, dict) else []
     return [dict(item) for item in subjects if isinstance(item, dict)]
+
+
+def merge_taxonomy(
+    base: list[dict[str, object]],
+    derived: Iterable[dict[str, object]],
+) -> list[dict[str, object]]:
+    merged: dict[str, dict[str, object]] = {}
+    for item in [*base, *derived]:
+        canonical = str(item.get("canonical_subject") or "").strip()
+        if not canonical:
+            continue
+        current = merged.setdefault(
+            canonical,
+            {
+                "canonical_subject": canonical,
+                "exact_terms": [],
+                "related_terms": [],
+                "excluded_terms": [],
+                "notes": "",
+            },
+        )
+        for field in ("exact_terms", "related_terms", "excluded_terms"):
+            values = item.get(field, [])
+            if isinstance(values, list):
+                current[field] = list(
+                    dict.fromkeys(
+                        [
+                            *current[field],
+                            *(str(value).strip() for value in values if str(value).strip()),
+                        ]
+                    )
+                )
+        note = str(item.get("notes") or "").strip()
+        if note and note not in str(current["notes"]):
+            current["notes"] = "；".join(
+                part for part in (str(current["notes"]), note) if part
+            )
+    return list(merged.values())
+
+
+def derived_taxonomy_entries(
+    three_first_rows: Iterable[dict[str, object]],
+    small_giant_rows: Iterable[dict[str, object]],
+) -> list[dict[str, object]]:
+    entries: list[dict[str, object]] = []
+    for row in three_first_rows:
+        product = derive_product_subject(row.get("product_name"))
+        industry = derive_industry_subject(row.get("industry"))
+        product_status = str(row.get("product_name_status") or "verified")
+        if product and product_status not in {"missing_user_lookup_required", "missing"}:
+            entries.append(
+                {
+                    "canonical_subject": product.canonical_subject,
+                    "exact_terms": [product.canonical_subject, product.raw_subject],
+                    "related_terms": [industry.canonical_subject] if industry else [],
+                    "excluded_terms": [],
+                    "notes": "由三首正式名单产品名确定性归一化；原名保留为证据。",
+                }
+            )
+        if industry:
+            entries.append(
+                {
+                    "canonical_subject": industry.canonical_subject,
+                    "exact_terms": [industry.canonical_subject, industry.raw_subject],
+                    "related_terms": [],
+                    "excluded_terms": [],
+                    "notes": "由三首来源行业字段归一化，不替代具体产品名。",
+                }
+            )
+    for row in small_giant_rows:
+        industry = derive_industry_subject(row.get("industry_name"))
+        if industry:
+            entries.append(
+                {
+                    "canonical_subject": industry.canonical_subject,
+                    "exact_terms": [industry.canonical_subject, industry.raw_subject],
+                    "related_terms": [],
+                    "excluded_terms": [],
+                    "notes": "由企策 industryName 归一化为行业主题；不表述为官方主营业务。",
+                }
+            )
+    return entries
 
 
 def canonical_matches(
@@ -249,8 +344,6 @@ def insert_subject_evidence(
         if not raw_subject:
             continue
         matches = canonical_matches(raw_subject, taxonomy)
-        if not matches and source_table == "three_first_project_awards":
-            matches = [(raw_subject, raw_subject, "exact")]
         for canonical, matched_term, level in matches:
             key = (canonical, matched_term, level)
             if key in seen:
@@ -261,7 +354,7 @@ def insert_subject_evidence(
                 source_row_id,
                 normalized_name,
                 canonical,
-                matched_term,
+                raw_subject,
                 level,
             )
             connection.execute(
@@ -290,16 +383,77 @@ def insert_subject_evidence(
             )
 
 
+def insert_derived_subject_evidence(
+    connection: sqlite3.Connection,
+    subject: DerivedSubject | None,
+    *,
+    source_table: str,
+    source_row_id: object,
+    enterprise_name: object,
+    match_level: str,
+    evidence_type: str,
+    evidence_excerpt: object = "",
+    source_url: object = "",
+    verification_status: str,
+) -> None:
+    if subject is None:
+        return
+    normalized_name = normalize_enterprise(enterprise_name)
+    if not normalized_name:
+        return
+    evidence_id = stable_id(
+        source_table,
+        source_row_id,
+        normalized_name,
+        subject.canonical_subject,
+        subject.raw_subject,
+        match_level,
+    )
+    attributes = "、".join(subject.attributes)
+    excerpt = str(evidence_excerpt or "")
+    if attributes:
+        excerpt = f"{excerpt}；归一化属性：{attributes}" if excerpt else f"归一化属性：{attributes}"
+    connection.execute(
+        """
+        INSERT OR REPLACE INTO enterprise_subject_evidence(
+            evidence_id,enterprise_id,enterprise_name,canonical_subject,raw_subject,
+            match_level,evidence_type,evidence_excerpt,source_url,source_document_id,
+            verification_status,source_table,source_row_id
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        (
+            evidence_id,
+            normalized_name,
+            str(enterprise_name or ""),
+            subject.canonical_subject,
+            subject.raw_subject,
+            match_level,
+            evidence_type,
+            excerpt[:2000],
+            str(source_url or ""),
+            None,
+            verification_status,
+            source_table,
+            str(source_row_id or ""),
+        ),
+    )
+
+
 def build_index(
     connection: sqlite3.Connection,
     taxonomy_path: Path = DEFAULT_TAXONOMY,
 ) -> dict[str, int]:
     connection.row_factory = sqlite3.Row
-    taxonomy = load_taxonomy(taxonomy_path)
+    three_first_rows = table_rows(connection, "three_first_project_awards")
+    small_giant_rows = table_rows(connection, "national_small_giant_master")
+    taxonomy = merge_taxonomy(
+        load_taxonomy(taxonomy_path),
+        derived_taxonomy_entries(three_first_rows, small_giant_rows),
+    )
     ensure_schema(connection)
     insert_taxonomy(connection, taxonomy)
 
-    for row in table_rows(connection, "three_first_project_awards"):
+    for row in three_first_rows:
         row_id = row.get("id") or stable_id(*row.values())
         insert_recognition_record(
             connection,
@@ -335,7 +489,34 @@ def build_index(
             verification_status=str(row.get("confidence") or "verified"),
         )
 
-    for row in table_rows(connection, "national_small_giant_master"):
+        product_status = str(row.get("product_name_status") or "verified")
+        if product_status not in {"missing_user_lookup_required", "missing"}:
+            insert_derived_subject_evidence(
+                connection,
+                derive_product_subject(row.get("product_name")),
+                source_table="three_first_project_awards",
+                source_row_id=row_id,
+                enterprise_name=row.get("enterprise_name"),
+                match_level="exact",
+                evidence_type="official_recognition_product_head",
+                evidence_excerpt=row.get("source_title"),
+                source_url=row.get("source_url"),
+                verification_status=str(row.get("confidence") or "verified"),
+            )
+        insert_derived_subject_evidence(
+            connection,
+            derive_industry_subject(row.get("industry")),
+            source_table="three_first_project_awards",
+            source_row_id=row_id,
+            enterprise_name=row.get("enterprise_name"),
+            match_level="exact",
+            evidence_type="source_industry_classification",
+            evidence_excerpt=row.get("source_title"),
+            source_url=row.get("source_url"),
+            verification_status=str(row.get("confidence") or "verified"),
+        )
+
+    for row in small_giant_rows:
         row_id = row.get("id") or stable_id(*row.values())
         insert_recognition_record(
             connection,
@@ -355,6 +536,18 @@ def build_index(
             source_url=row.get("official_url"),
             source_grade=row.get("official_url_role"),
             verification_status=row.get("verification_status"),
+        )
+        insert_derived_subject_evidence(
+            connection,
+            derive_industry_subject(row.get("industry_name")),
+            source_table="national_small_giant_master",
+            source_row_id=row_id,
+            enterprise_name=row.get("enterprise_name"),
+            match_level="exact",
+            evidence_type="platform_industry_classification",
+            evidence_excerpt="企策 industryName，仅作行业主题分类，不表述为官方主营业务。",
+            source_url=row.get("official_url"),
+            verification_status="source_industry_classification",
         )
 
     for row in table_rows(connection, "enterprise_recognition_events"):

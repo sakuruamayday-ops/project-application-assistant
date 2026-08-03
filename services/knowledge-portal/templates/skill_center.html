@@ -1,3 +1,14 @@
+{% macro historical_release_card(release) -%}
+<article class="skill-history-release" data-skill-history-release>
+  <span class="download-icon">HIS</span>
+  <div>
+    <h3>企业全生命周期助手 V{{ release.version }}</h3>
+    <small>发布时间 {{ release.published_at_display }} · 历史记录只读</small>
+    <details class="skill-release-notes"><summary>查看发布说明</summary><div class="manual-content">{{ release.release_notes_html }}</div></details>
+  </div>
+</article>
+{%- endmacro %}
+
 <section id="skills" class="section-block skill-center" data-skill-center>
   <header class="skill-hero">
     <div class="skill-hero-copy">
@@ -94,12 +105,27 @@
         {% set workbuddy = latest_release.workbuddy %}
         <article class="skill-platform-card is-workbuddy" data-platform-version="{{ workbuddy.version or '' }}">
           <span class="skill-platform-mark">WB</span>
-          <div><span class="skill-card-index">平台增强版 · WorkBuddy</span><h3>WorkBuddy</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% endif %}<p>macOS 与 Windows 使用两个独立签名插件市场 ZIP，共用 49 项 Skills、业务规则、远程 MCP 与 Python 行为核心；macOS 使用 shell Hook，Windows 使用原生 cmd Hook。</p>{% if workbuddy.distribution_notes_html %}<details class="skill-release-notes"><summary>查看 WorkBuddy 分发修订说明</summary><div class="manual-content">{{ workbuddy.distribution_notes_html }}</div>{% if workbuddy.distribution_url %}<a href="{{ workbuddy.distribution_url }}" target="_blank" rel="noreferrer">查看不可变发行记录</a>{% endif %}</details>{% endif %}</div>
+          <div><span class="skill-card-index">平台增强版 · WorkBuddy</span><h3>WorkBuddy</h3>{% if workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% endif %}<p>macOS 与 Windows 使用两个独立签名插件市场 ZIP，共用 49 项 Skills、业务规则、远程 MCP 与 Python 行为核心；macOS 使用 shell Hook，Windows 使用宿主 Bash 兼容桥进入原生 CMD 适配器。</p>{% if workbuddy.distribution_notes_html %}<details class="skill-release-notes"><summary>查看 WorkBuddy 分发修订说明</summary><div class="manual-content">{{ workbuddy.distribution_notes_html }}</div>{% if workbuddy.distribution_url %}<a href="{{ workbuddy.distribution_url }}" target="_blank" rel="noreferrer">查看不可变发行记录</a>{% endif %}</details>{% endif %}</div>
           <div class="skill-platform-status {{ 'is-ready' if workbuddy.installable else 'is-validating' }}"><i></i>{{ '正式包可安装' if workbuddy.installable else ('已暂停新安装' if workbuddy.included else '尚未发布') }}</div>
           {% if workbuddy.installable %}<a class="button" href="{{ workbuddy.download_urls.macos }}">下载 macOS 包</a><a class="button secondary" href="{{ workbuddy.download_urls.windows }}">下载 Windows 包</a>{% else %}<span class="button secondary is-disabled">{{ '等待安全正式版' if workbuddy.included else '当前版本未包含' }}</span>{% endif %}
           {% if workbuddy.included and not workbuddy.installable %}<p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>{% endif %}
         </article>
       </div>
+      {% endif %}
+      {% if historical_releases %}
+      <section class="skill-history-ledger" aria-labelledby="skill-history-title">
+        <header class="skill-history-heading">
+          <div><span class="skill-card-index">Release Archive</span><h3 id="skill-history-title">历史版本</h3></div>
+          <small>向管理员和普通成员展示全部正式版本；安装入口始终指向最新版</small>
+        </header>
+        {{ historical_release_card(historical_releases[0]) }}
+        {% if historical_releases|length > 1 %}
+        <details class="skill-history-more" data-skill-history>
+          <summary data-skill-history-toggle><span class="skill-history-summary-label"><span class="is-closed">展开全部历史版本</span><span class="is-open">收起历史版本</span></span><small>另外 {{ historical_releases|length - 1 }} 个版本</small></summary>
+          <div class="skill-history-list">{% for release in historical_releases[1:] %}{{ historical_release_card(release) }}{% endfor %}</div>
+        </details>
+        {% endif %}
+      </section>
       {% endif %}
     </div>
   </div>
