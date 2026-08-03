@@ -13,4 +13,6 @@ ExecStart=/usr/bin/python3 /usr/local/libexec/jiaotang-kb-application-deploy --d
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
-ReadWritePaths=/etc/jiaotang-kb-ops.env /etc/jiaotang-kb-app.env /opt/jiaotang-kb-runtime /var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /run/lock
+# The transaction replaces both environment files atomically.  Rename needs
+# write access to their parent directory, not only the existing file inodes.
+ReadWritePaths=/etc /opt/jiaotang-kb-runtime /var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /run/lock
