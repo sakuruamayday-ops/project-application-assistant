@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import errno
+import functools
 import hashlib
 import hmac
 import json
@@ -10,10 +12,16 @@ import pwd
 import re
 import secrets
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import oss2
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - production refresh runs on Linux
+    fcntl = None  # type: ignore[assignment]
 
 try:
     from scripts.oss_auth import build_bucket
@@ -61,6 +69,80 @@ REQUIRED_STRUCTURED_TABLES = {
     "enterprise_product_graph_edges": 1,
 }
 RELEASE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{7,127}$")
+
+
+class IndexRefreshBusy(RuntimeError):
+    """A second refresh attempted to enter the shared index transaction."""
+
+
+def index_refresh_lock_path() -> Path:
+    configured = os.environ.get("JIAOTANG_OSS_INDEX_REFRESH_LOCK", "").strip()
+    if configured:
+        return Path(configured)
+    status_path = Path(
+        os.environ.get(
+            "JIAOTANG_OSS_INDEX_CACHE_STATUS",
+            "/var/lib/jiaotang-kb/oss-index-cache-status.json",
+        )
+    )
+    return status_path.with_name("index-refresh.lock")
+
+
+def acquire_index_refresh_lock(path: Path, *, wait: bool):
+    if fcntl is None:
+        raise RuntimeError("当前平台不支持索引刷新进程互斥锁")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    stream = path.open("a+", encoding="utf-8")
+    operation = fcntl.LOCK_EX
+    if not wait:
+        operation |= fcntl.LOCK_NB
+    try:
+        fcntl.flock(stream.fileno(), operation)
+    except BlockingIOError as error:
+        stream.close()
+        raise IndexRefreshBusy("已有索引刷新事务持有互斥锁") from error
+    stream.seek(0)
+    stream.truncate()
+    stream.write(
+        json.dumps(
+            {"pid": os.getpid(), "acquired_at": utc_timestamp()},
+            ensure_ascii=False,
+        )
+        + "\n"
+    )
+    stream.flush()
+    os.fsync(stream.fileno())
+    return stream
+
+
+def release_index_refresh_lock(stream) -> None:
+    if fcntl is not None:
+        fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+    stream.close()
+
+
+def serialized_index_refresh(function):
+    @functools.wraps(function)
+    def wrapped() -> int:
+        verify_only = "--verify-only" in sys.argv[1:]
+        try:
+            lock = acquire_index_refresh_lock(
+                index_refresh_lock_path(),
+                wait=not verify_only,
+            )
+        except IndexRefreshBusy:
+            emit_progress(
+                "server-index-refresh",
+                "skipped",
+                item="concurrent-refresh-active",
+            )
+            return 0
+        try:
+            return function()
+        finally:
+            release_index_refresh_lock(lock)
+
+    return wrapped
 
 
 def utc_timestamp() -> str:
@@ -321,6 +403,29 @@ def require_unused_staging(path: Path) -> None:
         )
 
 
+def install_downloaded_release(
+    staging: Path,
+    release_dir: Path,
+    index_dir: Path,
+    release_id: str,
+) -> Path | None:
+    try:
+        os.rename(staging, release_dir)
+        return None
+    except OSError as error:
+        if error.errno not in {errno.EEXIST, errno.ENOTEMPTY}:
+            raise
+        preserved = preserve_generated_staging(staging, "concurrent-release")
+        if not local_generation_valid(index_dir, release_id):
+            raise RuntimeError("并发刷新产生同名但无效release") from error
+        emit_progress(
+            "index-install",
+            "deduplicated",
+            item=f"{release_id}:errno-{error.errno}",
+        )
+        return preserved
+
+
 def ensure_root_aliases(index_dir: Path) -> None:
     for name in PRODUCTION_FILES:
         alias = index_dir / name
@@ -575,6 +680,7 @@ def status_payload(
     return payload
 
 
+@serialized_index_refresh
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="从OSS签名current指针刷新本地不可变索引release"
@@ -711,12 +817,12 @@ def main() -> int:
                 staging,
                 os.environ.get("JIAOTANG_SERVICE_USER", "jiaotang"),
             )
-            try:
-                os.rename(staging, release_dir)
-            except FileExistsError:
-                preserve_generated_staging(staging, "concurrent-release")
-                if not local_generation_valid(index_dir, release_id):
-                    raise RuntimeError("并发刷新产生同名但无效release")
+            install_downloaded_release(
+                staging,
+                release_dir,
+                index_dir,
+                release_id,
+            )
         old_current = release_id_from_link(index_dir / "current")
         emit_progress("index-activation", "started", item=release_id)
         activate_release(index_dir, release_id, prevalidated=True)

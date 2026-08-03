@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -31,6 +32,7 @@ from scripts.publish_index_to_oss import (
 from scripts.refresh_index_from_oss import (
     REQUIRED_STRUCTURED_TABLES,
     activate_release,
+    install_downloaded_release,
     download_release,
     local_generation_metadata_valid,
     local_generation_valid,
@@ -739,6 +741,91 @@ def test_existing_staging_is_not_modified_or_removed(
 
     assert marker.read_text(encoding="utf-8") == "do not touch"
     assert staging.is_dir()
+
+
+@pytest.mark.parametrize("conflict_errno", [errno.EEXIST, errno.ENOTEMPTY])
+def test_release_install_accepts_existing_valid_concurrent_release(
+    tmp_path: Path,
+    monkeypatch,
+    conflict_errno: int,
+) -> None:
+    index_dir = tmp_path / "index"
+    create_local_release(index_dir, "release-stable")
+    release_dir = index_dir / "releases" / "release-stable"
+    staging = index_dir / "releases" / ".release-stable.123.staging"
+    staging.mkdir()
+    (staging / "download-complete.txt").write_text("valid", encoding="utf-8")
+
+    def conflict(source: Path, target: Path) -> None:
+        assert source == staging
+        assert target == release_dir
+        raise OSError(conflict_errno, "concurrent release already installed")
+
+    monkeypatch.setattr(refresh_module.os, "rename", conflict)
+    preserved = install_downloaded_release(
+        staging,
+        release_dir,
+        index_dir,
+        "release-stable",
+    )
+
+    assert preserved is not None
+    assert preserved.is_dir()
+    assert "concurrent-release" in preserved.name
+    assert not staging.exists()
+    assert local_generation_valid(index_dir, "release-stable")
+
+
+def test_verify_only_skips_busy_refresh_without_overwriting_status(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    status = tmp_path / "oss-index-cache-status.json"
+    original = '{"status":"正常","source":"existing"}\n'
+    status.write_text(original, encoding="utf-8")
+    monkeypatch.setenv("JIAOTANG_OSS_INDEX_CACHE_STATUS", str(status))
+
+    def busy_lock(_path: Path, *, wait: bool):
+        assert wait is False
+        raise refresh_module.IndexRefreshBusy("busy")
+
+    monkeypatch.setattr(
+        refresh_module,
+        "acquire_index_refresh_lock",
+        busy_lock,
+    )
+    monkeypatch.setattr("sys.argv", ["refresh_index_from_oss.py", "--verify-only"])
+
+    assert refresh_module.main() == 0
+    assert status.read_text(encoding="utf-8") == original
+    progress = capsys.readouterr().err
+    assert '"status":"skipped"' in progress
+    assert "concurrent-refresh-active" in progress
+
+
+def test_full_refresh_waits_for_shared_lock(monkeypatch) -> None:
+    acquired: list[tuple[Path, bool]] = []
+    released: list[object] = []
+    lock = object()
+
+    def acquire(path: Path, *, wait: bool):
+        acquired.append((path, wait))
+        return lock
+
+    monkeypatch.setenv("JIAOTANG_OSS_INDEX_REFRESH_LOCK", "/tmp/test.lock")
+    monkeypatch.setattr(refresh_module, "acquire_index_refresh_lock", acquire)
+    monkeypatch.setattr(
+        refresh_module,
+        "release_index_refresh_lock",
+        released.append,
+    )
+    monkeypatch.setattr("sys.argv", ["refresh_index_from_oss.py"])
+    wrapped = refresh_module.serialized_index_refresh(lambda: 7)
+
+    assert wrapped() == 7
+    assert acquired == [(Path("/tmp/test.lock"), True)]
+    assert released == [lock]
 
 
 def test_legacy_root_bootstrap_is_read_only_and_blocks_different_release(
