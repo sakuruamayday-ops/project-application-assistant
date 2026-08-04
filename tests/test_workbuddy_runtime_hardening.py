@@ -255,6 +255,10 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     "jiaotang-regression/plugins/jiaotang-regression-skills/"
                     "hooks/hooks.json"
                 ).decode("utf-8")
+                windows_hook = bundle.read(
+                    "jiaotang-regression/plugins/jiaotang-regression-skills/"
+                    "scripts/workbuddy_hook_windows.ps1"
+                )
             self.assertFalse(
                 any(
                     name.endswith(".command")
@@ -270,6 +274,12 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     for name in names
                 )
             )
+            self.assertTrue(windows_hook.startswith(b"\xef\xbb\xbf"))
+            windows_hook_text = windows_hook.decode("utf-8-sig")
+            self.assertIn("[Console]::InputEncoding", windows_hook_text)
+            self.assertIn("[Console]::OutputEncoding", windows_hook_text)
+            self.assertIn("previous_delivery_blocked", windows_hook_text)
+            self.assertIn("continued_from_turn_id", windows_hook_text)
             self.assertIn("powershell.exe", hooks.casefold())
             self.assertIn("workbuddy_hook_windows.ps1", hooks)
             self.assertNotIn("workbuddy_hook_windows.sh", hooks)
@@ -390,25 +400,109 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         )
 
     def test_behavior_hook_clause_local_formal_delivery_matrix(self):
-        cases = (
-            ("不要生成报告，只解释条件", False),
-            ("不要只解释，直接生成报告", True),
-            ("先解释条件，确认后再生成", False),
-            ("解释完以后直接生成报告", True),
-            ("“生成报告”是什么意思？", False),
-            ("给我生成政府项目可行性报告", True),
-            ("报告不用太长，生成简版", True),
-            ("只列材料清单，不生成文件", False),
-            ("如果需要，可以生成报告", False),
-            ("If needed, 以后请生成 PDF。", False),
-            ("现在直接输出 PDF", True),
+        cases = json.loads(
+            (
+                REPOSITORY
+                / "tests/fixtures/formal-delivery-intent-cases.json"
+            ).read_text(encoding="utf-8")
         )
-        for prompt, expected in cases:
-            with self.subTest(prompt=prompt):
+        for case in cases:
+            with self.subTest(case_id=case["case_id"]):
                 self.assertIs(
-                    BEHAVIOR.formal_delivery_intent(prompt, {}),
-                    expected,
+                    BEHAVIOR.formal_delivery_intent(case["prompt"], {}),
+                    case["expected"],
                 )
+
+    def test_behavior_hook_preserves_blocked_delivery_only_for_continuation(self):
+        contract_path = REPOSITORY / "skills/delivery-contracts.json"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            data_root = root / "behavior"
+            plugin_root.mkdir()
+            (plugin_root / "delivery-contracts.json").write_bytes(
+                contract_path.read_bytes()
+            )
+            state_path, _ = BEHAVIOR.state_paths(data_root, "session-resume")
+            BEHAVIOR.atomic_json(
+                state_path,
+                {
+                    "schema_version": 3,
+                    "session_id": "session-resume",
+                    "turn_id": "blocked-turn",
+                    "state_origin": "user_prompt_submit",
+                    "prompt_context_ok": True,
+                    "prompt_sha256": "abc",
+                    "prompt_signals": {
+                        "formal_business_delivery": True,
+                        "business_domain": True,
+                        "complex_task": False,
+                        "policy_task": False,
+                        "peer_task": False,
+                        "skill_applicability": {},
+                    },
+                    "active_skills": [{"skill": "consistency-check"}],
+                    "status": "blocked",
+                    "delivery_receipt": {
+                        "error_code": "NO_PRIMARY_BUSINESS_SKILL"
+                    },
+                },
+            )
+            output = io.StringIO()
+            with mock.patch.object(
+                BEHAVIOR,
+                "read_stdin",
+                return_value={
+                    "session_id": "session-resume",
+                    "prompt": "继续完成未完成任务",
+                    "source": "auto-continue",
+                },
+            ), contextlib.redirect_stdout(output):
+                self.assertEqual(
+                    BEHAVIOR.prompt_event(
+                        data_root,
+                        plugin_root,
+                        "workbuddy-marketplace",
+                        "workbuddy-macos",
+                    ),
+                    0,
+                )
+            receipt = json.loads(output.getvalue())
+            self.assertTrue(receipt["formal_business_delivery"])
+            self.assertTrue(receipt["previous_delivery_blocked"])
+            self.assertEqual(
+                receipt["blocked_error_code"],
+                "NO_PRIMARY_BUSINESS_SKILL",
+            )
+            self.assertEqual(
+                receipt["continued_from_turn_id"], "blocked-turn"
+            )
+            self.assertEqual(
+                BEHAVIOR.load_state(state_path)["active_skills"],
+                [{"skill": "consistency-check"}],
+            )
+
+            output = io.StringIO()
+            with mock.patch.object(
+                BEHAVIOR,
+                "read_stdin",
+                return_value={
+                    "session_id": "session-resume",
+                    "prompt": "解释一下新的日程安排",
+                },
+            ), contextlib.redirect_stdout(output):
+                self.assertEqual(
+                    BEHAVIOR.prompt_event(
+                        data_root,
+                        plugin_root,
+                        "workbuddy-marketplace",
+                        "workbuddy-macos",
+                    ),
+                    0,
+                )
+            fresh = json.loads(output.getvalue())
+            self.assertFalse(fresh["previous_delivery_blocked"])
+            self.assertEqual(BEHAVIOR.load_state(state_path)["active_skills"], [])
 
     def test_behavior_hook_requires_primary_role_and_classifies_all_49_skills(self):
         contract = json.loads(
