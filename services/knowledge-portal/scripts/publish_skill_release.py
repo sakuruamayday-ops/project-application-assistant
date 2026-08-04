@@ -591,7 +591,6 @@ def _validate_workbuddy_integrity(
         f"{plugin_prefix}scripts/workbuddy_hook_windows.cmd",
         f"{plugin_prefix}scripts/workbuddy_hook_windows.sh",
         f"{plugin_prefix}scripts/workbuddy_hook_windows.ps1",
-        f"{plugin_prefix}scripts/workbuddy_behavior_hook.py",
     }
     macos_adapter = f"{plugin_prefix}scripts/workbuddy_hook_macos.sh"
     launcher = f"{plugin_prefix}scripts/workbuddy_hook_launcher.sh"
@@ -606,6 +605,7 @@ def _validate_workbuddy_integrity(
             windows_legacy & file_names
             or macos_adapter in file_names
             or launcher in file_names
+            or f"{plugin_prefix}scripts/workbuddy_behavior_hook.py" in file_names
         ):
             raise ValueError("Windows包混入旧桥接链或macOS Hook适配器")
         if any(
@@ -694,12 +694,11 @@ def _validate_workbuddy_integrity(
         if any(
             marker in content
             for marker in (
-                b"${CODEBUDDY_PLUGIN_ROOT}",
                 b"jiaotang_kb_setup",
                 b"bootstrap_url",
             )
         ):
-            raise ValueError("WorkBuddy 简化包仍引用旧本地 MCP 或运行路径协议")
+            raise ValueError("WorkBuddy 简化包仍引用旧本地 MCP 或 bootstrap 协议")
     allowed_marketplace = {"name", "description", "owner", "plugins"}
     allowed_owner = {"name"}
     allowed_plugin = {"name", "description", "version", "source"}
@@ -755,7 +754,6 @@ def validate_release_packages(
     release_tag = f"V{version}"
     expected_version = semantic_version(version)
     canonical_skills: list[str] | None = None
-    workbuddy_core_hashes: dict[str, str] = {}
     hashes: dict[str, str] = {}
     integrity: dict[str, dict[str, object]] = {}
     for target, package in packages.items():
@@ -820,30 +818,7 @@ def validate_release_packages(
                     suite,
                     target,
                 )
-                core_names = [
-                    name
-                    for name in names
-                    if name.endswith("/scripts/workbuddy_behavior_hook.py")
-                ]
-                if len(core_names) != 1:
-                    raise ValueError(
-                        f"{target}包共享Python行为核心数量不为1"
-                    )
-                workbuddy_core_hashes[target] = hashlib.sha256(
-                    archive.read(core_names[0])
-                ).hexdigest()
         hashes[target] = sha256(package)
-
-    platform_core_hashes = {
-        target: digest
-        for target, digest in workbuddy_core_hashes.items()
-        if target in {"macos", "windows"}
-    }
-    if (
-        len(platform_core_hashes) == 2
-        and len(set(platform_core_hashes.values())) != 1
-    ):
-        raise ValueError("macOS与Windows包的共享Python行为核心不一致")
 
     return {
         "version": version,
