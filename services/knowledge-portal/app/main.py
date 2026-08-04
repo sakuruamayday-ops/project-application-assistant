@@ -12756,6 +12756,10 @@ def build_agent_bootstrap_prompt(
             "host_roots": "`~/.workbuddy` 与 `~/.codebuddy`",
             "mcp_path": "`~/.workbuddy/mcp.json`",
             "managed_mcp_path": "`~/.workbuddy/.mcp.json`",
+            "preflight": (
+                "只按原始发布文件运行包内 macOS Hook 预检；运行不兼容时返回 "
+                "MACOS_HOOK_RUNTIME_INCOMPATIBLE。"
+            ),
         },
         "windows": {
             "label": "Windows",
@@ -12766,6 +12770,11 @@ def build_agent_bootstrap_prompt(
             ),
             "mcp_path": "`%USERPROFILE%\\.workbuddy\\mcp.json`",
             "managed_mcp_path": "`%USERPROFILE%\\.workbuddy\\.mcp.json`",
+            "preflight": (
+                "只用 Windows PowerShell 5.1 按原始发布文件运行包内 PowerShell "
+                "预检；执行策略不允许时返回 WINDOWS_EXECUTION_POLICY_BLOCKED，"
+                "禁止绕过；Hook 不兼容时返回 WINDOWS_HOOK_RUNTIME_INCOMPATIBLE。"
+            ),
         },
     }
     profile = platform_profiles.get(platform)
@@ -12783,8 +12792,17 @@ def build_agent_bootstrap_prompt(
         "提示用户回到门户选择另一个安装按钮，不得改用其他平台的路径或启动方式。"
         f"目标版本为 V{release_version}，安装包下载地址如下：\n\n"
         f"{plugin_download_url}\n\n"
-        "请一次性完成以下动作：使用 WorkBuddy 内置插件管理安装或替换焦糖插件，"
-        "确认 49 项 Skills 可识别并启用包内最小行为约束 Hook。安装前同时检查当前用户目录下"
+        "请一次性完成以下动作。先把安装包下载到隔离暂存目录；下载和解压后的插件目录是不可变"
+        "发布产物，安装过程中不得修改、重写、转码、格式化或补丁处理其中任何文件，包括 "
+        "plugin.json、hooks.json、PowerShell、CMD、Shell、Python 脚本、文件权限、编码和换行符。"
+        "不得添加 ExecutionPolicy Bypass，不得改写 Hook 状态结构、stdin/stdout 编码或状态写入逻辑。"
+        "如包有缺陷或环境不兼容，必须停止并报告原始错误，不得在本机热修后把结果记为正式版本通过。"
+        "在移动旧版之前，先只读核对目标版本、目标平台、市场与插件结构、49 项 Skills、最小 Hook 和"
+        f"远程 MCP 边界；{profile['preflight']}"
+        "预检失败时保持旧版和原 MCP 配置完全不动。预检通过后记录解压目录的逐文件摘要，安装后"
+        "再次核对，必须逐字节一致；只要 package_mutated=true，验收立即失败并回滚。"
+        "然后使用 WorkBuddy 内置插件管理安装或替换焦糖插件，确认 49 项 Skills 可识别并启用包内"
+        "最小行为约束 Hook。安装前同时检查当前用户目录下"
         f" {profile['host_roots']} 的 plugins、plugins/marketplaces 以及宿主已登记的本地市场，"
         "识别所有焦糖旧版、重复副本和旧名称副本；不得扫描或改动无关插件。先把命中的旧版移出"
         "活动插件搜索路径，保存到当前宿主目录下 `plugin-backups/jiaotang-<旧版本>-<时间戳>`，"
@@ -12808,8 +12826,14 @@ def build_agent_bootstrap_prompt(
         "marketplaces 或用户 MCP 配置。回滚快照保持在活动搜索路径之外，不会被 Hook 或插件发现逻辑"
         "选中。不要执行安装包签名审查、用户侧签名校验、设备登记、"
         "bootstrap 或本地 MCP 启动器步骤。Authorization 中的个人 Token 仅可写入当前用户的 "
-        "WorkBuddy MCP 配置，不得在最终回复、普通日志或其他文件中复述。失败时先移走失败的新目录，"
-        "再把搜索路径外的回滚快照恢复到原活动位置，同时恢复原 MCP 配置，并说明恢复结果。"
+        "WorkBuddy MCP 配置，不得在最终回复、普通日志或其他文件中复述。失败时先把失败的新目录移入"
+        "系统回收站，再把搜索路径外的回滚快照恢复到原活动位置，同时恢复原 MCP 配置并说明恢复"
+        "结果。最终机器回执至少包含 installation_ok、package_mutated、preflight_passed、"
+        "failed_stage、error_code 和 rollback_restored；错误码只能按实际阶段使用 "
+        "PLATFORM_MISMATCH、PACKAGE_STRUCTURE_INVALID、PACKAGE_MUTATION_DETECTED、"
+        "WINDOWS_EXECUTION_POLICY_BLOCKED、WINDOWS_HOOK_RUNTIME_INCOMPATIBLE、"
+        "MACOS_HOOK_RUNTIME_INCOMPATIBLE、MCP_CONFIGURATION_FAILED 或 "
+        "POST_INSTALL_ACCEPTANCE_FAILED。"
         "安装验收成功后的最终回复必须补充一句：欢迎评价这套"
         "Skills 插件包，也可以回复“查看常用指令”。再用一行说明 49 项 Skills 已按六组完整核对："
         "总控与配置、知识与证据、企业与项目、专利专业、交付与质检、治理与进化。常用任务至少覆盖"

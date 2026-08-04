@@ -1,0 +1,77 @@
+[
+  {
+    "case_id": "explicit-negation",
+    "prompt": "不要生成报告，只解释申报条件",
+    "expected": false
+  },
+  {
+    "case_id": "reject-explanation-only",
+    "prompt": "不要只解释，直接生成政府项目报告",
+    "expected": true
+  },
+  {
+    "case_id": "reject-answer-only",
+    "prompt": "别只回答，输出正式申请书",
+    "expected": true
+  },
+  {
+    "case_id": "length-negation-is-not-delivery-negation",
+    "prompt": "报告不用太长，生成简版",
+    "expected": true
+  },
+  {
+    "case_id": "latest-explicit-negation-wins",
+    "prompt": "先生成报告，等等，当前暂时不要生成，只列资料清单",
+    "expected": false
+  },
+  {
+    "case_id": "future-condition",
+    "prompt": "如果以后生成政府项目报告",
+    "expected": false
+  },
+  {
+    "case_id": "conditional-but-current",
+    "prompt": "如果可以，现在生成政府项目报告",
+    "expected": true
+  },
+  {
+    "case_id": "quoted-discussion",
+    "prompt": "政府项目里“生成报告”是什么意思",
+    "expected": false
+  },
+  {
+    "case_id": "deferred-after-explanation",
+    "prompt": "先解释条件，确认后再生成",
+    "expected": false
+  },
+  {
+    "case_id": "delivery-after-explanation",
+    "prompt": "解释完以后直接生成报告",
+    "expected": true
+  },
+  {
+    "case_id": "plain-current-delivery",
+    "prompt": "给我生成政府项目可行性报告",
+    "expected": true
+  },
+  {
+    "case_id": "list-only-with-file-negation",
+    "prompt": "只列材料清单，不生成文件",
+    "expected": false
+  },
+  {
+    "case_id": "optional-delivery",
+    "prompt": "如果需要，可以生成报告",
+    "expected": false
+  },
+  {
+    "case_id": "future-english-prefix",
+    "prompt": "If needed, 以后请生成 PDF。",
+    "expected": false
+  },
+  {
+    "case_id": "explicit-pdf-output",
+    "prompt": "现在直接输出 PDF",
+    "expected": true
+  }
+]

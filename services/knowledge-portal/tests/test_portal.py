@@ -4173,6 +4173,8 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
         assert r"`%USERPROFILE%\.workbuddy\.mcp.json`" in windows_prompt
         assert "`~/.workbuddy" not in windows_prompt
         assert "macOS Hook 启动适配器" not in windows_prompt
+        assert "Windows PowerShell 5.1" in windows_prompt
+        assert "禁止绕过" in windows_prompt
         assert first.headers["cache-control"] == "no-store"
         assert first.json()["phase"] == "install_ready"
         assert "V1.5.0" in prompt
@@ -4196,6 +4198,14 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
         assert "只重载 WorkBuddy 一次" in prompt
         assert "knowledge_service_status" in prompt
         assert "connected: true" in prompt
+        assert "不可变发布产物" in prompt
+        assert "不得修改、重写、转码、格式化或补丁处理" in prompt
+        assert "ExecutionPolicy Bypass" in prompt
+        assert "移动旧版之前" in prompt
+        assert "package_mutated=true" in prompt
+        assert "PACKAGE_MUTATION_DETECTED" in prompt
+        assert "WINDOWS_EXECUTION_POLICY_BLOCKED" in prompt
+        assert "rollback_restored" in prompt
         assert "欢迎评价这套Skills插件包" in prompt.replace(" ", "")
         assert "查看常用指令" in prompt
         assert "专精特新前期评估与后期体检" in prompt
