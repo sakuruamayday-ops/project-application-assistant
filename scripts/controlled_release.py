@@ -343,11 +343,13 @@ def build_release_transaction_manifest(
             },
             "installation": {
                 "release_tag": validation["tag"],
-                "generic_package_sha256": package_hashes["generic"],
+                "generic_package_sha256": package_hashes.get("generic", ""),
                 "skill_count": validation["skill_total"],
                 "publisher_fingerprint": publisher_fingerprint,
                 "required_result": (
-                    "atomic-install-and-three-way-signature-audit-pass"
+                    "platform-hotfix-package-validation-pass"
+                    if set(package_hashes) == {"windows"}
+                    else "atomic-install-and-three-way-signature-audit-pass"
                 ),
             },
         },
@@ -481,26 +483,34 @@ def validate_inputs(
     gate_report: Path,
     notes: Path,
     expected_commit: str,
+    platform_hotfix: str | None = None,
 ) -> dict[str, object]:
     short, semantic, tag = normalize_version(version)
     manifest = json.loads(
         (root / "skills/suite-manifest.json").read_text(encoding="utf-8")
     )
     release = manifest.get("release", {})
-    if release.get("tag") != tag or release.get("version") != semantic:
-        raise RuntimeError("suite-manifest、发布标签和语义版本不一致")
-    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
-    if f'version = "{semantic}"' not in pyproject:
-        raise RuntimeError("pyproject.toml 组件版本未与产品语义版本对齐")
-    readme = (root / "README.md").read_text(encoding="utf-8")
-    if tag not in readme:
-        raise RuntimeError("README 未声明当前发布版本")
+    if platform_hotfix:
+        if platform_hotfix != "windows" or set(packages) != {"windows"}:
+            raise RuntimeError("Windows平台热修事务只能包含Windows包")
+        if not notes.is_file() or tag not in notes.read_text(encoding="utf-8"):
+            raise RuntimeError("平台热修发布说明不存在或版本不一致")
+    else:
+        if release.get("tag") != tag or release.get("version") != semantic:
+            raise RuntimeError("suite-manifest、发布标签和语义版本不一致")
+        pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
+        if f'version = "{semantic}"' not in pyproject:
+            raise RuntimeError("pyproject.toml 组件版本未与产品语义版本对齐")
+        readme = (root / "README.md").read_text(encoding="utf-8")
+        if tag not in readme:
+            raise RuntimeError("README 未声明当前发布版本")
     if not notes.is_file() or tag not in notes.read_text(encoding="utf-8"):
         raise RuntimeError("发布说明不存在或版本不一致")
     release_notes = notes.read_text(encoding="utf-8")
-    for fact in [str(release.get("summary") or ""), *release.get("changes", [])]:
-        if fact and fact not in release_notes:
-            raise RuntimeError("发布说明未覆盖 suite-manifest 中的版本事实")
+    if not platform_hotfix:
+        for fact in [str(release.get("summary") or ""), *release.get("changes", [])]:
+            if fact and fact not in release_notes:
+                raise RuntimeError("发布说明未覆盖 suite-manifest 中的版本事实")
     gate = json.loads(gate_report.read_text(encoding="utf-8"))
     gate_attestation = verify_gate_attestation(gate_report)
     if (
@@ -559,6 +569,7 @@ def validate_inputs(
         "gate_sha256": sha256(gate_report),
         "gate_attestation": gate_attestation,
         "source_provenance": provenance,
+        "platform_hotfix": platform_hotfix,
     }
 
 
@@ -798,6 +809,7 @@ def stage_portal(
     transaction_files: list[Path],
     credential_file: Path,
     lease_ttl_seconds: int,
+    platform_hotfix: str | None = None,
 ) -> dict[str, object]:
     ssh, deploy_host, deploy_key = _remote_release_context()
     remote_stage = f"/tmp/jiaotang-release-{version}-{int(time.time())}"
@@ -832,7 +844,12 @@ def stage_portal(
         f"--release-notes-file {shlex.quote(f'{remote_stage}/{notes.name}')} "
         f"--git-commit {shlex.quote(commit)} "
         f"--github-url {shlex.quote(release_url)} "
-        f"--transaction-manifest "
+        + (
+            f"--platform-hotfix {shlex.quote(platform_hotfix)} "
+            if platform_hotfix
+            else ""
+        )
+        + f"--transaction-manifest "
         f"{shlex.quote(f'{remote_stage}/{transaction_files[0].name}')} "
         f"--transaction-signature "
         f"{shlex.quote(f'{remote_stage}/{transaction_files[1].name}')} "
@@ -974,6 +991,11 @@ def main() -> None:
         type=Path,
         help="Windows原生EXE Hook入口的WorkBuddy插件市场包",
     )
+    parser.add_argument(
+        "--platform-hotfix",
+        choices=("windows",),
+        help="仅发布单个平台热修；未列出的平台继续沿用上一正式版本",
+    )
     parser.add_argument("--gate-report", type=Path)
     parser.add_argument("--release-notes", type=Path)
     parser.add_argument(
@@ -1112,13 +1134,16 @@ def main() -> None:
     }
     if not packages:
         parser.error("至少提供一个发布包")
-    if "generic" not in packages:
+    if arguments.platform_hotfix:
+        if set(packages) != {arguments.platform_hotfix}:
+            parser.error("平台热修事务只能提供对应的单个平台包")
+    elif "generic" not in packages:
         parser.error(
             "受控发布必须提供--generic-package，"
             "用于正式提升前的隔离安装、全量验签和三方哈希门禁"
         )
     platform_targets = {target for target in packages if target in {"macos", "windows"}}
-    if platform_targets and platform_targets != {"macos", "windows"}:
+    if platform_targets and platform_targets != {"macos", "windows"} and not arguments.platform_hotfix:
         parser.error("macOS与Windows WorkBuddy包必须同一事务成对发布")
     if platform_targets and "workbuddy" in packages:
         parser.error("分平台WorkBuddy包不得与旧统一包混合发布")
@@ -1134,6 +1159,7 @@ def main() -> None:
         gate_report,
         release_notes,
         commit,
+        arguments.platform_hotfix,
     )
     with recoverable_workspace(
         "jiaotang-controlled-release-transaction-"
@@ -1144,8 +1170,10 @@ def main() -> None:
             packages,
             gate_report,
         )
-        package_fingerprint = generic_publisher_fingerprint(
-            packages["generic"]
+        package_fingerprint = (
+            generic_publisher_fingerprint(packages["generic"])
+            if "generic" in packages
+            else OFFICIAL_PUBLISHER_FINGERPRINT
         )
         transaction_manifest = build_release_transaction_manifest(
             repository=arguments.repository,
@@ -1294,6 +1322,7 @@ def main() -> None:
                     transaction_files=transaction_files,
                     credential_file=credential_path,
                     lease_ttl_seconds=arguments.lease_ttl_seconds,
+                    platform_hotfix=arguments.platform_hotfix,
                 )
             except Exception as exc:
                 try:
@@ -1325,44 +1354,69 @@ def main() -> None:
                 create_if_missing=False,
                 allow_published=True,
             )
-            acceptance_root = create_isolated_skill_acceptance_root(
-                arguments.deployment_audit_dir.expanduser().resolve()
-            )
-            transition(
-                "installing",
-                {
-                    "generic_package_sha256": validation["artifacts"][
-                        "generic"
+            if arguments.platform_hotfix:
+                installation_acceptance = {
+                    "status": "pass",
+                    "acceptance_scope": "platform-hotfix",
+                    "platform": arguments.platform_hotfix,
+                    "package_sha256": validation["artifacts"][
+                        arguments.platform_hotfix
                     ]["sha256"],
-                    "acceptance_scope": "isolated",
-                    "acceptance_root": str(acceptance_root),
-                },
-            )
-            installation_acceptance = run_isolated_skill_acceptance_gate(
-                development_root=ROOT / "skills",
-                generic_package=packages["generic"],
-                install_root=acceptance_root / "skills",
-                config_dir=acceptance_root / "config",
-                audit_dir=(
-                    arguments.deployment_audit_dir.expanduser().resolve()
-                ),
-            )
-            installation_acceptance["acceptance_scope"] = "isolated"
-            installation_acceptance["acceptance_root"] = str(acceptance_root)
-            audit_path = Path(
-                str(installation_acceptance.get("report") or "")
-            )
-            transition(
-                "installed",
-                {
-                    "status": installation_acceptance.get("status"),
-                    "summary": installation_acceptance.get("summary"),
-                    "audit_report": str(audit_path),
-                    "audit_sha256": (
-                        sha256(audit_path) if audit_path.is_file() else ""
+                    "note": (
+                        "复用上一正式版本的通用安装基线；本事务只替换并验签"
+                        " Windows 原生 Hook 包。"
                     ),
-                },
-            )
+                }
+                transition(
+                    "installing",
+                    {
+                        "acceptance_scope": "platform-hotfix",
+                        "platform": arguments.platform_hotfix,
+                        "package_sha256": installation_acceptance[
+                            "package_sha256"
+                        ],
+                    },
+                )
+                transition("installed", installation_acceptance)
+            else:
+                acceptance_root = create_isolated_skill_acceptance_root(
+                    arguments.deployment_audit_dir.expanduser().resolve()
+                )
+                transition(
+                    "installing",
+                    {
+                        "generic_package_sha256": validation["artifacts"][
+                            "generic"
+                        ]["sha256"],
+                        "acceptance_scope": "isolated",
+                        "acceptance_root": str(acceptance_root),
+                    },
+                )
+                installation_acceptance = run_isolated_skill_acceptance_gate(
+                    development_root=ROOT / "skills",
+                    generic_package=packages["generic"],
+                    install_root=acceptance_root / "skills",
+                    config_dir=acceptance_root / "config",
+                    audit_dir=(
+                        arguments.deployment_audit_dir.expanduser().resolve()
+                    ),
+                )
+                installation_acceptance["acceptance_scope"] = "isolated"
+                installation_acceptance["acceptance_root"] = str(acceptance_root)
+                audit_path = Path(
+                    str(installation_acceptance.get("report") or "")
+                )
+                transition(
+                    "installed",
+                    {
+                        "status": installation_acceptance.get("status"),
+                        "summary": installation_acceptance.get("summary"),
+                        "audit_report": str(audit_path),
+                        "audit_sha256": (
+                            sha256(audit_path) if audit_path.is_file() else ""
+                        ),
+                    },
+                )
             portal_result = promote_portal(
                 str(validation["short_version"]),
                 transaction_files=transaction_files,

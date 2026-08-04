@@ -9270,12 +9270,14 @@ def portal_payload(
                 row
                 for row in connection.execute(
                     """
-                    SELECT id, version, file_name, sha256, release_notes, published_at
+                    SELECT id, version, file_name, file_path, sha256, release_notes, published_at
                     FROM skill_releases
                     ORDER BY published_at DESC, id DESC
                     """
                 ).fetchall()
                 if is_public_skill_release_version(str(row["version"]))
+                and str(row["file_path"] or "").strip()
+                and str(row["sha256"] or "").strip()
             ),
             None,
         )
@@ -9464,30 +9466,20 @@ def public_release_guidance() -> dict[str, object]:
     windows = latest_skill_artifact("windows")
     legacy_workbuddy = latest_skill_artifact("workbuddy")
     generic_version = str((generic or {}).get("version") or "")
-    platform_versions = {
-        str((artifact or {}).get("version") or "")
-        for artifact in (macos, windows)
-        if artifact
-    }
-    platform_complete = bool(macos and windows and len(platform_versions) == 1)
-    workbuddy = macos if platform_complete else legacy_workbuddy
-    workbuddy_version = (
-        next(iter(platform_versions))
-        if platform_complete
-        else str((legacy_workbuddy or {}).get("version") or "")
-    )
+    latest_workbuddy = latest_workbuddy_artifact()
+    platform_versions = latest_workbuddy.get("platform_versions", {})
+    platform_complete = bool(macos and windows)
+    workbuddy = latest_workbuddy if latest_workbuddy.get("included") else legacy_workbuddy
+    workbuddy_version = str(latest_workbuddy.get("version") or "")
+    if not workbuddy_version:
+        workbuddy_version = str((legacy_workbuddy or {}).get("version") or "")
     candidate_version = str(candidate.get("version") or "")
     generic_available = release_artifact_is_servable(
         generic,
         target="generic",
         require_signature=True,
     )
-    workbuddy_installable = (
-        workbuddy_artifact_is_simple_remote_mcp(macos)
-        and workbuddy_artifact_is_simple_remote_mcp(windows)
-        if platform_complete
-        else workbuddy_artifact_is_simple_remote_mcp(workbuddy)
-    )
+    workbuddy_installable = bool(latest_workbuddy.get("installable"))
     if workbuddy_installable:
         workbuddy_notice = (
             f"WorkBuddy macOS/Windows 正式包 V{workbuddy_version} 可安装。"
@@ -9513,6 +9505,7 @@ def public_release_guidance() -> dict[str, object]:
         "candidate_label": f"V{candidate_version}" if candidate_version else "未声明",
         "generic_available": generic_available,
         "workbuddy_version": workbuddy_version,
+        "workbuddy_platform_versions": platform_versions,
         "workbuddy_installable": workbuddy_installable,
         "workbuddy_notice": workbuddy_notice,
         "candidate_summary": str(candidate.get("summary") or ""),
@@ -15771,7 +15764,9 @@ def web_download_latest_workbuddy_platform(
     platform_pair = latest_workbuddy_platform_pair()
     release = platform_pair.get(platform_name) if platform_pair else None
     if release is None:
-        raise HTTPException(status_code=404, detail="尚未发布同版本双平台 WorkBuddy 正式包")
+        raise HTTPException(status_code=404, detail="尚未发布该平台 WorkBuddy 正式包")
+    if not workbuddy_artifact_is_simple_remote_mcp(release):
+        raise HTTPException(status_code=404, detail="该平台包未通过简化安装能力门禁")
     require_installable_workbuddy_artifact(release, platform=platform_name)
     return validated_release_artifact_download(
         release,
@@ -16269,7 +16264,11 @@ def latest_skill_release() -> sqlite3.Row | None:
         (
             row
             for row in rows
-            if is_public_skill_release_version(str(row["version"]))
+            if (
+                is_public_skill_release_version(str(row["version"]))
+                and str(row["file_path"] or "").strip()
+                and str(row["sha256"] or "").strip()
+            )
         ),
         None,
     )
@@ -16970,15 +16969,20 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
         target: artifacts.get(target)
         for target in ("macos", "windows")
     }
-    platform_complete = all(platform_artifacts.values())
+    platform_present = {
+        target: artifact
+        for target, artifact in platform_artifacts.items()
+        if artifact is not None
+    }
+    platform_complete = len(platform_present) == 2
     legacy = artifacts.get("workbuddy")
-    included = bool(platform_complete or legacy)
+    included = bool(platform_present or legacy)
     installable = (
         all(
             workbuddy_artifact_is_simple_remote_mcp(artifact)
-            for artifact in platform_artifacts.values()
+            for artifact in platform_present.values()
         )
-        if platform_complete
+        if platform_present
         else workbuddy_artifact_is_simple_remote_mcp(legacy)
     )
     distribution_revision = None
@@ -17007,7 +17011,12 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
             "macos": "/skills/latest/workbuddy/macos/download",
             "windows": "/skills/latest/workbuddy/windows/download",
         },
-        "platform_specific": bool(platform_complete),
+        "platform_specific": bool(platform_present),
+        "platform_complete": platform_complete,
+        "platform_versions": {
+            target: str(artifact["version"])
+            for target, artifact in platform_present.items()
+        },
         "distribution_notes_html": (
             render_guide_markdown(str(distribution_revision["release_notes"]))
             if distribution_revision is not None
@@ -17034,13 +17043,54 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
 def latest_workbuddy_artifact() -> dict[str, object]:
     macos = latest_skill_artifact("macos")
     windows = latest_skill_artifact("windows")
-    versions = {
-        str(artifact.get("version") or "")
-        for artifact in (macos, windows)
-        if artifact
+    platform_artifacts = {
+        target: artifact
+        for target, artifact in (("macos", macos), ("windows", windows))
+        if artifact is not None
     }
-    if macos and windows and len(versions) == 1:
-        return workbuddy_artifact(next(iter(versions)))
+    if platform_artifacts:
+        versions = {
+            str(artifact.get("version") or "")
+            for artifact in platform_artifacts.values()
+            if artifact
+        }
+        latest_version = max(versions, key=release_version_key) if versions else ""
+        platform_versions = {
+            str(artifact.get("version") or "")
+            for artifact in platform_artifacts.values()
+        }
+        platform_installable = len(platform_artifacts) == 2 and all(
+            workbuddy_artifact_is_simple_remote_mcp(artifact)
+            for artifact in platform_artifacts.values()
+        )
+        # A same-version pair remains visible when its security gate is
+        # pending, while a mismatched legacy pair is not promoted as a
+        # unified channel unless both platform packages are installable.
+        platform_complete = len(platform_artifacts) == 2 and (
+            platform_installable or len(platform_versions) == 1
+        )
+        return {
+            "id": "workbuddy",
+            "name": "WorkBuddy",
+            "version": latest_version if platform_complete else None,
+            "included": platform_complete,
+            "installable": platform_installable,
+            "download_url": "/skills/latest/workbuddy/macos/download",
+            "download_urls": {
+                "macos": "/skills/latest/workbuddy/macos/download",
+                "windows": "/skills/latest/workbuddy/windows/download",
+            },
+            "platform_specific": True,
+            "platform_complete": platform_complete,
+            "platform_versions": {
+                target: str(artifact["version"])
+                for target, artifact in platform_artifacts.items()
+            } if platform_complete else {},
+            "platform_artifacts": platform_artifacts,
+            "distribution_notes_html": None,
+            "distribution_url": None,
+            "distribution_published_at_display": None,
+        }
     artifact = latest_skill_artifact("workbuddy")
     if artifact is None:
         return workbuddy_artifact("0.0.0")
@@ -17053,13 +17103,6 @@ def latest_workbuddy_platform_pair() -> dict[str, dict[str, object]] | None:
         for target in ("macos", "windows")
     }
     if not all(artifacts.values()):
-        return None
-    versions = {
-        str(artifact.get("version") or "")
-        for artifact in artifacts.values()
-        if artifact is not None
-    }
-    if len(versions) != 1:
         return None
     return {
         target: artifact
@@ -17095,8 +17138,7 @@ def latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
 
 def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
     if target in {"macos", "windows"}:
-        platform_pair = latest_workbuddy_platform_pair()
-        release = platform_pair.get(target) if platform_pair else None
+        release = latest_skill_artifact(target)
     else:
         release = latest_skill_artifact(target)
     if release is None:
@@ -17203,7 +17245,9 @@ def download_latest_workbuddy_platform_skills(
     platform_pair = latest_workbuddy_platform_pair()
     release = platform_pair.get(platform_name) if platform_pair else None
     if release is None:
-        raise HTTPException(status_code=404, detail="尚未发布同版本双平台 WorkBuddy 正式包")
+        raise HTTPException(status_code=404, detail="尚未发布该平台 WorkBuddy 正式包")
+    if not workbuddy_artifact_is_simple_remote_mcp(release):
+        raise HTTPException(status_code=404, detail="该平台包未通过简化安装能力门禁")
     require_installable_workbuddy_artifact(release, platform=platform_name)
     return validated_release_artifact_download(
         release,

@@ -188,10 +188,16 @@ def semantic_version(value: str) -> str:
 ARTIFACT_TARGETS = ("generic", "workbuddy", "macos", "windows")
 
 
-def require_complete_workbuddy_platform_set(packages: dict[str, Path]) -> None:
+def require_complete_workbuddy_platform_set(
+    packages: dict[str, Path],
+    *,
+    allow_platform_hotfix: bool = False,
+) -> None:
     platform_targets = {
         target for target in packages if target in {"macos", "windows"}
     }
+    if allow_platform_hotfix and platform_targets == {"windows"} and set(packages) == {"windows"}:
+        return
     if platform_targets and platform_targets != {"macos", "windows"}:
         raise ValueError("macOS与Windows WorkBuddy包必须同一事务成对发布")
     if platform_targets and "workbuddy" in packages:
@@ -1154,8 +1160,13 @@ def stage_selective(
     release_notes: str,
     git_commit: str,
     github_url: str,
+    *,
+    allow_platform_hotfix: bool = False,
 ) -> dict[str, object]:
-    require_complete_workbuddy_platform_set(packages)
+    require_complete_workbuddy_platform_set(
+        packages,
+        allow_platform_hotfix=allow_platform_hotfix,
+    )
     validation = validate_release_packages(packages, version)
     stage_directory = release_directory / ".staging" / f"V{version}"
     release_directory.mkdir(parents=True, exist_ok=True)
@@ -1278,8 +1289,13 @@ def publish_selective(
     packages: dict[str, Path],
     version: str,
     release_notes: str,
+    *,
+    allow_platform_hotfix: bool = False,
 ) -> dict[str, object]:
-    require_complete_workbuddy_platform_set(packages)
+    require_complete_workbuddy_platform_set(
+        packages,
+        allow_platform_hotfix=allow_platform_hotfix,
+    )
     validation = validate_release_packages(packages, version)
     release_directory.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(database_path) as connection:
@@ -1329,11 +1345,14 @@ def publish_selective(
             _install_file(source, destination)
             installed[target] = destination
         primary_target = next(
-            target
-            for target in ("generic", "workbuddy")
-            if target in installed
+            (
+                target
+                for target in ("generic", "workbuddy")
+                if target in installed
+            ),
+            None,
         )
-        primary = installed[primary_target]
+        primary = installed.get(primary_target) if primary_target else None
         published_at = datetime.now(timezone.utc).isoformat()
         cursor = connection.execute(
             """
@@ -1343,9 +1362,13 @@ def publish_selective(
             """,
             (
                 version,
-                primary.name,
-                str(primary),
-                validation["artifacts"][primary_target]["sha256"],
+                primary.name if primary else "",
+                str(primary) if primary else "",
+                (
+                    validation["artifacts"][primary_target]["sha256"]
+                    if primary_target
+                    else ""
+                ),
                 release_notes.strip(),
                 published_at,
             ),
@@ -1420,6 +1443,7 @@ def promote_selective(
         packages,
         version,
         str(staged["release_notes"]),
+        allow_platform_hotfix=set(packages) == {"windows"},
     )
     if str(staged["status"]) == "published":
         return {
@@ -1665,6 +1689,11 @@ def main() -> None:
     parser.add_argument("--workbuddy-package", type=Path)
     parser.add_argument("--macos-package", type=Path)
     parser.add_argument("--windows-package", type=Path)
+    parser.add_argument(
+        "--platform-hotfix",
+        choices=("windows",),
+        help="允许单平台热修事务；仅可提供对应平台包，其他平台继续沿用上一正式版本",
+    )
     parser.add_argument("--version", required=True)
     parser.add_argument("--release-notes-file", type=Path)
     parser.add_argument("--git-commit", default="")
@@ -1873,6 +1902,7 @@ def main() -> None:
                 arguments.release_notes_file.read_text(encoding="utf-8"),
                 arguments.git_commit,
                 arguments.github_url,
+                allow_platform_hotfix=arguments.platform_hotfix == "windows",
             )
             with sqlite3.connect(arguments.database) as connection:
                 connection.row_factory = sqlite3.Row
