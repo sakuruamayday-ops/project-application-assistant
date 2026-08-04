@@ -972,7 +972,7 @@ def main() -> None:
     parser.add_argument(
         "--windows-package",
         type=Path,
-        help="Windows原生cmd Hook入口的WorkBuddy插件市场包",
+        help="Windows原生EXE Hook入口的WorkBuddy插件市场包",
     )
     parser.add_argument("--gate-report", type=Path)
     parser.add_argument("--release-notes", type=Path)
