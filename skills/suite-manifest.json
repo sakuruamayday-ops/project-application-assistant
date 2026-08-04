@@ -4,21 +4,22 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.5.7",
-    "version": "1.5.7",
-    "summary": "V1.5.7 修复正式交付被阻断后经宿主继续任务绕过门禁的问题，强化 Windows Hook 编码与状态写入，并禁止安装侧修补正式包。",
+    "tag": "V1.5.8",
+    "version": "1.5.8",
+    "summary": "V1.5.8 将 Windows 行为 Hook 切换为宿主 Git Bash 直接调用的原生 EXE，并收紧正式交付意图与模板证据判定。",
     "changes": [
-      "上一轮 Stop 已阻断且宿主明确自动继续或用户发送有限继续表达时，新轮继承正式交付信号、缺项错误和已激活 Skill；普通新问题仍完全重置。",
-      "macOS Python Hook 与 Windows PowerShell Hook 统一输出 previous_delivery_blocked、blocked_error_code、continued_from_turn_id、正式交付判定和 Stop 事件回执。",
-      "正式交付分句判断移除只解释、只回答的全局否定，并识别不要只解释、别只回答等否定非交付表达，避免反向语义误放行。",
-      "Windows 正式包中的 PowerShell Hook 固定为 UTF-8 BOM，显式设置 stdin、stdout 与管道编码，状态临时文件和持久文件均回读验证。",
-      "一键安装先在暂存目录执行原包只读平台预检，预检通过后才移动旧版；安装过程中禁止改写、转码或补丁处理正式包，也不得加入 ExecutionPolicy Bypass。",
-      "安装机器回执增加预检、包变更、失败阶段、错误码和回滚恢复字段；包被修改或平台运行不兼容时停止并恢复旧版。",
-      "代码发布和索引发布继续独立执行；本版本没有知识内容或索引结构变化，只使用 code 模式，不运行全库扫描。"
+      "Windows UserPromptSubmit、Skill 激活与 Stop 统一由原生 EXE 处理，不再经过 PowerShell、CMD、Python 或多层 shell 桥接。",
+      "Windows Hook 状态写入用户级 .workbuddy/state/jiaotang-behavior，插件目录保持发布后不可变。",
+      "macOS 保持既有 Python 与 shell 启动链，不因 Windows 修复改变已验证路径。",
+      "正式交付判定排除否定、引用、未来计划、概念解释和插件技术验收汇总，仅在当前业务交付意图明确时启动主业务门禁。",
+      "待核验、当前检索层未命中、无官方来源和暂无法判断视为已披露的证据状态，不再误报章节缺失。",
+      "四问复盘从文件硬门禁降为任务结束提示，交付文件只检查业务必要章节与相互矛盾的确定性结论。",
+      "安装过程中禁止改写、转码或补丁处理正式包；预检失败时停止并保留原版本。",
+      "代码发布和索引发布继续独立执行；本版本没有知识内容或索引结构变化，只使用 code 模式。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，先完成原包只读平台预检，再一次完成 V1.5.7 干净安装、活动路径旧版清理和远程 MCP 连接。",
+      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，先完成原包只读平台预检，再一次完成 V1.5.8 干净安装、活动路径旧版清理和远程 MCP 连接。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
     },
@@ -30,13 +31,13 @@
       },
       {
         "target": "macOS WorkBuddy",
-        "status": "自动化已验证，实机验收发布后补录",
-        "note": "使用独立 macOS 签名包和共享 Python 状态核心；自动化已验证阻断续验与普通新问题重置，发布后补测 49 项 Skills 与 MCP。"
+        "status": "RC2-r3 实机验收通过",
+        "note": "使用独立 macOS 签名包和 Python 状态核心；已验证技术否定意图放行、主业务 Skill 缺失阻断、阻断续轮保持、主业务 Skill 在场放行和安装后受控文件一致。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "候选自动化已验证，实机验收发布后补录",
-        "note": "使用 UTF-8 BOM 的独立 PowerShell Hook，不经过 Bash、CMD 或 Python 解释器发现；自动化已验证编码、原子写静态契约和阻断续验，发布后补测 Windows PowerShell 5.1 与 MCP。"
+        "status": "RC2-r3 实机验收通过",
+        "note": "使用宿主 Git Bash 直接调用的原生 Windows EXE，不经过 PowerShell、CMD 或 Python；已验证轮次重建、同轮多 Skill、否定意图、正式交付阻断、阻断续轮保持和主业务 Skill 在场放行。"
       }
     ],
     "one_step_installation_protocol": {
@@ -52,7 +53,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "活动搜索路径只保留一个 V1.5.7 jiaotang 市场",
+        "活动搜索路径只保留一个 V1.5.8 jiaotang 市场",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [

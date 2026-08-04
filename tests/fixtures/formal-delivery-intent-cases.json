@@ -73,5 +73,45 @@
     "case_id": "explicit-pdf-output",
     "prompt": "现在直接输出 PDF",
     "expected": true
+  },
+  {
+    "case_id": "negative-with-hook-receipt-instruction",
+    "prompt": "不要生成报告，只解释申报条件。结束后记录 Stop Hook 回执。",
+    "expected": false
+  },
+  {
+    "case_id": "quoted-and-future-combined",
+    "prompt": "我问的是“生成报告”是什么意思，以后确认后再做。",
+    "expected": false
+  },
+  {
+    "case_id": "technical-acceptance-summary",
+    "prompt": "整理 TC-15 技术验收事实汇总，说明政府项目报告门禁结果。",
+    "expected": false
+  },
+  {
+    "case_id": "plugin-test-report",
+    "prompt": "请生成 V1.5.8 插件测试报告，覆盖政府项目报告门禁。",
+    "expected": false
+  },
+  {
+    "case_id": "technical-summary-with-prohibited-business-report",
+    "prompt": "执行 V1.5.8-RC2 Windows 提示词语义测试3。请整理一段 TC-15 插件技术验收事实汇总。这是插件技术验收，不是企业分析、政府项目咨询或客户正式报告。本轮只能加载 consistency-check，不得加载主业务 Skill。原样输出 Hook JSON，用不超过五行输出技术事实汇总，不得生成政府项目可行性报告。",
+    "expected": false
+  },
+  {
+    "case_id": "technical-summary-with-forbidden-business-report",
+    "prompt": "整理插件验收结论，禁止生成政府项目可行性报告。",
+    "expected": false
+  },
+  {
+    "case_id": "business-test-artifact-still-delivery",
+    "prompt": "现在生成测试项目政府项目可行性报告。",
+    "expected": true
+  },
+  {
+    "case_id": "give-me-report-without-generate-verb",
+    "prompt": "给我一份政府项目可行性报告。",
+    "expected": true
   }
 ]

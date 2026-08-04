@@ -27,7 +27,7 @@ REQUIRED_RELEASE_MANAGER_SCRIPTS = (
     "workbuddy_preference_bridge.py",
     "workbuddy_behavior_hook.py",
     "workbuddy_hook_macos.sh",
-    "workbuddy_hook_windows.ps1",
+    "windows_hook/main.go",
     "package_skill_release.py",
     "package_workbuddy_suite.py",
 )
@@ -257,7 +257,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 ).decode("utf-8")
                 windows_hook = bundle.read(
                     "jiaotang-regression/plugins/jiaotang-regression-skills/"
-                    "scripts/workbuddy_hook_windows.ps1"
+                    "scripts/workbuddy_behavior_hook_windows.exe"
                 )
             self.assertFalse(
                 any(
@@ -265,23 +265,17 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     for name in names
                 )
             )
-            self.assertFalse(
-                any(name.endswith((".sh", ".cmd")) for name in names)
-            )
+            self.assertFalse(any(name.endswith((".sh", ".cmd", ".ps1", ".py")) for name in names))
             self.assertTrue(
                 any(
-                    name.endswith("/scripts/workbuddy_hook_windows.ps1")
+                    name.endswith("/scripts/workbuddy_behavior_hook_windows.exe")
                     for name in names
                 )
             )
-            self.assertTrue(windows_hook.startswith(b"\xef\xbb\xbf"))
-            windows_hook_text = windows_hook.decode("utf-8-sig")
-            self.assertIn("[Console]::InputEncoding", windows_hook_text)
-            self.assertIn("[Console]::OutputEncoding", windows_hook_text)
-            self.assertIn("previous_delivery_blocked", windows_hook_text)
-            self.assertIn("continued_from_turn_id", windows_hook_text)
-            self.assertIn("powershell.exe", hooks.casefold())
-            self.assertIn("workbuddy_hook_windows.ps1", hooks)
+            self.assertTrue(windows_hook.startswith(b"MZ"))
+            self.assertIn("workbuddy_behavior_hook_windows.exe", hooks)
+            self.assertIn("workbuddy-windows-exe", hooks)
+            self.assertNotIn("powershell", hooks.casefold())
             self.assertNotIn("workbuddy_hook_windows.sh", hooks)
             self.assertNotIn("workbuddy_hook_windows.cmd", hooks)
             self.assertNotIn("python", hooks.casefold())
@@ -301,10 +295,9 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 skill_entry.index("<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->"),
                 skill_entry.index("\n---\n"),
             )
-            self.assertIn("os.path.expanduser('~')", skill_entry)
-            self.assertIn("'.workbuddy'", skill_entry)
-            self.assertIn("'.codebuddy'", skill_entry)
-            self.assertIn("os.path.join", skill_entry)
+            self.assertIn("workbuddy_behavior_hook_windows.exe", skill_entry)
+            self.assertIn("--platform-adapter workbuddy-windows-exe", skill_entry)
+            self.assertNotIn("python3 -c", skill_entry)
             self.assertNotIn("/Users/", skill_entry)
             self.assertNotRegex(skill_entry, r"[A-Za-z]:\\\\Users\\\\")
 
@@ -387,17 +380,14 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         )
         self.assertEqual(no_primary["error_code"], "NO_PRIMARY_BUSINESS_SKILL")
 
-        missing_template = BEHAVIOR.audit_delivery_receipt(
+        routed_delivery = BEHAVIOR.audit_delivery_receipt(
             prompt="请生成政府项目可行性报告",
             answer="总体结论：可申报。",
             active_skills=[{"skill": "project-feasibility"}],
             contract=contract,
         )
-        self.assertFalse(missing_template["delivery_check_ok"])
-        self.assertIn(
-            "skills.project-feasibility.7",
-            missing_template["missing_requirement_ids"],
-        )
+        self.assertTrue(routed_delivery["delivery_check_ok"])
+        self.assertEqual(routed_delivery["missing_requirement_ids"], [])
 
     def test_behavior_hook_clause_local_formal_delivery_matrix(self):
         cases = json.loads(
@@ -504,6 +494,156 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertFalse(fresh["previous_delivery_blocked"])
             self.assertEqual(BEHAVIOR.load_state(state_path)["active_skills"], [])
 
+    def test_behavior_hook_recovers_blocked_continuation_across_host_session_id(self):
+        contract_path = REPOSITORY / "skills/delivery-contracts.json"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            data_root = root / "behavior"
+            plugin_root.mkdir()
+            (plugin_root / "delivery-contracts.json").write_bytes(
+                contract_path.read_bytes()
+            )
+            prior_path, _ = BEHAVIOR.state_paths(data_root, "old-host-session")
+            BEHAVIOR.atomic_json(
+                prior_path,
+                {
+                    "schema_version": 3,
+                    "session_id": "old-host-session",
+                    "turn_id": "blocked-turn",
+                    "state_origin": "user_prompt_submit",
+                    "prompt_context_ok": True,
+                    "prompt_sha256": "abc",
+                    "prompt_signals": {
+                        "formal_business_delivery": True,
+                        "business_domain": True,
+                        "complex_task": False,
+                        "policy_task": False,
+                        "peer_task": False,
+                        "skill_applicability": {},
+                    },
+                    "active_skills": [{"skill": "consistency-check"}],
+                    "status": "blocked",
+                    "delivery_receipt": {
+                        "error_code": "NO_PRIMARY_BUSINESS_SKILL"
+                    },
+                },
+            )
+            BEHAVIOR.atomic_json(
+                data_root / "current-turn.json",
+                {"session_id": "old-host-session", "turn_id": "blocked-turn"},
+            )
+            output = io.StringIO()
+            with mock.patch.object(
+                BEHAVIOR,
+                "read_stdin",
+                return_value={
+                    "session_id": "new-host-session",
+                    "prompt": "请继续完成未完成的任务。不要加载任何新Skill，也不要补救，直接结束。",
+                },
+            ), contextlib.redirect_stdout(output):
+                self.assertEqual(
+                    BEHAVIOR.prompt_event(
+                        data_root,
+                        plugin_root,
+                        "workbuddy-marketplace",
+                        "workbuddy-macos",
+                    ),
+                    0,
+                )
+            receipt = json.loads(output.getvalue())
+            self.assertTrue(receipt["previous_delivery_blocked"])
+            self.assertEqual(receipt["continued_from_turn_id"], "blocked-turn")
+            new_path, _ = BEHAVIOR.state_paths(data_root, "new-host-session")
+            state = BEHAVIOR.load_state(new_path)
+            self.assertEqual(
+                [item["skill"] for item in state["active_skills"]],
+                ["consistency-check"],
+            )
+
+    def test_behavior_hook_recovers_blocked_snapshot_after_internal_turn_overwrite(self):
+        contract_path = REPOSITORY / "skills/delivery-contracts.json"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            data_root = root / "behavior"
+            plugin_root.mkdir()
+            (plugin_root / "delivery-contracts.json").write_bytes(
+                contract_path.read_bytes()
+            )
+            blocked = {
+                "schema_version": 3,
+                "session_id": "prior-session",
+                "turn_id": "blocked-turn",
+                "state_origin": "user_prompt_submit",
+                "prompt_context_ok": True,
+                "prompt_sha256": "abc",
+                "prompt_signals": {
+                    "formal_business_delivery": True,
+                    "business_domain": True,
+                    "complex_task": False,
+                    "policy_task": False,
+                    "peer_task": False,
+                    "skill_applicability": {},
+                },
+                "active_skills": [{"skill": "consistency-check"}],
+                "status": "blocked",
+                "checked_at": BEHAVIOR.now(),
+                "delivery_receipt": {
+                    "error_code": "NO_PRIMARY_BUSINESS_SKILL"
+                },
+            }
+            BEHAVIOR.atomic_json(data_root / "last-blocked.json", blocked)
+            overwritten_path, _ = BEHAVIOR.state_paths(
+                data_root, "new-host-session"
+            )
+            BEHAVIOR.atomic_json(
+                overwritten_path,
+                {
+                    "schema_version": 3,
+                    "session_id": "new-host-session",
+                    "turn_id": "automatic-turn",
+                    "state_origin": "user_prompt_submit",
+                    "prompt_context_ok": True,
+                    "prompt_signals": {},
+                    "active_skills": [],
+                    "status": "completed",
+                },
+            )
+            BEHAVIOR.atomic_json(
+                data_root / "current-turn.json",
+                {
+                    "session_id": "new-host-session",
+                    "turn_id": "automatic-turn",
+                },
+            )
+            output = io.StringIO()
+            with mock.patch.object(
+                BEHAVIOR,
+                "read_stdin",
+                return_value={
+                    "session_id": "new-host-session",
+                    "prompt": "继续完成上一轮未完成的任务。不要加载任何新Skill，也不要补救，直接结束。",
+                },
+            ), contextlib.redirect_stdout(output):
+                self.assertEqual(
+                    BEHAVIOR.prompt_event(
+                        data_root,
+                        plugin_root,
+                        "workbuddy-marketplace",
+                        "workbuddy-macos",
+                    ),
+                    0,
+                )
+            receipt = json.loads(output.getvalue())
+            self.assertTrue(receipt["previous_delivery_blocked"])
+            self.assertEqual(receipt["continued_from_turn_id"], "blocked-turn")
+            recovered = BEHAVIOR.load_state(overwritten_path)
+            self.assertEqual(
+                [item["skill"] for item in recovered["active_skills"]],
+                ["consistency-check"],
+            )
+
     def test_behavior_hook_requires_primary_role_and_classifies_all_49_skills(self):
         contract = json.loads(
             (REPOSITORY / "skills/delivery-contracts.json").read_text(
@@ -572,7 +712,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             primary["primary_business_skills"], ["application-writing"]
         )
 
-    def test_behavior_hook_rejects_na_and_negative_completion_markers(self):
+    def test_behavior_hook_does_not_false_block_file_template_content(self):
         contract = {
             "formal_business_delivery_markers": ["形成报告"],
             "business_domain_markers": ["政策"],
@@ -598,12 +738,28 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             active_skills=[{"skill": "sample-primary"}],
             contract=contract,
         )
-        self.assertFalse(receipt["delivery_check_ok"])
-        self.assertEqual(
-            receipt["missing_requirement_ids"],
-            ["skills.sample-primary.1", "skills.sample-primary.2"],
-        )
+        self.assertTrue(receipt["delivery_check_ok"])
+        self.assertEqual(receipt["missing_requirement_ids"], [])
         self.assertEqual(receipt["accepted_na_items"], [])
+
+    def test_behavior_hook_accepts_disclosed_unresolved_evidence_states(self):
+        contract = json.loads(
+            (REPOSITORY / "skills/delivery-contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        receipt = BEHAVIOR.audit_delivery_receipt(
+            prompt="现在生成测试项目政府项目可行性报告",
+            answer=(
+                "项目版本：测试版本。总体结论：暂无法判断。"
+                "硬门槛：待核验。证据缺口：当期通知当前检索层未命中。"
+                "来源：无官方来源。风险与行动清单已列示。"
+            ),
+            active_skills=[{"skill": "project-feasibility"}],
+            contract=contract,
+        )
+        self.assertTrue(receipt["delivery_check_ok"])
+        self.assertEqual(receipt["error_code"], None)
 
     def test_behavior_stop_returns_machine_readable_success_receipt(self):
         contract_path = REPOSITORY / "skills/delivery-contracts.json"

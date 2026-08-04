@@ -38,7 +38,6 @@ FORBIDDEN_PATH_SUFFIXES = (
     "/plugin-release-manifest.sig",
 )
 FORBIDDEN_TEXT_MARKERS = (
-    "${CODEBUDDY_PLUGIN_ROOT}",
     "jiaotang_kb_setup",
     "bootstrap_url",
     "macOS 钥匙串",
@@ -112,7 +111,13 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         plugin_root = str(PurePosixPath(plugin_name).parent.parent)
         suite_name = f"{plugin_root}/skills/suite-manifest.json"
         hooks_name = f"{plugin_root}/hooks/hooks.json"
-        behavior_hook_name = f"{plugin_root}/scripts/workbuddy_behavior_hook.py"
+        plugin = load_json(archive, plugin_name)
+        platform = str(plugin.get("platform") or "")
+        behavior_hook_name = (
+            f"{plugin_root}/scripts/workbuddy_behavior_hook_windows.exe"
+            if platform == "windows"
+            else f"{plugin_root}/scripts/workbuddy_behavior_hook.py"
+        )
         forbidden_paths = sorted(
             name
             for name in names
@@ -126,7 +131,6 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         if missing_minimal_files:
             raise RuntimeError(f"候选包缺少最小运行文件：{missing_minimal_files}")
 
-        plugin = load_json(archive, plugin_name)
         suite = load_json(archive, suite_name)
         hooks = load_json(archive, hooks_name)
         declared_skills = list(suite.get("skills") or [])
@@ -175,6 +179,18 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
             raise RuntimeError("插件未声明用户级远程 MCP 模式")
         if "mcpServers" in plugin:
             raise RuntimeError("公共插件清单不得内嵌用户 MCP 配置")
+        if platform == "windows":
+            if not archive.read(behavior_hook_name).startswith(b"MZ"):
+                raise RuntimeError("Windows原生Hook不是有效PE文件")
+            forbidden_runtime = (
+                f"{plugin_root}/scripts/workbuddy_behavior_hook.py"
+            )
+        else:
+            forbidden_runtime = (
+                f"{plugin_root}/scripts/workbuddy_behavior_hook_windows.exe"
+            )
+        if forbidden_runtime in names:
+            raise RuntimeError("候选包混入其他平台行为运行时")
         hook_events = set(dict(hooks.get("hooks") or {}))
         if hook_events != {"UserPromptSubmit", "Stop"}:
             raise RuntimeError(f"最小行为 Hook 事件不合规：{sorted(hook_events)}")

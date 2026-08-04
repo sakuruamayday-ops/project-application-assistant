@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.5.7"><img src="https://img.shields.io/badge/Release-V1.5.7-C9A760?style=for-the-badge" alt="Release V1.5.7"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.5.8"><img src="https://img.shields.io/badge/Release-V1.5.8-C9A760?style=for-the-badge" alt="Release V1.5.8"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.5.7.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
+  <a href="docs/releases/V1.5.8.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
 </p>
 
@@ -52,15 +52,15 @@
 | WorkBuddy 5 或更高版本，macOS 与 Windows | 对应系统的 WorkBuddy 包 | 在门户选择 macOS 或 Windows 后复制一段完整指令给 WorkBuddy |
 | 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | 从手工配置页复制已自动填入个人 Token 的完整配置 |
 
-发布目标为通用 Skills 包、macOS WorkBuddy 包和 Windows WorkBuddy 包。两个平台包共享同一套49项Skills、业务规则和Python行为核心，只保留各自必要的启动适配器。
+发布目标为通用 Skills 包、macOS WorkBuddy 包和 Windows WorkBuddy 包。两个平台包共享同一套49项Skills和业务规则，并分别使用 macOS Python 核心和 Windows 原生 EXE。
 
 WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启动器、bootstrap、设备登记、钥匙串或DPAPI；用户侧不执行签名审查和插件目录哈希检查。手工配置页自动复用或生成当前登录用户的个人Token并填入完整远程HTTP MCP配置。
 
-V1.5.7 是当前对外发布的唯一最新版本。它让被门禁阻断的正式交付在宿主自动继续时保持阻断，强化 Windows PowerShell 编码和状态写入，并禁止安装程序现场修补正式包。
+V1.5.8 是当前对外发布的唯一最新版本。它将 Windows 行为 Hook 切换为实机验证过的原生 EXE，修复技术验收和否定表达误触发正式交付门禁，并用独立阻断快照保证明确续轮不能绕过门禁。
 
 ### WorkBuddy 平台说明
 
-WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入口与共享 Python 状态核心，Windows 的提示和停止事件直接由 UTF-8 BOM PowerShell Hook 处理，Skill 内联激活继续使用同一 schema 3 状态协议。普通新消息不继承上一轮 Skill；只有上一轮已被门禁阻断且本轮明确继续未完成任务时，才继承正式交付信号和缺项状态。安装完成标准统一为：原包平台预检通过、`package_mutated=false`、49项Skills可识别，`tools/list`出现`knowledge_search`、`knowledge_document`、`knowledge_service_status`，并实际调用状态工具返回`connected: true`。
+WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入口与 Python 状态核心，Windows 的提示、Skill 激活和停止事件由原生 EXE 统一处理，不依赖 PowerShell、CMD 或本机 Python。两个平台遵循相同的正式交付规则和轮次状态协议。普通新消息不继承上一轮 Skill；只有上一轮已被门禁阻断且本轮明确继续未完成任务时，才继承正式交付信号和缺项状态。安装完成标准统一为：原包平台预检通过、`package_mutated=false`、49项Skills可识别，`tools/list`出现`knowledge_search`、`knowledge_document`、`knowledge_service_status`，并实际调用状态工具返回`connected: true`。
 
 ## 安全边界
 
@@ -91,7 +91,7 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.5.7 发布说明](docs/releases/V1.5.7.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.5.8 发布说明](docs/releases/V1.5.8.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -108,8 +108,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.5.7` | 网站、GitHub Release 和用户可见最新版 |
-| 组件版本 | `1.5.7` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.5.8` | 网站、GitHub Release 和用户可见最新版 |
+| 组件版本 | `1.5.8` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界

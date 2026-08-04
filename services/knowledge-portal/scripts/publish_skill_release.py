@@ -569,7 +569,11 @@ def _validate_workbuddy_integrity(
     ):
         raise ValueError("WorkBuddy 插件未声明简化远程 MCP 与最小行为 Hook")
     hook_name = f"{plugin_prefix}hooks/hooks.json"
-    behavior_hook_name = f"{plugin_prefix}scripts/workbuddy_behavior_hook.py"
+    behavior_hook_name = (
+        f"{plugin_prefix}scripts/workbuddy_behavior_hook_windows.exe"
+        if target == "windows"
+        else f"{plugin_prefix}scripts/workbuddy_behavior_hook.py"
+    )
     if hook_name not in file_names or behavior_hook_name not in file_names:
         raise ValueError("WorkBuddy 简化包缺少最小行为 Hook")
     hooks = json.loads(archive.read(hook_name).decode("utf-8"))
@@ -580,10 +584,14 @@ def _validate_workbuddy_integrity(
     }:
         raise ValueError("WorkBuddy 最小行为 Hook 事件范围不合规")
     hook_commands = json.dumps(hooks, ensure_ascii=False).casefold()
-    windows_adapter = f"{plugin_prefix}scripts/workbuddy_hook_windows.ps1"
+    windows_adapter = (
+        f"{plugin_prefix}scripts/workbuddy_behavior_hook_windows.exe"
+    )
     windows_legacy = {
         f"{plugin_prefix}scripts/workbuddy_hook_windows.cmd",
         f"{plugin_prefix}scripts/workbuddy_hook_windows.sh",
+        f"{plugin_prefix}scripts/workbuddy_hook_windows.ps1",
+        f"{plugin_prefix}scripts/workbuddy_behavior_hook.py",
     }
     macos_adapter = f"{plugin_prefix}scripts/workbuddy_hook_macos.sh"
     launcher = f"{plugin_prefix}scripts/workbuddy_hook_launcher.sh"
@@ -591,7 +599,9 @@ def _validate_workbuddy_integrity(
         if plugin.get("platform") != "windows":
             raise ValueError("Windows包未声明Windows平台")
         if windows_adapter not in file_names:
-            raise ValueError("Windows包缺少独立PowerShell行为Hook")
+            raise ValueError("Windows包缺少原生EXE行为Hook")
+        if not archive.read(windows_adapter).startswith(b"MZ"):
+            raise ValueError("Windows原生EXE不是有效PE文件")
         if (
             windows_legacy & file_names
             or macos_adapter in file_names
@@ -608,16 +618,17 @@ def _validate_workbuddy_integrity(
                 "workbuddy_hook_windows.sh",
                 "workbuddy_hook_windows.cmd",
                 "workbuddy_behavior_hook.py",
+                "powershell",
                 "executionpolicy",
                 "bypass",
             )
         ):
             raise ValueError("Windows hooks.json仍使用旧桥接链或权限绕过")
         if (
-            "powershell.exe" not in hook_commands
-            or "workbuddy_hook_windows.ps1" not in hook_commands
+            "workbuddy_behavior_hook_windows.exe" not in hook_commands
+            or "workbuddy-windows-exe" not in hook_commands
         ):
-            raise ValueError("Windows hooks.json未进入独立PowerShell行为Hook")
+            raise ValueError("Windows hooks.json未进入原生EXE行为Hook")
     elif target == "macos":
         if plugin.get("platform") != "macos":
             raise ValueError("macOS包未声明macOS平台")
