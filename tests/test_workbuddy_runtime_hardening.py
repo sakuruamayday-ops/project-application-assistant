@@ -66,6 +66,10 @@ BEHAVIOR = load_module(
     RELEASE_MANAGER / "workbuddy_behavior_hook.py",
 )
 REPOSITORY = Path(__file__).resolve().parents[1]
+GROUNDED_ENGINE = load_module(
+    "grounded_evidence",
+    REPOSITORY / "skills/evidence-ledger/scripts/grounded_evidence.py",
+)
 ADVERSARIAL_EVAL = load_module(
     "run_adversarial_eval",
     REPOSITORY / "tests/run_adversarial_eval.py",
@@ -323,7 +327,9 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             ),
             [
                 "NO_PRIMARY_BUSINESS_SKILL：正式业务交付未激活主业务Skill；"
-                "辅助Skill和质量闸门不能替代主业务Skill"
+                "辅助Skill和质量闸门不能替代主业务Skill",
+                "Grounded交付缺少质量闸门Skill:evidence-ledger",
+                "Grounded交付缺少当前turn的report文件校验回执",
             ],
         )
         self.assertEqual(
@@ -386,8 +392,14 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             active_skills=[{"skill": "project-feasibility"}],
             contract=contract,
         )
-        self.assertTrue(routed_delivery["delivery_check_ok"])
-        self.assertEqual(routed_delivery["missing_requirement_ids"], [])
+        self.assertFalse(routed_delivery["delivery_check_ok"])
+        self.assertEqual(
+            routed_delivery["missing_requirement_ids"],
+            ["grounded.quality_gate", "grounded.artifact.report"],
+        )
+        self.assertEqual(
+            routed_delivery["error_code"], "DELIVERY_REQUIREMENTS_MISSING"
+        )
 
     def test_behavior_hook_clause_local_formal_delivery_matrix(self):
         cases = json.loads(
@@ -673,12 +685,14 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         signals = BEHAVIOR.prompt_signals(
             "请按现行政策形成报告并交付文件。", contract
         )
+        routing_signals = dict(signals)
+        routing_signals["requested_artifacts"] = []
         quality_only = BEHAVIOR.audit_delivery_receipt(
             prompt="",
             answer="已经完成。",
             active_skills=[{"skill": "consistency-check"}],
             contract=contract,
-            signals=signals,
+            signals=routing_signals,
         )
         self.assertFalse(quality_only["delivery_check_ok"])
         self.assertEqual(
@@ -693,7 +707,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             answer="已经完成。",
             active_skills=[{"skill": "policy-retrieval"}],
             contract=contract,
-            signals=signals,
+            signals=routing_signals,
         )
         self.assertFalse(supporting_only["delivery_check_ok"])
         self.assertEqual(
@@ -705,7 +719,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             answer="已经完成。",
             active_skills=[{"skill": "application-writing"}],
             contract=contract,
-            signals=signals,
+            signals=routing_signals,
         )
         self.assertTrue(primary["delivery_check_ok"])
         self.assertEqual(
@@ -748,18 +762,48 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        receipt = BEHAVIOR.audit_delivery_receipt(
-            prompt="现在生成测试项目政府项目可行性报告",
-            answer=(
-                "项目版本：测试版本。总体结论：暂无法判断。"
-                "硬门槛：待核验。证据缺口：当期通知当前检索层未命中。"
-                "来源：无官方来源。风险与行动清单已列示。"
-            ),
-            active_skills=[{"skill": "project-feasibility"}],
-            contract=contract,
-        )
-        self.assertTrue(receipt["delivery_check_ok"])
-        self.assertEqual(receipt["error_code"], None)
+        with tempfile.TemporaryDirectory() as directory:
+            state_root = Path(directory) / "state"
+            state_root.mkdir()
+            (state_root / "current-turn.json").write_text(
+                json.dumps({"turn_id": "turn-grounded-runtime"}),
+                encoding="utf-8",
+            )
+            ledger = (
+                REPOSITORY
+                / "skills/evidence-ledger/examples/normal-grounded-report.json"
+            )
+            artifact = (
+                REPOSITORY
+                / "tests/fixtures/grounded-citations/real/grounded-analysis-report.docx"
+            )
+            validator = GROUNDED_ENGINE.write_delivery_receipt(
+                ledger,
+                artifact,
+                profile="analysis-report",
+                state_root=state_root,
+            )
+            receipt = BEHAVIOR.audit_delivery_receipt(
+                prompt="现在生成测试项目政府项目可行性报告",
+                answer=(
+                    "项目版本：测试版本。总体结论：暂无法判断。"
+                    "硬门槛：待核验。证据缺口：当期通知当前检索层未命中。"
+                    "来源：无官方来源。风险与行动清单已列示。"
+                ),
+                active_skills=[
+                    {"skill": "project-feasibility"},
+                    {"skill": "evidence-ledger"},
+                ],
+                contract=contract,
+                state_root=state_root,
+                turn_id=validator["turn_id"],
+            )
+            self.assertTrue(receipt["delivery_check_ok"])
+            self.assertEqual(receipt["error_code"], None)
+            self.assertEqual(
+                receipt["passed_requirement_ids"],
+                ["grounded.quality_gate", "grounded.artifact.report"],
+            )
 
     def test_behavior_stop_returns_machine_readable_success_receipt(self):
         contract_path = REPOSITORY / "skills/delivery-contracts.json"
