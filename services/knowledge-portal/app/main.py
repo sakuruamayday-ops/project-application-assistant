@@ -172,6 +172,10 @@ HEALTH_STATUS_MAX_AGE_SECONDS = max(
 INDEX_STATUS_MAX_AGE_SECONDS = max(
     60, int(os.environ.get("JIAOTANG_INDEX_STATUS_MAX_AGE_SECONDS", "7200"))
 )
+SKILL_DEPLOY_GATE_STATUS_MAX_AGE_SECONDS = max(
+    60,
+    int(os.environ.get("JIAOTANG_SKILL_DEPLOY_GATE_STATUS_MAX_AGE_SECONDS", "86400")),
+)
 BACKUP_STATUS_MAX_AGE_SECONDS = max(
     60, int(os.environ.get("JIAOTANG_BACKUP_STATUS_MAX_AGE_SECONDS", "172800"))
 )
@@ -1459,9 +1463,51 @@ def runtime_operational_status_view() -> dict[str, object]:
 
 def skill_deploy_gate_status() -> dict[str, object]:
     payload = read_status_file(SKILL_DEPLOY_GATE_STATUS_PATH)
+    timestamp = parse_status_timestamp(payload.get("checked_at"))
+    age_seconds = (
+        max(0.0, (utc_now() - timestamp).total_seconds())
+        if timestamp is not None
+        else None
+    )
+    timestamp_fresh = (
+        age_seconds is not None
+        and age_seconds <= SKILL_DEPLOY_GATE_STATUS_MAX_AGE_SECONDS
+    )
+    recorded_deployment_id = str(payload.get("deployment_id") or "").strip()
+    deployment_matches = (
+        bool(recorded_deployment_id)
+        and (
+            BUILD_DEPLOYMENT_ID == "unknown"
+            or recorded_deployment_id == BUILD_DEPLOYMENT_ID
+        )
+    )
+    fresh = bool(payload) and timestamp_fresh and deployment_matches
+    if not payload:
+        display_status = "待首次核验"
+        freshness_label = "尚无生产门禁回执"
+        status_reason = "missing"
+    elif not timestamp_fresh:
+        display_status = "需重新核验"
+        freshness_label = f"检查时间超过 {SKILL_DEPLOY_GATE_STATUS_MAX_AGE_SECONDS // 3600} 小时"
+        status_reason = "stale_timestamp"
+    elif not deployment_matches:
+        display_status = "需重新核验"
+        freshness_label = "回执与当前生产部署批次不一致"
+        status_reason = "deployment_mismatch"
+    else:
+        display_status = "通过" if payload.get("status") == "pass" else "阻断"
+        freshness_label = "时效有效"
+        status_reason = "current"
     return {
         **payload,
         "checked_at_display": format_chinese_datetime(payload.get("checked_at")),
+        "recorded_status": payload.get("status"),
+        "status": payload.get("status") if fresh else "stale",
+        "display_status": display_status,
+        "is_fresh": fresh,
+        "age_seconds": age_seconds,
+        "freshness_label": freshness_label,
+        "status_reason": status_reason,
     }
 
 
@@ -9193,7 +9239,7 @@ def portal_payload(
             ).fetchall(), "created_at", "completed_at", "rolled_back_at")
         release_rows = connection.execute(
             """
-            SELECT id, version, file_name, sha256, release_notes, published_at
+            SELECT id, version, file_name, file_path, sha256, release_notes, published_at
             FROM skill_releases
             ORDER BY published_at DESC, id DESC
             """,
@@ -9257,7 +9303,11 @@ def portal_payload(
                     timestamp_field="completed_at",
                     max_age_seconds=BACKUP_STATUS_MAX_AGE_SECONDS,
                 ),
-                "oss_sync": read_status_file(OSS_SYNC_STATUS_PATH),
+                "oss_sync": operational_status_view(
+                    OSS_SYNC_STATUS_PATH,
+                    timestamp_field="completed_at",
+                    max_age_seconds=INDEX_STATUS_MAX_AGE_SECONDS,
+                ),
                 "oss_cache": operational_status_view(
                     OSS_INDEX_CACHE_STATUS_PATH,
                     timestamp_field="checked_at",
@@ -9265,22 +9315,29 @@ def portal_payload(
                 ),
                 "deploy_gate": skill_deploy_gate_status(),
             }
+        latest_generic_artifact = latest_skill_artifact("generic")
         latest_release = next(
             (
                 row
-                for row in connection.execute(
-                    """
-                    SELECT id, version, file_name, file_path, sha256, release_notes, published_at
-                    FROM skill_releases
-                    ORDER BY published_at DESC, id DESC
-                    """
-                ).fetchall()
-                if is_public_skill_release_version(str(row["version"]))
-                and str(row["file_path"] or "").strip()
-                and str(row["sha256"] or "").strip()
+                for row in release_rows
+                if latest_generic_artifact is not None
+                and int(row["id"]) == int(latest_generic_artifact["id"])
             ),
             None,
         )
+        if latest_release is None:
+            # 兼容早期只写入 skill_releases 主记录的版本；平台专属热修的
+            # 空主记录不会抢走最近的通用正式版本。
+            latest_release = next(
+                (
+                    row
+                    for row in release_rows
+                    if is_public_skill_release_version(str(row["version"]))
+                    and str(row["file_path"] or "").strip()
+                    and str(row["sha256"] or "").strip()
+                ),
+                None,
+            )
         release_stage = connection.execute(
             """
             SELECT version,status,generic_sha256,workbuddy_sha256,
@@ -9301,7 +9358,6 @@ def portal_payload(
             if release_stage
             else None
         )
-        latest_generic_artifact = latest_skill_artifact("generic")
         latest_generic_available = release_artifact_is_servable(
             latest_generic_artifact,
             target="generic",
@@ -9473,6 +9529,12 @@ def public_release_guidance() -> dict[str, object]:
     workbuddy_version = str(latest_workbuddy.get("version") or "")
     if not workbuddy_version:
         workbuddy_version = str((legacy_workbuddy or {}).get("version") or "")
+    platform_version_labels = []
+    for target, label in (("macos", "macOS"), ("windows", "Windows")):
+        version = str(platform_versions.get(target) or "")
+        if version:
+            platform_version_labels.append(f"{label} V{version}")
+    platform_version_label = "、".join(platform_version_labels)
     candidate_version = str(candidate.get("version") or "")
     generic_available = release_artifact_is_servable(
         generic,
@@ -9482,7 +9544,7 @@ def public_release_guidance() -> dict[str, object]:
     workbuddy_installable = bool(latest_workbuddy.get("installable"))
     if workbuddy_installable:
         workbuddy_notice = (
-            f"WorkBuddy macOS/Windows 正式包 V{workbuddy_version} 可安装。"
+            f"WorkBuddy {platform_version_label or f'V{workbuddy_version}'} 正式包可安装。"
             "一段指令完成49项Skills安装、远程MCP合并、一次重载和真实工具验收。"
         )
     elif workbuddy_version:
@@ -9506,6 +9568,10 @@ def public_release_guidance() -> dict[str, object]:
         "generic_available": generic_available,
         "workbuddy_version": workbuddy_version,
         "workbuddy_platform_versions": platform_versions,
+        "generic_version": generic_version,
+        "macos_version": str(platform_versions.get("macos") or ""),
+        "windows_version": str(platform_versions.get("windows") or ""),
+        "platform_version_label": platform_version_label,
         "workbuddy_installable": workbuddy_installable,
         "workbuddy_notice": workbuddy_notice,
         "candidate_summary": str(candidate.get("summary") or ""),
@@ -11999,7 +12065,8 @@ def admin_health_detail(
                     "是" if oss_cache.get("generation_consistent") is True else "否",
                 ),
                 ("指针 SHA-256", oss_cache.get("pointer_sha256") or "未记录"),
-                ("OSS 同步状态", oss_sync.get("status", "待首次同步")),
+                ("OSS 同步状态", oss_sync.get("display_status", "待首次同步")),
+                ("OSS 同步时效", oss_sync.get("freshness_label", "待采集")),
                 ("OSS 同步完成时间", oss_sync.get("completed_at", "待采集")),
                 ("目标 Bucket", oss_sync.get("bucket", "未配置")),
                 ("本次上传文件", oss_sync.get("uploaded_files", 0)),
@@ -12010,7 +12077,8 @@ def admin_health_detail(
         "deploy-gate": (
             "Skills 部署门禁",
             [
-                ("最近结果", "通过" if deploy_gate.get("status") == "pass" else ("阻断" if deploy_gate else "待首次记录")),
+                ("最近结果", deploy_gate.get("display_status", "待首次记录")),
+                ("门禁时效", deploy_gate.get("freshness_label", "待首次记录")),
                 ("检查时间", deploy_gate.get("checked_at_display") or "待首次记录"),
                 ("部署批次", deploy_gate.get("deployment_id") or "—"),
                 ("正式技能", deploy_gate.get("skill_total", 0)),

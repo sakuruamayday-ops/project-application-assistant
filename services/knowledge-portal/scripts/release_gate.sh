@@ -5,7 +5,11 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 service_dir="$(cd "${script_dir}/.." && pwd)"
 root_dir="$(cd "${service_dir}/../.." && pwd)"
 canonical_deploy_root="$(git -C "${root_dir}" config --local --get jiaotang.deployWorktree 2>/dev/null || true)"
-if [[ -n "${canonical_deploy_root}" ]]; then
+if [[ -z "${canonical_deploy_root}" && "${JIAOTANG_ALLOW_NONCANONICAL_DEPLOY:-false}" != "true" ]]; then
+  echo "四层发布门禁缺少唯一正式工作树 jiaotang.deployWorktree。" >&2
+  exit 76
+fi
+if [[ -n "${canonical_deploy_root}" && "${JIAOTANG_ALLOW_NONCANONICAL_DEPLOY:-false}" != "true" ]]; then
   canonical_deploy_root="$(cd "${canonical_deploy_root}" && pwd -P)"
   current_root="$(cd "${root_dir}" && pwd -P)"
   if [[ "${current_root}" != "${canonical_deploy_root}" ]]; then

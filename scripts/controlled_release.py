@@ -575,6 +575,25 @@ def validate_inputs(
 
 def validate_clean_default_branch(repository: str) -> str:
     git_root = ["git", "-C", str(ROOT)]
+    configured_root = run(
+        [*git_root, "config", "--local", "--get", "jiaotang.deployWorktree"]
+    )
+    allow_noncanonical = (
+        os.environ.get("JIAOTANG_ALLOW_NONCANONICAL_DEPLOY", "").lower() == "true"
+    )
+    if not configured_root and not allow_noncanonical:
+        raise RuntimeError(
+            "受控发布缺少唯一正式工作树配置 jiaotang.deployWorktree；"
+            "如确需隔离验收，请显式设置 JIAOTANG_ALLOW_NONCANONICAL_DEPLOY=true"
+        )
+    if configured_root and Path(configured_root).expanduser().resolve() != ROOT.resolve():
+        if not allow_noncanonical:
+            raise RuntimeError(
+                "受控发布必须从唯一正式工作树执行："
+                f"配置指向 {Path(configured_root).expanduser().resolve()}，"
+                f"当前为 {ROOT.resolve()}；如确需隔离验收，请显式设置 "
+                "JIAOTANG_ALLOW_NONCANONICAL_DEPLOY=true"
+            )
     if run([*git_root, "status", "--porcelain"]):
         raise RuntimeError("受控发布必须从无未提交改动的工作树执行")
     branch = run([*git_root, "branch", "--show-current"])
@@ -1049,7 +1068,7 @@ def main() -> None:
         default=Path.home()
         / ".codex"
         / "skill-signing"
-        / "publisher-ed25519",
+        / "jiaotang-skill-release-ed25519",
     )
     parser.add_argument(
         "--publisher-public-key",
@@ -1057,7 +1076,7 @@ def main() -> None:
         default=Path.home()
         / ".codex"
         / "skill-signing"
-        / "publisher-ed25519.pub",
+        / "jiaotang-skill-release-ed25519.pub",
     )
     parser.add_argument("--lease-owner", default="")
     parser.add_argument(

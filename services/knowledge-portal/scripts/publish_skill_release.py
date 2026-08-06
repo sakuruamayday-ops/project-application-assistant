@@ -948,6 +948,64 @@ def _artifact_name(version: str, target: str) -> str:
     return f"企业全生命周期助手-V{version}{suffix}.zip"
 
 
+def _sync_promoted_stage_paths(
+    connection: sqlite3.Connection,
+    release_directory: Path,
+    version: str,
+    targets: set[str],
+) -> None:
+    """将已提升版本的阶段元数据指向正式根目录，而不是 .staging。"""
+    normalized_targets = {target for target in targets if target in ARTIFACT_TARGETS}
+    for target in normalized_targets:
+        final_path = release_directory / _artifact_name(version, target)
+        if not final_path.is_file():
+            raise RuntimeError(f"正式产物不存在，无法同步阶段路径：{final_path}")
+        final_sha = sha256(final_path)
+        stage_artifact = connection.execute(
+            "SELECT sha256 FROM skill_release_stage_artifacts WHERE version=? AND target=?",
+            (version, target),
+        ).fetchone()
+        if stage_artifact is not None:
+            if str(stage_artifact[0]) != final_sha:
+                raise RuntimeError(f"阶段产物哈希与正式产物不一致：{version}/{target}")
+            connection.execute(
+                "UPDATE skill_release_stage_artifacts SET file_path=? WHERE version=? AND target=?",
+                (str(final_path), version, target),
+            )
+        artifact_stage = connection.execute(
+            "SELECT sha256 FROM skill_release_artifact_stages WHERE version=? AND target=?",
+            (version, target),
+        ).fetchone()
+        if artifact_stage is not None:
+            if str(artifact_stage[0]) != final_sha:
+                raise RuntimeError(f"通道阶段哈希与正式产物不一致：{version}/{target}")
+            connection.execute(
+                "UPDATE skill_release_artifact_stages SET file_path=? WHERE version=? AND target=?",
+                (str(final_path), version, target),
+            )
+    stage = connection.execute(
+        "SELECT 1 FROM skill_release_stages WHERE version=?", (version,)
+    ).fetchone()
+    if stage is None:
+        return
+    updates: dict[str, object] = {}
+    for target, path_field, hash_field in (
+        ("generic", "generic_path", "generic_sha256"),
+        ("workbuddy", "workbuddy_path", "workbuddy_sha256"),
+    ):
+        if target not in normalized_targets:
+            continue
+        final_path = release_directory / _artifact_name(version, target)
+        updates[path_field] = str(final_path)
+        updates[hash_field] = sha256(final_path)
+    if updates:
+        assignments = ",".join(f"{field}=?" for field in updates)
+        connection.execute(
+            f"UPDATE skill_release_stages SET {assignments} WHERE version=?",
+            (*updates.values(), version),
+        )
+
+
 def stage_artifact_addition(
     database_path: Path,
     release_directory: Path,
@@ -1142,6 +1200,7 @@ def promote_artifact_addition(
             """,
             (promoted_at, version, target),
         )
+        _sync_promoted_stage_paths(connection, release_directory, version, {target})
         connection.commit()
     return {
         **validation,
@@ -1462,6 +1521,12 @@ def promote_selective(
             """,
             (promoted_at, version),
         )
+        _sync_promoted_stage_paths(
+            connection,
+            release_directory,
+            version,
+            set(packages),
+        )
         connection.commit()
     return {
         **result,
@@ -1540,6 +1605,17 @@ def stage(
                 github_url.strip(),
                 staged_at,
             ),
+        )
+        connection.executemany(
+            """
+            INSERT INTO skill_release_stage_artifacts(
+                version,target,file_path,sha256
+            ) VALUES (?,?,?,?)
+            """,
+            [
+                (version, "generic", str(generic_target), validation["generic_sha256"]),
+                (version, "workbuddy", str(workbuddy_target), validation["workbuddy_sha256"]),
+            ],
         )
         connection.commit()
     return {
@@ -1656,6 +1732,12 @@ def promote(
               AND status IN ('releasing','staged-awaiting-acceptance')
             """,
             (promoted_at, version),
+        )
+        _sync_promoted_stage_paths(
+            connection,
+            release_directory,
+            version,
+            {"generic", "workbuddy"},
         )
         connection.commit()
     return {

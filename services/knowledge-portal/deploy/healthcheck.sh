@@ -42,3 +42,9 @@ done
     --restart-window-seconds "${JIAOTANG_HEALTH_RESTART_WINDOW_SECONDS:-1800}" \
     --circuit-cooldown-seconds "${JIAOTANG_HEALTH_CIRCUIT_COOLDOWN_SECONDS:-3600}" \
     >/dev/null
+
+"${app_dir}/.venv/bin/python" \
+    "${app_dir}/scripts/report_systemd_failure.py" \
+    --unit jiaotang-kb.service \
+    --clear \
+    >/dev/null

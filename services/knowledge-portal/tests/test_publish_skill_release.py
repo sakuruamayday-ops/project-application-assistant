@@ -313,6 +313,20 @@ def test_two_stage_release_requires_stage_before_promotion(tmp_path: Path) -> No
         assert connection.execute(
             "SELECT status FROM skill_release_stages WHERE version='1.2'"
         ).fetchone()[0] == "published"
+        stage_paths = connection.execute(
+            "SELECT generic_path,workbuddy_path FROM skill_release_stages WHERE version='1.2'"
+        ).fetchone()
+        assert stage_paths == (
+            str(release_dir / "企业全生命周期助手-V1.2.zip"),
+            str(release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip"),
+        )
+        artifact_paths = connection.execute(
+            "SELECT target,file_path FROM skill_release_stage_artifacts WHERE version='1.2' ORDER BY target"
+        ).fetchall()
+        assert artifact_paths == [
+            ("generic", str(release_dir / "企业全生命周期助手-V1.2.zip")),
+            ("workbuddy", str(release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip")),
+        ]
 
 
 def test_publish_rejects_version_mismatch(tmp_path: Path) -> None:

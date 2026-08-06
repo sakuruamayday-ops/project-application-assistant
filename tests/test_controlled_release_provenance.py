@@ -166,6 +166,8 @@ def test_default_branch_validation_uses_repository_root_from_any_cwd(
 
     def fake_run(command, **_kwargs):
         seen.append(command)
+        if command[-4:] == ["config", "--local", "--get", "jiaotang.deployWorktree"]:
+            return str(MODULE.ROOT)
         if command[-2:] == ["branch", "--show-current"]:
             return "main"
         if command[-2:] == ["rev-parse", "HEAD"]:

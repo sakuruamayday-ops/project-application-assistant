@@ -192,7 +192,7 @@ def test_deploy_rolls_back_previous_release_when_new_index_health_fails():
     assert '"scripts/refresh_index_from_oss.py"' in transaction
     assert '"--rollback"' in transaction
     assert "refresh_index_from_oss.py" not in deploy_script[
-        deploy_script.index("[5/7]") :
+        deploy_script.index("[5/8]") :
     ]
     assert "jiaotang-kb-refresh-index --rollback" in delta_script
     assert "rsync " not in delta_script

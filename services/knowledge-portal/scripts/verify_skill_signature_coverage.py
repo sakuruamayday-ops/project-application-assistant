@@ -137,6 +137,12 @@ def main() -> int:
     parser.add_argument("--output")
     parser.add_argument("--deployment-id", default="")
     parser.add_argument("--scope", default="local-preflight")
+    parser.add_argument(
+        "--release-mode",
+        choices=("code", "index"),
+        default="code",
+        help="本次发布模式，写入回执以区分代码发布与索引发布",
+    )
     options = parser.parse_args()
     result = validate_signature_coverage(Path(options.skills_root).expanduser().resolve())
     result.update(
@@ -144,6 +150,7 @@ def main() -> int:
             "checked_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
             "deployment_id": options.deployment_id,
             "scope": options.scope,
+            "release_mode": options.release_mode,
             "gate_type": "deployment-signature-coverage",
             "content_integrity_gate": "由技能套件发布流程独立执行",
         }

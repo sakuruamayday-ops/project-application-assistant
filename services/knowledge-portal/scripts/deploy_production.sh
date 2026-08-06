@@ -30,6 +30,10 @@ canonical_deploy_root="$(
     git -C "${repository_dir}" config --local --get jiaotang.deployWorktree \
         2>/dev/null || true
 )"
+if [[ -z "${canonical_deploy_root}" && "${JIAOTANG_ALLOW_NONCANONICAL_DEPLOY:-false}" != "true" ]]; then
+    echo "拒绝部署：未配置唯一正式工作树 jiaotang.deployWorktree。" >&2
+    exit 76
+fi
 if [[ -n "${canonical_deploy_root}" && "${JIAOTANG_ALLOW_NONCANONICAL_DEPLOY:-false}" != "true" ]]; then
     canonical_deploy_root="$(cd "${canonical_deploy_root}" && pwd -P)"
     current_deploy_root="$(cd "${repository_dir}" && pwd -P)"
@@ -187,11 +191,12 @@ PY
 
 python3 "${service_dir}/scripts/build_static_assets.py"
 
-echo "[1/7] 校验本地技能签名和生产环境"
+echo "[1/8] 校验本地技能签名和生产环境"
 python3 "${service_dir}/scripts/python_supply_chain.py" \
     lock-metadata-verify --portal-dir "${service_dir}" >/dev/null
 python3 "${service_dir}/scripts/verify_skill_signature_coverage.py" \
-    --skills-root "${repository_dir}/skills"
+    --skills-root "${repository_dir}/skills" \
+    --release-mode "${release_mode}"
 ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     SOURCE_ENV=/etc/jiaotang-kb-ops.env
     [ -f \"\${SOURCE_ENV}\" ] || SOURCE_ENV=/etc/jiaotang-kb.env
@@ -247,7 +252,7 @@ if values['JIAOTANG_SECURE_COOKIES'].lower() != 'true':
     raise SystemExit('生产环境必须设置 JIAOTANG_SECURE_COOKIES=true')
 PY"
 
-echo "[2/7] 创建唯一不可变应用release槽"
+echo "[2/8] 创建唯一不可变应用release槽"
 ssh "${ssh_args[@]}" "${deploy_host}" \
     "LEGACY_APP_DIR='${legacy_app_dir}' RUNTIME_ROOT='${runtime_root}' RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
 import os
@@ -299,6 +304,8 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/evaluate_structured_knowledge.py \
     scripts/project_catalog_matching.py \
     scripts/migrate_first_public_release.py scripts/publish_skill_release.py \
+    scripts/reconcile_release_metadata.py \
+    scripts/audit_release_locations.py \
     scripts/release_transaction.py scripts/smoke_test_production.sh \
     scripts/python_supply_chain.py \
     tests/fixtures/structured_knowledge_gold.jsonl \
@@ -386,7 +393,7 @@ print(hashlib.sha256(payload).hexdigest())
 PY"
 )"
 
-echo "[3/7] 离线校验新release并验证当前签名索引绑定（${release_mode}）"
+echo "[3/8] 离线校验新release并验证轻量指针回执（${release_mode}）"
 ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     python3 '${remote_release_dir}/scripts/python_supply_chain.py' \
         lock-metadata-verify --portal-dir '${remote_release_dir}' >/dev/null
@@ -402,7 +409,8 @@ ssh "${ssh_args[@]}" "${deploy_host}" "set -e
         '${remote_release_dir}/app/main.py'
     '${remote_release_dir}/.venv/bin/python' \
         '${remote_release_dir}/scripts/verify_skill_signature_coverage.py' \
-        --skills-root '${remote_release_dir}/skills'
+        --skills-root '${remote_release_dir}/skills' \
+        --release-mode '${release_mode}'
     SOURCE_ENV=/etc/jiaotang-kb-ops.env
     [ -f \"\${SOURCE_ENV}\" ] || SOURCE_ENV=/etc/jiaotang-kb.env
     set -a
@@ -420,7 +428,7 @@ ssh "${ssh_args[@]}" "${deploy_host}" "set -e
             /usr/local/sbin/jiaotang-kb-private-admin-guard
     fi"
 
-echo "[4/7] 写入职责分离环境并安装release感知入口"
+echo "[4/8] 写入职责分离环境并安装release感知入口"
 ssh "${ssh_args[@]}" "${deploy_host}" \
     "BUILD_COMMIT='${build_commit}' DEPLOYMENT_ID='${deployment_id}' \
     BUILD_CREATED_AT='${build_created_at}' RUNTIME_ROOT='${runtime_root}' \
@@ -641,7 +649,7 @@ PY
         jiaotang-kb-oss-sync.timer jiaotang-kb-oss-sync.path \
         2>/dev/null || true"
 
-echo "[5/7] 创建服务器持久化部署事务并脱离SSH执行"
+echo "[5/8] 创建服务器持久化部署事务并脱离SSH执行"
 launch_status=1
 for launch_attempt in 1 2 3; do
     if ssh "${ssh_args[@]}" "${deploy_host}" \
@@ -740,7 +748,7 @@ if [[ "${launch_status}" -ne 0 ]]; then
     echo "启动SSH连续中断；仍进入服务器回执续验，不直接判定生产失败。" >&2
 fi
 
-echo "[6/7] 断线重连并续验服务器阶段回执"
+echo "[6/8] 断线重连并续验服务器阶段回执"
 if ! python3 "${script_dir}/wait_for_application_deployment.py" \
     --host "${deploy_host}" \
     --key "${deploy_key}" \
@@ -755,6 +763,36 @@ if ! python3 "${script_dir}/wait_for_application_deployment.py" \
     exit 1
 fi
 
-echo "[7/7] 部署完成：${deployment_id}"
+echo "[7/8] 刷新当前部署批次的签名门禁回执并对齐发布元数据"
+if ! ssh "${ssh_args[@]}" "${deploy_host}" "set -e
+    SOURCE_ENV=/etc/jiaotang-kb-ops.env
+    [ -f \"\${SOURCE_ENV}\" ] || SOURCE_ENV=/etc/jiaotang-kb.env
+    set -a
+    source \"\${SOURCE_ENV}\"
+    set +a
+    '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/verify_skill_signature_coverage.py' \
+        --skills-root '${remote_release_dir}/skills' \
+        --output \"\${JIAOTANG_DATA_DIR}/skill-deploy-gate-status.json\" \
+        --deployment-id '${deployment_id}' \
+        --scope production \
+        --release-mode '${release_mode}' >/dev/null"
+then
+    echo "警告：生产部署已成功，但签名门禁状态回执刷新失败；请立即运行续验或手工补写回执。" >&2
+fi
+if ! ssh "${ssh_args[@]}" "set -e
+    SOURCE_ENV=/etc/jiaotang-kb-ops.env
+    [ -f \"\${SOURCE_ENV}\" ] || SOURCE_ENV=/etc/jiaotang-kb.env
+    set -a
+    source \"\${SOURCE_ENV}\"
+    set +a
+    '${remote_release_dir}/.venv/bin/python' \
+        '${remote_release_dir}/scripts/reconcile_release_metadata.py' \
+        --apply >/dev/null"
+then
+    echo "警告：生产部署已成功，但技能发布阶段元数据尚未完成根目录对齐；请运行 reconcile_release_metadata.py --apply。" >&2
+fi
+
+echo "[8/8] 部署完成：${deployment_id}"
 echo "应用current：${remote_release_dir}"
 echo "本轮未执行灾备恢复演练，也未处理历史对象、既有暂存或历史部署备份。"
