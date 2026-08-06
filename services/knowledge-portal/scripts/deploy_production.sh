@@ -780,7 +780,7 @@ if ! ssh "${ssh_args[@]}" "${deploy_host}" "set -e
 then
     echo "警告：生产部署已成功，但签名门禁状态回执刷新失败；请立即运行续验或手工补写回执。" >&2
 fi
-if ! ssh "${ssh_args[@]}" "set -e
+if ! ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     SOURCE_ENV=/etc/jiaotang-kb-ops.env
     [ -f \"\${SOURCE_ENV}\" ] || SOURCE_ENV=/etc/jiaotang-kb.env
     set -a
