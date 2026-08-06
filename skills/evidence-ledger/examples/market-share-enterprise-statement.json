@@ -1,0 +1,116 @@
+{
+  "schema_version": "grounded-evidence/v1",
+  "sources": [
+    {
+      "id": "S1",
+      "kind": "user_file",
+      "access_status": "obtained",
+      "file_name": "分产品销售台账.xlsx",
+      "retrieved_at": "2026-08-05"
+    },
+    {
+      "id": "S2",
+      "kind": "research_report",
+      "access_status": "obtained",
+      "title": "全国上位市场规模报告",
+      "publisher": "示例行业研究机构",
+      "url": "https://example.org/report/market-2025",
+      "published_at": "2026-03-01",
+      "retrieved_at": "2026-08-05"
+    },
+    {
+      "id": "S3",
+      "kind": "enterprise_statement",
+      "access_status": "obtained",
+      "title": "主导产品应用场景拆分说明",
+      "retrieved_at": "2026-08-05"
+    }
+  ],
+  "records": [
+    {
+      "id": "F-NUM",
+      "subject": "主导产品销售额",
+      "claim": "2025年国内主导产品销售额为1200万元",
+      "type": "fact",
+      "source": "S1",
+      "retrieved_at": "2026-08-05",
+      "location": "2025年汇总行",
+      "period": "2025",
+      "unit": "万元",
+      "value": 1200,
+      "status": "verified",
+      "evidence_excerpt": "2025年国内主导产品销售额合计1200万元。"
+    },
+    {
+      "id": "F-BASE",
+      "subject": "上位市场规模",
+      "claim": "2025年全国上位市场规模为20000万元",
+      "type": "fact",
+      "source": "S2",
+      "retrieved_at": "2026-08-05",
+      "location": "市场规模章节",
+      "period": "2025",
+      "unit": "万元",
+      "value": 20000,
+      "status": "verified",
+      "evidence_excerpt": "2025年全国该上位市场规模为2亿元。"
+    },
+    {
+      "id": "F-APP",
+      "subject": "应用场景系数",
+      "claim": "目标应用场景占上位市场60%",
+      "type": "fact",
+      "source": "S3",
+      "retrieved_at": "2026-08-05",
+      "location": "企业拆分说明第1项",
+      "unit": "ratio",
+      "value": 0.6,
+      "basis_type": "enterprise_estimate",
+      "status": "verified",
+      "evidence_excerpt": "企业测算目标应用场景约占上位市场的60%。"
+    },
+    {
+      "id": "C-SHARE",
+      "subject": "细分市场占有率",
+      "claim": "复算市场占有率为10%",
+      "type": "calculation",
+      "source": [],
+      "retrieved_at": "2026-08-05",
+      "location": "derived",
+      "status": "verified",
+      "formula": "1200 / (20000 * 0.6) * 100",
+      "inputs": ["F-NUM", "F-BASE", "F-APP"],
+      "unit": "%",
+      "value": 10
+    }
+  ],
+  "market_share": {
+    "product": "示例主导产品",
+    "geography": "中国",
+    "period": "2025",
+    "metric": "销售额",
+    "unit": "万元",
+    "tax_basis": "不含税",
+    "numerator_record": "F-NUM",
+    "base_market_record": "F-BASE",
+    "coefficients": ["F-APP"],
+    "claimed_value": 10,
+    "assumption_risk": "low",
+    "six_same": {
+      "year": "same",
+      "geography": "same",
+      "product": "same",
+      "application": "same",
+      "unit": "same",
+      "tax_basis": "same"
+    }
+  },
+  "document": {
+    "blocks": [
+      {
+        "text": "按当前企业申报测算口径复算，2025年国内细分市场占有率为10%。",
+        "claim_ids": ["C-SHARE"]
+      }
+    ]
+  }
+}

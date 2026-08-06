@@ -1,0 +1,74 @@
+{
+  "schema_version": "grounded-evidence/v1",
+  "sources": [
+    {
+      "id": "S1",
+      "kind": "user_file",
+      "access_status": "obtained",
+      "file_name": "全球销售汇总.xlsx",
+      "retrieved_at": "2026-08-05"
+    },
+    {
+      "id": "S2",
+      "kind": "research_report",
+      "access_status": "obtained",
+      "title": "中国细分市场规模",
+      "publisher": "示例行业研究机构",
+      "url": "https://example.org/report/china-market",
+      "retrieved_at": "2026-08-05"
+    }
+  ],
+  "records": [
+    {
+      "id": "F-NUM",
+      "subject": "全球销售额",
+      "claim": "2025年全球销售额为3000万元",
+      "type": "fact",
+      "source": "S1",
+      "retrieved_at": "2026-08-05",
+      "location": "汇总行",
+      "unit": "万元",
+      "value": 3000,
+      "status": "verified",
+      "evidence_excerpt": "2025年全球销售收入合计3000万元。"
+    },
+    {
+      "id": "F-BASE",
+      "subject": "中国市场规模",
+      "claim": "2025年中国市场规模为20000万元",
+      "type": "fact",
+      "source": "S2",
+      "retrieved_at": "2026-08-05",
+      "location": "中国市场章节",
+      "unit": "万元",
+      "value": 20000,
+      "status": "verified",
+      "evidence_excerpt": "2025年中国细分市场规模为2亿元。"
+    }
+  ],
+  "market_share": {
+    "product": "示例主导产品",
+    "geography": "中国",
+    "period": "2025",
+    "metric": "销售额",
+    "unit": "万元",
+    "tax_basis": "不含税",
+    "numerator_record": "F-NUM",
+    "base_market_record": "F-BASE",
+    "coefficients": ["F-NO-SOURCE"],
+    "claimed_value": 15,
+    "assumption_risk": "high",
+    "six_same": {
+      "year": "same",
+      "geography": "mismatch",
+      "product": "unknown",
+      "application": "unknown",
+      "unit": "same",
+      "tax_basis": "unknown"
+    },
+    "rank_claim": {
+      "text": "国内前三",
+      "source_records": []
+    }
+  }
+}

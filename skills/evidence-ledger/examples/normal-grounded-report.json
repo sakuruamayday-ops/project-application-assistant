@@ -1,0 +1,72 @@
+{
+  "schema_version": "grounded-evidence/v1",
+  "sources": [
+    {
+      "id": "S1",
+      "kind": "official_web",
+      "access_status": "obtained",
+      "title": "现行项目申报通知",
+      "publisher": "示例主管部门",
+      "url": "https://example.gov.cn/policy/current",
+      "published_at": "2026-07-01",
+      "retrieved_at": "2026-08-05"
+    },
+    {
+      "id": "S2",
+      "kind": "knowledge_base",
+      "access_status": "obtained",
+      "file_name": "企业产品销售底稿.xlsx",
+      "retrieved_at": "2026-08-05",
+      "internal": {
+        "path": "client-dossier/企业产品销售底稿.xlsx",
+        "sheet": "分产品收入",
+        "excerpt_hash": "sha256:example"
+      }
+    }
+  ],
+  "records": [
+    {
+      "id": "F1",
+      "subject": "示例项目",
+      "claim": "申报通知要求提交主导产品市场说明",
+      "type": "fact",
+      "source": "S1",
+      "retrieved_at": "2026-08-05",
+      "location": "申报要求第3项",
+      "status": "verified",
+      "evidence_excerpt": "申报单位应当提交主导产品及其细分市场情况说明。"
+    },
+    {
+      "id": "F2",
+      "subject": "示例企业",
+      "claim": "企业已经形成分产品销售底稿",
+      "type": "fact",
+      "source": "S2",
+      "retrieved_at": "2026-08-05",
+      "location": "分产品收入表",
+      "status": "verified",
+      "evidence_excerpt": "底稿按主导产品归集了本年度销售收入。"
+    },
+    {
+      "id": "I1",
+      "subject": "材料完备性",
+      "claim": "当前可以进入市场说明编制",
+      "type": "inference",
+      "source": [],
+      "retrieved_at": "2026-08-05",
+      "location": "derived",
+      "status": "verified",
+      "supports": ["F1", "F2"],
+      "limits": "仅说明具备编制基础，不代表市场占有率已经核验"
+    }
+  ],
+  "document": {
+    "blocks": [
+      {
+        "heading": "结论",
+        "text": "现有资料可以进入主导产品市场说明编制，但仍需单独复核市场占有率。",
+        "claim_ids": ["I1"]
+      }
+    ]
+  }
+}

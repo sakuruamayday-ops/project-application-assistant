@@ -1,0 +1,4 @@
+{"kind":"sheet","id":"ws/zc8fok","name":"分析结果","index":0,"range":"A1:D5","address":"A1:D5"}
+{"kind":"sheet","id":"ws/1g2t6g","name":"计算底稿","index":1,"range":"A1:C5","address":"A1:C5","formulas":1}
+{"kind":"formula","sheet":"计算底稿","address":"B5","formula":"=B2/(B3*B4)"}
+{"kind":"sheet","id":"ws/2jzh7k","name":"数据来源","index":2,"range":"A1:E6","address":"A1:E6"}

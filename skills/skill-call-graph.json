@@ -456,6 +456,150 @@
       "to": "evolution-governance",
       "type": "governance",
       "reason": "新技能属于正式能力变更，必须进入统一发布治理。"
+    },
+    {
+      "from": "agriculture-and-rural-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "application-version-diff",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "consistency-check",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "digitalization-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "enterprise-panorama-analysis",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "enterprise-profile",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "financial-verification",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "green-development-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "high-tech-enterprise-preassessment",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "industrialization-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "industry-chain-foundation-matcher",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "intellectual-property-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "investment-subsidy-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "ip-assessment",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "manufacturing-tax-risk-analysis",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "peer-benchmarking",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "project-feasibility",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "project-matching",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "regional-special-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "sme-score-preassessment",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "standard-drafting",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "talent-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "technology-innovation-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
+    },
+    {
+      "from": "trade-and-open-economy-projects",
+      "to": "evidence-ledger",
+      "type": "requires",
+      "reason": "统一来源登记、编号和校验由 evidence-ledger 提供；交付页面结构服从文档配置。"
     }
   ]
 }

@@ -1,0 +1,28 @@
+{"kind":"deck","id":"pr/uhhpyf","name":"Deck"}
+{"kind":"layout","layoutId":"581d8eeb-bf43-4b62-b328-1b20f24871cf","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"b9c8d0bd-d350-4514-8f2d-cdfdf83254bf","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/9zmq6p","slide":1,"title":"GROUNDED CITATIONS","textShapes":4}
+{"kind":"textbox","id":"sh/vy1gzyp8","slide":1,"name":"eyebrow","text":"GROUNDED CITATIONS","textPreview":"GROUNDED CITATIONS","textChars":18,"textLines":1,"bbox":[48,44,420,30]}
+{"kind":"textbox","id":"sh/wzax836t","slide":1,"name":"title","text":"每项结论都能回到来源","textPreview":"每项结论都能回到来源","textChars":10,"textLines":1,"bbox":[48,196,820,140]}
+{"kind":"textbox","id":"sh/h0jy187e","slide":1,"name":"subtitle","text":"PPT 正文保留轻量编号，完整来源集中在最后一页","textPreview":"PPT 正文保留轻量编号，完整来源集中在最后一页","textChars":24,"textLines":1,"bbox":[48,376,740,72]}
+{"kind":"shape","id":"sh/i1cfadoz","slide":1,"name":"accent-field","bbox":[930,0,350,720]}
+{"kind":"textbox","id":"sh/32lg3ipk","slide":1,"name":"page-1","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[1200,660,36,24]}
+{"kind":"notes","id":"nt/9zmq6p","slide":1,"text":""}
+{"kind":"slide","id":"sl/o225sb","slide":2,"title":"现有资料允许进入市场说明编制","textShapes":6}
+{"kind":"textbox","id":"sh/p4zm10jm","slide":2,"name":"title","text":"现有资料允许进入市场说明编制","textPreview":"现有资料允许进入市场说明编制","textChars":14,"textLines":1,"bbox":[48,42,1080,70]}
+{"kind":"textbox","id":"sh/218nq50b","slide":2,"name":"lead","text":"结论不等于市场占有率已经核验","textPreview":"结论不等于市场占有率已经核验","textChars":14,"textLines":1,"bbox":[48,168,610,58]}
+{"kind":"textbox","id":"sh/32h4zq1g","slide":2,"name":"body","text":"申报通知要求提交主导产品市场说明，企业已形成分产品销售底稿。[1][2]","textPreview":"申报通知要求提交主导产品市场说明，企业已形成分产品销售底稿。[1][2]","textChars":36,"textLines":1,"bbox":[48,258,690,148]}
+{"kind":"shape","id":"sh/gzq5ovi5","slide":2,"name":"validation-panel","bbox":[822,168,390,382]}
+{"kind":"textbox","id":"sh/10zmx0jq","slide":2,"name":"panel-heading","text":"自动校验","textPreview":"自动校验","textChars":4,"textLines":1,"bbox":[858,210,310,42]}
+{"kind":"textbox","id":"sh/udonml0z","slide":2,"name":"panel-body","text":"✓ 主张到来源映射\n✓ 知识库仅显示文件名\n✓ 完整来源位于末页","textPreview":"✓ 主张到来源映射 | ✓ 知识库仅显示文件名 | ✓ 完整来源位于末页","textChars":32,"textLines":3,"bbox":[858,286,310,170]}
+{"kind":"textbox","id":"sh/fyh4vq1k","slide":2,"name":"page-2","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[1200,660,36,24]}
+{"kind":"notes","id":"nt/o225sb","slide":2,"text":""}
+{"kind":"slide","id":"sl/xqs35z","slide":3,"title":"数据来源","textShapes":6}
+{"kind":"textbox","id":"sh/g3u9gb6p","slide":3,"name":"title","text":"数据来源","textPreview":"数据来源","textChars":4,"textLines":1,"bbox":[48,42,900,70]}
+{"kind":"textbox","id":"sh/f2l87654","slide":3,"name":"source-1-number","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[48,176,82,44]}
+{"kind":"textbox","id":"sh/uhcre1oj","slide":3,"name":"source-1","text":"示例主管部门《现行项目申报通知》\nhttps://example.gov.cn/policy/current\n检索日期 2026-08-05","textPreview":"示例主管部门《现行项目申报通知》 | https://example.gov.cn/policy/current | 检索日期 2026-08-05","textChars":70,"textLines":3,"bbox":[150,168,980,110]}
+{"kind":"shape","id":"sh/tg3q5wne","slide":3,"name":"rule-1","bbox":[48,306,1136,1]}
+{"kind":"textbox","id":"sh/sfu9cr6t","slide":3,"name":"source-2-number","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[48,354,82,44]}
+{"kind":"textbox","id":"sh/7e183658","slide":3,"name":"source-2","text":"企业产品销售底稿.xlsx\n知识库来源仅显示文件名","textPreview":"企业产品销售底稿.xlsx | 知识库来源仅显示文件名","textChars":25,"textLines":2,"bbox":[150,346,980,88]}
+{"kind":"textbox","id":"sh/6ds7a1on","slide":3,"name":"page-3","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[1200,660,36,24]}
+{"kind":"notes","id":"nt/xqs35z","slide":3,"text":""}

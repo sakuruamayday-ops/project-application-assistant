@@ -1,0 +1,65 @@
+{
+  "schema_version": "grounded-evidence/v1",
+  "sources": [
+    {
+      "id": "S1",
+      "kind": "official_web",
+      "access_status": "obtained",
+      "title": "标准化文件起草规则示例来源",
+      "publisher": "示例标准化主管机构",
+      "url": "https://example.gov.cn/standard/drafting-rule",
+      "published_at": "2026-01-15",
+      "retrieved_at": "2026-08-05"
+    },
+    {
+      "id": "S2",
+      "kind": "knowledge_base",
+      "access_status": "obtained",
+      "file_name": "产品试验数据.xlsx",
+      "retrieved_at": "2026-08-05",
+      "internal": {
+        "path": "knowledge/internal/产品试验数据.xlsx",
+        "sheet": "耐久性",
+        "location": "B12:D18"
+      }
+    }
+  ],
+  "records": [
+    {
+      "id": "F1",
+      "subject": "规范性引用文件",
+      "claim": "标准起草采用GB/T 1.1—2020",
+      "type": "fact",
+      "source": "S1",
+      "retrieved_at": "2026-08-05",
+      "location": "文件结构章节",
+      "status": "verified",
+      "evidence_excerpt": "标准化文件的结构和起草规则应符合适用起草规则。"
+    },
+    {
+      "id": "F2",
+      "subject": "耐久性要求",
+      "claim": "样品完成1000次循环后功能正常",
+      "type": "fact",
+      "source": "S2",
+      "retrieved_at": "2026-08-05",
+      "location": "耐久性表B12:D18",
+      "status": "verified",
+      "evidence_excerpt": "样品完成1000次循环后功能保持正常。"
+    }
+  ],
+  "document": {
+    "blocks": [
+      {
+        "heading": "规范性引用文件",
+        "text": "GB/T 1.1—2020 标准化工作导则 第1部分：标准化文件的结构和起草规则。",
+        "claim_ids": ["F1"]
+      },
+      {
+        "heading": "技术要求",
+        "text": "样品完成1000次循环后功能应正常。",
+        "claim_ids": ["F2"]
+      }
+    ]
+  }
+}

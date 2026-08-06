@@ -1,0 +1,126 @@
+{
+  "schema_version": "grounded-evidence/v1",
+  "sources": [
+    {
+      "id": "S1",
+      "kind": "user_file",
+      "access_status": "obtained",
+      "file_name": "grounded-market-share.xlsx",
+      "retrieved_at": "2026-08-06"
+    },
+    {
+      "id": "S2",
+      "kind": "user_file",
+      "access_status": "reference_only",
+      "file_name": "分产品销售台账.xlsx",
+      "registered_at": "2026-08-06",
+      "registered_via": "S1"
+    },
+    {
+      "id": "S3",
+      "kind": "research_report",
+      "access_status": "reference_only",
+      "title": "全国上位市场规模报告",
+      "publisher": "示例行业研究机构",
+      "url": "https://example.org/report/market-2025",
+      "published_at": "2026-03-01",
+      "registered_at": "2026-08-06",
+      "registered_via": "S1"
+    },
+    {
+      "id": "S4",
+      "kind": "enterprise_statement",
+      "access_status": "reference_only",
+      "title": "主导产品应用场景拆分说明",
+      "registered_at": "2026-08-06",
+      "registered_via": "S1"
+    }
+  ],
+  "records": [
+    {
+      "id": "F-NUM",
+      "subject": "主导产品销售额",
+      "claim": "工作簿登记2025年主导产品销售额为1200万元",
+      "type": "fact",
+      "source": ["S1", "S2"],
+      "retrieved_at": "2026-08-06",
+      "location": "由grounded-market-share.xlsx登记",
+      "period": "2025",
+      "unit": "万元",
+      "value": 1200,
+      "status": "unverified",
+      "evidence_excerpt": "分产品销售台账.xlsx登记销售额1200万元，原件未提供。"
+    },
+    {
+      "id": "F-BASE",
+      "subject": "上位市场规模",
+      "claim": "工作簿登记2025年全国上位市场规模为20000万元",
+      "type": "fact",
+      "source": ["S1", "S3"],
+      "retrieved_at": "2026-08-06",
+      "location": "由grounded-market-share.xlsx登记",
+      "period": "2025",
+      "unit": "万元",
+      "value": 20000,
+      "status": "unverified",
+      "evidence_excerpt": "工作簿登记上位市场规模20000万元，报告原文未提供。"
+    },
+    {
+      "id": "F-APP",
+      "subject": "应用场景系数",
+      "claim": "工作簿登记目标应用场景占上位市场60%",
+      "type": "fact",
+      "source": ["S1", "S4"],
+      "retrieved_at": "2026-08-06",
+      "location": "由grounded-market-share.xlsx登记",
+      "unit": "ratio",
+      "value": 0.6,
+      "basis_type": "enterprise_estimate",
+      "status": "unverified",
+      "evidence_excerpt": "工作簿登记企业拆分系数0.6，企业说明原件未提供。"
+    },
+    {
+      "id": "C-SHARE",
+      "subject": "细分市场占有率",
+      "claim": "按工作簿登记值受限复现市场占有率为10%",
+      "type": "calculation",
+      "source": [],
+      "retrieved_at": "2026-08-06",
+      "location": "derived",
+      "status": "unverified",
+      "formula": "1200 / (20000 * 0.6) * 100",
+      "inputs": ["F-NUM", "F-BASE", "F-APP"],
+      "unit": "%",
+      "value": 10
+    }
+  ],
+  "market_share": {
+    "product": "示例主导产品",
+    "geography": "中国",
+    "period": "2025",
+    "metric": "销售额",
+    "unit": "万元",
+    "tax_basis": "unknown",
+    "numerator_record": "F-NUM",
+    "base_market_record": "F-BASE",
+    "coefficients": ["F-APP"],
+    "claimed_value": 10,
+    "assumption_risk": "high",
+    "six_same": {
+      "year": "unknown",
+      "geography": "unknown",
+      "product": "unknown",
+      "application": "unknown",
+      "unit": "same",
+      "tax_basis": "unknown"
+    }
+  },
+  "document": {
+    "blocks": [
+      {
+        "text": "按工作簿登记值可受限复现10%，证据等级为D级；该精确占有率不得对外使用，排名未核验且不作排名结论。",
+        "claim_ids": ["C-SHARE"]
+      }
+    ]
+  }
+}

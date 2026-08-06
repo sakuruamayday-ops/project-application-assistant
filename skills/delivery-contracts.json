@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "contract_id": "jiaotang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.5.8",
+  "rule_version": "1.6.0",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -11,7 +11,7 @@
     "digitalization-projects": {"role": "primary_business", "owns": []},
     "enterprise-panorama-analysis": {"role": "primary_business", "owns": ["enterprise-panorama-standard", "enterprise-panorama-professional", "enterprise-panorama-dual"]},
     "enterprise-profile": {"role": "primary_business", "owns": []},
-    "evidence-ledger": {"role": "quality_gate", "owns": []},
+    "evidence-ledger": {"role": "quality_gate", "owns": ["grounded-evidence/v1"]},
     "evolution-governance": {"role": "infrastructure", "owns": []},
     "experience-recorder": {"role": "infrastructure", "owns": []},
     "financial-verification": {"role": "quality_gate", "owns": []},
@@ -39,7 +39,7 @@
     "project-memory": {"role": "infrastructure", "owns": []},
     "project-rule-manager": {"role": "infrastructure", "owns": []},
     "project-task-router": {"role": "infrastructure", "owns": []},
-    "quality-brand-projects": {"role": "primary_business", "owns": []},
+    "quality-brand-projects": {"role": "primary_business", "owns": ["grounded-market-share-report/v1"]},
     "regional-special-projects": {"role": "primary_business", "owns": []},
     "skill-authoring": {"role": "infrastructure", "owns": []},
     "skill-curator": {"role": "infrastructure", "owns": []},
@@ -74,7 +74,14 @@
     "财务",
     "税务",
     "企业分析",
-    "同行对标"
+    "同行对标",
+    "市场占有率",
+    "市场份额",
+    "市场地位",
+    "质量品牌",
+    "单项冠军",
+    "行业分析",
+    "标准"
   ],
   "complex_task_markers": [
     "客户项目分析",
@@ -120,6 +127,18 @@
     ["来源", "公示名单", "官方名单"],
     ["不可比较", "口径差异", "数据缺口"]
   ],
+  "grounded_delivery": {
+    "contract_id": "grounded-evidence/v1",
+    "quality_gate_skill": "evidence-ledger",
+    "validator_id": "grounded-delivery/v1",
+    "artifact_markers": {
+      "report": ["报告", "申请书", "申报材料", "正式材料", "正式稿", "提交稿", "交付文件", "标准草案", "正式标准"],
+      "docx": ["Word", "word", "DOCX", "docx", ".docx"],
+      "pdf": ["PDF", "pdf", ".pdf"],
+      "xlsx": ["Excel", "excel", "XLSX", "xlsx", ".xlsx"],
+      "pptx": ["PowerPoint", "PPT", "PPTX", "ppt", "pptx", ".pptx"]
+    }
+  },
   "profile_selectors": {
     "enterprise-panorama-analysis": {
       "by_report_variant": {
@@ -642,6 +661,23 @@
         ["依据", "来源", "证据"],
         ["风险", "遗漏", "不确定性"],
         ["下一步", "行动"]
+      ]
+    },
+    "quality-brand-projects": {
+      "applies_when_prompt_contains": [
+        "quality-brand-projects",
+        "市场占有率",
+        "市场份额",
+        "市场地位",
+        "质量品牌",
+        "单项冠军"
+      ],
+      "required_marker_groups": [
+        ["市场地位证据分析", "项目类型"],
+        ["市场占有率", "市场份额"],
+        ["证据等级", "A 级", "B 级", "C 级", "D 级"],
+        ["数据来源", "来源范围"],
+        ["证据缺口", "待核验缺口"]
       ]
     }
   }

@@ -4,40 +4,46 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.5.8",
-    "version": "1.5.8",
-    "summary": "V1.5.8 将 Windows 行为 Hook 切换为宿主 Git Bash 直接调用的原生 EXE，并收紧正式交付意图与模板证据判定。",
+    "tag": "V1.6.0",
+    "version": "1.6.0",
+    "summary": "V1.6.0 正式发布 Grounded 证据交付、前期培育方向卡、专利规则与跨平台最小行为 Hook。企业数字身份证属于外部数据门禁，不进入插件包。",
     "changes": [
-      "Windows UserPromptSubmit、Skill 激活与 Stop 统一由原生 EXE 处理，不再经过 PowerShell、CMD、Python 或多层 shell 桥接。",
-      "Windows Hook 状态写入用户级 .workbuddy/state/jiaotang-behavior，插件目录保持发布后不可变。",
-      "macOS 保持既有 Python 与 shell 启动链，不因 Windows 修复改变已验证路径。",
-      "正式交付判定排除否定、引用、未来计划、概念解释和插件技术验收汇总，仅在当前业务交付意图明确时启动主业务门禁。",
-      "待核验、当前检索层未命中、无官方来源和暂无法判断视为已披露的证据状态，不再误报章节缺失。",
-      "四问复盘从文件硬门禁降为任务结束提示，交付文件只检查业务必要章节与相互矛盾的确定性结论。",
-      "安装过程中禁止改写、转码或补丁处理正式包；预检失败时停止并保留原版本。",
-      "代码发布和索引发布继续独立执行；本版本没有知识内容或索引结构变化，只使用 code 模式。"
+      "统一来源登记、稳定编号、主张映射、计算血缘和最小披露规则，保留各文档类型的原生页面结构。",
+      "市场占有率采用固定乘除链、六同校验和 A 至 D 分级；D 级可生成明确限制用途的报告，但不得冒充可对外使用的精确结论。",
+      "正式 Grounded 交付必须产生与当前 turn_id 绑定的确定性验证回执；Stop Hook 不再把空 validator_receipts 判为已完成。",
+      "Windows 将已明确请求的输出文件与作为输入的工作簿分开；离线、禁上传等限制不得取消正向报告交付意图。",
+      "Windows 与 macOS 的正式交付否定只在否定词实际支配生成、输出或撰写等交付动作时生效；来源披露限制和生成器描述不得覆盖先前的正向交付请求。",
+      "来源登记增加 obtained 与 reference_only 访问状态；未取得原文的链接不得声称检索日期或伪装成用户文件。",
+      "Word 交付拒绝模板默认修改时间、空最后修改者和生成器元数据，并交叉校验台账与成品的来源访问状态。",
+      "Windows UserPromptSubmit、Skill 激活与 Stop 继续由原生 EXE 处理，状态写入用户级 .workbuddy/state/jiaotang-behavior。",
+      "本地 XLSX 只读检查提供无第三方依赖路径，不得为读取用户文件临时联网安装依赖。",
+      "未经用户明确授权不得把输入或交付文件上传到 COS、云渲染或其他外部服务。",
+      "分析报告来源位于文末，Excel 来源位于最后工作表，PowerPoint 来源位于最后一页；标准正文保持规范性引用文件结构并另附来源说明。",
+      "注册表、调用图、共享夹具、影响图和双端回执按批次同步更新。",
+      "前期培育报告先完成企业现有方向、用户给定方向和建议新增方向三类方向卡，再进入政策适配、成熟度和专利布局。",
+      "专利路由继续使用已核验的专利检索、挖掘、预审、布局和交付规则，不把企业数字身份证或索引数据打入插件。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "用户在门户选择 macOS 或 Windows 入口，复制一段完整指令给 WorkBuddy，先完成原包只读平台预检，再一次完成 V1.5.8 干净安装、活动路径旧版清理和远程 MCP 连接。",
+      "workbuddy": "V1.6.0 正式包支持 macOS 与 Windows WorkBuddy 一键安装；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
-      "verification": "确认 49 项 Skills 可识别、tools/list 出现三个核心知识工具，并实际调用 knowledge_service_status 返回 connected: true。"
+      "verification": "确认 49 项 Skills 可识别、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
     "compatibility": [
       {
         "target": "通用 Skills",
-        "status": "已验证",
-        "note": "适用于能够导入 SKILL.md 的 Agent。"
+        "status": "正式发布",
+        "note": "包含 Grounded 算法、注册表、调用图、方向卡规则和专利规则；通用 Skills 包已完成结构与安装门禁。"
       },
       {
         "target": "macOS WorkBuddy",
-        "status": "RC2-r3 实机验收通过",
-        "note": "使用独立 macOS 签名包和 Python 状态核心；已验证技术否定意图放行、主业务 Skill 缺失阻断、阻断续轮保持、主业务 Skill 在场放行和安装后受控文件一致。"
+        "status": "结构兼容，发布后补充实机结果",
+        "note": "沿用已验证的 macOS Hook 路径；本次规则变化已完成确定性回归，真实双端结果由主人发布后补录。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "RC2-r3 实机验收通过",
-        "note": "使用宿主 Git Bash 直接调用的原生 Windows EXE，不经过 PowerShell、CMD 或 Python；已验证轮次重建、同轮多 Skill、否定意图、正式交付阻断、阻断续轮保持和主业务 Skill 在场放行。"
+        "status": "结构兼容，发布后补充实机结果",
+        "note": "Windows 原生 EXE Hook 与 Grounded 交付回执已完成确定性回归；真实双端结果由主人发布后补录，不作为本次发布前置条件。"
       }
     ],
     "one_step_installation_protocol": {
@@ -53,7 +59,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "活动搜索路径只保留一个 V1.5.8 jiaotang 市场",
+        "安装后只保留一个 V1.6.0 活动 jiaotang 市场，旧版本可恢复快照不覆盖用户资料",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [
@@ -120,10 +126,12 @@
   ],
   "shared_paths": [
     "_runtime/jiaotang-branding",
+    "_runtime/grounded-citations",
     "delivery-contracts.json",
     "SOURCE-USE-LICENSE.txt",
     "policy-freshness-manifest.json",
     "policy-freshness-manifest.md",
+    "report-skill-registry.json",
     "skill-call-graph.json"
   ],
   "skill_call_graph": "skill-call-graph.json",
@@ -234,6 +242,15 @@
     }
   ],
   "dependencies": {
+    "standard-drafting": {
+      "required_skills": [
+        "evidence-ledger"
+      ],
+      "required_paths": [
+        "report-skill-registry.json"
+      ],
+      "reason": "标准正文保持规范性结构，技术依据进入统一证据底账并另生成标准数据来源说明。"
+    },
     "application-writing": {
       "required_skills": [
         "evidence-ledger",

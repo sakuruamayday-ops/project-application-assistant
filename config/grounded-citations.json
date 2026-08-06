@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "engine": "skills/evidence-ledger/scripts/grounded_evidence.py",
+  "default_profile": "chat",
+  "profiles": {
+    "chat": {
+      "artifacts": ["chat"],
+      "body_citations": "inline-or-before",
+      "source_placement": "selectable",
+      "sidecar": false
+    },
+    "analysis-report": {
+      "artifacts": ["md", "docx", "pdf"],
+      "body_citations": "numeric-markers",
+      "source_placement": "end-section",
+      "source_title": "数据来源",
+      "sidecar": false
+    },
+    "spreadsheet-native": {
+      "artifacts": ["xlsx"],
+      "body_citations": "numeric-markers",
+      "source_placement": "final-worksheet",
+      "source_title": "数据来源",
+      "sidecar": false
+    },
+    "presentation-native": {
+      "artifacts": ["pptx"],
+      "body_citations": "numeric-markers",
+      "source_placement": "final-slide",
+      "source_title": "数据来源",
+      "sidecar": false
+    },
+    "application-native": {
+      "artifacts": ["md", "docx", "pdf", "xlsx"],
+      "body_citations": "native-fields-or-sidecar",
+      "source_placement": "template-aware",
+      "source_title": "来源说明",
+      "sidecar": true
+    },
+    "standard-native": {
+      "artifacts": ["md", "docx", "pdf"],
+      "body_citations": "none",
+      "source_placement": "separate-source-memo",
+      "source_title": "标准数据来源说明",
+      "sidecar": true,
+      "forbidden_primary_headings": ["数据来源", "参考资料"],
+      "preserve_primary_headings": ["规范性引用文件"]
+    }
+  },
+  "skill_profiles": {
+    "standard-drafting": "standard-native",
+    "application-writing": "application-native",
+    "high-tech-enterprise-application-drafting": "application-native",
+    "enterprise-panorama-analysis": "analysis-report",
+    "enterprise-profile": "analysis-report",
+    "financial-verification": "analysis-report",
+    "ip-assessment": "analysis-report",
+    "peer-benchmarking": "analysis-report",
+    "industry-chain-foundation-matcher": "analysis-report",
+    "industry-positioning": "analysis-report",
+    "manufacturing-tax-risk-analysis": "analysis-report",
+    "project-matching": "analysis-report",
+    "project-feasibility": "analysis-report",
+    "high-tech-enterprise-preassessment": "analysis-report",
+    "sme-score-preassessment": "analysis-report",
+    "sme-development-projects": "analysis-report",
+    "agriculture-and-rural-projects": "analysis-report",
+    "digitalization-projects": "analysis-report",
+    "green-development-projects": "analysis-report",
+    "industrialization-projects": "analysis-report",
+    "intellectual-property-projects": "analysis-report",
+    "investment-subsidy-projects": "analysis-report",
+    "quality-brand-projects": "analysis-report",
+    "regional-special-projects": "analysis-report",
+    "talent-projects": "analysis-report",
+    "technology-innovation-projects": "analysis-report",
+    "trade-and-open-economy-projects": "analysis-report",
+    "consistency-check": "analysis-report",
+    "application-version-diff": "analysis-report"
+  },
+  "artifact_profile_overrides": {
+    "xlsx": "spreadsheet-native",
+    "pptx": "presentation-native"
+  },
+  "artifact_validation": {
+    "pdf": {
+      "required": ["reopen", "text-extraction", "all-pages-render", "nonblank-pages", "missing-glyph-scan"],
+      "font_rule": "embed-cjk-font-or-use-host-native-export",
+      "fail_closed": true
+    },
+    "docx": {
+      "required": ["reopen", "structure-check", "host-render-when-available", "missing-glyph-scan"],
+      "renderer_missing_cjk_is": "pending-device-acceptance",
+      "formal_release_requires_host_render": true
+    },
+    "xlsx": {
+      "required": ["reopen", "sheet-order", "formula-check", "all-sheets-render"],
+      "renderer": "spreadsheet-native",
+      "fail_closed": true
+    },
+    "pptx": {
+      "required": ["reopen", "slide-order", "all-slides-render", "overflow-check"],
+      "fail_closed": true
+    }
+  },
+  "host_adapters": {
+    "codex": "_runtime/grounded-citations/codex_adapter.py",
+    "workbuddy": "_runtime/grounded-citations/workbuddy_adapter.py"
+  }
+}
