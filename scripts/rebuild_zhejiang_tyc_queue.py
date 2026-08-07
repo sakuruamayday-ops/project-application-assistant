@@ -29,6 +29,9 @@ TARGET_PROJECTS = {
     "浙江省首批次新材料",
     "浙江省首版次软件产品",
 }
+OWNER_CONFIRMED_NAME_CORRECTIONS = {
+    "钱潮轴承有限公司-1005600": "钱潮轴承有限公司",
+}
 TRUSTED_EVIDENCE = {
     "official_final_list",
     "official_final_list_mirror",
@@ -83,6 +86,12 @@ QUEUE_SCOPE_RESOLVED_FIELDS = [
 
 def norm(value: str | None) -> str:
     return " ".join((value or "").split()).replace("（", "(").replace("）", ")")
+
+
+def corrected_manual_name(value: str | None) -> str:
+    source = str(value or "").strip()
+    source = OWNER_CONFIRMED_NAME_CORRECTIONS.get(source, source)
+    return re.sub(r"^t(?=[\u3400-\u9fff])", "", source, flags=re.IGNORECASE)
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -283,15 +292,37 @@ def main() -> int:
             added += 1
 
     source_manual_rows = read_csv(SOURCE_MANUAL)
+    current_event_names = {
+        norm(str(item.get("enterprise_name_at_event") or ""))
+        for item in events
+        if str(item.get("enterprise_name_at_event") or "").strip()
+    }
+    active_manual_keys = set(manual_reasons)
+
+    def source_manual_resolution(row: dict[str, str]) -> str:
+        source_key = norm(row.get("enterprise_name"))
+        corrected_key = norm(corrected_manual_name(row.get("enterprise_name")))
+        if corrected_key in grouped:
+            return "名称提取污染已纠正，且纠正后主体已进入可追溯自动队列"
+        if source_key not in current_event_names:
+            return "当前时间轴已不再包含该待核验名称，历史待办转为已解决"
+        if source_key in grouped:
+            return "时间轴事件已具备可追溯来源字段，恢复自动队列资格"
+        return ""
+
     resolved_source_manual = [
         row
         for row in source_manual_rows
-        if norm(row.get("enterprise_name")) in grouped
+        if (
+            norm(row.get("enterprise_name")) not in active_manual_keys
+            and bool(source_manual_resolution(row))
+        )
     ]
+    resolved_source_manual_ids = {id(row) for row in resolved_source_manual}
     source_manual_rows = [
         row
         for row in source_manual_rows
-        if norm(row.get("enterprise_name")) not in grouped
+        if id(row) not in resolved_source_manual_ids
     ]
     source_manual_resolved_rows = read_csv(SOURCE_MANUAL_RESOLVED)
     source_manual_resolved_keys = {
@@ -310,7 +341,7 @@ def main() -> int:
         source_manual_resolved_rows.append(
             {
                 **{field: str(row.get(field) or "") for field in SOURCE_MANUAL_FIELDS},
-                "resolution": "时间轴事件已具备可追溯来源字段，恢复自动队列资格",
+                "resolution": source_manual_resolution(row),
                 "resolved_at": resolved_at,
             }
         )

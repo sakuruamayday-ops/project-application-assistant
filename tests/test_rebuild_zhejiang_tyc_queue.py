@@ -16,3 +16,9 @@ def test_invalid_name_reason_blocks_ambiguous_source_names() -> None:
     assert MODULE.invalid_name_reason("钱潮轴承有限公司-1005600")
     assert MODULE.invalid_name_reason("杭州示例 A 科技有限公司")
     assert MODULE.invalid_name_reason("杭州示例科技有限公司") == ""
+
+
+def test_corrected_manual_name_only_repairs_confirmed_artifacts() -> None:
+    assert MODULE.corrected_manual_name("t杭州示例有限公司") == "杭州示例有限公司"
+    assert MODULE.corrected_manual_name("钱潮轴承有限公司-1005600") == "钱潮轴承有限公司"
+    assert MODULE.corrected_manual_name("Tesla China") == "Tesla China"

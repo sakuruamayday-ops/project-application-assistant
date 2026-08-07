@@ -18,10 +18,45 @@ SPEC.loader.exec_module(MODULE)
 
 def test_normalize_name_removes_punctuation():
     assert MODULE.normalize_name("浙江申新（原名）有限公司") == "浙江申新原名有限公司"
+    assert MODULE.normalize_name("t杭州佑全科技发展有限公司") == "杭州佑全科技发展有限公司"
 
 
 def test_normalize_region_keeps_recognition_layers():
     assert MODULE.normalize_region("台州市|浙江省|临海市") == ("浙江省", "台州市", "临海市")
+
+
+def test_knowledge_identity_snapshot_promotes_current_and_recognition_names(
+    tmp_path: Path,
+):
+    snapshot = tmp_path / "企业基础数字身份证.jsonl"
+    snapshot.write_text(
+        json.dumps(
+            {
+                "unified_social_credit_code": "91330108MA2B254A2K",
+                "current_name": "领信数科信息技术有限公司",
+                "recognition_names": ["杭州熙羚信息技术有限公司"],
+                "former_names": ["杭州领信数科信息技术有限公司"],
+                "current_province": "广东省",
+                "current_city": "广州市",
+                "generated_at": "2026-08-07T03:09:00Z",
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = MODULE.load_knowledge_identity_enrichment(snapshot)
+
+    for name in (
+        "领信数科信息技术有限公司",
+        "杭州熙羚信息技术有限公司",
+        "杭州领信数科信息技术有限公司",
+    ):
+        assert result[MODULE.normalize_name(name)]["unified_social_credit_code"] == (
+            "91330108MA2B254A2K"
+        )
+        assert result[MODULE.normalize_name(name)]["source_tools"] == "焦糖知识库"
 
 
 def test_first_year_uses_earliest_explicit_year():
@@ -838,7 +873,8 @@ def test_regional_coverage_audit_accepts_complete_region_set():
 def test_supplemental_final_events_preserve_source_name_and_review_cohort(tmp_path):
     path = tmp_path / "supplemental.jsonl"
     row = {
-        "enterprise_name": "钱潮轴承有限公司-1005600",
+        "enterprise_name": "钱潮轴承有限公司",
+        "source_enterprise_name": "钱潮轴承有限公司-1005600",
         "project_name": "浙江省专精特新中小企业",
         "event_year": 2025,
         "cohort_year": 2022,
@@ -871,7 +907,7 @@ def test_supplemental_final_events_preserve_source_name_and_review_cohort(tmp_pa
     loaded = MODULE.load_supplemental_events(path, events, rules, aliases)
     assert loaded == 1
     event = next(iter(events.values()))
-    assert event["enterprise_name_at_event"] == "钱潮轴承有限公司-1005600"
+    assert event["enterprise_name_at_event"] == "钱潮轴承有限公司"
     assert event["event_type"] == "review_passed"
     assert event["cohort_year"] == 2022
     assert event["evidence_status"] == "official_final_list"

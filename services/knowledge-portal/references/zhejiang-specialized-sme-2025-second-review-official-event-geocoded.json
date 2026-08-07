@@ -1695,7 +1695,9 @@
     },
     {
       "sequence_no": "233",
-      "enterprise_name": "钱潮轴承有限公司-1005600",
+      "enterprise_name": "钱潮轴承有限公司",
+      "source_enterprise_name": "钱潮轴承有限公司-1005600",
+      "name_correction_basis": "owner_confirmed_invalid_suffix",
       "province": "浙江省",
       "city": "杭州市",
       "county": ""

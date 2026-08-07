@@ -38,6 +38,7 @@ DEFAULT_THREE_FIRST = Path(
 DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省")
 DEFAULT_SUPPLEMENTAL_EVENTS = DEFAULT_OUTPUT / "浙江省补充认定事件.jsonl"
 DEFAULT_TYC_ENRICHMENT = DEFAULT_OUTPUT / "天眼查企业身份核验结果.csv"
+DEFAULT_KNOWLEDGE_IDENTITIES = DEFAULT_OUTPUT / "三类名单基础数字身份证"
 DEFAULT_LIFECYCLE_RULES = (
     Path(__file__).resolve().parents[1]
     / "references"
@@ -107,6 +108,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--tyc-enrichment", type=Path, default=DEFAULT_TYC_ENRICHMENT)
+    parser.add_argument(
+        "--knowledge-identities",
+        type=Path,
+        default=DEFAULT_KNOWLEDGE_IDENTITIES,
+        help="焦糖知识库企业基础数字身份证 JSONL 文件或所在目录",
+    )
     parser.add_argument("--lifecycle-rules", type=Path, default=DEFAULT_LIFECYCLE_RULES)
     parser.add_argument(
         "--policy-version-database",
@@ -118,7 +125,18 @@ def parse_args() -> argparse.Namespace:
 
 def normalize_name(value: str) -> str:
     value = re.sub(r"[“”\"'‘’]", "", value or "")
+    value = canonical_enterprise_name(value)
     return re.sub(r"[\s·•（）()\-—_，,。．]+", "", value).lower()
+
+
+def canonical_enterprise_name(value: str) -> str:
+    """Remove known extraction artifacts without changing valid Latin names."""
+    return re.sub(
+        r"^t(?=[\u3400-\u9fff])",
+        "",
+        str(value or "").strip(),
+        flags=re.IGNORECASE,
+    )
 
 
 def normalize_region(value: str) -> tuple[str, str, str]:
@@ -982,7 +1000,7 @@ def add_event(
     subject_name: str = "",
     product_name: str = "",
 ) -> None:
-    enterprise_name = enterprise_name.strip()
+    enterprise_name = canonical_enterprise_name(enterprise_name)
     if not enterprise_name:
         return
     event_type = event_type or infer_event_type(source_title, status, project_name)
@@ -1927,6 +1945,47 @@ def load_tyc_enrichment(path: Path) -> dict[str, dict[str, Any]]:
     return result
 
 
+def load_knowledge_identity_enrichment(path: Path) -> dict[str, dict[str, Any]]:
+    """Load public knowledge identities as the disclosure-safe identity authority."""
+    if not path.exists():
+        return {}
+    candidates = sorted(path.glob("*.jsonl")) if path.is_dir() else [path]
+    if len(candidates) != 1:
+        raise RuntimeError(
+            f"焦糖知识库企业身份快照数量必须为 1，实际为 {len(candidates)}：{path}"
+        )
+    result: dict[str, dict[str, Any]] = {}
+    for row in read_jsonl(candidates[0]):
+        code = str(row.get("unified_social_credit_code") or "").upper()
+        if not USCC_PATTERN.fullmatch(code):
+            continue
+        current_name = str(row.get("current_name") or "")
+        former_names = [str(item) for item in row.get("former_names", []) if str(item)]
+        recognition_names = [
+            str(item) for item in row.get("recognition_names", []) if str(item)
+        ]
+        item = {
+            "query_name": current_name,
+            "enterprise_name": current_name,
+            "unified_social_credit_code": code,
+            "tyc_company_id": "",
+            "current_province": str(row.get("current_province") or ""),
+            "current_city": str(row.get("current_city") or ""),
+            "current_county": str(row.get("current_county") or ""),
+            "current_address": str(row.get("current_address") or ""),
+            "registration_authority": str(row.get("registration_authority") or ""),
+            "former_names_json": json.dumps(former_names, ensure_ascii=False),
+            "name_events_json": "[]",
+            "source_tools": "焦糖知识库",
+            "source_data_updated_at": str(row.get("generated_at") or ""),
+            "verified_at": str(row.get("generated_at") or ""),
+        }
+        for name in [current_name, *recognition_names, *former_names]:
+            if name:
+                result[normalize_name(name)] = item
+    return result
+
+
 def write_policy_lifecycle_audit(
     database: Path,
     output: Path,
@@ -2074,10 +2133,10 @@ def write_outputs(
                 "current_county": str(enrichment.get("current_county") or ""),
                 "current_address": str(enrichment.get("current_address") or ""),
                 "registration_authority": str(enrichment.get("registration_authority") or ""),
-                "identity_source": str(enrichment.get("source_tools") or "list_name_pending_business_registry"),
+                "identity_source": "焦糖知识库",
                 "source_data_updated_at": str(enrichment.get("source_data_updated_at") or ""),
                 "verified_at": str(enrichment.get("verified_at") or ""),
-                "verification_status": "tyc_verified" if enrichment else "pending_business_identity",
+                "verification_status": "knowledge_verified" if enrichment else "pending_business_identity",
                 "recognition_names": set(),
                 "recognition_regions": set(),
                 "recognition_projects": set(),
@@ -2145,10 +2204,10 @@ def write_outputs(
                 "current_county": str(enrichment.get("current_county") or ""),
                 "current_address": str(enrichment.get("current_address") or ""),
                 "registration_authority": str(enrichment.get("registration_authority") or ""),
-                "identity_source": str(enrichment.get("source_tools") or "tyc-mcp"),
+                "identity_source": "焦糖知识库",
                 "source_data_updated_at": str(enrichment.get("source_data_updated_at") or ""),
                 "verified_at": str(enrichment.get("verified_at") or ""),
-                "verification_status": "tyc_verified",
+                "verification_status": "knowledge_verified",
                 "recognition_names": set(),
                 "recognition_regions": set(),
                 "recognition_projects": set(),
@@ -2166,7 +2225,7 @@ def write_outputs(
                 "alias_type": "former_name",
                 "valid_from": "",
                 "valid_to": "",
-                "source": str(enrichment.get("source_tools") or "tyc-mcp"),
+                "source": "焦糖知识库",
             }
         try:
             name_events = json.loads(str(enrichment.get("name_events_json") or "[]"))
@@ -2182,7 +2241,7 @@ def write_outputs(
                 "alias_type": str(event.get("event_type") or "name_event"),
                 "valid_from": str(event.get("valid_from") or ""),
                 "valid_to": str(event.get("valid_to") or ""),
-                "source": str(event.get("source") or enrichment.get("source_tools") or "tyc-mcp"),
+                "source": "焦糖知识库",
             }
     lifecycle_summaries: dict[tuple[str, str], dict[str, Any]] = {}
     for row in event_rows:
@@ -2687,14 +2746,16 @@ def write_outputs(
             policy_lifecycle_audit["candidate_projects"]
         ),
         "name_records": len(alias_rows),
-        "tyc_verified_profiles": sum(row["verification_status"] == "tyc_verified" for row in profile_rows),
+        "knowledge_verified_profiles": sum(
+            row["verification_status"] == "knowledge_verified" for row in profile_rows
+        ),
         "pending_business_identity": sum(
             row["verification_status"] == "pending_business_identity" for row in profile_rows
         ),
         "database_integrity": integrity,
         "rules": [
             "认定时名称、地区、年度、批次和状态来自名单侧，不被当前工商信息覆盖。",
-            "当前名称、信用代码、当前地区和地址来自天眼查等企业身份源。",
+            "当前名称、信用代码、当前地区和地址来自焦糖知识库企业身份层。",
             "首次认定、复核、重新认定、继续支持、变更和撤销分别建生命周期事件。",
             "高新技术企业到期按重新认定建档，不与监督复核混为一类。",
             "财政继续支持属于支持生命周期，不覆盖原资格认定批次。",
@@ -2809,7 +2870,10 @@ def main() -> None:
         args.database,
         args.output,
         events,
-        load_tyc_enrichment(args.tyc_enrichment),
+        {
+            **load_tyc_enrichment(args.tyc_enrichment),
+            **load_knowledge_identity_enrichment(args.knowledge_identities),
+        },
         lifecycle_rules,
         lifecycle_sources,
         regional_coverage_rules,
