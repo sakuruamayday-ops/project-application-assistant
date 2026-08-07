@@ -30,7 +30,11 @@ def _check_final(path: Path, expected_sha: str) -> tuple[bool, str]:
     return True, ""
 
 
-def audit(database: Path, release_directory: Path) -> dict[str, object]:
+def audit(
+    database: Path,
+    release_directory: Path,
+    versions: set[str] | None = None,
+) -> dict[str, object]:
     findings: list[dict[str, object]] = []
     with sqlite3.connect(database) as connection:
         connection.row_factory = sqlite3.Row
@@ -40,6 +44,8 @@ def audit(database: Path, release_directory: Path) -> dict[str, object]:
         ).fetchall()
         for row in stage_artifacts:
             version = str(row["version"])
+            if versions is not None and version not in versions:
+                continue
             target = str(row["target"])
             final_path = _final_path(release_directory, version, target)
             valid, error = _check_final(final_path, str(row["sha256"]))
@@ -71,6 +77,8 @@ def audit(database: Path, release_directory: Path) -> dict[str, object]:
         ).fetchall()
         for row in artifact_stages:
             version = str(row["version"])
+            if versions is not None and version not in versions:
+                continue
             target = str(row["target"])
             final_path = _final_path(release_directory, version, target)
             valid, error = _check_final(final_path, str(row["sha256"]))
@@ -104,6 +112,9 @@ def audit(database: Path, release_directory: Path) -> dict[str, object]:
             """
         ).fetchall()
         for row in stages:
+            version = str(row["version"])
+            if versions is not None and version not in versions:
+                continue
             for target, path_field, hash_field in (
                 ("generic", "generic_path", "generic_sha256"),
                 ("workbuddy", "workbuddy_path", "workbuddy_sha256"),
@@ -112,13 +123,13 @@ def audit(database: Path, release_directory: Path) -> dict[str, object]:
                 expected_sha = str(row[hash_field] or "")
                 if not stored_path or not expected_sha:
                     continue
-                final_path = _final_path(release_directory, str(row["version"]), target)
+                final_path = _final_path(release_directory, version, target)
                 valid, error = _check_final(final_path, expected_sha)
                 if not valid:
                     findings.append(
                         {
                             "kind": "release_stage_unrepairable",
-                            "version": str(row["version"]),
+                            "version": version,
                             "target": target,
                             "stored_path": stored_path,
                             "expected_path": str(final_path),
@@ -129,7 +140,7 @@ def audit(database: Path, release_directory: Path) -> dict[str, object]:
                     findings.append(
                         {
                             "kind": "release_stage_path",
-                            "version": str(row["version"]),
+                            "version": version,
                             "target": target,
                             "stored_path": stored_path,
                             "expected_path": str(final_path),
@@ -141,6 +152,7 @@ def audit(database: Path, release_directory: Path) -> dict[str, object]:
         "schema": "jiaotang-release-metadata-reconciliation/v1",
         "database": str(database),
         "release_directory": str(release_directory),
+        "versions": sorted(versions) if versions is not None else None,
         "checked_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "repairable": sum(1 for item in findings if item.get("repairable")),
         "unrepairable": sum(1 for item in findings if not item.get("repairable")),
@@ -193,9 +205,24 @@ def main() -> int:
         default=Path(os.environ.get("JIAOTANG_SKILL_RELEASE_DIR", data_dir / "skill-releases")),
     )
     parser.add_argument("--apply", action="store_true", help="写入可修复路径，默认只读")
+    parser.add_argument(
+        "--version",
+        action="append",
+        dest="versions",
+        help="只审计指定版本，可重复；不传时审计全部历史版本",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    report = audit(args.database.expanduser().resolve(), args.release_directory.expanduser().resolve())
+    versions = (
+        {str(version).removeprefix("V") for version in args.versions}
+        if args.versions
+        else None
+    )
+    report = audit(
+        args.database.expanduser().resolve(),
+        args.release_directory.expanduser().resolve(),
+        versions,
+    )
     backup = apply_repairs(args.database.expanduser().resolve(), report) if args.apply else None
     report["mode"] = "apply" if args.apply else "audit"
     if backup:

@@ -59,3 +59,29 @@ def test_reconcile_repairs_published_stage_paths_without_moving_files(tmp_path: 
         assert connection.execute(
             "SELECT target,file_path FROM skill_release_stage_artifacts ORDER BY target"
         ).fetchall() == [("generic", str(generic)), ("workbuddy", str(workbuddy))]
+
+
+def test_reconcile_can_scope_audit_to_current_release(tmp_path: Path):
+    database = tmp_path / "knowledge.db"
+    release_directory = tmp_path / "releases"
+    release_directory.mkdir()
+    current = release_directory / "企业全生命周期助手-V1.6.0.zip"
+    current.write_bytes(b"current")
+    with sqlite3.connect(database) as connection:
+        MODULE._ensure_stage_table(connection)
+        connection.executemany(
+            "INSERT INTO skill_release_stage_artifacts(version,target,file_path,sha256) VALUES (?,?,?,?)",
+            [
+                ("1.4.9", "generic", "/removed/legacy.zip", "0" * 64),
+                ("1.6.0", "generic", str(current), MODULE.sha256(current)),
+            ],
+        )
+        connection.commit()
+
+    full_report = MODULE.audit(database, release_directory)
+    assert full_report["unrepairable"] == 1
+    scoped_report = MODULE.audit(database, release_directory, {"1.6.0"})
+    assert scoped_report["versions"] == ["1.6.0"]
+    assert scoped_report["repairable"] == 0
+    assert scoped_report["unrepairable"] == 0
+    assert scoped_report["findings"] == []

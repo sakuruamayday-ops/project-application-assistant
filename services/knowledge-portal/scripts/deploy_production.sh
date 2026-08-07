@@ -61,6 +61,19 @@ legacy_app_dir="${JIAOTANG_REMOTE_APP_DIR:-/opt/jiaotang-kb}"
 runtime_root="${JIAOTANG_REMOTE_RUNTIME_ROOT:-/opt/jiaotang-kb-runtime}"
 release_root="${JIAOTANG_REMOTE_RELEASE_ROOT:-/opt/jiaotang-kb-release-slots}"
 build_commit="$(git -C "${repository_dir}" rev-parse HEAD)"
+skill_release_version="$(python3 - "${repository_dir}/skills/suite-manifest.json" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+version = str((manifest.get("release") or {}).get("version") or "")
+if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", version):
+    raise SystemExit("skills/suite-manifest.json 缺少合法 release.version")
+print(version)
+PY
+)"
 build_created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 deployment_id="${timestamp}-${build_commit:0:12}-$(
@@ -788,6 +801,7 @@ if ! ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     set +a
     '${remote_release_dir}/.venv/bin/python' \
         '${remote_release_dir}/scripts/reconcile_release_metadata.py' \
+        --version '${skill_release_version}' \
         --apply >/dev/null"
 then
     echo "警告：生产部署已成功，但技能发布阶段元数据尚未完成根目录对齐；请运行 reconcile_release_metadata.py --apply。" >&2
