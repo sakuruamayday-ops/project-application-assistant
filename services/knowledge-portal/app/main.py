@@ -114,6 +114,7 @@ from app.authoritative_list_facts import (
     query_authoritative_list_facts,
 )
 from app.knowledge_case_packs import case_pack_capability, query_case_packs
+from app.enterprise_identity_lineage import lookup_identity_lineage
 from app.recognized_enterprise_discovery import (
     discover_recognized_enterprises,
     recognition_search as execute_recognition_search,
@@ -859,6 +860,11 @@ class RecognitionSearchRequest(BaseModel):
     years: list[int] = Field(default_factory=list, max_length=20)
     status: str = Field(default="final_recognition", max_length=100)
     limit: int = Field(default=50, ge=1, le=200)
+
+
+class EnterpriseIdentityLineageRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=200)
+    limit: int = Field(default=20, ge=1, le=50)
 
 
 class EnterpriseLifecycleDecisionRequest(BaseModel):
@@ -16121,6 +16127,21 @@ def recognition_search_api(
         return execute_recognition_search(connection, **payload.model_dump())
 
 
+@app.post("/v1/enterprise/identity-lineage")
+def enterprise_identity_lineage_api(
+    payload: EnterpriseIdentityLineageRequest,
+    user: Annotated[sqlite3.Row, Depends(require_api_user)],
+):
+    del user
+    with closing(content_database()) as connection:
+        try:
+            return lookup_identity_lineage(connection, payload.query, payload.limit)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        except RuntimeError as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
+
+
 @app.post("/v1/enterprise-lifecycle/decide")
 def enterprise_lifecycle_decision_api(
     payload: EnterpriseLifecycleDecisionRequest,
@@ -17525,6 +17546,16 @@ def recognition_search_tool(
             status=status,
             limit=limit,
         )
+
+
+@knowledge_mcp.tool(name="enterprise_identity_lineage_lookup")
+def enterprise_identity_lineage_lookup_tool(
+    query: str,
+    limit: int = 20,
+) -> dict[str, object]:
+    """按现名、曾用名或统一社会信用代码反查主体，并展示冲突路径。"""
+    with closing(content_database()) as connection:
+        return lookup_identity_lineage(connection, query, limit)
 
 
 @knowledge_mcp.tool(name="enterprise_lifecycle_decision")

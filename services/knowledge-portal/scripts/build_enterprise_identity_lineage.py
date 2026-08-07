@@ -485,6 +485,134 @@ def write_database_graph(database: Path, rows: list[dict[str, Any]]) -> tuple[in
     return len(nodes), len(edges)
 
 
+def build_resolution_audit(
+    database: Path,
+    graph_rows: list[dict[str, Any]],
+    knowledge_identities: Path | None,
+) -> list[dict[str, Any]]:
+    """Build an explicit scope audit so timeline and three-list counts cannot mix."""
+    connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True)
+    profiles = connection.execute(
+        """
+        SELECT verification_status,unified_social_credit_code,recognition_projects_json
+        FROM enterprise_identity_profiles
+        """
+    ).fetchall()
+    connection.close()
+    total = len(profiles)
+    verified = sum(str(row[0] or "") == "knowledge_verified" for row in profiles)
+    with_code = sum(bool(USCC_PATTERN.fullmatch(str(row[1] or "").upper())) for row in profiles)
+    pending = total - verified
+    without_code = total - with_code
+    rows: list[dict[str, Any]] = [
+        {
+            "scope_key": "all_identity_timeline",
+            "scope_label": "浙江省企业认定时间轴全部主体",
+            "total_subjects": total,
+            "verified_subjects": verified,
+            "pending_subjects": pending,
+            "with_unified_social_credit_code": with_code,
+            "without_unified_social_credit_code": without_code,
+            "note": (
+                "该范围包含多个认定项目的历史主体；待核验主体没有可闭合的统一社会信用代码，"
+                "不得仅凭名称猜测或自动补码。"
+            ),
+            "source": PUBLIC_SOURCE,
+        }
+    ]
+
+    snapshot_rows = list(read_jsonl(snapshot_paths(knowledge_identities)[0])) if snapshot_paths(knowledge_identities) else []
+    snapshot_codes = [
+        str(row.get("unified_social_credit_code") or "").upper()
+        for row in snapshot_rows
+        if USCC_PATTERN.fullmatch(str(row.get("unified_social_credit_code") or "").upper())
+    ]
+    rows.append(
+        {
+            "scope_key": "three_list_identity_snapshot",
+            "scope_label": "浙江省三类名单企业基础数字身份证",
+            "total_subjects": len(snapshot_rows),
+            "verified_subjects": len(snapshot_codes),
+            "pending_subjects": len(snapshot_rows) - len(snapshot_codes),
+            "with_unified_social_credit_code": len(snapshot_codes),
+            "without_unified_social_credit_code": len(snapshot_rows) - len(snapshot_codes),
+            "note": "该范围是本次已确认完成的三类名单快照，不等同于全部认定时间轴主体。",
+            "source": PUBLIC_SOURCE,
+        }
+    )
+
+    project_counts: defaultdict[str, int] = defaultdict(int)
+    for status, _, projects_json in profiles:
+        if str(status or "") != "pending_business_identity":
+            continue
+        try:
+            projects = json.loads(str(projects_json or "[]"))
+        except json.JSONDecodeError:
+            projects = []
+        for project in projects if isinstance(projects, list) else []:
+            if str(project):
+                project_counts[str(project)] += 1
+    for project, count in sorted(project_counts.items(), key=lambda item: (-item[1], item[0])):
+        rows.append(
+            {
+                "scope_key": f"pending_project:{project}",
+                "scope_label": f"待核验主体·{project}",
+                "total_subjects": count,
+                "verified_subjects": 0,
+                "pending_subjects": count,
+                "with_unified_social_credit_code": 0,
+                "without_unified_social_credit_code": count,
+                "note": "当前知识库仅有名单/认定记录，尚无可闭合的统一社会信用代码。",
+                "source": PUBLIC_SOURCE,
+            }
+        )
+    return rows
+
+
+def write_resolution_audit_table(database: Path, rows: list[dict[str, Any]]) -> None:
+    connection = sqlite3.connect(database)
+    connection.executescript(
+        """
+        DROP TABLE IF EXISTS enterprise_identity_resolution_audit;
+        CREATE TABLE enterprise_identity_resolution_audit(
+            scope_key TEXT PRIMARY KEY,
+            scope_label TEXT NOT NULL,
+            total_subjects INTEGER NOT NULL,
+            verified_subjects INTEGER NOT NULL,
+            pending_subjects INTEGER NOT NULL,
+            with_unified_social_credit_code INTEGER NOT NULL,
+            without_unified_social_credit_code INTEGER NOT NULL,
+            note TEXT NOT NULL,
+            source TEXT NOT NULL
+        );
+        """
+    )
+    connection.executemany(
+        """
+        INSERT INTO enterprise_identity_resolution_audit(
+            scope_key,scope_label,total_subjects,verified_subjects,pending_subjects,
+            with_unified_social_credit_code,without_unified_social_credit_code,note,source
+        ) VALUES(?,?,?,?,?,?,?,?,?)
+        """,
+        [
+            (
+                row["scope_key"],
+                row["scope_label"],
+                row["total_subjects"],
+                row["verified_subjects"],
+                row["pending_subjects"],
+                row["with_unified_social_credit_code"],
+                row["without_unified_social_credit_code"],
+                row["note"],
+                PUBLIC_SOURCE,
+            )
+            for row in rows
+        ],
+    )
+    connection.commit()
+    connection.close()
+
+
 def main() -> None:
     args = parse_args()
     args.database = args.database.expanduser().resolve()
@@ -496,6 +624,12 @@ def main() -> None:
     aliases_rewritten = sanitize_public_alias_projection(args.output)
     profiles_sanitized = sanitize_public_profile_projection(args.output)
     node_count, edge_count = write_database_graph(args.database, graph_rows)
+    resolution_audit = build_resolution_audit(
+        args.database,
+        graph_rows,
+        args.knowledge_identities,
+    )
+    write_resolution_audit_table(args.database, resolution_audit)
     report = {
         "schema_version": SCHEMA_VERSION,
         "source": PUBLIC_SOURCE,
@@ -515,11 +649,30 @@ def main() -> None:
             != "verified"
             for row in graph_rows
         ),
+        "resolution_audit": resolution_audit,
         "public_source_values": [PUBLIC_SOURCE],
         "output": "浙江省企业身份血缘图.jsonl",
     }
     (args.output / "浙江省企业身份血缘图构建报告.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (args.output / "浙江省企业身份解析审计报告.json").write_text(
+        json.dumps(
+            {
+                "schema_version": SCHEMA_VERSION,
+                "source": PUBLIC_SOURCE,
+                "resolution_audit": resolution_audit,
+                "boundary": [
+                    "三类名单身份快照与全部认定时间轴是两个不同范围。",
+                    "待核验主体没有统一社会信用代码时不得凭名称猜测。",
+                    "现名、曾用名和统一社会信用代码反查均以本图的显式路径为准。",
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
         encoding="utf-8",
     )
     print(json.dumps(report, ensure_ascii=False))
