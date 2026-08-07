@@ -302,6 +302,8 @@ def test_index_sync_publishes_and_switches_index_before_application():
     assert "[release-stage]" in sync_script
     assert 'stage_mark "signed-index-release" "started"' in sync_script
     assert 'stage_mark "server-index-refresh" "started"' in sync_script
+    assert '"${script_dir}/build_enterprise_identity_lineage.py"' in sync_script
+    assert '--knowledge-identities' in sync_script
 
 
 def test_index_refresh_streams_transfer_progress_and_has_a_bounded_runtime():
