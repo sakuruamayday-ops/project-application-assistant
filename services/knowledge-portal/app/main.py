@@ -5765,6 +5765,17 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             if isinstance(item, dict)
         ]
         return result, sources
+    if name == "enterprise_identity_lineage_lookup":
+        query = str(arguments.get("query") or "").strip()[:200]
+        if not query:
+            raise ValueError("反查条件不能为空")
+        with closing(content_database()) as connection:
+            result = lookup_identity_lineage(
+                connection,
+                query,
+                max(1, min(int(arguments.get("limit") or 20), 50)),
+            )
+        return result, [dict(item) for item in result.get("results", [])]
     if name == "enterprise_lifecycle_decision":
         enterprise_facts = arguments.get("enterprise_facts") or []
         project_context = arguments.get("project_context") or {}
@@ -8210,6 +8221,7 @@ MCP_SEARCH_TOOLS = {
     "project_catalog_match",
     "three_first_analysis",
     "recognition_search",
+    "enterprise_identity_lineage_lookup",
     "enterprise_lifecycle_decision",
 }
 

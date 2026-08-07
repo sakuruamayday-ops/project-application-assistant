@@ -231,6 +231,24 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
         {
             "type": "function",
             "function": {
+                "name": "enterprise_identity_lineage_lookup",
+                "description": (
+                    "按企业现名、曾用名或统一社会信用代码反查焦糖知识库身份血缘，"
+                    "返回当前名、历史名、信用代码以及同名、多代码、合并主体和缺代码冲突路径。"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "minLength": 1, "maxLength": 200},
+                        "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "three_first_analysis",
                 "description": (
                     "统一查询首台套、首版次和首批次，可一次处理多个项目和多个地区；"
