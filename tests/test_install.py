@@ -620,6 +620,11 @@ class InstallTests(unittest.TestCase):
         self.assertIn("POST /v1/lists/search", skill)
         self.assertIn("public_list_search", skill)
         self.assertIn("knowledge_search", skill)
+        self.assertIn("truncated` 输出 `true`、`false` 或 `unavailable`", skill)
+        self.assertIn("prompt_hook_observable=false", skill)
+        self.assertIn("不创建 `.workbuddy/memory`", skill)
+        self.assertIn("尚未取得官方最终认定名单", skill)
+        self.assertIn("同一对象出现两个计数", skill)
         self.assertIn("年份替换为认定批次", protocol)
         self.assertIn("不得通过企业名称判断登记城市", protocol)
         self.assertIn("不能据此判断资料不存在", protocol)
@@ -628,6 +633,8 @@ class InstallTests(unittest.TestCase):
             protocol,
         )
         self.assertIn("专精特新产业园", protocol)
+        self.assertIn("无分页状态的路径时为 `unavailable`", protocol)
+        self.assertIn("不能证明最终名单已经形成", protocol)
         three_first = (
             repository
             / "skills/local-knowledge-retrieval/references/three-first-project-list-schema.md"

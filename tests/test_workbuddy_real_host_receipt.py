@@ -43,6 +43,22 @@ def test_receipt_counts_failed_mcp_attempts_and_all_host_caches(tmp_path: Path):
         },
         {
             "type": "function_call_result",
+            "name": "Skill",
+            "callId": "skill-1",
+            "status": "completed",
+            "output": {
+                "type": "text",
+                "text": (
+                    "<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->\n"
+                    '{"activation_ok":true,"state_persisted":true,'
+                    '"state_origin":"activation_fallback","prompt_context_ok":false,'
+                    '"error_code":"PROMPT_CONTEXT_UNAVAILABLE"}\n'
+                    "<!-- END WORKBUDDY BEHAVIOR HOOK -->"
+                ),
+            },
+        },
+        {
+            "type": "function_call_result",
             "name": "DeferExecuteTool",
             "callId": "mcp-1",
             "status": "completed",
@@ -93,6 +109,9 @@ def test_receipt_counts_failed_mcp_attempts_and_all_host_caches(tmp_path: Path):
     receipt = MODULE.generate_receipt(log)
 
     assert receipt["host_activated_skills"]["observable_skill_call_count"] == 1
+    assert receipt["host_activated_skills"]["all_activations_ok"] is True
+    assert receipt["host_activated_skills"]["prompt_hook_observable"] is False
+    assert receipt["host_activated_skills"]["delivery_check"] == "unavailable"
     assert receipt["mcp_tool_calls"]["total_attempts"] == 3
     assert receipt["mcp_tool_calls"]["by_tool"] == {
         "mcp__jiaotang-kb__knowledge_document": 1,
@@ -105,6 +124,80 @@ def test_receipt_counts_failed_mcp_attempts_and_all_host_caches(tmp_path: Path):
     }
     assert receipt["file_write_events"]["automatic_tool_result_cache_count"] == 1
     assert len(receipt["file_write_events"]["explicit_host_write_calls"]) == 1
+
+
+def test_receipt_reports_unavailable_truncation_and_detects_statement_conflict(tmp_path: Path):
+    log = tmp_path / "session-report.jsonl"
+    write_jsonl(
+        log,
+        [
+            {
+                "type": "function_call",
+                "name": "DeferExecuteTool",
+                "callId": "search-1",
+                "arguments": json.dumps(
+                    {"toolName": "mcp__jiaotang-kb__knowledge_search", "params": {}}
+                ),
+            },
+            {
+                "type": "function_call_result",
+                "name": "DeferExecuteTool",
+                "callId": "search-1",
+                "status": "completed",
+                "output": {"type": "text", "text": '{"results":[]}'},
+            },
+            {
+                "type": "function_call",
+                "name": "DeferExecuteTool",
+                "callId": "recognition-1",
+                "arguments": json.dumps(
+                    {"toolName": "mcp__jiaotang-kb__recognition_search", "params": {}}
+                ),
+            },
+            {
+                "type": "function_call_result",
+                "name": "DeferExecuteTool",
+                "callId": "recognition-1",
+                "status": "completed",
+                "output": {
+                    "type": "text",
+                    "text": json.dumps(
+                        {
+                            "pagination": {"is_truncated": False},
+                            "coverage": {"is_complete": False},
+                        }
+                    ),
+                },
+            },
+            {
+                "type": "message",
+                "role": "assistant",
+                "status": "completed",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": (
+                            "对 8 家候选逐一执行 authoritative_list_search。"
+                            "statement_conflicts | 无。pending 中仅 6/5 家逐一核验。"
+                        ),
+                    }
+                ],
+            },
+        ],
+    )
+
+    receipt = MODULE.generate_receipt(log)
+
+    assert receipt["mcp_tool_calls"]["coverage_complete"]["status"] == "false"
+    assert receipt["mcp_tool_calls"]["truncated"]["status"] == "unavailable"
+    assert receipt["statement_conflicts"]["status"] == "conflict"
+    assert {
+        item["code"] for item in receipt["statement_conflicts"]["detected"]
+    } == {
+        "AMBIGUOUS_ENTITY_COUNT",
+        "VERIFICATION_CALL_COUNT_MISMATCH",
+        "CONFLICT_DECLARED_NONE",
+    }
 
 
 def test_receipt_does_not_infer_implicit_skill_activation(tmp_path: Path):

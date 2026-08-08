@@ -75,6 +75,37 @@ def test_discovery_rejects_unknown_project_instead_of_guessing():
         raise AssertionError("未知项目必须显式拒绝")
 
 
+def test_common_national_small_giant_project_aliases_are_supported():
+    connection = sqlite3.connect(":memory:")
+    connection.row_factory = sqlite3.Row
+    connection.execute(
+        """
+        CREATE TABLE national_small_giant_master(
+            id INTEGER PRIMARY KEY,
+            enterprise_name TEXT,normalized_name TEXT,unified_social_credit_code TEXT,qice_eid TEXT,
+            region TEXT,city TEXT,county TEXT,recognition_year INTEGER,batch TEXT,status TEXT,
+            official_url TEXT,official_url_role TEXT,official_fragment_key TEXT,verification_status TEXT,
+            sequence_no TEXT,platform_year_raw TEXT,former_names_json TEXT,
+            source_documents_json TEXT,source_paths_json TEXT
+        )
+        """
+    )
+    for alias in (
+        "国家专精特新小巨人企业",
+        "国家级专精特新小巨人",
+        "国家级专精特新“小巨人”企业",
+        "国家级小巨人",
+    ):
+        result = recognition_search(
+            connection,
+            query="湿巾主题企业反查",
+            projects=[alias],
+            subject_terms=["湿巾"],
+        )
+        assert result["route_to"] == "recognition_reverse_lookup"
+        assert result["query_plan"]["projects"] == [alias]
+
+
 def test_recognition_query_plan_parses_gold_queries_and_keeps_all_dimensions():
     plan = build_recognition_query_plan(
         "查询浙江和宁波2024年、2025年做配电柜的首台套和首版次企业"

@@ -2,13 +2,18 @@
   "schema_version": 1,
   "product": "企业全生命周期助手",
   "release": {
-    "tag": "V1.6.1.1",
-    "version": "1.6.1.1",
-    "summary": "V1.6.1.1 是仅用于本地与 WorkBuddy 实机复验的修复候选：阻断小巨人等权威名单的产品、行业筛选被静默忽略，并加固覆盖完整性与真实宿主收据。企业数字身份证仍是服务端外部数据，不进入插件包。",
+    "tag": "V1.6.1.2",
+    "version": "1.6.1.2",
+    "summary": "V1.6.1.2 是仅用于本地与 WorkBuddy 实机复验的修复候选：补齐认定项目别名，分离技能激活与提示 Hook 可观测性，并确定性校验截断状态和报告冲突。企业数字身份证仍是服务端外部数据，不进入插件包。",
     "changes": [
       "国家小巨人、省级专精特新等非三首权威名单不再接受无效的 product_name 或 industry 参数；主题词反查固定转入 recognition_search。",
       "完整性回执分离 coverage_complete 与 truncated，并在覆盖不完整时禁止‘全部闭合’、‘确认不存在’等超证据表述。",
       "新增 WorkBuddy 真实宿主 JSONL 确定性收据生成器，只按实际 Skill 事件、MCP 尝试、外网调用和写入事件计数。",
+      "recognition_search 接受国家专精特新小巨人企业等常用项目名称，不再依赖失败后的自然语言重试。",
+      "真实宿主收据分离 activation_ok、prompt_hook_observable 与 delivery_check，fallback 激活不再被误报为技能激活失败。",
+      "使用无分页状态的 knowledge_search 时全局 truncated 固定为 unavailable，除非其他路径已经明确截断。",
+      "收据生成器自动发现含糊双计数、分级合计不一致和声明无冲突但实际存在冲突的报告。",
+      "验收任务未获明确授权时不再主动创建 .workbuddy/memory 工作日志；尚未形成官方最终名单的批次不列为主表遗漏。",
       "统一来源登记、稳定编号、主张映射、计算血缘和最小披露规则，保留各文档类型的原生页面结构。",
       "市场占有率采用固定乘除链、六同校验和 A 至 D 分级；D 级可生成明确限制用途的报告，但不得冒充可对外使用的精确结论。",
       "正式 Grounded 交付必须产生与当前 turn_id 绑定的确定性验证回执；Stop Hook 不再把空 validator_receipts 判为已完成。",
@@ -30,7 +35,7 @@
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.1.1 是仅供 macOS 先行实机验证的本地候选；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
+      "workbuddy": "V1.6.1.2 是仅供 macOS 先行实机验证的本地候选；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
@@ -64,7 +69,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "安装后只保留一个 V1.6.1.1 活动 jiaotang 候选市场，旧版本可恢复快照不覆盖用户资料",
+        "安装后只保留一个 V1.6.1.2 活动 jiaotang 候选市场，旧版本可恢复快照不覆盖用户资料",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [

@@ -13,8 +13,13 @@ from app.authoritative_list_facts import query_authoritative_list_facts
 PROJECT_ALIASES = {
     "小巨人": ("national_small_giant", ""),
     "国家小巨人": ("national_small_giant", ""),
+    "国家级小巨人": ("national_small_giant", ""),
     "国家专精特新小巨人": ("national_small_giant", ""),
+    "国家专精特新小巨人企业": ("national_small_giant", ""),
+    "国家级专精特新小巨人": ("national_small_giant", ""),
+    "国家级专精特新小巨人企业": ("national_small_giant", ""),
     "专精特新小巨人": ("national_small_giant", ""),
+    "专精特新小巨人企业": ("national_small_giant", ""),
     "national_small_giant": ("national_small_giant", ""),
     "专精特新中小企业": ("provincial_specialized_sme", ""),
     "省级专精特新": ("provincial_specialized_sme", ""),

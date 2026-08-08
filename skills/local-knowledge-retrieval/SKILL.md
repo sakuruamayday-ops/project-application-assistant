@@ -51,10 +51,14 @@ description: 检索团队统一云端知识服务。需要历史政策、相似�
 
 ## 完整性、计数与措辞门禁
 
-- `coverage_complete` 与 `truncated` 是两个独立布尔值，最终答复必须明确输出 `true` 或 `false`。任一实际使用的分页查询仍为 `has_more=true` 或 `is_truncated=true` 时，`truncated=true`；来源、地区、年度、批次、同义词或产品证据覆盖不足时，`coverage_complete=false`。
+- `coverage_complete` 与 `truncated` 必须分开报告。`coverage_complete` 输出 `true` 或 `false`；`truncated` 输出 `true`、`false` 或 `unavailable`。任一实际使用的分页查询仍为 `has_more=true` 或 `is_truncated=true` 时，`truncated=true`；只有所有实际使用的检索路径都提供分页状态且均已到底时才能写 `truncated=false`；只要使用了不返回分页状态的 `knowledge_search`，且没有其他路径已经确认截断，就写 `truncated=unavailable`，不得推断为 `false`。来源、地区、年度、批次、同义词或产品证据覆盖不足时，`coverage_complete=false`。
 - `coverage_complete=false` 时，从中间进度到最终答复均不得使用“全部闭合”“完整覆盖”“证据链已收齐”“确认不存在”及同义表述。只允许说明“当前已核验的记录”“当前检索范围内未命中”和仍待补齐的范围。
 - `verified`、`pending`、`noise`、`conflict` 每个数字必须同时写计数单位、去重键和是否为精确值。若只能得到下限，必须写“至少N条/家”并说明未完成的枚举范围；显式列出的去重实体数必须与报告数字一致。
 - 文档命中数、名单事实行数、去重企业数和“企业＋项目＋年度/批次”记录数必须分开，不得相互换算。
+- 最终写 `statement_conflicts=无` 前，必须逐项复核“声称逐一核验的企业数、实际名单核验调用数、各分级显式企业数、分级合计和总计”。`6/5家`、同一对象出现两个计数、调用数与声称核验数不一致，都必须列为冲突，不得写“无”。
+- Skill 调用回执中的 `activation_ok`、`prompt_context_ok` 和 `delivery_check_ok` 是三层独立状态。`activation_ok=true` 且 `state_origin=activation_fallback` 只证明技能已激活并持久化；应报告 `prompt_hook_observable=false`、`delivery_check=unavailable`，不得把它改写为技能激活失败，也不得声称完整 Hook 闭环。
+- 验收任务默认只读。用户没有明确要求归档、保存日志或生成本地收据文件时，不创建 `.workbuddy/memory`、工作日志或业务文件；宿主自动缓存仍须如实计入文件写入事件。
+- 不得把尚未取得官方最终认定名单的当期或未来批次写成“主表遗漏”。只有官方最终名单已经可读且未进入主表时，才能列为名单覆盖缺口；否则写“尚未形成或尚未核验最终名单”。
 - 连接器超时后只做一次工具重发现和一次 `knowledge_service_status` 复核。若 deferred tool 索引仍不可用，立即停止新增查询，保留已取得证据并标记部分完成；不得连续空转重试，也不得声称连接已恢复。
 
 ## 案例包分层调用
