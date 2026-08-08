@@ -147,7 +147,7 @@ echo "[6/7] OSS二次校验、服务器深度验签、REST/MCP固定路由和新
 "${python_bin}" "${script_dir}/policy_increment_release.py" verify-cloud \
   --prepared "${prepared}" >"${run_dir}/cloud-verification.json"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
-  'set -e; source /etc/jiaotang-kb-ops.env; /opt/jiaotang-kb-runtime/current/.venv/bin/python /usr/local/libexec/jiaotang-policy-increment-verify --deep' \
+  'set -e; set -a; source /etc/jiaotang-kb-ops.env; set +a; /opt/jiaotang-kb-runtime/current/.venv/bin/python /usr/local/libexec/jiaotang-policy-increment-verify --deep' \
   >"${run_dir}/server-chain-verification.json"
 
 document_paths_base64="$(python3 - "${prepared}" <<'PY'

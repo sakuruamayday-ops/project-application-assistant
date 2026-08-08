@@ -28,6 +28,7 @@ def test_signed_pointer_detects_tampering(tmp_path: Path) -> None:
     generate_key(private_path, public_path)
     private_key = release.load_private_key(private_path)
     public_key = release.load_public_key(public_path)
+    assert server_verify.key_id(public_key) == release.public_key_id(public_key)
     payload = release.sign_document(
         {
             "schema": release.POINTER_SCHEMA,

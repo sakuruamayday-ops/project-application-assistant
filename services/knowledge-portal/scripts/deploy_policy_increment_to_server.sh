@@ -20,7 +20,13 @@ pause_verifiers() {
 
 restore_legacy_verifier() {
   "${ssh_base[@]}" \
-    "systemctl disable --now jiaotang-kb-policy-increment-verify.timer >/dev/null 2>&1 || true; \
+    "set -e; \
+     systemctl disable --now jiaotang-kb-policy-increment-verify.timer >/dev/null 2>&1 || true; \
+     if ! systemctl cat jiaotang-kb-oss-verify.timer >/dev/null 2>&1; then \
+       install -m 0644 /opt/jiaotang-kb-runtime/current/deploy/jiaotang-kb-oss-verify.service /etc/systemd/system/; \
+       install -m 0644 /opt/jiaotang-kb-runtime/current/deploy/jiaotang-kb-oss-verify.timer /etc/systemd/system/; \
+       systemctl daemon-reload; \
+     fi; \
      systemctl enable --now jiaotang-kb-oss-verify.timer >/dev/null"
 }
 
@@ -66,7 +72,8 @@ PY
        mv /etc/jiaotang-kb/policy-increment-public.pem.tmp /var/lib/jiaotang-kb/policy-increment-public-installed.pem"
   fi
   "${ssh_base[@]}" \
-    "systemctl disable --now jiaotang-kb-oss-verify.timer >/dev/null 2>&1 || true; \
+    "set -e; \
+     systemctl disable --now jiaotang-kb-oss-verify.timer >/dev/null 2>&1 || true; \
      systemctl enable jiaotang-kb-policy-increment-verify.timer >/dev/null; \
      systemctl start jiaotang-kb-policy-increment-verify.service; \
      systemctl start jiaotang-kb-policy-increment-verify.timer"
@@ -74,8 +81,9 @@ PY
 
 rollback_release() {
   "${ssh_base[@]}" \
-    "set -e; source /etc/jiaotang-kb-ops.env; \
-     /usr/local/sbin/jiaotang-kb-refresh-index --rollback; \
+    "set -e; set -a; source /etc/jiaotang-kb-ops.env; set +a; \
+     /opt/jiaotang-kb-runtime/current/.venv/bin/python \
+       /opt/jiaotang-kb-runtime/current/scripts/refresh_index_from_oss.py --rollback; \
      systemctl restart jiaotang-kb; \
      curl --fail --silent --show-error --retry 20 --retry-delay 2 http://127.0.0.1:8100/health >/dev/null"
 }

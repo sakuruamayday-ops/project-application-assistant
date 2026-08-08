@@ -68,8 +68,8 @@ def load_public(path: Path) -> Ed25519PublicKey:
 
 def key_id(key: Ed25519PublicKey) -> str:
     payload = key.public_bytes(
-        encoding=serialization.Encoding.Raw,
-        format=serialization.PublicFormat.Raw,
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
     return hashlib.sha256(payload).hexdigest()[:24]
 
