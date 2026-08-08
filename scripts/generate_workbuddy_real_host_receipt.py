@@ -127,12 +127,33 @@ def final_assistant_report(events: list[dict[str, Any]]) -> str:
     return messages[-1] if messages else ""
 
 
+def ambiguous_entity_count_is_negated_example(
+    report: str,
+    match: re.Match[str],
+) -> bool:
+    """Ignore an explicitly negated example without hiding a real dual count."""
+    prefix = report[max(0, match.start() - 24) : match.start()]
+    suffix = report[match.end() : match.end() + 24]
+    negated = re.search(
+        r"(?:无|不存在|没有|未出现|未发生|并无)\s*[\"'`“‘「『]*\s*$",
+        prefix,
+    )
+    described_as_problem = re.match(
+        r"^\s*[\"'`”’」』]*\s*(?:式|这类|此类|这种|这样的)?\s*"
+        r"(?:计数)?\s*(?:矛盾|冲突|问题)",
+        suffix,
+    )
+    return bool(negated and described_as_problem)
+
+
 def statement_conflicts(
     report: str,
     mcp_calls: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     detected: list[dict[str, str]] = []
     for match in re.finditer(r"(?<!\d)(\d+)\s*/\s*(\d+)\s*家", report):
+        if ambiguous_entity_count_is_negated_example(report, match):
+            continue
         detected.append(
             {
                 "code": "AMBIGUOUS_ENTITY_COUNT",
@@ -181,7 +202,12 @@ def statement_conflicts(
             )
 
     declared_none = bool(
-        re.search(r"statement[_\\ ]conflicts[^\n|]{0,20}(?:\||：|:)\s*(?:无|0)", report, re.IGNORECASE)
+        re.search(
+            r"statement[_\\ ]conflicts\s*(?:\*\*)?\s*(?:\||：|:|=)"
+            r"\s*(?:\*\*|`)*\s*(?:无|0)",
+            report,
+            re.IGNORECASE,
+        )
     )
     if declared_none and detected:
         detected.append(
