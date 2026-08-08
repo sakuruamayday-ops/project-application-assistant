@@ -6,6 +6,16 @@
 - `production/knowledge/` 下只允许 `objects/` 内容寻址对象；旧 `current/` 和分类相对路径前缀永久禁止重新生成。
 - manifest、对象集合和生产索引在一次发布中使用同一冻结版本。
 - OSS 业务对象只使用 `production/knowledge/` 与 `production/index/` 两个大根目录。
+
+## 每周政策增量例外
+
+`automation-6` 生成且冻结的政策交接包采用“完整签名基线＋Ed25519 周增量链”，
+不重新扫描知识库，不重建全部文档，也不为每周变化上传新的 3 GB 级完整 SQLite。
+具体门禁、OSS 布局、服务器双槽切换和恢复流程见
+[`policy-increment-release.md`](policy-increment-release.md)。
+
+该例外不改变其他索引发布的完整不可变 release 规则；schema、解析器、分词器、
+分块算法变化或完整性失败时，政策增量链也必须回到完整基线发布。
 - 服务器查询索引在校验通过后原子切换；云端不生成快照、回滚快照或 `server-backups`。
 
 ## 固定发布顺序
