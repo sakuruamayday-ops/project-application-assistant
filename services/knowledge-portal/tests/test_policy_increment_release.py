@@ -44,6 +44,18 @@ def test_signed_pointer_detects_tampering(tmp_path: Path) -> None:
         release.verify_signed_document(payload, public_key)
 
 
+def test_server_status_inherits_protected_data_directory_group(
+    tmp_path: Path,
+) -> None:
+    status = tmp_path / "oss-index-cache-status.json"
+
+    server_verify.write_status(status, {"status": "正常"})
+
+    assert status.stat().st_gid == tmp_path.stat().st_gid
+    assert status.stat().st_mode & 0o777 == 0o640
+    assert json.loads(status.read_text(encoding="utf-8")) == {"status": "正常"}
+
+
 def test_pointer_is_byte_stable_for_same_state(tmp_path: Path) -> None:
     private_path = tmp_path / "private.pem"
     public_path = tmp_path / "public.pem"

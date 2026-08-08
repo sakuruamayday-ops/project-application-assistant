@@ -217,6 +217,16 @@ def test_code_preflight_selects_the_active_index_verifier():
     assert "configure_index_verifier(app_env)" in transaction
     assert "jiaotang-kb-policy-increment-verify.timer" in transaction
     assert 'desired.removesuffix(".timer") + ".service"' in transaction
+    configure_at = transaction.index("configure_index_verifier(app_env)")
+    explicit_health_at = transaction.index(
+        'run_checked(["systemctl", "start", "jiaotang-kb-health.service"])',
+        configure_at,
+    )
+    health_timer_at = transaction.index(
+        '["systemctl", "enable", "--now", "jiaotang-kb-health.timer"]',
+        explicit_health_at,
+    )
+    assert configure_at < explicit_health_at < health_timer_at
     policy_service = (
         DEPLOY_DIR / "jiaotang-kb-policy-increment-verify.service"
     ).read_text(encoding="utf-8")

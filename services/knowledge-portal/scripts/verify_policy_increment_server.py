@@ -207,6 +207,10 @@ def verify_latest_delta(
 def write_status(path: Path, payload: dict[str, Any]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    # The verifier may run as root from a service or a deployment preflight,
+    # while the health gate runs as the unprivileged application account.
+    # Inherit the protected data directory group instead of the caller's gid.
+    os.chown(temporary, -1, path.parent.stat().st_gid)
     os.chmod(temporary, 0o640)
     os.replace(temporary, path)
 

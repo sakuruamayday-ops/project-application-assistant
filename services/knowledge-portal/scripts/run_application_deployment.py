@@ -473,13 +473,18 @@ def execute(request_path: Path, state_path: Path) -> int:
         verify_build(request["expected_build"])
         update_state(state_path, request, "routes_verified")
 
-        for unit in (
-            "jiaotang-kb-health.timer",
-            "jiaotang-kb-backup.timer",
-        ):
-            run_checked(["systemctl", "enable", "--now", unit])
+        run_checked(
+            ["systemctl", "enable", "--now", "jiaotang-kb-backup.timer"]
+        )
+        # Keep the health timer stopped until the active index verifier has
+        # atomically refreshed the receipt consumed by the health service.
+        # Otherwise a minute-boundary activation can race the verifier and
+        # reuse a stale failure for the explicit release health gate.
         configure_index_verifier(app_env)
         run_checked(["systemctl", "start", "jiaotang-kb-health.service"])
+        run_checked(
+            ["systemctl", "enable", "--now", "jiaotang-kb-health.timer"]
+        )
         retention_cleanup: dict[str, Any]
         try:
             retention_cleanup = prune_release_generations(
