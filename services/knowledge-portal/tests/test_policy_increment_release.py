@@ -279,5 +279,7 @@ def test_shell_release_contract_has_rollback_and_page_aligned_rsync() -> None:
     assert "续发冻结产物与本次交接包不一致" in release_script
     assert "install_target}-repeat-" in deploy
     assert 'deployment_action="already-current"' in deploy
+    assert 'deployment_action="switched-existing"' in deploy
+    assert 'basename "${remote_inactive}"' in deploy
     assert release_script.index("upload-immutable") < release_script.index("pause-verifiers")
     assert release_script.index("pause-verifiers") < release_script.index("switch-pointer")

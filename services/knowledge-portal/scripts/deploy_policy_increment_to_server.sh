@@ -168,11 +168,16 @@ rsync_stats="$(dirname "${receipt_path}")/rsync-stats.txt"
 mkdir -p "$(dirname "${receipt_path}")"
 
 if [[ "$(basename "${remote_current}")" != "${release_id}" ]]; then
-  deployment_action="switched"
-  rsync --archive --no-owner --no-group --no-whole-file --checksum \
-    --block-size=4096 --stats --partial-dir=.policy-rsync-partial \
-    -e "ssh -i ${deploy_key} -o BatchMode=yes" \
-    "${candidate_dir}/" "${deploy_host}:${remote_inactive}/" | tee "${rsync_stats}"
+  if [[ "$(basename "${remote_inactive}")" == "${release_id}" ]]; then
+    deployment_action="switched-existing"
+    : > "${rsync_stats}"
+  else
+    deployment_action="switched"
+    rsync --archive --no-owner --no-group --no-whole-file --checksum \
+      --block-size=4096 --stats --partial-dir=.policy-rsync-partial \
+      -e "ssh -i ${deploy_key} -o BatchMode=yes" \
+      "${candidate_dir}/" "${deploy_host}:${remote_inactive}/" | tee "${rsync_stats}"
+  fi
   "${ssh_base[@]}" "set -e
     activated=0
     atomic_link() {

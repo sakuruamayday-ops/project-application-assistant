@@ -166,7 +166,7 @@ JIAOTANG_POLICY_DEPLOY_RECEIPT="${server_receipt}" \
   "${script_dir}/deploy_policy_increment_to_server.sh" deploy
 server_deployed="$(python3 - "${server_receipt}" <<'PY'
 import json,sys
-print("1" if json.load(open(sys.argv[1])).get("deployment_action") == "switched" else "0")
+print("1" if json.load(open(sys.argv[1])).get("deployment_action") in {"switched","switched-existing"} else "0")
 PY
 )"
 
