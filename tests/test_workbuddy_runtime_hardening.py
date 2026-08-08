@@ -816,6 +816,17 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             (plugin_root / "delivery-contracts.json").write_bytes(
                 contract_path.read_bytes()
             )
+            data_root.mkdir()
+            BEHAVIOR.atomic_json(
+                data_root / "current-turn.json",
+                {"turn_id": "turn-success"},
+            )
+            GROUNDED_ENGINE.write_delivery_receipt(
+                REPOSITORY / "skills/evidence-ledger/examples/normal-grounded-report.json",
+                REPOSITORY / "tests/fixtures/grounded-citations/real/grounded-analysis-report.docx",
+                profile="analysis-report",
+                state_root=data_root,
+            )
             state_path, _ = BEHAVIOR.state_paths(data_root, "session-success")
             BEHAVIOR.atomic_json(
                 state_path,
@@ -837,6 +848,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     "active_skills": [
                         {"skill": "application-writing"},
                         {"skill": "consistency-check"},
+                        {"skill": "evidence-ledger"},
                     ],
                     "status": "pending",
                 },
@@ -866,7 +878,8 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 receipt["primary_business_skills"], ["application-writing"]
             )
             self.assertEqual(
-                receipt["quality_gate_skills"], ["consistency-check"]
+                receipt["quality_gate_skills"],
+                ["consistency-check", "evidence-ledger"],
             )
             self.assertEqual(receipt["missing_requirement_ids"], [])
             self.assertEqual(

@@ -2051,6 +2051,32 @@ def save_upload(upload: UploadFile, directory: Path) -> tuple[Path, str, int]:
     return final_path, digest, final_path.stat().st_size
 
 
+def active_index_release_id() -> str | None:
+    configured = os.environ.get("JIAOTANG_INDEX_RELEASE_ID", "").strip()
+    if configured:
+        return configured
+    try:
+        resolved = CONTENT_DATABASE_PATH.resolve(strict=True)
+    except OSError:
+        resolved = CONTENT_DATABASE_PATH
+    if resolved.parent.parent.name == "releases":
+        release_id = resolved.parent.name.strip()
+        if release_id:
+            return release_id
+    status_path = Path(
+        os.environ.get(
+            "JIAOTANG_OSS_INDEX_CACHE_STATUS",
+            "/var/lib/jiaotang-kb/oss-index-cache-status.json",
+        )
+    )
+    try:
+        payload = json.loads(status_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    release_id = str(payload.get("current_release_id") or "").strip()
+    return release_id or None
+
+
 def disconnected_knowledge_index_stats() -> dict[str, object]:
     return {
         "connected": False,
@@ -2058,7 +2084,7 @@ def disconnected_knowledge_index_stats() -> dict[str, object]:
         "characters": 0,
         "updated_at": None,
         "built_at": None,
-        "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+        "index_release_id": active_index_release_id(),
         "knowledge_schema_version": "1.0",
         "case_pack_capability": False,
         "case_pack_count": 0,
@@ -2089,7 +2115,7 @@ def knowledge_index_stats_for_identity(
             "characters": int(row["characters"]),
             "updated_at": row["updated_at"],
             "built_at": row["updated_at"],
-            "index_release_id": os.environ.get("JIAOTANG_INDEX_RELEASE_ID") or None,
+            "index_release_id": active_index_release_id(),
             **capability,
         }
     except (sqlite3.Error, HTTPException):
@@ -3594,6 +3620,8 @@ def search_authoritative_list_facts(
             )
     except AuthorityTableUnavailable as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 def search_public_list_entities(

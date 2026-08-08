@@ -12,6 +12,7 @@ import uuid
 import zipfile
 from contextlib import closing
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -526,6 +527,19 @@ def load_app(tmp_path):
     module = importlib.reload(app.main)
     module.init_database()
     return module
+
+
+def test_active_index_release_id_resolves_current_release_symlink(tmp_path):
+    module = load_app(tmp_path)
+    release_id = "policy-test-release-0001"
+    release_dir = tmp_path / "knowledge-index" / "releases" / release_id
+    release_dir.mkdir(parents=True)
+    original = module.CONTENT_DATABASE_PATH
+    release_database = release_dir / "knowledge_content.sqlite3"
+    original.replace(release_database)
+    original.symlink_to(Path("releases") / release_id / release_database.name)
+
+    assert module.active_index_release_id() == release_id
 
 
 def issue_test_invitation(module, connection, authorization_id: int) -> str:

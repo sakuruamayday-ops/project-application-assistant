@@ -16,6 +16,10 @@ AUTHORITATIVE_LIST_TYPE_ALIASES = {
     "national_small_giant": "national_small_giant",
     "国家小巨人": "national_small_giant",
     "国家专精特新小巨人": "national_small_giant",
+    "国家专精特新小巨人企业": "national_small_giant",
+    "国家级专精特新小巨人": "national_small_giant",
+    "国家级专精特新小巨人企业": "national_small_giant",
+    "国家级小巨人": "national_small_giant",
     "专精特新小巨人": "national_small_giant",
     "小巨人": "national_small_giant",
     "provincial_specialized_sme": "provincial_specialized_sme",
@@ -1618,6 +1622,21 @@ def query_authoritative_list_facts(
 ) -> dict[str, object]:
     list_type = normalize_authoritative_list_type(list_type)
     _require_authority_table(connection, list_type)
+    unsupported_reverse_filters = [
+        name
+        for name, value in (
+            ("product_name", product_name),
+            ("industry", industry),
+        )
+        if value.strip() and list_type != "three_first"
+    ]
+    if unsupported_reverse_filters:
+        fields = "、".join(unsupported_reverse_filters)
+        raise ValueError(
+            f"{list_type}权威名单专表不支持{fields}反向筛选；"
+            "产品或行业主题反查必须改用recognition_search，"
+            "不得把未过滤的全量名单当成筛选结果。"
+        )
     bounded_offset = max(0, min(int(offset), 1_000_000))
     bounded_limit = max(1, min(int(limit), 200))
     if list_type == "national_small_giant":

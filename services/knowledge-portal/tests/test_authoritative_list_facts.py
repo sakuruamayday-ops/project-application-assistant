@@ -2,13 +2,55 @@ from __future__ import annotations
 
 import sqlite3
 
-from app.authoritative_list_facts import _provincial_coverage, query_authoritative_list_facts
+import pytest
+
+from app.authoritative_list_facts import (
+    _provincial_coverage,
+    normalize_authoritative_list_type,
+    query_authoritative_list_facts,
+)
 
 
 def memory_database() -> sqlite3.Connection:
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
     return connection
+
+
+@pytest.mark.parametrize(
+    "alias",
+    (
+        "国家级专精特新小巨人",
+        "国家级专精特新“小巨人”企业",
+        "国家专精特新小巨人企业",
+        "国家级小巨人",
+    ),
+)
+def test_national_small_giant_common_aliases_are_supported(alias: str):
+    assert normalize_authoritative_list_type(alias) == "national_small_giant"
+
+
+def test_national_small_giant_rejects_silently_ignored_product_filter():
+    connection = memory_database()
+    connection.executescript(
+        """
+        CREATE TABLE national_small_giant_master(
+            id INTEGER PRIMARY KEY,
+            enterprise_name TEXT,normalized_name TEXT,unified_social_credit_code TEXT,qice_eid TEXT,
+            region TEXT,city TEXT,county TEXT,recognition_year INTEGER,batch TEXT,status TEXT,
+            official_url TEXT,official_url_role TEXT,official_fragment_key TEXT,verification_status TEXT,
+            sequence_no TEXT,platform_year_raw TEXT,former_names_json TEXT,
+            source_documents_json TEXT,source_paths_json TEXT
+        );
+        """
+    )
+
+    with pytest.raises(ValueError, match="必须改用recognition_search"):
+        query_authoritative_list_facts(
+            connection,
+            list_type="国家级专精特新小巨人",
+            product_name="湿巾",
+        )
 
 
 def test_provincial_coverage_uses_complete_regional_group_for_province_query():

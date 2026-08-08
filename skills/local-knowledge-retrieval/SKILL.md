@@ -45,7 +45,17 @@ description: 检索团队统一云端知识服务。需要历史政策、相似�
 
 通过 MCP 调用时使用同一流程：普通名单由 `public_list_search` 与 `knowledge_search` 并行，关键文档再调用 `knowledge_document`；三首组合任务调用统一入口 `three_first_analysis`；产品或行业反查调用 `recognition_search`。必须检查 `coverage`、`pagination`、全部项目分组和三档结果，不得静默只取第一个项目、地区或第一页，也不得因为任一工具返回空结果而跳过另一条路径。
 
+`authoritative_list_search` 只用于按企业、年度、批次、地区和状态核验权威名单事实。除三首专表外，不得向该工具传入 `product_name` 或 `industry` 做主题词反查；国家小巨人和省级专精特新产品/行业反查固定使用 `recognition_search`。工具若明确拒绝不支持的筛选字段，按提示转路由；严禁删除筛选字段后把返回的全量名单冒充主题词筛选结果，也不得为了替代产品反查而遍历数万条名单。
+
 反向发现结果必须分开保存“产品或行业证据”和“正式认定证据”。`verified_matches` 才能进入已认定主表；`pending_candidates` 只能列为待核验线索。当前知识证据没有覆盖的行业、地区、年度或同义词必须明示，未命中只能写“当前检索层未命中”。
+
+## 完整性、计数与措辞门禁
+
+- `coverage_complete` 与 `truncated` 是两个独立布尔值，最终答复必须明确输出 `true` 或 `false`。任一实际使用的分页查询仍为 `has_more=true` 或 `is_truncated=true` 时，`truncated=true`；来源、地区、年度、批次、同义词或产品证据覆盖不足时，`coverage_complete=false`。
+- `coverage_complete=false` 时，从中间进度到最终答复均不得使用“全部闭合”“完整覆盖”“证据链已收齐”“确认不存在”及同义表述。只允许说明“当前已核验的记录”“当前检索范围内未命中”和仍待补齐的范围。
+- `verified`、`pending`、`noise`、`conflict` 每个数字必须同时写计数单位、去重键和是否为精确值。若只能得到下限，必须写“至少N条/家”并说明未完成的枚举范围；显式列出的去重实体数必须与报告数字一致。
+- 文档命中数、名单事实行数、去重企业数和“企业＋项目＋年度/批次”记录数必须分开，不得相互换算。
+- 连接器超时后只做一次工具重发现和一次 `knowledge_service_status` 复核。若 deferred tool 索引仍不可用，立即停止新增查询，保留已取得证据并标记部分完成；不得连续空转重试，也不得声称连接已恢复。
 
 ## 案例包分层调用
 

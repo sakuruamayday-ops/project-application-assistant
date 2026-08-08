@@ -49,8 +49,10 @@ def main() -> int:
     delivery_contract = load(SKILLS / "delivery-contracts.json")
     registry = load(SKILLS / "report-skill-registry.json")
     config = load(ROOT / "config" / "grounded-citations.json")
-    notes_path = ROOT / "docs" / "releases" / "V1.6.1.md"
+    notes_path = ROOT / "docs" / "releases" / "V1.6.1.1.md"
     notes = notes_path.read_text(encoding="utf-8")
+    stable_notes_path = ROOT / "docs" / "releases" / "V1.6.1.md"
+    stable_notes = stable_notes_path.read_text(encoding="utf-8")
     release_script = (ROOT / "scripts" / "controlled_release.py").read_text(encoding="utf-8")
     manager_root = args.release_manager_root.expanduser().resolve()
     manager_main = manager_root / "scripts" / "windows_hook" / "main.go"
@@ -64,8 +66,8 @@ def main() -> int:
     engine_text = (SKILLS / "evidence-ledger" / "scripts" / "grounded_evidence.py").read_text(encoding="utf-8")
     evidence_skill_text = (SKILLS / "evidence-ledger" / "SKILL.md").read_text(encoding="utf-8")
 
-    windows_match = re.search(r"(V1\.6\.1).*Windows WorkBuddy", notes)
-    macos_match = re.search(r"(V1\.6\.1).*?macOS", notes)
+    windows_match = re.search(r"(V1\.6\.1).*Windows WorkBuddy", stable_notes)
+    macos_match = re.search(r"(V1\.6\.1).*?macOS", stable_notes)
     skills_contract = str(manifest["release"]["tag"])
 
     adapters = config.get("host_adapters", {})
@@ -82,9 +84,9 @@ def main() -> int:
             "企业数字身份证不进入插件包" in notes
             or "不把企业身份数据放入 ZIP" in notes
         ),
-        "candidate_skills_contract_is_v161": skills_contract == "V1.6.1",
-        "delivery_contract_is_v161": delivery_contract.get("rule_version") == "1.6.1",
-        "release_notes_file_present": notes_path.is_file(),
+        "candidate_skills_contract_is_v1611": skills_contract == "V1.6.1.1",
+        "delivery_contract_is_v1611": delivery_contract.get("rule_version") == "1.6.1.1",
+        "release_notes_file_present": notes_path.is_file() and stable_notes_path.is_file(),
         "controlled_release_supports_windows_hotfix": (
             '"--platform-hotfix"' in release_script
             and 'choices=("windows",)' in release_script
