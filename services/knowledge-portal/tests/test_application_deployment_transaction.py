@@ -99,6 +99,7 @@ def install_success_fakes(monkeypatch, module, expected_build):
         },
     )
     monkeypatch.setattr(module, "restore_previous_build", lambda _build: None)
+    monkeypatch.setattr(module, "configure_index_verifier", lambda _env: "test.timer")
     return commands
 
 

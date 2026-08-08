@@ -205,6 +205,18 @@ def test_deploy_transfers_release_retention_dependency():
     assert "scripts/release_retention.py" in deploy_script
 
 
+def test_code_preflight_selects_the_active_index_verifier():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+    transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "scripts/verify_policy_increment_server.py" in deploy_script
+    assert "signed-policy-delta-chain-v1" in deploy_script
+    assert "configure_index_verifier(app_env)" in transaction
+    assert "jiaotang-kb-policy-increment-verify.timer" in transaction
+
+
 def test_deploy_injects_and_verifies_exact_build_identity():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
     transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(

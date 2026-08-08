@@ -346,6 +346,31 @@ def restore_previous_build(previous: dict[str, Any]) -> None:
             rewrite_build_environment(path, previous)
 
 
+def configure_index_verifier(app_env: dict[str, str]) -> str:
+    index_root = Path(
+        app_env.get("JIAOTANG_INDEX_DIR", "/srv/jiaotang/knowledge-index")
+    )
+    release = load_json((index_root / "current" / "release.json").resolve(strict=True))
+    policy_mode = release.get("storage_mode") == "signed-policy-delta-chain-v1"
+    desired = (
+        "jiaotang-kb-policy-increment-verify.timer"
+        if policy_mode
+        else "jiaotang-kb-oss-verify.timer"
+    )
+    obsolete = (
+        "jiaotang-kb-oss-verify.timer"
+        if policy_mode
+        else "jiaotang-kb-policy-increment-verify.timer"
+    )
+    subprocess.run(
+        ["systemctl", "disable", "--now", obsolete],
+        check=False,
+        timeout=180,
+    )
+    run_checked(["systemctl", "enable", "--now", desired])
+    return desired
+
+
 def rollback(
     request: dict[str, Any],
     runtime: Path,
@@ -370,7 +395,7 @@ def rollback(
     run_checked(["systemctl", "restart", "jiaotang-kb.service"], timeout=90)
     run_checked(["systemctl", "enable", "--now", "jiaotang-kb-health.timer"])
     run_checked(["systemctl", "enable", "--now", "jiaotang-kb-backup.timer"])
-    run_checked(["systemctl", "enable", "--now", "jiaotang-kb-oss-verify.timer"])
+    configure_index_verifier(parse_env(Path("/etc/jiaotang-kb-app.env")))
     fetch_json("http://127.0.0.1:8100/readyz")
     return "completed"
 
@@ -446,9 +471,9 @@ def execute(request_path: Path, state_path: Path) -> int:
         for unit in (
             "jiaotang-kb-health.timer",
             "jiaotang-kb-backup.timer",
-            "jiaotang-kb-oss-verify.timer",
         ):
             run_checked(["systemctl", "enable", "--now", unit])
+        configure_index_verifier(app_env)
         run_checked(["systemctl", "start", "jiaotang-kb-health.service"])
         retention_cleanup: dict[str, Any]
         try:

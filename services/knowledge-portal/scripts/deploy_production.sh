@@ -309,6 +309,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/release_progress.py \
     scripts/oss_auth.py scripts/verify_acceptance_receipt.py \
     scripts/verify_index_release_binding.py \
+    scripts/verify_policy_increment_server.py \
     scripts/validate_operational_health.py scripts/report_systemd_failure.py \
     scripts/health_recovery_state.py \
     scripts/check_oss_governance.py scripts/deploy_index_delta_to_server.sh \
@@ -446,10 +447,27 @@ ssh "${ssh_args[@]}" "${deploy_host}" "set -e
     set -a
     source \"\${SOURCE_ENV}\"
     set +a
-    '${remote_release_dir}/.venv/bin/python' \
-        '${remote_release_dir}/scripts/verify_index_release_binding.py' \
-        --index-root \"\${JIAOTANG_INDEX_DIR}\" \
-        --profile '${remote_release_dir}/references/acceptance-harness/knowledge-base.json'
+    INDEX_STORAGE_MODE=\$(python3 - \"\${JIAOTANG_INDEX_DIR}\" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+release = Path(sys.argv[1]) / 'current' / 'release.json'
+payload = json.loads(release.resolve(strict=True).read_text(encoding='utf-8'))
+print(str(payload.get('storage_mode') or 'full-index-release'))
+PY
+    )
+    if [ \"\${INDEX_STORAGE_MODE}\" = 'signed-policy-delta-chain-v1' ]; then
+        JIAOTANG_APP_DIR='${remote_release_dir}' \
+            '${remote_release_dir}/.venv/bin/python' \
+            '${remote_release_dir}/scripts/verify_policy_increment_server.py' \
+            --index-root \"\${JIAOTANG_INDEX_DIR}\"
+    else
+        '${remote_release_dir}/.venv/bin/python' \
+            '${remote_release_dir}/scripts/verify_index_release_binding.py' \
+            --index-root \"\${JIAOTANG_INDEX_DIR}\" \
+            --profile '${remote_release_dir}/references/acceptance-harness/knowledge-base.json'
+    fi
     chmod -R a-w '${remote_release_dir}'
     find '${remote_release_dir}' -type d -exec chmod a+rx {} +
     find '${remote_release_dir}' -type f -exec chmod a+r {} +
@@ -660,6 +678,9 @@ stable_entries = {
     ),
     '/usr/local/libexec/jiaotang-kb-application-deploy': (
         'scripts/run_application_deployment.py', 0o755
+    ),
+    '/usr/local/libexec/jiaotang-policy-increment-verify': (
+        'scripts/verify_policy_increment_server.py', 0o755
     ),
 }
 for target_value, (relative, mode) in stable_entries.items():
