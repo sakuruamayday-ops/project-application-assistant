@@ -11,11 +11,11 @@ def load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def test_product_configuration_validator_passes_on_v160_release_candidate(tmp_path):
+def test_product_configuration_validator_passes_on_v161_release_candidate(tmp_path):
     manager = tmp_path / "skill-release-manager"
     hook = manager / "scripts" / "windows_hook"
     hook.mkdir(parents=True)
-    (hook / "main.go").write_text('const runtimeVersion = "1.6.0"\n', encoding="utf-8")
+    (hook / "main.go").write_text('const runtimeVersion = "1.6.1"\n', encoding="utf-8")
     (hook / "contract.go").write_text(
         'const intentRuleVersion = "7-delivery-action-scoped-negation"\n',
         encoding="utf-8",
@@ -42,12 +42,12 @@ def test_product_configuration_validator_passes_on_v160_release_candidate(tmp_pa
     receipt = json.loads(result.stdout)
     assert receipt["status"] == "pass"
     assert receipt["channels"] == {
-        "workbuddy_windows_stable": "V1.6.0",
-        "workbuddy_macos_stable": "V1.6.0",
-        "candidate": "V1.6.0",
+        "workbuddy_windows_stable": "V1.6.1",
+        "workbuddy_macos_stable": "V1.6.1",
+        "candidate": "V1.6.1",
     }
-    assert receipt["skills_contract"] == "V1.6.0"
-    assert receipt["grounded_candidate_release"] == "V1.6.0"
+    assert receipt["skills_contract"] == "V1.6.1"
+    assert receipt["grounded_candidate_release"] == "V1.6.1"
 
 
 def test_grounded_host_adapters_are_in_the_shared_package_surface():

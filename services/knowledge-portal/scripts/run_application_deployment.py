@@ -17,6 +17,11 @@ from pathlib import Path
 from typing import Any
 from urllib.request import Request, urlopen
 
+try:
+    from scripts.release_retention import prune_release_generations
+except ImportError:  # direct script execution
+    from release_retention import prune_release_generations
+
 
 REQUEST_SCHEMA = "jiaotang-application-deployment-request/v1"
 STATE_SCHEMA = "jiaotang-application-deployment-state/v1"
@@ -445,11 +450,27 @@ def execute(request_path: Path, state_path: Path) -> int:
         ):
             run_checked(["systemctl", "enable", "--now", unit])
         run_checked(["systemctl", "start", "jiaotang-kb-health.service"])
+        retention_cleanup: dict[str, Any]
+        try:
+            retention_cleanup = prune_release_generations(
+                Path(str(request["release_root"])),
+                runtime,
+                apply=True,
+            )
+        except Exception as cleanup_error:
+            # Production is already healthy.  A retention warning must not
+            # misreport a successful deployment as failed or trigger rollback.
+            retention_cleanup = {
+                "schema": "jiaotang-release-retention/v1",
+                "applied": False,
+                "error": str(cleanup_error)[:2000],
+            }
         update_state(
             state_path,
             request,
             "completed",
             completed_at=utc_now(),
+            retention_cleanup=retention_cleanup,
         )
         return 0
     except Exception as error:

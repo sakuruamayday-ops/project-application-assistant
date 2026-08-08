@@ -90,6 +90,50 @@ def test_lineage_projection_contains_four_identity_layers_and_public_source(tmp_
     assert all("nodes" not in item and "edges" not in item for item in public_rows)
 
 
+def test_resolution_audit_exempts_two_projects_without_hiding_other_requirements(
+    tmp_path: Path,
+):
+    database = tmp_path / "coverage.sqlite3"
+    connection = sqlite3.connect(database)
+    connection.execute(
+        """
+        CREATE TABLE enterprise_identity_profiles(
+            identity_key TEXT PRIMARY KEY,
+            unified_social_credit_code TEXT NOT NULL,
+            verification_status TEXT NOT NULL,
+            recognition_projects_json TEXT NOT NULL
+        )
+        """
+    )
+    connection.executemany(
+        "INSERT INTO enterprise_identity_profiles VALUES(?,?,?,?)",
+        [
+            ("a", "", "pending_business_identity", json.dumps(["浙江制造精品"])),
+            ("b", "", "pending_business_identity", json.dumps(["地方科技小巨人企业"])),
+            (
+                "c",
+                "",
+                "pending_business_identity",
+                json.dumps(["地方科技小巨人企业", "浙江省专精特新中小企业"]),
+            ),
+        ],
+    )
+    connection.commit()
+    connection.close()
+
+    rows = {
+        row["scope_key"]: row
+        for row in MODULE.build_resolution_audit(database, [], None)
+    }
+
+    assert rows["pending_identity_verification_required"]["pending_subjects"] == 1
+    assert "pending_project:浙江制造精品" not in rows
+    assert "pending_project:地方科技小巨人企业" not in rows
+    assert rows["pending_project:浙江省专精特新中小企业"]["pending_subjects"] == 1
+    assert rows["verification_exempt_project:浙江制造精品"]["pending_subjects"] == 0
+    assert rows["verification_exempt_project:地方科技小巨人企业"]["pending_subjects"] == 0
+
+
 def test_database_graph_and_alias_projection_are_written_with_unified_source(tmp_path: Path):
     database = tmp_path / "knowledge.sqlite3"
     output = tmp_path / "output"

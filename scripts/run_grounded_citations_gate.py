@@ -209,6 +209,7 @@ def main() -> int:
     )
     steps.append(product_step)
     manager_root = args.release_manager_root.expanduser().resolve()
+    env["JIAOTANG_RELEASE_MANAGER_SCRIPTS"] = str(manager_root / "scripts")
     steps.append(
         run_step(
             "release-manager-pytest",
@@ -318,7 +319,7 @@ def main() -> int:
         "excluded_from_scope": ["bash-permission-policy", "external-mcp", "qcc", "paddleocr"],
         "verification_scope": {
             "host_adapters": "deterministic grounded contract output",
-            "product_configuration": "V1.6.0 Windows与macOS插件发布候选；企业数字身份证与索引不在插件构建输入",
+            "product_configuration": "V1.6.1 Windows与macOS插件发布候选；企业数字身份证与索引不在插件构建输入",
             "docx_pdf": "real OOXML/PDF round trip with Latin visual text; Chinese semantic contract covered by pytest",
         },
         "known_limits": [

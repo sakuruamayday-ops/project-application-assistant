@@ -24,6 +24,10 @@ from typing import Any, Iterable
 PUBLIC_SOURCE = "焦糖知识库"
 SCHEMA_VERSION = "jiaotang-enterprise-identity-lineage-v1"
 USCC_PATTERN = re.compile(r"^[0-9A-HJ-NPQRTUWXY]{18}$")
+IDENTITY_VERIFICATION_EXEMPT_PROJECTS = {
+    "浙江制造精品",
+    "地方科技小巨人企业",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -542,6 +546,8 @@ def build_resolution_audit(
     )
 
     project_counts: defaultdict[str, int] = defaultdict(int)
+    exempt_project_counts: defaultdict[str, int] = defaultdict(int)
+    actionable_pending = 0
     for status, _, projects_json in profiles:
         if str(status or "") != "pending_business_identity":
             continue
@@ -549,9 +555,34 @@ def build_resolution_audit(
             projects = json.loads(str(projects_json or "[]"))
         except json.JSONDecodeError:
             projects = []
-        for project in projects if isinstance(projects, list) else []:
-            if str(project):
-                project_counts[str(project)] += 1
+        normalized_projects = (
+            [str(project) for project in projects if str(project)]
+            if isinstance(projects, list)
+            else []
+        )
+        if any(
+            project not in IDENTITY_VERIFICATION_EXEMPT_PROJECTS
+            for project in normalized_projects
+        ):
+            actionable_pending += 1
+        for project in normalized_projects:
+            if project in IDENTITY_VERIFICATION_EXEMPT_PROJECTS:
+                exempt_project_counts[project] += 1
+            else:
+                project_counts[project] += 1
+    rows.append(
+        {
+            "scope_key": "pending_identity_verification_required",
+            "scope_label": "需要继续工商身份核验的主体",
+            "total_subjects": actionable_pending,
+            "verified_subjects": 0,
+            "pending_subjects": actionable_pending,
+            "with_unified_social_credit_code": 0,
+            "without_unified_social_credit_code": actionable_pending,
+            "note": "已按项目级规则排除浙江制造精品和地方科技小巨人企业；兼属其他项目的主体仍按其他项目核验。",
+            "source": PUBLIC_SOURCE,
+        }
+    )
     for project, count in sorted(project_counts.items(), key=lambda item: (-item[1], item[0])):
         rows.append(
             {
@@ -563,6 +594,20 @@ def build_resolution_audit(
                 "with_unified_social_credit_code": 0,
                 "without_unified_social_credit_code": count,
                 "note": "当前知识库仅有名单/认定记录，尚无可闭合的统一社会信用代码。",
+                "source": PUBLIC_SOURCE,
+            }
+        )
+    for project, count in sorted(exempt_project_counts.items()):
+        rows.append(
+            {
+                "scope_key": f"verification_exempt_project:{project}",
+                "scope_label": f"身份核验豁免项目·{project}",
+                "total_subjects": count,
+                "verified_subjects": 0,
+                "pending_subjects": 0,
+                "with_unified_social_credit_code": 0,
+                "without_unified_social_credit_code": count,
+                "note": "该项目不以工商身份补码作为发布门禁；不得据此伪造或推算统一社会信用代码。",
                 "source": PUBLIC_SOURCE,
             }
         )

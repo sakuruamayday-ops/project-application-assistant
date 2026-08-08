@@ -207,6 +207,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 marketplace_name="jiaotang-regression",
                 smoke_skill="enterprise-profile",
                 platform="windows",
+                candidate_mode=False,
             )
             stdout = io.StringIO()
 

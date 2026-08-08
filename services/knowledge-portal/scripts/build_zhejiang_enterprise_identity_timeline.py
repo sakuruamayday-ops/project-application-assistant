@@ -92,6 +92,10 @@ ZHEJIANG_PREFECTURE_CITIES = (
 COVERAGE_MATRIX_JSON = "省级项目年度设区市覆盖矩阵.json"
 COVERAGE_MATRIX_CSV = "省级项目年度设区市覆盖矩阵.csv"
 COVERAGE_COLLECTION_QUEUE = "省级项目年度设区市增量采集队列.jsonl"
+IDENTITY_COLLECTION_QUEUE = "浙江省企业工商身份增量采集队列.jsonl"
+IDENTITY_VERIFICATION_EXEMPT_PROJECTS = frozenset(
+    {"浙江制造精品", "地方科技小巨人企业"}
+)
 EventKey = tuple[str, str, int | None, str, str, str, str]
 IdentityEventKey = tuple[str, str, int | None, str, str, str, str]
 
@@ -1956,6 +1960,20 @@ def load_knowledge_identity_enrichment(path: Path) -> dict[str, dict[str, Any]]:
         )
     result: dict[str, dict[str, Any]] = {}
     for row in read_jsonl(candidates[0]):
+        explicit_status = str(row.get("knowledge_verification_status") or "").strip()
+        knowledge_layer = row.get("source_layers", {}).get("knowledge_base", {})
+        layer_status = str(knowledge_layer.get("enterprise_identity_status") or "").strip()
+        is_verified = explicit_status in {
+            "verified",
+            "knowledge_verified",
+            "dual_commercial_sources_consistent",
+        } or (
+            not explicit_status and layer_status == "verified"
+        )
+        if not is_verified:
+            # A valid-looking credit code from a one-source batch remains a
+            # candidate.  It must not silently promote a production profile.
+            continue
         code = str(row.get("unified_social_credit_code") or "").upper()
         if not USCC_PATTERN.fullmatch(code):
             continue
@@ -2095,6 +2113,65 @@ def write_policy_lifecycle_audit(
         encoding="utf-8",
     )
     return report
+
+
+def build_identity_collection_queue(
+    profile_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Regenerate the actionable business-identity delta after every index build."""
+    queue: list[dict[str, Any]] = []
+    for profile in profile_rows:
+        if profile.get("verification_status") != "pending_business_identity":
+            continue
+        projects = sorted(
+            str(project)
+            for project in profile.get("recognition_projects", [])
+            if str(project)
+        )
+        actionable_projects = [
+            project
+            for project in projects
+            if project not in IDENTITY_VERIFICATION_EXEMPT_PROJECTS
+        ]
+        if not actionable_projects:
+            continue
+        current_name = str(profile.get("current_name") or "").strip()
+        recognition_names = sorted(
+            {
+                str(name).strip()
+                for name in profile.get("recognition_names", [])
+                if str(name).strip()
+            }
+        )
+        queue.append(
+            {
+                "queue_id": hashlib.sha256(
+                    (str(profile.get("identity_key") or "") + "|" + current_name).encode(
+                        "utf-8"
+                    )
+                ).hexdigest(),
+                "identity_key": str(profile.get("identity_key") or ""),
+                "enterprise_name": current_name,
+                "recognition_names": recognition_names,
+                "recognition_projects": projects,
+                "actionable_projects": actionable_projects,
+                "recognition_regions": sorted(profile.get("recognition_regions", [])),
+                "requested_fields": [
+                    "unified_social_credit_code",
+                    "current_name",
+                ],
+                "queue_reason": "missing_verified_business_identity",
+                "source": "焦糖知识库",
+            }
+        )
+    return sorted(
+        queue,
+        key=lambda row: (
+            row["actionable_projects"],
+            row["enterprise_name"],
+            row["queue_id"],
+        ),
+    )
 
 
 def write_outputs(
@@ -2294,6 +2371,7 @@ def write_outputs(
             }
         )
     profile_rows.sort(key=lambda row: row["current_name"])
+    identity_collection_queue = build_identity_collection_queue(profile_rows)
     event_rows.sort(
         key=lambda row: (
             row["enterprise_name_at_event"],
@@ -2351,6 +2429,7 @@ def write_outputs(
         ("浙江省企业身份档案.jsonl", profile_rows),
         ("浙江省企业项目身份数字孪生.jsonl", project_twins),
         ("浙江省企业项目身份回放步骤.jsonl", twin_steps),
+        (IDENTITY_COLLECTION_QUEUE, identity_collection_queue),
     ):
         with (output / filename).open("w", encoding="utf-8") as handle:
             for item in rows:
@@ -2752,6 +2831,20 @@ def write_outputs(
         "pending_business_identity": sum(
             row["verification_status"] == "pending_business_identity" for row in profile_rows
         ),
+        "identity_collection_queue": len(identity_collection_queue),
+        "identity_collection_queue_by_project": {
+            project: sum(
+                project in row["actionable_projects"]
+                for row in identity_collection_queue
+            )
+            for project in sorted(
+                {
+                    project
+                    for row in identity_collection_queue
+                    for project in row["actionable_projects"]
+                }
+            )
+        },
         "database_integrity": integrity,
         "rules": [
             "认定时名称、地区、年度、批次和状态来自名单侧，不被当前工商信息覆盖。",
@@ -2764,6 +2857,7 @@ def write_outputs(
             "覆盖矩阵按附件内容哈希增量维护；哈希不变直接复用，仅缺失或变化来源进入采集队列。",
             "省级名单未提供城市时保留城市待核验，不通过企业名称猜测城市。",
             "统一社会信用代码缺失时使用规范名称临时键，禁止自动推算信用代码。",
+            "每次身份时间轴重建后按当前全部待核主体重新生成工商身份增量采集队列，不复用旧快照的队列清空状态。",
             "同名、迁址、合并和重组冲突必须进入人工核验。",
             "企业项目身份数字孪生保留政策版本、名单附件、主体匹配和生命周期状态迁移，可按年份回放。",
         ],

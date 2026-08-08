@@ -109,6 +109,11 @@ def test_server_transaction_completes_and_records_phase_history(tmp_path, monkey
     commands = install_success_fakes(
         monkeypatch, module, request["expected_build"]
     )
+    stale = Path(request["release_root"]) / "stale-release"
+    stale.mkdir()
+    (stale / "payload.bin").write_bytes(b"stale")
+    trash = tmp_path / "trash"
+    monkeypatch.setenv("JIAOTANG_RELEASE_TRASH_ROOT", str(trash))
 
     assert module.execute(request_path, state_path) == 0
 
@@ -116,6 +121,9 @@ def test_server_transaction_completes_and_records_phase_history(tmp_path, monkey
     assert state["phase"] == "completed"
     assert state["terminal"] is True
     assert state["success"] is True
+    assert state["retention_cleanup"]["removed_count"] == 1
+    assert not stale.exists()
+    assert len(list(trash.iterdir())) == 1
     assert (runtime / "current").resolve() == release
     phases = [item["phase"] for item in state["history"]]
     assert phases == [

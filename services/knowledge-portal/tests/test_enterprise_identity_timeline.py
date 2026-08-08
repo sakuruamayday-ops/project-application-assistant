@@ -38,6 +38,7 @@ def test_knowledge_identity_snapshot_promotes_current_and_recognition_names(
                 "former_names": ["杭州领信数科信息技术有限公司"],
                 "current_province": "广东省",
                 "current_city": "广州市",
+                "knowledge_verification_status": "verified",
                 "generated_at": "2026-08-07T03:09:00Z",
             },
             ensure_ascii=False,
@@ -57,6 +58,96 @@ def test_knowledge_identity_snapshot_promotes_current_and_recognition_names(
             "91330108MA2B254A2K"
         )
         assert result[MODULE.normalize_name(name)]["source_tools"] == "焦糖知识库"
+
+
+def test_knowledge_identity_snapshot_does_not_promote_single_source_candidate(
+    tmp_path: Path,
+):
+    snapshot = tmp_path / "企业基础数字身份证候选.jsonl"
+    snapshot.write_text(
+        json.dumps(
+            {
+                "unified_social_credit_code": "91330108MA2B254A2K",
+                "current_name": "单源候选企业有限公司",
+                "recognition_names": ["名单候选企业有限公司"],
+                "knowledge_verification_status": "commercial_candidate_pending_second_source",
+                "source_layers": {
+                    "knowledge_base": {"enterprise_identity_status": "candidate"}
+                },
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert MODULE.load_knowledge_identity_enrichment(snapshot) == {}
+
+
+def test_knowledge_identity_snapshot_accepts_audited_dual_commercial_match(
+    tmp_path: Path,
+):
+    snapshot = tmp_path / "双商业源一致企业.jsonl"
+    snapshot.write_text(
+        json.dumps(
+            {
+                "unified_social_credit_code": "91330108MA2B254A2K",
+                "current_name": "双源一致企业有限公司",
+                "recognition_names": ["双源一致企业有限公司"],
+                "knowledge_verification_status": "dual_commercial_sources_consistent",
+                "source_layers": {
+                    "knowledge_base": {
+                        "enterprise_identity_status": "dual_commercial_sources_consistent"
+                    }
+                },
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = MODULE.load_knowledge_identity_enrichment(snapshot)
+
+    assert result[MODULE.normalize_name("双源一致企业有限公司")][
+        "unified_social_credit_code"
+    ] == "91330108MA2B254A2K"
+
+
+def test_identity_collection_queue_is_regenerated_and_excludes_exempt_only():
+    profiles = [
+        {
+            "identity_key": "name:需要采集企业",
+            "current_name": "需要采集企业有限公司",
+            "recognition_names": ["需要采集企业有限公司"],
+            "recognition_projects": ["浙江省专精特新中小企业", "浙江制造精品"],
+            "recognition_regions": ["浙江省/杭州市"],
+            "verification_status": "pending_business_identity",
+        },
+        {
+            "identity_key": "name:免核企业",
+            "current_name": "免核企业有限公司",
+            "recognition_names": ["免核企业有限公司"],
+            "recognition_projects": ["浙江制造精品"],
+            "recognition_regions": ["浙江省/宁波市"],
+            "verification_status": "pending_business_identity",
+        },
+        {
+            "identity_key": "91330108MA2B254A2K",
+            "current_name": "已核企业有限公司",
+            "recognition_names": ["已核企业有限公司"],
+            "recognition_projects": ["浙江省专精特新中小企业"],
+            "recognition_regions": ["浙江省/杭州市"],
+            "verification_status": "knowledge_verified",
+        },
+    ]
+
+    queue = MODULE.build_identity_collection_queue(profiles)
+
+    assert len(queue) == 1
+    assert queue[0]["enterprise_name"] == "需要采集企业有限公司"
+    assert queue[0]["actionable_projects"] == ["浙江省专精特新中小企业"]
+    assert queue[0]["source"] == "焦糖知识库"
 
 
 def test_first_year_uses_earliest_explicit_year():

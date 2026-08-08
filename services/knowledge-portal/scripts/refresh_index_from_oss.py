@@ -36,6 +36,7 @@ try:
         signing_key_id,
     )
     from scripts.release_progress import TransferProgress, emit_progress
+    from scripts.release_retention import prune_release_generations
 except ImportError:  # direct script execution
     from oss_auth import build_bucket
     from publish_index_to_oss import (
@@ -49,6 +50,7 @@ except ImportError:  # direct script execution
         signing_key_id,
     )
     from release_progress import TransferProgress, emit_progress
+    from release_retention import prune_release_generations
 
 
 REQUIRED_STRUCTURED_TABLES = {
@@ -680,6 +682,34 @@ def status_payload(
     return payload
 
 
+def cleanup_index_generations(index_dir: Path) -> dict[str, object]:
+    try:
+        report = prune_release_generations(
+            index_dir / "releases",
+            index_dir,
+            apply=True,
+        )
+        emit_progress(
+            "index-release-retention",
+            "completed",
+            item=f"removed={report['removed_count']}",
+        )
+        return report
+    except Exception as error:
+        # A healthy, signed current index remains usable even if historical
+        # garbage collection needs manual recovery.
+        emit_progress(
+            "index-release-retention",
+            "failed",
+            item=error.__class__.__name__,
+        )
+        return {
+            "schema": "jiaotang-release-retention/v1",
+            "applied": False,
+            "error": str(error)[:500],
+        }
+
+
 @serialized_index_refresh
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -802,6 +832,7 @@ def main() -> int:
             payload["cache_updated_at"] = existing_status.get(
                 "cache_updated_at"
             ) or payload["checked_at"]
+            payload["retention_cleanup"] = cleanup_index_generations(index_dir)
             write_status(status_path, payload)
             emit_progress(
                 "server-index-refresh",
@@ -826,8 +857,7 @@ def main() -> int:
         old_current = release_id_from_link(index_dir / "current")
         emit_progress("index-activation", "started", item=release_id)
         activate_release(index_dir, release_id, prevalidated=True)
-        write_status(
-            status_path,
+        refreshed_status = (
             status_payload(
                 index_dir,
                 status="正常",
@@ -838,8 +868,10 @@ def main() -> int:
             | {
                 "object_key": pointer_key,
                 "release_manifest_key": manifest_key,
-            },
+            }
         )
+        refreshed_status["retention_cleanup"] = cleanup_index_generations(index_dir)
+        write_status(status_path, refreshed_status)
         emit_progress("index-activation", "completed", item=release_id)
         emit_progress("server-index-refresh", "completed", item=release_id)
         return 0
