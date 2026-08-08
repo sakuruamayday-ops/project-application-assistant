@@ -222,6 +222,21 @@ def test_receipt_does_not_infer_implicit_skill_activation(tmp_path: Path):
     assert receipt["host_activated_skills"]["implicit_activation_verifiable"] is False
 
 
+def test_negated_ambiguous_entity_count_example_is_not_a_conflict():
+    report = (
+        "verified 0 + related 0 + pending 15 + noise 0 = 15 家，"
+        "无‘6/5 家’式矛盾。**statement_conflicts=`无`**。"
+    )
+
+    result = MODULE.statement_conflicts(report, [])
+
+    assert result == {
+        "status": "none_observed",
+        "declared_none": True,
+        "detected": [],
+    }
+
+
 def test_shell_null_redirection_is_not_reported_as_a_write_risk():
     assert MODULE.shell_may_write("ls /tmp 2>/dev/null || echo missing") is False
     assert MODULE.shell_may_write("printf result > /tmp/result.txt") is True
