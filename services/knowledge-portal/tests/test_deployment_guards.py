@@ -422,7 +422,7 @@ def test_application_deploy_is_resumable_and_shutdown_is_bounded():
     assert "TimeoutStartSec=7min" in transaction_unit
     assert (
         "Environment=JIAOTANG_RELEASE_TRASH_ROOT="
-        "/var/lib/jiaotang-kb/release-trash/files"
+        "/opt/jiaotang-kb-release-slots/.Trash/files"
     ) in transaction_unit
     assert "ProtectHome=true" in transaction_unit
     assert "--timeout-graceful-shutdown 20" in service

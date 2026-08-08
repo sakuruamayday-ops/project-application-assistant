@@ -10,7 +10,7 @@ User=root
 Group=root
 TimeoutStartSec=7min
 ExecStart=/usr/bin/python3 /usr/local/libexec/jiaotang-kb-application-deploy --deployment-id %i
-Environment=JIAOTANG_RELEASE_TRASH_ROOT=/var/lib/jiaotang-kb/release-trash/files
+Environment=JIAOTANG_RELEASE_TRASH_ROOT=/opt/jiaotang-kb-release-slots/.Trash/files
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
