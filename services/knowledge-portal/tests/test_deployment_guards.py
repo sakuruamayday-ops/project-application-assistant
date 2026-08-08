@@ -212,6 +212,7 @@ def test_code_preflight_selects_the_active_index_verifier():
     )
 
     assert "scripts/verify_policy_increment_server.py" in deploy_script
+    assert "'/usr/local/libexec/release_retention.py'" in deploy_script
     assert "signed-policy-delta-chain-v1" in deploy_script
     assert "configure_index_verifier(app_env)" in transaction
     assert "jiaotang-kb-policy-increment-verify.timer" in transaction

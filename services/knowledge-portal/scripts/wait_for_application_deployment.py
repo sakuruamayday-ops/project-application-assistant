@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -13,9 +14,14 @@ from typing import Any, Callable
 
 STATE_SCHEMA = "jiaotang-application-deployment-state/v1"
 TERMINAL_PHASES = {"completed", "failed", "rolled_back"}
+DEPLOYMENT_ID_PATTERN = re.compile(
+    r"[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}-[0-9a-f]{8}"
+)
 
 
 def fetch_remote_state(host: str, key: Path, deployment_id: str) -> dict[str, Any]:
+    if DEPLOYMENT_ID_PATTERN.fullmatch(deployment_id) is None:
+        raise RuntimeError("部署编号格式非法")
     path = f"/var/lib/jiaotang-kb/deployments/{deployment_id}.state.json"
     result = subprocess.run(
         [
@@ -37,11 +43,58 @@ def fetch_remote_state(host: str, key: Path, deployment_id: str) -> dict[str, An
             "--",
             path,
         ],
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         timeout=70,
     )
+    if result.returncode != 0:
+        unit = f"jiaotang-kb-application-deploy@{deployment_id}.service"
+        unit_result = subprocess.run(
+            [
+                "ssh",
+                "-i",
+                str(key),
+                "-o",
+                "BatchMode=yes",
+                "-o",
+                "ConnectTimeout=15",
+                "-o",
+                "ConnectionAttempts=3",
+                host,
+                "systemctl",
+                "show",
+                unit,
+                "--property=ActiveState",
+                "--property=Result",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=70,
+        )
+        values = dict(
+            line.split("=", 1)
+            for line in unit_result.stdout.splitlines()
+            if "=" in line
+        )
+        if unit_result.returncode == 0 and (
+            values.get("ActiveState") == "failed" or values.get("Result") == "exit-code"
+        ):
+            return {
+                "schema": STATE_SCHEMA,
+                "deployment_id": deployment_id,
+                "phase": "failed",
+                "success": False,
+                "error": "systemd deployment unit failed before writing state receipt",
+                "systemd": values,
+            }
+        raise subprocess.CalledProcessError(
+            result.returncode,
+            result.args,
+            output=result.stdout,
+            stderr=result.stderr,
+        )
     payload = json.loads(result.stdout)
     if not isinstance(payload, dict):
         raise RuntimeError("部署回执顶层必须是JSON对象")

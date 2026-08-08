@@ -276,3 +276,24 @@ def test_receipt_polling_recovers_after_transport_disconnect():
 
     assert state["phase"] == "completed"
     assert failures == 1
+
+
+def test_receipt_fetch_reports_systemd_failure_before_state_exists(monkeypatch):
+    module = load_script("wait_for_application_deployment.py")
+    deployment_id = "20260803T200000Z-123456789abc-deadbeef"
+    responses = [
+        subprocess.CompletedProcess(["ssh"], 1, "", "missing"),
+        subprocess.CompletedProcess(
+            ["ssh"],
+            0,
+            "ActiveState=failed\nResult=exit-code\n",
+            "",
+        ),
+    ]
+    monkeypatch.setattr(module.subprocess, "run", lambda *args, **kwargs: responses.pop(0))
+
+    state = module.fetch_remote_state("host", Path("/tmp/key"), deployment_id)
+
+    assert state["phase"] == "failed"
+    assert state["success"] is False
+    assert state["systemd"]["Result"] == "exit-code"

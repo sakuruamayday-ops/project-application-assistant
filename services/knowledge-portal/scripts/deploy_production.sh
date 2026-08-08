@@ -679,6 +679,9 @@ stable_entries = {
     '/usr/local/libexec/jiaotang-kb-application-deploy': (
         'scripts/run_application_deployment.py', 0o755
     ),
+    '/usr/local/libexec/release_retention.py': (
+        'scripts/release_retention.py', 0o644
+    ),
     '/usr/local/libexec/jiaotang-policy-increment-verify': (
         'scripts/verify_policy_increment_server.py', 0o755
     ),
