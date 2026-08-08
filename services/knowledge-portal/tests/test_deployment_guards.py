@@ -419,6 +419,11 @@ def test_application_deploy_is_resumable_and_shutdown_is_bounded():
     assert "wait_for_application_deployment.py" in resume
     assert "Type=oneshot" in transaction_unit
     assert "TimeoutStartSec=7min" in transaction_unit
+    assert (
+        "Environment=JIAOTANG_RELEASE_TRASH_ROOT="
+        "/var/lib/jiaotang-kb/release-trash/files"
+    ) in transaction_unit
+    assert "ProtectHome=true" in transaction_unit
     assert "--timeout-graceful-shutdown 20" in service
     assert "TimeoutStopSec=30s" in service
     assert "ExecStartPost=/usr/local/sbin/jiaotang-kb-wait-ready" in service
