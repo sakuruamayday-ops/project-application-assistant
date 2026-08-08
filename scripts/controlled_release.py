@@ -26,6 +26,10 @@ OFFICIAL_PUBLISHER_FINGERPRINT = (
 )
 GATE_SIGNATURE_NAMESPACE = "codex-skill-release-gate"
 REMOTE_RELEASE_ROOT = "/opt/jiaotang-kb-runtime/current"
+DEFAULT_LOCAL_RELEASE_SYNC_SCRIPT = Path(
+    "/Users/zsh/Documents/自动化区域/"
+    "jiaotang-local-release-sync/local_release_sync.py"
+)
 
 
 def recoverable_workspace_path(prefix: str) -> Path:
@@ -73,6 +77,78 @@ def release_json(payload: object) -> str:
         indent=2,
         default=str,
     )
+
+
+def run_local_release_sync(
+    script: Path,
+    *,
+    expected_version: str,
+) -> dict[str, object]:
+    """Run the local signed-release gate once, immediately after publish."""
+    resolved = script.expanduser().resolve()
+    if not resolved.is_file():
+        raise RuntimeError(f"本机正式发布同步程序不存在：{resolved}")
+    environment = os.environ.copy()
+    for name in ("GITHUB_PAT_TOKEN", "GH_TOKEN", "EXA_API_KEY"):
+        environment.pop(name, None)
+    process = subprocess.run(
+        [
+            sys.executable,
+            str(resolved),
+            "--apply",
+            "--expected-version",
+            expected_version,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
+    raw = process.stdout.strip() or process.stderr.strip()
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            "本机正式发布即时同步未返回有效JSON：" + raw[-2000:]
+        ) from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("本机正式发布即时同步回执必须是JSON对象")
+    if process.returncode or payload.get("status") != "pass":
+        raise RuntimeError(
+            "本机正式发布即时同步失败："
+            + str(payload.get("error") or payload)
+        )
+    formal_release = payload.get("formal_release")
+    skills = payload.get("skills")
+    index = payload.get("index")
+    knowledge = payload.get("knowledge")
+    if not isinstance(formal_release, dict) or (
+        formal_release.get("version") != expected_version
+    ):
+        raise RuntimeError("本机同步回执的正式版本与发布事务不一致")
+    if not isinstance(skills, dict) or skills.get("status") not in {
+        "installed-and-verified",
+        "already-current-and-verified",
+    }:
+        raise RuntimeError("本机技能安装与签名验收未通过")
+    if not isinstance(index, dict) or index.get("status") not in {
+        "current",
+        "switched-and-verified",
+    }:
+        raise RuntimeError("本机活动索引切换验收未通过")
+    if not isinstance(knowledge, dict) or knowledge.get("status") != "complete":
+        raise RuntimeError("本机知识源清单完整性验收未通过")
+    return {
+        "status": "pass",
+        "mode": "formal-release-immediate",
+        "version": expected_version,
+        "skills": skills.get("status"),
+        "skill_count": skills.get("skill_count"),
+        "index": index.get("status"),
+        "index_release_id": index.get("release_id"),
+        "knowledge": knowledge.get("status"),
+        "receipt": str(payload.get("completed_at") or ""),
+    }
 
 
 def sha256(path: Path) -> str:
@@ -350,6 +426,16 @@ def build_release_transaction_manifest(
                     "platform-hotfix-package-validation-pass"
                     if set(package_hashes) == {"windows"}
                     else "atomic-install-and-three-way-signature-audit-pass"
+                ),
+            },
+            "local_sync": {
+                "mode": "formal-release-immediate",
+                "required_version": validation["short_version"],
+                "generic_package_sha256": package_hashes.get("generic", ""),
+                "required_result": (
+                    "signed-local-install-and-index-verification-pass"
+                    if "generic" in package_hashes
+                    else "not-applicable-platform-hotfix"
                 ),
             },
         },
@@ -1078,6 +1164,12 @@ def main() -> None:
         / "skill-signing"
         / "jiaotang-skill-release-ed25519.pub",
     )
+    parser.add_argument(
+        "--local-release-sync-script",
+        type=Path,
+        default=DEFAULT_LOCAL_RELEASE_SYNC_SCRIPT,
+        help="正式发布成为GitHub Latest后立即执行的本机同步程序",
+    )
     parser.add_argument("--lease-owner", default="")
     parser.add_argument(
         "--lease-ttl-seconds",
@@ -1232,6 +1324,7 @@ def main() -> None:
                     "github",
                     "portal",
                     "installation",
+                    "local_sync",
                 ],
             },
         }
@@ -1249,6 +1342,7 @@ def main() -> None:
         )
         portal_result: dict[str, object] | None = None
         github_published = False
+        local_sync_result: dict[str, object] | None = None
         try:
             credential = load_or_create_lease_credential(
                 path=credential_path,
@@ -1462,12 +1556,23 @@ def main() -> None:
                     "target_commit": commit,
                 },
             )
+            if "generic" in packages:
+                local_sync_result = run_local_release_sync(
+                    arguments.local_release_sync_script,
+                    expected_version=str(validation["short_version"]),
+                )
+            else:
+                local_sync_result = {
+                    "status": "not-applicable-platform-hotfix",
+                    "mode": "formal-release-immediate",
+                }
             completed = transition(
                 "completed",
                 {
                     "github": "published",
                     "portal": portal_result.get("release_state"),
                     "installation": installation_acceptance.get("status"),
+                    "local_sync": local_sync_result,
                 },
             )
         except Exception as exc:
@@ -1477,10 +1582,14 @@ def main() -> None:
                     {
                         "promote_error": str(exc),
                         "partial_state": (
-                            "portal-published-github-pending"
-                            if portal_result is not None
-                            and not github_published
-                            else "pre-publication-failed"
+                            "github-published-local-sync-pending"
+                            if github_published and local_sync_result is None
+                            else (
+                                "portal-published-github-pending"
+                                if portal_result is not None
+                                and not github_published
+                                else "pre-publication-failed"
+                            )
                         ),
                         "portal": (
                             portal_result.get("release_state")
@@ -1506,6 +1615,7 @@ def main() -> None:
                     "status": "published",
                     "release_url": release_url,
                     "isolated_skill_acceptance": installation_acceptance,
+                    "local_sync": local_sync_result,
                     "portal": portal_result,
                     "release_transaction": completed,
                 })

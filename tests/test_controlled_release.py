@@ -295,7 +295,7 @@ def test_controlled_release_requires_generic_package(
     assert "--generic-package" in capsys.readouterr().err
 
 
-def test_transaction_manifest_binds_all_three_release_participants(
+def test_transaction_manifest_binds_all_release_participants(
     tmp_path,
 ) -> None:
     generic = tmp_path / "generic.zip"
@@ -334,6 +334,7 @@ def test_transaction_manifest_binds_all_three_release_participants(
         "github",
         "portal",
         "installation",
+        "local_sync",
     }
     assert (
         manifest["participants"]["portal"]["package_sha256"]["generic"]
@@ -344,6 +345,61 @@ def test_transaction_manifest_binds_all_three_release_participants(
         manifest["lease_policy"]["non_holder_mode"]
         == "read-only-monitor"
     )
+
+
+def test_local_release_sync_is_fail_closed_and_strips_transient_tokens(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    script = tmp_path / "local_release_sync.py"
+    script.write_text("# test", encoding="utf-8")
+    captured = {}
+
+    def pass_sync(command, **kwargs):
+        captured["command"] = command
+        captured["env"] = kwargs["env"]
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "status": "pass",
+                    "completed_at": "2026-08-08T00:00:00Z",
+                    "formal_release": {"version": "1.6.1"},
+                    "skills": {
+                        "status": "installed-and-verified",
+                        "skill_count": 49,
+                    },
+                    "index": {
+                        "status": "current",
+                        "release_id": "policy-current",
+                    },
+                    "knowledge": {"status": "complete"},
+                }
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setenv("GH_TOKEN", "temporary-secret")
+    monkeypatch.setattr(MODULE.subprocess, "run", pass_sync)
+    result = MODULE.run_local_release_sync(
+        script,
+        expected_version="1.6.1",
+    )
+
+    assert result["status"] == "pass"
+    assert captured["command"][-2:] == ["--expected-version", "1.6.1"]
+    assert "GH_TOKEN" not in captured["env"]
+
+    def fail_sync(*_args, **_kwargs):
+        return SimpleNamespace(
+            returncode=2,
+            stdout="",
+            stderr='{"status":"fail","error":"signature mismatch"}',
+        )
+
+    monkeypatch.setattr(MODULE.subprocess, "run", fail_sync)
+    with pytest.raises(RuntimeError, match="signature mismatch"):
+        MODULE.run_local_release_sync(script, expected_version="1.6.1")
 
 
 def test_release_lease_checkpoint_is_owner_scoped_and_secret(tmp_path) -> None:

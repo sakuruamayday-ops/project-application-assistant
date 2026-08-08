@@ -27,6 +27,8 @@ public_key="${JIAOTANG_POLICY_PUBLIC_KEY:-/Users/zsh/.config/project-assistant/p
 baseline_source="${JIAOTANG_POLICY_BASELINE_SOURCE:-/Users/zsh/JiaotangData/索引/candidates/identity-reverse-lookup.RtlTpt/index}"
 python_bin="${JIAOTANG_POLICY_PYTHON:-/Users/zsh/Documents/分析/项目申报助手/services/knowledge-portal/.venv/bin/python}"
 resume_prepared="${JIAOTANG_POLICY_RESUME_PREPARED:-}"
+local_sync_script="${JIAOTANG_LOCAL_RELEASE_SYNC_SCRIPT:-/Users/zsh/Documents/自动化区域/jiaotang-local-release-sync/local_release_sync.py}"
+local_sync_python="${JIAOTANG_LOCAL_RELEASE_SYNC_PYTHON:-/usr/bin/python3}"
 if [[ -n "${resume_prepared}" ]]; then
   prepared="$(cd "$(dirname "${resume_prepared}")" && pwd -P)/$(basename "${resume_prepared}")"
   run_dir="$(dirname "${prepared}")"
@@ -84,6 +86,8 @@ trap rollback_on_failure EXIT
 [[ -d "${handoff_dir}" ]] || { echo "冻结交接包目录不存在：${handoff_dir}" >&2; exit 1; }
 [[ -f "${deploy_key}" ]] || { echo "SSH发布密钥不存在：${deploy_key}" >&2; exit 1; }
 [[ -x "${python_bin}" ]] || { echo "政策增量Python运行时不可用：${python_bin}" >&2; exit 1; }
+[[ -f "${local_sync_script}" ]] || { echo "本机即时同步程序不存在：${local_sync_script}" >&2; exit 1; }
+[[ -x "${local_sync_python}" ]] || { echo "本机即时同步Python不可用：${local_sync_python}" >&2; exit 1; }
 if [[ -n "${resume_prepared}" ]]; then
   [[ -f "${prepared}" ]] || { echo "续发冻结产物不存在：${prepared}" >&2; exit 1; }
   python3 - "${prepared}" "${handoff_dir}" "${state_root}" <<'PY'
@@ -142,7 +146,7 @@ else
   echo "复用原冻结发布包续发：${prepared}"
 fi
 
-echo "[1/7] 仅上传冻结交接包中的SHA-256内容寻址对象"
+echo "[1/8] 仅上传冻结交接包中的SHA-256内容寻址对象"
 "${python_bin}" "${script_dir}/upload_manifest_to_oss.py" \
   --manifest "${run_dir}/delta-upload-manifest.jsonl" \
   --allowlist "${run_dir}/delta-upload-allowlist.csv" \
@@ -150,16 +154,16 @@ echo "[1/7] 仅上传冻结交接包中的SHA-256内容寻址对象"
   --workers 4 \
   --verify-after-upload | tee "${run_dir}/knowledge-object-upload.log"
 
-echo "[2/7] 上传完整基线锚点、受信公钥和不可变签名增量包"
+echo "[2/8] 上传完整基线锚点、受信公钥和不可变签名增量包"
 "${python_bin}" "${script_dir}/policy_increment_release.py" upload-immutable \
   --prepared "${prepared}" | tee "${run_dir}/immutable-upload.log"
 
-echo "[3/7] 暂停旧OSS完整release校验器，准备双槽差异切换"
+echo "[3/8] 暂停旧OSS完整release校验器，准备双槽差异切换"
 JIAOTANG_DEPLOY_HOST="${deploy_host}" JIAOTANG_DEPLOY_KEY="${deploy_key}" \
   "${script_dir}/deploy_policy_increment_to_server.sh" pause-verifiers
 verifiers_paused=1
 
-echo "[4/7] rsync仅传输变化数据库页并原子切换服务器current"
+echo "[4/8] rsync仅传输变化数据库页并原子切换服务器current"
 JIAOTANG_DEPLOY_HOST="${deploy_host}" JIAOTANG_DEPLOY_KEY="${deploy_key}" \
 JIAOTANG_POLICY_PREPARED_RELEASE="${prepared}" \
 JIAOTANG_POLICY_DEPLOY_RECEIPT="${server_receipt}" \
@@ -170,7 +174,7 @@ print("1" if json.load(open(sys.argv[1])).get("deployment_action") in {"switched
 PY
 )"
 
-echo "[5/7] CAS切换Ed25519增量链current并启用每小时链验证"
+echo "[5/8] CAS切换Ed25519增量链current并启用每小时链验证"
 "${python_bin}" "${script_dir}/policy_increment_release.py" switch-pointer \
   --prepared "${prepared}" | tee "${run_dir}/pointer-switch.log"
 pointer_switched=1
@@ -178,7 +182,7 @@ JIAOTANG_DEPLOY_HOST="${deploy_host}" JIAOTANG_DEPLOY_KEY="${deploy_key}" \
 JIAOTANG_POLICY_PREPARED_RELEASE="${prepared}" \
   "${script_dir}/deploy_policy_increment_to_server.sh" install-verifier
 
-echo "[6/7] OSS二次校验、服务器深度验签、REST/MCP固定路由和新增文档命中"
+echo "[6/8] OSS二次校验、服务器深度验签、REST/MCP固定路由和新增文档命中"
 "${python_bin}" "${script_dir}/policy_increment_release.py" verify-cloud \
   --prepared "${prepared}" >"${run_dir}/cloud-verification.json"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
@@ -217,7 +221,7 @@ ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
 
 "${python_bin}" "${script_dir}/audit_oss_capacity.py" >"${run_dir}/oss-capacity.json"
 
-echo "[7/7] 冻结生产回执并提交本地链状态"
+echo "[7/8] 冻结生产回执并提交本地链状态"
 python3 - "${prepared}" "${server_receipt}" "${run_dir}/cloud-verification.json" "${final_receipt}" <<'PY'
 import json,sys
 from datetime import datetime,timezone
@@ -244,4 +248,27 @@ PY
 
 release_completed=1
 trap - EXIT
+echo "[8/8] 即时同步本机活动索引并核验知识源完整性"
+local_sync_receipt="${run_dir}/local-release-sync.json"
+if ! env -u GITHUB_PAT_TOKEN -u GH_TOKEN -u EXA_API_KEY \
+  "${local_sync_python}" "${local_sync_script}" --apply --index-only \
+  >"${local_sync_receipt}"; then
+  echo "线上政策索引已正式发布，但本机即时同步失败；请用同一回执补跑：${local_sync_receipt}" >&2
+  exit 79
+fi
+python3 - "${local_sync_receipt}" "${prepared}" <<'PY'
+import json,sys
+receipt=json.load(open(sys.argv[1])); prepared=json.load(open(sys.argv[2]))
+if receipt.get("status") != "pass":
+    raise SystemExit("本机即时同步回执未通过")
+if receipt.get("scope") != "index-only":
+    raise SystemExit("本机即时同步范围不是index-only")
+index=receipt.get("index") or {}; knowledge=receipt.get("knowledge") or {}
+if index.get("release_id") != prepared.get("release_id"):
+    raise SystemExit("本机活动索引与本次正式发布ID不一致")
+if index.get("status") not in {"current","switched-and-verified"}:
+    raise SystemExit("本机活动索引切换未通过")
+if knowledge.get("status") != "complete":
+    raise SystemExit("本机知识源完整性验收未通过")
+PY
 echo "政策冻结交接包增量正式发布完成：${run_dir}"
