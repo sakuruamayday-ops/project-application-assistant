@@ -34,7 +34,7 @@ PHASE_GUARDS = {
     "functional": (
         "这是隔离的Codex客户端功能交付测试。只使用提示内的脱敏或虚构数据；"
         "除读取本项目 .agents/skills 下点名技能的说明和资源外，不读取其他工作区文件、历史任务或"
-        "客户资料，不联网，不请求额外权限。允许且只允许在 {artifact_dir} 写入本用例的测试状态与"
+        "客户资料；仅可额外读取用例明确列出的本地离线测试夹具。不联网，不请求额外权限。允许且只允许在 {artifact_dir} 写入本用例的测试状态与"
         "交付物；如技能需要持久化状态，必须将JIAOTANG_SKILL_DATA_DIR显式设为该目录，禁止写入"
         "用户配置目录、正式知识库或其他路径。若用例无需文件交付，可以只在回复中完成。"
     ),
@@ -124,8 +124,20 @@ def validate_matrix(matrix: dict, declared_skills: list[str]) -> list[dict]:
         if item["skill"] in item["implicit_prompt"]:
             raise RuntimeError(f"{item['skill']}隐式路由提示泄露目标技能名")
         expected_negative = item.get("negative_expected_skill")
-        if expected_negative == item["skill"]:
+        expected_behavior = item.get("negative_expected_behavior") or (
+            "rerouted" if expected_negative else "not_triggered"
+        )
+        if expected_behavior not in {"rerouted", "not_triggered", "refused_in_scope"}:
+            raise RuntimeError(f"{item['skill']}负向行为类型无效：{expected_behavior}")
+        if expected_behavior == "refused_in_scope":
+            if expected_negative != item["skill"]:
+                raise RuntimeError(f"{item['skill']}拒绝型负向用例必须由目标技能处理")
+        elif expected_negative == item["skill"]:
             raise RuntimeError(f"{item['skill']}负向用例不能仍期待目标技能")
+        elif expected_behavior == "rerouted" and not expected_negative:
+            raise RuntimeError(f"{item['skill']}重路由负向用例缺少期望技能")
+        elif expected_behavior == "not_triggered" and expected_negative:
+            raise RuntimeError(f"{item['skill']}不触发负向用例不应指定期望技能")
     return cases
 
 
@@ -193,10 +205,30 @@ def prepare(options: argparse.Namespace) -> dict:
     for item in cases:
         artifact_dir = run_dir / "artifacts" / f"{item['index']:02d}-{item['skill']}"
         artifact_dir.mkdir()
+        functional_fixture_path = None
+        fixture = item.get("functional_fixture")
+        if fixture:
+            filename = str(fixture.get("filename") or "").strip()
+            if not filename or Path(filename).name != filename:
+                raise RuntimeError(f"{item['skill']}离线夹具文件名无效")
+            functional_fixture_path = artifact_dir / filename
+            functional_fixture_path.write_text(
+                str(fixture.get("content") or ""),
+                encoding="utf-8",
+            )
+        raw_prompts = {
+            phase: item[f"{phase}_prompt"]
+            for phase in EXPECTED_PHASES
+        }
+        if functional_fixture_path:
+            raw_prompts["functional"] = raw_prompts["functional"].replace(
+                "{functional_fixture_path}",
+                str(functional_fixture_path),
+            )
         effective_prompts = {
             phase: effective_prompt(
                 phase,
-                item[f"{phase}_prompt"],
+                raw_prompts[phase],
                 artifact_dir=artifact_dir if phase == "functional" else None,
             )
             for phase in EXPECTED_PHASES
@@ -211,12 +243,15 @@ def prepare(options: argparse.Namespace) -> dict:
                 if record["skill"] == item["skill"]
             ),
             "functional_artifact_dir": str(artifact_dir),
+            "functional_fixture_path": (
+                str(functional_fixture_path) if functional_fixture_path else None
+            ),
             "prompt_sha256": {
                 phase: sha256_bytes(effective_prompts[phase].encode("utf-8"))
                 for phase in EXPECTED_PHASES
             },
             "raw_prompt_sha256": {
-                phase: sha256_bytes(item[f"{phase}_prompt"].encode("utf-8"))
+                phase: sha256_bytes(raw_prompts[phase].encode("utf-8"))
                 for phase in EXPECTED_PHASES
             },
             "effective_prompt": effective_prompts,

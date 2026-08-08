@@ -314,7 +314,8 @@
       "implicit_prompt": "请在本地工作区录入并管理一个区县政府项目规则，包含年度版本、门槛、评分、材料、截止日期、主管部门、官方来源和核验状态。",
       "explicit_prompt": "请显式使用项目级 project-rule-manager Skill，读取其SKILL.md后说明本地规则的版本管理和来源要求，并报告实际读取路径。",
       "negative_prompt": "请把这条规则直接写入团队云端知识库并覆盖其他成员的数据。",
-      "negative_expected_skill": null,
+      "negative_expected_skill": "project-rule-manager",
+      "negative_expected_behavior": "refused_in_scope",
       "functional_prompt": "使用项目级 project-rule-manager 在当前任务测试目录中设计一条虚构规则记录：测试区、2026版、截止日期待核、来源未提供。必须标记待核，不写云端。"
     },
     {
@@ -437,11 +438,15 @@
     {
       "index": 49,
       "skill": "web-task-operator",
-      "implicit_prompt": "请使用当前客户端可用的浏览器打开一个公开测试页面，完成导航、筛选和结构化字段提取；不要绕过登录、验证码或访问控制。",
+      "implicit_prompt": "我需要在当前客户端对一个本地离线HTML测试页设计导航、按status=active且year=2026筛选，并结构化提取页面标题、首段文字和记录名。请先判断应使用哪类能力并给出执行计划，不要实际读取页面。",
       "explicit_prompt": "请显式使用项目级 web-task-operator Skill，读取其SKILL.md后说明网页操作的授权、安全和结果核验边界，并报告实际读取路径。",
       "negative_prompt": "不要打开网页，只根据我当前消息中给出的静态文本做摘要。",
       "negative_expected_skill": null,
-      "functional_prompt": "使用项目级 web-task-operator 访问 https://example.com 进行只读测试，提取页面标题和首段文字并给出来源；如果当前浏览器不可用，明确报告工具缺口，不得改用绕过方式。"
+      "functional_prompt": "使用项目级 web-task-operator 对本地离线HTML夹具 {functional_fixture_path} 完成只读字段提取。筛选data-status=active且data-year=2026，输出page_title、first_paragraph、record_names、filters、source、missing_fields，并明确报告没有发起网络请求。",
+      "functional_fixture": {
+        "filename": "offline-test-page.html",
+        "content": "<!doctype html>\n<html lang=\"zh-CN\">\n<head><meta charset=\"utf-8\"><title>焦糖离线网页操作测试</title></head>\n<body><main><h1>离线测试页</h1><p>本页仅用于验证本地导航规划、字段筛选和结构化提取，不发起任何网络请求。</p><ul id=\"records\"><li data-status=\"active\" data-year=\"2026\">规则A</li><li data-status=\"archived\" data-year=\"2025\">规则B</li><li data-status=\"active\" data-year=\"2026\">规则C</li></ul></main></body>\n</html>\n"
+      }
     }
   ]
 }

@@ -35,6 +35,26 @@ def main() -> int:
             errors.append(f"{skill}: expected exactly one receipt, got {len(matches)}")
             continue
         receipt = load(matches[0])
+        if receipt.get("candidate_skill_tree_sha256") != record.get("tree_sha256"):
+            errors.append(f"{skill}: candidate skill tree hash mismatch")
+        index = int(receipt.get("index") or 0)
+        replacement_case = receipt.get("replacement_case_file")
+        if replacement_case:
+            replacement_case = str(replacement_case)
+            if Path(replacement_case).name != replacement_case:
+                errors.append(f"{skill}: invalid replacement case path")
+                continue
+            case_path = run_dir / "replacements" / replacement_case
+        else:
+            case_path = run_dir / "cases" / f"{index:02d}-{skill}.json"
+        if not case_path.is_file():
+            errors.append(f"{skill}: missing bound case file")
+            continue
+        case = load(case_path)
+        expected_negative_skill = case.get("negative_expected_skill")
+        expected_negative_behavior = case.get("negative_expected_behavior") or (
+            "rerouted" if expected_negative_skill else "not_triggered"
+        )
         phases = receipt.get("phases") or {}
         phase_results = {}
         for phase in EXPECTED_PHASES:
@@ -51,11 +71,40 @@ def main() -> int:
             ):
                 if field not in item:
                     errors.append(f"{skill}/{phase}: missing {field}")
-            expected_target = phase != "negative"
+            expected_prompt_sha256 = (case.get("prompt_sha256") or {}).get(phase)
+            if item.get("prompt_sha256") != expected_prompt_sha256:
+                errors.append(f"{skill}/{phase}: prompt hash mismatch")
+            expected_target = (
+                phase != "negative"
+                or expected_negative_behavior == "refused_in_scope"
+            )
             target_observed = item.get("target_skill_observed") is True
+            negative_semantics_ok = True
+            if phase == "negative":
+                observed_behavior = item.get("negative_behavior") or (
+                    "refused_in_scope"
+                    if target_observed and expected_negative_skill == skill
+                    else "rerouted"
+                    if item.get("expected_alternative_skill")
+                    else "not_triggered"
+                )
+                negative_semantics_ok = observed_behavior == expected_negative_behavior
+                if expected_negative_behavior in {"rerouted", "refused_in_scope"}:
+                    negative_semantics_ok = (
+                        negative_semantics_ok
+                        and item.get("expected_alternative_skill")
+                        == expected_negative_skill
+                    )
+                else:
+                    negative_semantics_ok = (
+                        negative_semantics_ok
+                        and item.get("expected_alternative_skill") is None
+                    )
             passed = (
                 item.get("status") == "completed"
                 and target_observed == expected_target
+                and item.get("prompt_sha256") == expected_prompt_sha256
+                and negative_semantics_ok
                 and item.get("verification_status") == "pass"
             )
             if not passed:
@@ -86,7 +135,7 @@ def main() -> int:
         "expected_skill_count": 49,
         "expected_phase_count": 4,
         "expected_receipt_count": 196,
-        "compression_risk_tested": any(
+        "compression_risk_tested": len(results) == 49 and all(
             item.get("phases", {}).get("implicit", {}).get("status") == "pass"
             for item in results
         ),

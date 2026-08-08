@@ -37,6 +37,19 @@ class CodexClientHarnessTests(unittest.TestCase):
             prompt = PREPARE.effective_prompt("implicit", case["implicit_prompt"])
             self.assertNotIn(case["skill"], prompt)
             self.assertIn("不读取其他工作区文件", prompt)
+        by_skill = {case["skill"]: case for case in cases}
+        self.assertEqual(
+            by_skill["project-rule-manager"]["negative_expected_behavior"],
+            "refused_in_scope",
+        )
+        self.assertEqual(
+            by_skill["project-rule-manager"]["negative_expected_skill"],
+            "project-rule-manager",
+        )
+        self.assertNotIn(
+            "https://",
+            by_skill["web-task-operator"]["functional_prompt"],
+        )
 
     def test_prepare_creates_project_snapshot_and_compression_audit(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -84,6 +97,14 @@ class CodexClientHarnessTests(unittest.TestCase):
                 "JIAOTANG_SKILL_DATA_DIR",
                 first_case["effective_prompt"]["functional"],
             )
+            web_case = json.loads(
+                (root / ".codex-client-harness/runs/test-run/cases/49-web-task-operator.json")
+                .read_text(encoding="utf-8")
+            )
+            fixture_path = Path(web_case["functional_fixture_path"])
+            self.assertTrue(fixture_path.is_file())
+            self.assertIn(str(fixture_path), web_case["effective_prompt"]["functional"])
+            self.assertNotIn("https://", web_case["effective_prompt"]["functional"])
 
 
 if __name__ == "__main__":
