@@ -106,6 +106,10 @@ def test_existing_transition_is_reused_when_only_timestamp_differs() -> None:
 def test_initialize_requires_exact_complete_baseline(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # GitHub Actions commonly uses overlayfs, which does not guarantee reflink
+    # support. This fixture is deliberately tiny and tests baseline integrity,
+    # not the production no-full-copy default.
+    monkeypatch.setenv("JIAOTANG_POLICY_ALLOW_FULL_COPY", "1")
     monkeypatch.setattr(
         release,
         "PRODUCTION_FILES",
