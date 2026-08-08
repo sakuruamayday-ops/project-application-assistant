@@ -92,6 +92,7 @@ def test_deploy_verifies_signed_index_binding_without_refreshing_index():
         if line.startswith("ReadWritePaths=")
     ).split("=", 1)[1].split()
     assert "/etc" in deployment_writable_paths
+    assert "/opt/jiaotang-kb-release-slots" in deployment_writable_paths
     assert "/etc/jiaotang-kb-ops.env" not in deployment_writable_paths
     assert "/etc/jiaotang-kb-app.env" not in deployment_writable_paths
     assert "replaces both environment files atomically" in deployment_service

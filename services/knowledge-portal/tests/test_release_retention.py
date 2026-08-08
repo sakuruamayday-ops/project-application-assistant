@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import errno
 from pathlib import Path
 
 import pytest
@@ -78,3 +79,29 @@ def test_retention_refuses_pointer_outside_generation_root(tmp_path: Path):
         MODULE.prune_release_generations(generations, pointers, apply=True)
 
     assert previous.is_dir()
+
+
+def test_retention_never_falls_back_to_copy_then_delete(
+    tmp_path: Path, monkeypatch
+):
+    generations, pointers, current, previous, stale_a, stale_b = make_layout(
+        tmp_path
+    )
+    trash = tmp_path / "trash"
+    real_rename = MODULE.os.rename
+
+    def reject_release_move(source, destination):
+        if Path(source).parent == generations:
+            raise OSError(errno.EXDEV, "cross-device move forbidden")
+        return real_rename(source, destination)
+
+    monkeypatch.setattr(MODULE.os, "rename", reject_release_move)
+
+    with pytest.raises(OSError, match="cross-device move forbidden"):
+        MODULE.prune_release_generations(
+            generations, pointers, apply=True, trash_root=trash
+        )
+
+    assert current.is_dir() and previous.is_dir()
+    assert stale_a.is_dir() and stale_b.is_dir()
+    assert list(trash.iterdir()) == []

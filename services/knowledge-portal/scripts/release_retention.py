@@ -14,7 +14,6 @@ import json
 import os
 import re
 import secrets
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -130,12 +129,19 @@ def prune_release_generations(
             raise RuntimeError("回收站目录不得为系统根目录或符号链接")
         trash_root.mkdir(parents=True, exist_ok=True)
         trash_root = trash_root.resolve(strict=True)
+        if generation_root.stat().st_dev != trash_root.stat().st_dev:
+            raise RuntimeError(
+                "发布槽与可恢复回收区不在同一文件系统，拒绝复制后删除"
+            )
         for item in report["candidates"]:
             original = Path(str(item["path"]))
             destination = trash_root / (
                 f"jiaotang-release-{original.name}-{os.getpid()}-{secrets.token_hex(4)}"
             )
-            shutil.move(str(original), str(destination))
+            # Retention is an atomic same-filesystem rename.  Never fall back
+            # to copy-then-delete, which can duplicate a large release before
+            # a sandbox or permission error prevents the source removal.
+            os.rename(original, destination)
             moved = {**item, "trash_path": str(destination)}
             trashed.append(moved)
             removed.append(moved)

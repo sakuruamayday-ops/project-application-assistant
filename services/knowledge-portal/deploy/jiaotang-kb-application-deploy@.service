@@ -16,4 +16,4 @@ ProtectHome=true
 ProtectSystem=strict
 # The transaction replaces both environment files atomically.  Rename needs
 # write access to their parent directory, not only the existing file inodes.
-ReadWritePaths=/etc /opt/jiaotang-kb-runtime /var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /run/lock
+ReadWritePaths=/etc /opt/jiaotang-kb-runtime /opt/jiaotang-kb-release-slots /var/lib/jiaotang-kb /srv/jiaotang/knowledge-index /run/lock
