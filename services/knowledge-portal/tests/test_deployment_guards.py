@@ -229,6 +229,10 @@ def test_deploy_preflights_signed_binding_before_detached_transaction():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
 
     assert "scripts/oss_reconciliation.py" in deploy_script
+    assert "scripts/stream_to_command.py" in deploy_script
+    assert deploy_script.count('python3 "${script_dir}/stream_to_command.py"') == 3
+    assert "JIAOTANG_DEPLOY_TRANSFER_STALL_TIMEOUT_SECONDS" in deploy_script
+    assert "JIAOTANG_DEPLOY_TRANSFER_COMPLETION_TIMEOUT_SECONDS" in deploy_script
     preflight = deploy_script.index("verify_index_release_binding.py")
     private_guard = deploy_script.index(
         "JIAOTANG_APP_DIR='${remote_release_dir}'"

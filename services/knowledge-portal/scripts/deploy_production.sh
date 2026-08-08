@@ -94,6 +94,8 @@ ssh_args=(
     -o ServerAliveInterval=15
     -o ServerAliveCountMax=4
 )
+transfer_stall_timeout_seconds="${JIAOTANG_DEPLOY_TRANSFER_STALL_TIMEOUT_SECONDS:-60}"
+transfer_completion_timeout_seconds="${JIAOTANG_DEPLOY_TRANSFER_COMPLETION_TIMEOUT_SECONDS:-120}"
 
 for command in ssh tar; do
     command -v "${command}" >/dev/null || {
@@ -302,6 +304,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py \
     scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
     scripts/oss_reconciliation.py \
+    scripts/stream_to_command.py \
     scripts/release_progress.py \
     scripts/oss_auth.py scripts/verify_acceptance_receipt.py \
     scripts/verify_index_release_binding.py \
@@ -329,17 +332,29 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     requirements-lock-metadata.json \
     -C "${repository_dir}" \
     skills \
-    | ssh "${ssh_args[@]}" "${deploy_host}" \
+    | python3 "${script_dir}/stream_to_command.py" \
+        --label application-source \
+        --stall-timeout-seconds "${transfer_stall_timeout_seconds}" \
+        --completion-timeout-seconds "${transfer_completion_timeout_seconds}" \
+        -- ssh "${ssh_args[@]}" "${deploy_host}" \
         "tar -C '${remote_release_dir}' -xf -"
 ssh "${ssh_args[@]}" "${deploy_host}" \
     "mkdir '${remote_release_dir}/dependency-wheelhouse'"
 COPYFILE_DISABLE=1 tar --no-xattrs -C "${wheelhouse_dir}" -cf - . \
-    | ssh "${ssh_args[@]}" "${deploy_host}" \
+    | python3 "${script_dir}/stream_to_command.py" \
+        --label dependency-wheelhouse \
+        --stall-timeout-seconds "${transfer_stall_timeout_seconds}" \
+        --completion-timeout-seconds "${transfer_completion_timeout_seconds}" \
+        -- ssh "${ssh_args[@]}" "${deploy_host}" \
         "tar -C '${remote_release_dir}/dependency-wheelhouse' -xf -"
 COPYFILE_DISABLE=1 tar --no-xattrs \
     -C "$(dirname "${dependency_release_record}")" -cf - \
     "$(basename "${dependency_release_record}")" \
-    | ssh "${ssh_args[@]}" "${deploy_host}" \
+    | python3 "${script_dir}/stream_to_command.py" \
+        --label dependency-release-record \
+        --stall-timeout-seconds "${transfer_stall_timeout_seconds}" \
+        --completion-timeout-seconds "${transfer_completion_timeout_seconds}" \
+        -- ssh "${ssh_args[@]}" "${deploy_host}" \
         "tar -C '${remote_release_dir}' -xf -"
 
 private_overlay_identity_sha256="$(
