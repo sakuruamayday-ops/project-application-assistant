@@ -50,6 +50,21 @@ from scripts.verify_acceptance_receipt import (
 )
 
 
+@pytest.fixture(autouse=True)
+def stub_oss_knowledge_completeness_gate(monkeypatch):
+    monkeypatch.setattr(
+        publish_module,
+        "verify_current_allowlist_complete",
+        lambda *_args, **_kwargs: {
+            "current_expected_count": 0,
+            "remote_object_count": 0,
+            "missing_current_count": 0,
+            "missing_current_bytes": 0,
+            "size_mismatch_count": 0,
+        },
+    )
+
+
 class FakeRemote:
     def __init__(self, payload: bytes, headers: dict[str, str], etag: str) -> None:
         self.payload = payload

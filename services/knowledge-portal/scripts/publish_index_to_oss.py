@@ -18,6 +18,7 @@ import oss2
 
 try:
     from scripts.oss_auth import build_bucket
+    from scripts.oss_reconciliation import verify_current_allowlist_complete
     from scripts.release_progress import TransferProgress, emit_progress
     from scripts.verify_acceptance_receipt import (
         DEFAULT_PROFILE,
@@ -25,6 +26,7 @@ try:
     )
 except ImportError:  # direct script execution
     from oss_auth import build_bucket
+    from oss_reconciliation import verify_current_allowlist_complete
     from release_progress import TransferProgress, emit_progress
     from verify_acceptance_receipt import (
         DEFAULT_PROFILE,
@@ -764,6 +766,17 @@ def main() -> None:
             raise RuntimeError(f"Acceptance Harness回执不可用：{receipt_path}") from error
         if not isinstance(receipt, dict):
             raise RuntimeError("Acceptance Harness回执必须是JSON对象")
+        emit_progress("oss-knowledge-completeness", "started", item="current-allowlist")
+        knowledge_completeness = verify_current_allowlist_complete(
+            bucket,
+            args.index_dir / "upload_allowlist.csv",
+            prefix=prefix,
+        )
+        emit_progress(
+            "oss-knowledge-completeness",
+            "completed",
+            item=f"objects={knowledge_completeness['current_expected_count']}",
+        )
         receipt_body, receipt_signature_body = signed_document(receipt, secret)
         receipt_digest = sha256_bytes(receipt_body)
         emit_progress("index-release", "started", item="prepare-metadata")
@@ -952,6 +965,7 @@ def main() -> None:
                 "objects_uploaded": uploaded,
                 "objects_existing": existing,
                 "pointer": switch_status,
+                "knowledge_completeness": knowledge_completeness,
             },
             ensure_ascii=False,
             indent=2,

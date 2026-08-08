@@ -51,6 +51,7 @@ fi
 release_run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 timing_file="${JIAOTANG_DEPLOY_TIMING_FILE:-/Users/zsh/JiaotangData/索引/release-timings/${release_run_id}.jsonl}"
 mkdir -p "$(dirname "${timing_file}")"
+oss_reconcile_dir="${JIAOTANG_OSS_RECONCILIATION_ROOT:-/Users/zsh/JiaotangData/索引/oss-reconciliation}/${release_run_id}"
 release_started_epoch="$(date +%s)"
 previous_stage_epoch="${release_started_epoch}"
 active_stage=""
@@ -438,6 +439,12 @@ fi
 python3 "${script_dir}/publish_index_to_oss.py" "${index_publish_args[@]}"
 stage_mark "signed-index-release" "passed"
 
+stage_mark "oss-retention-plan" "started"
+python3 "${script_dir}/oss_reconciliation.py" \
+  --output-dir "${oss_reconcile_dir}" \
+  --require-current-complete
+stage_mark "oss-retention-plan" "passed"
+
 stage_mark "server-index-refresh" "started"
 JIAOTANG_INDEX_PATH="${index_dir}/knowledge_content.sqlite3" \
 JIAOTANG_INDEX_PREVALIDATED=1 \
@@ -469,3 +476,4 @@ echo "[发布5/5] 容量熔断已由本次不可变release发布前后聚合校�
 
 echo "manifest冻结、去重上传、二次校验、索引发布和容量复核五步流水线完成。"
 echo "阶段计时记录：${timing_file}"
+echo "OSS两套保留对账与完整清理计划：${oss_reconcile_dir}"
