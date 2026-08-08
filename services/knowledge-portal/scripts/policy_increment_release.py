@@ -194,7 +194,7 @@ def verify_signed_document(payload: dict[str, Any], public_key: Ed25519PublicKey
 def pointer_for_state(state: dict[str, Any], private_key: Ed25519PrivateKey) -> dict[str, Any]:
     payload = {
         "schema": POINTER_SCHEMA,
-        "updated_at": utc_now(),
+        "updated_at": state.get("updated_at") or state.get("created_at") or utc_now(),
         "key_id": state["key_id"],
         "base_release_id": state["base_release_id"],
         "base_index_sha256": state["base_index_sha256"],
@@ -347,6 +347,10 @@ def command_prepare(args: argparse.Namespace) -> dict[str, Any]:
         previous_chain_sha256=state["current_chain_sha256"],
     )
     result = build_package(namespace)
+    delta_manifest = load_json(package_dir / "delta_manifest.json", "增量manifest")
+    event_time = str(delta_manifest.get("generated_at") or "")
+    if not event_time:
+        raise PolicyIncrementError("增量manifest缺少确定性generated_at")
     for name in PRODUCTION_FILES:
         target = raw_candidate / name
         if target.exists():
@@ -368,12 +372,12 @@ def command_prepare(args: argparse.Namespace) -> dict[str, Any]:
         "candidate_index_sha256": result["candidate_index_sha256"],
         "candidate_manifest_sha256": result["candidate_manifest_sha256"],
         "delta_prefix": f"{policy_root}/deltas/{chain_sha}",
-        "published_at": utc_now(),
+        "published_at": event_time,
     }
     release = {
         "schema": MANIFEST_SCHEMA,
         "release_id": release_id,
-        "created_at": utc_now(),
+        "created_at": event_time,
         "previous_release_id": state["current_release_id"],
         "files": [metadata for _, metadata in files],
         "file_whitelist": list(PRODUCTION_FILES),
@@ -392,7 +396,7 @@ def command_prepare(args: argparse.Namespace) -> dict[str, Any]:
     new_state = dict(state)
     new_state.update(
         {
-            "updated_at": utc_now(),
+            "updated_at": event_time,
             "current_release_id": release_id,
             "current_index_dir": str(raw_candidate),
             "current_index_sha256": result["candidate_index_sha256"],

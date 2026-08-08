@@ -43,6 +43,30 @@ def test_signed_pointer_detects_tampering(tmp_path: Path) -> None:
         release.verify_signed_document(payload, public_key)
 
 
+def test_pointer_is_byte_stable_for_same_state(tmp_path: Path) -> None:
+    private_path = tmp_path / "private.pem"
+    public_path = tmp_path / "public.pem"
+    generate_key(private_path, public_path)
+    private_key = release.load_private_key(private_path)
+    public_key = release.load_public_key(public_path)
+    state = {
+        "updated_at": "2026-08-08T08:22:21+08:00",
+        "key_id": release.public_key_id(public_key),
+        "base_release_id": "index-base",
+        "base_index_sha256": "11" * 32,
+        "base_manifest_sha256": "22" * 32,
+        "base_chain_sha256": "33" * 32,
+        "current_release_id": "policy-current",
+        "current_chain_sha256": "44" * 32,
+        "current_index_sha256": "55" * 32,
+        "current_manifest_sha256": "66" * 32,
+        "entries": [],
+    }
+    first = release.pointer_for_state(state, private_key)
+    second = release.pointer_for_state(state, private_key)
+    assert release.canonical_json_bytes(first) == release.canonical_json_bytes(second)
+
+
 def test_initialize_requires_exact_complete_baseline(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
