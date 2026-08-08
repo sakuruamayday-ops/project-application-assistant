@@ -303,6 +303,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
     scripts/run_acceptance_harness.py \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py \
     scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
+    scripts/release_retention.py \
     scripts/oss_reconciliation.py \
     scripts/stream_to_command.py \
     scripts/release_progress.py \

@@ -198,6 +198,13 @@ def test_deploy_rolls_back_previous_release_when_new_index_health_fails():
     assert "rsync " not in delta_script
 
 
+def test_deploy_transfers_release_retention_dependency():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
+
+    assert "scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py" in deploy_script
+    assert "scripts/release_retention.py" in deploy_script
+
+
 def test_deploy_injects_and_verifies_exact_build_identity():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
     transaction = (SCRIPT_DIR / "run_application_deployment.py").read_text(
