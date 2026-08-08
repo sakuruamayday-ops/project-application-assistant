@@ -238,5 +238,9 @@ def test_shell_release_contract_has_rollback_and_page_aligned_rsync() -> None:
     assert "政策增量release健康失败，已自动回滚" in deploy
     assert "rollback-pointer" in release_script
     assert "restore-legacy-verifier" in release_script
+    assert "JIAOTANG_POLICY_RESUME_PREPARED" in release_script
+    assert "复用原冻结发布包续发" in release_script
+    assert "续发冻结产物与本次交接包不一致" in release_script
+    assert "install_target}-repeat-" in deploy
     assert release_script.index("upload-immutable") < release_script.index("pause-verifiers")
     assert release_script.index("pause-verifiers") < release_script.index("switch-pointer")

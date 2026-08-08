@@ -26,9 +26,16 @@ private_key="${JIAOTANG_POLICY_PRIVATE_KEY:-/Users/zsh/.config/project-assistant
 public_key="${JIAOTANG_POLICY_PUBLIC_KEY:-/Users/zsh/.config/project-assistant/policy-increment-chain/ed25519-public.pem}"
 baseline_source="${JIAOTANG_POLICY_BASELINE_SOURCE:-/Users/zsh/JiaotangData/索引/candidates/identity-reverse-lookup.RtlTpt/index}"
 python_bin="${JIAOTANG_POLICY_PYTHON:-/Users/zsh/Documents/分析/项目申报助手/services/knowledge-portal/.venv/bin/python}"
-run_id="$(date -u +%Y%m%dT%H%M%SZ)-$(basename "${handoff_dir}")"
-run_dir="${state_root}/runs/${run_id}"
-prepared="${run_dir}/prepared-release.json"
+resume_prepared="${JIAOTANG_POLICY_RESUME_PREPARED:-}"
+if [[ -n "${resume_prepared}" ]]; then
+  prepared="$(cd "$(dirname "${resume_prepared}")" && pwd -P)/$(basename "${resume_prepared}")"
+  run_dir="$(dirname "${prepared}")"
+  run_id="$(basename "${run_dir}")"
+else
+  run_id="$(date -u +%Y%m%dT%H%M%SZ)-$(basename "${handoff_dir}")"
+  run_dir="${state_root}/runs/${run_id}"
+  prepared="${run_dir}/prepared-release.json"
+fi
 server_receipt="${run_dir}/server-deploy-receipt.json"
 final_receipt="${run_dir}/production-deployment-receipt.json"
 deploy_lock="/Users/zsh/.cache/jiaotang/deploy-production.lock"
@@ -77,6 +84,26 @@ trap rollback_on_failure EXIT
 [[ -d "${handoff_dir}" ]] || { echo "冻结交接包目录不存在：${handoff_dir}" >&2; exit 1; }
 [[ -f "${deploy_key}" ]] || { echo "SSH发布密钥不存在：${deploy_key}" >&2; exit 1; }
 [[ -x "${python_bin}" ]] || { echo "政策增量Python运行时不可用：${python_bin}" >&2; exit 1; }
+if [[ -n "${resume_prepared}" ]]; then
+  [[ -f "${prepared}" ]] || { echo "续发冻结产物不存在：${prepared}" >&2; exit 1; }
+  python3 - "${prepared}" "${handoff_dir}" "${state_root}" <<'PY'
+import json,sys
+from pathlib import Path
+prepared=Path(sys.argv[1]).resolve()
+payload=json.loads(prepared.read_text())
+expected_handoff=Path(sys.argv[2]).resolve()
+expected_state_root=Path(sys.argv[3]).resolve()
+if Path(payload["run_dir"]).resolve() != prepared.parent:
+    raise SystemExit("续发冻结产物run_dir不一致")
+if Path(payload["handoff_dir"]).resolve() != expected_handoff:
+    raise SystemExit("续发冻结产物与本次交接包不一致")
+if Path(payload["state_root"]).resolve() != expected_state_root:
+    raise SystemExit("续发冻结产物与本次状态根目录不一致")
+for key in ("package_dir","candidate_index_dir","pending_state_path","pointer_path","previous_pointer_path","upload_manifest","upload_allowlist"):
+    if not Path(payload[key]).exists():
+        raise SystemExit(f"续发冻结产物缺少依赖：{key}")
+PY
+fi
 
 while IFS='=' read -r key value; do
   case "${key}" in
@@ -88,7 +115,7 @@ done < <(ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
   'env_file=/etc/jiaotang-kb-ops.env; grep -E "^JIAOTANG_OSS_(ENDPOINT|BUCKET|ACCESS_KEY_ID|ACCESS_KEY_SECRET|PREFIX|AUTH_MODE|SECURITY_TOKEN|RAM_ROLE_AUTH_HOST)=" "${env_file}"')
 export JIAOTANG_OSS_ENDPOINT="${JIAOTANG_OSS_ENDPOINT/oss-cn-hangzhou-internal/oss-cn-hangzhou}"
 
-if [[ ! -f "${state_root}/state.json" ]]; then
+if [[ -z "${resume_prepared}" && ! -f "${state_root}/state.json" ]]; then
   base_release_json="$(mktemp -t jiaotang-policy-base-release.XXXXXX.json)"
   remote_base_id="$(ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
     'basename "$(readlink -f /srv/jiaotang/knowledge-index/current)"')"
@@ -105,11 +132,15 @@ if [[ ! -f "${state_root}/state.json" ]]; then
   mv "${base_release_json}" "${state_root}/baselines/${remote_base_id}/source-release.json"
 fi
 
-"${python_bin}" "${script_dir}/policy_increment_release.py" prepare \
-  --handoff-dir "${handoff_dir}" \
-  --run-dir "${run_dir}" \
-  --state-root "${state_root}" \
-  --private-key "${private_key}"
+if [[ -z "${resume_prepared}" ]]; then
+  "${python_bin}" "${script_dir}/policy_increment_release.py" prepare \
+    --handoff-dir "${handoff_dir}" \
+    --run-dir "${run_dir}" \
+    --state-root "${state_root}" \
+    --private-key "${private_key}"
+else
+  echo "复用原冻结发布包续发：${prepared}"
+fi
 
 echo "[1/7] 仅上传冻结交接包中的SHA-256内容寻址对象"
 "${python_bin}" "${script_dir}/upload_manifest_to_oss.py" \

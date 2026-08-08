@@ -57,7 +57,14 @@ PY
       mkdir -p /etc/jiaotang-kb
       systemctl daemon-reload
       trap - EXIT
-      mv \"\${staging}\" /var/lib/jiaotang-kb/policy-increment-install-${verifier_sha}"
+      install_target=/var/lib/jiaotang-kb/policy-increment-install-${verifier_sha}
+      if [ -e \"\${install_target}\" ]; then
+        existing=\$(sha256sum \"\${install_target}/scripts/verify_policy_increment_server.py\" | awk '{print \$1}')
+        [ \"\${existing}\" = '${verifier_sha}' ]
+        mv \"\${staging}\" \"\${install_target}-repeat-\$(date +%s)-\$\$\"
+      else
+        mv \"\${staging}\" \"\${install_target}\"
+      fi"
   remote_public_sha="$("${ssh_base[@]}" \
     "if [ -f /etc/jiaotang-kb/policy-increment-public.pem ]; then sha256sum /etc/jiaotang-kb/policy-increment-public.pem | awk '{print \$1}'; fi")"
   local_public_sha="$(shasum -a 256 "${public_key}" | awk '{print $1}')"
