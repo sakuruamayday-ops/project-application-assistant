@@ -160,6 +160,60 @@ def test_candidate_environment_is_activated_atomically_with_fixed_modes(tmp_path
     assert app_target.stat().st_mode & 0o777 == 0o640
 
 
+def test_configure_policy_verifier_refreshes_receipt_immediately(
+    tmp_path, monkeypatch
+):
+    module = load_script("run_application_deployment.py")
+    index_root = tmp_path / "index"
+    release_dir = index_root / "releases" / "policy-current"
+    release_dir.mkdir(parents=True)
+    (release_dir / "release.json").write_text(
+        json.dumps({"storage_mode": "signed-policy-delta-chain-v1"}),
+        encoding="utf-8",
+    )
+    (index_root / "current").symlink_to(Path("releases") / "policy-current")
+    unchecked: list[list[str]] = []
+    checked: list[tuple[list[str], int]] = []
+    monkeypatch.setattr(
+        module.subprocess,
+        "run",
+        lambda command, **_kwargs: unchecked.append(command),
+    )
+    monkeypatch.setattr(
+        module,
+        "run_checked",
+        lambda command, *, timeout=180: checked.append((command, timeout)),
+    )
+
+    selected = module.configure_index_verifier(
+        {"JIAOTANG_INDEX_DIR": str(index_root)}
+    )
+
+    assert selected == "jiaotang-kb-policy-increment-verify.timer"
+    assert unchecked == [
+        ["systemctl", "disable", "--now", "jiaotang-kb-oss-verify.timer"]
+    ]
+    assert checked == [
+        (
+            [
+                "systemctl",
+                "enable",
+                "--now",
+                "jiaotang-kb-policy-increment-verify.timer",
+            ],
+            180,
+        ),
+        (
+            [
+                "systemctl",
+                "start",
+                "jiaotang-kb-policy-increment-verify.service",
+            ],
+            900,
+        ),
+    ]
+
+
 def test_code_transaction_failure_rolls_back_without_index_operation(
     tmp_path, monkeypatch
 ):

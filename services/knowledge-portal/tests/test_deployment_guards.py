@@ -216,6 +216,12 @@ def test_code_preflight_selects_the_active_index_verifier():
     assert "signed-policy-delta-chain-v1" in deploy_script
     assert "configure_index_verifier(app_env)" in transaction
     assert "jiaotang-kb-policy-increment-verify.timer" in transaction
+    assert 'desired.removesuffix(".timer") + ".service"' in transaction
+    policy_service = (
+        DEPLOY_DIR / "jiaotang-kb-policy-increment-verify.service"
+    ).read_text(encoding="utf-8")
+    assert "User=root" in policy_service
+    assert "Group=jiaotang" in policy_service
 
 
 def test_deploy_injects_and_verifies_exact_build_identity():

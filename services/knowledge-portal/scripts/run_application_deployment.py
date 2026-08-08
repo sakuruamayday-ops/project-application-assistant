@@ -368,6 +368,11 @@ def configure_index_verifier(app_env: dict[str, str]) -> str:
         timeout=180,
     )
     run_checked(["systemctl", "enable", "--now", desired])
+    # Starting an already-active timer does not run its oneshot immediately.
+    # Refresh the verifier receipt now so the health gate never consumes a
+    # stale receipt with permissions or metadata from the previous verifier.
+    verifier_service = desired.removesuffix(".timer") + ".service"
+    run_checked(["systemctl", "start", verifier_service], timeout=900)
     return desired
 
 
