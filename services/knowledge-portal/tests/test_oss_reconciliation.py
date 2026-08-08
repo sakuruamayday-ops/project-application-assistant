@@ -135,3 +135,40 @@ def test_direct_index_publish_checks_knowledge_before_pointer_switch() -> None:
     switch = source.index("switch_status = switch_pointer_cas(")
 
     assert gate < upload < switch
+
+
+def test_plan_sha_is_stable_across_observation_time_and_execution_state() -> None:
+    plan = {
+        "schema": module.PLAN_SCHEMA,
+        "generated_at": "2026-08-08T00:00:00+00:00",
+        "bucket": "fixture",
+        "pointer_sha256": "a" * 64,
+        "permanent_delete_versions": [
+            {"object_key": "production/stale", "version_id": "v1", "size_bytes": 7}
+        ],
+        "permanent_delete_applied": False,
+    }
+    expected = module.calculate_plan_sha256(plan)
+
+    plan["generated_at"] = "2026-08-09T00:00:00+00:00"
+    plan["permanent_delete_applied"] = True
+    plan["plan_sha256"] = "ignored"
+
+    assert module.calculate_plan_sha256(plan) == expected
+
+
+def test_plan_sha_changes_when_exact_version_target_changes() -> None:
+    plan = {
+        "schema": module.PLAN_SCHEMA,
+        "generated_at": "2026-08-08T00:00:00+00:00",
+        "bucket": "fixture",
+        "pointer_sha256": "a" * 64,
+        "permanent_delete_versions": [
+            {"object_key": "production/stale", "version_id": "v1", "size_bytes": 7}
+        ],
+        "permanent_delete_applied": False,
+    }
+    original = module.calculate_plan_sha256(plan)
+    plan["permanent_delete_versions"][0]["version_id"] = "v2"
+
+    assert module.calculate_plan_sha256(plan) != original

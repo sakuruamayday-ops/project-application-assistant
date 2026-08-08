@@ -29,7 +29,7 @@ except ImportError:  # direct script execution
 
 
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
-PLAN_SCHEMA = "jiaotang-oss-retention-plan/v1"
+PLAN_SCHEMA = "jiaotang-oss-retention-plan/v2"
 
 
 def canonical_json(payload: dict[str, Any]) -> bytes:
@@ -42,6 +42,22 @@ def canonical_json(payload: dict[str, Any]) -> bytes:
         )
         + "\n"
     ).encode("utf-8")
+
+
+def calculate_plan_sha256(plan: dict[str, Any]) -> str:
+    """Return a stable identity for the exact cleanup target set.
+
+    Observation time and execution status are audit metadata, not part of the
+    authorised target set.  Excluding them keeps repeated read-only
+    reconciliation of unchanged OSS state anchored to the same SHA-256.
+    """
+
+    identity = {
+        key: value
+        for key, value in plan.items()
+        if key not in {"generated_at", "permanent_delete_applied", "plan_sha256"}
+    }
+    return hashlib.sha256(canonical_json(identity)).hexdigest()
 
 
 def utc_now() -> str:
@@ -448,7 +464,7 @@ def build_retention_plan(
         "version_ids_included": include_version_ids,
         "permanent_delete_applied": False,
     }
-    plan["plan_sha256"] = hashlib.sha256(canonical_json(plan)).hexdigest()
+    plan["plan_sha256"] = calculate_plan_sha256(plan)
     return plan
 
 
