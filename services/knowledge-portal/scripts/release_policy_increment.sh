@@ -164,7 +164,11 @@ JIAOTANG_DEPLOY_HOST="${deploy_host}" JIAOTANG_DEPLOY_KEY="${deploy_key}" \
 JIAOTANG_POLICY_PREPARED_RELEASE="${prepared}" \
 JIAOTANG_POLICY_DEPLOY_RECEIPT="${server_receipt}" \
   "${script_dir}/deploy_policy_increment_to_server.sh" deploy
-server_deployed=1
+server_deployed="$(python3 - "${server_receipt}" <<'PY'
+import json,sys
+print("1" if json.load(open(sys.argv[1])).get("deployment_action") == "switched" else "0")
+PY
+)"
 
 echo "[5/7] CAS切换Ed25519增量链current并启用每小时链验证"
 "${python_bin}" "${script_dir}/policy_increment_release.py" switch-pointer \

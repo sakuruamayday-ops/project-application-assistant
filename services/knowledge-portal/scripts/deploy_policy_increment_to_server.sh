@@ -168,6 +168,7 @@ rsync_stats="$(dirname "${receipt_path}")/rsync-stats.txt"
 mkdir -p "$(dirname "${receipt_path}")"
 
 if [[ "$(basename "${remote_current}")" != "${release_id}" ]]; then
+  deployment_action="switched"
   rsync --archive --no-owner --no-group --no-whole-file --checksum \
     --block-size=4096 --stats --partial-dir=.policy-rsync-partial \
     -e "ssh -i ${deploy_key} -o BatchMode=yes" \
@@ -233,11 +234,12 @@ PY
     activated=0
     trap - EXIT"
 else
+  deployment_action="already-current"
   : > "${rsync_stats}"
 fi
 
 python3 - "${receipt_path}" "${release_id}" "${previous_release_id}" "${chain_sha}" \
-  "${index_sha}" "${manifest_sha}" "${rsync_stats}" <<'PY'
+  "${index_sha}" "${manifest_sha}" "${rsync_stats}" "${deployment_action}" <<'PY'
 import json,re,sys
 from datetime import datetime,timezone
 from pathlib import Path
@@ -252,7 +254,7 @@ payload={
  'completed_at':datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z'),
  'release_id':sys.argv[2],'previous_release_id':sys.argv[3],'chain_sha256':sys.argv[4],
  'candidate_index_sha256':sys.argv[5],'candidate_manifest_sha256':sys.argv[6],
- 'server_status':'healthy',
+ 'server_status':'healthy','deployment_action':sys.argv[8],
  'rsync_literal_bytes':value(('Literal data','Unmatched data')),
  'rsync_total_sent_bytes':value(('Total bytes sent','Total sent')),
  'rsync_total_received_bytes':value(('Total bytes received','Total received')),

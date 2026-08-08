@@ -487,6 +487,35 @@ def put_immutable_file(bucket: object, key: str, path: Path) -> str:
     return put_immutable_bytes(bucket, key, payload)
 
 
+def put_or_verify_transition(bucket: object, key: str, payload: dict[str, Any]) -> str:
+    remote = immutable_head(bucket, key)
+    if remote is None:
+        return put_immutable_bytes(bucket, key, canonical_json_bytes(payload))
+    raw = bucket.get_object(key).read()
+    digest = hashlib.sha256(raw).hexdigest()
+    if (
+        int(remote.content_length) != len(raw)
+        or str(remote.headers.get("x-oss-meta-sha256", "")) != digest
+    ):
+        raise PolicyIncrementError(f"OSS迁移凭证身份异常：{key}")
+    try:
+        existing = json.loads(raw)
+    except (TypeError, ValueError) as exc:
+        raise PolicyIncrementError(f"OSS迁移凭证不是有效JSON：{key}") from exc
+    semantic_fields = (
+        "schema",
+        "reason",
+        "expected_chain_sha256",
+        "target_chain_sha256",
+        "target_pointer_sha256",
+    )
+    if not isinstance(existing, dict) or any(
+        existing.get(field) != payload.get(field) for field in semantic_fields
+    ):
+        raise PolicyIncrementError(f"OSS不可变迁移凭证冲突：{key}")
+    return "existing"
+
+
 def prepared_payload(path: Path) -> dict[str, Any]:
     payload = load_json(path.expanduser().resolve(), "prepared-release")
     if payload.get("schema") != PREPARED_SCHEMA:
@@ -585,7 +614,7 @@ def overwrite_current_pointer(
         )
     transition = {
         "schema": "jiaotang-policy-increment-transition/v1",
-        "created_at": utc_now(),
+        "created_at": str(target.get("updated_at") or utc_now()),
         "reason": reason,
         "expected_chain_sha256": expected_chain_sha256,
         "target_chain_sha256": target["current_chain_sha256"],
@@ -595,7 +624,7 @@ def overwrite_current_pointer(
         f"{policy_root}/transitions/{expected_chain_sha256}/"
         f"{target['current_chain_sha256']}.json"
     )
-    put_immutable_bytes(bucket, transition_key, canonical_json_bytes(transition))
+    put_or_verify_transition(bucket, transition_key, transition)
     confirmed = remote_pointer(bucket, key, Path(os.environ["JIAOTANG_POLICY_TRUSTED_PUBLIC_KEY"]))
     confirmed_chain = str(confirmed.get("current_chain_sha256") or "") if confirmed else ""
     if confirmed_chain != expected_chain_sha256:

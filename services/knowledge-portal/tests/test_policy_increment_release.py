@@ -5,6 +5,7 @@ import json
 import sqlite3
 from argparse import Namespace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -65,6 +66,41 @@ def test_pointer_is_byte_stable_for_same_state(tmp_path: Path) -> None:
     first = release.pointer_for_state(state, private_key)
     second = release.pointer_for_state(state, private_key)
     assert release.canonical_json_bytes(first) == release.canonical_json_bytes(second)
+
+
+def test_existing_transition_is_reused_when_only_timestamp_differs() -> None:
+    existing = {
+        "schema": "jiaotang-policy-increment-transition/v1",
+        "created_at": "2026-08-08T01:00:00Z",
+        "reason": "weekly-policy-release",
+        "expected_chain_sha256": "11" * 32,
+        "target_chain_sha256": "22" * 32,
+        "target_pointer_sha256": "33" * 32,
+    }
+    raw = release.canonical_json_bytes(existing)
+
+    class StoredObject:
+        def read(self) -> bytes:
+            return raw
+
+    class Bucket:
+        def head_object(self, key: str) -> object:
+            return SimpleNamespace(
+                content_length=len(raw),
+                headers={"x-oss-meta-sha256": hashlib.sha256(raw).hexdigest()},
+            )
+
+        def get_object(self, key: str) -> StoredObject:
+            return StoredObject()
+
+    retry = existing | {"created_at": "2026-08-08T02:00:00Z"}
+    assert release.put_or_verify_transition(Bucket(), "transition.json", retry) == "existing"
+    with pytest.raises(PolicyIncrementError, match="迁移凭证冲突"):
+        release.put_or_verify_transition(
+            Bucket(),
+            "transition.json",
+            retry | {"target_chain_sha256": "44" * 32},
+        )
 
 
 def test_initialize_requires_exact_complete_baseline(
@@ -242,5 +278,6 @@ def test_shell_release_contract_has_rollback_and_page_aligned_rsync() -> None:
     assert "复用原冻结发布包续发" in release_script
     assert "续发冻结产物与本次交接包不一致" in release_script
     assert "install_target}-repeat-" in deploy
+    assert 'deployment_action="already-current"' in deploy
     assert release_script.index("upload-immutable") < release_script.index("pause-verifiers")
     assert release_script.index("pause-verifiers") < release_script.index("switch-pointer")
