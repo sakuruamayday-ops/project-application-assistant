@@ -281,5 +281,8 @@ def test_shell_release_contract_has_rollback_and_page_aligned_rsync() -> None:
     assert 'deployment_action="already-current"' in deploy
     assert 'deployment_action="switched-existing"' in deploy
     assert 'basename "${remote_inactive}"' in deploy
+    assert 'row["source_key"]' in release_script
+    assert "WHERE source_key=?" in release_script
+    assert "source_path" not in release_script
     assert release_script.index("upload-immutable") < release_script.index("pause-verifiers")
     assert release_script.index("pause-verifiers") < release_script.index("switch-pointer")

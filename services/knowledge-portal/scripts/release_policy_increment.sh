@@ -185,23 +185,23 @@ ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
   'set -e; set -a; source /etc/jiaotang-kb-ops.env; set +a; /opt/jiaotang-kb-runtime/current/.venv/bin/python /usr/local/libexec/jiaotang-policy-increment-verify --deep' \
   >"${run_dir}/server-chain-verification.json"
 
-document_paths_base64="$(python3 - "${prepared}" <<'PY'
+document_keys_base64="$(python3 - "${prepared}" <<'PY'
 import base64,json,sys
 p=json.load(open(sys.argv[1]))
 payload=json.load(open(p["package_dir"]+"/delta_payload.json"))
-body=json.dumps([row["source_path"] for row in payload["documents"]],ensure_ascii=False).encode()
+body=json.dumps([row["source_key"] for row in payload["documents"]],ensure_ascii=False).encode()
 print(base64.b64encode(body).decode())
 PY
 )"
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
-  "python3 - '${document_paths_base64}' /srv/jiaotang/knowledge-index/current/knowledge_content.sqlite3" <<'PY' \
+  "python3 - '${document_keys_base64}' /srv/jiaotang/knowledge-index/current/knowledge_content.sqlite3" <<'PY' \
   >"${run_dir}/new-document-smoke.json"
 import base64,json,sqlite3,sys
-paths=json.loads(base64.b64decode(sys.argv[1]))
+source_keys=json.loads(base64.b64decode(sys.argv[1]))
 with sqlite3.connect(f"file:{sys.argv[2]}?mode=ro",uri=True) as db:
-    hits=sum(db.execute("SELECT COUNT(*) FROM documents WHERE source_path=?",(path,)).fetchone()[0] for path in paths)
-if hits != len(paths): raise SystemExit(f"新增文档命中不完整：{hits}/{len(paths)}")
-print(json.dumps({"expected":len(paths),"hits":hits,"status":"pass"},ensure_ascii=False))
+    hits=sum(db.execute("SELECT COUNT(*) FROM documents WHERE source_key=?",(key,)).fetchone()[0] for key in source_keys)
+if hits != len(source_keys): raise SystemExit(f"新增文档命中不完整：{hits}/{len(source_keys)}")
+print(json.dumps({"expected":len(source_keys),"hits":hits,"status":"pass"},ensure_ascii=False))
 PY
 
 ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
