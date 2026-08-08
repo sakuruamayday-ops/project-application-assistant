@@ -15,6 +15,17 @@ from typing import Any
 
 MCP_PROXY_NAME = "DeferExecuteTool"
 EXTERNAL_NETWORK_TOOLS = {"WebFetch", "WebSearch"}
+PAGINATED_RETRIEVAL_TOOLS = {
+    "authoritative_list_search",
+    "public_list_search",
+    "recognition_search",
+}
+UNPAGINATED_RETRIEVAL_TOOLS = {"knowledge_search"}
+HOOK_RECEIPT_PATTERN = re.compile(
+    r"<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->\s*(\{.*?\})\s*"
+    r"<!-- END WORKBUDDY BEHAVIOR HOOK -->",
+    re.DOTALL,
+)
 SHELL_WRITE_PATTERN = re.compile(
     r"(?:^|[;&|]\s*)(?:cp|mv|mkdir|touch|tee|install|rsync)\b|"
     r"(?:^|[^>])>{1,2}\s*(?!/dev/null(?:\s|$))|"
@@ -74,6 +85,184 @@ def result_text(event: dict[str, Any] | None) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True)
 
 
+def json_result(event: dict[str, Any] | None) -> dict[str, Any]:
+    text = result_text(event).strip()
+    if not text.startswith("{"):
+        return {}
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def hook_activation_receipt(event: dict[str, Any] | None) -> dict[str, Any]:
+    match = HOOK_RECEIPT_PATTERN.search(result_text(event))
+    if not match:
+        return {}
+    try:
+        value = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def tool_basename(tool_name: str) -> str:
+    return tool_name.rsplit("__", 1)[-1]
+
+
+def assistant_message_text(event: dict[str, Any]) -> str:
+    if event.get("type") != "message" or event.get("role") != "assistant":
+        return ""
+    chunks: list[str] = []
+    for item in event.get("content", []):
+        if isinstance(item, dict) and isinstance(item.get("text"), str):
+            chunks.append(item["text"])
+    return "\n".join(chunks).strip()
+
+
+def final_assistant_report(events: list[dict[str, Any]]) -> str:
+    messages = [assistant_message_text(event) for event in events]
+    messages = [message for message in messages if message]
+    return messages[-1] if messages else ""
+
+
+def statement_conflicts(
+    report: str,
+    mcp_calls: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    detected: list[dict[str, str]] = []
+    for match in re.finditer(r"(?<!\d)(\d+)\s*/\s*(\d+)\s*家", report):
+        detected.append(
+            {
+                "code": "AMBIGUOUS_ENTITY_COUNT",
+                "evidence": match.group(0),
+                "reason": "同一实体集合不能同时使用两个未解释的家数。",
+            }
+        )
+
+    total_match = re.search(
+        r"去重企业\s*(\d+)\s*家\s*=\s*verified\s*(\d+)\s*\+\s*"
+        r"pending\s*(\d+)\s*\+\s*related\s*(\d+)\s*\+\s*noise\s*(\d+)",
+        report,
+        re.IGNORECASE,
+    )
+    if total_match:
+        total, *parts = (int(value) for value in total_match.groups())
+        if total != sum(parts):
+            detected.append(
+                {
+                    "code": "CLASSIFICATION_TOTAL_MISMATCH",
+                    "evidence": total_match.group(0),
+                    "reason": f"分级合计为{sum(parts)}，与总计{total}不一致。",
+                }
+            )
+
+    verification_claim = re.search(
+        r"对\s*(\d+)\s*家[^。；\n]{0,100}(?:逐一|逐家)[^。；\n]{0,100}"
+        r"(?:authoritative_list_search|权威名单)",
+        report,
+        re.IGNORECASE,
+    )
+    if verification_claim and mcp_calls is not None:
+        claimed = int(verification_claim.group(1))
+        actual = sum(
+            tool_basename(str(item.get("tool_name") or ""))
+            == "authoritative_list_search"
+            for item in mcp_calls
+        )
+        if claimed != actual:
+            detected.append(
+                {
+                    "code": "VERIFICATION_CALL_COUNT_MISMATCH",
+                    "evidence": verification_claim.group(0),
+                    "reason": f"报告声称逐一核验{claimed}家，真实名单核验调用为{actual}次。",
+                }
+            )
+
+    declared_none = bool(
+        re.search(r"statement[_\\ ]conflicts[^\n|]{0,20}(?:\||：|:)\s*(?:无|0)", report, re.IGNORECASE)
+    )
+    if declared_none and detected:
+        detected.append(
+            {
+                "code": "CONFLICT_DECLARED_NONE",
+                "evidence": "statement_conflicts=无",
+                "reason": "报告声明无冲突，但确定性检查已发现冲突。",
+            }
+        )
+    return {
+        "status": "conflict" if detected else "none_observed",
+        "declared_none": declared_none,
+        "detected": detected,
+    }
+
+
+def retrieval_completeness(calls: list[dict[str, Any]]) -> dict[str, Any]:
+    truncated_true = False
+    unavailable_tools: set[str] = set()
+    observed_pageable = 0
+    coverage_incomplete = False
+    coverage_observed = False
+
+    for item in calls:
+        if item.get("outcome") != "success":
+            continue
+        name = tool_basename(str(item.get("tool_name") or ""))
+        payload = item.get("result_payload")
+        payload = payload if isinstance(payload, dict) else {}
+        if name in UNPAGINATED_RETRIEVAL_TOOLS:
+            unavailable_tools.add(name)
+        elif name in PAGINATED_RETRIEVAL_TOOLS:
+            pagination = payload.get("pagination")
+            if not isinstance(pagination, dict):
+                unavailable_tools.add(name)
+            else:
+                observed_pageable += 1
+                if pagination.get("has_more") is True or pagination.get("is_truncated") is True:
+                    truncated_true = True
+
+        coverage = payload.get("coverage")
+        if isinstance(coverage, dict):
+            coverage_observed = True
+            if (
+                coverage.get("is_complete") is False
+                or coverage.get("completeness_claim_allowed") is False
+                or str(coverage.get("status") or "").lower() == "incomplete"
+            ):
+                coverage_incomplete = True
+
+    if truncated_true:
+        truncation = {
+            "status": "true",
+            "reason": "至少一个已调用分页路径仍有下一页或明确返回截断。",
+        }
+    elif unavailable_tools:
+        truncation = {
+            "status": "unavailable",
+            "reason": "存在不返回分页状态的已用检索路径。",
+            "unobservable_tools": sorted(unavailable_tools),
+        }
+    elif observed_pageable:
+        truncation = {
+            "status": "false",
+            "reason": "全部已调用分页路径均返回无下一页且未截断。",
+        }
+    else:
+        truncation = {
+            "status": "unavailable",
+            "reason": "没有可观察的检索分页回执。",
+        }
+
+    coverage_status = (
+        "false" if coverage_incomplete else "true" if coverage_observed else "unavailable"
+    )
+    return {
+        "coverage_complete": {"status": coverage_status},
+        "truncated": truncation,
+    }
+
+
 def mcp_outcome(result: dict[str, Any] | None) -> str:
     text = result_text(result).lower()
     if "timed out" in text or "timeout" in text:
@@ -110,8 +299,8 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
         if event.get("type") == "function_call_result" and event.get("callId")
     }
 
-    skill_calls: list[dict[str, str]] = []
-    mcp_calls: list[dict[str, str]] = []
+    skill_calls: list[dict[str, Any]] = []
+    mcp_calls: list[dict[str, Any]] = []
     external_calls: list[dict[str, str]] = []
     host_write_calls: list[dict[str, str]] = []
     unresolved_shell_write_risks: list[dict[str, str]] = []
@@ -121,8 +310,26 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
         call_id = str(call.get("callId") or "")
         arguments = decoded_arguments(call)
         if name == "Skill":
+            activation = hook_activation_receipt(results_by_call_id.get(call_id))
             skill_calls.append(
-                {"call_id": call_id, "skill": str(arguments.get("skill") or "")}
+                {
+                    "call_id": call_id,
+                    "skill": str(arguments.get("skill") or ""),
+                    "activation_ok": activation.get("activation_ok"),
+                    "state_persisted": activation.get("state_persisted"),
+                    "state_origin": activation.get("state_origin"),
+                    "prompt_hook_observable": activation.get("prompt_context_ok") is True,
+                    "delivery_check": (
+                        "available"
+                        if activation.get("prompt_context_ok") is True
+                        else "unavailable"
+                    ),
+                    "degraded_reason": (
+                        None
+                        if activation.get("prompt_context_ok") is True
+                        else activation.get("error_code") or "PROMPT_CONTEXT_UNAVAILABLE"
+                    ),
+                }
             )
 
         tool_name = ""
@@ -131,11 +338,13 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
         elif name.startswith("mcp__"):
             tool_name = name
         if tool_name:
+            result_event = results_by_call_id.get(call_id)
             mcp_calls.append(
                 {
                     "call_id": call_id,
                     "tool_name": tool_name,
-                    "outcome": mcp_outcome(results_by_call_id.get(call_id)),
+                    "outcome": mcp_outcome(result_event),
+                    "result_payload": json_result(result_event),
                 }
             )
 
@@ -172,8 +381,10 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
 
     tool_counts = Counter(item["tool_name"] for item in mcp_calls)
     outcome_counts = Counter(item["outcome"] for item in mcp_calls)
+    completeness = retrieval_completeness(mcp_calls)
+    report = final_assistant_report(events)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
         "source": {
             "session_log": str(session_log.resolve()),
@@ -184,8 +395,19 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
             "observable_skill_call_count": len(skill_calls),
             "calls": skill_calls,
             "implicit_activation_verifiable": bool(skill_calls),
+            "all_activations_ok": bool(skill_calls)
+            and all(item.get("activation_ok") is True for item in skill_calls),
+            "prompt_hook_observable": bool(skill_calls)
+            and all(item.get("prompt_hook_observable") is True for item in skill_calls),
+            "delivery_check": (
+                "available"
+                if skill_calls
+                and all(item.get("delivery_check") == "available" for item in skill_calls)
+                else "unavailable"
+            ),
             "note": (
-                "Only actual Skill events are observable; behavior alone does not prove activation."
+                "Skill activation and prompt-hook observability are separate facts; "
+                "activation fallback does not prove a complete prompt/stop hook cycle."
             ),
         },
         "mcp_tool_calls": {
@@ -194,6 +416,7 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
             "by_tool": dict(sorted(tool_counts.items())),
             "by_outcome": dict(sorted(outcome_counts.items())),
             "calls": mcp_calls,
+            **completeness,
         },
         "external_network_calls": {
             "total": len(external_calls),
@@ -205,6 +428,7 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
             "automatic_tool_result_cache_files": cache_files,
             "unresolved_shell_write_risks": unresolved_shell_write_risks,
         },
+        "statement_conflicts": statement_conflicts(report, mcp_calls),
     }
 
 
