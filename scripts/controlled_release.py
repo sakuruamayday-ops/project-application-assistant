@@ -85,9 +85,7 @@ def run_local_release_sync(
     expected_version: str,
 ) -> dict[str, object]:
     """Run the local signed-release gate once, immediately after publish."""
-    resolved = script.expanduser().resolve()
-    if not resolved.is_file():
-        raise RuntimeError(f"本机正式发布同步程序不存在：{resolved}")
+    resolved, _digest = validate_local_release_sync(script)
     environment = os.environ.copy()
     for name in ("GITHUB_PAT_TOKEN", "GH_TOKEN", "EXA_API_KEY"):
         environment.pop(name, None)
@@ -149,6 +147,14 @@ def run_local_release_sync(
         "knowledge": knowledge.get("status"),
         "receipt": str(payload.get("completed_at") or ""),
     }
+
+
+def validate_local_release_sync(script: Path) -> tuple[Path, str]:
+    """Resolve and hash the exact local sync program bound to a release."""
+    resolved = script.expanduser().resolve()
+    if not resolved.is_file():
+        raise RuntimeError(f"本机正式发布同步程序不存在：{resolved}")
+    return resolved, sha256(resolved)
 
 
 def sha256(path: Path) -> str:
@@ -391,6 +397,7 @@ def build_release_transaction_manifest(
     validation: dict[str, object],
     release_assets: list[Path],
     publisher_fingerprint: str,
+    local_sync_script_sha256: str,
 ) -> dict[str, object]:
     asset_hashes = {
         path.name: sha256(path) for path in sorted(release_assets)
@@ -432,6 +439,7 @@ def build_release_transaction_manifest(
                 "mode": "formal-release-immediate",
                 "required_version": validation["short_version"],
                 "generic_package_sha256": package_hashes.get("generic", ""),
+                "sync_script_sha256": local_sync_script_sha256,
                 "required_result": (
                     "signed-local-install-and-index-verification-pass"
                     if "generic" in package_hashes
@@ -1292,6 +1300,13 @@ def main() -> None:
             validation=validation,
             release_assets=assets,
             publisher_fingerprint=package_fingerprint,
+            local_sync_script_sha256=(
+                validate_local_release_sync(
+                    arguments.local_release_sync_script
+                )[1]
+                if "generic" in packages
+                else ""
+            ),
         )
         transaction_files, transaction_verification = (
             prepare_release_transaction_assets(

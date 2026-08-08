@@ -320,6 +320,7 @@ def test_transaction_manifest_binds_all_release_participants(
         validation=validation,
         release_assets=[release_notes, workbuddy, generic],
         publisher_fingerprint="SHA256:publisher",
+        local_sync_script_sha256="a" * 64,
     )
     repeated = MODULE.build_release_transaction_manifest(
         repository="owner/repository",
@@ -327,6 +328,7 @@ def test_transaction_manifest_binds_all_release_participants(
         validation=validation,
         release_assets=[generic, release_notes, workbuddy],
         publisher_fingerprint="SHA256:publisher",
+        local_sync_script_sha256="a" * 64,
     )
 
     assert manifest == repeated
@@ -339,6 +341,9 @@ def test_transaction_manifest_binds_all_release_participants(
     assert (
         manifest["participants"]["portal"]["package_sha256"]["generic"]
         == MODULE.sha256(generic)
+    )
+    assert manifest["participants"]["local_sync"]["sync_script_sha256"] == (
+        "a" * 64
     )
     assert manifest["lease_policy"]["single_writer"] is True
     assert (
@@ -400,6 +405,18 @@ def test_local_release_sync_is_fail_closed_and_strips_transient_tokens(
     monkeypatch.setattr(MODULE.subprocess, "run", fail_sync)
     with pytest.raises(RuntimeError, match="signature mismatch"):
         MODULE.run_local_release_sync(script, expected_version="1.6.1")
+
+
+def test_local_release_sync_program_is_required_and_hash_bound(tmp_path) -> None:
+    script = tmp_path / "local_release_sync.py"
+    with pytest.raises(RuntimeError, match="同步程序不存在"):
+        MODULE.validate_local_release_sync(script)
+
+    script.write_text("# immutable release helper\n", encoding="utf-8")
+    resolved, digest = MODULE.validate_local_release_sync(script)
+
+    assert resolved == script.resolve()
+    assert digest == MODULE.sha256(script)
 
 
 def test_release_lease_checkpoint_is_owner_scoped_and_secret(tmp_path) -> None:
