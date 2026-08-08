@@ -454,6 +454,11 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
             "automatic_tool_result_cache_files": cache_files,
             "unresolved_shell_write_risks": unresolved_shell_write_risks,
         },
+        # Keep the canonical machine-readable completeness fields at the
+        # receipt root as well as beside the MCP call ledger.  Consumers should
+        # not need to know the nested implementation detail to enforce gates.
+        "coverage_complete": completeness["coverage_complete"],
+        "truncated": completeness["truncated"],
         "statement_conflicts": statement_conflicts(report, mcp_calls),
     }
 

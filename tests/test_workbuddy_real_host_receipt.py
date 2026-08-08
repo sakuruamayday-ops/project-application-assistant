@@ -190,6 +190,8 @@ def test_receipt_reports_unavailable_truncation_and_detects_statement_conflict(t
 
     assert receipt["mcp_tool_calls"]["coverage_complete"]["status"] == "false"
     assert receipt["mcp_tool_calls"]["truncated"]["status"] == "unavailable"
+    assert receipt["coverage_complete"]["status"] == "false"
+    assert receipt["truncated"]["status"] == "unavailable"
     assert receipt["statement_conflicts"]["status"] == "conflict"
     assert {
         item["code"] for item in receipt["statement_conflicts"]["detected"]
