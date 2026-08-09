@@ -116,7 +116,7 @@ def parse_args() -> argparse.Namespace:
         "--knowledge-identities",
         type=Path,
         default=DEFAULT_KNOWLEDGE_IDENTITIES,
-        help="焦糖知识库企业基础数字身份证 JSONL 文件或所在目录",
+        help="共创研究院知识库企业基础数字身份证 JSONL 文件或所在目录",
     )
     parser.add_argument("--lifecycle-rules", type=Path, default=DEFAULT_LIFECYCLE_RULES)
     parser.add_argument(
@@ -1956,7 +1956,7 @@ def load_knowledge_identity_enrichment(path: Path) -> dict[str, dict[str, Any]]:
     candidates = sorted(path.glob("*.jsonl")) if path.is_dir() else [path]
     if len(candidates) != 1:
         raise RuntimeError(
-            f"焦糖知识库企业身份快照数量必须为 1，实际为 {len(candidates)}：{path}"
+            f"共创研究院知识库企业身份快照数量必须为 1，实际为 {len(candidates)}：{path}"
         )
     result: dict[str, dict[str, Any]] = {}
     for row in read_jsonl(candidates[0]):
@@ -1994,7 +1994,7 @@ def load_knowledge_identity_enrichment(path: Path) -> dict[str, dict[str, Any]]:
             "registration_authority": str(row.get("registration_authority") or ""),
             "former_names_json": json.dumps(former_names, ensure_ascii=False),
             "name_events_json": "[]",
-            "source_tools": "焦糖知识库",
+            "source_tools": "共创研究院知识库",
             "source_data_updated_at": str(row.get("generated_at") or ""),
             "verified_at": str(row.get("generated_at") or ""),
         }
@@ -2161,7 +2161,7 @@ def build_identity_collection_queue(
                     "current_name",
                 ],
                 "queue_reason": "missing_verified_business_identity",
-                "source": "焦糖知识库",
+                "source": "共创研究院知识库",
             }
         )
     return sorted(
@@ -2210,7 +2210,7 @@ def write_outputs(
                 "current_county": str(enrichment.get("current_county") or ""),
                 "current_address": str(enrichment.get("current_address") or ""),
                 "registration_authority": str(enrichment.get("registration_authority") or ""),
-                "identity_source": "焦糖知识库",
+                "identity_source": "共创研究院知识库",
                 "source_data_updated_at": str(enrichment.get("source_data_updated_at") or ""),
                 "verified_at": str(enrichment.get("verified_at") or ""),
                 "verification_status": "knowledge_verified" if enrichment else "pending_business_identity",
@@ -2281,7 +2281,7 @@ def write_outputs(
                 "current_county": str(enrichment.get("current_county") or ""),
                 "current_address": str(enrichment.get("current_address") or ""),
                 "registration_authority": str(enrichment.get("registration_authority") or ""),
-                "identity_source": "焦糖知识库",
+                "identity_source": "共创研究院知识库",
                 "source_data_updated_at": str(enrichment.get("source_data_updated_at") or ""),
                 "verified_at": str(enrichment.get("verified_at") or ""),
                 "verification_status": "knowledge_verified",
@@ -2302,7 +2302,7 @@ def write_outputs(
                 "alias_type": "former_name",
                 "valid_from": "",
                 "valid_to": "",
-                "source": "焦糖知识库",
+                "source": "共创研究院知识库",
             }
         try:
             name_events = json.loads(str(enrichment.get("name_events_json") or "[]"))
@@ -2318,7 +2318,7 @@ def write_outputs(
                 "alias_type": str(event.get("event_type") or "name_event"),
                 "valid_from": str(event.get("valid_from") or ""),
                 "valid_to": str(event.get("valid_to") or ""),
-                "source": "焦糖知识库",
+                "source": "共创研究院知识库",
             }
     lifecycle_summaries: dict[tuple[str, str], dict[str, Any]] = {}
     for row in event_rows:
@@ -2848,7 +2848,7 @@ def write_outputs(
         "database_integrity": integrity,
         "rules": [
             "认定时名称、地区、年度、批次和状态来自名单侧，不被当前工商信息覆盖。",
-            "当前名称、信用代码、当前地区和地址来自焦糖知识库企业身份层。",
+            "当前名称、信用代码、当前地区和地址来自共创研究院知识库企业身份层。",
             "首次认定、复核、重新认定、继续支持、变更和撤销分别建生命周期事件。",
             "高新技术企业到期按重新认定建档，不与监督复核混为一类。",
             "财政继续支持属于支持生命周期，不覆盖原资格认定批次。",

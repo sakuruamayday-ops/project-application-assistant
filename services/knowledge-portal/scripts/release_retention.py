@@ -116,6 +116,7 @@ def prune_release_generations(
     report = plan_release_retention(generation_root, pointer_root)
     removed: list[dict[str, Any]] = []
     trashed: list[dict[str, Any]] = []
+    concurrently_removed: list[dict[str, Any]] = []
     if apply:
         if trash_root is None:
             configured_trash = os.environ.get("JIAOTANG_RELEASE_TRASH_ROOT", "").strip()
@@ -141,7 +142,17 @@ def prune_release_generations(
             # Retention is an atomic same-filesystem rename.  Never fall back
             # to copy-then-delete, which can duplicate a large release before
             # a sandbox or permission error prevents the source removal.
-            os.rename(original, destination)
+            try:
+                os.rename(original, destination)
+            except FileNotFoundError:
+                # Another retention worker may have completed the same
+                # atomic rename after this worker produced its plan. Treat
+                # an actually absent direct child as an idempotent success;
+                # preserve every other rename error for operator review.
+                if original.exists() or original.is_symlink():
+                    raise
+                concurrently_removed.append(item)
+                continue
             moved = {**item, "trash_path": str(destination)}
             trashed.append(moved)
             removed.append(moved)
@@ -150,6 +161,8 @@ def prune_release_generations(
         report["trash_root"] = str(trash_root)
     report["removed"] = removed
     report["trashed"] = trashed
+    report["concurrently_removed"] = concurrently_removed
+    report["concurrently_removed_count"] = len(concurrently_removed)
     report["removed_count"] = len(removed)
     report["removed_bytes"] = sum(int(item["bytes"]) for item in removed)
     report["completed_at"] = utc_now()

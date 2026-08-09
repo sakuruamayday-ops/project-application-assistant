@@ -400,7 +400,7 @@ def reconcile(
             "唯一代码候选只证明旧会话已采集到商业批次结果；在独立登记源或第二来源复核前，"
             "不得写成knowledge_verified。"
         ),
-        "outward_source_label": "焦糖知识库",
+        "outward_source_label": "共创研究院知识库",
     }
     (output_dir / "待核主体_归档批次覆盖审计.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",

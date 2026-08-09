@@ -1,7 +1,7 @@
 """Query the disclosure-safe enterprise identity lineage graph.
 
 The graph is built during the index release.  This module deliberately reads
-only the public graph tables and returns the stable source label ``焦糖知识库``;
+only the public graph tables and returns the stable source label ``共创研究院知识库``;
 provider identifiers or provider names never leave the portal API/MCP layer.
 """
 
@@ -14,7 +14,7 @@ from collections import defaultdict
 from typing import Any
 
 
-PUBLIC_SOURCE = "焦糖知识库"
+PUBLIC_SOURCE = "共创研究院知识库"
 USCC_PATTERN = re.compile(r"^[0-9A-HJ-NPQRTUWXY]{18}$")
 
 

@@ -13870,7 +13870,7 @@ def agent_install_protocol(
             "publisher": {
                 "name": "知识产权大脑",
                 "service_origin": public_endpoint,
-                "purpose": "为当前本地 Agent 安装焦糖知识库签名 MCP 连接器",
+                "purpose": "为当前本地 Agent 安装共创研究院知识库签名 MCP 连接器",
             },
             "compatibility": {
                 "platforms": ["darwin", "win32"],

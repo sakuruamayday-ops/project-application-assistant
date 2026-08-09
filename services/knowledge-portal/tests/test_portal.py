@@ -4450,7 +4450,7 @@ def test_admin_uses_same_transactional_agent_onboarding_as_members(
         user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
 
         access = client.get("/access")
-        assert "连接焦糖知识库" in access.text
+        assert "连接共创研究院知识库" in access.text
         assert "data-copy-agent-bootstrap" in access.text
         assert "管理员 API Key" not in access.text
         assert "管理员豁免" not in access.text
