@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const runtimeVersion = "1.6.2"
+const runtimeVersion = "1.6.3"
 
 type options struct {
 	command         string

@@ -468,13 +468,66 @@ func validSkillName(value string) bool {
 	return true
 }
 
+func recoveredStopSession(root string, payload map[string]any) (any, bool) {
+	recoveredPayload, prompt, _ := recoverPromptForActivation()
+	if strings.TrimSpace(prompt) == "" {
+		return nil, false
+	}
+	recoveredSession := recoveredPayload["session_id"]
+	if recoveredSession == nil || strings.TrimSpace(fmt.Sprint(recoveredSession)) == "" {
+		return nil, false
+	}
+	// The activation fallback and Stop hook can receive different host session
+	// identifiers even though they belong to the same WorkBuddy turn.  Only
+	// trust transcript recovery when it is also the atomically published
+	// current turn and the recovered prompt identity still matches that state.
+	// This prevents an unrelated recent transcript from overriding a valid
+	// Stop payload, while still allowing a duplicate Stop to return the already
+	// completed receipt.
+	current := map[string]any{}
+	if readJSON(filepath.Join(root, "current-turn.json"), &current) != nil || fmt.Sprint(current["session_id"]) != fmt.Sprint(recoveredSession) {
+		return nil, false
+	}
+	statePath, _ := statePaths(root, recoveredSession)
+	var state behaviorState
+	if readJSON(statePath, &state) != nil || state.TurnID != strings.TrimSpace(toString(current["turn_id"])) || !state.PromptContextOK || !promptContextOrigin(state.StateOrigin) || state.PromptSHA256 != hashText(prompt) {
+		return nil, false
+	}
+	updatedAt, err := time.Parse(time.RFC3339, strings.TrimSpace(toString(current["updated_at"])))
+	if err != nil {
+		return nil, false
+	}
+	age := time.Since(updatedAt)
+	if age < 0 || age > currentTurnTTL {
+		return nil, false
+	}
+	recoveredEventID := strings.TrimSpace(toString(recoveredPayload["prompt_event_id"]))
+	if recoveredEventID != "" && state.PromptEventID != recoveredEventID {
+		return nil, false
+	}
+	return recoveredSession, true
+}
+
+func stopStateSession(root string, payload map[string]any) (any, string, bool) {
+	payloadSession := payload["session_id"]
+	if recoveredSession, ok := recoveredStopSession(root, payload); ok {
+		matched := fmt.Sprint(recoveredSession) == fmt.Sprint(payloadSession)
+		if matched {
+			return recoveredSession, "stop_payload", true
+		}
+		return recoveredSession, "session_transcript_current_turn", false
+	}
+	return payloadSession, "stop_payload", true
+}
+
 func stopEvent(root string, opts options) int {
 	payload, err := readPayload()
 	if err != nil {
 		writeHook(map[string]any{"hook_runtime_ok": false, "error_code": "HOOK_INPUT_INVALID", "delivery_check_ok": nil})
 		return 0
 	}
-	statePath, lockPath := statePaths(root, payload["session_id"])
+	stopSession, stopStateSource, payloadSessionMatched := stopStateSession(root, payload)
+	statePath, lockPath := statePaths(root, stopSession)
 	returnCode := 0
 	err = withStateLock(lockPath, func() error {
 		var state behaviorState
@@ -487,7 +540,7 @@ func stopEvent(root string, opts options) int {
 			return nil
 		}
 		if !promptContextOrigin(state.StateOrigin) || !state.PromptContextOK {
-			receipt := map[string]any{"hook_runtime_ok": false, "error_code": "PROMPT_CONTEXT_UNAVAILABLE", "delivery_check_ok": nil, "state_origin": state.StateOrigin, "prompt_context_ok": false, "turn_id": state.TurnID, "root_source": opts.rootSource, "platform_adapter": state.PlatformAdapter}
+			receipt := map[string]any{"hook_runtime_ok": false, "error_code": "PROMPT_CONTEXT_UNAVAILABLE", "delivery_check_ok": nil, "state_origin": state.StateOrigin, "prompt_context_ok": false, "turn_id": state.TurnID, "root_source": opts.rootSource, "platform_adapter": state.PlatformAdapter, "stop_state_source": stopStateSource, "stop_payload_session_matched": payloadSessionMatched}
 			state.Status, state.CompletedAt, state.DeliveryReceipt = "completed", nowISO(), receipt
 			if err := atomicJSON(statePath, state); err != nil {
 				return err
@@ -509,6 +562,8 @@ func stopEvent(root string, opts options) int {
 		receipt["previous_delivery_blocked"] = state.PreviousDeliveryBlocked
 		receipt["blocked_error_code"] = state.BlockedErrorCode
 		receipt["continued_from_turn_id"] = state.ContinuedFromTurnID
+		receipt["stop_state_source"] = stopStateSource
+		receipt["stop_payload_session_matched"] = payloadSessionMatched
 		state.DeliveryReceipt = receipt
 		if len(missing) > 0 {
 			state.Status, state.PreviousDeliveryBlocked, state.BlockedErrorCode, state.CheckedAt = "blocked", true, receipt["error_code"], nowISO()

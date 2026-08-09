@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -254,5 +255,72 @@ func TestActivationRecoveryReusesSameTranscriptEventAcrossSkills(t *testing.T) {
 	}
 	if got := skillNames(second.ActiveSkills); len(got) != 2 || got[0] != "industrialization-projects" || got[1] != "local-knowledge-retrieval" {
 		t.Fatalf("same-turn skills did not accumulate: %#v", got)
+	}
+}
+
+func TestStopUsesCurrentTranscriptTurnWhenPayloadSessionDiffers(t *testing.T) {
+	profile := t.TempDir()
+	t.Setenv("USERPROFILE", profile)
+	workspace := filepath.Join(t.TempDir(), "current-workspace")
+	if err := os.MkdirAll(workspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	previousCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(workspace); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(previousCWD) })
+
+	pluginRoot := filepath.Join(t.TempDir(), "plugin")
+	addTestSkill(t, pluginRoot, "project-feasibility")
+	addTestSkill(t, pluginRoot, "evidence-ledger")
+	stateRoot := filepath.Join(t.TempDir(), "state")
+	transcriptSession := "transcript-session"
+	writeProjectTranscript(t, profile, workspace, transcriptSession, "继续完成测试可行性报告")
+
+	opts := testOptions(pluginRoot)
+	opts.skill = "project-feasibility"
+	activateEvent(stateRoot, opts)
+	opts.skill = "evidence-ledger"
+	activateEvent(stateRoot, opts)
+
+	wrongSession := "stop-payload-session"
+	wrongPath, _ := statePaths(stateRoot, wrongSession)
+	if err := atomicJSON(wrongPath, behaviorState{
+		SchemaVersion:   4,
+		SessionID:       wrongSession,
+		TurnID:          "stale-stop-turn",
+		StateOrigin:     "session_start_recovery",
+		PromptContextOK: true,
+		PromptSHA256:    hashText("TC06 stale turn"),
+		PromptSignals: promptSignals{
+			FormalBusinessDelivery: true,
+			BusinessDomain:         true,
+			SkillApplicability:     map[string]bool{},
+		},
+		ActiveSkills: []activeSkill{},
+		Status:       "pending",
+		SubmittedAt:  nowISO(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, source, matched := stopStateSession(stateRoot, map[string]any{"session_id": wrongSession})
+	if fmt.Sprint(resolved) != transcriptSession {
+		t.Fatalf("Stop kept stale payload session: got %v want %s", resolved, transcriptSession)
+	}
+	if source != "session_transcript_current_turn" || matched {
+		t.Fatalf("unexpected Stop resolution metadata: source=%s matched=%v", source, matched)
+	}
+	resolvedPath, _ := statePaths(stateRoot, resolved)
+	var resolvedState behaviorState
+	if err := readJSON(resolvedPath, &resolvedState); err != nil {
+		t.Fatal(err)
+	}
+	if got := skillNames(resolvedState.ActiveSkills); len(got) != 2 || got[0] != "evidence-ledger" || got[1] != "project-feasibility" {
+		t.Fatalf("Stop did not resolve the active current turn: %#v", got)
 	}
 }
