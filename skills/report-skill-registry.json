@@ -6,6 +6,7 @@
     "version": "1.6.1.3",
     "summary": "V1.6.1.3 是仅用于本地与 WorkBuddy 实机复验的修复候选：兼容 WorkBuddy 5.3.11 冷启动时首条消息早于 UserPromptSubmit Hook 注册的时序，并继续隔离过期或测试轮次状态。企业数字身份证仍是服务端外部数据，不进入插件包。",
     "changes": [
+      "WorkBuddy Host Hook 与沙箱内 Skill 激活统一使用用户级 plugins/data/<plugin>-<marketplace>/behavior-hook 状态根；沙箱缺少 CODEBUDDY_PLUGIN_DATA 时从已验证的市场安装路径确定性推导，避免同轮被拆成恢复状态与 activation_fallback 两份状态。",
       "macOS 新增 SessionStart 冷启动恢复：只读取宿主提供的同一 session_id、两分钟内且位于 WorkBuddy 项目目录的 JSONL，提取当前 user_query 的摘要；不扫描其他任务，也不保存提示正文。",
       "SessionStart 恢复状态如实标记 state_origin=session_start_recovery、prompt_context_source=session_transcript、prompt_hook_observable=false；后续原生 UserPromptSubmit 到达同轮时升级为 user_prompt_submit。",
       "同一会话同一提示在五秒内去重，避免市场级与 Skill 内联 Hook 重复注册生成两个 turn_id；Windows 仍保持原生 UserPromptSubmit 与 Stop 双事件。",

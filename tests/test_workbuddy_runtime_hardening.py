@@ -1808,8 +1808,8 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                             RELEASE_MANAGER / "workbuddy_behavior_hook.py",
                             decoy / "scripts/workbuddy_behavior_hook.py",
                         )
-                    data_root = plugin_root / ".behavior-data"
-                    data_root.mkdir()
+                    data_root = BEHAVIOR.data_directory(plugin_root)
+                    data_root.mkdir(parents=True)
                     (data_root / "current-turn.json").write_text(
                         json.dumps(
                             {
@@ -1915,7 +1915,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             receipt = json.loads(process.stdout)
             self.assertIn("hookSpecificOutput", receipt)
             state_path, _ = BEHAVIOR.state_paths(
-                plugin_root / ".behavior-data",
+                BEHAVIOR.data_directory(plugin_root),
                 "session-hook",
             )
             self.assertTrue(state_path.is_file())
@@ -1995,7 +1995,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 set(skills),
             )
             state_path, _ = BEHAVIOR.state_paths(
-                plugin_root / ".behavior-data",
+                BEHAVIOR.data_directory(plugin_root),
                 "suite-session",
             )
             state = json.loads(state_path.read_text(encoding="utf-8"))
