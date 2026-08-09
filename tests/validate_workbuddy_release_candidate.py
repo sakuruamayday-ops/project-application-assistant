@@ -192,7 +192,12 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         if forbidden_runtime in names:
             raise RuntimeError("候选包混入其他平台行为运行时")
         hook_events = set(dict(hooks.get("hooks") or {}))
-        if hook_events != {"UserPromptSubmit", "Stop"}:
+        expected_hook_events = (
+            {"UserPromptSubmit", "Stop"}
+            if platform == "windows"
+            else {"SessionStart", "UserPromptSubmit", "Stop"}
+        )
+        if hook_events != expected_hook_events:
             raise RuntimeError(f"最小行为 Hook 事件不合规：{sorted(hook_events)}")
 
         scanned_text = []
