@@ -2085,6 +2085,122 @@ def test_three_first_directory_diff_and_product_match_tools(tmp_path):
     assert analysis["internal_routing"]["knowledge_search"]
 
 
+def test_three_first_topic_only_query_returns_official_recognition_facts(tmp_path):
+    module = load_app(tmp_path)
+    with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE three_first_project_awards(
+                id INTEGER PRIMARY KEY,
+                enterprise_key TEXT NOT NULL,
+                eid TEXT NOT NULL,
+                enterprise_name TEXT NOT NULL,
+                enterprise_aliases TEXT NOT NULL,
+                province TEXT NOT NULL,
+                city TEXT NOT NULL,
+                county TEXT NOT NULL,
+                industry TEXT NOT NULL,
+                project_id TEXT NOT NULL,
+                project_name TEXT NOT NULL,
+                year INTEGER,
+                product_name TEXT NOT NULL,
+                recognition_tier TEXT NOT NULL,
+                product_category TEXT NOT NULL,
+                list_status TEXT NOT NULL,
+                source_policy_id TEXT NOT NULL,
+                source_index_id TEXT NOT NULL,
+                source_title TEXT NOT NULL,
+                source_url TEXT NOT NULL,
+                source_tier TEXT NOT NULL,
+                evidence_semantics TEXT NOT NULL,
+                confidence TEXT NOT NULL,
+                product_name_status TEXT NOT NULL,
+                user_action TEXT NOT NULL
+            );
+            INSERT INTO three_first_project_awards VALUES
+                (1,'ningbo-water','','宁波水表（集团）股份有限公司','[]',
+                 '浙江省','宁波市','江北区','仪器仪表','first-equipment',
+                 '浙江省制造业首台（套）装备',2023,'NWM-MW100多参数智能水表',
+                 '国内首台（套）','整机装备','正式认定','policy-2023','row-42',
+                 '2023年度浙江省首台（套）装备名单','https://example.gov.cn/2023',
+                 'official','final_recognition','verified','structured_product_name','none'),
+                (2,'ningbo-donghai','','宁波东海集团有限公司','[]',
+                 '浙江省','宁波市','海曙区','仪器仪表','first-equipment',
+                 '浙江省制造业首台（套）装备',2021,'LXE智能电磁水表',
+                 '省内首台（套）','整机装备','正式认定','policy-2021','row-224',
+                 '2021年度浙江省首台（套）装备名单','https://example.gov.cn/2021',
+                 'official','final_recognition','verified','structured_product_name','none');
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO documents(
+                source_key,title,content,source,cloud_path,document_role,
+                sensitivity,sha256,updated_at,canonical_project_name,region,
+                document_stage,validity_status,policy_year,batch
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                "smart-meter-guidance",
+                "浙江省首台套产品推广应用指导目录2025年版",
+                "NWM-MW100多参数智能水表退出目录时间为2026年底",
+                "10_政策与目录/推广目录.wps",
+                "10_政策与目录/推广目录.wps",
+                "10_政策与目录",
+                "public",
+                "smart-meter-guidance-sha",
+                "2025-03-21T00:00:00+00:00",
+                "浙江省制造业首台（套）装备",
+                "浙江省",
+                "推广目录",
+                "active_candidate",
+                2025,
+                "",
+            ),
+        )
+        connection.execute("INSERT INTO documents_fts(documents_fts) VALUES ('rebuild')")
+        connection.execute(
+            "INSERT INTO documents_fts_trigram(documents_fts_trigram) VALUES ('rebuild')"
+        )
+        connection.commit()
+
+    result = module.analyze_three_first(
+        query="智能水表",
+        regions=["浙江省"],
+        limit=50,
+    )
+
+    assert result["project_types"] == ["首台套", "首版次", "首批次"]
+    assert result["internal_routing"]["public_list_search"] is True
+    assert result["internal_routing"]["recognition_search"] is True
+    assert result["recognition_results"]["route_to"] == "recognition_reverse_lookup"
+    exact = result["recognition_results"]["exact_results"]
+    assert {
+        (
+            item["recognition_fact"]["enterprise_name"],
+            item["recognition_fact"]["recognition_year"],
+            item["recognition_fact"]["product_name"],
+        )
+        for item in exact
+    } == {
+        ("宁波水表（集团）股份有限公司", 2023, "NWM-MW100多参数智能水表"),
+        ("宁波东海集团有限公司", 2021, "LXE智能电磁水表"),
+    }
+    assert all("推广" not in item["recognition_fact"]["source_title"] for item in exact)
+    assert result["coverage_complete"] is False
+    assert result["truncated"] is False
+    assert any("推广" in item["title"] for item in result["knowledge_results"])
+
+    grouped = module.analyze_three_first(
+        query="智能水表 × 首台套/首版次",
+        regions=["浙江省"],
+        limit=50,
+    )
+    assert grouped["project_types"] == ["首台套", "首版次"]
+    assert grouped["list_groups"][0]["project_name"] == "浙江省制造业首台（套）装备"
+    assert len(grouped["recognition_results"]["exact_results"]) == 2
+
+
 def test_three_first_directory_diff_falls_back_to_transition_chain(tmp_path):
     module = load_app(tmp_path)
     with closing(sqlite3.connect(module.CONTENT_DATABASE_PATH)) as connection:

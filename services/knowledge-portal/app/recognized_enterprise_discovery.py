@@ -137,7 +137,38 @@ def load_indexed_subject_taxonomy(
                 "notes": str(row["notes"] or ""),
             }
         )
-    return taxonomy or load_subject_taxonomy()
+    # The server code and the independently built index can be deployed at
+    # different moments.  Merge the bundled taxonomy into indexed rows so a
+    # newly released subject family works immediately without silently waiting
+    # for the next full index rebuild.  Indexed additions remain preserved.
+    merged: dict[str, dict[str, object]] = {
+        str(item.get("canonical_subject") or ""): dict(item)
+        for item in taxonomy
+        if str(item.get("canonical_subject") or "")
+    }
+    for bundled in load_subject_taxonomy():
+        canonical = str(bundled.get("canonical_subject") or "")
+        if not canonical:
+            continue
+        current = merged.setdefault(canonical, {"canonical_subject": canonical})
+        for field in ("exact_terms", "related_terms", "excluded_terms"):
+            current[field] = _unique(
+                [
+                    *(
+                        current.get(field, [])
+                        if isinstance(current.get(field), list)
+                        else []
+                    ),
+                    *(
+                        bundled.get(field, [])
+                        if isinstance(bundled.get(field), list)
+                        else []
+                    ),
+                ]
+            )
+        if not str(current.get("notes") or ""):
+            current["notes"] = str(bundled.get("notes") or "")
+    return list(merged.values()) or load_subject_taxonomy()
 
 
 def _project_terms_in_query(query: str) -> list[str]:
@@ -622,6 +653,14 @@ def discover_recognized_enterprises(
     seen_facts: set[str] = set()
     processed: list[dict[str, object]] = []
 
+    def canonical_recognition_fact(raw_fact: dict[str, object]) -> dict[str, object]:
+        fact = dict(raw_fact)
+        fact.setdefault("project_name", fact.get("canonical_project_name", ""))
+        fact.setdefault("recognition_year", fact.get("policy_year"))
+        fact.setdefault("status", fact.get("list_status", ""))
+        fact.setdefault("recognition_level", fact.get("recognition_tier", ""))
+        return fact
+
     for list_type, project_name, display_name in resolved_projects:
         if list_type == "three_first":
             for region in region_scopes:
@@ -655,6 +694,7 @@ def discover_recognized_enterprises(
                             if not fact_id or fact_id in seen_facts:
                                 continue
                             seen_facts.add(fact_id)
+                            canonical_fact = canonical_recognition_fact(dict(fact))
                             verified_matches.append(
                                 {
                                     "project": display_name,
@@ -666,7 +706,7 @@ def discover_recognized_enterprises(
                                         "source_title": fact.get("source_title", ""),
                                         "source_url": fact.get("source_url", ""),
                                     },
-                                    "recognition_fact": fact,
+                                    "recognition_fact": canonical_fact,
                                 }
                             )
                     processed.append(
@@ -703,6 +743,7 @@ def discover_recognized_enterprises(
                         continue
                     authority_found = True
                     seen_facts.add(fact_id)
+                    canonical_fact = canonical_recognition_fact(dict(fact))
                     verified_matches.append(
                         {
                             "project": display_name,
@@ -719,7 +760,7 @@ def discover_recognized_enterprises(
                             ),
                             "match_scope": "knowledge_evidence_then_authority",
                             "subject_evidence": candidate,
-                            "recognition_fact": fact,
+                            "recognition_fact": canonical_fact,
                         }
                     )
             if not authority_found:
