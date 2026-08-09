@@ -178,6 +178,23 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
             hook_position = content.find("<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->")
             if hook_position < frontmatter.end():
                 raise RuntimeError(f"行为Hook未位于frontmatter之后：{skill}")
+            hook_end = content.find(
+                "<!-- END WORKBUDDY BEHAVIOR HOOK -->",
+                hook_position,
+            )
+            if hook_end < hook_position:
+                raise RuntimeError(f"行为Hook边界不完整：{skill}")
+            if platform == "windows":
+                activation_entry = content[hook_position:hook_end]
+                if (
+                    "${CODEBUDDY_PLUGIN_ROOT}" in activation_entry
+                    or "${CODEBUDDY_SKILL_DIR}" in activation_entry
+                    or "$HOME/.workbuddy/plugins/marketplaces/jiaotang"
+                    not in activation_entry
+                ):
+                    raise RuntimeError(
+                        f"Windows技能激活入口仍依赖不稳定宿主变量：{skill}"
+                    )
             skill_names_from_frontmatter.append(names_in_entry[0])
         if len(set(skill_names_from_frontmatter)) != EXPECTED_SKILL_COUNT:
             raise RuntimeError("技能frontmatter名称不是49项唯一值")

@@ -301,6 +301,9 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 skill_entry.index("\n---\n"),
             )
             self.assertIn("workbuddy_behavior_hook_windows.exe", skill_entry)
+            self.assertNotIn("${CODEBUDDY_PLUGIN_ROOT}", skill_entry)
+            self.assertNotIn("${CODEBUDDY_SKILL_DIR}", skill_entry)
+            self.assertIn("${CODEBUDDY_SESSION_ID:-}", skill_entry)
             self.assertIn("--platform-adapter workbuddy-windows-exe", skill_entry)
             self.assertNotIn("python3 -c", skill_entry)
             self.assertNotIn("/Users/", skill_entry)

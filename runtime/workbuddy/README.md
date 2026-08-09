@@ -7,8 +7,8 @@ contract for the `jiaotang-workbuddy-skills` marketplace plugin.
 
 The Windows command deliberately resolves the installed marketplace from
 `$HOME/.workbuddy` instead of relying on `CODEBUDDY_PLUGIN_ROOT`. WorkBuddy's
-Skill sandbox exposes the latter during inline Skill activation, but the native
-Windows plugin lifecycle does not expose it consistently.
+Windows lifecycle and inline Skill sandbox do not expose the latter
+consistently, so both entry points use the same deterministic marketplace root.
 
 When lifecycle prompt events are unavailable, Skill activation may recover the
 latest user prompt only from a fresh transcript belonging to the current
