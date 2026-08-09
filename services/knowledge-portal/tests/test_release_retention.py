@@ -68,6 +68,24 @@ def test_retention_apply_keeps_exactly_current_and_previous(tmp_path: Path):
     ]
 
 
+def test_retention_default_trash_stays_inside_generation_root(
+    tmp_path: Path, monkeypatch
+):
+    generations, pointers, current, previous, stale_a, stale_b = make_layout(
+        tmp_path
+    )
+    monkeypatch.delenv("JIAOTANG_RELEASE_TRASH_ROOT", raising=False)
+
+    report = MODULE.prune_release_generations(generations, pointers, apply=True)
+
+    trash = generations / ".Trash" / "files"
+    assert report["trash_root"] == str(trash.resolve())
+    assert report["removed_count"] == 2
+    assert current.is_dir() and previous.is_dir()
+    assert not stale_a.exists() and not stale_b.exists()
+    assert len(list(trash.iterdir())) == 2
+
+
 def test_retention_refuses_pointer_outside_generation_root(tmp_path: Path):
     generations, pointers, _, previous, _, _ = make_layout(tmp_path)
     outside = tmp_path / "outside"

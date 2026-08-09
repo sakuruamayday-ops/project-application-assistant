@@ -123,7 +123,7 @@ def prune_release_generations(
             trash_root = (
                 Path(configured_trash)
                 if configured_trash
-                else Path.home() / ".local" / "share" / "Trash" / "files"
+                else generation_root / ".Trash" / "files"
             )
         trash_root = trash_root.expanduser()
         if trash_root == Path("/") or trash_root.is_symlink():
