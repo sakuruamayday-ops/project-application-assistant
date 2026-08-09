@@ -38,7 +38,7 @@ def test_windows_hook_source_contains_truthful_activation_recovery():
     main = (WINDOWS_SOURCE / "main.go").read_text("utf-8")
     events = (WINDOWS_SOURCE / "events.go").read_text("utf-8")
     state = (WINDOWS_SOURCE / "state.go").read_text("utf-8")
-    assert 'runtimeVersion = "1.6.3"' in main
+    assert 'runtimeVersion = "1.6.5"' in main
     assert 'case "session-start"' in main
     assert '"skill_activation_recovery"' in events
     assert '"session_transcript"' in events

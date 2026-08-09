@@ -223,6 +223,51 @@ func recentTranscriptCandidates(projectRoot string) []transcriptCandidate {
 	return result
 }
 
+func transcriptCandidateForSession(session string, ttl time.Duration) (transcriptCandidate, bool) {
+	session = strings.TrimSpace(session)
+	if session == "" || filepath.Base(session) != session {
+		return transcriptCandidate{}, false
+	}
+	lowered := strings.ToLower(session)
+	for _, prefix := range nonHostSessionPrefixes {
+		if strings.HasPrefix(lowered, prefix) {
+			return transcriptCandidate{}, false
+		}
+	}
+	profile := strings.TrimSpace(os.Getenv("USERPROFILE"))
+	if profile == "" {
+		var err error
+		profile, err = os.UserHomeDir()
+		if err != nil {
+			return transcriptCandidate{}, false
+		}
+	}
+	candidates := []transcriptCandidate{}
+	for _, base := range []string{filepath.Join(profile, ".workbuddy", "projects"), filepath.Join(profile, ".codebuddy", "projects")} {
+		projects, _ := filepath.Glob(filepath.Join(base, "*"))
+		for _, project := range projects {
+			path := filepath.Join(project, session+".jsonl")
+			info, err := os.Stat(path)
+			if err != nil || info.IsDir() {
+				continue
+			}
+			age := time.Since(info.ModTime())
+			if age < 0 || age > ttl {
+				continue
+			}
+			prompt, eventID, errorCode := promptFromTranscriptFile(path, session)
+			if errorCode == "" {
+				candidates = append(candidates, transcriptCandidate{path: path, session: session, prompt: prompt, eventID: eventID, modTime: info.ModTime()})
+			}
+		}
+	}
+	if len(candidates) == 0 {
+		return transcriptCandidate{}, false
+	}
+	sort.Slice(candidates, func(i, j int) bool { return candidates[i].modTime.After(candidates[j].modTime) })
+	return candidates[0], true
+}
+
 func recoverPromptForActivation() (map[string]any, string, string) {
 	profile := strings.TrimSpace(os.Getenv("USERPROFILE"))
 	if profile == "" {
@@ -468,54 +513,83 @@ func validSkillName(value string) bool {
 	return true
 }
 
-func recoveredStopSession(root string, payload map[string]any) (any, bool) {
-	recoveredPayload, prompt, _ := recoverPromptForActivation()
-	if strings.TrimSpace(prompt) == "" {
-		return nil, false
+func freshPendingStopState(root string, session any) bool {
+	statePath, _ := statePaths(root, session)
+	var state behaviorState
+	if readJSON(statePath, &state) != nil || state.Status != "pending" || !state.PromptContextOK || !promptContextOrigin(state.StateOrigin) {
+		return false
 	}
-	recoveredSession := recoveredPayload["session_id"]
-	if recoveredSession == nil || strings.TrimSpace(fmt.Sprint(recoveredSession)) == "" {
-		return nil, false
+	timestamp := state.ActivatedAt
+	if timestamp == "" {
+		timestamp = state.SubmittedAt
 	}
+	updatedAt, err := time.Parse(time.RFC3339, timestamp)
+	if err != nil {
+		return false
+	}
+	age := time.Since(updatedAt)
+	return age >= 0 && age <= currentTurnTTL
+}
+
+func recoveredStopSession(root string, payload map[string]any) (any, string, bool) {
 	// The activation fallback and Stop hook can receive different host session
 	// identifiers even though they belong to the same WorkBuddy turn.  Only
-	// trust transcript recovery when it is also the atomically published
-	// current turn and the recovered prompt identity still matches that state.
+	// trust the transcript bound to the atomically published current turn and
+	// only while that turn itself is still fresh.  Stop may run more than two
+	// minutes after activation while the report and validator receipt are being
+	// generated, so it must not reuse the shorter activation-recovery window.
 	// This prevents an unrelated recent transcript from overriding a valid
 	// Stop payload, while still allowing a duplicate Stop to return the already
 	// completed receipt.
 	current := map[string]any{}
-	if readJSON(filepath.Join(root, "current-turn.json"), &current) != nil || fmt.Sprint(current["session_id"]) != fmt.Sprint(recoveredSession) {
-		return nil, false
+	if readJSON(filepath.Join(root, "current-turn.json"), &current) != nil {
+		return nil, "", false
 	}
-	statePath, _ := statePaths(root, recoveredSession)
-	var state behaviorState
-	if readJSON(statePath, &state) != nil || state.TurnID != strings.TrimSpace(toString(current["turn_id"])) || !state.PromptContextOK || !promptContextOrigin(state.StateOrigin) || state.PromptSHA256 != hashText(prompt) {
-		return nil, false
+	recoveredSession := strings.TrimSpace(toString(current["session_id"]))
+	if recoveredSession == "" {
+		return nil, "", false
 	}
 	updatedAt, err := time.Parse(time.RFC3339, strings.TrimSpace(toString(current["updated_at"])))
 	if err != nil {
-		return nil, false
+		return nil, "", false
 	}
 	age := time.Since(updatedAt)
 	if age < 0 || age > currentTurnTTL {
-		return nil, false
+		return nil, "", false
 	}
-	recoveredEventID := strings.TrimSpace(toString(recoveredPayload["prompt_event_id"]))
-	if recoveredEventID != "" && state.PromptEventID != recoveredEventID {
-		return nil, false
+	statePath, _ := statePaths(root, recoveredSession)
+	var state behaviorState
+	if readJSON(statePath, &state) != nil || state.TurnID != strings.TrimSpace(toString(current["turn_id"])) || (state.Status != "pending" && state.Status != "completed") || !state.PromptContextOK || !promptContextOrigin(state.StateOrigin) {
+		return nil, "", false
 	}
-	return recoveredSession, true
+	payloadSession := payload["session_id"]
+	if fmt.Sprint(payloadSession) == fmt.Sprint(recoveredSession) {
+		return recoveredSession, "stop_payload", true
+	}
+	// A fresh, prompt-grounded pending payload can belong to another live
+	// WorkBuddy window. Preserve that explicit session instead of allowing the
+	// process-wide current-turn pointer to steal a concurrent Stop event.
+	if freshPendingStopState(root, payloadSession) {
+		return nil, "", false
+	}
+
+	// The current-turn/state pair is the durable activation receipt. WorkBuddy
+	// may rotate, rewrite, or move the JSONL transcript before Stop runs, so a
+	// transcript re-read is useful corroboration but cannot be a prerequisite
+	// for using a newer pending turn over an old blocked host payload.
+	source := "current_turn_state"
+	transcript, ok := transcriptCandidateForSession(recoveredSession, currentTurnTTL)
+	if ok && state.PromptSHA256 == hashText(transcript.prompt) && (transcript.eventID == "" || state.PromptEventID == transcript.eventID) {
+		source = "session_transcript_current_turn"
+	}
+	return recoveredSession, source, true
 }
 
 func stopStateSession(root string, payload map[string]any) (any, string, bool) {
 	payloadSession := payload["session_id"]
-	if recoveredSession, ok := recoveredStopSession(root, payload); ok {
+	if recoveredSession, source, ok := recoveredStopSession(root, payload); ok {
 		matched := fmt.Sprint(recoveredSession) == fmt.Sprint(payloadSession)
-		if matched {
-			return recoveredSession, "stop_payload", true
-		}
-		return recoveredSession, "session_transcript_current_turn", false
+		return recoveredSession, source, matched
 	}
 	return payloadSession, "stop_payload", true
 }

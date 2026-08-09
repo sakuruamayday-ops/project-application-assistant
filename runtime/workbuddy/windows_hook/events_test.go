@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func addTestSkill(t *testing.T, pluginRoot, skill string) {
@@ -302,8 +303,8 @@ func TestStopUsesCurrentTranscriptTurnWhenPayloadSessionDiffers(t *testing.T) {
 			SkillApplicability:     map[string]bool{},
 		},
 		ActiveSkills: []activeSkill{},
-		Status:       "pending",
-		SubmittedAt:  nowISO(),
+		Status:       "blocked",
+		SubmittedAt:  time.Now().Add(-time.Hour).Format(time.RFC3339),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -322,5 +323,145 @@ func TestStopUsesCurrentTranscriptTurnWhenPayloadSessionDiffers(t *testing.T) {
 	}
 	if got := skillNames(resolvedState.ActiveSkills); len(got) != 2 || got[0] != "evidence-ledger" || got[1] != "project-feasibility" {
 		t.Fatalf("Stop did not resolve the active current turn: %#v", got)
+	}
+}
+
+func TestStopUsesCurrentTurnTranscriptAfterActivationRecoveryWindow(t *testing.T) {
+	profile := t.TempDir()
+	t.Setenv("USERPROFILE", profile)
+	workspace := filepath.Join(t.TempDir(), "current-workspace")
+	if err := os.MkdirAll(workspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	previousCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(workspace); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(previousCWD) })
+
+	pluginRoot := filepath.Join(t.TempDir(), "plugin")
+	addTestSkill(t, pluginRoot, "project-feasibility")
+	stateRoot := filepath.Join(t.TempDir(), "state")
+	transcriptSession := "transcript-session"
+	transcriptPath := writeProjectTranscript(t, profile, workspace, transcriptSession, "继续完成测试可行性报告")
+
+	opts := testOptions(pluginRoot)
+	opts.skill = "project-feasibility"
+	activateEvent(stateRoot, opts)
+
+	// A real grounded report can take longer than the two-minute activation
+	// recovery window.  The current turn remains valid for fifteen minutes and
+	// must stay bound to its own transcript even if another transcript is newer.
+	older := time.Now().Add(-3 * time.Minute)
+	if err := os.Chtimes(transcriptPath, older, older); err != nil {
+		t.Fatal(err)
+	}
+	otherWorkspace := filepath.Join(t.TempDir(), "other-workspace")
+	if err := os.MkdirAll(otherWorkspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	writeProjectTranscript(t, profile, otherWorkspace, "unrelated-session", "无关的新会话")
+
+	wrongSession := "stale-stop-payload-session"
+	resolved, source, matched := stopStateSession(stateRoot, map[string]any{"session_id": wrongSession})
+	if fmt.Sprint(resolved) != transcriptSession {
+		t.Fatalf("Stop kept stale payload session after activation window: got %v want %s", resolved, transcriptSession)
+	}
+	if source != "session_transcript_current_turn" || matched {
+		t.Fatalf("unexpected Stop resolution metadata: source=%s matched=%v", source, matched)
+	}
+}
+
+func TestStopUsesCurrentTurnStateWhenTranscriptUnavailable(t *testing.T) {
+	profile := t.TempDir()
+	t.Setenv("USERPROFILE", profile)
+	workspace := filepath.Join(t.TempDir(), "current-workspace")
+	if err := os.MkdirAll(workspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	previousCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(workspace); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(previousCWD) })
+
+	pluginRoot := filepath.Join(t.TempDir(), "plugin")
+	addTestSkill(t, pluginRoot, "project-feasibility")
+	stateRoot := filepath.Join(t.TempDir(), "state")
+	transcriptSession := "transcript-session"
+	transcriptPath := writeProjectTranscript(t, profile, workspace, transcriptSession, "继续完成测试可行性报告")
+
+	opts := testOptions(pluginRoot)
+	opts.skill = "project-feasibility"
+	activateEvent(stateRoot, opts)
+	if err := os.Remove(transcriptPath); err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, source, matched := stopStateSession(stateRoot, map[string]any{"session_id": "old-blocked-host-session"})
+	if fmt.Sprint(resolved) != transcriptSession {
+		t.Fatalf("Stop did not use durable current-turn state: got %v want %s", resolved, transcriptSession)
+	}
+	if source != "current_turn_state" || matched {
+		t.Fatalf("unexpected state-only Stop resolution metadata: source=%s matched=%v", source, matched)
+	}
+}
+
+func TestStopPreservesFreshConcurrentPayloadSession(t *testing.T) {
+	profile := t.TempDir()
+	t.Setenv("USERPROFILE", profile)
+	workspace := filepath.Join(t.TempDir(), "current-workspace")
+	if err := os.MkdirAll(workspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	previousCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(workspace); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(previousCWD) })
+
+	pluginRoot := filepath.Join(t.TempDir(), "plugin")
+	addTestSkill(t, pluginRoot, "project-feasibility")
+	stateRoot := filepath.Join(t.TempDir(), "state")
+	writeProjectTranscript(t, profile, workspace, "current-session", "当前窗口任务")
+
+	opts := testOptions(pluginRoot)
+	opts.skill = "project-feasibility"
+	activateEvent(stateRoot, opts)
+
+	concurrentSession := "concurrent-session"
+	concurrentPath, _ := statePaths(stateRoot, concurrentSession)
+	if err := atomicJSON(concurrentPath, behaviorState{
+		SchemaVersion:   4,
+		SessionID:       concurrentSession,
+		TurnID:          "concurrent-turn",
+		StateOrigin:     "session_start_recovery",
+		PromptContextOK: true,
+		PromptSHA256:    hashText("并发窗口任务"),
+		PromptSignals: promptSignals{
+			FormalBusinessDelivery: true,
+			BusinessDomain:         true,
+			SkillApplicability:     map[string]bool{},
+		},
+		ActiveSkills: []activeSkill{{Skill: "project-feasibility", TurnID: "concurrent-turn", ActivatedAt: nowISO()}},
+		Status:       "pending",
+		SubmittedAt:  nowISO(),
+		ActivatedAt:  nowISO(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, source, matched := stopStateSession(stateRoot, map[string]any{"session_id": concurrentSession})
+	if fmt.Sprint(resolved) != concurrentSession || source != "stop_payload" || !matched {
+		t.Fatalf("fresh concurrent Stop payload was overridden: resolved=%v source=%s matched=%v", resolved, source, matched)
 	}
 }
