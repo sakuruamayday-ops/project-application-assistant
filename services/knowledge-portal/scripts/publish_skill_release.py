@@ -584,11 +584,7 @@ def _validate_workbuddy_integrity(
         raise ValueError("WorkBuddy 简化包缺少最小行为 Hook")
     hooks = json.loads(archive.read(hook_name).decode("utf-8"))
     hook_events = hooks.get("hooks") if isinstance(hooks, dict) else None
-    expected_hook_events = (
-        {"UserPromptSubmit", "Stop"}
-        if target == "windows"
-        else {"SessionStart", "UserPromptSubmit", "Stop"}
-    )
+    expected_hook_events = {"SessionStart", "UserPromptSubmit", "Stop"}
     if (
         not isinstance(hook_events, dict)
         or set(hook_events) != expected_hook_events

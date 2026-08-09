@@ -73,8 +73,15 @@ def load_json(archive: zipfile.ZipFile, name: str) -> dict[str, object]:
 
 
 def validate_server_release_contract(suite_zip: Path) -> dict[str, object]:
-    validation = validate_release_packages({"workbuddy": suite_zip}, EXPECTED_VERSION)
-    artifact = validation["artifacts"]["workbuddy"]
+    with zipfile.ZipFile(suite_zip) as archive:
+        names = set(archive.namelist())
+        plugin_name = unique_name(names, "/.codebuddy-plugin/plugin.json")
+        plugin = load_json(archive, plugin_name)
+    target = str(plugin.get("platform") or "workbuddy")
+    if target not in {"macos", "windows"}:
+        target = "workbuddy"
+    validation = validate_release_packages({target: suite_zip}, EXPECTED_VERSION)
+    artifact = validation["artifacts"][target]
     integrity = artifact["integrity"]
     if integrity.get("status") != "verified":
         raise RuntimeError("WorkBuddy 候选包完整性未验证")
@@ -93,6 +100,7 @@ def validate_server_release_contract(suite_zip: Path) -> dict[str, object]:
     return {
         "status": "pass",
         "check": "server-release-contract",
+        "target": target,
         "sha256": artifact["sha256"],
         "publisher_fingerprint": integrity["publisher_fingerprint"],
         "verified_files": integrity["verified_files"],
