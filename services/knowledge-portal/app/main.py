@@ -3951,6 +3951,8 @@ def analyze_three_first(
     project_type = str(plan["project_type"])
     project_names = [str(item) for item in plan.get("project_names", [])]
     project_types = [str(item) for item in plan.get("project_types", [])]
+    planned_enterprise_name = str(plan.get("enterprise_name") or "")
+    planned_product_name = str(plan.get("product_name") or "")
     effective_from_year = plan["from_year"]
     effective_to_year = plan["to_year"]
     list_year = plan["list_year"]
@@ -3965,8 +3967,8 @@ def analyze_three_first(
             for requested_region in requested_region_scopes:
                 group = search_authoritative_list_facts(
                     "three_first",
-                    enterprise_name=enterprise_name,
-                    product_name=product_name,
+                    enterprise_name=planned_enterprise_name,
+                    product_name=planned_product_name,
                     project_name=requested_project,
                     year=list_year,
                     region=requested_region,
@@ -3987,8 +3989,8 @@ def analyze_three_first(
                 )
         list_results = {
             "filters": {
-                "enterprise_name": enterprise_name.strip(),
-                "product_name": product_name.strip(),
+                "enterprise_name": planned_enterprise_name,
+                "product_name": planned_product_name,
                 "project_names": requested_projects,
                 "regions": requested_regions,
                 "year": list_year,
@@ -4014,6 +4016,55 @@ def analyze_three_first(
             limit=bounded_limit,
         )
 
+    recognition_results: dict[str, object] = {
+        "route_to": "not_requested",
+        "exact_results": [],
+        "related_results": [],
+        "pending_results": [],
+        "coverage": {
+            "requested": 0,
+            "processed": 0,
+            "is_complete": False,
+            "reason": "本次问题未识别出需要反查的产品主题。",
+        },
+        "pagination": {"limit": bounded_limit, "returned": 0, "is_truncated": False},
+    }
+    if plan["routes"].get("recognition_search"):
+        recognition_years = list(
+            dict.fromkeys(
+                int(value)
+                for value in (award_year, effective_from_year, effective_to_year)
+                if value is not None
+            )
+        )
+        with closing(content_database()) as connection:
+            recognition_results = execute_recognition_search(
+                connection,
+                query=normalized_query,
+                projects=project_types or ["三首"],
+                subject_terms=[planned_product_name],
+                regions=requested_regions,
+                years=recognition_years,
+                status="final_recognition",
+                limit=bounded_limit,
+            )
+
+    recognition_truncated = bool(
+        recognition_results.get("pagination", {}).get("is_truncated")
+    )
+    list_truncated = any(
+        bool(group.get("pagination", {}).get("is_truncated"))
+        for group in list_groups
+    )
+    list_coverage_complete = bool(list_groups) and all(
+        bool(group.get("coverage", {}).get("completeness_claim_allowed"))
+        for group in list_groups
+    )
+    recognition_coverage_complete = bool(
+        recognition_results.get("coverage", {}).get("is_complete")
+    )
+    coverage_complete = list_coverage_complete and recognition_coverage_complete
+
     return {
         "query": normalized_query,
         "project_type": project_type,
@@ -4025,23 +4076,31 @@ def analyze_three_first(
         "structured_results": knowledge.get("structured_results", []),
         "list_results": list_results.get("results", []),
         "list_groups": list_groups,
+        "recognition_results": recognition_results,
         "directory_diffs": directory_diffs.get("results", []),
         "product_matches": product_matches.get("results", []),
         "deadline_reminders": knowledge.get("deadline_reminders", []),
         "clarifications": plan["clarifications"],
+        "warnings": [
+            "knowledge_results仅用于发现线索；推广指导目录、供给清单和内部培训资料不得直接升级为正式认定事实。",
+            "正式认定分级以recognition_results为准；pending_results不得写成verified，未命中不等于不存在。",
+        ],
+        "coverage_complete": coverage_complete,
+        "truncated": list_truncated or recognition_truncated,
         "coverage_ledger": {
             "requested": len(project_names or [project_name or "三首项目"])
             * max(1, len(requested_regions)),
             "processed": len(list_groups),
             "skipped": [],
-            "is_truncated": any(
-                bool(group.get("pagination", {}).get("is_truncated"))
-                for group in list_groups
-            ),
+            "is_truncated": list_truncated or recognition_truncated,
+            "coverage_complete": coverage_complete,
+            "list_coverage_complete": list_coverage_complete,
+            "recognition_coverage_complete": recognition_coverage_complete,
         },
         "internal_routing": {
             "knowledge_search": True,
             "public_list_search": bool(plan["routes"]["public_list_search"]),
+            "recognition_search": bool(plan["routes"].get("recognition_search")),
             "directory_diff": bool(plan["routes"]["directory_diff"]),
             "product_match": bool(plan["routes"]["product_match"]),
         },
@@ -5764,6 +5823,12 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
             for item in result.get("list_results", [])
             if isinstance(item, dict)
         ]
+        sources.extend(
+            dict(item.get("recognition_fact") or {})
+            for group in ("exact_results", "related_results")
+            for item in result.get("recognition_results", {}).get(group, [])
+            if isinstance(item, dict)
+        )
         return result, sources
     if name == "recognition_search":
         raw_projects = arguments.get("projects") or []
