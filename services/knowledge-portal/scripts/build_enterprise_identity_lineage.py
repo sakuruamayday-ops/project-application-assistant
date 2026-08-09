@@ -22,7 +22,7 @@ from typing import Any, Iterable
 
 
 PUBLIC_SOURCE = "共创研究院知识库"
-SCHEMA_VERSION = "jiaotang-enterprise-identity-lineage-v1"
+SCHEMA_VERSION = "co-creation-institute-enterprise-identity-lineage-v1"
 USCC_PATTERN = re.compile(r"^[0-9A-HJ-NPQRTUWXY]{18}$")
 IDENTITY_VERIFICATION_EXEMPT_PROJECTS = {
     "浙江制造精品",
@@ -151,18 +151,62 @@ def build_lineage_rows(database: Path, knowledge_identities: Path | None) -> lis
     by_code, by_name = load_identity_snapshot(knowledge_identities)
     connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True)
     connection.row_factory = sqlite3.Row
-    profiles = connection.execute(
-        "SELECT * FROM enterprise_identity_profiles ORDER BY identity_key"
-    ).fetchall()
-    alias_rows = connection.execute(
-        """
-        SELECT identity_key,alias_name,alias_type,valid_from,valid_to
-        FROM enterprise_identity_names
-        ORDER BY identity_key,alias_type,alias_name
-        """
-    ).fetchall()
+    profiles: list[Any] = list(
+        connection.execute(
+            "SELECT * FROM enterprise_identity_profiles ORDER BY identity_key"
+        ).fetchall()
+    )
+    alias_rows: list[Any] = list(
+        connection.execute(
+            """
+            SELECT identity_key,alias_name,alias_type,valid_from,valid_to
+            FROM enterprise_identity_names
+            ORDER BY identity_key,alias_type,alias_name
+            """
+        ).fetchall()
+    )
+    existing_identity_keys = {str(row["identity_key"]) for row in profiles}
+    if connection.execute(
+        "SELECT 1 FROM sqlite_master "
+        "WHERE type='table' AND name='enterprise_unified_digital_identities'"
+    ).fetchone():
+        for row in connection.execute(
+            """
+            SELECT identity_key,unified_social_credit_code,current_name,
+                   identity_verification_status,former_names_json
+            FROM enterprise_unified_digital_identities
+            ORDER BY identity_key
+            """
+        ).fetchall():
+            identity_key = str(row["identity_key"] or "")
+            if identity_key in existing_identity_keys:
+                continue
+            profiles.append(
+                {
+                    "identity_key": identity_key,
+                    "unified_social_credit_code": str(
+                        row["unified_social_credit_code"] or ""
+                    ),
+                    "current_name": str(row["current_name"] or ""),
+                    "verification_status": str(
+                        row["identity_verification_status"] or ""
+                    ),
+                }
+            )
+            alias_rows.extend(
+                {
+                    "identity_key": identity_key,
+                    "alias_name": former_name,
+                    "alias_type": "former_name",
+                    "valid_from": "",
+                    "valid_to": "",
+                }
+                for former_name in _json_list(row["former_names_json"])
+                if former_name
+            )
+            existing_identity_keys.add(identity_key)
     connection.close()
-    aliases_by_identity: dict[str, list[sqlite3.Row]] = defaultdict(list)
+    aliases_by_identity: dict[str, list[Any]] = defaultdict(list)
     for row in alias_rows:
         aliases_by_identity[str(row["identity_key"])].append(row)
 

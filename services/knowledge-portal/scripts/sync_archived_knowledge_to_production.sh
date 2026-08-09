@@ -172,6 +172,10 @@ fi
 python3 "${script_dir}/build_three_first_benchmark_graph.py" "${three_first_args[@]}"
 python3 "${script_dir}/build_zhejiang_enterprise_identity_timeline.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
+python3 "${script_dir}/build_unified_enterprise_digital_identity.py" \
+  --database "${index_dir}/knowledge_content.sqlite3" \
+  --knowledge-identities "${knowledge_root}/50_名单与对标/企业身份时间轴/浙江省/三类名单基础数字身份证" \
+  --output "${knowledge_root}/50_名单与对标/企业身份时间轴/统一企业数字身份证.jsonl"
 python3 "${script_dir}/build_enterprise_identity_lineage.py" \
   --database "${index_dir}/knowledge_content.sqlite3" \
   --output "${knowledge_root}/50_名单与对标/企业身份时间轴/浙江省" \
