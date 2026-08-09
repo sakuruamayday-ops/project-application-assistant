@@ -224,6 +224,81 @@ def test_receipt_does_not_infer_implicit_skill_activation(tmp_path: Path):
     assert receipt["host_activated_skills"]["implicit_activation_verifiable"] is False
 
 
+def test_receipt_keeps_prompt_context_separate_and_binds_latest_stop_state(
+    tmp_path: Path,
+):
+    session_id = "session-with-two-turns"
+    log = tmp_path / f"{session_id}.jsonl"
+    hook_state = tmp_path / "hook-state.json"
+    events: list[dict] = []
+    for index, turn_id in enumerate(("turn-1", "turn-2"), start=1):
+        call_id = f"skill-{index}"
+        events.extend(
+            [
+                {
+                    "type": "function_call",
+                    "name": "Skill",
+                    "callId": call_id,
+                    "arguments": json.dumps(
+                        {"skill": "local-knowledge-retrieval"}
+                    ),
+                },
+                {
+                    "type": "function_call_result",
+                    "name": "Skill",
+                    "callId": call_id,
+                    "status": "completed",
+                    "output": {
+                        "type": "text",
+                        "text": (
+                            "<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->\n"
+                            + json.dumps(
+                                {
+                                    "activation_ok": True,
+                                    "hook_runtime_ok": True,
+                                    "state_persisted": True,
+                                    "turn_id": turn_id,
+                                    "state_origin": "session_start_recovery",
+                                    "prompt_context_ok": True,
+                                    "prompt_hook_observable": False,
+                                    "prompt_context_source": "session_transcript",
+                                }
+                            )
+                            + "\n<!-- END WORKBUDDY BEHAVIOR HOOK -->"
+                        ),
+                    },
+                },
+            ]
+        )
+    write_jsonl(log, events)
+    hook_state.write_text(
+        json.dumps(
+            {
+                "session_id": session_id,
+                "turn_id": "turn-2",
+                "delivery_receipt": {
+                    "turn_id": "turn-2",
+                    "delivery_check_ok": True,
+                    "stop_event_seen": True,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    receipt = MODULE.generate_receipt(log, hook_state)
+
+    calls = receipt["host_activated_skills"]["calls"]
+    assert receipt["schema_version"] == 3
+    assert receipt["host_activated_skills"]["prompt_context_ok"] is True
+    assert receipt["host_activated_skills"]["prompt_hook_observable"] is False
+    assert receipt["host_activated_skills"]["delivery_check"] == "partial"
+    assert calls[0]["delivery_check"] == "unavailable"
+    assert calls[1]["delivery_check"] == "passed"
+    assert calls[1]["stop_event_seen"] is True
+    assert receipt["source"]["hook_state"]["turn_id"] == "turn-2"
+
+
 def test_negated_ambiguous_entity_count_example_is_not_a_conflict():
     report = (
         "verified 0 + related 0 + pending 15 + noise 0 = 15 家，"
