@@ -57,7 +57,7 @@ def test_knowledge_identity_snapshot_promotes_current_and_recognition_names(
         assert result[MODULE.normalize_name(name)]["unified_social_credit_code"] == (
             "91330108MA2B254A2K"
         )
-        assert result[MODULE.normalize_name(name)]["source_tools"] == "焦糖知识库"
+        assert result[MODULE.normalize_name(name)]["source_tools"] == "共创研究院知识库"
 
 
 def test_knowledge_identity_snapshot_does_not_promote_single_source_candidate(
@@ -147,7 +147,7 @@ def test_identity_collection_queue_is_regenerated_and_excludes_exempt_only():
     assert len(queue) == 1
     assert queue[0]["enterprise_name"] == "需要采集企业有限公司"
     assert queue[0]["actionable_projects"] == ["浙江省专精特新中小企业"]
-    assert queue[0]["source"] == "焦糖知识库"
+    assert queue[0]["source"] == "共创研究院知识库"
 
 
 def test_first_year_uses_earliest_explicit_year():

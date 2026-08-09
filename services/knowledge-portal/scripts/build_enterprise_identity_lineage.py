@@ -5,7 +5,7 @@ The timeline builder already stores the identity profile and alias tables.  This
 step turns those two tables into an explicit, queryable graph while keeping the
 public source label stable.  Internal alias provenance remains in
 ``enterprise_identity_names.source`` for audit; the JSONL projection and graph
-tables deliberately expose only ``焦糖知识库`` as their source.
+tables deliberately expose only ``共创研究院知识库`` as their source.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-PUBLIC_SOURCE = "焦糖知识库"
+PUBLIC_SOURCE = "共创研究院知识库"
 SCHEMA_VERSION = "jiaotang-enterprise-identity-lineage-v1"
 USCC_PATTERN = re.compile(r"^[0-9A-HJ-NPQRTUWXY]{18}$")
 IDENTITY_VERIFICATION_EXEMPT_PROJECTS = {
@@ -38,7 +38,7 @@ def parse_args() -> argparse.Namespace:
         "--knowledge-identities",
         type=Path,
         default=None,
-        help="焦糖知识库企业基础数字身份证 JSONL 文件或目录",
+        help="共创研究院知识库企业基础数字身份证 JSONL 文件或目录",
     )
     return parser.parse_args()
 
@@ -79,7 +79,7 @@ def load_identity_snapshot(path: Path | None) -> tuple[dict[str, dict[str, Any]]
     by_name: dict[str, dict[str, Any]] = {}
     paths = snapshot_paths(path)
     if len(paths) > 1:
-        raise RuntimeError(f"焦糖知识库身份快照数量必须为 1，实际为 {len(paths)}：{path}")
+        raise RuntimeError(f"共创研究院知识库身份快照数量必须为 1，实际为 {len(paths)}：{path}")
     for row in read_jsonl(paths[0]) if paths else []:
         code = str(row.get("unified_social_credit_code") or "").strip().upper()
         if not USCC_PATTERN.fullmatch(code):

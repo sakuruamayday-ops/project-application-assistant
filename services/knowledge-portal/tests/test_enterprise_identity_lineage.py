@@ -72,7 +72,7 @@ def test_lineage_projection_contains_four_identity_layers_and_public_source(tmp_
     rows = MODULE.build_lineage_rows(database, snapshot)
     assert len(rows) == 1
     row = rows[0]
-    assert row["source"] == "焦糖知识库"
+    assert row["source"] == "共创研究院知识库"
     assert row["master_identity_key"] == "name:曾用名科技有限公司"
     assert row["former_names"] == ["曾用名科技有限公司", "旧注册名科技有限公司"]
     assert row["unified_social_credit_code"] == "91330108MA2B254A2K"
@@ -82,11 +82,11 @@ def test_lineage_projection_contains_four_identity_layers_and_public_source(tmp_
         "unified_social_credit_code",
         "merged_subject",
     }
-    assert {node["source"] for node in row["nodes"]} == {"焦糖知识库"}
-    assert {edge["source"] for edge in row["edges"]} == {"焦糖知识库"}
+    assert {node["source"] for node in row["nodes"]} == {"共创研究院知识库"}
+    assert {edge["source"] for edge in row["edges"]} == {"共创研究院知识库"}
     public_rows = MODULE.public_projection_rows(rows)
     assert len(public_rows) == len(row["edges"])
-    assert all(item["source"] == "焦糖知识库" for item in public_rows)
+    assert all(item["source"] == "共创研究院知识库" for item in public_rows)
     assert all("nodes" not in item and "edges" not in item for item in public_rows)
 
 
@@ -150,14 +150,14 @@ def test_database_graph_and_alias_projection_are_written_with_unified_source(tmp
     assert node_count >= 4
     assert edge_count >= 3
     alias = json.loads((output / "浙江省企业名称历史.jsonl").read_text(encoding="utf-8"))
-    assert alias["source"] == "焦糖知识库"
+    assert alias["source"] == "共创研究院知识库"
     connection = sqlite3.connect(database)
     assert connection.execute(
         "SELECT COUNT(*) FROM enterprise_identity_lineage_edges"
     ).fetchone()[0] == edge_count
     assert connection.execute(
         "SELECT DISTINCT source FROM enterprise_identity_lineage_edges"
-    ).fetchall() == [("焦糖知识库",)]
+    ).fetchall() == [("共创研究院知识库",)]
     connection.close()
 
 
@@ -181,4 +181,4 @@ def test_public_profile_projection_drops_provider_identifier(tmp_path: Path):
         (output / "浙江省企业身份档案.jsonl").read_text(encoding="utf-8")
     )
     assert "tyc_company_id" not in row
-    assert row["identity_source"] == "焦糖知识库"
+    assert row["identity_source"] == "共创研究院知识库"

@@ -105,3 +105,39 @@ def test_retention_never_falls_back_to_copy_then_delete(
     assert current.is_dir() and previous.is_dir()
     assert stale_a.is_dir() and stale_b.is_dir()
     assert list(trash.iterdir()) == []
+
+
+def test_retention_tolerates_candidate_already_moved_by_concurrent_worker(
+    tmp_path: Path, monkeypatch
+):
+    generations, pointers, current, previous, stale_a, stale_b = make_layout(
+        tmp_path
+    )
+    trash = tmp_path / "trash"
+    real_rename = MODULE.os.rename
+    raced = False
+
+    def race_first_release_move(source, destination):
+        nonlocal raced
+        source_path = Path(source)
+        if not raced and source_path.parent == generations:
+            raced = True
+            concurrent_destination = trash / "moved-by-concurrent-worker"
+            real_rename(source_path, concurrent_destination)
+            raise FileNotFoundError(errno.ENOENT, "already moved", source_path)
+        return real_rename(source, destination)
+
+    monkeypatch.setattr(MODULE.os, "rename", race_first_release_move)
+
+    report = MODULE.prune_release_generations(
+        generations, pointers, apply=True, trash_root=trash
+    )
+
+    assert report["concurrently_removed_count"] == 1
+    assert report["removed_count"] == 1
+    assert current.is_dir() and previous.is_dir()
+    assert not stale_a.exists() and not stale_b.exists()
+    assert sorted(path.name for path in generations.iterdir()) == [
+        "current-generation",
+        "previous-generation",
+    ]

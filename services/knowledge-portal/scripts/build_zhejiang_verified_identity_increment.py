@@ -43,7 +43,7 @@ def parse_checklist(path: Path) -> list[dict[str, str]]:
             raise RuntimeError(f"核验清单包含无效信用代码：{recognition_name} {code}")
         if "核验通过" not in conclusion and "归并" not in conclusion:
             raise RuntimeError(f"核验清单包含未转正行：{recognition_name} {conclusion}")
-        if source != "焦糖知识库":
+        if source != "共创研究院知识库":
             raise RuntimeError(f"核验清单来源标签异常：{recognition_name} {source}")
         rows.append(
             {
@@ -117,7 +117,7 @@ def merge(
             row["knowledge_verification_status"] = "verified"
             row["generated_at"] = generated_at
             row.setdefault("source_layers", {})["knowledge_base"] = {
-                "source_type": "焦糖知识库",
+                "source_type": "共创研究院知识库",
                 "list_membership_status": "verified",
                 "enterprise_identity_status": "verified",
                 "match_status": "verified_alias_merge",
@@ -165,7 +165,7 @@ def merge(
             "knowledge_verification_status": "verified",
             "source_layers": {
                 "knowledge_base": {
-                    "source_type": "焦糖知识库",
+                    "source_type": "共创研究院知识库",
                     "list_membership_status": "verified",
                     "enterprise_identity_status": "verified",
                     "match_status": "uscc_exact",
@@ -302,7 +302,7 @@ def merge(
                 "knowledge_verification_status": "dual_commercial_sources_consistent",
                 "source_layers": {
                     "knowledge_base": {
-                        "source_type": "焦糖知识库",
+                        "source_type": "共创研究院知识库",
                         "list_membership_status": "verified",
                         "enterprise_identity_status": "dual_commercial_sources_consistent",
                         "match_status": "dual_commercial_uscc_exact",
@@ -335,7 +335,7 @@ def merge(
         "dual_source_aliases_added": dual_source_aliases_merged,
         "output_identity_count": len(base_rows),
         "generated_at": generated_at,
-        "outward_source_label": "焦糖知识库",
+        "outward_source_label": "共创研究院知识库",
     }
     audit_path.write_text(json.dumps(audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return audit
