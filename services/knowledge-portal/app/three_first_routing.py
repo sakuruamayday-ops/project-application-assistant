@@ -32,6 +32,22 @@ TOPIC_COMMAND_TERMS = (
     "历年不限",
     "历年",
 )
+GENERIC_CONTEXT_TERMS = (
+    "帮我",
+    "请",
+    "分析",
+    "浙江省",
+    "浙江",
+    "认定",
+    "名单",
+    "公示",
+    "目录",
+    "项目",
+    "相关",
+    "情况",
+    "这家企业",
+    "该企业",
+)
 
 
 def compact_text(value: str) -> str:
@@ -74,6 +90,8 @@ def infer_topic_product_name(
             candidate = candidate.replace(normalized_region.removesuffix("市"), "")
     candidate = re.sub(r"(?<!\d)20\d{2}(?!\d)", "", candidate)
     for term in TOPIC_COMMAND_TERMS:
+        candidate = candidate.replace(term, "")
+    for term in sorted(GENERIC_CONTEXT_TERMS, key=len, reverse=True):
         candidate = candidate.replace(term, "")
     candidate = re.sub(r"[：:，,、；;。.?？/／×]+", "", candidate).strip()
     return candidate if 2 <= len(candidate) <= 100 else ""
