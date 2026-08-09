@@ -10,6 +10,8 @@
       "macOS 新增 SessionStart 冷启动恢复：只读取宿主提供的同一 session_id、两分钟内且位于 WorkBuddy 项目目录的 JSONL，提取当前 user_query 的摘要；不扫描其他任务，也不保存提示正文。",
       "SessionStart 恢复状态如实标记 state_origin=session_start_recovery、prompt_context_source=session_transcript、prompt_hook_observable=false；后续原生 UserPromptSubmit 到达同轮时升级为 user_prompt_submit。",
       "同一会话同一提示在五秒内去重，避免市场级与 Skill 内联 Hook 重复注册生成两个 turn_id；Windows 原生 EXE 同步增加受限 SessionStart 恢复。",
+      "Windows 生命周期 Hook 从固定的 $HOME/.workbuddy 正式市场根直接调用原生 EXE，不依赖 Hook 进程中不稳定的 CODEBUDDY_PLUGIN_ROOT 注入。",
+      "Windows 宿主未发出 Prompt Hook 时，Skill 激活只从当前项目两分钟内的新鲜转录恢复上下文，并如实标记 skill_activation_recovery；同一转录事件多 Skill 累积，新消息生成新 turn_id 并清空旧 Skill。",
       "macOS UserPromptSubmit 同时接受 WorkBuddy 5.3.11 的 user_prompt 与旧版 prompt 字段，真实提示能够创建全新轮次状态。",
       "无宿主会话标识的 Skill 激活仅复用十五分钟内、状态一致且非测试会话的 current-turn；dry-run、夹具和过期轮次一律降级为 activation_fallback。",
       "国家小巨人、省级专精特新等非三首权威名单不再接受无效的 product_name 或 industry 参数；主题词反查固定转入 recognition_search。",
@@ -59,7 +61,7 @@
       {
         "target": "Windows WorkBuddy",
         "status": "结构兼容，发布后补充实机结果",
-        "note": "Windows 原生 EXE 已增加受限 SessionStart 转录恢复、同提示去重和跨轮 Skill 隔离；确定性回归通过后仍须由 Windows 真实宿主验证。"
+        "note": "Windows 原生 EXE 已修复生命周期命令根路径，并增加受限 Skill 激活转录恢复、消息事件去重和跨轮 Skill 隔离；确定性回归通过后仍须由 Windows 真实宿主验证。"
       }
     ],
     "one_step_installation_protocol": {
