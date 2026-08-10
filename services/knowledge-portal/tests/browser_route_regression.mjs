@@ -125,6 +125,46 @@ try {
   assert.match(await page.locator("main").innerText(), /普通成员/, "普通成员自助注册权限必须创建成功");
   await page.goto(`${baseUrl}/portal`, {waitUntil: "networkidle"});
 
+  const glowCard = page.locator(".metrics > a").first();
+  const glowIdle = await glowCard.evaluate((element) => {
+    const style = getComputedStyle(element, "::after");
+    return {opacity: style.opacity, animationName: style.animationName, backgroundImage: style.backgroundImage};
+  });
+  assert.equal(glowIdle.opacity, "0", "流光卡片静止时不应持续发亮");
+  assert.equal(glowIdle.animationName, "atelier-flow-orbit", "可点击卡片应挂载流光轨道动画");
+  assert.match(glowIdle.backgroundImage, /conic-gradient/, "流光边框应使用锥形渐变");
+  await glowCard.hover();
+  await page.waitForTimeout(240);
+  const glowActive = await glowCard.evaluate((element) => {
+    const style = getComputedStyle(element, "::after");
+    return {opacity: Number(style.opacity), animationPlayState: style.animationPlayState};
+  });
+  assert.ok(glowActive.opacity > .95, `悬停后流光边框应可见：${JSON.stringify(glowActive)}`);
+  assert.equal(glowActive.animationPlayState, "running", "悬停后流光轨道应开始运行");
+
+  const focusedField = page.locator('#feedback input[name="subject"]');
+  await focusedField.focus();
+  const fieldGlow = await focusedField.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {animationName: style.animationName, backgroundImage: style.backgroundImage};
+  });
+  assert.equal(fieldGlow.animationName, "atelier-flow-orbit", "输入框聚焦后应启动流光边框");
+  assert.match(fieldGlow.backgroundImage, /conic-gradient/, "输入框聚焦边框应使用锥形渐变");
+
+  await page.emulateMedia({reducedMotion: "reduce"});
+  await glowCard.focus();
+  const reducedMotionGlow = await glowCard.evaluate((element) => getComputedStyle(element, "::after").animationName);
+  assert.equal(reducedMotionGlow, "none", "减少动态效果模式必须停用流光动画");
+  await page.emulateMedia({reducedMotion: "no-preference"});
+  await glowCard.scrollIntoViewIfNeeded();
+  await glowCard.focus();
+  await page.waitForTimeout(180);
+  if (screenshotDir) {
+    await mkdir(screenshotDir, {recursive: true});
+    await page.screenshot({path: join(screenshotDir, "flow-glow-desktop.png"), fullPage: false});
+    await glowCard.screenshot({path: join(screenshotDir, "flow-glow-card-desktop.png")});
+  }
+
   const orderedSectionIds = ["overview", "cockpit", "algorithms", "api-access", "feedback", "skills", "health-admin"];
   await assertPortalSequence(page, orderedSectionIds, "管理员");
 
@@ -171,6 +211,11 @@ try {
   assert.equal(await credentialPanel.locator("[data-credential-select]").count(), 1, "测试管理员应展示一条可选凭据");
   const batchRevoke = credentialPanel.locator("[data-credential-batch-submit]");
   assert.equal(await batchRevoke.isDisabled(), true, "未选择凭据时批量吊销按钮必须禁用");
+  assert.equal(
+    await batchRevoke.evaluate((element) => getComputedStyle(element, "::after").content),
+    "none",
+    "风险按钮不得叠加普通可点击框流光",
+  );
   await credentialPanel.locator("[data-credential-select]").check();
   assert.equal(await batchRevoke.isEnabled(), true, "选择凭据后批量吊销按钮必须启用");
   assert.match(await credentialPanel.locator("[data-credential-selection]").innerText(), /已选择 1 条/);
@@ -218,6 +263,14 @@ try {
     mobilePortalLayout.contentTop >= mobilePortalLayout.topbarBottom - 1,
     `移动端正文不得被账号栏遮挡：${JSON.stringify(mobilePortalLayout)}`,
   );
+  const mobileGlowCard = page.locator(".metrics > a").first();
+  await mobileGlowCard.scrollIntoViewIfNeeded();
+  await mobileGlowCard.focus();
+  await page.waitForTimeout(180);
+  if (screenshotDir) {
+    await page.screenshot({path: join(screenshotDir, "flow-glow-mobile.png"), fullPage: false});
+    await mobileGlowCard.screenshot({path: join(screenshotDir, "flow-glow-card-mobile.png")});
+  }
   await page.goto(`${baseUrl}/cockpit`, {waitUntil: "networkidle"});
   await page.waitForTimeout(850);
   const mobileTargetLayout = await page.evaluate(() => {

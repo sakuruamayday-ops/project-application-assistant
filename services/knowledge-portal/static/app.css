@@ -1311,6 +1311,12 @@ a.algorithm-stat-card:hover,
   --atelier-font: "SF Pro Display", "SF Pro Text", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
 
+@property --atelier-flow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 300deg;
+}
+
 * { box-sizing: border-box; }
 html { color-scheme: dark; scroll-behavior: smooth; background: var(--atelier-bg); }
 html.is-instant-scroll { scroll-behavior: auto !important; }
@@ -1600,6 +1606,65 @@ textarea:focus-visible, select:focus-visible {
 .button.white { color: #17130b; background: var(--atelier-gold-light); border-color: var(--atelier-gold-light); }
 .button.disabled { color: #6e6b65; background: #191a1c; border-color: rgba(255,255,255,.06); cursor: default; }
 
+/* flow-glow-ui：只在真实可点击边框上流动，避免覆盖内容或削弱风险状态。 */
+:where(
+  .button:not(.danger):not(.danger-outline):not(.disabled):not(:disabled):not([aria-disabled="true"]),
+  .metrics > a,
+  .health-grid > a,
+  .detail-card-link,
+  .external-link-grid a,
+  .page-continuation-link
+) {
+  position: relative;
+  isolation: isolate;
+}
+:where(
+  .button:not(.danger):not(.danger-outline):not(.disabled):not(:disabled):not([aria-disabled="true"]),
+  .metrics > a,
+  .health-grid > a,
+  .detail-card-link,
+  .external-link-grid a,
+  .page-continuation-link
+)::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 2;
+  padding: 2px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--atelier-flow-angle),
+    transparent 0 67%,
+    rgba(162,126,63,.18) 74%,
+    rgba(202,169,105,.76) 80%,
+    rgba(255,247,224,.98) 84%,
+    rgba(234,217,178,.9) 87%,
+    rgba(202,169,105,.32) 92%,
+    transparent 98% 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(234,217,178,.64)) drop-shadow(0 0 12px rgba(202,169,105,.26));
+  animation: atelier-flow-orbit 3.8s linear infinite;
+  animation-play-state: paused;
+  transition: opacity .18s ease;
+}
+:where(
+  .button:not(.danger):not(.danger-outline):not(.disabled):not(:disabled):not([aria-disabled="true"]),
+  .metrics > a,
+  .health-grid > a,
+  .detail-card-link,
+  .external-link-grid a,
+  .page-continuation-link
+):is(:hover, :focus-visible, :focus-within)::after {
+  opacity: 1;
+  animation-play-state: running;
+}
+
 .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 26px; overflow: hidden; border: 1px solid var(--atelier-line); border-radius: var(--atelier-radius); background: var(--atelier-line); }
 .metrics.is-member { grid-template-columns: repeat(3, 1fr); }
 .metrics > a { position: relative; min-height: 164px; padding: 24px; display: flex; flex-direction: column; color: inherit; background: #111214; text-decoration: none; transition: background .2s ease; }
@@ -1655,6 +1720,27 @@ input, textarea, select {
 }
 textarea { resize: vertical; line-height: 1.7; }
 input:focus, textarea:focus, select:focus { border-color: var(--atelier-gold); box-shadow: 0 0 0 3px rgba(202,169,105,.1); }
+:where(
+  input:not([type]):not([name="confirmation"]),
+  input:is([type="text"], [type="search"], [type="password"], [type="email"], [type="url"], [type="number"], [type="tel"]):not([name="confirmation"]),
+  textarea:not([name="confirmation"]),
+  select
+):focus {
+  border-color: transparent;
+  background:
+    linear-gradient(#0e0f10, #0e0f10) padding-box,
+    conic-gradient(
+      from var(--atelier-flow-angle),
+      rgba(202,169,105,.2),
+      rgba(255,247,224,.98),
+      rgba(202,169,105,.45),
+      rgba(202,169,105,.14),
+      rgba(234,217,178,.86),
+      rgba(202,169,105,.2)
+    ) border-box;
+  box-shadow: 0 0 0 3px rgba(202,169,105,.09), 0 0 18px rgba(202,169,105,.11);
+  animation: atelier-flow-orbit 3.8s linear infinite;
+}
 code, pre { color: var(--atelier-gold-light); background: #0d0e0f; border: 1px solid rgba(202,169,105,.12); border-radius: 7px; }
 code { padding: 2px 5px; }
 pre { padding: 15px; overflow: auto; white-space: pre-wrap; }
@@ -1965,6 +2051,7 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 @keyframes atelier-enter-top { from { opacity: 0; transform: translateY(-22px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
 @keyframes atelier-leave { to { opacity: 0; transform: translateY(-34px); filter: blur(3px); } }
 @keyframes atelier-leave-down { to { opacity: 0; transform: translateY(34px); filter: blur(3px); } }
+@keyframes atelier-flow-orbit { to { --atelier-flow-angle: 660deg; } }
 /* mountains-drift 背景动画已移除：逐 section 重绘 1.7MB 背景图代价过高 */
 
 .endpoint-list { display: grid; gap: 10px; margin: 16px 0; }
@@ -2176,6 +2263,15 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  :where(
+    .button:not(.danger):not(.danger-outline),
+    .metrics > a,
+    .health-grid > a,
+    .detail-card-link,
+    .external-link-grid a,
+    .page-continuation-link
+  )::after,
+  :where(input, textarea, select):focus { animation: none !important; }
 }
 }
 
