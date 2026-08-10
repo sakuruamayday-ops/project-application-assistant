@@ -46,12 +46,12 @@
     <div class="content-wrap">
       {% if message %}<div class="notice success">{{ message }}</div>{% endif %}
       {% if error %}<div class="notice alert">{{ error }}</div>{% endif %}
-      {% if new_token %}<section class="token-reveal"><p class="eyebrow light">个人 API Key · {{ user.username }}</p><h2>API 与 MCP 接入配置已生成</h2><div class="secret-config-card is-light" data-secret-group="personal-access"><div class="secret-config-head"><span>通用接入配置</span><div><button type="button" data-toggle-secret="personal-access" aria-pressed="false">显示</button><button type="button" data-copy-config data-token="{{ new_token }}">复制</button></div></div><pre>JIAOTANG_KB_BASE_URL={{ public_endpoint }}
-JIAOTANG_KB_API_BASE_URL={{ public_endpoint }}/v1
-JIAOTANG_KB_ENDPOINT={{ public_endpoint }}
-JIAOTANG_KB_MCP_URL={{ public_endpoint }}/mcp/
-JIAOTANG_KB_DEVICE_ID=<span data-device-id-display>正在生成此设备标识…</span>
-JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value="{{ new_token }}">••••••••••••••••••••</span></pre></div><div class="button-row"><button class="button white" type="button" data-copy-config data-token="{{ new_token }}">复制通用接入配置</button><button class="button outline-light" type="button" data-copy-value="{{ new_token }}">复制 API Key</button></div><p>API URL 是知识库接口地址，API Key 是个人身份凭据；两者可在“API 与用户”页面反复查看和复制。</p></section>{% endif %}
+      {% if new_token %}<section class="token-reveal"><p class="eyebrow light">个人 API Key · {{ user.username }}</p><h2>API 与 MCP 接入配置已生成</h2><div class="secret-config-card is-light" data-secret-group="personal-access"><div class="secret-config-head"><span>通用接入配置</span><div><button type="button" data-toggle-secret="personal-access" aria-pressed="false">显示</button><button type="button" data-copy-config data-token="{{ new_token }}">复制</button></div></div><pre>GONGCHUANG_KB_BASE_URL={{ public_endpoint }}
+GONGCHUANG_KB_API_BASE_URL={{ public_endpoint }}/v1
+GONGCHUANG_KB_ENDPOINT={{ public_endpoint }}
+GONGCHUANG_KB_MCP_URL={{ public_endpoint }}/mcp/
+GONGCHUANG_KB_DEVICE_ID=<span data-device-id-display>正在生成此设备标识…</span>
+GONGCHUANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value="{{ new_token }}">••••••••••••••••••••</span></pre></div><div class="button-row"><button class="button white" type="button" data-copy-config data-token="{{ new_token }}">复制通用接入配置</button><button class="button outline-light" type="button" data-copy-value="{{ new_token }}">复制 API Key</button></div><p>API URL 是知识库接口地址，API Key 是个人身份凭据；两者可在“API 与用户”页面反复查看和复制。</p></section>{% endif %}
 
       {% if single_page or active_page == 'overview' %}<section id="overview" class="section-block">
         <div class="page-heading"><div><p class="eyebrow">Team Workspace</p><h1>{{ greeting }}，{{ user.real_name or user.username }}</h1><p class="muted">在一个工作台连接团队知识、智能答疑与项目申报 Skills。</p></div><span class="status-pill"><i></i>统一知识权限</span></div>

@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
+PORTAL = ROOT / "services" / "knowledge-portal"
 ALLOWED = ("jiaotang-kb", "zshjiaotang.cn")
 
 
@@ -49,3 +50,33 @@ def test_public_skill_sources_only_retain_mcp_and_endpoint_compatibility():
             if has_legacy_brand(remove_allowed_identifiers(path.read_bytes())):
                 findings.append(f"content:{relative}")
     assert findings == []
+
+
+def test_portal_visible_configuration_uses_public_namespace():
+    assistant = (PORTAL / "app" / "assistant_runtime.py").read_text()
+    template = (PORTAL / "templates" / "portal.html").read_text()
+    script = (PORTAL / "static" / "portal.js").read_text()
+
+    assert "登录焦糖网站" not in assistant
+    assert "登录共创研究院网站" in assistant
+    for legacy_name in (
+        "JIAOTANG_KB_BASE_URL=",
+        "JIAOTANG_KB_API_BASE_URL=",
+        "JIAOTANG_KB_ENDPOINT=",
+        "JIAOTANG_KB_MCP_URL=",
+        "JIAOTANG_KB_DEVICE_ID=",
+        "JIAOTANG_KB_DEVICE_NAME=",
+        "JIAOTANG_KB_TOKEN=",
+    ):
+        assert legacy_name not in template
+        assert legacy_name not in script
+    for public_name in (
+        "GONGCHUANG_KB_BASE_URL=",
+        "GONGCHUANG_KB_API_BASE_URL=",
+        "GONGCHUANG_KB_ENDPOINT=",
+        "GONGCHUANG_KB_MCP_URL=",
+        "GONGCHUANG_KB_DEVICE_ID=",
+        "GONGCHUANG_KB_TOKEN=",
+    ):
+        assert public_name in template
+        assert public_name in script

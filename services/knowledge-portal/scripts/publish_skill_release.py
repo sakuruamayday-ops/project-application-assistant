@@ -951,10 +951,24 @@ def _ensure_stage_table(connection: sqlite3.Connection) -> None:
             git_commit TEXT NOT NULL,
             github_url TEXT NOT NULL,
             database_backup TEXT NOT NULL,
+            rebound_enrollments_json TEXT NOT NULL DEFAULT '{}',
             reissued_at TEXT NOT NULL
         )
         """
     )
+    reissue_columns = {
+        str(row[1])
+        for row in connection.execute(
+            "PRAGMA table_info(skill_release_reissues)"
+        ).fetchall()
+    }
+    if "rebound_enrollments_json" not in reissue_columns:
+        connection.execute(
+            """
+            ALTER TABLE skill_release_reissues
+            ADD COLUMN rebound_enrollments_json TEXT NOT NULL DEFAULT '{}'
+            """
+        )
 
 
 def _artifact_name(version: str, target: str) -> str:
@@ -965,6 +979,77 @@ def _artifact_name(version: str, target: str) -> str:
         "windows": "-Windows-WorkBuddy",
     }[target]
     return f"共创研究院企业全生命周期助手-V{version}{suffix}.zip"
+
+
+def _rebind_pending_enrollment_artifacts(
+    connection: sqlite3.Connection,
+    *,
+    version: str,
+    previous: dict[str, dict[str, str]],
+    replacements: dict[str, dict[str, str]],
+    effective_at: str,
+) -> dict[str, int]:
+    """把尚未使用的一次性安装指令从旧同版本包迁到已重签正式包。"""
+    enrollment_table = connection.execute(
+        """
+        SELECT 1 FROM sqlite_master
+        WHERE type='table' AND name='agent_enrollment_codes'
+        """
+    ).fetchone()
+    if enrollment_table is None:
+        return {}
+    columns = {
+        str(row[1])
+        for row in connection.execute(
+            "PRAGMA table_info(agent_enrollment_codes)"
+        ).fetchall()
+    }
+    required = {
+        "consumed_at",
+        "expires_at",
+        "install_platform",
+        "workbuddy_version",
+        "workbuddy_file_name",
+        "workbuddy_file_path",
+        "workbuddy_sha256",
+    }
+    if not required <= columns:
+        raise RuntimeError("安装会话表缺少同版本重签迁移所需字段")
+
+    rebound: dict[str, int] = {}
+    for target in sorted(set(previous) & set(replacements)):
+        if target not in {"workbuddy", "macos", "windows"}:
+            continue
+        old = previous[target]
+        new = replacements[target]
+        cursor = connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET workbuddy_file_name=?,workbuddy_file_path=?,workbuddy_sha256=?
+            WHERE consumed_at IS NULL
+              AND expires_at>?
+              AND workbuddy_version=?
+              AND workbuddy_file_path=?
+              AND workbuddy_sha256=?
+              AND CASE
+                    WHEN install_platform IN ('macos','windows')
+                    THEN install_platform
+                    ELSE 'workbuddy'
+                  END=?
+            """,
+            (
+                str(new["file_name"]),
+                str(new["file_path"]),
+                str(new["sha256"]),
+                effective_at,
+                version,
+                str(old["file_path"]),
+                str(old["sha256"]),
+                target,
+            ),
+        )
+        rebound[target] = max(int(cursor.rowcount), 0)
+    return rebound
 
 
 def reissue_selective(
@@ -1061,7 +1146,8 @@ def reissue_selective(
             if existing_hashes == replacement_hashes:
                 recorded = connection.execute(
                     """
-                    SELECT database_backup,reissued_at
+                    SELECT database_backup,reissued_at,
+                           previous_artifacts_json,rebound_enrollments_json
                     FROM skill_release_reissues
                     WHERE transaction_sha256=?
                     """,
@@ -1074,13 +1160,40 @@ def reissue_selective(
                     for target in replacement_hashes
                 ):
                     raise RuntimeError("当前哈希已更新，但缺少可验证的修订事务回执")
-                connection.rollback()
+                previous_artifacts = json.loads(
+                    str(recorded["previous_artifacts_json"])
+                )
+                rebound_now = _rebind_pending_enrollment_artifacts(
+                    connection,
+                    version=version,
+                    previous=previous_artifacts,
+                    replacements=existing,
+                    effective_at=datetime.now(timezone.utc).isoformat(),
+                )
+                rebound_total = json.loads(
+                    str(recorded["rebound_enrollments_json"] or "{}")
+                )
+                for target, count in rebound_now.items():
+                    rebound_total[target] = int(rebound_total.get(target, 0)) + count
+                connection.execute(
+                    """
+                    UPDATE skill_release_reissues
+                    SET rebound_enrollments_json=?
+                    WHERE transaction_sha256=?
+                    """,
+                    (
+                        json.dumps(rebound_total, sort_keys=True),
+                        transaction_sha256,
+                    ),
+                )
+                connection.commit()
                 return {
                     **validation,
                     "status": "already-reissued",
                     "release_id": int(release["id"]),
                     "database_backup": str(recorded["database_backup"]),
                     "reissued_at": str(recorded["reissued_at"]),
+                    "rebound_enrollments": rebound_now,
                 }
             normalized_expected = {
                 str(target): str(digest)
@@ -1156,14 +1269,29 @@ def reissue_selective(
                     ),
                 )
             reissued_at = datetime.now(timezone.utc).isoformat()
+            replacement_enrollment_artifacts = {
+                target: {
+                    "file_name": _artifact_name(version, target),
+                    "file_path": str(current_path),
+                    "sha256": replacement_hashes[target],
+                }
+                for target, current_path in installed_new.items()
+            }
+            rebound_enrollments = _rebind_pending_enrollment_artifacts(
+                connection,
+                version=version,
+                previous=existing,
+                replacements=replacement_enrollment_artifacts,
+                effective_at=reissued_at,
+            )
             connection.execute(
                 """
                 INSERT INTO skill_release_reissues(
                     release_id,version,transaction_sha256,
                     previous_artifacts_json,replacement_artifacts_json,
                     archived_paths_json,reason,git_commit,github_url,
-                    database_backup,reissued_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                    database_backup,rebound_enrollments_json,reissued_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
                     int(release["id"]),
@@ -1184,6 +1312,7 @@ def reissue_selective(
                     git_commit.strip(),
                     github_url.strip(),
                     str(backup_path),
+                    json.dumps(rebound_enrollments, sort_keys=True),
                     reissued_at,
                 ),
             )
@@ -1209,6 +1338,7 @@ def reissue_selective(
         "archived_paths": {
             target: str(path) for target, path in moved_old.items()
         },
+        "rebound_enrollments": rebound_enrollments,
         "reissued_at": reissued_at,
     }
 

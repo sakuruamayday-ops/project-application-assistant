@@ -750,7 +750,7 @@ document.addEventListener("click", async (event) => {
   } else if (button.dataset.copyValue !== undefined) {
     value = button.dataset.copyValue;
   } else if (button.dataset.copyConfig !== undefined) {
-    value = `JIAOTANG_KB_BASE_URL=${window.location.origin}\nJIAOTANG_KB_API_BASE_URL=${window.location.origin}/v1\nJIAOTANG_KB_ENDPOINT=${window.location.origin}\nJIAOTANG_KB_MCP_URL=${window.location.origin}/mcp/\nJIAOTANG_KB_DEVICE_ID=${knowledgeDeviceId}\nJIAOTANG_KB_DEVICE_NAME=${knowledgeDeviceName}\nJIAOTANG_KB_TOKEN=${button.dataset.token}`;
+    value = `GONGCHUANG_KB_BASE_URL=${window.location.origin}\nGONGCHUANG_KB_API_BASE_URL=${window.location.origin}/v1\nGONGCHUANG_KB_ENDPOINT=${window.location.origin}\nGONGCHUANG_KB_MCP_URL=${window.location.origin}/mcp/\nGONGCHUANG_KB_DEVICE_ID=${knowledgeDeviceId}\nGONGCHUANG_KB_DEVICE_NAME=${knowledgeDeviceName}\nGONGCHUANG_KB_TOKEN=${button.dataset.token}`;
   } else {
     const target = document.querySelector(button.dataset.copyTarget);
     value = target?.textContent?.trim() || "";
