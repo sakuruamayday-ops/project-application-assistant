@@ -232,7 +232,7 @@
         "-m",
         "pytest",
         "-q",
-        "services/knowledge-portal/tests/test_portal.py::test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bearer_only"
+        "services/knowledge-portal/tests/test_portal.py::test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only"
       ],
       "environment": {
         "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
