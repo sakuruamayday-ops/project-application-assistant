@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const runtimeVersion = "1.6.5"
+const runtimeVersion = "1.6.6"
 
 type options struct {
 	command         string
@@ -134,11 +134,19 @@ func inferRootSource(root string) string {
 }
 
 func dataDirectory() (string, error) {
-	configured := strings.TrimSpace(os.Getenv("CODEBUDDY_PLUGIN_DATA"))
+	// WorkBuddy injects CODEBUDDY_PLUGIN_DATA only for lifecycle command Hooks.
+	// Inline Skill activation commands do not inherit that variable. Using it
+	// here therefore splits a single turn across two state roots: prompt/Stop
+	// state under the host plugin directory and activation state under the
+	// stable user state directory. Keep every Windows entry point on one root.
+	configured := strings.TrimSpace(os.Getenv("JIAOTANG_BEHAVIOR_STATE_ROOT"))
 	if configured != "" && !strings.HasPrefix(configured, "${") {
 		root, err := canonicalDataPath(configured)
 		if err == nil {
-			return filepath.Join(root, "behavior-hook"), nil
+			if err = os.MkdirAll(filepath.Join(root, "sessions"), 0o700); err != nil {
+				return "", err
+			}
+			return root, nil
 		}
 	}
 	profile := strings.TrimSpace(os.Getenv("USERPROFILE"))
