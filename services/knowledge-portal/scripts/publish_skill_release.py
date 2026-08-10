@@ -937,6 +937,24 @@ def _ensure_stage_table(connection: sqlite3.Connection) -> None:
         )
         """
     )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS skill_release_reissues(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            release_id INTEGER NOT NULL,
+            version TEXT NOT NULL,
+            transaction_sha256 TEXT NOT NULL UNIQUE,
+            previous_artifacts_json TEXT NOT NULL,
+            replacement_artifacts_json TEXT NOT NULL,
+            archived_paths_json TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            git_commit TEXT NOT NULL,
+            github_url TEXT NOT NULL,
+            database_backup TEXT NOT NULL,
+            reissued_at TEXT NOT NULL
+        )
+        """
+    )
 
 
 def _artifact_name(version: str, target: str) -> str:
@@ -947,6 +965,252 @@ def _artifact_name(version: str, target: str) -> str:
         "windows": "-Windows-WorkBuddy",
     }[target]
     return f"共创研究院企业全生命周期助手-V{version}{suffix}.zip"
+
+
+def reissue_selective(
+    database_path: Path,
+    release_directory: Path,
+    packages: dict[str, Path],
+    version: str,
+    git_commit: str,
+    github_url: str,
+    *,
+    transaction_manifest: dict[str, object],
+    transaction_sha256: str,
+) -> dict[str, object]:
+    """以签名修订事务替换同版本正式包，同时保留旧包和数据库快照。"""
+    require_complete_workbuddy_platform_set(packages)
+    validation = validate_release_packages(packages, version)
+    _validate_transaction_artifacts(
+        transaction_manifest,
+        validation["artifacts"],
+    )
+    if transaction_manifest.get("operation") != "reissue":
+        raise RuntimeError("同版本修订事务必须声明operation=reissue")
+    reissue_contract = transaction_manifest.get("reissue")
+    if not isinstance(reissue_contract, dict):
+        raise RuntimeError("同版本修订事务缺少reissue约束")
+    reason = str(reissue_contract.get("reason") or "").strip()
+    expected_previous = reissue_contract.get("previous_package_sha256")
+    if not reason or not isinstance(expected_previous, dict):
+        raise RuntimeError("同版本修订事务缺少原因或原正式包哈希")
+    if not re.fullmatch(r"[0-9a-f]{64}", transaction_sha256):
+        raise RuntimeError("同版本修订事务哈希格式无效")
+
+    release_directory.mkdir(parents=True, exist_ok=True)
+    replacement_hashes = {
+        target: str(data["sha256"])
+        for target, data in validation["artifacts"].items()
+    }
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    backup_path = database_path.with_name(
+        f"{database_path.name}.before-reissue-v{version}-{timestamp}"
+    )
+    staging_directory = (
+        release_directory
+        / ".reissue-staging"
+        / f"V{version}"
+        / transaction_sha256
+    )
+    staged_paths: dict[str, Path] = {}
+    for target, source in packages.items():
+        staged = staging_directory / _artifact_name(version, target)
+        _install_file(source, staged)
+        if sha256(staged) != replacement_hashes[target]:
+            raise RuntimeError(f"同版本修订暂存哈希不一致：{target}")
+        staged_paths[target] = staged
+
+    with sqlite3.connect(database_path) as snapshot_source:
+        with sqlite3.connect(backup_path) as snapshot_target:
+            snapshot_source.backup(snapshot_target)
+
+    moved_old: dict[str, Path] = {}
+    installed_new: dict[str, Path] = {}
+    existing: dict[str, dict[str, str]] = {}
+    try:
+        with sqlite3.connect(database_path) as connection:
+            connection.row_factory = sqlite3.Row
+            connection.execute("BEGIN IMMEDIATE")
+            _ensure_stage_table(connection)
+            release = connection.execute(
+                "SELECT * FROM skill_releases WHERE version=?",
+                (version,),
+            ).fetchone()
+            if release is None:
+                raise RuntimeError(f"版本 {version} 尚未正式发布，不能同版本修订")
+            existing_rows = connection.execute(
+                """
+                SELECT target,file_name,file_path,sha256
+                FROM skill_release_artifacts
+                WHERE release_id=? ORDER BY target
+                """,
+                (int(release["id"]),),
+            ).fetchall()
+            existing = {
+                str(row["target"]): {
+                    "file_name": str(row["file_name"]),
+                    "file_path": str(row["file_path"]),
+                    "sha256": str(row["sha256"]),
+                }
+                for row in existing_rows
+            }
+            existing_hashes = {
+                target: str(data["sha256"])
+                for target, data in existing.items()
+            }
+            if existing_hashes == replacement_hashes:
+                recorded = connection.execute(
+                    """
+                    SELECT database_backup,reissued_at
+                    FROM skill_release_reissues
+                    WHERE transaction_sha256=?
+                    """,
+                    (transaction_sha256,),
+                ).fetchone()
+                if recorded is None or any(
+                    not Path(str(existing[target]["file_path"])).is_file()
+                    or sha256(Path(str(existing[target]["file_path"])))
+                    != replacement_hashes[target]
+                    for target in replacement_hashes
+                ):
+                    raise RuntimeError("当前哈希已更新，但缺少可验证的修订事务回执")
+                connection.rollback()
+                return {
+                    **validation,
+                    "status": "already-reissued",
+                    "release_id": int(release["id"]),
+                    "database_backup": str(recorded["database_backup"]),
+                    "reissued_at": str(recorded["reissued_at"]),
+                }
+            normalized_expected = {
+                str(target): str(digest)
+                for target, digest in expected_previous.items()
+            }
+            if existing_hashes != normalized_expected:
+                raise RuntimeError("当前正式包哈希与签名修订事务声明的原哈希不一致")
+            if set(existing) != set(packages):
+                raise RuntimeError("同版本修订必须完整覆盖当前正式发布通道")
+            for target, data in existing.items():
+                current_path = Path(str(data["file_path"]))
+                if current_path.resolve().parent != release_directory.resolve():
+                    raise RuntimeError(f"原正式包不在受控发布目录：{target}")
+                canonical_path = release_directory / _artifact_name(version, target)
+                if (
+                    canonical_path.exists()
+                    and canonical_path.resolve() != current_path.resolve()
+                ):
+                    raise RuntimeError(f"正式目标路径被其他文件占用：{target}")
+                if (
+                    not current_path.is_file()
+                    or sha256(current_path) != str(data["sha256"])
+                ):
+                    raise RuntimeError(f"原正式包缺失或哈希不一致：{target}")
+
+            archive_directory = (
+                release_directory
+                / ".revisions"
+                / f"V{version}"
+                / timestamp
+                / transaction_sha256[:12]
+            )
+            archive_directory.mkdir(parents=True, exist_ok=False)
+            for target, data in existing.items():
+                current_path = Path(str(data["file_path"]))
+                archived = archive_directory / current_path.name
+                os.replace(current_path, archived)
+                moved_old[target] = archived
+            for target, staged in staged_paths.items():
+                current_path = release_directory / _artifact_name(version, target)
+                os.replace(staged, current_path)
+                installed_new[target] = current_path
+
+            generic = installed_new.get("generic")
+            if generic is None:
+                raise RuntimeError("同版本完整修订必须包含通用包")
+            connection.execute(
+                """
+                UPDATE skill_releases
+                SET file_name=?,file_path=?,sha256=?
+                WHERE id=?
+                """,
+                (
+                    _artifact_name(version, "generic"),
+                    str(generic),
+                    replacement_hashes["generic"],
+                    int(release["id"]),
+                ),
+            )
+            for target, current_path in installed_new.items():
+                connection.execute(
+                    """
+                    UPDATE skill_release_artifacts
+                    SET file_name=?,file_path=?,sha256=?
+                    WHERE release_id=? AND target=?
+                    """,
+                    (
+                        _artifact_name(version, target),
+                        str(current_path),
+                        replacement_hashes[target],
+                        int(release["id"]),
+                        target,
+                    ),
+                )
+            reissued_at = datetime.now(timezone.utc).isoformat()
+            connection.execute(
+                """
+                INSERT INTO skill_release_reissues(
+                    release_id,version,transaction_sha256,
+                    previous_artifacts_json,replacement_artifacts_json,
+                    archived_paths_json,reason,git_commit,github_url,
+                    database_backup,reissued_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    int(release["id"]),
+                    version,
+                    transaction_sha256,
+                    json.dumps(existing, ensure_ascii=False, sort_keys=True),
+                    json.dumps(
+                        validation["artifacts"],
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    json.dumps(
+                        {target: str(path) for target, path in moved_old.items()},
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    reason,
+                    git_commit.strip(),
+                    github_url.strip(),
+                    str(backup_path),
+                    reissued_at,
+                ),
+            )
+            connection.commit()
+    except Exception:
+        for target, current_path in installed_new.items():
+            staged = staged_paths[target]
+            staged.parent.mkdir(parents=True, exist_ok=True)
+            if current_path.exists():
+                os.replace(current_path, staged)
+        for target, archived in moved_old.items():
+            original = Path(str(existing[target]["file_path"]))
+            original.parent.mkdir(parents=True, exist_ok=True)
+            if archived.exists():
+                os.replace(archived, original)
+        raise
+    return {
+        **validation,
+        "status": "reissued",
+        "release_id": int(release["id"]),
+        "transaction_sha256": transaction_sha256,
+        "database_backup": str(backup_path),
+        "archived_paths": {
+            target: str(path) for target, path in moved_old.items()
+        },
+        "reissued_at": reissued_at,
+    }
 
 
 def _sync_promoted_stage_paths(
@@ -1757,6 +2021,7 @@ def main() -> None:
         choices=(
             "stage",
             "promote",
+            "reissue",
             "stage-artifact",
             "promote-artifact",
             "lease-acquire",
@@ -1807,7 +2072,37 @@ def main() -> None:
             "全局发布事务已启用，禁止对同一版本绕过签名事务补发单个通道；"
             "请生成新的补丁版本并走完整stage/promote发布事务。"
         )
-    if arguments.mode == "lease-monitor":
+    if arguments.mode == "reissue":
+        packages = {
+            target: package
+            for target, package in (
+                ("generic", arguments.generic_package),
+                ("workbuddy", arguments.workbuddy_package),
+                ("macos", arguments.macos_package),
+                ("windows", arguments.windows_package),
+            )
+            if package is not None
+        }
+        if (
+            not packages
+            or not arguments.git_commit.strip()
+            or not arguments.github_url.strip()
+        ):
+            parser.error(
+                "reissue必须提供完整正式包、git提交和GitHub地址"
+            )
+        verification, _, _ = _load_verified_transaction(arguments)
+        result = reissue_selective(
+            arguments.database,
+            arguments.release_dir,
+            packages,
+            arguments.version,
+            arguments.git_commit,
+            arguments.github_url,
+            transaction_manifest=verification["manifest"],
+            transaction_sha256=str(verification["manifest_sha256"]),
+        )
+    elif arguments.mode == "lease-monitor":
         with sqlite3.connect(arguments.database) as connection:
             connection.row_factory = sqlite3.Row
             result = monitor_release_transaction(

@@ -775,3 +775,135 @@ def test_artifact_addition_refuses_to_replace_existing_channel(
         assert "不同内容" in str(error)
     else:
         raise AssertionError("existing channel must not be replaced")
+
+
+def test_signed_reissue_preserves_previous_files_and_updates_same_version(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "portal.db"
+    release_dir = tmp_path / "releases"
+    generic, workbuddy = make_packages(tmp_path)
+    make_database(database)
+    published = MODULE.publish_selective(
+        database,
+        release_dir,
+        {"generic": generic, "workbuddy": workbuddy},
+        "1.2",
+        "original",
+    )
+    previous_hashes = {
+        target: str(data["sha256"])
+        for target, data in published["artifacts"].items()
+    }
+
+    replacements: dict[str, Path] = {}
+    for target, source in {"generic": generic, "workbuddy": workbuddy}.items():
+        replacement = tmp_path / f"replacement-{target}.zip"
+        replacement.write_bytes(source.read_bytes())
+        with zipfile.ZipFile(replacement, "a") as archive:
+            archive.comment = b"signed reissue"
+        replacements[target] = replacement
+    replacement_hashes = {
+        target: MODULE.sha256(path) for target, path in replacements.items()
+    }
+    manifest = {
+        "operation": "reissue",
+        "participants": {
+            "portal": {"package_sha256": replacement_hashes},
+        },
+        "reissue": {
+            "reason": "public namespace correction",
+            "previous_package_sha256": previous_hashes,
+        },
+    }
+    transaction_sha = "a" * 64
+    result = MODULE.reissue_selective(
+        database,
+        release_dir,
+        replacements,
+        "1.2",
+        "abc123",
+        "https://github.example/releases/V1.2",
+        transaction_manifest=manifest,
+        transaction_sha256=transaction_sha,
+    )
+    assert result["status"] == "reissued"
+    assert set(result["archived_paths"]) == {"generic", "workbuddy"}
+    assert all(Path(path).is_file() for path in result["archived_paths"].values())
+    with sqlite3.connect(database) as connection:
+        rows = connection.execute(
+            """
+            SELECT target,file_name,file_path,sha256
+            FROM skill_release_artifacts ORDER BY target
+            """
+        ).fetchall()
+        assert {row[0]: row[3] for row in rows} == replacement_hashes
+        assert all(Path(row[2]).name == row[1] for row in rows)
+        audit = connection.execute(
+            """
+            SELECT transaction_sha256,reason,database_backup
+            FROM skill_release_reissues
+            """
+        ).fetchone()
+        assert audit[0] == transaction_sha
+        assert audit[1] == "public namespace correction"
+        assert Path(audit[2]).is_file()
+
+    repeated = MODULE.reissue_selective(
+        database,
+        release_dir,
+        replacements,
+        "1.2",
+        "abc123",
+        "https://github.example/releases/V1.2",
+        transaction_manifest=manifest,
+        transaction_sha256=transaction_sha,
+    )
+    assert repeated["status"] == "already-reissued"
+
+
+def test_signed_reissue_rejects_unexpected_current_hashes(tmp_path: Path) -> None:
+    database = tmp_path / "portal.db"
+    release_dir = tmp_path / "releases"
+    generic, workbuddy = make_packages(tmp_path)
+    make_database(database)
+    MODULE.publish_selective(
+        database,
+        release_dir,
+        {"generic": generic, "workbuddy": workbuddy},
+        "1.2",
+        "original",
+    )
+    manifest = {
+        "operation": "reissue",
+        "participants": {
+            "portal": {
+                "package_sha256": {
+                    "generic": MODULE.sha256(generic),
+                    "workbuddy": MODULE.sha256(workbuddy),
+                }
+            }
+        },
+        "reissue": {
+            "reason": "mismatch test",
+            "previous_package_sha256": {
+                "generic": "0" * 64,
+                "workbuddy": "1" * 64,
+            },
+        },
+    }
+    try:
+        MODULE.reissue_selective(
+            database,
+            release_dir,
+            {"generic": generic, "workbuddy": workbuddy},
+            "1.2",
+            "abc123",
+            "https://github.example/releases/V1.2",
+            transaction_manifest=manifest,
+            transaction_sha256="b" * 64,
+        )
+    except RuntimeError as error:
+        assert "当前哈希已更新" in str(error)
+    else:
+        raise AssertionError("unrecorded same-hash reissue must be rejected")
