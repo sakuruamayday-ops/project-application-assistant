@@ -49,7 +49,7 @@ def main() -> int:
     delivery_contract = load(SKILLS / "delivery-contracts.json")
     registry = load(SKILLS / "report-skill-registry.json")
     config = load(ROOT / "config" / "grounded-citations.json")
-    notes_path = ROOT / "docs" / "releases" / "V1.6.1.2.md"
+    notes_path = ROOT / "docs" / "releases" / "V1.6.1.3.md"
     notes = notes_path.read_text(encoding="utf-8")
     stable_notes_path = ROOT / "docs" / "releases" / "V1.6.1.md"
     stable_notes = stable_notes_path.read_text(encoding="utf-8")
@@ -84,8 +84,8 @@ def main() -> int:
             "企业数字身份证不进入插件包" in notes
             or "不把企业身份数据放入 ZIP" in notes
         ),
-        "candidate_skills_contract_is_v1612": skills_contract == "V1.6.1.2",
-        "delivery_contract_is_v1612": delivery_contract.get("rule_version") == "1.6.1.2",
+        "candidate_skills_contract_is_v1613": skills_contract == "V1.6.1.3",
+        "delivery_contract_is_v1613": delivery_contract.get("rule_version") == "1.6.1.3",
         "release_notes_file_present": notes_path.is_file() and stable_notes_path.is_file(),
         "controlled_release_supports_windows_hotfix": (
             '"--platform-hotfix"' in release_script

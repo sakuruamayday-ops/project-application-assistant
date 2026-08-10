@@ -73,8 +73,15 @@ def load_json(archive: zipfile.ZipFile, name: str) -> dict[str, object]:
 
 
 def validate_server_release_contract(suite_zip: Path) -> dict[str, object]:
-    validation = validate_release_packages({"workbuddy": suite_zip}, EXPECTED_VERSION)
-    artifact = validation["artifacts"]["workbuddy"]
+    with zipfile.ZipFile(suite_zip) as archive:
+        names = set(archive.namelist())
+        plugin_name = unique_name(names, "/.codebuddy-plugin/plugin.json")
+        plugin = load_json(archive, plugin_name)
+    target = str(plugin.get("platform") or "workbuddy")
+    if target not in {"macos", "windows"}:
+        target = "workbuddy"
+    validation = validate_release_packages({target: suite_zip}, EXPECTED_VERSION)
+    artifact = validation["artifacts"][target]
     integrity = artifact["integrity"]
     if integrity.get("status") != "verified":
         raise RuntimeError("WorkBuddy 候选包完整性未验证")
@@ -93,6 +100,7 @@ def validate_server_release_contract(suite_zip: Path) -> dict[str, object]:
     return {
         "status": "pass",
         "check": "server-release-contract",
+        "target": target,
         "sha256": artifact["sha256"],
         "publisher_fingerprint": integrity["publisher_fingerprint"],
         "verified_files": integrity["verified_files"],
@@ -170,6 +178,23 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
             hook_position = content.find("<!-- BEGIN WORKBUDDY BEHAVIOR HOOK -->")
             if hook_position < frontmatter.end():
                 raise RuntimeError(f"行为Hook未位于frontmatter之后：{skill}")
+            hook_end = content.find(
+                "<!-- END WORKBUDDY BEHAVIOR HOOK -->",
+                hook_position,
+            )
+            if hook_end < hook_position:
+                raise RuntimeError(f"行为Hook边界不完整：{skill}")
+            if platform == "windows":
+                activation_entry = content[hook_position:hook_end]
+                if (
+                    "${CODEBUDDY_PLUGIN_ROOT}" in activation_entry
+                    or "${CODEBUDDY_SKILL_DIR}" in activation_entry
+                    or "$HOME/.workbuddy/plugins/marketplaces/jiaotang"
+                    not in activation_entry
+                ):
+                    raise RuntimeError(
+                        f"Windows技能激活入口仍依赖不稳定宿主变量：{skill}"
+                    )
             skill_names_from_frontmatter.append(names_in_entry[0])
         if len(set(skill_names_from_frontmatter)) != EXPECTED_SKILL_COUNT:
             raise RuntimeError("技能frontmatter名称不是49项唯一值")
@@ -192,7 +217,8 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         if forbidden_runtime in names:
             raise RuntimeError("候选包混入其他平台行为运行时")
         hook_events = set(dict(hooks.get("hooks") or {}))
-        if hook_events != {"UserPromptSubmit", "Stop"}:
+        expected_hook_events = {"SessionStart", "UserPromptSubmit", "Stop"}
+        if hook_events != expected_hook_events:
             raise RuntimeError(f"最小行为 Hook 事件不合规：{sorted(hook_events)}")
 
         scanned_text = []

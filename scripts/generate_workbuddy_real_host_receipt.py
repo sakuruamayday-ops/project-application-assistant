@@ -107,6 +107,43 @@ def hook_activation_receipt(event: dict[str, Any] | None) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def load_json_object(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"无法读取Hook状态文件: {path}") from error
+    if not isinstance(value, dict):
+        raise ValueError(f"Hook状态文件必须是JSON对象: {path}")
+    return value
+
+
+def explicit_bool(value: Any) -> bool | None:
+    return value if isinstance(value, bool) else None
+
+
+def delivery_status(receipt: dict[str, Any] | None) -> str:
+    if not receipt:
+        return "unavailable"
+    delivery_check_ok = explicit_bool(receipt.get("delivery_check_ok"))
+    stop_event_seen = explicit_bool(receipt.get("stop_event_seen"))
+    if delivery_check_ok is True and stop_event_seen is True:
+        return "passed"
+    if delivery_check_ok is False or stop_event_seen is False:
+        return "failed"
+    return "unavailable"
+
+
+def aggregate_delivery_status(skill_calls: list[dict[str, Any]]) -> str:
+    statuses = [str(item.get("delivery_check") or "unavailable") for item in skill_calls]
+    if not statuses or all(status == "unavailable" for status in statuses):
+        return "unavailable"
+    if any(status == "failed" for status in statuses):
+        return "failed"
+    if all(status == "passed" for status in statuses):
+        return "passed"
+    return "partial"
+
+
 def tool_basename(tool_name: str) -> str:
     return tool_name.rsplit("__", 1)[-1]
 
@@ -316,8 +353,30 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def generate_receipt(session_log: Path) -> dict[str, Any]:
+def generate_receipt(
+    session_log: Path,
+    hook_state_path: Path | None = None,
+) -> dict[str, Any]:
     events = load_json_lines(session_log)
+    hook_state: dict[str, Any] = {}
+    delivery_receipt: dict[str, Any] = {}
+    hook_state_source: dict[str, Any] | None = None
+    if hook_state_path is not None:
+        hook_state = load_json_object(hook_state_path)
+        state_session_id = str(hook_state.get("session_id") or "")
+        if state_session_id != session_log.stem:
+            raise ValueError(
+                "Hook状态session_id与WorkBuddy会话日志文件名不一致: "
+                f"{state_session_id!r} != {session_log.stem!r}"
+            )
+        candidate = hook_state.get("delivery_receipt")
+        delivery_receipt = candidate if isinstance(candidate, dict) else {}
+        hook_state_source = {
+            "path": str(hook_state_path.resolve()),
+            "sha256": sha256_file(hook_state_path),
+            "session_id": state_session_id,
+            "turn_id": str(hook_state.get("turn_id") or ""),
+        }
     calls = [event for event in events if event.get("type") == "function_call"]
     results_by_call_id = {
         str(event.get("callId")): event
@@ -337,22 +396,39 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
         arguments = decoded_arguments(call)
         if name == "Skill":
             activation = hook_activation_receipt(results_by_call_id.get(call_id))
+            turn_id = str(activation.get("turn_id") or "")
+            current_delivery = (
+                delivery_receipt
+                if turn_id
+                and turn_id == str(hook_state.get("turn_id") or "")
+                and turn_id == str(delivery_receipt.get("turn_id") or "")
+                else {}
+            )
+            prompt_context_ok = explicit_bool(activation.get("prompt_context_ok"))
+            prompt_hook_observable = explicit_bool(
+                activation.get("prompt_hook_observable")
+            )
+            if prompt_hook_observable is None and prompt_context_ok is False:
+                prompt_hook_observable = False
             skill_calls.append(
                 {
                     "call_id": call_id,
                     "skill": str(arguments.get("skill") or ""),
-                    "activation_ok": activation.get("activation_ok"),
-                    "state_persisted": activation.get("state_persisted"),
+                    "activation_ok": explicit_bool(activation.get("activation_ok")),
+                    "hook_runtime_ok": explicit_bool(activation.get("hook_runtime_ok")),
+                    "state_persisted": explicit_bool(activation.get("state_persisted")),
+                    "turn_id": turn_id or None,
                     "state_origin": activation.get("state_origin"),
-                    "prompt_hook_observable": activation.get("prompt_context_ok") is True,
-                    "delivery_check": (
-                        "available"
-                        if activation.get("prompt_context_ok") is True
-                        else "unavailable"
+                    "prompt_context_ok": prompt_context_ok,
+                    "prompt_hook_observable": prompt_hook_observable,
+                    "prompt_context_source": activation.get("prompt_context_source"),
+                    "delivery_check": delivery_status(current_delivery),
+                    "stop_event_seen": explicit_bool(
+                        current_delivery.get("stop_event_seen")
                     ),
                     "degraded_reason": (
                         None
-                        if activation.get("prompt_context_ok") is True
+                        if prompt_context_ok is True
                         else activation.get("error_code") or "PROMPT_CONTEXT_UNAVAILABLE"
                     ),
                 }
@@ -410,12 +486,13 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
     completeness = retrieval_completeness(mcp_calls)
     report = final_assistant_report(events)
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
         "source": {
             "session_log": str(session_log.resolve()),
             "session_log_sha256": sha256_file(session_log),
             "event_count": len(events),
+            "hook_state": hook_state_source,
         },
         "host_activated_skills": {
             "observable_skill_call_count": len(skill_calls),
@@ -423,17 +500,21 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
             "implicit_activation_verifiable": bool(skill_calls),
             "all_activations_ok": bool(skill_calls)
             and all(item.get("activation_ok") is True for item in skill_calls),
-            "prompt_hook_observable": bool(skill_calls)
-            and all(item.get("prompt_hook_observable") is True for item in skill_calls),
-            "delivery_check": (
-                "available"
+            "prompt_context_ok": bool(skill_calls)
+            and all(item.get("prompt_context_ok") is True for item in skill_calls),
+            "prompt_hook_observable": (
+                True
                 if skill_calls
-                and all(item.get("delivery_check") == "available" for item in skill_calls)
-                else "unavailable"
+                and all(item.get("prompt_hook_observable") is True for item in skill_calls)
+                else False
+                if any(item.get("prompt_hook_observable") is False for item in skill_calls)
+                else None
             ),
+            "delivery_check": aggregate_delivery_status(skill_calls),
             "note": (
-                "Skill activation and prompt-hook observability are separate facts; "
-                "activation fallback does not prove a complete prompt/stop hook cycle."
+                "Skill activation, prompt context, native prompt-hook observability, "
+                "and Stop delivery are separate facts. SessionStart transcript recovery "
+                "may provide valid prompt context while prompt_hook_observable remains false."
             ),
         },
         "mcp_tool_calls": {
@@ -466,9 +547,18 @@ def generate_receipt(session_log: Path) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--session-log", type=Path, required=True)
+    parser.add_argument("--hook-state", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     options = parser.parse_args()
-    receipt = generate_receipt(options.session_log.expanduser().resolve())
+    hook_state = (
+        options.hook_state.expanduser().resolve()
+        if options.hook_state is not None
+        else None
+    )
+    receipt = generate_receipt(
+        options.session_log.expanduser().resolve(),
+        hook_state,
+    )
     output = options.output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
