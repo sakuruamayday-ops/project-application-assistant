@@ -326,16 +326,6 @@ textarea:focus-visible, select:focus-visible {
   --atelier-flow-speed: 3.8s;
   --atelier-flow-idle-opacity: 0;
   --atelier-flow-active-opacity: 1;
-  --atelier-flow-track: conic-gradient(
-    from var(--atelier-flow-angle),
-    transparent 0 57%,
-    rgba(162,126,63,.08) 64%,
-    rgba(202,169,105,.72) 73%,
-    rgba(255,247,224,1) 79%,
-    rgba(234,217,178,.92) 84%,
-    rgba(202,169,105,.3) 91%,
-    transparent 98% 100%
-  );
   --atelier-flow-shadow: drop-shadow(0 0 7px rgba(255,247,224,.72)) drop-shadow(0 0 18px rgba(202,169,105,.42));
   isolation: isolate;
 }
@@ -349,7 +339,18 @@ textarea:focus-visible, select:focus-visible {
   padding: 2px;
   pointer-events: none;
   border-radius: inherit;
-  background: var(--atelier-flow-track);
+  /* The animated angle must be consumed on the pseudo-element itself.
+     Resolving a parent-level gradient variable freezes the painted track at 300deg. */
+  background: conic-gradient(
+    from var(--atelier-flow-angle),
+    transparent 0 57%,
+    rgba(162,126,63,.08) 64%,
+    rgba(202,169,105,.72) 73%,
+    rgba(255,247,224,1) 79%,
+    rgba(234,217,178,.92) 84%,
+    rgba(202,169,105,.3) 91%,
+    transparent 98% 100%
+  );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -365,17 +366,17 @@ textarea:focus-visible, select:focus-visible {
 [data-atelier-flow-frame="after"]:nth-child(3n)::after { animation-delay: -2.1s; }
 [data-atelier-flow-frame="before"]:nth-child(3n + 2)::before,
 [data-atelier-flow-frame="after"]:nth-child(3n + 2)::after { animation-delay: -4.3s; }
-[data-atelier-flow-frame].is-atelier-flow-hovered,
-html:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame].is-atelier-flow-focused {
+html.is-atelier-flow-document-visible [data-atelier-flow-frame].is-atelier-flow-visible.is-atelier-flow-hovered,
+html.is-atelier-flow-document-visible:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame].is-atelier-flow-visible.is-atelier-flow-focused {
   --atelier-flow-idle-opacity: var(--atelier-flow-active-opacity);
 }
-[data-atelier-flow-frame="before"].is-atelier-flow-hovered::before,
-[data-atelier-flow-frame="after"].is-atelier-flow-hovered::after,
-html:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame="before"].is-atelier-flow-focused::before,
-html:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame="after"].is-atelier-flow-focused::after { animation-play-state: running; }
+html.is-atelier-flow-document-visible [data-atelier-flow-frame="before"].is-atelier-flow-visible.is-atelier-flow-hovered::before,
+html.is-atelier-flow-document-visible [data-atelier-flow-frame="after"].is-atelier-flow-visible.is-atelier-flow-hovered::after,
+html.is-atelier-flow-document-visible:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame="before"].is-atelier-flow-visible.is-atelier-flow-focused::before,
+html.is-atelier-flow-document-visible:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame="after"].is-atelier-flow-visible.is-atelier-flow-focused::after { animation-play-state: running; }
 .hero-banner[data-atelier-flow-frame] { --atelier-flow-speed: 8.4s; --atelier-flow-idle-opacity: .58; }
-.hero-banner[data-atelier-flow-frame="before"].is-atelier-flow-visible::before,
-.hero-banner[data-atelier-flow-frame="after"].is-atelier-flow-visible::after { animation-play-state: running; }
+html.is-atelier-flow-document-visible .hero-banner[data-atelier-flow-frame="before"].is-atelier-flow-visible::before,
+html.is-atelier-flow-document-visible .hero-banner[data-atelier-flow-frame="after"].is-atelier-flow-visible::after { animation-play-state: running; }
 :where(
   .button,
   .side-nav a.active,
@@ -462,7 +463,14 @@ input:focus, textarea:focus, select:focus { border-color: var(--atelier-gold); b
     ) border-box;
   box-shadow: 0 0 0 3px rgba(202,169,105,.09), 0 0 18px rgba(202,169,105,.11);
   animation: atelier-flow-orbit 3.8s linear infinite;
+  animation-play-state: paused;
 }
+html.is-atelier-flow-document-visible :where(
+  input:not([type]):not([name="confirmation"]),
+  input:is([type="text"], [type="search"], [type="password"], [type="email"], [type="url"], [type="number"], [type="tel"]):not([name="confirmation"]),
+  textarea:not([name="confirmation"]),
+  select
+).is-atelier-flow-visible:focus { animation-play-state: running; }
 code, pre { color: var(--atelier-gold-light); background: #0d0e0f; border: 1px solid rgba(202,169,105,.12); border-radius: 7px; }
 code { padding: 2px 5px; }
 pre { padding: 15px; overflow: auto; white-space: pre-wrap; }
