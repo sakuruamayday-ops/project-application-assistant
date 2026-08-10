@@ -10,13 +10,13 @@ func TestDataDirectoryIgnoresHostPluginData(t *testing.T) {
 	profile := t.TempDir()
 	t.Setenv("USERPROFILE", profile)
 	t.Setenv("CODEBUDDY_PLUGIN_DATA", filepath.Join(t.TempDir(), "host-plugin-data"))
-	t.Setenv("JIAOTANG_BEHAVIOR_STATE_ROOT", "")
+	t.Setenv("GONGCHUANG_BEHAVIOR_STATE_ROOT", "")
 
 	root, err := dataDirectory()
 	if err != nil {
 		t.Fatalf("dataDirectory returned error: %v", err)
 	}
-	want := filepath.Join(profile, ".workbuddy", "state", "jiaotang-behavior")
+	want := filepath.Join(profile, ".workbuddy", "state", "gongchuang-behavior")
 	if root != want {
 		t.Fatalf("dataDirectory=%q want stable root %q", root, want)
 	}
@@ -29,7 +29,7 @@ func TestDataDirectoryHonorsExplicitBehaviorStateRoot(t *testing.T) {
 	configured := filepath.Join(t.TempDir(), "shared-behavior-state")
 	t.Setenv("USERPROFILE", t.TempDir())
 	t.Setenv("CODEBUDDY_PLUGIN_DATA", filepath.Join(t.TempDir(), "host-plugin-data"))
-	t.Setenv("JIAOTANG_BEHAVIOR_STATE_ROOT", configured)
+	t.Setenv("GONGCHUANG_BEHAVIOR_STATE_ROOT", configured)
 
 	root, err := dataDirectory()
 	if err != nil {

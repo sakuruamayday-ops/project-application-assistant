@@ -101,8 +101,8 @@ def test_prepare_assets_contains_only_release_files(
     )
 
     assert [path.name for path in assets] == [
-        "jiaotang-skills-V1.3.zip",
-        "jiaotang-skills-V1.3-WorkBuddy.zip",
+        "gongchuang-research-institute-skills-V1.3.zip",
+        "gongchuang-research-institute-skills-V1.3-WorkBuddy.zip",
         "gate.json",
         "gate.json.sig",
         "gate.json.signature.json",
@@ -130,8 +130,8 @@ def test_prepare_assets_allows_one_or_two_release_targets(
         gate,
     )
     assert [path.name for path in assets] == [
-        "jiaotang-skills-V1.3.1.1.zip",
-        "jiaotang-skills-V1.3.1.1-WorkBuddy.zip",
+        "gongchuang-research-institute-skills-V1.3.1.1.zip",
+        "gongchuang-research-institute-skills-V1.3.1.1-WorkBuddy.zip",
         "gate.json",
         "gate.json.sig",
         "gate.json.signature.json",

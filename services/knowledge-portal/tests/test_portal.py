@@ -2124,7 +2124,7 @@ def test_assistant_skill_router_and_read_only_tool_loop(tmp_path, monkeypatch):
     assert "知识库资料" in answer
     assert "小巨人" in sources[0]["title"]
     assert "project-matching" in skills
-    assert set(module.route_assistant_skills("分析专利侵权和法律状态")) >= {"jiaotang-patent-router"}
+    assert set(module.route_assistant_skills("分析专利侵权和法律状态")) >= {"patent-router"}
 
     repeated_calls = 0
 
@@ -4896,7 +4896,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert "`~/.workbuddy/.mcp.json`" in prompt
         assert "禁止读取、修改或覆盖" in prompt
         assert "只合并 `jiaotang-kb`" in prompt
-        assert "plugin-backups/jiaotang-<旧版本>-<时间戳>" in prompt
+        assert "plugin-backups/gongchuang-<旧版本>-<时间戳>" in prompt
         assert "位于 plugins 与 plugins/marketplaces 之外" in prompt
         assert "最终只能保留一个" in prompt
         assert "移入系统回收站" in prompt
@@ -5628,7 +5628,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert protocol.headers["x-jiaotang-registration-transaction"] == (
             "prepare-store-activate"
         )
-        assert protocol.json()["schema"] == "jiaotang-agent-install/v1"
+        assert protocol.json()["schema"] == "gongchuang-research-institute-agent-install/v1"
         assert protocol.json()["protocol_version"] == 6
         assert protocol.json()["phase"] == "review"
         assert protocol.json()["action"] == "review_signed_plugin"
@@ -5671,7 +5671,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         ]
         assert "~/.workbuddy/plugins" in storage_layers[0]["path"]
         assert "~/.codebuddy/plugins" in storage_layers[0]["path"]
-        assert "plugins/marketplaces/jiaotang" in storage_layers[0]["path"]
+        assert "plugins/marketplaces/gongchuang-research-institute" in storage_layers[0]["path"]
         assert "不得使用安装临时目录" in storage_layers[0]["purpose"]
         assert "~/.jiaotang/bin/jiaotang-kb-mcp.mjs" in storage_layers[1]["path"]
         assert storage_layers[1]["required_for_signed_plugin"] is False
@@ -5837,9 +5837,9 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
             host_installation["fixed_actions"]
         )
         persistent_marketplace = host_installation["persistent_marketplace"]
-        assert persistent_marketplace["name"] == "jiaotang"
+        assert persistent_marketplace["name"] == "gongchuang-research-institute"
         assert persistent_marketplace["relative_path"] == (
-            "plugins/marketplaces/jiaotang"
+            "plugins/marketplaces/gongchuang-research-institute"
         )
         assert persistent_marketplace["select_active_host_root"] is True
         assert persistent_marketplace["register_from_temporary_path"] is False
@@ -5872,7 +5872,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         existing_install_policy = authorized_protocol.json()["installation"][
             "existing_install_policy"
         ]
-        assert "持久 jiaotang 市场目录" in (
+        assert "持久共创研究院市场目录" in (
             existing_install_policy["same_package_sha256"]
         )
         assert "不得只凭 enabled 状态跳过" in (
@@ -5886,9 +5886,9 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "registered_persistent_marketplace" in cleanup["preserve"]
         assert cleanup["requires_runtime_connection_check"] is True
         steps = authorized_protocol.json()["installation"]["steps"]
-        assert any("plugins/marketplaces/jiaotang" in step for step in steps)
+        assert any("plugins/marketplaces/gongchuang-research-institute" in step for step in steps)
         assert any("不得直接从临时下载目录" in step for step in steps)
-        assert any("不得删除已注册的持久 jiaotang 市场" in step for step in steps)
+        assert any("不得删除已注册的持久共创研究院市场" in step for step in steps)
         publisher_trust = authorized_protocol.json()["integrity"]["publisher_trust"]
         assert publisher_trust["fingerprint"] == (
             "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
@@ -6916,8 +6916,8 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
         "workbuddy_artifact_is_simple_remote_mcp",
         lambda artifact: bool(artifact),
     )
-    macos_package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy-macOS.zip"
-    windows_package = module.SKILL_RELEASE_DIR / "企业全生命周期助手-V1.2-WorkBuddy-Windows.zip"
+    macos_package = module.SKILL_RELEASE_DIR / "共创研究院企业全生命周期助手-V1.2-WorkBuddy-macOS.zip"
+    windows_package = module.SKILL_RELEASE_DIR / "共创研究院企业全生命周期助手-V1.2-WorkBuddy-Windows.zip"
     macos_package.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(macos_package, "w") as archive:
         archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
@@ -7356,7 +7356,7 @@ def test_selective_macos_release_preserves_only_historical_client_downloads(
     module.SKILL_RELEASE_DIR.mkdir(parents=True, exist_ok=True)
     old_workbuddy = (
         module.SKILL_RELEASE_DIR
-        / "企业全生命周期助手-V1.3.1-WorkBuddy.zip"
+        / "共创研究院企业全生命周期助手-V1.3.1-WorkBuddy.zip"
     )
     with zipfile.ZipFile(old_workbuddy, "w") as archive:
         archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")

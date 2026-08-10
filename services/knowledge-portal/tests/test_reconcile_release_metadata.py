@@ -16,8 +16,8 @@ def test_reconcile_repairs_published_stage_paths_without_moving_files(tmp_path: 
     database = tmp_path / "knowledge.db"
     release_directory = tmp_path / "releases"
     release_directory.mkdir()
-    generic = release_directory / "企业全生命周期助手-V1.2.zip"
-    workbuddy = release_directory / "企业全生命周期助手-V1.2-WorkBuddy.zip"
+    generic = release_directory / "共创研究院企业全生命周期助手-V1.2.zip"
+    workbuddy = release_directory / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip"
     generic.write_bytes(b"generic")
     workbuddy.write_bytes(b"workbuddy")
     staging = release_directory / ".staging" / "V1.2"
@@ -65,7 +65,7 @@ def test_reconcile_can_scope_audit_to_current_release(tmp_path: Path):
     database = tmp_path / "knowledge.db"
     release_directory = tmp_path / "releases"
     release_directory.mkdir()
-    current = release_directory / "企业全生命周期助手-V1.6.0.zip"
+    current = release_directory / "共创研究院企业全生命周期助手-V1.6.0.zip"
     current.write_bytes(b"current")
     with sqlite3.connect(database) as connection:
         MODULE._ensure_stage_table(connection)

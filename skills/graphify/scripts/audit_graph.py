@@ -47,7 +47,7 @@ def write_atomic(path: Path, text: str) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audit a Graphify graph for Jiaotang evidence-chain requirements.")
+    parser = argparse.ArgumentParser(description="Audit a Graphify graph for Gongchuang Research Institute evidence-chain requirements.")
     parser.add_argument("graph", type=Path)
     parser.add_argument("--profile", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)

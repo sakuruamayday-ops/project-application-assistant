@@ -11,7 +11,7 @@ from pathlib import Path
 import fitz
 
 SKILLS_ROOT = Path(__file__).resolve().parents[2]
-BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "jiaotang-branding" / "scripts"
+BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "gongchuang-branding" / "scripts"
 if not BRANDING_SCRIPTS.is_dir():
     raise RuntimeError(f"shared branding runtime missing: {BRANDING_SCRIPTS}")
 sys.path.insert(0, str(BRANDING_SCRIPTS))
@@ -33,7 +33,7 @@ def with_metadata(
             "author": author,
             "subject": subject,
             "creator": "manufacturing-tax-risk-analysis",
-            "producer": "Jiaotang Portable Report Runtime",
+            "producer": "Gongchuang Research Institute Portable Report Runtime",
             "keywords": "金税四期,财税风险,共创知识产权",
         }
     )

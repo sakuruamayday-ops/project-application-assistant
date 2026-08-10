@@ -920,7 +920,7 @@ def build_delivery_repair_plan(
                         )
                     ),
                     required_inputs=["最终产物", "产物SHA-256", "品牌配置与交付闸门"],
-                    preferred_sources=["skills/_runtime/jiaotang-branding"],
+                    preferred_sources=["skills/_runtime/gongchuang-branding"],
                     acceptance_criteria=[
                         "branding_audit.status=passed",
                         "branding_audit.artifact_sha256与产物哈希一致",

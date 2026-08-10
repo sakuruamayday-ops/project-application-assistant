@@ -16,9 +16,13 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+OFFICIAL_PUBLISHER_FINGERPRINT = (
+    "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
+)
+SKILL_SIGNATURE_NAMESPACE = "codex-skill-manifest"
 
 PROFILE_SCHEMA_VERSION = 1
-PROFILE_DIR_ENV = "JIAOTANG_SKILL_DATA_DIR"
+PROFILE_DIR_ENV = "GONGCHUANG_SKILL_DATA_DIR"
 PROTECTED_PHRASES = (
     "跳过签名",
     "跳过验签",
@@ -37,7 +41,7 @@ def now() -> str:
 
 
 def arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="焦糖技能跨平台运行时")
+    parser = argparse.ArgumentParser(description="共创研究院技能跨平台运行时")
     parser.add_argument(
         "command",
         choices=("prepare", "context", "remember", "forget", "list", "diagnose"),
@@ -50,11 +54,27 @@ def arguments() -> argparse.Namespace:
         "--data-dir",
         help=f"覆盖用户数据根目录；默认读取{PROFILE_DIR_ENV}或平台配置目录",
     )
+    parser.add_argument(
+        "--skill-root",
+        help="WorkBuddy共享运行时使用的目标技能目录",
+    )
+    parser.add_argument(
+        "--plugin-root",
+        help="WorkBuddy插件根目录；设置后由插件级签名承担完整性校验",
+    )
     return parser.parse_args()
 
 
 def skill_root() -> Path:
     return Path(__file__).resolve().parents[1]
+
+
+def resolved_skill_root(value: str | None) -> Path:
+    return (
+        Path(value).expanduser().resolve()
+        if value
+        else skill_root()
+    )
 
 
 def read_manifest(root: Path) -> dict:
@@ -72,15 +92,15 @@ def default_data_root() -> Path:
     if system == "Windows":
         base = os.environ.get("APPDATA")
         if base:
-            return Path(base) / "JiaotangSkills"
-        return Path.home() / "AppData" / "Roaming" / "JiaotangSkills"
+            return Path(base) / "GongchuangResearchInstituteSkills"
+        return Path.home() / "AppData" / "Roaming" / "GongchuangResearchInstituteSkills"
     if system == "Darwin":
-        return Path.home() / "Library" / "Application Support" / "JiaotangSkills"
+        return Path.home() / "Library" / "Application Support" / "GongchuangResearchInstituteSkills"
     xdg = os.environ.get("XDG_CONFIG_HOME")
     return (
-        Path(xdg).expanduser() / "jiaotang-skills"
+        Path(xdg).expanduser() / "gongchuang-research-institute-skills"
         if xdg
-        else Path.home() / ".config" / "jiaotang-skills"
+        else Path.home() / ".config" / "gongchuang-research-institute-skills"
     )
 
 
@@ -189,19 +209,26 @@ def verify_embedded_signature(root: Path) -> dict:
         if not path.is_file()
     ]
     if missing:
-        return {
-            "status": "unavailable",
-            "reason": "缺少内置验签文件：" + "、".join(missing),
-        }
+        raise RuntimeError("缺少内置验签文件：" + "、".join(missing))
     if executable is None:
-        return {
-            "status": "unavailable",
-            "reason": "宿主环境缺少ssh-keygen，无法执行Ed25519验签",
-        }
+        raise RuntimeError("宿主环境缺少ssh-keygen，拒绝跳过Ed25519验签")
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     fingerprint = public_fingerprint(public_key)
-    if fingerprint != metadata.get("public_key_fingerprint"):
-        raise RuntimeError("内置公钥指纹与签名元数据不一致")
+    expected_metadata = {
+        "algorithm": "OpenSSH-Ed25519",
+        "signature_namespace": SKILL_SIGNATURE_NAMESPACE,
+        "signed_file": "release-manifest.json",
+        "signature": "release-manifest.json.sig",
+        "public_key": "publisher-ed25519.pub",
+        "public_key_fingerprint": OFFICIAL_PUBLISHER_FINGERPRINT,
+    }
+    if not isinstance(metadata, dict) or any(
+        metadata.get(key) != value
+        for key, value in expected_metadata.items()
+    ):
+        raise RuntimeError("内置签名元数据与固定发布协议不一致")
+    if fingerprint != OFFICIAL_PUBLISHER_FINGERPRINT:
+        raise RuntimeError("内置发布公钥不是共创研究院官方固定发布身份")
     with tempfile.TemporaryDirectory(prefix="skill-manifest-verify-") as temp:
         allowed = Path(temp) / "allowed_signers"
         allowed.write_text(
@@ -218,7 +245,7 @@ def verify_embedded_signature(root: Path) -> dict:
                 "-I",
                 "publisher",
                 "-n",
-                metadata.get("signature_namespace", "codex-skill-manifest"),
+                SKILL_SIGNATURE_NAMESPACE,
                 "-s",
                 str(signature),
             ],
@@ -231,7 +258,7 @@ def verify_embedded_signature(root: Path) -> dict:
     return {
         "status": "verified",
         "public_key_fingerprint": fingerprint,
-        "trust_model": metadata.get("trust_model"),
+        "trust_model": "pinned-official-publisher",
     }
 
 
@@ -284,15 +311,48 @@ def prepare(
     manifest: dict,
     profile_path: Path,
     backup_dir: Path,
+    plugin_root: Path | None = None,
 ) -> dict:
-    check = run_install_check(root)
+    if plugin_root is None:
+        check = run_install_check(root)
+        signature_check = verify_embedded_signature(root)
+    else:
+        expected_root = (plugin_root / "skills" / root.name).resolve()
+        if root != expected_root or not (root / "SKILL.md").is_file():
+            raise RuntimeError("共享运行时目标技能不属于当前WorkBuddy插件")
+        metadata_path = plugin_root / "plugin-release-signature.json"
+        if not metadata_path.is_file():
+            raise RuntimeError("缺少WorkBuddy插件签名元数据")
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        if (
+            not isinstance(metadata, dict)
+            or metadata.get("public_key_fingerprint")
+            != OFFICIAL_PUBLISHER_FINGERPRINT
+            or metadata.get("signature_namespace")
+            != "codex-workbuddy-plugin-manifest"
+        ):
+            raise RuntimeError("WorkBuddy插件发布身份或签名命名空间不合规")
+        check = {
+            "status": "pass",
+            "scope": "workbuddy-plugin",
+            "checked_by": "plugin-release-manifest",
+        }
+        signature_check = {
+            "status": "delegated",
+            "scope": "workbuddy-plugin",
+            "public_key_fingerprint": metadata.get(
+                "public_key_fingerprint"
+            ),
+            "reason": "插件钩子已完成插件级签名与完整性校验",
+        }
     capability_check = check_runtime_requirements(manifest)
     profile = load_profile(profile_path, manifest["skill_name"])
-    signature_check = verify_embedded_signature(root)
     current_fingerprint = signature_check.get("public_key_fingerprint")
     trusted_fingerprint = profile.get("trusted_publisher_fingerprint")
     trust_established = False
     if current_fingerprint:
+        if current_fingerprint != OFFICIAL_PUBLISHER_FINGERPRINT:
+            raise RuntimeError("当前发布者不是共创研究院官方固定发布身份")
         if trusted_fingerprint and trusted_fingerprint != current_fingerprint:
             raise RuntimeError(
                 "新版技能的发布公钥与首次信任的发布者不一致，停止升级"
@@ -415,7 +475,7 @@ def forget(
 
 def main() -> int:
     options = arguments()
-    root = skill_root()
+    root = resolved_skill_root(options.skill_root)
     try:
         manifest = read_manifest(root)
         skill_name = manifest["skill_name"]
@@ -423,7 +483,17 @@ def main() -> int:
         profile_dir.mkdir(parents=True, exist_ok=True)
 
         if options.command == "prepare":
-            result = prepare(root, manifest, profile_path, backup_dir)
+            result = prepare(
+                root,
+                manifest,
+                profile_path,
+                backup_dir,
+                (
+                    Path(options.plugin_root).expanduser().resolve()
+                    if options.plugin_root
+                    else None
+                ),
+            )
         else:
             profile = load_profile(profile_path, skill_name)
             if options.command in {"context", "list"}:

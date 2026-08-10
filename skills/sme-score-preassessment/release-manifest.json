@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-score-preassessment",
-  "release_tag": "V1.1",
+  "release_tag": "V1.6.3",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,27 +21,17 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "5d6c1140b4f6ae154ae4d02423b224774928e94c675ced3e3733154d1290717d",
-    "assets/nbs_benchmarks_2022_2024.json": "30291df760325abc56918e5944305c6abb41b1d72d47d60d8e4e9a8c78e7e97b",
-    "assets/nbs_benchmarks_2022_2025.json": "221ce59c40d72d13814b39cf3d8d6cc0a7d27e09dd3a0d9fd5708207da0cef07",
-    "assets/nbs_industry_map.json": "b0b9816c937745bcc0e2cb7abc830976734127bc292ace0902e1a95b50de58fa",
-    "assets/zhejiang_benchmarks_latest.json": "30d313b28d74173b618e1c7c3e220af3b8cafaffa50bec1921b52b708bb0e698",
-    "assets/三年财务底表_标准输入模板.xlsx": "0fa4b74e8eb45d08661b13c40252be2222b6baa6435db9da4083a90a405d67a3",
-    "assets/专精特新与小巨人前期评分预评估模板.xlsx": "43a91197228258fc5b396cc7caec4789dd8688f50732d51b7701e8405cab53b6",
-    "assets/专精特新与小巨人客户评分_三年财务底表模板.xlsx": "6c1f022c16c9b827f03c00a9d239ac34a6fc4e76e1fa91df4186494117f841f4",
-    "references/automation.md": "5d21088c7a316bd396515550c152a2a0f0930f3ab3569ab7d4db269df286b31a",
-    "references/data-contract.md": "8182c2ddd0428de9b72143e8947179cb1543664c03652518908b6ec9c35a1116",
-    "references/portable-runtime-protocol.md": "cfc1ba0744d2a3ac5f1e3a7ba483930a811aaf27e45d838b184b6f14446fb9cb",
+    "SKILL.md": "44a0cb9e710711759651b75dc1d0dc3b63325ce522d4b7f0ddffa58199058a29",
+    "assets/专精特新小巨人前期培育方向卡模板.docx": "3e6dadd6f7955799eaf3f1e6a1188ef7b5e85e46c933ee6e1d6f36f544375bff",
+    "references/current-policy-baseline-2026.json": "3828a8e370fe5560110eafe27cce8907450d002b8aaa206db4cb39c01023c8cf",
+    "references/current-policy-baseline-2026.md": "04229bd2ee6e6fbfa0278f939156432686adf52dca601c77fe45299cb1a7ca7b",
+    "references/data-contract.md": "28ee31e05f1343183184ae704bf4ff6280cae415b3a6fbd13e09ae36ad6f0ca2",
+    "references/direction-card-first-template.md": "f141c5223563005b9c0d49add543a0fa73f13c8babc3e28d111d3c1b52052986",
+    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/qcc-verification.md": "5a37b72301adabd46240a9d2b641cbdcfd66b77c28d2514f555b3546fd4c5651",
-    "references/scoring-output.md": "34b90711662a1f959d073bf6678d5e642a29299bff3f65f1627169e03fa83f9b",
-    "scripts/nbs_fetch.mjs": "e81a7f82226dd49ee7fa620ade4f28bbc6adddced6187340cdbd8c4d4b610e2e",
-    "scripts/nbs_vision_ocr.swift": "272e5fbf856b09e2c5689ba7dc4d063384849b7f0170a676ec80ecf647e7c690",
-    "scripts/portable_skill_runtime.py": "69e8116fcbf2a677c9a75327f772165e507ec4176b8c52d9b05619b7acc88d13",
-    "scripts/run_score.sh": "b76052877c90a5fd45fbae04ba9299bb08c46e433b2d374597b0343d3f6703ea",
-    "scripts/score_core.mjs": "62e48cb64df8c745edc8af3218db8ff383e4b281eea904906bb6aa9dc32074c9",
-    "scripts/score_engine.mjs": "06a82fba64088c3636db8e6e9b2a18fab9724e540314a880f1bdc8c464ace930",
-    "scripts/verify_skill_installation.py": "a1d7f859a1753eb720be6a5543cd1d0b77588fea7250d8b17790c38cb199fc39",
-    "scripts/zhejiang_fetch.mjs": "18fd9f3f695a3adc73c0acd29e28002166e17a12a33ebac4e009cc55383bb600"
+    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/preflight.py": "f100d2f84ea635f38b6ad58d983f491f8cd9c74298e868cc3f08da95775146db",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

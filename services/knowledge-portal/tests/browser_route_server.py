@@ -45,14 +45,14 @@ def main() -> None:
     if os.environ.get("JIAOTANG_BROWSER_TEST_SKILL_RELEASE_FIXTURE") == "1":
         release_dir = data_dir / "skill-releases"
         release_dir.mkdir(parents=True, exist_ok=True)
-        generic = release_dir / "企业全生命周期助手-V1.2.zip"
+        generic = release_dir / "共创研究院企业全生命周期助手-V1.2.zip"
         generic.write_bytes(b"browser-release-fixture")
         historical_generics = []
         for version in ("1.1", "1.0"):
-            archive_path = release_dir / f"企业全生命周期助手-V{version}.zip"
+            archive_path = release_dir / f"共创研究院企业全生命周期助手-V{version}.zip"
             archive_path.write_bytes(f"browser-release-fixture-{version}".encode())
             historical_generics.append((version, archive_path))
-        workbuddy = release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip"
+        workbuddy = release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip"
         with zipfile.ZipFile(workbuddy, "w") as archive:
             archive.writestr("jiaotang/.codebuddy-plugin/marketplace.json", "{}")
             archive.writestr("jiaotang/plugins/plugin/.codebuddy-plugin/plugin.json", "{}")

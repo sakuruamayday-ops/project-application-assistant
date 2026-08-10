@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "contract_id": "jiaotang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.6.2",
+  "contract_id": "gongchuang-workbuddy-delivery-contract-v1",
+  "rule_version": "1.6.3",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -26,8 +26,8 @@
     "intellectual-property-projects": {"role": "primary_business", "owns": []},
     "investment-subsidy-projects": {"role": "primary_business", "owns": []},
     "ip-assessment": {"role": "primary_business", "owns": []},
-    "jiaotang-legal-regulations": {"role": "supporting_business", "owns": []},
-    "jiaotang-patent-router": {"role": "primary_business", "owns": ["patent-application-case"]},
+    "legal-regulations": {"role": "supporting_business", "owns": []},
+    "patent-router": {"role": "primary_business", "owns": ["patent-application-case"]},
     "local-knowledge-retrieval": {"role": "supporting_business", "owns": []},
     "manufacturing-tax-risk-analysis": {"role": "primary_business", "owns": ["manufacturing-tax-risk-report"]},
     "peer-benchmarking": {"role": "supporting_business", "owns": []},
@@ -159,7 +159,7 @@
     "sme-development-projects": {
       "default": "sme-application-checkup-report"
     },
-    "jiaotang-patent-router": {
+    "patent-router": {
       "by_case_mode": {
         "filing-ready": "patent-application-case"
       }
@@ -497,7 +497,7 @@
       ]
     },
     "patent-application-case": {
-      "skill_id": "jiaotang-patent-router",
+      "skill_id": "patent-router",
       "case_mode": "filing-ready",
       "requires_source_trace": true,
       "requires_evidence_ledger": true,
@@ -628,7 +628,7 @@
         ["品牌审计通过", "报告水印审计通过"]
       ]
     },
-    "jiaotang-patent-router": {
+    "patent-router": {
       "applies_when_prompt_contains": [
         "撰写专利",
         "发明专利申请",

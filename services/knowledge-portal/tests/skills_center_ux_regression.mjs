@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 const {chromium} = require("playwright");
 const port = 18766;
 const baseUrl = `http://127.0.0.1:${port}`;
-const dataDir = await mkdtemp(join(tmpdir(), "jiaotang-skills-ux-"));
+const dataDir = await mkdtemp(join(tmpdir(), "gongchuang-research-institute-skills-ux-"));
 const skillCenterTemplate = await readFile(new URL("../templates/skill_center.html", import.meta.url), "utf8");
 assert.match(skillCenterTemplate, /<details class="skill-release-notes skill-current-release-notes">/, "当前版本发布说明必须使用默认折叠的 details");
 assert.match(skillCenterTemplate, /latest_release\.workbuddy/, "下载区必须渲染跨平台 WorkBuddy 包");
@@ -412,7 +412,7 @@ try {
   server.kill("SIGTERM");
   await Promise.race([new Promise((resolve) => server.once("exit", resolve)), delay(2000)]);
   try {
-    await rename(dataDir, join(homedir(), ".Trash", `jiaotang-skills-ux-${Date.now()}`));
+    await rename(dataDir, join(homedir(), ".Trash", `gongchuang-research-institute-skills-ux-${Date.now()}`));
   } catch {
     console.warn(`浏览器测试数据保留在 ${dataDir}`);
   }

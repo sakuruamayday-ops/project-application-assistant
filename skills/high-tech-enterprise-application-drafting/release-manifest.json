@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "high-tech-enterprise-application-drafting",
-  "release_tag": "V1.3.1",
+  "release_tag": "V1.6.3",
   "required_paths": [
     "SKILL.md",
     "agents/openai.yaml",
@@ -33,16 +33,16 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "1be87fe4715b2586162a2315339ea4885c7389654a848c3123e52ff1d3f9d564",
+    "SKILL.md": "ff9352b51e458832d5abcb15a63a189fbd8732e2c60e49e88b2939cdbbf638e6",
     "agents/openai.yaml": "b5bcaa928eba28c982f4e53e7f33227e3fe35661b09b6fc46a527e7a6bb21a46",
     "assets/高新技术企业认定申请书空白模板.docx": "449f74c7327f7a486031343cc8f7d6b4cf182a5ad68debddca027c5d15d1f20a",
-    "references/portable-runtime-protocol.md": "cfc1ba0744d2a3ac5f1e3a7ba483930a811aaf27e45d838b184b6f14446fb9cb",
+    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/v1.3.1-release-plan.md": "326d44775af10d37fa2d1805c802af6155d8563408b4d4a10e1db0acf752b53e",
     "references/writing-rules.md": "0992c11d6789b1717062a3336d407faa0005cd496c97f71078deb878966371fe",
     "scripts/audit_application_docx.py": "ab8446012290fcfb5480f0d93d7abc25b67c002ce77d7d309478480173862241",
     "scripts/expand_rd_ps_tables.py": "ddc79ee1a63a2c462934492ed28472d8ba5d1c0b7b39539306feaf30df247fc0",
-    "scripts/portable_skill_runtime.py": "69e8116fcbf2a677c9a75327f772165e507ec4176b8c52d9b05619b7acc88d13",
-    "scripts/verify_skill_installation.py": "a1d7f859a1753eb720be6a5543cd1d0b77588fea7250d8b17790c38cb199fc39"
+    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

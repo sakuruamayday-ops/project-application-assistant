@@ -107,7 +107,7 @@ def main() -> int:
         environment["JIAOTANG_WORKBUDDY_PLUGIN_DATA"] = str(
             data_root / "workbuddy"
         )
-        environment["JIAOTANG_SKILL_DATA_DIR"] = str(data_root / "profiles")
+        environment["GONGCHUANG_SKILL_DATA_DIR"] = str(data_root / "profiles")
         prompt = (
             "这是发布候选包的真实激活检查。请逐个实际加载下列技能，"
             "不要联网、不要写文件、不要执行其业务任务；加载完只回复"

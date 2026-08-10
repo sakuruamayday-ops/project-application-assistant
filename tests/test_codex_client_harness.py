@@ -94,7 +94,7 @@ class CodexClientHarnessTests(unittest.TestCase):
             self.assertTrue(artifact_dir.is_dir())
             self.assertIn(str(artifact_dir), first_case["effective_prompt"]["functional"])
             self.assertIn(
-                "JIAOTANG_SKILL_DATA_DIR",
+                "GONGCHUANG_SKILL_DATA_DIR",
                 first_case["effective_prompt"]["functional"],
             )
             web_case = json.loads(

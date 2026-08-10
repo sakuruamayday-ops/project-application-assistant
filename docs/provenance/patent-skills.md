@@ -2,7 +2,7 @@
 
 ## 2026年7月27日正式工作树状态
 
-- 顶层入口收敛为 `jiaotang-patent-router` 与 `checking-patdocx-cn-single-agent`。
+- 顶层入口收敛为 `patent-router` 与 `checking-patdocx-cn-single-agent`。
 - 公司级总路由内部固定为 P1 检索与法律分析、P2 挖掘交底、P3 浙江省／杭州市双中心预审推荐；申请文件核稿保持独立。
 - 所有公司级专利能力已经融合进同一个总路由；不存在旧技能目录、兼容入口或旧名称运行分支。
 - P1、P2、P3 是总路由的三个流程阶段，不是三个可独立安装或触发的技能。
@@ -10,7 +10,7 @@
 
 ## 实现边界
 
-`jiaotang-patent-router` 与 `checking-patdocx-cn-single-agent` 的流程、提示结构和运行脚本均在焦糖正式工作树内独立实现。技能包不包含其他专利技能仓库、安装说明、旧提示词、旧模板或旧项目代码。
+`patent-router` 与 `checking-patdocx-cn-single-agent` 的流程、提示结构和运行脚本均在焦糖正式工作树内独立实现。技能包不包含其他专利技能仓库、安装说明、旧提示词、旧模板或旧项目代码。
 
 法规、IPC 分类和保护中心准入结论仍必须引用外部权威证据。外部证据属于事实来源，不构成技能实现：
 

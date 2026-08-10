@@ -7,21 +7,13 @@ description: 在项目版本、政策和企业事实核验完成后撰写政府�
 
 
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
-## 跨平台首次运行与个人习惯
-
-支持CodeBuddy/WorkBuddy内联命令的宿主会在技能触发时自动执行下面的确定性门禁，并把JSON结果注入当前上下文：
+## 便携运行门禁
 
 !`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
 
-作为WorkBuddy插件加载时，还会把本轮实际触发的技能与当前会话和轮次绑定：
-
 !`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "application-writing" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
 
-每次触发本技能时，第一步必须定位当前`SKILL.md`所在的技能目录，并以该目录为工作目录运行`python3 scripts/portable_skill_runtime.py prepare`。不得因为当前任务看似简单而跳过。将返回的`active_preferences`作为用户个人习惯应用于当前任务；结果为`fail`时停止执行，不得声称安装、自检或升级成功。`capability_check`为`limited`时，只使用宿主已具备的能力，并明确未通过的依赖项，不得声称依赖完整。
-
-用户以“以后、默认、记住、每次、别再”等措辞明确表达长期习惯时：若上下文已出现“偏好桥接轮次已建立”的WorkBuddy钩子提示，不要手动调用`remember`，由停止钩子只向本轮实际触发且已经按会话、轮次绑定的技能写入；其他宿主则在最终答复前调用`python3 scripts/portable_skill_runtime.py remember --instruction '用户原意' --scope default --source agent-confirmed`，再调用`context`确认。未取得`status: pass`和对应偏好记录时，严禁声称“已记住”或“以后会默认采用”。无法执行保存时，只能说明本次会话已理解、尚未形成跨会话偏好。“这次、本次、当前文件、临时”等要求只影响当前任务，禁止写入长期偏好。无需让用户了解或输入存储命令。发生歧义、偏好冲突或可能削弱强制质量门禁时才询问。
-
-个人配置保存在技能目录外并自动备份。不得用个人偏好覆盖真实性、安全、验签、安装自检或本技能的强制质量门禁。完整规则见[跨平台技能运行协议](references/portable-runtime-protocol.md)。
+每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责
@@ -43,6 +35,12 @@ description: 在项目版本、政策和企业事实核验完成后撰写政府�
 5. 企业简介和主导产品按 `references/application-section-patterns.md` 选择结构；当期表单有强制结构时以表单为准。
 6. 完成后调用 `consistency-check`，未通过不得标记为终稿。
 7. 所有事实编号通过 `evidence-ledger` 保持可追溯。若当期申请书存在固定结构或原生来源字段，服从表单；没有容纳来源的位置时另交付来源说明，不得为统一报告格式改动法定表单结构。
+
+## 用户模板原样填充
+
+用户提供Word模板并要求按模板、按原格式或完全保持版式时，默认只替换模板已有文字节点。禁止用 `python-docx` 或其他工具重建段落、表格和版式，禁止新增或删除结构。字体、字号、颜色（包括红字）、抬头、页眉页脚、表格布局、合并关系、边框、节属性和页面边距必须保持不变。交付前运行 `skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py`，再逐页检查页数、分页、表格边界、红字、抬头、溢出和重叠；若文字过长导致视觉漂移，压缩文字，不得重排版。
+
+只有用户明确要求增删重复表格时，才进入结构扩展模式；必须复制模板中完整同类OOXML片段，禁止自建相似版式，并单独记录结构变化与视觉验收结果。
 
 ## 输出
 

@@ -35,7 +35,7 @@
       "implicit_prompt": "请检查一份中国发明专利申请Word文件，重点核对摘要、权利要求引用、说明书术语、附图标记和OOXML结构，并给出可定位的核稿意见。",
       "explicit_prompt": "请显式使用项目级 checking-patdocx-cn-single-agent Skill，读取其SKILL.md后列出专利申请Word核稿范围，并报告实际读取路径。",
       "negative_prompt": "我不是要核稿Word，请做现有技术检索、判断新颖性并规划后续专利布局。",
-      "negative_expected_skill": "jiaotang-patent-router",
+      "negative_expected_skill": "patent-router",
       "functional_prompt": "使用项目级 checking-patdocx-cn-single-agent 对以下脱敏问题生成核稿清单：权利要求2引用权利要求3，说明书混用检测模块和识别模块，摘要写有商业效果但无技术特征。只核稿，不做查新。"
     },
     {
@@ -188,7 +188,7 @@
       "implicit_prompt": "企业准备申报知识产权示范、专利产业化或高价值专利组合项目，请核验权利事实、运用成效和项目证据。",
       "explicit_prompt": "请显式使用项目级 intellectual-property-projects Skill，读取其SKILL.md后说明知识产权类政府项目的分析边界，并报告实际读取路径。",
       "negative_prompt": "我需要做FTO检索、侵权风险和权利要求策略分析，不是申报知识产权政府项目。",
-      "negative_expected_skill": "jiaotang-patent-router",
+      "negative_expected_skill": "patent-router",
       "functional_prompt": "使用项目级 intellectual-property-projects 分析脱敏事实：有效发明4件，其中2件转让取得；有专利产品收入但无许可合同。输出适合方向、权利风险和材料缺口。"
     },
     {
@@ -206,29 +206,20 @@
       "implicit_prompt": "请建立企业专利、商标和软著事实底稿，核验权利状态、取得方式、主体变更、产品技术关联以及在政府项目中的证据价值。",
       "explicit_prompt": "请显式使用项目级 ip-assessment Skill，读取其SKILL.md后说明知识产权事实底稿字段，并报告实际读取路径。",
       "negative_prompt": "请分析具体专利权利要求、开展FTO检索并判断潜在侵权风险。",
-      "negative_expected_skill": "jiaotang-patent-router",
+      "negative_expected_skill": "patent-router",
       "functional_prompt": "使用项目级 ip-assessment 整理脱敏清单：自主申请有效发明2件，转让取得有效发明1件，审中发明2件，软著3件。输出事实状态和申报使用风险。"
     },
     {
       "index": 24,
-      "skill": "jiaotang-legal-regulations",
+      "skill": "legal-regulations",
       "implicit_prompt": "请分国家、浙江省、杭州市和区县检索并核验与政府奖补、知识产权和企业合规有关的现行法律法规，说明效力和合规红线。",
-      "explicit_prompt": "请显式使用项目级 jiaotang-legal-regulations Skill，读取其SKILL.md后说明法规层级、效力和行业补查规则，并报告实际读取路径。",
+      "explicit_prompt": "请显式使用项目级 legal-regulations Skill，读取其SKILL.md后说明法规层级、效力和行业补查规则，并报告实际读取路径。",
       "negative_prompt": "我只需要核验某个政府项目从管理办法到当期通知的完整政策链，不做法律法规清单。",
       "negative_expected_skill": "policy-retrieval",
-      "functional_prompt": "使用项目级 jiaotang-legal-regulations 对虚构场景做方法测试：浙江制造企业申请财政奖补并涉及商业秘密。列出需要核验的法规层级、事实问题和来源要求，不给无来源条文。"
+      "functional_prompt": "使用项目级 legal-regulations 对虚构场景做方法测试：浙江制造企业申请财政奖补并涉及商业秘密。列出需要核验的法规层级、事实问题和来源要求，不给无来源条文。"
     },
     {
       "index": 25,
-      "skill": "jiaotang-patent-router",
-      "implicit_prompt": "请为一家公司的技术方案做专利查新、技术特征拆分、专利布局、权利要求策略和保护中心预审方向建议，并记录法域与检索边界。",
-      "explicit_prompt": "请显式使用项目级 jiaotang-patent-router Skill，读取其SKILL.md后说明公司级专利任务路由和证据链，并报告实际读取路径。",
-      "negative_prompt": "我只需要检查一份已经写好的中国专利申请Word，核对权利要求引用、术语和附图标记，不做查新。",
-      "negative_expected_skill": "checking-patdocx-cn-single-agent",
-      "functional_prompt": "使用项目级 jiaotang-patent-router 对脱敏技术做专利挖掘框架：用视觉模型识别纺织品表面缺陷并动态调整照明。输出技术特征图、检索层级和三项候选发明点，不声称已完成真实查新。"
-    },
-    {
-      "index": 26,
       "skill": "local-knowledge-retrieval",
       "implicit_prompt": "请在团队知识服务中检索历史政策、相似案例、模板和企业名单，同时使用简称全称、年份批次变体以及结构化名单和全文双路径；一次未命中不能断言不存在。",
       "explicit_prompt": "请显式使用项目级 local-knowledge-retrieval Skill，读取其SKILL.md后说明知识服务双路径和未命中表述，并报告实际读取路径。",
@@ -237,13 +228,22 @@
       "functional_prompt": "使用项目级 local-knowledge-retrieval 设计一条只读测试查询：浙江省2025年专精特新中小企业名单。列出简称全称、年份批次、结构化和全文四类检索变体；若当前工具不可用必须明确未覆盖。"
     },
     {
-      "index": 27,
+      "index": 26,
       "skill": "manufacturing-tax-risk-analysis",
       "implicit_prompt": "请基于制造企业近三年审计报告、财务报表和税务资料做三表复算、税务风险、订单往来、研发和所得税核验，并规划金色顾问版报告。",
       "explicit_prompt": "请显式使用项目级 manufacturing-tax-risk-analysis Skill，读取其SKILL.md后说明制造企业财税体检的数据门槛和报告要求，并报告实际读取路径。",
       "negative_prompt": "没有任何财税资料，我只想整理企业工商、产品、研发和知识产权基础画像。",
       "negative_expected_skill": "enterprise-profile",
       "functional_prompt": "使用项目级 manufacturing-tax-risk-analysis 对脱敏异常做风险筛查：收入增长25%，应收账款增长80%，研发费用增长5%，存货周转明显下降。只输出需要进一步核验的风险信号，不形成税务违法结论。"
+    },
+    {
+      "index": 27,
+      "skill": "patent-router",
+      "implicit_prompt": "请为一家公司的技术方案做专利查新、技术特征拆分、专利布局、权利要求策略和保护中心预审方向建议，并记录法域与检索边界。",
+      "explicit_prompt": "请显式使用项目级 patent-router Skill，读取其SKILL.md后说明公司级专利任务路由和证据链，并报告实际读取路径。",
+      "negative_prompt": "我只需要检查一份已经写好的中国专利申请Word，核对权利要求引用、术语和附图标记，不做查新。",
+      "negative_expected_skill": "checking-patdocx-cn-single-agent",
+      "functional_prompt": "使用项目级 patent-router 对脱敏技术做专利挖掘框架：用视觉模型识别纺织品表面缺陷并动态调整照明。输出技术特征图、检索层级和三项候选发明点，不声称已完成真实查新。"
     },
     {
       "index": 28,

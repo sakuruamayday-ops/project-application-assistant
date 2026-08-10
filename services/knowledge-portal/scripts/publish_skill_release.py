@@ -946,7 +946,7 @@ def _artifact_name(version: str, target: str) -> str:
         "macos": "-macOS-WorkBuddy",
         "windows": "-Windows-WorkBuddy",
     }[target]
-    return f"企业全生命周期助手-V{version}{suffix}.zip"
+    return f"共创研究院企业全生命周期助手-V{version}{suffix}.zip"
 
 
 def _sync_promoted_stage_paths(
@@ -1548,9 +1548,9 @@ def stage(
 ) -> dict[str, object]:
     validation = validate_packages(generic_package, workbuddy_package, version)
     stage_directory = release_directory / ".staging" / f"V{version}"
-    generic_target = stage_directory / f"企业全生命周期助手-V{version}.zip"
+    generic_target = stage_directory / f"共创研究院企业全生命周期助手-V{version}.zip"
     workbuddy_target = (
-        stage_directory / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
+        stage_directory / f"共创研究院企业全生命周期助手-V{version}-WorkBuddy.zip"
     )
     release_directory.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(database_path) as connection:
@@ -1637,8 +1637,8 @@ def publish(
     release_notes: str,
 ) -> dict[str, object]:
     validation = validate_packages(generic_package, workbuddy_package, version)
-    generic_target = release_directory / f"企业全生命周期助手-V{version}.zip"
-    workbuddy_target = release_directory / f"企业全生命周期助手-V{version}-WorkBuddy.zip"
+    generic_target = release_directory / f"共创研究院企业全生命周期助手-V{version}.zip"
+    workbuddy_target = release_directory / f"共创研究院企业全生命周期助手-V{version}-WorkBuddy.zip"
     release_directory.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(database_path) as connection:

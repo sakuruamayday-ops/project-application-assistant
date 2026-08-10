@@ -13352,13 +13352,13 @@ def build_agent_bootstrap_prompt(
         f"远程 MCP 边界；{profile['preflight']}"
         "预检失败时保持旧版和原 MCP 配置完全不动。预检通过后记录解压目录的逐文件摘要，安装后"
         "再次核对，必须逐字节一致；只要 package_mutated=true，验收立即失败并回滚。"
-        "然后使用 WorkBuddy 内置插件管理安装或替换焦糖插件，确认 49 项 Skills 可识别并启用包内"
+        "然后使用 WorkBuddy 内置插件管理安装或替换共创研究院插件，确认 49 项 Skills 可识别并启用包内"
         "最小行为约束 Hook。安装前同时检查当前用户目录下"
         f" {profile['host_roots']} 的 plugins、plugins/marketplaces 以及宿主已登记的本地市场，"
-        "识别所有焦糖旧版、重复副本和旧名称副本；不得扫描或改动无关插件。先把命中的旧版移出"
-        "活动插件搜索路径，保存到当前宿主目录下 `plugin-backups/jiaotang-<旧版本>-<时间戳>`，"
+        "识别所有共创研究院旧版、重复副本和历史技术名称副本；不得扫描或改动无关插件。先把命中的旧版移出"
+        "活动插件搜索路径，保存到当前宿主目录下 `plugin-backups/gongchuang-<旧版本>-<时间戳>`，"
         "该备份目录必须位于 plugins 与 plugins/marketplaces 之外。活动搜索路径中最终只能保留一个"
-        " `plugins/marketplaces/jiaotang`，且必须是本次目标版本。"
+        " `plugins/marketplaces/gongchuang-research-institute`，且必须是本次目标版本。"
         "移除旧的本地 jiaotang-kb command/args 连接方式，不读取旧钥匙串、Windows DPAPI、"
         "设备密钥或 bootstrap 配置。不要把新文件直接覆盖解压到旧插件目录；先把旧插件目录移动到"
         "上述搜索路径外的可恢复备份，再安装干净的新目录，并确认新插件根目录不含 `.mcp.json`、`bin` 或"
@@ -13400,8 +13400,8 @@ def build_agent_bootstrap_prompt(
 
 def build_agent_install_prompt(install_protocol_url: str) -> str:
     return (
-        "我已在焦糖门户完成安装说明审查，并明确授权继续安装。请重新读取下面的 HTTPS 安装说明，"
-        "校验 schema 为 jiaotang-agent-install/v1、phase 为 install_authorized，按协议中固定的"
+        "我已在共创研究院门户完成安装说明审查，并明确授权继续安装。请重新读取下面的 HTTPS 安装说明，"
+        "校验 schema 为 gongchuang-research-institute-agent-install/v1、phase 为 install_authorized，按协议中固定的"
         "SHA-256、发布者指纹和 Ed25519 签名完成校验，再安全解压插件市场包，并在 WorkBuddy 内"
         "完成市场添加与插件安装：\n\n"
         f"{install_protocol_url}\n\n"
@@ -13412,9 +13412,9 @@ def build_agent_install_prompt(install_protocol_url: str) -> str:
         "由 WorkBuddy 按已验签清单启动声明的 MCP 入口属于正常运行。协议中的 /plugin 只是 WorkBuddy"
         "宿主的插件管理入口，不是必须出现在 Agent 工具列表中的工具；不要仅因缺少同名工具而中止。"
         "当前会话如具备本地文件、插件管理或 WorkBuddy 配置能力，可以使用这些已授权能力完成协议"
-        "列出的固定步骤。安全解压后必须先把完整 jiaotang 市场持久保存到当前 WorkBuddy 实际使用的"
+        "列出的固定步骤。安全解压后必须先把完整 gongchuang-research-institute 市场持久保存到当前 WorkBuddy 实际使用的"
         "用户插件市场目录，再从该持久目录注册；不得直接注册临时下载或临时解压目录，清理时也不得"
-        "删除已注册的 jiaotang 市场。`jiaotang-kb` 的 MCP 声明位于签名插件根目录 .mcp.json，"
+        "删除已注册的 gongchuang-research-institute 市场。`jiaotang-kb` 的 MCP 声明位于签名插件根目录 .mcp.json，"
         "plugin.json 只保留相对路径声明。先让宿主直接加载签名声明；如 WorkBuddy 5.3.x 日志明确显示"
         " `command=${CODEBUDDY_PLUGIN_ROOT}/bin/run-node`、`runtimeInjected=false` 或因字面量占位符导致 "
         "MCP -32000，允许执行一次限定兼容修复：仅合并用户级 ~/.workbuddy/mcp.json 的 `jiaotang-kb` 条目，"
@@ -13464,12 +13464,12 @@ def build_agent_upgrade_review_prompt(
 
 def build_agent_upgrade_prompt(protocol_url: str) -> str:
     return (
-        "我已在焦糖门户审查跨版本升级计划，并明确授权继续升级。请重新读取下面的 "
+        "我已在共创研究院门户审查跨版本升级计划，并明确授权继续升级。请重新读取下面的 "
         "HTTPS 升级协议，严格核对当前版本、目标版本、目标包 SHA-256、Ed25519 "
         "发布者指纹和持久市场路径：\n\n"
         f"{protocol_url}\n\n"
-        "使用 WorkBuddy 内置插件管理器从已签名的 jiaotang 持久市场升级 "
-        "jiaotang-workbuddy-skills；复用现有设备标识、设备密钥、API Token "
+        "使用 WorkBuddy 内置插件管理器从已签名的 gongchuang-research-institute 持久市场升级 "
+        "gongchuang-research-institute-skills；复用现有设备标识、设备密钥、API Token "
         "和 jiaotang-kb MCP 身份，不得重新登记设备或创建第二个 "
         "MCP。升级前保留当前插件目录作为可恢复备份；新包验签、启用和任一只读 "
         "jiaotang-kb 调用均通过后，再按协议回传目标版本和包哈希。升级后必须确认宿主"
@@ -13490,9 +13490,9 @@ def workbuddy_storage_layers() -> list[dict[str, object]]:
             "label": "宿主插件文件",
             "scope": "workbuddy_managed",
             "path": (
-                "当前 WorkBuddy 实际用户目录的 plugins/marketplaces/jiaotang；"
-                "WorkBuddy 5 通常为 ~/.workbuddy/plugins/marketplaces/jiaotang，"
-                "兼容版本可能为 ~/.codebuddy/plugins/marketplaces/jiaotang"
+                "当前 WorkBuddy 实际用户目录的 plugins/marketplaces/gongchuang-research-institute；"
+                "WorkBuddy 5 通常为 ~/.workbuddy/plugins/marketplaces/gongchuang-research-institute，"
+                "兼容版本可能为 ~/.codebuddy/plugins/marketplaces/gongchuang-research-institute"
             ),
             "purpose": (
                 "持久保存 WorkBuddy 本地市场、插件运行文件和启用状态；"
@@ -13504,7 +13504,7 @@ def workbuddy_storage_layers() -> list[dict[str, object]]:
             "required_for_signed_plugin": True,
             "rollback": (
                 "在 WorkBuddy 插件管理中停用并卸载 "
-                "jiaotang-workbuddy-skills@jiaotang，再移除 jiaotang 本地市场；"
+                "gongchuang-research-institute-skills@gongchuang-research-institute，再移除共创研究院本地市场；"
                 "不要删除整个 ~/.workbuddy 或 ~/.codebuddy"
             ),
         },
@@ -14264,7 +14264,7 @@ def agent_install_protocol(
     storage_layers = workbuddy_storage_layers()
     return JSONResponse(
         {
-            "schema": "jiaotang-agent-install/v1",
+            "schema": "gongchuang-research-institute-agent-install/v1",
             "protocol_version": 6,
             "phase": "install_authorized" if install_authorized else "review",
             "action": (
@@ -14381,8 +14381,8 @@ def agent_install_protocol(
                             "cleanup_download_and_staging_only",
                         ],
                         "persistent_marketplace": {
-                            "name": "jiaotang",
-                            "relative_path": "plugins/marketplaces/jiaotang",
+                            "name": "gongchuang-research-institute",
+                            "relative_path": "plugins/marketplaces/gongchuang-research-institute",
                             "select_active_host_root": True,
                             "preferred_host_root": "~/.workbuddy",
                             "compatibility_host_root": "~/.codebuddy",
@@ -14419,7 +14419,7 @@ def agent_install_protocol(
                     },
                     "existing_install_policy": {
                         "same_package_sha256": (
-                            "仅当已注册的持久 jiaotang 市场目录和签名插件文件仍实际存在时复用；"
+                            "仅当已注册的持久共创研究院市场目录和签名插件文件仍实际存在时复用；"
                             "否则按缺失安装处理，不得只凭 enabled 状态跳过"
                         ),
                         "missing_or_different_package_sha256": (
@@ -14432,10 +14432,10 @@ def agent_install_protocol(
                         "核对发布包 SHA-256、固定发布者指纹和 Ed25519 签名。",
                         "先拒绝绝对路径、父目录穿越、符号链接、重复路径和超限归档，再安全解压；不执行包内内容。",
                         "识别当前 WorkBuddy 实际用户目录；优先使用 ~/.workbuddy，兼容版本可能使用 ~/.codebuddy。",
-                        "把解压后的完整 jiaotang 目录持久保存到该宿主目录的 plugins/marketplaces/jiaotang；"
+                        "把解压后的完整 gongchuang-research-institute 目录持久保存到该宿主目录的 plugins/marketplaces/gongchuang-research-institute；"
                         "不得直接从临时下载目录或临时解压目录注册。",
-                        "使用 WorkBuddy 内置插件管理添加上述持久 jiaotang 本地市场；/plugin 是界面入口，不是 Agent 工具名。",
-                        "在 WorkBuddy 内安装并启用 jiaotang-workbuddy-skills@jiaotang；"
+                        "使用 WorkBuddy 内置插件管理添加上述共创研究院本地市场；/plugin 是界面入口，不是 Agent 工具名。",
+                        "在 WorkBuddy 内安装并启用 gongchuang-research-institute-skills@gongchuang-research-institute；"
                         "由宿主读取签名插件根目录 .mcp.json 中的 jiaotang-kb MCP 声明，"
                         "正常情况不另写用户级或项目级 MCP 配置。",
                         "若 WorkBuddy 5.3.x 把 ${CODEBUDDY_PLUGIN_ROOT} 作为字面量命令导致 MCP -32000，"
@@ -14444,7 +14444,7 @@ def agent_install_protocol(
                         "首次加载时由未绑定的本地 MCP 仅枚举 jiaotang_kb_setup 与状态工具；"
                         "确认本地 setup 工具已枚举后停止，不在安装步骤调用 bootstrap_url。",
                         "返回门户点击第三步“复制知识库绑定指令”，再由用户将单次绑定指令发送给同一 Agent。",
-                        "只清理下载 ZIP 和未注册的中转目录；不得删除已注册的持久 jiaotang 市场、"
+                        "只清理下载 ZIP 和未注册的中转目录；不得删除已注册的持久共创研究院市场、"
                         "插件运行文件或系统凭据。",
                     ],
                     "cleanup": {
@@ -14572,7 +14572,7 @@ def agent_upgrade_protocol(
     )
     return JSONResponse(
         {
-            "schema": "jiaotang-agent-upgrade/v1",
+            "schema": "gongchuang-research-institute-agent-upgrade/v1",
             "protocol_version": 1,
             "phase": "upgrade_authorized" if authorized else "review",
             "action": (
@@ -14605,16 +14605,16 @@ def agent_upgrade_protocol(
                 {
                     "authorized": True,
                     "interface": "workbuddy_builtin_plugin_manager",
-                    "marketplace": "jiaotang",
-                    "plugin": "jiaotang-workbuddy-skills@jiaotang",
+                    "marketplace": "gongchuang-research-institute",
+                    "plugin": "gongchuang-research-institute-skills@gongchuang-research-institute",
                     "persistent_marketplace_relative_path": (
-                        "plugins/marketplaces/jiaotang"
+                        "plugins/marketplaces/gongchuang-research-institute"
                     ),
                     "steps": [
                         "核对现有设备身份、当前版本和当前包哈希。",
                         "下载本协议固定的目标包并验证 SHA-256、Ed25519 签名和发布者指纹。",
                         "把当前已注册插件目录移动到可恢复备份位置，不删除设备凭据。",
-                        "使用 WorkBuddy 内置插件管理器从持久 jiaotang 市场升级并启用插件。",
+                        "使用 WorkBuddy 内置插件管理器从持久共创研究院市场升级并启用插件。",
                         "确认宿主已读取签名插件根目录 .mcp.json，jiaotang-kb 仍为同一连接，"
                         "tools/list 包含 knowledge_search，且任一只读调用成功。",
                         "向 result_url 回传目标版本、目标包哈希和升级结果。",

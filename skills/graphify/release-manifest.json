@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "graphify",
-  "release_tag": "20260724-batch5",
+  "release_tag": "V1.6.3",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,10 +21,17 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "981c3dab6dbe05e9159f05bd7e403bd48d1c2c01c587105bafa4fcb5d7678cdd",
-    "references/portable-runtime-protocol.md": "69474087d3c12c950b704f378a05ad41a361468eb37cb335b9bfd2691336fb72",
-    "scripts/portable_skill_runtime.py": "920a5434860a03453a265c26ba4b57635bd9dc3770031e91724fb1adde18edc7",
-    "scripts/verify_skill_installation.py": "a1d7f859a1753eb720be6a5543cd1d0b77588fea7250d8b17790c38cb199fc39"
+    "SKILL.md": "12dc14a365bff35745b7f9a2bbd567594f74691cc22002efb8df1ed9398898c7",
+    "references/domain-overlay.md": "fe8109101949b2e47f64c8bbbe2146d758078b918a0df6c24c98276ae5dae958",
+    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/privacy-and-scope.md": "446674e6771bc9e2ccf6b9dfeea413c0c224d7e2b9ae82c0233db54105db2df8",
+    "references/project-profiles.md": "19976a23378cdf99cec62f3b4bfe3e65db51fa3b1e72506a6e98802c24e587a5",
+    "references/query-templates.md": "d4143f4bb0de32be8a980a014cdfdea94506139142d70d84942058326ffaadfc",
+    "scripts/audit_graph.py": "df1ba2ad5cdc8e28604e58a1ddce969bf59bfc73548a80e2741be345499052ba",
+    "scripts/build_prompt.py": "78a75c5a9159136a1d5afb891d8b1db336febfcb6f62ba2c5ede9992c176e045",
+    "scripts/init_project.py": "50a8d5b906a641588cfa0f8776659ab234649d82efa2b36f7de8b052ee9d3a34",
+    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

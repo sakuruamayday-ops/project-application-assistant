@@ -145,7 +145,7 @@ WorkBuddy会安装或覆盖49项Skills、启用最小行为Hook，只替换用�
 
 ### 适用Skill
 
-`jiaotang-patent-router`与`checking-patdocx-cn-single-agent`。前者统一承接公司级查新、权利要求分析、FTO、布局、挖掘交底和双中心预审推荐，后者只承接中国专利申请 Word 核稿。
+`patent-router`与`checking-patdocx-cn-single-agent`。前者统一承接公司级查新、权利要求分析、FTO、布局、挖掘交底和双中心预审推荐，后者只承接中国专利申请 Word 核稿。
 
 ### 操作步骤
 

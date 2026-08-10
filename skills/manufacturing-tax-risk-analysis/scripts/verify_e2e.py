@@ -25,7 +25,7 @@ def run_checked(command: list[str], **kwargs) -> subprocess.CompletedProcess:
 
 def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
     tax_root = skills_root / "manufacturing-tax-risk-analysis"
-    runtime_root = skills_root / "_runtime" / "jiaotang-branding"
+    runtime_root = skills_root / "_runtime" / "gongchuang-branding"
     required = [
         tax_root / "scripts" / "generate_report_html.py",
         tax_root / "scripts" / "render_pdf_stdout.js",
@@ -145,7 +145,7 @@ def main() -> int:
     if args.output_dir:
         result = verify(args.skills_root.resolve(), args.output_dir.resolve())
     else:
-        with tempfile.TemporaryDirectory(prefix="jiaotang-tax-e2e-") as directory:
+        with tempfile.TemporaryDirectory(prefix="gongchuang-tax-e2e-") as directory:
             result = verify(args.skills_root.resolve(), Path(directory))
             result.pop("html", None)
             result.pop("pdf", None)

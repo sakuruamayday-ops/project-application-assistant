@@ -197,7 +197,7 @@ def run_case(
     data_root = case_dir / "isolated-data"
     env = os.environ.copy()
     env["JIAOTANG_WORKBUDDY_PLUGIN_DATA"] = str(data_root / "workbuddy")
-    env["JIAOTANG_SKILL_DATA_DIR"] = str(data_root / "profiles")
+    env["GONGCHUANG_SKILL_DATA_DIR"] = str(data_root / "profiles")
     route_prompt = (
         item["prompt"]
         + "\n\n这是处理路径预检门禁，不是业务答复。请从当前加载的 "

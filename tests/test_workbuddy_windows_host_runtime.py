@@ -24,8 +24,8 @@ def test_windows_hook_registration_uses_deterministic_marketplace_root():
     for groups in payload["hooks"].values():
         command = groups[0]["hooks"][0]["command"]
         assert command.startswith(
-            '"$HOME/.workbuddy/plugins/marketplaces/jiaotang/plugins/'
-            'jiaotang-workbuddy-skills/scripts/'
+            '"$HOME/.workbuddy/plugins/marketplaces/gongchuang-research-institute/plugins/'
+            'gongchuang-research-institute-skills/scripts/'
             'workbuddy_behavior_hook_windows.exe" '
         )
         assert "${CODEBUDDY_PLUGIN_ROOT}" not in command
@@ -39,7 +39,7 @@ def test_windows_hook_source_contains_truthful_activation_recovery():
     events = (WINDOWS_SOURCE / "events.go").read_text("utf-8")
     state = (WINDOWS_SOURCE / "state.go").read_text("utf-8")
     assert 'runtimeVersion = "1.6.6"' in main
-    assert 'os.Getenv("JIAOTANG_BEHAVIOR_STATE_ROOT")' in main
+    assert 'os.Getenv("GONGCHUANG_BEHAVIOR_STATE_ROOT")' in main
     assert 'os.Getenv("CODEBUDDY_PLUGIN_DATA")' not in main
     assert 'case "session-start"' in main
     assert '"skill_activation_recovery"' in events

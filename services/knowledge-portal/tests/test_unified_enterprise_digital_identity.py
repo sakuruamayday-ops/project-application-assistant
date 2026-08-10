@@ -169,6 +169,114 @@ def write_snapshot(path: Path) -> None:
     )
 
 
+def write_business_profile_candidates(path: Path) -> None:
+    rows = [
+        {
+            "identity_key": "913201002222222222",
+            "unified_social_credit_code": "913201002222222222",
+            "current_name": "乙智能制造有限公司",
+            "former_names": ["乙数字工程有限公司"],
+            "recognition_names": ["乙智能制造有限公司"],
+            "company_introduction": "工业机器人系统集成企业",
+            "business_scope": "工业机器人研发、生产与销售",
+            "main_product_tags": ["工业机器人"],
+            "industry_track_tags": ["机器视觉"],
+            "recognition_projects": ["国家专精特新“小巨人”企业"],
+            "identity_verification_status": "candidate_alias_closed",
+            "business_profile_evidence_status": "candidate_profile_complete",
+            "recognition_evidence_status": "knowledge_list_linked",
+            "peer_comparison_ready": 1,
+            "source": "共创研究院知识库",
+            "merged_source_identity_keys": ["913201002222222222"],
+        },
+        {
+            "identity_key": "913301004444444444",
+            "unified_social_credit_code": "913301004444444444",
+            "current_name": "丁听力科技有限公司",
+            "company_introduction": "听力设备研发企业",
+            "business_scope": "助听设备研发与销售",
+            "main_product_tags": [],
+            "industry_track_tags": ["助听器"],
+            "recognition_projects": ["浙江省专精特新中小企业"],
+            "identity_verification_status": "knowledge_verified",
+            "business_profile_evidence_status": "candidate_profile_partial",
+            "recognition_evidence_status": "knowledge_list_linked",
+            "peer_comparison_ready": 0,
+            "source": "共创研究院知识库",
+            "merged_source_identity_keys": ["913301004444444444"],
+        },
+    ]
+    path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+
+def test_builder_promotes_audited_delta_and_preserves_partial_queue(tmp_path: Path):
+    database = tmp_path / "knowledge.sqlite3"
+    snapshot = tmp_path / "identities.jsonl"
+    candidates = tmp_path / "business-profile-candidates.jsonl"
+    make_database(database)
+    write_snapshot(snapshot)
+    write_business_profile_candidates(candidates)
+    connection = sqlite3.connect(database)
+    connection.execute(
+        "INSERT INTO three_first_project_awards VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            "candidate-alias",
+            "乙数字工程有限公司",
+            "[]",
+            "浙江省",
+            "杭州市",
+            "滨江区",
+            "浙江省首版次软件产品",
+            2024,
+            "乙工业软件V1.0",
+            "省级",
+            "工业软件",
+            "final_recognition",
+        ),
+    )
+    connection.commit()
+    connection.close()
+
+    report = BUILDER.build(database, snapshot, None, candidates)
+
+    assert report["promoted_business_profile_candidates"] == 2
+    assert report["promoted_complete_business_profiles"] == 1
+    assert report["promoted_partial_business_profiles"] == 1
+    assert report["coverage"]["specialized_sme_peer_comparison"] == {
+        "total_subjects": 2,
+        "ready_subjects": 1,
+        "missing_profile_subjects": 1,
+    }
+    connection = sqlite3.connect(database)
+    connection.row_factory = sqlite3.Row
+    promoted = connection.execute(
+        "SELECT * FROM enterprise_unified_digital_identities WHERE identity_key=?",
+        ("913201002222222222",),
+    ).fetchone()
+    assert promoted["identity_verification_status"] == "knowledge_alias_closed"
+    assert promoted["business_profile_evidence_status"] == "knowledge_profile_complete"
+    assert promoted["three_first_product_enriched"] == 1
+    assert "乙数字工程有限公司" in json.loads(promoted["former_names_json"])
+    assert connection.execute(
+        "SELECT COUNT(*) FROM enterprise_unified_digital_identities WHERE current_name=?",
+        ("乙数字工程有限公司",),
+    ).fetchone()[0] == 0
+    partial = connection.execute(
+        "SELECT * FROM enterprise_unified_digital_identities WHERE identity_key=?",
+        ("913301004444444444",),
+    ).fetchone()
+    assert partial["business_profile_evidence_status"] == "knowledge_profile_partial"
+    assert partial["peer_comparison_ready"] == 0
+    assert connection.execute(
+        "SELECT COUNT(*) FROM enterprise_profile_enrichment_queue WHERE identity_key=?",
+        ("913301004444444444",),
+    ).fetchone()[0] == 1
+    connection.close()
+
+
 def test_builder_preserves_evidence_layers_and_enriches_three_first(tmp_path: Path):
     database = tmp_path / "knowledge.sqlite3"
     snapshot = tmp_path / "identities.jsonl"

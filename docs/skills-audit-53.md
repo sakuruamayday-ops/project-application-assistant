@@ -33,7 +33,7 @@
 | industry-positioning | 产业链、重点领域论证 | 严格目录匹配 | 负责解释与证据链，不自造目录分类 |
 | industry-chain-foundation-matcher | 产业链、工业六基严格分类 | 两份内置目录PDF | 目录无精确项时输出相似项与判断项，标注来源 |
 | enterprise-panorama-analysis | 企业尽调、标准销售版或深度顾问版报告 | 团队知识、企业画像、项目与专利链 | 正式团队Skill；PDF由宿主提供，包内脚本仅作后备 |
-| jiaotang-legal-regulations | 适用法律、现行效力、合规红线、行业监管 | 官方法规、当期通知、团队知识 | 法规适用性检索；不替代项目条件检索，不输出律师结论 |
+| legal-regulations | 适用法律、现行效力、合规红线、行业监管 | 官方法规、当期通知、团队知识 | 法规适用性检索；不替代项目条件检索，不输出律师结论 |
 | manufacturing-tax-risk-analysis | 制造企业三表复算、金税四期和税务风险 | 用户提供的审计、财务及税务资料 | 深度财税体检；与申报财务门槛核验分离，无可靠数据不推算 |
 
 ## 三、项目类别 12项
@@ -120,7 +120,7 @@
 - 将成员政策写入限定在本地 `project-rules/`，普通成员不能修改团队云端知识。
 - 用自动归档替换Obsidian，并加入企业全景报告Skill。
 - 增加 `first-run-configuration`，统一生成当前用户凭据文件、脱敏能力报告和首次配置说明。
-- 增加 `jiaotang-legal-regulations` 与 `manufacturing-tax-risk-analysis`，并与政策检索、申报财务核验划清触发边界。
+- 增加 `legal-regulations` 与 `manufacturing-tax-risk-analysis`，并与政策检索、申报财务核验划清触发边界。
 - 发布门禁扫描本机绝对路径、旧依赖名、`agents` 元数据、macOS `._` 文件和Python缓存。
 
 ## 十一、仍需人工验收

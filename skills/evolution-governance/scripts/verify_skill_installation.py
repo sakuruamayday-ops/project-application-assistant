@@ -80,7 +80,7 @@ def main() -> int:
             actual.add(relative)
     extra = sorted(actual - set(declared))
     if extra:
-        warnings.append("存在清单外文件：" + "、".join(extra))
+        errors.append("存在清单外文件：" + "、".join(extra))
     result = {
         "status": "pass" if not errors else "fail",
         "skill": actual_name,
