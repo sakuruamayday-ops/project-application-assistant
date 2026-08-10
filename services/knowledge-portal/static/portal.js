@@ -54,6 +54,30 @@ document.addEventListener("submit", (event) => {
   }
 }, true);
 
+document.querySelectorAll("[data-credential-batch]").forEach((form) => {
+  const credentialChecks = [...form.querySelectorAll("[data-credential-select]")];
+  const selectAll = form.querySelector("[data-credential-select-all]");
+  const selection = form.querySelector("[data-credential-selection]");
+  const batchSubmit = form.querySelector("[data-credential-batch-submit]");
+  const updateSelection = () => {
+    const checkedCount = credentialChecks.filter((control) => control.checked).length;
+    if (selection) selection.textContent = checkedCount ? `已选择 ${checkedCount} 条` : "尚未选择";
+    if (batchSubmit) batchSubmit.disabled = checkedCount === 0;
+    if (selectAll) {
+      selectAll.checked = credentialChecks.length > 0 && checkedCount === credentialChecks.length;
+      selectAll.indeterminate = checkedCount > 0 && checkedCount < credentialChecks.length;
+    }
+  };
+  selectAll?.addEventListener("change", () => {
+    credentialChecks.forEach((control) => {
+      control.checked = selectAll.checked;
+    });
+    updateSelection();
+  });
+  credentialChecks.forEach((control) => control.addEventListener("change", updateSelection));
+  updateSelection();
+});
+
 function renderAssistantAnswer(container, value) {
   container.replaceChildren();
   const urlPattern = /(https:\/\/[^\s]+)/g;

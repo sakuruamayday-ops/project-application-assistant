@@ -970,6 +970,262 @@ def test_admin_access_health_shows_connection_device_credentials_and_toggle(tmp_
         assert "启用" in refreshed.text
 
 
+def test_admin_can_open_member_credentials_and_revoke_one_or_many(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(
+                username,real_name,company_name,password_hash,is_admin,created_at
+            ) VALUES (?,?,?,?,1,?)
+            """,
+            (
+                "owner",
+                "管理员",
+                "共创集团",
+                module.password_hasher.hash("owner-password-123"),
+                now,
+            ),
+        )
+        member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "multi-device-member",
+                    "多设备成员",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        other_member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "other-member",
+                    "其他成员",
+                    "共创集团",
+                    module.password_hasher.hash("other-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        first_token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    last_used_at,credential_kind
+                ) VALUES (?,?,?,?,?,?,?,'installation')
+                """,
+                (
+                    member_id,
+                    "办公室 MacBook",
+                    "jtk_office",
+                    "office-token-hash",
+                    "office-token-seed",
+                    now,
+                    now,
+                ),
+            ).lastrowid
+        )
+        binding_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_bindings(
+                    user_id,device_id_hash,device_id_prefix,device_name,
+                    auth_method,first_bound_at,last_seen_at
+                ) VALUES (?,?,?,?,?,?,?)
+                """,
+                (
+                    member_id,
+                    "home-device-hash",
+                    "home-device",
+                    "家中 Windows",
+                    "device_signature",
+                    now,
+                    now,
+                ),
+            ).lastrowid
+        )
+        second_token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    last_used_at,credential_kind,binding_id
+                ) VALUES (?,?,?,?,?,?,?,'device',?)
+                """,
+                (
+                    member_id,
+                    "家中 Windows",
+                    "jtk_home",
+                    "home-token-hash",
+                    "home-token-seed",
+                    now,
+                    now,
+                    binding_id,
+                ),
+            ).lastrowid
+        )
+        other_token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    last_used_at,credential_kind
+                ) VALUES (?,?,?,?,?,?,?,'personal')
+                """,
+                (
+                    other_member_id,
+                    "其他成员 API Key",
+                    "jtk_other",
+                    "other-token-hash",
+                    "other-token-seed",
+                    now,
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO device_keys(
+                user_id,binding_id,key_id,public_key,platform,agent_host,created_at
+            ) VALUES (?,?,?,?,?,?,?)
+            """,
+            (
+                member_id,
+                binding_id,
+                "home-key",
+                "home-public-key",
+                "windows-amd64",
+                "workbuddy",
+                now,
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        owner = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        access = client.get("/admin/health/access")
+        assert f'/admin/users/{member_id}#access-credentials' in access.text
+        detail = client.get(f"/admin/users/{member_id}")
+        assert detail.status_code == 200
+        assert "访问凭据与设备" in detail.text
+        assert "办公室 MacBook" in detail.text
+        assert "家中 Windows" in detail.text
+        assert 'name="credential_ids"' in detail.text
+        assert f"/admin/users/{member_id}/credentials/revoke" in detail.text
+        assert f"/admin/users/{member_id}/credentials/{first_token_id}/revoke" in detail.text
+
+        wrong_member = client.post(
+            f"/admin/users/{member_id}/credentials/{other_token_id}/revoke",
+            data={"csrf_token": owner["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert wrong_member.status_code == 404
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT revoked_at FROM device_tokens WHERE id=?",
+                (other_token_id,),
+            ).fetchone()["revoked_at"] is None
+
+        one = client.post(
+            f"/admin/users/{member_id}/credentials/{first_token_id}/revoke",
+            data={"csrf_token": owner["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert one.status_code == 303
+        assert "credentials_revoked=1" in one.headers["location"]
+        with closing(module.database()) as connection:
+            first = connection.execute(
+                "SELECT revoked_at,revoked_reason,revoked_by FROM device_tokens WHERE id=?",
+                (first_token_id,),
+            ).fetchone()
+            second = connection.execute(
+                "SELECT revoked_at FROM device_tokens WHERE id=?",
+                (second_token_id,),
+            ).fetchone()
+            assert first["revoked_at"]
+            assert first["revoked_reason"] == "admin_credential_revoked"
+            assert first["revoked_by"] == "owner"
+            assert second["revoked_at"] is None
+            assert connection.execute(
+                "SELECT revoked_at FROM device_bindings WHERE id=?",
+                (binding_id,),
+            ).fetchone()["revoked_at"] is None
+
+        many = client.post(
+            f"/admin/users/{member_id}/credentials/revoke",
+            data={
+                "csrf_token": owner["csrf_token"],
+                "credential_ids": [second_token_id],
+            },
+            follow_redirects=False,
+        )
+        assert many.status_code == 303
+        assert "credentials_revoked=1" in many.headers["location"]
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT revoked_at FROM device_tokens WHERE id=?",
+                (second_token_id,),
+            ).fetchone()["revoked_at"]
+            assert connection.execute(
+                "SELECT revoked_at,revoked_reason FROM device_bindings WHERE id=?",
+                (binding_id,),
+            ).fetchone()["revoked_reason"] == "admin_credential_revoked"
+            assert connection.execute(
+                "SELECT revoked_at,revoked_reason FROM device_keys WHERE binding_id=?",
+                (binding_id,),
+            ).fetchone()["revoked_reason"] == "admin_credential_revoked"
+            assert connection.execute(
+                "SELECT active FROM users WHERE id=?",
+                (member_id,),
+            ).fetchone()["active"] == 1
+
+        client.cookies.clear()
+        member_login = client.post(
+            "/login",
+            data={
+                "username": "other-member",
+                "password": "other-password-123",
+            },
+            follow_redirects=False,
+        )
+        client.cookies.update(member_login.cookies)
+        regular_member = module.session_user(
+            member_login.cookies[module.SESSION_COOKIE]
+        )[0]
+        forbidden = client.post(
+            f"/admin/users/{other_member_id}/credentials/{other_token_id}/revoke",
+            data={"csrf_token": regular_member["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert forbidden.status_code == 403
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT revoked_at FROM device_tokens WHERE id=?",
+                (other_token_id,),
+            ).fetchone()["revoked_at"] is None
+
+
 def test_directory_storage_size_ignores_inaccessible_path(tmp_path, monkeypatch):
     module = load_app(tmp_path)
 
@@ -4058,7 +4314,7 @@ def test_admin_can_open_member_details_and_restore_soft_deleted_records(tmp_path
 
         member_detail = client.get(f"/admin/users/{member_id}")
         assert member_detail.status_code == 200
-        assert "最后一次结构化安装结果" in member_detail.text
+        assert "最后一次安装或连接结果" in member_detail.text
         assert "mcp_connection" in member_detail.text
         assert "安装失败：MCP 初始化超时" in member_detail.text
         assert client.get(
@@ -4271,6 +4527,100 @@ def test_admin_members_uses_confirmed_mcp_connection_as_install_success(tmp_path
         assert "未收到结果" not in members.text
 
 
+def test_admin_members_uses_remote_mcp_activity_when_install_result_is_missing(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(
+                username,real_name,company_name,password_hash,is_admin,created_at
+            ) VALUES (?,?,?,?,1,?)
+            """,
+            (
+                "owner",
+                "管理员",
+                "总部",
+                module.password_hasher.hash("owner-password-123"),
+                now,
+            ),
+        )
+        member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "jinxi",
+                    "金玺",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,
+                    created_at,last_used_at
+                ) VALUES (?,?,?,?,?,?,?)
+                """,
+                (
+                    member_id,
+                    "金玺",
+                    "jtk_jinxi",
+                    "jinxi-token-hash",
+                    "jinxi-token-seed",
+                    now,
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,0,?)
+            """,
+            (
+                member_id,
+                token_id,
+                "/mcp/",
+                "POST",
+                "mcp_connection",
+                "MCP连接检测",
+                now,
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        members = client.get(
+            "/admin/members",
+            params={"member_query": "jinxi"},
+        )
+        assert members.status_code == 200
+        assert "金玺" in members.text
+        assert "已连接" in members.text
+        assert "未收到结果" not in members.text
+        detail = client.get(f"/admin/users/{member_id}")
+        assert detail.status_code == 200
+        assert "最后一次安装或连接结果" in detail.text
+        assert "未回传，但连接已由服务端确认" in detail.text
+        assert "尚未收到结构化安装结果" not in detail.text
+
+
 def test_admin_can_filter_feedback(tmp_path):
     module = load_app(tmp_path)
     now = module.isoformat(module.utc_now())
@@ -4426,7 +4776,7 @@ def test_api_rejects_missing_token(tmp_path):
         assert response.status_code == 401
 
 
-def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bearer_only(
+def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
     tmp_path,
     monkeypatch,
 ):
@@ -4501,6 +4851,11 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
             r"/v1/agent-install/(jbe_[A-Za-z0-9_-]+)/workbuddy/download",
             prompt,
         ).group(1)
+        first_token = re.search(r"jtk_[A-Za-z0-9_-]+", prompt).group(0)
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {first_token}"},
+        ).status_code == 200
         protocol = client.get(f"/v1/agent-install/{enrollment_code}")
         assert protocol.status_code == 200
         assert protocol.json()["platform"] == {
@@ -4604,15 +4959,37 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
         assert len(suite["skills"]) == 49
         assert len(grouped_skills) == len(set(grouped_skills)) == 49
         assert set(grouped_skills) == set(suite["skills"])
-        first_token = re.search(r"jtk_[A-Za-z0-9_-]+", prompt).group(0)
         second_token = re.search(
             r"jtk_[A-Za-z0-9_-]+", windows_prompt
         ).group(0)
-        assert first_token == second_token
+        assert first_token != second_token
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {second_token}"},
+        ).status_code == 200
+        second_enrollment_code = re.search(
+            r"/v1/agent-install/(jbe_[A-Za-z0-9_-]+)/workbuddy/download",
+            windows_prompt,
+        ).group(1)
+        reported = client.post(
+            f"/v1/agent-install-result/{second_enrollment_code}",
+            json={
+                "schema": "jiaotang-agent-result/v1",
+                "ok": True,
+                "status": "configured",
+                "user_message": "配置成功",
+                "next_action": None,
+                "host": "WIN-DEV-02",
+                "platform": "windows-amd64",
+                "activation_required": False,
+            },
+        )
+        assert reported.status_code == 200
 
         guide = client.get("/mcp-guide")
         assert guide.headers["cache-control"] == "private, no-store"
-        assert first_token in guide.text
+        guide_token = re.search(r"jtk_[A-Za-z0-9_-]+", guide.text).group(0)
+        assert guide_token not in {first_token, second_token}
         assert "Bearer 你的个人Token" not in guide.text
         assert r"%USERPROFILE%\.workbuddy\mcp.json" in guide.text
         assert "~/.workbuddy/mcp.json" in guide.text
@@ -4620,14 +4997,31 @@ def test_v150_one_step_install_reuses_token_cleans_old_versions_and_accepts_bear
         assert "手动信任" in guide.text
         assert client.get(
             "/v1/me",
-            headers={"Authorization": f"Bearer {first_token}"},
+            headers={"Authorization": f"Bearer {guide_token}"},
         ).status_code == 200
         with closing(module.database()) as connection:
             assert connection.execute(
                 "SELECT COUNT(*) FROM device_tokens "
                 "WHERE user_id=? AND revoked_at IS NULL",
                 (int(user["id"]),),
-            ).fetchone()[0] == 1
+            ).fetchone()[0] == 3
+            assert connection.execute(
+                """
+                SELECT COUNT(*) FROM device_tokens
+                WHERE user_id=? AND credential_kind='installation'
+                  AND revoked_at IS NULL
+                """,
+                (int(user["id"]),),
+            ).fetchone()[0] == 2
+            assert connection.execute(
+                """
+                SELECT label FROM device_tokens
+                WHERE enrollment_id=(
+                    SELECT id FROM agent_enrollment_codes WHERE code_hash=?
+                )
+                """,
+                (module.token_hash(second_enrollment_code),),
+            ).fetchone()["label"] == "WIN-DEV-02"
 
 
 @pytest.mark.skip(reason="V1.4.5 已由单段安装指令替代三阶段设备绑定")

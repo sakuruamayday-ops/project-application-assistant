@@ -17,8 +17,14 @@
     <article><span>密码安全状态</span><strong>已设置 · 原文不可查看</strong></article>
   </section>
   <section class="panel">
-    <div class="panel-head"><div><p class="eyebrow">Agent Installation</p><h3>最后一次结构化安装结果</h3></div>{% if latest_install_result %}<span class="table-status {{ 'off' if not latest_install_result.result_ok else '' }}">{{ '成功' if latest_install_result.result_ok else '失败' }}</span>{% endif %}</div>
-    {% if latest_install_result %}
+    <div class="panel-head"><div><p class="eyebrow">Agent Installation</p><h3>最后一次安装或连接结果</h3></div>{% if latest_mcp_activity %}<span class="table-status">已连接</span>{% elif latest_install_result %}<span class="table-status {{ 'off' if not latest_install_result.result_ok else '' }}">{{ '成功' if latest_install_result.result_ok else '失败' }}</span>{% endif %}</div>
+    {% if latest_mcp_activity %}
+    <div class="detail-grid">
+      <article><span>最近 MCP 活动</span><strong>{{ latest_mcp_activity.called_at_display }}</strong></article>
+      <article><span>活动类型</span><strong>{{ latest_mcp_activity.activity_name or latest_mcp_activity.activity_type }}</strong></article>
+      <article><span>结构化安装回执</span><strong>未回传，但连接已由服务端确认</strong></article>
+    </div>
+    {% elif latest_install_result %}
     <div class="detail-grid">
       <article><span>上报时间</span><strong>{{ latest_install_result.result_reported_at_display }}</strong></article>
       <article><span>失败阶段</span><strong>{{ latest_install_result.result_error_stage or '无' }}</strong></article>
@@ -28,6 +34,41 @@
     <div class="form-stack"><p><strong>用户提示</strong><br>{{ latest_install_result.result_user_message }}</p><p><strong>下一步</strong><br>{{ latest_install_result.result_next_action or '无需后续操作' }}</p></div>
     {% else %}
     <p class="muted">尚未收到结构化安装结果。若 Agent 连安装协议入口都无法读取，服务器不会收到结果，应结合用户反馈的网络错误判断。</p>
+    {% endif %}
+  </section>
+  <section class="panel credential-management" id="access-credentials">
+    <div class="panel-head"><div><p class="eyebrow">Access Credentials</p><h3>访问凭据与设备</h3></div><span>{{ credentials|length }} 条记录</span></div>
+    <p class="muted">每次新的一键安装都会生成独立凭据，可只吊销某一台或勾选多条批量吊销。历史共享 API Key 无法区分已经复制到几台机器，吊销时会同时阻断所有使用该 Key 的设备。</p>
+    {% if credentials_revoked %}<div class="notice success">已吊销 {{ credentials_revoked }} 条访问凭据，其他凭据和成员账号状态未改变。</div>{% endif %}
+    {% if credentials %}
+    <form method="post" action="/admin/users/{{ member.id }}/credentials/revoke" data-credential-batch data-confirm="确认吊销选中的访问凭据？对应设备会立即失去 API 与 MCP 访问权限，其他凭据不受影响。">
+      <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
+      <div class="credential-batch-bar">
+        <label><input type="checkbox" data-credential-select-all> 选择全部有效凭据</label>
+        <span data-credential-selection>尚未选择</span>
+        <button class="button danger-outline" type="submit" data-risk-level="confirm" data-credential-batch-submit>吊销所选凭据</button>
+      </div>
+      <div class="table-wrap">
+        <table class="credential-detail-table">
+          <thead><tr><th class="credential-check-column">选择</th><th>凭据</th><th>设备 / 平台</th><th>状态</th><th>最近活动</th><th>时间</th><th>操作</th></tr></thead>
+          <tbody>
+          {% for credential in credentials %}
+            <tr class="{{ 'credential-row-revoked' if credential.revoked_at else '' }}">
+              <td class="credential-check-column">{% if not credential.revoked_at %}<input type="checkbox" name="credential_ids" value="{{ credential.id }}" aria-label="选择凭据 {{ credential.token_prefix }}" data-credential-select>{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td><strong>{{ credential.label }}</strong><small>{{ credential.kind_label }}</small><code>{{ credential.token_prefix }}…</code></td>
+              <td><strong>{{ credential.device_display }}</strong><small>{{ credential.platform_display }}</small>{% if credential.workbuddy_version %}<small>WorkBuddy V{{ credential.workbuddy_version }}</small>{% endif %}</td>
+              <td>{% if credential.revoked_at %}<span class="table-status off">已吊销</span><small>{{ {'admin_credential_revoked':'管理员吊销','user_revoked':'用户自行吊销','installation_failed':'安装失败自动吊销','superseded_unused_install':'未使用安装指令已替换'}.get(credential.revoked_reason, credential.revoked_reason or '历史记录') }}{% if credential.revoked_by %} · {{ credential.revoked_by }}{% endif %}</small>{% elif not member.active %}<span class="table-status connection-blocked">随账号停用</span>{% else %}<span class="table-status">有效</span>{% endif %}</td>
+              <td><strong>{{ credential.last_mcp_at or '尚无 MCP 活动' }}</strong><small>业务调用 {{ credential.call_count }}</small><small>Token 最近使用 {{ credential.last_used_at or '尚未使用' }}</small></td>
+              <td><small>生成 {{ credential.created_at }}</small>{% if credential.revoked_at %}<small>吊销 {{ credential.revoked_at }}</small>{% elif credential.result_reported_at %}<small>安装上报 {{ credential.result_reported_at }}</small>{% endif %}</td>
+              <td>{% if not credential.revoked_at %}<button class="text-danger" type="submit" formaction="/admin/users/{{ member.id }}/credentials/{{ credential.id }}/revoke" data-risk-level="confirm" data-confirm="确认只吊销凭据 {{ credential.token_prefix }}…？其他凭据不受影响。">吊销此凭据</button>{% else %}<span class="muted">已结束</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+    {% else %}
+    <p class="empty">该成员尚无访问凭据。</p>
     {% endif %}
   </section>
   {% if password_reset %}<div class="notice success">成员密码已重置，该成员原有网页登录会话已全部失效。</div>{% endif %}

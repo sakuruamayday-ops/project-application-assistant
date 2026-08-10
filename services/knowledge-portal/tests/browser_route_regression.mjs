@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import {mkdtemp, rename} from "node:fs/promises";
+import {mkdir, mkdtemp, rename} from "node:fs/promises";
 import {homedir, tmpdir} from "node:os";
 import {join} from "node:path";
 import {spawn} from "node:child_process";
@@ -26,6 +26,7 @@ const routes = new Map([
 const port = 18765;
 const baseUrl = `http://127.0.0.1:${port}`;
 const dataDir = await mkdtemp(join(tmpdir(), "jiaotang-browser-routes-"));
+const screenshotDir = process.env.JIAOTANG_BROWSER_SCREENSHOT_DIR || "";
 const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
 const server = spawn(python, ["tests/browser_route_server.py"], {
   env: {
@@ -159,6 +160,35 @@ try {
       assert.equal(await page.locator('a[href="/admin/health/deploy-gate"]').isVisible(), true, "健康看板应展示 Skills 部署门禁");
     }
   }
+  await page.goto(`${baseUrl}/mcp-guide`, {waitUntil: "networkidle"});
+  await page.goto(`${baseUrl}/admin/health/access`, {waitUntil: "networkidle"});
+  const credentialSummary = page.locator('.credential-summary-link[href="/admin/users/1#access-credentials"]');
+  assert.equal(await credentialSummary.isVisible(), true, "访问凭据数量应可点击进入成员凭据明细");
+  await credentialSummary.click();
+  await page.waitForURL("**/admin/users/1#access-credentials");
+  const credentialPanel = page.locator("#access-credentials");
+  assert.equal(await credentialPanel.isVisible(), true, "成员详情应展示访问凭据与设备面板");
+  assert.equal(await credentialPanel.locator("[data-credential-select]").count(), 1, "测试管理员应展示一条可选凭据");
+  const batchRevoke = credentialPanel.locator("[data-credential-batch-submit]");
+  assert.equal(await batchRevoke.isDisabled(), true, "未选择凭据时批量吊销按钮必须禁用");
+  await credentialPanel.locator("[data-credential-select]").check();
+  assert.equal(await batchRevoke.isEnabled(), true, "选择凭据后批量吊销按钮必须启用");
+  assert.match(await credentialPanel.locator("[data-credential-selection]").innerText(), /已选择 1 条/);
+  const credentialDesktopWidth = await page.evaluate(() => ({document: document.documentElement.scrollWidth, viewport: window.innerWidth}));
+  assert.equal(credentialDesktopWidth.document, credentialDesktopWidth.viewport, "凭据详情桌面端不应出现页面级横向溢出");
+  if (screenshotDir) {
+    await mkdir(screenshotDir, {recursive: true});
+    await page.screenshot({path: join(screenshotDir, "credential-detail-desktop.png"), fullPage: true});
+  }
+  await page.setViewportSize({width: 390, height: 844});
+  await page.reload({waitUntil: "networkidle"});
+  const credentialMobileWidth = await page.evaluate(() => ({document: document.documentElement.scrollWidth, viewport: window.innerWidth}));
+  assert.equal(credentialMobileWidth.document, credentialMobileWidth.viewport, "凭据详情移动端不应出现页面级横向溢出");
+  assert.equal(await page.locator("#access-credentials [data-credential-batch-submit]").isVisible(), true, "移动端应保留批量吊销入口");
+  if (screenshotDir) {
+    await page.screenshot({path: join(screenshotDir, "credential-detail-mobile.png"), fullPage: true});
+  }
+  await page.setViewportSize({width: 1440, height: 1000});
   await page.goto(`${baseUrl}/admin/health/deploy-gate`, {waitUntil: "networkidle"});
   assert.equal(await page.locator(".deployment-gate-boundary article").count(), 2, "部署门禁详情应明确展示两类门禁边界");
   const desktopWidth = await page.evaluate(() => ({document: document.documentElement.scrollWidth, viewport: window.innerWidth}));
