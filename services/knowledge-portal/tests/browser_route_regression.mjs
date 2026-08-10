@@ -92,6 +92,21 @@ async function assertPortalSequence(page, expectedIds, roleLabel) {
   }
 }
 
+async function readFlowState(locator) {
+  return locator.evaluate((element) => {
+    const slot = element.dataset.atelierFlowFrame;
+    const style = getComputedStyle(element, `::${slot}`);
+    return {
+      slot,
+      angle: style.getPropertyValue("--atelier-flow-angle").trim(),
+      opacity: Number(style.opacity),
+      animationName: style.animationName,
+      animationPlayState: style.animationPlayState,
+      backgroundImage: style.backgroundImage,
+    };
+  });
+}
+
 let browser;
 try {
   await waitForServer();
@@ -125,21 +140,46 @@ try {
   assert.match(await page.locator("main").innerText(), /普通成员/, "普通成员自助注册权限必须创建成功");
   await page.goto(`${baseUrl}/portal`, {waitUntil: "networkidle"});
 
-  const glowCard = page.locator(".metrics > a").first();
-  const glowIdle = await glowCard.evaluate((element) => {
-    const style = getComputedStyle(element, "::after");
-    return {opacity: style.opacity, animationName: style.animationName, backgroundImage: style.backgroundImage};
+  await page.waitForTimeout(160);
+  const flowCoverage = await page.evaluate(() => {
+    const samples = [
+      ".hero-banner",
+      ".hero-command",
+      ".metrics",
+      ".metrics > a",
+      ".cockpit-radar",
+      ".assistant-console",
+      ".panel",
+      ".table-wrap",
+    ];
+    return {
+      missing: samples.filter((selector) => !document.querySelector(selector)?.dataset.atelierFlowFrame),
+      unavailable: document.querySelectorAll('[data-atelier-flow-frame="unavailable"]').length,
+      decorated: document.querySelectorAll("[data-atelier-flow-frame]").length,
+    };
   });
-  assert.equal(glowIdle.opacity, "0", "流光卡片静止时不应持续发亮");
+  assert.deepEqual(flowCoverage.missing, [], `所有主要框体都必须装配流光：${JSON.stringify(flowCoverage)}`);
+  assert.equal(flowCoverage.unavailable, 0, `框体原有伪元素不得阻断流光：${JSON.stringify(flowCoverage)}`);
+  assert.ok(flowCoverage.decorated > 30, `单页门户应覆盖全部框体而非少量入口：${JSON.stringify(flowCoverage)}`);
+
+  const heroFrame = page.locator(".hero-banner");
+  const heroFlowStart = await readFlowState(heroFrame);
+  await page.waitForTimeout(420);
+  const heroFlowEnd = await readFlowState(heroFrame);
+  assert.ok(heroFlowStart.opacity >= .1, `大型框体默认也应显示低亮度流光：${JSON.stringify(heroFlowStart)}`);
+  assert.equal(heroFlowStart.animationName, "atelier-flow-orbit", "大型框体应挂载流光轨道动画");
+  assert.equal(heroFlowStart.animationPlayState, "running", "可见框体流光必须持续运行");
+  assert.notEqual(heroFlowStart.angle, heroFlowEnd.angle, "大型框体流光角度必须随时间连续变化");
+
+  const glowCard = page.locator(".metrics > a").first();
+  const glowIdle = await readFlowState(glowCard);
+  assert.ok(glowIdle.opacity >= .15, `每张框体卡片都应保持低亮度流动：${JSON.stringify(glowIdle)}`);
   assert.equal(glowIdle.animationName, "atelier-flow-orbit", "可点击卡片应挂载流光轨道动画");
   assert.match(glowIdle.backgroundImage, /conic-gradient/, "流光边框应使用锥形渐变");
   await glowCard.hover();
   await page.waitForTimeout(240);
-  const glowActive = await glowCard.evaluate((element) => {
-    const style = getComputedStyle(element, "::after");
-    return {opacity: Number(style.opacity), animationPlayState: style.animationPlayState};
-  });
-  assert.ok(glowActive.opacity > .95, `悬停后流光边框应可见：${JSON.stringify(glowActive)}`);
+  const glowActive = await readFlowState(glowCard);
+  assert.ok(glowActive.opacity > .85, `悬停后流光边框应增强：${JSON.stringify(glowActive)}`);
   assert.equal(glowActive.animationPlayState, "running", "悬停后流光轨道应开始运行");
 
   const focusedField = page.locator('#feedback input[name="subject"]');
@@ -153,8 +193,8 @@ try {
 
   await page.emulateMedia({reducedMotion: "reduce"});
   await glowCard.focus();
-  const reducedMotionGlow = await glowCard.evaluate((element) => getComputedStyle(element, "::after").animationName);
-  assert.equal(reducedMotionGlow, "none", "减少动态效果模式必须停用流光动画");
+  const reducedMotionGlow = await readFlowState(glowCard);
+  assert.equal(reducedMotionGlow.animationName, "none", "减少动态效果模式必须停用流光动画");
   await page.emulateMedia({reducedMotion: "no-preference"});
   await glowCard.scrollIntoViewIfNeeded();
   await glowCard.focus();
@@ -166,36 +206,28 @@ try {
   }
 
   await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
+  assert.equal(await page.getByText("政策基线包", {exact: true}).count(), 0, "空的政策基线分类卡必须移除");
+  assert.equal(await page.getByText("纯检索路由", {exact: true}).count(), 0, "空的纯检索路由卡必须移除");
   const activeAlgorithmCard = page.locator("a.algorithm-stat-card.is-active").first();
   await activeAlgorithmCard.scrollIntoViewIfNeeded();
-  const algorithmGlowStart = await activeAlgorithmCard.evaluate((element) => {
-    const style = getComputedStyle(element, "::before");
-    return {
-      angle: style.getPropertyValue("--atelier-flow-angle").trim(),
-      opacity: Number(style.opacity),
-      animationName: style.animationName,
-      animationPlayState: style.animationPlayState,
-    };
-  });
+  const algorithmGlowStart = await readFlowState(activeAlgorithmCard);
   await page.waitForTimeout(420);
-  const algorithmGlowEnd = await activeAlgorithmCard.evaluate((element) => (
-    getComputedStyle(element, "::before").getPropertyValue("--atelier-flow-angle").trim()
-  ));
-  assert.ok(algorithmGlowStart.opacity > .95, `当前算法卡应持续显示流光：${JSON.stringify(algorithmGlowStart)}`);
+  const algorithmGlowEnd = await readFlowState(activeAlgorithmCard);
+  assert.ok(algorithmGlowStart.opacity > .85, `当前算法卡应持续显示增强流光：${JSON.stringify(algorithmGlowStart)}`);
   assert.equal(algorithmGlowStart.animationName, "atelier-flow-orbit", "算法卡应挂载流光轨道动画");
   assert.equal(algorithmGlowStart.animationPlayState, "running", "当前算法卡流光应持续运行");
-  assert.notEqual(algorithmGlowStart.angle, algorithmGlowEnd, "算法卡流光角度必须随时间连续变化");
+  assert.notEqual(algorithmGlowStart.angle, algorithmGlowEnd.angle, "算法卡流光角度必须随时间连续变化");
 
   const hoverAlgorithmCard = page.locator("a.algorithm-stat-card").nth(1);
   await hoverAlgorithmCard.hover();
   await page.waitForTimeout(180);
   assert.ok(
-    await hoverAlgorithmCard.evaluate((element) => Number(getComputedStyle(element, "::before").opacity)) > .95,
+    (await readFlowState(hoverAlgorithmCard)).opacity > .85,
     "非当前算法卡悬停后应显示流光",
   );
   await page.emulateMedia({reducedMotion: "reduce"});
   assert.equal(
-    await activeAlgorithmCard.evaluate((element) => getComputedStyle(element, "::before").animationName),
+    (await readFlowState(activeAlgorithmCard)).animationName,
     "none",
     "减少动态效果模式必须停用算法卡流光动画",
   );

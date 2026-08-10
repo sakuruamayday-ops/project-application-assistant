@@ -1473,9 +1473,9 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "显示 29 / 29 个主项目" in response.text
     assert "另有 1 个兼容别名包" in response.text
     assert "正式规则包" in response.text
-    assert "政策基线包" in response.text
+    assert "政策基线包" not in response.text
     assert "近7日查询" in response.text
-    assert "纯检索路由" in response.text
+    assert "纯检索路由" not in response.text
     assert (
         "29 类常规项目均已形成正式阈值规则包。系统会读取企业事实字段，"
         "按稳定管理办法、年度通知、属地规则和已核验征求意见前瞻层逐项核对。"

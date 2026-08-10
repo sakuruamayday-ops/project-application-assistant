@@ -1056,7 +1056,7 @@ body, .sidebar, .table-wrap, .feedback-items, .assistant-progress,
 .algorithm-introduction p { margin: 0; color: var(--console-muted); line-height: 1.8; }
 .algorithm-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(250px, 1.35fr);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 12px;
   margin: 0 0 14px;
 }
@@ -1237,7 +1237,7 @@ a.algorithm-stat-card:hover,
   .algorithm-introduction { grid-template-columns: 1fr; }
   .algorithm-metrics { grid-template-columns: 1fr 1fr; }
   .algorithm-stat-card { min-height: 136px; padding: 16px; }
-  .algorithm-priority-card { grid-column: 1 / -1; }
+  .algorithm-priority-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .algorithm-detail-head { display: grid; }
   .algorithm-detail-metrics { grid-template-columns: 1fr 1fr; }
   .algorithm-detail-metrics div:nth-child(2) { border-right: 0; }
@@ -1606,101 +1606,80 @@ textarea:focus-visible, select:focus-visible {
 .button.white { color: #17130b; background: var(--atelier-gold-light); border-color: var(--atelier-gold-light); }
 .button.disabled { color: #6e6b65; background: #191a1c; border-color: rgba(255,255,255,.06); cursor: default; }
 
-/* flow-glow-ui：只在真实可点击边框上流动，避免覆盖内容或削弱风险状态。 */
-:where(
-  .button:not(.danger):not(.danger-outline):not(.disabled):not(:disabled):not([aria-disabled="true"]),
-  .metrics > a,
-  .health-grid > a,
-  .detail-card-link,
-  .external-link-grid a,
-  .page-continuation-link
-) {
-  position: relative;
+/* flow-glow-ui：每个框体都有低亮度轨道，当前、悬停与聚焦状态再增强。 */
+[data-atelier-flow-frame] {
+  --atelier-flow-speed: 7.4s;
+  --atelier-flow-idle-opacity: .16;
+  --atelier-flow-active-opacity: .92;
   isolation: isolate;
 }
-:where(
-  .button:not(.danger):not(.danger-outline):not(.disabled):not(:disabled):not([aria-disabled="true"]),
-  .metrics > a,
-  .health-grid > a,
-  .detail-card-link,
-  .external-link-grid a,
-  .page-continuation-link
-)::after {
+.atelier-flow-needs-position { position: relative; }
+[data-atelier-flow-frame="before"]::before,
+[data-atelier-flow-frame="after"]::after {
   content: "";
   position: absolute;
   inset: -1px;
-  z-index: 2;
-  padding: 2px;
-  pointer-events: none;
-  border-radius: inherit;
-  background: conic-gradient(
-    from var(--atelier-flow-angle),
-    transparent 0 67%,
-    rgba(162,126,63,.18) 74%,
-    rgba(202,169,105,.76) 80%,
-    rgba(255,247,224,.98) 84%,
-    rgba(234,217,178,.9) 87%,
-    rgba(202,169,105,.32) 92%,
-    transparent 98% 100%
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  opacity: 0;
-  filter: drop-shadow(0 0 5px rgba(234,217,178,.64)) drop-shadow(0 0 12px rgba(202,169,105,.26));
-  animation: atelier-flow-orbit 3.8s linear infinite;
-  animation-play-state: paused;
-  transition: opacity .18s ease;
-}
-:where(
-  .button:not(.danger):not(.danger-outline):not(.disabled):not(:disabled):not([aria-disabled="true"]),
-  .metrics > a,
-  .health-grid > a,
-  .detail-card-link,
-  .external-link-grid a,
-  .page-continuation-link
-):is(:hover, :focus-visible, :focus-within, :active)::after {
-  opacity: 1;
-  animation-play-state: running;
-}
-
-/* 算法卡已有 ::after 轨道装饰，使用独立 ::before 保留原视觉并补齐流光。 */
-a.algorithm-stat-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  padding: 2px;
+  z-index: 6;
+  padding: 1.4px;
   pointer-events: none;
   border-radius: inherit;
   background: conic-gradient(
     from var(--atelier-flow-angle),
     transparent 0 64%,
-    rgba(162,126,63,.16) 71%,
-    rgba(202,169,105,.82) 78%,
-    rgba(255,247,224,1) 82%,
-    rgba(234,217,178,.94) 86%,
-    rgba(202,169,105,.36) 92%,
+    rgba(162,126,63,.08) 70%,
+    rgba(202,169,105,.48) 78%,
+    rgba(255,247,224,.98) 82%,
+    rgba(234,217,178,.78) 86%,
+    rgba(202,169,105,.2) 92%,
     transparent 99% 100%
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
-  opacity: .1;
-  filter: drop-shadow(0 0 6px rgba(255,247,224,.7)) drop-shadow(0 0 15px rgba(202,169,105,.34));
-  animation: atelier-flow-orbit 3.2s linear infinite;
+  opacity: var(--atelier-flow-idle-opacity);
+  filter: drop-shadow(0 0 4px rgba(234,217,178,.34)) drop-shadow(0 0 10px rgba(202,169,105,.16));
+  animation: atelier-flow-orbit var(--atelier-flow-speed) linear infinite;
+  animation-delay: var(--atelier-flow-delay, 0s);
   animation-play-state: paused;
-  transition: opacity .16s ease, filter .16s ease;
+  transition: opacity .18s ease, filter .18s ease;
 }
-a.algorithm-stat-card:is(:hover, :focus-visible, :focus-within, :active)::before,
-a.algorithm-stat-card.is-active::before {
-  opacity: 1;
-  animation-play-state: running;
+[data-atelier-flow-frame="before"]:nth-child(3n)::before,
+[data-atelier-flow-frame="after"]:nth-child(3n)::after { animation-delay: -2.1s; }
+[data-atelier-flow-frame="before"]:nth-child(3n + 2)::before,
+[data-atelier-flow-frame="after"]:nth-child(3n + 2)::after { animation-delay: -4.3s; }
+[data-atelier-flow-frame="before"].is-atelier-flow-visible::before,
+[data-atelier-flow-frame="after"].is-atelier-flow-visible::after { animation-play-state: running; }
+[data-atelier-flow-frame]:is(:hover, :focus-visible, :focus-within, :active, .is-active) {
+  --atelier-flow-idle-opacity: var(--atelier-flow-active-opacity);
 }
-a.algorithm-stat-card:active::before {
-  filter: drop-shadow(0 0 8px rgba(255,247,224,.84)) drop-shadow(0 0 20px rgba(202,169,105,.5));
+[data-atelier-flow-frame="before"]:is(:hover, :focus-visible, :focus-within, :active, .is-active)::before,
+[data-atelier-flow-frame="after"]:is(:hover, :focus-visible, :focus-within, :active, .is-active)::after {
+  filter: drop-shadow(0 0 6px rgba(255,247,224,.68)) drop-shadow(0 0 16px rgba(202,169,105,.34));
+}
+:where(
+  .auth-shell,
+  .hero-banner,
+  .panel,
+  .manual-content,
+  .calibration-workspace,
+  .skill-center,
+  .skill-catalog-shell,
+  .skill-detail-dialog
+)[data-atelier-flow-frame] {
+  --atelier-flow-speed: 9.2s;
+  --atelier-flow-idle-opacity: .11;
+}
+:where(
+  .button,
+  .side-nav a.active,
+  .account-chip,
+  .account-menu-link,
+  .quick-prompts button,
+  .page-continuation-link
+)[data-atelier-flow-frame] {
+  --atelier-flow-speed: 5.8s;
+  --atelier-flow-idle-opacity: .19;
 }
 
 .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 26px; overflow: hidden; border: 1px solid var(--atelier-line); border-radius: var(--atelier-radius); background: var(--atelier-line); }
@@ -2301,16 +2280,14 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-  :where(
-    .button:not(.danger):not(.danger-outline),
-    .metrics > a,
-    .health-grid > a,
-    .detail-card-link,
-    .external-link-grid a,
-    .page-continuation-link
-  )::after,
-  a.algorithm-stat-card::before,
+  [data-atelier-flow-frame="before"]::before,
+  [data-atelier-flow-frame="after"]::after,
   :where(input, textarea, select):focus { animation: none !important; }
+}
+
+@media print {
+  [data-atelier-flow-frame="before"]::before,
+  [data-atelier-flow-frame="after"]::after { content: none !important; }
 }
 }
 
