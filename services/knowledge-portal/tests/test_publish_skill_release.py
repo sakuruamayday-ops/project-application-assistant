@@ -795,6 +795,45 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
         target: str(data["sha256"])
         for target, data in published["artifacts"].items()
     }
+    with sqlite3.connect(database) as connection:
+        previous_workbuddy = connection.execute(
+            """
+            SELECT file_name,file_path,sha256
+            FROM skill_release_artifacts
+            WHERE target='workbuddy'
+            """
+        ).fetchone()
+        connection.execute(
+            """
+            CREATE TABLE agent_enrollment_codes(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                consumed_at TEXT,
+                expires_at TEXT NOT NULL,
+                install_platform TEXT NOT NULL,
+                workbuddy_version TEXT,
+                workbuddy_file_name TEXT,
+                workbuddy_file_path TEXT,
+                workbuddy_sha256 TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                consumed_at,expires_at,install_platform,workbuddy_version,
+                workbuddy_file_name,workbuddy_file_path,workbuddy_sha256
+            ) VALUES (NULL,?,?,?,?,?,?)
+            """,
+            (
+                "2099-01-01T00:00:00+00:00",
+                "unified",
+                "1.2",
+                previous_workbuddy[0],
+                previous_workbuddy[1],
+                previous_workbuddy[2],
+            ),
+        )
+        connection.commit()
 
     replacements: dict[str, Path] = {}
     for target, source in {"generic": generic, "workbuddy": workbuddy}.items():
@@ -828,6 +867,7 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
         transaction_sha256=transaction_sha,
     )
     assert result["status"] == "reissued"
+    assert result["rebound_enrollments"] == {"workbuddy": 1}
     assert set(result["archived_paths"]) == {"generic", "workbuddy"}
     assert all(Path(path).is_file() for path in result["archived_paths"].values())
     with sqlite3.connect(database) as connection:
@@ -848,6 +888,35 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
         assert audit[0] == transaction_sha
         assert audit[1] == "public namespace correction"
         assert Path(audit[2]).is_file()
+        rebound = connection.execute(
+            """
+            SELECT workbuddy_file_name,workbuddy_file_path,workbuddy_sha256
+            FROM agent_enrollment_codes WHERE id=1
+            """
+        ).fetchone()
+        assert rebound[0] == "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip"
+        assert rebound[1] == str(
+            release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip"
+        )
+        assert rebound[2] == replacement_hashes["workbuddy"]
+
+        connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                consumed_at,expires_at,install_platform,workbuddy_version,
+                workbuddy_file_name,workbuddy_file_path,workbuddy_sha256
+            ) VALUES (NULL,?,?,?,?,?,?)
+            """,
+            (
+                "2099-01-01T00:00:00+00:00",
+                "unified",
+                "1.2",
+                previous_workbuddy[0],
+                previous_workbuddy[1],
+                previous_workbuddy[2],
+            ),
+        )
+        connection.commit()
 
     repeated = MODULE.reissue_selective(
         database,
@@ -860,6 +929,19 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
         transaction_sha256=transaction_sha,
     )
     assert repeated["status"] == "already-reissued"
+    assert repeated["rebound_enrollments"] == {"workbuddy": 1}
+    with sqlite3.connect(database) as connection:
+        rebound = connection.execute(
+            """
+            SELECT workbuddy_file_name,workbuddy_file_path,workbuddy_sha256
+            FROM agent_enrollment_codes WHERE id=2
+            """
+        ).fetchone()
+        assert rebound[0] == "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip"
+        assert rebound[1] == str(
+            release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip"
+        )
+        assert rebound[2] == replacement_hashes["workbuddy"]
 
 
 def test_signed_reissue_rejects_unexpected_current_hashes(tmp_path: Path) -> None:
