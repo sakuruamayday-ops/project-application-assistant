@@ -1747,6 +1747,57 @@ tbody tr:hover { background: rgba(202,169,105,.025); }
 .table-status.off { color: var(--atelier-muted); background: rgba(255,255,255,.04); }
 .table-status.failed { color: var(--atelier-muted); background: rgba(255,255,255,.04); text-decoration: line-through; }
 .table-status.ready { color: var(--atelier-success); background: rgba(117,198,155,.08); }
+.status-stack, .device-cell { min-width: 150px; }
+.status-stack small, .device-cell small, .access-user-table td > small {
+  display: block;
+  margin-top: 6px;
+  color: var(--atelier-muted);
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+.access-user-table { min-width: 1460px; }
+.access-token-table { min-width: 1120px; }
+.access-user-table td { vertical-align: middle; }
+.access-user-table .record-link small { margin-top: 1px; }
+.table-status.connection-recently_active,
+.table-status.connection-connected { gap: 6px; }
+.table-status.connection-recently_active::before,
+.table-status.connection-connected::before,
+.table-status.connection-waiting::before,
+.table-status.connection-blocked::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+}
+.table-status.connection-recently_active {
+  color: #9ee0b8;
+  background: rgba(117,198,155,.14);
+  box-shadow: inset 0 0 0 1px rgba(117,198,155,.18);
+}
+.table-status.connection-connected { color: var(--atelier-gold-light); background: rgba(202,169,105,.1); }
+.table-status.connection-waiting { color: var(--atelier-muted); background: rgba(255,255,255,.04); }
+.table-status.connection-blocked { color: var(--atelier-risk-verify); background: var(--atelier-risk-surface); }
+.credential-state-list { display: flex; flex-wrap: wrap; gap: 6px; min-width: 150px; }
+.credential-state-list span { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: 10px; white-space: nowrap; }
+.credential-active { color: var(--atelier-success); background: rgba(117,198,155,.08); }
+.credential-revoked { color: var(--atelier-muted); background: rgba(255,255,255,.04); }
+.device-cell strong { display: block; max-width: 230px; overflow: hidden; color: var(--atelier-ink); text-overflow: ellipsis; white-space: nowrap; }
+.device-cell .device-current { color: var(--atelier-success); }
+.access-action-cell { min-width: 136px; }
+.access-user-table th:last-child,
+.access-user-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: #111214;
+  box-shadow: -12px 0 18px rgba(9,10,11,.86);
+}
+.access-user-table th:last-child { z-index: 4; background: #151618; }
+.access-user-table tbody tr:hover td:last-child { background: #171716; }
 .status-failed,
 .status-rolled_back { color: var(--atelier-risk-verify); background: var(--atelier-risk-surface); }
 .status-waiting { color: var(--atelier-gold-light); background: rgba(202,169,105,.08); }
