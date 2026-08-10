@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import copy
 import importlib.util
 import sqlite3
@@ -103,6 +104,7 @@ def test_signed_transaction_manifest_is_deterministic_and_tamper_evident(
     )
     assert repeated["manifest_sha256"] == verification["manifest_sha256"]
     assert repeated["signature_status"] == "verified"
+    assert repeated["manifest"]["schema"] == "gongchuang-release-transaction/v1"
 
     tampered = copy.deepcopy(verification["manifest"])
     tampered["git_commit"] = "attacker"
@@ -112,6 +114,41 @@ def test_signed_transaction_manifest_is_deterministic_and_tamper_evident(
             signature_payload=signature,
             public_key_text=public_key,
         )
+
+
+def test_legacy_transaction_schema_remains_verifiable(tmp_path: Path) -> None:
+    private_key = Ed25519PrivateKey.generate()
+    public_text = (
+        private_key.public_key().public_bytes(
+            serialization.Encoding.OpenSSH,
+            serialization.PublicFormat.OpenSSH,
+        )
+        + b"\n"
+    ).decode("utf-8")
+    public_path = tmp_path / "legacy.pub"
+    public_path.write_text(public_text, encoding="utf-8")
+    _, fingerprint, _ = MODULE.load_public_key(public_path)
+    manifest = transaction_manifest()
+    manifest["schema"] = MODULE.LEGACY_TRANSACTION_SCHEMA
+    manifest_bytes = MODULE.canonical_json_bytes(manifest)
+    signature_payload = {
+        "schema": MODULE.LEGACY_SIGNATURE_SCHEMA,
+        "algorithm": "Ed25519",
+        "manifest_sha256": MODULE.sha256_bytes(manifest_bytes),
+        "publisher_fingerprint": fingerprint,
+        "signature_base64": base64.b64encode(
+            private_key.sign(manifest_bytes)
+        ).decode("ascii"),
+    }
+
+    verified = MODULE.verify_transaction_manifest(
+        manifest_bytes=manifest_bytes,
+        signature_payload=signature_payload,
+        public_key_text=public_text,
+    )
+
+    assert verified["signature_status"] == "verified"
+    assert verified["manifest"]["schema"] == MODULE.LEGACY_TRANSACTION_SCHEMA
 
 
 def test_one_version_allows_one_writer_and_other_tasks_only_monitor(

@@ -105,6 +105,86 @@ def audit(
                         "repairable": True,
                     }
                 )
+        releases = connection.execute(
+            "SELECT id,version,file_name,file_path,sha256 FROM skill_releases"
+        ).fetchall()
+        for row in releases:
+            version = str(row["version"])
+            if versions is not None and version not in versions:
+                continue
+            final_path = _final_path(release_directory, version, "generic")
+            valid, error = _check_final(final_path, str(row["sha256"]))
+            if not valid:
+                findings.append(
+                    {
+                        "kind": "skill_release_unrepairable",
+                        "version": version,
+                        "target": "generic",
+                        "release_id": int(row["id"]),
+                        "stored_path": str(row["file_path"]),
+                        "expected_path": str(final_path),
+                        "reason": error,
+                    }
+                )
+            elif (
+                str(row["file_path"]) != str(final_path)
+                or str(row["file_name"]) != final_path.name
+            ):
+                findings.append(
+                    {
+                        "kind": "skill_release_path",
+                        "version": version,
+                        "target": "generic",
+                        "release_id": int(row["id"]),
+                        "stored_path": str(row["file_path"]),
+                        "expected_path": str(final_path),
+                        "sha256": str(row["sha256"]),
+                        "repairable": True,
+                    }
+                )
+        release_artifacts = connection.execute(
+            """
+            SELECT artifact.release_id,release.version,artifact.target,
+                   artifact.file_name,artifact.file_path,artifact.sha256
+            FROM skill_release_artifacts artifact
+            JOIN skill_releases release ON release.id=artifact.release_id
+            """
+        ).fetchall()
+        for row in release_artifacts:
+            version = str(row["version"])
+            if versions is not None and version not in versions:
+                continue
+            target = str(row["target"])
+            final_path = _final_path(release_directory, version, target)
+            valid, error = _check_final(final_path, str(row["sha256"]))
+            if not valid:
+                findings.append(
+                    {
+                        "kind": "skill_release_artifact_unrepairable",
+                        "version": version,
+                        "target": target,
+                        "release_id": int(row["release_id"]),
+                        "stored_path": str(row["file_path"]),
+                        "expected_path": str(final_path),
+                        "reason": error,
+                    }
+                )
+            elif (
+                str(row["file_path"]) != str(final_path)
+                or str(row["file_name"]) != final_path.name
+            ):
+                findings.append(
+                    {
+                        "kind": "skill_release_artifact_path",
+                        "version": version,
+                        "target": target,
+                        "release_id": int(row["release_id"]),
+                        "stored_path": str(row["file_path"]),
+                        "expected_path": str(final_path),
+                        "sha256": str(row["sha256"]),
+                        "repairable": True,
+                    }
+                )
         stages = connection.execute(
             """
             SELECT version,generic_path,generic_sha256,workbuddy_path,workbuddy_sha256
@@ -190,6 +270,24 @@ def apply_repairs(database: Path, report: dict[str, object]) -> str | None:
                 connection.execute(
                     f"UPDATE skill_release_stages SET {field}=? WHERE version=?",
                     (expected_path, version),
+                )
+            elif item["kind"] == "skill_release_path":
+                connection.execute(
+                    "UPDATE skill_releases SET file_name=?,file_path=? WHERE id=?",
+                    (Path(expected_path).name, expected_path, int(item["release_id"])),
+                )
+            elif item["kind"] == "skill_release_artifact_path":
+                connection.execute(
+                    """
+                    UPDATE skill_release_artifacts SET file_name=?,file_path=?
+                    WHERE release_id=? AND target=?
+                    """,
+                    (
+                        Path(expected_path).name,
+                        expected_path,
+                        int(item["release_id"]),
+                        target,
+                    ),
                 )
         connection.commit()
     return str(backup)

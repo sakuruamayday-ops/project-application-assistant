@@ -19,8 +19,14 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 )
 
 
-TRANSACTION_SCHEMA = "jiaotang-release-transaction/v1"
-SIGNATURE_SCHEMA = "jiaotang-release-transaction-signature/v1"
+TRANSACTION_SCHEMA = "gongchuang-release-transaction/v1"
+SIGNATURE_SCHEMA = "gongchuang-release-transaction-signature/v1"
+LEGACY_TRANSACTION_SCHEMA = "jiaotang-release-transaction/v1"
+LEGACY_SIGNATURE_SCHEMA = "jiaotang-release-transaction-signature/v1"
+SUPPORTED_SCHEMA_PAIRS = {
+    TRANSACTION_SCHEMA: SIGNATURE_SCHEMA,
+    LEGACY_TRANSACTION_SCHEMA: LEGACY_SIGNATURE_SCHEMA,
+}
 DEFAULT_LEASE_TTL_SECONDS = 4 * 60 * 60
 STATE_SEQUENCE = (
     "leased",
@@ -126,11 +132,12 @@ def verify_transaction_manifest(
         manifest = json.loads(manifest_bytes)
     except json.JSONDecodeError as exc:
         raise RuntimeError("发布事务清单不是有效JSON") from exc
-    if not isinstance(manifest, dict) or manifest.get("schema") != TRANSACTION_SCHEMA:
+    manifest_schema = manifest.get("schema") if isinstance(manifest, dict) else None
+    if manifest_schema not in SUPPORTED_SCHEMA_PAIRS:
         raise RuntimeError("发布事务清单schema不受支持")
     if canonical_json_bytes(manifest) != manifest_bytes:
         raise RuntimeError("发布事务清单不是规范化JSON")
-    if signature_payload.get("schema") != SIGNATURE_SCHEMA:
+    if signature_payload.get("schema") != SUPPORTED_SCHEMA_PAIRS[manifest_schema]:
         raise RuntimeError("发布事务签名schema不受支持")
     public_key = serialization.load_ssh_public_key(
         public_key_text.strip().encode("utf-8")

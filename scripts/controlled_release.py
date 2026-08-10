@@ -407,7 +407,7 @@ def build_release_transaction_manifest(
         for target, data in validation["artifacts"].items()
     }
     return {
-        "schema": "jiaotang-release-transaction/v1",
+        "schema": "gongchuang-release-transaction/v1",
         "version": validation["short_version"],
         "semantic_version": validation["semantic_version"],
         "tag": validation["tag"],
@@ -476,12 +476,12 @@ def prepare_release_transaction_assets(
     if fingerprint != expected_fingerprint:
         raise RuntimeError("发布事务签名公钥与正式包发布者不一致")
     directory.mkdir(parents=True, exist_ok=True)
-    manifest_path = directory / f"jiaotang-release-transaction-{tag}.json"
+    manifest_path = directory / f"gongchuang-release-transaction-{tag}.json"
     signature_path = (
-        directory / f"jiaotang-release-transaction-{tag}.sig.json"
+        directory / f"gongchuang-release-transaction-{tag}.sig.json"
     )
     public_key_path = (
-        directory / f"jiaotang-release-transaction-{tag}.pub"
+        directory / f"gongchuang-release-transaction-{tag}.pub"
     )
     manifest_path.write_bytes(manifest_bytes)
     signature_path.write_text(
