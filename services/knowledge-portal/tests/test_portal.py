@@ -1280,7 +1280,7 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
 
         installation_status = client.get("/agent-installation-status")
         assert installation_status.status_code == 200
-        assert installation_status.json()["schema"] == "jiaotang-web-install-status/v2"
+        assert installation_status.json()["schema"] == "gongchuang-web-install-status/v2"
         assert not installation_status.json()["configured"]
         assert set(installation_status.json()["stages"]) == {
             "skills",
@@ -1358,7 +1358,7 @@ def test_admin_portal_section_order_and_mcp_activity_status(tmp_path):
         status = client.get("/agent-installation-status")
         assert status.status_code == 200
         payload = status.json()
-        assert payload["schema"] == "jiaotang-web-install-status/v2"
+        assert payload["schema"] == "gongchuang-web-install-status/v2"
         assert payload["configured"] is True
         assert payload["connection"]["state"] == "recently_active"
         assert payload["connection"]["last_activity_type"] == "mcp_connection"
@@ -4776,6 +4776,13 @@ def test_api_rejects_missing_token(tmp_path):
         assert response.status_code == 401
 
 
+def test_public_machine_contracts_use_gongchuang_brand(tmp_path):
+    module = load_app(tmp_path)
+    assert module.build_provenance_payload()["schema"] == (
+        "gongchuang-build-provenance/v1"
+    )
+
+
 def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
     tmp_path,
     monkeypatch,
@@ -4858,6 +4865,10 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         ).status_code == 200
         protocol = client.get(f"/v1/agent-install/{enrollment_code}")
         assert protocol.status_code == 200
+        assert protocol.json()["schema"] == "gongchuang-agent-install/v2"
+        assert protocol.headers["content-type"].startswith(
+            "application/vnd.gongchuang.agent-install+json"
+        )
         assert protocol.json()["platform"] == {
             "id": "macos",
             "label": "macOS",
@@ -4974,7 +4985,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         reported = client.post(
             f"/v1/agent-install-result/{second_enrollment_code}",
             json={
-                "schema": "jiaotang-agent-result/v1",
+                "schema": "gongchuang-agent-result/v1",
                 "ok": True,
                 "status": "configured",
                 "user_message": "配置成功",
