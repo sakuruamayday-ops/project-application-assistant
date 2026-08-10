@@ -99,6 +99,7 @@ async function readFlowState(locator) {
     return {
       slot,
       angle: style.getPropertyValue("--atelier-flow-angle").trim(),
+      thickness: style.paddingTop,
       opacity: Number(style.opacity),
       animationName: style.animationName,
       animationPlayState: style.animationPlayState,
@@ -178,7 +179,8 @@ try {
   await page.waitForTimeout(420);
   const heroFlowEnd = await readFlowState(heroFrame);
   if (screenshotDir) await heroFrame.screenshot({path: join(screenshotDir, "flow-glow-hero-t1.png")});
-  assert.ok(heroFlowStart.opacity >= .5, `主视觉大型框体应持续显示清晰流光：${JSON.stringify(heroFlowStart)}`);
+  assert.equal(heroFlowStart.opacity, 1, `主视觉大型框体应与悬停小卡片保持同等满强度：${JSON.stringify(heroFlowStart)}`);
+  assert.equal(heroFlowStart.thickness, "3px", `主视觉大型框体流光应加粗到 3px：${JSON.stringify(heroFlowStart)}`);
   assert.equal(heroFlowStart.animationName, "atelier-flow-orbit", "大型框体应挂载流光轨道动画");
   assert.equal(heroFlowStart.animationPlayState, "running", "只有主视觉大型框体默认持续运行");
   assert.notEqual(heroFlowStart.angle, heroFlowEnd.angle, "大型框体流光角度必须随时间连续变化");
@@ -212,6 +214,7 @@ try {
 
   const glowCard = page.locator(".metrics > a").first();
   const glowIdle = await readFlowState(glowCard);
+  assert.equal(glowIdle.thickness, "2px", "普通小卡片仍应保持 2px 流光，不得随大框一起加粗");
   assert.equal(glowIdle.opacity, 0, `普通卡片默认必须完全静止：${JSON.stringify(glowIdle)}`);
   assert.equal(glowIdle.animationName, "atelier-flow-orbit", "可点击卡片应挂载流光轨道动画");
   assert.match(glowIdle.backgroundImage, /conic-gradient/, "流光边框应使用锥形渐变");

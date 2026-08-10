@@ -324,6 +324,7 @@ textarea:focus-visible, select:focus-visible {
    所有表面统一使用暖金流光，避免金底按钮的黑色轨迹消失在页面黑色外沿上。 */
 [data-atelier-flow-frame] {
   --atelier-flow-speed: 3.8s;
+  --atelier-flow-thickness: 2px;
   --atelier-flow-idle-opacity: 0;
   --atelier-flow-active-opacity: 1;
   --atelier-flow-shadow: drop-shadow(0 0 7px rgba(255,247,224,.72)) drop-shadow(0 0 18px rgba(202,169,105,.42));
@@ -336,7 +337,7 @@ textarea:focus-visible, select:focus-visible {
   position: absolute;
   inset: -1px;
   z-index: 6;
-  padding: 2px;
+  padding: var(--atelier-flow-thickness);
   pointer-events: none;
   border-radius: inherit;
   /* The animated angle must be consumed on the pseudo-element itself.
@@ -374,7 +375,11 @@ html.is-atelier-flow-document-visible [data-atelier-flow-frame="before"].is-atel
 html.is-atelier-flow-document-visible [data-atelier-flow-frame="after"].is-atelier-flow-visible.is-atelier-flow-hovered::after,
 html.is-atelier-flow-document-visible:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame="before"].is-atelier-flow-visible.is-atelier-flow-focused::before,
 html.is-atelier-flow-document-visible:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame="after"].is-atelier-flow-visible.is-atelier-flow-focused::after { animation-play-state: running; }
-.hero-banner[data-atelier-flow-frame] { --atelier-flow-speed: 8.4s; --atelier-flow-idle-opacity: .58; }
+.hero-banner[data-atelier-flow-frame] {
+  --atelier-flow-speed: 8.4s;
+  --atelier-flow-thickness: 3px;
+  --atelier-flow-idle-opacity: 1;
+}
 html.is-atelier-flow-document-visible .hero-banner[data-atelier-flow-frame="before"].is-atelier-flow-visible::before,
 html.is-atelier-flow-document-visible .hero-banner[data-atelier-flow-frame="after"].is-atelier-flow-visible::after { animation-play-state: running; }
 :where(
