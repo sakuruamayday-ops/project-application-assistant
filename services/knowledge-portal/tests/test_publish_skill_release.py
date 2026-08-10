@@ -796,6 +796,13 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
         for target, data in published["artifacts"].items()
     }
     with sqlite3.connect(database) as connection:
+        previous_generic = connection.execute(
+            """
+            SELECT file_name,file_path,sha256
+            FROM skill_release_artifacts
+            WHERE target='generic'
+            """
+        ).fetchone()
         previous_workbuddy = connection.execute(
             """
             SELECT file_name,file_path,sha256
@@ -829,6 +836,48 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
                 "unified",
                 "1.2",
                 previous_workbuddy[0],
+                previous_workbuddy[1],
+                previous_workbuddy[2],
+            ),
+        )
+        connection.executemany(
+            """
+            INSERT INTO skill_release_stage_artifacts(
+                version,target,file_path,sha256
+            ) VALUES ('1.2',?,?,?)
+            """,
+            (
+                ("generic", previous_generic[1], previous_generic[2]),
+                ("workbuddy", previous_workbuddy[1], previous_workbuddy[2]),
+            ),
+        )
+        connection.executemany(
+            """
+            INSERT INTO skill_release_artifact_stages(
+                version,target,status,file_path,sha256,release_notes,
+                git_commit,github_url,staged_at,promoted_at
+            ) VALUES ('1.2',?,'published',?,?,'original','abc123',
+                      'https://github.example/releases/V1.2',
+                      '2026-08-10T00:00:00+00:00','2026-08-10T00:01:00+00:00')
+            """,
+            (
+                ("generic", previous_generic[1], previous_generic[2]),
+                ("workbuddy", previous_workbuddy[1], previous_workbuddy[2]),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO skill_release_stages(
+                version,status,generic_path,generic_sha256,
+                workbuddy_path,workbuddy_sha256,release_notes,
+                git_commit,github_url,staged_at,promoted_at
+            ) VALUES ('1.2','published',?,?,?,?, 'original','abc123',
+                      'https://github.example/releases/V1.2',
+                      '2026-08-10T00:00:00+00:00','2026-08-10T00:01:00+00:00')
+            """,
+            (
+                previous_generic[1],
+                previous_generic[2],
                 previous_workbuddy[1],
                 previous_workbuddy[2],
             ),
@@ -868,6 +917,11 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
     )
     assert result["status"] == "reissued"
     assert result["rebound_enrollments"] == {"workbuddy": 1}
+    assert result["synchronized_stage_metadata"] == {
+        "stage_artifacts": 2,
+        "artifact_stages": 2,
+        "release_stages": 2,
+    }
     assert set(result["archived_paths"]) == {"generic", "workbuddy"}
     assert all(Path(path).is_file() for path in result["archived_paths"].values())
     with sqlite3.connect(database) as connection:
@@ -899,6 +953,30 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
             release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip"
         )
         assert rebound[2] == replacement_hashes["workbuddy"]
+        assert connection.execute(
+            """
+            SELECT COUNT(*) FROM skill_release_stage_artifacts
+            WHERE sha256 IN (?,?)
+            """,
+            (replacement_hashes["generic"], replacement_hashes["workbuddy"]),
+        ).fetchone()[0] == 2
+        assert connection.execute(
+            """
+            SELECT COUNT(*) FROM skill_release_artifact_stages
+            WHERE sha256 IN (?,?)
+            """,
+            (replacement_hashes["generic"], replacement_hashes["workbuddy"]),
+        ).fetchone()[0] == 2
+        release_stage = connection.execute(
+            """
+            SELECT generic_sha256,workbuddy_sha256
+            FROM skill_release_stages WHERE version='1.2'
+            """
+        ).fetchone()
+        assert release_stage == (
+            replacement_hashes["generic"],
+            replacement_hashes["workbuddy"],
+        )
 
         connection.execute(
             """
@@ -930,6 +1008,11 @@ def test_signed_reissue_preserves_previous_files_and_updates_same_version(
     )
     assert repeated["status"] == "already-reissued"
     assert repeated["rebound_enrollments"] == {"workbuddy": 1}
+    assert repeated["synchronized_stage_metadata"] == {
+        "stage_artifacts": 0,
+        "artifact_stages": 0,
+        "release_stages": 0,
+    }
     with sqlite3.connect(database) as connection:
         rebound = connection.execute(
             """
