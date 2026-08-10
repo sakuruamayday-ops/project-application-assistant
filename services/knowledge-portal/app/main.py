@@ -13510,10 +13510,10 @@ def workbuddy_storage_layers() -> list[dict[str, object]]:
         },
         {
             "layer": "jiaotang_runtime_files",
-            "label": "焦糖运行文件",
+            "label": "共创研究院兼容运行文件",
             "scope": "jiaotang_managed",
             "path": (
-                "~/.jiaotang/bin/jiaotang-kb-mcp.mjs 等焦糖独立运行文件；"
+                "~/.jiaotang/bin/jiaotang-kb-mcp.mjs 等共创研究院兼容运行文件；"
                 "签名插件内置模式通常不重复创建该文件"
             ),
             "purpose": (
@@ -13522,7 +13522,7 @@ def workbuddy_storage_layers() -> list[dict[str, object]]:
             "created_when": "仅在独立运行或兼容接入模式需要时",
             "required_for_signed_plugin": False,
             "rollback": (
-                "仅当这些焦糖运行文件实际存在时，将 ~/.jiaotang 中对应运行文件移入系统回收站"
+                "仅当这些共创研究院兼容运行文件实际存在时，将 ~/.jiaotang 中对应运行文件移入系统回收站"
             ),
         },
         {
@@ -14334,7 +14334,7 @@ def agent_install_protocol(
                     "layer_count": 3,
                     "layers": storage_layers,
                     "separation_rule": (
-                        "宿主插件文件、焦糖独立运行文件和系统凭据按用途分别管理；"
+                        "宿主插件文件、共创研究院兼容运行文件和系统凭据按用途分别管理；"
                         "路径相邻或同属用户目录不代表用途相同"
                     ),
                 },
@@ -14349,7 +14349,7 @@ def agent_install_protocol(
                 },
                 "rollback": [
                     "在门户点击“更换绑定设备”或由管理员停用账号，使服务器端凭据与设备公钥立即失效。",
-                    "按 storage_model.layers 的 rollback 分别撤销宿主插件文件、实际存在的焦糖运行文件和系统凭据。",
+                    "按 storage_model.layers 的 rollback 分别撤销宿主插件文件、实际存在的共创研究院兼容运行文件和系统凭据。",
                     "不要把 ~/.workbuddy、~/.codebuddy 或整个用户目录作为递归清理目标。",
                 ],
             },
@@ -14873,14 +14873,6 @@ def agent_bootstrap_manifest(
             },
         },
         headers={"Cache-Control": "no-store"},
-    )
-
-
-@app.get("/install/jiaotang-agent.mjs")
-def download_jiaotang_agent():
-    raise HTTPException(
-        status_code=410,
-        detail="V1.4.5 已停用本地 Agent 安装组件，请使用门户一键安装指令。",
     )
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -42,8 +43,9 @@ def fixture_inputs(tmp_path: Path):
     )
     generic = tmp_path / "generic.zip"
     workbuddy = tmp_path / "workbuddy.zip"
-    generic.write_bytes(b"generic")
-    workbuddy.write_bytes(b"workbuddy")
+    for path, target in ((generic, "generic"), (workbuddy, "workbuddy")):
+        with zipfile.ZipFile(path, "w") as archive:
+            archive.writestr("manifest.json", json.dumps({"target": target}))
     packages = {"generic": generic, "workbuddy": workbuddy}
     provenance = {
         "git_commit": "abc123",
