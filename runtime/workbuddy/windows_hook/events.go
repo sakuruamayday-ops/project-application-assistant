@@ -746,13 +746,21 @@ func loadValidatorReceipts(root, turnID, validatorID string) []map[string]any {
 func auditDelivery(root, turnID, answer string, active []activeSkill, contract deliveryContract, signals promptSignals) (map[string]any, []string) {
 	roles := activeRoles(active, contract)
 	missing, missingIDs, passedIDs, applied := []string{}, []string{}, []string{}, []string{}
+	primaryActive := len(roles["primary_business"]) > 0
+	effectiveBusinessDomain := signals.BusinessDomain || primaryActive
+	businessDomainSource := "none"
+	if signals.BusinessDomain {
+		businessDomainSource = "prompt_signal"
+	} else if primaryActive {
+		businessDomainSource = "active_primary_business_skill"
+	}
 	if len(contract.Raw) > 0 && signals.FormalBusinessDelivery && signals.BusinessDomain && len(roles["primary_business"]) == 0 {
 		missing = append(missing, "NO_PRIMARY_BUSINESS_SKILL：正式业务交付未激活主业务Skill；辅助Skill和质量闸门不能替代主业务Skill")
 		missingIDs = append(missingIDs, "routing.primary_business_skill")
 	}
 	validatorReceipts := []map[string]any{}
 	grounded, groundedConfigured := contract.Raw["grounded_delivery"].(map[string]any)
-	if groundedConfigured && len(grounded) > 0 && signals.FormalBusinessDelivery && signals.BusinessDomain {
+	if groundedConfigured && len(grounded) > 0 && signals.FormalBusinessDelivery && effectiveBusinessDomain {
 		contractID := toString(grounded["contract_id"])
 		if contractID == "" {
 			contractID = "grounded-evidence/v1"
@@ -795,7 +803,7 @@ func auditDelivery(root, turnID, answer string, active []activeSkill, contract d
 	if containsExact(missingIDs, "routing.primary_business_skill") {
 		errorCode = "NO_PRIMARY_BUSINESS_SKILL"
 	}
-	receipt := map[string]any{"delivery_check_ok": len(missing) == 0, "error_code": errorCode, "primary_business_skills": roles["primary_business"], "supporting_business_skills": roles["supporting_business"], "quality_gate_skills": roles["quality_gate"], "infrastructure_skills": roles["infrastructure"], "unclassified_skills": roles["unclassified"], "applied_contracts": applied, "passed_requirement_ids": passedIDs, "accepted_na_items": []string{}, "missing_requirement_ids": missingIDs, "validator_receipts": validatorReceipts}
+	receipt := map[string]any{"delivery_check_ok": len(missing) == 0, "error_code": errorCode, "primary_business_skills": roles["primary_business"], "supporting_business_skills": roles["supporting_business"], "quality_gate_skills": roles["quality_gate"], "infrastructure_skills": roles["infrastructure"], "unclassified_skills": roles["unclassified"], "applied_contracts": applied, "passed_requirement_ids": passedIDs, "accepted_na_items": []string{}, "missing_requirement_ids": missingIDs, "validator_receipts": validatorReceipts, "effective_business_domain": effectiveBusinessDomain, "business_domain_source": businessDomainSource}
 	return receipt, missing
 }
 

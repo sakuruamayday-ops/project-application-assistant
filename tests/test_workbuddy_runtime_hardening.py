@@ -889,6 +889,89 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 BEHAVIOR.load_state(state_path)["status"], "completed"
             )
 
+    def test_macos_stop_consumes_current_turn_receipt_when_prompt_domain_was_missed(self):
+        contract_path = REPOSITORY / "skills/delivery-contracts.json"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            data_root = root / "behavior"
+            plugin_root.mkdir()
+            data_root.mkdir()
+            (plugin_root / "delivery-contracts.json").write_bytes(
+                contract_path.read_bytes()
+            )
+            BEHAVIOR.atomic_json(
+                data_root / "current-turn.json",
+                {"turn_id": "turn-macos-effective-domain"},
+            )
+            validator = GROUNDED_ENGINE.write_delivery_receipt(
+                REPOSITORY / "skills/evidence-ledger/examples/normal-grounded-report.json",
+                REPOSITORY / "tests/fixtures/grounded-citations/real/grounded-analysis-report.docx",
+                profile="analysis-report",
+                state_root=data_root,
+            )
+            state_path, _ = BEHAVIOR.state_paths(data_root, "session-macos-effective-domain")
+            BEHAVIOR.atomic_json(
+                state_path,
+                {
+                    "schema_version": 4,
+                    "session_id": "session-macos-effective-domain",
+                    "turn_id": validator["turn_id"],
+                    "state_origin": "session_start_recovery",
+                    "prompt_context_ok": True,
+                    "prompt_sha256": "abc",
+                    "prompt_signals": {
+                        "formal_business_delivery": True,
+                        "business_domain": False,
+                        "complex_task": False,
+                        "policy_task": False,
+                        "peer_task": False,
+                        "skill_applicability": {},
+                    },
+                    "active_skills": [
+                        {"skill": "industrialization-projects"},
+                        {"skill": "consistency-check"},
+                        {"skill": "evidence-ledger"},
+                    ],
+                    "status": "pending",
+                },
+            )
+            output = io.StringIO()
+            with mock.patch.object(
+                BEHAVIOR,
+                "read_stdin",
+                return_value={
+                    "session_id": "session-macos-effective-domain",
+                    "last_assistant_message": "正式业务报告已经完成。",
+                },
+            ), contextlib.redirect_stdout(output):
+                self.assertEqual(
+                    BEHAVIOR.stop_event(
+                        data_root,
+                        plugin_root,
+                        "workbuddy-marketplace",
+                        "workbuddy-macos",
+                    ),
+                    0,
+                )
+
+            receipt = json.loads(output.getvalue())
+            self.assertTrue(receipt["delivery_check_ok"])
+            self.assertTrue(receipt["effective_business_domain"])
+            self.assertEqual(
+                receipt["business_domain_source"],
+                "active_primary_business_skill",
+            )
+            self.assertEqual(
+                receipt["applied_contracts"], ["grounded-evidence/v1"]
+            )
+            self.assertEqual(len(receipt["validator_receipts"]), 1)
+            self.assertEqual(
+                receipt["validator_receipts"][0]["turn_id"],
+                "turn-macos-effective-domain",
+            )
+            self.assertEqual(BEHAVIOR.load_state(state_path)["status"], "completed")
+
     def test_delivery_contract_uses_specific_not_generic_trigger_markers(self):
         contract = json.loads(
             (REPOSITORY / "skills/delivery-contracts.json").read_text(

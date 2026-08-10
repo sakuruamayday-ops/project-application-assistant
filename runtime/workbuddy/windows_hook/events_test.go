@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,6 +9,109 @@ import (
 	"testing"
 	"time"
 )
+
+func groundedTestContract() deliveryContract {
+	return deliveryContract{Raw: map[string]any{
+		"skill_roles": map[string]any{
+			"industrialization-projects": map[string]any{"role": "primary_business"},
+			"evidence-ledger":            map[string]any{"role": "quality_gate"},
+		},
+		"grounded_delivery": map[string]any{
+			"contract_id":        "grounded-evidence/v1",
+			"quality_gate_skill": "evidence-ledger",
+			"validator_id":       "grounded-delivery/v1",
+		},
+	}}
+}
+
+func writeGroundedTestReceipt(t *testing.T, root, turnID, artifactPath, artifactHash string) string {
+	t.Helper()
+	receiptDir := filepath.Join(root, "validator-receipts", turnID)
+	if err := os.MkdirAll(receiptDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(receiptDir, "grounded-delivery-v1-test.json")
+	payload := map[string]any{
+		"validator_id": "grounded-delivery/v1",
+		"status":       "pass",
+		"turn_id":      turnID,
+		"artifact": map[string]any{
+			"path":   artifactPath,
+			"sha256": artifactHash,
+		},
+	}
+	if err := atomicJSON(path, payload); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func TestGroundedDeliveryUsesActivePrimarySkillWhenPromptDomainSignalMissing(t *testing.T) {
+	root := t.TempDir()
+	turnID := "turn-primary-domain-fallback"
+	artifactPath := filepath.Join(t.TempDir(), "report.docx")
+	artifactData := []byte("validated artifact")
+	if err := os.WriteFile(artifactPath, artifactData, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	artifactHash := fmt.Sprintf("%x", sha256.Sum256(artifactData))
+	active := []activeSkill{
+		{Skill: "industrialization-projects", TurnID: turnID},
+		{Skill: "evidence-ledger", TurnID: turnID},
+	}
+	signals := promptSignals{FormalBusinessDelivery: true, BusinessDomain: false}
+
+	missingReceipt, missing := auditDelivery(root, turnID, "", active, groundedTestContract(), signals)
+	if len(missing) != 1 || !containsExact(missingReceipt["missing_requirement_ids"].([]string), "grounded.artifact.report") {
+		t.Fatalf("missing receipt did not fail closed: receipt=%#v missing=%#v", missingReceipt, missing)
+	}
+	if missingReceipt["effective_business_domain"] != true || missingReceipt["business_domain_source"] != "active_primary_business_skill" {
+		t.Fatalf("primary skill did not establish effective business domain: %#v", missingReceipt)
+	}
+
+	writeGroundedTestReceipt(t, root, turnID, artifactPath, artifactHash)
+	receipt, missing := auditDelivery(root, turnID, "", active, groundedTestContract(), signals)
+	if len(missing) != 0 || receipt["delivery_check_ok"] != true {
+		t.Fatalf("valid current-turn receipt was not consumed: receipt=%#v missing=%#v", receipt, missing)
+	}
+	if !containsExact(receipt["passed_requirement_ids"].([]string), "grounded.artifact.report") {
+		t.Fatalf("artifact requirement not passed: %#v", receipt)
+	}
+	if got := receipt["validator_receipts"].([]map[string]any); len(got) != 1 {
+		t.Fatalf("validator receipt not recorded: %#v", got)
+	}
+}
+
+func TestGroundedDeliveryRejectsWrongTurnAndChangedArtifact(t *testing.T) {
+	root := t.TempDir()
+	turnID := "turn-current"
+	artifactPath := filepath.Join(t.TempDir(), "report.docx")
+	artifactData := []byte("artifact version one")
+	if err := os.WriteFile(artifactPath, artifactData, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	artifactHash := fmt.Sprintf("%x", sha256.Sum256(artifactData))
+	active := []activeSkill{
+		{Skill: "industrialization-projects", TurnID: turnID},
+		{Skill: "evidence-ledger", TurnID: turnID},
+	}
+	signals := promptSignals{FormalBusinessDelivery: true, BusinessDomain: false}
+
+	writeGroundedTestReceipt(t, root, "turn-stale", artifactPath, artifactHash)
+	receipt, _ := auditDelivery(root, turnID, "", active, groundedTestContract(), signals)
+	if receipt["delivery_check_ok"] != false {
+		t.Fatalf("wrong-turn receipt was accepted: %#v", receipt)
+	}
+
+	writeGroundedTestReceipt(t, root, turnID, artifactPath, artifactHash)
+	if err := os.WriteFile(artifactPath, []byte("artifact version two"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	receipt, _ = auditDelivery(root, turnID, "", active, groundedTestContract(), signals)
+	if receipt["delivery_check_ok"] != false {
+		t.Fatalf("changed artifact was accepted: %#v", receipt)
+	}
+}
 
 func addTestSkill(t *testing.T, pluginRoot, skill string) {
 	t.Helper()

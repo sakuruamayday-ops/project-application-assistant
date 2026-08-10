@@ -4,10 +4,15 @@
   "product_slug": "jiaotang-skills",
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.6.1.3",
-    "version": "1.6.1.3",
-    "summary": "V1.6.1.3 是仅用于本地与 WorkBuddy 实机复验的修复候选：兼容 WorkBuddy 5.3.11 冷启动时首条消息早于 UserPromptSubmit Hook 注册的时序，并继续隔离过期或测试轮次状态。企业数字身份证仍是服务端外部数据，不进入插件包。",
+    "tag": "V1.6.1.4",
+    "version": "1.6.1.4",
+    "summary": "V1.6.1.4 是仅用于本地与 WorkBuddy 双端实机复验的修复候选：修复 Stop 未消费当前 turn Grounded validator receipt，并继续隔离过期、错 turn、错目录或文件哈希失效的回执。企业数字身份证仍是服务端外部数据，不进入插件包。",
     "changes": [
+      "Windows 与 macOS Stop 在正式交付已激活主业务 Skill 时建立 effective_business_domain，即使提示词 business_domain 漏判也必须执行 Grounded 质量闸门并消费当前 turn 回执。",
+      "Grounded 校验器默认把正式回执写入与宿主 Hook 完全一致的行为状态根；Windows 固定使用用户级 .workbuddy/state/jiaotang-behavior，macOS 使用插件 data 行为目录。",
+      "工作区需要保留用户可见收据时改用 receipt-export-dir 复制副本；state-root 不得再指向 artifacts 或交付目录，避免 Stop 看不到已经生成的回执。",
+      "Stop 只接受 validator_id、turn_id、pass 状态和当前文件 SHA-256 全部一致的回执；旧 turn 回执、失败回执和文件变更后的回执继续失败关闭。",
+      "首台套、首批次和首版次加入正式业务地域识别词，避免三首业务报告因领域提示词漏判而绕过主业务 Skill 与 Grounded 门禁。",
       "WorkBuddy Host Hook 与沙箱内 Skill 激活统一使用用户级 plugins/data/<plugin>-<marketplace>/behavior-hook 状态根；沙箱缺少 CODEBUDDY_PLUGIN_DATA 时从已验证的市场安装路径确定性推导，避免同轮被拆成恢复状态与 activation_fallback 两份状态。",
       "macOS 新增 SessionStart 冷启动恢复：只读取宿主提供的同一 session_id、两分钟内且位于 WorkBuddy 项目目录的 JSONL，提取当前 user_query 的摘要；不扫描其他任务，也不保存提示正文。",
       "SessionStart 恢复状态如实标记 state_origin=session_start_recovery、prompt_context_source=session_transcript、prompt_hook_observable=false；后续原生 UserPromptSubmit 到达同轮时升级为 user_prompt_submit。",
@@ -46,7 +51,7 @@
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.1.3 是供 macOS 与 Windows 双端实机验证的本地候选；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
+      "workbuddy": "V1.6.1.4 是供 macOS 与 Windows 双端实机验证的本地候选；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
@@ -80,7 +85,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "安装后只保留一个 V1.6.1.3 活动 jiaotang 候选市场，旧版本可恢复快照不覆盖用户资料",
+        "安装后只保留一个 V1.6.1.4 活动 jiaotang 候选市场，旧版本可恢复快照不覆盖用户资料",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [

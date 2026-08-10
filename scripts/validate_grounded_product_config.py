@@ -49,7 +49,7 @@ def main() -> int:
     delivery_contract = load(SKILLS / "delivery-contracts.json")
     registry = load(SKILLS / "report-skill-registry.json")
     config = load(ROOT / "config" / "grounded-citations.json")
-    notes_path = ROOT / "docs" / "releases" / "V1.6.1.3.md"
+    notes_path = ROOT / "docs" / "releases" / "V1.6.1.4.md"
     notes = notes_path.read_text(encoding="utf-8")
     stable_notes_path = ROOT / "docs" / "releases" / "V1.6.1.md"
     stable_notes = stable_notes_path.read_text(encoding="utf-8")
@@ -84,8 +84,8 @@ def main() -> int:
             "企业数字身份证不进入插件包" in notes
             or "不把企业身份数据放入 ZIP" in notes
         ),
-        "candidate_skills_contract_is_v1613": skills_contract == "V1.6.1.3",
-        "delivery_contract_is_v1613": delivery_contract.get("rule_version") == "1.6.1.3",
+        "candidate_skills_contract_is_v1614": skills_contract == "V1.6.1.4",
+        "delivery_contract_is_v1614": delivery_contract.get("rule_version") == "1.6.1.4",
         "release_notes_file_present": notes_path.is_file() and stable_notes_path.is_file(),
         "controlled_release_supports_windows_hotfix": (
             '"--platform-hotfix"' in release_script
@@ -126,14 +126,16 @@ def main() -> int:
             config,
             {"permissions", "permission", "mcpServers", "mcp_servers"},
         ),
-        "release_manager_builds_windows_runtime_v161": 'runtimeVersion = "1.6.1"' in manager_main_text,
+        "release_manager_builds_windows_runtime_v166": 'runtimeVersion = "1.6.6"' in manager_main_text,
         "release_manager_contains_grounded_delivery_rule": (
             'intentRuleVersion = "7-delivery-action-scoped-negation"' in manager_contract_text
             and "loadValidatorReceipts" in manager_events_text
+            and "effectiveBusinessDomain" in manager_events_text
         ),
         "python_hook_contains_grounded_delivery_rule": (
             'INTENT_RULE_VERSION = "7-delivery-action-scoped-negation"' in manager_python_text
             and "load_validator_receipts" in manager_python_text
+            and "effective_business_domain" in manager_python_text
         ),
         "grounded_contract_owns_receipt_protocol": (
             delivery_contract.get("grounded_delivery", {}).get("validator_id") == "grounded-delivery/v1"
@@ -144,6 +146,7 @@ def main() -> int:
             "def dump_xlsx" in engine_text
             and "def write_delivery_receipt" in engine_text
             and '"validate-delivery"' in engine_text
+            and '"--receipt-export-dir"' in engine_text
         ),
         "evidence_skill_forbids_unapproved_external_upload": (
             "未经用户明确授权" in evidence_skill_text

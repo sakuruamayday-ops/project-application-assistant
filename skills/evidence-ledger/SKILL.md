@@ -69,6 +69,7 @@ python3 scripts/grounded_evidence.py xlsx-dump <输入.xlsx> --output <只读内
 python3 scripts/grounded_evidence.py render-profile <台账.json> --profile analysis-report --artifact pdf
 python3 scripts/grounded_evidence.py render-profile <台账.json> --profile standard-native --artifact docx
 python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report
+python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report --receipt-export-dir <交付目录/validator-receipts>
 python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标准正文.docx> --profile standard-native --source-memo <标准数据来源说明.docx>
 ```
 
@@ -76,7 +77,7 @@ python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标�
 
 生成 Word、PDF、Excel 或 PowerPoint 后，按 `config/grounded-citations.json` 的 `artifact_validation` 分格式验收。PDF 必须逐页渲染并检查空白页和缺字；Excel 使用表格原生引擎逐表渲染；PowerPoint 逐页渲染；Word 在当前宿主存在可用渲染器时逐页渲染。缺少 Word 或中文字体时记录状态 pending-device-acceptance，禁止把文本提取成功写成视觉通过，也禁止用 PDF、Excel 或 PPT 的成功代替 Word 验收。
 
-正式文件交付前必须运行 grounded_evidence.py 的 validate-delivery 子命令，使台账哈希、交付文件哈希、结构检查和当前 `turn_id` 形成 `grounded-delivery/v1` 回执；没有非空回执时不得宣称交付门禁通过。报告生成器、读取器或渲染器发生降级时，最终答复必须写实际产生最终文件的工具，不得把早先尝试过但未生成终稿的通道写成最终来源。读取普通 XLSX 优先使用同一脚本的 xlsx-dump 子命令，不得为了只读用户文件临时联网安装 openpyxl 等依赖。
+正式文件交付前必须运行 grounded_evidence.py 的 validate-delivery 子命令，使台账哈希、交付文件哈希、结构检查和当前 `turn_id` 形成 `grounded-delivery/v1` 回执；没有非空回执时不得宣称交付门禁通过。WorkBuddy 正式交付时不得把 `--state-root` 指向工作区、`artifacts` 或交付目录，默认路径会自动与当前宿主 Hook 的行为状态目录对齐。需要给用户保留一份可见收据时使用 `--receipt-export-dir`，该参数只复制回执，不改变 Stop 消费的正式回执位置。报告生成器、读取器或渲染器发生降级时，最终答复必须写实际产生最终文件的工具，不得把早先尝试过但未生成终稿的通道写成最终来源。读取普通 XLSX 优先使用同一脚本的 xlsx-dump 子命令，不得为了只读用户文件临时联网安装 openpyxl 等依赖。
 
 未经用户明确授权，不得把用户输入、台账或交付文件上传到 COS、云渲染、在线转换或其他外部服务。宿主找不到 WPS、Word 或 LibreOffice 自动化入口时，只能写“当前自动化通道未定位到可用渲染器”，不得据此断言用户设备未安装对应软件。
 

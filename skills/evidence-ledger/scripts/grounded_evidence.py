@@ -1271,15 +1271,40 @@ def _default_state_root() -> Path:
     explicit = os.environ.get("JIAOTANG_BEHAVIOR_STATE_ROOT", "").strip()
     if explicit:
         return Path(explicit).expanduser().resolve()
+    windows_root = Path.home() / ".workbuddy" / "state" / "jiaotang-behavior"
+    if os.name == "nt":
+        # Windows lifecycle hooks and inline Skill activation do not inherit
+        # CODEBUDDY_PLUGIN_DATA consistently.  The native Hook deliberately
+        # keeps every event on this stable per-user root, so the validator must
+        # use the same root and ignore a transient host plugin-data value.
+        return windows_root
     plugin_data = os.environ.get("CODEBUDDY_PLUGIN_DATA", "").strip()
     if plugin_data and not plugin_data.startswith("${"):
         return Path(plugin_data).expanduser().resolve() / "behavior-hook"
-    windows_root = Path.home() / ".workbuddy" / "state" / "jiaotang-behavior"
-    if os.name == "nt" or windows_root.exists():
-        return windows_root
     plugin_root = os.environ.get("CODEBUDDY_PLUGIN_ROOT", "").strip()
-    if plugin_root and not plugin_root.startswith("${"):
-        return Path(plugin_root).expanduser().resolve() / ".behavior-data"
+    packaged_root = Path(plugin_root).expanduser().resolve() if plugin_root and not plugin_root.startswith("${") else SKILLS_ROOT.parent.resolve()
+    if (packaged_root / ".codebuddy-plugin" / "plugin.json").is_file():
+        plugin_container = packaged_root.parent
+        marketplace = plugin_container.parent
+        marketplaces = marketplace.parent
+        host_plugins = marketplaces.parent
+        host_home = host_plugins.parent
+        safe_component = re.compile(r"[A-Za-z0-9._-]{1,128}")
+        if (
+            plugin_container.name == "plugins"
+            and marketplaces.name == "marketplaces"
+            and host_plugins.name == "plugins"
+            and host_home.name in {".workbuddy", ".codebuddy"}
+            and safe_component.fullmatch(packaged_root.name)
+            and safe_component.fullmatch(marketplace.name)
+        ):
+            return (
+                host_plugins
+                / "data"
+                / f"{packaged_root.name}-{marketplace.name}"
+                / "behavior-hook"
+            )
+        return packaged_root / ".behavior-data"
     raise ValueError("无法定位WorkBuddy行为状态目录，请传入--state-root")
 
 
@@ -1290,6 +1315,7 @@ def write_delivery_receipt(
     profile: str,
     source_memo_path: Path | None = None,
     state_root: Path | None = None,
+    receipt_export_dir: Path | None = None,
     visual_status: str = "pending-device-acceptance",
 ) -> dict[str, Any]:
     payload = load_payload(ledger_path)
@@ -1330,6 +1356,14 @@ def write_delivery_receipt(
                     }
                 )
     root = (state_root or _default_state_root()).expanduser().resolve()
+    packaged_root = SKILLS_ROOT.parent.resolve()
+    if state_root is not None and (packaged_root / ".codebuddy-plugin" / "plugin.json").is_file():
+        canonical_root = _default_state_root()
+        if root != canonical_root:
+            raise ValueError(
+                "WorkBuddy正式回执必须写入宿主行为状态目录；"
+                "如需交付副本请使用--receipt-export-dir"
+            )
     current = json.loads((root / "current-turn.json").read_text(encoding="utf-8"))
     turn_id = str(current.get("turn_id", "")).strip()
     if not turn_id:
@@ -1373,8 +1407,16 @@ def write_delivery_receipt(
     receipt_dir = root / "validator-receipts" / turn_id
     receipt_dir.mkdir(parents=True, exist_ok=True)
     receipt_path = receipt_dir / f"grounded-delivery-v1-{artifact_hash[:16]}.json"
-    receipt_path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return {**receipt, "receipt_path": str(receipt_path)}
+    receipt_text = json.dumps(receipt, ensure_ascii=False, indent=2) + "\n"
+    receipt_path.write_text(receipt_text, encoding="utf-8")
+    result = {**receipt, "receipt_path": str(receipt_path)}
+    if receipt_export_dir is not None:
+        export_dir = receipt_export_dir.expanduser().resolve() / turn_id
+        export_dir.mkdir(parents=True, exist_ok=True)
+        export_path = export_dir / receipt_path.name
+        export_path.write_text(receipt_text, encoding="utf-8")
+        result["receipt_export_path"] = str(export_path)
+    return result
 
 
 def main() -> int:
@@ -1413,6 +1455,7 @@ def main() -> int:
     delivery_parser.add_argument("--profile", required=True)
     delivery_parser.add_argument("--source-memo")
     delivery_parser.add_argument("--state-root")
+    delivery_parser.add_argument("--receipt-export-dir")
     delivery_parser.add_argument(
         "--visual-status",
         choices=("passed-host-render", "pending-device-acceptance", "not-applicable"),
@@ -1432,6 +1475,7 @@ def main() -> int:
                 profile=args.profile,
                 source_memo_path=Path(args.source_memo) if args.source_memo else None,
                 state_root=Path(args.state_root) if args.state_root else None,
+                receipt_export_dir=Path(args.receipt_export_dir) if args.receipt_export_dir else None,
                 visual_status=args.visual_status,
             )
             print(json.dumps(result, ensure_ascii=False, indent=2))

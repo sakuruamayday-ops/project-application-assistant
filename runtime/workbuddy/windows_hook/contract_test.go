@@ -35,6 +35,23 @@ func TestFormalDeliveryIntentBaseline(t *testing.T) {
 	}
 }
 
+func TestIndustrializationMarkersSetBusinessDomain(t *testing.T) {
+	contract := deliveryContract{Raw: map[string]any{
+		"formal_business_delivery_markers": []any{"生成报告"},
+		"business_domain_markers":          []any{"首台套", "首批次", "首版次"},
+	}}
+	for _, prompt := range []string{
+		"生成首台套报告：智能水表项目",
+		"生成首批次报告：新材料项目",
+		"生成首版次报告：工业软件项目",
+	} {
+		signals := promptSignalSet(prompt, contract)
+		if !signals.FormalBusinessDelivery || !signals.BusinessDomain {
+			t.Fatalf("industrialization prompt not classified as formal business delivery: %q %#v", prompt, signals)
+		}
+	}
+}
+
 func TestSignalMergeKeepsBlockedTaskOnlyWhenRequested(t *testing.T) {
 	previous := promptSignals{FormalBusinessDelivery: true, BusinessDomain: true, SkillApplicability: map[string]bool{"project-feasibility": true}}
 	current := promptSignals{SkillApplicability: map[string]bool{}}
