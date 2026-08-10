@@ -36,7 +36,7 @@ const FLOW_FRAME_SELECTOR = [
   ".button:not(.danger):not(.danger-outline):not(.disabled):not(:disabled):not([aria-disabled='true'])",
   ".metrics",
   ".metrics > a",
-  ".panel:not(.danger-panel):not(.danger-zone)",
+  ".panel",
   ".download-card",
   ".cockpit-radar",
   ".assistant-console",
@@ -52,7 +52,7 @@ const FLOW_FRAME_SELECTOR = [
   ".assistant-progress",
   ".assistant-result",
   ".external-link-grid a",
-  ".notice:not(.alert)",
+  ".notice",
   ".token-reveal",
   ".upload-field",
   ".release-modal-card",
@@ -114,6 +114,34 @@ const pseudoSlotIsFree = (element, slot) => {
   return content === "none" || content === "normal" || content === "";
 };
 
+const isVisibleRoundedFrame = (element) => {
+  if (!(element instanceof HTMLElement)) return false;
+  if (element.matches("input, textarea, select, option, progress, meter")) return false;
+  if (element.matches(RISK_CONTROL_SELECTOR) || element.closest("[data-risk-level]") === element) return false;
+  const rect = element.getBoundingClientRect();
+  if (rect.width < 38 || rect.height < 28) return false;
+  const style = getComputedStyle(element);
+  const radii = [
+    style.borderTopLeftRadius,
+    style.borderTopRightRadius,
+    style.borderBottomRightRadius,
+    style.borderBottomLeftRadius,
+  ].map((value) => Number.parseFloat(value) || 0);
+  if (Math.max(...radii) < 2) return false;
+  const sides = ["Top", "Right", "Bottom", "Left"];
+  const hasVisibleBorder = sides.some((side) => {
+    const width = Number.parseFloat(style[`border${side}Width`]) || 0;
+    const borderStyle = style[`border${side}Style`];
+    const color = style[`border${side}Color`].replaceAll(" ", "").toLowerCase();
+    const transparent = color === "transparent" || /rgba\([^)]*,0(?:\.0+)?\)$/.test(color);
+    return width > 0 && borderStyle !== "none" && borderStyle !== "hidden" && !transparent;
+  });
+  if (!hasVisibleBorder) return false;
+  const looksCircular = Math.abs(rect.width - rect.height) < 4
+    && Math.max(...radii) >= Math.min(rect.width, rect.height) * .4;
+  return !looksCircular;
+};
+
 const decorateFlowFrame = (element) => {
   if (!(element instanceof HTMLElement) || element.dataset.atelierFlowFrame) return;
   const slot = pseudoSlotIsFree(element, "::before")
@@ -127,8 +155,14 @@ const decorateFlowFrame = (element) => {
 };
 
 const installFlowFrames = (root = document) => {
-  if (root instanceof Element && root.matches(FLOW_FRAME_SELECTOR)) decorateFlowFrame(root);
-  root.querySelectorAll?.(FLOW_FRAME_SELECTOR).forEach(decorateFlowFrame);
+  if (root instanceof Element && (root.matches(FLOW_FRAME_SELECTOR) || isVisibleRoundedFrame(root))) {
+    decorateFlowFrame(root);
+  }
+  const candidates = new Set(root.querySelectorAll?.(FLOW_FRAME_SELECTOR) || []);
+  root.querySelectorAll?.("[class]").forEach((element) => {
+    if (isVisibleRoundedFrame(element)) candidates.add(element);
+  });
+  candidates.forEach(decorateFlowFrame);
 };
 
 installFlowFrames();

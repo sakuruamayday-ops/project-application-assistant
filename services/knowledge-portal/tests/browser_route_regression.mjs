@@ -151,6 +151,7 @@ try {
       ".assistant-console",
       ".panel",
       ".table-wrap",
+      ".status-pill",
     ];
     return {
       missing: samples.filter((selector) => !document.querySelector(selector)?.dataset.atelierFlowFrame),
@@ -284,6 +285,10 @@ try {
   const credentialPanel = page.locator("#access-credentials");
   assert.equal(await credentialPanel.isVisible(), true, "成员详情应展示访问凭据与设备面板");
   assert.equal(await credentialPanel.locator("[data-credential-select]").count(), 1, "测试管理员应展示一条可选凭据");
+  assert.ok(
+    await page.locator(".danger-zone").evaluate((element) => ["before", "after"].includes(element.dataset.atelierFlowFrame)),
+    "风险面板仍是框体，应保留低亮度流光且不改变风险语义",
+  );
   const batchRevoke = credentialPanel.locator("[data-credential-batch-submit]");
   assert.equal(await batchRevoke.isDisabled(), true, "未选择凭据时批量吊销按钮必须禁用");
   assert.equal(
