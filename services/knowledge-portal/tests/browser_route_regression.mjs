@@ -167,20 +167,21 @@ try {
   const heroFlowStart = await readFlowState(heroFrame);
   await page.waitForTimeout(420);
   const heroFlowEnd = await readFlowState(heroFrame);
-  assert.ok(heroFlowStart.opacity >= .1, `大型框体默认也应显示低亮度流光：${JSON.stringify(heroFlowStart)}`);
+  assert.ok(heroFlowStart.opacity >= .5, `主视觉大型框体应持续显示清晰流光：${JSON.stringify(heroFlowStart)}`);
   assert.equal(heroFlowStart.animationName, "atelier-flow-orbit", "大型框体应挂载流光轨道动画");
-  assert.equal(heroFlowStart.animationPlayState, "running", "可见框体流光必须持续运行");
+  assert.equal(heroFlowStart.animationPlayState, "running", "只有主视觉大型框体默认持续运行");
   assert.notEqual(heroFlowStart.angle, heroFlowEnd.angle, "大型框体流光角度必须随时间连续变化");
 
   const glowCard = page.locator(".metrics > a").first();
   const glowIdle = await readFlowState(glowCard);
-  assert.ok(glowIdle.opacity >= .15, `每张框体卡片都应保持低亮度流动：${JSON.stringify(glowIdle)}`);
+  assert.equal(glowIdle.opacity, 0, `普通卡片默认必须完全静止：${JSON.stringify(glowIdle)}`);
   assert.equal(glowIdle.animationName, "atelier-flow-orbit", "可点击卡片应挂载流光轨道动画");
   assert.match(glowIdle.backgroundImage, /conic-gradient/, "流光边框应使用锥形渐变");
+  assert.equal(glowIdle.animationPlayState, "paused", "普通卡片未悬停时不得占用动画资源");
   await glowCard.hover();
   await page.waitForTimeout(240);
   const glowActive = await readFlowState(glowCard);
-  assert.ok(glowActive.opacity > .85, `悬停后流光边框应增强：${JSON.stringify(glowActive)}`);
+  assert.ok(glowActive.opacity > .95, `悬停后流光边框应明显增强：${JSON.stringify(glowActive)}`);
   assert.equal(glowActive.animationPlayState, "running", "悬停后流光轨道应开始运行");
 
   const focusedField = page.locator('#feedback input[name="subject"]');
@@ -207,6 +208,7 @@ try {
   }
 
   await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
+  await page.mouse.move(2, 2);
   assert.equal(await page.getByText("政策基线包", {exact: true}).count(), 0, "空的政策基线分类卡必须移除");
   assert.equal(await page.getByText("纯检索路由", {exact: true}).count(), 0, "空的纯检索路由卡必须移除");
   const activeAlgorithmCard = page.locator("a.algorithm-stat-card.is-active").first();
@@ -214,18 +216,21 @@ try {
   const algorithmGlowStart = await readFlowState(activeAlgorithmCard);
   await page.waitForTimeout(420);
   const algorithmGlowEnd = await readFlowState(activeAlgorithmCard);
-  assert.ok(algorithmGlowStart.opacity > .85, `当前算法卡应持续显示增强流光：${JSON.stringify(algorithmGlowStart)}`);
+  assert.equal(algorithmGlowStart.opacity, 0, `仅被选中的算法卡也必须保持静止：${JSON.stringify(algorithmGlowStart)}`);
   assert.equal(algorithmGlowStart.animationName, "atelier-flow-orbit", "算法卡应挂载流光轨道动画");
-  assert.equal(algorithmGlowStart.animationPlayState, "running", "当前算法卡流光应持续运行");
-  assert.notEqual(algorithmGlowStart.angle, algorithmGlowEnd.angle, "算法卡流光角度必须随时间连续变化");
+  assert.equal(algorithmGlowStart.animationPlayState, "paused", "当前算法卡不得因选中态持续运行");
+  assert.equal(algorithmGlowStart.angle, algorithmGlowEnd.angle, "静止算法卡的流光角度不得自行变化");
 
   const hoverAlgorithmCard = page.locator("a.algorithm-stat-card").nth(1);
   await hoverAlgorithmCard.hover();
   await page.waitForTimeout(180);
+  const hoveredAlgorithmGlow = await readFlowState(hoverAlgorithmCard);
   assert.ok(
-    (await readFlowState(hoverAlgorithmCard)).opacity > .85,
+    hoveredAlgorithmGlow.opacity > .95,
     "非当前算法卡悬停后应显示流光",
   );
+  assert.equal(hoveredAlgorithmGlow.animationPlayState, "running", "只允许悬停算法卡开始流动");
+  assert.equal((await readFlowState(activeAlgorithmCard)).animationPlayState, "paused", "悬停其他卡片时选中卡片仍应静止");
   await page.emulateMedia({reducedMotion: "reduce"});
   assert.equal(
     (await readFlowState(activeAlgorithmCard)).animationName,

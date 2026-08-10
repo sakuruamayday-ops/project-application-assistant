@@ -45,6 +45,18 @@ async function waitForServer() {
   throw new Error(`Skills UX 测试服务启动超时\n${serverLog}`);
 }
 
+async function readFlowState(locator) {
+  return locator.evaluate((element) => {
+    const slot = element.dataset.atelierFlowFrame;
+    const style = getComputedStyle(element, `::${slot}`);
+    return {
+      angle: style.getPropertyValue("--atelier-flow-angle").trim(),
+      opacity: Number(style.opacity),
+      animationPlayState: style.animationPlayState,
+    };
+  });
+}
+
 let browser;
 try {
   await waitForServer();
@@ -98,6 +110,33 @@ try {
   assert.ok(palette.catalogAfterTabs, "技能目录必须紧随页面页签");
   assert.equal(palette.catalogIsContinuous, true, "分类、筛选与技能清单必须位于同一连续工作区");
   assert.equal(palette.feedbackBeforeSkills, true, "左侧留言反馈必须位于 Skills 中心之前");
+  const activeGroup = page.locator(".skill-group-button.is-active");
+  const activeGroupIdle = await readFlowState(activeGroup);
+  assert.equal(activeGroupIdle.opacity, 0, "技能目录的已选中“全部”不得持续显示流光");
+  assert.equal(activeGroupIdle.animationPlayState, "paused", "技能目录的已选中“全部”不得持续占用动画资源");
+  const installPackageButton = page.getByRole("button", {name: "选择安装包"});
+  const skillsOuterFrame = page.locator(".skill-center");
+  const skillsHeroFrame = page.locator(".skill-hero");
+  await installPackageButton.hover();
+  await page.waitForTimeout(220);
+  const installFlowStart = await readFlowState(installPackageButton);
+  await page.waitForTimeout(360);
+  const installFlowEnd = await readFlowState(installPackageButton);
+  assert.ok(installFlowStart.opacity > .95, `选择安装包悬停流光必须足够明显：${JSON.stringify(installFlowStart)}`);
+  assert.equal(installFlowStart.animationPlayState, "running", "选择安装包悬停时必须启动流光");
+  assert.notEqual(installFlowStart.angle, installFlowEnd.angle, "选择安装包悬停流光必须实际移动");
+  assert.equal(await installPackageButton.evaluate((element) => element.classList.contains("atelier-flow-dark")), true, "黑字金底按钮必须使用黑色流光");
+  assert.equal((await readFlowState(skillsOuterFrame)).animationPlayState, "paused", "悬停子按钮时 Skills 外框不得联动");
+  assert.equal((await readFlowState(skillsHeroFrame)).animationPlayState, "paused", "悬停子按钮时 Skills 总览框不得联动");
+  assert.equal((await readFlowState(activeGroup)).animationPlayState, "paused", "悬停选择安装包时已选中“全部”仍须静止");
+  const runningFlowCount = await page.evaluate(() => [...document.querySelectorAll('[data-atelier-flow-frame="before"],[data-atelier-flow-frame="after"]')]
+    .filter((element) => getComputedStyle(element, `::${element.dataset.atelierFlowFrame}`).animationPlayState === "running")
+    .length);
+  assert.equal(runningFlowCount, 1, `Skills 页面悬停时只能运行一个框体流光，实际 ${runningFlowCount} 个`);
+  if (process.env.SKILLS_QA_FLOW_SCREENSHOT) {
+    await page.screenshot({path: process.env.SKILLS_QA_FLOW_SCREENSHOT, fullPage: false});
+  }
+  await page.mouse.move(2, 2);
   const catalogTab = page.locator('[data-skill-section-tab="catalog"]');
   await catalogTab.focus();
   await page.keyboard.press("ArrowRight");
