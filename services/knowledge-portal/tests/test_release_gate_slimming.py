@@ -13,6 +13,9 @@ def test_release_gate_is_four_layers_and_uses_reusable_harness_receipt():
     assert "[4/4]" in content
     assert "verify_acceptance_receipt.py" in content
     assert "verify_index_release_binding.py" in content
+    assert "public_namespace_gate.py" in content
+    assert '--archive "${generic_archive}"' in content
+    assert '--archive "${workbuddy_archive}"' in content
     assert 'if [[ "${release_mode}" == "index" ]]' in content
     assert "JIAOTANG_RELEASE_MODE=code 或 index" in content
     assert "run_acceptance_harness.py" not in content

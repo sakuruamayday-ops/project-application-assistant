@@ -130,6 +130,10 @@ curl "${curl_args[@]}" "${auth[@]}" \
   "${endpoint}/v1/skills/latest/download" -o "${generic_archive}"
 curl "${curl_args[@]}" "${auth[@]}" \
   "${endpoint}/v1/skills/latest/workbuddy/download" -o "${workbuddy_archive}"
+python3 "${root_dir}/scripts/public_namespace_gate.py" \
+  --source-root "${root_dir}" \
+  --archive "${generic_archive}" \
+  --archive "${workbuddy_archive}"
 JIAOTANG_RELEASE_ARCHIVE="${generic_archive}" python3 - <<'PY'
 import os
 import zipfile

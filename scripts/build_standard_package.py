@@ -9,6 +9,11 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from scripts.public_namespace_gate import require_public_namespace
+except ModuleNotFoundError:  # Direct execution from the scripts directory.
+    from public_namespace_gate import require_public_namespace
+
 
 PORTABLE_REPORT_REQUIRED = [
     "skills/manufacturing-tax-risk-analysis/assets/deep-gold-advisor-template.html",
@@ -173,6 +178,7 @@ def included(path):
     return (
         not any(part in FORBIDDEN_ARCHIVE_PATH_PARTS or part.startswith("._") for part in path.parts)
         and path.suffix not in {".pyc", ".pyo"}
+        and path.parts[:3] != ("skills", "_runtime", "jiaotang-kb")
         and path.as_posix() not in LEGACY_BRAND_DUPLICATES
         and not (
             path.parts[:3] == ("skills", "enterprise-panorama-analysis", "assets")
@@ -361,7 +367,9 @@ def main():
         raise SystemExit("status只允许release-candidate或stable")
     output = (
         args.output
-        or args.root / "dist" / f"企业全生命周期助手-{release['tag']}.zip"
+        or args.root
+        / "dist"
+        / f"gongchuang-research-institute-skills-{release['tag']}.zip"
     )
     staging_output = output.with_name(f".{output.name}.staging")
     missing = [path for path in REQUIRED if not (args.root / path).is_file()]
@@ -386,7 +394,7 @@ def main():
         for relative_path in PORTABLE_REPORT_REQUIRED
     }
     manifest = {
-        "name": "企业全生命周期助手",
+        "name": "共创研究院企业全生命周期助手",
         "version": version,
         "release_tag": release["tag"],
         "status": args.status,
@@ -441,6 +449,10 @@ def main():
             archive.write(path, archive_name)
         archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     validate_release_archive(staging_output)
+    require_public_namespace(
+        archives=[staging_output],
+        asset_names=[output.name],
+    )
     container_audit = None
     if args.status == "stable":
         staging_audit = run_stable_container_gate(args.root, staging_output)

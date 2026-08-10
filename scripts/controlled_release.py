@@ -19,6 +19,11 @@ import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
+try:
+    from scripts.public_namespace_gate import require_public_namespace
+except ModuleNotFoundError:  # Direct execution from the scripts directory.
+    from public_namespace_gate import require_public_namespace
+
 
 ROOT = Path(__file__).resolve().parents[1]
 OFFICIAL_PUBLISHER_FINGERPRINT = (
@@ -638,6 +643,10 @@ def validate_inputs(
     validate_release_provenance_environment(provenance)
     publisher = load_portal_publisher(root)
     package_validation = publisher.validate_release_packages(packages, short)
+    public_namespace = require_public_namespace(
+        source_root=root,
+        archives=packages.values(),
+    )
     final_artifacts = gate.get("final_artifacts")
     if (
         gate.get("final_artifacts_complete") is not True
@@ -668,6 +677,7 @@ def validate_inputs(
         "gate_attestation": gate_attestation,
         "source_provenance": provenance,
         "platform_hotfix": platform_hotfix,
+        "public_namespace": public_namespace,
     }
 
 
@@ -1328,6 +1338,9 @@ def main() -> None:
             )
         )
         all_assets = [*assets, *transaction_files]
+        public_asset_namespace = require_public_namespace(
+            asset_names=[path.name for path in all_assets],
+        )
         transaction_sha = str(
             transaction_verification["manifest_sha256"]
         )
@@ -1348,6 +1361,10 @@ def main() -> None:
                     "installation",
                     "local_sync",
                 ],
+            },
+            "public_namespace": {
+                "source_and_archives": validation["public_namespace"],
+                "release_asset_names": public_asset_namespace,
             },
         }
         if action_name == "preflight":

@@ -1,4 +1,4 @@
-const USER_API_SESSION_STORAGE_KEY = "jiaotang-user-model-api";
+const USER_API_SESSION_STORAGE_KEY = "gongchuang-user-model-api";
 if (document.querySelector("[data-clear-sensitive-storage-on-load]")) {
   try {
     sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
@@ -8,8 +8,8 @@ if (document.querySelector("[data-clear-sensitive-storage-on-load]")) {
 }
 try {
   document.documentElement.dataset.pageDirection =
-    sessionStorage.getItem("jiaotang-page-direction") || "next";
-  sessionStorage.removeItem("jiaotang-page-direction");
+    sessionStorage.getItem("gongchuang-page-direction") || "next";
+  sessionStorage.removeItem("gongchuang-page-direction");
 } catch {
   document.documentElement.dataset.pageDirection = "next";
 }
@@ -467,7 +467,7 @@ if (releaseDialog) {
   releaseDialogForm?.addEventListener("submit", dismissReleaseDialog);
 }
 
-const knowledgeDeviceStorageKey = "jiaotang-kb-device-id";
+const knowledgeDeviceStorageKey = "gongchuang-kb-device-id";
 const createKnowledgeDeviceId = () => {
   if (window.crypto?.randomUUID) return `device:${window.crypto.randomUUID()}`;
   const random = new Uint8Array(18);
@@ -728,13 +728,13 @@ document.addEventListener("click", async (event) => {
       question.value = questionButton.dataset.question;
       document.querySelector("#assistant-form")?.requestSubmit();
     } else if (releaseForm) {
-      sessionStorage.setItem("jiaotang-cockpit-question", questionButton.dataset.question);
+      sessionStorage.setItem("gongchuang-cockpit-question", questionButton.dataset.question);
       dismissReleaseDialog();
       await fetch(releaseForm.action, {method: "POST", body: new FormData(releaseForm)});
-      sessionStorage.setItem("jiaotang-page-direction", "next");
+      sessionStorage.setItem("gongchuang-page-direction", "next");
       window.location.href = "/cockpit";
     } else {
-      sessionStorage.setItem("jiaotang-cockpit-question", questionButton.dataset.question);
+      sessionStorage.setItem("gongchuang-cockpit-question", questionButton.dataset.question);
       window.location.href = "/cockpit";
     }
     return;
@@ -771,11 +771,11 @@ document.addEventListener("click", async (event) => {
   }
 });
 
-const pendingCockpitQuestion = sessionStorage.getItem("jiaotang-cockpit-question");
+const pendingCockpitQuestion = sessionStorage.getItem("gongchuang-cockpit-question");
 const cockpitQuestion = document.querySelector('.page-cockpit #assistant-form textarea[name="question"]');
 if (pendingCockpitQuestion && cockpitQuestion) {
   cockpitQuestion.value = pendingCockpitQuestion;
-  sessionStorage.removeItem("jiaotang-cockpit-question");
+  sessionStorage.removeItem("gongchuang-cockpit-question");
   cockpitQuestion.focus();
 }
 
@@ -964,7 +964,7 @@ document.querySelectorAll("a.page-transition-link").forEach((link) => {
       return;
     }
     event.preventDefault();
-    sessionStorage.setItem("jiaotang-page-direction", "next");
+    sessionStorage.setItem("gongchuang-page-direction", "next");
     document.body.classList.add("is-page-leaving");
     window.setTimeout(() => {
       window.location.href = link.href;
