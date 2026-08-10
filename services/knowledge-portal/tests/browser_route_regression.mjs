@@ -165,6 +165,49 @@ try {
     await glowCard.screenshot({path: join(screenshotDir, "flow-glow-card-desktop.png")});
   }
 
+  await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
+  const activeAlgorithmCard = page.locator("a.algorithm-stat-card.is-active").first();
+  await activeAlgorithmCard.scrollIntoViewIfNeeded();
+  const algorithmGlowStart = await activeAlgorithmCard.evaluate((element) => {
+    const style = getComputedStyle(element, "::before");
+    return {
+      angle: style.getPropertyValue("--atelier-flow-angle").trim(),
+      opacity: Number(style.opacity),
+      animationName: style.animationName,
+      animationPlayState: style.animationPlayState,
+    };
+  });
+  await page.waitForTimeout(420);
+  const algorithmGlowEnd = await activeAlgorithmCard.evaluate((element) => (
+    getComputedStyle(element, "::before").getPropertyValue("--atelier-flow-angle").trim()
+  ));
+  assert.ok(algorithmGlowStart.opacity > .95, `当前算法卡应持续显示流光：${JSON.stringify(algorithmGlowStart)}`);
+  assert.equal(algorithmGlowStart.animationName, "atelier-flow-orbit", "算法卡应挂载流光轨道动画");
+  assert.equal(algorithmGlowStart.animationPlayState, "running", "当前算法卡流光应持续运行");
+  assert.notEqual(algorithmGlowStart.angle, algorithmGlowEnd, "算法卡流光角度必须随时间连续变化");
+
+  const hoverAlgorithmCard = page.locator("a.algorithm-stat-card").nth(1);
+  await hoverAlgorithmCard.hover();
+  await page.waitForTimeout(180);
+  assert.ok(
+    await hoverAlgorithmCard.evaluate((element) => Number(getComputedStyle(element, "::before").opacity)) > .95,
+    "非当前算法卡悬停后应显示流光",
+  );
+  await page.emulateMedia({reducedMotion: "reduce"});
+  assert.equal(
+    await activeAlgorithmCard.evaluate((element) => getComputedStyle(element, "::before").animationName),
+    "none",
+    "减少动态效果模式必须停用算法卡流光动画",
+  );
+  await page.emulateMedia({reducedMotion: "no-preference"});
+  await page.mouse.move(1400, 20);
+  await activeAlgorithmCard.evaluate((element) => element.blur());
+  await page.waitForTimeout(180);
+  if (screenshotDir) {
+    await page.screenshot({path: join(screenshotDir, "algorithm-flow-glow-desktop.png"), fullPage: false});
+    await activeAlgorithmCard.screenshot({path: join(screenshotDir, "algorithm-flow-card-desktop.png")});
+  }
+
   const orderedSectionIds = ["overview", "cockpit", "algorithms", "api-access", "feedback", "skills", "health-admin"];
   await assertPortalSequence(page, orderedSectionIds, "管理员");
 
@@ -270,6 +313,14 @@ try {
   if (screenshotDir) {
     await page.screenshot({path: join(screenshotDir, "flow-glow-mobile.png"), fullPage: false});
     await mobileGlowCard.screenshot({path: join(screenshotDir, "flow-glow-card-mobile.png")});
+  }
+  await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
+  const mobileAlgorithmCard = page.locator("a.algorithm-stat-card.is-active").first();
+  await mobileAlgorithmCard.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(180);
+  if (screenshotDir) {
+    await page.screenshot({path: join(screenshotDir, "algorithm-flow-glow-mobile.png"), fullPage: false});
+    await mobileAlgorithmCard.screenshot({path: join(screenshotDir, "algorithm-flow-card-mobile.png")});
   }
   await page.goto(`${baseUrl}/cockpit`, {waitUntil: "networkidle"});
   await page.waitForTimeout(850);

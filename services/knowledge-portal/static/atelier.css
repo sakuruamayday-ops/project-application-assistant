@@ -374,9 +374,47 @@ textarea:focus-visible, select:focus-visible {
   .detail-card-link,
   .external-link-grid a,
   .page-continuation-link
-):is(:hover, :focus-visible, :focus-within)::after {
+):is(:hover, :focus-visible, :focus-within, :active)::after {
   opacity: 1;
   animation-play-state: running;
+}
+
+/* 算法卡已有 ::after 轨道装饰，使用独立 ::before 保留原视觉并补齐流光。 */
+a.algorithm-stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 2px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--atelier-flow-angle),
+    transparent 0 64%,
+    rgba(162,126,63,.16) 71%,
+    rgba(202,169,105,.82) 78%,
+    rgba(255,247,224,1) 82%,
+    rgba(234,217,178,.94) 86%,
+    rgba(202,169,105,.36) 92%,
+    transparent 99% 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: .1;
+  filter: drop-shadow(0 0 6px rgba(255,247,224,.7)) drop-shadow(0 0 15px rgba(202,169,105,.34));
+  animation: atelier-flow-orbit 3.2s linear infinite;
+  animation-play-state: paused;
+  transition: opacity .16s ease, filter .16s ease;
+}
+a.algorithm-stat-card:is(:hover, :focus-visible, :focus-within, :active)::before,
+a.algorithm-stat-card.is-active::before {
+  opacity: 1;
+  animation-play-state: running;
+}
+a.algorithm-stat-card:active::before {
+  filter: drop-shadow(0 0 8px rgba(255,247,224,.84)) drop-shadow(0 0 20px rgba(202,169,105,.5));
 }
 
 .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 26px; overflow: hidden; border: 1px solid var(--atelier-line); border-radius: var(--atelier-radius); background: var(--atelier-line); }
@@ -985,5 +1023,6 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
     .external-link-grid a,
     .page-continuation-link
   )::after,
+  a.algorithm-stat-card::before,
   :where(input, textarea, select):focus { animation: none !important; }
 }
