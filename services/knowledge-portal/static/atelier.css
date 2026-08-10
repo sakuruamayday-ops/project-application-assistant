@@ -466,7 +466,7 @@ tbody tr:hover { background: rgba(202,169,105,.025); }
   display: block;
   margin-top: 6px;
   color: var(--atelier-muted);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.45;
   white-space: nowrap;
 }
@@ -496,7 +496,7 @@ tbody tr:hover { background: rgba(202,169,105,.025); }
 .table-status.connection-waiting { color: var(--atelier-muted); background: rgba(255,255,255,.04); }
 .table-status.connection-blocked { color: var(--atelier-risk-verify); background: var(--atelier-risk-surface); }
 .credential-state-list { display: flex; flex-wrap: wrap; gap: 6px; min-width: 150px; }
-.credential-state-list span { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: 10px; white-space: nowrap; }
+.credential-state-list span { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
 .credential-active { color: var(--atelier-success); background: rgba(117,198,155,.08); }
 .credential-revoked { color: var(--atelier-muted); background: rgba(255,255,255,.04); }
 .device-cell strong { display: block; max-width: 230px; overflow: hidden; color: var(--atelier-ink); text-overflow: ellipsis; white-space: nowrap; }
