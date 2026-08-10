@@ -253,8 +253,8 @@ def test_publish_is_validated_and_idempotent(tmp_path: Path) -> None:
     result = MODULE.publish(database, release_dir, generic, workbuddy, "1.2", "notes")
     assert result["status"] == "published"
     assert result["skill_count"] == 49
-    assert (release_dir / "企业全生命周期助手-V1.2.zip").is_file()
-    assert (release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip").is_file()
+    assert (release_dir / "共创研究院企业全生命周期助手-V1.2.zip").is_file()
+    assert (release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip").is_file()
 
     repeated = MODULE.publish(database, release_dir, generic, workbuddy, "1.2", "notes")
     assert repeated["status"] == "already-published"
@@ -287,7 +287,7 @@ def test_two_stage_release_requires_stage_before_promotion(tmp_path: Path) -> No
     )
     assert staged["status"] == "staged"
     assert staged["release_state"] == "staged-awaiting-acceptance"
-    assert not (release_dir / "企业全生命周期助手-V1.2.zip").exists()
+    assert not (release_dir / "共创研究院企业全生命周期助手-V1.2.zip").exists()
     with sqlite3.connect(database) as connection:
         assert connection.execute("SELECT COUNT(*) FROM skill_releases").fetchone()[0] == 0
         assert connection.execute(
@@ -308,8 +308,8 @@ def test_two_stage_release_requires_stage_before_promotion(tmp_path: Path) -> No
 
     promoted = MODULE.promote(database, release_dir, "1.2")
     assert promoted["release_state"] == "published"
-    assert (release_dir / "企业全生命周期助手-V1.2.zip").is_file()
-    assert (release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip").is_file()
+    assert (release_dir / "共创研究院企业全生命周期助手-V1.2.zip").is_file()
+    assert (release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip").is_file()
     with sqlite3.connect(database) as connection:
         assert connection.execute(
             "SELECT status FROM skill_release_stages WHERE version='1.2'"
@@ -318,15 +318,15 @@ def test_two_stage_release_requires_stage_before_promotion(tmp_path: Path) -> No
             "SELECT generic_path,workbuddy_path FROM skill_release_stages WHERE version='1.2'"
         ).fetchone()
         assert stage_paths == (
-            str(release_dir / "企业全生命周期助手-V1.2.zip"),
-            str(release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip"),
+            str(release_dir / "共创研究院企业全生命周期助手-V1.2.zip"),
+            str(release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip"),
         )
         artifact_paths = connection.execute(
             "SELECT target,file_path FROM skill_release_stage_artifacts WHERE version='1.2' ORDER BY target"
         ).fetchall()
         assert artifact_paths == [
-            ("generic", str(release_dir / "企业全生命周期助手-V1.2.zip")),
-            ("workbuddy", str(release_dir / "企业全生命周期助手-V1.2-WorkBuddy.zip")),
+            ("generic", str(release_dir / "共创研究院企业全生命周期助手-V1.2.zip")),
+            ("workbuddy", str(release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip")),
         ]
 
 
@@ -582,7 +582,7 @@ def test_selective_stage_and_promote_workbuddy_only(tmp_path: Path) -> None:
     assert promoted["release_state"] == "published"
     assert (
         release_dir
-        / "企业全生命周期助手-V1.3.1.1-WorkBuddy.zip"
+        / "共创研究院企业全生命周期助手-V1.3.1.1-WorkBuddy.zip"
     ).is_file()
     with sqlite3.connect(database) as connection:
         assert connection.execute(
@@ -627,7 +627,7 @@ def test_existing_release_can_add_universal_workbuddy_without_replacing_generic(
     )
     make_database(database)
     generic_sha = MODULE.sha256(generic)
-    generic_target = release_dir / "企业全生命周期助手-V1.3.1.2.zip"
+    generic_target = release_dir / "共创研究院企业全生命周期助手-V1.3.1.2.zip"
     release_dir.mkdir()
     generic_target.write_bytes(generic.read_bytes())
     with sqlite3.connect(database) as connection:
@@ -686,7 +686,7 @@ def test_existing_release_can_add_universal_workbuddy_without_replacing_generic(
     assert promoted["status"] == "published"
     assert generic_target.read_bytes() == generic.read_bytes()
     assert (
-        release_dir / "企业全生命周期助手-V1.3.1.2-WorkBuddy.zip"
+        release_dir / "共创研究院企业全生命周期助手-V1.3.1.2-WorkBuddy.zip"
     ).is_file()
     with sqlite3.connect(database) as connection:
         assert connection.execute(

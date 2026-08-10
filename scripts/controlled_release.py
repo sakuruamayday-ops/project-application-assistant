@@ -657,6 +657,10 @@ def validate_inputs(
         "short_version": short,
         "semantic_version": semantic,
         "tag": tag,
+        "product_name": str(manifest.get("product_name") or "共创研究院企业全生命周期助手"),
+        "product_slug": str(
+            manifest.get("product_slug") or "gongchuang-research-institute-skills"
+        ),
         "skill_total": len(manifest.get("skills", [])),
         "targets": package_validation["targets"],
         "artifacts": package_validation["artifacts"],
@@ -712,13 +716,14 @@ def prepare_ascii_assets(
     tag: str,
     packages: dict[str, Path],
     gate_report: Path,
+    product_slug: str = "gongchuang-research-institute-skills",
 ) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
     names = {
-        "generic": f"jiaotang-skills-{tag}.zip",
-        "workbuddy": f"jiaotang-skills-{tag}-WorkBuddy.zip",
-        "macos": f"jiaotang-skills-{tag}-macOS-WorkBuddy.zip",
-        "windows": f"jiaotang-skills-{tag}-Windows-WorkBuddy.zip",
+        "generic": f"{product_slug}-{tag}.zip",
+        "workbuddy": f"{product_slug}-{tag}-WorkBuddy.zip",
+        "macos": f"{product_slug}-{tag}-macOS-WorkBuddy.zip",
+        "windows": f"{product_slug}-{tag}-Windows-WorkBuddy.zip",
     }
     targets: list[Path] = []
     for target_name, source in packages.items():
@@ -744,6 +749,7 @@ def ensure_prerelease(
     notes: Path,
     assets: list[Path],
     *,
+    product_name: str = "共创研究院企业全生命周期助手",
     create_if_missing: bool = True,
     allow_published: bool = False,
 ) -> str:
@@ -792,7 +798,7 @@ def ensure_prerelease(
             "--target",
             commit,
             "--title",
-            f"企业全生命周期助手 {tag}",
+            f"{product_name} {tag}",
             "--notes-file",
             str(notes),
             "--prerelease",
@@ -1288,6 +1294,7 @@ def main() -> None:
             validation["tag"],
             packages,
             gate_report,
+            str(validation["product_slug"]),
         )
         package_fingerprint = (
             generic_publisher_fingerprint(packages["generic"])
@@ -1430,6 +1437,7 @@ def main() -> None:
                     commit,
                     release_notes,
                     all_assets,
+                    product_name=str(validation["product_name"]),
                 )
                 transition(
                     "github_staged",
@@ -1479,6 +1487,7 @@ def main() -> None:
                 commit,
                 release_notes,
                 all_assets,
+                product_name=str(validation["product_name"]),
                 create_if_missing=False,
                 allow_published=True,
             )

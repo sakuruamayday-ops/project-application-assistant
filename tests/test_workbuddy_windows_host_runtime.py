@@ -24,8 +24,8 @@ def test_windows_hook_registration_uses_deterministic_marketplace_root():
     for groups in payload["hooks"].values():
         command = groups[0]["hooks"][0]["command"]
         assert command.startswith(
-            '"$HOME/.workbuddy/plugins/marketplaces/jiaotang/plugins/'
-            'jiaotang-workbuddy-skills/scripts/'
+            '"$HOME/.workbuddy/plugins/marketplaces/gongchuang-research-institute/plugins/'
+            'gongchuang-research-institute-skills/scripts/'
             'workbuddy_behavior_hook_windows.exe" '
         )
         assert "${CODEBUDDY_PLUGIN_ROOT}" not in command

@@ -1,4 +1,4 @@
-<h1 align="center">企业全生命周期助手</h1>
+<h1 align="center">共创研究院企业全生命周期助手</h1>
 
 <p align="center">
   面向政府项目申报工程师与知识产权顾问的专业 Agent 工作系统。<br>
@@ -10,14 +10,14 @@
   <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.6.2"><img src="https://img.shields.io/badge/Release-V1.6.2-C9A760?style=for-the-badge" alt="Release V1.6.2"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
   <a href="docs/releases/V1.6.2.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
-  <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-zshjiaotang.cn-8A6A2F?style=for-the-badge" alt="Team portal"></a>
+  <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
 
 ---
 
 ## 它解决什么问题
 
-申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。企业全生命周期助手把这些要求编排成 49 项可复用 Skills，并通过统一入口自动路由。
+申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。共创研究院企业全生命周期助手把这些要求编排成 49 项可复用 Skills，并通过统一入口自动路由。
 
 | 核心能力 | 能做什么 |
 |---|---|

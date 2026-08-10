@@ -22,6 +22,10 @@ DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqli
 DEFAULT_IDENTITIES = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省/三类名单基础数字身份证"
 )
+DEFAULT_BUSINESS_PROFILE_CANDIDATES = Path(
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省/企业画像补采归并/"
+    "企业统一数字身份证_画像补采归并_903家_20260810.jsonl"
+)
 DEFAULT_OUTPUT = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/统一企业数字身份证.jsonl"
 )
@@ -44,6 +48,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="构建企业统一数字身份证与同行对比画像")
     parser.add_argument("--database", type=Path, default=DEFAULT_DB)
     parser.add_argument("--knowledge-identities", type=Path, default=DEFAULT_IDENTITIES)
+    parser.add_argument(
+        "--business-profile-candidates",
+        type=Path,
+        default=DEFAULT_BUSINESS_PROFILE_CANDIDATES,
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
 
@@ -270,9 +279,144 @@ def overlay_profile(
         target["business_profile_evidence_status"] = business_status
 
 
+def merge_three_first_products(*values: object) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for value in values:
+        if not isinstance(value, list):
+            continue
+        for raw in value:
+            if not isinstance(raw, dict):
+                continue
+            item = {
+                "project_name": canonical_project_name(raw.get("project_name")),
+                "year": raw.get("year"),
+                "product_name": sanitize_public_text(raw.get("product_name")).strip(),
+                "recognition_tier": sanitize_public_text(
+                    raw.get("recognition_tier")
+                ).strip(),
+                "product_category": sanitize_public_text(
+                    raw.get("product_category")
+                ).strip(),
+                "list_status": sanitize_public_text(raw.get("list_status")).strip(),
+                "source": PUBLIC_SOURCE,
+            }
+            fingerprint = json.dumps(item, ensure_ascii=False, sort_keys=True)
+            if fingerprint in seen:
+                continue
+            seen.add(fingerprint)
+            result.append(item)
+    return result
+
+
+def overlay_business_profile_candidates(
+    profiles: dict[str, dict[str, Any]],
+    path: Path,
+    stats: defaultdict[str, int],
+) -> None:
+    """Promote an audited candidate delta without weakening identity boundaries."""
+
+    if not path.is_file():
+        stats["business_profile_candidate_source_missing"] += 1
+        return
+    seen_codes: set[str] = set()
+    for row in read_jsonl(path):
+        code = str(row.get("unified_social_credit_code") or "").strip().upper()
+        if not USCC_PATTERN.fullmatch(code):
+            raise RuntimeError(f"企业画像补采候选缺少有效统一社会信用代码：{code!r}")
+        if code in seen_codes:
+            raise RuntimeError(f"企业画像补采候选存在重复统一社会信用代码：{code}")
+        seen_codes.add(code)
+        if str(row.get("source") or "").strip() != PUBLIC_SOURCE:
+            raise RuntimeError(f"企业画像补采候选来源未统一投影为{PUBLIC_SOURCE}：{code}")
+        candidate_status = str(
+            row.get("business_profile_evidence_status") or ""
+        ).strip()
+        if candidate_status not in {
+            "candidate_profile_complete",
+            "candidate_profile_partial",
+        }:
+            raise RuntimeError(f"企业画像补采候选状态不受支持：{code}/{candidate_status}")
+        peer_ready = int(row.get("peer_comparison_ready") or 0)
+        if peer_ready not in {0, 1}:
+            raise RuntimeError(f"企业画像补采候选同行状态不合法：{code}")
+        if candidate_status == "candidate_profile_partial" and peer_ready:
+            raise RuntimeError(f"部分画像不得标记为同行对比就绪：{code}")
+
+        candidate_key = profile_key(row)
+        existing_keys = {
+            key
+            for key, profile in profiles.items()
+            if str(profile.get("unified_social_credit_code") or "").upper() == code
+        }
+        existing_keys.update(
+            str(key)
+            for key in as_list(row.get("merged_source_identity_keys"))
+            if str(key) in profiles
+        )
+        if len(
+            {
+                str(profiles[key].get("unified_social_credit_code") or "").upper()
+                for key in existing_keys
+                if str(profiles[key].get("unified_social_credit_code") or "").strip()
+            }
+            - {code}
+        ):
+            raise RuntimeError(f"企业画像补采候选命中不同信用代码主体：{code}")
+
+        target = profiles.get(candidate_key) or empty_profile(
+            candidate_key, str(row.get("current_name") or "")
+        )
+        for key in sorted(existing_keys):
+            existing = profiles[key]
+            overlay_profile(target, existing)
+            target["recognition_evidence_status"] = first_text(
+                existing.get("recognition_evidence_status"),
+                target["recognition_evidence_status"],
+            )
+            target["three_first_products"] = merge_three_first_products(
+                target["three_first_products"], existing.get("three_first_products")
+            )
+        overlay_profile(
+            target,
+            row,
+            business_status=(
+                "knowledge_profile_complete"
+                if candidate_status == "candidate_profile_complete"
+                else "knowledge_profile_partial"
+            ),
+        )
+        target["identity_key"] = candidate_key
+        target["identity_verification_status"] = (
+            "knowledge_alias_closed"
+            if str(row.get("identity_verification_status") or "")
+            == "candidate_alias_closed"
+            else "knowledge_verified"
+        )
+        target["recognition_evidence_status"] = first_text(
+            row.get("recognition_evidence_status"),
+            target["recognition_evidence_status"],
+        )
+        target["three_first_products"] = merge_three_first_products(
+            target["three_first_products"], row.get("three_first_products")
+        )
+        target["_peer_comparison_ready_override"] = peer_ready
+        for key in existing_keys:
+            if key != candidate_key:
+                profiles.pop(key, None)
+        profiles[candidate_key] = target
+        stats[
+            "promoted_complete_business_profiles"
+            if peer_ready
+            else "promoted_partial_business_profiles"
+        ] += 1
+    stats["promoted_business_profile_candidates"] += len(seen_codes)
+
+
 def build_profiles(
     connection: sqlite3.Connection,
     knowledge_identities: Path,
+    business_profile_candidates: Path | None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
     profiles: dict[str, dict[str, Any]] = {}
     stats: defaultdict[str, int] = defaultdict(int)
@@ -359,6 +503,13 @@ def build_profiles(
             target["recognition_evidence_status"] = "knowledge_list_linked"
             stats["small_giant_business_profiles"] += 1
 
+    if business_profile_candidates is not None:
+        overlay_business_profile_candidates(
+            profiles,
+            business_profile_candidates,
+            stats,
+        )
+
     name_index: defaultdict[str, set[str]] = defaultdict(set)
     for key, profile in profiles.items():
         for name in merge_unique(
@@ -407,13 +558,9 @@ def build_profiles(
                 "list_status": str(row["list_status"] or ""),
                 "source": PUBLIC_SOURCE,
             }
-            fingerprint = json.dumps(product, ensure_ascii=False, sort_keys=True)
-            existing = {
-                json.dumps(item, ensure_ascii=False, sort_keys=True)
-                for item in target["three_first_products"]
-            }
-            if fingerprint not in existing:
-                target["three_first_products"].append(product)
+            target["three_first_products"] = merge_three_first_products(
+                target["three_first_products"], [product]
+            )
             stats["three_first_product_records"] += 1
 
     for profile in profiles.values():
@@ -425,7 +572,10 @@ def build_profiles(
         )
         project_set = set(profile["recognition_projects"])
         profile["peer_comparison_ready"] = int(
-            has_business_data and bool(project_set & PEER_PROJECTS)
+            profile.pop(
+                "_peer_comparison_ready_override",
+                int(has_business_data and bool(project_set & PEER_PROJECTS)),
+            )
         )
         profile["three_first_product_enriched"] = int(
             has_business_data and bool(profile["three_first_products"])
@@ -657,11 +807,20 @@ def write_projection(path: Path, profiles: dict[str, dict[str, Any]]) -> None:
             stream.write(json.dumps(profile, ensure_ascii=False, sort_keys=True) + "\n")
 
 
-def build(database: Path, knowledge_identities: Path, output: Path | None) -> dict[str, Any]:
+def build(
+    database: Path,
+    knowledge_identities: Path,
+    output: Path | None,
+    business_profile_candidates: Path | None = None,
+) -> dict[str, Any]:
     connection = sqlite3.connect(database)
     connection.row_factory = sqlite3.Row
     try:
-        profiles, stats = build_profiles(connection, knowledge_identities)
+        profiles, stats = build_profiles(
+            connection,
+            knowledge_identities,
+            business_profile_candidates,
+        )
         profile_count, term_count, coverage = write_database(connection, profiles)
     finally:
         connection.close()
@@ -688,7 +847,12 @@ def main() -> None:
     args = parse_args()
     print(
         json.dumps(
-            build(args.database, args.knowledge_identities, args.output),
+            build(
+                args.database,
+                args.knowledge_identities,
+                args.output,
+                args.business_profile_candidates,
+            ),
             ensure_ascii=False,
         )
     )

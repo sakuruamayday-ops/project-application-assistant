@@ -1,7 +1,12 @@
 {
   "schema_version": 1,
-  "product_name": "企业全生命周期助手",
-  "product_slug": "jiaotang-skills",
+  "product_name": "共创研究院企业全生命周期助手",
+  "product_slug": "gongchuang-research-institute-skills",
+  "public_brand": {
+    "display_name": "共创研究院",
+    "plugin_name": "gongchuang-research-institute-skills",
+    "marketplace_name": "gongchuang-research-institute"
+  },
   "install_mode": "bundle-only",
   "release": {
     "tag": "V1.6.2",
@@ -9,7 +14,7 @@
     "summary": "V1.6.2 是正式稳定版：修复 WorkBuddy Stop 未消费当前 turn Grounded validator receipt 的问题，统一双端状态目录、有效业务域与 Session 隔离规则。企业数字身份证仍作为服务端外部数据单独发布，不进入插件包。",
     "changes": [
       "Windows 与 macOS Stop 在正式交付已激活主业务 Skill 时建立 effective_business_domain，即使提示词 business_domain 漏判也必须执行 Grounded 质量闸门并消费当前 turn 回执。",
-      "Grounded 校验器默认把正式回执写入与宿主 Hook 完全一致的行为状态根；Windows 固定使用用户级 .workbuddy/state/jiaotang-behavior，macOS 使用插件 data 行为目录。",
+      "Grounded 校验器默认把正式回执写入与宿主 Hook 完全一致的用户级行为状态根，macOS 使用插件 data 行为目录。",
       "工作区需要保留用户可见收据时改用 receipt-export-dir 复制副本；state-root 不得再指向 artifacts 或交付目录，避免 Stop 看不到已经生成的回执。",
       "Stop 只接受 validator_id、turn_id、pass 状态和当前文件 SHA-256 全部一致的回执；旧 turn 回执、失败回执和文件变更后的回执继续失败关闭。",
       "首台套、首批次和首版次加入正式业务地域识别词，避免三首业务报告因领域提示词漏判而绕过主业务 Skill 与 Grounded 门禁。",
@@ -37,7 +42,7 @@
       "Windows 与 macOS 的正式交付否定只在否定词实际支配生成、输出或撰写等交付动作时生效；来源披露限制和生成器描述不得覆盖先前的正向交付请求。",
       "来源登记增加 obtained 与 reference_only 访问状态；未取得原文的链接不得声称检索日期或伪装成用户文件。",
       "Word 交付拒绝模板默认修改时间、空最后修改者和生成器元数据，并交叉校验台账与成品的来源访问状态。",
-      "Windows SessionStart、UserPromptSubmit、Skill 激活与 Stop 统一由原生 EXE 处理，状态写入用户级 .workbuddy/state/jiaotang-behavior。",
+      "Windows SessionStart、UserPromptSubmit、Skill 激活与 Stop 统一由原生 EXE 处理，状态写入用户级行为状态目录。",
       "本地 XLSX 只读检查提供无第三方依赖路径，不得为读取用户文件临时联网安装依赖。",
       "未经用户明确授权不得把输入或交付文件上传到 COS、云渲染或其他外部服务。",
       "分析报告来源位于文末，Excel 来源位于最后工作表，PowerPoint 来源位于最后一页；标准正文保持规范性引用文件结构并另附来源说明。",
@@ -47,7 +52,9 @@
       "人才项目增加基于真实履历、项目阶段与落地需求的创业区域预评估；例外通道必须有官方依据，人才券与算力券只作条件式分析。",
       "服务端建立现名、曾用名、统一社会信用代码与合并主体的身份血缘，并支持按名称或信用代码反查冲突路径。",
       "企业数字身份证、同行对比主题词和待补画像数量以服务端当前签名索引为准；插件包不固化会持续增长的数据总量。",
-      "应用槽与索引代际的活动目录只保留 current 和 previous；更早代际先移入系统回收站并记录精确路径，不在发布事务中永久删除。"
+      "应用槽与索引代际的活动目录只保留 current 和 previous；更早代际先移入系统回收站并记录精确路径，不在发布事务中永久删除。",
+      "将 903 条已完成画像补采归并纳入统一数字身份证构建：902 条完整画像进入同行对比，1 条部分画像保留缺口，宁波昌隆同名注销主体冲突继续阻断跨代码归并。",
+      "公开附件、WorkBuddy 市场、插件及发布说明统一使用共创研究院品牌；仅远程 MCP 兼容标识 jiaotang-kb 保持不变。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
