@@ -47,6 +47,72 @@ def test_delivery_receipt_is_bound_to_current_turn_artifact_and_ledger_hash(tmp_
     assert json.loads(receipt_path.read_text(encoding="utf-8"))["validator_id"] == "grounded-delivery/v1"
 
 
+def test_delivery_receipt_keeps_canonical_copy_and_exports_user_visible_copy(tmp_path: Path):
+    state_root = tmp_path / "state"
+    state_root.mkdir()
+    (state_root / "current-turn.json").write_text(
+        json.dumps({"turn_id": "turn-grounded-export"}),
+        encoding="utf-8",
+    )
+    export_root = tmp_path / "artifacts" / "validator-receipts"
+    ledger = ROOT / "skills" / "evidence-ledger" / "examples" / "normal-grounded-report.json"
+    artifact = REAL / "grounded-analysis-report.docx"
+
+    result = MODULE.write_delivery_receipt(
+        ledger,
+        artifact,
+        profile="analysis-report",
+        state_root=state_root,
+        receipt_export_dir=export_root,
+    )
+
+    canonical = Path(result["receipt_path"])
+    exported = Path(result["receipt_export_path"])
+    assert canonical.parent == state_root / "validator-receipts" / "turn-grounded-export"
+    assert exported.parent == export_root / "turn-grounded-export"
+    assert canonical.read_bytes() == exported.read_bytes()
+    assert json.loads(exported.read_text(encoding="utf-8"))["turn_id"] == "turn-grounded-export"
+
+
+def test_macos_marketplace_state_root_matches_hook_data_directory(tmp_path: Path, monkeypatch):
+    plugin_root = (
+        tmp_path
+        / ".workbuddy"
+        / "plugins"
+        / "marketplaces"
+        / "jiaotang"
+        / "plugins"
+        / "jiaotang-workbuddy-skills"
+    )
+    (plugin_root / ".codebuddy-plugin").mkdir(parents=True)
+    (plugin_root / ".codebuddy-plugin" / "plugin.json").write_text("{}", encoding="utf-8")
+    monkeypatch.delenv("JIAOTANG_BEHAVIOR_STATE_ROOT", raising=False)
+    monkeypatch.delenv("CODEBUDDY_PLUGIN_DATA", raising=False)
+    monkeypatch.setenv("CODEBUDDY_PLUGIN_ROOT", str(plugin_root))
+
+    assert MODULE._default_state_root() == (
+        tmp_path
+        / ".workbuddy"
+        / "plugins"
+        / "data"
+        / "jiaotang-workbuddy-skills-jiaotang"
+        / "behavior-hook"
+    )
+
+
+def test_windows_state_root_ignores_transient_plugin_data(tmp_path: Path, monkeypatch):
+    explicit_home = tmp_path / "profile"
+    transient_plugin_data = tmp_path / "host-plugin-data"
+    monkeypatch.delenv("JIAOTANG_BEHAVIOR_STATE_ROOT", raising=False)
+    monkeypatch.setenv("CODEBUDDY_PLUGIN_DATA", str(transient_plugin_data))
+    monkeypatch.setattr(MODULE.os, "name", "nt")
+    monkeypatch.setattr(MODULE.Path, "home", classmethod(lambda cls: explicit_home))
+
+    assert MODULE._default_state_root() == (
+        explicit_home / ".workbuddy" / "state" / "jiaotang-behavior"
+    )
+
+
 def test_docx_validator_rejects_user_observed_provenance_and_structure_defects(tmp_path: Path):
     path = tmp_path / "bad-report.docx"
     document = Document()

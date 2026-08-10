@@ -177,6 +177,7 @@ def make_packages(
         "hooks/hooks.json": json.dumps(
             {
                 "hooks": {
+                    "SessionStart": [{"hooks": []}],
                     "UserPromptSubmit": [{"hooks": []}],
                     "Stop": [{"hooks": []}],
                 }

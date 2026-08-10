@@ -2,10 +2,24 @@
   "schema_version": 1,
   "product": "企业全生命周期助手",
   "release": {
-    "tag": "V1.6.1.2",
-    "version": "1.6.1.2",
-    "summary": "V1.6.1.2 是仅用于本地与 WorkBuddy 实机复验的修复候选：补齐认定项目别名，分离技能激活与提示 Hook 可观测性，并确定性校验截断状态和报告冲突。企业数字身份证仍是服务端外部数据，不进入插件包。",
+    "tag": "V1.6.2",
+    "version": "1.6.2",
+    "summary": "V1.6.2 是正式稳定版：修复 WorkBuddy Stop 未消费当前 turn Grounded validator receipt 的问题，统一双端状态目录、有效业务域与 Session 隔离规则。企业数字身份证仍作为服务端外部数据单独发布，不进入插件包。",
     "changes": [
+      "Windows 与 macOS Stop 在正式交付已激活主业务 Skill 时建立 effective_business_domain，即使提示词 business_domain 漏判也必须执行 Grounded 质量闸门并消费当前 turn 回执。",
+      "Grounded 校验器默认把正式回执写入与宿主 Hook 完全一致的行为状态根；Windows 固定使用用户级 .workbuddy/state/jiaotang-behavior，macOS 使用插件 data 行为目录。",
+      "工作区需要保留用户可见收据时改用 receipt-export-dir 复制副本；state-root 不得再指向 artifacts 或交付目录，避免 Stop 看不到已经生成的回执。",
+      "Stop 只接受 validator_id、turn_id、pass 状态和当前文件 SHA-256 全部一致的回执；旧 turn 回执、失败回执和文件变更后的回执继续失败关闭。",
+      "首台套、首批次和首版次加入正式业务地域识别词，避免三首业务报告因领域提示词漏判而绕过主业务 Skill 与 Grounded 门禁。",
+      "WorkBuddy Host Hook 与沙箱内 Skill 激活统一使用用户级 plugins/data/<plugin>-<marketplace>/behavior-hook 状态根；沙箱缺少 CODEBUDDY_PLUGIN_DATA 时从已验证的市场安装路径确定性推导，避免同轮被拆成恢复状态与 activation_fallback 两份状态。",
+      "macOS 新增 SessionStart 冷启动恢复：只读取宿主提供的同一 session_id、两分钟内且位于 WorkBuddy 项目目录的 JSONL，提取当前 user_query 的摘要；不扫描其他任务，也不保存提示正文。",
+      "SessionStart 恢复状态如实标记 state_origin=session_start_recovery、prompt_context_source=session_transcript、prompt_hook_observable=false；后续原生 UserPromptSubmit 到达同轮时升级为 user_prompt_submit。",
+      "同一会话同一提示在五秒内去重，避免市场级与 Skill 内联 Hook 重复注册生成两个 turn_id；Windows 原生 EXE 同步增加受限 SessionStart 恢复。",
+      "Windows 生命周期 Hook 与 49 个 Skill 内联激活入口均从固定的 $HOME/.workbuddy 正式市场根直接调用原生 EXE，不依赖 Windows 进程中不稳定的 CODEBUDDY_PLUGIN_ROOT 注入。",
+      "Windows 宿主未发出 Prompt Hook 时，Skill 激活只从当前项目两分钟内的新鲜转录恢复上下文，并如实标记 skill_activation_recovery；同一转录事件多 Skill 累积，新消息生成新 turn_id 并清空旧 Skill。",
+      "Windows 原生 Hook 运行时升级为 1.6.6；Stop 载荷的 session_id 与 Skill 激活恢复会话不一致时，只在当前项目转录、current-turn、turn_id、提示哈希和事件编号全部对齐后改用当前 turn 审计，并输出 stop_state_source 与 stop_payload_session_matched 收据。",
+      "macOS UserPromptSubmit 同时接受 WorkBuddy 5.3.11 的 user_prompt 与旧版 prompt 字段，真实提示能够创建全新轮次状态。",
+      "无宿主会话标识的 Skill 激活仅复用十五分钟内、状态一致且非测试会话的 current-turn；dry-run、夹具和过期轮次一律降级为 activation_fallback。",
       "国家小巨人、省级专精特新等非三首权威名单不再接受无效的 product_name 或 industry 参数；主题词反查固定转入 recognition_search。",
       "完整性回执分离 coverage_complete 与 truncated，并在覆盖不完整时禁止‘全部闭合’、‘确认不存在’等超证据表述。",
       "新增 WorkBuddy 真实宿主 JSONL 确定性收据生成器，只按实际 Skill 事件、MCP 尝试、外网调用和写入事件计数。",
@@ -21,7 +35,7 @@
       "Windows 与 macOS 的正式交付否定只在否定词实际支配生成、输出或撰写等交付动作时生效；来源披露限制和生成器描述不得覆盖先前的正向交付请求。",
       "来源登记增加 obtained 与 reference_only 访问状态；未取得原文的链接不得声称检索日期或伪装成用户文件。",
       "Word 交付拒绝模板默认修改时间、空最后修改者和生成器元数据，并交叉校验台账与成品的来源访问状态。",
-      "Windows UserPromptSubmit、Skill 激活与 Stop 继续由原生 EXE 处理，状态写入用户级 .workbuddy/state/jiaotang-behavior。",
+      "Windows SessionStart、UserPromptSubmit、Skill 激活与 Stop 统一由原生 EXE 处理，状态写入用户级 .workbuddy/state/jiaotang-behavior。",
       "本地 XLSX 只读检查提供无第三方依赖路径，不得为读取用户文件临时联网安装依赖。",
       "未经用户明确授权不得把输入或交付文件上传到 COS、云渲染或其他外部服务。",
       "分析报告来源位于文末，Excel 来源位于最后工作表，PowerPoint 来源位于最后一页；标准正文保持规范性引用文件结构并另附来源说明。",
@@ -30,12 +44,12 @@
       "专利路由继续使用已核验的专利检索、挖掘、预审、布局和交付规则，不把企业数字身份证或索引数据打入插件。",
       "人才项目增加基于真实履历、项目阶段与落地需求的创业区域预评估；例外通道必须有官方依据，人才券与算力券只作条件式分析。",
       "服务端建立现名、曾用名、统一社会信用代码与合并主体的身份血缘，并支持按名称或信用代码反查冲突路径。",
-      "当前生产企业身份基线为 15,837 个主体，其中 11,882 个已核验、3,955 个明确保留为后续增量；主题分类词典现有 3,312 条。",
+      "企业数字身份证、同行对比主题词和待补画像数量以服务端当前签名索引为准；插件包不固化会持续增长的数据总量。",
       "应用槽与索引代际的活动目录只保留 current 和 previous；更早代际先移入系统回收站并记录精确路径，不在发布事务中永久删除。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.1.2 是仅供 macOS 先行实机验证的本地候选；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
+      "workbuddy": "V1.6.2 同步发布 macOS 与 Windows WorkBuddy 正式包；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
@@ -48,12 +62,12 @@
       {
         "target": "macOS WorkBuddy",
         "status": "结构兼容，发布后补充实机结果",
-        "note": "沿用已验证的 macOS Hook 路径；本次规则变化已完成确定性回归，真实双端结果由主人发布后补录。"
+        "note": "增加受限的 SessionStart 冷启动恢复并保留原生 UserPromptSubmit 路径；确定性回归通过后仍须完成两个独立真实任务的原始 Hook 与 Stop 回执。"
       },
       {
         "target": "Windows WorkBuddy",
         "status": "结构兼容，发布后补充实机结果",
-        "note": "Windows 原生 EXE Hook 与 Grounded 交付回执已完成确定性回归；真实双端结果由主人发布后补录，不作为本次发布前置条件。"
+        "note": "Windows 原生 EXE 已修复生命周期命令根路径，并增加受限 Skill 激活转录恢复、消息事件去重、跨轮 Skill 隔离与 Stop 会话对齐收据；确定性回归通过后仍须由 Windows 真实宿主验证。"
       }
     ],
     "one_step_installation_protocol": {
@@ -69,7 +83,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "安装后只保留一个 V1.6.1.2 活动 jiaotang 候选市场，旧版本可恢复快照不覆盖用户资料",
+        "安装后只保留一个 V1.6.2 活动正式市场，旧版本可恢复快照不覆盖用户资料",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [

@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.workbuddy/plugins/marketplaces/jiaotang/plugins/jiaotang-workbuddy-skills/scripts/workbuddy_behavior_hook_windows.exe\" session-start --plugin-root \"$HOME/.workbuddy/plugins/marketplaces/jiaotang/plugins/jiaotang-workbuddy-skills\" --root-source auto --platform-adapter workbuddy-windows-exe",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.workbuddy/plugins/marketplaces/jiaotang/plugins/jiaotang-workbuddy-skills/scripts/workbuddy_behavior_hook_windows.exe\" prompt --plugin-root \"$HOME/.workbuddy/plugins/marketplaces/jiaotang/plugins/jiaotang-workbuddy-skills\" --root-source auto --platform-adapter workbuddy-windows-exe",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.workbuddy/plugins/marketplaces/jiaotang/plugins/jiaotang-workbuddy-skills/scripts/workbuddy_behavior_hook_windows.exe\" stop --plugin-root \"$HOME/.workbuddy/plugins/marketplaces/jiaotang/plugins/jiaotang-workbuddy-skills\" --root-source auto --platform-adapter workbuddy-windows-exe",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

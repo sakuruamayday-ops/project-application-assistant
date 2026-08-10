@@ -23,7 +23,7 @@
 ## V1.4.6 正式发布门禁
 
 1. 使用已重签的 `skill-release-manager` 生成唯一 WorkBuddy 候选包；服务端发布通道仍校验候选包完整性和固定发布者。
-2. 确认包内存在 49 项 Skills、市场清单、插件清单和最小行为 Hook，且最小 Hook 只声明 `UserPromptSubmit` 与 `Stop`。
+2. 确认包内存在 49 项 Skills、市场清单、插件清单和最小行为 Hook。macOS 声明 `SessionStart`、`UserPromptSubmit` 与 `Stop`；WorkBuddy 5.3.11 当前会在启动和恢复任务的用户消息前触发 `SessionStart`，该事件用于同会话转录恢复。Windows 仍只声明 `UserPromptSubmit` 与 `Stop`。
 3. 确认插件声明 `mcp_configuration_mode: user_remote_streamable_http`，不内嵌用户 MCP 配置或真实个人 Token。
 4. 确认候选包没有旧本地知识库服务、启动器、便携运行时或用户侧逐轮哈希检查。
 5. 门户端到端测试必须验证 Token 复用、只替换 `jiaotang-kb`、保留其他 MCP、一次重载和 `connected: true` 验收。

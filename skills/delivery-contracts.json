@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "contract_id": "jiaotang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.6.1.2",
+  "rule_version": "1.6.2",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -80,6 +80,9 @@
     "市场地位",
     "质量品牌",
     "单项冠军",
+    "首台套",
+    "首批次",
+    "首版次",
     "行业分析",
     "标准"
   ],

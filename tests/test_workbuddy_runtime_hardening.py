@@ -301,6 +301,9 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 skill_entry.index("\n---\n"),
             )
             self.assertIn("workbuddy_behavior_hook_windows.exe", skill_entry)
+            self.assertNotIn("${CODEBUDDY_PLUGIN_ROOT}", skill_entry)
+            self.assertNotIn("${CODEBUDDY_SKILL_DIR}", skill_entry)
+            self.assertIn("${CODEBUDDY_SESSION_ID:-}", skill_entry)
             self.assertIn("--platform-adapter workbuddy-windows-exe", skill_entry)
             self.assertNotIn("python3 -c", skill_entry)
             self.assertNotIn("/Users/", skill_entry)
@@ -885,6 +888,89 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertEqual(
                 BEHAVIOR.load_state(state_path)["status"], "completed"
             )
+
+    def test_macos_stop_consumes_current_turn_receipt_when_prompt_domain_was_missed(self):
+        contract_path = REPOSITORY / "skills/delivery-contracts.json"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            data_root = root / "behavior"
+            plugin_root.mkdir()
+            data_root.mkdir()
+            (plugin_root / "delivery-contracts.json").write_bytes(
+                contract_path.read_bytes()
+            )
+            BEHAVIOR.atomic_json(
+                data_root / "current-turn.json",
+                {"turn_id": "turn-macos-effective-domain"},
+            )
+            validator = GROUNDED_ENGINE.write_delivery_receipt(
+                REPOSITORY / "skills/evidence-ledger/examples/normal-grounded-report.json",
+                REPOSITORY / "tests/fixtures/grounded-citations/real/grounded-analysis-report.docx",
+                profile="analysis-report",
+                state_root=data_root,
+            )
+            state_path, _ = BEHAVIOR.state_paths(data_root, "session-macos-effective-domain")
+            BEHAVIOR.atomic_json(
+                state_path,
+                {
+                    "schema_version": 4,
+                    "session_id": "session-macos-effective-domain",
+                    "turn_id": validator["turn_id"],
+                    "state_origin": "session_start_recovery",
+                    "prompt_context_ok": True,
+                    "prompt_sha256": "abc",
+                    "prompt_signals": {
+                        "formal_business_delivery": True,
+                        "business_domain": False,
+                        "complex_task": False,
+                        "policy_task": False,
+                        "peer_task": False,
+                        "skill_applicability": {},
+                    },
+                    "active_skills": [
+                        {"skill": "industrialization-projects"},
+                        {"skill": "consistency-check"},
+                        {"skill": "evidence-ledger"},
+                    ],
+                    "status": "pending",
+                },
+            )
+            output = io.StringIO()
+            with mock.patch.object(
+                BEHAVIOR,
+                "read_stdin",
+                return_value={
+                    "session_id": "session-macos-effective-domain",
+                    "last_assistant_message": "正式业务报告已经完成。",
+                },
+            ), contextlib.redirect_stdout(output):
+                self.assertEqual(
+                    BEHAVIOR.stop_event(
+                        data_root,
+                        plugin_root,
+                        "workbuddy-marketplace",
+                        "workbuddy-macos",
+                    ),
+                    0,
+                )
+
+            receipt = json.loads(output.getvalue())
+            self.assertTrue(receipt["delivery_check_ok"])
+            self.assertTrue(receipt["effective_business_domain"])
+            self.assertEqual(
+                receipt["business_domain_source"],
+                "active_primary_business_skill",
+            )
+            self.assertEqual(
+                receipt["applied_contracts"], ["grounded-evidence/v1"]
+            )
+            self.assertEqual(len(receipt["validator_receipts"]), 1)
+            self.assertEqual(
+                receipt["validator_receipts"][0]["turn_id"],
+                "turn-macos-effective-domain",
+            )
+            self.assertEqual(BEHAVIOR.load_state(state_path)["status"], "completed")
 
     def test_delivery_contract_uses_specific_not_generic_trigger_markers(self):
         contract = json.loads(
@@ -1659,6 +1745,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     {
                         "session_id": "session-1",
                         "turn_id": "turn-1",
+                        "updated_at": BEHAVIOR.now(),
                     }
                 ),
                 encoding="utf-8",
@@ -1710,6 +1797,61 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 ["policy-retrieval"],
             )
 
+    def test_workbuddy_activation_rejects_stale_or_dry_run_current_turn(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin_root = root / "plugin"
+            skill_root = plugin_root / "skills" / "policy-retrieval"
+            skill_root.mkdir(parents=True)
+            (skill_root / "SKILL.md").write_text(
+                "---\nname: policy-retrieval\ndescription: test\n---\n",
+                encoding="utf-8",
+            )
+            data_root = root / "behavior"
+            stale_path, _ = BEHAVIOR.state_paths(data_root, "dry-run-verify")
+            BEHAVIOR.atomic_json(
+                stale_path,
+                {
+                    "schema_version": 3,
+                    "session_id": "dry-run-verify",
+                    "turn_id": "stale-turn",
+                    "state_origin": "user_prompt_submit",
+                    "prompt_context_ok": True,
+                    "prompt_sha256": "stale",
+                    "prompt_signals": {},
+                    "active_skills": [],
+                    "status": "pending",
+                },
+            )
+            BEHAVIOR.atomic_json(
+                data_root / "current-turn.json",
+                {
+                    "session_id": "dry-run-verify",
+                    "turn_id": "stale-turn",
+                    "updated_at": "2099-01-01T00:00:00+00:00",
+                },
+            )
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                result = BEHAVIOR.activate(
+                    data_root,
+                    plugin_root,
+                    "",
+                    "policy-retrieval",
+                    Path(""),
+                )
+
+            self.assertEqual(result, 0)
+            receipt = json.loads(output.getvalue())
+            self.assertTrue(receipt["activation_ok"])
+            self.assertEqual(receipt["state_origin"], "activation_fallback")
+            self.assertFalse(receipt["prompt_context_ok"])
+            self.assertNotEqual(receipt["turn_id"], "stale-turn")
+            self.assertEqual(
+                BEHAVIOR.load_state(stale_path)["active_skills"], []
+            )
+
     def test_generated_activation_runner_discovers_default_marketplace_layouts(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1752,13 +1894,16 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                             RELEASE_MANAGER / "workbuddy_behavior_hook.py",
                             decoy / "scripts/workbuddy_behavior_hook.py",
                         )
-                    data_root = plugin_root / ".behavior-data"
-                    data_root.mkdir()
+                    data_root = BEHAVIOR.data_directory(plugin_root)
+                    data_root.mkdir(parents=True)
                     (data_root / "current-turn.json").write_text(
                         json.dumps(
                             {
                                 "session_id": "session-2",
                                 "turn_id": f"turn-{storage[1:]}",
+                                "updated_at": BEHAVIOR.now(),
+                                "state_origin": "user_prompt_submit",
+                                "prompt_context_ok": True,
                             }
                         ),
                         encoding="utf-8",
@@ -1771,6 +1916,8 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                                 "schema_version": 2,
                                 "session_id": "session-2",
                                 "turn_id": f"turn-{storage[1:]}",
+                                "state_origin": "user_prompt_submit",
+                                "prompt_context_ok": True,
                                 "prompt_sha256": "",
                                 "prompt_signals": {},
                                 "active_skills": [],
@@ -1841,7 +1988,10 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 input=json.dumps(
-                    {"session_id": "session-hook", "prompt": "测试提示词"}
+                    {
+                        "session_id": "session-hook",
+                        "user_prompt": "测试提示词",
+                    }
                 ),
                 env=environment,
                 cwd=root,
@@ -1851,7 +2001,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             receipt = json.loads(process.stdout)
             self.assertIn("hookSpecificOutput", receipt)
             state_path, _ = BEHAVIOR.state_paths(
-                plugin_root / ".behavior-data",
+                BEHAVIOR.data_directory(plugin_root),
                 "session-hook",
             )
             self.assertTrue(state_path.is_file())
@@ -1931,7 +2081,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 set(skills),
             )
             state_path, _ = BEHAVIOR.state_paths(
-                plugin_root / ".behavior-data",
+                BEHAVIOR.data_directory(plugin_root),
                 "suite-session",
             )
             state = json.loads(state_path.read_text(encoding="utf-8"))
