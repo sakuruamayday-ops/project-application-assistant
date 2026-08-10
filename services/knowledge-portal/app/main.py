@@ -9771,7 +9771,7 @@ def prewarm_portal_read_caches() -> None:
 def build_provenance_payload() -> dict[str, object]:
     release = public_release_guidance()
     return {
-        "schema": "jiaotang-build-provenance/v1",
+        "schema": "gongchuang-build-provenance/v1",
         "commit": BUILD_COMMIT,
         "deployment_id": BUILD_DEPLOYMENT_ID,
         "built_at": BUILD_CREATED_AT or None,
@@ -14176,7 +14176,7 @@ def web_agent_installation_status(
         )
     return JSONResponse(
         {
-            "schema": "jiaotang-web-install-status/v2",
+            "schema": "gongchuang-web-install-status/v2",
             "configured": connection_status["configured"],
             "connection": connection_status,
             "stages": connection_status["checks"],
@@ -14209,7 +14209,7 @@ def agent_install_protocol(
     )
     return JSONResponse(
         {
-            "schema": "jiaotang-agent-install/v2",
+            "schema": "gongchuang-agent-install/v2",
             "phase": "install_ready",
             "review_required": False,
             "user_confirmation_required": False,
@@ -14257,7 +14257,7 @@ def agent_install_protocol(
                 "user_signature_check",
             ],
         },
-        media_type="application/vnd.jiaotang.agent-install+json",
+        media_type="application/vnd.gongchuang.agent-install+json",
         headers={"Cache-Control": "private, no-store"},
     )
     package_sha256 = str(artifact["sha256"])
@@ -14549,8 +14549,8 @@ def download_authorized_workbuddy_plugin(
         ),
         headers={
             "Cache-Control": "private, no-store",
-            "X-Jiaotang-Package-SHA256": str(artifact["sha256"]),
-            "X-Jiaotang-Install-Platform": platform_name,
+            "X-Gongchuang-Package-SHA256": str(artifact["sha256"]),
+            "X-Gongchuang-Install-Platform": platform_name,
         },
     )
 
@@ -14641,7 +14641,7 @@ def agent_upgrade_protocol(
             },
             "expires_at": str(enrollment.get("expires_at") or ""),
         },
-        media_type="application/vnd.jiaotang.agent-upgrade+json",
+        media_type="application/vnd.gongchuang.agent-upgrade+json",
         headers={"Cache-Control": "no-store"},
     )
 
@@ -14659,8 +14659,8 @@ def download_authorized_workbuddy_upgrade(upgrade_code: str):
         filename=str(artifact["file_name"]),
         headers={
             "Cache-Control": "no-store",
-            "X-Jiaotang-Package-SHA256": str(artifact["sha256"]),
-            "X-Jiaotang-Target-Version": str(artifact["version"]),
+            "X-Gongchuang-Package-SHA256": str(artifact["sha256"]),
+            "X-Gongchuang-Target-Version": str(artifact["version"]),
         },
     )
 
@@ -14684,7 +14684,10 @@ def report_agent_upgrade_result(
     installed_version = str(payload.get("installed_version") or "")
     installed_sha256 = str(payload.get("installed_package_sha256") or "")
     result_ok = payload.get("ok")
-    if result_schema != "jiaotang-agent-upgrade-result/v1":
+    if result_schema not in {
+        "gongchuang-agent-upgrade-result/v1",
+        "jiaotang-agent-upgrade-result/v1",
+    }:
         raise HTTPException(status_code=422, detail="升级结果版本不受支持")
     if result_status not in {"upgraded", "failed"}:
         raise HTTPException(status_code=422, detail="升级结果状态无效")
@@ -14904,7 +14907,10 @@ def report_agent_install_result(
     result_platform = optional_text("platform", 60)
     result_ok = payload.get("ok")
     activation_required = payload.get("activation_required")
-    if result_schema != "jiaotang-agent-result/v1":
+    if result_schema not in {
+        "gongchuang-agent-result/v1",
+        "jiaotang-agent-result/v1",
+    }:
         raise HTTPException(status_code=422, detail="安装结果版本不受支持")
     if result_status not in {"configured", "failed"}:
         raise HTTPException(status_code=422, detail="安装结果状态无效")
