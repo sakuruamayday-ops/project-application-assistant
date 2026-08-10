@@ -10,7 +10,7 @@
 
 ## 云端调用
 
-- 默认从安全环境变量读取 `JIAOTANG_KB_ENDPOINT`、`JIAOTANG_KB_TOKEN`、`JIAOTANG_KB_DEVICE_ID` 和 `JIAOTANG_KB_DEVICE_NAME`。
+- 默认从安全环境变量读取 `GONGCHUANG_KB_ENDPOINT` 和 `GONGCHUANG_KB_TOKEN`。
 - 先验证 `GET /v1/me`，再调用 `POST /v1/search`。
 - 不在命令参数、日志、Skill、报告或对话中展示 Token。
 - “未命中”只能表述为当前检索层未命中，不能写成文件或法规不存在。

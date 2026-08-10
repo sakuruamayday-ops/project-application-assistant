@@ -226,15 +226,14 @@ def migrate_report(report_path: Path, preference_file: Path, output_dir: Path) -
 
 def sync_preferences(script_dir: Path, preference_file: Path) -> int:
     if (
-        not os.environ.get("JIAOTANG_KB_ENDPOINT")
-        or not os.environ.get("JIAOTANG_KB_TOKEN")
-        or not os.environ.get("JIAOTANG_KB_DEVICE_ID")
+        not os.environ.get("GONGCHUANG_KB_ENDPOINT")
+        or not os.environ.get("GONGCHUANG_KB_TOKEN")
     ):
         print("未检测到云端凭据，偏好已保存在本机；首次配置后再同步。")
         return 0
     module_path = script_dir / "manage_preferences.py"
     specification = importlib.util.spec_from_file_location(
-        "jiaotang_manage_preferences",
+        "gongchuang_manage_preferences",
         module_path,
     )
     if specification is None or specification.loader is None:

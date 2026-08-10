@@ -105,7 +105,7 @@ python3 scripts/validate_report_pdf.py <PDF路径> --require-watermark
 ## 平台与配置边界
 
 - 先读取 `first-run-configuration` 生成的能力报告；缺少团队知识、企查查、专利或PDF能力时只回到统一向导一次，再按报告执行降级。
-- 团队知识服务只读取宿主安全凭据中的 `JIAOTANG_KB_ENDPOINT`、`JIAOTANG_KB_TOKEN`、`JIAOTANG_KB_DEVICE_ID` 和 `JIAOTANG_KB_DEVICE_NAME`，不得把真实值写入Skill、报告或日志。
+- 团队知识服务只读取宿主安全凭据中的 `GONGCHUANG_KB_ENDPOINT` 和 `GONGCHUANG_KB_TOKEN`，不得把真实值写入Skill、报告或日志。
 - 企查查、政府网页、专利数据源和浏览器能力均按 `docs/user-guide/api-mcp-configuration.md` 由用户自行配置；任一外部能力缺失时执行对应降级，不得补造结果。
 - PDF、Word、Excel和网页渲染由宿主平台提供。包内脚本只是确定性PDF渲染后备，不复制通用文档Skill。
 - 所有资源路径必须相对本Skill目录解析，禁止写入用户主目录或开发者机器绝对路径。

@@ -46,30 +46,14 @@ def request_json(
     token: str,
     route: str,
     payload=None,
-    *,
-    device_id: str | None = None,
-    device_name: str | None = None,
 ):
     body = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    resolved_device_id = (
-        device_id or os.environ.get("JIAOTANG_KB_DEVICE_ID", "")
-    ).strip()
-    resolved_device_name = (
-        device_name or os.environ.get("JIAOTANG_KB_DEVICE_NAME", "")
-    ).strip()
-    if not resolved_device_id:
-        raise ValueError("缺少JIAOTANG_KB_DEVICE_ID")
     request = urllib.request.Request(
         endpoint.rstrip("/") + route,
         data=body,
         method=method,
         headers={
             "Authorization": f"Bearer {token}",
-            "X-Jiaotang-Device-ID": resolved_device_id,
-            "X-Jiaotang-Device-Name": (
-                resolved_device_name.encode("ascii", errors="ignore").decode("ascii").strip()
-                or "Project Assistant"
-            ),
             "Content-Type": "application/json",
             "User-Agent": "project-assistant-preferences/1",
         },
@@ -85,12 +69,10 @@ def request_json(
 
 
 def cloud_config(args) -> tuple[str, str]:
-    endpoint = (args.endpoint or os.environ.get("JIAOTANG_KB_ENDPOINT", "")).strip()
-    token = (args.token or os.environ.get("JIAOTANG_KB_TOKEN", "")).strip()
-    if not endpoint or not token or not os.environ.get("JIAOTANG_KB_DEVICE_ID", "").strip():
-        raise ValueError(
-            "缺少JIAOTANG_KB_ENDPOINT、JIAOTANG_KB_TOKEN或JIAOTANG_KB_DEVICE_ID"
-        )
+    endpoint = (args.endpoint or os.environ.get("GONGCHUANG_KB_ENDPOINT", "")).strip()
+    token = (args.token or os.environ.get("GONGCHUANG_KB_TOKEN", "")).strip()
+    if not endpoint or not token:
+        raise ValueError("缺少GONGCHUANG_KB_ENDPOINT或GONGCHUANG_KB_TOKEN")
     return endpoint, token
 
 
