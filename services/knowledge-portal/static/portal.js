@@ -105,11 +105,35 @@ const FLOW_FRAME_SELECTOR = [
   "[role='dialog']",
 ].join(",");
 
+const FLOW_FOCUS_SELECTOR = [
+  'input:not([type]):not([name="confirmation"])',
+  'input:is([type="text"], [type="search"], [type="password"], [type="email"], [type="url"], [type="number"], [type="tel"]):not([name="confirmation"])',
+  'textarea:not([name="confirmation"])',
+  "select",
+].join(",");
+
+const syncFlowDocumentVisibility = () => {
+  document.documentElement.classList.toggle(
+    "is-atelier-flow-document-visible",
+    document.visibilityState === "visible",
+  );
+};
+
+syncFlowDocumentVisibility();
+document.addEventListener("visibilitychange", syncFlowDocumentVisibility, true);
+window.addEventListener("pageshow", syncFlowDocumentVisibility);
+
 const flowFrameVisibility = "IntersectionObserver" in window
   ? new IntersectionObserver((entries) => {
     entries.forEach((entry) => entry.target.classList.toggle("is-atelier-flow-visible", entry.isIntersecting));
-  }, {rootMargin: "120px 0px", threshold: 0})
+  }, {rootMargin: "0px", threshold: .01})
   : null;
+
+const observeFlowVisibility = (element) => {
+  if (!(element instanceof HTMLElement)) return;
+  if (flowFrameVisibility) flowFrameVisibility.observe(element);
+  else element.classList.add("is-atelier-flow-visible");
+};
 
 const pseudoSlotIsFree = (element, slot) => {
   const content = getComputedStyle(element, slot).content;
@@ -152,8 +176,7 @@ const decorateFlowFrame = (element) => {
   element.dataset.atelierFlowFrame = slot;
   if (slot === "unavailable") return;
   if (getComputedStyle(element).position === "static") element.classList.add("atelier-flow-needs-position");
-  if (flowFrameVisibility) flowFrameVisibility.observe(element);
-  else element.classList.add("is-atelier-flow-visible");
+  observeFlowVisibility(element);
 };
 
 const installFlowFrames = (root = document) => {
@@ -165,6 +188,8 @@ const installFlowFrames = (root = document) => {
     if (isVisibleRoundedFrame(element)) candidates.add(element);
   });
   candidates.forEach(decorateFlowFrame);
+  if (root instanceof Element && root.matches(FLOW_FOCUS_SELECTOR)) observeFlowVisibility(root);
+  root.querySelectorAll?.(FLOW_FOCUS_SELECTOR).forEach(observeFlowVisibility);
 };
 
 installFlowFrames();

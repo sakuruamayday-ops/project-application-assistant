@@ -126,6 +126,11 @@ try {
   assert.ok(installFlowStart.opacity > .95, `选择安装包悬停流光必须足够明显：${JSON.stringify(installFlowStart)}`);
   assert.equal(installFlowStart.animationPlayState, "running", "选择安装包悬停时必须启动流光");
   assert.notEqual(installFlowStart.angle, installFlowEnd.angle, "选择安装包悬停流光必须实际移动");
+  assert.notEqual(
+    installFlowStart.backgroundImage,
+    installFlowEnd.backgroundImage,
+    "选择安装包的实际渐变背景必须随角度重新绘制，不能只改变未参与绘制的变量",
+  );
   assert.equal(installFlowEnd.animationPlayState, "running", "按钮悬停位移后不得误清除流光运行状态");
   assert.ok(installFlowEnd.opacity > .95, `按钮持续悬停时流光不得衰减：${JSON.stringify(installFlowEnd)}`);
   assert.equal(await installPackageButton.evaluate((element) => element.classList.contains("atelier-flow-dark")), false, "黑字金底按钮不得再切换为黑色流光");
@@ -137,6 +142,16 @@ try {
     .filter((element) => getComputedStyle(element, `::${element.dataset.atelierFlowFrame}`).animationPlayState === "running")
     .length);
   assert.equal(runningFlowCount, 1, `Skills 页面悬停时只能运行一个框体流光，实际 ${runningFlowCount} 个`);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {configurable: true, value: "hidden"});
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  assert.equal((await readFlowState(installPackageButton)).animationPlayState, "paused", "页面进入后台时悬停按钮必须暂停");
+  await page.evaluate(() => {
+    delete document.visibilityState;
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  assert.equal((await readFlowState(installPackageButton)).animationPlayState, "running", "页面返回前台后当前悬停按钮必须恢复");
   if (process.env.SKILLS_QA_FLOW_SCREENSHOT) {
     await page.screenshot({path: process.env.SKILLS_QA_FLOW_SCREENSHOT, fullPage: false});
   }

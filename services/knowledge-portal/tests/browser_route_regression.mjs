@@ -99,6 +99,7 @@ async function readFlowState(locator) {
     return {
       slot,
       angle: style.getPropertyValue("--atelier-flow-angle").trim(),
+      thickness: style.paddingTop,
       opacity: Number(style.opacity),
       animationName: style.animationName,
       animationPlayState: style.animationPlayState,
@@ -164,33 +165,88 @@ try {
   assert.ok(flowCoverage.decorated > 30, `单页门户应覆盖全部框体而非少量入口：${JSON.stringify(flowCoverage)}`);
 
   const heroFrame = page.locator(".hero-banner");
+  assert.equal(
+    await page.locator("html").evaluate((element) => element.classList.contains("is-atelier-flow-document-visible")),
+    true,
+    "前台页面必须开放流光运行门禁",
+  );
+  await page.waitForFunction(() => document.querySelector(".hero-banner")?.classList.contains("is-atelier-flow-visible"));
   const heroFlowStart = await readFlowState(heroFrame);
+  if (screenshotDir) {
+    await mkdir(screenshotDir, {recursive: true});
+    await heroFrame.screenshot({path: join(screenshotDir, "flow-glow-hero-t0.png")});
+  }
   await page.waitForTimeout(420);
   const heroFlowEnd = await readFlowState(heroFrame);
-  assert.ok(heroFlowStart.opacity >= .5, `主视觉大型框体应持续显示清晰流光：${JSON.stringify(heroFlowStart)}`);
+  if (screenshotDir) await heroFrame.screenshot({path: join(screenshotDir, "flow-glow-hero-t1.png")});
+  assert.equal(heroFlowStart.opacity, 1, `主视觉大型框体应与悬停小卡片保持同等满强度：${JSON.stringify(heroFlowStart)}`);
+  assert.equal(heroFlowStart.thickness, "3px", `主视觉大型框体流光应加粗到 3px：${JSON.stringify(heroFlowStart)}`);
   assert.equal(heroFlowStart.animationName, "atelier-flow-orbit", "大型框体应挂载流光轨道动画");
   assert.equal(heroFlowStart.animationPlayState, "running", "只有主视觉大型框体默认持续运行");
   assert.notEqual(heroFlowStart.angle, heroFlowEnd.angle, "大型框体流光角度必须随时间连续变化");
+  assert.notEqual(
+    heroFlowStart.backgroundImage,
+    heroFlowEnd.backgroundImage,
+    "大型框体的实际渐变背景必须随角度重新绘制，不能只改变未参与绘制的变量",
+  );
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {configurable: true, value: "hidden"});
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  assert.equal(
+    await page.locator("html").evaluate((element) => element.classList.contains("is-atelier-flow-document-visible")),
+    false,
+    "页面进入后台时必须关闭流光运行门禁",
+  );
+  assert.equal((await readFlowState(heroFrame)).animationPlayState, "paused", "页面进入后台时大型框体必须暂停");
+  await page.evaluate(() => {
+    delete document.visibilityState;
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  assert.equal((await readFlowState(heroFrame)).animationPlayState, "running", "页面返回前台时可见大型框体必须恢复");
+
+  await page.evaluate(() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: "auto"}));
+  await page.waitForFunction(() => !document.querySelector(".hero-banner")?.classList.contains("is-atelier-flow-visible"));
+  assert.equal((await readFlowState(heroFrame)).animationPlayState, "paused", "大型框体离开视口后必须暂停");
+  await heroFrame.scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.querySelector(".hero-banner")?.classList.contains("is-atelier-flow-visible"));
+  assert.equal((await readFlowState(heroFrame)).animationPlayState, "running", "大型框体回到视口后必须恢复");
 
   const glowCard = page.locator(".metrics > a").first();
   const glowIdle = await readFlowState(glowCard);
+  assert.equal(glowIdle.thickness, "2px", "普通小卡片仍应保持 2px 流光，不得随大框一起加粗");
   assert.equal(glowIdle.opacity, 0, `普通卡片默认必须完全静止：${JSON.stringify(glowIdle)}`);
   assert.equal(glowIdle.animationName, "atelier-flow-orbit", "可点击卡片应挂载流光轨道动画");
   assert.match(glowIdle.backgroundImage, /conic-gradient/, "流光边框应使用锥形渐变");
   assert.equal(glowIdle.animationPlayState, "paused", "普通卡片未悬停时不得占用动画资源");
   await glowCard.hover();
   await page.waitForTimeout(240);
+  if (screenshotDir) await glowCard.screenshot({path: join(screenshotDir, "flow-glow-card-t0.png")});
+  await page.waitForTimeout(420);
   const glowActive = await readFlowState(glowCard);
+  if (screenshotDir) await glowCard.screenshot({path: join(screenshotDir, "flow-glow-card-t1.png")});
   assert.ok(glowActive.opacity > .95, `悬停后流光边框应明显增强：${JSON.stringify(glowActive)}`);
   assert.equal(glowActive.animationPlayState, "running", "悬停后流光轨道应开始运行");
+  await page.mouse.move(2, 2);
+  await page.keyboard.press("Tab");
+  await glowCard.focus();
+  await page.waitForTimeout(80);
+  assert.equal((await readFlowState(glowCard)).animationPlayState, "running", "可见卡片聚焦时必须运行");
+  await page.evaluate(() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: "auto"}));
+  await page.waitForFunction(() => !document.querySelector(".metrics > a")?.classList.contains("is-atelier-flow-visible"));
+  assert.equal((await readFlowState(glowCard)).animationPlayState, "paused", "聚焦卡片离开视口后也必须暂停");
+  await glowCard.scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.querySelector(".metrics > a")?.classList.contains("is-atelier-flow-visible"));
 
   const focusedField = page.locator('#feedback input[name="subject"]');
   await focusedField.focus();
+  await page.waitForFunction(() => document.querySelector('#feedback input[name="subject"]')?.classList.contains("is-atelier-flow-visible"));
   const fieldGlow = await focusedField.evaluate((element) => {
     const style = getComputedStyle(element);
-    return {animationName: style.animationName, backgroundImage: style.backgroundImage};
+    return {animationName: style.animationName, animationPlayState: style.animationPlayState, backgroundImage: style.backgroundImage};
   });
   assert.equal(fieldGlow.animationName, "atelier-flow-orbit", "输入框聚焦后应启动流光边框");
+  assert.equal(fieldGlow.animationPlayState, "running", "前台且位于视口内的输入框聚焦后必须运行");
   assert.match(fieldGlow.backgroundImage, /conic-gradient/, "输入框聚焦边框应使用锥形渐变");
 
   await page.emulateMedia({reducedMotion: "reduce"});
