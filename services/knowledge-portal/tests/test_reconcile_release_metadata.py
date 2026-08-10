@@ -24,6 +24,25 @@ def test_reconcile_repairs_published_stage_paths_without_moving_files(tmp_path: 
     staging.mkdir(parents=True)
     with sqlite3.connect(database) as connection:
         MODULE._ensure_stage_table(connection)
+        connection.executescript(
+            """
+            CREATE TABLE skill_releases(
+                id INTEGER PRIMARY KEY,version TEXT,file_name TEXT,file_path TEXT,
+                sha256 TEXT,release_notes TEXT,published_at TEXT
+            );
+            """
+        )
+        connection.execute(
+            "INSERT INTO skill_releases VALUES(1,'1.2','legacy.zip',?,?,?,?)",
+            (str(staging / generic.name), MODULE.sha256(generic), "notes", "2026-01-01"),
+        )
+        connection.executemany(
+            "INSERT INTO skill_release_artifacts VALUES(1,?,?,?,?)",
+            [
+                ("generic", "legacy.zip", str(staging / generic.name), MODULE.sha256(generic)),
+                ("workbuddy", "legacy-workbuddy.zip", str(staging / workbuddy.name), MODULE.sha256(workbuddy)),
+            ],
+        )
         connection.execute(
             """
             INSERT INTO skill_release_stages(
@@ -47,7 +66,7 @@ def test_reconcile_repairs_published_stage_paths_without_moving_files(tmp_path: 
         connection.commit()
 
     report = MODULE.audit(database, release_directory)
-    assert report["repairable"] == 4
+    assert report["repairable"] == 7
     assert report["unrepairable"] == 0
     backup = MODULE.apply_repairs(database, report)
     assert backup and Path(backup).is_file()
@@ -59,6 +78,15 @@ def test_reconcile_repairs_published_stage_paths_without_moving_files(tmp_path: 
         assert connection.execute(
             "SELECT target,file_path FROM skill_release_stage_artifacts ORDER BY target"
         ).fetchall() == [("generic", str(generic)), ("workbuddy", str(workbuddy))]
+        assert connection.execute(
+            "SELECT file_name,file_path FROM skill_releases WHERE id=1"
+        ).fetchone() == (generic.name, str(generic))
+        assert connection.execute(
+            "SELECT target,file_name,file_path FROM skill_release_artifacts ORDER BY target"
+        ).fetchall() == [
+            ("generic", generic.name, str(generic)),
+            ("workbuddy", workbuddy.name, str(workbuddy)),
+        ]
 
 
 def test_reconcile_can_scope_audit_to_current_release(tmp_path: Path):
@@ -69,6 +97,14 @@ def test_reconcile_can_scope_audit_to_current_release(tmp_path: Path):
     current.write_bytes(b"current")
     with sqlite3.connect(database) as connection:
         MODULE._ensure_stage_table(connection)
+        connection.executescript(
+            """
+            CREATE TABLE skill_releases(
+                id INTEGER PRIMARY KEY,version TEXT,file_name TEXT,file_path TEXT,
+                sha256 TEXT,release_notes TEXT,published_at TEXT
+            );
+            """
+        )
         connection.executemany(
             "INSERT INTO skill_release_stage_artifacts(version,target,file_path,sha256) VALUES (?,?,?,?)",
             [

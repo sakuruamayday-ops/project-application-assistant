@@ -332,6 +332,7 @@ def test_transaction_manifest_binds_all_release_participants(
     )
 
     assert manifest == repeated
+    assert manifest["schema"] == "gongchuang-release-transaction/v1"
     assert set(manifest["participants"]) == {
         "github",
         "portal",
@@ -350,6 +351,14 @@ def test_transaction_manifest_binds_all_release_participants(
         manifest["lease_policy"]["non_holder_mode"]
         == "read-only-monitor"
     )
+
+
+def test_transaction_asset_names_use_public_brand(tmp_path: Path) -> None:
+    assert "jiaotang" not in "gongchuang-release-transaction-V1.6.3.json"
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "gongchuang-release-transaction-{tag}.json" in source
+    assert "gongchuang-release-transaction-{tag}.sig.json" in source
+    assert "gongchuang-release-transaction-{tag}.pub" in source
 
 
 def test_local_release_sync_is_fail_closed_and_strips_transient_tokens(
