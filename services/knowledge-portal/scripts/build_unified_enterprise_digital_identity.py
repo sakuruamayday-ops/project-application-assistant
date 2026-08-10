@@ -26,6 +26,10 @@ DEFAULT_BUSINESS_PROFILE_CANDIDATES = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省/企业画像补采归并/"
     "企业统一数字身份证_画像补采归并_903家_20260810.jsonl"
 )
+DEFAULT_THEME_ENRICHMENT_CANDIDATES = Path(
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省/主题补全/"
+    "企业主题补全队列_20260811.jsonl"
+)
 DEFAULT_OUTPUT = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/统一企业数字身份证.jsonl"
 )
@@ -52,6 +56,11 @@ def parse_args() -> argparse.Namespace:
         "--business-profile-candidates",
         type=Path,
         default=DEFAULT_BUSINESS_PROFILE_CANDIDATES,
+    )
+    parser.add_argument(
+        "--theme-enrichment-candidates",
+        type=Path,
+        default=DEFAULT_THEME_ENRICHMENT_CANDIDATES,
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
@@ -413,10 +422,47 @@ def overlay_business_profile_candidates(
     stats["promoted_business_profile_candidates"] += len(seen_codes)
 
 
+def overlay_theme_enrichment_candidates(
+    profiles: dict[str, dict[str, Any]],
+    path: Path,
+    stats: defaultdict[str, int],
+) -> None:
+    """Apply only deterministic exact-name topics from the licensed-source queue."""
+
+    if not path.is_file():
+        stats["theme_enrichment_candidate_source_missing"] += 1
+        return
+    for row in read_jsonl(path):
+        if str(row.get("source") or "").strip() != PUBLIC_SOURCE:
+            raise RuntimeError("企业主题补全候选未统一投影为共创研究院知识库")
+        if str(row.get("match_status") or "") != "exact_enterprise_name":
+            continue
+        key = str(row.get("identity_key") or "")
+        target = profiles.get(key)
+        if target is None:
+            stats["theme_enrichment_target_missing"] += 1
+            continue
+        if normalize_name(target.get("current_name")) != normalize_name(row.get("current_name")):
+            raise RuntimeError(f"企业主题补全候选主体名称冲突：{key}")
+        products = as_list(row.get("candidate_main_product_tags"))
+        industries = as_list(row.get("candidate_industry_track_tags"))
+        if not products and not industries:
+            stats["theme_enrichment_exact_without_topics"] += 1
+            continue
+        target["main_product_tags"] = merge_unique(
+            target["main_product_tags"], products
+        )
+        target["industry_track_tags"] = merge_unique(
+            target["industry_track_tags"], industries
+        )
+        stats["theme_enrichment_profiles"] += 1
+
+
 def build_profiles(
     connection: sqlite3.Connection,
     knowledge_identities: Path,
     business_profile_candidates: Path | None,
+    theme_enrichment_candidates: Path | None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
     profiles: dict[str, dict[str, Any]] = {}
     stats: defaultdict[str, int] = defaultdict(int)
@@ -507,6 +553,13 @@ def build_profiles(
         overlay_business_profile_candidates(
             profiles,
             business_profile_candidates,
+            stats,
+        )
+
+    if theme_enrichment_candidates is not None:
+        overlay_theme_enrichment_candidates(
+            profiles,
+            theme_enrichment_candidates,
             stats,
         )
 
@@ -744,6 +797,15 @@ def write_database(
             lambda profile: bool(profile["three_first_product_enriched"]),
             "三首认定产品保持原名单锚点；企业画像只作附加信息，不覆盖产品名称与认定状态。",
         ),
+        (
+            "topic_enrichment",
+            "企业产品与行业主题补全",
+            lambda profile: True,
+            lambda profile: bool(
+                profile["main_product_tags"] or profile["industry_track_tags"]
+            ),
+            "产品与行业主题均为空的主体进入补全队列；来源等级与是否需要商业信息复核分别记录。",
+        ),
     )
     coverage: dict[str, dict[str, int]] = {}
     coverage_rows: list[tuple[str, str, int, int, int, str, str]] = []
@@ -771,12 +833,15 @@ def write_database(
         for profile in scoped_profiles:
             if ready(profile):
                 continue
-            reason = (
-                "缺少企业经营与产品画像"
-                if profile["business_profile_evidence_status"]
-                in {"not_collected", "knowledge_identity_only"}
-                else "企业画像缺少可用于同口径比较的主营产品或行业主题词"
-            )
+            if scope_key == "topic_enrichment":
+                reason = "产品与行业主题均为空"
+            else:
+                reason = (
+                    "缺少企业经营与产品画像"
+                    if profile["business_profile_evidence_status"]
+                    in {"not_collected", "knowledge_identity_only"}
+                    else "企业画像缺少可用于同口径比较的主营产品或行业主题词"
+                )
             queue_rows.append(
                 (
                     profile["identity_key"],
@@ -812,6 +877,7 @@ def build(
     knowledge_identities: Path,
     output: Path | None,
     business_profile_candidates: Path | None = None,
+    theme_enrichment_candidates: Path | None = None,
 ) -> dict[str, Any]:
     connection = sqlite3.connect(database)
     connection.row_factory = sqlite3.Row
@@ -820,6 +886,7 @@ def build(
             connection,
             knowledge_identities,
             business_profile_candidates,
+            theme_enrichment_candidates,
         )
         profile_count, term_count, coverage = write_database(connection, profiles)
     finally:
@@ -852,6 +919,7 @@ def main() -> None:
                 args.knowledge_identities,
                 args.output,
                 args.business_profile_candidates,
+                args.theme_enrichment_candidates,
             ),
             ensure_ascii=False,
         )

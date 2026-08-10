@@ -212,6 +212,31 @@ def write_business_profile_candidates(path: Path) -> None:
     )
 
 
+def write_theme_enrichment_candidates(path: Path) -> None:
+    rows = [
+        {
+            "identity_key": "913301003333333333",
+            "current_name": "丙装备有限公司",
+            "match_status": "exact_enterprise_name",
+            "candidate_main_product_tags": ["精密加工中心"],
+            "candidate_industry_track_tags": ["金属切削机床制造"],
+            "source": "共创研究院知识库",
+        },
+        {
+            "identity_key": "name:错误产品名",
+            "current_name": "错误产品名",
+            "match_status": "product_name_candidate",
+            "candidate_main_product_tags": ["不得自动合并"],
+            "candidate_industry_track_tags": ["制造业"],
+            "source": "共创研究院知识库",
+        },
+    ]
+    path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+
 def test_builder_promotes_audited_delta_and_preserves_partial_queue(tmp_path: Path):
     database = tmp_path / "knowledge.sqlite3"
     snapshot = tmp_path / "identities.jsonl"
@@ -333,6 +358,35 @@ def test_builder_preserves_evidence_layers_and_enriches_three_first(tmp_path: Pa
         json.loads(line)["source"] == "共创研究院知识库"
         for line in projection.splitlines()
     )
+
+
+def test_theme_enrichment_applies_exact_names_and_builds_empty_topic_queue(
+    tmp_path: Path,
+):
+    database = tmp_path / "knowledge.sqlite3"
+    snapshot = tmp_path / "identities.jsonl"
+    themes = tmp_path / "theme-candidates.jsonl"
+    make_database(database)
+    write_snapshot(snapshot)
+    write_theme_enrichment_candidates(themes)
+
+    report = BUILDER.build(database, snapshot, None, None, themes)
+
+    assert report["theme_enrichment_profiles"] == 1
+    assert report["coverage"]["topic_enrichment"] == {
+        "total_subjects": 3,
+        "ready_subjects": 3,
+        "missing_profile_subjects": 0,
+    }
+    connection = sqlite3.connect(database)
+    enriched = connection.execute(
+        "SELECT main_product_tags_json,industry_track_tags_json "
+        "FROM enterprise_unified_digital_identities WHERE identity_key=?",
+        ("913301003333333333",),
+    ).fetchone()
+    connection.close()
+    assert "精密加工中心" in json.loads(enriched[0])
+    assert "金属切削机床制造" in json.loads(enriched[1])
 
 
 def test_identity_lookup_returns_profile_and_cross_program_peers(tmp_path: Path):
