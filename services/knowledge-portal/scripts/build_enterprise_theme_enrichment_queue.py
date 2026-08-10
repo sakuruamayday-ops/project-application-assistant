@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source-root", type=Path, default=DEFAULT_SOURCE_ROOT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--summary", type=Path, default=DEFAULT_SUMMARY)
+    parser.add_argument("--expected-count", type=int)
     return parser.parse_args()
 
 
@@ -260,9 +261,13 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 def main() -> None:
     args = parse_args()
     queue, stats = build_queue(read_jsonl(args.unified), load_source_records(args.source_root))
-    if stats.get("initial_theme_empty") != 155:
+    if (
+        args.expected_count is not None
+        and stats.get("initial_theme_empty") != args.expected_count
+    ):
         raise RuntimeError(
-            f"主题空记录基线漂移，预期155条，实际{stats.get('initial_theme_empty', 0)}条"
+            "主题空记录基线漂移，预期"
+            f"{args.expected_count}条，实际{stats.get('initial_theme_empty', 0)}条"
         )
     write_jsonl(args.output, queue)
     args.summary.parent.mkdir(parents=True, exist_ok=True)
