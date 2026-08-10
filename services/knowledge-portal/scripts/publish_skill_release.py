@@ -952,6 +952,7 @@ def _ensure_stage_table(connection: sqlite3.Connection) -> None:
             github_url TEXT NOT NULL,
             database_backup TEXT NOT NULL,
             rebound_enrollments_json TEXT NOT NULL DEFAULT '{}',
+            synchronized_stage_metadata_json TEXT NOT NULL DEFAULT '{}',
             reissued_at TEXT NOT NULL
         )
         """
@@ -967,6 +968,13 @@ def _ensure_stage_table(connection: sqlite3.Connection) -> None:
             """
             ALTER TABLE skill_release_reissues
             ADD COLUMN rebound_enrollments_json TEXT NOT NULL DEFAULT '{}'
+            """
+        )
+    if "synchronized_stage_metadata_json" not in reissue_columns:
+        connection.execute(
+            """
+            ALTER TABLE skill_release_reissues
+            ADD COLUMN synchronized_stage_metadata_json TEXT NOT NULL DEFAULT '{}'
             """
         )
 
@@ -1050,6 +1058,66 @@ def _rebind_pending_enrollment_artifacts(
         )
         rebound[target] = max(int(cursor.rowcount), 0)
     return rebound
+
+
+def _sync_reissued_stage_metadata(
+    connection: sqlite3.Connection,
+    *,
+    version: str,
+    replacements: dict[str, dict[str, str]],
+) -> dict[str, int]:
+    """让已提升阶段记录与同版本重签后的正式文件保持一致。"""
+    updated = {
+        "stage_artifacts": 0,
+        "artifact_stages": 0,
+        "release_stages": 0,
+    }
+    for target, replacement in sorted(replacements.items()):
+        file_path = str(replacement["file_path"])
+        digest = str(replacement["sha256"])
+        cursor = connection.execute(
+            """
+            UPDATE skill_release_stage_artifacts
+            SET file_path=?,sha256=?
+            WHERE version=? AND target=?
+              AND (file_path<>? OR sha256<>?)
+            """,
+            (file_path, digest, version, target, file_path, digest),
+        )
+        updated["stage_artifacts"] += max(int(cursor.rowcount), 0)
+        cursor = connection.execute(
+            """
+            UPDATE skill_release_artifact_stages
+            SET file_path=?,sha256=?
+            WHERE version=? AND target=?
+              AND (file_path<>? OR sha256<>?)
+            """,
+            (file_path, digest, version, target, file_path, digest),
+        )
+        updated["artifact_stages"] += max(int(cursor.rowcount), 0)
+        if target == "generic":
+            cursor = connection.execute(
+                """
+                UPDATE skill_release_stages
+                SET generic_path=?,generic_sha256=?
+                WHERE version=?
+                  AND (generic_path<>? OR generic_sha256<>?)
+                """,
+                (file_path, digest, version, file_path, digest),
+            )
+            updated["release_stages"] += max(int(cursor.rowcount), 0)
+        elif target == "workbuddy":
+            cursor = connection.execute(
+                """
+                UPDATE skill_release_stages
+                SET workbuddy_path=?,workbuddy_sha256=?
+                WHERE version=?
+                  AND (workbuddy_path<>? OR workbuddy_sha256<>?)
+                """,
+                (file_path, digest, version, file_path, digest),
+            )
+            updated["release_stages"] += max(int(cursor.rowcount), 0)
+    return updated
 
 
 def reissue_selective(
@@ -1147,7 +1215,8 @@ def reissue_selective(
                 recorded = connection.execute(
                     """
                     SELECT database_backup,reissued_at,
-                           previous_artifacts_json,rebound_enrollments_json
+                           previous_artifacts_json,rebound_enrollments_json,
+                           synchronized_stage_metadata_json
                     FROM skill_release_reissues
                     WHERE transaction_sha256=?
                     """,
@@ -1170,6 +1239,11 @@ def reissue_selective(
                     replacements=existing,
                     effective_at=datetime.now(timezone.utc).isoformat(),
                 )
+                synchronized_now = _sync_reissued_stage_metadata(
+                    connection,
+                    version=version,
+                    replacements=existing,
+                )
                 rebound_total = json.loads(
                     str(recorded["rebound_enrollments_json"] or "{}")
                 )
@@ -1178,11 +1252,13 @@ def reissue_selective(
                 connection.execute(
                     """
                     UPDATE skill_release_reissues
-                    SET rebound_enrollments_json=?
+                    SET rebound_enrollments_json=?,
+                        synchronized_stage_metadata_json=?
                     WHERE transaction_sha256=?
                     """,
                     (
                         json.dumps(rebound_total, sort_keys=True),
+                        json.dumps(synchronized_now, sort_keys=True),
                         transaction_sha256,
                     ),
                 )
@@ -1194,6 +1270,7 @@ def reissue_selective(
                     "database_backup": str(recorded["database_backup"]),
                     "reissued_at": str(recorded["reissued_at"]),
                     "rebound_enrollments": rebound_now,
+                    "synchronized_stage_metadata": synchronized_now,
                 }
             normalized_expected = {
                 str(target): str(digest)
@@ -1284,14 +1361,20 @@ def reissue_selective(
                 replacements=replacement_enrollment_artifacts,
                 effective_at=reissued_at,
             )
+            synchronized_stage_metadata = _sync_reissued_stage_metadata(
+                connection,
+                version=version,
+                replacements=replacement_enrollment_artifacts,
+            )
             connection.execute(
                 """
                 INSERT INTO skill_release_reissues(
                     release_id,version,transaction_sha256,
                     previous_artifacts_json,replacement_artifacts_json,
                     archived_paths_json,reason,git_commit,github_url,
-                    database_backup,rebound_enrollments_json,reissued_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                    database_backup,rebound_enrollments_json,
+                    synchronized_stage_metadata_json,reissued_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
                     int(release["id"]),
@@ -1313,6 +1396,7 @@ def reissue_selective(
                     github_url.strip(),
                     str(backup_path),
                     json.dumps(rebound_enrollments, sort_keys=True),
+                    json.dumps(synchronized_stage_metadata, sort_keys=True),
                     reissued_at,
                 ),
             )
@@ -1339,6 +1423,7 @@ def reissue_selective(
             target: str(path) for target, path in moved_old.items()
         },
         "rebound_enrollments": rebound_enrollments,
+        "synchronized_stage_metadata": synchronized_stage_metadata,
         "reissued_at": reissued_at,
     }
 
