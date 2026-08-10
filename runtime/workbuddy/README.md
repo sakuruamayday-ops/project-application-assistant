@@ -16,10 +16,10 @@ WorkBuddy project. The state is labeled `skill_activation_recovery`; it is not
 reported as an observed `SessionStart` or `UserPromptSubmit` event.
 
 Lifecycle Hooks and inline Skill activation deliberately share
-`%USERPROFILE%\.workbuddy\state\jiaotang-behavior`. WorkBuddy injects
+`%USERPROFILE%\.workbuddy\state\gongchuang-behavior`. WorkBuddy injects
 `CODEBUDDY_PLUGIN_DATA` only into lifecycle command Hooks, so treating that
 variable as the behavior state root would split one turn across two stores.
-`JIAOTANG_BEHAVIOR_STATE_ROOT` is the only supported explicit override.
+`GONGCHUANG_BEHAVIOR_STATE_ROOT` is the only supported explicit override.
 
 Only `Stop` performs delivery auditing. Registering the same audit under
 `FinalStop` causes concurrent duplicate executions in WorkBuddy 5.3.11.

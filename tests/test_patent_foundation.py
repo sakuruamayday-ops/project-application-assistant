@@ -12,7 +12,7 @@ class PatentRouterCompatibilityTests(unittest.TestCase):
         self.repository = Path(__file__).resolve().parents[1]
 
     def test_normalize_patent_records(self):
-        script = self.repository / "skills/jiaotang-patent-router/scripts/normalize_patent_records.py"
+        script = self.repository / "skills/patent-router/scripts/normalize_patent_records.py"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "input.jsonl"
@@ -28,7 +28,7 @@ class PatentRouterCompatibilityTests(unittest.TestCase):
             self.assertEqual(record["legal_status"], "无法确认")
 
     def test_build_search_plan(self):
-        script = self.repository / "skills/jiaotang-patent-router/scripts/build_search_plan.py"
+        script = self.repository / "skills/patent-router/scripts/build_search_plan.py"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "input.json"
@@ -40,7 +40,7 @@ class PatentRouterCompatibilityTests(unittest.TestCase):
             self.assertEqual(plan["features"][0]["feature"], "多层共挤")
 
     def test_patent_connector_imports_and_searches(self):
-        script = self.repository / "skills/jiaotang-patent-router/scripts/patent_index.py"
+        script = self.repository / "skills/patent-router/scripts/patent_index.py"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "patents.jsonl"

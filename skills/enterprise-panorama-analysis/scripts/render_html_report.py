@@ -11,7 +11,7 @@ import subprocess
 
 HERE = Path(__file__).resolve().parent
 SKILLS_ROOT = Path(__file__).resolve().parents[2]
-BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "jiaotang-branding" / "scripts"
+BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "gongchuang-branding" / "scripts"
 
 
 def npm_root() -> str:

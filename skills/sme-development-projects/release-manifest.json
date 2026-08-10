@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-development-projects",
-  "release_tag": "20260724-batch8-core-gates-rc2",
+  "release_tag": "V1.6.3",
   "required_paths": [
     "SKILL.md",
     "references/current-policy-baseline-2026.md",
@@ -23,16 +23,18 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "32c9183769cc1fc6928d9cd600359b6c08e2793a82036d44a5efeb61a76dd78c",
+    "SKILL.md": "8f88b345daf987c30143d3b22f1dcca83c6ecbad1e50611577b15e75f770a26a",
+    "assets/专精特新小巨人前期培育方向卡模板.docx": "3e6dadd6f7955799eaf3f1e6a1188ef7b5e85e46c933ee6e1d6f36f544375bff",
     "references/application-version-gate.md": "43d651b1c2c61f28746b74266d2f7280507e471a35436be2b9d48f4656408d9a",
-    "references/current-policy-baseline-2026.md": "5cfbb754f327389e1b696c390b919d388bbf7329a1e43f23233861722b67ff91",
+    "references/current-policy-baseline-2026.md": "e9b865b21abef878be74e69ea90d57f71a621e8aa60ff65b1525ad0badb56cce",
+    "references/direction-card-first-template.md": "fb285b857bdb8fa1371c2a7fbc01d8645a2b10ce3d99aa26077fa404a503c665",
     "references/enterprise-introduction-method.md": "8f49aa5ad5066e183824d70ef5ebfb725678f1995a25d604d11760331073e512",
     "references/evaluation-workflow.md": "9c3a6a70ad4a699219ea501f10a27fdb40a126130e8c4030de262b159bd2ccde",
-    "references/four-judgment-decision-table.md": "8e77bf633f07c1b95f2afaab5e050580907599b8d4594e6887cdf9270e96baec",
-    "references/portable-runtime-protocol.md": "69474087d3c12c950b704f378a05ad41a361468eb37cb335b9bfd2691336fb72",
-    "scripts/portable_skill_runtime.py": "920a5434860a03453a265c26ba4b57635bd9dc3770031e91724fb1adde18edc7",
-    "scripts/validate_sme_assessment.py": "32614a1ef0277929fb7c62f7e8d97b4853cac253a083783bac60a2d8d9c32769",
-    "scripts/verify_skill_installation.py": "a1d7f859a1753eb720be6a5543cd1d0b77588fea7250d8b17790c38cb199fc39"
+    "references/four-judgment-decision-table.md": "74d219f75f96fea4fd4a6ddc6b580828060b2cc585bb50ca218989ce7033fb46",
+    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/validate_sme_assessment.py": "d6f89a306eab2024c668a46d2e6f22546c637e348dbbe9d6e9886585597be516",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

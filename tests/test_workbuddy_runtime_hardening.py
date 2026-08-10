@@ -1118,7 +1118,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         missing = BRIDGE.audit_delivery_completion(
             prompt="请撰写专利并形成完整申请文件。",
             answer="申请文件已经完成。",
-            active_skills=[{"skill": "jiaotang-patent-router"}],
+            active_skills=[{"skill": "patent-router"}],
             contract=contract,
         )
         joined = "；".join(missing)

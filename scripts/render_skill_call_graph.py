@@ -101,7 +101,7 @@ def main() -> None:
         "",
         "```mermaid",
         "flowchart LR",
-        "  U[公司级专利任务] --> ROUTER[jiaotang-patent-router]",
+        "  U[公司级专利任务] --> ROUTER[patent-router]",
         "  ROUTER --> P1[P1 检索与法律分析]",
         "  ROUTER --> P2[P2 挖掘与交底]",
         "  ROUTER --> P3[P3 双中心预审推荐]",

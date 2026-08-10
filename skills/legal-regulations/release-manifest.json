@@ -1,0 +1,45 @@
+{
+  "schema_version": 2,
+  "skill_name": "legal-regulations",
+  "release_tag": "V1.6.3",
+  "required_paths": [
+    "SKILL.md",
+    "references/company-law-compliance-2026.md",
+    "references/industry-routing.md",
+    "references/local-retrieval.md",
+    "references/portable-runtime-protocol.md",
+    "references/source-and-validity.md",
+    "scripts/portable_skill_runtime.py",
+    "scripts/search_legal_base.py",
+    "scripts/verify_skill_installation.py"
+  ],
+  "mutable_paths": [
+    "local-overrides"
+  ],
+  "portable_runtime": {
+    "profile_schema_version": 1,
+    "profile_storage": "external-user-config",
+    "prepare_command": "python3 scripts/portable_skill_runtime.py prepare"
+  },
+  "runtime_requirements": {
+    "python_modules": [],
+    "executables": []
+  },
+  "files": {
+    "SKILL.md": "e93f6c128e63c57133945f3ffb5ccc7f71ef8573703ad0783a76e82faf728e9d",
+    "references/company-law-compliance-2026.md": "7a93fec392790216b444a6e2d583b518eef346c54c58c5b7636275917afd0342",
+    "references/industry-routing.md": "745bb0f7ef8d3210fc3463192eddbef5c84167d7bd780ccdbe2f00aed95f2a72",
+    "references/local-retrieval.md": "5a961cb650076302945812064205459b85d64117f54381599f24990c5855ed6b",
+    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/source-and-validity.md": "df19b08f22b8f38de7399f338547f124d71303344b5219bbdc45906589de673b",
+    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/search_legal_base.py": "03f05298322c31b60f9d034336c10877eeb63a7492f1420cae824bec55e34b92",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
+  },
+  "integrity_excludes": [
+    "publisher-ed25519.pub",
+    "release-manifest.json",
+    "release-manifest.json.sig",
+    "release-signature.json"
+  ]
+}

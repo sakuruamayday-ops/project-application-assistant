@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "manufacturing-tax-risk-analysis",
-  "release_tag": "20260724-batch5",
+  "release_tag": "V1.6.3",
   "required_paths": [
     "SKILL.md",
     "assets/gold-advisor.css",
@@ -29,24 +29,24 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "c3b9acfd06149f538d95364b735c25aa453a7a9e79f005fa27d12b5990e3eb0e",
+    "SKILL.md": "2e65def8140437dd7df291df31d0fa40f9e312746d3d4e73a90000643a23be06",
     "assets/deep-gold-advisor-template.html": "f2c33d887f169add8bff8f23ec3f02fa5de344e30da07dfed0d4d934950b5be3",
     "assets/gold-advisor.css": "b7fe9ff1b85474053f28fd2b4d4858666b6a7f64e332e906b42b1a2961d31be3",
-    "package.json": "c0bb326d7d0dea105d841a1497ba19fd4a70ff4c22ae42c7862eb7698cb66106",
+    "package.json": "48954c26137d279550159b04a43ce5461143690d097f18fb6578cb4cbe53ac14",
     "references/data-schema.md": "5a240a31ab0516316f64893e66955c9223f21c197fee098143cfc222b9e1d718",
     "references/policy-baseline.md": "d720040d94048479f7e4d9b9b75b1598ca5231cfe8f03e0beb1575809602104f",
-    "references/portable-runtime-protocol.md": "69474087d3c12c950b704f378a05ad41a361468eb37cb335b9bfd2691336fb72",
+    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/report-data.example.json": "6cfdda259fb1e55f4c16988f73a36b21cb745b065a70e5ca249eeb4d513f589d",
     "references/report-input-schema.md": "7d33796c560b3ae63f2f8531645cbbe0341849879a49163cec4962ecad209a4e",
     "references/report-spec.md": "dfce58f8ef1ef29732fbbbbb177c495826d672847766588d46d3ca1ecf0e0477",
     "references/risk-gates.md": "c0b3f606cfc5eb38d98320dfbb7c73df4f0bbad6de6561bcb4b428c1669d5123",
-    "scripts/brand_gold_pdf.py": "b66b504eead5c76a4b6c4d34f940013fbe8cf1e9bc268f2e26cc36ac5db3ddee",
+    "scripts/brand_gold_pdf.py": "8aafe383b7def791a6e690c055aac8e5a9e0bc5519cff19f55de78a6f5d5fff8",
     "scripts/calculate_metrics.py": "b82c2bcbe2fd3aa7cdfa55b12ea48204c494137876f7408408f8891ce965e608",
     "scripts/generate_report_html.py": "d79a0d9eaa3ea730a705ed60dc9d4f4e9179d18eb2b3e3278d895389d6729fbc",
-    "scripts/portable_skill_runtime.py": "920a5434860a03453a265c26ba4b57635bd9dc3770031e91724fb1adde18edc7",
+    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/render_pdf_stdout.js": "ba3654747b55527baa0c9838d67d492894bc4821cbc9081df0b633af997dbfe9",
-    "scripts/verify_e2e.py": "669eb7bcd289bedd88e3221cc572d717566f66a29479c792615aa9b80d562d73",
-    "scripts/verify_skill_installation.py": "a1d7f859a1753eb720be6a5543cd1d0b77588fea7250d8b17790c38cb199fc39"
+    "scripts/verify_e2e.py": "c418afa829aa9f6d4f7d79ab89624304a7c2a4e84f8964fad97576c08af85d7a",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

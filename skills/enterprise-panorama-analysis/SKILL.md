@@ -7,21 +7,13 @@ description: 企业合作前公开信息全景调研与双版本 PDF 或网页�
 
 
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
-## 跨平台首次运行与个人习惯
-
-支持CodeBuddy/WorkBuddy内联命令的宿主会在技能触发时自动执行下面的确定性门禁，并把JSON结果注入当前上下文：
+## 便携运行门禁
 
 !`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
 
-作为WorkBuddy插件加载时，还会把本轮实际触发的技能与当前会话和轮次绑定：
-
 !`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "enterprise-panorama-analysis" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
 
-每次触发本技能时，第一步必须定位当前`SKILL.md`所在的技能目录，并以该目录为工作目录运行`python3 scripts/portable_skill_runtime.py prepare`。不得因为当前任务看似简单而跳过。将返回的`active_preferences`作为用户个人习惯应用于当前任务；结果为`fail`时停止执行，不得声称安装、自检或升级成功。`capability_check`为`limited`时，只使用宿主已具备的能力，并明确未通过的依赖项，不得声称依赖完整。
-
-用户以“以后、默认、记住、每次、别再”等措辞明确表达长期习惯时：若上下文已出现“偏好桥接轮次已建立”的WorkBuddy钩子提示，不要手动调用`remember`，由停止钩子只向本轮实际触发且已经按会话、轮次绑定的技能写入；其他宿主则在最终答复前调用`python3 scripts/portable_skill_runtime.py remember --instruction '用户原意' --scope default --source agent-confirmed`，再调用`context`确认。未取得`status: pass`和对应偏好记录时，严禁声称“已记住”或“以后会默认采用”。无法执行保存时，只能说明本次会话已理解、尚未形成跨会话偏好。“这次、本次、当前文件、临时”等要求只影响当前任务，禁止写入长期偏好。无需让用户了解或输入存储命令。发生歧义、偏好冲突或可能削弱强制质量门禁时才询问。
-
-个人配置保存在技能目录外并自动备份。不得用个人偏好覆盖真实性、安全、验签、安装自检或本技能的强制质量门禁。完整规则见[跨平台技能运行协议](references/portable-runtime-protocol.md)。
+每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 强制版本选择
@@ -59,7 +51,7 @@ description: 企业合作前公开信息全景调研与双版本 PDF 或网页�
 - 融资租赁、抵押或诉讼数量本身不能证明资金不足、资不抵债或回款困难。
 - 项目分为“公开信息已支持、具备培育可能、请企业提供资料后判断”；正式申报前重新核验当期政策。
 - 专利区分有效授权、审中、终止、驳回、转让取得和转出；历史成果不得冒充当前有效权利。
-- 企业级专利统计只用于画像。用户要求专利性、权利要求、FTO、规避设计、技术壁垒、挖掘交底或预审推荐时，统一调用包内 `jiaotang-patent-router`，不得从企查查摘要直接推导不侵权、稳定性或预审准入。
+- 企业级专利统计只用于画像。用户要求专利性、权利要求、FTO、规避设计、技术壁垒、挖掘交底或预审推荐时，统一调用包内 `patent-router`，不得从企查查摘要直接推导不侵权、稳定性或预审准入。
 - 报告结尾必须让非专业客户看懂：按优先级列问题、影响、解决动作和对应服务。
 - 战略维度至少回答产品、区域、主体、资产投资、技术绿色和五年发展布局。报告不再单设“经营与销售视角”、客户渠道表或核心字段验证摘要；产品、人员、质量和经营控制信息分别放入主营业务、风险和项目章节。只有用户提供客户、渠道、报价、账期或回款资料并明确要求专项分析时，才增加经营销售模块。
 - 同行必须读取并执行 [peer-selection-rules.md](references/peer-selection-rules.md)：先核验分析企业是否已经取得省级专精特新，再动态选择一家近身同行、两家短期可追对象和两家行业标杆。选择方法只用于内部筛选，报告正文不得写出选择数量、层级或方法；企业风控形成风险地图、传导路径、控制措施和90天整改清单。
@@ -105,8 +97,8 @@ python3 scripts/validate_report_pdf.py <PDF路径> --require-watermark
 
 - 用户提供财务报表或未分配利润数据：叠加包内 `financial-verification`；涉及制造企业税务风险时再叠加 `manufacturing-tax-risk-analysis`，计算必须展示来源和公式。
 - 用户要求正式项目资格测算：叠加包内 `project-matching` 与 `project-feasibility`。
-- 用户要求专利布局：叠加包内 `jiaotang-patent-router`。
-- 用户要求专利查新、权利要求、FTO、侵权、规避设计、挖掘交底或预审推荐：叠加包内 `jiaotang-patent-router`；用户只要求检查中国专利申请 Word 时改用 `checking-patdocx-cn-single-agent`。
+- 用户要求专利布局：叠加包内 `patent-router`。
+- 用户要求专利查新、权利要求、FTO、侵权、规避设计、挖掘交底或预审推荐：叠加包内 `patent-router`；用户只要求检查中国专利申请 Word 时改用 `checking-patdocx-cn-single-agent`。
 - 用户只要求快速初筛：调用包内 `enterprise-profile` 采集，但报告仍按本技能重组。
 - 用户要求网页式看板：使用宿主平台已有前端能力生成，但未经授权不得发布或托管；页面数据必须来自共同事实底稿，缺失项明确显示待核，不得生成示例事实。
 

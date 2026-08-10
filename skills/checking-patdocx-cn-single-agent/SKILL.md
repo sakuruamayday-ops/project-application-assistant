@@ -3,7 +3,7 @@ name: checking-patdocx-cn-single-agent
 description: 检查、核稿、批注或修订中国专利申请 Word 文件。用于逐项核对摘要、权利要求书、说明书、附图标记、引用关系、术语一致性、公开充分性和 OOXML 结构完整性，并生成可定位的审查意见与批注副本。只承担申请文件核稿，不执行查新、挖掘、预审中心推荐或公司级专利布局。
 ---
 
-# 焦糖专利申请文件核稿
+# 共创研究院专利申请文件核稿
 
 
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
@@ -16,7 +16,7 @@ description: 检查、核稿、批注或修订中国专利申请 Word 文件。�
 每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
-把核稿作为独立轨道运行。若用户同时要求企业级全面审查，由 `jiaotang-patent-router` 另建任务记录；两条轨道分别输出。
+把核稿作为独立轨道运行。若用户同时要求企业级全面审查，由 `patent-router` 另建任务记录；两条轨道分别输出。
 
 ## 任务头
 

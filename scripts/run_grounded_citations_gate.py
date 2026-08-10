@@ -319,7 +319,7 @@ def main() -> int:
         "excluded_from_scope": ["bash-permission-policy", "external-mcp", "qcc", "paddleocr"],
         "verification_scope": {
             "host_adapters": "deterministic grounded contract output",
-            "product_configuration": "V1.6.2 正式稳定版；Stop 强制消费当前 turn validator receipt；企业数字身份证与索引不在插件构建输入",
+            "product_configuration": "V1.6.3 正式版；Stop 强制消费当前 turn validator receipt；用户模板原样填充门禁生效；企业数字身份证与索引不在插件构建输入",
             "docx_pdf": "real OOXML/PDF round trip with Latin visual text; Chinese semantic contract covered by pytest",
         },
         "known_limits": [

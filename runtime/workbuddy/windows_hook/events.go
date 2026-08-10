@@ -396,7 +396,7 @@ func recordPromptContext(root string, opts options, payload map[string]any, prom
 		writeHook(map[string]any{"hook_runtime_ok": false, "error_code": "STATE_PERSISTENCE_FAILED", "delivery_check_ok": nil, "prompt_context_ok": false})
 		return 0
 	}
-	context := "焦糖行为约束已启用：命中正式业务 Skill 时，交付前执行必要章节与结论检查。"
+	context := "共创研究院行为约束已启用：命中正式业务 Skill 时，交付前执行必要章节与结论检查。"
 	if state.PreviousDeliveryBlocked {
 		context = "上轮正式交付仍被门禁阻断；继续任务必须补齐缺失的主业务Skill或交付要求。"
 	} else if state.StateOrigin == "session_start_recovery" {

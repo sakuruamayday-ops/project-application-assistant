@@ -17,7 +17,7 @@
 python3 scripts/portable_skill_runtime.py prepare
 ```
 
-对于支持Skill内联Shell命令的CodeBuddy/WorkBuddy，统一发布组件同时注入以下宿主适配门禁，使检查在技能内容交给模型前确定性执行：
+对于支持Skill内联Shell命令的通用宿主，统一发布组件可注入以下宿主适配门禁，使检查在技能内容交给模型前确定性执行：
 
 ```markdown
 !`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
@@ -25,7 +25,7 @@ python3 scripts/portable_skill_runtime.py prepare
 
 其他宿主继续由Agent按技能首步指令调用同一脚本。内联命令属于宿主适配方式，不改变跨平台运行时、外置个人配置和签名核心。
 
-统一发布器采用双产物模式：通用技能ZIP用于支持完整技能目录的宿主；WorkBuddy插件包额外包含插件描述、`SessionStart`、`UserPromptSubmit`、`Stop`钩子和偏好桥接器。两类产物独立签名，不能用通用ZIP的签名替代插件包验签。
+统一发布器采用双产物模式：通用技能ZIP用于支持完整技能目录的宿主；WorkBuddy插件包包含插件描述、Skills和`UserPromptSubmit`、`Stop`最小行为Hook。服务端发布产物保持签名和哈希门禁，WorkBuddy用户侧不再嵌入或运行全目录验签器。
 
 该命令幂等执行安装完整性检查、识别版本变化、初始化或迁移外置个人配置、备份旧配置，并返回当前有效偏好。若结果为`fail`，停止使用该安装副本。
 
@@ -58,11 +58,10 @@ python3 scripts/portable_skill_runtime.py remember \
 
 在WorkBuddy插件模式下：
 
-1. `UserPromptSubmit`读取宿主提供的真实`session_id`，为本轮生成`turn_id`，并在进入模型前校验插件发布清单、哈希和签名。
-2. 每个被Skill工具实际加载的技能通过内联命令登记`skill_name`，不得依据用户文字猜测技能归属。
-3. `Stop`只在提示属于长期偏好时，把原始要求写入本轮已登记技能；一次性要求不写入。
-4. 每条偏好来源保留`session_id`和`turn_id`。多个技能同轮触发时分别写入各自配置，形成`session_id + turn_id + skill_name`三重绑定。
-5. 已出现“偏好桥接轮次已建立”提示时，Agent不得再手动调用`remember`，避免宿主自由发挥改变归属或来源。
+1. `UserPromptSubmit`读取当前提示和会话标识，为本轮建立临时状态，不校验插件文件哈希或签名。
+2. 每个被Skill工具实际加载的技能登记`skill_name`，不得依据用户文字猜测技能归属。
+3. `Stop`只对本轮已登记Skill执行必要的交付检查，不保存长期偏好，不处理MCP或设备凭据。
+4. Hook内部异常必须返回继续执行，不能因插件变化、更新或卸载阻断普通提问。
 
 不要要求用户说出保存命令，也不要在每次保存前机械确认。只有长期性不明确、与既有偏好冲突或可能影响强制质量门禁时才询问。
 
@@ -74,18 +73,16 @@ python3 scripts/portable_skill_runtime.py remember \
 
 个人配置默认保存在技能安装目录之外：
 
-- macOS：`~/Library/Application Support/JiaotangSkills/<skill-name>/`
-- Windows：`%APPDATA%\JiaotangSkills\<skill-name>\`
-- Linux：`$XDG_CONFIG_HOME/jiaotang-skills/<skill-name>/`
+- macOS：`~/Library/Application Support/GongchuangResearchInstituteSkills/<skill-name>/`
+- Windows：`%APPDATA%\GongchuangResearchInstituteSkills\<skill-name>\`
+- Linux：`$XDG_CONFIG_HOME/gongchuang-research-institute-skills/<skill-name>/`
 
-可用环境变量`JIAOTANG_SKILL_DATA_DIR`统一改到企业托管目录。外置配置不进入官方ZIP，不使用发布私钥签名，并在每次变化前自动备份。
+可用环境变量`GONGCHUANG_SKILL_DATA_DIR`统一改到企业托管目录。外置配置不进入官方ZIP，不使用发布私钥签名，并在每次变化前自动备份。
 
-WorkBuddy桥接状态默认保存在同一平台配置根下的`_workbuddy/<plugin-name>/`。测试或企业托管可用`JIAOTANG_WORKBUDDY_PLUGIN_DATA`改到隔离目录。不得依赖WorkBuddy 5.3.3未稳定展开的`${CODEBUDDY_PLUGIN_DATA}`占位符。
-
-WorkBuddy整包只部署一份插件级共享运行时。会话启动时执行完整插件哈希与Ed25519验签；同一安装状态下，后续提示词钩子使用短时缓存和文件状态指纹，文件尺寸或修改时间变化后立即回到完整校验。文件哈希不一致、签名失败或发布者身份异常必须阻断；偏好缓存损坏、文件锁失败和可选运行能力缺失只允许警告降级，不得阻断业务对话，也不得声称相关偏好已经保存。
+WorkBuddy最小行为Hook的临时轮次状态优先写入宿主提供的插件数据目录；宿主未提供时可退回插件目录下的`.behavior-data`。该状态不含Token、长期偏好、设备身份或安装完整性结果。
 
 ## 平台边界
 
-本协议能保证运行时被调用后的完整性自检、内置清单验签和个人配置迁移。WorkBuddy插件在`UserPromptSubmit`阶段完成提示前验签，篡改时阻断本轮；技能触发后再执行单技能安装自检。其他宿主若只把`SKILL.md`作为模型提示，则调用仍取决于Agent遵循指令的能力。只有宿主平台提供“导入前安装钩子”或已安装可信引导器时，才能在平台读取新技能指令前完成验签和核心回滚。
+本协议能保证通用技能运行时被调用后的自检和个人配置迁移。WorkBuddy简化包只保证最小行为Hook的Skill登记与交付检查；安装包真实性由服务端受控发布流程、最终包哈希和发布签名保证，不把这一责任转移到用户每次提问。其他宿主若只把`SKILL.md`作为模型提示，则调用仍取决于Agent遵循指令的能力。
 
 未经过目标平台实测时，只能标注“结构兼容”；完成导入、脚本执行、资产访问、偏好保持和覆盖升级测试后，才可标注“已验证兼容”。

@@ -86,7 +86,7 @@ def test_macos_marketplace_state_root_matches_hook_data_directory(tmp_path: Path
     )
     (plugin_root / ".codebuddy-plugin").mkdir(parents=True)
     (plugin_root / ".codebuddy-plugin" / "plugin.json").write_text("{}", encoding="utf-8")
-    monkeypatch.delenv("JIAOTANG_BEHAVIOR_STATE_ROOT", raising=False)
+    monkeypatch.delenv("GONGCHUANG_BEHAVIOR_STATE_ROOT", raising=False)
     monkeypatch.delenv("CODEBUDDY_PLUGIN_DATA", raising=False)
     monkeypatch.setenv("CODEBUDDY_PLUGIN_ROOT", str(plugin_root))
 
@@ -103,13 +103,13 @@ def test_macos_marketplace_state_root_matches_hook_data_directory(tmp_path: Path
 def test_windows_state_root_ignores_transient_plugin_data(tmp_path: Path, monkeypatch):
     explicit_home = tmp_path / "profile"
     transient_plugin_data = tmp_path / "host-plugin-data"
-    monkeypatch.delenv("JIAOTANG_BEHAVIOR_STATE_ROOT", raising=False)
+    monkeypatch.delenv("GONGCHUANG_BEHAVIOR_STATE_ROOT", raising=False)
     monkeypatch.setenv("CODEBUDDY_PLUGIN_DATA", str(transient_plugin_data))
     monkeypatch.setattr(MODULE.os, "name", "nt")
     monkeypatch.setattr(MODULE.Path, "home", classmethod(lambda cls: explicit_home))
 
     assert MODULE._default_state_root() == (
-        explicit_home / ".workbuddy" / "state" / "jiaotang-behavior"
+        explicit_home / ".workbuddy" / "state" / "gongchuang-behavior"
     )
 
 

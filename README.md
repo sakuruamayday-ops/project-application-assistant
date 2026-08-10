@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.6.2"><img src="https://img.shields.io/badge/Release-V1.6.2-C9A760?style=for-the-badge" alt="Release V1.6.2"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.6.3"><img src="https://img.shields.io/badge/Release-V1.6.3-C9A760?style=for-the-badge" alt="Release V1.6.3"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.6.2.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
+  <a href="docs/releases/V1.6.3.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
 
@@ -56,7 +56,7 @@
 
 WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启动器、bootstrap、设备登记、钥匙串或DPAPI；用户侧不执行签名审查和插件目录哈希检查。手工配置页自动复用或生成当前登录用户的个人Token并填入完整远程HTTP MCP配置。
 
-V1.6.2 是当前对外发布的唯一最新版本。它修复 WorkBuddy 正式交付时当前 turn validator receipt 的消费与双端状态同步，并继续保留人才创业落地区域预评估、企业身份血缘和主题反查能力。企业数字身份证与知识索引仍作为独立的服务端数据门禁，不进入插件包。
+V1.6.3 是当前对外发布的唯一最新版本。它统一共创研究院公开品牌，新增 Word 用户模板原样填充门禁，并继续保留 WorkBuddy 正式交付回执、人才创业落地区域预评估、企业身份血缘和主题反查能力。企业数字身份证与知识索引仍作为独立的服务端数据门禁，不进入插件包。
 
 ### WorkBuddy 平台说明
 
@@ -91,7 +91,7 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.2 发布说明](docs/releases/V1.6.2.md) | 当前版本变更、兼容性和已知限制 |
+| [V1.6.3 发布说明](docs/releases/V1.6.3.md) | 当前版本变更、兼容性和已知限制 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -108,8 +108,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.6.2` | 网站、GitHub Release 和用户可见最新版 |
-| 组件版本 | `1.6.2` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.6.3` | 网站、GitHub Release 和用户可见最新版 |
+| 组件版本 | `1.6.3` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界

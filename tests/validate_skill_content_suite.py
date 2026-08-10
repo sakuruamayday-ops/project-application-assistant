@@ -17,7 +17,7 @@ SCRIPT_REQUIRED = {
     "green-development-projects",
     "investment-subsidy-projects",
     "ip-assessment",
-    "jiaotang-patent-router",
+    "patent-router",
     "project-memory",
     "regional-special-projects",
     "skill-authoring",
@@ -53,7 +53,7 @@ def main():
             errors.append(f"{skill}:案例类型不完整")
     manifest = json.loads((SKILLS / "suite-manifest.json").read_text(encoding="utf-8"))
     dependencies = manifest.get("dependencies", {})
-    for skill in ("application-writing", "industry-positioning", "intellectual-property-projects", "jiaotang-patent-router", "regional-special-projects"):
+    for skill in ("application-writing", "industry-positioning", "intellectual-property-projects", "patent-router", "regional-special-projects"):
         if skill not in dependencies:
             errors.append(f"suite-manifest:缺少依赖声明:{skill}")
     router = (SKILLS / "project-task-router" / "references" / "domain-routing-matrix.md")

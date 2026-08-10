@@ -9,7 +9,7 @@ import tempfile
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Combine the installed Graphify extraction spec with the Jiaotang overlay."
+        description="Combine the installed Graphify extraction spec with the Gongchuang Research Institute overlay."
     )
     parser.add_argument("--upstream", type=Path)
     parser.add_argument("--overlay", required=True, type=Path)

@@ -172,8 +172,8 @@ def comments_xml(reviews: list[dict[str, object]]) -> bytes:
             qname(W, "comment"),
             {
                 qname(W, "id"): str(index),
-                qname(W, "author"): "焦糖专利核稿",
-                qname(W, "initials"): "焦糖",
+                qname(W, "author"): "共创研究院专利核稿",
+                qname(W, "initials"): "共创研究院",
                 qname(W, "date"): now,
             },
         )
@@ -216,7 +216,7 @@ def ensure_content_type(root: ET.Element) -> None:
 
 
 def add_comments(source: Path, target: Path, reviews: list[dict[str, object]]) -> dict[str, object]:
-    with TemporaryDirectory(prefix="jiaotang-comment-") as directory:
+    with TemporaryDirectory(prefix="gongchuang-comment-") as directory:
         root_dir = Path(directory)
         with zipfile.ZipFile(source) as archive:
             archive.extractall(root_dir)

@@ -169,9 +169,9 @@ def prepare_ascii_assets(
 ) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
     targets = [
-        directory / f"jiaotang-skills-{tag}.zip",
-        directory / f"jiaotang-skills-{tag}-WorkBuddy.zip",
-        directory / f"jiaotang-skills-{tag}-release-gate.json",
+        directory / f"gongchuang-research-institute-skills-{tag}.zip",
+        directory / f"gongchuang-research-institute-skills-{tag}-WorkBuddy.zip",
+        directory / f"gongchuang-research-institute-skills-{tag}-release-gate.json",
     ]
     for source, target in zip((generic, workbuddy, gate_report), targets, strict=True):
         shutil.copy2(source, target)

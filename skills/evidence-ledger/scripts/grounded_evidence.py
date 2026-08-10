@@ -1268,10 +1268,10 @@ def validate_source_disclosure(
 
 
 def _default_state_root() -> Path:
-    explicit = os.environ.get("JIAOTANG_BEHAVIOR_STATE_ROOT", "").strip()
+    explicit = os.environ.get("GONGCHUANG_BEHAVIOR_STATE_ROOT", "").strip()
     if explicit:
         return Path(explicit).expanduser().resolve()
-    windows_root = Path.home() / ".workbuddy" / "state" / "jiaotang-behavior"
+    windows_root = Path.home() / ".workbuddy" / "state" / "gongchuang-behavior"
     if os.name == "nt":
         # Windows lifecycle hooks and inline Skill activation do not inherit
         # CODEBUDDY_PLUGIN_DATA consistently.  The native Hook deliberately

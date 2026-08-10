@@ -10,7 +10,7 @@ from xml.etree import ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ROUTER = ROOT / "skills" / "jiaotang-patent-router"
+ROUTER = ROOT / "skills" / "patent-router"
 CHECKER = ROOT / "skills" / "checking-patdocx-cn-single-agent"
 CASE_FIXTURE = ROOT / "tests" / "fixtures" / "patent-case-delivery"
 
@@ -28,11 +28,11 @@ def test_core_patent_skill_count_and_internal_components():
     public_patent_entries = {
         name
         for name in manifest["skills"]
-        if name in {"jiaotang-patent-router", "checking-patdocx-cn-single-agent"}
+        if name in {"patent-router", "checking-patdocx-cn-single-agent"}
         or name.startswith("patent-")
     }
     assert public_patent_entries == {
-        "jiaotang-patent-router",
+        "patent-router",
         "checking-patdocx-cn-single-agent",
     }
     for method in (

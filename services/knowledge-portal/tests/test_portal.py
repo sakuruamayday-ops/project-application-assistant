@@ -2124,7 +2124,7 @@ def test_assistant_skill_router_and_read_only_tool_loop(tmp_path, monkeypatch):
     assert "知识库资料" in answer
     assert "小巨人" in sources[0]["title"]
     assert "project-matching" in skills
-    assert set(module.route_assistant_skills("分析专利侵权和法律状态")) >= {"jiaotang-patent-router"}
+    assert set(module.route_assistant_skills("分析专利侵权和法律状态")) >= {"patent-router"}
 
     repeated_calls = 0
 

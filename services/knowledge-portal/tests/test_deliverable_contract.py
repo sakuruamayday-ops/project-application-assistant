@@ -356,7 +356,7 @@ def test_panorama_profile_refuses_to_guess_a_or_b():
 def test_patent_filing_ready_profile_requires_manifest_and_same_hash_artifacts():
     deliverable = {
         "task_type": "formal-application-report",
-        "skill_id": "jiaotang-patent-router",
+        "skill_id": "patent-router",
         "case_mode": "filing-ready",
         "sections": {},
         "four_question_review": _review(),
@@ -390,7 +390,7 @@ def test_patent_router_without_filing_mode_keeps_narrow_tasks_unprofiled():
         "只做一次现有技术检索",
         {
             "task_type": "general-response",
-            "skill_id": "jiaotang-patent-router",
+            "skill_id": "patent-router",
         },
     )
 

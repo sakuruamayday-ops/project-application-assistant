@@ -86,7 +86,7 @@ CATALOG = [
         "typo": "企业想报知产示饭项目，请看权力质量、管理制渡和转化运佣。",
         "negation": "不做侵权判断，也不预测专利授权，只分析知识产权项目申报能力。",
         "multi": "材料有专利、商标、管理认证和许可收入，本次目标是知识产权示范项目。",
-        "forbidden": ["jiaotang-patent-router"],
+        "forbidden": ["patent-router"],
         "policy": "知识产权示范企业",
     },
     {
@@ -104,10 +104,10 @@ CATALOG = [
         "typo": "判断现有专立哪些能当申报证据，标明法绿状态和产晶关联。",
         "negation": "不做侵权分析，也不能把审中专利当授权，只评估申报证据价值。",
         "multi": "企业同时有授权、审中和受让专利，请按法律状态和主导产品关联分类。",
-        "forbidden": ["jiaotang-patent-router"],
+        "forbidden": ["patent-router"],
     },
     {
-        "skill": "jiaotang-patent-router",
+        "skill": "patent-router",
         "base": "基于现有专利和检索结果规划未来三年的专利申请方向。",
         "typo": "基于现有专立和捡索结果，规划未来三年的申请方响。",
         "negation": "不要承诺新颖性，也不要直接撰写申请文件，只做专利布局规划。",

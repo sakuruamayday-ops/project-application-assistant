@@ -2,10 +2,17 @@
   "schema_version": 1,
   "product": "共创研究院企业全生命周期助手",
   "release": {
-    "tag": "V1.6.2",
-    "version": "1.6.2",
-    "summary": "V1.6.2 是正式稳定版：修复 WorkBuddy Stop 未消费当前 turn Grounded validator receipt 的问题，统一双端状态目录、有效业务域与 Session 隔离规则。企业数字身份证仍作为服务端外部数据单独发布，不进入插件包。",
+    "tag": "V1.6.3",
+    "version": "1.6.3",
+    "summary": "V1.6.3 正式版统一共创研究院公开品牌，增加 Word 用户模板原样填充门禁，并在独立索引发布中纳入 903 条企业画像补采。远程 MCP 兼容名称 jiaotang-kb 保持不变。",
     "changes": [
+      "用户提供 Word 模板并要求按原格式生成时默认只允许替换既有正文文字节点；禁止使用 python-docx 重建版式或自建相似表格。",
+      "新增模板保真校验器，字体、字号、颜色含红字、抬头、页眉页脚、表格网格、列宽、行高、合并关系、边框、节属性、页面边距和媒体任一变化均阻断交付。",
+      "模板填充必须完成结构校验和逐页视觉检查；文字过长导致分页、行高或表格边界漂移时只能压缩文字，不得改字号、行距、边距或重排版。",
+      "只有用户明确要求增删 RD、PS 等重复表格时才进入结构扩展模式；扩展必须深拷贝模板完整同类 OOXML 片段，并与严格原样填充审计分开报告。",
+      "公开附件、WorkBuddy 市场、插件、运行目录和生成文件的产品标识统一为共创研究院；远程 MCP 兼容名称 jiaotang-kb 及其协议字段保持不变。",
+      "Windows 原生 Hook 同步使用共创研究院市场与行为状态路径；系统级 Authenticode 仍按既定规则在正式发布后补测。",
+      "企业统一数字身份证构建纳入 903 条画像补采：902 条完整画像进入同行对比，1 条部分画像保留缺口，同名注销主体冲突继续阻断跨信用代码归并。",
       "Windows 与 macOS Stop 在正式交付已激活主业务 Skill 时建立 effective_business_domain，即使提示词 business_domain 漏判也必须执行 Grounded 质量闸门并消费当前 turn 回执。",
       "Grounded 校验器默认把正式回执写入与宿主 Hook 完全一致的用户级行为状态根，macOS 使用插件 data 行为目录。",
       "工作区需要保留用户可见收据时改用 receipt-export-dir 复制副本；state-root 不得再指向 artifacts 或交付目录，避免 Stop 看不到已经生成的回执。",
@@ -51,7 +58,7 @@
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.2 同步发布 macOS 与 Windows WorkBuddy 正式包；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
+      "workbuddy": "V1.6.3 同步发布 macOS 与 Windows WorkBuddy 正式包；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认 49 项 Skills 可识别、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
@@ -85,7 +92,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "安装后只保留一个 V1.6.2 活动正式市场，旧版本可恢复快照不覆盖用户资料",
+        "安装后只保留一个 V1.6.3 活动正式市场，旧版本可恢复快照不覆盖用户资料",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [
@@ -336,12 +343,7 @@
       "uses_grounded_engine": true
     },
     {
-      "skill": "jiaotang-legal-regulations",
-      "profile": "chat",
-      "uses_grounded_engine": false
-    },
-    {
-      "skill": "jiaotang-patent-router",
+      "skill": "legal-regulations",
       "profile": "chat",
       "uses_grounded_engine": false
     },
@@ -354,6 +356,11 @@
       "skill": "manufacturing-tax-risk-analysis",
       "profile": "analysis-report",
       "uses_grounded_engine": true
+    },
+    {
+      "skill": "patent-router",
+      "profile": "chat",
+      "uses_grounded_engine": false
     },
     {
       "skill": "peer-benchmarking",

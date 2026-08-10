@@ -36,7 +36,7 @@
       "industry-positioning",
       "enterprise-panorama-analysis",
       "manufacturing-tax-risk-analysis",
-      "jiaotang-legal-regulations",
+      "legal-regulations",
       "high-tech-enterprise-preassessment",
       "sme-score-preassessment",
       "sme-development-projects",
@@ -54,7 +54,7 @@
       "trade-and-open-economy-projects"
     ],
     "patent": [
-      "jiaotang-patent-router",
+      "patent-router",
       "checking-patdocx-cn-single-agent"
     ],
     "delivery": [
@@ -338,7 +338,7 @@
       "reason": "经校验的 enterprise-financial-facts/v1 可供后续项目门槛复用。"
     },
     {
-      "from": "jiaotang-legal-regulations",
+      "from": "legal-regulations",
       "to": "local-knowledge-retrieval",
       "type": "requires",
       "reason": "法规、废止替代依据和内部合规方法优先从团队知识库检索。"
@@ -351,7 +351,7 @@
     },
     {
       "from": "standard-drafting",
-      "to": "jiaotang-legal-regulations",
+      "to": "legal-regulations",
       "type": "optional",
       "reason": "涉及合规边界、强制要求或专利声明时补充法规核验。"
     },
@@ -381,7 +381,7 @@
     },
     {
       "from": "enterprise-panorama-analysis",
-      "to": "jiaotang-patent-router",
+      "to": "patent-router",
       "type": "optional",
       "reason": "用户需要公司级专利查新、布局、FTO、挖掘交底或预审推荐时进入唯一专利总路由。"
     },

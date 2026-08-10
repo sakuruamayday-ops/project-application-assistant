@@ -124,7 +124,7 @@ finish_phase "预发布运行时与远程 MCP"
 
 start_phase "[3/4] 服务端发布产物"
 release_workspace="$(mktemp -d -t jiaotang-release-evidence.XXXXXX)"
-generic_archive="${release_workspace}/jiaotang-skills.zip"
+generic_archive="${release_workspace}/gongchuang-research-institute-skills.zip"
 workbuddy_archive="${release_workspace}/jiaotang-workbuddy.zip"
 curl "${curl_args[@]}" "${auth[@]}" \
   "${endpoint}/v1/skills/latest/download" -o "${generic_archive}"

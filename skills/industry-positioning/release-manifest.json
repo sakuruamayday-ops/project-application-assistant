@@ -1,9 +1,10 @@
 {
   "schema_version": 2,
   "skill_name": "industry-positioning",
-  "release_tag": "20260724-batch5",
+  "release_tag": "V1.6.3",
   "required_paths": [
     "SKILL.md",
+    "references/industry-positioning-assessment.md",
     "references/portable-runtime-protocol.md",
     "scripts/portable_skill_runtime.py",
     "scripts/verify_skill_installation.py"
@@ -21,10 +22,12 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "7253365e9c386764af593feb6f64b8156b8c337f1229bf6867fd69ef78d3abf1",
-    "references/portable-runtime-protocol.md": "69474087d3c12c950b704f378a05ad41a361468eb37cb335b9bfd2691336fb72",
-    "scripts/portable_skill_runtime.py": "920a5434860a03453a265c26ba4b57635bd9dc3770031e91724fb1adde18edc7",
-    "scripts/verify_skill_installation.py": "a1d7f859a1753eb720be6a5543cd1d0b77588fea7250d8b17790c38cb199fc39"
+    "SKILL.md": "8fead854319da601fb1bc2589a4f23db6f71ff458a52301312c1d4f86c9b3b42",
+    "references/industry-positioning-assessment.md": "b6422c8fcecf127e87b6c110fb8c32eb15c61cf70b3670f2bd45f01fff4385a7",
+    "references/market-boundary-and-substitution-gate.md": "c8ce8cbc222da3b879fb7a18fa5e2697a2d062c872b8f8919f4a98dd400e447d",
+    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

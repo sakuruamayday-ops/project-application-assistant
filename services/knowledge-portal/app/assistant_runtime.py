@@ -41,11 +41,11 @@ SKILL_PROFILES = {
         "keywords": ("可行性", "符合条件", "能不能报", "差距", "研究院", "首台套", "首批次"),
         "summary": "按政策门槛、企业证据和数据缺口进行可行性分析，不承诺一定符合或获批。",
     },
-    "jiaotang-patent-router": {
+    "patent-router": {
         "keywords": ("专利", "权利要求", "侵权", "FTO", "同族", "IPC", "法律状态"),
         "summary": "统一完成公司级专利检索、权利要求分析、挖掘交底、FTO、布局和双中心预审推荐；单独核稿转申请文件检查技能。",
     },
-    "jiaotang-legal-regulations": {
+    "legal-regulations": {
         "keywords": ("法律", "法规", "合规", "行政处罚", "法条", "监管要求"),
         "summary": "核验现行法律法规、适用地域、效力层级和时间版本，区分法律判断与业务建议。",
     },

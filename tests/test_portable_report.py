@@ -13,7 +13,7 @@ class PortableReportTests(unittest.TestCase):
         cls.repository = Path(__file__).resolve().parents[1]
         cls.skills = cls.repository / "skills"
         cls.tax = cls.skills / "manufacturing-tax-risk-analysis"
-        cls.runtime = cls.skills / "_runtime" / "jiaotang-branding"
+        cls.runtime = cls.skills / "_runtime" / "gongchuang-branding"
 
     def test_generator_outputs_exactly_seventeen_page_sections(self):
         with tempfile.TemporaryDirectory() as directory:

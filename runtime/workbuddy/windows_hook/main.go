@@ -124,9 +124,9 @@ func canonicalWindowsPath(value string) (string, error) {
 func inferRootSource(root string) string {
 	normalized := strings.ToLower(filepath.ToSlash(root))
 	switch {
-	case strings.Contains(normalized, "/.workbuddy/plugins/marketplaces/jiaotang/"):
+	case strings.Contains(normalized, "/.workbuddy/plugins/marketplaces/gongchuang-research-institute/"):
 		return "workbuddy-marketplace"
-	case strings.Contains(normalized, "/.codebuddy/plugins/marketplaces/jiaotang/"):
+	case strings.Contains(normalized, "/.codebuddy/plugins/marketplaces/gongchuang-research-institute/"):
 		return "codebuddy-marketplace"
 	default:
 		return "env-plugin-root"
@@ -139,7 +139,7 @@ func dataDirectory() (string, error) {
 	// here therefore splits a single turn across two state roots: prompt/Stop
 	// state under the host plugin directory and activation state under the
 	// stable user state directory. Keep every Windows entry point on one root.
-	configured := strings.TrimSpace(os.Getenv("JIAOTANG_BEHAVIOR_STATE_ROOT"))
+	configured := strings.TrimSpace(os.Getenv("GONGCHUANG_BEHAVIOR_STATE_ROOT"))
 	if configured != "" && !strings.HasPrefix(configured, "${") {
 		root, err := canonicalDataPath(configured)
 		if err == nil {
@@ -157,7 +157,7 @@ func dataDirectory() (string, error) {
 			return "", err
 		}
 	}
-	root := filepath.Join(profile, ".workbuddy", "state", "jiaotang-behavior")
+	root := filepath.Join(profile, ".workbuddy", "state", "gongchuang-behavior")
 	if err := os.MkdirAll(filepath.Join(root, "sessions"), 0o700); err != nil {
 		return "", err
 	}

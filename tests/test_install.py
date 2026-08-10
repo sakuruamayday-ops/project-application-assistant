@@ -70,10 +70,10 @@ class InstallTests(unittest.TestCase):
         Path(
             os.environ.get(
                 "JIAOTANG_BRANDING_ROOT",
-                Path.home() / ".agents/skills/jiaotang-branding",
+                Path.home() / ".agents/skills/gongchuang-branding",
             )
         ).joinpath("SKILL.md").is_file(),
-        "requires the separately installed jiaotang-branding host integration",
+        "requires the separately installed gongchuang-branding host integration",
     )
     def test_release_gates_cover_startup_evolution_and_four_questions(self):
         repository = Path(__file__).resolve().parents[1]
@@ -143,7 +143,7 @@ class InstallTests(unittest.TestCase):
             self.assertFalse(
                 any("发布伴随物" in name for name in names)
             )
-            self.assertIn("skills/jiaotang-legal-regulations/SKILL.md", names)
+            self.assertIn("skills/legal-regulations/SKILL.md", names)
             self.assertIn("skills/standard-drafting/SKILL.md", names)
             for required_path in PORTABLE_REPORT_REQUIRED:
                 self.assertIn(required_path, names)

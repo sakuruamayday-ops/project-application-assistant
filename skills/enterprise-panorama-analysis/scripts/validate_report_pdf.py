@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 SKILLS_ROOT = Path(__file__).resolve().parents[2]
-BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "jiaotang-branding" / "scripts"
+BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "gongchuang-branding" / "scripts"
 if not BRANDING_SCRIPTS.is_dir():
     raise RuntimeError(f"shared branding runtime missing: {BRANDING_SCRIPTS}")
 sys.path.insert(0, str(BRANDING_SCRIPTS))
