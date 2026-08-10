@@ -82,6 +82,27 @@ def _unified_profile_table_available(connection: sqlite3.Connection) -> bool:
 
 
 def _public_business_profile(row: sqlite3.Row) -> dict[str, Any]:
+    available_columns = set(row.keys())
+    if {
+        "requires_qcc",
+        "qcc_requirement_reasons_json",
+    }.issubset(available_columns):
+        requires_qcc = bool(row["requires_qcc"])
+        qcc_reasons = _json_list(row["qcc_requirement_reasons_json"])
+    else:
+        projects = set(_json_list(row["recognition_projects_json"]))
+        qcc_reasons = []
+        if (
+            str(row["identity_verification_status"])
+            == "pending_business_identity"
+            and bool(projects - {"浙江制造精品", "地方科技小巨人企业"})
+        ):
+            qcc_reasons.append("identity_resolution_pending")
+        if bool(projects & PEER_PROJECTS) and not bool(
+            row["peer_comparison_ready"]
+        ):
+            qcc_reasons.append("peer_profile_incomplete")
+        requires_qcc = bool(qcc_reasons)
     return {
         "identity_key": str(row["identity_key"]),
         "current_name": str(row["current_name"]),
@@ -121,6 +142,8 @@ def _public_business_profile(row: sqlite3.Row) -> dict[str, Any]:
         "recognition_evidence_status": str(row["recognition_evidence_status"]),
         "peer_comparison_ready": bool(row["peer_comparison_ready"]),
         "three_first_product_enriched": bool(row["three_first_product_enriched"]),
+        "requires_qcc": requires_qcc,
+        "qcc_requirement_reasons": qcc_reasons,
         "source": PUBLIC_SOURCE,
     }
 

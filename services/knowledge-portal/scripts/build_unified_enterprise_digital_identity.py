@@ -46,6 +46,12 @@ SPECIALIZED_PROJECTS = frozenset(
     {"浙江省专精特新中小企业", "专精特新中小企业"}
 )
 SMALL_GIANT_PROJECT = "国家专精特新“小巨人”企业"
+IDENTITY_VERIFICATION_EXEMPT_PROJECTS = frozenset(
+    {
+        "浙江制造精品",
+        "地方科技小巨人企业",
+    }
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -232,6 +238,31 @@ def has_business_profile_data(row: dict[str, Any]) -> bool:
         or as_list(row.get("industry_track_tags"))
         or str(row.get("industry_level_3") or "").strip()
     )
+
+
+def qcc_requirement(profile: dict[str, Any]) -> tuple[int, list[str]]:
+    """Project whether this profile genuinely needs QCC follow-up.
+
+    Evidence-grade statuses deliberately remain independent from this
+    operational flag.  In particular, an audited single-source profile is not
+    a gap when its identity is closed and peer-comparison fields are ready.
+    """
+
+    reasons: list[str] = []
+    projects = set(as_list(profile.get("recognition_projects")))
+    actionable_projects = projects - IDENTITY_VERIFICATION_EXEMPT_PROJECTS
+    if (
+        str(profile.get("identity_verification_status") or "")
+        == "pending_business_identity"
+        and bool(actionable_projects)
+    ):
+        reasons.append("identity_resolution_pending")
+    if (
+        bool(projects & PEER_PROJECTS)
+        and not bool(profile.get("peer_comparison_ready"))
+    ):
+        reasons.append("peer_profile_incomplete")
+    return int(bool(reasons)), reasons
 
 
 def overlay_profile(
@@ -633,6 +664,9 @@ def build_profiles(
         profile["three_first_product_enriched"] = int(
             has_business_data and bool(profile["three_first_products"])
         )
+        profile["requires_qcc"], profile["qcc_requirement_reasons"] = (
+            qcc_requirement(profile)
+        )
         profile["source"] = PUBLIC_SOURCE
     return profiles, dict(stats)
 
@@ -677,6 +711,8 @@ def write_database(
             recognition_evidence_status TEXT NOT NULL,
             peer_comparison_ready INTEGER NOT NULL DEFAULT 0,
             three_first_product_enriched INTEGER NOT NULL DEFAULT 0,
+            requires_qcc INTEGER NOT NULL DEFAULT 0,
+            qcc_requirement_reasons_json TEXT NOT NULL DEFAULT '[]',
             source TEXT NOT NULL,
             profile_updated_at TEXT NOT NULL DEFAULT ''
         );
@@ -686,6 +722,8 @@ def write_database(
             ON enterprise_unified_digital_identities(current_name);
         CREATE INDEX enterprise_unified_identity_peer_idx
             ON enterprise_unified_digital_identities(peer_comparison_ready);
+        CREATE INDEX enterprise_unified_identity_qcc_idx
+            ON enterprise_unified_digital_identities(requires_qcc);
         CREATE TABLE enterprise_peer_comparison_terms(
             identity_key TEXT NOT NULL,
             term_type TEXT NOT NULL,
@@ -745,6 +783,8 @@ def write_database(
                 profile["recognition_evidence_status"],
                 profile["peer_comparison_ready"],
                 profile["three_first_product_enriched"],
+                profile["requires_qcc"],
+                json.dumps(profile["qcc_requirement_reasons"], ensure_ascii=False),
                 PUBLIC_SOURCE,
                 profile["profile_updated_at"],
             )
@@ -767,7 +807,7 @@ def write_database(
                 seen.add(normalized)
                 terms.append((key, term_type, term, normalized, PUBLIC_SOURCE))
     connection.executemany(
-        "INSERT INTO enterprise_unified_digital_identities VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO enterprise_unified_digital_identities VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         rows,
     )
     connection.executemany(
@@ -901,6 +941,9 @@ def build(
         ),
         "three_first_enriched_profiles": sum(
             int(profile["three_first_product_enriched"]) for profile in profiles.values()
+        ),
+        "qcc_required_profiles": sum(
+            int(profile["requires_qcc"]) for profile in profiles.values()
         ),
         "peer_terms": term_count,
         "coverage": coverage,

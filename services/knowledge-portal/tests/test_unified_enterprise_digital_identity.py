@@ -35,6 +35,32 @@ def test_identity_evidence_is_not_mislabeled_as_business_profile_evidence():
     ) is True
 
 
+def test_qcc_requirement_is_independent_from_evidence_grade():
+    audited_ready = {
+        "identity_verification_status": "audited_single_source_candidate",
+        "recognition_projects": ["国家专精特新“小巨人”企业"],
+        "peer_comparison_ready": 1,
+    }
+    assert BUILDER.qcc_requirement(audited_ready) == (0, [])
+
+    exempt_pending = {
+        "identity_verification_status": "pending_business_identity",
+        "recognition_projects": ["浙江制造精品", "地方科技小巨人企业"],
+        "peer_comparison_ready": 0,
+    }
+    assert BUILDER.qcc_requirement(exempt_pending) == (0, [])
+
+    mixed_pending = {
+        "identity_verification_status": "pending_business_identity",
+        "recognition_projects": ["浙江制造精品", "浙江省专精特新中小企业"],
+        "peer_comparison_ready": 0,
+    }
+    assert BUILDER.qcc_requirement(mixed_pending) == (
+        1,
+        ["identity_resolution_pending", "peer_profile_incomplete"],
+    )
+
+
 def make_database(path: Path) -> None:
     connection = sqlite3.connect(path)
     connection.executescript(
@@ -295,6 +321,10 @@ def test_builder_promotes_audited_delta_and_preserves_partial_queue(tmp_path: Pa
     ).fetchone()
     assert partial["business_profile_evidence_status"] == "knowledge_profile_partial"
     assert partial["peer_comparison_ready"] == 0
+    assert partial["requires_qcc"] == 1
+    assert json.loads(partial["qcc_requirement_reasons_json"]) == [
+        "peer_profile_incomplete"
+    ]
     assert connection.execute(
         "SELECT COUNT(*) FROM enterprise_profile_enrichment_queue WHERE identity_key=?",
         ("913301004444444444",),
@@ -341,6 +371,8 @@ def test_builder_preserves_evidence_layers_and_enriches_three_first(tmp_path: Pa
     assert candidate["identity_verification_status"] == "audited_single_source_candidate"
     assert candidate["business_profile_evidence_status"] == "audited_single_source_candidate"
     assert candidate["recognition_evidence_status"] == "knowledge_list_linked"
+    assert candidate["requires_qcc"] == 0
+    assert json.loads(candidate["qcc_requirement_reasons_json"]) == []
     three_first = connection.execute(
         "SELECT * FROM enterprise_unified_digital_identities WHERE identity_key=?",
         ("913301003333333333",),
@@ -404,6 +436,8 @@ def test_identity_lookup_returns_profile_and_cross_program_peers(tmp_path: Path)
     assert result["result_count"] == 1
     item = result["results"][0]
     assert item["business_profile"]["peer_comparison_ready"] is True
+    assert item["business_profile"]["requires_qcc"] is False
+    assert item["business_profile"]["qcc_requirement_reasons"] == []
     assert set(item["business_profile"]["recognition_projects"]) == {
         "浙江省专精特新中小企业",
         "国家专精特新“小巨人”企业",
