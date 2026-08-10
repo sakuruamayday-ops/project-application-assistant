@@ -320,7 +320,8 @@ textarea:focus-visible, select:focus-visible {
 .button.white { color: #17130b; background: var(--atelier-gold-light); border-color: var(--atelier-gold-light); }
 .button.disabled { color: #6e6b65; background: #191a1c; border-color: rgba(255,255,255,.06); cursor: default; }
 
-/* flow-glow-ui：主视觉持续流动；其余框体只在成为唯一指针/键盘焦点时启动。 */
+/* flow-glow-ui：主视觉持续流动；其余框体只在成为唯一指针/键盘焦点时启动。
+   所有表面统一使用暖金流光，避免金底按钮的黑色轨迹消失在页面黑色外沿上。 */
 [data-atelier-flow-frame] {
   --atelier-flow-speed: 3.8s;
   --atelier-flow-idle-opacity: 0;
@@ -337,19 +338,6 @@ textarea:focus-visible, select:focus-visible {
   );
   --atelier-flow-shadow: drop-shadow(0 0 7px rgba(255,247,224,.72)) drop-shadow(0 0 18px rgba(202,169,105,.42));
   isolation: isolate;
-}
-.atelier-flow-dark {
-  --atelier-flow-track: conic-gradient(
-    from var(--atelier-flow-angle),
-    transparent 0 57%,
-    rgba(31,25,16,.08) 64%,
-    rgba(24,19,11,.72) 73%,
-    rgba(0,0,0,1) 79%,
-    rgba(18,14,8,.94) 84%,
-    rgba(32,25,14,.36) 91%,
-    transparent 98% 100%
-  );
-  --atelier-flow-shadow: drop-shadow(0 0 7px rgba(0,0,0,.72)) drop-shadow(0 0 16px rgba(23,18,10,.5));
 }
 .atelier-flow-needs-position { position: relative; }
 [data-atelier-flow-frame="before"]::before,

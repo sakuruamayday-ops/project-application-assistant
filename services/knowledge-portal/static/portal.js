@@ -144,35 +144,6 @@ const isVisibleRoundedFrame = (element) => {
   return !looksCircular;
 };
 
-const parseCssColor = (value) => {
-  const channels = value.match(/[\d.]+/g)?.map(Number) || [];
-  if (channels.length < 3) return null;
-  return {red: channels[0], green: channels[1], blue: channels[2], alpha: channels[3] ?? 1};
-};
-
-const relativeLuminance = ({red, green, blue}) => {
-  const linear = [red, green, blue].map((channel) => {
-    const value = channel / 255;
-    return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
-  });
-  return .2126 * linear[0] + .7152 * linear[1] + .0722 * linear[2];
-};
-
-const syncFlowContrast = (element) => {
-  if (!(element instanceof HTMLElement)) return;
-  const style = getComputedStyle(element);
-  const background = parseCssColor(style.backgroundColor);
-  const foreground = parseCssColor(style.color);
-  const needsDarkFlow = Boolean(
-    background
-    && foreground
-    && background.alpha > .45
-    && relativeLuminance(background) > .45
-    && relativeLuminance(foreground) < .2
-  );
-  element.classList.toggle("atelier-flow-dark", needsDarkFlow);
-};
-
 const decorateFlowFrame = (element) => {
   if (!(element instanceof HTMLElement) || element.dataset.atelierFlowFrame) return;
   const slot = pseudoSlotIsFree(element, "::before")
@@ -181,7 +152,6 @@ const decorateFlowFrame = (element) => {
   element.dataset.atelierFlowFrame = slot;
   if (slot === "unavailable") return;
   if (getComputedStyle(element).position === "static") element.classList.add("atelier-flow-needs-position");
-  syncFlowContrast(element);
   if (flowFrameVisibility) flowFrameVisibility.observe(element);
   else element.classList.add("is-atelier-flow-visible");
 };
@@ -219,7 +189,6 @@ const setHoveredFlowFrame = (nextFrame, pointerActive) => {
   if (hoveredFlowFrame === nextFrame) return;
   hoveredFlowFrame?.classList.remove("is-atelier-flow-hovered");
   hoveredFlowFrame = nextFrame;
-  syncFlowContrast(hoveredFlowFrame);
   hoveredFlowFrame?.classList.add("is-atelier-flow-hovered");
 };
 
@@ -227,14 +196,19 @@ const setFocusedFlowFrame = (nextFrame) => {
   if (focusedFlowFrame === nextFrame) return;
   focusedFlowFrame?.classList.remove("is-atelier-flow-focused");
   focusedFlowFrame = nextFrame;
-  syncFlowContrast(focusedFlowFrame);
   focusedFlowFrame?.classList.add("is-atelier-flow-focused");
 };
 
-document.addEventListener("pointerover", (event) => setHoveredFlowFrame(closestFlowFrame(event.target), true), true);
+const syncPointerFlowFrame = (event) => {
+  setHoveredFlowFrame(closestFlowFrame(event.target), true);
+};
+
+document.addEventListener("pointerover", syncPointerFlowFrame, true);
+document.addEventListener("pointermove", syncPointerFlowFrame, true);
 document.addEventListener("pointerout", (event) => {
-  setHoveredFlowFrame(closestFlowFrame(event.relatedTarget), event.relatedTarget instanceof Element);
+  if (event.relatedTarget === null) setHoveredFlowFrame(null, false);
 }, true);
+window.addEventListener("blur", () => setHoveredFlowFrame(null, false));
 document.addEventListener("keydown", (event) => {
   if (["Tab", "ArrowUp", "ArrowRight", "ArrowDown", "ArrowLeft"].includes(event.key)) {
     setHoveredFlowFrame(null, false);

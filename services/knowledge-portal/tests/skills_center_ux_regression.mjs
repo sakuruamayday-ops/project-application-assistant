@@ -53,6 +53,7 @@ async function readFlowState(locator) {
       angle: style.getPropertyValue("--atelier-flow-angle").trim(),
       opacity: Number(style.opacity),
       animationPlayState: style.animationPlayState,
+      backgroundImage: style.backgroundImage,
     };
   });
 }
@@ -125,7 +126,10 @@ try {
   assert.ok(installFlowStart.opacity > .95, `选择安装包悬停流光必须足够明显：${JSON.stringify(installFlowStart)}`);
   assert.equal(installFlowStart.animationPlayState, "running", "选择安装包悬停时必须启动流光");
   assert.notEqual(installFlowStart.angle, installFlowEnd.angle, "选择安装包悬停流光必须实际移动");
-  assert.equal(await installPackageButton.evaluate((element) => element.classList.contains("atelier-flow-dark")), true, "黑字金底按钮必须使用黑色流光");
+  assert.equal(installFlowEnd.animationPlayState, "running", "按钮悬停位移后不得误清除流光运行状态");
+  assert.ok(installFlowEnd.opacity > .95, `按钮持续悬停时流光不得衰减：${JSON.stringify(installFlowEnd)}`);
+  assert.equal(await installPackageButton.evaluate((element) => element.classList.contains("atelier-flow-dark")), false, "黑字金底按钮不得再切换为黑色流光");
+  assert.match(installFlowStart.backgroundImage, /202, 169, 105|255, 247, 224/, "黑字金底按钮必须使用可见的暖金流光轨迹");
   assert.equal((await readFlowState(skillsOuterFrame)).animationPlayState, "paused", "悬停子按钮时 Skills 外框不得联动");
   assert.equal((await readFlowState(skillsHeroFrame)).animationPlayState, "paused", "悬停子按钮时 Skills 总览框不得联动");
   assert.equal((await readFlowState(activeGroup)).animationPlayState, "paused", "悬停选择安装包时已选中“全部”仍须静止");
