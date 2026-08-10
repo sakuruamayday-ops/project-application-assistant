@@ -112,6 +112,10 @@ const FLOW_FOCUS_SELECTOR = [
   "select",
 ].join(",");
 
+// API 与用户区块使用真实矩形周长路径，避免宽面板上的锥形渐变被压缩成左右光柱。
+const FLOW_PERIMETER_SELECTOR = "#api-access > .panel";
+const FLOW_SVG_NS = "http://www.w3.org/2000/svg";
+
 const syncFlowDocumentVisibility = () => {
   document.documentElement.classList.toggle(
     "is-atelier-flow-document-visible",
@@ -133,6 +137,53 @@ const observeFlowVisibility = (element) => {
   if (!(element instanceof HTMLElement)) return;
   if (flowFrameVisibility) flowFrameVisibility.observe(element);
   else element.classList.add("is-atelier-flow-visible");
+};
+
+const syncPerimeterGeometry = (element) => {
+  const svg = element.querySelector(":scope > .atelier-flow-perimeter");
+  if (!(svg instanceof SVGSVGElement)) return;
+  const width = Math.max(1, element.clientWidth + 2);
+  const height = Math.max(1, element.clientHeight + 2);
+  const style = getComputedStyle(element);
+  const radius = Math.min(
+    Math.max(0, Number.parseFloat(style.borderTopLeftRadius) || 0) + 1,
+    width / 2,
+    height / 2,
+  );
+  const inset = 1.5;
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.querySelectorAll("rect").forEach((track) => {
+    track.setAttribute("x", String(inset));
+    track.setAttribute("y", String(inset));
+    track.setAttribute("width", String(Math.max(0, width - inset * 2)));
+    track.setAttribute("height", String(Math.max(0, height - inset * 2)));
+    track.setAttribute("rx", String(radius));
+    track.setAttribute("ry", String(radius));
+  });
+};
+
+const flowPerimeterResize = "ResizeObserver" in window
+  ? new ResizeObserver((entries) => entries.forEach((entry) => syncPerimeterGeometry(entry.target)))
+  : null;
+
+const installPerimeterFlow = (element) => {
+  if (!element.matches(FLOW_PERIMETER_SELECTOR) || element.dataset.atelierFlowMode === "perimeter") return;
+  element.dataset.atelierFlowMode = "perimeter";
+  const svg = document.createElementNS(FLOW_SVG_NS, "svg");
+  svg.classList.add("atelier-flow-perimeter");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  ["aura", "core"].forEach((layer) => {
+    const track = document.createElementNS(FLOW_SVG_NS, "rect");
+    track.classList.add("atelier-flow-perimeter-track", `is-${layer}`);
+    track.setAttribute("pathLength", "1000");
+    track.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.append(track);
+  });
+  element.append(svg);
+  syncPerimeterGeometry(element);
+  if (flowPerimeterResize) flowPerimeterResize.observe(element);
+  else window.addEventListener("resize", () => syncPerimeterGeometry(element), {passive: true});
 };
 
 const pseudoSlotIsFree = (element, slot) => {
@@ -176,6 +227,7 @@ const decorateFlowFrame = (element) => {
   element.dataset.atelierFlowFrame = slot;
   if (slot === "unavailable") return;
   if (getComputedStyle(element).position === "static") element.classList.add("atelier-flow-needs-position");
+  installPerimeterFlow(element);
   observeFlowVisibility(element);
 };
 

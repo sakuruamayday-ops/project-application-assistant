@@ -1649,6 +1649,39 @@ textarea:focus-visible, select:focus-visible {
   animation-play-state: paused;
   transition: opacity .18s ease, filter .18s ease;
 }
+[data-atelier-flow-mode="perimeter"][data-atelier-flow-frame="before"]::before,
+[data-atelier-flow-mode="perimeter"][data-atelier-flow-frame="after"]::after { content: none; }
+.atelier-flow-perimeter {
+  position: absolute;
+  inset: -1px;
+  z-index: 6;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  overflow: visible;
+  pointer-events: none;
+  opacity: var(--atelier-flow-idle-opacity);
+  transition: opacity .18s ease;
+}
+.atelier-flow-perimeter-track {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dashoffset: 0;
+  animation: atelier-flow-perimeter-orbit var(--atelier-flow-speed) linear infinite;
+  animation-play-state: paused;
+}
+.atelier-flow-perimeter-track.is-aura {
+  stroke: rgba(202,169,105,.68);
+  stroke-width: 7px;
+  stroke-dasharray: 150 850;
+  filter: blur(4px) drop-shadow(0 0 9px rgba(202,169,105,.72));
+}
+.atelier-flow-perimeter-track.is-core {
+  stroke: #ead9b2;
+  stroke-width: 2.5px;
+  stroke-dasharray: 76 924;
+  filter: drop-shadow(0 0 4px rgba(255,247,224,.9)) drop-shadow(0 0 10px rgba(202,169,105,.8));
+}
 [data-atelier-flow-frame="before"]:nth-child(3n)::before,
 [data-atelier-flow-frame="after"]:nth-child(3n)::after { animation-delay: -2.1s; }
 [data-atelier-flow-frame="before"]:nth-child(3n + 2)::before,
@@ -1661,6 +1694,8 @@ html.is-atelier-flow-document-visible [data-atelier-flow-frame="before"].is-atel
 html.is-atelier-flow-document-visible [data-atelier-flow-frame="after"].is-atelier-flow-visible.is-atelier-flow-hovered::after,
 html.is-atelier-flow-document-visible:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame="before"].is-atelier-flow-visible.is-atelier-flow-focused::before,
 html.is-atelier-flow-document-visible:not(.is-atelier-flow-pointer-active) [data-atelier-flow-frame="after"].is-atelier-flow-visible.is-atelier-flow-focused::after { animation-play-state: running; }
+html.is-atelier-flow-document-visible [data-atelier-flow-mode="perimeter"].is-atelier-flow-visible.is-atelier-flow-hovered > .atelier-flow-perimeter .atelier-flow-perimeter-track,
+html.is-atelier-flow-document-visible:not(.is-atelier-flow-pointer-active) [data-atelier-flow-mode="perimeter"].is-atelier-flow-visible.is-atelier-flow-focused > .atelier-flow-perimeter .atelier-flow-perimeter-track { animation-play-state: running; }
 .hero-banner[data-atelier-flow-frame] {
   --atelier-flow-speed: 8.4s;
   --atelier-flow-thickness: 3px;
@@ -2073,6 +2108,7 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 @keyframes atelier-leave { to { opacity: 0; transform: translateY(-34px); filter: blur(3px); } }
 @keyframes atelier-leave-down { to { opacity: 0; transform: translateY(34px); filter: blur(3px); } }
 @keyframes atelier-flow-orbit { to { --atelier-flow-angle: 660deg; } }
+@keyframes atelier-flow-perimeter-orbit { to { stroke-dashoffset: -1000; } }
 /* mountains-drift 背景动画已移除：逐 section 重绘 1.7MB 背景图代价过高 */
 
 .endpoint-list { display: grid; gap: 10px; margin: 16px 0; }
@@ -2286,12 +2322,14 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   [data-atelier-flow-frame="before"]::before,
   [data-atelier-flow-frame="after"]::after,
+  .atelier-flow-perimeter-track,
   :where(input, textarea, select):focus { animation: none !important; }
 }
 
 @media print {
   [data-atelier-flow-frame="before"]::before,
   [data-atelier-flow-frame="after"]::after { content: none !important; }
+  .atelier-flow-perimeter { display: none !important; }
 }
 }
 

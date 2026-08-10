@@ -108,6 +108,25 @@ async function readFlowState(locator) {
   });
 }
 
+async function readPerimeterFlowState(locator) {
+  return locator.evaluate((element) => {
+    const svg = element.querySelector(":scope > .atelier-flow-perimeter");
+    const tracks = [...(svg?.querySelectorAll(".atelier-flow-perimeter-track") || [])];
+    const coreStyle = tracks.length ? getComputedStyle(tracks.at(-1)) : null;
+    return {
+      mode: element.dataset.atelierFlowMode,
+      trackCount: tracks.length,
+      opacity: svg ? Number(getComputedStyle(svg).opacity) : null,
+      animationName: coreStyle?.animationName || "",
+      animationPlayState: coreStyle?.animationPlayState || "",
+      dashOffset: coreStyle?.strokeDashoffset || "",
+      dashArray: coreStyle?.strokeDasharray || "",
+      pathLength: tracks.at(-1)?.getAttribute("pathLength") || "",
+      viewBox: svg?.getAttribute("viewBox") || "",
+    };
+  });
+}
+
 let browser;
 try {
   await waitForServer();
@@ -237,6 +256,55 @@ try {
   assert.equal((await readFlowState(glowCard)).animationPlayState, "paused", "聚焦卡片离开视口后也必须暂停");
   await glowCard.scrollIntoViewIfNeeded();
   await page.waitForFunction(() => document.querySelector(".metrics > a")?.classList.contains("is-atelier-flow-visible"));
+
+  const accessInstallFrame = page.locator(".agent-bootstrap-card").first();
+  await accessInstallFrame.scrollIntoViewIfNeeded();
+  await page.mouse.move(2, 2);
+  const accessIdle = await readPerimeterFlowState(accessInstallFrame);
+  assert.equal(accessIdle.mode, "perimeter", `API 与用户宽面板必须改用真实周长轨道：${JSON.stringify(accessIdle)}`);
+  assert.equal(accessIdle.trackCount, 2, `周长轨道只能有一组光带的光晕和核心两层：${JSON.stringify(accessIdle)}`);
+  assert.equal(accessIdle.opacity, 0, `API 与用户宽面板未悬停时必须静止：${JSON.stringify(accessIdle)}`);
+  assert.equal(accessIdle.animationName, "atelier-flow-perimeter-orbit", "宽面板必须挂载周长路径动画");
+  assert.equal(accessIdle.animationPlayState, "paused", "宽面板未悬停时不得运行路径动画");
+  assert.equal(accessIdle.pathLength, "1000", "宽面板路径必须归一化，保证各边速度一致");
+  assert.match(accessIdle.viewBox, /^0 0 \d+(?:\.\d+)? \d+(?:\.\d+)?$/, "宽面板路径应匹配真实框体尺寸");
+  await accessInstallFrame.hover({position: {x: 16, y: 16}});
+  await page.waitForTimeout(240);
+  const accessActiveStart = await readPerimeterFlowState(accessInstallFrame);
+  if (screenshotDir) await accessInstallFrame.screenshot({path: join(screenshotDir, "flow-glow-access-t0.png")});
+  await page.waitForTimeout(620);
+  const accessActiveMiddle = await readPerimeterFlowState(accessInstallFrame);
+  if (screenshotDir) await accessInstallFrame.screenshot({path: join(screenshotDir, "flow-glow-access-t1.png")});
+  await page.waitForTimeout(620);
+  const accessActiveEnd = await readPerimeterFlowState(accessInstallFrame);
+  if (screenshotDir) await accessInstallFrame.screenshot({path: join(screenshotDir, "flow-glow-access-t2.png")});
+  assert.ok(accessActiveStart.opacity > .95, `悬停宽面板后周长流光必须清晰可见：${JSON.stringify(accessActiveStart)}`);
+  assert.equal(accessActiveStart.animationPlayState, "running", "悬停宽面板后周长路径必须运行");
+  assert.notEqual(accessActiveStart.dashOffset, accessActiveMiddle.dashOffset, "单段光带必须沿真实周长连续移动");
+  assert.notEqual(accessActiveMiddle.dashOffset, accessActiveEnd.dashOffset, "单段光带不得退化成两侧光柱切换");
+  assert.equal(
+    await page.locator("#api-access > .panel .atelier-flow-perimeter-track").evaluateAll((tracks) => (
+      tracks.filter((track) => getComputedStyle(track).animationPlayState === "running").length
+    )),
+    2,
+    "API 与用户区块同一时刻只能运行当前悬停面板的一组双层光带",
+  );
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {configurable: true, value: "hidden"});
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  assert.equal((await readPerimeterFlowState(accessInstallFrame)).animationPlayState, "paused", "页面进入后台时宽面板路径必须暂停");
+  await page.evaluate(() => {
+    delete document.visibilityState;
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  assert.equal((await readPerimeterFlowState(accessInstallFrame)).animationPlayState, "running", "页面返回前台时当前可见宽面板可恢复");
+  await page.evaluate(() => window.scrollTo({top: 0, behavior: "auto"}));
+  await page.waitForFunction(() => !document.querySelector(".agent-bootstrap-card")?.classList.contains("is-atelier-flow-visible"));
+  assert.equal((await readPerimeterFlowState(accessInstallFrame)).animationPlayState, "paused", "API 与用户宽面板离开视口后必须暂停");
+  await accessInstallFrame.scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.querySelector(".agent-bootstrap-card")?.classList.contains("is-atelier-flow-visible"));
+  assert.equal((await readPerimeterFlowState(accessInstallFrame)).animationPlayState, "running", "当前悬停宽面板回到视口后可恢复");
 
   const focusedField = page.locator('#feedback input[name="subject"]');
   await focusedField.focus();
