@@ -1071,7 +1071,8 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
         connection.execute("BEGIN IMMEDIATE")
         active_token = connection.execute(
             "SELECT id,token_seed FROM device_tokens "
-            "WHERE user_id=? AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
+            "WHERE user_id=? AND credential_kind='personal' "
+            "AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
             (user_id,),
         ).fetchone()
         if active_token is None:
@@ -1080,8 +1081,9 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
             connection.execute(
                 """
                 INSERT INTO device_tokens(
-                    user_id,label,token_prefix,token_hash,token_seed,created_at
-                ) VALUES (?,?,?,?,?,?)
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    credential_kind
+                ) VALUES (?,?,?,?,?,?,'personal')
                 """,
                 (
                     user_id,
@@ -6898,7 +6900,12 @@ def init_database() -> None:
                 token_seed TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL,
                 last_used_at TEXT,
-                revoked_at TEXT
+                revoked_at TEXT,
+                revoked_reason TEXT NOT NULL DEFAULT '',
+                revoked_by TEXT NOT NULL DEFAULT '',
+                credential_kind TEXT NOT NULL DEFAULT 'personal',
+                enrollment_id INTEGER REFERENCES agent_enrollment_codes(id) ON DELETE SET NULL,
+                binding_id INTEGER REFERENCES device_bindings(id) ON DELETE SET NULL
             );
 
             CREATE TABLE IF NOT EXISTS device_bindings (
@@ -7435,30 +7442,67 @@ def init_database() -> None:
             connection.execute(
                 "ALTER TABLE device_tokens ADD COLUMN token_seed TEXT NOT NULL DEFAULT ''"
             )
+        token_migrations = {
+            "revoked_reason": "TEXT NOT NULL DEFAULT ''",
+            "revoked_by": "TEXT NOT NULL DEFAULT ''",
+            "credential_kind": "TEXT NOT NULL DEFAULT 'personal'",
+            "enrollment_id": "INTEGER REFERENCES agent_enrollment_codes(id) ON DELETE SET NULL",
+            "binding_id": "INTEGER REFERENCES device_bindings(id) ON DELETE SET NULL",
+        }
+        for column_name, declaration in token_migrations.items():
+            if column_name not in token_columns:
+                connection.execute(
+                    f"ALTER TABLE device_tokens ADD COLUMN {column_name} {declaration}"
+                )
         now = isoformat(utc_now())
-        for token_user in connection.execute("SELECT id FROM users ORDER BY id").fetchall():
-            active_rows = connection.execute(
-                "SELECT id,token_seed FROM device_tokens "
-                "WHERE user_id=? AND revoked_at IS NULL ORDER BY id DESC",
-                (int(token_user["id"]),),
-            ).fetchall()
-            if not active_rows:
+        for active_row in connection.execute(
+            "SELECT id,user_id,token_seed FROM device_tokens WHERE revoked_at IS NULL"
+        ).fetchall():
+            if active_row["token_seed"]:
                 continue
-            keeper = active_rows[0]
-            seed = str(keeper["token_seed"] or secrets.token_urlsafe(24))
-            raw_token = user_access_token(int(token_user["id"]), seed)
+            seed = secrets.token_urlsafe(24)
+            raw_token = user_access_token(int(active_row["user_id"]), seed)
             connection.execute(
                 "UPDATE device_tokens SET token_seed=?,token_prefix=?,token_hash=? WHERE id=?",
-                (seed, raw_token[:12], token_hash(raw_token), int(keeper["id"])),
+                (seed, raw_token[:12], token_hash(raw_token), int(active_row["id"])),
             )
-            if len(active_rows) > 1:
-                connection.executemany(
-                    "UPDATE device_tokens SET revoked_at=? WHERE id=?",
-                    ((now, int(row["id"])) for row in active_rows[1:]),
-                )
+        connection.execute("DROP INDEX IF EXISTS device_tokens_one_active_per_user")
         connection.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_per_user "
-            "ON device_tokens(user_id) WHERE revoked_at IS NULL"
+            "CREATE INDEX IF NOT EXISTS device_tokens_user_status_idx "
+            "ON device_tokens(user_id,revoked_at,id DESC)"
+        )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_enrollment_idx "
+            "ON device_tokens(enrollment_id) WHERE enrollment_id IS NOT NULL"
+        )
+        connection.execute(
+            """
+            UPDATE device_tokens
+            SET binding_id=(
+                SELECT MIN(device_bindings.id)
+                FROM device_bindings
+                    WHERE device_bindings.user_id=device_tokens.user_id
+                      AND device_bindings.first_bound_at=device_tokens.created_at
+                      AND device_bindings.device_name=device_tokens.label
+            )
+            WHERE binding_id IS NULL
+              AND 1=(
+                SELECT COUNT(*) FROM device_bindings
+                WHERE device_bindings.user_id=device_tokens.user_id
+                  AND device_bindings.first_bound_at=device_tokens.created_at
+                  AND device_bindings.device_name=device_tokens.label
+              )
+            """
+        )
+        connection.execute(
+            """
+            UPDATE device_tokens
+            SET credential_kind=CASE
+                WHEN enrollment_id IS NOT NULL THEN 'installation'
+                WHEN binding_id IS NOT NULL THEN 'device'
+                ELSE credential_kind
+            END
+            """
         )
         enrollment_columns = {
             row["name"]
@@ -9192,16 +9236,29 @@ def portal_payload(
                        users.is_admin,users.active,users.created_at,
                        CASE
                          WHEN connected_key.mcp_connected_at IS NOT NULL THEN 'configured'
+                         WHEN latest_mcp.called_at IS NOT NULL
+                          AND (latest_result.result_reported_at IS NULL
+                               OR latest_mcp.called_at>=latest_result.result_reported_at)
+                           THEN 'connected'
                          ELSE latest_result.result_status
                        END AS install_result_status,
                        CASE
                          WHEN connected_key.mcp_connected_at IS NOT NULL THEN NULL
+                         WHEN latest_mcp.called_at IS NOT NULL
+                          AND (latest_result.result_reported_at IS NULL
+                               OR latest_mcp.called_at>=latest_result.result_reported_at)
+                           THEN NULL
                          ELSE latest_result.result_error_stage
                        END AS install_error_stage,
-                       COALESCE(
-                         connected_key.mcp_connected_at,
-                         latest_result.result_reported_at
-                       ) AS install_reported_at
+                       CASE
+                         WHEN connected_key.mcp_connected_at IS NOT NULL
+                           THEN connected_key.mcp_connected_at
+                         WHEN latest_mcp.called_at IS NOT NULL
+                          AND (latest_result.result_reported_at IS NULL
+                               OR latest_mcp.called_at>=latest_result.result_reported_at)
+                           THEN latest_mcp.called_at
+                         ELSE latest_result.result_reported_at
+                       END AS install_reported_at
                 FROM users
                 LEFT JOIN agent_enrollment_codes latest_result
                   ON latest_result.id=(
@@ -9220,6 +9277,18 @@ def portal_payload(
                       AND active_keys.revoked_at IS NULL
                       AND active_keys.mcp_connected_at IS NOT NULL
                     ORDER BY active_keys.mcp_connected_at DESC,active_keys.id DESC
+                      LIMIT 1
+                  )
+                LEFT JOIN api_usage latest_mcp
+                  ON latest_mcp.id=(
+                    SELECT recent_activity.id
+                    FROM api_usage recent_activity
+                    WHERE recent_activity.user_id=users.id
+                      AND recent_activity.activity_type IN (
+                        'mcp_connection','mcp_tools_list','mcp_search',
+                        'mcp_document','mcp_tool'
+                      )
+                    ORDER BY recent_activity.called_at DESC,recent_activity.id DESC
                     LIMIT 1
                   )
                 WHERE users.deleted_at IS NULL
@@ -11138,6 +11207,7 @@ def admin_user_detail(
     member_id: int,
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
     password_reset: int = 0,
+    credentials_revoked: int = 0,
 ):
     require_admin(user)
     with closing(database()) as connection:
@@ -11167,6 +11237,56 @@ def admin_user_detail(
             """,
             (member_id,),
         ).fetchone()
+        latest_mcp_activity = connection.execute(
+            """
+            SELECT called_at,activity_type,activity_name
+            FROM api_usage
+            WHERE user_id=? AND activity_type IN (
+                'mcp_connection','mcp_tools_list','mcp_search',
+                'mcp_document','mcp_tool'
+            )
+            ORDER BY called_at DESC,id DESC
+            LIMIT 1
+            """,
+            (member_id,),
+        ).fetchone()
+        credential_rows = connection.execute(
+            """
+            SELECT token.id,token.label,token.token_prefix,token.created_at,
+                   token.last_used_at,token.revoked_at,token.revoked_reason,
+                   token.revoked_by,token.credential_kind,token.enrollment_id,
+                   token.binding_id,
+                   enrollment.install_platform,enrollment.workbuddy_version,
+                   enrollment.result_status,enrollment.result_host,
+                   enrollment.result_platform,enrollment.result_reported_at,
+                   binding.device_name,binding.auth_method,
+                   binding.first_bound_at,binding.last_seen_at,
+                   binding.revoked_at AS binding_revoked_at,
+                   device_key.platform AS device_platform,
+                   device_key.agent_host,
+                   COUNT(CASE WHEN usage.counts_toward_usage=1 THEN 1 END)
+                       AS call_count,
+                   MAX(CASE WHEN usage.activity_type IN (
+                       'mcp_connection','mcp_tools_list','mcp_search',
+                       'mcp_document','mcp_tool'
+                   ) THEN usage.called_at END) AS last_mcp_at
+            FROM device_tokens token
+            LEFT JOIN agent_enrollment_codes enrollment
+              ON enrollment.id=token.enrollment_id
+            LEFT JOIN device_bindings binding ON binding.id=token.binding_id
+            LEFT JOIN device_keys device_key
+              ON device_key.id=(
+                  SELECT candidate.id FROM device_keys candidate
+                  WHERE candidate.binding_id=token.binding_id
+                  ORDER BY candidate.id DESC LIMIT 1
+              )
+            LEFT JOIN api_usage usage ON usage.device_token_id=token.id
+            WHERE token.user_id=?
+            GROUP BY token.id
+            ORDER BY (token.revoked_at IS NULL) DESC,token.id DESC
+            """,
+            (member_id,),
+        ).fetchall()
     if member is None:
         raise HTTPException(status_code=404, detail="成员不存在")
     latest_install_result_payload = (
@@ -11185,6 +11305,60 @@ def admin_user_detail(
         if latest_install_result
         else None
     )
+    latest_mcp_activity_payload = (
+        {
+            **dict(latest_mcp_activity),
+            "called_at_display": format_chinese_datetime(
+                latest_mcp_activity["called_at"]
+            ),
+        }
+        if latest_mcp_activity
+        and (
+            latest_install_result is None
+            or str(latest_mcp_activity["called_at"])
+            >= str(latest_install_result["result_reported_at"])
+        )
+        else None
+    )
+    credentials = format_row_datetimes(
+        credential_rows,
+        "created_at",
+        "last_used_at",
+        "revoked_at",
+        "result_reported_at",
+        "first_bound_at",
+        "last_seen_at",
+        "binding_revoked_at",
+        "last_mcp_at",
+    )
+    kind_labels = {
+        "installation": "独立安装凭据",
+        "device": "设备签名凭据",
+        "personal": "共享 API Key",
+    }
+    for credential in credentials:
+        credential["kind_label"] = kind_labels.get(
+            str(credential.get("credential_kind") or ""),
+            "历史凭据",
+        )
+        credential["device_display"] = (
+            credential.get("device_name")
+            or credential.get("result_host")
+            or credential.get("agent_host")
+            or (
+                f"{credential.get('install_platform')} 设备"
+                if credential.get("credential_kind") == "installation"
+                and credential.get("install_platform")
+                else None
+            )
+            or "未上报"
+        )
+        credential["platform_display"] = (
+            credential.get("result_platform")
+            or credential.get("device_platform")
+            or credential.get("install_platform")
+            or "平台未上报"
+        )
     return templates.TemplateResponse(
         request,
         "admin_user_detail.html",
@@ -11197,8 +11371,126 @@ def admin_user_detail(
                 "deleted_at_display": format_chinese_datetime(member["deleted_at"]),
             },
             "latest_install_result": latest_install_result_payload,
+            "latest_mcp_activity": latest_mcp_activity_payload,
+            "credentials": credentials,
+            "credentials_revoked": max(0, credentials_revoked),
             "password_reset": password_reset == 1,
         },
+    )
+
+
+def revoke_member_credentials(
+    member_id: int,
+    credential_ids: list[int],
+    *,
+    operated_by: str,
+) -> int:
+    selected_ids = sorted({int(value) for value in credential_ids if int(value) > 0})
+    if not selected_ids:
+        return 0
+    placeholders = ",".join("?" for _ in selected_ids)
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        member = connection.execute(
+            "SELECT id FROM users WHERE id=? AND deleted_at IS NULL",
+            (member_id,),
+        ).fetchone()
+        if member is None:
+            connection.rollback()
+            raise HTTPException(status_code=404, detail="成员不存在")
+        rows = connection.execute(
+            f"""
+            SELECT id,binding_id,revoked_at FROM device_tokens
+            WHERE user_id=? AND id IN ({placeholders})
+            """,
+            (member_id, *selected_ids),
+        ).fetchall()
+        if len(rows) != len(selected_ids):
+            connection.rollback()
+            raise HTTPException(status_code=404, detail="访问凭据不存在或不属于该成员")
+        active_ids = [int(row["id"]) for row in rows if not row["revoked_at"]]
+        binding_ids = sorted(
+            {
+                int(row["binding_id"])
+                for row in rows
+                if not row["revoked_at"] and row["binding_id"] is not None
+            }
+        )
+        if active_ids:
+            active_placeholders = ",".join("?" for _ in active_ids)
+            connection.execute(
+                f"""
+                UPDATE device_tokens
+                SET revoked_at=?,revoked_reason='admin_credential_revoked',revoked_by=?
+                WHERE user_id=? AND revoked_at IS NULL
+                  AND id IN ({active_placeholders})
+                """,
+                (now, operated_by[:100], member_id, *active_ids),
+            )
+        if binding_ids:
+            binding_placeholders = ",".join("?" for _ in binding_ids)
+            connection.execute(
+                f"""
+                UPDATE device_keys
+                SET revoked_at=COALESCE(revoked_at,?),
+                    revoked_reason=CASE WHEN revoked_at IS NULL
+                        THEN 'admin_credential_revoked' ELSE revoked_reason END
+                WHERE user_id=? AND binding_id IN ({binding_placeholders})
+                """,
+                (now, member_id, *binding_ids),
+            )
+            connection.execute(
+                f"""
+                UPDATE device_bindings
+                SET revoked_at=COALESCE(revoked_at,?),
+                    revoked_reason=CASE WHEN revoked_at IS NULL
+                        THEN 'admin_credential_revoked' ELSE revoked_reason END
+                WHERE user_id=? AND id IN ({binding_placeholders})
+                """,
+                (now, member_id, *binding_ids),
+            )
+        connection.commit()
+    return len(active_ids)
+
+
+@app.post("/admin/users/{member_id}/credentials/{credential_id}/revoke")
+def admin_revoke_member_credential(
+    member_id: int,
+    credential_id: int,
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    require_admin(user)
+    revoked = revoke_member_credentials(
+        member_id,
+        [credential_id],
+        operated_by=str(user["username"]),
+    )
+    return RedirectResponse(
+        f"/admin/users/{member_id}?credentials_revoked={revoked}#access-credentials",
+        status_code=303,
+    )
+
+
+@app.post("/admin/users/{member_id}/credentials/revoke")
+def admin_revoke_member_credentials(
+    member_id: int,
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    credential_ids: Annotated[list[int] | None, Form()] = None,
+):
+    validate_csrf(user, csrf_token)
+    require_admin(user)
+    revoked = revoke_member_credentials(
+        member_id,
+        credential_ids or [],
+        operated_by=str(user["username"]),
+    )
+    return RedirectResponse(
+        f"/admin/users/{member_id}?credentials_revoked={revoked}#access-credentials",
+        status_code=303,
     )
 
 
@@ -13369,8 +13661,26 @@ def create_agent_bootstrap_code(
     now = isoformat(now_value)
     raw_code = "jbe_" + secrets.token_urlsafe(32)
     confirmed_ip = (client_ip_from(request) or "unknown")[:100]
+    seed = secrets.token_urlsafe(24)
+    raw_token = user_access_token(int(user["id"]), seed)
+    platform_label = "macOS" if platform_name == "macos" else "Windows"
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            """
+            UPDATE device_tokens
+            SET revoked_at=COALESCE(revoked_at,?),
+                revoked_reason=CASE WHEN revoked_at IS NULL THEN 'superseded_unused_install' ELSE revoked_reason END,
+                revoked_by=CASE WHEN revoked_at IS NULL THEN 'system' ELSE revoked_by END
+            WHERE user_id=? AND revoked_at IS NULL AND last_used_at IS NULL
+              AND enrollment_id IN (
+                  SELECT id FROM agent_enrollment_codes
+                  WHERE user_id=? AND consumed_at IS NULL
+                    AND result_reported_at IS NULL
+              )
+            """,
+            (now, int(user["id"]), int(user["id"])),
+        )
         connection.execute(
             """
             UPDATE agent_enrollment_codes
@@ -13379,7 +13689,7 @@ def create_agent_bootstrap_code(
             """,
             (now, int(user["id"])),
         )
-        connection.execute(
+        enrollment_cursor = connection.execute(
             """
             INSERT INTO agent_enrollment_codes(
                 user_id,code_hash,created_at,expires_at,
@@ -13407,15 +13717,28 @@ def create_agent_bootstrap_code(
                 str(artifact.get("sha256") or ""),
             ),
         )
+        connection.execute(
+            """
+            INSERT INTO device_tokens(
+                user_id,label,token_prefix,token_hash,token_seed,created_at,
+                credential_kind,enrollment_id
+            ) VALUES (?,?,?,?,?,?,'installation',?)
+            """,
+            (
+                int(user["id"]),
+                f"{platform_label} 安装 · 待上报",
+                raw_token[:12],
+                token_hash(raw_token),
+                seed,
+                now,
+                int(enrollment_cursor.lastrowid),
+            ),
+        )
         connection.commit()
     public_endpoint = str(request.base_url).rstrip("/")
     plugin_download_url = (
         f"{public_endpoint}/v1/agent-install/{quote(raw_code)}/workbuddy/download"
         f"?platform={platform_name}"
-    )
-    raw_token = ensure_personal_access_token(
-        int(user["id"]),
-        str(user["real_name"] or user["username"] or "个人 Token"),
     )
     return JSONResponse(
         {
@@ -13428,7 +13751,7 @@ def create_agent_bootstrap_code(
             ),
             "phase": "install_ready",
             "platform": platform_name,
-            "platform_label": "macOS" if platform_name == "macos" else "Windows",
+            "platform_label": platform_label,
             "hook_adapter": f"workbuddy-{platform_name}",
             "release_version": str(artifact.get("version") or ""),
             "expires_in_seconds": AGENT_BOOTSTRAP_MINUTES * 60,
@@ -14640,6 +14963,29 @@ def report_agent_install_result(
                 int(enrollment["id"]),
             ),
         )
+        credential_label = (
+            result_host
+            or result_platform
+            or ("Agent 安装" if result_ok else "失败的 Agent 安装")
+        )[:100]
+        connection.execute(
+            """
+            UPDATE device_tokens
+            SET label=?,
+                revoked_at=CASE WHEN ?=1 THEN revoked_at ELSE COALESCE(revoked_at,?) END,
+                revoked_reason=CASE WHEN ?=1 THEN revoked_reason ELSE 'installation_failed' END,
+                revoked_by=CASE WHEN ?=1 THEN revoked_by ELSE 'system' END
+            WHERE enrollment_id=?
+            """,
+            (
+                credential_label,
+                1 if result_ok else 0,
+                now,
+                1 if result_ok else 0,
+                1 if result_ok else 0,
+                int(enrollment["id"]),
+            ),
+        )
         if (
             result_ok
             and str(enrollment["operation"] or "install") == "install"
@@ -14981,8 +15327,9 @@ def register_agent_device(
         token_cursor = connection.execute(
             """
             INSERT INTO device_tokens(
-                user_id,label,token_prefix,token_hash,token_seed,created_at
-            ) VALUES (?,?,?,?,?,?)
+                user_id,label,token_prefix,token_hash,token_seed,created_at,
+                credential_kind
+            ) VALUES (?,?,?,?,?,?,'device')
             """,
             (
                 int(user["id"]),
@@ -15011,6 +15358,10 @@ def register_agent_device(
                 (client_ip or "unknown")[:100],
                 request.headers.get("user-agent", "")[:300],
             ),
+        )
+        connection.execute(
+            "UPDATE device_tokens SET binding_id=? WHERE id=?",
+            (int(binding_cursor.lastrowid), int(token_cursor.lastrowid)),
         )
         connection.execute(
             """
@@ -15236,8 +15587,9 @@ def activate_agent_device(
         token_cursor = connection.execute(
             """
             INSERT INTO device_tokens(
-                user_id,label,token_prefix,token_hash,token_seed,created_at
-            ) VALUES (?,?,?,?,?,?)
+                user_id,label,token_prefix,token_hash,token_seed,created_at,
+                credential_kind
+            ) VALUES (?,?,?,?,?,?,'device')
             """,
             (
                 int(enrollment["user_id"]),
@@ -15266,6 +15618,10 @@ def activate_agent_device(
                 (client_ip or "unknown")[:100],
                 request.headers.get("user-agent", "")[:300],
             ),
+        )
+        connection.execute(
+            "UPDATE device_tokens SET binding_id=? WHERE id=?",
+            (int(binding_cursor.lastrowid), int(token_cursor.lastrowid)),
         )
         connection.execute(
             """
@@ -15366,7 +15722,8 @@ def create_device_token(
     with closing(database()) as connection:
         active_token = connection.execute(
             "SELECT id,token_seed FROM device_tokens "
-            "WHERE user_id=? AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
+            "WHERE user_id=? AND credential_kind='personal' "
+            "AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
             (user["id"],),
         ).fetchone()
         if active_token:
@@ -15385,8 +15742,9 @@ def create_device_token(
             connection.execute(
                 """
                 INSERT INTO device_tokens(
-                    user_id,label,token_prefix,token_hash,token_seed,created_at
-                ) VALUES (?,?,?,?,?,?)
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    credential_kind
+                ) VALUES (?,?,?,?,?,?,'personal')
                 """,
                 (
                     user["id"], normalized_real_name, raw_token[:12], token_hash(raw_token),
@@ -15418,10 +15776,16 @@ def revoke_device_token(
     with closing(database()) as connection:
         connection.execute(
             """
-            UPDATE device_tokens SET revoked_at = ?
+            UPDATE device_tokens
+            SET revoked_at=?,revoked_reason='user_revoked',revoked_by=?
             WHERE id = ? AND user_id = ? AND revoked_at IS NULL
             """,
-            (isoformat(utc_now()), device_token_id, user["id"]),
+            (
+                isoformat(utc_now()),
+                str(user["username"]),
+                device_token_id,
+                user["id"],
+            ),
         )
         connection.commit()
     return RedirectResponse("/access", status_code=303)

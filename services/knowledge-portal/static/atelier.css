@@ -499,6 +499,37 @@ tbody tr:hover { background: rgba(202,169,105,.025); }
 .credential-state-list span { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
 .credential-active { color: var(--atelier-success); background: rgba(117,198,155,.08); }
 .credential-revoked { color: var(--atelier-muted); background: rgba(255,255,255,.04); }
+.credential-summary-link { display: grid; gap: 6px; color: inherit; text-decoration: none; }
+.credential-summary-link > small { color: var(--atelier-gold); }
+.credential-summary-link:hover > small,
+.credential-summary-link:focus-visible > small { color: var(--atelier-gold-light); }
+.credential-summary-link:focus-visible { outline: 2px solid var(--atelier-gold); outline-offset: 4px; border-radius: 8px; }
+.credential-management { scroll-margin-top: 24px; }
+.credential-management > .muted { display: block; max-width: 980px; margin: -4px 0 18px; line-height: 1.7; }
+.credential-batch-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--atelier-line);
+  border-radius: 12px;
+  background: #101113;
+}
+.credential-batch-bar label { display: inline-flex; align-items: center; gap: 8px; color: var(--atelier-ink); font-weight: 700; }
+.credential-batch-bar input,
+.credential-check-column input { width: 17px; min-height: 17px; accent-color: var(--atelier-gold); }
+.credential-batch-bar > span { flex: 1; color: var(--atelier-muted); font-size: 11px; }
+.credential-batch-bar button:disabled { opacity: .45; cursor: not-allowed; }
+.credential-detail-table { min-width: 1260px; }
+.credential-detail-table td { vertical-align: middle; }
+.credential-detail-table td strong,
+.credential-detail-table td small,
+.credential-detail-table td code { display: block; }
+.credential-detail-table td small { margin-top: 4px; color: var(--atelier-muted); }
+.credential-detail-table td code { width: max-content; margin-top: 7px; }
+.credential-check-column { width: 62px; text-align: center; }
+.credential-row-revoked { opacity: .68; }
 .device-cell strong { display: block; max-width: 230px; overflow: hidden; color: var(--atelier-ink); text-overflow: ellipsis; white-space: nowrap; }
 .device-cell .device-current { color: var(--atelier-success); }
 .access-action-cell { min-width: 136px; }
@@ -845,6 +876,9 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   .metrics > a { min-height: 130px; }
   .assistant-actions, .download-card { align-items: stretch; flex-direction: column; }
   .danger-zone { align-items: stretch; flex-direction: column; }
+  .credential-batch-bar { align-items: stretch; flex-direction: column; }
+  .credential-batch-bar > span { flex: 0 0 auto; }
+  .credential-batch-bar .button { width: 100%; }
   .download-card > div { align-items: start; }
   .table-panel { padding: 18px 0; }
   .table-panel .panel-head { padding: 0 18px; }
