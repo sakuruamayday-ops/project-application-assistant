@@ -744,6 +744,232 @@ def test_oauth_routes_and_tables_are_removed(tmp_path):
         assert "累计OAuth调用" not in access_health.text
 
 
+def test_admin_access_health_shows_connection_device_credentials_and_toggle(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    revoked_at = module.isoformat(module.utc_now() - timedelta(days=1))
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(
+                username,real_name,company_name,password_hash,is_admin,created_at
+            ) VALUES (?,?,?,?,1,?)
+            """,
+            (
+                "owner",
+                "管理员",
+                "共创集团",
+                module.password_hasher.hash("owner-password-123"),
+                now,
+            ),
+        )
+        member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "connected-member",
+                    "连接用户",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        disabled_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,active,created_at
+                ) VALUES (?,?,?,?,0,?)
+                """,
+                (
+                    "disabled-member",
+                    "停用用户",
+                    "共创集团",
+                    module.password_hasher.hash("disabled-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        active_token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,
+                    created_at,last_used_at
+                ) VALUES (?,?,?,?,?,?,?)
+                """,
+                (
+                    member_id,
+                    "连接用户",
+                    "jtk_active",
+                    "active-token-hash",
+                    "active-token-seed",
+                    now,
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO device_tokens(
+                user_id,label,token_prefix,token_hash,token_seed,
+                created_at,last_used_at,revoked_at
+            ) VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                member_id,
+                "连接用户旧凭据",
+                "jtk_revoked",
+                "revoked-token-hash",
+                "revoked-token-seed",
+                revoked_at,
+                revoked_at,
+                revoked_at,
+            ),
+        )
+        disabled_token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,
+                    created_at,last_used_at
+                ) VALUES (?,?,?,?,?,?,?)
+                """,
+                (
+                    disabled_id,
+                    "停用用户",
+                    "jtk_disabled",
+                    "disabled-token-hash",
+                    "disabled-token-seed",
+                    now,
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                member_id,
+                active_token_id,
+                "/mcp",
+                "POST",
+                "mcp_connection",
+                "MCP连接检测",
+                0,
+                now,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                member_id,
+                active_token_id,
+                "/v1/search",
+                "POST",
+                "rest_api",
+                "知识检索",
+                1,
+                now,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                disabled_id,
+                disabled_token_id,
+                "/mcp",
+                "POST",
+                "mcp_connection",
+                "MCP连接检测",
+                0,
+                now,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO device_bindings(
+                user_id,device_id_hash,device_id_prefix,device_name,
+                auth_method,first_bound_at,last_seen_at
+            ) VALUES (?,?,?,?,?,?,?)
+            """,
+            (
+                member_id,
+                "device-hash",
+                "device-prefix",
+                "测试 MacBook Pro",
+                "device_signature",
+                now,
+                now,
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        owner = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+
+        access_page = client.get("/admin/health/access")
+        assert access_page.status_code == 200
+        assert "当前活跃" in access_page.text
+        assert "API Key" in access_page.text
+        assert "测试 MacBook Pro" in access_page.text
+        assert "有效 1" in access_page.text
+        assert "已吊销 1" in access_page.text
+        assert "访问已阻断" in access_page.text
+        assert "随账号停用" in access_page.text
+        assert "当前账号" in access_page.text
+        assert f'action="/users/{member_id}/toggle"' in access_page.text
+        assert 'name="return_to" value="/admin/health/access"' in access_page.text
+
+        disabled = client.post(
+            f"/users/{member_id}/toggle",
+            data={
+                "csrf_token": owner["csrf_token"],
+                "return_to": "/admin/health/access",
+            },
+            follow_redirects=False,
+        )
+        assert disabled.status_code == 303
+        assert disabled.headers["location"] == "/admin/health/access"
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT active FROM users WHERE id=?",
+                (member_id,),
+            ).fetchone()["active"] == 0
+
+        refreshed = client.get("/admin/health/access")
+        assert refreshed.status_code == 200
+        assert refreshed.text.count("访问已阻断") >= 2
+        assert refreshed.text.count("随账号停用") >= 2
+        assert f'action="/users/{member_id}/toggle"' in refreshed.text
+        assert "启用" in refreshed.text
+
+
 def test_directory_storage_size_ignores_inaccessible_path(tmp_path, monkeypatch):
     module = load_app(tmp_path)
 

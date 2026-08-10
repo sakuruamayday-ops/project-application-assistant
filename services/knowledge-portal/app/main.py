@@ -11881,25 +11881,111 @@ def admin_health_detail(
             ORDER BY id DESC LIMIT 30
             """
         ).fetchall(), "created_at", "completed_at")
-        access_users = format_row_datetimes(connection.execute(
+        access_user_rows = connection.execute(
             """
-            SELECT users.id, users.username, users.company_name, users.is_admin, users.active,
-                   users.created_at,
-                   COUNT(DISTINCT device_tokens.id) AS token_count,
-                   COUNT(DISTINCT CASE WHEN device_tokens.revoked_at IS NULL THEN device_tokens.id END) AS active_token_count,
-                   COUNT(DISTINCT CASE WHEN device_tokens.revoked_at IS NOT NULL THEN device_tokens.id END) AS revoked_token_count,
-                   COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count,
-                   MAX(device_tokens.last_used_at) AS last_used_at
+            WITH token_stats AS (
+                SELECT user_id,
+                       COUNT(*) AS token_count,
+                       COUNT(CASE WHEN revoked_at IS NULL THEN 1 END)
+                           AS active_token_count,
+                       COUNT(CASE WHEN revoked_at IS NOT NULL THEN 1 END)
+                           AS revoked_token_count,
+                       MAX(last_used_at) AS last_used_at
+                FROM device_tokens
+                GROUP BY user_id
+            ),
+            usage_stats AS (
+                SELECT user_id,
+                       COUNT(CASE WHEN counts_toward_usage = 1 THEN 1 END)
+                           AS call_count
+                FROM api_usage
+                GROUP BY user_id
+            ),
+            latest_mcp AS (
+                SELECT activity.user_id, activity.called_at,
+                       activity.activity_type, activity.activity_name
+                FROM api_usage activity
+                WHERE activity.id = (
+                    SELECT candidate.id
+                    FROM api_usage candidate
+                    WHERE candidate.user_id = activity.user_id
+                      AND candidate.activity_type IN (
+                          'mcp_connection','mcp_tools_list','mcp_search',
+                          'mcp_document','mcp_tool'
+                      )
+                    ORDER BY candidate.called_at DESC,candidate.id DESC
+                    LIMIT 1
+                )
+            ),
+            latest_device AS (
+                SELECT binding.user_id,binding.device_name,binding.auth_method,
+                       binding.last_seen_at,binding.revoked_at
+                FROM device_bindings binding
+                WHERE binding.id = (
+                    SELECT candidate.id
+                    FROM device_bindings candidate
+                    WHERE candidate.user_id = binding.user_id
+                    ORDER BY (candidate.revoked_at IS NOT NULL),
+                             candidate.last_seen_at DESC,candidate.id DESC
+                    LIMIT 1
+                )
+            )
+            SELECT users.id,users.username,users.real_name,users.company_name,
+                   users.is_admin,users.active,users.created_at,
+                   COALESCE(token_stats.token_count,0) AS token_count,
+                   COALESCE(token_stats.active_token_count,0)
+                       AS active_token_count,
+                   COALESCE(token_stats.revoked_token_count,0)
+                       AS revoked_token_count,
+                   COALESCE(usage_stats.call_count,0) AS call_count,
+                   token_stats.last_used_at,
+                   latest_mcp.called_at AS last_mcp_at,
+                   latest_mcp.activity_type AS last_mcp_activity_type,
+                   latest_mcp.activity_name AS last_mcp_activity_name,
+                   CASE
+                     WHEN latest_mcp.called_at IS NULL THEN NULL
+                     WHEN latest_device.revoked_at IS NULL
+                      AND latest_device.last_seen_at=latest_mcp.called_at
+                       THEN latest_device.auth_method
+                     ELSE 'api_key'
+                   END AS connection_auth_method,
+                   CASE
+                     WHEN users.active=0 THEN 'blocked'
+                     WHEN latest_mcp.called_at>=? THEN 'recently_active'
+                     WHEN latest_mcp.called_at IS NOT NULL THEN 'connected'
+                     ELSE 'waiting'
+                   END AS connection_state,
+                   latest_device.device_name,
+                   latest_device.auth_method AS device_auth_method,
+                   latest_device.last_seen_at AS device_last_seen_at,
+                   latest_device.revoked_at AS device_revoked_at,
+                   CASE
+                     WHEN latest_device.device_name IS NULL THEN 'missing'
+                     WHEN latest_device.revoked_at IS NULL THEN 'registered'
+                     ELSE 'historical'
+                   END AS device_state
             FROM users
-            LEFT JOIN device_tokens ON device_tokens.user_id = users.id
-            LEFT JOIN api_usage ON api_usage.device_token_id = device_tokens.id
-            GROUP BY users.id
-            ORDER BY users.active DESC, users.is_admin DESC, users.id
-            """
-        ).fetchall(), "created_at", "last_used_at")
+            LEFT JOIN token_stats ON token_stats.user_id=users.id
+            LEFT JOIN usage_stats ON usage_stats.user_id=users.id
+            LEFT JOIN latest_mcp ON latest_mcp.user_id=users.id
+            LEFT JOIN latest_device ON latest_device.user_id=users.id
+            WHERE users.deleted_at IS NULL
+            ORDER BY users.active DESC,users.is_admin DESC,users.id
+            """,
+            (isoformat(utc_now() - timedelta(minutes=15)),),
+        ).fetchall()
+        access_users = format_row_datetimes(
+            access_user_rows,
+            "created_at",
+            "last_used_at",
+            "last_mcp_at",
+            "device_last_seen_at",
+            "device_revoked_at",
+        )
         access_tokens = format_row_datetimes(connection.execute(
             """
-            SELECT device_tokens.id, users.username, device_tokens.label,
+            SELECT device_tokens.id, users.id AS user_id, users.username,
+                   users.active AS user_active,device_tokens.label,
                    device_tokens.token_prefix, device_tokens.created_at,
                    device_tokens.last_used_at, device_tokens.revoked_at,
                    COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
@@ -15463,6 +15549,7 @@ def toggle_user(
     user_id: int,
     csrf_token: Annotated[str, Form()],
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
+    return_to: Annotated[str, Form()] = "",
 ):
     validate_csrf(user, csrf_token)
     require_admin(user)
@@ -15475,7 +15562,12 @@ def toggle_user(
             (user_id, user_id),
         )
         connection.commit()
-    return RedirectResponse("/portal", status_code=303)
+    redirect_target = (
+        "/admin/health/access"
+        if return_to == "/admin/health/access"
+        else "/portal"
+    )
+    return RedirectResponse(redirect_target, status_code=303)
 
 
 @app.post("/admin/knowledge-updates", response_class=HTMLResponse)
