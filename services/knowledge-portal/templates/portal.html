@@ -93,17 +93,10 @@ JIAOTANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-value=
           <a class="algorithm-stat-card {{ 'is-active' if project_algorithms.coverage_filter == 'rules-confirmed' else '' }}" href="/algorithms?coverage=rules-confirmed#algorithm-catalog" data-force-navigation>
             <span>正式规则包</span><strong>{{ project_algorithms.confirmed }}</strong><small>可执行已确认门槛判断</small><em>筛选项目 →</em>
           </a>
-          <a class="algorithm-stat-card {{ 'is-active' if project_algorithms.coverage_filter == 'policy-baseline-confirmed' else '' }}" href="/algorithms?coverage=policy-baseline-confirmed#algorithm-catalog" data-force-navigation>
-            <span>政策基线包</span><strong>{{ project_algorithms.policy_baselines }}</strong><small>最新办法、年度通知与依赖关系已补齐</small><em>筛选项目 →</em>
-          </a>
           {% if project_algorithms.top_priority %}
           <a class="algorithm-stat-card algorithm-priority-card" href="/algorithms?project={{ project_algorithms.top_priority.project_id }}#algorithm-detail" data-force-navigation>
             <span>当前首要补齐</span><strong>{{ project_algorithms.priority_title }}</strong><small>{{ project_algorithms.priority_detail }}</small><em>查看项目 →</em>
           </a>
-          {% else %}
-          <div class="algorithm-stat-card algorithm-priority-card">
-            <span>纯检索路由</span><strong>{{ project_algorithms.routing_only }}</strong><small>29 个项目均已编译正式阈值规则</small>
-          </div>
           {% endif %}
         </nav>
         {% if project_algorithm_detail %}

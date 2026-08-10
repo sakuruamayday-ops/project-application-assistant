@@ -21,6 +21,123 @@ const RISK_CONFIRMATIONS = {
   verify: "这是最高等级风险操作。请确认核验信息无误后继续。",
 };
 
+// 全站框体流光清单。装饰层自动使用组件未占用的伪元素，避免覆盖原有圆弧、图标和状态标记。
+const FLOW_FRAME_SELECTOR = [
+  ".auth-shell",
+  ".remember-option",
+  ".invite-confirmation",
+  ".side-nav a.active",
+  ".service-state",
+  ".account-chip",
+  ".account-menu-link",
+  ".account-menu-panel",
+  ".hero-banner",
+  ".hero-command",
+  ".button:not(.danger):not(.danger-outline):not(.disabled):not(:disabled):not([aria-disabled='true'])",
+  ".metrics",
+  ".metrics > a",
+  ".panel:not(.danger-panel):not(.danger-zone)",
+  ".download-card",
+  ".cockpit-radar",
+  ".assistant-console",
+  ".health-grid > a",
+  ".detail-grid article",
+  ".detail-card-link",
+  ".deployment-gate-boundary article",
+  ".secret-config-card",
+  ".empty-token-state",
+  ".table-wrap",
+  ".credential-batch-bar",
+  ".quick-prompts button",
+  ".assistant-progress",
+  ".assistant-result",
+  ".external-link-grid a",
+  ".notice:not(.alert)",
+  ".token-reveal",
+  ".upload-field",
+  ".release-modal-card",
+  ".preference-status-grid article",
+  ".preference-checks label",
+  ".page-continuation-link",
+  ".endpoint-list > div",
+  ".agent-connection-summary",
+  ".manual-agent-config",
+  ".installation-stage-list li",
+  ".feedback-item",
+  ".preview-summary-grid article",
+  ".preview-commit-bar",
+  ".record-summary",
+  ".alert-item",
+  ".manual-hero",
+  ".manual-content",
+  ".user-model-config",
+  ".calibration-metrics article",
+  ".calibration-tabs",
+  ".calibration-workspace",
+  ".calibration-card",
+  ".candidate-comparison",
+  ".calibration-form",
+  ".policy-facts",
+  ".cluster-members",
+  ".calibration-empty",
+  ".algorithm-stat-card",
+  ".algorithm-detail-metrics",
+  ".algorithm-chip-list span",
+  ".algorithm-routing-notice",
+  ".skill-center",
+  ".skill-section-tabs",
+  ".skill-catalog-shell",
+  ".skill-group-button",
+  ".skill-hero",
+  ".skill-metrics div",
+  ".skill-filter-bar",
+  ".skill-catalog-table",
+  ".skill-download-content",
+  ".skill-install-plan",
+  ".skill-install-status",
+  ".skill-install-result",
+  ".skill-install-safety",
+  ".skill-detail-dialog",
+  ".skill-detail-pane.manual-content",
+  ".diagnostics-summary article",
+  "[role='dialog']",
+].join(",");
+
+const flowFrameVisibility = "IntersectionObserver" in window
+  ? new IntersectionObserver((entries) => {
+    entries.forEach((entry) => entry.target.classList.toggle("is-atelier-flow-visible", entry.isIntersecting));
+  }, {rootMargin: "120px 0px", threshold: 0})
+  : null;
+
+const pseudoSlotIsFree = (element, slot) => {
+  const content = getComputedStyle(element, slot).content;
+  return content === "none" || content === "normal" || content === "";
+};
+
+const decorateFlowFrame = (element) => {
+  if (!(element instanceof HTMLElement) || element.dataset.atelierFlowFrame) return;
+  const slot = pseudoSlotIsFree(element, "::before")
+    ? "before"
+    : (pseudoSlotIsFree(element, "::after") ? "after" : "unavailable");
+  element.dataset.atelierFlowFrame = slot;
+  if (slot === "unavailable") return;
+  if (getComputedStyle(element).position === "static") element.classList.add("atelier-flow-needs-position");
+  if (flowFrameVisibility) flowFrameVisibility.observe(element);
+  else element.classList.add("is-atelier-flow-visible");
+};
+
+const installFlowFrames = (root = document) => {
+  if (root instanceof Element && root.matches(FLOW_FRAME_SELECTOR)) decorateFlowFrame(root);
+  root.querySelectorAll?.(FLOW_FRAME_SELECTOR).forEach(decorateFlowFrame);
+};
+
+installFlowFrames();
+new MutationObserver((records) => {
+  records.forEach((record) => record.addedNodes.forEach((node) => {
+    if (node instanceof Element) installFlowFrames(node);
+  }));
+}).observe(document.body, {childList: true, subtree: true});
+
 const riskLevelForControl = (control) => {
   const form = control.closest("form");
   if (form?.querySelector("input[name='confirmation']") || form?.action.includes("/purge")) return "verify";

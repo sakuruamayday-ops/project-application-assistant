@@ -295,7 +295,8 @@ try {
   await page.setViewportSize({width: 1920, height: 1080});
   await page.goto(`${baseUrl}/algorithms`, {waitUntil: "networkidle"});
   assert.equal(await page.getByRole("heading", {name: "项目算法包"}).count(), 1, "算法包页面必须正常展示");
-  assert.equal(await page.getByText("纯检索路由", {exact: true}).count(), 1, "算法包全部形成正式规则后必须展示零路由待补齐状态");
+  assert.equal(await page.getByText("政策基线包", {exact: true}).count(), 0, "已升级为正式规则包的空分类不应继续占用算法概览");
+  assert.equal(await page.getByText("纯检索路由", {exact: true}).count(), 0, "已经清零的纯检索路由不应继续占用算法概览");
   assert.equal(await page.getByText("近7日查询", {exact: true}).count(), 1, "算法包页面必须展示真实查询频率");
   assert.equal(await page.getByText("它解决什么问题", {exact: true}).count(), 1, "算法包页面必须解释实际用途");
   const desktopAlgorithmFlow = await page.evaluate(() => {
