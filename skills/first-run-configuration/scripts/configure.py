@@ -8,14 +8,12 @@ import getpass
 import importlib.util
 import json
 import os
-import platform
 import re
 import shlex
 import shutil
 import stat
 import urllib.error
 import urllib.request
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -28,17 +26,17 @@ PREFERENCE_PROTOCOL_VERSION = 1
 KNOWLEDGE_CONNECTION_CHECK_PROMPT = "检查下知识库连接状态"
 HOST_SKILL_INSTALL_PROMPT = "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
 SECRET_NAMES = {
-    "JIAOTANG_KB_TOKEN",
+    "GONGCHUANG_KB_TOKEN",
     "QCC_API_KEY",
     "PATENT_API_KEY",
     "PADDLE_OCR_API_KEY",
 }
 SYSTEM_CREDENTIAL_ONLY_NAMES = {
-    "JIAOTANG_KB_TOKEN",
+    "GONGCHUANG_KB_TOKEN",
 }
 PLAINTEXT_CREDENTIAL_NAMES = SECRET_NAMES - SYSTEM_CREDENTIAL_ONLY_NAMES
 BOOLEAN_NAMES = {
-    "JIAOTANG_KB_MCP_READY",
+    "GONGCHUANG_KB_MCP_READY",
     "TYC_MCP_READY",
     "QCC_MCP_READY",
     "PATENT_MCP_READY",
@@ -64,10 +62,8 @@ def initialize_preferences(
         return "warning", "未能加载个人偏好管理器"
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    endpoint = values.get("JIAOTANG_KB_ENDPOINT", "").strip()
-    token = values.get("JIAOTANG_KB_TOKEN", "").strip()
-    device_id = values.get("JIAOTANG_KB_DEVICE_ID", "").strip()
-    device_name = values.get("JIAOTANG_KB_DEVICE_NAME", "").strip()
+    endpoint = values.get("GONGCHUANG_KB_ENDPOINT", "").strip()
+    token = values.get("GONGCHUANG_KB_TOKEN", "").strip()
     if network and endpoint and token:
         try:
             remote = module.request_json(
@@ -75,8 +71,6 @@ def initialize_preferences(
                 endpoint,
                 token,
                 "/v1/preferences",
-                device_id=device_id,
-                device_name=device_name,
             )
             module.write_local(preference_file, module.local_from_remote(remote))
             return "synced", f"已从云端同步个人偏好R{remote.get('revision', 0)}"
@@ -98,11 +92,6 @@ def initialize_preferences(
 
 def truthy(value: str | None) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on", "ready", "enabled"}
-
-
-def ascii_header_value(value: str, fallback: str) -> str:
-    normalized = value.encode("ascii", errors="ignore").decode("ascii").strip()
-    return normalized or fallback
 
 
 def read_env_file(path: Path) -> dict[str, str]:
@@ -183,18 +172,14 @@ def write_region_profile(region: str, path: Path = REGION_PROFILE_PATH) -> None:
 def probe_cloud(
     endpoint: str,
     token: str,
-    device_id: str,
-    device_name: str,
     timeout: float = 10.0,
 ) -> tuple[str, str]:
-    if not endpoint or not token or not device_id:
-        return "missing", "缺少地址、个人Token或设备标识"
+    if not endpoint or not token:
+        return "missing", "缺少地址或个人Token"
     request = urllib.request.Request(
         endpoint.rstrip("/") + "/v1/me",
         headers={
             "Authorization": f"Bearer {token}",
-            "X-Jiaotang-Device-ID": device_id,
-            "X-Jiaotang-Device-Name": ascii_header_value(device_name, "Project Assistant"),
             "User-Agent": "project-assistant-onboarding/1",
         },
     )
@@ -221,15 +206,13 @@ def module_available(name: str) -> bool:
 def capability_report(
     values: dict[str, str], *, network: bool = True, startup_required: bool = True
 ) -> dict[str, object]:
-    endpoint = values.get("JIAOTANG_KB_ENDPOINT", DEFAULT_ENDPOINT).strip()
-    token = values.get("JIAOTANG_KB_TOKEN", "").strip()
-    device_id = values.get("JIAOTANG_KB_DEVICE_ID", "").strip()
-    device_name = values.get("JIAOTANG_KB_DEVICE_NAME", "").strip()
-    knowledge_mcp_ready = truthy(values.get("JIAOTANG_KB_MCP_READY"))
+    endpoint = values.get("GONGCHUANG_KB_ENDPOINT", DEFAULT_ENDPOINT).strip()
+    token = values.get("GONGCHUANG_KB_TOKEN", "").strip()
+    knowledge_mcp_ready = truthy(values.get("GONGCHUANG_KB_MCP_READY"))
     if knowledge_mcp_ready:
         cloud_status, cloud_detail = "ready", "jiaotang-kb MCP运行时连接已验证"
     elif network and token:
-        cloud_status, cloud_detail = probe_cloud(endpoint, token, device_id, device_name)
+        cloud_status, cloud_detail = probe_cloud(endpoint, token)
     elif token:
         cloud_status, cloud_detail = "configured", "已配置，尚未联网验证"
     else:
@@ -424,11 +407,11 @@ def configure_interactively(values: dict[str, str]) -> dict[str, str]:
         "默认政策地区，请填写到省、市",
         configured.get("PROJECT_ASSISTANT_DEFAULT_REGION", ""),
     )
-    configured["JIAOTANG_KB_ENDPOINT"] = ask(
+    configured["GONGCHUANG_KB_ENDPOINT"] = ask(
         "团队云端知识API地址",
-        configured.get("JIAOTANG_KB_ENDPOINT", DEFAULT_ENDPOINT),
+        configured.get("GONGCHUANG_KB_ENDPOINT", DEFAULT_ENDPOINT),
     )
-    if not configured.get("JIAOTANG_KB_TOKEN"):
+    if not configured.get("GONGCHUANG_KB_TOKEN"):
         print(
             "团队知识库凭据不再通过首次配置脚本录入；"
             "请在登录门户生成一次性安装引导，由本地Agent保存到系统凭据库。"
@@ -485,12 +468,6 @@ def run(
     removed_plaintext_credentials = scrub_system_credentials_from_plaintext(
         credentials_file
     )
-    if not values.get("JIAOTANG_KB_DEVICE_ID", "").strip():
-        values["JIAOTANG_KB_DEVICE_ID"] = f"device:{uuid.uuid4()}"
-    if not values.get("JIAOTANG_KB_DEVICE_NAME", "").strip():
-        values["JIAOTANG_KB_DEVICE_NAME"] = (
-            f"{platform.system()} {platform.machine()}".strip()
-        )
     if not non_interactive:
         values = configure_interactively(values)
         if ask_yes_no("是否保存到仅当前用户可读的统一凭据文件", True):
@@ -500,9 +477,7 @@ def run(
                 if key in PLAINTEXT_CREDENTIAL_NAMES
                 or key in BOOLEAN_NAMES
                 or key in {
-                    "JIAOTANG_KB_ENDPOINT",
-                    "JIAOTANG_KB_DEVICE_ID",
-                    "JIAOTANG_KB_DEVICE_NAME",
+                    "GONGCHUANG_KB_ENDPOINT",
                     "PATENT_DATA_PROVIDER",
                     "PATENT_API_ENDPOINT",
                     "PROJECT_ASSISTANT_DEFAULT_REGION",

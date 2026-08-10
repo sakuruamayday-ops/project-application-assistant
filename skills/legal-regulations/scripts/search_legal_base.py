@@ -12,8 +12,6 @@ import urllib.request
 def request_json(
     url: str,
     token: str,
-    device_id: str,
-    device_name: str,
     payload: dict[str, object] | None = None,
 ) -> object:
     data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -22,11 +20,6 @@ def request_json(
         data=data,
         headers={
             "Authorization": f"Bearer {token}",
-            "X-Jiaotang-Device-ID": device_id,
-            "X-Jiaotang-Device-Name": (
-                device_name.encode("ascii", errors="ignore").decode("ascii").strip()
-                or "Project Assistant"
-            ),
             "Content-Type": "application/json",
         },
         method="GET" if payload is None else "POST",
@@ -41,28 +34,24 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=8)
     args = parser.parse_args()
 
-    endpoint = os.environ.get("JIAOTANG_KB_ENDPOINT", "").strip().rstrip("/")
-    token = os.environ.get("JIAOTANG_KB_TOKEN", "").strip()
-    device_id = os.environ.get("JIAOTANG_KB_DEVICE_ID", "").strip()
-    device_name = os.environ.get("JIAOTANG_KB_DEVICE_NAME", "").strip()
-    if not endpoint or not token or not device_id:
+    endpoint = os.environ.get("GONGCHUANG_KB_ENDPOINT", "").strip().rstrip("/")
+    token = os.environ.get("GONGCHUANG_KB_TOKEN", "").strip()
+    if not endpoint or not token:
         print(
             json.dumps(
                 {
                     "status": "unconfigured",
-                    "detail": "团队知识服务地址、个人Token或设备标识未配置",
+                    "detail": "团队知识服务地址或个人Token未配置",
                 },
                 ensure_ascii=False,
             )
         )
         return 3
     try:
-        identity = request_json(f"{endpoint}/v1/me", token, device_id, device_name)
+        identity = request_json(f"{endpoint}/v1/me", token)
         results = request_json(
             f"{endpoint}/v1/search",
             token,
-            device_id,
-            device_name,
             {"query": args.query, "limit": max(1, min(args.limit, 20))},
         )
     except urllib.error.HTTPError as error:

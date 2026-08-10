@@ -14,8 +14,8 @@ SPEC.loader.exec_module(MODULE)
 
 def test_unified_report_redacts_all_secret_values(tmp_path):
     secrets = {
-        "JIAOTANG_KB_ENDPOINT": "https://knowledge.example.com",
-        "JIAOTANG_KB_TOKEN": "jtk-test-secret",
+        "GONGCHUANG_KB_ENDPOINT": "https://knowledge.example.com",
+        "GONGCHUANG_KB_TOKEN": "jtk-test-secret",
         "TYC_MCP_READY": "true",
         "QCC_API_KEY": "qcc-test-secret",
         "PATENT_DATA_PROVIDER": "test-provider",
@@ -44,15 +44,15 @@ def test_credentials_file_excludes_system_store_only_secrets(tmp_path):
     MODULE.write_credentials(
         target,
         {
-            "JIAOTANG_KB_ENDPOINT": "https://knowledge.example.com",
-            "JIAOTANG_KB_TOKEN": "token with spaces",
+            "GONGCHUANG_KB_ENDPOINT": "https://knowledge.example.com",
+            "GONGCHUANG_KB_TOKEN": "token with spaces",
             "QCC_API_KEY": "qcc with spaces",
         },
     )
     mode = stat.S_IMODE(target.stat().st_mode)
     assert mode == 0o600
     values = MODULE.read_env_file(target)
-    assert "JIAOTANG_KB_TOKEN" not in values
+    assert "GONGCHUANG_KB_TOKEN" not in values
     assert values["QCC_API_KEY"] == "qcc with spaces"
 
 
@@ -61,7 +61,7 @@ def test_existing_plaintext_team_token_is_scrubbed_without_losing_other_values(t
     target.write_text(
         "\n".join(
             [
-                "JIAOTANG_KB_TOKEN=legacy-team-token",
+                "GONGCHUANG_KB_TOKEN=legacy-team-token",
                 "QCC_API_KEY=retained-qcc-token",
                 "PROJECT_ASSISTANT_BROWSER_READY=true",
             ]
@@ -78,11 +78,11 @@ def test_existing_plaintext_team_token_is_scrubbed_without_losing_other_values(t
     )
 
     values = MODULE.read_env_file(target)
-    assert "JIAOTANG_KB_TOKEN" not in values
+    assert "GONGCHUANG_KB_TOKEN" not in values
     assert values["QCC_API_KEY"] == "retained-qcc-token"
     assert values["PROJECT_ASSISTANT_BROWSER_READY"] == "true"
     assert report["credentials"]["removed_from_plaintext_file"] == [
-        "JIAOTANG_KB_TOKEN"
+        "GONGCHUANG_KB_TOKEN"
     ]
 
 
@@ -99,10 +99,10 @@ def test_capability_profile_contains_names_not_secret_values(tmp_path):
         tmp_path,
         non_interactive=True,
         network=False,
-        environment={"JIAOTANG_KB_ENDPOINT": "https://knowledge.example.com", "JIAOTANG_KB_TOKEN": "hidden-value"},
+        environment={"GONGCHUANG_KB_ENDPOINT": "https://knowledge.example.com", "GONGCHUANG_KB_TOKEN": "hidden-value"},
     )
     saved = json.loads(profile_file.read_text(encoding="utf-8"))
-    assert "JIAOTANG_KB_TOKEN" in saved["credentials"]["detected_names"]
+    assert "GONGCHUANG_KB_TOKEN" in saved["credentials"]["detected_names"]
     assert "hidden-value" not in profile_file.read_text(encoding="utf-8")
     assert report["capabilities"]["team_knowledge"]["endpoint"] == "https://knowledge.example.com"
 
@@ -136,7 +136,7 @@ def test_host_skill_prompt_appears_after_knowledge_connection(tmp_path):
         tmp_path,
         non_interactive=True,
         network=False,
-        environment={"JIAOTANG_KB_MCP_READY": "true"},
+        environment={"GONGCHUANG_KB_MCP_READY": "true"},
     )
     onboarding = report["onboarding"]
     assert onboarding["startup_protocol_completed"] is True
@@ -162,8 +162,8 @@ def test_api_probe_does_not_replace_runtime_mcp_connection(tmp_path, monkeypatch
         non_interactive=True,
         network=True,
         environment={
-            "JIAOTANG_KB_ENDPOINT": "https://knowledge.example.com",
-            "JIAOTANG_KB_TOKEN": "hidden-value",
+            "GONGCHUANG_KB_ENDPOINT": "https://knowledge.example.com",
+            "GONGCHUANG_KB_TOKEN": "hidden-value",
         },
     )
     assert report["capabilities"]["team_knowledge"]["status"] == "ready"
@@ -198,7 +198,7 @@ def test_startup_prompt_only_appears_once_per_protocol_version(tmp_path):
         tmp_path,
         non_interactive=True,
         network=False,
-        environment={"JIAOTANG_KB_MCP_READY": "true"},
+        environment={"GONGCHUANG_KB_MCP_READY": "true"},
     )
     assert first["onboarding"]["startup_prompt_required"] is True
     assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in first_report.read_text(encoding="utf-8")
@@ -207,7 +207,7 @@ def test_startup_prompt_only_appears_once_per_protocol_version(tmp_path):
         tmp_path,
         non_interactive=True,
         network=False,
-        environment={"JIAOTANG_KB_MCP_READY": "true"},
+        environment={"GONGCHUANG_KB_MCP_READY": "true"},
     )
     assert second["onboarding"]["startup_prompt_required"] is False
     assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" not in second_report.read_text(encoding="utf-8")
