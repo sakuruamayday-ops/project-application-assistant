@@ -124,7 +124,7 @@ python3 skills/standard-drafting/scripts/audit_standard_draft.py 标准草案.md
 
 生成Word、PDF或表格时调用宿主平台对应文档能力，本Skill不重复打包通用文档工具。
 
-如果用户提供Word标准模板并要求按原格式填写，默认只允许替换既有文字节点。禁止用 `python-docx` 重建模板，禁止重新创建封面、抬头、段落、表格、样式或页眉页脚；字体、字号、颜色（包括红字）、表格布局、边框、合并关系、节属性和页面边距必须保持不变。交付前运行 `skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py` 并逐页视觉检查。文字过长时压缩条文表达，不得通过改字号、改行距、改边距或重新排版解决。
+如果用户提供Word标准模板并要求按原格式填写，默认只允许替换既有文字节点。禁止用 python-docx 重建模板，禁止重新创建封面、抬头、段落、表格、样式或页眉页脚；字体、字号、颜色（包括红字）、表格布局、边框、合并关系、节属性和页面边距必须保持不变。交付前运行 `skills/_runtime/template-fidelity/scripts/validate_docx_text_only.py` 并逐页视觉检查。文字过长时压缩条文表达，不得通过改字号、改行距、改边距或重新排版解决。
 
 ## 质量结论
 
