@@ -696,7 +696,14 @@ def cleanup_index_generations(index_dir: Path) -> dict[str, object]:
         emit_progress(
             "index-release-retention",
             "completed",
-            item=f"removed={report['removed_count']}",
+            item=(
+                "moved_to_recoverable_trash="
+                f"{report['removed_count']} "
+                "cleanup_targets="
+                f"{report['cleanup_pending']['target_count']} "
+                "reclaimable_bytes="
+                f"{report['cleanup_pending']['reclaimable_bytes']}"
+            ),
         )
         return report
     except Exception as error:

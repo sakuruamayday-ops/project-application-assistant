@@ -287,6 +287,35 @@ def test_deploy_preflights_signed_binding_before_detached_transaction():
     assert stable_worker < transaction_launch
 
 
+def test_index_release_emits_exact_oss_cleanup_plan_with_object_versions():
+    release_script = (
+        SCRIPT_DIR / "sync_archived_knowledge_to_production.sh"
+    ).read_text(encoding="utf-8")
+    reconciliation = release_script.index("oss_reconciliation.py")
+    refresh = release_script.index("deploy_index_delta_to_server.sh", reconciliation)
+    command = release_script[reconciliation:refresh]
+
+    assert "--include-history" in command
+    assert "--include-version-ids" in command
+    assert "--require-current-complete" in command
+
+
+def test_admin_disk_detail_exposes_physical_release_cleanup_debt():
+    application = (SCRIPT_DIR.parent / "app" / "main.py").read_text(
+        encoding="utf-8"
+    )
+    template = (TEMPLATE_DIR / "admin_health_detail.html").read_text(
+        encoding="utf-8"
+    )
+
+    assert "def release_cleanup_backlog()" in application
+    assert "gongchuang-server-release-cleanup-plan/v1" in application
+    assert '"cleanup_pending": release_cleanup_backlog()' in application
+    assert "发布后待清理" in template
+    assert "cleanup_pending.plan_sha256" in template
+    assert "不再把“已移入回收区”误报为已经释放空间" in template
+
+
 def test_deploy_requires_main_ci_wheelhouse_and_installs_without_index():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
 

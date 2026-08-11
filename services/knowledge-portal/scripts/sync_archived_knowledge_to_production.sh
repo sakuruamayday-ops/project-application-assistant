@@ -469,6 +469,8 @@ stage_mark "signed-index-release" "passed"
 stage_mark "oss-retention-plan" "started"
 python3 "${script_dir}/oss_reconciliation.py" \
   --output-dir "${oss_reconcile_dir}" \
+  --include-history \
+  --include-version-ids \
   --require-current-complete
 stage_mark "oss-retention-plan" "passed"
 

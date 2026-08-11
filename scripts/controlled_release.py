@@ -31,6 +31,7 @@ OFFICIAL_PUBLISHER_FINGERPRINT = (
 )
 GATE_SIGNATURE_NAMESPACE = "codex-skill-release-gate"
 REMOTE_RELEASE_ROOT = "/opt/jiaotang-kb-runtime/current"
+REMOTE_RELEASE_TRASH_ROOT = "/var/lib/jiaotang-kb/release-trash/files"
 DEFAULT_LOCAL_RELEASE_SYNC_SCRIPT = Path(
     "/Users/zsh/Documents/自动化区域/"
     "jiaotang-local-release-sync/local_release_sync.py"
@@ -825,6 +826,44 @@ def _remote_release_context() -> tuple[list[str], str, str]:
     return ssh, deploy_host, deploy_key
 
 
+def archive_remote_release_workspace(
+    ssh: list[str], remote_stage: str
+) -> dict[str, object]:
+    """Move a completed upload workspace into the governed cleanup backlog."""
+    destination = f"{REMOTE_RELEASE_TRASH_ROOT}/{Path(remote_stage).name}"
+    command = (
+        "set -e; "
+        f"install -d -m 0700 {shlex.quote(REMOTE_RELEASE_TRASH_ROOT)}; "
+        f"if test -d {shlex.quote(remote_stage)}; then "
+        f"test ! -e {shlex.quote(destination)}; "
+        f"test \"$(stat -c %d -- {shlex.quote(remote_stage)})\" = "
+        f"\"$(stat -c %d -- {shlex.quote(REMOTE_RELEASE_TRASH_ROOT)})\"; "
+        f"mv -- {shlex.quote(remote_stage)} {shlex.quote(destination)}; "
+        f"elif test -d {shlex.quote(destination)}; then :; "
+        "else exit 44; "
+        "fi"
+    )
+    try:
+        run([*ssh, command])
+    except (OSError, subprocess.CalledProcessError) as error:
+        # Publication has already succeeded.  Preserve the exact source path
+        # for the next cleanup plan instead of turning cleanup debt into a
+        # false release failure.
+        return {
+            "status": "cleanup-pending-at-source",
+            "source": remote_stage,
+            "target": destination,
+            "error": str(error),
+            "permanent_delete_applied": False,
+        }
+    return {
+        "status": "archived-awaiting-authorized-cleanup",
+        "source": remote_stage,
+        "target": destination,
+        "permanent_delete_applied": False,
+    }
+
+
 def remote_release_transaction_call(
     *,
     mode: str,
@@ -901,7 +940,7 @@ def remote_release_transaction_call(
         f"{REMOTE_RELEASE_ROOT}/scripts/publish_skill_release.py "
         + " ".join(options)
     )
-    return json.loads(
+    result = json.loads(
         run(
             [*ssh, remote_command],
             input_text=(
@@ -911,6 +950,11 @@ def remote_release_transaction_call(
             ),
         )
     )
+    if uploads:
+        result["remote_workspace_cleanup"] = archive_remote_release_workspace(
+            ssh, remote_stage
+        )
+    return result
 
 
 def transaction_evidence_file(
@@ -987,12 +1031,16 @@ def stage_portal(
         "--lease-credential-stdin "
         f"--lease-ttl-seconds {lease_ttl_seconds}"
     )
-    return json.loads(
+    result = json.loads(
         run(
             [*ssh, remote_command],
             input_text=credential_file.read_text(encoding="utf-8"),
         )
     )
+    result["remote_workspace_cleanup"] = archive_remote_release_workspace(
+        ssh, remote_stage
+    )
+    return result
 
 
 def promote_portal(
@@ -1035,12 +1083,16 @@ def promote_portal(
         "--lease-credential-stdin "
         f"--lease-ttl-seconds {lease_ttl_seconds}"
     )
-    return json.loads(
+    result = json.loads(
         run(
             [*ssh, remote_command],
             input_text=credential_file.read_text(encoding="utf-8"),
         )
     )
+    result["remote_workspace_cleanup"] = archive_remote_release_workspace(
+        ssh, remote_stage
+    )
+    return result
 
 
 def run_isolated_skill_acceptance_gate(

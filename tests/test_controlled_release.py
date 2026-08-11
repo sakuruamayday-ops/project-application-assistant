@@ -39,6 +39,45 @@ def test_remote_release_commands_use_current_runtime_slot() -> None:
     assert "/opt/jiaotang-kb/.venv/bin/python" not in source
 
 
+def test_completed_remote_workspace_moves_to_governed_cleanup_backlog(
+    monkeypatch,
+) -> None:
+    commands = []
+
+    def record(arguments, **_kwargs):
+        commands.append(arguments)
+        return ""
+
+    monkeypatch.setattr(MODULE, "run", record)
+    result = MODULE.archive_remote_release_workspace(
+        ["ssh", "production"], "/tmp/jiaotang-release-V1.7.0-123"
+    )
+
+    assert result["status"] == "archived-awaiting-authorized-cleanup"
+    assert result["permanent_delete_applied"] is False
+    command = commands[0][-1]
+    assert "mv --" in command
+    assert "stat -c %d" in command
+    assert MODULE.REMOTE_RELEASE_TRASH_ROOT in command
+    assert "rm " not in command
+
+
+def test_remote_workspace_cleanup_debt_never_turns_release_success_into_failure(
+    monkeypatch,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise MODULE.subprocess.CalledProcessError(1, ["ssh"])
+
+    monkeypatch.setattr(MODULE, "run", fail)
+    result = MODULE.archive_remote_release_workspace(
+        ["ssh", "production"], "/tmp/jiaotang-release-V1.7.0-456"
+    )
+
+    assert result["status"] == "cleanup-pending-at-source"
+    assert result["source"].startswith("/tmp/jiaotang-release-")
+    assert result["permanent_delete_applied"] is False
+
+
 def test_published_receipt_does_not_reference_removed_delivery_state() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
 

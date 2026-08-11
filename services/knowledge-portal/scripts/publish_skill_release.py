@@ -5,16 +5,17 @@ from __future__ import annotations
 import argparse
 import base64
 import binascii
+import errno
 import hashlib
 import json
 import os
 import re
+import secrets
 import shutil
 import sqlite3
 import stat
 import struct
 import sys
-import tempfile
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -856,17 +857,37 @@ def validate_packages(generic: Path, workbuddy: Path, version: str) -> dict[str,
     }
 
 
-def _install_file(source: Path, target: Path) -> None:
+def _install_file(
+    source: Path, target: Path, *, share_immutable: bool = False
+) -> None:
     if target.exists():
         if sha256(target) == sha256(source):
             return
         raise RuntimeError(f"目标文件已存在且内容不同：{target}")
     target.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent)
-    os.close(descriptor)
-    temporary = Path(temporary_name)
+    temporary = target.parent / (
+        f".{target.name}.{os.getpid()}.{secrets.token_hex(4)}.tmp"
+    )
     try:
-        shutil.copy2(source, temporary)
+        if share_immutable:
+            try:
+                # Signed release artifacts are immutable.  On the common
+                # production filesystem, staging and publication can share
+                # one inode until the recoverable stage entry is authorized
+                # for cleanup.
+                os.link(source, temporary)
+            except OSError as error:
+                if error.errno not in {
+                    errno.EXDEV,
+                    errno.EPERM,
+                    errno.EACCES,
+                    errno.EOPNOTSUPP,
+                    errno.ENOTSUP,
+                }:
+                    raise
+                shutil.copy2(source, temporary)
+        else:
+            shutil.copy2(source, temporary)
         os.replace(temporary, target)
     finally:
         if temporary.exists():
@@ -877,6 +898,71 @@ def _install_file(source: Path, target: Path) -> None:
                 f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
             )
             os.replace(temporary, failed_copy)
+
+
+def _archive_completed_skill_stage(
+    database_path: Path,
+    release_directory: Path,
+    version: str,
+) -> dict[str, object]:
+    """Move a fully promoted stage into the recoverable cleanup backlog."""
+    with sqlite3.connect(database_path) as connection:
+        _ensure_stage_table(connection)
+        pending_release = int(
+            connection.execute(
+                """
+                SELECT COUNT(*) FROM skill_release_stages
+                WHERE version=? AND status IN ('releasing','staged-awaiting-acceptance')
+                """,
+                (version,),
+            ).fetchone()[0]
+        )
+        pending_artifacts = int(
+            connection.execute(
+                """
+                SELECT COUNT(*) FROM skill_release_artifact_stages
+                WHERE version=? AND status IN ('releasing','staged-awaiting-acceptance')
+                """,
+                (version,),
+            ).fetchone()[0]
+        )
+    source = release_directory / ".staging" / f"V{version}"
+    if pending_release or pending_artifacts:
+        return {
+            "status": "active-stage-retained",
+            "source": str(source),
+            "pending_transactions": pending_release + pending_artifacts,
+            "permanent_delete_applied": False,
+        }
+    if not source.is_dir() or source.is_symlink():
+        return {
+            "status": "no-completed-stage",
+            "source": str(source),
+            "permanent_delete_applied": False,
+        }
+    trash_root = release_directory / ".trash"
+    trash_root.mkdir(parents=True, exist_ok=True)
+    destination = trash_root / (
+        f"published-stage-V{version}-"
+        f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-"
+        f"{secrets.token_hex(4)}"
+    )
+    try:
+        os.rename(source, destination)
+    except OSError as error:
+        return {
+            "status": "cleanup-pending-at-source",
+            "source": str(source),
+            "target": str(destination),
+            "error": str(error),
+            "permanent_delete_applied": False,
+        }
+    return {
+        "status": "archived-awaiting-authorized-cleanup",
+        "source": str(source),
+        "target": str(destination),
+        "permanent_delete_applied": False,
+    }
 
 
 def _ensure_stage_table(connection: sqlite3.Connection) -> None:
@@ -1560,7 +1646,7 @@ def stage_artifact_addition(
             raise RuntimeError(
                 f"版本 {version} 的 {target} 通道已有不同候选"
             )
-        _install_file(package, staged_path)
+        _install_file(package, staged_path, share_immutable=True)
         staged_at = datetime.now(timezone.utc).isoformat()
         connection.execute(
             """
@@ -1655,7 +1741,7 @@ def promote_artifact_addition(
         with sqlite3.connect(backup_path) as backup:
             connection.backup(backup)
         target_path = release_directory / _artifact_name(version, target)
-        _install_file(staged_path, target_path)
+        _install_file(staged_path, target_path, share_immutable=True)
         connection.execute(
             """
             INSERT INTO skill_release_artifacts(
@@ -1688,6 +1774,9 @@ def promote_artifact_addition(
         "release_state": "published",
         "database_backup": str(backup_path),
         "promoted_at": promoted_at,
+        "stage_cleanup": _archive_completed_skill_stage(
+            database_path, release_directory, version
+        ),
     }
 
 
@@ -1772,7 +1861,7 @@ def stage_selective(
         installed: dict[str, Path] = {}
         for target, source in packages.items():
             destination = stage_directory / _artifact_name(version, target)
-            _install_file(source, destination)
+            _install_file(source, destination, share_immutable=True)
             installed[target] = destination
         staged_at = datetime.now(timezone.utc).isoformat()
         connection.execute(
@@ -1830,6 +1919,7 @@ def publish_selective(
     release_notes: str,
     *,
     allow_platform_hotfix: bool = False,
+    share_immutable: bool = False,
 ) -> dict[str, object]:
     require_complete_workbuddy_platform_set(
         packages,
@@ -1881,7 +1971,11 @@ def publish_selective(
         installed: dict[str, Path] = {}
         for target, source in packages.items():
             destination = release_directory / _artifact_name(version, target)
-            _install_file(source, destination)
+            _install_file(
+                source,
+                destination,
+                share_immutable=share_immutable,
+            )
             installed[target] = destination
         primary_target = next(
             (
@@ -1983,12 +2077,16 @@ def promote_selective(
         version,
         str(staged["release_notes"]),
         allow_platform_hotfix=set(packages) == {"windows"},
+        share_immutable=True,
     )
     if str(staged["status"]) == "published":
         return {
             **result,
             "release_state": "published",
             "promoted_at": staged["promoted_at"],
+            "stage_cleanup": _archive_completed_skill_stage(
+                database_path, release_directory, version
+            ),
         }
     promoted_at = datetime.now(timezone.utc).isoformat()
     with sqlite3.connect(database_path) as connection:
@@ -2012,6 +2110,9 @@ def promote_selective(
         **result,
         "release_state": "published",
         "promoted_at": promoted_at,
+        "stage_cleanup": _archive_completed_skill_stage(
+            database_path, release_directory, version
+        ),
     }
 
 
@@ -2062,8 +2163,8 @@ def stage(
                     "github_url": str(existing["github_url"]),
                 }
             raise RuntimeError(f"版本 {version} 已有不同内容的发布中记录")
-        _install_file(generic_package, generic_target)
-        _install_file(workbuddy_package, workbuddy_target)
+        _install_file(generic_package, generic_target, share_immutable=True)
+        _install_file(workbuddy_package, workbuddy_target, share_immutable=True)
         staged_at = datetime.now(timezone.utc).isoformat()
         connection.execute(
             """
@@ -2114,6 +2215,8 @@ def publish(
     workbuddy_package: Path,
     version: str,
     release_notes: str,
+    *,
+    share_immutable: bool = False,
 ) -> dict[str, object]:
     validation = validate_packages(generic_package, workbuddy_package, version)
     generic_target = release_directory / f"共创研究院企业全生命周期助手-V{version}.zip"
@@ -2140,8 +2243,16 @@ def publish(
         with sqlite3.connect(backup_path) as backup:
             connection.backup(backup)
 
-        _install_file(generic_package, generic_target)
-        _install_file(workbuddy_package, workbuddy_target)
+        _install_file(
+            generic_package,
+            generic_target,
+            share_immutable=share_immutable,
+        )
+        _install_file(
+            workbuddy_package,
+            workbuddy_target,
+            share_immutable=share_immutable,
+        )
         published_at = datetime.now(timezone.utc).isoformat()
         cursor = connection.execute(
             """
@@ -2201,6 +2312,7 @@ def promote(
         workbuddy_package,
         version,
         str(staged["release_notes"]),
+        share_immutable=True,
     )
     promoted_at = datetime.now(timezone.utc).isoformat()
     with sqlite3.connect(database_path) as connection:
@@ -2224,6 +2336,9 @@ def promote(
         **result,
         "release_state": "published",
         "promoted_at": promoted_at,
+        "stage_cleanup": _archive_completed_skill_stage(
+            database_path, release_directory, version
+        ),
     }
 
 

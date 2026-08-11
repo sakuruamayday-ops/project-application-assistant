@@ -10,6 +10,7 @@ moved to the operating-system trash instead of being permanently deleted.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -37,6 +38,88 @@ def directory_bytes(path: Path) -> int:
         except OSError:
             continue
     return total
+
+
+def directory_reclaimable_bytes(path: Path) -> int:
+    """Return bytes freed when this exact directory alone is deleted."""
+    inodes: dict[tuple[int, int], dict[str, int]] = {}
+    for item in path.rglob("*"):
+        try:
+            if not item.is_file() or item.is_symlink():
+                continue
+            status = item.stat()
+        except OSError:
+            continue
+        identity = (status.st_dev, status.st_ino)
+        record = inodes.setdefault(
+            identity,
+            {
+                "inside_links": 0,
+                "total_links": int(status.st_nlink),
+                "bytes": int(getattr(status, "st_blocks", 0)) * 512
+                or int(status.st_size),
+            },
+        )
+        record["inside_links"] += 1
+    return sum(
+        record["bytes"]
+        for record in inodes.values()
+        if record["inside_links"] >= record["total_links"]
+    )
+
+
+def cleanup_backlog(trash_root: Path) -> dict[str, Any]:
+    """Describe exact recoverable targets awaiting separate delete authority."""
+    targets: list[dict[str, Any]] = []
+    try:
+        children = sorted(trash_root.iterdir(), key=lambda item: item.name)
+    except FileNotFoundError:
+        children = []
+    for child in children:
+        if child.is_symlink():
+            state = "symlink_requires_manual_review"
+            allocated = 0
+        elif child.is_dir():
+            state = "recoverable_release_trash"
+            allocated = directory_reclaimable_bytes(child)
+        elif child.is_file():
+            state = "recoverable_release_file"
+            status = child.stat()
+            allocated = int(getattr(status, "st_blocks", 0)) * 512 or status.st_size
+        else:
+            state = "special_file_requires_manual_review"
+            allocated = 0
+        targets.append(
+            {
+                "path": str(child.absolute()),
+                "reclaimable_bytes": allocated,
+                "state": state,
+            }
+        )
+    plan_payload = {
+        "schema": "jiaotang-release-cleanup-plan/v1",
+        "trash_root": str(trash_root.resolve(strict=False)),
+        "targets": targets,
+    }
+    plan_sha256 = hashlib.sha256(
+        json.dumps(
+            plan_payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        **plan_payload,
+        "required": bool(targets),
+        "target_count": len(targets),
+        "reclaimable_bytes": sum(
+            int(item["reclaimable_bytes"]) for item in targets
+        ),
+        "plan_sha256": plan_sha256,
+        "authorization_required": bool(targets),
+        "permanent_delete_applied": False,
+    }
 
 
 def validated_pointer(pointer_root: Path, generation_root: Path, name: str) -> Path:
@@ -117,14 +200,14 @@ def prune_release_generations(
     removed: list[dict[str, Any]] = []
     trashed: list[dict[str, Any]] = []
     concurrently_removed: list[dict[str, Any]] = []
+    if trash_root is None:
+        configured_trash = os.environ.get("JIAOTANG_RELEASE_TRASH_ROOT", "").strip()
+        trash_root = (
+            Path(configured_trash)
+            if configured_trash
+            else generation_root / ".Trash" / "files"
+        )
     if apply:
-        if trash_root is None:
-            configured_trash = os.environ.get("JIAOTANG_RELEASE_TRASH_ROOT", "").strip()
-            trash_root = (
-                Path(configured_trash)
-                if configured_trash
-                else generation_root / ".Trash" / "files"
-            )
         trash_root = trash_root.expanduser()
         if trash_root == Path("/") or trash_root.is_symlink():
             raise RuntimeError("回收站目录不得为系统根目录或符号链接")
@@ -165,6 +248,7 @@ def prune_release_generations(
     report["concurrently_removed_count"] = len(concurrently_removed)
     report["removed_count"] = len(removed)
     report["removed_bytes"] = sum(int(item["bytes"]) for item in removed)
+    report["cleanup_pending"] = cleanup_backlog(trash_root.expanduser())
     report["completed_at"] = utc_now()
     return report
 

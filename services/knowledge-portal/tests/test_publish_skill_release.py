@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import errno
 import hashlib
 import importlib.util
 import json
@@ -244,6 +245,36 @@ def rewrite_zip(
             target.writestr(name, payload)
 
 
+def test_install_file_reuses_one_physical_inode_when_supported(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.zip"
+    target = tmp_path / "published" / "target.zip"
+    source.write_bytes(b"immutable-release")
+
+    MODULE._install_file(source, target, share_immutable=True)
+
+    assert target.read_bytes() == source.read_bytes()
+    assert target.stat().st_ino == source.stat().st_ino
+
+
+def test_install_file_falls_back_to_copy_across_filesystems(
+    tmp_path: Path, monkeypatch
+) -> None:
+    source = tmp_path / "source.zip"
+    target = tmp_path / "published" / "target.zip"
+    source.write_bytes(b"immutable-release")
+
+    def cross_device_link(_source, _target):
+        raise OSError(errno.EXDEV, "cross-device link")
+
+    monkeypatch.setattr(MODULE.os, "link", cross_device_link)
+    MODULE._install_file(source, target, share_immutable=True)
+
+    assert target.read_bytes() == source.read_bytes()
+    assert target.stat().st_ino != source.stat().st_ino
+
+
 def test_publish_is_validated_and_idempotent(tmp_path: Path) -> None:
     database = tmp_path / "portal.db"
     release_dir = tmp_path / "releases"
@@ -308,8 +339,19 @@ def test_two_stage_release_requires_stage_before_promotion(tmp_path: Path) -> No
 
     promoted = MODULE.promote(database, release_dir, "1.2")
     assert promoted["release_state"] == "published"
+    assert promoted["stage_cleanup"]["status"] == (
+        "archived-awaiting-authorized-cleanup"
+    )
+    assert not (release_dir / ".staging" / "V1.2").exists()
+    archived_stage = Path(str(promoted["stage_cleanup"]["target"]))
+    assert archived_stage.is_dir()
     assert (release_dir / "共创研究院企业全生命周期助手-V1.2.zip").is_file()
     assert (release_dir / "共创研究院企业全生命周期助手-V1.2-WorkBuddy.zip").is_file()
+    assert (
+        archived_stage / "共创研究院企业全生命周期助手-V1.2.zip"
+    ).stat().st_ino == (
+        release_dir / "共创研究院企业全生命周期助手-V1.2.zip"
+    ).stat().st_ino
     with sqlite3.connect(database) as connection:
         assert connection.execute(
             "SELECT status FROM skill_release_stages WHERE version='1.2'"

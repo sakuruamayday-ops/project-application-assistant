@@ -573,6 +573,10 @@ tbody tr:hover { background: rgba(202,169,105,.045); }
 
 .disk-component-list em { color: #caaa69; font-style: normal; text-align: right; }
 
+.cleanup-notice { margin: 0 0 14px; color: var(--console-muted); line-height: 1.7; }
+
+.cleanup-plan-hash { display: block; padding: 12px 14px; border: 1px solid rgba(202,169,105,.2); border-radius: 10px; color: var(--console-gold-pale); background: rgba(0,0,0,.24); overflow-wrap: anywhere; }
+
 /* 旧翻页 orb 样式已废弃，翻页链接样式见 .page-continuation-link */
 
 .release-modal-kicker, .release-phrases button:hover { color: var(--console-gold-pale); }

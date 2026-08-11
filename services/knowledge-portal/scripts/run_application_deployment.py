@@ -506,6 +506,14 @@ def execute(request_path: Path, state_path: Path) -> int:
             "completed",
             completed_at=utc_now(),
             retention_cleanup=retention_cleanup,
+            cleanup_pending=bool(
+                retention_cleanup.get("cleanup_pending", {}).get("required")
+            ),
+            cleanup_plan_sha256=str(
+                retention_cleanup.get("cleanup_pending", {}).get(
+                    "plan_sha256", ""
+                )
+            ),
         )
         return 0
     except Exception as error:

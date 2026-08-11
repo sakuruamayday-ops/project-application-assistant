@@ -123,6 +123,8 @@ def test_server_transaction_completes_and_records_phase_history(tmp_path, monkey
     assert state["terminal"] is True
     assert state["success"] is True
     assert state["retention_cleanup"]["removed_count"] == 1
+    assert state["cleanup_pending"] is True
+    assert len(state["cleanup_plan_sha256"]) == 64
     assert not stale.exists()
     assert len(list(trash.iterdir())) == 1
     assert (runtime / "current").resolve() == release

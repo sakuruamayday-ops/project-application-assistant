@@ -62,6 +62,16 @@ def test_retention_apply_keeps_exactly_current_and_previous(tmp_path: Path):
     assert report["delete_mode"] == "recoverable_system_trash"
     assert report["trash_root"] == str(trash.resolve())
     assert len(list(trash.iterdir())) == 3
+    pending = report["cleanup_pending"]
+    assert pending["required"] is True
+    assert pending["target_count"] == 3
+    assert pending["reclaimable_bytes"] > 0
+    assert len(pending["plan_sha256"]) == 64
+    assert pending["authorization_required"] is True
+    assert pending["permanent_delete_applied"] is False
+    assert {item["path"] for item in pending["targets"]} == {
+        str(path.resolve()) for path in trash.iterdir()
+    }
     assert sorted(path.name for path in generations.iterdir()) == [
         "current-generation",
         "previous-generation",
@@ -84,6 +94,40 @@ def test_retention_default_trash_stays_inside_generation_root(
     assert current.is_dir() and previous.is_dir()
     assert not stale_a.exists() and not stale_b.exists()
     assert len(list(trash.iterdir())) == 2
+
+
+def test_retention_dry_run_reports_existing_physical_cleanup_backlog(
+    tmp_path: Path,
+):
+    generations, pointers, *_ = make_layout(tmp_path)
+    trash = generations / ".Trash" / "files"
+    pending = trash / "old-release"
+    pending.mkdir(parents=True)
+    (pending / "payload.bin").write_bytes(b"pending")
+
+    report = MODULE.prune_release_generations(generations, pointers, apply=False)
+
+    assert report["cleanup_pending"]["required"] is True
+    assert report["cleanup_pending"]["target_count"] == 1
+    assert report["cleanup_pending"]["targets"][0]["path"] == str(
+        pending.resolve()
+    )
+
+
+def test_cleanup_backlog_does_not_claim_shared_release_inode_is_reclaimable(
+    tmp_path: Path,
+):
+    retained = tmp_path / "retained.zip"
+    retained.write_bytes(b"signed-release")
+    trash = tmp_path / "trash"
+    pending = trash / "published-stage"
+    pending.mkdir(parents=True)
+    (pending / "same.zip").hardlink_to(retained)
+
+    backlog = MODULE.cleanup_backlog(trash)
+
+    assert backlog["target_count"] == 1
+    assert backlog["reclaimable_bytes"] == 0
 
 
 def test_retention_refuses_pointer_outside_generation_root(tmp_path: Path):

@@ -157,6 +157,24 @@ if not TOKEN_DERIVATION_SECRET:
         )
     TOKEN_DERIVATION_SECRET = b"development-only-token-secret"
 INDEX_SNAPSHOT_DIR = Path(os.environ.get("JIAOTANG_INDEX_SNAPSHOT_DIR", DATA_DIR / "index-snapshots"))
+APPLICATION_RELEASE_TRASH_DIR = Path(
+    os.environ.get(
+        "JIAOTANG_APPLICATION_RELEASE_TRASH_DIR",
+        "/opt/jiaotang-kb-release-slots/.Trash/files",
+    )
+)
+INDEX_RELEASE_TRASH_DIR = Path(
+    os.environ.get(
+        "JIAOTANG_INDEX_RELEASE_TRASH_DIR",
+        "/srv/jiaotang/knowledge-index/releases/.Trash/files",
+    )
+)
+RELEASE_TRANSACTION_TRASH_DIR = Path(
+    os.environ.get(
+        "JIAOTANG_RELEASE_TRANSACTION_TRASH_DIR",
+        "/var/lib/jiaotang-kb/release-trash/files",
+    )
+)
 MEMBER_COMPANY = os.environ.get("JIAOTANG_MEMBER_COMPANY", "共创集团").strip()
 SESSION_COOKIE = "jiaotang_session"
 SESSION_HOURS = int(os.environ.get("JIAOTANG_SESSION_HOURS", "12"))
@@ -1564,6 +1582,105 @@ def directory_storage_size(path: Path) -> int:
     return total
 
 
+def reclaimable_storage_size(path: Path) -> int:
+    """Estimate bytes released if this exact target alone is removed."""
+    try:
+        if not path.exists() or path.is_symlink():
+            return 0
+        files = [path] if path.is_file() else []
+    except OSError:
+        return 0
+    if not files:
+        for root, _, names in os.walk(path):
+            files.extend(Path(root) / name for name in names)
+    inodes: dict[tuple[int, int], dict[str, int]] = {}
+    for item in files:
+        try:
+            if item.is_symlink():
+                continue
+            status = item.stat()
+        except OSError:
+            continue
+        identity = (status.st_dev, status.st_ino)
+        record = inodes.setdefault(
+            identity,
+            {
+                "inside_links": 0,
+                "total_links": int(status.st_nlink),
+                "bytes": int(getattr(status, "st_blocks", 0)) * 512
+                or int(status.st_size),
+            },
+        )
+        record["inside_links"] += 1
+    return sum(
+        record["bytes"]
+        for record in inodes.values()
+        if record["inside_links"] >= record["total_links"]
+    )
+
+
+def release_cleanup_backlog() -> dict[str, object]:
+    roots = [
+        ("应用旧槽回收区", APPLICATION_RELEASE_TRASH_DIR),
+        ("索引旧槽回收区", INDEX_RELEASE_TRASH_DIR),
+        ("发布事务回收区", RELEASE_TRANSACTION_TRASH_DIR),
+        ("Skills 失败发布", SKILL_RELEASE_DIR / ".failed-attempts"),
+        ("Skills 重发暂存", SKILL_RELEASE_DIR / ".reissue-staging"),
+        ("Skills 重发输入", SKILL_RELEASE_DIR / ".reissue-inputs"),
+        ("Skills 回收区", SKILL_RELEASE_DIR / ".trash"),
+    ]
+    rows: list[dict[str, object]] = []
+    targets: list[dict[str, object]] = []
+    for label, root in roots:
+        try:
+            children = sorted(root.iterdir(), key=lambda item: item.name)
+        except (FileNotFoundError, NotADirectoryError, PermissionError):
+            children = []
+        root_targets = []
+        for child in children:
+            size = reclaimable_storage_size(child)
+            target = {
+                "path": str(child.absolute()),
+                "reclaimable_bytes": size,
+            }
+            root_targets.append(target)
+            targets.append(target)
+        if root_targets:
+            root_bytes = sum(int(item["reclaimable_bytes"]) for item in root_targets)
+            rows.append(
+                {
+                    "label": label,
+                    "path": str(root),
+                    "target_count": len(root_targets),
+                    "bytes": root_bytes,
+                    "size": format_storage_size(root_bytes),
+                }
+            )
+    plan_payload = {
+        "schema": "gongchuang-server-release-cleanup-plan/v1",
+        "targets": targets,
+    }
+    plan_sha256 = hashlib.sha256(
+        json.dumps(
+            plan_payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    total = sum(int(item["reclaimable_bytes"]) for item in targets)
+    return {
+        **plan_payload,
+        "required": bool(targets),
+        "target_count": len(targets),
+        "bytes": total,
+        "size": format_storage_size(total),
+        "plan_sha256": plan_sha256,
+        "authorization_required": bool(targets),
+        "rows": rows,
+    }
+
+
 def production_disk_breakdown() -> dict[str, object]:
     usage = shutil.disk_usage(DATA_DIR)
     components = [
@@ -1594,6 +1711,7 @@ def production_disk_breakdown() -> dict[str, object]:
         "free": format_storage_size(usage.free),
         "percent": round(usage.used / usage.total * 100, 1) if usage.total else 0,
         "components": rows,
+        "cleanup_pending": release_cleanup_backlog(),
     }
 
 
