@@ -189,16 +189,16 @@ python3 "${script_dir}/build_unified_enterprise_digital_identity.py" \
   --knowledge-identities "${knowledge_root}/50_名单与对标/企业身份时间轴/浙江省/三类名单基础数字身份证" \
   --theme-enrichment-candidates "${theme_queue}" \
   --output "${knowledge_root}/50_名单与对标/企业身份时间轴/统一企业数字身份证.jsonl"
-python3 "${script_dir}/build_enterprise_identity_inventory_report.py" \
-  --database "${index_dir}/knowledge_content.sqlite3" \
-  --json-output "${knowledge_root}/50_名单与对标/企业身份时间轴/企业身份数据库分层统计_current.json" \
-  --markdown-output "${knowledge_root}/50_名单与对标/企业身份时间轴/企业身份数据库分层统计_current.md"
 python3 "${script_dir}/build_enterprise_identity_lineage.py" \
   --database "${index_dir}/knowledge_content.sqlite3" \
   --output "${knowledge_root}/50_名单与对标/企业身份时间轴/浙江省" \
   --knowledge-identities "${knowledge_root}/50_名单与对标/企业身份时间轴/浙江省/三类名单基础数字身份证"
 python3 "${script_dir}/build_recognition_search_index.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
+python3 "${script_dir}/build_enterprise_identity_inventory_report.py" \
+  --database "${index_dir}/knowledge_content.sqlite3" \
+  --json-output "${knowledge_root}/50_名单与对标/企业身份时间轴/企业身份数据库分层统计_current.json" \
+  --markdown-output "${knowledge_root}/50_名单与对标/企业身份时间轴/企业身份数据库分层统计_current.md"
 python3 "${script_dir}/audit_three_first_directory_exit.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/audit_specialized_lists_and_three_first.py" \

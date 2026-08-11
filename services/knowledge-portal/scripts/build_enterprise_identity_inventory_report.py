@@ -20,6 +20,16 @@ from typing import Any
 
 USCC_PATTERN = re.compile(r"^[0-9A-HJ-NPQRTUWXY]{18}$")
 PUBLIC_SOURCE = "共创研究院知识库"
+REQUIRED_TABLES = {
+    "documents",
+    "enterprise_project_identity_twin_steps",
+    "enterprise_project_identity_twins",
+    "enterprise_recognition_events",
+    "enterprise_unified_digital_identities",
+    "public_list_entities",
+    "recognition_records",
+    "small_giant_enterprise_identity_profiles",
+}
 DEFAULT_PROVENANCE = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/企业画像批量回传血缘/"
     "企业画像批量回传主体血缘_current.jsonl"
@@ -62,6 +72,21 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     ]
 
 
+def require_tables(connection: sqlite3.Connection) -> None:
+    available = {
+        str(item[0])
+        for item in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )
+    }
+    missing = sorted(REQUIRED_TABLES - available)
+    if missing:
+        raise RuntimeError(
+            "企业身份分层统计必须在结构表全部构建后执行；缺少表："
+            + ", ".join(missing)
+        )
+
+
 def build_report(
     database: Path,
     provenance_path: Path,
@@ -79,6 +104,7 @@ def build_report(
     connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True)
     connection.row_factory = sqlite3.Row
     try:
+        require_tables(connection)
         project_catalog = row(
             connection,
             """
