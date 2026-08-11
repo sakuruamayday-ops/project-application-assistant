@@ -11846,6 +11846,7 @@ def manual_install_target_payload(
                      ON token.id=usage.device_token_id
                    WHERE usage.user_id=enrollment.user_id
                      AND token.revoked_at IS NULL
+                     AND token.activation_state='active'
                      AND usage.called_at>=enrollment.created_at
                      AND usage.activity_type IN (
                          'mcp_connection','mcp_tools_list','mcp_search',
@@ -12125,14 +12126,13 @@ def admin_confirm_manual_install(
         if member is None:
             connection.rollback()
             raise HTTPException(status_code=404, detail="成员不存在")
-        target = manual_install_target_payload(
-            connection,
-            member_id,
-            enrollment_id,
-        )
-        if target is None:
+        target = manual_install_target_payload(connection, member_id)
+        if target is None or int(target["id"]) != enrollment_id:
             connection.rollback()
-            raise HTTPException(status_code=404, detail="待确认安装计划不存在")
+            raise HTTPException(
+                status_code=409,
+                detail="安装计划已更新，请刷新成员详情后确认最新目标版本",
+            )
         if target["version_confirmed"]:
             connection.commit()
             return RedirectResponse(
