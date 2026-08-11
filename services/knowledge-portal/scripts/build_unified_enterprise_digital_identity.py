@@ -38,6 +38,14 @@ DEFAULT_BATCH_PROFILE_REVIEW = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/企业画像批量回传血缘/"
     "企业画像批量回传人工裁决_current.jsonl"
 )
+DEFAULT_IDENTITY_CLOSURE_PATCHES = Path(
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/企业身份闭环增量/"
+    "三类数字身份证非110闭环增量候选_20260811.jsonl"
+)
+DEFAULT_QIZHIDAO_QUEUE_REUSE_CANDIDATES = Path(
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/企业身份闭环增量/"
+    "企知道110家队列归并增量候选_20260811.jsonl"
+)
 DEFAULT_OUTPUT = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/统一企业数字身份证.jsonl"
 )
@@ -85,6 +93,16 @@ def parse_args() -> argparse.Namespace:
         "--batch-profile-review",
         type=Path,
         default=DEFAULT_BATCH_PROFILE_REVIEW,
+    )
+    parser.add_argument(
+        "--identity-closure-patches",
+        type=Path,
+        default=DEFAULT_IDENTITY_CLOSURE_PATCHES,
+    )
+    parser.add_argument(
+        "--qizhidao-queue-reuse-candidates",
+        type=Path,
+        default=DEFAULT_QIZHIDAO_QUEUE_REUSE_CANDIDATES,
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
@@ -768,6 +786,242 @@ def temporal_identity_candidates(
     return temporal_candidates or candidates
 
 
+def patch_target(
+    profiles: dict[str, dict[str, Any]],
+    row: dict[str, Any],
+    *,
+    label: str,
+) -> tuple[str, dict[str, Any]]:
+    code = str(
+        row.get("unified_social_credit_code")
+        or row.get("master_identity_key")
+        or row.get("identity_key")
+        or ""
+    ).strip().upper()
+    if not USCC_PATTERN.fullmatch(code):
+        raise RuntimeError(f"{label}缺少有效统一社会信用代码：{code!r}")
+    target = profiles.get(code)
+    if target is None:
+        raise RuntimeError(f"{label}未命中统一主档：{code}")
+    expected_name = str(row.get("current_name") or "").strip()
+    if expected_name and normalize_name(expected_name) != normalize_name(
+        target.get("current_name")
+    ):
+        raise RuntimeError(
+            f"{label}主体名称冲突：{code}/{expected_name}/{target.get('current_name')}"
+        )
+    return code, target
+
+
+def validate_promotion_candidate(row: dict[str, Any], *, label: str) -> None:
+    if str(row.get("source") or "").strip() != PUBLIC_SOURCE:
+        raise RuntimeError(f"{label}来源未统一投影为{PUBLIC_SOURCE}")
+    if row.get("candidate_only") is not True or row.get("production_promoted") is not False:
+        raise RuntimeError(f"{label}不是待正式归并的候选记录")
+
+
+def promote_identity_status(target: dict[str, Any], candidate_status: object) -> None:
+    status = str(candidate_status or "").strip()
+    if not status:
+        return
+    if str(target.get("identity_verification_status") or "") in {
+        "",
+        "pending_business_identity",
+        "licensed_batch_identity_candidate",
+        "audited_single_source_candidate",
+    }:
+        target["identity_verification_status"] = status
+
+
+def overlay_identity_closure_patches(
+    profiles: dict[str, dict[str, Any]],
+    path: Path,
+    stats: defaultdict[str, int],
+) -> None:
+    if not path.is_file():
+        stats["identity_closure_patch_source_missing"] += 1
+        return
+    rows = read_jsonl(path)
+    allowed_types = {
+        "small_giant_recognition_closure",
+        "peer_comparison_ready_flag_repair",
+        "profile_topic_inference",
+        "false_recognition_quarantine",
+    }
+    seen: set[tuple[str, str, str, str, str]] = set()
+    grouped: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        validate_promotion_candidate(row, label="企业身份闭环增量")
+        patch_type = str(row.get("patch_type") or "")
+        if patch_type not in allowed_types:
+            raise RuntimeError(f"企业身份闭环增量类型不受支持：{patch_type}")
+        identity_key = str(row.get("identity_key") or "").strip().upper()
+        fingerprint = (
+            patch_type,
+            identity_key,
+            str(row.get("recognition_name") or ""),
+            str(row.get("recognition_year") or ""),
+            str(row.get("recognition_region") or ""),
+        )
+        if fingerprint in seen:
+            raise RuntimeError(f"企业身份闭环增量存在重复补丁：{patch_type}/{identity_key}")
+        seen.add(fingerprint)
+        grouped[patch_type].append(row)
+
+    for patch_type in (
+        "small_giant_recognition_closure",
+        "profile_topic_inference",
+        "peer_comparison_ready_flag_repair",
+        "false_recognition_quarantine",
+    ):
+        for row in grouped[patch_type]:
+            code, target = patch_target(
+                profiles, row, label=f"企业身份闭环增量/{patch_type}"
+            )
+            if patch_type == "small_giant_recognition_closure":
+                recognition_name = str(row.get("recognition_name") or "")
+                recognition_project = str(row.get("recognition_project") or "")
+                project_already_linked = recognition_project in set(
+                    target["recognition_projects"]
+                )
+                if project_already_linked:
+                    target["recognition_names"] = merge_unique(
+                        target["recognition_names"], [recognition_name]
+                    )
+                    target["recognition_evidence_status"] = str(
+                        row.get("recognition_evidence_status")
+                        or "knowledge_list_linked"
+                    )
+                    stats["small_giant_closure_existing_project_rows"] += 1
+                else:
+                    target["candidate_recognition_names"] = merge_unique(
+                        target.get("candidate_recognition_names"),
+                        [recognition_name],
+                    )
+                    target["candidate_recognition_projects"] = merge_unique(
+                        target.get("candidate_recognition_projects"),
+                        [recognition_project],
+                    )
+                    target["candidate_recognition_evidence_status"] = str(
+                        row.get("recognition_evidence_status")
+                        or "knowledge_list_linked"
+                    )
+                    stats["small_giant_closure_candidate_only_project_rows"] += 1
+                promote_identity_status(target, row.get("identity_verification_status"))
+                existing_promotions = target.get("identity_closure_promotions") or []
+                if not isinstance(existing_promotions, list):
+                    raise RuntimeError(f"企业身份闭环提升记录结构非法：{code}")
+                target["identity_closure_promotions"] = [
+                    *existing_promotions,
+                    {
+                        "recognition_name": recognition_name,
+                        "recognition_project": recognition_project,
+                        "recognition_region": str(row.get("recognition_region") or ""),
+                        "recognition_year": str(row.get("recognition_year") or ""),
+                        "closure_basis": str(row.get("closure_basis") or ""),
+                        "lineage_verification_method": str(
+                            row.get("lineage_verification_method") or ""
+                        ),
+                        "lineage_evidence_urls": as_list(
+                            row.get("lineage_evidence_urls")
+                        ),
+                        "project_scope_included": int(project_already_linked),
+                        "source": PUBLIC_SOURCE,
+                    },
+                ]
+                stats["small_giant_recognition_closure_patches_promoted"] += 1
+            elif patch_type == "profile_topic_inference":
+                if str(row.get("inference_scope") or "") != "产品主题，不生成具体产品型号":
+                    raise RuntimeError(f"企业主题推断边界不受支持：{code}")
+                target["main_product_tags"] = merge_unique(
+                    target["main_product_tags"], row.get("main_product_tags")
+                )
+                target["business_profile_evidence_status"] = str(
+                    row.get("business_profile_evidence_status")
+                    or "knowledge_profile_inferred"
+                )
+                target["_peer_comparison_ready_override"] = 1
+                stats["profile_topic_inference_patches_promoted"] += 1
+            elif patch_type == "peer_comparison_ready_flag_repair":
+                if int(row.get("peer_comparison_ready") or 0) != 1:
+                    raise RuntimeError(f"同行对比就绪补丁值不合法：{code}")
+                if not has_business_profile_data(target):
+                    raise RuntimeError(f"同行对比就绪补丁缺少企业画像：{code}")
+                target["_peer_comparison_ready_override"] = 1
+                stats["peer_comparison_ready_patches_promoted"] += 1
+            else:
+                if row.get("preserve_enterprise_identity") is not True:
+                    raise RuntimeError(f"错误认定关系隔离不允许删除主体：{code}")
+                remove_names = {
+                    normalize_name(value)
+                    for value in as_list(row.get("remove_recognition_names"))
+                }
+                remove_projects = set(as_list(row.get("remove_recognition_projects")))
+                target["recognition_names"] = [
+                    value
+                    for value in target["recognition_names"]
+                    if normalize_name(value) not in remove_names
+                ]
+                target["recognition_projects"] = [
+                    value
+                    for value in target["recognition_projects"]
+                    if value not in remove_projects
+                ]
+                target["three_first_products"] = [
+                    value
+                    for value in target["three_first_products"]
+                    if str(value.get("project_name") or "") not in remove_projects
+                ]
+                if not target["recognition_projects"]:
+                    target["recognition_evidence_status"] = "not_linked"
+                stats["false_recognition_relationships_quarantined"] += 1
+    stats["identity_closure_patch_records_promoted"] += len(rows)
+
+
+def overlay_qizhidao_queue_reuse_candidates(
+    profiles: dict[str, dict[str, Any]],
+    path: Path,
+    stats: defaultdict[str, int],
+) -> None:
+    if not path.is_file():
+        stats["qizhidao_queue_reuse_candidate_source_missing"] += 1
+        return
+    seen_targets: set[str] = set()
+    for row in read_jsonl(path):
+        validate_promotion_candidate(row, label="企知道队列本地主档复用增量")
+        if str(row.get("patch_type") or "") != "deferred_qizhidao_queue_local_master_reuse":
+            raise RuntimeError("企知道队列本地主档复用增量类型不受支持")
+        if row.get("qizhidao_requery_required") is not False:
+            raise RuntimeError("企知道队列归并候选仍要求重拉")
+        code, target = patch_target(
+            profiles, row, label="企知道队列本地主档复用增量"
+        )
+        if code in seen_targets:
+            raise RuntimeError(f"企知道队列存在重复主档映射：{code}")
+        seen_targets.add(code)
+        if int(row.get("peer_comparison_ready") or 0) != 1:
+            raise RuntimeError(f"企知道队列复用主体未就绪：{code}")
+        if not has_business_profile_data(target):
+            raise RuntimeError(f"企知道队列复用主体缺少完整画像：{code}")
+        promote_identity_status(target, row.get("identity_verification_status"))
+        target["_peer_comparison_ready_override"] = 1
+        target["qizhidao_requery_required"] = False
+        target["qizhidao_queue_resolution_status"] = "local_master_reused"
+        target["qizhidao_queue_match_method"] = str(row.get("match_method") or "")
+        target["qizhidao_business_profile_reuse_status"] = str(
+            row.get("business_profile_reuse_status") or "knowledge_verified"
+        )
+        target["qizhidao_source_identity_keys"] = merge_unique(
+            target.get("qizhidao_source_identity_keys"),
+            row.get("source_identity_keys"),
+        )
+        target["qizhidao_source_enterprise_names"] = merge_unique(
+            target.get("qizhidao_source_enterprise_names"),
+            [row.get("source_enterprise_name")],
+        )
+        stats["qizhidao_queue_local_master_reuse_promoted"] += 1
+
+
 def build_profiles(
     connection: sqlite3.Connection,
     knowledge_identities: Path,
@@ -775,6 +1029,8 @@ def build_profiles(
     theme_enrichment_candidates: Path | None,
     batch_profile_provenance: Path | None,
     batch_profile_review: Path | None,
+    identity_closure_patches: Path | None,
+    qizhidao_queue_reuse_candidates: Path | None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
     profiles: dict[str, dict[str, Any]] = {}
     stats: defaultdict[str, int] = defaultdict(int)
@@ -947,6 +1203,20 @@ def build_profiles(
             stats,
         )
 
+    if identity_closure_patches is not None:
+        overlay_identity_closure_patches(
+            profiles,
+            identity_closure_patches,
+            stats,
+        )
+
+    if qizhidao_queue_reuse_candidates is not None:
+        overlay_qizhidao_queue_reuse_candidates(
+            profiles,
+            qizhidao_queue_reuse_candidates,
+            stats,
+        )
+
     for profile in profiles.values():
         has_business_data = bool(
             profile["company_introduction"]
@@ -979,6 +1249,8 @@ def write_database(
         """
         DROP TABLE IF EXISTS enterprise_peer_comparison_terms;
         DROP TABLE IF EXISTS enterprise_profile_enrichment_queue;
+        DROP TABLE IF EXISTS enterprise_qizhidao_queue_resolutions;
+        DROP TABLE IF EXISTS enterprise_identity_closure_promotions;
         DROP TABLE IF EXISTS enterprise_unified_identity_coverage;
         DROP TABLE IF EXISTS enterprise_unified_digital_identities;
         CREATE TABLE enterprise_unified_digital_identities(
@@ -1053,11 +1325,92 @@ def write_database(
             source TEXT NOT NULL,
             PRIMARY KEY(identity_key,target_scope)
         );
+        CREATE TABLE enterprise_qizhidao_queue_resolutions(
+            identity_key TEXT PRIMARY KEY,
+            unified_social_credit_code TEXT NOT NULL,
+            current_name TEXT NOT NULL,
+            source_identity_keys_json TEXT NOT NULL DEFAULT '[]',
+            source_enterprise_names_json TEXT NOT NULL DEFAULT '[]',
+            match_method TEXT NOT NULL,
+            business_profile_reuse_status TEXT NOT NULL,
+            qizhidao_requery_required INTEGER NOT NULL,
+            resolution_status TEXT NOT NULL,
+            source TEXT NOT NULL
+        );
+        CREATE TABLE enterprise_identity_closure_promotions(
+            identity_key TEXT NOT NULL,
+            unified_social_credit_code TEXT NOT NULL,
+            current_name TEXT NOT NULL,
+            recognition_name TEXT NOT NULL,
+            recognition_project TEXT NOT NULL,
+            recognition_region TEXT NOT NULL,
+            recognition_year TEXT NOT NULL,
+            closure_basis TEXT NOT NULL,
+            lineage_verification_method TEXT NOT NULL,
+            lineage_evidence_urls_json TEXT NOT NULL DEFAULT '[]',
+            project_scope_included INTEGER NOT NULL,
+            source TEXT NOT NULL,
+            PRIMARY KEY(
+                identity_key, recognition_name, recognition_project,
+                recognition_region, recognition_year
+            )
+        );
         """
     )
     rows = []
+    qizhidao_resolution_rows = []
+    closure_promotion_rows = []
     terms: list[tuple[str, str, str, str, str]] = []
     for key, profile in sorted(profiles.items()):
+        promotions = profile.get("identity_closure_promotions") or []
+        if not isinstance(promotions, list):
+            raise RuntimeError(f"企业身份闭环提升记录结构非法：{key}")
+        for promotion in promotions:
+            if not isinstance(promotion, dict):
+                raise RuntimeError(f"企业身份闭环提升记录结构非法：{key}")
+            closure_promotion_rows.append(
+                (
+                    key,
+                    profile["unified_social_credit_code"],
+                    profile["current_name"],
+                    str(promotion.get("recognition_name") or ""),
+                    str(promotion.get("recognition_project") or ""),
+                    str(promotion.get("recognition_region") or ""),
+                    str(promotion.get("recognition_year") or ""),
+                    str(promotion.get("closure_basis") or ""),
+                    str(promotion.get("lineage_verification_method") or ""),
+                    json.dumps(
+                        as_list(promotion.get("lineage_evidence_urls")),
+                        ensure_ascii=False,
+                    ),
+                    int(promotion.get("project_scope_included") or 0),
+                    PUBLIC_SOURCE,
+                )
+            )
+        if profile.get("qizhidao_queue_resolution_status") == "local_master_reused":
+            qizhidao_resolution_rows.append(
+                (
+                    key,
+                    profile["unified_social_credit_code"],
+                    profile["current_name"],
+                    json.dumps(
+                        profile.get("qizhidao_source_identity_keys", []),
+                        ensure_ascii=False,
+                    ),
+                    json.dumps(
+                        profile.get("qizhidao_source_enterprise_names", []),
+                        ensure_ascii=False,
+                    ),
+                    str(profile.get("qizhidao_queue_match_method") or ""),
+                    str(
+                        profile.get("qizhidao_business_profile_reuse_status")
+                        or ""
+                    ),
+                    int(bool(profile.get("qizhidao_requery_required"))),
+                    "local_master_reused",
+                    PUBLIC_SOURCE,
+                )
+            )
         rows.append(
             (
                 key,
@@ -1109,6 +1462,14 @@ def write_database(
     connection.executemany(
         "INSERT INTO enterprise_unified_digital_identities VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         rows,
+    )
+    connection.executemany(
+        "INSERT INTO enterprise_qizhidao_queue_resolutions VALUES(?,?,?,?,?,?,?,?,?,?)",
+        qizhidao_resolution_rows,
+    )
+    connection.executemany(
+        "INSERT INTO enterprise_identity_closure_promotions VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+        closure_promotion_rows,
     )
     connection.executemany(
         "INSERT INTO enterprise_peer_comparison_terms VALUES(?,?,?,?,?)", terms
@@ -1220,6 +1581,8 @@ def build(
     theme_enrichment_candidates: Path | None = None,
     batch_profile_provenance: Path | None = None,
     batch_profile_review: Path | None = None,
+    identity_closure_patches: Path | None = None,
+    qizhidao_queue_reuse_candidates: Path | None = None,
 ) -> dict[str, Any]:
     connection = sqlite3.connect(database)
     connection.row_factory = sqlite3.Row
@@ -1231,6 +1594,8 @@ def build(
             theme_enrichment_candidates,
             batch_profile_provenance,
             batch_profile_review,
+            identity_closure_patches,
+            qizhidao_queue_reuse_candidates,
         )
         profile_count, term_count, coverage = write_database(connection, profiles)
     finally:
@@ -1269,6 +1634,8 @@ def main() -> None:
                 args.theme_enrichment_candidates,
                 args.batch_profile_provenance,
                 args.batch_profile_review,
+                args.identity_closure_patches,
+                args.qizhidao_queue_reuse_candidates,
             ),
             ensure_ascii=False,
         )
