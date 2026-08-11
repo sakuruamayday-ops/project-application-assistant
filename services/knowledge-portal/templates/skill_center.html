@@ -2,9 +2,9 @@
 <article class="skill-history-release" data-skill-history-release>
   <span class="download-icon">HIS</span>
   <div>
-    <h3>企业全生命周期助手 V{{ release.version }}</h3>
+    <h3>共创研究院企业全生命周期助手 V{{ release.version }}</h3>
     <small>发布时间 {{ release.published_at_display }} · 历史记录只读</small>
-    <details class="skill-release-notes"><summary>查看发布说明</summary><div class="manual-content">{{ release.release_notes_html }}</div></details>
+    <details class="skill-release-notes"><summary>查看功能简介</summary><div class="manual-content">{{ release.release_notes_html }}</div></details>
   </div>
 </article>
 {%- endmacro %}
@@ -86,13 +86,13 @@
         <span class="download-icon">V{{ release_stage.version }}</span>
         <div>
           <span class="skill-status is-pending"><i></i>正式发布中</span>
-          <h3>企业全生命周期助手 V{{ release_stage.version }}</h3>
+          <h3>共创研究院企业全生命周期助手 V{{ release_stage.version }}</h3>
           <small>进入发布流程 {{ release_stage.staged_at_display }} · 等待主人确认正式发布</small>
         </div>
         <div class="button-row"><a class="button secondary" href="{{ release_stage.github_url }}" target="_blank" rel="noreferrer">查看预发布</a></div>
       </article>
       {% endif %}
-      <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本发布说明</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
+      <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '共创研究院企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本功能简介</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
       <div class="skill-platform-note"><strong>固定三产物</strong><p>正式发布只保留通用版、macOS WorkBuddy 版与 Windows WorkBuddy 版。两个 WorkBuddy 包包含同一套 Skills 与业务规则，并分别使用 macOS Python 核心和 Windows 原生 EXE；不需要重复安装通用版。其他宿主不再规划或展示平台专用版本。</p></div>
       <div class="skill-platform-downloads">

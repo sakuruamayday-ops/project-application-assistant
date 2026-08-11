@@ -119,6 +119,7 @@ from app.recognized_enterprise_discovery import (
     discover_recognized_enterprises,
     recognition_search as execute_recognition_search,
 )
+from app.release_introductions import release_function_introduction
 
 # Production may supply this private extension as a server-managed overlay.
 try:
@@ -8976,6 +8977,10 @@ def is_public_skill_release_version(value: str) -> bool:
     )
 
 
+def public_release_notes(version: str, fallback: str = "") -> str:
+    return release_function_introduction(str(version), str(fallback or ""))
+
+
 def latest_agent_install_result_payload(
     connection: sqlite3.Connection,
     user_id: int,
@@ -9596,8 +9601,17 @@ def portal_payload(
         releases = [
             {
                 **dict(row),
+                "release_notes": public_release_notes(
+                    str(row["version"]),
+                    str(row["release_notes"]),
+                ),
                 "published_at_display": format_chinese_datetime(row["published_at"]),
-                "release_notes_html": render_guide_markdown(str(row["release_notes"])),
+                "release_notes_html": render_guide_markdown(
+                    public_release_notes(
+                        str(row["version"]),
+                        str(row["release_notes"]),
+                    )
+                ),
             }
             for row in release_rows
             if is_public_skill_release_version(str(row["version"]))
@@ -9716,8 +9730,17 @@ def portal_payload(
         latest_release_payload = (
             {
                 **dict(latest_release),
+                "release_notes": public_release_notes(
+                    str(latest_release["version"]),
+                    str(latest_release["release_notes"]),
+                ),
                 "published_at_display": format_chinese_datetime(latest_release["published_at"]),
-                "release_notes_html": render_guide_markdown(str(latest_release["release_notes"])),
+                "release_notes_html": render_guide_markdown(
+                    public_release_notes(
+                        str(latest_release["version"]),
+                        str(latest_release["release_notes"]),
+                    )
+                ),
                 "generic_available": latest_generic_available,
                 "workbuddy_available": latest_workbuddy["installable"],
                 "workbuddy": latest_workbuddy,
@@ -18061,7 +18084,10 @@ def latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
         file_name=release["file_name"],
         sha256=release["sha256"],
         file_size=package_path.stat().st_size,
-        release_notes=release["release_notes"],
+        release_notes=public_release_notes(
+            str(release["version"]),
+            str(release["release_notes"] or ""),
+        ),
         published_at=release["published_at"],
         download_url="/v1/skills/latest/download",
     )
@@ -18099,7 +18125,10 @@ def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
         file_name=str(release["file_name"]),
         sha256=str(release["sha256"]),
         file_size=package_path.stat().st_size,
-        release_notes=str(release["release_notes"] or ""),
+        release_notes=public_release_notes(
+            str(release["version"]),
+            str(release["release_notes"] or ""),
+        ),
         published_at=str(release["published_at"]),
         download_url=download_url,
     )

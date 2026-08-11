@@ -7760,7 +7760,7 @@ def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
         assert artifacts["windows"]["available"] is False
 
 
-def test_workbuddy_distribution_revision_is_visible_without_rewriting_content_notes(
+def test_workbuddy_distribution_revision_uses_public_intro_without_rewriting_audit_notes(
     tmp_path,
 ):
     module = load_app(tmp_path)
@@ -7844,7 +7844,14 @@ def test_workbuddy_distribution_revision_is_visible_without_rewriting_content_no
         assert "查看 WorkBuddy 分发修订说明" in page.text
         assert "跨平台分发修订：移除外层固定安装器。" in page.text
         assert "查看不可变发行记录" in page.text
-        assert "初始 Windows 历史说明" in page.text
+        assert "一、本版本新增功能" in page.text
+        assert "初始 Windows 历史说明" not in page.text
+
+        with closing(module.database()) as connection:
+            stored_notes = connection.execute(
+                "SELECT release_notes FROM skill_releases WHERE version='1.3.1.2'"
+            ).fetchone()["release_notes"]
+        assert stored_notes == "初始 Windows 历史说明"
 
 
 @pytest.mark.parametrize(
@@ -9427,12 +9434,14 @@ def test_portal_displays_latest_and_full_public_release_history_for_all_roles(
         page = client.get("/skills")
 
         assert page.status_code == 200
-        assert "企业全生命周期助手 V1.5.2" in page.text
-        assert "企业全生命周期助手 V1.5.1" in page.text
-        assert "企业全生命周期助手 V1.5.0" in page.text
-        assert "release 1.5.1" in page.text
+        assert "共创研究院企业全生命周期助手 V1.5.2" in page.text
+        assert "共创研究院企业全生命周期助手 V1.5.1" in page.text
+        assert "共创研究院企业全生命周期助手 V1.5.0" in page.text
+        assert "一、本版本新增功能" in page.text
+        assert "49 项 Skill 划分为主业务" in page.text
+        assert "release 1.5.1" not in page.text
         assert "历史记录只读" in page.text
-        assert "企业全生命周期助手 V1.4.9" not in page.text
+        assert "共创研究院企业全生命周期助手 V1.4.9" not in page.text
 
 
 def test_admin_invalid_signature_upload_keeps_previous_latest(
