@@ -6531,14 +6531,21 @@ def test_legacy_device_registration_is_blocked_after_transactional_release(
         assert connection.execute("SELECT COUNT(*) FROM device_keys").fetchone()[0] == 0
 
 
-def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
+def test_skills_diagnostics_uses_current_platform_pair_and_redacts_secrets(
     tmp_path,
     monkeypatch,
 ):
     module = load_app(tmp_path)
-    package = tmp_path / "workbuddy-diagnostics.zip"
-    package.write_bytes(b"diagnostic-package")
-    package_sha256 = hashlib.sha256(package.read_bytes()).hexdigest()
+    packages = {
+        "macos": tmp_path / "workbuddy-macos-diagnostics.zip",
+        "windows": tmp_path / "workbuddy-windows-diagnostics.zip",
+    }
+    packages["macos"].write_bytes(b"diagnostic-package-macos")
+    packages["windows"].write_bytes(b"diagnostic-package-windows")
+    package_sha256 = {
+        target: hashlib.sha256(path.read_bytes()).hexdigest()
+        for target, path in packages.items()
+    }
     now = module.isoformat(module.utc_now())
     expires_at = module.isoformat(module.utc_now() + timedelta(minutes=30))
     with closing(module.database()) as connection:
@@ -6612,33 +6619,29 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
     monkeypatch.setattr(
         module,
         "latest_skill_artifact",
-        lambda target: (
-            {
-                "file_path": str(package),
-                "sha256": package_sha256,
-                "target": "workbuddy",
-                "version": "1.3.1.4",
-            }
-            if target == "workbuddy"
-            else None
-        ),
-    )
-    monkeypatch.setattr(
-        module,
-        "workbuddy_connector_sha256",
-        lambda artifact: "a" * 64,
+        lambda target: {
+            "file_path": str(packages[target]),
+            "file_name": packages[target].name,
+            "sha256": package_sha256[target],
+            "target": target,
+            "version": "1.6.3",
+        }
+        if target in packages
+        else None,
     )
     monkeypatch.setattr(
         module,
         "validate_workbuddy_artifact_for_diagnostics",
-        lambda *args: {
+        lambda artifact: {
             "status": "verified",
             "publisher_fingerprint": (
                 "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
             ),
             "signature_namespace": "codex-workbuddy-plugin-manifest",
-            "verified_files": 57,
-            "archive_entries": 61,
+            "verified_files": 319 if artifact["target"] == "macos" else 317,
+            "archive_entries": 319 if artifact["target"] == "macos" else 317,
+            "mcp_configuration_mode": "user_remote_streamable_http",
+            "hook_mode": "behavior_only_fail_open",
         },
     )
 
@@ -6652,8 +6655,11 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
         page = client.get("/skills/diagnostics")
         assert page.status_code == 200
         assert "WorkBuddy 一键诊断" in page.text
-        assert package_sha256 in page.text
-        assert "Ed25519 签名有效" in page.text
+        assert package_sha256["macos"] in page.text
+        assert package_sha256["windows"] in page.text
+        assert "WorkBuddy V1.6.3" in page.text
+        assert "Ed25519 双端签名有效" in page.text
+        assert "636 个文件已核验" in page.text
         assert "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI" in page.text
         assert "安装包边界" in page.text
         assert "运行时完成标准" in page.text
@@ -6668,6 +6674,132 @@ def test_skills_diagnostics_redacts_secrets_and_shows_integrity_and_stages(
         ):
             assert sensitive not in page.text
         assert page.headers["cache-control"] == "private, no-store"
+
+
+@pytest.mark.parametrize(
+    ("fault", "expected_status", "expected_detail"),
+    (
+        ("missing", "unavailable", "未同时就绪"),
+        ("version", "invalid", "双端版本不一致"),
+        ("fingerprint", "invalid", "公钥指纹不一致"),
+        ("invalid", "invalid", "至少一个平台验签或安装边界未通过"),
+    ),
+)
+def test_agent_diagnostics_fails_closed_for_platform_pair_drift(
+    tmp_path,
+    monkeypatch,
+    fault,
+    expected_status,
+    expected_detail,
+):
+    module = load_app(tmp_path)
+    packages = {
+        "macos": tmp_path / "macos.zip",
+        "windows": tmp_path / "windows.zip",
+    }
+    for target, path in packages.items():
+        path.write_bytes(f"{target}-package".encode())
+
+    def artifact(target):
+        if target not in packages:
+            raise AssertionError("不得回退到旧workbuddy单包")
+        if fault == "missing" and target == "windows":
+            return None
+        path = packages[target]
+        return {
+            "file_path": str(path),
+            "file_name": path.name,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "target": target,
+            "version": "1.6.2" if fault == "version" and target == "windows" else "1.6.3",
+        }
+
+    def validation(candidate):
+        target = candidate["target"]
+        if fault == "invalid" and target == "windows":
+            raise ValueError("fixture signature failure")
+        fingerprint = "SHA256:current-publisher"
+        if fault == "fingerprint" and target == "windows":
+            fingerprint = "SHA256:different-publisher"
+        return {
+            "status": "verified",
+            "publisher_fingerprint": fingerprint,
+            "signature_namespace": "codex-workbuddy-plugin-manifest",
+            "verified_files": 2,
+            "archive_entries": 2,
+            "mcp_configuration_mode": "user_remote_streamable_http",
+            "hook_mode": "behavior_only_fail_open",
+        }
+
+    monkeypatch.setattr(module, "latest_skill_artifact", artifact)
+    monkeypatch.setattr(
+        module,
+        "validate_workbuddy_artifact_for_diagnostics",
+        validation,
+    )
+    payload = module.agent_diagnostics_payload(None, 1)
+    assert payload["signature"]["status"] == expected_status
+    assert expected_detail in payload["signature"]["detail"]
+    assert payload["signature"]["verified_files"] == 0
+
+
+def test_current_workbuddy_upgrade_channel_uses_platform_artifact(monkeypatch, tmp_path):
+    module = load_app(tmp_path)
+    monkeypatch.setattr(
+        module,
+        "latest_workbuddy_artifact",
+        lambda: {
+            "version": "1.6.3",
+            "installable": True,
+            "platform_artifacts": {
+                "macos": {"sha256": "a" * 64},
+                "windows": {"sha256": "b" * 64},
+            },
+        },
+    )
+    assert module.current_workbuddy_upgrade_channel("win32-x64") == {
+        "version": "1.6.3",
+        "installable": True,
+        "target": "windows",
+        "sha256": "b" * 64,
+    }
+    assert module.current_workbuddy_upgrade_channel("darwin-arm64") == {
+        "version": "1.6.3",
+        "installable": True,
+        "target": "macos",
+        "sha256": "a" * 64,
+    }
+    assert module.current_workbuddy_upgrade_channel("unknown-agent") == {
+        "version": "1.6.3",
+        "installable": False,
+        "target": "",
+        "sha256": "",
+    }
+
+
+def test_current_workbuddy_upgrade_channel_does_not_cross_platform_versions(
+    monkeypatch,
+    tmp_path,
+):
+    module = load_app(tmp_path)
+    monkeypatch.setattr(
+        module,
+        "latest_workbuddy_artifact",
+        lambda: {
+            "version": "1.6.4",
+            "installable": True,
+            "platform_artifacts": {
+                "macos": {"version": "1.6.3", "sha256": "a" * 64},
+                "windows": {"version": "1.6.4", "sha256": "b" * 64},
+            },
+        },
+    )
+    assert module.current_workbuddy_upgrade_channel("darwin-arm64")["version"] == (
+        "1.6.3"
+    )
+    assert module.current_workbuddy_upgrade_channel("windows-x64")["version"] == (
+        "1.6.4"
+    )
 
 
 @pytest.mark.skip(reason="V1.4.5 通过插件与 MCP 配置备份恢复，不再使用 bootstrap")

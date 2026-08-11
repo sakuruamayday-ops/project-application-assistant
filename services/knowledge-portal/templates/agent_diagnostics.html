@@ -19,7 +19,7 @@
     <article class="{{ 'is-ok' if diagnostics.package.digest_matches else 'is-alert' }}">
       <span>包摘要</span>
       <strong>{{ '一致' if diagnostics.package.digest_matches else '需检查' }}</strong>
-      <small>WorkBuddy V{{ diagnostics.package.version or '—' }}</small>
+      <small>WorkBuddy {{ diagnostics.package.version_label or '—' }}</small>
     </article>
     <article class="{{ 'is-ok' if diagnostics.signature.status == 'verified' else 'is-alert' }}">
       <span>签名状态</span>
@@ -35,10 +35,17 @@
 
   <section class="diagnostics-grid">
     <article class="panel diagnostics-card">
-      <div class="panel-head"><div><span class="file-tab">PACKAGE DIGEST</span><h2>正式包摘要</h2></div></div>
+      <div class="panel-head"><div><span class="file-tab">PACKAGE DIGEST</span><h2>双端正式包摘要</h2></div></div>
       <dl class="diagnostics-values">
-        <div><dt>发布记录 SHA-256</dt><dd><code>{{ diagnostics.package.expected_sha256 or '未发布' }}</code></dd></div>
-        <div><dt>服务器文件 SHA-256</dt><dd><code>{{ diagnostics.package.actual_sha256 or '文件不可用' }}</code></dd></div>
+        {% for platform in diagnostics.package.platforms %}
+        <div>
+          <dt>{{ platform.label }} V{{ platform.version or '—' }} · {{ '摘要一致' if platform.digest_matches else '摘要需检查' }}</dt>
+          <dd>
+            <code>发布记录：{{ platform.expected_sha256 or '未发布' }}</code>
+            <code>服务器文件：{{ platform.actual_sha256 or '文件不可用' }}</code>
+          </dd>
+        </div>
+        {% endfor %}
       </dl>
     </article>
 
@@ -48,6 +55,9 @@
       <p>{{ diagnostics.signature.detail }}</p>
       <dl class="diagnostics-values">
         <div><dt>发布者公钥指纹</dt><dd><code>{{ diagnostics.signature.publisher_fingerprint or '无法验证' }}</code></dd></div>
+        {% for platform in diagnostics.package.platforms %}
+        <div><dt>{{ platform.label }}</dt><dd>{{ platform.status_label }} · {{ platform.verified_files }} 个文件</dd></div>
+        {% endfor %}
       </dl>
     </article>
 

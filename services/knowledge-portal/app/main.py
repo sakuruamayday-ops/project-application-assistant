@@ -9103,19 +9103,21 @@ def portal_payload(
             """,
             (int(user["id"]),),
         ).fetchone()
-        latest_workbuddy_upgrade_artifact = latest_skill_artifact("workbuddy")
+        workbuddy_upgrade_channel = current_workbuddy_upgrade_channel(
+            str(active_device_binding["platform"] or "")
+            if active_device_binding
+            else ""
+        )
         installed_version = (
             str(active_device_binding["installed_version"] or "")
             if active_device_binding
             else ""
         )
-        latest_workbuddy_version = (
-            str(latest_workbuddy_upgrade_artifact.get("version") or "")
-            if latest_workbuddy_upgrade_artifact
-            else ""
+        latest_workbuddy_version = str(
+            workbuddy_upgrade_channel.get("version") or ""
         )
-        latest_workbuddy_installable = workbuddy_artifact_is_simple_remote_mcp(
-            latest_workbuddy_upgrade_artifact
+        latest_workbuddy_installable = bool(
+            workbuddy_upgrade_channel.get("installable")
         )
         upgrade_available = bool(
             active_device_binding
@@ -9134,10 +9136,8 @@ def portal_payload(
                 "upgrade_available": upgrade_available,
                 "workbuddy_installable": latest_workbuddy_installable,
                 "latest_workbuddy_version": latest_workbuddy_version,
-                "latest_workbuddy_sha256": (
-                    str(latest_workbuddy_upgrade_artifact.get("sha256") or "")
-                    if latest_workbuddy_upgrade_artifact
-                    else ""
+                "latest_workbuddy_sha256": str(
+                    workbuddy_upgrade_channel.get("sha256") or ""
                 ),
                 "first_bound_at_display": format_chinese_datetime(
                     active_device_binding["first_bound_at"]
@@ -9691,6 +9691,35 @@ def require_installable_workbuddy_artifact(
             ),
         )
     return selected
+
+
+def current_workbuddy_upgrade_channel(platform: str = "") -> dict[str, object]:
+    """Return the current installable platform channel, never a legacy bundle."""
+
+    channel = latest_workbuddy_artifact()
+    platform_artifacts = channel.get("platform_artifacts")
+    if not isinstance(platform_artifacts, dict):
+        platform_artifacts = {}
+    normalized_platform = platform.strip().casefold()
+    platform_tokens = {
+        token for token in re.split(r"[^a-z0-9]+", normalized_platform) if token
+    }
+    target = ""
+    if platform_tokens & {"win", "win32", "win64", "windows"}:
+        target = "windows"
+    elif platform_tokens & {"darwin", "mac", "macos", "osx"}:
+        target = "macos"
+    artifact = platform_artifacts.get(target)
+    if not isinstance(artifact, dict):
+        artifact = None
+    return {
+        "version": str(
+            (artifact or {}).get("version") or channel.get("version") or ""
+        ),
+        "installable": bool(channel.get("installable") and artifact),
+        "target": target,
+        "sha256": str((artifact or {}).get("sha256") or ""),
+    }
 
 
 def public_release_guidance() -> dict[str, object]:
@@ -17374,22 +17403,22 @@ def workbuddy_connector_sha256(artifact: dict[str, object]) -> str:
 
 
 def validate_workbuddy_artifact_for_diagnostics(
-    package_path_value: str,
-    version: str,
-    expected_sha256: str,
-    size: int,
-    modified_ns: int,
+    artifact: dict[str, object],
 ) -> dict[str, object]:
-    del size, modified_ns
+    target = str(artifact.get("target") or "")
+    if target not in {"macos", "windows"}:
+        raise ValueError("诊断仅接受当前macOS或Windows正式包")
     integrity = validate_release_artifact_for_serving(
-        {
-            "file_path": package_path_value,
-            "version": version,
-            "sha256": expected_sha256,
-        },
-        target="workbuddy",
+        artifact,
+        target=target,
         require_signature=True,
     )
+    if (
+        integrity.get("mcp_configuration_mode")
+        != "user_remote_streamable_http"
+        or integrity.get("hook_mode") != "behavior_only_fail_open"
+    ):
+        raise ValueError("WorkBuddy简化安装边界未通过")
     return {
         "status": str(integrity.get("status") or ""),
         "publisher_fingerprint": str(
@@ -17401,6 +17430,52 @@ def validate_workbuddy_artifact_for_diagnostics(
         "mcp_configuration_mode": str(
             integrity.get("mcp_configuration_mode") or ""
         ),
+        "hook_mode": str(integrity.get("hook_mode") or ""),
+    }
+
+
+def workbuddy_platform_diagnostic(
+    target: str,
+    label: str,
+) -> dict[str, object]:
+    artifact = latest_skill_artifact(target)
+    expected_sha256 = str((artifact or {}).get("sha256") or "")
+    package_path = Path(str((artifact or {}).get("file_path") or ""))
+    actual_sha256 = sha256_file(package_path) if package_path.is_file() else ""
+    digest_matches = bool(
+        expected_sha256
+        and actual_sha256
+        and secrets.compare_digest(expected_sha256, actual_sha256)
+    )
+    payload: dict[str, object] = {
+        "target": target,
+        "label": label,
+        "version": str((artifact or {}).get("version") or ""),
+        "file_name": str((artifact or {}).get("file_name") or ""),
+        "available": bool(artifact and package_path.is_file()),
+        "expected_sha256": expected_sha256,
+        "actual_sha256": actual_sha256,
+        "digest_matches": digest_matches,
+        "status": "unavailable",
+        "status_label": "正式包不可用",
+        "publisher_fingerprint": "",
+        "verified_files": 0,
+        "archive_entries": 0,
+    }
+    if not payload["available"]:
+        return payload
+    try:
+        integrity = validate_workbuddy_artifact_for_diagnostics(artifact or {})
+    except (OSError, ValueError, zipfile.BadZipFile):
+        return {
+            **payload,
+            "status": "invalid",
+            "status_label": "签名或安装边界未通过",
+        }
+    return {
+        **payload,
+        **integrity,
+        "status_label": "签名有效",
     }
 
 
@@ -17408,155 +17483,92 @@ def agent_diagnostics_payload(
     request: Request,
     user_id: int,
 ) -> dict[str, object]:
-    artifact = latest_skill_artifact("workbuddy")
-    expected_sha256 = str(artifact.get("sha256") or "") if artifact else ""
-    package_path = (
-        Path(str(artifact.get("file_path") or "")) if artifact else None
+    del request, user_id
+    platforms = [
+        workbuddy_platform_diagnostic("macos", "macOS"),
+        workbuddy_platform_diagnostic("windows", "Windows"),
+    ]
+    complete = all(bool(item["available"]) for item in platforms)
+    digest_matches = complete and all(
+        bool(item["digest_matches"]) for item in platforms
     )
-    actual_sha256 = ""
-    connector_sha256 = ""
-    signature: dict[str, object] = {
-        "status": "unavailable",
-        "label": "无法验证",
-        "detail": "当前没有可验签的 WorkBuddy 正式包。",
-        "publisher_fingerprint": "",
-        "verified_files": 0,
-        "archive_entries": 0,
+    versions = {str(item["version"]) for item in platforms if item["version"]}
+    version_matches = complete and len(versions) == 1
+    fingerprints = {
+        str(item["publisher_fingerprint"])
+        for item in platforms
+        if item["status"] == "verified" and item["publisher_fingerprint"]
     }
-    package_exists = bool(package_path and package_path.is_file())
-    if package_exists and package_path is not None:
-        actual_sha256 = sha256_file(package_path)
-        try:
-            connector_sha256 = workbuddy_connector_sha256(artifact or {})
-            stat = package_path.stat()
-            integrity = validate_workbuddy_artifact_for_diagnostics(
-                str(package_path),
-                str(artifact.get("version") or ""),
-                expected_sha256,
-                int(stat.st_size),
-                int(stat.st_mtime_ns),
-            )
-            signature = {
-                **integrity,
-                "label": "Ed25519 签名有效",
-                "detail": (
-                    f"已验证 {integrity['verified_files']} 个签名文件，"
-                    f"归档共 {integrity['archive_entries']} 个文件。"
-                ),
-            }
-        except (OSError, ValueError, zipfile.BadZipFile):
-            signature = {
-                **signature,
-                "status": "invalid",
-                "label": "签名验证失败",
-                "detail": "正式包验签未通过，请联系管理员查看服务器端发布门禁。",
-            }
-
-    with closing(database()) as connection:
-        enrollment = connection.execute(
-            """
-            SELECT codes.created_at,codes.expires_at,codes.confirmed_at,
-                   codes.registered_at,codes.consumed_at,
-                   intents.created_at AS prepared_at,
-                   intents.activated_at AS intent_activated_at
-            FROM agent_enrollment_codes codes
-            LEFT JOIN device_registration_intents intents
-              ON intents.enrollment_id=codes.id
-            WHERE codes.user_id=?
-            ORDER BY codes.id DESC
-            LIMIT 1
-            """,
-            (user_id,),
-        ).fetchone()
-        binding = connection.execute(
-            """
-            SELECT device_bindings.first_bound_at,
-                   device_keys.credential_saved_at,
-                   device_keys.first_verified_at,
-                   device_keys.mcp_connected_at
-            FROM device_bindings
-            JOIN device_keys ON device_keys.binding_id=device_bindings.id
-            WHERE device_bindings.user_id=?
-              AND device_bindings.revoked_at IS NULL
-              AND device_keys.revoked_at IS NULL
-            ORDER BY device_bindings.id DESC
-            LIMIT 1
-            """,
-            (user_id,),
-        ).fetchone()
+    platform_signatures_valid = all(
+        item["status"] == "verified" for item in platforms
+    )
+    signature_verified = (
+        complete
+        and digest_matches
+        and version_matches
+        and platform_signatures_valid
+        and len(fingerprints) == 1
+    )
+    if signature_verified:
+        verified_files = sum(int(item["verified_files"]) for item in platforms)
+        archive_entries = sum(int(item["archive_entries"]) for item in platforms)
+        signature: dict[str, object] = {
+            "status": "verified",
+            "label": "Ed25519 双端签名有效",
+            "detail": (
+                f"macOS 与 Windows 共验证 {verified_files} 个签名文件，"
+                f"归档共 {archive_entries} 个文件。"
+            ),
+            "publisher_fingerprint": next(iter(fingerprints)),
+            "verified_files": verified_files,
+            "archive_entries": archive_entries,
+        }
+    elif not complete:
+        signature = {
+            "status": "unavailable",
+            "label": "双端签名材料不完整",
+            "detail": "当前macOS与Windows正式包未同时就绪。",
+            "publisher_fingerprint": "",
+            "verified_files": 0,
+            "archive_entries": 0,
+        }
+    else:
+        reasons: list[str] = []
+        if not version_matches:
+            reasons.append("双端版本不一致")
+        if not digest_matches:
+            reasons.append("包摘要不一致")
+        if not platform_signatures_valid:
+            reasons.append("至少一个平台验签或安装边界未通过")
+        if platform_signatures_valid and len(fingerprints) != 1:
+            reasons.append("双端发布者公钥指纹不一致")
+        signature = {
+            "status": "invalid",
+            "label": "签名验证失败",
+            "detail": "；".join(reasons) or "双端正式包验签未通过。",
+            "publisher_fingerprint": "",
+            "verified_files": 0,
+            "archive_entries": 0,
+        }
 
     now = isoformat(utc_now())
-    enrollment_status = "none"
-    enrollment_label = "尚未生成"
-    if enrollment is not None:
-        if binding and binding["mcp_connected_at"]:
-            enrollment_status, enrollment_label = "connected", "四阶段已完成"
-        elif enrollment["registered_at"] or enrollment["intent_activated_at"]:
-            enrollment_status, enrollment_label = "activated", "凭据已激活"
-        elif str(enrollment["expires_at"]) <= now:
-            enrollment_status, enrollment_label = "expired", "已过期"
-        elif enrollment["prepared_at"]:
-            enrollment_status, enrollment_label = (
-                "credential_pending",
-                "等待本地凭据保存并激活",
-            )
-        elif enrollment["confirmed_at"]:
-            enrollment_status, enrollment_label = "ready", "已确认，等待预登记"
-        else:
-            enrollment_status, enrollment_label = "review", "等待用户审查确认"
-
-    stage_specs = (
-        ("registration", "设备登记", "first_bound_at"),
-        ("credential_saved", "凭据安全保存", "credential_saved_at"),
-        ("first_signature", "设备签名验证", "first_verified_at"),
-        ("mcp_connection", "MCP 首次连接", "mcp_connected_at"),
+    version_label = (
+        f"V{next(iter(versions))}"
+        if version_matches
+        else " / ".join(
+            f"{item['label']} V{item['version'] or '—'}" for item in platforms
+        )
     )
-    stages = [
-        {
-            "id": stage_id,
-            "label": label,
-            "complete": bool(binding and binding[field]),
-            "completed_at": (
-                format_chinese_datetime(binding[field])
-                if binding and binding[field]
-                else ""
-            ),
-        }
-        for stage_id, label, field in stage_specs
-    ]
-    public_endpoint = str(request.base_url).rstrip("/")
     return {
         "generated_at": format_chinese_datetime(now),
         "package": {
-            "version": str(artifact.get("version") or "") if artifact else "",
-            "available": package_exists,
-            "expected_sha256": expected_sha256,
-            "actual_sha256": actual_sha256,
-            "digest_matches": bool(
-                expected_sha256
-                and actual_sha256
-                and secrets.compare_digest(expected_sha256, actual_sha256)
-            ),
-            "connector_sha256": connector_sha256,
+            "version": next(iter(versions)) if version_matches else "",
+            "version_label": version_label,
+            "available": complete,
+            "digest_matches": digest_matches and version_matches,
+            "platforms": platforms,
         },
         "signature": signature,
-        "enrollment": {
-            "status": enrollment_status,
-            "label": enrollment_label,
-            "url": (
-                f"{public_endpoint}/v1/agent-bootstrap/"
-                "[一次性安装码已隐藏]?platform=unified"
-                if enrollment is not None
-                else "尚未生成一次性登记 URL"
-            ),
-            "expires_at": (
-                format_chinese_datetime(enrollment["expires_at"])
-                if enrollment is not None
-                else ""
-            ),
-        },
-        "stages": stages,
-        "configured": bool(binding and binding["mcp_connected_at"]),
     }
 
 
