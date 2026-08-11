@@ -586,6 +586,190 @@ def test_batch_profile_provenance_merges_aliases_and_excludes_reviewed_noise(
     assert renamed["recognition_evidence_status"] == "knowledge_list_linked"
 
 
+def test_identity_closure_patches_keep_candidate_honors_out_of_project_scope(
+    tmp_path: Path,
+):
+    database = tmp_path / "knowledge.sqlite3"
+    snapshot = tmp_path / "identities.jsonl"
+    patches = tmp_path / "identity-closure-patches.jsonl"
+    make_database(database)
+    write_snapshot(snapshot)
+    rows = [
+        {
+            "schema_version": "enterprise-identity-closure-candidate-v1",
+            "patch_type": "small_giant_recognition_closure",
+            "candidate_only": True,
+            "production_promoted": False,
+            "source": "共创研究院知识库",
+            "identity_key": "913301001111111111",
+            "unified_social_credit_code": "913301001111111111",
+            "current_name": "甲机器人有限公司",
+            "recognition_name": "甲自动化有限公司",
+            "recognition_project": "国家专精特新“小巨人”企业",
+            "recognition_region": "浙江省",
+            "recognition_year": "2022",
+            "recognition_evidence_status": "knowledge_list_linked",
+            "identity_verification_status": "knowledge_alias_closed",
+            "closure_basis": "统一代码一致＋名称链一致",
+            "lineage_verification_method": "已闭合现名和曾用名链",
+            "lineage_evidence_urls": [],
+        },
+        {
+            "schema_version": "enterprise-identity-closure-candidate-v1",
+            "patch_type": "small_giant_recognition_closure",
+            "candidate_only": True,
+            "production_promoted": False,
+            "source": "共创研究院知识库",
+            "identity_key": "913301003333333333",
+            "unified_social_credit_code": "913301003333333333",
+            "current_name": "丙装备有限公司",
+            "recognition_name": "丙装备有限公司",
+            "recognition_project": "国家专精特新“小巨人”企业",
+            "recognition_region": "浙江省",
+            "recognition_year": "2023",
+            "recognition_evidence_status": "knowledge_list_linked",
+            "identity_verification_status": "knowledge_alias_closed",
+            "closure_basis": "单源荣誉候选",
+            "lineage_verification_method": "主体已闭合，项目尚未闭合",
+            "lineage_evidence_urls": [],
+        },
+        {
+            "schema_version": "enterprise-identity-closure-candidate-v1",
+            "patch_type": "profile_topic_inference",
+            "candidate_only": True,
+            "production_promoted": False,
+            "source": "共创研究院知识库",
+            "identity_key": "913301003333333333",
+            "unified_social_credit_code": "913301003333333333",
+            "current_name": "丙装备有限公司",
+            "inference_scope": "产品主题，不生成具体产品型号",
+            "main_product_tags": ["精密加工中心"],
+            "business_profile_evidence_status": "knowledge_profile_inferred",
+            "peer_comparison_ready": 1,
+        },
+        {
+            "schema_version": "enterprise-identity-closure-candidate-v1",
+            "patch_type": "peer_comparison_ready_flag_repair",
+            "candidate_only": True,
+            "production_promoted": False,
+            "source": "共创研究院知识库",
+            "identity_key": "913301003333333333",
+            "unified_social_credit_code": "913301003333333333",
+            "current_name": "丙装备有限公司",
+            "peer_comparison_ready": 1,
+        },
+        {
+            "schema_version": "enterprise-identity-closure-candidate-v1",
+            "patch_type": "false_recognition_quarantine",
+            "candidate_only": True,
+            "production_promoted": False,
+            "source": "共创研究院知识库",
+            "identity_key": "913301003333333333",
+            "unified_social_credit_code": "913301003333333333",
+            "current_name": "丙装备有限公司",
+            "preserve_enterprise_identity": True,
+            "remove_recognition_names": [],
+            "remove_recognition_projects": ["浙江省制造业首台（套）装备"],
+        },
+    ]
+    patches.write_text(
+        "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in rows),
+        encoding="utf-8",
+    )
+
+    report = BUILDER.build(
+        database,
+        snapshot,
+        None,
+        identity_closure_patches=patches,
+    )
+
+    assert report["identity_closure_patch_records_promoted"] == 5
+    assert report["small_giant_closure_existing_project_rows"] == 1
+    assert report["small_giant_closure_candidate_only_project_rows"] == 1
+    assert report["peer_comparison_ready_patches_promoted"] == 1
+    assert report["profile_topic_inference_patches_promoted"] == 1
+    assert report["false_recognition_relationships_quarantined"] == 1
+    connection = sqlite3.connect(database)
+    connection.row_factory = sqlite3.Row
+    existing = connection.execute(
+        "SELECT recognition_names_json FROM enterprise_unified_digital_identities "
+        "WHERE identity_key='913301001111111111'"
+    ).fetchone()
+    candidate_only = connection.execute(
+        "SELECT recognition_projects_json,peer_comparison_ready "
+        "FROM enterprise_unified_digital_identities "
+        "WHERE identity_key='913301003333333333'"
+    ).fetchone()
+    promotion_scope = connection.execute(
+        "SELECT recognition_year,project_scope_included "
+        "FROM enterprise_identity_closure_promotions ORDER BY recognition_year"
+    ).fetchall()
+    connection.close()
+    assert "甲自动化有限公司" in json.loads(
+        existing["recognition_names_json"]
+    )
+    assert "国家专精特新“小巨人”企业" not in json.loads(
+        candidate_only["recognition_projects_json"]
+    )
+    assert candidate_only["peer_comparison_ready"] == 1
+    assert [(row["recognition_year"], row["project_scope_included"]) for row in promotion_scope] == [
+        ("2022", 1),
+        ("2023", 0),
+    ]
+
+
+def test_qizhidao_queue_reuse_closes_without_new_external_query(tmp_path: Path):
+    database = tmp_path / "knowledge.sqlite3"
+    snapshot = tmp_path / "identities.jsonl"
+    queue = tmp_path / "qizhidao-reuse.jsonl"
+    make_database(database)
+    write_snapshot(snapshot)
+    queue.write_text(
+        json.dumps(
+            {
+                "schema_version": "enterprise-source-alias-merge-candidate-v1",
+                "patch_type": "deferred_qizhidao_queue_local_master_reuse",
+                "candidate_only": True,
+                "production_promoted": False,
+                "source": "共创研究院知识库",
+                "master_identity_key": "913301001111111111",
+                "unified_social_credit_code": "913301001111111111",
+                "current_name": "甲机器人有限公司",
+                "source_enterprise_name": "甲机器人有限公司",
+                "source_identity_keys": ["qice:test-subject"],
+                "match_method": "normalized_name_unique_exact_match",
+                "business_profile_reuse_status": "knowledge_verified",
+                "identity_verification_status": "knowledge_alias_closed",
+                "peer_comparison_ready": 1,
+                "qizhidao_requery_required": False,
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = BUILDER.build(
+        database,
+        snapshot,
+        None,
+        qizhidao_queue_reuse_candidates=queue,
+    )
+
+    assert report["qizhidao_queue_local_master_reuse_promoted"] == 1
+    connection = sqlite3.connect(database)
+    connection.row_factory = sqlite3.Row
+    resolution = connection.execute(
+        "SELECT * FROM enterprise_qizhidao_queue_resolutions"
+    ).fetchone()
+    connection.close()
+    assert resolution["identity_key"] == "913301001111111111"
+    assert resolution["qizhidao_requery_required"] == 0
+    assert resolution["resolution_status"] == "local_master_reused"
+    assert json.loads(resolution["source_identity_keys_json"]) == ["qice:test-subject"]
+
+
 def test_identity_lookup_returns_profile_and_cross_program_peers(tmp_path: Path):
     database = tmp_path / "knowledge.sqlite3"
     snapshot = tmp_path / "identities.jsonl"

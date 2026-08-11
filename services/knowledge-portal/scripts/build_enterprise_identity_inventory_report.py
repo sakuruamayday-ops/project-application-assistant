@@ -24,6 +24,8 @@ REQUIRED_TABLES = {
     "documents",
     "enterprise_project_identity_twin_steps",
     "enterprise_project_identity_twins",
+    "enterprise_identity_closure_promotions",
+    "enterprise_qizhidao_queue_resolutions",
     "enterprise_recognition_events",
     "enterprise_unified_digital_identities",
     "public_list_entities",
@@ -170,6 +172,56 @@ def build_report(
             FROM small_giant_enterprise_identity_profiles
             """,
         )
+        target_scope = row(
+            connection,
+            """
+            SELECT COUNT(*) AS target_union_subjects,
+                   SUM(peer_comparison_ready) AS peer_ready_subjects,
+                   SUM(EXISTS(
+                       SELECT 1 FROM json_each(recognition_projects_json)
+                       WHERE value='国家专精特新“小巨人”企业'
+                   )) AS national_small_giant_subjects,
+                   SUM(EXISTS(
+                       SELECT 1 FROM json_each(recognition_projects_json)
+                       WHERE value='浙江省专精特新中小企业'
+                   )) AS zhejiang_specialized_sme_subjects,
+                   SUM(EXISTS(
+                       SELECT 1 FROM json_each(recognition_projects_json)
+                       WHERE value IN (
+                           '浙江省首台（套）装备','浙江省首批次新材料',
+                           '浙江省首版次软件产品','浙江省三首项目'
+                       )
+                   )) AS zhejiang_three_first_subjects
+            FROM enterprise_unified_digital_identities identities
+            WHERE EXISTS(
+                SELECT 1 FROM json_each(identities.recognition_projects_json)
+                WHERE value IN (
+                    '国家专精特新“小巨人”企业','浙江省专精特新中小企业',
+                    '浙江省首台（套）装备','浙江省首批次新材料',
+                    '浙江省首版次软件产品','浙江省三首项目'
+                )
+            )
+            """,
+        )
+        closure_promotions = row(
+            connection,
+            """
+            SELECT COUNT(*) AS closure_rows,
+                   COUNT(DISTINCT identity_key) AS identity_subjects,
+                   SUM(project_scope_included) AS existing_project_rows,
+                   SUM(project_scope_included=0) AS candidate_only_project_rows
+            FROM enterprise_identity_closure_promotions
+            """,
+        )
+        qizhidao_queue = row(
+            connection,
+            """
+            SELECT COUNT(*) AS resolved_queue_rows,
+                   COUNT(DISTINCT identity_key) AS resolved_subjects,
+                   SUM(qizhidao_requery_required) AS requery_required_subjects
+            FROM enterprise_qizhidao_queue_resolutions
+            """,
+        )
         master_codes = {
             str(item[0]).strip().upper()
             for item in connection.execute(
@@ -207,7 +259,20 @@ def build_report(
                 provenance_audit["excluded_unrelated_return"]
             ),
             "invalid_result_rows": int(provenance_audit["invalid_result_rows"]),
-            "definition": "42份许可批量企业画像回传的代码级血缘；包括已入主档、名称差异但已有主档和明确排除项。",
+            "result_files": int(provenance_audit["result_files"]),
+            "definition": "许可批量企业画像回传的代码级血缘；包括已入主档、名称差异但已有主档和明确排除项。",
+        },
+        "three_category_target_scope": {
+            **target_scope,
+            "definition": "全国小巨人、浙江省专精特新中小企业和浙江省三首项目主体的去重并集；单源荣誉候选不冒充正式项目关系。",
+        },
+        "identity_closure_promotions": {
+            **closure_promotions,
+            "definition": "经统一代码和名称链闭环的增量证据；candidate_only_project_rows仅进入候选证据层，不抬高三类目标并集。",
+        },
+        "qizhidao_queue_resolution": {
+            **qizhidao_queue,
+            "definition": "原企知道待补拉队列在本地主档完成唯一复用映射后的状态；重拉要求必须为0。",
         },
         "curated_small_giant_profile_subset": {
             **curated_subset,
@@ -247,6 +312,9 @@ def write_report(
     master = report["unified_enterprise_master"]
     batch = report["licensed_batch_profile_lineage"]
     curated = report["curated_small_giant_profile_subset"]
+    target = report["three_category_target_scope"]
+    closures = report["identity_closure_promotions"]
+    qizhidao = report["qizhidao_queue_resolution"]
     lists = report["public_list_extraction"]
     recognition = report["recognition_records"]
     lifecycle = report["recognition_lifecycle"]
@@ -261,8 +329,11 @@ def write_report(
 | 项目名称 | {project['project_names']:,} | documents中的去重项目名称 |
 | 项目技术ID | {project['project_ids']:,} | documents中的去重project_id |
 | 企业统一主档 | {master['master_rows']:,} | 按主体归并；有效代码{master['valid_codes']:,}，无代码{master['without_code']:,} |
-| 批量企业画像代码级血缘 | {batch['unique_valid_codes']:,} | 42份回传；已入主档{batch['codes_in_unified_master']:,}，明确排除或未入{batch['codes_not_in_unified_master']:,} |
+| 批量企业画像代码级血缘 | {batch['unique_valid_codes']:,} | {batch['result_files']:,}份回传；已入主档{batch['codes_in_unified_master']:,}，明确排除或未入{batch['codes_not_in_unified_master']:,} |
 | 全国小巨人精选画像子集 | {curated['unique_codes']:,} | 业务图谱精选子集，不是全部批量回传 |
+| 三类目标企业去重并集 | {target['target_union_subjects']:,} | peer-ready {target['peer_ready_subjects']:,}；全国小巨人{target['national_small_giant_subjects']:,}、浙江专精特新{target['zhejiang_specialized_sme_subjects']:,}、浙江三首{target['zhejiang_three_first_subjects']:,} |
+| 单源身份闭环增量 | {closures['closure_rows']:,} | {closures['identity_subjects']:,}家；其中{closures['candidate_only_project_rows']:,}条不升级为正式项目关系 |
+| 企知道过期队列本地主档复用 | {qizhidao['resolved_subjects']:,} | 仍需重拉{qizhidao['requery_required_subjects']:,}家 |
 | 公开名单记录 | {lists['list_rows']:,} | 可跨文件、年度、项目重复 |
 | 公开名单不同提取名称 | {lists['distinct_extracted_names']:,} | 名单提取层，不等于统一企业主体 |
 | 企业认定记录 | {recognition['recognition_rows']:,} | 涉及{recognition['enterprise_ids']:,}个企业ID |
@@ -273,6 +344,8 @@ def write_report(
 
 - {report['denominator_warning']}
 - {curated['unique_codes']:,}对应全国小巨人精选画像子集，不是全部批量回传。
+- 958条增量由848条闭环/修复记录和110条队列映射组成，存在同一企业多记录及跨文件交叉，不能表述为958家。
+- 三类目标并集为{target['target_union_subjects']:,}家，同行对比就绪{target['peer_ready_subjects']:,}家；单源荣誉候选不抬高该分母。
 - 企业-项目孪生只在身份、项目、政策版本和生命周期证据同时闭环时建立，因此不能用企业画像总量作分母。
 """
     markdown_output.write_text(markdown, encoding="utf-8")

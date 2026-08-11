@@ -63,6 +63,8 @@ REQUIRED_STRUCTURED_TABLES = {
     "enterprise_lifecycle_source_audits": 1,
     "enterprise_regional_coverage_audits": 3,
     "enterprise_unified_digital_identities": 1,
+    "enterprise_identity_closure_promotions": 1,
+    "enterprise_qizhidao_queue_resolutions": 1,
     "enterprise_peer_comparison_terms": 1,
     "enterprise_unified_identity_coverage": 3,
     "enterprise_profile_enrichment_queue": 0,

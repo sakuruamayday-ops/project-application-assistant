@@ -3,7 +3,14 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FileBlob, SpreadsheetFile } from "@oai/artifact-tool";
+import { pathToFileURL } from "node:url";
+
+const artifactTool = await import(
+  process.env.JIAOTANG_ARTIFACT_TOOL_MODULE
+    ? pathToFileURL(process.env.JIAOTANG_ARTIFACT_TOOL_MODULE).href
+    : "@oai/artifact-tool"
+);
+const { FileBlob, SpreadsheetFile } = artifactTool;
 
 const USCC = /^[0-9A-HJ-NPQRTUWXY]{18}$/;
 const PUBLIC_SOURCE = "共创研究院知识库";
