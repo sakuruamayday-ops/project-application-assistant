@@ -8994,6 +8994,19 @@ def latest_agent_install_result_payload(
                result_activation_required,result_reported_at
         FROM agent_enrollment_codes
         WHERE user_id=? AND result_reported_at IS NOT NULL
+          AND (
+              result_ok=0
+              OR result_schema='gongchuang-agent-result/v2'
+              OR EXISTS (
+                  SELECT 1
+                  FROM device_keys result_key
+                  JOIN device_bindings result_binding
+                    ON result_binding.id=result_key.binding_id
+                  WHERE result_key.key_id=agent_enrollment_codes.registered_key_id
+                    AND result_key.revoked_at IS NULL
+                    AND result_binding.revoked_at IS NULL
+              )
+          )
         ORDER BY result_reported_at DESC,id DESC
         LIMIT 1
         """,
@@ -9021,22 +9034,27 @@ def agent_connection_status_payload(
     result = latest_result or latest_agent_install_result_payload(connection, user_id)
     activity = connection.execute(
         """
-        SELECT activity_type,activity_name,called_at
-        FROM api_usage
-        WHERE user_id=?
-          AND activity_type IN (
+        SELECT usage.activity_type,usage.activity_name,usage.called_at
+        FROM api_usage usage
+        JOIN device_tokens token ON token.id=usage.device_token_id
+        WHERE usage.user_id=?
+          AND token.revoked_at IS NULL
+          AND usage.activity_type IN (
             'mcp_connection','mcp_tools_list','mcp_search','mcp_document','mcp_tool'
           )
-        ORDER BY called_at DESC,id DESC
+        ORDER BY usage.called_at DESC,usage.id DESC
         LIMIT 1
         """,
         (user_id,),
     ).fetchone()
     tools_list = connection.execute(
         """
-        SELECT called_at FROM api_usage
-        WHERE user_id=? AND activity_type='mcp_tools_list'
-        ORDER BY called_at DESC,id DESC LIMIT 1
+        SELECT usage.called_at
+        FROM api_usage usage
+        JOIN device_tokens token ON token.id=usage.device_token_id
+        WHERE usage.user_id=? AND token.revoked_at IS NULL
+          AND usage.activity_type='mcp_tools_list'
+        ORDER BY usage.called_at DESC,usage.id DESC LIMIT 1
         """,
         (user_id,),
     ).fetchone()
@@ -9310,7 +9328,8 @@ def portal_payload(
                            'reported' AS evidence,
                            3 AS evidence_rank
                     FROM device_bindings binding
-                    WHERE COALESCE(binding.installed_version,'')<>''
+                    WHERE binding.revoked_at IS NULL
+                      AND COALESCE(binding.installed_version,'')<>''
                     UNION ALL
                     SELECT enrollment.user_id,enrollment.workbuddy_version,
                            enrollment.result_reported_at,'reported',3
@@ -9319,7 +9338,15 @@ def portal_payload(
                       AND enrollment.result_status IN ('configured','upgraded')
                       AND (
                           enrollment.result_schema='gongchuang-agent-result/v2'
-                          OR enrollment.registered_key_id IS NOT NULL
+                          OR EXISTS (
+                              SELECT 1
+                              FROM device_keys result_key
+                              JOIN device_bindings result_binding
+                                ON result_binding.id=result_key.binding_id
+                              WHERE result_key.key_id=enrollment.registered_key_id
+                                AND result_key.revoked_at IS NULL
+                                AND result_binding.revoked_at IS NULL
+                          )
                       )
                       AND COALESCE(enrollment.workbuddy_version,'')<>''
                       AND enrollment.result_reported_at IS NOT NULL
@@ -9333,7 +9360,8 @@ def portal_payload(
                     WHERE usage.activity_type IN (
                         'mcp_connection','mcp_tools_list','mcp_search',
                         'mcp_document','mcp_tool'
-                    )
+                      )
+                      AND token.revoked_at IS NULL
                       AND COALESCE(enrollment.workbuddy_version,'')<>''
                     GROUP BY token.user_id,enrollment.workbuddy_version
                 ),
@@ -9401,6 +9429,19 @@ def portal_payload(
                     FROM agent_enrollment_codes result_codes
                     WHERE result_codes.user_id=users.id
                       AND result_codes.result_reported_at IS NOT NULL
+                      AND (
+                          result_codes.result_ok=0
+                          OR result_codes.result_schema='gongchuang-agent-result/v2'
+                          OR EXISTS (
+                              SELECT 1
+                              FROM device_keys result_key
+                              JOIN device_bindings result_binding
+                                ON result_binding.id=result_key.binding_id
+                              WHERE result_key.key_id=result_codes.registered_key_id
+                                AND result_key.revoked_at IS NULL
+                                AND result_binding.revoked_at IS NULL
+                          )
+                      )
                     ORDER BY result_codes.result_reported_at DESC,result_codes.id DESC
                     LIMIT 1
                   )
@@ -9418,7 +9459,10 @@ def portal_payload(
                   ON latest_mcp.id=(
                     SELECT recent_activity.id
                     FROM api_usage recent_activity
+                    JOIN device_tokens recent_token
+                      ON recent_token.id=recent_activity.device_token_id
                     WHERE recent_activity.user_id=users.id
+                      AND recent_token.revoked_at IS NULL
                       AND recent_activity.activity_type IN (
                         'mcp_connection','mcp_tools_list','mcp_search',
                         'mcp_document','mcp_tool'
@@ -11453,6 +11497,19 @@ def admin_user_detail(
                    result_activation_required,result_reported_at
             FROM agent_enrollment_codes
             WHERE user_id=? AND result_reported_at IS NOT NULL
+              AND (
+                  result_ok=0
+                  OR result_schema='gongchuang-agent-result/v2'
+                  OR EXISTS (
+                      SELECT 1
+                      FROM device_keys result_key
+                      JOIN device_bindings result_binding
+                        ON result_binding.id=result_key.binding_id
+                      WHERE result_key.key_id=agent_enrollment_codes.registered_key_id
+                        AND result_key.revoked_at IS NULL
+                        AND result_binding.revoked_at IS NULL
+                  )
+              )
             ORDER BY result_reported_at DESC,id DESC
             LIMIT 1
             """,
@@ -11460,13 +11517,15 @@ def admin_user_detail(
         ).fetchone()
         latest_mcp_activity = connection.execute(
             """
-            SELECT called_at,activity_type,activity_name
-            FROM api_usage
-            WHERE user_id=? AND activity_type IN (
+            SELECT usage.called_at,usage.activity_type,usage.activity_name
+            FROM api_usage usage
+            JOIN device_tokens token ON token.id=usage.device_token_id
+            WHERE usage.user_id=? AND token.revoked_at IS NULL
+              AND usage.activity_type IN (
                 'mcp_connection','mcp_tools_list','mcp_search',
                 'mcp_document','mcp_tool'
             )
-            ORDER BY called_at DESC,id DESC
+            ORDER BY usage.called_at DESC,usage.id DESC
             LIMIT 1
             """,
             (member_id,),
@@ -12430,10 +12489,15 @@ def admin_health_detail(
                 SELECT activity.user_id, activity.called_at,
                        activity.activity_type, activity.activity_name
                 FROM api_usage activity
+                JOIN device_tokens activity_token
+                  ON activity_token.id=activity.device_token_id
                 WHERE activity.id = (
                     SELECT candidate.id
                     FROM api_usage candidate
+                    JOIN device_tokens candidate_token
+                      ON candidate_token.id=candidate.device_token_id
                     WHERE candidate.user_id = activity.user_id
+                      AND candidate_token.revoked_at IS NULL
                       AND candidate.activity_type IN (
                           'mcp_connection','mcp_tools_list','mcp_search',
                           'mcp_document','mcp_tool'
@@ -12441,6 +12505,7 @@ def admin_health_detail(
                     ORDER BY candidate.called_at DESC,candidate.id DESC
                     LIMIT 1
                 )
+                  AND activity_token.revoked_at IS NULL
             ),
             latest_device AS (
                 SELECT binding.user_id,binding.device_name,binding.auth_method,

@@ -4801,6 +4801,201 @@ def test_admin_members_displays_installed_version_and_update_state(
     assert f'href="/admin/users/{member_ids["pending-member"]}"' not in outdated.text
 
 
+def test_admin_members_ignores_revoked_install_version_evidence(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    release_guidance = module.public_release_guidance()
+    release_guidance["workbuddy_version"] = "1.6.3"
+    monkeypatch.setattr(
+        module,
+        "public_release_guidance",
+        lambda: release_guidance,
+    )
+    now_value = module.utc_now()
+    now = module.isoformat(now_value)
+    old_time = module.isoformat(now_value - timedelta(days=10))
+    revoked_time = module.isoformat(now_value - timedelta(days=9))
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(
+                username,real_name,company_name,password_hash,is_admin,created_at
+            ) VALUES (?,?,?,?,1,?)
+            """,
+            (
+                "owner",
+                "管理员",
+                "总部",
+                module.password_hasher.hash("owner-password-123"),
+                now,
+            ),
+        )
+        member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "revoked-member",
+                    "已撤销旧版成员",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    old_time,
+                ),
+            ).lastrowid
+        )
+        binding_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_bindings(
+                    user_id,device_id_hash,device_id_prefix,device_name,
+                    auth_method,first_bound_at,last_seen_at,installed_version,
+                    installed_at,revoked_at,revoked_reason
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    member_id,
+                    "revoked-device-hash",
+                    "revoked-device",
+                    "historical-device",
+                    "device_signature",
+                    old_time,
+                    revoked_time,
+                    "1.4.4",
+                    old_time,
+                    revoked_time,
+                    "replaced",
+                ),
+            ).lastrowid
+        )
+        key_id = "jdk_revoked_version_evidence"
+        connection.execute(
+            """
+            INSERT INTO device_keys(
+                user_id,binding_id,key_id,public_key,platform,agent_host,
+                created_at,last_verified_at,revoked_at,revoked_reason
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                member_id,
+                binding_id,
+                key_id,
+                "revoked-public-key",
+                "macos",
+                "workbuddy",
+                old_time,
+                revoked_time,
+                revoked_time,
+                "replaced",
+            ),
+        )
+        legacy_enrollment_id = int(
+            connection.execute(
+                """
+                INSERT INTO agent_enrollment_codes(
+                    user_id,code_hash,created_at,expires_at,install_platform,
+                    workbuddy_version,result_schema,result_ok,result_status,
+                    result_reported_at,registered_key_id
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    member_id,
+                    "revoked-member-legacy-enrollment",
+                    old_time,
+                    revoked_time,
+                    "macos",
+                    "1.4.4",
+                    "jiaotang-agent-result/v1",
+                    1,
+                    "configured",
+                    old_time,
+                    key_id,
+                ),
+            ).lastrowid
+        )
+        revoked_token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    revoked_at,revoked_reason,credential_kind,enrollment_id
+                ) VALUES (?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    member_id,
+                    "历史安装凭据",
+                    "jtk_revoked",
+                    "revoked-version-token-hash",
+                    "revoked-version-token-seed",
+                    old_time,
+                    revoked_time,
+                    "replaced",
+                    "installation",
+                    legacy_enrollment_id,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,0,?)
+            """,
+            (
+                member_id,
+                revoked_token_id,
+                "/mcp/",
+                "POST",
+                "mcp_connection",
+                "历史 MCP 连接",
+                revoked_time,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                user_id,code_hash,created_at,expires_at,install_platform,
+                workbuddy_version
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                member_id,
+                "revoked-member-current-target",
+                now,
+                now,
+                "macos",
+                "1.6.3",
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        members = client.get("/admin/members")
+
+    row = re.search(
+        rf'<tr><td><a class="record-link" href="/admin/users/{member_id}">.*?</tr>',
+        members.text,
+        re.DOTALL,
+    )
+    assert row is not None
+    member_row = row.group(0)
+    assert "插件 V1.4.4" not in member_row
+    assert "目标插件 V1.6.3" in member_row
+    assert "尚未确认安装" in member_row
+    assert "待更新" not in member_row
+
+
 def test_remote_mcp_connection_closes_installation_without_device_reporting(tmp_path):
     module = load_app(tmp_path)
     now = module.isoformat(module.utc_now())
