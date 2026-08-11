@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import subprocess
 import sys
@@ -7,6 +8,7 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
+STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates"
 DEPLOY_DIR = Path(__file__).resolve().parents[1] / "deploy"
 
@@ -18,6 +20,21 @@ def load_script(name: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def test_generated_static_assets_match_canonical_sources():
+    module = load_script("build_static_assets.py")
+    sections = ["@layer base, console, theme;\n"]
+    for layer, name in module.SOURCES:
+        content = (STATIC_DIR / name).read_text(encoding="utf-8").strip()
+        sections.append(f"@layer {layer} {{\n{content}\n}}\n")
+    expected_css = "\n".join(sections)
+    generated_css = (STATIC_DIR / "app.css").read_text(encoding="utf-8")
+    assert generated_css == expected_css
+
+    digest = hashlib.sha256(generated_css.encode("utf-8")).hexdigest()[:16]
+    assets = (TEMPLATE_DIR / "_static_assets.html").read_text(encoding="utf-8")
+    assert f'/static/app.css?v={digest}' in assets
 
 
 def test_authenticated_portal_validators_accept_current_contract():
