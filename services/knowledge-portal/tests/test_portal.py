@@ -4621,6 +4621,186 @@ def test_admin_members_uses_remote_mcp_activity_when_install_result_is_missing(t
         assert "尚未收到结构化安装结果" not in detail.text
 
 
+def test_admin_members_displays_installed_version_and_update_state(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    release_guidance = module.public_release_guidance()
+    release_guidance["workbuddy_version"] = "1.6.3"
+    monkeypatch.setattr(
+        module,
+        "public_release_guidance",
+        lambda: release_guidance,
+    )
+    now_value = module.utc_now()
+    now = module.isoformat(now_value)
+    old_time = module.isoformat(now_value - timedelta(days=2))
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(
+                username,real_name,company_name,password_hash,is_admin,created_at
+            ) VALUES (?,?,?,?,1,?)
+            """,
+            (
+                "owner",
+                "管理员",
+                "总部",
+                module.password_hasher.hash("owner-password-123"),
+                now,
+            ),
+        )
+        member_ids = {}
+        for username, real_name in (
+            ("current-member", "当前成员"),
+            ("old-member", "旧版成员"),
+            ("pending-member", "待安装成员"),
+        ):
+            member_ids[username] = int(
+                connection.execute(
+                    """
+                    INSERT INTO users(
+                        username,real_name,company_name,password_hash,created_at
+                    ) VALUES (?,?,?,?,?)
+                    """,
+                    (
+                        username,
+                        real_name,
+                        "共创集团",
+                        module.password_hasher.hash("member-password-123"),
+                        old_time,
+                    ),
+                ).lastrowid
+            )
+
+        current_enrollment_id = int(
+            connection.execute(
+                """
+                INSERT INTO agent_enrollment_codes(
+                    user_id,code_hash,created_at,expires_at,install_platform,
+                    workbuddy_version
+                ) VALUES (?,?,?,?,?,?)
+                """,
+                (
+                    member_ids["current-member"],
+                    "current-member-enrollment",
+                    now,
+                    now,
+                    "macos",
+                    "1.6.3",
+                ),
+            ).lastrowid
+        )
+        current_token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    credential_kind,enrollment_id
+                ) VALUES (?,?,?,?,?,?,'installation',?)
+                """,
+                (
+                    member_ids["current-member"],
+                    "macOS 远程 MCP",
+                    "jtk_current",
+                    "current-member-token-hash",
+                    "current-member-token-seed",
+                    now,
+                    current_enrollment_id,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,0,?)
+            """,
+            (
+                member_ids["current-member"],
+                current_token_id,
+                "/mcp/",
+                "POST",
+                "mcp_connection",
+                "MCP连接检测",
+                now,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                user_id,code_hash,created_at,expires_at,install_platform,
+                workbuddy_version,result_schema,result_ok,result_status,
+                result_reported_at
+            ) VALUES (?,?,?,?,?,?,?,1,'configured',?)
+            """,
+            (
+                member_ids["old-member"],
+                "old-member-enrollment",
+                old_time,
+                now,
+                "windows",
+                "1.6.2",
+                "gongchuang-agent-result/v2",
+                old_time,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO agent_enrollment_codes(
+                user_id,code_hash,created_at,expires_at,install_platform,
+                workbuddy_version
+            ) VALUES (?,?,?,?,?,?)
+            """,
+            (
+                member_ids["pending-member"],
+                "pending-member-enrollment",
+                now,
+                now,
+                "windows",
+                "1.6.3",
+            ),
+        )
+        connection.commit()
+
+    def member_row(page_text: str, member_id: int) -> str:
+        match = re.search(
+            rf'<tr><td><a class="record-link" href="/admin/users/{member_id}">.*?</tr>',
+            page_text,
+            re.DOTALL,
+        )
+        assert match is not None
+        return match.group(0)
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        members = client.get("/admin/members")
+        outdated = client.get("/admin/members", params={"member_query": "待更新"})
+
+    assert members.status_code == 200
+    current_row = member_row(members.text, member_ids["current-member"])
+    assert "插件 V1.6.3" in current_row
+    assert "连接关联版本" in current_row
+    assert "最新版本" in current_row
+    old_row = member_row(members.text, member_ids["old-member"])
+    assert "插件 V1.6.2" in old_row
+    assert "安装回执版本" in old_row
+    assert "待更新" in old_row
+    pending_row = member_row(members.text, member_ids["pending-member"])
+    assert "目标插件 V1.6.3" in pending_row
+    assert "尚未确认安装" in pending_row
+    assert f'href="/admin/users/{member_ids["current-member"]}"' not in outdated.text
+    assert f'href="/admin/users/{member_ids["old-member"]}"' in outdated.text
+    assert f'href="/admin/users/{member_ids["pending-member"]}"' not in outdated.text
+
+
 def test_remote_mcp_connection_closes_installation_without_device_reporting(tmp_path):
     module = load_app(tmp_path)
     now = module.isoformat(module.utc_now())
@@ -5094,6 +5274,13 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert protocol.json()["installation"]["platform_adapter"] == (
             "workbuddy-macos"
         )
+        assert protocol.json()["result_reporting"]["schema"] == (
+            "gongchuang-agent-result/v2"
+        )
+        assert protocol.json()["result_reporting"]["required_on_completion"] is True
+        assert protocol.json()["result_reporting"]["url"].endswith(
+            f"/v1/agent-install-result/{enrollment_code}"
+        )
         mismatch = client.get(
             f"/v1/agent-install/{enrollment_code}?platform=windows"
         )
@@ -5144,6 +5331,11 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert "PACKAGE_MUTATION_DETECTED" in prompt
         assert "WINDOWS_NATIVE_HOOK_BLOCKED" in prompt
         assert "rollback_restored" in prompt
+        assert f"/v1/agent-install-result/{enrollment_code}" in prompt
+        assert "gongchuang-agent-result/v2" in prompt
+        assert "installed_version" in prompt
+        assert "installed_package_sha256" in prompt
+        assert "VERSION_RECEIPT_FAILED" in prompt
         assert "欢迎评价这套Skills插件包" in prompt.replace(" ", "")
         assert "查看常用指令" in prompt
         assert "专精特新前期评估与后期体检" in prompt
@@ -5198,16 +5390,37 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             r"/v1/agent-install/(jbe_[A-Za-z0-9_-]+)/workbuddy/download",
             windows_prompt,
         ).group(1)
+        windows_protocol = client.get(
+            f"/v1/agent-install/{second_enrollment_code}"
+        )
+        assert windows_protocol.status_code == 200
+        mismatched_report = client.post(
+            f"/v1/agent-install-result/{second_enrollment_code}",
+            json={
+                "schema": "gongchuang-agent-result/v2",
+                "ok": True,
+                "status": "configured",
+                "installed_version": "1.4.9",
+                "installed_package_sha256": "0" * 64,
+                "user_message": "配置成功",
+                "platform": "Windows",
+                "activation_required": False,
+            },
+        )
+        assert mismatched_report.status_code == 422
         reported = client.post(
             f"/v1/agent-install-result/{second_enrollment_code}",
             json={
-                "schema": "gongchuang-agent-result/v1",
+                "schema": "gongchuang-agent-result/v2",
                 "ok": True,
                 "status": "configured",
+                "installed_version": windows_protocol.json()["release"]["version"],
+                "installed_package_sha256": windows_protocol.json()["release"][
+                    "sha256"
+                ],
                 "user_message": "配置成功",
                 "next_action": None,
-                "host": "WIN-DEV-02",
-                "platform": "windows-amd64",
+                "platform": "Windows",
                 "activation_required": False,
             },
         )
@@ -5248,7 +5461,24 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
                 )
                 """,
                 (module.token_hash(second_enrollment_code),),
-            ).fetchone()["label"] == "WIN-DEV-02"
+            ).fetchone()["label"] == "Windows 远程 MCP"
+            stored_receipt = connection.execute(
+                """
+                SELECT result_schema,result_ok,result_status,workbuddy_version,
+                       workbuddy_sha256
+                FROM agent_enrollment_codes WHERE code_hash=?
+                """,
+                (module.token_hash(second_enrollment_code),),
+            ).fetchone()
+            assert stored_receipt["result_schema"] == "gongchuang-agent-result/v2"
+            assert stored_receipt["result_ok"] == 1
+            assert stored_receipt["result_status"] == "configured"
+            assert stored_receipt["workbuddy_version"] == (
+                windows_protocol.json()["release"]["version"]
+            )
+            assert stored_receipt["workbuddy_sha256"] == (
+                windows_protocol.json()["release"]["sha256"]
+            )
 
 
 @pytest.mark.skip(reason="V1.4.5 已由单段安装指令替代三阶段设备绑定")

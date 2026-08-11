@@ -7048,6 +7048,9 @@ def init_database() -> None:
             CREATE INDEX IF NOT EXISTS api_usage_user_time_idx
             ON api_usage(user_id, called_at DESC);
 
+            CREATE INDEX IF NOT EXISTS api_usage_device_token_time_idx
+            ON api_usage(device_token_id, called_at DESC);
+
             CREATE TABLE IF NOT EXISTS user_preferences (
                 user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
                 schema_version INTEGER NOT NULL DEFAULT 1,
@@ -9123,6 +9126,10 @@ def portal_payload(
     algorithm_project_id: str = "",
     algorithm_coverage: str = "",
 ) -> dict[str, object]:
+    release_guidance = public_release_guidance()
+    latest_member_install_version = str(
+        release_guidance.get("workbuddy_version") or ""
+    )
     with closing(database()) as connection:
         device_tokens = connection.execute(
             """
@@ -9288,6 +9295,62 @@ def portal_payload(
         if user["is_admin"]:
             users = format_row_datetimes(connection.execute(
                 """
+                WITH version_observations AS (
+                    SELECT binding.user_id,
+                           binding.installed_version AS version,
+                           COALESCE(
+                               binding.last_upgrade_at,binding.installed_at,
+                               binding.last_seen_at,binding.first_bound_at
+                           ) AS observed_at,
+                           'reported' AS evidence,
+                           3 AS evidence_rank
+                    FROM device_bindings binding
+                    WHERE COALESCE(binding.installed_version,'')<>''
+                    UNION ALL
+                    SELECT enrollment.user_id,enrollment.workbuddy_version,
+                           enrollment.result_reported_at,'reported',3
+                    FROM agent_enrollment_codes enrollment
+                    WHERE enrollment.result_ok=1
+                      AND enrollment.result_status IN ('configured','upgraded')
+                      AND (
+                          enrollment.result_schema='gongchuang-agent-result/v2'
+                          OR enrollment.registered_key_id IS NOT NULL
+                      )
+                      AND COALESCE(enrollment.workbuddy_version,'')<>''
+                      AND enrollment.result_reported_at IS NOT NULL
+                    UNION ALL
+                    SELECT token.user_id,enrollment.workbuddy_version,
+                           MAX(usage.called_at),'connected_target',2
+                    FROM api_usage usage
+                    JOIN device_tokens token ON token.id=usage.device_token_id
+                    JOIN agent_enrollment_codes enrollment
+                      ON enrollment.id=token.enrollment_id
+                    WHERE usage.activity_type IN (
+                        'mcp_connection','mcp_tools_list','mcp_search',
+                        'mcp_document','mcp_tool'
+                    )
+                      AND COALESCE(enrollment.workbuddy_version,'')<>''
+                    GROUP BY token.user_id,enrollment.workbuddy_version
+                ),
+                ranked_versions AS (
+                    SELECT observation.*,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY observation.user_id
+                               ORDER BY observation.observed_at DESC,
+                                        observation.evidence_rank DESC
+                           ) AS row_number
+                    FROM version_observations observation
+                ),
+                ranked_targets AS (
+                    SELECT enrollment.user_id,enrollment.workbuddy_version,
+                           enrollment.created_at,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY enrollment.user_id
+                               ORDER BY enrollment.created_at DESC,enrollment.id DESC
+                           ) AS row_number
+                    FROM agent_enrollment_codes enrollment
+                    WHERE COALESCE(enrollment.workbuddy_version,'')<>''
+                )
                 SELECT users.id,users.username,users.real_name,users.company_name,
                        users.is_admin,users.active,users.created_at,
                        CASE
@@ -9314,8 +9377,19 @@ def portal_payload(
                                OR latest_mcp.called_at>=latest_result.result_reported_at)
                            THEN latest_mcp.called_at
                          ELSE latest_result.result_reported_at
-                       END AS install_reported_at
+                       END AS install_reported_at,
+                       latest_version.version AS install_version,
+                       latest_version.evidence AS install_version_evidence,
+                       latest_version.observed_at AS install_version_observed_at,
+                       latest_target.workbuddy_version AS install_target_version,
+                       latest_target.created_at AS install_target_created_at
                 FROM users
+                LEFT JOIN ranked_versions latest_version
+                  ON latest_version.user_id=users.id
+                 AND latest_version.row_number=1
+                LEFT JOIN ranked_targets latest_target
+                  ON latest_target.user_id=users.id
+                 AND latest_target.row_number=1
                 LEFT JOIN agent_enrollment_codes latest_result
                   ON latest_result.id=(
                     SELECT result_codes.id
@@ -9350,7 +9424,42 @@ def portal_payload(
                 WHERE users.deleted_at IS NULL
                 ORDER BY users.id
                 """
-            ).fetchall(), "created_at", "install_reported_at")
+            ).fetchall(), "created_at", "install_reported_at",
+                "install_version_observed_at", "install_target_created_at")
+            for member in users:
+                install_version = str(member.get("install_version") or "")
+                install_target_version = str(
+                    member.get("install_target_version") or ""
+                )
+                evidence = str(member.get("install_version_evidence") or "")
+                member["install_version_evidence_label"] = {
+                    "reported": "安装回执版本",
+                    "connected_target": "连接关联版本",
+                }.get(evidence, "版本未确认")
+                member["install_update_state"] = "unknown"
+                member["install_update_label"] = "版本未确认"
+                if (
+                    valid_release_version(install_version)
+                    and valid_release_version(latest_member_install_version)
+                ):
+                    installed_key = release_version_key(install_version)
+                    latest_key = release_version_key(latest_member_install_version)
+                    if installed_key < latest_key:
+                        member["install_update_state"] = "outdated"
+                        member["install_update_label"] = "待更新"
+                    elif installed_key == latest_key:
+                        member["install_update_state"] = "latest"
+                        member["install_update_label"] = "最新版本"
+                    else:
+                        member["install_update_state"] = "ahead"
+                        member["install_update_label"] = "高于当前公开版"
+                observed_at = str(member.get("install_version_observed_at") or "")
+                target_created_at = str(member.get("install_target_created_at") or "")
+                member["install_pending_target"] = bool(
+                    valid_release_version(install_target_version)
+                    and install_target_version != install_version
+                    and (not observed_at or target_created_at > observed_at)
+                )
             users_total = len(users)
             normalized_member_query = " ".join(member_query.strip().split())[:100]
             if normalized_member_query:
@@ -9366,6 +9475,10 @@ def portal_payload(
                             str(member.get("company_name") or ""),
                             "管理员" if member.get("is_admin") else "成员",
                             "有效" if member.get("active") else "已停用",
+                            str(member.get("install_version") or ""),
+                            str(member.get("install_target_version") or ""),
+                            str(member.get("install_update_label") or ""),
+                            str(member.get("install_version_evidence_label") or ""),
                         )
                     ).casefold()
                 ]
@@ -9686,7 +9799,7 @@ def portal_payload(
             load_four_city_green_factory_policy_registry()
         ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
-        "release_guidance": public_release_guidance(),
+        "release_guidance": release_guidance,
         "release_announcement": announcement_payload,
         "knowledge_stats": knowledge_index_stats(),
         "new_token": new_token,
@@ -13410,9 +13523,11 @@ def build_agent_bootstrap_prompt(
     *,
     plugin_download_url: str,
     release_version: str,
+    release_sha256: str,
     mcp_url: str,
     raw_token: str,
     platform: str,
+    result_url: str,
 ) -> str:
     platform_profiles = {
         "macos": {
@@ -13450,6 +13565,21 @@ def build_agent_bootstrap_prompt(
         remote_mcp_configuration(mcp_url, raw_token),
         ensure_ascii=False,
         indent=2,
+    )
+    success_receipt = json.dumps(
+        {
+            "schema": "gongchuang-agent-result/v2",
+            "ok": True,
+            "status": "configured",
+            "installed_version": release_version,
+            "installed_package_sha256": release_sha256,
+            "user_message": "安装与远程 MCP 验收通过",
+            "next_action": None,
+            "platform": profile["label"],
+            "activation_required": False,
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
     )
     return (
         "请在当前 WorkBuddy 中完成企业全生命周期助手的一次安装或覆盖升级。"
@@ -13499,7 +13629,18 @@ def build_agent_bootstrap_prompt(
         "PLATFORM_MISMATCH、PACKAGE_STRUCTURE_INVALID、PACKAGE_MUTATION_DETECTED、"
         "WINDOWS_NATIVE_HOOK_BLOCKED、WINDOWS_HOOK_RUNTIME_INCOMPATIBLE、"
         "MACOS_HOOK_RUNTIME_INCOMPATIBLE、MCP_CONFIGURATION_FAILED 或 "
-        "POST_INSTALL_ACCEPTANCE_FAILED。"
+        "POST_INSTALL_ACCEPTANCE_FAILED。版本回执单独允许 VERSION_RECEIPT_FAILED。"
+        "完成本地验收后，还必须使用 HTTPS POST 向以下一次性回执地址"
+        "发送一份 `Content-Type: application/json` 的版本回执：\n\n"
+        f"{result_url}\n\n"
+        "先从安装后实际启用的不可变插件包读取版本和 SHA-256；只有实测值与以下预期完全一致时，"
+        "才可逐字发送这份成功 JSON。不得根据提示目标自行假定；不一致时必须发送失败回执：\n\n"
+        f"{success_receipt}\n\n"
+        "失败时仍使用 `gongchuang-agent-result/v2`，设置 `ok:false`、`status:\"failed\"`，"
+        "并如实填写 error_stage、user_message 和 next_action，不得回传成功版本。回执失败可重试三次；"
+        "如果本地安装与 MCP 验收已经成功但回执仍失败，不得因此回滚可用安装，最终明确报告 "
+        "VERSION_RECEIPT_FAILED，供管理员按连接关联版本复核。一次性回执地址、安装码和个人 Token "
+        "均不得出现在最终回复或普通日志中。"
         "安装验收成功后的最终回复必须补充一句：欢迎评价这套"
         "Skills 插件包，也可以回复“查看常用指令”。再用一行说明 49 项 Skills 已按六组完整核对："
         "总控与配置、知识与证据、企业与项目、专利专业、交付与质检、治理与进化。常用任务至少覆盖"
@@ -13855,14 +13996,17 @@ def create_agent_bootstrap_code(
         f"{public_endpoint}/v1/agent-install/{quote(raw_code)}/workbuddy/download"
         f"?platform={platform_name}"
     )
+    result_url = f"{public_endpoint}/v1/agent-install-result/{quote(raw_code)}"
     return JSONResponse(
         {
             "prompt": build_agent_bootstrap_prompt(
                 plugin_download_url=plugin_download_url,
                 release_version=str(artifact.get("version") or ""),
+                release_sha256=str(artifact.get("sha256") or ""),
                 mcp_url=f"{public_endpoint}/mcp/",
                 raw_token=raw_token,
                 platform=platform_name,
+                result_url=result_url,
             ),
             "phase": "install_ready",
             "platform": platform_name,
@@ -14362,6 +14506,15 @@ def agent_install_protocol(
                 ],
                 "status_call": "knowledge_service_status",
                 "connected": True,
+            },
+            "result_reporting": {
+                "url": result_url,
+                "schema": "gongchuang-agent-result/v2",
+                "required_on_completion": True,
+                "validated_fields": [
+                    "installed_version",
+                    "installed_package_sha256",
+                ],
             },
             "forbidden_legacy_steps": [
                 "bootstrap",
@@ -15012,9 +15165,15 @@ def report_agent_install_result(
     next_action = optional_text("next_action", 500)
     result_host = optional_text("host", 60)
     result_platform = optional_text("platform", 60)
+    installed_version = optional_text("installed_version", 40)
+    installed_package_sha256 = optional_text(
+        "installed_package_sha256",
+        64,
+    )
     result_ok = payload.get("ok")
     activation_required = payload.get("activation_required")
     if result_schema not in {
+        "gongchuang-agent-result/v2",
         "gongchuang-agent-result/v1",
         "jiaotang-agent-result/v1",
     }:
@@ -15029,6 +15188,14 @@ def report_agent_install_result(
         raise HTTPException(status_code=422, detail="失败结果必须包含 error_stage")
     if activation_required is not None and not isinstance(activation_required, bool):
         raise HTTPException(status_code=422, detail="activation_required 字段无效")
+    if result_schema == "gongchuang-agent-result/v2" and result_ok:
+        if not installed_version or not valid_release_version(installed_version):
+            raise HTTPException(status_code=422, detail="安装成功回执缺少有效版本号")
+        if not installed_package_sha256 or not re.fullmatch(
+            r"[a-fA-F0-9]{64}",
+            installed_package_sha256,
+        ):
+            raise HTTPException(status_code=422, detail="安装成功回执缺少有效包 SHA-256")
     now_value = utc_now()
     now = isoformat(now_value)
     recent_cutoff = isoformat(now_value - timedelta(hours=24))
@@ -15036,8 +15203,8 @@ def report_agent_install_result(
     with closing(database()) as connection:
         enrollment = connection.execute(
             """
-            SELECT id,operation,registered_key_id,workbuddy_version,
-                   workbuddy_sha256
+            SELECT id,operation,registered_key_id,install_platform,
+                   workbuddy_version,workbuddy_sha256
             FROM agent_enrollment_codes
             WHERE code_hash=? AND created_at>=?
             """,
@@ -15047,6 +15214,15 @@ def report_agent_install_result(
             raise HTTPException(
                 status_code=410,
                 detail="安装结果对应的一次性配置不存在或已超过上报期限",
+            )
+        if result_schema == "gongchuang-agent-result/v2" and result_ok and (
+            installed_version != str(enrollment["workbuddy_version"] or "")
+            or str(installed_package_sha256 or "").lower()
+            != str(enrollment["workbuddy_sha256"] or "").lower()
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="回传版本或包 SHA-256 与本次安装目标不一致",
             )
         connection.execute(
             """
@@ -15076,10 +15252,19 @@ def report_agent_install_result(
                 int(enrollment["id"]),
             ),
         )
+        simplified_platform_label = remote_mcp_platform_label(
+            enrollment["install_platform"]
+        )
         credential_label = (
-            result_host
-            or result_platform
-            or ("Agent 安装" if result_ok else "失败的 Agent 安装")
+            f"{simplified_platform_label} 远程 MCP"
+            if result_ok
+            and not enrollment["registered_key_id"]
+            and simplified_platform_label
+            else (
+                result_host
+                or result_platform
+                or ("Agent 安装" if result_ok else "失败的 Agent 安装")
+            )
         )[:100]
         connection.execute(
             """
