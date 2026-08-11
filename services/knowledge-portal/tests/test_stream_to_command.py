@@ -4,7 +4,28 @@ import io
 import sys
 import time
 
-from scripts.stream_to_command import stream
+from scripts.stream_to_command import stream, write_all
+
+
+class PartialWriter:
+    def __init__(self, limit: int) -> None:
+        self.limit = limit
+        self.payload = bytearray()
+
+    def write(self, data: bytes | memoryview) -> int:
+        accepted = bytes(data[: self.limit])
+        self.payload.extend(accepted)
+        return len(accepted)
+
+
+def test_write_all_preserves_bytes_across_partial_writes() -> None:
+    destination = PartialWriter(limit=7)
+    payload = b"gongchuang-release-stream" * 100
+
+    written = write_all(destination, payload)
+
+    assert written == len(payload)
+    assert bytes(destination.payload) == payload
 
 
 def test_stream_to_command_delivers_complete_input() -> None:
