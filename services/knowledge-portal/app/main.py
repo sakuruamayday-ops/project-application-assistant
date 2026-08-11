@@ -1084,14 +1084,14 @@ def user_access_token(user_id: int, token_seed: str) -> str:
 
 
 def ensure_personal_access_token(user_id: int, label: str = "") -> str:
-    """Reuse the active personal token, or create one after revocation."""
+    """Reuse the user's active credential, or create a personal one."""
     normalized_label = (label or "个人 Token").strip()[:100] or "个人 Token"
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
         active_token = connection.execute(
-            "SELECT id,token_seed FROM device_tokens "
-            "WHERE user_id=? AND credential_kind='personal' "
-            "AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
+            "SELECT id,token_seed,credential_kind FROM device_tokens "
+            "WHERE user_id=? AND activation_state='active' "
+            "AND revoked_at IS NULL ORDER BY COALESCE(last_used_at,created_at) DESC,id DESC LIMIT 1",
             (user_id,),
         ).fetchone()
         if active_token is None:
@@ -1101,8 +1101,8 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
                 """
                 INSERT INTO device_tokens(
                     user_id,label,token_prefix,token_hash,token_seed,created_at,
-                    credential_kind
-                ) VALUES (?,?,?,?,?,?,'personal')
+                    credential_kind,activated_at
+                ) VALUES (?,?,?,?,?,?,'personal',?)
                 """,
                 (
                     user_id,
@@ -1111,9 +1111,10 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
                     token_hash(raw_token),
                     seed,
                     isoformat(utc_now()),
+                    isoformat(utc_now()),
                 ),
             )
-        else:
+        elif str(active_token["credential_kind"] or "") == "personal":
             seed = str(active_token["token_seed"] or secrets.token_urlsafe(24))
             raw_token = user_access_token(user_id, seed)
             connection.execute(
@@ -1130,6 +1131,9 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
                     int(active_token["id"]),
                 ),
             )
+        else:
+            seed = str(active_token["token_seed"])
+            raw_token = user_access_token(user_id, seed)
         connection.commit()
     return raw_token
 
@@ -7024,7 +7028,10 @@ def init_database() -> None:
                 revoked_by TEXT NOT NULL DEFAULT '',
                 credential_kind TEXT NOT NULL DEFAULT 'personal',
                 enrollment_id INTEGER REFERENCES agent_enrollment_codes(id) ON DELETE SET NULL,
-                binding_id INTEGER REFERENCES device_bindings(id) ON DELETE SET NULL
+                binding_id INTEGER REFERENCES device_bindings(id) ON DELETE SET NULL,
+                activation_state TEXT NOT NULL DEFAULT 'active',
+                activated_at TEXT,
+                supersedes_token_id INTEGER REFERENCES device_tokens(id) ON DELETE SET NULL
             );
 
             CREATE TABLE IF NOT EXISTS device_bindings (
@@ -7570,6 +7577,9 @@ def init_database() -> None:
             "credential_kind": "TEXT NOT NULL DEFAULT 'personal'",
             "enrollment_id": "INTEGER REFERENCES agent_enrollment_codes(id) ON DELETE SET NULL",
             "binding_id": "INTEGER REFERENCES device_bindings(id) ON DELETE SET NULL",
+            "activation_state": "TEXT NOT NULL DEFAULT 'active'",
+            "activated_at": "TEXT",
+            "supersedes_token_id": "INTEGER REFERENCES device_tokens(id) ON DELETE SET NULL",
         }
         for column_name, declaration in token_migrations.items():
             if column_name not in token_columns:
@@ -7577,6 +7587,14 @@ def init_database() -> None:
                     f"ALTER TABLE device_tokens ADD COLUMN {column_name} {declaration}"
                 )
         now = isoformat(utc_now())
+        connection.execute(
+            "UPDATE device_tokens SET activation_state='active' "
+            "WHERE activation_state NOT IN ('active','pending') OR activation_state IS NULL"
+        )
+        connection.execute(
+            "UPDATE device_tokens SET activated_at=COALESCE(activated_at,last_used_at,created_at) "
+            "WHERE activation_state='active'"
+        )
         for active_row in connection.execute(
             "SELECT id,user_id,token_seed FROM device_tokens WHERE revoked_at IS NULL"
         ).fetchall():
@@ -7592,6 +7610,10 @@ def init_database() -> None:
         connection.execute(
             "CREATE INDEX IF NOT EXISTS device_tokens_user_status_idx "
             "ON device_tokens(user_id,revoked_at,id DESC)"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS device_tokens_user_activation_idx "
+            "ON device_tokens(user_id,activation_state,revoked_at,id DESC)"
         )
         connection.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_enrollment_idx "
@@ -8197,6 +8219,105 @@ def project_algorithm_usage_metrics(days: int = 7) -> dict[str, dict[str, int]]:
     return metrics
 
 
+def mcp_request_messages(body: bytes) -> list[dict[str, object]]:
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return []
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if isinstance(payload, dict):
+        return [payload]
+    return []
+
+
+def pending_credential_request_allowed(endpoint: str, method: str, body: bytes) -> bool:
+    if endpoint.rstrip("/") != "/mcp":
+        return False
+    if method.upper() in {"GET", "HEAD", "OPTIONS"}:
+        return True
+    messages = mcp_request_messages(body)
+    if not messages:
+        return False
+    for message in messages:
+        rpc_method = str(message.get("method") or "")
+        if rpc_method in {"ping", "initialize", "notifications/initialized", "tools/list"}:
+            continue
+        params = message.get("params")
+        tool_name = str(params.get("name") or "") if isinstance(params, dict) else ""
+        if rpc_method == "tools/call" and tool_name == "knowledge_service_status":
+            continue
+        return False
+    return True
+
+
+def requests_knowledge_service_status(body: bytes) -> bool:
+    for message in mcp_request_messages(body):
+        if str(message.get("method") or "") != "tools/call":
+            continue
+        params = message.get("params")
+        if isinstance(params, dict) and params.get("name") == "knowledge_service_status":
+            return True
+    return False
+
+
+def mcp_response_confirms_connected_status(
+    request_body: bytes,
+    response_body: bytes,
+) -> bool:
+    requested_ids = {
+        json.dumps(message.get("id"), ensure_ascii=False, sort_keys=True)
+        for message in mcp_request_messages(request_body)
+        if str(message.get("method") or "") == "tools/call"
+        and isinstance(message.get("params"), dict)
+        and message["params"].get("name") == "knowledge_service_status"
+        and "id" in message
+    }
+    if not requested_ids:
+        return False
+    try:
+        response_text = response_body.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    response_messages: list[dict[str, object]] = []
+    try:
+        decoded = json.loads(response_text)
+    except json.JSONDecodeError:
+        for line in response_text.splitlines():
+            if not line.startswith("data:"):
+                continue
+            try:
+                event_payload = json.loads(line.removeprefix("data:").strip())
+            except json.JSONDecodeError:
+                continue
+            if isinstance(event_payload, list):
+                response_messages.extend(
+                    item for item in event_payload if isinstance(item, dict)
+                )
+            elif isinstance(event_payload, dict):
+                response_messages.append(event_payload)
+    else:
+        if isinstance(decoded, list):
+            response_messages.extend(
+                item for item in decoded if isinstance(item, dict)
+            )
+        elif isinstance(decoded, dict):
+            response_messages.append(decoded)
+    for message in response_messages:
+        response_id = json.dumps(
+            message.get("id"), ensure_ascii=False, sort_keys=True
+        )
+        if response_id not in requested_ids:
+            continue
+        result = message.get("result")
+        if not isinstance(result, dict) or result.get("isError") is True:
+            continue
+        structured = result.get("structuredContent")
+        if isinstance(structured, dict) and structured.get("connected") is True:
+            return True
+    return False
+
+
 def authenticate_api_token(
     authorization: str | None,
     endpoint: str,
@@ -8224,9 +8345,12 @@ def authenticate_api_token(
         row = connection.execute(
             """
             SELECT users.id, users.username, device_tokens.id AS device_token_id,
-                   users.is_admin
+                   users.is_admin,device_tokens.activation_state,
+                   device_tokens.credential_kind,enrollment.expires_at AS enrollment_expires_at
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
+            LEFT JOIN agent_enrollment_codes enrollment
+              ON enrollment.id=device_tokens.enrollment_id
             WHERE device_tokens.token_hash = ?
               AND device_tokens.revoked_at IS NULL
               AND users.active = 1
@@ -8243,6 +8367,25 @@ def authenticate_api_token(
         ).fetchone()
         if row is None:
             raise access_error(401, "用户访问凭据无效、过期或已吊销")
+        if str(row["activation_state"] or "active") == "pending":
+            now = isoformat(utc_now())
+            if row["enrollment_expires_at"] and str(row["enrollment_expires_at"]) <= now:
+                connection.execute(
+                    """
+                    UPDATE device_tokens
+                    SET revoked_at=?,revoked_reason='pending_activation_expired',
+                        revoked_by='system'
+                    WHERE id=? AND revoked_at IS NULL AND activation_state='pending'
+                    """,
+                    (now, int(row["device_token_id"])),
+                )
+                connection.commit()
+                raise access_error(401, "待激活凭据已过期，请回到门户重新复制安装指令")
+            if not pending_credential_request_allowed(endpoint, method, body):
+                raise access_error(
+                    403,
+                    "待激活凭据仅允许完成 MCP 握手、工具发现和知识服务状态验收",
+                )
         # V1.4.5: a valid personal Bearer token is the complete client
         # credential. Legacy device headers are accepted but deliberately
         # ignored so old clients can migrate without a binding ceremony.
@@ -8348,9 +8491,12 @@ def mark_mcp_connected(
     user_id: int,
     key_id: str,
     device_token_id: int | None = None,
+    *,
+    activate_installation_credential: bool = False,
 ) -> None:
     now = isoformat(utc_now())
     with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
         if key_id:
             connection.execute(
                 """
@@ -8372,7 +8518,7 @@ def mark_mcp_connected(
             installation = connection.execute(
                 """
                 SELECT token.id,token.label,token.enrollment_id,
-                       enrollment.install_platform
+                       token.activation_state,enrollment.install_platform
                 FROM device_tokens token
                 JOIN agent_enrollment_codes enrollment
                   ON enrollment.id=token.enrollment_id
@@ -8383,25 +8529,55 @@ def mark_mcp_connected(
                 (device_token_id, user_id),
             ).fetchone()
             if installation is not None:
+                activation_state = str(installation["activation_state"] or "active")
                 platform_label = remote_mcp_platform_label(
                     installation["install_platform"]
                 )
                 expected_legacy_label = (
                     f"{platform_label} 安装 · 待上报" if platform_label else ""
                 )
-                if expected_legacy_label and installation["label"] == expected_legacy_label:
+                if (
+                    activation_state == "pending"
+                    and activate_installation_credential
+                ):
+                    activated = connection.execute(
+                        """
+                        UPDATE device_tokens
+                        SET activation_state='active',activated_at=COALESCE(activated_at,?)
+                        WHERE id=? AND user_id=? AND revoked_at IS NULL
+                          AND activation_state='pending'
+                        """,
+                        (now, device_token_id, user_id),
+                    )
+                    if activated.rowcount == 1:
+                        connection.execute(
+                            """
+                            UPDATE device_tokens
+                            SET revoked_at=?,revoked_reason='superseded_by_new_credential',
+                                revoked_by='system'
+                            WHERE user_id=? AND id<>? AND revoked_at IS NULL
+                            """,
+                            (now, user_id, device_token_id),
+                        )
+                        activation_state = "active"
+                if (
+                    activation_state == "active"
+                    and expected_legacy_label
+                    and installation["label"] == expected_legacy_label
+                ):
                     connection.execute(
                         "UPDATE device_tokens SET label=? WHERE id=?",
                         (f"{platform_label} 远程 MCP", device_token_id),
                     )
-                connection.execute(
-                    """
-                    UPDATE agent_enrollment_codes
-                    SET consumed_at=COALESCE(consumed_at,?)
-                    WHERE id=? AND user_id=?
-                    """,
-                    (now, installation["enrollment_id"], user_id),
-                )
+                if activation_state == "active":
+                    connection.execute(
+                        """
+                        UPDATE agent_enrollment_codes
+                        SET consumed_at=COALESCE(consumed_at,?)
+                        WHERE id=? AND user_id=?
+                        """,
+                        (now, installation["enrollment_id"], user_id),
+                    )
         connection.commit()
 
 
@@ -8704,21 +8880,36 @@ class MCPBearerMiddleware:
             "mcp_document",
             "mcp_tool",
         }
+        status_requested = requests_knowledge_service_status(request_body)
+        response_body = bytearray()
+        activates_pending_credential = False
 
         async def tracked_send(message):
             nonlocal response_status, mcp_connection_recorded
+            nonlocal activates_pending_credential
             if message.get("type") == "http.response.start":
                 response_status = int(message.get("status", 500))
+            if message.get("type") == "http.response.body" and status_requested:
+                response_body.extend(message.get("body", b""))
             if (
                 message.get("type") == "http.response.body"
                 and not message.get("more_body", False)
                 and response_status < 400
                 and records_confirmed_connection
             ):
+                activates_pending_credential = (
+                    mcp_response_confirms_connected_status(
+                        request_body,
+                        bytes(response_body),
+                    )
+                    if status_requested
+                    else False
+                )
                 mark_mcp_connected(
                     int(user["id"]),
                     headers.get(DEVICE_KEY_ID_HEADER.lower(), ""),
                     int(user["device_token_id"]),
+                    activate_installation_credential=activates_pending_credential,
                 )
                 mcp_connection_recorded = True
             await send(message)
@@ -8735,6 +8926,7 @@ class MCPBearerMiddleware:
                     int(user["id"]),
                     headers.get(DEVICE_KEY_ID_HEADER.lower(), ""),
                     int(user["device_token_id"]),
+                    activate_installation_credential=activates_pending_credential,
                 )
             record_api_usage(
                 user,
@@ -9157,6 +9349,7 @@ def agent_connection_status_payload(
         JOIN device_tokens token ON token.id=usage.device_token_id
         WHERE usage.user_id=?
           AND token.revoked_at IS NULL
+          AND token.activation_state='active'
           AND usage.activity_type IN (
             'mcp_connection','mcp_tools_list','mcp_search','mcp_document','mcp_tool'
           )
@@ -9171,6 +9364,7 @@ def agent_connection_status_payload(
         FROM api_usage usage
         JOIN device_tokens token ON token.id=usage.device_token_id
         WHERE usage.user_id=? AND token.revoked_at IS NULL
+          AND token.activation_state='active'
           AND usage.activity_type='mcp_tools_list'
         ORDER BY usage.called_at DESC,usage.id DESC LIMIT 1
         """,
@@ -9277,11 +9471,12 @@ def portal_payload(
             SELECT device_tokens.id, device_tokens.label, device_tokens.token_prefix,
                    device_tokens.token_seed,
                    device_tokens.created_at, device_tokens.last_used_at,
-                   device_tokens.revoked_at,
+                   device_tokens.revoked_at,device_tokens.activation_state,
                    COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
             FROM device_tokens
             LEFT JOIN api_usage ON api_usage.device_token_id = device_tokens.id
             WHERE device_tokens.user_id = ? AND device_tokens.revoked_at IS NULL
+              AND device_tokens.activation_state='active'
             GROUP BY device_tokens.id
             ORDER BY device_tokens.id DESC
             """,
@@ -9480,6 +9675,7 @@ def portal_payload(
                         'mcp_document','mcp_tool'
                       )
                       AND token.revoked_at IS NULL
+                      AND token.activation_state='active'
                       AND COALESCE(enrollment.workbuddy_version,'')<>''
                     GROUP BY token.user_id,enrollment.workbuddy_version
                 ),
@@ -9581,6 +9777,7 @@ def portal_payload(
                       ON recent_token.id=recent_activity.device_token_id
                     WHERE recent_activity.user_id=users.id
                       AND recent_token.revoked_at IS NULL
+                      AND recent_token.activation_state='active'
                       AND recent_activity.activity_type IN (
                         'mcp_connection','mcp_tools_list','mcp_search',
                         'mcp_document','mcp_tool'
@@ -11597,7 +11794,7 @@ def admin_user_detail(
         member = connection.execute(
             """
             SELECT users.*,
-                   COUNT(DISTINCT CASE WHEN device_tokens.revoked_at IS NULL THEN device_tokens.id END) AS active_tokens,
+                   COUNT(DISTINCT CASE WHEN device_tokens.revoked_at IS NULL AND device_tokens.activation_state='active' THEN device_tokens.id END) AS active_tokens,
                    COUNT(DISTINCT CASE WHEN api_usage.counts_toward_usage = 1 THEN api_usage.id END) AS call_count,
                    MAX(api_usage.called_at) AS last_called_at
             FROM users
@@ -11639,6 +11836,7 @@ def admin_user_detail(
             FROM api_usage usage
             JOIN device_tokens token ON token.id=usage.device_token_id
             WHERE usage.user_id=? AND token.revoked_at IS NULL
+              AND token.activation_state='active'
               AND usage.activity_type IN (
                 'mcp_connection','mcp_tools_list','mcp_search',
                 'mcp_document','mcp_tool'
@@ -11653,7 +11851,8 @@ def admin_user_detail(
             SELECT token.id,token.label,token.token_prefix,token.created_at,
                    token.last_used_at,token.revoked_at,token.revoked_reason,
                    token.revoked_by,token.credential_kind,token.enrollment_id,
-                   token.binding_id,
+                   token.binding_id,token.activation_state,token.activated_at,
+                   token.supersedes_token_id,
                    enrollment.install_platform,enrollment.workbuddy_version,
                    enrollment.result_status,enrollment.result_host,
                    enrollment.result_platform,enrollment.result_reported_at,
@@ -11681,7 +11880,11 @@ def admin_user_detail(
             LEFT JOIN api_usage usage ON usage.device_token_id=token.id
             WHERE token.user_id=?
             GROUP BY token.id
-            ORDER BY (token.revoked_at IS NULL) DESC,token.id DESC
+            ORDER BY CASE
+                       WHEN token.revoked_at IS NULL AND token.activation_state='active' THEN 0
+                       WHEN token.revoked_at IS NULL THEN 1
+                       ELSE 2
+                     END,token.id DESC
             """,
             (member_id,),
         ).fetchall()
@@ -11728,6 +11931,7 @@ def admin_user_detail(
         "last_seen_at",
         "binding_revoked_at",
         "last_mcp_at",
+        "activated_at",
     )
     kind_labels = {
         "installation": "独立安装凭据",
@@ -12469,7 +12673,10 @@ def admin_health_detail(
     with closing(database()) as connection:
         active_users = int(connection.execute("SELECT COUNT(*) FROM users WHERE active = 1").fetchone()[0])
         active_tokens = int(
-            connection.execute("SELECT COUNT(*) FROM device_tokens WHERE revoked_at IS NULL").fetchone()[0]
+            connection.execute(
+                "SELECT COUNT(*) FROM device_tokens "
+                "WHERE revoked_at IS NULL AND activation_state='active'"
+            ).fetchone()[0]
         )
         calls_since_24_hours = isoformat(utc_now() - timedelta(hours=24))
         recent_calls_from = """
@@ -12588,8 +12795,10 @@ def admin_health_detail(
             WITH token_stats AS (
                 SELECT user_id,
                        COUNT(*) AS token_count,
-                       COUNT(CASE WHEN revoked_at IS NULL THEN 1 END)
+                       COUNT(CASE WHEN revoked_at IS NULL AND activation_state='active' THEN 1 END)
                            AS active_token_count,
+                       COUNT(CASE WHEN revoked_at IS NULL AND activation_state='pending' THEN 1 END)
+                           AS pending_token_count,
                        COUNT(CASE WHEN revoked_at IS NOT NULL THEN 1 END)
                            AS revoked_token_count,
                        MAX(last_used_at) AS last_used_at
@@ -12616,6 +12825,7 @@ def admin_health_detail(
                       ON candidate_token.id=candidate.device_token_id
                     WHERE candidate.user_id = activity.user_id
                       AND candidate_token.revoked_at IS NULL
+                      AND candidate_token.activation_state='active'
                       AND candidate.activity_type IN (
                           'mcp_connection','mcp_tools_list','mcp_search',
                           'mcp_document','mcp_tool'
@@ -12624,6 +12834,7 @@ def admin_health_detail(
                     LIMIT 1
                 )
                   AND activity_token.revoked_at IS NULL
+                  AND activity_token.activation_state='active'
             ),
             latest_device AS (
                 SELECT binding.user_id,binding.device_name,binding.auth_method,
@@ -12643,6 +12854,8 @@ def admin_health_detail(
                    COALESCE(token_stats.token_count,0) AS token_count,
                    COALESCE(token_stats.active_token_count,0)
                        AS active_token_count,
+                   COALESCE(token_stats.pending_token_count,0)
+                       AS pending_token_count,
                    COALESCE(token_stats.revoked_token_count,0)
                        AS revoked_token_count,
                    COALESCE(usage_stats.call_count,0) AS call_count,
@@ -12696,7 +12909,8 @@ def admin_health_detail(
                    users.active AS user_active,device_tokens.label,
                    device_tokens.token_prefix, device_tokens.created_at,
                    device_tokens.last_used_at, device_tokens.revoked_at,
-                   device_tokens.credential_kind,enrollment.install_platform,
+                   device_tokens.credential_kind,device_tokens.activation_state,
+                   enrollment.install_platform,
                    COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
@@ -14134,7 +14348,7 @@ def create_agent_bootstrap_code(
             SET revoked_at=COALESCE(revoked_at,?),
                 revoked_reason=CASE WHEN revoked_at IS NULL THEN 'superseded_unused_install' ELSE revoked_reason END,
                 revoked_by=CASE WHEN revoked_at IS NULL THEN 'system' ELSE revoked_by END
-            WHERE user_id=? AND revoked_at IS NULL AND last_used_at IS NULL
+            WHERE user_id=? AND revoked_at IS NULL AND activation_state='pending'
               AND enrollment_id IN (
                   SELECT id FROM agent_enrollment_codes
                   WHERE user_id=? AND consumed_at IS NULL
@@ -14143,6 +14357,14 @@ def create_agent_bootstrap_code(
             """,
             (now, int(user["id"]), int(user["id"])),
         )
+        active_token = connection.execute(
+            """
+            SELECT id FROM device_tokens
+            WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+            ORDER BY COALESCE(last_used_at,created_at) DESC,id DESC LIMIT 1
+            """,
+            (int(user["id"]),),
+        ).fetchone()
         connection.execute(
             """
             UPDATE agent_enrollment_codes
@@ -14183,8 +14405,8 @@ def create_agent_bootstrap_code(
             """
             INSERT INTO device_tokens(
                 user_id,label,token_prefix,token_hash,token_seed,created_at,
-                credential_kind,enrollment_id
-            ) VALUES (?,?,?,?,?,?,'installation',?)
+                credential_kind,enrollment_id,activation_state,supersedes_token_id
+            ) VALUES (?,?,?,?,?,?,'installation',?,'pending',?)
             """,
             (
                 int(user["id"]),
@@ -14194,6 +14416,7 @@ def create_agent_bootstrap_code(
                 seed,
                 now,
                 int(enrollment_cursor.lastrowid),
+                int(active_token["id"]) if active_token else None,
             ),
         )
         connection.commit()
@@ -16225,34 +16448,36 @@ def create_device_token(
         )
     with closing(database()) as connection:
         active_token = connection.execute(
-            "SELECT id,token_seed FROM device_tokens "
-            "WHERE user_id=? AND credential_kind='personal' "
-            "AND revoked_at IS NULL ORDER BY id DESC LIMIT 1",
+            "SELECT id,token_seed,credential_kind FROM device_tokens "
+            "WHERE user_id=? AND activation_state='active' "
+            "AND revoked_at IS NULL ORDER BY COALESCE(last_used_at,created_at) DESC,id DESC LIMIT 1",
             (user["id"],),
         ).fetchone()
         if active_token:
             seed = str(active_token["token_seed"] or secrets.token_urlsafe(24))
             raw_token = user_access_token(int(user["id"]), seed)
-            connection.execute(
-                "UPDATE device_tokens SET label=?,token_seed=?,token_prefix=?,token_hash=? WHERE id=?",
-                (
-                    normalized_real_name, seed, raw_token[:12], token_hash(raw_token),
-                    int(active_token["id"]),
-                ),
-            )
+            if str(active_token["credential_kind"] or "") == "personal":
+                connection.execute(
+                    "UPDATE device_tokens SET label=?,token_seed=?,token_prefix=?,token_hash=? WHERE id=?",
+                    (
+                        normalized_real_name, seed, raw_token[:12], token_hash(raw_token),
+                        int(active_token["id"]),
+                    ),
+                )
         else:
             seed = secrets.token_urlsafe(24)
             raw_token = user_access_token(int(user["id"]), seed)
+            created_at = isoformat(utc_now())
             connection.execute(
                 """
                 INSERT INTO device_tokens(
                     user_id,label,token_prefix,token_hash,token_seed,created_at,
-                    credential_kind
-                ) VALUES (?,?,?,?,?,?,'personal')
+                    credential_kind,activated_at
+                ) VALUES (?,?,?,?,?,?,'personal',?)
                 """,
                 (
                     user["id"], normalized_real_name, raw_token[:12], token_hash(raw_token),
-                    seed, isoformat(utc_now()),
+                    seed, created_at, created_at,
                 ),
             )
         connection.execute(

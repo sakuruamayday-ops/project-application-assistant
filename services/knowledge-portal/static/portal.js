@@ -370,8 +370,14 @@ function renderAssistantAnswer(container, value) {
 
 async function copyToClipboard(value) {
   if (navigator.clipboard?.writeText && window.isSecureContext) {
-    await navigator.clipboard.writeText(value);
-    return;
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch {
+      // Safari can reject after an async boundary because transient user
+      // activation has expired. Fall through to the legacy copy path so the
+      // user receives a localized error instead of a raw DOMException.
+    }
   }
   const temporary = document.createElement("textarea");
   temporary.value = value;
@@ -382,6 +388,22 @@ async function copyToClipboard(value) {
   const copied = document.execCommand("copy");
   temporary.remove();
   if (!copied) throw new Error("浏览器未允许复制，请刷新页面后重试。");
+}
+
+function copyGeneratedTextFromGesture(valuePromise) {
+  if (
+    navigator.clipboard?.write
+    && window.ClipboardItem
+    && window.isSecureContext
+  ) {
+    const textBlob = Promise.resolve(valuePromise).then(
+      (value) => new Blob([value], {type: "text/plain"}),
+    );
+    return navigator.clipboard.write([
+      new ClipboardItem({"text/plain": textBlob}),
+    ]);
+  }
+  return Promise.resolve(valuePromise).then(copyToClipboard);
 }
 
 function appendAssistantProgress(list, payload) {
@@ -559,7 +581,7 @@ const watchAgentUpgradeStatus = (card) => {
   poll();
 };
 
-const loadAgentInstallReview = async (card, {copyPrompt = false, platform = ""} = {}) => {
+const loadAgentInstallReview = async (card, {platform = ""} = {}) => {
   if (!["macos", "windows"].includes(platform)) throw new Error("请选择 macOS 版或 Windows 版。");
   const form = new URLSearchParams();
   form.set("csrf_token", card?.dataset.csrfToken || "");
@@ -573,11 +595,10 @@ const loadAgentInstallReview = async (card, {copyPrompt = false, platform = ""} 
   if (!response.ok || payload.phase !== "install_ready" || !payload.prompt) {
     throw new Error(payload.detail || "无法生成完整安装指令");
   }
-  if (copyPrompt) await copyToClipboard(payload.prompt);
   return payload;
 };
 
-const loadAgentUpgradeReview = async (card, {copyPrompt = false} = {}) => {
+const loadAgentUpgradeReview = async (card) => {
   const form = new URLSearchParams();
   form.set("csrf_token", card?.dataset.csrfToken || "");
   const response = await fetch("/agent-upgrade-codes", {
@@ -591,7 +612,6 @@ const loadAgentUpgradeReview = async (card, {copyPrompt = false} = {}) => {
   }
   card.dataset.agentUpgradeCode = payload.review_code;
   card.dataset.agentUpgradeUrl = payload.review_url;
-  if (copyPrompt) await copyToClipboard(payload.prompt);
   card.querySelector("[data-confirm-agent-upgrade]")?.removeAttribute("hidden");
   return payload;
 };
@@ -625,7 +645,11 @@ document.addEventListener("click", async (event) => {
     status?.classList.remove("is-error");
     agentUpgradeButton.innerHTML = "<span>正在锁定升级版本…</span><small>请稍候</small>";
     try {
-      await loadAgentUpgradeReview(card, {copyPrompt: true});
+      const payloadPromise = loadAgentUpgradeReview(card);
+      const copyPromise = copyGeneratedTextFromGesture(
+        payloadPromise.then((payload) => payload.prompt),
+      );
+      await Promise.all([payloadPromise, copyPromise]);
       agentUpgradeButton.classList.remove("is-loading");
       agentUpgradeButton.classList.add("copy-success");
       agentUpgradeButton.innerHTML = "<span>升级审查已复制</span><small>回到本页确认后再升级</small>";
@@ -654,8 +678,11 @@ document.addEventListener("click", async (event) => {
     confirmUpgradeButton.disabled = true;
     status?.classList.remove("is-error");
     try {
-      const payload = await confirmAgentUpgrade(card);
-      await copyToClipboard(payload.prompt);
+      const payloadPromise = confirmAgentUpgrade(card);
+      const copyPromise = copyGeneratedTextFromGesture(
+        payloadPromise.then((payload) => payload.prompt),
+      );
+      await Promise.all([payloadPromise, copyPromise]);
       confirmUpgradeButton.innerHTML = "<span>升级确认已复制</span><small>发送给同一个 Agent</small>";
       if (status) status.textContent = "请粘贴给审查升级计划的同一个 Agent；门户只接受目标版本和目标哈希完全一致的回传。";
       watchAgentUpgradeStatus(installCard);
@@ -682,7 +709,11 @@ document.addEventListener("click", async (event) => {
     status?.classList.remove("is-error");
     agentBootstrapButton.innerHTML = `<span>正在生成 ${platformLabel} 配置…</span><small>请稍候</small>`;
     try {
-      const payload = await loadAgentInstallReview(card, {copyPrompt: true, platform});
+      const payloadPromise = loadAgentInstallReview(card, {platform});
+      const copyPromise = copyGeneratedTextFromGesture(
+        payloadPromise.then((payload) => payload.prompt),
+      );
+      await Promise.all([payloadPromise, copyPromise]);
       agentBootstrapButton.classList.remove("is-loading");
       agentBootstrapButton.innerHTML = `<span>${platformLabel} 指令已复制</span><small>粘贴到 WorkBuddy 执行</small>`;
       agentBootstrapButton.classList.add("copy-success");

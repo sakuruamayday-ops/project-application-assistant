@@ -70,6 +70,18 @@ def test_skills_tabs_have_complete_relationships_and_keyboard_support() -> None:
     assert 'event.key === "End"' in portal_js
 
 
+def test_generated_agent_prompts_start_clipboard_write_inside_user_gesture() -> None:
+    portal_js = (STATIC / "portal.js").read_text(encoding="utf-8")
+
+    assert "function copyGeneratedTextFromGesture(valuePromise)" in portal_js
+    assert "navigator.clipboard?.write" in portal_js
+    assert 'new ClipboardItem({"text/plain": textBlob})' in portal_js
+    assert portal_js.count("copyGeneratedTextFromGesture(") == 4
+    assert "payloadPromise.then((payload) => payload.prompt)" in portal_js
+    assert "copyPrompt = false" not in portal_js
+    assert "浏览器未允许复制" in portal_js
+
+
 def test_black_gold_sources_do_not_use_micro_text_below_11px() -> None:
     sources = ("atelier.css", "console.css", "skill-center.css", "demo.css")
     offenders: list[str] = []

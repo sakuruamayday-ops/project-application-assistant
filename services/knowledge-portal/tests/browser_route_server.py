@@ -72,20 +72,21 @@ def main() -> None:
                     datetime.now(timezone.utc).isoformat(),
                 ),
             )
-            connection.execute(
-                """
-                INSERT INTO skill_release_artifacts(
-                    release_id,target,file_name,file_path,sha256
-                ) VALUES (?,?,?,?,?)
-                """,
-                (
-                    release_cursor.lastrowid,
-                    "workbuddy",
-                    workbuddy.name,
-                    str(workbuddy),
-                    hashlib.sha256(workbuddy.read_bytes()).hexdigest(),
-                ),
-            )
+            for target in ("workbuddy", "macos", "windows"):
+                connection.execute(
+                    """
+                    INSERT INTO skill_release_artifacts(
+                        release_id,target,file_name,file_path,sha256
+                    ) VALUES (?,?,?,?,?)
+                    """,
+                    (
+                        release_cursor.lastrowid,
+                        target,
+                        workbuddy.name,
+                        str(workbuddy),
+                        hashlib.sha256(workbuddy.read_bytes()).hexdigest(),
+                    ),
+                )
             for offset, (version, archive_path) in enumerate(historical_generics, start=1):
                 connection.execute(
                     """
