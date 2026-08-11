@@ -20,6 +20,19 @@ def terminate(process: subprocess.Popen[bytes]) -> None:
         process.wait(timeout=5)
 
 
+def write_all(destination: BinaryIO, payload: bytes) -> int:
+    """Write a complete payload even when an unbuffered pipe writes partially."""
+
+    view = memoryview(payload)
+    written_total = 0
+    while written_total < len(view):
+        written = destination.write(view[written_total:])
+        if written is None or written <= 0:
+            raise BrokenPipeError("目标管道未接受剩余数据")
+        written_total += written
+    return written_total
+
+
 def stream(
     source: BinaryIO,
     command: list[str],
@@ -43,8 +56,8 @@ def stream(
         assert process.stdin is not None
         try:
             while chunk := source.read(256 * 1024):
-                process.stdin.write(chunk)
-                state["bytes"] = int(state["bytes"]) + len(chunk)
+                written = write_all(process.stdin, chunk)
+                state["bytes"] = int(state["bytes"]) + written
                 state["last_progress"] = time.monotonic()
             process.stdin.close()
             state["input_complete"] = True

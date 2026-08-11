@@ -295,7 +295,9 @@ if release.exists() or release.is_symlink():
 release.mkdir(parents=True, mode=0o755)
 PY"
 
-COPYFILE_DISABLE=1 tar --no-xattrs -C "${service_dir}" -cf - \
+COPYFILE_DISABLE=1 tar --no-xattrs \
+    --exclude='*/__pycache__' --exclude='*.pyc' \
+    -C "${service_dir}" -cf - \
     app references templates static installers deploy \
     scripts/build_knowledge_content_index.py \
     scripts/build_knowledge_inventory_from_manifest.py \
