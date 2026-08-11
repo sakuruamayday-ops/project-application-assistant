@@ -49,10 +49,11 @@ def main() -> int:
     delivery_contract = load(SKILLS / "delivery-contracts.json")
     registry = load(SKILLS / "report-skill-registry.json")
     config = load(ROOT / "config" / "grounded-citations.json")
-    notes_path = ROOT / "docs" / "releases" / "V1.6.3.md"
+    release_tag = str(manifest["release"]["tag"])
+    notes_path = ROOT / "docs" / "releases" / f"{release_tag}.md"
     notes = notes_path.read_text(encoding="utf-8")
-    stable_notes_path = ROOT / "docs" / "releases" / "V1.6.3.md"
-    stable_notes = stable_notes_path.read_text(encoding="utf-8")
+    stable_notes_path = notes_path
+    stable_notes = notes
     release_script = (ROOT / "scripts" / "controlled_release.py").read_text(encoding="utf-8")
     manager_root = args.release_manager_root.expanduser().resolve()
     manager_main = manager_root / "scripts" / "windows_hook" / "main.go"
@@ -66,8 +67,9 @@ def main() -> int:
     engine_text = (SKILLS / "evidence-ledger" / "scripts" / "grounded_evidence.py").read_text(encoding="utf-8")
     evidence_skill_text = (SKILLS / "evidence-ledger" / "SKILL.md").read_text(encoding="utf-8")
 
-    windows_match = re.search(r"(?s)(V1\.6\.3).*Windows WorkBuddy", stable_notes)
-    macos_match = re.search(r"(?s)(V1\.6\.3).*?macOS", stable_notes)
+    escaped_release_tag = re.escape(release_tag)
+    windows_match = re.search(rf"(?s)({escaped_release_tag}).*Windows WorkBuddy", stable_notes)
+    macos_match = re.search(rf"(?s)({escaped_release_tag}).*?macOS", stable_notes)
     skills_contract = str(manifest["release"]["tag"])
 
     adapters = config.get("host_adapters", {})
@@ -78,15 +80,17 @@ def main() -> int:
     }
     shared_paths = set(manifest.get("shared_paths", []))
     checks = {
-        "release_notes_identify_v163_windows": bool(windows_match),
-        "release_notes_identify_v163_macos": bool(macos_match),
+        "release_notes_identify_current_windows": bool(windows_match),
+        "release_notes_identify_current_macos": bool(macos_match),
         "release_notes_keep_identity_out_of_plugin": (
             "企业数字身份证不进入插件包" in notes
             or "不包含知识索引、企业数字身份证" in notes
             or "不把企业身份数据放入 ZIP" in notes
         ),
-        "formal_skills_contract_is_v163": skills_contract == "V1.6.3",
-        "delivery_contract_is_v163": delivery_contract.get("rule_version") == "1.6.3",
+        "formal_skills_contract_matches_release_notes": skills_contract == release_tag,
+        "delivery_contract_matches_skills_contract": (
+            delivery_contract.get("rule_version") == manifest["release"]["version"]
+        ),
         "release_notes_file_present": notes_path.is_file() and stable_notes_path.is_file(),
         "controlled_release_supports_windows_hotfix": (
             '"--platform-hotfix"' in release_script

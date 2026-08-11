@@ -1,0 +1,363 @@
+#!/usr/bin/env python3
+"""Safely fill RD core-technology and innovation cells in a high-tech application."""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import json
+import re
+import shutil
+import tempfile
+import zipfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+from lxml import etree
+
+
+W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+W = f"{{{W_NS}}}"
+NS = {"w": W_NS}
+RD_PATTERN = re.compile(r"研发活动编号[:：]?\s*(RD\d{2})", re.IGNORECASE)
+ADVANCED_TERMS = (
+    "人工智能",
+    "深度学习",
+    "机器学习",
+    "神经网络",
+    "数字孪生",
+    "大数据平台",
+    "区块链",
+    "云边协同",
+    "自主决策",
+    "预测性维护",
+)
+VALIDATION_SENTENCE = (
+    "项目实施时将通过输入覆盖、边界工况、连续运行、异常注入、通信中断恢复和闭环记录等测试逐项核定上述指标，"
+    "最终以企业检测报告、产品规格书及现场运行记录为准，不将拟定指标视为已取得的第三方检测结论。"
+)
+UNIT_OR_BOUNDARY = re.compile(
+    r"(%|秒|分钟|小时|天|毫米|厘米|微米|千米|米|赫兹|分贝|摄氏度|℃|兆帕|MPa|"
+    r"伏|安|瓦|帧|次|个|类|项|套|点|条|不低于|不高于|不大于|不小于|不超过|不少于)"
+)
+
+
+def normalize(value: str) -> str:
+    return "".join(value.replace("\u3000", " ").split())
+
+
+def element_text(node: etree._Element) -> str:
+    return "".join(text.text or "" for text in node.xpath(".//w:t", namespaces=NS))
+
+
+def paragraph_text(node: etree._Element) -> str:
+    return element_text(node)
+
+
+def table_rows(table: etree._Element) -> list[list[etree._Element]]:
+    return [row.xpath("./w:tc", namespaces=NS) for row in table.xpath("./w:tr", namespaces=NS)]
+
+
+def find_label_row(rows: list[list[etree._Element]], prefix: str) -> tuple[list[etree._Element], int] | None:
+    for cells in rows:
+        for index, cell in enumerate(cells):
+            if normalize(element_text(cell)).startswith(prefix):
+                return cells, index
+    return None
+
+
+def collect_rd_targets(root: etree._Element) -> dict[str, dict[str, object]]:
+    body = root.find(".//w:body", namespaces=NS)
+    if body is None:
+        raise ValueError("DOCX正文缺少w:body")
+    current_rd: str | None = None
+    targets: dict[str, dict[str, object]] = {}
+    for child in body:
+        if child.tag == W + "p":
+            match = RD_PATTERN.search(paragraph_text(child))
+            if match:
+                current_rd = match.group(1).upper()
+            continue
+        if child.tag != W + "tbl" or current_rd is None:
+            continue
+        rows = table_rows(child)
+        title_row = find_label_row(rows, "研发活动名称")
+        field_row = find_label_row(rows, "技术领域")
+        core_row = find_label_row(rows, "核心技术及创新点")
+        if not title_row or not field_row or not core_row:
+            continue
+        field_cells, field_index = field_row
+        core_cells, core_index = core_row
+        if field_index + 1 >= len(field_cells) or core_index + 1 >= len(core_cells):
+            raise ValueError(f"{current_rd}表的领域或核心技术数据单元格缺失")
+        field = element_text(field_cells[field_index + 1]).strip()
+        if not field or "—" not in field:
+            raise ValueError(f"{current_rd}表头未填写完整四级领域：{field!r}")
+        if current_rd in targets:
+            raise ValueError(f"文档存在重复编号：{current_rd}")
+        targets[current_rd] = {"field": field, "cell": core_cells[core_index + 1]}
+    return targets
+
+
+def ensure_sentence(value: str) -> str:
+    value = value.strip()
+    if not value:
+        return value
+    return value if value[-1] in "。；！？.!?" else value + "。"
+
+
+def require_string(container: dict, key: str, context: str) -> str:
+    value = container.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{context}.{key}不能为空")
+    return value.strip()
+
+
+def validate_profile(data: dict) -> dict[str, object]:
+    profile = data.get("enterprise_profile")
+    if not isinstance(profile, dict):
+        raise ValueError("enterprise_profile必须为对象")
+    for key in ("name", "scale_summary", "main_business", "patent_summary"):
+        require_string(profile, key, "enterprise_profile")
+    for key in ("scale_evidence", "patent_evidence"):
+        values = profile.get(key)
+        if not isinstance(values, list) or not values or not all(isinstance(item, str) and item.strip() for item in values):
+            raise ValueError(f"enterprise_profile.{key}必须是非空字符串数组")
+    verified = profile.get("verified_advanced_terms", [])
+    if not isinstance(verified, list) or not all(isinstance(item, str) and item.strip() for item in verified):
+        raise ValueError("enterprise_profile.verified_advanced_terms必须是字符串数组")
+    unknown = sorted(set(verified) - set(ADVANCED_TERMS))
+    if unknown:
+        raise ValueError("verified_advanced_terms含未受控词：" + "、".join(unknown))
+    return profile
+
+
+def format_technology(index: int, value: dict, rd_id: str) -> str:
+    if not isinstance(value, dict):
+        raise ValueError(f"{rd_id}.core_technologies[{index - 1}]必须为对象")
+    name = require_string(value, "name", f"{rd_id}.core_technologies[{index - 1}]").rstrip("：:")
+    description = require_string(value, "description", f"{rd_id}.core_technologies[{index - 1}]")
+    indicators = require_string(value, "indicators", f"{rd_id}.core_technologies[{index - 1}]")
+    if not name.endswith("技术"):
+        raise ValueError(f"{rd_id}第{index}条核心技术名称必须以“技术”结尾")
+    if not re.search(r"\d", indicators) or not UNIT_OR_BOUNDARY.search(indicators):
+        raise ValueError(f"{rd_id}第{index}条核心技术指标必须包含数值以及单位或阈值边界")
+    indicators = re.sub(r"^拟定技术指标(?:为|：|:)?", "", indicators).strip()
+    return f"{index}、{name}：{ensure_sentence(description)}拟定技术指标为{ensure_sentence(indicators)}"
+
+
+def format_item(item: dict, field: str, min_body_chars: int) -> tuple[str, int]:
+    rd_id = require_string(item, "rd_id", "item").upper()
+    technologies = item.get("core_technologies")
+    innovations = item.get("innovations")
+    if not isinstance(technologies, list) or len(technologies) != 2:
+        raise ValueError(f"{rd_id}.core_technologies必须且只能有2条")
+    if not isinstance(innovations, list) or len(innovations) != 2:
+        raise ValueError(f"{rd_id}.innovations必须且只能有2条")
+    if not all(isinstance(value, str) and value.strip() for value in innovations):
+        raise ValueError(f"{rd_id}.innovations必须为2条非空字符串")
+    lines = [
+        f"所属技术领域：{field}。",
+        "核心技术：",
+        format_technology(1, technologies[0], rd_id),
+        format_technology(2, technologies[1], rd_id),
+        "创新点：",
+        f"1、{ensure_sentence(innovations[0])}",
+        f"2、{ensure_sentence(innovations[1])}{VALIDATION_SENTENCE}",
+    ]
+    body_length = len("".join(lines[index] for index in (2, 3, 5, 6)))
+    if body_length < min_body_chars:
+        raise ValueError(f"{rd_id}核心技术与创新点合计{body_length}字，少于{min_body_chars}字")
+    return "\n".join(lines), body_length
+
+
+def set_simsun_xiaosi(run: etree._Element) -> None:
+    rpr = run.find(W + "rPr")
+    if rpr is None:
+        rpr = etree.Element(W + "rPr")
+        run.insert(0, rpr)
+    fonts = rpr.find(W + "rFonts")
+    if fonts is None:
+        fonts = etree.Element(W + "rFonts")
+        rpr.insert(0, fonts)
+    for key in ("ascii", "hAnsi", "eastAsia", "cs"):
+        fonts.set(W + key, "宋体")
+    for key in ("sz", "szCs"):
+        node = rpr.find(W + key)
+        if node is None:
+            node = etree.SubElement(rpr, W + key)
+        node.set(W + "val", "24")
+
+
+def replace_cell_content(cell: etree._Element, value: str) -> None:
+    paragraphs = cell.xpath("./w:p", namespaces=NS)
+    if not paragraphs:
+        paragraph = etree.SubElement(cell, W + "p")
+    else:
+        paragraph = paragraphs[0]
+    runs = paragraph.xpath("./w:r", namespaces=NS)
+    run = runs[0] if runs else etree.SubElement(paragraph, W + "r")
+    for child in list(run):
+        if child.tag != W + "rPr":
+            run.remove(child)
+    set_simsun_xiaosi(run)
+    lines = value.split("\n")
+    for index, line in enumerate(lines):
+        text = etree.SubElement(run, W + "t")
+        text.text = line
+        if index < len(lines) - 1:
+            etree.SubElement(run, W + "br")
+    for other_run in cell.xpath(".//w:r", namespaces=NS):
+        if other_run is run:
+            continue
+        for child in list(other_run):
+            if child.tag != W + "rPr":
+                other_run.remove(child)
+    for other_paragraph in paragraphs[1:]:
+        for other_run in other_paragraph.xpath(".//w:r", namespaces=NS):
+            for child in list(other_run):
+                if child.tag != W + "rPr":
+                    other_run.remove(child)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="按高企格式批量回填RD核心技术及创新点，并校准企业能力边界。")
+    parser.add_argument("input", type=Path, help="输入DOCX")
+    parser.add_argument("spec", type=Path, help="结构化JSON")
+    parser.add_argument("output", type=Path, help="输出DOCX，不得与输入相同")
+    parser.add_argument("--report", type=Path, help="JSON审计报告；默认输出DOCX同名.audit.json")
+    parser.add_argument("--min-body-chars", type=int, default=400)
+    parser.add_argument("--overwrite", action="store_true", help="允许覆盖已有输出；原文件先保存为时间戳备份")
+    return parser.parse_args()
+
+
+def unique_recovery_path(path: Path, marker: str) -> Path:
+    """Return an unused sibling path without deleting or overwriting any file."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    candidate = path.with_name(path.name + f".{marker}-{timestamp}")
+    suffix = 1
+    while candidate.exists():
+        candidate = path.with_name(path.name + f".{marker}-{timestamp}-{suffix}")
+        suffix += 1
+    return candidate
+
+
+def main() -> None:
+    args = parse_args()
+    input_path = args.input.resolve()
+    spec_path = args.spec.resolve()
+    output_path = args.output.resolve()
+    if input_path == output_path:
+        raise SystemExit("输出文件不得与输入文件相同")
+    if not input_path.is_file() or not spec_path.is_file():
+        raise SystemExit("输入DOCX或JSON不存在")
+    if args.min_body_chars < 400:
+        raise SystemExit("--min-body-chars不得小于400")
+    if output_path.exists() and not args.overwrite:
+        raise SystemExit(f"输出文件已存在；如需覆盖请增加 --overwrite：{output_path}")
+
+    try:
+        data = json.loads(spec_path.read_text(encoding="utf-8"))
+        if data.get("schema_version") != 1:
+            raise ValueError("schema_version必须为1")
+        profile = validate_profile(data)
+        items = data.get("items")
+        if not isinstance(items, list) or not items:
+            raise ValueError("items必须为非空数组")
+
+        with zipfile.ZipFile(input_path, "r") as source_zip:
+            root = etree.fromstring(source_zip.read("word/document.xml"))
+            targets = collect_rd_targets(root)
+            seen: set[str] = set()
+            formatted: dict[str, dict[str, object]] = {}
+            all_text = []
+            for raw_item in items:
+                if not isinstance(raw_item, dict):
+                    raise ValueError("items中的每一项必须为对象")
+                rd_id = require_string(raw_item, "rd_id", "item").upper()
+                if rd_id in seen:
+                    raise ValueError(f"JSON存在重复编号：{rd_id}")
+                if rd_id not in targets:
+                    raise ValueError(f"文档中未找到目标RD表：{rd_id}")
+                seen.add(rd_id)
+                field = str(targets[rd_id]["field"])
+                value, body_length = format_item(raw_item, field, args.min_body_chars)
+                formatted[rd_id] = {"field": field, "body_length": body_length, "value": value}
+                all_text.append(value)
+
+            verified = set(profile.get("verified_advanced_terms", []))
+            found = sorted(term for term in ADVANCED_TERMS if term in "\n".join(all_text))
+            unsupported = sorted(set(found) - verified)
+            if unsupported:
+                raise ValueError(
+                    "正文包含缺少企业能力证据的高阶技术词："
+                    + "、".join(unsupported)
+                    + "；请补充证据并列入verified_advanced_terms，或改写为企业实际技术"
+                )
+
+            for rd_id, record in formatted.items():
+                replace_cell_content(targets[rd_id]["cell"], str(record["value"]))
+            new_xml = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            backup_path = None
+            if output_path.exists():
+                backup_path = unique_recovery_path(output_path, "backup")
+                shutil.move(output_path, backup_path)
+            with tempfile.NamedTemporaryFile(dir=output_path.parent, suffix=".docx", delete=False) as handle:
+                temporary_path = Path(handle.name)
+            try:
+                with zipfile.ZipFile(temporary_path, "w") as output_zip:
+                    for member in source_zip.infolist():
+                        payload = new_xml if member.filename == "word/document.xml" else source_zip.read(member.filename)
+                        output_zip.writestr(copy.deepcopy(member), payload)
+                temporary_path.replace(output_path)
+            except Exception:
+                if temporary_path.exists():
+                    failed_path = unique_recovery_path(output_path, "failed-write")
+                    shutil.move(temporary_path, failed_path)
+                if backup_path and backup_path.exists() and not output_path.exists():
+                    shutil.move(backup_path, output_path)
+                raise
+
+        report_path = args.report.resolve() if args.report else output_path.with_suffix(output_path.suffix + ".audit.json")
+        report = {
+            "schema_version": 1,
+            "status": "pass",
+            "input": str(input_path),
+            "spec": str(spec_path),
+            "output": str(output_path),
+            "backup": str(backup_path) if backup_path else None,
+            "enterprise": {
+                "name": profile["name"],
+                "scale_summary": profile["scale_summary"],
+                "main_business": profile["main_business"],
+                "scale_evidence_count": len(profile["scale_evidence"]),
+                "patent_summary": profile["patent_summary"],
+                "patent_evidence_count": len(profile["patent_evidence"]),
+            },
+            "advanced_terms_found": found,
+            "advanced_terms_verified": sorted(verified),
+            "rd_count": len(formatted),
+            "rd": {
+                rd_id: {
+                    "field": record["field"],
+                    "body_length": record["body_length"],
+                    "core_technology_count": 2,
+                    "innovation_count": 2,
+                }
+                for rd_id, record in formatted.items()
+            },
+            "format": "所属技术领域 + 2条具名核心技术 + 2条创新点",
+            "font": "宋体小四",
+            "field_source": "each RD header",
+            "indicator_status": "draft targets unless source-backed actual values are supplied outside this formatter",
+        }
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    except (ValueError, json.JSONDecodeError, zipfile.BadZipFile, etree.XMLSyntaxError) as exc:
+        raise SystemExit(str(exc)) from exc
+
+
+if __name__ == "__main__":
+    main()

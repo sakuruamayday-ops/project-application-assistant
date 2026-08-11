@@ -45,6 +45,7 @@ EXPECTED_RELEASES = (
     "1.6.1",
     "1.6.2",
     "1.6.3",
+    "1.6.3.1",
 )
 
 
@@ -88,6 +89,19 @@ def test_v163_matches_the_owner_confirmed_function_summary():
         "一键安装 49 项 Skills",
         "企业分析报告 A/B/C 版本和金税四期分析报告",
         "Word、Excel、PowerPoint、PDF 等常用交付格式",
+    ):
+        assert text in introduction
+
+
+def test_v1631_matches_the_owner_confirmed_function_summary():
+    introduction = release_function_introduction("V1.6.3.1")
+    for text in (
+        "新增高新技术企业申请书 RD 核心技术及创新点批量回填",
+        "两条具名核心技术和两条创新点",
+        "增加企业能力校准",
+        "高阶技术没有直接证据时禁止写入",
+        "新增 RD 受控单元格填充与自动审计",
+        "一键安装 49 项 Skills",
     ):
         assert text in introduction
 

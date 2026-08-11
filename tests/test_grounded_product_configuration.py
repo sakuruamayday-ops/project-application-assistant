@@ -11,7 +11,7 @@ def load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def test_product_configuration_validator_passes_on_v162_formal_release(tmp_path):
+def test_product_configuration_validator_passes_on_current_formal_release(tmp_path):
     manager = tmp_path / "skill-release-manager"
     hook = manager / "scripts" / "windows_hook"
     hook.mkdir(parents=True)
@@ -45,12 +45,12 @@ def test_product_configuration_validator_passes_on_v162_formal_release(tmp_path)
     receipt = json.loads(result.stdout)
     assert receipt["status"] == "pass"
     assert receipt["channels"] == {
-        "workbuddy_windows_stable": "V1.6.3",
-        "workbuddy_macos_stable": "V1.6.3",
-        "candidate": "V1.6.3",
+        "workbuddy_windows_stable": "V1.6.3.1",
+        "workbuddy_macos_stable": "V1.6.3.1",
+        "candidate": "V1.6.3.1",
     }
-    assert receipt["skills_contract"] == "V1.6.3"
-    assert receipt["grounded_candidate_release"] == "V1.6.3"
+    assert receipt["skills_contract"] == "V1.6.3.1"
+    assert receipt["grounded_candidate_release"] == "V1.6.3.1"
 
 
 def test_grounded_host_adapters_are_in_the_shared_package_surface():

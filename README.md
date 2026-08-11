@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.6.3"><img src="https://img.shields.io/badge/Release-V1.6.3-C9A760?style=for-the-badge" alt="Release V1.6.3"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.6.3.1"><img src="https://img.shields.io/badge/Release-V1.6.3.1-C9A760?style=for-the-badge" alt="Release V1.6.3.1"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-49-17181A?style=for-the-badge" alt="49 Skills"></a>
-  <a href="docs/releases/V1.6.3.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
+  <a href="docs/releases/V1.6.3.1.md"><img src="https://img.shields.io/badge/Release%20Channel-Verified-2F7D5C?style=for-the-badge" alt="Verified release channel"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
 
@@ -60,13 +60,12 @@ WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启�
 
 #### 一、本版本新增功能
 
-- 新增 Word 模板原样填充功能。使用用户提供的模板生成材料时，保留原有字体、字号、颜色、页眉页脚、表格、页面设置和整体版式，只替换指定文字内容。
-- 增加模板保真校验和逐页视觉检查，避免生成文件出现表格错位、样式变化、分页异常或红字丢失。
-- 完善正式材料质量检查，强化主业务 Skill、证据回执、文件一致性和当前任务状态之间的关联。
-- 提升 Windows 与 macOS 双端运行稳定性，减少重复触发、状态丢失、提示识别失败和交付门禁误判。
-- 完善企业数字身份证，支持按企业现名、曾用名和统一社会信用代码查询身份血缘、合并主体及冲突路径，并用于企业画像和同行对比。
-- 优化小巨人、专精特新、三首等名单检索，增加完整性与截断状态提示，避免把未完整返回的结果误判为全部结果。
-- 插件、安装包、市场目录和生成文件统一使用“共创研究院”品牌。
+- 新增高新技术企业申请书 RD 核心技术及创新点批量回填。每个研发项目独立读取四级技术领域，并固定生成两条具名核心技术和两条创新点。
+- 两条核心技术均需包含具体数值、单位或阈值；无实测材料时明确标记为拟定技术指标，核心技术与创新点合计不少于 400 字。
+- 增加企业能力校准。写作前核验企业规模、主营产品、生产方式、研发基础和公开专利，避免技术描述超出企业实际能力。
+- 传统制造业和中小企业优先使用材料、结构、工艺、工装、设备、检测和过程控制等可落地技术；人工智能、数字孪生等高阶技术没有直接证据时禁止写入。
+- 新增 RD 受控单元格填充与自动审计，只修改目标文字内容，保留模板表格、合并关系、页眉页脚、节属性和整体版式。
+- 专利检索未命中时统一表述为“当前检索层未命中”，不据此断言企业没有相关能力。
 
 #### 二、原有核心功能
 
@@ -113,7 +112,7 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.3 技术发布说明](docs/releases/V1.6.3.md) | 当前版本的技术变更、兼容性和已知限制 |
+| [V1.6.3.1 功能简介](docs/releases/V1.6.3.1.md) | 当前版本新增功能与原有核心功能 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -130,8 +129,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.6.3` | 网站、GitHub Release 和用户可见最新版 |
-| 组件版本 | `1.6.3` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.6.3.1` | 网站、GitHub Release 和用户可见最新版 |
+| 组件版本 | `1.6.3.1` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "contract_id": "gongchuang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.6.3",
+  "rule_version": "1.6.3.1",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
