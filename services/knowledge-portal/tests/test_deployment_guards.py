@@ -489,6 +489,12 @@ def test_index_sync_uses_one_canonical_manifest_and_candidate_root():
     assert 'export JIAOTANG_KNOWLEDGE_MANIFEST_PATH="${manifest}"' in sync_script
     assert "JIAOTANG_CANDIDATE_ROOT/index" in sync_script
     assert "候选发布不得指向可变current目录" in sync_script
+    assert "全量发布拒绝原位改写签名链current" in sync_script
+    assert "rebase-full-release" in sync_script
+    assert "local_release_sync.py" in sync_script
+    assert sync_script.index("rebase-full-release") < sync_script.index(
+        "local_release_sync.py"
+    )
     assert 'os.environ.get("JIAOTANG_MANIFEST_PATH"' in updater
     assert "JIAOTANG_MANIFEST_PATH与JIAOTANG_KNOWLEDGE_MANIFEST_PATH不一致" in updater
 

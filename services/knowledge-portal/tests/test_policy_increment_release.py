@@ -80,6 +80,86 @@ def test_pointer_is_byte_stable_for_same_state(tmp_path: Path) -> None:
     assert release.canonical_json_bytes(first) == release.canonical_json_bytes(second)
 
 
+def test_pointer_binds_full_release_manifest_when_present(tmp_path: Path) -> None:
+    private_path = tmp_path / "private.pem"
+    public_path = tmp_path / "public.pem"
+    generate_key(private_path, public_path)
+    private_key = release.load_private_key(private_path)
+    public_key = release.load_public_key(public_path)
+    state = {
+        "updated_at": "2026-08-11T08:25:09Z",
+        "key_id": release.public_key_id(public_key),
+        "base_release_id": "index-base",
+        "base_index_sha256": "11" * 32,
+        "base_manifest_sha256": "22" * 32,
+        "base_chain_sha256": "33" * 32,
+        "current_release_id": "index-current",
+        "current_chain_sha256": "33" * 32,
+        "current_index_sha256": "44" * 32,
+        "current_manifest_sha256": "55" * 32,
+        "current_release_manifest_sha256": "66" * 32,
+        "entries": [],
+    }
+
+    pointer = release.pointer_for_state(state, private_key)
+
+    assert pointer["current_release_manifest_sha256"] == "66" * 32
+
+
+def test_remote_pointer_requires_signed_structural_chain_consistency(
+    tmp_path: Path,
+) -> None:
+    private_path = tmp_path / "private.pem"
+    public_path = tmp_path / "public.pem"
+    generate_key(private_path, public_path)
+    private_key = release.load_private_key(private_path)
+    public_key = release.load_public_key(public_path)
+
+    class StoredObject:
+        def __init__(self, payload: bytes) -> None:
+            self.payload = payload
+
+        def read(self) -> bytes:
+            return self.payload
+
+    class Bucket:
+        def __init__(self, payload: dict[str, object]) -> None:
+            self.payload = release.canonical_json_bytes(payload)
+
+        def head_object(self, _key: str) -> object:
+            return SimpleNamespace()
+
+        def get_object(self, _key: str) -> StoredObject:
+            return StoredObject(self.payload)
+
+    base_chain = "33" * 32
+    payload = release.sign_document(
+        {
+            "schema": release.POINTER_SCHEMA,
+            "updated_at": "2026-08-11T08:25:09Z",
+            "key_id": release.public_key_id(public_key),
+            "base_chain_sha256": base_chain,
+            "current_chain_sha256": base_chain,
+            "chain_length": 0,
+            "entries": [],
+        },
+        private_key,
+    )
+    assert (
+        release.remote_pointer(Bucket(payload), "current.json", public_path)[
+            "current_chain_sha256"
+        ]
+        == base_chain
+    )
+
+    inconsistent = release.sign_document(
+        {**payload, "chain_length": 1, "signature_base64": ""},
+        private_key,
+    )
+    with pytest.raises(PolicyIncrementError, match="条目数量"):
+        release.remote_pointer(Bucket(inconsistent), "current.json", public_path)
+
+
 def test_existing_transition_is_reused_when_only_timestamp_differs() -> None:
     existing = {
         "schema": "jiaotang-policy-increment-transition/v1",
