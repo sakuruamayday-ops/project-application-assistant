@@ -73,6 +73,22 @@ def official_urls(source: str, content: str) -> list[str]:
     )
 
 
+def primary_list_regions(content: str) -> set[str]:
+    sheet_positions = [match.start() for match in re.finditer(r"工作表[:：]", content)]
+    if len(sheet_positions) < 2:
+        return set()
+    primary_content = content[:sheet_positions[1]]
+    trailing_content = content[sheet_positions[1]:]
+    if not any(term in trailing_content for term in ("复核", "未报送", "不推荐", "未通过")):
+        return set()
+    regions = {
+        province
+        for province in PROVINCES
+        if re.search(rf"\|\s*{re.escape(province)}\s*\|", primary_content)
+    }
+    return regions if len(regions) == 1 else set()
+
+
 def main() -> None:
     args = parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -100,15 +116,32 @@ def main() -> None:
         """
     ).fetchall()
     fragments: dict[tuple[str, str, int], dict[str, object]] = {}
-    document_entities: dict[int, set[str]] = defaultdict(set)
+    document_entities: dict[tuple[int, str], set[str]] = defaultdict(set)
+    document_display_names: dict[tuple[int, str], dict[str, str]] = defaultdict(dict)
     excluded_terms = ("复核", "重点", "建议支持", "不推荐", "主动放弃", "复核不通过", "未通过复核")
+    primary_regions_by_document: dict[int, set[str]] = {}
     for document_id, title, content, source, sha256, batch, enterprise_name, sequence_no, region, context in rows:
         scope, _ = infer_scope(str(title), str(content), "")
         if scope != "national_small_giant" or any(term in str(title) for term in excluded_terms):
             continue
-        if any(term in str(context) for term in excluded_terms[3:]):
+        context_value = str(context or "")
+        if (
+            any(term in context_value for term in excluded_terms[3:])
+            or re.search(r"\|\s*否\s*\|", context_value)
+        ):
             continue
-        province = infer_province(str(title), str(content), str(region or ""))
+        # A cross-province workbook often stores only “全国” in the extracted
+        # region column. The row context contains the actual province and must
+        # precede the document-wide fallback, otherwise every row is assigned
+        # to whichever province appears first in the workbook.
+        province = infer_province("", context_value, str(region or ""))
+        if province == "待核验":
+            province = infer_province(str(title), str(content), str(region or ""))
+        allowed_primary_regions = primary_regions_by_document.setdefault(
+            int(document_id), primary_list_regions(str(content))
+        )
+        if allowed_primary_regions and province not in allowed_primary_regions:
+            continue
         key = (str(batch), province, int(document_id))
         fragment = fragments.setdefault(
             key,
@@ -132,7 +165,11 @@ def main() -> None:
                 "verification_status": "source_present_pending_url_recovery",
             },
         )
-        document_entities[int(document_id)].add(normalize_name(str(enterprise_name)))
+        document_region_key = (int(document_id), province)
+        document_entities[document_region_key].add(normalize_name(str(enterprise_name)))
+        document_display_names[document_region_key].setdefault(
+            normalize_name(str(enterprise_name)), str(enterprise_name).strip()
+        )
         sequences = [value for value in re.findall(r"\d+", str(sequence_no or "")) if value]
         if sequences:
             current_min = int(fragment["sequence_min"]) if fragment["sequence_min"] else int(sequences[0])
@@ -140,7 +177,8 @@ def main() -> None:
             fragment["sequence_min"] = str(min(current_min, *(int(value) for value in sequences)))
             fragment["sequence_max"] = str(max(current_max, *(int(value) for value in sequences)))
     for fragment in fragments.values():
-        fragment["enterprise_count"] = len(document_entities[int(fragment["document_id"])])
+        document_region_key = (int(fragment["document_id"]), str(fragment["region"]))
+        fragment["enterprise_count"] = len(document_entities[document_region_key])
         if fragment["official_urls"]:
             fragment["verification_status"] = "official_url_recovered"
         elif str(fragment["source_path"]).startswith(("http://", "https://")):
@@ -186,6 +224,9 @@ def main() -> None:
             count_delta INTEGER NOT NULL DEFAULT 0,
             fragment_count INTEGER NOT NULL DEFAULT 0,
             recovered_url_count INTEGER NOT NULL DEFAULT 0,
+            matched_name_count INTEGER NOT NULL DEFAULT 0,
+            official_only_count INTEGER NOT NULL DEFAULT 0,
+            candidate_only_count INTEGER NOT NULL DEFAULT 0,
             closure_status TEXT NOT NULL,
             UNIQUE(batch,region)
         );
@@ -211,13 +252,18 @@ def main() -> None:
             for item in ordered
         ],
     )
-    batch_region = defaultdict(lambda: {"documents": 0, "enterprise_names": set(), "urls": 0})
+    batch_region = defaultdict(
+        lambda: {"documents": 0, "enterprise_names": set(), "display_names": {}, "urls": 0}
+    )
     for item in ordered:
         key = (str(item["batch"]), str(item["region"]))
+        document_region_key = (int(item["document_id"]), str(item["region"]))
         batch_region[key]["documents"] += 1
-        batch_region[key]["enterprise_names"].update(document_entities[int(item["document_id"])])
+        batch_region[key]["enterprise_names"].update(document_entities[document_region_key])
+        batch_region[key]["display_names"].update(document_display_names[document_region_key])
         batch_region[key]["urls"] += len(item["official_urls"])
     master_counts: dict[tuple[str, str], int] = {}
+    master_names: dict[tuple[str, str], dict[str, str]] = defaultdict(dict)
     master_exists = connection.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='national_small_giant_master'"
     ).fetchone()
@@ -233,16 +279,35 @@ def main() -> None:
                 """
             )
         }
+        for batch, region, enterprise_name, normalized_name in connection.execute(
+            """
+            SELECT batch,region,enterprise_name,normalized_name
+            FROM national_small_giant_master
+            WHERE batch IN ('第四批','第五批','第六批','第七批')
+            """
+        ):
+            master_names[(str(batch), str(region))].setdefault(
+                str(normalized_name) or normalize_name(str(enterprise_name)),
+                str(enterprise_name),
+            )
     summary = []
+    reconciliation_rows: list[dict[str, object]] = []
     for batch in BATCHES:
         for region in PROVINCES:
             value = batch_region[(batch, region)]
-            official_count = len(value["enterprise_names"])
+            official_names = set(value["enterprise_names"])
+            candidate_names = set(master_names.get((batch, region), {}))
+            official_count = len(official_names)
             candidate_count = master_counts.get((batch, region), 0)
-            if official_count and value["urls"] and official_count == candidate_count:
+            matched_names = official_names & candidate_names
+            official_only_names = official_names - candidate_names
+            candidate_only_names = candidate_names - official_names
+            if official_count and value["urls"] and not official_only_names and not candidate_only_names:
                 closure_status = "closed_count_and_source"
-            elif official_count and official_count == candidate_count:
+            elif official_count and not official_only_names and not candidate_only_names:
                 closure_status = "closed_enterprises_url_pending"
+            elif official_count and official_count == candidate_count:
+                closure_status = "count_aligned_name_mismatch"
             elif official_count:
                 closure_status = "partial_fragment_count_gap"
             else:
@@ -257,22 +322,49 @@ def main() -> None:
                     "count_delta": official_count - candidate_count,
                     "fragment_count": value["documents"],
                     "recovered_url_count": value["urls"],
+                    "matched_name_count": len(matched_names),
+                    "official_only_count": len(official_only_names),
+                    "candidate_only_count": len(candidate_only_names),
                     "closure_status": closure_status,
                 }
             )
+            for normalized in sorted(official_only_names):
+                reconciliation_rows.append(
+                    {
+                        "batch": batch,
+                        "recognition_year": BATCH_YEARS[batch],
+                        "region": region,
+                        "difference_type": "official_only",
+                        "enterprise_name": value["display_names"].get(normalized, normalized),
+                        "normalized_name": normalized,
+                    }
+                )
+            for normalized in sorted(candidate_only_names):
+                reconciliation_rows.append(
+                    {
+                        "batch": batch,
+                        "recognition_year": BATCH_YEARS[batch],
+                        "region": region,
+                        "difference_type": "candidate_only",
+                        "enterprise_name": master_names[(batch, region)].get(normalized, normalized),
+                        "normalized_name": normalized,
+                    }
+                )
     connection.executemany(
         """
         INSERT INTO small_giant_fragment_coverage(
             batch,recognition_year,region,platform_candidate_count,
             official_fragment_enterprise_count,count_delta,fragment_count,
-            recovered_url_count,closure_status
-        ) VALUES(?,?,?,?,?,?,?,?,?)
+            recovered_url_count,matched_name_count,official_only_count,candidate_only_count,
+            closure_status
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         [
             (
                 item["batch"], item["recognition_year"], item["region"],
                 item["platform_candidate_count"], item["official_fragment_enterprise_count"],
                 item["count_delta"], item["fragment_count"], item["recovered_url_count"],
+                item["matched_name_count"], item["official_only_count"], item["candidate_only_count"],
                 item["closure_status"],
             )
             for item in summary
@@ -282,7 +374,7 @@ def main() -> None:
     connection.close()
     payload = {
         "generated_at": generated_at,
-        "schema_version": 1,
+        "schema_version": 2,
         "fragment_count": len(ordered),
         "fragments": ordered,
         "batch_region_summary": summary,
@@ -290,6 +382,18 @@ def main() -> None:
     (args.output / "official_fragments.json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    with (args.output / "官方分片企业名称差异.csv").open(
+        "w", encoding="utf-8-sig", newline=""
+    ) as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "batch", "recognition_year", "region", "difference_type",
+                "enterprise_name", "normalized_name",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(reconciliation_rows)
     with (args.output / "官方原始链接恢复队列.csv").open(
         "w", encoding="utf-8-sig", newline=""
     ) as handle:

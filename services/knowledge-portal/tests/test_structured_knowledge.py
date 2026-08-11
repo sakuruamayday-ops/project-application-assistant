@@ -14,6 +14,7 @@ from scripts.evaluate_structured_knowledge import DEFAULT_GOLD_SET, evaluate, lo
 from scripts.import_qice_small_giant_dataset import import_dataset
 from scripts.build_small_giant_identity_graph import USCC_PATTERN
 from scripts.build_small_giant_identity_graph import normalize_name as normalize_identity_name
+from scripts.build_small_giant_official_fragments import primary_list_regions
 from scripts.collect_small_giant_official_fragments import allowed as official_fragment_url_allowed
 from scripts.build_three_first_benchmark_graph import canonicalize_details
 from scripts.build_three_first_benchmark_graph import build_graph as build_three_first_graph
@@ -382,6 +383,33 @@ def test_three_first_final_list_replaces_public_and_history_duplicates():
     assert merged[0]["product_name"] == "测试装备A"
 
 
+def test_small_giant_multisheet_fragment_keeps_only_primary_list_region():
+    content = "\n".join(
+        [
+            "工作表：第五批",
+            "第五批专精特新小巨人企业公示名单",
+            "1 | 湖南省 | 湖南测试企业有限公司",
+            "工作表：第二批复核未报送名单",
+            "1 | 天津市 | 天津测试企业有限公司",
+        ]
+    )
+
+    assert primary_list_regions(content) == {"湖南省"}
+
+
+def test_small_giant_multisheet_fragment_does_not_limit_normal_workbook():
+    content = "\n".join(
+        [
+            "工作表：北京市",
+            "1 | 北京市 | 北京测试企业有限公司",
+            "工作表：天津市",
+            "1 | 天津市 | 天津测试企业有限公司",
+        ]
+    )
+
+    assert primary_list_regions(content) == set()
+
+
 def test_three_first_timeline_keeps_publicity_recognition_reward_and_exit_separate():
     base = {
         "enterprise_key": "enterprise-1",
@@ -442,9 +470,85 @@ def test_three_first_missing_product_does_not_create_placeholder_product_node():
     }
     merged = merge_three_first_records([record], [])
     nodes, edges = build_three_first_graph(merged)
-    assert merged[0]["product_name_status"] == "missing_user_lookup_required"
+    assert merged[0]["product_name_status"] == "platform_history_scope_unresolved"
     assert not [node for node in nodes if node["type"] == "product"]
     assert not [edge for edge in edges if edge["relation"] == "recognized_product"]
+
+
+def test_three_first_history_uses_other_year_product_only_as_identity_topic_candidate():
+    from scripts.build_three_first_benchmark_graph import attach_identity_topic_candidates
+
+    history = {
+        "enterprise_key": "enterprise-1",
+        "eid": "enterprise-1",
+        "enterprise_name": "浙江测试材料有限公司",
+        "enterprise_aliases": [],
+        "province": "浙江省",
+        "city": "杭州市",
+        "county": "",
+        "industry": "",
+        "project_id": "11",
+        "project_name": "浙江省首批次新材料",
+        "year": 2025,
+        "product_name": "",
+        "recognition_tier": "",
+        "product_category": "",
+        "list_status": "platform_history",
+        "source_policy_id": "",
+        "source_index_id": "",
+        "source_title": "",
+        "source_url": "",
+        "source_tier": "licensed_platform",
+        "evidence_semantics": "platform_history_claim",
+        "confidence": "discovery_only",
+    }
+    verified = {
+        **history,
+        "year": 2024,
+        "product_name": "高性能复合材料",
+        "list_status": "final_recognition",
+        "source_title": "关于公布2024年度浙江省首批次新材料名单的通知",
+        "source_url": "https://example.test/final",
+        "source_tier": "official",
+        "evidence_semantics": "annual_list_row",
+        "confidence": "product_level",
+    }
+
+    records = attach_identity_topic_candidates(
+        merge_three_first_records([history], [verified])
+    )
+    unresolved = next(row for row in records if row["year"] == 2025)
+
+    assert unresolved["product_name"] == ""
+    assert unresolved["product_name_status"] == "platform_history_scope_unresolved"
+    assert unresolved["topic_direction_status"] == "candidate_from_same_enterprise_history"
+    assert unresolved["identity_topic_product_candidates"][0]["product_name"] == "高性能复合材料"
+    assert unresolved["identity_topic_product_candidates"][0]["recognition_year"] == 2024
+
+
+def test_three_first_blank_annual_row_is_suppressed_by_same_year_product_detail():
+    blank = {
+        "enterprise_key": "enterprise-1",
+        "project_id": "11",
+        "year": 2024,
+        "product_name": "",
+        "enterprise_name": "浙江测试材料有限公司",
+        "source_tier": "public_repost",
+        "evidence_semantics": "annual_list_row",
+        "confidence": "partial_product_level",
+    }
+    product = {
+        **blank,
+        "product_name": "高性能复合材料",
+        "source_tier": "licensed_platform",
+        "confidence": "product_level",
+    }
+
+    merged = merge_three_first_records([], [blank, product])
+
+    assert len(merged) == 1
+    assert merged[0]["product_name"] == "高性能复合材料"
+    assert merged[0]["product_name_status"] == "verified"
 
 
 def test_specialized_sme_final_recognition_overrides_public_candidates():

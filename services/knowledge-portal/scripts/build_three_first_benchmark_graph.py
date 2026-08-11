@@ -29,6 +29,8 @@ PROJECT_NAMES = {
 }
 MISSING_PRODUCT_STATUS = "missing_user_lookup_required"
 MISSING_PRODUCT_MESSAGE = "仅检索到企业名称，未取得可核验的具体产品名称，请用户自行查找并补充对应产品名称。"
+SCOPE_UNRESOLVED_STATUS = "platform_history_scope_unresolved"
+SCOPE_UNRESOLVED_MESSAGE = "平台历史关联未能与同年度正式名单逐项对应；不得把其他年度产品静默回填为本年度认定产品。"
 TIMELINE_STAGE_ORDER = {
     "publicity": 10,
     "recognition": 20,
@@ -645,6 +647,7 @@ def merge_records(history: list[dict[str, Any]], details: list[dict[str, Any]]) 
             record.get("year"),
         )
         for record in details
+        if normalize_product(record.get("product_name") or "")
     }
     keyed: dict[tuple[Any, ...], dict[str, Any]] = {}
     for record in [*history, *details]:
@@ -653,7 +656,10 @@ def merge_records(history: list[dict[str, Any]], details: list[dict[str, Any]]) 
             str(record.get("project_id")),
             record.get("year"),
         )
-        if record.get("confidence") == "discovery_only" and enterprise_year in detailed_enterprise_years:
+        if (
+            not normalize_product(record.get("product_name") or "")
+            and enterprise_year in detailed_enterprise_years
+        ):
             continue
         key = (
             record.get("enterprise_key"), record.get("project_id"), record.get("year"),
@@ -667,11 +673,129 @@ def merge_records(history: list[dict[str, Any]], details: list[dict[str, Any]]) 
         if normalize_product(record.get("product_name") or ""):
             record["product_name_status"] = "verified"
             record["user_action"] = ""
+        elif (
+            record.get("confidence") == "discovery_only"
+            or record.get("evidence_semantics") == "platform_history_claim"
+        ):
+            record["product_name"] = ""
+            record["product_name_status"] = SCOPE_UNRESOLVED_STATUS
+            record["user_action"] = SCOPE_UNRESOLVED_MESSAGE
         else:
             record["product_name"] = ""
             record["product_name_status"] = MISSING_PRODUCT_STATUS
             record["user_action"] = MISSING_PRODUCT_MESSAGE
     return sorted(records, key=lambda item: (str(item.get("project_id")), int(item.get("year") or 0), str(item.get("enterprise_name")), str(item.get("product_name"))))
+
+
+def attach_identity_topic_candidates(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    products_by_identity_project: dict[tuple[str, str], dict[str, dict[str, Any]]] = defaultdict(dict)
+    for record in records:
+        product_name = normalize_product(record.get("product_name") or "")
+        if not product_name:
+            continue
+        key = (str(record.get("enterprise_key") or ""), str(record.get("project_id") or ""))
+        candidate = {
+            "product_name": product_name,
+            "recognition_year": record.get("year"),
+            "source_title": str(record.get("source_title") or ""),
+            "source_url": str(record.get("source_url") or ""),
+            "source_tier": str(record.get("source_tier") or ""),
+            "list_status": str(record.get("list_status") or ""),
+            "confidence": str(record.get("confidence") or ""),
+            "evidence_semantics": str(record.get("evidence_semantics") or ""),
+        }
+        previous = products_by_identity_project[key].get(product_name)
+        if previous is None or source_priority(record) > source_priority(previous):
+            products_by_identity_project[key][product_name] = candidate
+    output: list[dict[str, Any]] = []
+    for record in records:
+        item = dict(record)
+        product_name = normalize_product(item.get("product_name") or "")
+        if product_name:
+            item["identity_topic_product_candidates"] = []
+            item["topic_direction_status"] = "verified_annual_product"
+        else:
+            key = (str(item.get("enterprise_key") or ""), str(item.get("project_id") or ""))
+            candidates = sorted(
+                products_by_identity_project.get(key, {}).values(),
+                key=lambda candidate: (
+                    int(candidate.get("recognition_year") or 0),
+                    str(candidate.get("product_name") or ""),
+                ),
+            )
+            item["identity_topic_product_candidates"] = candidates[:20]
+            item["topic_direction_status"] = (
+                "candidate_from_same_enterprise_history"
+                if candidates
+                else "pending_external_product_lookup"
+            )
+        output.append(item)
+    return output
+
+
+def build_identity_profiles(
+    records: list[dict[str, Any]], identities: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    by_identity: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        by_identity[str(record.get("enterprise_key") or "")].append(record)
+    profiles: list[dict[str, Any]] = []
+    for enterprise_key, rows in by_identity.items():
+        identity = identities.get(enterprise_key, {})
+        signals: dict[tuple[str, int | None, str], dict[str, Any]] = {}
+        projects: set[str] = set()
+        years: set[int] = set()
+        for row in rows:
+            project_id = str(row.get("project_id") or "")
+            projects.add(project_id)
+            if row.get("year"):
+                years.add(int(row["year"]))
+            product_name = normalize_product(row.get("product_name") or "")
+            if not product_name:
+                continue
+            signal_key = (project_id, row.get("year"), product_name)
+            signals[signal_key] = {
+                "project_id": project_id,
+                "project_name": str(row.get("project_name") or ""),
+                "recognition_year": row.get("year"),
+                "product_name": product_name,
+                "recognition_tier": str(row.get("recognition_tier") or ""),
+                "product_category": str(row.get("product_category") or ""),
+                "source_title": str(row.get("source_title") or ""),
+                "source_url": str(row.get("source_url") or ""),
+                "source_tier": str(row.get("source_tier") or ""),
+                "evidence_semantics": str(row.get("evidence_semantics") or ""),
+            }
+        product_signals = sorted(
+            signals.values(),
+            key=lambda signal: (
+                str(signal["project_id"]),
+                int(signal.get("recognition_year") or 0),
+                str(signal["product_name"]),
+            ),
+        )
+        profiles.append(
+            {
+                "enterprise_key": enterprise_key,
+                "eid": str(identity.get("eid") or next((row.get("eid") for row in rows if row.get("eid")), "")),
+                "enterprise_name": str(identity.get("enterprise_name") or rows[0].get("enterprise_name") or ""),
+                "aliases": list(identity.get("aliases") or []),
+                "province": str(identity.get("province") or rows[0].get("province") or ""),
+                "city": str(identity.get("city") or rows[0].get("city") or ""),
+                "county": str(identity.get("county") or rows[0].get("county") or ""),
+                "industry": str(identity.get("industry") or rows[0].get("industry") or ""),
+                "three_first_projects": sorted(projects),
+                "three_first_years": sorted(years),
+                "product_signal_count": len(product_signals),
+                "product_signal_status": (
+                    "verified_product_signal"
+                    if product_signals
+                    else "identity_only_scope_unresolved"
+                ),
+                "product_signals": product_signals,
+            }
+        )
+    return sorted(profiles, key=lambda profile: (profile["enterprise_name"], profile["enterprise_key"]))
 
 
 def timeline_event_types(record: dict[str, Any]) -> list[str]:
@@ -793,6 +917,7 @@ def build_graph(records: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], li
 def import_database(
     database: Path,
     records: list[dict[str, Any]],
+    identity_profiles: list[dict[str, Any]],
     evidence: list[dict[str, Any]],
     timeline: list[dict[str, Any]],
     guidance_directories: list[dict[str, Any]],
@@ -806,6 +931,7 @@ def import_database(
         connection.executescript(
             """
             DROP TABLE IF EXISTS three_first_project_awards;
+            DROP TABLE IF EXISTS three_first_identity_profiles;
             DROP TABLE IF EXISTS enterprise_product_graph_nodes;
             DROP TABLE IF EXISTS enterprise_product_graph_edges;
             DROP TABLE IF EXISTS three_first_award_evidence;
@@ -842,6 +968,23 @@ def import_database(
             );
             CREATE INDEX three_first_awards_lookup_idx ON three_first_project_awards(enterprise_name,project_name,year);
             CREATE INDEX three_first_awards_product_idx ON three_first_project_awards(product_name,recognition_tier,year);
+            CREATE TABLE three_first_identity_profiles(
+                enterprise_key TEXT PRIMARY KEY,
+                eid TEXT NOT NULL,
+                enterprise_name TEXT NOT NULL,
+                aliases_json TEXT NOT NULL,
+                province TEXT NOT NULL,
+                city TEXT NOT NULL,
+                county TEXT NOT NULL,
+                industry TEXT NOT NULL,
+                three_first_projects_json TEXT NOT NULL,
+                three_first_years_json TEXT NOT NULL,
+                product_signal_count INTEGER NOT NULL,
+                product_signal_status TEXT NOT NULL,
+                product_signals_json TEXT NOT NULL
+            );
+            CREATE INDEX three_first_identity_profiles_lookup_idx
+                ON three_first_identity_profiles(enterprise_name,product_signal_status);
             CREATE TABLE three_first_award_evidence(
                 id INTEGER PRIMARY KEY,
                 enterprise_key TEXT NOT NULL,
@@ -966,6 +1109,25 @@ def import_database(
                 row["source_tier"], row["evidence_semantics"],
                 row["product_name_status"], row["user_action"],
             ) for row in records],
+        )
+        connection.executemany(
+            """INSERT INTO three_first_identity_profiles(
+                enterprise_key,eid,enterprise_name,aliases_json,province,city,county,industry,
+                three_first_projects_json,three_first_years_json,product_signal_count,
+                product_signal_status,product_signals_json
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            [
+                (
+                    row["enterprise_key"], row["eid"], row["enterprise_name"],
+                    json.dumps(row["aliases"], ensure_ascii=False), row["province"], row["city"],
+                    row["county"], row["industry"],
+                    json.dumps(row["three_first_projects"], ensure_ascii=False),
+                    json.dumps(row["three_first_years"], ensure_ascii=False),
+                    row["product_signal_count"], row["product_signal_status"],
+                    json.dumps(row["product_signals"], ensure_ascii=False),
+                )
+                for row in identity_profiles
+            ],
         )
         connection.executemany(
             """INSERT INTO three_first_award_evidence(
@@ -1113,17 +1275,13 @@ def main() -> None:
     supplements = load_supplements(args.supplements, identities)
     directory_status = load_supplements(args.directory_status, identities)
     guidance_directories = load_guidance_directories(args.guidance_directories)
-    supplemented_project_years = {
-        (str(record.get("project_id")), record.get("year"))
-        for record in supplements
-        if record.get("evidence_semantics") == "annual_list_row"
-    }
-    details = [
-        record
-        for record in details
-        if (str(record.get("project_id")), record.get("year")) not in supplemented_project_years
-    ]
-    records = merge_records(history, [*details, *supplements])
+    # Official supplements supersede only an exact enterprise/project/year/product
+    # duplicate. They must not erase every licensed detail row in the same
+    # project-year, otherwise valid product signals disappear from the identity.
+    records = attach_identity_topic_candidates(
+        merge_records(history, [*details, *supplements])
+    )
+    identity_profiles = build_identity_profiles(records, identities)
     guidance_diffs = directory_version_diffs(guidance_directories)
     directory_matches = enterprise_product_directory_matches(
         records, guidance_directories
@@ -1132,6 +1290,7 @@ def main() -> None:
     all_evidence = [*detail_evidence, *supplements, *directory_status]
     timeline = build_status_timeline(all_evidence)
     write_jsonl(args.output / "三首项目企业产品年度记录.jsonl", records)
+    write_jsonl(args.output / "三首企业数字身份证.jsonl", identity_profiles)
     write_jsonl(args.output / "三首项目状态时间轴.jsonl", timeline)
     write_jsonl(args.output / "三首项目图谱节点.jsonl", nodes)
     write_jsonl(args.output / "三首项目图谱关系.jsonl", edges)
@@ -1140,11 +1299,27 @@ def main() -> None:
     identity_rows = list(identities.values())
     write_jsonl(args.output / "三首项目企业身份别名.jsonl", identity_rows)
     product_records = sum(bool(row["product_name"]) for row in records)
+    product_signal_keys = {
+        (str(row.get("enterprise_key") or ""), str(row.get("project_id") or ""))
+        for row in records
+        if normalize_product(row.get("product_name") or "")
+    }
+    history_2025 = [row for row in history if row.get("year") == 2025]
+    history_2025_topic_closed = sum(
+        (
+            str(row.get("enterprise_key") or ""),
+            str(row.get("project_id") or ""),
+        ) in product_signal_keys
+        for row in history_2025
+    )
     summary = {
         "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "records": len(records),
         "product_level_records": product_records,
         "discovery_only_records": len(records) - product_records,
+        "scope_unresolved_records": sum(
+            row["product_name_status"] == SCOPE_UNRESOLVED_STATUS for row in records
+        ),
         "detail_evidence_records": len(detail_evidence),
         "canonical_detail_records": len(details),
         "supplement_records": len(supplements),
@@ -1166,9 +1341,25 @@ def main() -> None:
         "timeline_reward": sum(row["event_type"] == "reward" for row in timeline),
         "timeline_directory_exit": sum(row["event_type"] == "directory_exit" for row in timeline),
         "enterprises": len(identities),
+        "identity_profiles": len(identity_profiles),
+        "identity_topic_direction_closed": sum(
+            row["product_signal_status"] == "verified_product_signal"
+            for row in identity_profiles
+        ),
+        "identity_topic_direction_pending": sum(
+            row["product_signal_status"] == "identity_only_scope_unresolved"
+            for row in identity_profiles
+        ),
+        "history_2025_scope_records": len(history_2025),
+        "history_2025_identity_topic_closed": history_2025_topic_closed,
+        "history_2025_identity_topic_pending": len(history_2025) - history_2025_topic_closed,
         "nodes": len(nodes),
         "edges": len(edges),
     }
+    (args.output / "三首项目跨年对标图谱汇总.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     (args.output / "三首项目跨年对标图谱说明.md").write_text(
         "\n".join([
             "# 三首项目跨年对标图谱",
@@ -1185,7 +1376,8 @@ def main() -> None:
             "- product_level：已从历年公示详情提取企业、产品、档次或类别。",
             "- partial_product_level：公示详情字段不完整，需抽样复核。",
             "- discovery_only：仅历史获批页确认企业和年度，不能据此断言具体产品或认定档次。",
-            f"- 缺少产品名称时固定标记 `{MISSING_PRODUCT_STATUS}`，并提示：{MISSING_PRODUCT_MESSAGE}",
+            f"- 年度正式名单行缺少产品名称时标记 `{MISSING_PRODUCT_STATUS}`，并提示：{MISSING_PRODUCT_MESSAGE}",
+            f"- 平台历史线索无法与同年度正式名单对应时标记 `{SCOPE_UNRESOLVED_STATUS}`；其他年度同企业产品仅进入身份级主题候选，不回填认定年度。",
             "- 状态时间轴仅依据原文分别记录公示、认定、奖励和目录退出；没有明确退出证据时不得推断已退出。",
             "",
             "## 汇总",
@@ -1198,6 +1390,7 @@ def main() -> None:
     import_database(
         args.database,
         records,
+        identity_profiles,
         all_evidence,
         timeline,
         guidance_directories,

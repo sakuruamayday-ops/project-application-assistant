@@ -12,19 +12,84 @@ from pathlib import Path
 DEFAULT_DB = Path("/Users/zsh/JiaotangData/索引/current/knowledge_content.sqlite3")
 DEFAULT_MASTER_REPORT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/_全国小巨人批次主表/全国小巨人批次主表核验报告.json")
 DEFAULT_OUTPUT = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/_覆盖矩阵/专精特新小巨人三首遗漏审计.md")
+DEFAULT_ZHEJIANG_EVENTS = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省/浙江省企业认定事件.jsonl")
+DEFAULT_THREE_FIRST_SUMMARY = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/三首项目/_结构化数据/三首项目跨年对标图谱汇总.json")
+DEFAULT_SMALL_GIANT_FRAGMENTS = Path("/Users/zsh/JiaotangData/知识库/50_名单与对标/优质中小企业梯度培育/_全国小巨人批次主表/官方地方分片/official_fragments.json")
+FORMAL_EVENT_STATUSES = {"official_final_list", "official_final_list_mirror"}
+PUBLIC_EVENT_STATUSES = {"official_publicity", "official_publicity_archive"}
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="审计省专、国家小巨人和三首项目名单覆盖缺口")
     parser.add_argument("--database", type=Path, default=DEFAULT_DB)
     parser.add_argument("--master-report", type=Path, default=DEFAULT_MASTER_REPORT)
+    parser.add_argument("--zhejiang-events", type=Path, default=DEFAULT_ZHEJIANG_EVENTS)
+    parser.add_argument("--three-first-summary", type=Path, default=DEFAULT_THREE_FIRST_SUMMARY)
+    parser.add_argument("--small-giant-fragments", type=Path, default=DEFAULT_SMALL_GIANT_FRAGMENTS)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
+
+
+def load_zhejiang_specialized_events(path: Path) -> dict[int, dict[str, object]]:
+    rows: dict[int, dict[str, object]] = defaultdict(
+        lambda: {
+            "formal_ids": set(),
+            "public_ids": set(),
+            "reconstructed_ids": set(),
+            "formal_titles": set(),
+            "formal_paths": set(),
+        }
+    )
+    if not path.is_file():
+        return {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        event = json.loads(line)
+        if event.get("project_name") != "浙江省专精特新中小企业":
+            continue
+        year = int(event.get("event_year") or 0)
+        if not 2022 <= year <= 2025:
+            continue
+        identity = str(event.get("identity_key") or event.get("normalized_name") or "")
+        evidence_status = str(event.get("evidence_status") or "")
+        if evidence_status in FORMAL_EVENT_STATUSES:
+            rows[year]["formal_ids"].add(identity)
+            rows[year]["formal_titles"].add(str(event.get("source_title") or ""))
+            rows[year]["formal_paths"].update(str(path) for path in event.get("source_paths") or [] if path)
+        elif evidence_status in PUBLIC_EVENT_STATUSES:
+            rows[year]["public_ids"].add(identity)
+        elif evidence_status == "official_count_current_library_qice_reconstruction":
+            rows[year]["reconstructed_ids"].add(identity)
+    return rows
 
 
 def main() -> None:
     args = parse_args()
     master = json.loads(args.master_report.read_text(encoding="utf-8"))
+    zhejiang_events = load_zhejiang_specialized_events(args.zhejiang_events)
+    three_first_summary = (
+        json.loads(args.three_first_summary.read_text(encoding="utf-8"))
+        if args.three_first_summary.is_file()
+        else {}
+    )
+    fragment_payload = (
+        json.loads(args.small_giant_fragments.read_text(encoding="utf-8"))
+        if args.small_giant_fragments.is_file()
+        else {}
+    )
+    fragment_by_batch: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for item in fragment_payload.get("batch_region_summary", []):
+        batch = str(item.get("batch") or "")
+        fragment_by_batch[batch]["matched_name_count"] += int(item.get("matched_name_count") or 0)
+        fragment_by_batch[batch]["official_only_count"] += int(item.get("official_only_count") or 0)
+        fragment_by_batch[batch]["candidate_only_count"] += int(item.get("candidate_only_count") or 0)
+        if int(item.get("official_fragment_enterprise_count") or 0) > 0:
+            fragment_by_batch[batch]["covered_regions"] += 1
+        if str(item.get("closure_status") or "").startswith("closed_"):
+            fragment_by_batch[batch]["closed_regions"] += 1
+        if str(item.get("closure_status") or "") == "missing_official_fragment":
+            fragment_by_batch[batch]["missing_regions"] += 1
     connection = sqlite3.connect(args.database)
     matrix_counts = {
         scope: dict(connection.execute(
@@ -64,27 +129,55 @@ def main() -> None:
         "",
         "## 一、全国小巨人批次主表",
         "",
-        "| 年度 | 批次 | 官方数量 | 当前候选 | 差额 | 地方官方分片已匹配 | 状态 |",
-        "|---|---:|---:|---:|---:|---:|---|",
+        "| 年度 | 批次 | 官方总量 | 当前候选 | 总量差 | 分片名称交集 | 分片覆盖地区 | 名称集合闭环地区 | 缺分片地区 | 状态 |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for item in master["batches"]:
+        fragment = fragment_by_batch.get(str(item["batch"]), {})
         lines.append(
             f"| {item['year']} | {item['batch']} | {item['expected_official_count']} | "
-            f"{item['candidate_count']} | {item['count_delta']} | {item['official_local_match_count']} | "
+            f"{item['candidate_count']} | {item['count_delta']} | {fragment.get('matched_name_count', 0)} | "
+            f"{fragment.get('covered_regions', 0)} | {fragment.get('closed_regions', 0)} | "
+            f"{fragment.get('missing_regions', 0)} | "
             f"{item['completeness_state']} |"
         )
     lines.extend([
         "",
-        "## 二、省级专精特新历史缺口",
-        "",
-        f"- 矩阵状态：{json.dumps(matrix_counts['provincial_specialized_sme'], ensure_ascii=False)}",
-        f"- 2022至2025年历史缺口：{sum(len(years) for years in provincial_gaps.values())} 个地区年度组合。",
-        "- 2026年度按当年认定进度持续采集，不与历史缺口混算。",
-        "",
-        "| 地区 | 待补年度 |",
-        "|---|---|",
+        "- 第四至第七批中央完整附件尚未全部恢复；当前总量差只能说明候选池与官方公布总量不一致，不能直接解释为准确缺少多少家。",
+        "- 地方分片按企业名称集合对账；数量相等但名称不同仍记为未闭环。详细差异见同轮《官方分片企业名称差异.csv》。",
     ])
-    lines.extend(f"| {region} | {','.join(map(str, years))} |" for region, years in provincial_gaps.items())
+    lines.extend([
+        "",
+        "## 二、浙江省专精特新历史覆盖",
+        "",
+        "- 这里优先读取浙江企业认定事件的正式名单证据，避免通用全文矩阵未解析派生文件时误报缺口。",
+        "- 正式认定、复核通过、公示过程和企策重建分别统计；低等级重建不升级为正式名单。",
+        "",
+        "| 年度 | 正式名单主体 | 公示主体 | 企策重建主体 | 审计结论 |",
+        "|---:|---:|---:|---:|---|",
+    ])
+    for year in range(2022, 2026):
+        item = zhejiang_events.get(year, {})
+        formal_count = len(item.get("formal_ids", set()))
+        public_count = len(item.get("public_ids", set()))
+        reconstructed_count = len(item.get("reconstructed_ids", set()))
+        if formal_count:
+            conclusion = "已命中正式名单结构化事件"
+        elif public_count:
+            conclusion = "仅命中公示层，当前正式名单层未命中"
+        elif reconstructed_count:
+            conclusion = "仅有重建线索，待正式来源"
+        else:
+            conclusion = "当前结构化事件层未命中"
+        lines.append(
+            f"| {year} | {formal_count} | {public_count} | {reconstructed_count} | {conclusion} |"
+        )
+    lines.extend([
+        "",
+        f"- 通用32地区矩阵状态保留为诊断信息：{json.dumps(matrix_counts['provincial_specialized_sme'], ensure_ascii=False)}。",
+        "- 2022年首批185家仍属于企策重建范围；第二批正式名单已结构化。2024年当前只命中公示层，不能写成正式认定闭环。",
+        "- 2025年第一、第二批正式认定及复核通过事件均已结构化，不再标记为附件未提取。",
+    ])
     lines.extend([
         "",
         "## 三、三首产品级明细",
@@ -102,22 +195,29 @@ def main() -> None:
     )
     lines.extend([
         "",
-        "## 四、三首当前明确缺口",
+        "## 四、三首双层闭环状态",
         "",
-        "1. 首台套2016至2018年目前只有企策历史企业与年度线索，尚缺可逐企业核验的完整产品级附件。",
-        "2. 2021年首批次已补13条重点新材料认定奖励名单；非认定奖励类公开信息显示应有22个项目，当前企策历史页仅发现18家企业线索，尚缺完整产品级附件且至少4条待恢复，不能与奖励名单混算。",
-        "3. 2019年首台套为公开转载的107条公示表，尚待恢复政府官方原始附件；当前可用于线索核验，不替代最终认定原文。",
+        "- 年度正式产品层：只使用同年度名单产品，不用其他年度产品回填。",
+        "- 企业身份主题层：允许使用同企业、同项目其他年度已核产品判断产品方向，但保留原年份和证据来源。",
+        f"- 全历史企业身份：已闭合 {three_first_summary.get('identity_topic_direction_closed', '待生成')}/"
+        f"{three_first_summary.get('identity_profiles', '待生成')}，待补 {three_first_summary.get('identity_topic_direction_pending', '待生成')}。",
+        f"- 2025年平台历史范围：已闭合 {three_first_summary.get('history_2025_identity_topic_closed', '待生成')}/"
+        f"{three_first_summary.get('history_2025_scope_records', '待生成')}，待补 {three_first_summary.get('history_2025_identity_topic_pending', '待生成')}。",
+        f"- 平台历史范围未对应年度正式产品：{three_first_summary.get('scope_unresolved_records', '待生成')}条；这些是范围线索，不等于缺失产品名。",
         "",
         "## 五、下一轮优先级",
         "",
-        "1. 恢复首台套2016至2019年政府官方附件并核对公示与认定差额。",
-        "2. 恢复2021年非奖励口径首批次新材料完整附件，确认与13条重点奖励名单的包含关系。",
-        "3. 对企策顾问2022至2025年产品级字段抽样核验产品名称、档次、地区和原始链接。",
-        "4. 省专按覆盖矩阵继续补历史缺口；国家小巨人按批次主表仅处理新增异常。",
+        "1. 三首只补企业身份主题仍无产品信号的主体；年度范围未对应项继续保留，不批量伪回填。",
+        "2. 浙江省专精特新优先恢复2024年正式认定来源及2022年首批185家正式名单来源。",
+        "3. 全国小巨人第四至第七批按地区逐一核对官方分片与候选企业名称集合，不能只看总量差。",
     ])
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(json.dumps({"output": str(args.output), "provincial_historical_gaps": sum(len(years) for years in provincial_gaps.values()), "three_first_rows": len(three_first)}, ensure_ascii=False))
+    print(json.dumps({
+        "output": str(args.output),
+        "generic_matrix_missing_combinations": sum(len(years) for years in provincial_gaps.values()),
+        "three_first_rows": len(three_first),
+    }, ensure_ascii=False))
 
 
 if __name__ == "__main__":
