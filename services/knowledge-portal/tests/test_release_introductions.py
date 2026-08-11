@@ -86,7 +86,6 @@ def test_v163_matches_the_owner_confirmed_function_summary():
         "增加模板保真校验和逐页视觉检查",
         "完善企业数字身份证",
         "优化小巨人、专精特新、三首等名单检索",
-        "一键安装 49 项 Skills",
         "企业分析报告 A/B/C 版本和金税四期分析报告",
         "Word、Excel、PowerPoint、PDF 等常用交付格式",
     ):
@@ -101,9 +100,39 @@ def test_v1631_matches_the_owner_confirmed_function_summary():
         "增加企业能力校准",
         "高阶技术没有直接证据时禁止写入",
         "新增 RD 受控单元格填充与自动审计",
-        "一键安装 49 项 Skills",
+        "支持 Word 模板原样填充和逐页视觉检查",
+        "查询数字身份证、身份血缘及冲突路径",
+        "名单检索会提示完整性与截断状态",
     ):
         assert text in introduction
+
+    original_features = introduction.split("## 二、原有核心功能", 1)[1]
+    assert (
+        "一键安装 49 项 Skills，同时配置远程 MCP，并保留用户原有的其他 MCP。"
+        not in original_features
+    )
+
+
+def test_future_release_inherits_previous_important_features(tmp_path):
+    payload = json.loads(DEFAULT_CATALOG_PATH.read_text(encoding="utf-8"))
+    payload["releases"]["1.6.3.2"] = {
+        "core_profile": "v1.6.2",
+        "important_features": ["供后续版本继承的测试能力。"],
+        "new_features": ["用于验证继承规则的测试更新。"],
+    }
+    catalog_path = tmp_path / "release-function-introductions.json"
+    catalog_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    introduction = release_function_introduction(
+        "1.6.3.2",
+        catalog_path=catalog_path,
+    )
+    original_features = introduction.split("## 二、原有核心功能", 1)[1]
+    assert "支持高企申请书逐 RD 回填两条具名核心技术" in original_features
+    assert "仅替换目标单元格文字" in original_features
 
 
 def test_unknown_release_falls_back_without_rewriting_history():
