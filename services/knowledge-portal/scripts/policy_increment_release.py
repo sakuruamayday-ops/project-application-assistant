@@ -134,6 +134,26 @@ def clone_production_files(source: Path, target: Path) -> None:
         clone_file(path, target / name)
 
 
+def clone_release_files(
+    source: Path,
+    target: Path,
+    release: dict[str, Any],
+) -> None:
+    """Clone the exact files bound by a verified full-index release."""
+
+    if target.exists():
+        raise PolicyIncrementError(f"完整基线目标已存在，拒绝覆盖：{target}")
+    target.mkdir(parents=True)
+    for row in release["files"]:
+        if not isinstance(row, dict):
+            raise PolicyIncrementError("生产release文件元数据非对象")
+        name = str(row["name"])
+        path = source / name
+        if not path.is_file():
+            raise PolicyIncrementError(f"完整基线缺少生产文件：{name}")
+        clone_file(path, target / name)
+
+
 def verify_against_release(index_dir: Path, release_path: Path) -> dict[str, Any]:
     release = load_json(release_path, "生产release.json")
     if release.get("schema") != MANIFEST_SCHEMA:
@@ -207,6 +227,10 @@ def pointer_for_state(state: dict[str, Any], private_key: Ed25519PrivateKey) -> 
         "chain_length": len(state.get("entries", [])),
         "entries": state.get("entries", []),
     }
+    if state.get("current_release_manifest_sha256"):
+        payload["current_release_manifest_sha256"] = state[
+            "current_release_manifest_sha256"
+        ]
     return sign_document(payload, private_key)
 
 
@@ -271,6 +295,212 @@ def command_initialize(args: argparse.Namespace) -> dict[str, Any]:
     pointer = pointer_for_state(state, private_key)
     write_json(root / "base-pointer.json", pointer)
     return {"status": "initialized", "state": state, "anchor": anchor}
+
+
+def command_rebase_full_release(args: argparse.Namespace) -> dict[str, Any]:
+    """Re-anchor the Ed25519 policy chain to a verified full OSS release."""
+
+    root = args.state_root.expanduser().resolve()
+    state = load_state(root)
+    private_path = args.private_key.expanduser().resolve()
+    public_path = Path(str(state["trusted_public_key"])).resolve()
+    private_key = load_private_key(private_path)
+    public_key = load_public_key(public_path)
+    if public_key_id(private_key.public_key()) != public_key_id(public_key):
+        raise PolicyIncrementError("增量链公私钥不匹配")
+
+    try:
+        from scripts.refresh_index_from_oss import (
+            remote_bytes as release_remote_bytes,
+            signing_secrets,
+            verify_pointer,
+            verify_release,
+        )
+    except ImportError:
+        from refresh_index_from_oss import (
+            remote_bytes as release_remote_bytes,
+            signing_secrets,
+            verify_pointer,
+            verify_release,
+        )
+
+    bucket = build_bucket()
+    prefix = os.environ.get("JIAOTANG_OSS_PREFIX", "production").strip("/")
+    policy_root = f"{prefix}/index/policy-increment/v1"
+    policy_current_key = f"{policy_root}/current.json"
+    remote_policy_pointer = remote_pointer(bucket, policy_current_key, public_path)
+    if remote_policy_pointer is None:
+        raise PolicyIncrementError("OSS增量链current指针不存在")
+    expected_policy_chain = str(remote_policy_pointer["current_chain_sha256"])
+    local_policy_chain = str(state["current_chain_sha256"])
+    predecessor_source = (
+        "local-state"
+        if expected_policy_chain == local_policy_chain
+        else "verified-remote-pointer-ahead"
+    )
+
+    release_pointer = verify_pointer(
+        release_remote_bytes(bucket, f"{prefix}/index/current.json"),
+        signing_secrets(),
+    )
+    release_id = str(release_pointer["release_id"])
+    manifest_body = release_remote_bytes(
+        bucket, str(release_pointer["release_manifest_key"])
+    )
+    signature_body = release_remote_bytes(
+        bucket, str(release_pointer["release_signature_key"])
+    )
+    release = verify_release(
+        manifest_body,
+        signature_body,
+        release_pointer,
+        signing_secrets(),
+    )
+    index_dir = args.index_dir.expanduser().resolve()
+    run_dir = root / "rebases" / (
+        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        + "-"
+        + release_id[:24]
+    )
+    if run_dir.exists():
+        raise PolicyIncrementError(f"重定基运行目录已存在：{run_dir}")
+    run_dir.mkdir(parents=True)
+    release_path = run_dir / "release.json"
+    release_path.write_bytes(manifest_body)
+    verify_against_release(index_dir, release_path)
+
+    current_verification = "exact"
+    try:
+        verify_current_state(state, public_path)
+    except PolicyIncrementError:
+        if not args.recover_drifted_current:
+            raise
+        if index_dir != Path(str(state["current_index_dir"])).resolve():
+            raise PolicyIncrementError(
+                "漂移恢复只允许使用原签名链current目录中"
+                "与OSS完整release精确一致的内容"
+            )
+        current_verification = "drift-recovered-from-signed-full-release"
+
+    baseline_root = root / "baselines" / release_id
+    baseline_dir = baseline_root / "index"
+    anchor_dir = baseline_root / "anchor"
+    if baseline_root.exists():
+        verify_against_release(baseline_dir, baseline_dir / "release.json")
+        verified_anchor = verify_base_anchor(
+            anchor_dir,
+            baseline_dir / "knowledge_content.sqlite3",
+            baseline_dir / "manifest.jsonl",
+            public_path,
+        )
+        base_chain = str(verified_anchor["signature"]["chain_sha256"])
+        baseline_status = "existing"
+    else:
+        staging = root / "baselines" / f".{release_id}.rebase-{os.getpid()}"
+        clone_release_files(index_dir, staging / "index", release)
+        (staging / "index" / "release.json").write_bytes(manifest_body)
+        build_base_anchor(
+            staging / "index" / "knowledge_content.sqlite3",
+            staging / "index" / "manifest.jsonl",
+            staging / "anchor",
+            private_path,
+        )
+        verified_anchor = verify_base_anchor(
+            staging / "anchor",
+            staging / "index" / "knowledge_content.sqlite3",
+            staging / "index" / "manifest.jsonl",
+            public_path,
+        )
+        base_chain = str(verified_anchor["signature"]["chain_sha256"])
+        os.rename(staging, baseline_root)
+        baseline_status = "created"
+
+    updated_at = str(release.get("created_at") or utc_now())
+    new_state = {
+        "schema": STATE_SCHEMA,
+        "created_at": state.get("created_at") or updated_at,
+        "updated_at": updated_at,
+        "state_root": str(root),
+        "key_id": public_key_id(public_key),
+        "trusted_public_key": str(public_path),
+        "base_release_id": release_id,
+        "base_index_dir": str(baseline_dir),
+        "base_anchor_dir": str(anchor_dir),
+        "base_index_sha256": sha256_file(baseline_dir / "knowledge_content.sqlite3"),
+        "base_manifest_sha256": sha256_file(baseline_dir / "manifest.jsonl"),
+        "base_chain_sha256": base_chain,
+        "current_release_id": release_id,
+        "current_index_dir": str(baseline_dir),
+        "current_index_sha256": sha256_file(
+            baseline_dir / "knowledge_content.sqlite3"
+        ),
+        "current_manifest_sha256": sha256_file(baseline_dir / "manifest.jsonl"),
+        "current_chain_sha256": base_chain,
+        "current_release_manifest_sha256": hashlib.sha256(manifest_body).hexdigest(),
+        "entries": [],
+    }
+    target_pointer = pointer_for_state(new_state, private_key)
+    write_json(run_dir / "previous-state.json", state)
+    write_json(run_dir / "previous-remote-pointer.json", remote_policy_pointer)
+    write_json(run_dir / "target-state.json", new_state)
+    write_json(run_dir / "target-pointer.json", target_pointer)
+
+    base_prefix = f"{policy_root}/bases/{release_id}"
+    uploaded = existing = 0
+    for path in sorted(anchor_dir.iterdir()):
+        if path.is_file():
+            status = put_immutable_file(bucket, f"{base_prefix}/anchor/{path.name}", path)
+            uploaded += int(status == "uploaded")
+            existing += int(status == "existing")
+    status = put_immutable_file(bucket, f"{base_prefix}/trusted-public.pem", public_path)
+    uploaded += int(status == "uploaded")
+    existing += int(status == "existing")
+    status = put_immutable_bytes(
+        bucket,
+        f"{policy_root}/pointers/{base_chain}.json",
+        canonical_json_bytes(target_pointer),
+    )
+    uploaded += int(status == "uploaded")
+    existing += int(status == "existing")
+    os.environ["JIAOTANG_POLICY_TRUSTED_PUBLIC_KEY"] = str(public_path)
+    switch = overwrite_current_pointer(
+        bucket,
+        policy_current_key,
+        target_pointer,
+        expected_chain_sha256=expected_policy_chain,
+        policy_root=policy_root,
+        reason="full-index-release-rebase",
+    )
+    write_json(state_path(root), new_state)
+    write_json(root / "base-pointer.json", target_pointer)
+    write_json(
+        run_dir / "rebase-receipt.json",
+        {
+            "schema": "jiaotang-policy-chain-rebase-receipt/v1",
+            "status": "pass",
+            "release_id": release_id,
+            "previous_release_id": remote_policy_pointer["current_release_id"],
+            "previous_chain_sha256": expected_policy_chain,
+            "current_chain_sha256": base_chain,
+            "predecessor_source": predecessor_source,
+            "local_predecessor_release_id": state["current_release_id"],
+            "local_predecessor_chain_sha256": local_policy_chain,
+            "current_verification": current_verification,
+            "baseline_status": baseline_status,
+            "uploaded": uploaded,
+            "existing": existing,
+            "cloud_switch": switch,
+        },
+    )
+    return {
+        "status": "rebased",
+        "release_id": release_id,
+        "current_chain_sha256": base_chain,
+        "current_verification": current_verification,
+        "baseline_status": baseline_status,
+        "cloud_switch": switch,
+        "run_dir": str(run_dir),
+    }
 
 
 def verify_current_state(state: dict[str, Any], public_key: Path) -> Path:
@@ -587,9 +817,25 @@ def remote_pointer(bucket: object, key: str, public_path: Path) -> dict[str, Any
     if not isinstance(payload, dict):
         raise PolicyIncrementError("OSS current增量链指针不是对象")
     public_key = load_public_key(public_path)
+    if payload.get("schema") != POINTER_SCHEMA:
+        raise PolicyIncrementError("OSS current增量链指针schema不受支持")
     if payload.get("key_id") != public_key_id(public_key):
         raise PolicyIncrementError("OSS current增量链指针key_id不匹配")
     verify_signed_document(payload, public_key)
+    entries = payload.get("entries")
+    if not isinstance(entries, list) or len(entries) != int(
+        payload.get("chain_length") or 0
+    ):
+        raise PolicyIncrementError("OSS current增量链指针条目数量不一致")
+    expected_chain = str(
+        entries[-1].get("chain_sha256")
+        if entries and isinstance(entries[-1], dict)
+        else payload.get("base_chain_sha256") or ""
+    )
+    if not SHA256_RE.fullmatch(expected_chain) or expected_chain != str(
+        payload.get("current_chain_sha256") or ""
+    ):
+        raise PolicyIncrementError("OSS current增量链指针链头不一致")
     return payload
 
 
@@ -759,6 +1005,16 @@ def parser() -> argparse.ArgumentParser:
     initialize.add_argument("--private-key", type=Path, default=DEFAULT_PRIVATE_KEY)
     initialize.add_argument("--public-key", type=Path, default=DEFAULT_PUBLIC_KEY)
 
+    rebase = sub.add_parser("rebase-full-release")
+    rebase.add_argument("--index-dir", type=Path, required=True)
+    rebase.add_argument("--state-root", type=Path, default=DEFAULT_STATE_ROOT)
+    rebase.add_argument("--private-key", type=Path, default=DEFAULT_PRIVATE_KEY)
+    rebase.add_argument(
+        "--recover-drifted-current",
+        action="store_true",
+        help="仅用于当前签名基线被已验签完整release原位改写的恢复",
+    )
+
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--handoff-dir", type=Path, required=True)
     prepare.add_argument("--run-dir", type=Path, required=True)
@@ -780,6 +1036,8 @@ def main() -> int:
     args = parser().parse_args()
     if args.command == "initialize":
         output = command_initialize(args)
+    elif args.command == "rebase-full-release":
+        output = command_rebase_full_release(args)
     elif args.command == "prepare":
         output = command_prepare(args)
     elif args.command == "upload-immutable":

@@ -49,7 +49,7 @@
   </section>
   <section class="panel credential-management" id="access-credentials">
     <div class="panel-head"><div><p class="eyebrow">Access Credentials</p><h3>访问凭据与接入方式</h3></div><span>{{ credentials|length }} 条记录</span></div>
-    <p class="muted">每次新的一键安装都会生成独立凭据，可单独或批量吊销。远程 MCP 不采集设备名；历史共享 API Key 无法区分已经复制到几台机器，吊销时会同时阻断所有使用该 Key 的客户端。</p>
+    <p class="muted">每次复制一键安装指令都生成待激活新凭据。新凭据成功调用 knowledge_service_status 后才接管，系统随即自动吊销该用户其他凭据；验收失败或超时不影响原凭据。</p>
     {% if credentials_revoked %}<div class="notice success">已吊销 {{ credentials_revoked }} 条访问凭据，其他凭据和成员账号状态未改变。</div>{% endif %}
     {% if credentials %}
     <form method="post" action="/admin/users/{{ member.id }}/credentials/revoke" data-credential-batch data-confirm="确认吊销选中的访问凭据？对应客户端会立即失去 API 与 MCP 访问权限，其他凭据不受影响。">
@@ -68,7 +68,7 @@
               <td class="credential-check-column">{% if not credential.revoked_at %}<input type="checkbox" name="credential_ids" value="{{ credential.id }}" aria-label="选择凭据 {{ credential.token_prefix }}" data-credential-select>{% else %}<span class="muted">—</span>{% endif %}</td>
               <td><strong>{{ credential.label_display }}</strong><small>{{ credential.kind_label }}</small><code>{{ credential.token_prefix }}…</code></td>
               <td><strong>{{ credential.device_display }}</strong><small>{{ credential.platform_display }}</small>{% if credential.workbuddy_version %}<small>WorkBuddy V{{ credential.workbuddy_version }}</small>{% endif %}</td>
-              <td>{% if credential.revoked_at %}<span class="table-status off">已吊销</span><small>{{ {'admin_credential_revoked':'管理员吊销','user_revoked':'用户自行吊销','installation_failed':'安装失败自动吊销','superseded_unused_install':'未使用安装指令已替换'}.get(credential.revoked_reason, credential.revoked_reason or '历史记录') }}{% if credential.revoked_by %} · {{ credential.revoked_by }}{% endif %}</small>{% elif not member.active %}<span class="table-status connection-blocked">随账号停用</span>{% else %}<span class="table-status">有效</span>{% endif %}</td>
+              <td>{% if credential.revoked_at %}<span class="table-status off">已吊销</span><small>{{ {'admin_credential_revoked':'管理员吊销','user_revoked':'用户自行吊销','installation_failed':'安装失败自动吊销','superseded_unused_install':'未激活安装指令已替换','superseded_by_new_credential':'新凭据验收后自动接管','pending_activation_expired':'待激活凭据已过期'}.get(credential.revoked_reason, credential.revoked_reason or '历史记录') }}{% if credential.revoked_by %} · {{ credential.revoked_by }}{% endif %}</small>{% elif credential.activation_state == 'pending' %}<span class="table-status connection-waiting">待激活</span><small>等待 knowledge_service_status 成功验收</small>{% elif not member.active %}<span class="table-status connection-blocked">随账号停用</span>{% else %}<span class="table-status">有效</span>{% endif %}</td>
               <td><strong>{{ credential.last_mcp_at or '尚无 MCP 活动' }}</strong><small>业务调用 {{ credential.call_count }}</small><small>Token 最近使用 {{ credential.last_used_at or '尚未使用' }}</small></td>
               <td><small>生成 {{ credential.created_at }}</small>{% if credential.revoked_at %}<small>吊销 {{ credential.revoked_at }}</small>{% elif credential.result_reported_at %}<small>安装上报 {{ credential.result_reported_at }}</small>{% endif %}</td>
               <td>{% if not credential.revoked_at %}<button class="text-danger" type="submit" formaction="/admin/users/{{ member.id }}/credentials/{{ credential.id }}/revoke" data-risk-level="confirm" data-confirm="确认只吊销凭据 {{ credential.token_prefix }}…？其他凭据不受影响。">吊销此凭据</button>{% else %}<span class="muted">已结束</span>{% endif %}</td>

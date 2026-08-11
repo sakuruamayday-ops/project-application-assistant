@@ -43,7 +43,11 @@ try {
     headless: true,
     executablePath: process.env.JIAOTANG_BROWSER_EXECUTABLE || undefined,
   });
-  const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
+  const context = await browser.newContext({
+    viewport: {width: 1440, height: 1000},
+    permissions: ["clipboard-read", "clipboard-write"],
+  });
+  const page = await context.newPage();
   const errors = [];
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
@@ -87,6 +91,26 @@ try {
   assert.equal(desktop.documentWidth, desktop.viewportWidth, "桌面安装流程不得横向溢出");
   assert.equal(desktop.columns.split(" ").length, 2, "桌面安装与验收应为双栏");
   assert.equal(desktop.platformColumns.split(" ").length, 2, "macOS 与 Windows 一键安装按钮应桌面并排");
+  const installResponsePromise = page.waitForResponse((response) => (
+    response.url().endsWith("/agent-bootstrap-codes")
+    && response.request().method() === "POST"
+  ));
+  await macInstallButton.click();
+  const installResponse = await installResponsePromise;
+  await delay(1200);
+  const copyState = {
+    button: await macInstallButton.innerText(),
+    status: await installPane.locator("[data-agent-copy-status]").innerText(),
+  };
+  assert.equal(installResponse.status(), 200, "生成安装指令接口必须成功");
+  assert.match(
+    copyState.button,
+    /指令已复制/,
+    `真实浏览器应完成异步生成指令复制：${copyState.status}；${errors.join("；")}`,
+  );
+  const copiedPrompt = await page.evaluate(() => navigator.clipboard.readText());
+  assert.match(copiedPrompt, /macOS Hook 启动适配器/);
+  assert.match(copiedPrompt, /knowledge_service_status/);
   if (process.env.JIAOTANG_INSTALL_DESKTOP_SCREENSHOT) {
     await page.screenshot({path: process.env.JIAOTANG_INSTALL_DESKTOP_SCREENSHOT, fullPage: true});
   }

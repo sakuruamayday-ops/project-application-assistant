@@ -42,6 +42,27 @@ if [[ -n "${JIAOTANG_CANDIDATE_ROOT:-}" ]]; then
   fi
 fi
 
+policy_state="${JIAOTANG_POLICY_CHAIN_STATE:-/Users/zsh/JiaotangData/索引/policy-increment-chain/state.json}"
+if [[ -f "${policy_state}" ]]; then
+  signed_current_index="$(python3 - "${policy_state}" <<'PY'
+import json,sys
+from pathlib import Path
+state=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(Path(str(state["current_index_dir"])).resolve())
+PY
+)"
+  resolved_build_index="$(python3 - "${index_dir}" <<'PY'
+import sys
+from pathlib import Path
+print(Path(sys.argv[1]).resolve())
+PY
+)"
+  if [[ "${resolved_build_index}" == "${signed_current_index}" ]]; then
+    echo "全量发布拒绝原位改写签名链current；请使用JIAOTANG_CANDIDATE_ROOT/index候选目录" >&2
+    exit 67
+  fi
+fi
+
 if [[ "${JIAOTANG_RELEASE_LOCK_HELD:-0}" != "1" ]]; then
   mkdir -p "$(dirname "${release_lock}")"
   exec lockf -k -t "${JIAOTANG_RELEASE_LOCK_WAIT_SECONDS:-600}" \
@@ -500,6 +521,31 @@ else
   echo "未提供本地Token或设备标识，已完成服务健康与部署固定路由冒烟；带凭据REST/MCP冒烟由deploy_production.sh固定路由检查覆盖。"
 fi
 stage_mark "production-smoke" "passed"
+
+stage_mark "policy-chain-rebase" "started"
+echo "[发布4/5] 将完整生产release重定基到Ed25519政策链并同步本机活动索引"
+python3 "${script_dir}/policy_increment_release.py" rebase-full-release \
+  --index-dir "${index_dir}"
+local_sync_receipt="${JIAOTANG_LOCAL_SYNC_RECEIPT:-/Users/zsh/JiaotangData/索引/reports/local-release-sync-${release_run_id}.json}"
+mkdir -p "$(dirname "${local_sync_receipt}")"
+if ! env -u GITHUB_PAT_TOKEN -u GH_TOKEN -u EXA_API_KEY \
+  /usr/bin/python3 \
+  /Users/zsh/Documents/自动化区域/jiaotang-local-release-sync/local_release_sync.py \
+  --apply --index-only >"${local_sync_receipt}"; then
+  echo "生产索引与政策链已同步，但本机活动索引切换失败：${local_sync_receipt}" >&2
+  exit 79
+fi
+python3 - "${local_sync_receipt}" <<'PY'
+import json,sys
+receipt=json.load(open(sys.argv[1]))
+if receipt.get("status") != "pass" or receipt.get("scope") != "index-only":
+    raise SystemExit("本机活动索引同步回执未通过")
+if (receipt.get("index") or {}).get("status") not in {"current","switched-and-verified"}:
+    raise SystemExit("本机活动索引未完成原子切换")
+if (receipt.get("knowledge") or {}).get("status") != "complete":
+    raise SystemExit("本机活动索引知识源完整性未通过")
+PY
+stage_mark "policy-chain-rebase" "passed"
 
 echo "[发布5/5] 容量熔断已由本次不可变release发布前后聚合校验完成；跳过历史对象与既有分片盘点"
 

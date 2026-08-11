@@ -5693,6 +5693,14 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         )
         client.cookies.update(login.cookies)
         user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        original_guide = client.get("/mcp-guide")
+        original_token = re.search(
+            r"jtk_[A-Za-z0-9_-]+", original_guide.text
+        ).group(0)
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {original_token}"},
+        ).status_code == 200
 
         access = client.get("/access")
         assert "一键安装" in access.text
@@ -5730,6 +5738,10 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert client.get(
             "/v1/me",
             headers={"Authorization": f"Bearer {first_token}"},
+        ).status_code == 403
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {original_token}"},
         ).status_code == 200
         protocol = client.get(f"/v1/agent-install/{enrollment_code}")
         assert protocol.status_code == 200
@@ -5857,6 +5869,14 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert client.get(
             "/v1/me",
             headers={"Authorization": f"Bearer {second_token}"},
+        ).status_code == 403
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {first_token}"},
+        ).status_code == 401
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {original_token}"},
         ).status_code == 200
         second_enrollment_code = re.search(
             r"/v1/agent-install/(jbe_[A-Za-z0-9_-]+)/workbuddy/download",
@@ -5866,6 +5886,33 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             f"/v1/agent-install/{second_enrollment_code}"
         )
         assert windows_protocol.status_code == 200
+        status_response = client.post(
+            "/mcp/",
+            headers={
+                **api_headers(second_token),
+                "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+            },
+            json={
+                "jsonrpc": "2.0",
+                "id": 81,
+                "method": "tools/call",
+                "params": {
+                    "name": "knowledge_service_status",
+                    "arguments": {},
+                },
+            },
+        )
+        assert status_response.status_code == 200
+        assert status_response.json()["result"]["structuredContent"]["connected"] is True
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {second_token}"},
+        ).status_code == 200
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {original_token}"},
+        ).status_code == 401
         mismatched_report = client.post(
             f"/v1/agent-install-result/{second_enrollment_code}",
             json={
@@ -5901,7 +5948,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         guide = client.get("/mcp-guide")
         assert guide.headers["cache-control"] == "private, no-store"
         guide_token = re.search(r"jtk_[A-Za-z0-9_-]+", guide.text).group(0)
-        assert guide_token not in {first_token, second_token}
+        assert guide_token == second_token
         assert "Bearer 你的个人Token" not in guide.text
         assert r"%USERPROFILE%\.workbuddy\mcp.json" in guide.text
         assert "~/.workbuddy/mcp.json" in guide.text
@@ -5916,15 +5963,22 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
                 "SELECT COUNT(*) FROM device_tokens "
                 "WHERE user_id=? AND revoked_at IS NULL",
                 (int(user["id"]),),
-            ).fetchone()[0] == 3
+            ).fetchone()[0] == 1
             assert connection.execute(
                 """
                 SELECT COUNT(*) FROM device_tokens
                 WHERE user_id=? AND credential_kind='installation'
-                  AND revoked_at IS NULL
+                  AND revoked_at IS NULL AND activation_state='active'
                 """,
                 (int(user["id"]),),
-            ).fetchone()[0] == 2
+            ).fetchone()[0] == 1
+            assert connection.execute(
+                """
+                SELECT COUNT(*) FROM device_tokens
+                WHERE user_id=? AND revoked_reason='superseded_by_new_credential'
+                """,
+                (int(user["id"]),),
+            ).fetchone()[0] == 1
             assert connection.execute(
                 """
                 SELECT label FROM device_tokens
@@ -5951,6 +6005,130 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             assert stored_receipt["workbuddy_sha256"] == (
                 windows_protocol.json()["release"]["sha256"]
             )
+
+
+def test_pending_installation_credential_preserves_active_token_when_status_is_disconnected_or_expired(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    workbuddy_package = tmp_path / "workbuddy-macos-v1.5.0.zip"
+    workbuddy_package.write_bytes(b"workbuddy-macos-v1.5.0")
+    artifact = {
+        "file_path": str(workbuddy_package),
+        "file_name": workbuddy_package.name,
+        "sha256": hashlib.sha256(workbuddy_package.read_bytes()).hexdigest(),
+        "target": "macos",
+        "version": "1.5.0",
+    }
+    monkeypatch.setattr(
+        module,
+        "latest_skill_artifact",
+        lambda target: dict(artifact) if target == "macos" else None,
+    )
+    monkeypatch.setattr(
+        module,
+        "workbuddy_artifact_is_simple_remote_mcp",
+        lambda candidate: bool(candidate),
+    )
+
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        original_token = re.search(
+            r"jtk_[A-Za-z0-9_-]+", client.get("/mcp-guide").text
+        ).group(0)
+        pending_response = client.post(
+            "/agent-bootstrap-codes",
+            data={"csrf_token": user["csrf_token"], "platform": "macos"},
+        )
+        pending_token = re.search(
+            r"jtk_[A-Za-z0-9_-]+", pending_response.json()["prompt"]
+        ).group(0)
+        enrollment_code = re.search(
+            r"/v1/agent-install/(jbe_[A-Za-z0-9_-]+)/workbuddy/download",
+            pending_response.json()["prompt"],
+        ).group(1)
+
+        disconnected = module.disconnected_knowledge_index_stats()
+        monkeypatch.setattr(module, "knowledge_index_stats", lambda: disconnected)
+        status_response = client.post(
+            "/mcp/",
+            headers={
+                **api_headers(pending_token),
+                "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+            },
+            json={
+                "jsonrpc": "2.0",
+                "id": 82,
+                "method": "tools/call",
+                "params": {
+                    "name": "knowledge_service_status",
+                    "arguments": {},
+                },
+            },
+        )
+        assert status_response.status_code == 200
+        assert status_response.json()["result"]["structuredContent"]["connected"] is False
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {pending_token}"},
+        ).status_code == 403
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {original_token}"},
+        ).status_code == 200
+
+        with closing(module.database()) as connection:
+            connection.execute(
+                "UPDATE agent_enrollment_codes SET expires_at=? WHERE code_hash=?",
+                (
+                    module.isoformat(module.utc_now() - timedelta(minutes=1)),
+                    module.token_hash(enrollment_code),
+                ),
+            )
+            connection.commit()
+
+        expired = client.post(
+            "/mcp/",
+            headers={
+                **api_headers(pending_token),
+                "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+            },
+            json={"jsonrpc": "2.0", "id": 83, "method": "ping"},
+        )
+        assert expired.status_code == 401
+        assert client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {original_token}"},
+        ).status_code == 200
+        with closing(module.database()) as connection:
+            pending = connection.execute(
+                "SELECT revoked_reason,activation_state FROM device_tokens WHERE token_hash=?",
+                (module.token_hash(pending_token),),
+            ).fetchone()
+            assert pending["activation_state"] == "pending"
+            assert pending["revoked_reason"] == "pending_activation_expired"
+            assert connection.execute(
+                "SELECT COUNT(*) FROM device_tokens WHERE user_id=? "
+                "AND revoked_at IS NULL AND activation_state='active'",
+                (int(user["id"]),),
+            ).fetchone()[0] == 1
 
 
 @pytest.mark.skip(reason="V1.4.5 已由单段安装指令替代三阶段设备绑定")
