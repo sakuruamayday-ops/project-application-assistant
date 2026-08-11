@@ -126,8 +126,8 @@ stage_mark "content-index-build" "passed"
 
 stage_mark "structured-index-build" "started"
 echo "[4/10] 重建名单覆盖矩阵、官方分片、全国批次主表、身份图谱、浙江企业身份时间轴和三首跨年图谱"
-python3 "${script_dir}/rebuild_list_entity_extractions.py" \
-  --database "${index_dir}/knowledge_content.sqlite3"
+# 全文富索引刚刚按当前 manifest 及结构化提取源完整构建。
+# 不再用仅能从文档正文重放的原位工具覆盖，避免丢失 _structured_entities。
 python3 "${script_dir}/build_specialized_sme_coverage_matrix.py" \
   --database "${index_dir}/knowledge_content.sqlite3"
 python3 "${script_dir}/build_small_giant_official_fragments.py" \
@@ -331,6 +331,7 @@ PY
   PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
     tests/test_portal.py \
     tests/test_structured_knowledge.py \
+    tests/test_rebuild_list_entity_extractions.py \
     tests/test_unified_enterprise_digital_identity.py \
     -q
   node --check scripts/build_enterprise_batch_profile_provenance.mjs

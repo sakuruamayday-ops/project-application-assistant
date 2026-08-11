@@ -28,12 +28,20 @@ def parse_args() -> argparse.Namespace:
         description="按当前解析规则原位重建名单文档的企业实体，不触碰全文和非名单文档"
     )
     parser.add_argument("--database", type=Path, default=DEFAULT_DB)
+    parser.add_argument(
+        "--allow-shrink",
+        action="store_true",
+        help="显式允许重建后的名单记录数少于重建前；默认保护已有结构化提取结果",
+    )
     return parser.parse_args()
 
 
-def rebuild(database: Path) -> dict[str, int]:
+def rebuild(database: Path, *, allow_shrink: bool = False) -> dict[str, int]:
     connection = sqlite3.connect(database)
     try:
+        original_public_list_entities = connection.execute(
+            "SELECT COUNT(*) FROM public_list_entities"
+        ).fetchone()[0]
         documents = connection.execute(
             """
             SELECT id,content,canonical_project_name,policy_year,batch,region,document_stage
@@ -101,6 +109,17 @@ def rebuild(database: Path) -> dict[str, int]:
             """,
             entity_rows,
         )
+        rebuilt_public_list_entities = connection.execute(
+            "SELECT COUNT(*) FROM public_list_entities"
+        ).fetchone()[0]
+        if (
+            rebuilt_public_list_entities < original_public_list_entities
+            and not allow_shrink
+        ):
+            raise RuntimeError(
+                "refusing to shrink public_list_entities without --allow-shrink: "
+                f"{original_public_list_entities} -> {rebuilt_public_list_entities}"
+            )
         if connection.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='public_list_entity_years'"
         ).fetchone():
@@ -134,6 +153,7 @@ def rebuild(database: Path) -> dict[str, int]:
             "public_list_entities": connection.execute(
                 "SELECT COUNT(*) FROM public_list_entities"
             ).fetchone()[0],
+            "previous_public_list_entities": original_public_list_entities,
         }
     except Exception:
         connection.rollback()
@@ -143,7 +163,13 @@ def rebuild(database: Path) -> dict[str, int]:
 
 
 def main() -> None:
-    print(json.dumps(rebuild(parse_args().database), ensure_ascii=False))
+    args = parse_args()
+    print(
+        json.dumps(
+            rebuild(args.database, allow_shrink=args.allow_shrink),
+            ensure_ascii=False,
+        )
+    )
 
 
 if __name__ == "__main__":
