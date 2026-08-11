@@ -147,6 +147,9 @@ FIRST_PUBLIC_SKILL_VERSION = os.environ.get(
     "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION",
     "1.5.0",
 ).strip()
+ADMIN_MANUAL_INSTALL_RESULT_SCHEMA = (
+    "gongchuang-admin-manual-install-result/v1"
+)
 SECURE_COOKIES = os.environ.get("JIAOTANG_SECURE_COOKIES", "true").lower() == "true"
 TOKEN_DERIVATION_SECRET = os.environ.get("JIAOTANG_TOKEN_DERIVATION_SECRET", "").encode("utf-8")
 if not TOKEN_DERIVATION_SECRET:
@@ -9114,7 +9117,10 @@ def latest_agent_install_result_payload(
         WHERE user_id=? AND result_reported_at IS NOT NULL
           AND (
               result_ok=0
-              OR result_schema='gongchuang-agent-result/v2'
+              OR result_schema IN (
+                  'gongchuang-agent-result/v2',
+                  'gongchuang-admin-manual-install-result/v1'
+              )
               OR EXISTS (
                   SELECT 1
                   FROM device_keys result_key
@@ -9450,12 +9456,22 @@ def portal_payload(
                       AND COALESCE(binding.installed_version,'')<>''
                     UNION ALL
                     SELECT enrollment.user_id,enrollment.workbuddy_version,
-                           enrollment.result_reported_at,'reported',3
+                           enrollment.result_reported_at,
+                           CASE
+                             WHEN enrollment.result_schema=
+                               'gongchuang-admin-manual-install-result/v1'
+                               THEN 'admin_confirmed'
+                             ELSE 'reported'
+                           END,
+                           3
                     FROM agent_enrollment_codes enrollment
                     WHERE enrollment.result_ok=1
                       AND enrollment.result_status IN ('configured','upgraded')
                       AND (
-                          enrollment.result_schema='gongchuang-agent-result/v2'
+                          enrollment.result_schema IN (
+                              'gongchuang-agent-result/v2',
+                              'gongchuang-admin-manual-install-result/v1'
+                          )
                           OR EXISTS (
                               SELECT 1
                               FROM device_keys result_key
@@ -9508,7 +9524,7 @@ def portal_payload(
                          WHEN connected_key.mcp_connected_at IS NOT NULL THEN 'configured'
                          WHEN latest_mcp.called_at IS NOT NULL
                           AND (latest_result.result_reported_at IS NULL
-                               OR latest_mcp.called_at>=latest_result.result_reported_at)
+                               OR latest_mcp.called_at>latest_result.result_reported_at)
                            THEN 'connected'
                          ELSE latest_result.result_status
                        END AS install_result_status,
@@ -9516,7 +9532,7 @@ def portal_payload(
                          WHEN connected_key.mcp_connected_at IS NOT NULL THEN NULL
                          WHEN latest_mcp.called_at IS NOT NULL
                           AND (latest_result.result_reported_at IS NULL
-                               OR latest_mcp.called_at>=latest_result.result_reported_at)
+                               OR latest_mcp.called_at>latest_result.result_reported_at)
                            THEN NULL
                          ELSE latest_result.result_error_stage
                        END AS install_error_stage,
@@ -9525,7 +9541,7 @@ def portal_payload(
                            THEN connected_key.mcp_connected_at
                          WHEN latest_mcp.called_at IS NOT NULL
                           AND (latest_result.result_reported_at IS NULL
-                               OR latest_mcp.called_at>=latest_result.result_reported_at)
+                               OR latest_mcp.called_at>latest_result.result_reported_at)
                            THEN latest_mcp.called_at
                          ELSE latest_result.result_reported_at
                        END AS install_reported_at,
@@ -9549,7 +9565,10 @@ def portal_payload(
                       AND result_codes.result_reported_at IS NOT NULL
                       AND (
                           result_codes.result_ok=0
-                          OR result_codes.result_schema='gongchuang-agent-result/v2'
+                          OR result_codes.result_schema IN (
+                              'gongchuang-agent-result/v2',
+                              'gongchuang-admin-manual-install-result/v1'
+                          )
                           OR EXISTS (
                               SELECT 1
                               FROM device_keys result_key
@@ -9601,6 +9620,7 @@ def portal_payload(
                 evidence = str(member.get("install_version_evidence") or "")
                 member["install_version_evidence_label"] = {
                     "reported": "安装回执版本",
+                    "admin_confirmed": "管理员确认版本",
                     "connected_target": "连接关联版本",
                 }.get(evidence, "版本未确认")
                 member["install_update_state"] = "unknown"
@@ -11584,6 +11604,80 @@ def restore_registration_authorization(
     )
 
 
+def manual_install_target_payload(
+    connection: sqlite3.Connection,
+    member_id: int,
+    enrollment_id: int | None = None,
+) -> dict[str, object] | None:
+    enrollment_filter = "AND enrollment.id=?" if enrollment_id is not None else ""
+    parameters: tuple[object, ...] = (
+        (member_id, enrollment_id)
+        if enrollment_id is not None
+        else (member_id,)
+    )
+    row = connection.execute(
+        f"""
+        SELECT enrollment.id,enrollment.user_id,enrollment.operation,
+               enrollment.install_platform,enrollment.workbuddy_version,
+               enrollment.workbuddy_sha256,enrollment.created_at,
+               enrollment.confirmed_at,enrollment.result_schema,
+               enrollment.result_ok,enrollment.result_status,
+               CASE
+                 WHEN enrollment.result_ok=1
+                  AND enrollment.result_status IN ('configured','upgraded')
+                  AND (
+                      enrollment.result_schema IN (
+                          'gongchuang-agent-result/v2',
+                          'gongchuang-admin-manual-install-result/v1'
+                      )
+                      OR EXISTS (
+                          SELECT 1
+                          FROM device_keys result_key
+                          JOIN device_bindings result_binding
+                            ON result_binding.id=result_key.binding_id
+                          WHERE result_key.key_id=enrollment.registered_key_id
+                            AND result_key.revoked_at IS NULL
+                            AND result_binding.revoked_at IS NULL
+                      )
+                  )
+                   THEN 1 ELSE 0
+               END AS version_confirmed,
+               (
+                   SELECT MAX(usage.called_at)
+                   FROM api_usage usage
+                   JOIN device_tokens token
+                     ON token.id=usage.device_token_id
+                   WHERE usage.user_id=enrollment.user_id
+                     AND token.revoked_at IS NULL
+                     AND usage.called_at>=enrollment.created_at
+                     AND usage.activity_type IN (
+                         'mcp_connection','mcp_tools_list','mcp_search',
+                         'mcp_document','mcp_tool'
+                     )
+               ) AS last_mcp_after_target
+        FROM agent_enrollment_codes enrollment
+        WHERE enrollment.user_id=?
+          AND enrollment.operation='install'
+          AND enrollment.confirmed_at IS NOT NULL
+          AND COALESCE(enrollment.workbuddy_version,'')<>''
+          {enrollment_filter}
+        ORDER BY enrollment.created_at DESC,enrollment.id DESC
+        LIMIT 1
+        """,
+        parameters,
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        **dict(row),
+        "version_confirmed": bool(row["version_confirmed"]),
+        "created_at_display": format_chinese_datetime(row["created_at"]),
+        "last_mcp_after_target_display": format_chinese_datetime(
+            row["last_mcp_after_target"]
+        ),
+    }
+
+
 @app.get("/admin/users/{member_id}", response_class=HTMLResponse)
 def admin_user_detail(
     request: Request,
@@ -11591,6 +11685,7 @@ def admin_user_detail(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
     password_reset: int = 0,
     credentials_revoked: int = 0,
+    manual_install_confirmed: int = 0,
 ):
     require_admin(user)
     with closing(database()) as connection:
@@ -11617,7 +11712,10 @@ def admin_user_detail(
             WHERE user_id=? AND result_reported_at IS NOT NULL
               AND (
                   result_ok=0
-                  OR result_schema='gongchuang-agent-result/v2'
+                  OR result_schema IN (
+                      'gongchuang-agent-result/v2',
+                      'gongchuang-admin-manual-install-result/v1'
+                  )
                   OR EXISTS (
                       SELECT 1
                       FROM device_keys result_key
@@ -11685,6 +11783,10 @@ def admin_user_detail(
             """,
             (member_id,),
         ).fetchall()
+        manual_install_target = manual_install_target_payload(
+            connection,
+            member_id,
+        )
     if member is None:
         raise HTTPException(status_code=404, detail="成员不存在")
     latest_install_result_payload = (
@@ -11714,7 +11816,7 @@ def admin_user_detail(
         and (
             latest_install_result is None
             or str(latest_mcp_activity["called_at"])
-            >= str(latest_install_result["result_reported_at"])
+            > str(latest_install_result["result_reported_at"])
         )
         else None
     )
@@ -11782,10 +11884,96 @@ def admin_user_detail(
             },
             "latest_install_result": latest_install_result_payload,
             "latest_mcp_activity": latest_mcp_activity_payload,
+            "manual_install_candidate": (
+                manual_install_target
+                if manual_install_target
+                and not manual_install_target["version_confirmed"]
+                and manual_install_target["last_mcp_after_target"]
+                else None
+            ),
+            "manual_install_confirmed": manual_install_confirmed == 1,
             "credentials": credentials,
             "credentials_revoked": max(0, credentials_revoked),
             "password_reset": password_reset == 1,
         },
+    )
+
+
+@app.post(
+    "/admin/users/{member_id}/installations/{enrollment_id}/manual-confirm"
+)
+def admin_confirm_manual_install(
+    request: Request,
+    member_id: int,
+    enrollment_id: int,
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    require_admin(user)
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        member = connection.execute(
+            "SELECT id FROM users WHERE id=? AND deleted_at IS NULL",
+            (member_id,),
+        ).fetchone()
+        if member is None:
+            connection.rollback()
+            raise HTTPException(status_code=404, detail="成员不存在")
+        target = manual_install_target_payload(
+            connection,
+            member_id,
+            enrollment_id,
+        )
+        if target is None:
+            connection.rollback()
+            raise HTTPException(status_code=404, detail="待确认安装计划不存在")
+        if target["version_confirmed"]:
+            connection.commit()
+            return RedirectResponse(
+                f"/admin/users/{member_id}?manual_install_confirmed=1",
+                status_code=303,
+            )
+        if not target["last_mcp_after_target"]:
+            connection.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="安装计划之后尚无有效 MCP 活动，不能确认手动安装版本",
+            )
+        version = str(target["workbuddy_version"] or "")
+        if not valid_release_version(version):
+            connection.rollback()
+            raise HTTPException(status_code=409, detail="安装计划版本号无效")
+        platform_label = remote_mcp_platform_label(target["install_platform"])
+        operator = str(user["username"] or "admin")[:100]
+        connection.execute(
+            """
+            UPDATE agent_enrollment_codes
+            SET result_schema=?,result_ok=1,result_status='configured',
+                result_error_stage=NULL,result_user_message=?,
+                result_next_action=NULL,result_host='管理员手动确认',
+                result_platform=?,result_activation_required=0,
+                result_reported_at=?,result_ip=?
+            WHERE id=? AND user_id=?
+            """,
+            (
+                ADMIN_MANUAL_INSTALL_RESULT_SCHEMA,
+                (
+                    f"管理员 {operator} 已核对手动安装 V{version}；"
+                    "服务器同时观测到该安装计划之后的 MCP 活动。"
+                ),
+                platform_label or str(target["install_platform"] or ""),
+                now,
+                (client_ip_from(request) or "unknown")[:100],
+                enrollment_id,
+                member_id,
+            ),
+        )
+        connection.commit()
+    return RedirectResponse(
+        f"/admin/users/{member_id}?manual_install_confirmed=1",
+        status_code=303,
     )
 
 

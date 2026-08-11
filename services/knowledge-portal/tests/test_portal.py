@@ -4801,6 +4801,283 @@ def test_admin_members_displays_installed_version_and_update_state(
     assert f'href="/admin/users/{member_ids["pending-member"]}"' not in outdated.text
 
 
+def test_admin_confirms_manual_install_after_post_target_mcp_activity(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    release_guidance = module.public_release_guidance()
+    release_guidance["workbuddy_version"] = "1.6.3.1"
+    monkeypatch.setattr(
+        module,
+        "public_release_guidance",
+        lambda: release_guidance,
+    )
+    now_value = module.utc_now()
+    target_time = module.isoformat(now_value - timedelta(minutes=5))
+    now = module.isoformat(now_value)
+    with closing(module.database()) as connection:
+        owner_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,is_admin,created_at
+                ) VALUES (?,?,?,?,1,?)
+                """,
+                (
+                    "owner",
+                    "管理员",
+                    "总部",
+                    module.password_hasher.hash("owner-password-123"),
+                    target_time,
+                ),
+            ).lastrowid
+        )
+        assert owner_id > 0
+        member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "manual-member",
+                    "手动安装成员",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    target_time,
+                ),
+            ).lastrowid
+        )
+        enrollment_id = int(
+            connection.execute(
+                """
+                INSERT INTO agent_enrollment_codes(
+                    user_id,code_hash,created_at,expires_at,confirmed_at,
+                    install_platform,workbuddy_version,workbuddy_sha256
+                ) VALUES (?,?,?,?,?,?,?,?)
+                """,
+                (
+                    member_id,
+                    "manual-install-enrollment",
+                    target_time,
+                    now,
+                    target_time,
+                    "macos",
+                    "1.6.3.1",
+                    "a" * 64,
+                ),
+            ).lastrowid
+        )
+        token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    credential_kind
+                ) VALUES (?,?,?,?,?,?,'personal')
+                """,
+                (
+                    member_id,
+                    "手动安装成员",
+                    "jtk_manual",
+                    "manual-token-hash",
+                    "manual-token-seed",
+                    target_time,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,0,?)
+            """,
+            (
+                member_id,
+                token_id,
+                "/mcp/",
+                "POST",
+                "mcp_connection",
+                "MCP连接检测",
+                now,
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        owner = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        detail = client.get(f"/admin/users/{member_id}")
+        assert detail.status_code == 200
+        assert "检测到手动安装待确认" in detail.text
+        assert "MCP 已连接，插件版本待管理员核对" in detail.text
+        assert f"/installations/{enrollment_id}/manual-confirm" in detail.text
+
+        confirmed = client.post(
+            f"/admin/users/{member_id}/installations/{enrollment_id}/manual-confirm",
+            data={"csrf_token": owner["csrf_token"]},
+            follow_redirects=False,
+        )
+        assert confirmed.status_code == 303
+        assert "manual_install_confirmed=1" in confirmed.headers["location"]
+
+        members = client.get(
+            "/admin/members",
+            params={"member_query": "manual-member"},
+        )
+        assert "插件 V1.6.3.1" in members.text
+        assert "管理员确认版本" in members.text
+        assert "最新版本" in members.text
+        assert "尚未确认安装" not in members.text
+        confirmed_detail = client.get(confirmed.headers["location"])
+        assert "手动安装版本已确认并写入审计回执" in confirmed_detail.text
+        assert "管理员 owner 已核对手动安装 V1.6.3.1" in confirmed_detail.text
+
+    with closing(module.database()) as connection:
+        result = connection.execute(
+            """
+            SELECT result_schema,result_ok,result_status,result_error_stage,
+                   result_host,result_platform,result_reported_at
+            FROM agent_enrollment_codes WHERE id=?
+            """,
+            (enrollment_id,),
+        ).fetchone()
+    assert result["result_schema"] == module.ADMIN_MANUAL_INSTALL_RESULT_SCHEMA
+    assert result["result_ok"] == 1
+    assert result["result_status"] == "configured"
+    assert result["result_error_stage"] is None
+    assert result["result_host"] == "管理员手动确认"
+    assert result["result_platform"] == "macOS"
+    assert result["result_reported_at"]
+
+
+def test_admin_manual_install_confirmation_requires_post_target_mcp_activity(tmp_path):
+    module = load_app(tmp_path)
+    now_value = module.utc_now()
+    before_target = module.isoformat(now_value - timedelta(minutes=10))
+    target_time = module.isoformat(now_value - timedelta(minutes=5))
+    now = module.isoformat(now_value)
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(
+                username,real_name,company_name,password_hash,is_admin,created_at
+            ) VALUES (?,?,?,?,1,?)
+            """,
+            (
+                "owner",
+                "管理员",
+                "总部",
+                module.password_hasher.hash("owner-password-123"),
+                before_target,
+            ),
+        )
+        member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "inactive-manual-member",
+                    "未连接成员",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    before_target,
+                ),
+            ).lastrowid
+        )
+        enrollment_id = int(
+            connection.execute(
+                """
+                INSERT INTO agent_enrollment_codes(
+                    user_id,code_hash,created_at,expires_at,confirmed_at,
+                    install_platform,workbuddy_version,workbuddy_sha256
+                ) VALUES (?,?,?,?,?,?,?,?)
+                """,
+                (
+                    member_id,
+                    "inactive-manual-enrollment",
+                    target_time,
+                    now,
+                    target_time,
+                    "windows",
+                    "1.6.3.1",
+                    "b" * 64,
+                ),
+            ).lastrowid
+        )
+        token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    credential_kind
+                ) VALUES (?,?,?,?,?,?,'personal')
+                """,
+                (
+                    member_id,
+                    "未连接成员",
+                    "jtk_inactive",
+                    "inactive-token-hash",
+                    "inactive-token-seed",
+                    before_target,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO api_usage(
+                user_id,device_token_id,endpoint,method,activity_type,
+                activity_name,counts_toward_usage,called_at
+            ) VALUES (?,?,?,?,?,?,0,?)
+            """,
+            (
+                member_id,
+                token_id,
+                "/mcp/",
+                "POST",
+                "mcp_connection",
+                "MCP连接检测",
+                before_target,
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        owner = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        detail = client.get(f"/admin/users/{member_id}")
+        assert "检测到手动安装待确认" not in detail.text
+        rejected = client.post(
+            f"/admin/users/{member_id}/installations/{enrollment_id}/manual-confirm",
+            data={"csrf_token": owner["csrf_token"]},
+        )
+        assert rejected.status_code == 409
+        assert "安装计划之后尚无有效 MCP 活动" in rejected.text
+
+    with closing(module.database()) as connection:
+        result = connection.execute(
+            "SELECT result_reported_at FROM agent_enrollment_codes WHERE id=?",
+            (enrollment_id,),
+        ).fetchone()
+    assert result["result_reported_at"] is None
+
+
 def test_admin_members_ignores_revoked_install_version_evidence(
     tmp_path,
     monkeypatch,

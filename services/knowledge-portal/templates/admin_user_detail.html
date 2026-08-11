@@ -22,7 +22,7 @@
     <div class="detail-grid">
       <article><span>最近 MCP 活动</span><strong>{{ latest_mcp_activity.called_at_display }}</strong></article>
       <article><span>活动类型</span><strong>{{ latest_mcp_activity.activity_name or latest_mcp_activity.activity_type }}</strong></article>
-      <article><span>服务端连接回执</span><strong>已确认，无需重新安装</strong></article>
+      <article><span>服务端连接回执</span><strong>{{ 'MCP 已连接，插件版本待管理员核对' if manual_install_candidate else '已确认，无需重新安装' }}</strong></article>
     </div>
     {% elif latest_install_result %}
     <div class="detail-grid">
@@ -34,6 +34,17 @@
     <div class="form-stack"><p><strong>用户提示</strong><br>{{ latest_install_result.result_user_message }}</p><p><strong>下一步</strong><br>{{ latest_install_result.result_next_action or '无需后续操作' }}</p></div>
     {% else %}
     <p class="muted">尚未检测到 MCP 连接。远程 MCP 不采集设备名；请先确认 WorkBuddy 已启用该连接并完成一次状态检测。</p>
+    {% endif %}
+    {% if manual_install_confirmed %}<div class="notice success">手动安装版本已确认并写入审计回执。</div>{% endif %}
+    {% if manual_install_candidate %}
+    <div class="notice warning" id="manual-install-confirmation">
+      <p><strong>检测到手动安装待确认</strong></p>
+      <p>目标插件 V{{ manual_install_candidate.workbuddy_version }} 的安装计划创建于 {{ manual_install_candidate.created_at_display }}，随后已检测到 MCP 活动 {{ manual_install_candidate.last_mcp_after_target_display }}。服务器无法从个人凭据自动读取本机插件版本；请仅在人工核对 WorkBuddy 实际启用版本后确认。</p>
+      <form method="post" action="/admin/users/{{ member.id }}/installations/{{ manual_install_candidate.id }}/manual-confirm" data-confirm="确认已人工核对该成员实际启用的插件版本为 V{{ manual_install_candidate.workbuddy_version }}？此操作会写入管理员审计回执。">
+        <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
+        <button class="button" type="submit">确认手动安装 V{{ manual_install_candidate.workbuddy_version }}</button>
+      </form>
+    </div>
     {% endif %}
   </section>
   <section class="panel credential-management" id="access-credentials">
