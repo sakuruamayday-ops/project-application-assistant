@@ -189,6 +189,10 @@ python3 "${script_dir}/build_unified_enterprise_digital_identity.py" \
   --knowledge-identities "${knowledge_root}/50_名单与对标/企业身份时间轴/浙江省/三类名单基础数字身份证" \
   --theme-enrichment-candidates "${theme_queue}" \
   --output "${knowledge_root}/50_名单与对标/企业身份时间轴/统一企业数字身份证.jsonl"
+python3 "${script_dir}/build_enterprise_identity_inventory_report.py" \
+  --database "${index_dir}/knowledge_content.sqlite3" \
+  --json-output "${knowledge_root}/50_名单与对标/企业身份时间轴/企业身份数据库分层统计_current.json" \
+  --markdown-output "${knowledge_root}/50_名单与对标/企业身份时间轴/企业身份数据库分层统计_current.md"
 python3 "${script_dir}/build_enterprise_identity_lineage.py" \
   --database "${index_dir}/knowledge_content.sqlite3" \
   --output "${knowledge_root}/50_名单与对标/企业身份时间轴/浙江省" \
@@ -324,7 +328,12 @@ print("SQLite quick_check=ok")
 PY
 (
   cd "${service_dir}"
-  PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest tests/test_portal.py tests/test_structured_knowledge.py -q
+  PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
+    tests/test_portal.py \
+    tests/test_structured_knowledge.py \
+    tests/test_unified_enterprise_digital_identity.py \
+    -q
+  node --check scripts/build_enterprise_batch_profile_provenance.mjs
 )
 stage_mark "validation-and-tests" "passed"
 

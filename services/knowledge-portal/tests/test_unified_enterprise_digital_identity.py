@@ -61,6 +61,45 @@ def test_qcc_requirement_is_independent_from_evidence_grade():
     )
 
 
+def test_temporal_identity_candidates_reject_subject_founded_after_award():
+    profiles = {
+        "old": {"founded_date": "2011-04-19"},
+        "new": {"founded_date": "2024-08-01"},
+    }
+    assert BUILDER.temporal_identity_candidates(
+        profiles, {"old", "new"}, 2020
+    ) == {"old"}
+    assert BUILDER.temporal_identity_candidates(
+        profiles, {"old", "new"}, 2025
+    ) == {"old", "new"}
+
+
+def test_collapse_unambiguous_name_only_profile_preserves_ambiguous_alias():
+    profiles = {
+        "code-a": BUILDER.empty_profile("code-a", "现名甲有限公司"),
+        "code-b": BUILDER.empty_profile("code-b", "同名乙有限公司"),
+        "name:old-a": BUILDER.empty_profile("name:old-a", "旧名甲有限公司"),
+        "name:ambiguous": BUILDER.empty_profile(
+            "name:ambiguous", "共同旧名有限公司"
+        ),
+    }
+    profiles["code-a"]["unified_social_credit_code"] = "913301001111111111"
+    profiles["code-a"]["former_names"] = [
+        "旧名甲有限公司", "共同旧名有限公司"
+    ]
+    profiles["code-b"]["unified_social_credit_code"] = "913301002222222222"
+    profiles["code-b"]["former_names"] = ["共同旧名有限公司"]
+    stats = BUILDER.defaultdict(int)
+
+    BUILDER.collapse_unambiguous_name_only_profiles(profiles, stats)
+
+    assert "name:old-a" not in profiles
+    assert "旧名甲有限公司" in profiles["code-a"]["recognition_names"]
+    assert "name:ambiguous" in profiles
+    assert stats["unambiguous_name_only_profiles_collapsed"] == 1
+    assert stats["ambiguous_name_only_profiles_retained"] == 1
+
+
 def make_database(path: Path) -> None:
     connection = sqlite3.connect(path)
     connection.executescript(
@@ -419,6 +458,132 @@ def test_theme_enrichment_applies_exact_names_and_builds_empty_topic_queue(
     connection.close()
     assert "精密加工中心" in json.loads(enriched[0])
     assert "金属切削机床制造" in json.loads(enriched[1])
+
+
+def test_batch_profile_provenance_merges_aliases_and_excludes_reviewed_noise(
+    tmp_path: Path,
+):
+    database = tmp_path / "knowledge.sqlite3"
+    provenance = tmp_path / "batch-provenance.jsonl"
+    review = tmp_path / "batch-review.jsonl"
+    connection = sqlite3.connect(database)
+    connection.executescript(
+        """
+        CREATE TABLE enterprise_identity_profiles(
+            identity_key TEXT PRIMARY KEY,
+            unified_social_credit_code TEXT NOT NULL,
+            current_name TEXT NOT NULL,
+            verification_status TEXT NOT NULL,
+            recognition_projects_json TEXT NOT NULL,
+            project_lifecycles_json TEXT NOT NULL
+        );
+        INSERT INTO enterprise_identity_profiles VALUES
+          ('name:旧名企业','', '旧名企业有限公司','pending_business_identity',
+           '["浙江省专精特新中小企业"]','[]'),
+          ('name:噪声','', 'BFL2030H 动柱高速铣削中心','pending_business_identity',
+           '["浙江省制造业首台（套）装备"]','[]');
+        """
+    )
+    connection.commit()
+    connection.close()
+    provenance.write_text(
+        "".join(
+            json.dumps(row, ensure_ascii=False) + "\n"
+            for row in [
+                {
+                    "identity_key": "913301001111111111",
+                    "unified_social_credit_code": "913301001111111111",
+                    "current_name": "现名企业有限公司",
+                    "imported_names": ["旧名企业有限公司"],
+                    "observed_current_names": ["现名企业有限公司"],
+                    "former_names": [],
+                    "company_introduction": "工业装备制造企业",
+                    "business_scope": "工业装备研发制造",
+                    "main_product_tags": ["工业装备"],
+                    "industry_track_tags": ["装备制造"],
+                    "identity_candidate_status": "accepted_reviewed_alias",
+                    "source": "共创研究院知识库",
+                    "captured_at": "20260811",
+                },
+                {
+                    "identity_key": "913301002222222222",
+                    "unified_social_credit_code": "913301002222222222",
+                    "current_name": "新增企业有限公司",
+                    "imported_names": ["新增企业有限公司"],
+                    "observed_current_names": ["新增企业有限公司"],
+                    "former_names": [],
+                    "company_introduction": "新材料企业",
+                    "business_scope": "新材料研发制造",
+                    "main_product_tags": ["新材料"],
+                    "industry_track_tags": ["材料制造"],
+                    "identity_candidate_status": "accepted_exact_current_name",
+                    "source": "共创研究院知识库",
+                    "captured_at": "20260811",
+                },
+                {
+                    "identity_key": "91370785MA3X04GX5J",
+                    "unified_social_credit_code": "91370785MA3X04GX5J",
+                    "current_name": "高密市文利铣床销售中心",
+                    "imported_names": ["BFL2030H 动柱高速铣削中心"],
+                    "observed_current_names": ["高密市文利铣床销售中心"],
+                    "former_names": [],
+                    "identity_candidate_status": "excluded_unrelated_return",
+                    "source": "共创研究院知识库",
+                    "captured_at": "20260811",
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    review.write_text(
+        json.dumps(
+            {
+                "master_name": "BFL2030H 动柱高速铣削中心",
+                "decision": "exclude_unrelated_return",
+                "exclude_from_unified_master": True,
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = BUILDER.build(
+        database,
+        tmp_path / "missing-snapshot.jsonl",
+        None,
+        None,
+        None,
+        provenance,
+        review,
+    )
+
+    assert report["batch_profile_provenance_subjects"] == 3
+    assert report["batch_profile_accepted_subjects"] == 2
+    assert report["batch_profile_manual_or_excluded_subjects"] == 1
+    assert report["batch_profile_alias_rows_merged"] == 1
+    assert report["batch_profile_new_subjects"] == 1
+    assert report["reviewed_non_enterprise_master_rows_excluded"] == 1
+    connection = sqlite3.connect(database)
+    connection.row_factory = sqlite3.Row
+    rows = connection.execute(
+        "SELECT * FROM enterprise_unified_digital_identities ORDER BY identity_key"
+    ).fetchall()
+    connection.close()
+    assert [row["identity_key"] for row in rows] == [
+        "913301001111111111",
+        "913301002222222222",
+    ]
+    renamed = rows[0]
+    assert renamed["current_name"] == "现名企业有限公司"
+    assert "旧名企业有限公司" in json.loads(renamed["recognition_names_json"])
+    assert "浙江省专精特新中小企业" in json.loads(
+        renamed["recognition_projects_json"]
+    )
+    assert renamed["identity_verification_status"] == (
+        "licensed_batch_identity_candidate"
+    )
+    assert renamed["recognition_evidence_status"] == "knowledge_list_linked"
 
 
 def test_identity_lookup_returns_profile_and_cross_program_peers(tmp_path: Path):

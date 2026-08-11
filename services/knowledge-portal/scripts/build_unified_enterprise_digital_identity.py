@@ -30,6 +30,14 @@ DEFAULT_THEME_ENRICHMENT_CANDIDATES = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/浙江省/主题补全/"
     "企业主题补全队列_20260811.jsonl"
 )
+DEFAULT_BATCH_PROFILE_PROVENANCE = Path(
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/企业画像批量回传血缘/"
+    "企业画像批量回传主体血缘_current.jsonl"
+)
+DEFAULT_BATCH_PROFILE_REVIEW = Path(
+    "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/企业画像批量回传血缘/"
+    "企业画像批量回传人工裁决_current.jsonl"
+)
 DEFAULT_OUTPUT = Path(
     "/Users/zsh/JiaotangData/知识库/50_名单与对标/企业身份时间轴/统一企业数字身份证.jsonl"
 )
@@ -67,6 +75,16 @@ def parse_args() -> argparse.Namespace:
         "--theme-enrichment-candidates",
         type=Path,
         default=DEFAULT_THEME_ENRICHMENT_CANDIDATES,
+    )
+    parser.add_argument(
+        "--batch-profile-provenance",
+        type=Path,
+        default=DEFAULT_BATCH_PROFILE_PROVENANCE,
+    )
+    parser.add_argument(
+        "--batch-profile-review",
+        type=Path,
+        default=DEFAULT_BATCH_PROFILE_REVIEW,
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
@@ -489,11 +507,274 @@ def overlay_theme_enrichment_candidates(
         stats["theme_enrichment_profiles"] += 1
 
 
+def profile_names(profile: dict[str, Any]) -> list[str]:
+    return merge_unique(
+        [profile.get("current_name")],
+        profile.get("former_names"),
+        profile.get("recognition_names"),
+    )
+
+
+def overlay_batch_profile_provenance(
+    profiles: dict[str, dict[str, Any]],
+    path: Path,
+    stats: defaultdict[str, int],
+) -> None:
+    """Merge accepted licensed batch profiles without creating recognition facts."""
+
+    if not path.is_file():
+        stats["batch_profile_provenance_source_missing"] += 1
+        return
+    name_index: defaultdict[str, set[str]] = defaultdict(set)
+    for key, profile in profiles.items():
+        for name in profile_names(profile):
+            normalized = normalize_name(name)
+            if normalized:
+                name_index[normalized].add(key)
+
+    seen_codes: set[str] = set()
+    for row in read_jsonl(path):
+        code = str(row.get("unified_social_credit_code") or "").strip().upper()
+        if not USCC_PATTERN.fullmatch(code):
+            raise RuntimeError(f"批量画像血缘包含无效统一社会信用代码：{code!r}")
+        if code in seen_codes:
+            raise RuntimeError(f"批量画像血缘包含重复统一社会信用代码：{code}")
+        seen_codes.add(code)
+        if str(row.get("source") or "").strip() != PUBLIC_SOURCE:
+            raise RuntimeError(f"批量画像血缘来源未统一投影为{PUBLIC_SOURCE}：{code}")
+        candidate_status = str(row.get("identity_candidate_status") or "")
+        if candidate_status not in {
+            "accepted_exact_current_name",
+            "accepted_reviewed_alias",
+            "excluded_unrelated_return",
+            "manual_review_name_mismatch",
+        }:
+            raise RuntimeError(f"批量画像血缘候选状态不受支持：{code}/{candidate_status}")
+        if not candidate_status.startswith("accepted_"):
+            stats["batch_profile_manual_or_excluded_subjects"] += 1
+            continue
+
+        incoming_names = merge_unique(
+            row.get("imported_names"), row.get("observed_current_names")
+        )
+        existing_keys: set[str] = set()
+        if code in profiles:
+            existing_keys.add(code)
+        for name in incoming_names:
+            for matched_key in name_index.get(normalize_name(name), set()):
+                matched_code = str(
+                    profiles[matched_key].get("unified_social_credit_code") or ""
+                ).strip().upper()
+                if USCC_PATTERN.fullmatch(matched_code) and matched_code != code:
+                    stats["batch_profile_name_collisions_with_other_codes"] += 1
+                    continue
+                existing_keys.add(matched_key)
+        for matched_key in as_list(row.get("matched_master_identity_keys")):
+            if matched_key not in profiles:
+                continue
+            matched_code = str(
+                profiles[matched_key].get("unified_social_credit_code") or ""
+            ).strip().upper()
+            if USCC_PATTERN.fullmatch(matched_code) and matched_code != code:
+                stats["batch_profile_name_collisions_with_other_codes"] += 1
+                continue
+            existing_keys.add(matched_key)
+
+        target = profiles.get(code) or empty_profile(
+            code, str(row.get("current_name") or "")
+        )
+        strongest_identity_status = str(target.get("identity_verification_status") or "")
+        strongest_business_status = str(target.get("business_profile_evidence_status") or "")
+        strongest_recognition_status = str(target.get("recognition_evidence_status") or "")
+        canonical_name = str(target.get("current_name") or row.get("current_name") or "")
+        merged_alias_keys = 0
+        for key in sorted(existing_keys):
+            existing = profiles[key]
+            source = dict(existing)
+            existing_name = str(source.get("current_name") or "")
+            source["current_name"] = ""
+            overlay_profile(target, source)
+            target["recognition_names"] = merge_unique(
+                target["recognition_names"], [existing_name]
+            )
+            if str(existing.get("identity_verification_status") or "") not in {
+                "", "pending_business_identity", "licensed_batch_identity_candidate",
+            }:
+                strongest_identity_status = str(existing["identity_verification_status"])
+            if str(existing.get("business_profile_evidence_status") or "") not in {
+                "", "not_collected", "knowledge_identity_only",
+                "licensed_batch_profile_candidate", "licensed_batch_profile_complete",
+                "licensed_batch_profile_partial",
+            }:
+                strongest_business_status = str(existing["business_profile_evidence_status"])
+            if str(existing.get("recognition_evidence_status") or "") not in {
+                "", "not_linked",
+            }:
+                strongest_recognition_status = str(existing["recognition_evidence_status"])
+            if key != code:
+                merged_alias_keys += 1
+
+        incoming = dict(row)
+        incoming["current_name"] = canonical_name or str(row.get("current_name") or "")
+        incoming["former_names"] = merge_unique(
+            row.get("former_names"),
+            [
+                name
+                for name in as_list(row.get("imported_names"))
+                if normalize_name(name) != normalize_name(row.get("current_name"))
+            ],
+        )
+        overlay_profile(
+            target,
+            incoming,
+            business_status=(
+                strongest_business_status
+                if strongest_business_status
+                not in {"", "not_collected", "knowledge_identity_only"}
+                else (
+                    "licensed_batch_profile_complete"
+                    if has_business_profile_data(row)
+                    else "licensed_batch_profile_partial"
+                )
+            ),
+        )
+        target["identity_key"] = code
+        target["unified_social_credit_code"] = code
+        target["identity_verification_status"] = (
+            strongest_identity_status
+            if strongest_identity_status
+            not in {"", "pending_business_identity"}
+            else "licensed_batch_identity_candidate"
+        )
+        target["recognition_evidence_status"] = first_text(
+            strongest_recognition_status,
+            target.get("recognition_evidence_status"),
+            "not_linked",
+        )
+        for key in existing_keys:
+            if key != code:
+                profiles.pop(key, None)
+                for normalized_keys in name_index.values():
+                    normalized_keys.discard(key)
+        profiles[code] = target
+        for name in profile_names(target):
+            normalized = normalize_name(name)
+            if normalized:
+                name_index[normalized].add(code)
+        stats["batch_profile_accepted_subjects"] += 1
+        stats["batch_profile_alias_rows_merged"] += merged_alias_keys
+        if not existing_keys:
+            stats["batch_profile_new_subjects"] += 1
+    stats["batch_profile_provenance_subjects"] += len(seen_codes)
+
+
+def exclude_reviewed_non_enterprise_profiles(
+    profiles: dict[str, dict[str, Any]],
+    path: Path,
+    stats: defaultdict[str, int],
+) -> None:
+    """Remove reviewed extraction noise from the enterprise master only."""
+
+    if not path.is_file():
+        stats["batch_profile_review_source_missing"] += 1
+        return
+    excluded_names = {
+        normalize_name(row.get("master_name") or row.get("imported_name"))
+        for row in read_jsonl(path)
+        if bool(row.get("exclude_from_unified_master"))
+    }
+    excluded_names.discard("")
+    for key, profile in list(profiles.items()):
+        code = str(profile.get("unified_social_credit_code") or "").strip().upper()
+        if USCC_PATTERN.fullmatch(code):
+            continue
+        matched = {
+            normalize_name(name) for name in profile_names(profile)
+        } & excluded_names
+        if not matched:
+            continue
+        profiles.pop(key)
+        stats["reviewed_non_enterprise_master_rows_excluded"] += 1
+
+
+def collapse_unambiguous_name_only_profiles(
+    profiles: dict[str, dict[str, Any]],
+    stats: defaultdict[str, int],
+) -> None:
+    """Collapse a code-less alias only when exactly one coded subject owns it."""
+
+    coded_name_index: defaultdict[str, set[str]] = defaultdict(set)
+    for key, profile in profiles.items():
+        code = str(profile.get("unified_social_credit_code") or "").strip().upper()
+        if not USCC_PATTERN.fullmatch(code):
+            continue
+        for name in profile_names(profile):
+            normalized = normalize_name(name)
+            if normalized:
+                coded_name_index[normalized].add(key)
+
+    for key, profile in list(profiles.items()):
+        code = str(profile.get("unified_social_credit_code") or "").strip().upper()
+        if USCC_PATTERN.fullmatch(code):
+            continue
+        candidates: set[str] = set()
+        for name in profile_names(profile):
+            candidates.update(coded_name_index.get(normalize_name(name), set()))
+        if len(candidates) != 1:
+            if len(candidates) > 1:
+                stats["ambiguous_name_only_profiles_retained"] += 1
+            continue
+        target_key = next(iter(candidates))
+        target = profiles[target_key]
+        alias_name = str(profile.get("current_name") or "")
+        source = dict(profile)
+        source["current_name"] = ""
+        overlay_profile(target, source)
+        target["recognition_names"] = merge_unique(
+            target["recognition_names"], [alias_name]
+        )
+        if str(profile.get("recognition_evidence_status") or "") not in {
+            "", "not_linked",
+        }:
+            target["recognition_evidence_status"] = str(
+                profile["recognition_evidence_status"]
+            )
+        target["three_first_products"] = merge_three_first_products(
+            target["three_first_products"], profile.get("three_first_products")
+        )
+        profiles.pop(key)
+        for name in profile_names(target):
+            normalized = normalize_name(name)
+            if normalized:
+                coded_name_index[normalized].add(target_key)
+        stats["unambiguous_name_only_profiles_collapsed"] += 1
+
+
+def temporal_identity_candidates(
+    profiles: dict[str, dict[str, Any]],
+    candidates: set[str],
+    event_year: object,
+) -> set[str]:
+    """Discard subjects founded after a dated recognition event."""
+
+    if len(candidates) <= 1 or not str(event_year or "").isdigit():
+        return candidates
+    temporal_candidates = {
+        key
+        for key in candidates
+        if not str(profiles[key].get("founded_date") or "")[:4].isdigit()
+        or int(str(profiles[key]["founded_date"])[:4]) <= int(str(event_year))
+    }
+    return temporal_candidates or candidates
+
+
 def build_profiles(
     connection: sqlite3.Connection,
     knowledge_identities: Path,
     business_profile_candidates: Path | None,
     theme_enrichment_candidates: Path | None,
+    batch_profile_provenance: Path | None,
+    batch_profile_review: Path | None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
     profiles: dict[str, dict[str, Any]] = {}
     stats: defaultdict[str, int] = defaultdict(int)
@@ -587,6 +868,13 @@ def build_profiles(
             stats,
         )
 
+    if batch_profile_provenance is not None:
+        overlay_batch_profile_provenance(
+            profiles,
+            batch_profile_provenance,
+            stats,
+        )
+
     if theme_enrichment_candidates is not None:
         overlay_theme_enrichment_candidates(
             profiles,
@@ -617,6 +905,9 @@ def build_profiles(
             if not candidates:
                 for name in merge_unique(row["enterprise_aliases"]):
                     candidates.update(name_index.get(normalize_name(name), set()))
+            candidates = temporal_identity_candidates(
+                profiles, candidates, row["year"]
+            )
             if len(candidates) == 1:
                 key = next(iter(candidates))
             else:
@@ -646,6 +937,15 @@ def build_profiles(
                 target["three_first_products"], [product]
             )
             stats["three_first_product_records"] += 1
+
+    collapse_unambiguous_name_only_profiles(profiles, stats)
+
+    if batch_profile_review is not None:
+        exclude_reviewed_non_enterprise_profiles(
+            profiles,
+            batch_profile_review,
+            stats,
+        )
 
     for profile in profiles.values():
         has_business_data = bool(
@@ -918,6 +1218,8 @@ def build(
     output: Path | None,
     business_profile_candidates: Path | None = None,
     theme_enrichment_candidates: Path | None = None,
+    batch_profile_provenance: Path | None = None,
+    batch_profile_review: Path | None = None,
 ) -> dict[str, Any]:
     connection = sqlite3.connect(database)
     connection.row_factory = sqlite3.Row
@@ -927,6 +1229,8 @@ def build(
             knowledge_identities,
             business_profile_candidates,
             theme_enrichment_candidates,
+            batch_profile_provenance,
+            batch_profile_review,
         )
         profile_count, term_count, coverage = write_database(connection, profiles)
     finally:
@@ -963,6 +1267,8 @@ def main() -> None:
                 args.output,
                 args.business_profile_candidates,
                 args.theme_enrichment_candidates,
+                args.batch_profile_provenance,
+                args.batch_profile_review,
             ),
             ensure_ascii=False,
         )
