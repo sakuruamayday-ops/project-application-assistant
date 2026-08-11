@@ -1128,7 +1128,7 @@ def test_admin_can_open_member_credentials_and_revoke_one_or_many(tmp_path):
         assert f'/admin/users/{member_id}#access-credentials' in access.text
         detail = client.get(f"/admin/users/{member_id}")
         assert detail.status_code == 200
-        assert "访问凭据与设备" in detail.text
+        assert "访问凭据与接入方式" in detail.text
         assert "办公室 MacBook" in detail.text
         assert "家中 Windows" in detail.text
         assert 'name="credential_ids"' in detail.text
@@ -4617,8 +4617,224 @@ def test_admin_members_uses_remote_mcp_activity_when_install_result_is_missing(t
         detail = client.get(f"/admin/users/{member_id}")
         assert detail.status_code == 200
         assert "最后一次安装或连接结果" in detail.text
-        assert "未回传，但连接已由服务端确认" in detail.text
+        assert "已确认，无需重新安装" in detail.text
         assert "尚未收到结构化安装结果" not in detail.text
+
+
+def test_remote_mcp_connection_closes_installation_without_device_reporting(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    raw_token = ""
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(
+                username,real_name,company_name,password_hash,is_admin,created_at
+            ) VALUES (?,?,?,?,1,?)
+            """,
+            (
+                "owner",
+                "管理员",
+                "总部",
+                module.password_hasher.hash("owner-password-123"),
+                now,
+            ),
+        )
+        member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "remote-member",
+                    "远程成员",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO registration_authorizations(
+                real_name,identity_code,status,user_id,created_at,registered_at
+            ) VALUES (?,?,'registered',?,?,?)
+            """,
+            ("远程成员", "0811", member_id, now, now),
+        )
+        enrollment_id = int(
+            connection.execute(
+                """
+                INSERT INTO agent_enrollment_codes(
+                    user_id,code_hash,created_at,expires_at,install_platform
+                ) VALUES (?,?,?,?,?)
+                """,
+                (member_id, "remote-enrollment", now, now, "macos"),
+            ).lastrowid
+        )
+        token_seed = "remote-install-token-seed"
+        raw_token = module.user_access_token(member_id, token_seed)
+        token_id = int(
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    credential_kind,enrollment_id
+                ) VALUES (?,?,?,?,?,?,'installation',?)
+                """,
+                (
+                    member_id,
+                    "macOS 安装 · 待上报",
+                    raw_token[:12],
+                    module.token_hash(raw_token),
+                    token_seed,
+                    now,
+                    enrollment_id,
+                ),
+            ).lastrowid
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        ping = client.post(
+            "/mcp/",
+            headers={
+                **api_headers(raw_token),
+                "Accept": "application/json, text/event-stream",
+            },
+            json={"jsonrpc": "2.0", "id": 1, "method": "ping", "params": {}},
+        )
+        assert ping.status_code == 200
+
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        access = client.get("/admin/health/access")
+        detail = client.get(f"/admin/users/{member_id}")
+
+    with closing(module.database()) as connection:
+        token = connection.execute(
+            "SELECT label,last_used_at FROM device_tokens WHERE id=?",
+            (token_id,),
+        ).fetchone()
+        enrollment = connection.execute(
+            """
+            SELECT consumed_at,result_reported_at,result_status
+            FROM agent_enrollment_codes WHERE id=?
+            """,
+            (enrollment_id,),
+        ).fetchone()
+        binding_count = connection.execute(
+            "SELECT COUNT(*) FROM device_bindings WHERE user_id=?",
+            (member_id,),
+        ).fetchone()[0]
+
+    assert token["label"] == "macOS 远程 MCP"
+    assert token["last_used_at"] is not None
+    assert enrollment["consumed_at"] is not None
+    assert enrollment["result_reported_at"] is None
+    assert enrollment["result_status"] is None
+    assert binding_count == 0
+    assert access.status_code == 200
+    assert "接入方式" in access.text
+    assert "远程 MCP" in access.text
+    assert "已由服务端确认连接" in access.text
+    assert "不采集设备名" in access.text
+    assert "未上报" not in access.text
+    assert detail.status_code == 200
+    assert "服务端连接回执" in detail.text
+    assert "已确认，无需重新安装" in detail.text
+    assert "访问凭据与接入方式" in detail.text
+    assert "macOS 远程 MCP" in detail.text
+    assert "待上报" not in detail.text
+
+
+def test_unconnected_remote_mcp_is_waiting_not_unreported(tmp_path):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(
+                username,real_name,company_name,password_hash,is_admin,created_at
+            ) VALUES (?,?,?,?,1,?)
+            """,
+            (
+                "owner",
+                "管理员",
+                "总部",
+                module.password_hasher.hash("owner-password-123"),
+                now,
+            ),
+        )
+        member_id = int(
+            connection.execute(
+                """
+                INSERT INTO users(
+                    username,real_name,company_name,password_hash,created_at
+                ) VALUES (?,?,?,?,?)
+                """,
+                (
+                    "waiting-member",
+                    "待连接成员",
+                    "共创集团",
+                    module.password_hasher.hash("member-password-123"),
+                    now,
+                ),
+            ).lastrowid
+        )
+        enrollment_id = int(
+            connection.execute(
+                """
+                INSERT INTO agent_enrollment_codes(
+                    user_id,code_hash,created_at,expires_at,install_platform
+                ) VALUES (?,?,?,?,?)
+                """,
+                (member_id, "waiting-enrollment", now, now, "windows"),
+            ).lastrowid
+        )
+        connection.execute(
+            """
+            INSERT INTO device_tokens(
+                user_id,label,token_prefix,token_hash,token_seed,created_at,
+                credential_kind,enrollment_id
+            ) VALUES (?,?,?,?,?,?,'installation',?)
+            """,
+            (
+                member_id,
+                "Windows 安装 · 待上报",
+                "jtk_waiting",
+                "waiting-token-hash",
+                "waiting-token-seed",
+                now,
+                enrollment_id,
+            ),
+        )
+        connection.commit()
+
+    with TestClient(module.app) as client:
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        access = client.get("/admin/health/access")
+        detail = client.get(f"/admin/users/{member_id}")
+
+    assert access.status_code == 200
+    assert "尚未建立连接" in access.text
+    assert "不采集设备名" in access.text
+    assert "未上报" not in access.text
+    assert detail.status_code == 200
+    assert "Windows 安装凭据" in detail.text
+    assert "尚未检测到 MCP 连接" in detail.text
+    assert "待上报" not in detail.text
 
 
 def test_admin_can_filter_feedback(tmp_path):

@@ -412,7 +412,7 @@ try {
   await credentialSummary.click();
   await page.waitForURL("**/admin/users/1#access-credentials");
   const credentialPanel = page.locator("#access-credentials");
-  assert.equal(await credentialPanel.isVisible(), true, "成员详情应展示访问凭据与设备面板");
+  assert.equal(await credentialPanel.isVisible(), true, "成员详情应展示访问凭据与接入方式面板");
   assert.equal(await credentialPanel.locator("[data-credential-select]").count(), 1, "测试管理员应展示一条可选凭据");
   assert.ok(
     await page.locator(".danger-zone").evaluate((element) => ["before", "after"].includes(element.dataset.atelierFlowFrame)),

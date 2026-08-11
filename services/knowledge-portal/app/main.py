@@ -8212,27 +8212,74 @@ def record_api_usage(
         connection.commit()
 
 
-def mark_mcp_connected(user_id: int, key_id: str) -> None:
-    if not key_id:
-        return
+def remote_mcp_platform_label(value: object) -> str:
+    normalized = str(value or "").strip().lower()
+    return {
+        "macos": "macOS",
+        "mac": "macOS",
+        "windows": "Windows",
+        "win": "Windows",
+    }.get(normalized, "")
+
+
+def mark_mcp_connected(
+    user_id: int,
+    key_id: str,
+    device_token_id: int | None = None,
+) -> None:
     now = isoformat(utc_now())
     with closing(database()) as connection:
-        connection.execute(
-            """
-            UPDATE device_keys
-            SET mcp_connected_at=COALESCE(mcp_connected_at,?)
-            WHERE user_id=? AND key_id=? AND revoked_at IS NULL
-            """,
-            (now, user_id, key_id),
-        )
-        connection.execute(
-            """
-            UPDATE agent_enrollment_codes
-            SET consumed_at=COALESCE(consumed_at,?)
-            WHERE user_id=? AND registered_key_id=? AND consumed_at IS NULL
-            """,
-            (now, user_id, key_id),
-        )
+        if key_id:
+            connection.execute(
+                """
+                UPDATE device_keys
+                SET mcp_connected_at=COALESCE(mcp_connected_at,?)
+                WHERE user_id=? AND key_id=? AND revoked_at IS NULL
+                """,
+                (now, user_id, key_id),
+            )
+            connection.execute(
+                """
+                UPDATE agent_enrollment_codes
+                SET consumed_at=COALESCE(consumed_at,?)
+                WHERE user_id=? AND registered_key_id=? AND consumed_at IS NULL
+                """,
+                (now, user_id, key_id),
+            )
+        if device_token_id:
+            installation = connection.execute(
+                """
+                SELECT token.id,token.label,token.enrollment_id,
+                       enrollment.install_platform
+                FROM device_tokens token
+                JOIN agent_enrollment_codes enrollment
+                  ON enrollment.id=token.enrollment_id
+                WHERE token.id=? AND token.user_id=?
+                  AND token.credential_kind='installation'
+                  AND token.revoked_at IS NULL
+                """,
+                (device_token_id, user_id),
+            ).fetchone()
+            if installation is not None:
+                platform_label = remote_mcp_platform_label(
+                    installation["install_platform"]
+                )
+                expected_legacy_label = (
+                    f"{platform_label} 安装 · 待上报" if platform_label else ""
+                )
+                if expected_legacy_label and installation["label"] == expected_legacy_label:
+                    connection.execute(
+                        "UPDATE device_tokens SET label=? WHERE id=?",
+                        (f"{platform_label} 远程 MCP", device_token_id),
+                    )
+                connection.execute(
+                    """
+                    UPDATE agent_enrollment_codes
+                    SET consumed_at=COALESCE(consumed_at,?)
+                    WHERE id=? AND user_id=?
+                    """,
+                    (now, installation["enrollment_id"], user_id),
+                )
         connection.commit()
 
 
@@ -8528,6 +8575,13 @@ class MCPBearerMiddleware:
         )
         response_status = 500
         mcp_connection_recorded = False
+        records_confirmed_connection = activity_type in {
+            "mcp_connection",
+            "mcp_tools_list",
+            "mcp_search",
+            "mcp_document",
+            "mcp_tool",
+        }
 
         async def tracked_send(message):
             nonlocal response_status, mcp_connection_recorded
@@ -8537,11 +8591,12 @@ class MCPBearerMiddleware:
                 message.get("type") == "http.response.body"
                 and not message.get("more_body", False)
                 and response_status < 400
-                and activity_type == "mcp_connection"
+                and records_confirmed_connection
             ):
                 mark_mcp_connected(
                     int(user["id"]),
                     headers.get(DEVICE_KEY_ID_HEADER.lower(), ""),
+                    int(user["device_token_id"]),
                 )
                 mcp_connection_recorded = True
             await send(message)
@@ -8552,11 +8607,12 @@ class MCPBearerMiddleware:
             if (
                 not mcp_connection_recorded
                 and response_status < 400
-                and activity_type == "mcp_connection"
+                and records_confirmed_connection
             ):
                 mark_mcp_connected(
                     int(user["id"]),
                     headers.get(DEVICE_KEY_ID_HEADER.lower(), ""),
+                    int(user["device_token_id"]),
                 )
             record_api_usage(
                 user,
@@ -11370,23 +11426,35 @@ def admin_user_detail(
             str(credential.get("credential_kind") or ""),
             "历史凭据",
         )
+        install_platform_label = remote_mcp_platform_label(
+            credential.get("install_platform")
+        )
+        credential_label = str(credential.get("label") or "")
+        legacy_waiting_label = (
+            f"{install_platform_label} 安装 · 待上报"
+            if install_platform_label
+            else ""
+        )
+        credential["label_display"] = (
+            (
+                f"{install_platform_label} 远程 MCP"
+                if credential.get("last_mcp_at")
+                else f"{install_platform_label} 安装凭据"
+            )
+            if legacy_waiting_label and credential_label == legacy_waiting_label
+            else credential_label
+        )
         credential["device_display"] = (
             credential.get("device_name")
             or credential.get("result_host")
             or credential.get("agent_host")
-            or (
-                f"{credential.get('install_platform')} 设备"
-                if credential.get("credential_kind") == "installation"
-                and credential.get("install_platform")
-                else None
-            )
-            or "未上报"
+            or "远程 MCP"
         )
         credential["platform_display"] = (
             credential.get("result_platform")
             or credential.get("device_platform")
-            or credential.get("install_platform")
-            or "平台未上报"
+            or install_platform_label
+            or "远程 HTTP"
         )
     return templates.TemplateResponse(
         request,
@@ -12309,15 +12377,33 @@ def admin_health_detail(
                    users.active AS user_active,device_tokens.label,
                    device_tokens.token_prefix, device_tokens.created_at,
                    device_tokens.last_used_at, device_tokens.revoked_at,
+                   device_tokens.credential_kind,enrollment.install_platform,
                    COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
+            LEFT JOIN agent_enrollment_codes enrollment
+              ON enrollment.id=device_tokens.enrollment_id
             LEFT JOIN api_usage ON api_usage.device_token_id = device_tokens.id
             GROUP BY device_tokens.id
             ORDER BY device_tokens.id DESC
             LIMIT 100
             """
         ).fetchall(), "created_at", "last_used_at", "revoked_at")
+        for access_token in access_tokens:
+            token_platform_label = remote_mcp_platform_label(
+                access_token.get("install_platform")
+            )
+            token_label = str(access_token.get("label") or "")
+            legacy_waiting_label = (
+                f"{token_platform_label} 安装 · 待上报"
+                if token_platform_label
+                else ""
+            )
+            access_token["label_display"] = (
+                f"{token_platform_label} 远程 MCP"
+                if legacy_waiting_label and token_label == legacy_waiting_label
+                else token_label
+            )
         assistant_since_7_days = isoformat(utc_now() - timedelta(days=7))
         assistant_day_start, assistant_day_end = assistant_day_bounds()
         assistant_summary = connection.execute(
@@ -13755,7 +13841,7 @@ def create_agent_bootstrap_code(
             """,
             (
                 int(user["id"]),
-                f"{platform_label} 安装 · 待上报",
+                f"{platform_label} 远程 MCP",
                 raw_token[:12],
                 token_hash(raw_token),
                 seed,

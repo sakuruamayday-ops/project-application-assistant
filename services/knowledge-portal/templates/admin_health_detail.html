@@ -20,7 +20,7 @@
     </div>
     <div class="table-wrap">
       <table class="access-user-table">
-        <thead><tr><th>用户账号</th><th>公司 / 身份</th><th>账号状态</th><th>连接状态</th><th>设备名</th><th>访问凭据</th><th>累计业务调用</th><th>最近调用</th><th>创建时间</th><th>操作</th></tr></thead>
+        <thead><tr><th>用户账号</th><th>公司 / 身份</th><th>账号状态</th><th>连接状态</th><th>接入方式</th><th>访问凭据</th><th>累计业务调用</th><th>最近调用</th><th>创建时间</th><th>操作</th></tr></thead>
         <tbody>
         {% for account in access_users %}
           {% set connection_label = {'recently_active':'当前活跃','connected':'已连接','waiting':'未连接','blocked':'访问已阻断'}.get(account.connection_state, '未连接') %}
@@ -29,8 +29,8 @@
             <td><strong>{{ account.company_name or '未填公司' }}</strong><small>{{ '管理员' if account.is_admin else '成员' }}</small></td>
             <td><span class="table-status {{ 'off' if not account.active else '' }}">{{ '有效' if account.active else '已停用' }}</span></td>
             <td class="status-stack"><span class="table-status connection-{{ account.connection_state }}">{{ connection_label }}</span><small>{{ account.last_mcp_at or '尚无 MCP 连接记录' }}</small><small>{{ 'API Key' if account.connection_auth_method == 'api_key' else ('设备签名' if account.connection_auth_method == 'device_signature' else '认证方式未记录') }}</small></td>
-            <td class="device-cell"><strong>{{ account.device_name or '未上报' }}</strong>{% if account.device_state == 'registered' %}<small class="device-current">当前登记 · {{ account.device_last_seen_at or '时间未记录' }}</small>{% elif account.device_state == 'historical' %}<small>历史设备 · 已撤销 {{ account.device_revoked_at or '' }}</small>{% else %}<small>远程 MCP 暂未采集设备名</small>{% endif %}</td>
-            <td><a class="credential-summary-link" href="/admin/users/{{ account.id }}#access-credentials" aria-label="查看 {{ account.username }} 的全部访问凭据"><div class="credential-state-list"><span class="credential-active">有效 {{ account.active_token_count }}</span><span class="credential-revoked">已吊销 {{ account.revoked_token_count }}</span></div><small>查看并按设备吊销 →</small></a>{% if not account.active and account.active_token_count %}<small>有效凭据已随账号停用而阻断</small>{% elif not account.active_token_count %}<small>当前没有可用凭据</small>{% endif %}</td>
+            <td class="device-cell">{% if account.device_state == 'registered' %}<strong>{{ account.device_name }}</strong><small class="device-current">当前登记 · {{ account.device_last_seen_at or '时间未记录' }}</small>{% elif account.device_state == 'historical' %}<strong>{{ account.device_name }}</strong><small>历史设备 · 已撤销 {{ account.device_revoked_at or '' }}</small>{% else %}<strong>远程 MCP</strong><small>{{ '已由服务端确认连接' if account.last_mcp_at else '尚未建立连接' }} · 不采集设备名</small>{% endif %}</td>
+            <td><a class="credential-summary-link" href="/admin/users/{{ account.id }}#access-credentials" aria-label="查看 {{ account.username }} 的全部访问凭据"><div class="credential-state-list"><span class="credential-active">有效 {{ account.active_token_count }}</span><span class="credential-revoked">已吊销 {{ account.revoked_token_count }}</span></div><small>查看并按凭据吊销 →</small></a>{% if not account.active and account.active_token_count %}<small>有效凭据已随账号停用而阻断</small>{% elif not account.active_token_count %}<small>当前没有可用凭据</small>{% endif %}</td>
             <td>{{ account.call_count }}</td>
             <td>{{ account.last_used_at or '尚未调用' }}</td>
             <td>{{ account.created_at }}</td>
@@ -48,7 +48,7 @@
     <div class="table-wrap">
       <table class="access-token-table">
         <thead><tr><th>真实姓名</th><th>登录账号</th><th>凭据标识</th><th>有效状态</th><th>账号状态</th><th>调用次数</th><th>生成时间</th><th>最近调用</th><th>吊销时间</th></tr></thead>
-        <tbody>{% for token in access_tokens %}<tr><td><strong>{{ token.label }}</strong></td><td><a class="text-action" href="/admin/users/{{ token.user_id }}">{{ token.username }}</a></td><td><code>{{ token.token_prefix }}…</code></td><td>{% if token.revoked_at %}<span class="table-status off">已吊销</span>{% elif not token.user_active %}<span class="table-status connection-blocked">随账号停用</span>{% else %}<span class="table-status">有效</span>{% endif %}</td><td><span class="table-status {{ 'off' if not token.user_active else '' }}">{{ '有效' if token.user_active else '已停用' }}</span></td><td>{{ token.call_count }}</td><td>{{ token.created_at }}</td><td>{{ token.last_used_at or '尚未调用' }}</td><td>{{ token.revoked_at or '—' }}</td></tr>{% else %}<tr><td colspan="9" class="empty">尚无用户凭据</td></tr>{% endfor %}</tbody>
+        <tbody>{% for token in access_tokens %}<tr><td><strong>{{ token.label_display }}</strong></td><td><a class="text-action" href="/admin/users/{{ token.user_id }}">{{ token.username }}</a></td><td><code>{{ token.token_prefix }}…</code></td><td>{% if token.revoked_at %}<span class="table-status off">已吊销</span>{% elif not token.user_active %}<span class="table-status connection-blocked">随账号停用</span>{% else %}<span class="table-status">有效</span>{% endif %}</td><td><span class="table-status {{ 'off' if not token.user_active else '' }}">{{ '有效' if token.user_active else '已停用' }}</span></td><td>{{ token.call_count }}</td><td>{{ token.created_at }}</td><td>{{ token.last_used_at or '尚未调用' }}</td><td>{{ token.revoked_at or '—' }}</td></tr>{% else %}<tr><td colspan="9" class="empty">尚无用户凭据</td></tr>{% endfor %}</tbody>
       </table>
     </div>
   </section>
