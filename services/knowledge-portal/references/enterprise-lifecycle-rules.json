@@ -76,6 +76,78 @@
       "rule_note": "2022年度称号有效期至2025年7月；复核结果公布后原称号自动失效，复核通过的有效期重新计算。"
     },
     {
+      "rule_id": "zhejiang-first-equipment",
+      "project_name": "浙江省制造业首台（套）装备",
+      "aliases": [
+        "浙江省首台套装备",
+        "浙江省首台（套）装备",
+        "首台套"
+      ],
+      "cycle_type": "product_recognition_timeline",
+      "supported_event_types": [
+        "recognition_publicity",
+        "recognition",
+        "award",
+        "directory_exit",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "historical_event_model_confirmed",
+      "local_rule_sources": [
+        "50_名单与对标/三首项目/_结构化数据/三首项目企业产品年度记录.jsonl"
+      ],
+      "official_rule_urls": [],
+      "rule_note": "按企业、装备产品、年度和认定档次建立公示、认定、奖励与明确目录退出事件；没有明确退出原文时不得自动推断退出。"
+    },
+    {
+      "rule_id": "zhejiang-first-batch-material",
+      "project_name": "浙江省首批次新材料",
+      "aliases": [
+        "浙江省重点新材料首批次",
+        "首批次新材料",
+        "首批次"
+      ],
+      "cycle_type": "product_recognition_timeline",
+      "supported_event_types": [
+        "recognition_publicity",
+        "recognition",
+        "award",
+        "directory_exit",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "historical_event_model_confirmed",
+      "local_rule_sources": [
+        "50_名单与对标/三首项目/_结构化数据/三首项目企业产品年度记录.jsonl"
+      ],
+      "official_rule_urls": [],
+      "rule_note": "认定名单与应用示范指导目录分层保存；目录命中不替代企业认定，目录退出必须有明确原文。"
+    },
+    {
+      "rule_id": "zhejiang-first-software-version",
+      "project_name": "浙江省首版次软件产品",
+      "aliases": [
+        "浙江省首版次软件",
+        "首版次软件产品",
+        "首版次"
+      ],
+      "cycle_type": "product_recognition_timeline",
+      "supported_event_types": [
+        "recognition_publicity",
+        "recognition",
+        "award",
+        "directory_exit",
+        "changed",
+        "revoked"
+      ],
+      "current_rule_state": "historical_event_model_confirmed",
+      "local_rule_sources": [
+        "50_名单与对标/三首项目/_结构化数据/三首项目企业产品年度记录.jsonl"
+      ],
+      "official_rule_urls": [],
+      "rule_note": "只处理浙江省级首版次软件产品，按企业、软件产品、年度和档次保存历史事件，不与市级首版次混并。"
+    },
+    {
       "rule_id": "national-high-tech-enterprise",
       "project_name": "国家高新技术企业",
       "aliases": [

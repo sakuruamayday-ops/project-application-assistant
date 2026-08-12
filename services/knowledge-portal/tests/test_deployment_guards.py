@@ -499,6 +499,20 @@ def test_index_sync_uses_one_canonical_manifest_and_candidate_root():
     assert "JIAOTANG_MANIFEST_PATH与JIAOTANG_KNOWLEDGE_MANIFEST_PATH不一致" in updater
 
 
+def test_full_release_rebuilds_target_twins_after_policy_versions():
+    sync_script = (
+        SCRIPT_DIR / "sync_archived_knowledge_to_production.sh"
+    ).read_text(encoding="utf-8")
+
+    policy_at = sync_script.index("build_policy_version_links.py")
+    twin_at = sync_script.index("rebuild_target_project_identity_twins.py")
+    verify_at = sync_script.index("verify_target_project_twin_closure.py", twin_at)
+    validation_at = sync_script.index('stage_mark "validation-and-tests" "started"')
+    assert policy_at < twin_at < verify_at < validation_at
+    assert "三首产品补充证据_20260812.json" in sync_script
+    assert '--knowledge-root "${knowledge_root}"' in sync_script
+
+
 def test_index_convergence_accepts_expected_nonzero_status_before_restoring_err_trap():
     sync_script = (
         SCRIPT_DIR / "sync_archived_knowledge_to_production.sh"
