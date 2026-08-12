@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import struct
 import subprocess
 import sys
+import zlib
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,7 @@ SKILL_ROOT = ROOT / "skills" / "high-tech-enterprise-application-drafting"
 SCRIPT = SKILL_ROOT / "scripts" / "expand_rd_ps_tables.py"
 FILL_SCRIPT = SKILL_ROOT / "scripts" / "fill_rd_core_innovation.py"
 AUDIT_SCRIPT = SKILL_ROOT / "scripts" / "audit_application_docx.py"
+DELIVERY_GATE = SKILL_ROOT / "scripts" / "hightech_delivery_gate.py"
 TEMPLATE = SKILL_ROOT / "assets" / "高新技术企业认定申请书空白模板.docx"
 SPEC = importlib.util.spec_from_file_location("expand_rd_ps_tables", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -282,3 +285,281 @@ def test_fill_requires_scale_and_patent_evidence(tmp_path: Path) -> None:
     assert process.returncode != 0
     assert "patent_evidence必须是非空字符串数组" in process.stderr
     assert not output.exists()
+
+
+def run_gate(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(DELIVERY_GATE), *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
+def make_ps_summary(path: Path, *, prohibited: bool = False) -> None:
+    document = Document()
+    table = document.add_table(rows=2, cols=9)
+    headers = [
+        "编号",
+        "高新技术产品（服务）名称",
+        "高新收入",
+        "关键技术",
+        "所属高新领域",
+        "对应的RD",
+        "知识产权名称",
+        "技术指标",
+        "证明材料",
+    ]
+    values = [
+        "1",
+        "精密部件表面处理服务",
+        "" if not prohibited else "XXX万元，待核定",
+        "异常联锁技术\n清洗除尘技术",
+        "八、先进制造与自动化/（四）先进制造工艺与装备/4、特种加工技术",
+        "RD01\nRD02",
+        "IP01\nIP02",
+        "报警响应≤3秒\n颗粒去除率≥95%",
+        "知识产权\n检测报告\n销售合同",
+    ]
+    for index, value in enumerate(headers):
+        table.rows[0].cells[index].text = value
+    for index, value in enumerate(values):
+        table.rows[1].cells[index].text = value
+    document.save(path)
+
+
+def make_result_summary(path: Path, *, split_tables: bool = False) -> None:
+    document = Document()
+    headers = [
+        "序号",
+        "成果名称",
+        "成果来源",
+        "转化方式",
+        "转化目标产品",
+        "转化时间",
+        "涉及关键技术",
+        "转化所取得成效",
+        "关联项目RD编号",
+        "关联专利IP编号",
+        "成果转化证明材料",
+    ]
+    rows = [
+        ["1", "清洗设备", "自有技术", "自行投资实施转化", "新技术应用", "2025", "多阶段清洗技术", "形成一体化清洗设备。", "RD01", "IP01", "知识产权\n销售合同"],
+        ["2", "除尘装置", "自有技术", "自行投资实施转化", "新技术应用", "2025", "离子风除尘技术", "形成进炉前除尘装置。", "RD02", "IP02", "知识产权\n检测记录"],
+    ]
+    groups = [[item] for item in rows] if split_tables else [rows]
+    for group in groups:
+        table = document.add_table(rows=1 + len(group), cols=len(headers))
+        for index, value in enumerate(headers):
+            table.rows[0].cells[index].text = value
+        for row_index, row in enumerate(group, 1):
+            for column_index, value in enumerate(row):
+                table.rows[row_index].cells[column_index].text = value
+    document.save(path)
+
+
+def make_ip_summary(path: Path, *, bad_number: bool = False) -> None:
+    document = Document()
+    table = document.add_table(rows=3, cols=6)
+    headers = ["知识产权编号", "知识产权名称", "类别", "授权日期", "授权号", "获得方式"]
+    rows = [
+        ["IP01", "一种定位治具", "实用新型", "2025-03-01", "ZL2024XXXXXX.X", "自主研发"],
+        ["IP03" if bad_number else "IP02", "工艺参数管理软件V1.0", "软件著作权", "2025-05-01", "2025SRXXXXXX", "自主研发"],
+    ]
+    for index, value in enumerate(headers):
+        table.rows[0].cells[index].text = value
+    for row_index, row in enumerate(rows, 1):
+        for column_index, value in enumerate(row):
+            table.rows[row_index].cells[column_index].text = value
+    document.save(path)
+
+
+def test_summary_lint_accepts_compact_ps_and_continuous_results(tmp_path: Path) -> None:
+    ps = tmp_path / "ps.docx"
+    results = tmp_path / "results.docx"
+    ip = tmp_path / "ip.docx"
+    make_ps_summary(ps)
+    make_result_summary(results)
+    make_ip_summary(ip)
+    for source in (ps, results, ip):
+        report = source.with_suffix(".audit.json")
+        process = run_gate("summary-lint", str(source), "--report", str(report))
+        assert process.returncode == 0, process.stdout + process.stderr
+        payload = json.loads(report.read_text(encoding="utf-8"))
+        assert payload["status"] == "pass"
+        assert payload["tables"]
+
+
+def test_summary_lint_blocks_placeholder_and_split_result_tables(tmp_path: Path) -> None:
+    ps = tmp_path / "bad-ps.docx"
+    results = tmp_path / "split-results.docx"
+    make_ps_summary(ps, prohibited=True)
+    make_result_summary(results, split_tables=True)
+
+    ps_process = run_gate("summary-lint", str(ps), "--report", str(tmp_path / "bad-ps.json"))
+    assert ps_process.returncode != 0
+    assert "禁用占位语" in ps_process.stdout
+
+    results_process = run_gate(
+        "summary-lint", str(results), "--report", str(tmp_path / "split-results.json")
+    )
+    assert results_process.returncode != 0
+    assert "科技成果转化汇总表被拆成" in results_process.stdout
+
+    ip = tmp_path / "bad-ip.docx"
+    make_ip_summary(ip, bad_number=True)
+    ip_process = run_gate("summary-lint", str(ip), "--report", str(tmp_path / "bad-ip.json"))
+    assert ip_process.returncode != 0
+    assert "IP编号不连续" in ip_process.stdout
+
+
+def test_template_copy_requires_byte_identical_initial_copy(tmp_path: Path) -> None:
+    copied = tmp_path / "copy.docx"
+    copied.write_bytes(TEMPLATE.read_bytes())
+    report = tmp_path / "copy.json"
+    passing = run_gate(
+        "template-copy", str(TEMPLATE), str(copied), "--report", str(report)
+    )
+    assert passing.returncode == 0, passing.stdout + passing.stderr
+    copied.write_bytes(copied.read_bytes() + b"changed")
+    failing = run_gate(
+        "template-copy", str(TEMPLATE), str(copied), "--report", str(report)
+    )
+    assert failing.returncode != 0
+    assert "字节级复制" in failing.stdout
+
+
+def wps_checklist(path: Path, screenshots: list[Path]) -> None:
+    checks = {
+        "header_footer": "pass",
+        "table_boundaries": "pass",
+        "repeated_header": "pass",
+        "overflow": "pass",
+        "overlap": "pass",
+        "blank_page": "pass",
+        "continuous_numbering": "pass",
+        "missing_fields": "pass",
+    }
+    path.write_text(
+        json.dumps(
+            {
+                "engine": "WPS Office",
+                "reviewer": "Codex",
+                "page_count": len(screenshots),
+                "pages": [
+                    {"page": index, "screenshot": screenshot.name, "checks": checks}
+                    for index, screenshot in enumerate(screenshots, 1)
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def write_png(path: Path, width: int = 800, height: int = 600, color: bytes = b"\xff\xff\xff") -> None:
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    scanline = b"\x00" + color * width
+    pixels = scanline * height
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(pixels))
+        + chunk(b"IEND", b"")
+    )
+
+
+def test_wps_review_and_finalize_are_bound_to_final_docx_hash(tmp_path: Path) -> None:
+    template = tmp_path / "summary-template.docx"
+    document = tmp_path / "summary.docx"
+    make_ps_summary(template)
+    document.write_bytes(template.read_bytes())
+    screenshot = tmp_path / "page-1.png"
+    write_png(screenshot)
+    checklist = tmp_path / "wps-checklist.json"
+    wps_checklist(checklist, [screenshot])
+    wps_receipt = tmp_path / "wps-receipt.json"
+    summary_receipt = tmp_path / "summary-receipt.json"
+    copy_receipt = tmp_path / "copy-receipt.json"
+    assert run_gate(
+        "template-copy", str(template), str(document), "--report", str(copy_receipt)
+    ).returncode == 0
+    assert run_gate(
+        "summary-lint", str(document), "--report", str(summary_receipt)
+    ).returncode == 0
+    assert run_gate(
+        "record-wps-review", str(document), str(checklist), "--report", str(wps_receipt)
+    ).returncode == 0
+
+    final_receipt = tmp_path / "final.json"
+    brand_receipt = tmp_path / "brand.json"
+    brand_receipt.write_text(
+        json.dumps(
+            {
+                "status": "passed",
+                "artifacts": [{"format": "docx", "status": "passed", "path": str(document)}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    passing = run_gate(
+        "finalize",
+        str(document),
+        "--copy-receipt",
+        str(copy_receipt),
+        "--summary-receipt",
+        str(summary_receipt),
+        "--wps-receipt",
+        str(wps_receipt),
+        "--brand-receipt",
+        str(brand_receipt),
+        "--report",
+        str(final_receipt),
+    )
+    assert passing.returncode == 0, passing.stdout + passing.stderr
+
+    changed_document = Document(document)
+    changed_document.add_paragraph("后续保存变更")
+    changed_document.save(document)
+    failing = run_gate(
+        "finalize",
+        str(document),
+        "--copy-receipt",
+        str(copy_receipt),
+        "--summary-receipt",
+        str(summary_receipt),
+        "--wps-receipt",
+        str(wps_receipt),
+        "--brand-receipt",
+        str(brand_receipt),
+        "--report",
+        str(final_receipt),
+    )
+    assert failing.returncode != 0
+    assert "当前终稿不一致" in failing.stdout
+
+
+def test_wps_review_rejects_non_wps_engine_and_incomplete_pages(tmp_path: Path) -> None:
+    document = tmp_path / "summary.docx"
+    make_ps_summary(document)
+    screenshot = tmp_path / "page-1.png"
+    write_png(screenshot)
+    checklist = tmp_path / "bad-checklist.json"
+    wps_checklist(checklist, [screenshot])
+    data = json.loads(checklist.read_text(encoding="utf-8"))
+    data["engine"] = "LibreOffice"
+    data["page_count"] = 2
+    checklist.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    process = run_gate(
+        "record-wps-review",
+        str(document),
+        str(checklist),
+        "--report",
+        str(tmp_path / "bad-wps.json"),
+    )
+    assert process.returncode != 0
+    assert '必须精确为\\"WPS Office\\"' in process.stdout
+    assert "逐页清单不连续或不完整" in process.stdout
