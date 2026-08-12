@@ -1141,6 +1141,56 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
     return raw_token
 
 
+def reconcile_single_active_credentials(
+    connection: sqlite3.Connection,
+    reconciled_at: str,
+) -> int:
+    """Revoke historical duplicate active credentials before enforcing uniqueness."""
+    revoked_count = 0
+    duplicate_users = connection.execute(
+        """
+        SELECT user_id
+        FROM device_tokens
+        WHERE revoked_at IS NULL AND activation_state='active'
+        GROUP BY user_id
+        HAVING COUNT(*) > 1
+        ORDER BY user_id
+        """
+    ).fetchall()
+    for duplicate_user in duplicate_users:
+        user_id = int(duplicate_user["user_id"])
+        survivor = connection.execute(
+            """
+            SELECT id
+            FROM device_tokens
+            WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+            ORDER BY
+                CASE WHEN COALESCE(last_used_at,'')<>'' THEN 1 ELSE 0 END DESC,
+                last_used_at DESC,
+                COALESCE(activated_at,created_at) DESC,
+                created_at DESC,
+                id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        if survivor is None:
+            continue
+        revoked = connection.execute(
+            """
+            UPDATE device_tokens
+            SET revoked_at=?,
+                revoked_reason='single_active_credential_reconciliation',
+                revoked_by='system'
+            WHERE user_id=? AND id<>? AND revoked_at IS NULL
+              AND activation_state='active'
+            """,
+            (reconciled_at, user_id, int(survivor["id"])),
+        )
+        revoked_count += int(revoked.rowcount)
+    return revoked_count
+
+
 def runtime_install_attestation(
     *,
     user_id: int,
@@ -7689,6 +7739,8 @@ def init_database() -> None:
             "UPDATE device_tokens SET activated_at=COALESCE(activated_at,last_used_at,created_at) "
             "WHERE activation_state='active'"
         )
+        connection.execute("DROP INDEX IF EXISTS device_tokens_one_active_per_user")
+        reconcile_single_active_credentials(connection, now)
         for active_row in connection.execute(
             "SELECT id,user_id,token_seed FROM device_tokens WHERE revoked_at IS NULL"
         ).fetchall():
@@ -7700,7 +7752,6 @@ def init_database() -> None:
                 "UPDATE device_tokens SET token_seed=?,token_prefix=?,token_hash=? WHERE id=?",
                 (seed, raw_token[:12], token_hash(raw_token), int(active_row["id"])),
             )
-        connection.execute("DROP INDEX IF EXISTS device_tokens_one_active_per_user")
         connection.execute(
             "CREATE INDEX IF NOT EXISTS device_tokens_user_status_idx "
             "ON device_tokens(user_id,revoked_at,id DESC)"
@@ -7712,6 +7763,11 @@ def init_database() -> None:
         connection.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_enrollment_idx "
             "ON device_tokens(enrollment_id) WHERE enrollment_id IS NOT NULL"
+        )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_per_user "
+            "ON device_tokens(user_id) "
+            "WHERE revoked_at IS NULL AND activation_state='active'"
         )
         connection.execute(
             """
@@ -8740,6 +8796,15 @@ def mark_mcp_connected(
                     activation_state == "pending"
                     and activate_installation_credential
                 ):
+                    connection.execute(
+                        """
+                        UPDATE device_tokens
+                        SET revoked_at=?,revoked_reason='superseded_by_new_credential',
+                            revoked_by='system'
+                        WHERE user_id=? AND id<>? AND revoked_at IS NULL
+                        """,
+                        (now, user_id, device_token_id),
+                    )
                     activated = connection.execute(
                         """
                         UPDATE device_tokens
@@ -8749,17 +8814,9 @@ def mark_mcp_connected(
                         """,
                         (now, device_token_id, user_id),
                     )
-                    if activated.rowcount == 1:
-                        connection.execute(
-                            """
-                            UPDATE device_tokens
-                            SET revoked_at=?,revoked_reason='superseded_by_new_credential',
-                                revoked_by='system'
-                            WHERE user_id=? AND id<>? AND revoked_at IS NULL
-                            """,
-                            (now, user_id, device_token_id),
-                        )
-                        activation_state = "active"
+                    if activated.rowcount != 1:
+                        raise RuntimeError("待激活安装凭据未能原子接管当前活跃凭据")
+                    activation_state = "active"
                 if (
                     activation_state == "active"
                     and expected_legacy_label

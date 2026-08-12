@@ -1063,8 +1063,8 @@ def test_admin_can_open_member_credentials_and_revoke_one_or_many(tmp_path):
                 """
                 INSERT INTO device_tokens(
                     user_id,label,token_prefix,token_hash,token_seed,created_at,
-                    last_used_at,credential_kind,binding_id
-                ) VALUES (?,?,?,?,?,?,?,'device',?)
+                    last_used_at,credential_kind,binding_id,activation_state
+                ) VALUES (?,?,?,?,?,?,?,'device',?,'pending')
                 """,
                 (
                     member_id,
@@ -5450,6 +5450,131 @@ def test_api_rejects_missing_token(tmp_path):
     with TestClient(module.app) as client:
         response = client.get("/v1/me")
         assert response.status_code == 401
+
+
+def test_init_database_reconciles_legacy_active_credentials_and_enforces_one_active(
+    tmp_path,
+):
+    module = load_app(tmp_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO users(username,password_hash,created_at)
+            VALUES (?,?,?)
+            """,
+            (
+                "legacy-duplicate-tokens",
+                module.password_hasher.hash("owner-password-123"),
+                "2026-08-01T00:00:00Z",
+            ),
+        )
+        user_id = int(connection.execute("SELECT last_insert_rowid()").fetchone()[0])
+        connection.execute("DROP INDEX device_tokens_one_active_per_user")
+        fixtures = (
+            (
+                "recent-never-used",
+                "legacy-seed-new",
+                "2026-08-12T00:00:00Z",
+                None,
+                "2026-08-12T00:00:00Z",
+            ),
+            (
+                "latest-real-use",
+                "legacy-seed-used-latest",
+                "2026-08-02T00:00:00Z",
+                "2026-08-11T12:00:00Z",
+                "2026-08-02T00:00:00Z",
+            ),
+            (
+                "older-real-use",
+                "legacy-seed-used-older",
+                "2026-08-03T00:00:00Z",
+                "2026-08-10T12:00:00Z",
+                "2026-08-03T00:00:00Z",
+            ),
+        )
+        for label, seed, created_at, last_used_at, activated_at in fixtures:
+            raw_token = module.user_access_token(user_id, seed)
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    last_used_at,credential_kind,activation_state,activated_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    user_id,
+                    label,
+                    raw_token[:12],
+                    module.token_hash(raw_token),
+                    seed,
+                    created_at,
+                    last_used_at,
+                    "personal",
+                    "active",
+                    activated_at,
+                ),
+            )
+        connection.commit()
+
+    module.init_database()
+
+    with closing(module.database()) as connection:
+        active = connection.execute(
+            """
+            SELECT label,token_seed
+            FROM device_tokens
+            WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+            """,
+            (user_id,),
+        ).fetchall()
+        assert [row["label"] for row in active] == ["latest-real-use"]
+        assert connection.execute(
+            """
+            SELECT COUNT(*)
+            FROM device_tokens
+            WHERE user_id=?
+              AND revoked_reason='single_active_credential_reconciliation'
+              AND revoked_by='system'
+            """,
+            (user_id,),
+        ).fetchone()[0] == 2
+        index_sql = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type='index' AND name=?",
+            ("device_tokens_one_active_per_user",),
+        ).fetchone()["sql"]
+        assert "UNIQUE INDEX" in index_sql
+        assert "activation_state='active'" in index_sql
+        duplicate_token = module.user_access_token(user_id, "duplicate-seed")
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    credential_kind,activation_state,activated_at
+                ) VALUES (?,?,?,?,?,?,'personal','active',?)
+                """,
+                (
+                    user_id,
+                    "forbidden-second-active",
+                    duplicate_token[:12],
+                    module.token_hash(duplicate_token),
+                    "duplicate-seed",
+                    "2026-08-12T01:00:00Z",
+                    "2026-08-12T01:00:00Z",
+                ),
+            )
+
+    manual_token = module.ensure_personal_access_token(user_id, "手动配置复用")
+    assert manual_token == module.user_access_token(user_id, str(active[0]["token_seed"]))
+    with closing(module.database()) as connection:
+        assert connection.execute(
+            """
+            SELECT COUNT(*) FROM device_tokens
+            WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+            """,
+            (user_id,),
+        ).fetchone()[0] == 1
 
 
 def test_public_machine_contracts_use_gongchuang_brand(tmp_path):
