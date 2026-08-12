@@ -14,7 +14,10 @@ The script therefore:
 4. replaces only the target-project twins in a candidate database.
 
 The active ``/索引/current`` database is write-protected by default.  Callers
-must clone it and pass the clone with ``--database``.
+must clone it and pass the clone with ``--database``.  Repeating
+``--identity-key`` enables an incremental replay that replaces only those
+subjects and verifies that every unselected target twin stays byte-stable at
+the trace level.
 """
 
 from __future__ import annotations
@@ -103,6 +106,15 @@ def parse_args() -> argparse.Namespace:
         help="用于解析补充证据中的知识库相对附件路径",
     )
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--identity-key",
+        action="append",
+        default=[],
+        help=(
+            "仅重放指定统一社会信用代码，可重复传入；不提供时保持全量重建。"
+            "局部模式只允许写候选数据库。"
+        ),
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--allow-active-index-write",
@@ -110,6 +122,22 @@ def parse_args() -> argparse.Namespace:
         help="仅受控发布器可使用；常规调用禁止直接修改活动索引",
     )
     return parser.parse_args()
+
+
+def normalize_identity_scope(values: Iterable[object]) -> set[str]:
+    identity_keys = {str(value or "").strip().upper() for value in values}
+    identity_keys.discard("")
+    invalid = sorted(
+        identity_key
+        for identity_key in identity_keys
+        if not USCC_PATTERN.fullmatch(identity_key)
+    )
+    if invalid:
+        raise RuntimeError(
+            "局部重放统一社会信用代码无效："
+            + "、".join(invalid)
+        )
+    return identity_keys
 
 
 def canonical_enterprise_name(value: object) -> str:
@@ -942,6 +970,50 @@ def current_gap_rows(
     ]
 
 
+def target_twin_scope_digest(
+    connection: sqlite3.Connection,
+    identity_keys: set[str],
+    *,
+    exclude: bool,
+) -> tuple[int, str]:
+    if not identity_keys:
+        raise RuntimeError("孪生摘要至少需要一个统一社会信用代码")
+    projects = ",".join("?" for _ in TARGET_PROJECTS)
+    keys = ",".join("?" for _ in identity_keys)
+    operator = "NOT IN" if exclude else "IN"
+    rows = connection.execute(
+        "SELECT identity_key,project_name,current_state,current_as_of_year,"
+        "trace_hash FROM enterprise_project_identity_twins "
+        f"WHERE project_name IN ({projects}) "
+        f"AND identity_key {operator} ({keys}) "
+        "ORDER BY identity_key,project_name",
+        (*TARGET_PROJECTS, *sorted(identity_keys)),
+    )
+    digest_value = hashlib.sha256()
+    count = 0
+    for row in rows:
+        digest_value.update(
+            ("|".join(str(value or "") for value in row) + "\n").encode(
+                "utf-8"
+            )
+        )
+        count += 1
+    return count, digest_value.hexdigest()
+
+
+def quick_check_tables(
+    connection: sqlite3.Connection,
+    tables: Iterable[str],
+) -> str:
+    for table in tables:
+        result = str(
+            connection.execute(f"PRAGMA quick_check('{table}')").fetchone()[0]
+        )
+        if result != "ok":
+            return f"{table}:{result}"
+    return "ok"
+
+
 def write_csv(path: Path, rows: list[dict[str, Any]], fields: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
@@ -963,6 +1035,85 @@ def replace_target_twins(
     connection.execute(
         f"DELETE FROM enterprise_project_identity_twins WHERE project_name IN ({placeholders})",
         TARGET_PROJECTS,
+    )
+    connection.executemany(
+        """
+        INSERT INTO enterprise_project_identity_twins(
+            twin_id,identity_key,project_name,lifecycle_rule_id,policy_version_id,
+            current_state,current_as_of_year,trace_hash,identity_match_json,
+            policy_version_json,list_attachment_trace_json,coverage_trace_json,
+            lifecycle_trace_json,replayable_years_json
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        [
+            (
+                row["twin_id"],
+                row["identity_key"],
+                row["project_name"],
+                row["lifecycle_rule_id"],
+                row["policy_version"]["policy_version_id"],
+                row["current_replay"]["state"],
+                row["current_replay"]["as_of_year"],
+                row["trace_hash"],
+                json.dumps(row["identity_match"], ensure_ascii=False),
+                json.dumps(row["policy_version"], ensure_ascii=False),
+                json.dumps(row["list_attachment_trace"], ensure_ascii=False),
+                json.dumps(row["coverage_trace"], ensure_ascii=False),
+                json.dumps(row["lifecycle_trace"], ensure_ascii=False),
+                json.dumps(row["replayable_years"], ensure_ascii=False),
+            )
+            for row in twins
+        ],
+    )
+    connection.executemany(
+        """
+        INSERT INTO enterprise_project_identity_twin_steps(
+            twin_id,identity_key,project_name,step,event_year,event_type,
+            previous_state,next_state,reason,evidence_hash,payload_json
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        [
+            (
+                row["twin_id"],
+                row["identity_key"],
+                row["project_name"],
+                row["step"],
+                row["event_year"],
+                row["event_type"],
+                row["previous_state"],
+                row["next_state"],
+                row["reason"],
+                row["evidence_hash"],
+                json.dumps(row, ensure_ascii=False),
+            )
+            for row in steps
+        ],
+    )
+
+
+def replace_selected_twins(
+    connection: sqlite3.Connection,
+    identity_keys: set[str],
+    twins: list[dict[str, Any]],
+    steps: list[dict[str, Any]],
+) -> None:
+    if not identity_keys:
+        raise RuntimeError("局部重放至少需要一个统一社会信用代码")
+    ordered_keys = sorted(identity_keys)
+    key_placeholders = ",".join("?" for _ in ordered_keys)
+    project_placeholders = ",".join("?" for _ in TARGET_PROJECTS)
+    parameters = (*ordered_keys, *TARGET_PROJECTS)
+    connection.execute(
+        "DELETE FROM enterprise_project_identity_twin_steps "
+        f"WHERE identity_key IN ({key_placeholders}) "
+        f"AND project_name IN ({project_placeholders})",
+        parameters,
+    )
+    connection.execute(
+        "DELETE FROM enterprise_project_identity_twins "
+        f"WHERE identity_key IN ({key_placeholders}) "
+        f"AND project_name IN ({project_placeholders})",
+        parameters,
     )
     connection.executemany(
         """
@@ -1214,6 +1365,109 @@ def write_audit_tables(
     )
 
 
+def write_incremental_audit_tables(
+    connection: sqlite3.Connection,
+    identity_keys: set[str],
+    quarantine: list[dict[str, Any]],
+    gaps: list[dict[str, Any]],
+    product_corrections: list[dict[str, Any]],
+    report: Mapping[str, Any],
+    *,
+    replace_product_corrections: bool,
+) -> None:
+    required = {
+        "enterprise_project_relation_quarantine",
+        "enterprise_project_twin_gaps",
+        "enterprise_project_twin_rebuild_audit",
+        "enterprise_project_product_corrections",
+    }
+    missing = sorted(
+        table for table in required if not table_exists(connection, table)
+    )
+    if missing:
+        raise RuntimeError(
+            "局部重放缺少全量基线审计表：" + "、".join(missing)
+        )
+    ordered_keys = sorted(identity_keys)
+    placeholders = ",".join("?" for _ in ordered_keys)
+    tables_to_replace = [
+        "enterprise_project_relation_quarantine",
+        "enterprise_project_twin_gaps",
+    ]
+    if replace_product_corrections:
+        tables_to_replace.append("enterprise_project_product_corrections")
+    for table in tables_to_replace:
+        connection.execute(
+            f"DELETE FROM {table} WHERE identity_key IN ({placeholders})",
+            ordered_keys,
+        )
+    connection.executemany(
+        "INSERT INTO enterprise_project_relation_quarantine VALUES(?,?,?,?,?,?)",
+        [
+            (
+                row["identity_key"],
+                row["current_name"],
+                row["project_name"],
+                row["reason"],
+                json.dumps(row.get("details", {}), ensure_ascii=False),
+                PUBLIC_SOURCE,
+            )
+            for row in quarantine
+        ],
+    )
+    connection.executemany(
+        "INSERT INTO enterprise_project_twin_gaps VALUES(?,?,?,?,?,?)",
+        [
+            (
+                row["identity_key"],
+                row["current_name"],
+                row["project_name"],
+                row["gap_type"],
+                json.dumps(row.get("details", {}), ensure_ascii=False),
+                PUBLIC_SOURCE,
+            )
+            for row in gaps
+        ],
+    )
+    if replace_product_corrections:
+        connection.executemany(
+            "INSERT INTO enterprise_project_product_corrections "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+            [
+                (
+                    str(row["identity_key"]),
+                    str(row.get("current_name") or ""),
+                    str(row["project_name"]),
+                    int(row["year"]),
+                    str(row["product_name"]),
+                    str(row["verification_status"]),
+                    str(row["source_title"]),
+                    str(row.get("source_path") or ""),
+                    str(row.get("source_sha256") or ""),
+                    json.dumps(
+                        {
+                            key: value
+                            for key, value in row.items()
+                            if not str(key).startswith("_")
+                        },
+                        ensure_ascii=False,
+                    ),
+                    PUBLIC_SOURCE,
+                )
+                for row in product_corrections
+            ],
+        )
+    connection.execute(
+        "INSERT OR REPLACE INTO enterprise_project_twin_rebuild_audit "
+        "VALUES(?,?,?)",
+        (
+            "last_incremental_replay",
+            json.dumps(report, ensure_ascii=False),
+            PUBLIC_SOURCE,
+        ),
+    )
+
+
 def build_candidate(
     database: Path,
     policy_version_database: Path | None,
@@ -1223,18 +1477,52 @@ def build_candidate(
     output: Path,
     *,
     dry_run: bool,
+    identity_keys: set[str] | None = None,
 ) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
-    before_sha256 = sha256_file(database)
+    incremental_identity_keys = set(identity_keys or ())
+    before_sha256 = (
+        "not_computed_incremental"
+        if incremental_identity_keys
+        else sha256_file(database)
+    )
     connection = sqlite3.connect(database)
     connection.row_factory = sqlite3.Row
     require_tables(connection)
     profiles, memberships, aliases, source_names = load_profiles(connection)
     apply_loaded_lineage_corrections(profiles, aliases, source_names)
-    product_corrections = load_product_corrections(
+    missing_identity_keys = sorted(incremental_identity_keys - set(profiles))
+    if missing_identity_keys:
+        raise RuntimeError(
+            "局部重放主体不在目标主档：" + "、".join(missing_identity_keys)
+        )
+    scoped_profiles = (
+        {
+            identity_key: profiles[identity_key]
+            for identity_key in sorted(incremental_identity_keys)
+        }
+        if incremental_identity_keys
+        else profiles
+    )
+    scoped_memberships = (
+        {
+            (identity_key, project_name)
+            for identity_key, project_name in memberships
+            if identity_key in incremental_identity_keys
+        }
+        if incremental_identity_keys
+        else memberships
+    )
+    loaded_product_corrections = load_product_corrections(
         product_corrections_path,
         knowledge_root,
     )
+    product_corrections = [
+        correction
+        for correction in loaded_product_corrections
+        if not incremental_identity_keys
+        or str(correction["identity_key"]) in incremental_identity_keys
+    ]
     correction_by_key: dict[tuple[str, str, int], dict[str, Any]] = {}
     for correction in product_corrections:
         key = (
@@ -1246,13 +1534,30 @@ def build_candidate(
             raise RuntimeError(f"三首产品补充证据未命中目标主档关系：{key}")
         correction["current_name"] = str(profiles[key[0]].get("current_name") or "")
         correction_by_key[key] = correction
-    before_gaps = current_gap_rows(connection, memberships, profiles)
+    before_gaps = current_gap_rows(
+        connection,
+        scoped_memberships,
+        scoped_profiles,
+    )
     existing_twins = {
         (str(row["identity_key"]), str(row["project_name"])): dict(row)
         for row in connection.execute(
             "SELECT * FROM enterprise_project_identity_twins"
         )
     }
+    unselected_snapshot_before: tuple[int, str] | None = None
+    selected_snapshot_before: tuple[int, str] | None = None
+    if incremental_identity_keys:
+        unselected_snapshot_before = target_twin_scope_digest(
+            connection,
+            incremental_identity_keys,
+            exclude=True,
+        )
+        selected_snapshot_before = target_twin_scope_digest(
+            connection,
+            incremental_identity_keys,
+            exclude=False,
+        )
     events: dict[tuple[Any, ...], dict[str, Any]] = {}
     resolved_pairs: set[tuple[str, str]] = set()
     weak_pairs: defaultdict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -1279,6 +1584,17 @@ def build_candidate(
             name_fields=("enterprise_id", "enterprise_name_at_recognition"),
         )
         if method == "identity_conflict":
+            relevant_candidates = (
+                [
+                    candidate
+                    for candidate in candidates
+                    if candidate in incremental_identity_keys
+                ]
+                if incremental_identity_keys
+                else candidates
+            )
+            if not relevant_candidates:
+                continue
             ignored_conflicts.append(
                 {
                     "project_name": str(row["project_name"]),
@@ -1287,15 +1603,18 @@ def build_candidate(
                     ),
                     "year": row["year"],
                     "batch": str(row["batch"] or ""),
-                    "candidate_identity_keys": candidates,
+                    "candidate_identity_keys": relevant_candidates,
                     "record_id": str(row["record_id"]),
                 }
             )
             conflict_pairs.update(
-                (candidate, str(row["project_name"])) for candidate in candidates
+                (candidate, str(row["project_name"]))
+                for candidate in relevant_candidates
             )
             continue
         if not identity_key:
+            if incremental_identity_keys:
+                continue
             unmapped_source_records.append(
                 {
                     "project_name": str(row.get("project_name") or ""),
@@ -1315,6 +1634,8 @@ def build_candidate(
                     "resolution": "not_in_target_identity_universe",
                 }
             )
+            continue
+        if incremental_identity_keys and identity_key not in incremental_identity_keys:
             continue
         pair = (identity_key, str(row["project_name"]))
         correction_key = (
@@ -1387,24 +1708,38 @@ def build_candidate(
                 name_fields=("enterprise_name",),
             )
             if method == "identity_conflict":
+                relevant_candidates = (
+                    [
+                        candidate
+                        for candidate in candidates
+                        if candidate in incremental_identity_keys
+                    ]
+                    if incremental_identity_keys
+                    else candidates
+                )
+                if not relevant_candidates:
+                    continue
                 ignored_conflicts.append(
                     {
                         "project_name": str(row["project_name"]),
                         "enterprise_name_at_recognition": str(row["enterprise_name"]),
                         "year": row["year"],
                         "batch": "",
-                        "candidate_identity_keys": candidates,
+                        "candidate_identity_keys": relevant_candidates,
                         "record_id": "three_first_reward",
                     }
                 )
                 continue
-            if identity_key:
+            if identity_key and (
+                not incremental_identity_keys
+                or identity_key in incremental_identity_keys
+            ):
                 add_aggregated_event(events, reward_event(row, identity_key, method))
 
     event_rows = freeze_events(events)
     rules = load_rules(lifecycle_rules)
     twins, steps = build_project_identity_twins(
-        profile_payloads(profiles),
+        profile_payloads(scoped_profiles),
         event_rows,
         rules,
         {"rows": []},
@@ -1415,11 +1750,11 @@ def build_candidate(
         (str(row["identity_key"]), str(row["project_name"])) for row in twins
     }
 
-    unresolved_pairs = memberships - twin_pairs
+    unresolved_pairs = scoped_memberships - twin_pairs
     quarantine: list[dict[str, Any]] = []
     gaps: list[dict[str, Any]] = []
     for identity_key, project_name in sorted(unresolved_pairs):
-        profile = profiles[identity_key]
+        profile = scoped_profiles[identity_key]
         base = {
             "identity_key": identity_key,
             "current_name": str(profile.get("current_name") or ""),
@@ -1472,7 +1807,7 @@ def build_candidate(
     quarantined_pairs = {
         (str(row["identity_key"]), str(row["project_name"])) for row in quarantine
     }
-    formal_memberships = memberships - quarantined_pairs
+    formal_memberships = scoped_memberships - quarantined_pairs
     residual_pairs = formal_memberships - twin_pairs
 
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
@@ -1483,9 +1818,15 @@ def build_candidate(
         "database": str(database),
         "database_sha256_before": before_sha256,
         "dry_run": dry_run,
+        "replay_mode": (
+            "incremental" if incremental_identity_keys else "full"
+        ),
+        "requested_identity_keys": sorted(incremental_identity_keys),
         "target_projects": list(TARGET_PROJECTS),
-        "input_subjects": len({identity_key for identity_key, _ in memberships}),
-        "input_enterprise_project_memberships": len(memberships),
+        "input_subjects": len(
+            {identity_key for identity_key, _ in scoped_memberships}
+        ),
+        "input_enterprise_project_memberships": len(scoped_memberships),
         "preexisting_missing_same_project_twins": len(before_gaps),
         "resolved_source_rows": sum(resolution_counts.values()),
         "resolution_counts": dict(sorted(resolution_counts.items())),
@@ -1501,40 +1842,144 @@ def build_candidate(
         "residual_gap_subjects": len({identity_key for identity_key, _ in residual_pairs}),
         "ignored_ambiguous_source_rows": len(ignored_conflicts),
         "unmapped_source_rows": len(unmapped_source_records),
-        "applied_identity_lineage_corrections": len(IDENTITY_LINEAGE_CORRECTIONS),
+        "applied_identity_lineage_corrections": sum(
+            1
+            for correction in IDENTITY_LINEAGE_CORRECTIONS
+            if not incremental_identity_keys
+            or {
+                str(correction["incorrect_identity_key"]),
+                str(correction["correct_identity_key"]),
+            }
+            & incremental_identity_keys
+        ),
         "applied_product_corrections": len(applied_correction_keys),
         "coverage_complete": len(residual_pairs) == 0,
         "truncated": False,
         "production_index_switched": False,
     }
+    if selected_snapshot_before and unselected_snapshot_before:
+        report.update(
+            {
+                "selected_target_twins_before": selected_snapshot_before[0],
+                "selected_target_digest_before": selected_snapshot_before[1],
+                "unselected_target_twins_before": unselected_snapshot_before[0],
+                "unselected_target_digest_before": unselected_snapshot_before[1],
+            }
+        )
 
     if not dry_run:
         connection.execute("BEGIN IMMEDIATE")
-        replace_target_twins(connection, twins, steps)
-        update_unified_profiles(connection, profiles, quarantined_pairs, twins)
-        persist_lineage_corrections(connection)
-        persist_product_corrections(connection, product_corrections, profiles)
+        if incremental_identity_keys:
+            replace_selected_twins(
+                connection,
+                incremental_identity_keys,
+                twins,
+                steps,
+            )
+        else:
+            replace_target_twins(connection, twins, steps)
+        update_unified_profiles(
+            connection,
+            scoped_profiles,
+            quarantined_pairs,
+            twins,
+        )
+        lineage_keys = {
+            str(correction[key])
+            for correction in IDENTITY_LINEAGE_CORRECTIONS
+            for key in ("incorrect_identity_key", "correct_identity_key")
+        }
+        if not incremental_identity_keys or lineage_keys & incremental_identity_keys:
+            persist_lineage_corrections(connection)
+        persist_product_corrections(
+            connection,
+            product_corrections,
+            scoped_profiles,
+        )
         refresh_coverage_counts(connection)
+        if incremental_identity_keys:
+            unselected_snapshot_after = target_twin_scope_digest(
+                connection,
+                incremental_identity_keys,
+                exclude=True,
+            )
+            selected_snapshot_after = target_twin_scope_digest(
+                connection,
+                incremental_identity_keys,
+                exclude=False,
+            )
+            if unselected_snapshot_after != unselected_snapshot_before:
+                connection.rollback()
+                raise RuntimeError(
+                    "局部重放越界修改了未选中主体，已回滚候选数据库"
+                )
+            report.update(
+                {
+                    "selected_target_twins_after": selected_snapshot_after[0],
+                    "selected_target_digest_after": selected_snapshot_after[1],
+                    "unselected_target_twins_after": unselected_snapshot_after[0],
+                    "unselected_target_digest_after": unselected_snapshot_after[1],
+                    "unselected_target_invariant": "pass",
+                }
+            )
         connection.commit()
-        quick_check = str(connection.execute("PRAGMA quick_check").fetchone()[0])
+        if incremental_identity_keys:
+            quick_check = quick_check_tables(
+                connection,
+                tuple(
+                    table
+                    for table in (
+                        "enterprise_project_identity_twins",
+                        "enterprise_project_identity_twin_steps",
+                        "enterprise_unified_digital_identities",
+                        "recognition_records",
+                        "three_first_status_timeline",
+                    )
+                    if table_exists(connection, table)
+                ),
+            )
+            report["sqlite_quick_check_scope"] = "modified_tables"
+        else:
+            quick_check = str(
+                connection.execute("PRAGMA quick_check").fetchone()[0]
+            )
+            report["sqlite_quick_check_scope"] = "full_database"
+        if quick_check != "ok":
+            raise RuntimeError(f"SQLite快速检查失败：{quick_check}")
         report["sqlite_quick_check"] = quick_check
         connection.execute("BEGIN IMMEDIATE")
-        write_audit_tables(
-            connection,
-            quarantine,
-            gaps,
-            product_corrections,
-            report,
-        )
+        if incremental_identity_keys:
+            write_incremental_audit_tables(
+                connection,
+                incremental_identity_keys,
+                quarantine,
+                gaps,
+                product_corrections,
+                report,
+                replace_product_corrections=(
+                    product_corrections_path is not None
+                ),
+            )
+        else:
+            write_audit_tables(
+                connection,
+                quarantine,
+                gaps,
+                product_corrections,
+                report,
+            )
         connection.commit()
         connection.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
     else:
         connection.rollback()
         report["sqlite_quick_check"] = "not_run_dry_run"
     connection.close()
-    report["database_sha256_after"] = (
-        sha256_file(database) if not dry_run else before_sha256
-    )
+    if incremental_identity_keys:
+        report["database_sha256_after"] = "not_computed_incremental"
+    elif dry_run:
+        report["database_sha256_after"] = before_sha256
+    else:
+        report["database_sha256_after"] = sha256_file(database)
 
     (output / "企业项目数字孪生重建报告.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2),
@@ -1645,6 +2090,7 @@ def build_candidate(
 def main() -> None:
     args = parse_args()
     ensure_candidate_database(args.database, args.allow_active_index_write)
+    identity_keys = normalize_identity_scope(args.identity_key)
     report = build_candidate(
         args.database,
         args.policy_version_database,
@@ -1653,6 +2099,7 @@ def main() -> None:
         args.knowledge_root,
         args.output,
         dry_run=args.dry_run,
+        identity_keys=identity_keys,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
