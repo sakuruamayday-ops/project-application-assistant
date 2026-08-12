@@ -20,12 +20,19 @@ description: 从政府项目库中匹配企业可申报方向。适用于用户�
 
 ## 强制判断链
 
-1. 读取 `references/canonical-project-index.jsonl` 和 `references/project-matching-rules.md`，先判断“理论上应关注哪些项目类型”。再按标准项目名称检索 `references/high-frequency-project-rules.jsonl`，优先使用已有高频项目条件缩小候选范围。
+1. 前期评估、培育规划、多项目矩阵或年度路线图先完整读取 `references/policy-application-path-contract.md`；再读取 `references/canonical-project-index.jsonl` 和 `references/project-matching-rules.md`，先判断“理论上应关注哪些项目类型”。再按标准项目名称检索 `references/high-frequency-project-rules.jsonl`，优先使用已有高频项目条件缩小候选范围。
 2. 用企业地区、行业、产品、规模、资质、研发、知识产权和投资计划对候选项目进行召回和排序。
 3. 用户已明确启用实验性 `third-party-data-indexing` 时，检查SQLite索引的最后成功日期；索引不是当日时标记陈旧并在用户授权后更新或补采。未启用或更新失败时直接降级检索官方来源，不阻断项目匹配。
 4. 对所有拟推荐项目调用政策检索能力，核验政府官方管理办法、当期通知、截止时间和附件。
 5. 只有完成官方核验的项目才能进入“当期可申报”；其余项目标记为“培育方向”、“索引命中待核验”或“历史项目”。
 6. 项目检索或成长路径中存在当前仍在申报期的项目时，读取企业申报截止时间，按北京时间计算并提醒“距离截止还有多少天”。企业申报截止与主管部门报送截止并存时优先企业截止；截止对象不明确时只提示核验时间，不输出精确倒计时。
+
+## 政策路径完整性
+
+- 与企业相关但当前不具备条件的项目必须进入正文，标记为建设后申报、条件触发或长期梯度，并说明研发机构、制造边界、能源环境、数字化、知识产权、产品成熟度或市场证据等先行任务。
+- “不建议现在申报”不得等同于“不列入报告”。摘要可只突出重点，正文必须保留完整项目池、依赖关系、建议年度、材料证据、停项条件和下一步动作。
+- 至少逐类检查主目标梯度、研发平台、绿色发展、数字化、知识产权、质量品牌和产业化项目；某类与企业确实无关时写明排除边界。
+- 每个项目按路径合同的十二项固定字段输出。目标年度政策未发布时标记规划参考，并设置当期通知发布后的重检节点。
 
 ## 高频简称门禁
 
@@ -62,6 +69,7 @@ description: 从政府项目库中匹配企业可申报方向。适用于用户�
 - `references/high-frequency-project-rules.jsonl`：高频申报项目的条件线索。表格条件只作历史召回依据；专精特新与研发机构必须使用其中的新版规则卡。
 - `references/project-matching-rules.md`：企业画像召回、排除、排序、时效和证据规则。
 - `references/high-frequency-project-retrieval-rules.json`：高频简称、正式项目、选择提示、允许项目和串项排除规则。
+- `references/policy-application-path-contract.md`：前期评估完整政策路径的范围、十二项路径卡字段、分层、边界和交付自检。
 - `scripts/build_project_map.py`：从本地 Markdown 项目目录重建脱敏地图，默认不输出来源字段、内部编号和第三方内容。
 - `scripts/build_high_frequency_rules.py`：从用户维护的政策更新表与新版 Markdown 规则重建高频条件卡。
 - `scripts/filter_project_map.py`：按用户默认地区范围和企业关键词过滤统一地图，避免将其他地区项目加载进上下文。
