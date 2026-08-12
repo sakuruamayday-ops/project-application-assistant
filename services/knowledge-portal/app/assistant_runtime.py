@@ -56,7 +56,11 @@ SKILL_PROFILES = {
 }
 
 
-def quick_guide_answer(question: str, public_endpoint: str) -> tuple[str, str] | None:
+def quick_guide_answer(
+    question: str,
+    public_endpoint: str,
+    skill_count: int,
+) -> tuple[str, str] | None:
     normalized = re.sub(r"\s+", "", question).lower()
     matched = None
     for guide_name, guide_question in QUICK_GUIDE_QUESTIONS.items():
@@ -83,7 +87,7 @@ def quick_guide_answer(question: str, public_endpoint: str) -> tuple[str, str] |
     if matched == "api_mcp_import":
         return (
             "一、登录共创研究院网站，打开“连接我的 Agent”。\n"
-            "二、点击“一键安装”，把网站生成的一段完整指令粘贴给 macOS 或 Windows 上的 WorkBuddy。该指令会安装或更新50项Skills、启用最小行为Hook、只替换 mcpServers.jiaotang-kb 并保留其他MCP。\n"
+            f"二、点击“一键安装”，把网站生成的一段完整指令粘贴给 macOS 或 Windows 上的 WorkBuddy。该指令会安装或更新{skill_count}项Skills、启用最小行为Hook、只替换 mcpServers.jiaotang-kb 并保留其他MCP。\n"
             "三、WorkBuddy 重载一次后，应在 tools/list 中看到 knowledge_search、knowledge_document、knowledge_service_status，并实际调用 knowledge_service_status。只有返回 connected: true 才算完成。\n\n"
             "手工配置页面会自动复用或生成当前登录用户的个人Token，并直接填入完整远程HTTP MCP配置；不需要设备绑定、bootstrap、钥匙串、DPAPI或用户侧签名校验。个人Token不要粘贴到公共代码或聊天回复中，怀疑泄露时在网站撤销，重新打开配置页即可生成新Token。",
             "first-run-configuration",

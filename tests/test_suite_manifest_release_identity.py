@@ -69,3 +69,21 @@ def test_call_graph_covers_manifest_skill_set() -> None:
     )
 
     assert graph_skills == sorted(manifest["skills"])
+
+
+def test_active_runtime_surfaces_do_not_hardcode_skill_count() -> None:
+    count_literal = re.compile(r"(?<!\d)(?:49|50)\s*项\s*(?:正式\s*)?Skills")
+    active_paths = [
+        ROOT / "services/knowledge-portal/app/main.py",
+        ROOT / "services/knowledge-portal/app/assistant_runtime.py",
+        ROOT / "services/knowledge-portal/scripts/release_gate.sh",
+        ROOT / "tests/codex-client-skill-matrix.json",
+        *sorted((ROOT / "services/knowledge-portal/templates").glob("*.html")),
+    ]
+    findings = []
+    for path in active_paths:
+        text = path.read_text(encoding="utf-8")
+        if count_literal.search(text):
+            findings.append(str(path.relative_to(ROOT)))
+
+    assert findings == []

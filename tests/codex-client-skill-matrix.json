@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "50项Skills在Codex桌面客户端中的显式加载、隐式路由、负向边界和功能交付全量矩阵。第一轮implicit不得出现目标Skill目录名。",
+  "description": "suite-manifest声明的全部Skills在Codex桌面客户端中的显式加载、隐式路由、负向边界和功能交付全量矩阵。第一轮implicit不得出现目标Skill目录名。",
   "skills": [
     {
       "index": 1,

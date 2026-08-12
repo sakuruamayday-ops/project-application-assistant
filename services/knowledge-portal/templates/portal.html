@@ -147,17 +147,17 @@ GONGCHUANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-valu
           <div class="agent-bootstrap-copy">
             <span class="file-tab">ONE-STEP SETUP</span>
             <h3>一键安装 Skills 并连接知识库</h3>
-            <p>macOS 与 Windows 分别使用独立启动适配指令；两端共用 50 项 Skills、业务规则和远程 MCP。</p>
+            <p>macOS 与 Windows 分别使用独立启动适配指令；两端共用 {{ skill_center.summary.total }} 项 Skills、业务规则和远程 MCP。</p>
             <div class="button-row compact agent-install-actions">
               <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap data-agent-platform="macos"><span>一键安装 macOS 版</span><small>复制 macOS 启动适配指令</small></button>
               <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap data-agent-platform="windows"><span>一键安装 Windows 版</span><small>复制 Windows 启动适配指令</small></button>
             </div>
-            <p class="agent-copy-status" data-agent-copy-status aria-live="polite">请只选择当前电脑对应的版本；安装结果以 50 项 Skills、tools/list 和 knowledge_service_status 为准。</p>
+            <p class="agent-copy-status" data-agent-copy-status aria-live="polite">请只选择当前电脑对应的版本；安装结果以 {{ skill_center.summary.total }} 项 Skills、tools/list 和 knowledge_service_status 为准。</p>
             <div class="agent-connection-summary is-{{ agent_connection_status.state }}" data-agent-install-status aria-live="polite">
               <i></i><div><strong data-agent-connection-label>{{ agent_connection_status.label }}</strong><small data-agent-connection-detail>{{ agent_connection_status.detail }}</small></div>
             </div>
           </div>
-          <ol class="agent-setup-flow" aria-label="配置流程"><li><b>01</b><span><strong>安装</strong><small>50 项 Skills 与最小行为 Hook</small></span></li><li><b>02</b><span><strong>连接</strong><small>只替换 jiaotang-kb，保留其他 MCP</small></span></li><li><b>03</b><span><strong>验收</strong><small>一次重载并调用状态工具</small></span></li></ol>
+          <ol class="agent-setup-flow" aria-label="配置流程"><li><b>01</b><span><strong>安装</strong><small>{{ skill_center.summary.total }} 项 Skills 与最小行为 Hook</small></span></li><li><b>02</b><span><strong>连接</strong><small>只替换 jiaotang-kb，保留其他 MCP</small></span></li><li><b>03</b><span><strong>验收</strong><small>一次重载并调用状态工具</small></span></li></ol>
         </article>
         {% else %}
         <article class="panel agent-bootstrap-card"><div class="agent-bootstrap-copy"><span class="file-tab">INSTALL PAUSED</span><h3>WorkBuddy 新安装已暂停</h3><p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p><a class="button secondary" href="#skills">查看最新版</a></div></article>

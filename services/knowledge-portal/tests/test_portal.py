@@ -5859,7 +5859,8 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert first.headers["cache-control"] == "no-store"
         assert first.json()["phase"] == "install_ready"
         assert "V1.5.0" in prompt
-        assert "50 项 Skills" in prompt
+        expected_skill_count = len(module.skill_catalog_payload()["skills"])
+        assert f"{expected_skill_count} 项 Skills" in prompt
         assert "只替换当前用户配置中的 `mcpServers.jiaotang-kb`" in prompt
         assert "保留所有其他 MCP 条目" in prompt
         assert "文件名是不带点前缀的 `mcp.json`" in prompt

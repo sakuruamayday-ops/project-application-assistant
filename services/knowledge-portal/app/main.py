@@ -11798,6 +11798,7 @@ def skills_diagnostics_page(
         {
             "user": user,
             "diagnostics": agent_diagnostics_payload(request, int(user["id"])),
+            "skill_count": len(skill_catalog_payload()["skills"]),
         },
     )
     response.headers["Cache-Control"] = "private, no-store"
@@ -12960,7 +12961,11 @@ def assistant_answer(
 ):
     validate_csrf(user, csrf_token)
     admin_unlimited = bool(user["is_admin"])
-    guide = quick_guide_answer(question, str(request.base_url))
+    guide = quick_guide_answer(
+        question,
+        str(request.base_url),
+        len(skill_catalog_payload()["skills"]),
+    )
     if guide:
         answer, skill_name = guide
         daily_limit = None if admin_unlimited else assistant_limit_for_user(int(user["id"]))
