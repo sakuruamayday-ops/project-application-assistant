@@ -26,7 +26,7 @@ import urllib.error
 import urllib.request
 import zipfile
 import xml.etree.ElementTree as ET
-from base64 import urlsafe_b64encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from copy import deepcopy
 from contextlib import asynccontextmanager, closing, contextmanager
 from collections import Counter
@@ -147,9 +147,9 @@ FIRST_PUBLIC_SKILL_VERSION = os.environ.get(
     "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION",
     "1.5.0",
 ).strip()
-ADMIN_MANUAL_INSTALL_RESULT_SCHEMA = (
-    "gongchuang-admin-manual-install-result/v1"
-)
+RUNTIME_INSTALL_RESULT_SCHEMA = "gongchuang-runtime-install-result/v1"
+RUNTIME_INSTALL_ATTESTATION_SCHEMA = "gongchuang-install-attestation/v1"
+RUNTIME_INSTALL_ATTESTATION_HEADER = "X-Gongchuang-Install-Attestation"
 SECURE_COOKIES = os.environ.get("JIAOTANG_SECURE_COOKIES", "true").lower() == "true"
 TOKEN_DERIVATION_SECRET = os.environ.get("JIAOTANG_TOKEN_DERIVATION_SECRET", "").encode("utf-8")
 if not TOKEN_DERIVATION_SECRET:
@@ -1141,13 +1141,104 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
     return raw_token
 
 
-def remote_mcp_configuration(mcp_url: str, raw_token: str) -> dict[str, object]:
+def runtime_install_attestation(
+    *,
+    user_id: int,
+    enrollment_id: int,
+    version: str,
+    package_sha256: str,
+    platform: str,
+) -> str:
+    payload = {
+        "schema": RUNTIME_INSTALL_ATTESTATION_SCHEMA,
+        "user_id": int(user_id),
+        "enrollment_id": int(enrollment_id),
+        "version": str(version),
+        "package_sha256": str(package_sha256).lower(),
+        "platform": str(platform),
+    }
+    encoded = urlsafe_b64encode(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode(
+            "utf-8"
+        )
+    ).decode("ascii").rstrip("=")
+    signature = urlsafe_b64encode(
+        hmac.new(
+            TOKEN_DERIVATION_SECRET,
+            f"gongchuang-install-attestation-v1:{encoded}".encode("ascii"),
+            hashlib.sha256,
+        ).digest()
+    ).decode("ascii").rstrip("=")
+    return f"gcia1.{encoded}.{signature}"
+
+
+def verified_runtime_install_attestation(
+    value: str,
+    *,
+    user_id: int,
+) -> dict[str, object] | None:
+    parts = str(value or "").split(".")
+    if len(parts) != 3 or parts[0] != "gcia1":
+        return None
+    encoded, supplied_signature = parts[1], parts[2]
+    expected_signature = urlsafe_b64encode(
+        hmac.new(
+            TOKEN_DERIVATION_SECRET,
+            f"gongchuang-install-attestation-v1:{encoded}".encode("ascii"),
+            hashlib.sha256,
+        ).digest()
+    ).decode("ascii").rstrip("=")
+    if not hmac.compare_digest(supplied_signature, expected_signature):
+        return None
+    try:
+        decoded = urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+        payload = json.loads(decoded.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("schema") != RUNTIME_INSTALL_ATTESTATION_SCHEMA:
+        return None
+    try:
+        payload_user_id = int(payload.get("user_id"))
+        enrollment_id = int(payload.get("enrollment_id"))
+    except (TypeError, ValueError):
+        return None
+    version = str(payload.get("version") or "")
+    package_sha256 = str(payload.get("package_sha256") or "").lower()
+    platform = str(payload.get("platform") or "")
+    if (
+        payload_user_id != int(user_id)
+        or enrollment_id <= 0
+        or not valid_release_version(version)
+        or not re.fullmatch(r"[a-f0-9]{64}", package_sha256)
+        or platform not in {"macos", "windows"}
+    ):
+        return None
+    return {
+        "user_id": payload_user_id,
+        "enrollment_id": enrollment_id,
+        "version": version,
+        "package_sha256": package_sha256,
+        "platform": platform,
+    }
+
+
+def remote_mcp_configuration(
+    mcp_url: str,
+    raw_token: str,
+    *,
+    install_attestation: str = "",
+) -> dict[str, object]:
+    headers = {"Authorization": f"Bearer {raw_token}"}
+    if install_attestation:
+        headers[RUNTIME_INSTALL_ATTESTATION_HEADER] = install_attestation
     return {
         "mcpServers": {
             "jiaotang-kb": {
                 "type": "http",
                 "url": mcp_url,
-                "headers": {"Authorization": f"Bearer {raw_token}"},
+                "headers": headers,
                 "timeout": 60000,
                 "disabled": False,
             }
@@ -8490,12 +8581,118 @@ def remote_mcp_platform_label(value: object) -> str:
     }.get(normalized, "")
 
 
+def record_runtime_install_observation(
+    connection: sqlite3.Connection,
+    *,
+    user_id: int,
+    device_token_id: int,
+    attestation: str,
+    observed_at: str,
+    client_ip: str,
+) -> bool:
+    observation = verified_runtime_install_attestation(
+        attestation,
+        user_id=user_id,
+    )
+    if observation is None:
+        return False
+    enrollment = connection.execute(
+        """
+        SELECT id,user_id,operation,install_platform,workbuddy_version,
+               workbuddy_sha256,created_at,result_schema,result_ok,result_status
+        FROM agent_enrollment_codes
+        WHERE id=? AND user_id=? AND confirmed_at IS NOT NULL
+          AND operation IN ('install','upgrade')
+        """,
+        (int(observation["enrollment_id"]), user_id),
+    ).fetchone()
+    if enrollment is None:
+        return False
+    token = connection.execute(
+        """
+        SELECT id FROM device_tokens
+        WHERE id=? AND user_id=? AND revoked_at IS NULL
+          AND activation_state='active'
+        """,
+        (device_token_id, user_id),
+    ).fetchone()
+    if token is None:
+        return False
+    if (
+        str(enrollment["workbuddy_version"] or "") != observation["version"]
+        or str(enrollment["workbuddy_sha256"] or "").lower()
+        != observation["package_sha256"]
+        or str(enrollment["install_platform"] or "") != observation["platform"]
+    ):
+        return False
+    newer_confirmed = connection.execute(
+        """
+        SELECT 1 FROM agent_enrollment_codes newer
+        WHERE newer.user_id=?
+          AND (newer.created_at>? OR (newer.created_at=? AND newer.id>?))
+          AND newer.result_ok=1
+          AND newer.result_status IN ('configured','upgraded')
+          AND newer.result_schema IN (
+              'gongchuang-agent-result/v2',
+              'gongchuang-runtime-install-result/v1'
+          )
+        LIMIT 1
+        """,
+        (
+            user_id,
+            str(enrollment["created_at"]),
+            str(enrollment["created_at"]),
+            int(enrollment["id"]),
+        ),
+    ).fetchone()
+    if newer_confirmed is not None:
+        return False
+    if (
+        enrollment["result_ok"] == 1
+        and enrollment["result_status"] in {"configured", "upgraded"}
+        and enrollment["result_schema"] in {
+            "gongchuang-agent-result/v2",
+            RUNTIME_INSTALL_RESULT_SCHEMA,
+        }
+    ):
+        return True
+    platform_label = remote_mcp_platform_label(observation["platform"])
+    status_value = (
+        "upgraded" if str(enrollment["operation"] or "install") == "upgrade" else "configured"
+    )
+    updated = connection.execute(
+        """
+        UPDATE agent_enrollment_codes
+        SET result_schema=?,result_ok=1,result_status=?,
+            result_error_stage=NULL,result_user_message=?,result_next_action=NULL,
+            result_host='WorkBuddy MCP 自动回传',result_platform=?,
+            result_activation_required=0,result_reported_at=?,result_ip=?
+        WHERE id=? AND user_id=?
+        """,
+        (
+            RUNTIME_INSTALL_RESULT_SCHEMA,
+            status_value,
+            (
+                f"客户端连接已自动携带并验证正式安装版本 V{observation['version']}。"
+            ),
+            platform_label or str(observation["platform"]),
+            observed_at,
+            (client_ip or "unknown")[:100],
+            int(enrollment["id"]),
+            user_id,
+        ),
+    )
+    return updated.rowcount == 1
+
+
 def mark_mcp_connected(
     user_id: int,
     key_id: str,
     device_token_id: int | None = None,
     *,
     activate_installation_credential: bool = False,
+    installation_attestation: str = "",
+    client_ip: str = "",
 ) -> None:
     now = isoformat(utc_now())
     with closing(database()) as connection:
@@ -8581,6 +8778,19 @@ def mark_mcp_connected(
                         """,
                         (now, installation["enrollment_id"], user_id),
                     )
+        if (
+            device_token_id
+            and activate_installation_credential
+            and installation_attestation
+        ):
+            record_runtime_install_observation(
+                connection,
+                user_id=user_id,
+                device_token_id=device_token_id,
+                attestation=installation_attestation,
+                observed_at=now,
+                client_ip=client_ip,
+            )
         connection.commit()
 
 
@@ -8842,6 +9052,10 @@ class MCPBearerMiddleware:
         request_target = str(scope.get("path", "/mcp"))
         if query_string:
             request_target += f"?{query_string}"
+        request_client_ip = client_ip_from_peer(
+            str((scope.get("client") or ("unknown", 0))[0]),
+            headers.get("x-real-ip"),
+        )
         try:
             user = authenticate_api_token(
                 headers.get("authorization"),
@@ -8855,10 +9069,7 @@ class MCPBearerMiddleware:
                 device_signature_value=headers.get(DEVICE_SIGNATURE_HEADER.lower()),
                 request_target=request_target,
                 body=request_body,
-                client_ip=client_ip_from_peer(
-                    str((scope.get("client") or ("unknown", 0))[0]),
-                    headers.get("x-real-ip"),
-                ),
+                client_ip=request_client_ip,
                 user_agent=headers.get("user-agent", ""),
                 record_usage=False,
             )
@@ -8913,6 +9124,10 @@ class MCPBearerMiddleware:
                     headers.get(DEVICE_KEY_ID_HEADER.lower(), ""),
                     int(user["device_token_id"]),
                     activate_installation_credential=activates_pending_credential,
+                    installation_attestation=headers.get(
+                        RUNTIME_INSTALL_ATTESTATION_HEADER.lower(), ""
+                    ),
+                    client_ip=request_client_ip,
                 )
                 mcp_connection_recorded = True
             await send(message)
@@ -8930,6 +9145,10 @@ class MCPBearerMiddleware:
                     headers.get(DEVICE_KEY_ID_HEADER.lower(), ""),
                     int(user["device_token_id"]),
                     activate_installation_credential=activates_pending_credential,
+                    installation_attestation=headers.get(
+                        RUNTIME_INSTALL_ATTESTATION_HEADER.lower(), ""
+                    ),
+                    client_ip=request_client_ip,
                 )
             record_api_usage(
                 user,
@@ -9311,7 +9530,7 @@ def latest_agent_install_result_payload(
               result_ok=0
               OR result_schema IN (
                   'gongchuang-agent-result/v2',
-                  'gongchuang-admin-manual-install-result/v1'
+                  'gongchuang-runtime-install-result/v1'
               )
               OR EXISTS (
                   SELECT 1
@@ -9654,8 +9873,8 @@ def portal_payload(
                            enrollment.result_reported_at,
                            CASE
                              WHEN enrollment.result_schema=
-                               'gongchuang-admin-manual-install-result/v1'
-                               THEN 'admin_confirmed'
+                               'gongchuang-runtime-install-result/v1'
+                               THEN 'runtime_attested'
                              ELSE 'reported'
                            END,
                            3
@@ -9665,7 +9884,7 @@ def portal_payload(
                       AND (
                           enrollment.result_schema IN (
                               'gongchuang-agent-result/v2',
-                              'gongchuang-admin-manual-install-result/v1'
+                              'gongchuang-runtime-install-result/v1'
                           )
                           OR EXISTS (
                               SELECT 1
@@ -9763,7 +9982,7 @@ def portal_payload(
                           result_codes.result_ok=0
                           OR result_codes.result_schema IN (
                               'gongchuang-agent-result/v2',
-                              'gongchuang-admin-manual-install-result/v1'
+                              'gongchuang-runtime-install-result/v1'
                           )
                           OR EXISTS (
                               SELECT 1
@@ -9816,9 +10035,9 @@ def portal_payload(
                 )
                 evidence = str(member.get("install_version_evidence") or "")
                 member["install_version_evidence_label"] = {
-                    "reported": "安装回执版本",
-                    "admin_confirmed": "管理员确认版本",
-                    "connected_target": "连接关联版本",
+                    "reported": "客户端安装回执",
+                    "runtime_attested": "客户端自动识别版本",
+                    "connected_target": "连接自动识别版本",
                 }.get(evidence, "版本未确认")
                 member["install_update_state"] = "unknown"
                 member["install_update_label"] = "版本未确认"
@@ -11801,81 +12020,6 @@ def restore_registration_authorization(
     )
 
 
-def manual_install_target_payload(
-    connection: sqlite3.Connection,
-    member_id: int,
-    enrollment_id: int | None = None,
-) -> dict[str, object] | None:
-    enrollment_filter = "AND enrollment.id=?" if enrollment_id is not None else ""
-    parameters: tuple[object, ...] = (
-        (member_id, enrollment_id)
-        if enrollment_id is not None
-        else (member_id,)
-    )
-    row = connection.execute(
-        f"""
-        SELECT enrollment.id,enrollment.user_id,enrollment.operation,
-               enrollment.install_platform,enrollment.workbuddy_version,
-               enrollment.workbuddy_sha256,enrollment.created_at,
-               enrollment.confirmed_at,enrollment.result_schema,
-               enrollment.result_ok,enrollment.result_status,
-               CASE
-                 WHEN enrollment.result_ok=1
-                  AND enrollment.result_status IN ('configured','upgraded')
-                  AND (
-                      enrollment.result_schema IN (
-                          'gongchuang-agent-result/v2',
-                          'gongchuang-admin-manual-install-result/v1'
-                      )
-                      OR EXISTS (
-                          SELECT 1
-                          FROM device_keys result_key
-                          JOIN device_bindings result_binding
-                            ON result_binding.id=result_key.binding_id
-                          WHERE result_key.key_id=enrollment.registered_key_id
-                            AND result_key.revoked_at IS NULL
-                            AND result_binding.revoked_at IS NULL
-                      )
-                  )
-                   THEN 1 ELSE 0
-               END AS version_confirmed,
-               (
-                   SELECT MAX(usage.called_at)
-                   FROM api_usage usage
-                   JOIN device_tokens token
-                     ON token.id=usage.device_token_id
-                   WHERE usage.user_id=enrollment.user_id
-                     AND token.revoked_at IS NULL
-                     AND token.activation_state='active'
-                     AND usage.called_at>=enrollment.created_at
-                     AND usage.activity_type IN (
-                         'mcp_connection','mcp_tools_list','mcp_search',
-                         'mcp_document','mcp_tool'
-                     )
-               ) AS last_mcp_after_target
-        FROM agent_enrollment_codes enrollment
-        WHERE enrollment.user_id=?
-          AND enrollment.operation='install'
-          AND enrollment.confirmed_at IS NOT NULL
-          AND COALESCE(enrollment.workbuddy_version,'')<>''
-          {enrollment_filter}
-        ORDER BY enrollment.created_at DESC,enrollment.id DESC
-        LIMIT 1
-        """,
-        parameters,
-    ).fetchone()
-    if row is None:
-        return None
-    return {
-        **dict(row),
-        "version_confirmed": bool(row["version_confirmed"]),
-        "created_at_display": format_chinese_datetime(row["created_at"]),
-        "last_mcp_after_target_display": format_chinese_datetime(
-            row["last_mcp_after_target"]
-        ),
-    }
-
-
 @app.get("/admin/users/{member_id}", response_class=HTMLResponse)
 def admin_user_detail(
     request: Request,
@@ -11883,7 +12027,6 @@ def admin_user_detail(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
     password_reset: int = 0,
     credentials_revoked: int = 0,
-    manual_install_confirmed: int = 0,
 ):
     require_admin(user)
     with closing(database()) as connection:
@@ -11912,7 +12055,7 @@ def admin_user_detail(
                   result_ok=0
                   OR result_schema IN (
                       'gongchuang-agent-result/v2',
-                      'gongchuang-admin-manual-install-result/v1'
+                      'gongchuang-runtime-install-result/v1'
                   )
                   OR EXISTS (
                       SELECT 1
@@ -11987,10 +12130,6 @@ def admin_user_detail(
             """,
             (member_id,),
         ).fetchall()
-        manual_install_target = manual_install_target_payload(
-            connection,
-            member_id,
-        )
     if member is None:
         raise HTTPException(status_code=404, detail="成员不存在")
     latest_install_result_payload = (
@@ -12089,95 +12228,10 @@ def admin_user_detail(
             },
             "latest_install_result": latest_install_result_payload,
             "latest_mcp_activity": latest_mcp_activity_payload,
-            "manual_install_candidate": (
-                manual_install_target
-                if manual_install_target
-                and not manual_install_target["version_confirmed"]
-                and manual_install_target["last_mcp_after_target"]
-                else None
-            ),
-            "manual_install_confirmed": manual_install_confirmed == 1,
             "credentials": credentials,
             "credentials_revoked": max(0, credentials_revoked),
             "password_reset": password_reset == 1,
         },
-    )
-
-
-@app.post(
-    "/admin/users/{member_id}/installations/{enrollment_id}/manual-confirm"
-)
-def admin_confirm_manual_install(
-    request: Request,
-    member_id: int,
-    enrollment_id: int,
-    csrf_token: Annotated[str, Form()],
-    user: Annotated[sqlite3.Row, Depends(require_web_user)],
-):
-    validate_csrf(user, csrf_token)
-    require_admin(user)
-    now = isoformat(utc_now())
-    with closing(database()) as connection:
-        connection.execute("BEGIN IMMEDIATE")
-        member = connection.execute(
-            "SELECT id FROM users WHERE id=? AND deleted_at IS NULL",
-            (member_id,),
-        ).fetchone()
-        if member is None:
-            connection.rollback()
-            raise HTTPException(status_code=404, detail="成员不存在")
-        target = manual_install_target_payload(connection, member_id)
-        if target is None or int(target["id"]) != enrollment_id:
-            connection.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail="安装计划已更新，请刷新成员详情后确认最新目标版本",
-            )
-        if target["version_confirmed"]:
-            connection.commit()
-            return RedirectResponse(
-                f"/admin/users/{member_id}?manual_install_confirmed=1",
-                status_code=303,
-            )
-        if not target["last_mcp_after_target"]:
-            connection.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail="安装计划之后尚无有效 MCP 活动，不能确认手动安装版本",
-            )
-        version = str(target["workbuddy_version"] or "")
-        if not valid_release_version(version):
-            connection.rollback()
-            raise HTTPException(status_code=409, detail="安装计划版本号无效")
-        platform_label = remote_mcp_platform_label(target["install_platform"])
-        operator = str(user["username"] or "admin")[:100]
-        connection.execute(
-            """
-            UPDATE agent_enrollment_codes
-            SET result_schema=?,result_ok=1,result_status='configured',
-                result_error_stage=NULL,result_user_message=?,
-                result_next_action=NULL,result_host='管理员手动确认',
-                result_platform=?,result_activation_required=0,
-                result_reported_at=?,result_ip=?
-            WHERE id=? AND user_id=?
-            """,
-            (
-                ADMIN_MANUAL_INSTALL_RESULT_SCHEMA,
-                (
-                    f"管理员 {operator} 已核对手动安装 V{version}；"
-                    "服务器同时观测到该安装计划之后的 MCP 活动。"
-                ),
-                platform_label or str(target["install_platform"] or ""),
-                now,
-                (client_ip_from(request) or "unknown")[:100],
-                enrollment_id,
-                member_id,
-            ),
-        )
-        connection.commit()
-    return RedirectResponse(
-        f"/admin/users/{member_id}?manual_install_confirmed=1",
-        status_code=303,
     )
 
 
@@ -14134,6 +14188,7 @@ def build_agent_bootstrap_prompt(
     release_sha256: str,
     mcp_url: str,
     raw_token: str,
+    install_attestation: str,
     platform: str,
     result_url: str,
 ) -> str:
@@ -14170,7 +14225,11 @@ def build_agent_bootstrap_prompt(
     if profile is None:
         raise ValueError("不支持的 WorkBuddy 安装平台")
     configuration = json.dumps(
-        remote_mcp_configuration(mcp_url, raw_token),
+        remote_mcp_configuration(
+            mcp_url,
+            raw_token,
+            install_attestation=install_attestation,
+        ),
         ensure_ascii=False,
         indent=2,
     )
@@ -14225,7 +14284,9 @@ def build_agent_bootstrap_prompt(
         "若显示未信任，提示用户在界面手动点击信任，不得尝试绕过宿主安全确认。信任后执行 tools/list，确认 knowledge_search、"
         "knowledge_document、knowledge_service_status 已出现，再实际调用 "
         "knowledge_service_status；只有返回 connected: true、49 项 Skills 可识别且其他 MCP "
-        "未被覆盖时，才报告安装完成。验收通过后，将除一个回滚快照外的旧版、重复副本和旧名称"
+        "未被覆盖时，才报告安装完成。连接成功时，配置内的服务端签名安装证明会随 MCP 状态请求"
+        "自动回传，门户将自动更新实际连接对应的版本，不需要管理员人工确认。验收通过后，将除一个"
+        "回滚快照外的旧版、重复副本和旧名称"
         "副本移入系统回收站；不得永久删除，也不得删除整个 `.workbuddy`、`.codebuddy`、plugins、"
         "marketplaces 或用户 MCP 配置。回滚快照保持在活动搜索路径之外，不会被 Hook 或插件发现逻辑"
         "选中。不要执行安装包签名审查、用户侧签名校验、设备登记、"
@@ -14589,6 +14650,7 @@ def create_agent_bootstrap_code(
                 str(artifact.get("sha256") or ""),
             ),
         )
+        enrollment_id = int(enrollment_cursor.lastrowid)
         connection.execute(
             """
             INSERT INTO device_tokens(
@@ -14603,11 +14665,18 @@ def create_agent_bootstrap_code(
                 token_hash(raw_token),
                 seed,
                 now,
-                int(enrollment_cursor.lastrowid),
+                enrollment_id,
                 int(active_token["id"]) if active_token else None,
             ),
         )
         connection.commit()
+    install_attestation = runtime_install_attestation(
+        user_id=int(user["id"]),
+        enrollment_id=enrollment_id,
+        version=str(artifact.get("version") or ""),
+        package_sha256=str(artifact.get("sha256") or ""),
+        platform=platform_name,
+    )
     public_endpoint = str(request.base_url).rstrip("/")
     plugin_download_url = (
         f"{public_endpoint}/v1/agent-install/{quote(raw_code)}/workbuddy/download"
@@ -14622,6 +14691,7 @@ def create_agent_bootstrap_code(
                 release_sha256=str(artifact.get("sha256") or ""),
                 mcp_url=f"{public_endpoint}/mcp/",
                 raw_token=raw_token,
+                install_attestation=install_attestation,
                 platform=platform_name,
                 result_url=result_url,
             ),

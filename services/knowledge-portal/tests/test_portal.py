@@ -4617,7 +4617,7 @@ def test_admin_members_uses_remote_mcp_activity_when_install_result_is_missing(t
         detail = client.get(f"/admin/users/{member_id}")
         assert detail.status_code == 200
         assert "最后一次安装或连接结果" in detail.text
-        assert "已确认，无需重新安装" in detail.text
+        assert "MCP 已连接，等待下次安装或更新自动回传版本" in detail.text
         assert "尚未收到结构化安装结果" not in detail.text
 
 
@@ -4787,11 +4787,11 @@ def test_admin_members_displays_installed_version_and_update_state(
     assert members.status_code == 200
     current_row = member_row(members.text, member_ids["current-member"])
     assert "插件 V1.6.3" in current_row
-    assert "连接关联版本" in current_row
+    assert "连接自动识别版本" in current_row
     assert "最新版本" in current_row
     old_row = member_row(members.text, member_ids["old-member"])
     assert "插件 V1.6.2" in old_row
-    assert "安装回执版本" in old_row
+    assert "客户端安装回执" in old_row
     assert "待更新" in old_row
     pending_row = member_row(members.text, member_ids["pending-member"])
     assert "目标插件 V1.6.3" in pending_row
@@ -4801,170 +4801,12 @@ def test_admin_members_displays_installed_version_and_update_state(
     assert f'href="/admin/users/{member_ids["pending-member"]}"' not in outdated.text
 
 
-def test_admin_confirms_manual_install_after_post_target_mcp_activity(
-    tmp_path,
-    monkeypatch,
-):
+def test_admin_ignores_legacy_manual_install_confirmation(tmp_path, monkeypatch):
     module = load_app(tmp_path)
     release_guidance = module.public_release_guidance()
     release_guidance["workbuddy_version"] = "1.6.3.1"
-    monkeypatch.setattr(
-        module,
-        "public_release_guidance",
-        lambda: release_guidance,
-    )
-    now_value = module.utc_now()
-    target_time = module.isoformat(now_value - timedelta(minutes=5))
-    now = module.isoformat(now_value)
-    with closing(module.database()) as connection:
-        owner_id = int(
-            connection.execute(
-                """
-                INSERT INTO users(
-                    username,real_name,company_name,password_hash,is_admin,created_at
-                ) VALUES (?,?,?,?,1,?)
-                """,
-                (
-                    "owner",
-                    "管理员",
-                    "总部",
-                    module.password_hasher.hash("owner-password-123"),
-                    target_time,
-                ),
-            ).lastrowid
-        )
-        assert owner_id > 0
-        member_id = int(
-            connection.execute(
-                """
-                INSERT INTO users(
-                    username,real_name,company_name,password_hash,created_at
-                ) VALUES (?,?,?,?,?)
-                """,
-                (
-                    "manual-member",
-                    "手动安装成员",
-                    "共创集团",
-                    module.password_hasher.hash("member-password-123"),
-                    target_time,
-                ),
-            ).lastrowid
-        )
-        enrollment_id = int(
-            connection.execute(
-                """
-                INSERT INTO agent_enrollment_codes(
-                    user_id,code_hash,created_at,expires_at,confirmed_at,
-                    install_platform,workbuddy_version,workbuddy_sha256
-                ) VALUES (?,?,?,?,?,?,?,?)
-                """,
-                (
-                    member_id,
-                    "manual-install-enrollment",
-                    target_time,
-                    now,
-                    target_time,
-                    "macos",
-                    "1.6.3.1",
-                    "a" * 64,
-                ),
-            ).lastrowid
-        )
-        token_id = int(
-            connection.execute(
-                """
-                INSERT INTO device_tokens(
-                    user_id,label,token_prefix,token_hash,token_seed,created_at,
-                    credential_kind
-                ) VALUES (?,?,?,?,?,?,'personal')
-                """,
-                (
-                    member_id,
-                    "手动安装成员",
-                    "jtk_manual",
-                    "manual-token-hash",
-                    "manual-token-seed",
-                    target_time,
-                ),
-            ).lastrowid
-        )
-        connection.execute(
-            """
-            INSERT INTO api_usage(
-                user_id,device_token_id,endpoint,method,activity_type,
-                activity_name,counts_toward_usage,called_at
-            ) VALUES (?,?,?,?,?,?,0,?)
-            """,
-            (
-                member_id,
-                token_id,
-                "/mcp/",
-                "POST",
-                "mcp_connection",
-                "MCP连接检测",
-                now,
-            ),
-        )
-        connection.commit()
-
-    with TestClient(module.app) as client:
-        login = client.post(
-            "/login",
-            data={"username": "owner", "password": "owner-password-123"},
-            follow_redirects=False,
-        )
-        client.cookies.update(login.cookies)
-        owner = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
-        detail = client.get(f"/admin/users/{member_id}")
-        assert detail.status_code == 200
-        assert "检测到手动安装待确认" in detail.text
-        assert "MCP 已连接，插件版本待管理员核对" in detail.text
-        assert f"/installations/{enrollment_id}/manual-confirm" in detail.text
-
-        confirmed = client.post(
-            f"/admin/users/{member_id}/installations/{enrollment_id}/manual-confirm",
-            data={"csrf_token": owner["csrf_token"]},
-            follow_redirects=False,
-        )
-        assert confirmed.status_code == 303
-        assert "manual_install_confirmed=1" in confirmed.headers["location"]
-
-        members = client.get(
-            "/admin/members",
-            params={"member_query": "manual-member"},
-        )
-        assert "插件 V1.6.3.1" in members.text
-        assert "管理员确认版本" in members.text
-        assert "最新版本" in members.text
-        assert "尚未确认安装" not in members.text
-        confirmed_detail = client.get(confirmed.headers["location"])
-        assert "手动安装版本已确认并写入审计回执" in confirmed_detail.text
-        assert "管理员 owner 已核对手动安装 V1.6.3.1" in confirmed_detail.text
-
-    with closing(module.database()) as connection:
-        result = connection.execute(
-            """
-            SELECT result_schema,result_ok,result_status,result_error_stage,
-                   result_host,result_platform,result_reported_at
-            FROM agent_enrollment_codes WHERE id=?
-            """,
-            (enrollment_id,),
-        ).fetchone()
-    assert result["result_schema"] == module.ADMIN_MANUAL_INSTALL_RESULT_SCHEMA
-    assert result["result_ok"] == 1
-    assert result["result_status"] == "configured"
-    assert result["result_error_stage"] is None
-    assert result["result_host"] == "管理员手动确认"
-    assert result["result_platform"] == "macOS"
-    assert result["result_reported_at"]
-
-
-def test_admin_manual_install_confirmation_requires_post_target_mcp_activity(tmp_path):
-    module = load_app(tmp_path)
-    now_value = module.utc_now()
-    before_target = module.isoformat(now_value - timedelta(minutes=10))
-    target_time = module.isoformat(now_value - timedelta(minutes=5))
-    now = module.isoformat(now_value)
+    monkeypatch.setattr(module, "public_release_guidance", lambda: release_guidance)
+    now = module.isoformat(module.utc_now())
     with closing(module.database()) as connection:
         connection.execute(
             """
@@ -4977,7 +4819,7 @@ def test_admin_manual_install_confirmation_requires_post_target_mcp_activity(tmp
                 "管理员",
                 "总部",
                 module.password_hasher.hash("owner-password-123"),
-                before_target,
+                now,
             ),
         )
         member_id = int(
@@ -4988,11 +4830,11 @@ def test_admin_manual_install_confirmation_requires_post_target_mcp_activity(tmp
                 ) VALUES (?,?,?,?,?)
                 """,
                 (
-                    "inactive-manual-member",
-                    "未连接成员",
+                    "legacy-manual-member",
+                    "历史人工记录成员",
                     "共创集团",
                     module.password_hasher.hash("member-password-123"),
-                    before_target,
+                    now,
                 ),
             ).lastrowid
         )
@@ -5001,55 +4843,22 @@ def test_admin_manual_install_confirmation_requires_post_target_mcp_activity(tmp
                 """
                 INSERT INTO agent_enrollment_codes(
                     user_id,code_hash,created_at,expires_at,confirmed_at,
-                    install_platform,workbuddy_version,workbuddy_sha256
-                ) VALUES (?,?,?,?,?,?,?,?)
+                    install_platform,workbuddy_version,workbuddy_sha256,
+                    result_schema,result_ok,result_status,result_reported_at
+                ) VALUES (?,?,?,?,?,?,?,?,'gongchuang-admin-manual-install-result/v1',1,'configured',?)
                 """,
                 (
                     member_id,
-                    "inactive-manual-enrollment",
-                    target_time,
+                    "legacy-manual-enrollment",
                     now,
-                    target_time,
-                    "windows",
+                    now,
+                    now,
+                    "macos",
                     "1.6.3.1",
-                    "b" * 64,
+                    "a" * 64,
+                    now,
                 ),
             ).lastrowid
-        )
-        token_id = int(
-            connection.execute(
-                """
-                INSERT INTO device_tokens(
-                    user_id,label,token_prefix,token_hash,token_seed,created_at,
-                    credential_kind
-                ) VALUES (?,?,?,?,?,?,'personal')
-                """,
-                (
-                    member_id,
-                    "未连接成员",
-                    "jtk_inactive",
-                    "inactive-token-hash",
-                    "inactive-token-seed",
-                    before_target,
-                ),
-            ).lastrowid
-        )
-        connection.execute(
-            """
-            INSERT INTO api_usage(
-                user_id,device_token_id,endpoint,method,activity_type,
-                activity_name,counts_toward_usage,called_at
-            ) VALUES (?,?,?,?,?,?,0,?)
-            """,
-            (
-                member_id,
-                token_id,
-                "/mcp/",
-                "POST",
-                "mcp_connection",
-                "MCP连接检测",
-                before_target,
-            ),
         )
         connection.commit()
 
@@ -5061,21 +4870,20 @@ def test_admin_manual_install_confirmation_requires_post_target_mcp_activity(tmp
         )
         client.cookies.update(login.cookies)
         owner = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        members = client.get(
+            "/admin/members",
+            params={"member_query": "legacy-manual-member"},
+        )
         detail = client.get(f"/admin/users/{member_id}")
-        assert "检测到手动安装待确认" not in detail.text
-        rejected = client.post(
+        removed_route = client.post(
             f"/admin/users/{member_id}/installations/{enrollment_id}/manual-confirm",
             data={"csrf_token": owner["csrf_token"]},
         )
-        assert rejected.status_code == 409
-        assert "安装计划之后尚无有效 MCP 活动" in rejected.text
 
-    with closing(module.database()) as connection:
-        result = connection.execute(
-            "SELECT result_reported_at FROM agent_enrollment_codes WHERE id=?",
-            (enrollment_id,),
-        ).fetchone()
-    assert result["result_reported_at"] is None
+    assert "管理员确认版本" not in members.text
+    assert "目标插件 V1.6.3.1" in members.text
+    assert "确认手动安装" not in detail.text
+    assert removed_route.status_code == 404
 
 
 def test_admin_members_ignores_revoked_install_version_evidence(
@@ -5400,7 +5208,7 @@ def test_remote_mcp_connection_closes_installation_without_device_reporting(tmp_
     assert "未上报" not in access.text
     assert detail.status_code == 200
     assert "服务端连接回执" in detail.text
-    assert "已确认，无需重新安装" in detail.text
+    assert "MCP 已连接，等待下次安装或更新自动回传版本" in detail.text
     assert "访问凭据与接入方式" in detail.text
     assert "macOS 远程 MCP" in detail.text
     assert "待上报" not in detail.text
@@ -5734,6 +5542,14 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             r"/v1/agent-install/(jbe_[A-Za-z0-9_-]+)/workbuddy/download",
             prompt,
         ).group(1)
+        first_attestation = re.search(
+            r'"X-Gongchuang-Install-Attestation": "(gcia1\.[A-Za-z0-9_.-]+)"',
+            prompt,
+        ).group(1)
+        assert module.verified_runtime_install_attestation(
+            first_attestation,
+            user_id=int(user["id"]),
+        )
         first_token = re.search(r"jtk_[A-Za-z0-9_-]+", prompt).group(0)
         assert client.get(
             "/v1/me",
@@ -5865,6 +5681,10 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         second_token = re.search(
             r"jtk_[A-Za-z0-9_-]+", windows_prompt
         ).group(0)
+        second_attestation = re.search(
+            r'"X-Gongchuang-Install-Attestation": "(gcia1\.[A-Za-z0-9_.-]+)"',
+            windows_prompt,
+        ).group(1)
         assert first_token != second_token
         assert client.get(
             "/v1/me",
@@ -5890,6 +5710,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             "/mcp/",
             headers={
                 **api_headers(second_token),
+                module.RUNTIME_INSTALL_ATTESTATION_HEADER: second_attestation,
                 "Accept": "application/json, text/event-stream",
                 "Content-Type": "application/json",
             },
@@ -5913,6 +5734,18 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             "/v1/me",
             headers={"Authorization": f"Bearer {original_token}"},
         ).status_code == 401
+        with closing(module.database()) as connection:
+            automatic_receipt = connection.execute(
+                """
+                SELECT result_schema,result_ok,result_status,result_host
+                FROM agent_enrollment_codes WHERE code_hash=?
+                """,
+                (module.token_hash(second_enrollment_code),),
+            ).fetchone()
+        assert automatic_receipt["result_schema"] == module.RUNTIME_INSTALL_RESULT_SCHEMA
+        assert automatic_receipt["result_ok"] == 1
+        assert automatic_receipt["result_status"] == "configured"
+        assert automatic_receipt["result_host"] == "WorkBuddy MCP 自动回传"
         mismatched_report = client.post(
             f"/v1/agent-install-result/{second_enrollment_code}",
             json={
@@ -6005,6 +5838,138 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             assert stored_receipt["workbuddy_sha256"] == (
                 windows_protocol.json()["release"]["sha256"]
             )
+
+
+def test_runtime_install_attestation_updates_version_with_personal_token(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    release_guidance = module.public_release_guidance()
+    release_guidance["workbuddy_version"] = "1.6.3.1"
+    monkeypatch.setattr(module, "public_release_guidance", lambda: release_guidance)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        personal_token = re.search(
+            r"jtk_[A-Za-z0-9_-]+",
+            client.get("/mcp-guide").text,
+        ).group(0)
+        now = module.isoformat(module.utc_now())
+        package_sha256 = "c" * 64
+        with closing(module.database()) as connection:
+            enrollment_id = int(
+                connection.execute(
+                    """
+                    INSERT INTO agent_enrollment_codes(
+                        user_id,code_hash,created_at,expires_at,confirmed_at,
+                        install_platform,workbuddy_version,workbuddy_sha256
+                    ) VALUES (?,?,?,?,?,?,?,?)
+                    """,
+                    (
+                        int(user["id"]),
+                        "personal-runtime-observation",
+                        now,
+                        now,
+                        now,
+                        "macos",
+                        "1.6.3.1",
+                        package_sha256,
+                    ),
+                ).lastrowid
+            )
+            connection.commit()
+        attestation = module.runtime_install_attestation(
+            user_id=int(user["id"]),
+            enrollment_id=enrollment_id,
+            version="1.6.3.1",
+            package_sha256=package_sha256,
+            platform="macos",
+        )
+        status_payload = {
+            "jsonrpc": "2.0",
+            "id": 91,
+            "method": "tools/call",
+            "params": {
+                "name": "knowledge_service_status",
+                "arguments": {},
+            },
+        }
+        tampered = f"{attestation[:-1]}{'A' if attestation[-1] != 'A' else 'B'}"
+        rejected_observation = client.post(
+            "/mcp/",
+            headers={
+                **api_headers(personal_token),
+                module.RUNTIME_INSTALL_ATTESTATION_HEADER: tampered,
+                "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+            },
+            json=status_payload,
+        )
+        assert rejected_observation.status_code == 200
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT result_reported_at FROM agent_enrollment_codes WHERE id=?",
+                (enrollment_id,),
+            ).fetchone()["result_reported_at"] is None
+
+        status_payload["id"] = 92
+        observed = client.post(
+            "/mcp/",
+            headers={
+                **api_headers(personal_token),
+                module.RUNTIME_INSTALL_ATTESTATION_HEADER: attestation,
+                "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+            },
+            json=status_payload,
+        )
+        assert observed.status_code == 200
+        members = client.get(
+            "/admin/members",
+            params={"member_query": "owner"},
+        )
+
+    with closing(module.database()) as connection:
+        result = connection.execute(
+            """
+            SELECT result_schema,result_ok,result_status,result_host,
+                   result_platform,result_reported_at
+            FROM agent_enrollment_codes WHERE id=?
+            """,
+            (enrollment_id,),
+        ).fetchone()
+        active_personal = connection.execute(
+            """
+            SELECT credential_kind,revoked_at FROM device_tokens
+            WHERE token_hash=?
+            """,
+            (module.token_hash(personal_token),),
+        ).fetchone()
+    assert result["result_schema"] == module.RUNTIME_INSTALL_RESULT_SCHEMA
+    assert result["result_ok"] == 1
+    assert result["result_status"] == "configured"
+    assert result["result_host"] == "WorkBuddy MCP 自动回传"
+    assert result["result_platform"] == "macOS"
+    assert result["result_reported_at"]
+    assert active_personal["credential_kind"] == "personal"
+    assert active_personal["revoked_at"] is None
+    assert "插件 V1.6.3.1" in members.text
+    assert "客户端自动识别版本" in members.text
+    assert "管理员确认版本" not in members.text
 
 
 def test_pending_installation_credential_preserves_active_token_when_status_is_disconnected_or_expired(
