@@ -48,6 +48,7 @@ EXPECTED_RELEASES = (
     "1.6.3.1",
     "1.6.4",
     "1.6.4.1",
+    "1.6.4.2",
 )
 
 
@@ -136,6 +137,19 @@ def test_v1641_includes_complete_policy_application_paths():
         "绿色工厂",
         "建设后申报、条件触发或长期梯度",
         "当期通知发布后整体重检",
+    ):
+        assert text in introduction
+
+
+def test_v1642_includes_sme_presale_and_manifest_driven_governance():
+    introduction = release_function_introduction("V1.6.4.2")
+    for text in (
+        "五至八页",
+        "结论、项目申报路径、主导产品与专利、财务简析",
+        "后台完整政策项目池",
+        "待定与待补强",
+        "全部可见技能根目录",
+        "suite-manifest.json",
     ):
         assert text in introduction
 

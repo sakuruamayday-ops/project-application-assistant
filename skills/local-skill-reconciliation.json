@@ -1,21 +1,493 @@
 {
-  "schema_version": 1,
-  "scope": "本地 jiaotang-* 技能与正式套件的发布前对账",
+  "schema_version": 2,
+  "scope": "本地全部技能根目录与正式套件的发布前库存分类；扫描不等于打包，正式包只读取suite-manifest.json的skills数组。",
+  "package_source": "suite-manifest.json:skills",
+  "root_policies": [
+    {
+      "path": "~/.codex/skills/.system",
+      "recursive": false,
+      "status": "system_skill",
+      "reason": "Codex宿主内置技能，由宿主维护，不进入共创研究院用户插件。"
+    },
+    {
+      "path": "~/.codex/plugins/cache",
+      "recursive": true,
+      "status": "external_capability",
+      "reason": "Codex插件缓存技能，由插件来源和宿主版本管理，不复制进共创研究院用户插件。"
+    }
+  ],
   "entries": {
+    "agent-reach": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "通用联网研究能力，按宿主环境调用，不复制进正式套件。"
+    },
+    "aiqice-peer-benchmark": {
+      "status": "retained_local_extension",
+      "formal_target": "peer-benchmarking",
+      "source": "local-platform-extension",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "保留企策定向检索扩展；正式同行对标入口仍为peer-benchmarking。"
+    },
+    "anti-hallucinate": {
+      "status": "merged_into",
+      "formal_targets": ["evidence-ledger", "consistency-check", "policy-retrieval"],
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "来源验证、风险分类和引用检查已由证据、政策和一致性门禁共同承担。"
+    },
+    "artifact-template-daily-qa": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-template",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "每日问答海报属于可选本地视觉模板，不构成正式业务技能。"
+    },
+    "artifact-template-gb-t-1-1": {
+      "status": "merged_into",
+      "formal_target": "standard-drafting",
+      "source": "local-template",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "GB/T 1.1通用模板与规则已归入standard-drafting。"
+    },
+    "artifact-template-sme": {
+      "status": "merged_into",
+      "formal_target": "sme-development-projects",
+      "source": "local-template",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "专精特新方向卡模板已归入sme-development-projects。"
+    },
+    "artifact-template-v1-3-1": {
+      "status": "merged_into",
+      "formal_target": "high-tech-enterprise-application-drafting",
+      "source": "local-template",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "高企申请书模板已归入高企正式撰写技能。"
+    },
+    "arxiv": {
+      "status": "excluded",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "主人明确排除，不进入正式包。"
+    },
+    "bigquery-patent-search": {
+      "status": "excluded",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "主人明确排除，不进入正式包。"
+    },
+    "charlie": {
+      "status": "merged_into",
+      "formal_target": "financial-verification",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "十三周现金流、现金跑道和情景压力测试的适用部分已归入financial-verification。"
+    },
+    "china-tax-compliance": {
+      "status": "merged_into",
+      "formal_target": "manufacturing-tax-risk-analysis",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "税种识别、计算输入和政策时效方法已归入制造业财税风险分析。"
+    },
+    "csv-data-summarizer": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "通用CSV工具能力由宿主按需提供。"
+    },
+    "deep-research-zh": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "开放式深度研究属于通用外部能力，正式项目研究仍按领域技能和证据门禁执行。"
+    },
+    "docx": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "Word文件操作由宿主文档能力提供。"
+    },
+    "docx-beautify": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "Word美化是可选交付工具，不是正式业务入口。"
+    },
+    "dogfood": {
+      "status": "excluded",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "主人明确排除，不进入正式包。"
+    },
+    "enterprise-checkup": {
+      "status": "merged_into",
+      "formal_targets": ["enterprise-profile", "project-matching", "project-feasibility"],
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "企业画像、项目匹配和差距分析已按阶段归入三个正式入口。"
+    },
+    "expert-dual-assessment": {
+      "status": "merged_into",
+      "formal_target": "industry-positioning",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "产业链与重点领域双维度核验已归入industry-positioning。"
+    },
+    "file-organizer": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "通用文件整理能力不属于正式业务套件。"
+    },
+    "financial-statement-analysis-zh": {
+      "status": "merged_into",
+      "formal_target": "financial-verification",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "三表联读、指标、趋势和风险信号已归入financial-verification。"
+    },
+    "find-redskills": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-marketplace-helper",
+      "owner": "external-marketplace",
+      "package_policy": "exclude_from_suite",
+      "reason": "技能市场搜索入口独立于正式套件。"
+    },
+    "flow-glow-ui": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-ui-extension",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "通用视觉效果能力不构成正式业务技能。"
+    },
+    "frontend-design": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-ui-extension",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "通用前端设计能力由宿主按需提供。"
+    },
+    "gif-search": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "GIF检索与政府项目核心业务无关。"
+    },
+    "gov-project-feasibility": {
+      "status": "merged_into",
+      "formal_targets": ["project-feasibility", "project-task-router"],
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "政府项目可行性与领域路由已由正式总流程覆盖。"
+    },
+    "guizang-ppt-skill": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "网页演示生成属于可选交付工具。"
+    },
+    "hatch-pet": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-visual-extension",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "桌面宠物制作与正式业务套件无关。"
+    },
+    "image-ocr": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "图片OCR由宿主工具提供，不复制进业务插件。"
+    },
+    "jiaotang-branding": {
+      "status": "shared_runtime",
+      "runtime_target": "_runtime/gongchuang-branding",
+      "source": "local-private-skill",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "品牌能力已作为gongchuang-branding共享运行时发布，不新增独立技能入口。"
+    },
     "jiaotang-enterprise-verification": {
       "status": "retained_local_extension",
       "formal_target": "enterprise-profile",
-      "reason": "包含本机企业数据工具路由和双商业源核验扩展，本轮不作为独立正式技能发布；正式企业画像仍由 enterprise-profile 承担。"
+      "source": "local-private-skill",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "包含本机企业数据工具路由；正式企业画像仍由enterprise-profile承担。"
     },
     "jiaotang-graphify": {
       "status": "retained_local_extension",
       "formal_target": "graphify",
-      "reason": "包含本机项目隔离与隐私配置扩展，本轮不作为独立正式技能发布；正式图谱入口仍为 graphify。"
+      "source": "local-private-skill",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "包含本机项目隔离和隐私扩展；正式图谱入口仍为graphify。"
     },
     "jiaotang-humanizer-zh": {
       "status": "merged_into",
       "formal_target": "gongchuang-humanizer-zh",
-      "reason": "本地旧名保留兼容映射；中文自然化改写以 gongchuang-humanizer-zh 作为第 50 项正式技能发布。"
+      "source": "local-private-skill",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "本地旧名保留兼容映射，正式入口为gongchuang-humanizer-zh。"
+    },
+    "jiaotang-infra": {
+      "status": "administrator_tool",
+      "formal_target": null,
+      "source": "local-private-skill",
+      "owner": "local-administrator",
+      "package_policy": "exclude_from_suite",
+      "reason": "维护本机MCP、浏览器、记忆和知识库基础设施，仅供管理员本地使用。"
+    },
+    "jiaotang-memory": {
+      "status": "retained_local_extension",
+      "formal_target": "project-memory",
+      "source": "local-private-skill",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "保留Codex本地历史审计扩展；正式项目连续性入口仍为project-memory。"
+    },
+    "jiaotang-rag-query": {
+      "status": "retained_local_extension",
+      "formal_target": "local-knowledge-retrieval",
+      "source": "local-private-skill",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "保留主人本地RAG路径扩展；正式检索入口仍为local-knowledge-retrieval。"
+    },
+    "multi-project-matrix": {
+      "status": "merged_into",
+      "formal_targets": ["project-matching", "project-feasibility"],
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "多项目矩阵、优先级和路线图已由项目匹配与可行性技能覆盖。"
+    },
+    "nano-pdf": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "PDF文本编辑属于宿主工具能力。"
+    },
+    "ocr-and-documents": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "OCR和文档解析属于宿主工具能力。"
+    },
+    "paddle-ocr": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "PaddleOCR运行时和模型不复制进正式插件。"
+    },
+    "patent-layout-planner": {
+      "status": "merged_into",
+      "formal_target": "patent-router",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "项目导向专利组合、节奏和交底卡已归入patent-router。"
+    },
+    "pdf": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "通用PDF操作由宿主能力提供。"
+    },
+    "pdf-beautifier": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-delivery-extension",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "PDF视觉美化是可选交付工具，不构成正式业务入口。"
+    },
+    "playwright": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-browser-extension",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "浏览器自动化由宿主或外部工具提供。"
+    },
+    "policy-data-collection": {
+      "status": "retained_local_extension",
+      "formal_target": "third-party-data-indexing",
+      "source": "local-private-skill",
+      "owner": "local-workspace",
+      "package_policy": "exclude_from_suite",
+      "reason": "保留企策定向采集扩展；正式第三方数据索引入口为third-party-data-indexing。"
+    },
+    "pptx-beautify": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "演示文稿美化属于宿主交付能力。"
+    },
+    "project-quick-reference": {
+      "status": "merged_into",
+      "formal_targets": ["project-task-router", "policy-retrieval"],
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "项目分类与现行政策核验已由正式路由和政策技能承担。"
+    },
+    "qcc-history-evolution": {
+      "status": "merged_into",
+      "formal_targets": ["enterprise-profile", "enterprise-panorama-analysis"],
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "企业沿革和KYB方法已由企业画像与全景分析覆盖，商业平台仅作外部数据源。"
+    },
+    "qcc-ip-infringement-alert": {
+      "status": "merged_into",
+      "formal_targets": ["ip-assessment", "patent-router"],
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "知识产权事实底稿与侵权/FTO分析已由两个正式入口覆盖。"
+    },
+    "qcc-quick-scan": {
+      "status": "merged_into",
+      "formal_target": "enterprise-profile",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "企业快速体检方法归入企业画像，商业平台调用不进入公共包。"
+    },
+    "redskill-preference": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-marketplace-helper",
+      "owner": "external-marketplace",
+      "package_policy": "exclude_from_suite",
+      "reason": "外部技能市场偏好协议独立于正式套件。"
+    },
+    "skill-release-manager": {
+      "status": "administrator_tool",
+      "formal_target": null,
+      "source": "signed-administrator-tool",
+      "owner": "release-administrator",
+      "package_policy": "exclude_from_suite",
+      "reason": "发布、签名和打包工具仅供管理员使用，不进入普通用户插件。"
+    },
+    "sme-checkup": {
+      "status": "merged_into",
+      "formal_target": "sme-development-projects",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "专精特新后期体检通用门禁已归入sme-development-projects。"
+    },
+    "spike": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "通用试验技能由宿主按需提供。"
+    },
+    "srxgj-qa": {
+      "status": "merged_into",
+      "formal_targets": ["sme-development-projects", "patent-router", "application-writing"],
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "方向卡到六问的单方向一致性规则已归入三个正式入口。"
+    },
+    "tyc-it": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "local-commercial-connector",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "天眼查商业查询连接器按用户环境配置，不进入公共插件。"
+    },
+    "writing-polish-prompts": {
+      "status": "merged_into",
+      "formal_target": "gongchuang-humanizer-zh",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "自然化改写和发布前审校由正式humanizer统一承担。"
+    },
+    "xlsx": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "Excel操作由宿主表格能力提供。"
+    },
+    "xlsx-beautify": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "Excel美化属于宿主交付能力。"
+    },
+    "zhejiang-gov-policy-search": {
+      "status": "retained_local_extension",
+      "formal_target": "policy-retrieval",
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "浙江政府站点定向检索保留为外部扩展；正式政策入口为policy-retrieval。"
     }
   }
 }

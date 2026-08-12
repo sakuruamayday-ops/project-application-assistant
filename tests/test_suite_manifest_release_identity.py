@@ -72,10 +72,14 @@ def test_call_graph_covers_manifest_skill_set() -> None:
 
 
 def test_active_runtime_surfaces_do_not_hardcode_skill_count() -> None:
-    count_literal = re.compile(r"(?<!\d)(?:49|50)\s*项\s*(?:正式\s*)?Skills")
+    count_literal = re.compile(
+        r"(?<!\d)\d+\s*(?:项|个)\s*(?:正式\s*)?(?:Skills?|skills?|Skill|能力)"
+    )
     active_paths = [
         ROOT / "README.md",
+        ROOT / "docs/product/README.md",
         ROOT / "docs/product/product-brief.md",
+        ROOT / "docs/product/release-gate-slimming.md",
         ROOT / "docs/product/roadmap.md",
         ROOT / "docs/product/website-package-distribution.md",
         ROOT / "docs/product/workbuddy-app-marketplace-migration.md",

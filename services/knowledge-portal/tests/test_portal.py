@@ -5932,8 +5932,9 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             for group_skills in graph["groups"].values()
             for skill_name in group_skills
         ]
-        assert len(suite["skills"]) == 50
-        assert len(grouped_skills) == len(set(grouped_skills)) == 50
+        expected_skill_count = len(suite["skills"])
+        assert expected_skill_count > 0
+        assert len(grouped_skills) == len(set(grouped_skills)) == expected_skill_count
         assert set(grouped_skills) == set(suite["skills"])
         second_token = re.search(
             r"jtk_[A-Za-z0-9_-]+", windows_prompt

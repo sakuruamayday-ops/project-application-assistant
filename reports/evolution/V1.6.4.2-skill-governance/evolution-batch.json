@@ -1,0 +1,112 @@
+{
+  "batch_id": "V1.6.4.2-skill-governance",
+  "state": "approved",
+  "risk_level": "high",
+  "summary": "全量本地技能对账、清单唯一打包源、动态技能数量和V1.6.4.2专精特新谈单补丁的候选治理。",
+  "snapshot": {
+    "path": "snapshot.md",
+    "sha256": "fd6071827aea2330dc1685fb92fe7b722e89c0c4512e3cc546fe868749cb5746"
+  },
+  "impact_report": {
+    "path": "impact-report.md",
+    "sha256": "8bd40bd71eb079bd7c8da1a171a3ff2a84e887b4410b2fbe94b981992640e8f0"
+  },
+  "diff": {
+    "path": "candidate-diff.md",
+    "sha256": "9c0db1e727d6bbd5343beead0f0dcf1f8407431326ea963e8dddf071a0829fb3"
+  },
+  "test_report": {
+    "path": "test-report.md",
+    "sha256": "d61c20ac7ba73259a9bd0377071df0a356119963c787b32124b41109e81d0230"
+  },
+  "tests": [
+    {
+      "name": "root-suite",
+      "status": "pass",
+      "result": "277 passed, 2 skipped, 67 subtests passed"
+    },
+    {
+      "name": "knowledge-portal",
+      "status": "pass",
+      "result": "592 passed, 7 skipped"
+    },
+    {
+      "name": "targeted-contracts",
+      "status": "pass",
+      "result": "32 passed"
+    },
+    {
+      "name": "portal-install-and-release-introductions",
+      "status": "pass",
+      "result": "11 passed"
+    },
+    {
+      "name": "adversarial",
+      "status": "pass",
+      "result": "108 cases"
+    },
+    {
+      "name": "behavior-coverage",
+      "status": "pass",
+      "result": "50 skills"
+    },
+    {
+      "name": "content-and-routing",
+      "status": "pass",
+      "result": "88 cases"
+    },
+    {
+      "name": "three-first-gold",
+      "status": "pass",
+      "result": "20 cases"
+    },
+    {
+      "name": "full-local-skill-audit",
+      "status": "pass",
+      "result": "150 discovered, 0 unregistered, 0 missing formal"
+    },
+    {
+      "name": "suite-validation",
+      "status": "pass",
+      "result": "50 skills, 12 dependencies, 0 unresolved"
+    },
+    {
+      "name": "diff-check",
+      "status": "pass",
+      "result": "pass"
+    }
+  ],
+  "targets": [
+    {
+      "path": "scripts/audit_local_formal_skill_drift.py",
+      "before_sha256": "ee85040b2a25a1e34ea6af9a47253c2dd1bbf5b1c4a275ecafd2cec9e4c3efd5",
+      "after_sha256": "f2086ff284fbe8e8ab41af754ea331b0ad4f92b34bed505c7d941ecf6d3a0fda"
+    },
+    {
+      "path": "skills/local-skill-reconciliation.json",
+      "before_sha256": "c84a1c15887404140a443ef5b914c65515c280d250c802d7a275b13f80a2ede6",
+      "after_sha256": "feb5559dbb954c649b503565e456d2f95448ef0e2a620333a8ed5eb8a28d3954"
+    },
+    {
+      "path": "skills/suite-manifest.json",
+      "before_sha256": "f507e393043351cdb9f93c913cf52ad0a8e269f54be51cf7a2427e3fa0517ebf",
+      "after_sha256": "20d005147d7106f2de9f171888eb4d3582b5e73f375485af404e96599d34c012"
+    },
+    {
+      "path": "tests/test_local_formal_skill_drift.py",
+      "before_sha256": "7d625897be2b3c463807e9135af3662e62fe3b91f61aa923b9833257b49b2924",
+      "after_sha256": "e89d6aa4975d87ecfe21700ffc71d0ba287f0c51ba76cee2a9300e44a9b9ddd6"
+    },
+    {
+      "path": "tests/test_suite_manifest_release_identity.py",
+      "before_sha256": "8d745725e357de05fef60e6209bdf4cb2136144bd07c68b8c7c0ff586495ec8f",
+      "after_sha256": "aef0e238446f22ec81d95336ba86b9e812398b6485e15196562279e6f47c71ce"
+    }
+  ],
+  "approval": {
+    "approved_by": "owner",
+    "approved_at": "2026-08-12T18:21:01+08:00",
+    "approval_scope": "主人授权修复全本地技能对账、套件清单唯一来源与动态技能数量，并要求与V1.6.4.2专精特新谈单补丁合并完成签名候选；不授权正式推送、部署或索引切换。",
+    "diff_sha256": "06d2052e3647920c171345fb339735e85ee422c70d0156cb147d0e51a72d3f77"
+  }
+}

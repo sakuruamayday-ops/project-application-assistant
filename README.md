@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.6.4.1"><img src="https://img.shields.io/badge/Production-V1.6.4.1-C9A760?style=for-the-badge" alt="Production V1.6.4.1"></a>
+  <a href="docs/releases/V1.6.4.2.md"><img src="https://img.shields.io/badge/Candidate-V1.6.4.2-C9A760?style=for-the-badge" alt="Candidate V1.6.4.2"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -116,7 +116,7 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.4.1 功能简介](docs/releases/V1.6.4.1.md) | 当前正式版本的政策申报路径合同、兼容范围与发布边界 |
+| [V1.6.4.2 功能简介](docs/releases/V1.6.4.2.md) | 当前候选版本的专精特新前期谈单版、技能治理和发布边界 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -133,8 +133,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 生产产品标签 | `V1.6.4.1` | 当前网站、GitHub Release 和用户可见最新版 |
-| 组件版本 | `1.6.4.1` | 套件、插件和 Python 组件正式版本 |
+| 候选产品标签 | `V1.6.4.2` | 当前隔离分支候选；正式发布后才进入网站、GitHub Release 和用户可见最新版 |
+| 组件版本 | `1.6.4.2` | 套件、插件和 Python 组件候选版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界
