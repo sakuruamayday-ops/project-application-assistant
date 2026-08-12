@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-score-preassessment",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.4",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -26,7 +26,7 @@
     "references/current-policy-baseline-2026.json": "3828a8e370fe5560110eafe27cce8907450d002b8aaa206db4cb39c01023c8cf",
     "references/current-policy-baseline-2026.md": "04229bd2ee6e6fbfa0278f939156432686adf52dca601c77fe45299cb1a7ca7b",
     "references/data-contract.md": "28ee31e05f1343183184ae704bf4ff6280cae415b3a6fbd13e09ae36ad6f0ca2",
-    "references/direction-card-first-template.md": "f141c5223563005b9c0d49add543a0fa73f13c8babc3e28d111d3c1b52052986",
+    "references/direction-card-first-template.md": "027f44b5211ca592f0eb6e1e47958bcf32e1f60b0defb99938b5575ae6eb24d8",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/qcc-verification.md": "5a37b72301adabd46240a9d2b641cbdcfd66b77c28d2514f555b3546fd4c5651",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",

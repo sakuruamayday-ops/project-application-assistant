@@ -24,10 +24,11 @@ from publish_skill_release import validate_release_packages  # noqa: E402
 
 
 OFFICIAL_FINGERPRINT = "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
-EXPECTED_SKILL_COUNT = 49
-EXPECTED_VERSION = json.loads(
+SOURCE_SUITE = json.loads(
     (ROOT / "skills/suite-manifest.json").read_text(encoding="utf-8")
-)["release"]["version"]
+)
+EXPECTED_SKILL_COUNT = len(SOURCE_SUITE["skills"])
+EXPECTED_VERSION = SOURCE_SUITE["release"]["version"]
 FORBIDDEN_PATH_SUFFIXES = (
     "/.mcp.json",
     "/bin/run-node",
@@ -197,7 +198,7 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
                     )
             skill_names_from_frontmatter.append(names_in_entry[0])
         if len(set(skill_names_from_frontmatter)) != EXPECTED_SKILL_COUNT:
-            raise RuntimeError("技能frontmatter名称不是49项唯一值")
+            raise RuntimeError(f"技能frontmatter名称不是{EXPECTED_SKILL_COUNT}项唯一值")
         if plugin.get("hook_mode") != "behavior_only_fail_open":
             raise RuntimeError("插件未声明最小行为 Hook 模式")
         if plugin.get("mcp_configuration_mode") != "user_remote_streamable_http":

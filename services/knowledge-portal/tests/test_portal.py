@@ -1276,7 +1276,8 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
         assert "生成安全安装计划" in catalog.text
         assert 'data-skill-open="project-application-assistant"' in catalog.text
         assert 'data-skill-row' in catalog.text
-        assert "49 / 49" in catalog.text
+        expected_skill_count = len(module.skill_catalog_payload()["skills"])
+        assert f"{expected_skill_count} / {expected_skill_count}" in catalog.text
 
         installation_status = client.get("/agent-installation-status")
         assert installation_status.status_code == 200
@@ -5858,7 +5859,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert first.headers["cache-control"] == "no-store"
         assert first.json()["phase"] == "install_ready"
         assert "V1.5.0" in prompt
-        assert "49 项 Skills" in prompt
+        assert "50 项 Skills" in prompt
         assert "只替换当前用户配置中的 `mcpServers.jiaotang-kb`" in prompt
         assert "保留所有其他 MCP 条目" in prompt
         assert "文件名是不带点前缀的 `mcp.json`" in prompt
@@ -5930,8 +5931,8 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             for group_skills in graph["groups"].values()
             for skill_name in group_skills
         ]
-        assert len(suite["skills"]) == 49
-        assert len(grouped_skills) == len(set(grouped_skills)) == 49
+        assert len(suite["skills"]) == 50
+        assert len(grouped_skills) == len(set(grouped_skills)) == 50
         assert set(grouped_skills) == set(suite["skills"])
         second_token = re.search(
             r"jtk_[A-Za-z0-9_-]+", windows_prompt

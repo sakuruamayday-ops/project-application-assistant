@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "contract_id": "gongchuang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.6.3.1",
+  "rule_version": "1.6.4",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -26,6 +26,7 @@
     "intellectual-property-projects": {"role": "primary_business", "owns": []},
     "investment-subsidy-projects": {"role": "primary_business", "owns": []},
     "ip-assessment": {"role": "primary_business", "owns": []},
+    "gongchuang-humanizer-zh": {"role": "supporting_business", "owns": []},
     "legal-regulations": {"role": "supporting_business", "owns": []},
     "patent-router": {"role": "primary_business", "owns": ["patent-application-case"]},
     "local-knowledge-retrieval": {"role": "supporting_business", "owns": []},

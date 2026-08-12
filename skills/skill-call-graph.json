@@ -61,6 +61,7 @@
       "application-writing",
       "high-tech-enterprise-application-drafting",
       "application-version-diff",
+      "gongchuang-humanizer-zh",
       "consistency-check",
       "project-deliverable-archive"
     ],
@@ -114,6 +115,24 @@
       "to": "consistency-check",
       "type": "quality_gate",
       "reason": "正式材料提交前检查数字、事实、产品、知识产权和章节联动。"
+    },
+    {
+      "from": "application-writing",
+      "to": "gongchuang-humanizer-zh",
+      "type": "optional",
+      "reason": "用户要求去AI味、降低机器腔或自然化润色时，在事实锁内处理表达层；改写后仍须通过一致性检查。"
+    },
+    {
+      "from": "gongchuang-humanizer-zh",
+      "to": "consistency-check",
+      "type": "quality_gate",
+      "reason": "正式申报材料自然化改写后必须复核数字、名称、政策口径、技术关系和章节一致性。"
+    },
+    {
+      "from": "gongchuang-humanizer-zh",
+      "to": "skill-evolution",
+      "type": "governance",
+      "reason": "只有用户明确要求基于真实反馈进化时，才把脱敏反馈汇总交给受控候选流程。"
     },
     {
       "from": "consistency-check",

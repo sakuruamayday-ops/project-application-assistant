@@ -22,6 +22,8 @@ description: 在industry-chain-foundation-matcher给出目录候选后，判断�
 
 凡涉及市场占有率、细分市场排名、补短板、锻长板、填空白或国产替代，必须完整读取 `references/market-boundary-and-substitution-gate.md`。该闸门统一证据方法，不统一项目阈值；不得把一个项目的排名条件复制到其他项目。
 
+当核心创新位于自产自用配方、基材、核心部件、嵌入式软件、算法或关键工艺层，而商业化收入由终端产品形成时，完整读取 `references/cross-project-technical-commercialization-gate.md` 和 `references/automatic-master-matrix-orchestration.md`。同一企业只维护一份技术—产品—收入母矩阵；由 `scripts/technical_product_revenue_matrix.py` 校验并生成项目视图，不要求客户填写 Excel，不把视图生成状态解释为项目达标。
+
 ## 双维判断
 
 1. **产品维度**：主导产品是否实际处于候选产业链关键环节，产品功能、材料、工艺、客户和上下游位置是否一致。

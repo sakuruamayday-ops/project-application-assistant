@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "company": {
+    "name": "",
+    "credit_code": "",
+    "as_of_date": "",
+    "source_scope": []
+  },
+  "technologies": [
+    {
+      "id": "tech-001",
+      "internal_version": "V1",
+      "carrier_type": "material",
+      "public_name": "",
+      "technical_goal": "",
+      "public_route": "",
+      "public_window": "企业内部受控窗口",
+      "development_status": "mass_production",
+      "sources": [
+        {
+          "document": "",
+          "locator": "",
+          "evidence_type": "application_or_technical_document"
+        }
+      ],
+      "confidential_boundary": [
+        "不披露精确配方比例",
+        "不披露原料牌号和添加顺序",
+        "不披露关键单点工艺参数"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-001",
+      "name": "",
+      "product_type": "terminal_product",
+      "sales_status": "sold",
+      "policy_attributes": [],
+      "registered_or_catalog_name": "",
+      "sources": [
+        {
+          "document": "",
+          "locator": "",
+          "evidence_type": "application_or_product_document"
+        }
+      ]
+    }
+  ],
+  "technology_product_links": [
+    {
+      "technology_id": "tech-001",
+      "product_id": "prod-001",
+      "relation": "embedded",
+      "stable_use": true,
+      "performance_contributions": [
+        {
+          "metric": "",
+          "value": "",
+          "status": "achieved",
+          "source": ""
+        }
+      ],
+      "source": {
+        "document": "",
+        "locator": ""
+      }
+    }
+  ],
+  "commercialization": [
+    {
+      "product_id": "prod-001",
+      "year": "",
+      "amount": "",
+      "unit": "万元",
+      "basis": "terminal_sales",
+      "customer_or_application_scope": "",
+      "source": {
+        "document": "",
+        "locator": "",
+        "evidence_type": "application_or_sales_ledger"
+      }
+    }
+  ],
+  "intellectual_property_links": [],
+  "project_overrides": {}
+}

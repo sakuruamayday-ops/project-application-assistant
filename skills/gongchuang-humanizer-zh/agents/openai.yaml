@@ -1,0 +1,4 @@
+interface:
+  display_name: "共创中文自然化改写"
+  short_description: "事实锁定、分文体改写、反馈学习与受控进化的中文去 AI 味技能"
+  default_prompt: "使用 $gongchuang-humanizer-zh 在不改变事实的前提下诊断并改写这段中文，并记录我对候选稿的反馈用于受控进化。"

@@ -10751,6 +10751,7 @@ def current_workbuddy_upgrade_channel(platform: str = "") -> dict[str, object]:
 
 def public_release_guidance() -> dict[str, object]:
     suite = read_json_object(SKILL_SOURCE_DIR / "suite-manifest.json")
+    skill_count = len(suite.get("skills", [])) if isinstance(suite.get("skills"), list) else 0
     candidate = suite.get("release", {})
     candidate = candidate if isinstance(candidate, dict) else {}
     generic = latest_skill_artifact("generic")
@@ -10781,7 +10782,7 @@ def public_release_guidance() -> dict[str, object]:
     if workbuddy_installable:
         workbuddy_notice = (
             f"WorkBuddy {platform_version_label or f'V{workbuddy_version}'} 正式包可安装。"
-            "一段指令完成49项Skills安装、远程MCP合并、一次重载和真实工具验收。"
+            f"一段指令完成{skill_count}项Skills安装、远程MCP合并、一次重载和真实工具验收。"
         )
     elif workbuddy_version:
         pending = (
@@ -14466,6 +14467,7 @@ def build_agent_bootstrap_prompt(
     profile = platform_profiles.get(platform)
     if profile is None:
         raise ValueError("不支持的 WorkBuddy 安装平台")
+    skill_count = len(skill_catalog_payload()["skills"])
     configuration = json.dumps(
         remote_mcp_configuration(
             mcp_url,
@@ -14502,11 +14504,11 @@ def build_agent_bootstrap_prompt(
         "plugin.json、hooks.json、EXE、PowerShell、CMD、Shell、Python 脚本、文件权限、编码和换行符。"
         "不得添加权限绕过参数，不得改写 Hook 状态结构、stdin/stdout 编码或状态写入逻辑。"
         "如包有缺陷或环境不兼容，必须停止并报告原始错误，不得在本机热修后把结果记为正式版本通过。"
-        "在移动旧版之前，先只读核对目标版本、目标平台、市场与插件结构、49 项 Skills、最小 Hook 和"
+        f"在移动旧版之前，先只读核对目标版本、目标平台、市场与插件结构、{skill_count} 项 Skills、最小 Hook 和"
         f"远程 MCP 边界；{profile['preflight']}"
         "预检失败时保持旧版和原 MCP 配置完全不动。预检通过后记录解压目录的逐文件摘要，安装后"
         "再次核对，必须逐字节一致；只要 package_mutated=true，验收立即失败并回滚。"
-        "然后使用 WorkBuddy 内置插件管理安装或替换共创研究院插件，确认 49 项 Skills 可识别并启用包内"
+        f"然后使用 WorkBuddy 内置插件管理安装或替换共创研究院插件，确认 {skill_count} 项 Skills 可识别并启用包内"
         "最小行为约束 Hook。安装前同时检查当前用户目录下"
         f" {profile['host_roots']} 的 plugins、plugins/marketplaces 以及宿主已登记的本地市场，"
         "识别所有共创研究院旧版、重复副本和历史技术名称副本；不得扫描或改动无关插件。先把命中的旧版移出"
@@ -14525,7 +14527,7 @@ def build_agent_bootstrap_prompt(
         "保存后只重载 WorkBuddy 一次。打开连接器管理，确认自定义连接器中出现 `jiaotang-kb`；"
         "若显示未信任，提示用户在界面手动点击信任，不得尝试绕过宿主安全确认。信任后执行 tools/list，确认 knowledge_search、"
         "knowledge_document、knowledge_service_status 已出现，再实际调用 "
-        "knowledge_service_status；只有返回 connected: true、49 项 Skills 可识别且其他 MCP "
+        f"knowledge_service_status；只有返回 connected: true、{skill_count} 项 Skills 可识别且其他 MCP "
         "未被覆盖时，才报告安装完成。连接成功时，配置内的服务端签名安装证明会随 MCP 状态请求"
         "自动回传，门户将自动更新实际连接对应的版本，不需要管理员人工确认。验收通过后，将除一个"
         "回滚快照外的旧版、重复副本和旧名称"
@@ -14553,14 +14555,14 @@ def build_agent_bootstrap_prompt(
         "VERSION_RECEIPT_FAILED，供管理员按连接关联版本复核。一次性回执地址、安装码和个人 Token "
         "均不得出现在最终回复或普通日志中。"
         "安装验收成功后的最终回复必须补充一句：欢迎评价这套"
-        "Skills 插件包，也可以回复“查看常用指令”。再用一行说明 49 项 Skills 已按六组完整核对："
+        f"Skills 插件包，也可以回复“查看常用指令”。再用一行说明 {skill_count} 项 Skills 已按六组完整核对："
         "总控与配置、知识与证据、企业与项目、专利专业、交付与质检、治理与进化。常用任务至少覆盖"
         "政策现行性与历史资料检索、企业画像与同行对标、项目匹配和单项目可行性、专精特新前期评估"
         "与后期体检、高企预评估与申请书撰写、产业链定位、企业分析报告 A 标准版/B 深度版/C 两版齐出、"
         "数字化/绿色/工业化/投资/质量品牌/知识产权/科技/人才/农业/商贸及区域专项、专利检索布局/FTO/"
         "交底与申请文件核稿、按现行 GB/T 1.1 撰写标准、金税四期分析报告与财务核验、申报材料撰写/版本对比/"
         "一致性检查、证据台账与交付归档。治理与进化类能力应说明为自动运行或管理员能力，不包装成"
-        "普通成员的日常指令。用户回复“查看常用指令”时，必须依据实际安装的 49 项 Skills 按上述六组"
+        f"普通成员的日常指令。用户回复“查看常用指令”时，必须依据实际安装的 {skill_count} 项 Skills 按上述六组"
         "给出可直接复制的示例，不得只复述本提示列出的少数例子。不得在完成提示中复述个人 Token。"
     )
 
@@ -15420,7 +15422,7 @@ def agent_install_protocol(
             "installation": {
                 "mode": "one_copy_workbuddy_prompt",
                 "platform_adapter": f"workbuddy-{platform_name}",
-                "skill_count": 49,
+                "skill_count": len(skill_catalog_payload()["skills"]),
                 "hook_mode": "behavior_only_fail_open",
                 "mcp_configuration_mode": "user_remote_streamable_http",
                 "replace_only_mcp_server": "jiaotang-kb",

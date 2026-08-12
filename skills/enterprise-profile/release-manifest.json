@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "enterprise-profile",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.4",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,7 +21,8 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "39813be5ff150b0d0bb7ebf8fb692b2a04a27e58e77431a2a1eb15a704020056",
+    "SKILL.md": "2df817455005ae7c6250d69c494f9832b487e8121c0d17a5d6ee331a28bee2fd",
+    "references/enterprise-checkup-routing.md": "93ca8ad093683f925b61ba24515ebfa410129633ace55f639f2280c49d3470a5",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

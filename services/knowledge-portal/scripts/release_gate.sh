@@ -136,6 +136,7 @@ python3 "${root_dir}/scripts/public_namespace_gate.py" \
   --archive "${workbuddy_archive}"
 JIAOTANG_RELEASE_ARCHIVE="${generic_archive}" python3 - <<'PY'
 import os
+import json
 import zipfile
 from pathlib import Path
 
@@ -148,7 +149,14 @@ with zipfile.ZipFile(os.environ["JIAOTANG_RELEASE_ARCHIVE"]) as archive:
         name for name in names
         if "/skills/" in f"/{name}" and name.endswith("/SKILL.md")
     }
-    assert len(skill_manifests) == 49, f"Skills 数量异常：{len(skill_manifests)}"
+    suite_names = [name for name in names if name.endswith("/skills/suite-manifest.json")]
+    assert len(suite_names) == 1, f"suite-manifest 数量异常：{suite_names}"
+    suite = json.loads(archive.read(suite_names[0]))
+    expected_skill_count = len(suite.get("skills") or [])
+    assert expected_skill_count > 0, "suite-manifest 技能清单为空"
+    assert len(skill_manifests) == expected_skill_count, (
+        f"Skills 数量异常：{len(skill_manifests)}，预期 {expected_skill_count}"
+    )
     forbidden = (
         "jiaotang-agent.mjs",
         "run-node.cmd",

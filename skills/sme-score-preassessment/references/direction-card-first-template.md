@@ -39,7 +39,7 @@
 
 ## 文档模板
 
-- 个人模板：`$artifact-template-sme`
+- 包内母版：`../sme-development-projects/assets/专精特新小巨人前期培育方向卡模板.docx`
 - 技能内模板：`assets/专精特新小巨人前期培育方向卡模板.docx`
 
 生成前期培育报告时优先套用模板；如用户要求聊天摘要，也必须保持方向卡在政策与成熟度之前。

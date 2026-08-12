@@ -35,6 +35,7 @@ description: 在项目版本、政策和企业事实核验完成后撰写政府�
 5. 企业简介和主导产品按 `references/application-section-patterns.md` 选择结构；当期表单有强制结构时以表单为准。
 6. 完成后调用 `consistency-check`，未通过不得标记为终稿。
 7. 所有事实编号通过 `evidence-ledger` 保持可追溯。若当期申请书存在固定结构或原生来源字段，服从表单；没有容纳来源的位置时另交付来源说明，不得为统一报告格式改动法定表单结构。
+8. 用户明确要求去AI味、降低机器腔或自然化润色时，可将已锁定正文交给 `gongchuang-humanizer-zh` 处理表达层；改写完成后必须再次执行 `consistency-check`，不能用自然化改写替代资格、政策或证据判断。
 
 ## 用户模板原样填充
 

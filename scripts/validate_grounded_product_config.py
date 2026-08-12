@@ -96,7 +96,10 @@ def main() -> int:
             '"--platform-hotfix"' in release_script
             and 'choices=("windows",)' in release_script
         ),
-        "registry_covers_49_skills": len(registry.get("skills", [])) == len(manifest.get("skills", [])) == 49,
+        "registry_covers_declared_skills": (
+            len(registry.get("skills", [])) == len(manifest.get("skills", []))
+            and len(manifest.get("skills", [])) > 0
+        ),
         "registry_routes_30_grounded_skills": sum(
             bool(item.get("uses_grounded_engine")) for item in registry.get("skills", [])
         ) == 30,

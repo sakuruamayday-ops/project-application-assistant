@@ -9,22 +9,22 @@
   },
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.6.3.1",
-    "version": "1.6.3.1",
-    "summary": "V1.6.3.1 在高新技术企业申请书撰写中新增逐 RD 核心技术及创新点结构化回填、企业能力校准和高阶技术证据门禁；49 项 Skills、远程 MCP 名称 jiaotang-kb 与其他既有核心能力保持不变。",
+    "tag": "V1.6.4",
+    "version": "1.6.4",
+    "summary": "V1.6.4 将中文自然化改写纳入第 50 项正式 Skill，并把企业体检、产业定位、财务分析、专利布局、专精特新写作、税务核验和统一品牌能力归并到既有主技能；发布前新增本地技能与正式清单对账。",
     "changes": [
-      "新增高新技术企业申请书 RD 核心技术及创新点批量回填。每个研发项目独立读取四级技术领域，并固定生成两条具名核心技术和两条创新点。",
-      "两条核心技术均需包含具体数值、单位或阈值；无实测材料时明确标记为拟定技术指标，核心技术与创新点合计不少于 400 字。",
-      "增加企业能力校准。写作前核验企业规模、主营产品、生产方式、研发基础和公开专利，避免技术描述超出企业实际能力。",
-      "传统制造业和中小企业优先使用材料、结构、工艺、工装、设备、检测和过程控制等可落地技术；人工智能、数字孪生等高阶技术没有直接证据时禁止写入。",
-      "新增 RD 受控单元格填充与自动审计，只修改目标文字内容，保留模板表格、合并关系、页眉页脚、节属性和整体版式。",
-      "专利检索未命中时统一表述为“当前检索层未命中”，不据此断言企业没有相关能力。"
+      "新增 gongchuang-humanizer-zh 正式技能，中文自然化改写先锁定数字、名称、政策、知识产权、技术参数和引用，再处理模板腔与机械节奏。",
+      "企业体检、产业定位、三表分析、现金流与营运资金、专利布局、专精特新后期体检和税务计算方法归并到正式主技能，旧外部技能不再作为运行依赖。",
+      "吸收 Charlie 中适用于制造企业的十三周现金流、现金安全垫、现金转换周期、情景分析和资本开支回收期方法，排除 SaaS 与美国市场固定阈值。",
+      "统一品牌运行时扩展到 PDF、Word、Excel 与 HTML，并保留文件级交付闸门。",
+      "新增本地技能与正式技能清单对账门禁，任何新增本地同品牌技能必须明确登记为正式、已归并或排除。",
+      "arxiv、bigquery-patent-search 和 dogfood 不进入正式包，也不成为正式技能依赖。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.3.1 同步发布 macOS 与 Windows WorkBuddy 正式包；外部企业数字身份证和知识索引由服务端单独管理，不属于插件包输入。",
+      "workbuddy": "V1.6.4 候选将同步构建 macOS 与 Windows WorkBuddy 包；外部企业数字身份证和知识索引仍由服务端单独管理，不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
-      "verification": "确认 49 项 Skills 可识别、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
+      "verification": "确认 50 项 Skills 可识别、本地与正式技能清单无未登记漂移、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
     "compatibility": [
       {
@@ -51,12 +51,12 @@
       "preserve_other_mcp_servers": true,
       "reload_count": 1,
       "success_gate": [
-        "49 项 Skills 可识别",
+        "50 项 Skills 可识别",
         "最小行为 Hook 已启用",
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "安装后只保留一个 V1.6.3.1 活动正式市场，旧版本可恢复快照不覆盖用户资料",
+        "安装后只保留一个 V1.6.4 活动正式市场，旧版本可恢复快照不覆盖用户资料",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [
@@ -84,6 +84,7 @@
     "experience-recorder",
     "financial-verification",
     "first-run-configuration",
+    "gongchuang-humanizer-zh",
     "graphify",
     "green-development-projects",
     "high-tech-enterprise-application-drafting",
@@ -126,6 +127,7 @@
     "_runtime/grounded-citations",
     "_runtime/template-fidelity",
     "delivery-contracts.json",
+    "local-skill-reconciliation.json",
     "SOURCE-USE-LICENSE.txt",
     "policy-freshness-manifest.json",
     "policy-freshness-manifest.md",
@@ -135,6 +137,16 @@
   "skill_call_graph": "skill-call-graph.json",
   "policy_freshness_manifest": "policy-freshness-manifest.json",
   "release_gates": [
+    {
+      "name": "local-formal-skill-reconciliation",
+      "command": [
+        "{python}",
+        "scripts/audit_local_formal_skill_drift.py",
+        "--skills-root",
+        "skills"
+      ],
+      "timeout_seconds": 60
+    },
     {
       "name": "pytest",
       "command": [
@@ -293,13 +305,15 @@
       "reason": "知识产权类项目分析必须先取得统一权利状态和产品关联底稿。"
     },
     "manufacturing-tax-risk-analysis": {
-      "required_skills": [],
+      "required_skills": [
+        "financial-verification"
+      ],
       "required_paths": [
         "_runtime/gongchuang-branding/scripts/delivery_gate.py",
         "_runtime/gongchuang-branding/scripts/pdf_two_pass.py",
         "_runtime/gongchuang-branding/references/brand_config.json"
       ],
-      "reason": "制造企业财税风险报告使用套件共享品牌运行时完成PDF品牌处理和交付闸门。"
+      "reason": "制造企业财税风险报告复用统一三表与现金流核验，并使用套件共享品牌运行时完成PDF品牌处理和交付闸门。"
     },
     "patent-router": {
       "required_skills": [],

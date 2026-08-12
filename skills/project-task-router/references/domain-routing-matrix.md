@@ -14,5 +14,6 @@
 | 人才、团队、博士后 | talent-projects | 普通企业研发团队转technology-innovation-projects |
 | 研发机构、科技计划、奖励 | technology-innovation-projects | 产品认定或示范应用转industrialization-projects；设备、产线和固定资产投资转investment-subsidy-projects |
 | 外贸、跨境、服务贸易、境外业务 | trade-and-open-economy-projects | 国内电商不适用 |
+| 去AI味、降低机器腔、中文自然化润色 | gongchuang-humanizer-zh | 资格判断转project-feasibility；正式正文尚未成稿时先转application-writing |
 
 先选择一个主领域。跨领域任务按“主项目条件→专项证据→最终可行性”的顺序调用，不因关键词重合同时启动全部技能。

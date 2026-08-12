@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "manufacturing-tax-risk-analysis",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.4",
   "required_paths": [
     "SKILL.md",
     "assets/gold-advisor.css",
@@ -29,7 +29,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "2e65def8140437dd7df291df31d0fa40f9e312746d3d4e73a90000643a23be06",
+    "SKILL.md": "e17f764f9172ad4dd345a78f9eaefd371d9db7bcd03a5e1e8e84c2bf6fdee3a5",
     "assets/deep-gold-advisor-template.html": "f2c33d887f169add8bff8f23ec3f02fa5de344e30da07dfed0d4d934950b5be3",
     "assets/gold-advisor.css": "b7fe9ff1b85474053f28fd2b4d4858666b6a7f64e332e906b42b1a2961d31be3",
     "package.json": "48954c26137d279550159b04a43ce5461143690d097f18fb6578cb4cbe53ac14",
@@ -40,6 +40,7 @@
     "references/report-input-schema.md": "7d33796c560b3ae63f2f8531645cbbe0341849879a49163cec4962ecad209a4e",
     "references/report-spec.md": "dfce58f8ef1ef29732fbbbbb177c495826d672847766588d46d3ca1ecf0e0477",
     "references/risk-gates.md": "c0b3f606cfc5eb38d98320dfbb7c73df4f0bbad6de6561bcb4b428c1669d5123",
+    "references/tax-calculation-and-freshness-protocol.md": "6c77b6a8119aa0e0bd33c1985ac247450ce46fe2807f31ddaa5b152bcdde1c87",
     "scripts/brand_gold_pdf.py": "8aafe383b7def791a6e690c055aac8e5a9e0bc5519cff19f55de78a6f5d5fff8",
     "scripts/calculate_metrics.py": "b82c2bcbe2fd3aa7cdfa55b12ea48204c494137876f7408408f8891ce965e608",
     "scripts/generate_report_html.py": "d79a0d9eaa3ea730a705ed60dc9d4f4e9179d18eb2b3e3278d895389d6729fbc",

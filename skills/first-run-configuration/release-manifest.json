@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "first-run-configuration",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.4",
   "required_paths": [
     "SKILL.md",
     "references/first-startup-protocol.md",
@@ -23,14 +23,14 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "d1c5c26d612e4e8dc103abb8a3e6db28025efb859376719352759a238c27f30a",
+    "SKILL.md": "358e8c7b690c02427ccc362833b7cd67f22075e72ca3c757bafed5d59f63d64f",
     "references/capability-delegation-protocol.md": "650ad5628f00573765a2c5345a3dd46ee6f5edd0ca7adfda2a26fb2d92f57417",
     "references/first-startup-protocol.md": "36058865706da9063c864461ce5194e377686353b97e644cc9e93a1e0f73b3e5",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/preference-inheritance.md": "b7f3c19f3dcff6882b288fb557fdcc32c1d6b9f846330ba4c63851cc6299027e",
-    "scripts/configure.py": "816c39b7f296ee63d024e2c8d2b34ba195196025dea533358f9c7dba894f91ed",
-    "scripts/manage_preferences.py": "ee2b482fdb354fe6ead06bf58453578ef7fccaca0d4c0b91664ee61d01eb19c4",
-    "scripts/migrate_skill_preferences.py": "04263eea457c5cbedb5f085b515762be721137d9ea3079a6fd5826117e63ef43",
+    "scripts/configure.py": "ace5d1f14b850294a58eb51f07b683b5d184d35f6a23082e0fa60a09981946cd",
+    "scripts/manage_preferences.py": "04f065d372970533a0347290addb79cf5d576a7d1d7c95480bf5a7a64310201e",
+    "scripts/migrate_skill_preferences.py": "616ba0a3dc447b5e1806f9f5dda9bde497ce704cc366cf4d8c741968623da8e7",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/upgrade_inheritance.py": "e91b21ba45e1dd32e72e5867b9f6caae7fb0d63e01373ddf607da38ebf0c9f4d",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

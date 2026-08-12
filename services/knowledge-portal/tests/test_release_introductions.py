@@ -46,6 +46,7 @@ EXPECTED_RELEASES = (
     "1.6.2",
     "1.6.3",
     "1.6.3.1",
+    "1.6.4",
 )
 
 
@@ -113,9 +114,21 @@ def test_v1631_matches_the_owner_confirmed_function_summary():
     )
 
 
+def test_v164_includes_humanization_and_skill_reconciliation():
+    introduction = release_function_introduction("V1.6.4")
+    for text in (
+        "正式技能由49项增至50项",
+        "中文自然化改写",
+        "十三周现金流",
+        "品牌运行时扩展到 PDF、Word、Excel 与 HTML",
+        "本地技能与正式清单对账",
+    ):
+        assert text in introduction
+
+
 def test_future_release_inherits_previous_important_features(tmp_path):
     payload = json.loads(DEFAULT_CATALOG_PATH.read_text(encoding="utf-8"))
-    payload["releases"]["1.6.3.2"] = {
+    payload["releases"]["1.6.4.1"] = {
         "core_profile": "v1.6.2",
         "important_features": ["供后续版本继承的测试能力。"],
         "new_features": ["用于验证继承规则的测试更新。"],
@@ -127,12 +140,12 @@ def test_future_release_inherits_previous_important_features(tmp_path):
     )
 
     introduction = release_function_introduction(
-        "1.6.3.2",
+        "1.6.4.1",
         catalog_path=catalog_path,
     )
     original_features = introduction.split("## 二、原有核心功能", 1)[1]
-    assert "支持高企申请书逐 RD 回填两条具名核心技术" in original_features
-    assert "仅替换目标单元格文字" in original_features
+    assert "中文自然化改写先锁定数字" in original_features
+    assert "发布前自动核对本地扩展与正式技能清单" in original_features
 
 
 def test_unknown_release_falls_back_without_rewriting_history():

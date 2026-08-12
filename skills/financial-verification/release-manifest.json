@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "financial-verification",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.4",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,8 +21,10 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "37cd20085eb4bc996545b4eeced58e7c82d9782ee1fea2142440df3d3eb108b3",
+    "SKILL.md": "6252cea22d63b6eeb2f96d2b1eb524a8ed377e40002c163b453a16da7154807f",
+    "references/cash-flow-and-working-capital-review.md": "df32813123f0a223ffbafe8101b8eaf40c787a9e204a82f11e88c866a7acf1ee",
     "references/financial-facts-contract.md": "efd218cf03186d11bff7189bcfd955e4645b04bad8d943cf7872f4ee74243e16",
+    "references/financial-statement-analysis.md": "374a205f6f9d0ca95bf054eac25ef2019b7ebf305699f004eae39b04a0de9a06",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/reconciliation-and-formulas.md": "167287d40230cbd26a79ffcd2acc51de659fef2b7c80d30aad1d99bb89ba3e54",
     "references/source-and-normalization-rules.md": "49b7228bc7b416cea0a888869f26da290713c4d713282db67404bb6a831e9180",

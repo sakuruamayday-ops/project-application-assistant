@@ -16,7 +16,7 @@ description: 统一完成企业全生命周期助手首次配置、能力检测�
 每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
-团队知识库的首次配置优先采用门户“一键安装”：用户只需把门户生成的一段完整指令发送给当前 WorkBuddy。Agent 自动安装或覆盖49项Skills、启用最小行为Hook、只替换用户配置中的`mcpServers.jiaotang-kb`并保留其他MCP，随后只重载一次并完成真实工具验收。不得要求普通成员执行签名审查、设备登记、bootstrap、钥匙串、DPAPI或本地MCP启动器步骤。
+团队知识库的首次配置优先采用门户“一键安装”：用户只需把门户生成的一段完整指令发送给当前 WorkBuddy。Agent 自动安装或覆盖50项Skills、启用最小行为Hook、只替换用户配置中的`mcpServers.jiaotang-kb`并保留其他MCP，随后只重载一次并完成真实工具验收。不得要求普通成员执行签名审查、设备登记、bootstrap、钥匙串、DPAPI或本地MCP启动器步骤。
 
 团队知识库始终复用唯一的 `jiaotang-kb` MCP。服务端新增工具或统一分析入口时，安装和升级只刷新原连接的工具列表，不创建第二个知识库 MCP，不重新索要凭据。
 

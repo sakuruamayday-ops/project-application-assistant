@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-development-projects",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.4",
   "required_paths": [
     "SKILL.md",
     "references/current-policy-baseline-2026.md",
@@ -23,15 +23,21 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "8f88b345daf987c30143d3b22f1dcca83c6ecbad1e50611577b15e75f770a26a",
+    "SKILL.md": "cb682af53cf383e15794c4b2b3aa1ac889814b7bca31712d3a82b08684567cf9",
     "assets/专精特新小巨人前期培育方向卡模板.docx": "3e6dadd6f7955799eaf3f1e6a1188ef7b5e85e46c933ee6e1d6f36f544375bff",
     "references/application-version-gate.md": "43d651b1c2c61f28746b74266d2f7280507e471a35436be2b9d48f4656408d9a",
+    "references/core-formula-process-performance-matrix.md": "9be9c917fba75a880de7ebc56880a20fa5bdf26d3c8313e81406106f7bac69b9",
     "references/current-policy-baseline-2026.md": "e9b865b21abef878be74e69ea90d57f71a621e8aa60ff65b1525ad0badb56cce",
-    "references/direction-card-first-template.md": "fb285b857bdb8fa1371c2a7fbc01d8645a2b10ce3d99aa26077fa404a503c665",
+    "references/direction-card-first-template.md": "53374de9158d684d6f170a8f4ee96f3b6715bc41938f405c843211550e78fdc5",
+    "references/direction-card-to-six-questions.md": "9327dfaf57c0bceabd21ad5a4be8f003900366a330e2d9e7459a0f992aea3fb8",
     "references/enterprise-introduction-method.md": "8f49aa5ad5066e183824d70ef5ebfb725678f1995a25d604d11760331073e512",
     "references/evaluation-workflow.md": "9c3a6a70ad4a699219ea501f10a27fdb40a126130e8c4030de262b159bd2ccde",
     "references/four-judgment-decision-table.md": "74d219f75f96fea4fd4a6ddc6b580828060b2cc585bb50ca218989ce7033fb46",
+    "references/key-technology-first-innovation-method.md": "e5d94c9578b7faf5b4ff11abfe21e220513f7c5dcd66c18fc1579af110dcbc37",
+    "references/main-product-naming-and-boundary-gate.md": "9543d1410ae33c4aa1dd7e99c59c43f960d01447aaab5795904274242bd47005",
+    "references/market-share-workpaper-method.md": "2971827809846aa031cdb3db5bd2f9d2e68939b8af6cf725889ae4cf42565cd9",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/technology-advancement-feasibility-rubric.md": "73d2c4c3207c722df780bcf928af8b39bd12d202c7a3375f2fc16fd2a37cc6f7",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/validate_sme_assessment.py": "d6f89a306eab2024c668a46d2e6f22546c637e348dbbe9d6e9886585597be516",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

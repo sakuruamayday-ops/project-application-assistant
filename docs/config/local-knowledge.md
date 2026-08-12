@@ -4,7 +4,7 @@
 
 ## 配置
 
-普通成员登录门户后点击“一键安装”，再把整段文字粘贴到当前 WorkBuddy。Agent 自动安装或更新 49 项 Skills、启用最小行为 Hook、只替换用户配置中的 `mcpServers.jiaotang-kb`、保留其他 MCP，并在一次重载后完成连接验证。成员不需要到其他页面寻找 Token，也不需要手工编辑 JSON。
+普通成员登录门户后点击“一键安装”，再把整段文字粘贴到当前 WorkBuddy。Agent 自动安装或更新 50 项 Skills、启用最小行为 Hook、只替换用户配置中的 `mcpServers.jiaotang-kb`、保留其他 MCP，并在一次重载后完成连接验证。成员不需要到其他页面寻找 Token，也不需要手工编辑 JSON。
 
 管理员账号属于设备限制豁免账号，可继续使用门户提供的管理员 API Key。
 

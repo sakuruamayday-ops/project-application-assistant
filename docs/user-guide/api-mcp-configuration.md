@@ -10,7 +10,7 @@
 2. 根据当前电脑，点击“一键安装 macOS 版”或“一键安装 Windows 版”。
 3. 将网站生成的一段完整指令粘贴给当前WorkBuddy。
 
-WorkBuddy会安装或覆盖49项Skills、启用最小行为Hook，只替换用户配置中的`mcpServers.jiaotang-kb`并保留其他MCP，随后重载一次并调用`knowledge_service_status`验收。
+WorkBuddy会安装或覆盖50项Skills、启用最小行为Hook，只替换用户配置中的`mcpServers.jiaotang-kb`并保留其他MCP，随后重载一次并调用`knowledge_service_status`验收。
 
 手工配置页适用于WorkBuddy和其他支持Streamable HTTP MCP的Agent。页面自动复用当前账号的有效个人Token；没有有效Token时自动生成，并直接填入完整配置。
 
@@ -25,7 +25,7 @@ WorkBuddy会安装或覆盖49项Skills、启用最小行为Hook，只替换用�
 1. 登录团队门户并完成团队成员身份验证。
 2. 点击当前电脑对应的 macOS 版或 Windows 版按钮，把完整指令发送给需要使用知识库的WorkBuddy。
 3. WorkBuddy安装插件并合并远程`jiaotang-kb` MCP，保留所有其他MCP条目。
-4. 只有49项Skills可识别、三个核心工具已枚举，且`knowledge_service_status`返回`connected: true`后，才报告配置成功。
+4. 只有50项Skills可识别、三个核心工具已枚举，且`knowledge_service_status`返回`connected: true`后，才报告配置成功。
 
 知识服务还提供三个结构化只读接口：
 

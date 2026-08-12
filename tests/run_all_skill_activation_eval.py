@@ -96,8 +96,8 @@ def main() -> int:
         )
     )
     skills = list(suite.get("skills") or [])
-    if len(skills) != 49 or len(set(skills)) != 49:
-        raise RuntimeError("真实行为门禁要求精确49项不重复技能")
+    if not skills or len(set(skills)) != len(skills):
+        raise RuntimeError("真实行为门禁要求套件技能清单非空且不重复")
     results = []
     for offset in range(0, len(skills), options.batch_size):
         expected = skills[offset : offset + options.batch_size]

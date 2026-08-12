@@ -1,0 +1,104 @@
+{
+  "schema_version": "1.0",
+  "adapters": {
+    "provincial_sme": {
+      "label": "省级专精特新",
+      "subject_mode": "minimum_sufficient_unit",
+      "accepted_product_types": ["material", "component", "terminal_product", "equipment", "system", "software", "service"],
+      "allow_embedded_technology_as_subject": true,
+      "commercial_basis": "稳定搭载核心技术的终端产品收入及占比",
+      "narrative_focus": ["专业化", "精细化", "特色化", "创新能力"],
+      "policy_gates": ["当期省级评价指标", "评分口径", "主导产品收入边界", "申请表结构"]
+    },
+    "small_giant": {
+      "label": "专精特新小巨人",
+      "subject_mode": "minimum_sufficient_unit",
+      "accepted_product_types": ["material", "component", "terminal_product", "equipment", "system", "software"],
+      "allow_embedded_technology_as_subject": true,
+      "commercial_basis": "稳定搭载核心技术的终端产品收入及主导产品占比",
+      "narrative_focus": ["专业化", "创新性", "补短板", "填空白", "国产替代", "产业链价值"],
+      "policy_gates": ["当批次申报门槛", "主导产品收入占比", "产业链关键环节", "I类知识产权关联"]
+    },
+    "first_batch_material": {
+      "label": "首批次新材料",
+      "subject_mode": "material",
+      "accepted_product_types": ["material"],
+      "allow_embedded_technology_as_subject": true,
+      "commercial_basis": "材料销售、应用示范或当期政策认可口径",
+      "narrative_focus": ["材料属性", "技术指标", "工程化", "应用示范"],
+      "policy_gates": ["指导目录品类", "材料产品边界", "检测", "查新", "首批次", "TRL"]
+    },
+    "first_set_equipment": {
+      "label": "首台套装备",
+      "subject_mode": "equipment_or_system",
+      "accepted_product_types": ["equipment", "system"],
+      "allow_embedded_technology_as_subject": false,
+      "commercial_basis": "整机或成套装备销售及示范应用",
+      "narrative_focus": ["整机突破", "关键部件", "控制算法", "工程验证"],
+      "policy_gates": ["首台套定义", "查新", "检测", "销售或应用证明"]
+    },
+    "first_edition_software": {
+      "label": "首版次软件",
+      "subject_mode": "software",
+      "accepted_product_types": ["software", "embedded_software"],
+      "allow_embedded_technology_as_subject": true,
+      "commercial_basis": "当期政策与专项审计认可的软件产品收入",
+      "narrative_focus": ["软件版本", "自主知识产权", "检测", "嵌入式载体", "功能性能"],
+      "policy_gates": ["指导目录类别", "软著时效", "软件检测", "研发投入", "专项审计"]
+    },
+    "industrial_new_product": {
+      "label": "省工业新产品",
+      "subject_mode": "new_product",
+      "accepted_product_types": ["material", "component", "terminal_product", "equipment", "system", "software", "medical_device"],
+      "allow_embedded_technology_as_subject": false,
+      "commercial_basis": "申报新产品销售、客户应用和产业化效益",
+      "narrative_focus": ["技术新颖性", "产品性能", "产业化", "经济效益"],
+      "policy_gates": ["投产时间", "检测", "鉴定或评价", "标准", "销售应用"]
+    },
+    "zhejiang_manufacturing_excellence": {
+      "label": "浙江制造精品",
+      "subject_mode": "market_product",
+      "accepted_product_types": ["material", "component", "terminal_product", "equipment", "system", "software", "medical_device"],
+      "allow_embedded_technology_as_subject": false,
+      "commercial_basis": "申报产品销售、客户认可和市场表现",
+      "narrative_focus": ["技术水平", "质量水平", "品牌", "市场认可"],
+      "policy_gates": ["当期产品范围", "质量标准", "检测认证", "市场表现"]
+    },
+    "science_project": {
+      "label": "科技计划与尖兵领雁",
+      "subject_mode": "task_or_achievement",
+      "accepted_product_types": ["material", "component", "terminal_product", "equipment", "system", "software", "medical_device", "achievement", "prototype"],
+      "allow_embedded_technology_as_subject": true,
+      "commercial_basis": "样机验证、示范应用、成果转化或项目阶段效益",
+      "narrative_focus": ["指南任务", "技术指标", "TRL", "样机", "示范应用"],
+      "policy_gates": ["指南方向", "TRL", "创新平台", "企业牵头比例", "任务书指标"]
+    },
+    "science_award": {
+      "label": "科技进步奖",
+      "subject_mode": "achievement",
+      "accepted_product_types": ["achievement", "material", "component", "terminal_product", "equipment", "system", "software", "medical_device"],
+      "allow_embedded_technology_as_subject": true,
+      "commercial_basis": "应用效益、经济社会效益和推广范围",
+      "narrative_focus": ["成果创新点", "知识产权", "应用单位", "推广效益"],
+      "policy_gates": ["奖励办法", "完成单位", "完成人", "应用年限", "成果评价"]
+    },
+    "innovative_medical_device": {
+      "label": "创新医疗器械",
+      "subject_mode": "registered_medical_device",
+      "accepted_product_types": ["medical_device"],
+      "allow_embedded_technology_as_subject": false,
+      "commercial_basis": "注册产品的临床、应用和商业化价值",
+      "narrative_focus": ["器械创新性", "临床价值", "安全性", "有效性"],
+      "policy_gates": ["器械分类", "注册边界", "临床评价", "安全有效性", "审评要求"]
+    },
+    "high_tech_enterprise": {
+      "label": "高新技术企业",
+      "subject_mode": "high_tech_product_or_service",
+      "accepted_product_types": ["material", "component", "terminal_product", "equipment", "system", "software", "embedded_software", "service", "medical_device"],
+      "allow_embedded_technology_as_subject": true,
+      "commercial_basis": "专项审计认可的高新技术产品或服务收入",
+      "narrative_focus": ["高新领域", "核心知识产权", "研发活动", "高新产品服务"],
+      "policy_gates": ["高新领域", "知识产权", "研发费用比例", "高新收入比例", "专项审计"]
+    }
+  }
+}

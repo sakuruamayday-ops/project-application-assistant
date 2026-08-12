@@ -43,14 +43,15 @@ def test_product_configuration_validator_passes_on_current_formal_release(tmp_pa
     )
     assert result.returncode == 0, result.stdout + result.stderr
     receipt = json.loads(result.stdout)
+    release_tag = load(ROOT / "skills" / "suite-manifest.json")["release"]["tag"]
     assert receipt["status"] == "pass"
     assert receipt["channels"] == {
-        "workbuddy_windows_stable": "V1.6.3.1",
-        "workbuddy_macos_stable": "V1.6.3.1",
-        "candidate": "V1.6.3.1",
+        "workbuddy_windows_stable": release_tag,
+        "workbuddy_macos_stable": release_tag,
+        "candidate": release_tag,
     }
-    assert receipt["skills_contract"] == "V1.6.3.1"
-    assert receipt["grounded_candidate_release"] == "V1.6.3.1"
+    assert receipt["skills_contract"] == release_tag
+    assert receipt["grounded_candidate_release"] == release_tag
 
 
 def test_grounded_host_adapters_are_in_the_shared_package_surface():

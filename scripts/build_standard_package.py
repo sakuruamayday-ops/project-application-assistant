@@ -33,6 +33,8 @@ PORTABLE_REPORT_REQUIRED = [
     "skills/_runtime/gongchuang-branding/references/brand_config.json",
     "skills/_runtime/gongchuang-branding/scripts/brand_config.py",
     "skills/_runtime/gongchuang-branding/scripts/delivery_gate.py",
+    "skills/_runtime/gongchuang-branding/scripts/html_branding.py",
+    "skills/_runtime/gongchuang-branding/scripts/office_watermark.py",
     "skills/_runtime/gongchuang-branding/scripts/pdf_two_pass.py",
     "skills/_runtime/gongchuang-branding/assets/brand-mark.png",
     "skills/_runtime/gongchuang-branding/assets/brand-gold-07.png",

@@ -18,7 +18,8 @@ def test_current_suite_has_complete_verified_signature_coverage():
     skills_root = Path(__file__).resolve().parents[3] / "skills"
     result = MODULE.validate_signature_coverage(skills_root)
     assert result["status"] == "pass", result["errors"]
-    assert result["signature_count"] == result["skill_total"] == 49
+    expected = len(json.loads((skills_root / "suite-manifest.json").read_text(encoding="utf-8"))["skills"])
+    assert result["signature_count"] == result["skill_total"] == expected
     assert result["verified_count"] == result["skill_total"]
 
 
@@ -53,4 +54,5 @@ def test_gate_result_can_be_persisted_for_admin_dashboard(tmp_path):
     assert payload["status"] == "pass"
     assert payload["deployment_id"] == "test-20260726"
     assert payload["scope"] == "production"
-    assert payload["verified_count"] == payload["skill_total"] == 49
+    expected = len(json.loads((skills_root / "suite-manifest.json").read_text(encoding="utf-8"))["skills"])
+    assert payload["verified_count"] == payload["skill_total"] == expected

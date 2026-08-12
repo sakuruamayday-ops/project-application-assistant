@@ -26,5 +26,5 @@
 
 ## 模板入口
 
-- 个人模板：`$artifact-template-sme`
+- 包内母版：`assets/专精特新小巨人前期培育方向卡模板.docx`
 - 技能内模板：`assets/专精特新小巨人前期培育方向卡模板.docx`

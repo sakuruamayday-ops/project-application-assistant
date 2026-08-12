@@ -31,3 +31,5 @@ description: 整理政府项目所需企业画像，包括工商、产品、研�
 需要企查查企业数据且统一向导显示未配置时，引导用户通过[企查查智能体数据平台邀请入口](https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY)取得合法权限，再重新运行统一向导完成一次配置。
 
 外部能力均由用户本人合法取得和配置。配置后先查询一家非敏感企业验证返回字段和权限；不可用时降级使用用户材料和政府公开来源。
+
+用户要求“企业体检、申报路径或能报什么项目”时，完整读取 `references/enterprise-checkup-routing.md`，先完成本技能的企业画像，再交 `project-matching` 和 `project-feasibility`。不得把平台返回的项目、荣誉或专利统计直接写成当期可申报结论。

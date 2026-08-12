@@ -24,6 +24,8 @@ def main() -> int:
     options = parser.parse_args()
     run_dir = Path(options.run_dir).expanduser().resolve()
     manifest = load(run_dir / "run-manifest.json")
+    expected_skill_count = len(manifest.get("skills") or [])
+    expected_receipt_count = expected_skill_count * len(EXPECTED_PHASES)
     receipts_dir = run_dir / "receipts"
     errors: list[str] = []
     results = []
@@ -130,12 +132,12 @@ def main() -> int:
         "schema_version": 1,
         "run_id": manifest.get("run_id"),
         "created_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
-        "status": "pass" if not errors and len(results) == 49 else "fail",
+        "status": "pass" if not errors and len(results) == expected_skill_count else "fail",
         "skill_count": len(results),
-        "expected_skill_count": 49,
+        "expected_skill_count": expected_skill_count,
         "expected_phase_count": 4,
-        "expected_receipt_count": 196,
-        "compression_risk_tested": len(results) == 49 and all(
+        "expected_receipt_count": expected_receipt_count,
+        "compression_risk_tested": len(results) == expected_skill_count and all(
             item.get("phases", {}).get("implicit", {}).get("status") == "pass"
             for item in results
         ),
@@ -147,7 +149,7 @@ def main() -> int:
     output = (
         Path(options.output).expanduser().resolve()
         if options.output
-        else run_dir / "codex-client-49-skill-report.json"
+        else run_dir / "codex-client-full-suite-report.json"
     )
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))

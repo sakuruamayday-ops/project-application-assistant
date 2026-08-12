@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "scope": "本地 jiaotang-* 技能与正式套件的发布前对账",
+  "entries": {
+    "jiaotang-enterprise-verification": {
+      "status": "retained_local_extension",
+      "formal_target": "enterprise-profile",
+      "reason": "包含本机企业数据工具路由和双商业源核验扩展，本轮不作为独立正式技能发布；正式企业画像仍由 enterprise-profile 承担。"
+    },
+    "jiaotang-graphify": {
+      "status": "retained_local_extension",
+      "formal_target": "graphify",
+      "reason": "包含本机项目隔离与隐私配置扩展，本轮不作为独立正式技能发布；正式图谱入口仍为 graphify。"
+    },
+    "jiaotang-humanizer-zh": {
+      "status": "merged_into",
+      "formal_target": "gongchuang-humanizer-zh",
+      "reason": "本地旧名保留兼容映射；中文自然化改写以 gongchuang-humanizer-zh 作为第 50 项正式技能发布。"
+    }
+  }
+}

@@ -27,6 +27,10 @@ description: 核验政府项目申报中的营收、利润、研发投入、资�
 5. 将结果标为“verified、computed、missing、conflicting、not-applicable”；只有前两类可以传递给资格判断。
 6. 输出可复用事实、计算指标、证据、质量状态、冲突和缺口；不输出税务违法或申报资格结论。
 
+需要完整解读资产负债表、利润表和现金流量表时，读取 `references/financial-statement-analysis.md`。指标阈值和行业基准必须带来源、年度和样本口径；没有可靠基准时只做企业自身趋势与结构分析，不使用固定健康值或统一十分制。
+
+需要评估短期资金安全、回款、备货、供应商账期、资本开支或压力情景时，读取 `references/cash-flow-and-working-capital-review.md`。13周现金流、现金跑道和现金转换周期只使用用户资料或明确测算假设，不套用创业公司、SaaS或美元金额基准。
+
 ## 共享财务事实
 
 读取 `references/financial-facts-contract.md`。发现 `enterprise-financial-facts/v1` 文件时：

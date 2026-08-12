@@ -10,7 +10,53 @@ from typing import Any
 
 import fitz
 
-from brand_config import choose_style, load_config, relative_luminance
+from brand_config import choose_style, load_config, public_identity, relative_luminance
+
+
+def _hex_color(value: str) -> tuple[float, float, float]:
+    cleaned = value.strip().lstrip("#")
+    if len(cleaned) != 6:
+        raise ValueError(f"Invalid brand color: {value}")
+    return tuple(int(cleaned[index:index + 2], 16) / 255 for index in (0, 2, 4))
+
+
+def _insert_public_brand_text(page: fitz.Page, *, cover: bool) -> None:
+    config = load_config()
+    identity = public_identity()
+    policy = config["policy"]
+    color = _hex_color(str(policy["header_color"]))
+    font_size = float(policy["header_font_size_pt"])
+    header_rect = fitz.Rect(
+        page.rect.x0 + 28,
+        page.rect.y0 + 14,
+        page.rect.x1 - 28,
+        page.rect.y0 + 14 + font_size * 2.2,
+    )
+    page.insert_textbox(
+        header_rect,
+        identity["document_header"],
+        fontname="china-s",
+        fontsize=font_size,
+        color=color,
+        align=fitz.TEXT_ALIGN_RIGHT,
+        overlay=True,
+    )
+    if cover:
+        cover_rect = fitz.Rect(
+            page.rect.x0 + 28,
+            page.rect.y1 - 48,
+            page.rect.x1 - 28,
+            page.rect.y1 - 24,
+        )
+        page.insert_textbox(
+            cover_rect,
+            identity["cover_signature"],
+            fontname="china-s",
+            fontsize=max(font_size, 10),
+            color=color,
+            align=fitz.TEXT_ALIGN_RIGHT,
+            overlay=True,
+        )
 
 
 def _overlap_area(a: fitz.Rect, b: fitz.Rect) -> float:
@@ -120,6 +166,7 @@ def brand_pdf_bytes(
         overlap_score = overlap / max(1.0, main_rect.width * main_rect.height)
 
         page.insert_image(main_rect, filename=style["asset_path"], keep_proportion=True, overlay=True)
+        _insert_public_brand_text(page, cover=page_index == 0)
 
         audit.append({
             "page": page_index + 1,
@@ -130,6 +177,8 @@ def brand_pdf_bytes(
             "fixed_size_pt": round(fixed_size_pt, 2),
             "main_overlap_score": round(overlap_score, 4),
             "variant": style["variant"],
+            "document_header": public_identity()["document_header"],
+            "cover_signature": page_index == 0,
         })
 
     output_path = Path(output_path)

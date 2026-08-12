@@ -33,6 +33,7 @@ EXPECTED_SKILLS = {
     "intellectual-property-projects",
     "investment-subsidy-projects",
     "ip-assessment",
+    "gongchuang-humanizer-zh",
     "legal-regulations",
     "patent-router",
     "local-knowledge-retrieval",
@@ -68,7 +69,7 @@ def main() -> int:
     errors = []
     if declared != EXPECTED_SKILLS:
         errors.append(
-            "49项行为基线与套件技能漂移："
+            "正式技能行为基线与套件清单漂移："
             f"缺少{sorted(EXPECTED_SKILLS - declared)}；"
             f"新增{sorted(declared - EXPECTED_SKILLS)}"
         )

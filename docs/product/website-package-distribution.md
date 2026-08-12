@@ -13,8 +13,8 @@
 
 | 包型 | 内容 | 用户选择 |
 |---|---|---|
-| 通用 Skills 包 | 49 项正式 Skills 与服务端发布完整性材料 | 宿主支持标准 Agent Skills 时使用 |
-| WorkBuddy 跨平台包 | 49 项 Skills、插件清单、最小行为 Hook、必要参考资料和业务脚本 | 门户提供 macOS 与 Windows 两个并列入口，分别生成对应平台的安装适配指令 |
+| 通用 Skills 包 | 50 项正式 Skills 与服务端发布完整性材料 | 宿主支持标准 Agent Skills 时使用 |
+| WorkBuddy 跨平台包 | 50 项 Skills、插件清单、最小行为 Hook、必要参考资料和业务脚本 | 门户提供 macOS 与 Windows 两个并列入口，分别生成对应平台的安装适配指令 |
 
 WorkBuddy 包已经包含通用 Skills。用户只安装一个包，不叠加安装。
 
@@ -25,7 +25,7 @@ WorkBuddy 包已经包含通用 Skills。用户只安装一个包，不叠加安
 | 通用 Agent Skills | `SKILL.md` 目录或导入机制 | 正式可下载 |
 | WorkBuddy | 本地插件市场、最小行为 Hook、用户级远程 HTTP MCP | macOS 与 Windows 共用一个核心包；网站提供两个独立按钮，安装码与选定平台绑定 |
 
-正式发布矩阵固定为以上两个核心产物，不复制 49 项 Skills 或业务规则。macOS 与 Windows 只分离网站安装入口、路径协议和 Hook 启动适配层。
+正式发布矩阵固定为以上两个核心产物，不复制 50 项 Skills 或业务规则。macOS 与 Windows 只分离网站安装入口、路径协议和 Hook 启动适配层。
 
 ## 版本号授权
 
@@ -45,7 +45,7 @@ WorkBuddy 包已经包含通用 Skills。用户只安装一个包，不叠加安
 2. 包结构、配置字段和版本范围有固定校验器。
 3. 一键安装指令明确写入位置、联网域名、个人 Token 的使用范围和回滚方式。
 4. 不使用外部 CLI、运行锁、动态命令或管理员权限绕过宿主安全边界。
-5. WorkBuddy 包在服务端候选门禁中验证 49 项 Skills、最小行为 Hook、远程 MCP 模式和已停用组件缺失。
+5. WorkBuddy 包在服务端候选门禁中验证 50 项 Skills、最小行为 Hook、远程 MCP 模式和已停用组件缺失。
 6. 发布清单、候选包 SHA-256 和发布者完整性校验全部通过；这是服务端发布门禁，不转嫁给用户。
 7. 正式提升前，以通用签名包在独立验收目录执行原子升级模拟，并完成开发源、正式包、隔离安装目录三方哈希比对和全量验签。不得覆盖发布者正在使用的 Codex Skills。
 8. 发布事务状态必须依次证明 GitHub 暂存、门户暂存、本机安装、门户正式、GitHub
@@ -60,7 +60,7 @@ macOS 与 Windows WorkBuddy 实机验收是发布后补录证据，不是正式�
 ## 兼容与回滚
 
 - 已有用户不手工删除旧插件目录。一键安装指令在处理前备份旧插件目录和用户 MCP 配置，更新或替换旧插件。
-- 门户从已发布 artifact 记录读取通用版和 WorkBuddy 版本，并对 WorkBuddy ZIP 执行服务端完整性、49 项 Skills、最小行为 Hook 和远程 MCP 模式检查。
+- 门户从已发布 artifact 记录读取通用版和 WorkBuddy 版本，并对 WorkBuddy ZIP 执行服务端完整性、50 项 Skills、最小行为 Hook 和远程 MCP 模式检查。
 - 公共 WorkBuddy 包不内置用户 Token、本地知识库服务或启动器。远程 MCP 配置由登录门户为当前用户生成并合并到用户配置。
 - 升级只替换 `mcpServers.jiaotang-kb`，保留其他 MCP，并只重载一次。Windows 固定写入 `%USERPROFILE%\.workbuddy\mcp.json`，macOS 固定写入 `~/.workbuddy/mcp.json`；不得修改 WorkBuddy 托管的 `.workbuddy/.mcp.json`。验收失败时恢复升级前插件目录和用户 MCP 配置备份。
 - 原生客户端 v0.2.0 的 GitHub Release 不删除、不替换，只停止门户转发。

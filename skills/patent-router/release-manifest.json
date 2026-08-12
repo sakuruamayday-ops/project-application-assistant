@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "patent-router",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.4",
   "required_paths": [
     "SKILL.md",
     "references/claim-prior-art-matrix.md",
@@ -55,7 +55,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "39d7a524b7b4dfca43eb5eed6ca994f92e28d0acd27e7d8ef9a7845e5174fc1e",
+    "SKILL.md": "c99af2142976efc1fdc550b893ef1e6b6f3c0da66f050434609d52c249d109bf",
     "references/ai-patent-practice.md": "72465c41a0cbc124c472fd788a8d57cda15475fd2e1c916350ab796a949dd4f9",
     "references/claim-prior-art-matrix.md": "e7734245c823a30982b26efb821839e825ab4482d6f96512e76658d65577b2c5",
     "references/claims-and-office-action-practice.md": "2d06dfd00aed8a7ef5011c72f8d5e3062128c70c8dad7ade6740cbb6181337d7",
@@ -73,6 +73,7 @@
     "references/p2-mining-disclosure.md": "700b47337986f9e3d656a428175342f2efc94049c79988e1223581bf823bdf5e",
     "references/p3-preexam.md": "63c7a7a61ff8ee384f059e2043e1ebb66c7c24c8661b0687e72883d4e276066c",
     "references/patent-application-delivery-contract.json": "fdbf253a6f61bc061be07cd82b8d2d3d5536d5358af74e73880000a5ad3041de",
+    "references/patent-layout-planning.md": "c8cce21e296e9c8a9035665c0de225f0280bd5d1263961c352b0325c4ba2eaae",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/preexam-center-recommendation.md": "401ac74d34883628b7c134d3e57c5d2002ec4d0ed59f5e6aea6ff8a9e1114570",
     "references/preexam-default-centers.md": "574cd07f896b71ee3573a1bc0f6eabbd8afec57460a888d43ba386c593ab3c28",

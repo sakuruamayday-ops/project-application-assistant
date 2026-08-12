@@ -1,8 +1,12 @@
 {
   "name": "gongchuang-branding-runtime",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "formats": [
-    "pdf"
+    "pdf",
+    "docx",
+    "xlsx",
+    "xlsm",
+    "html"
   ],
   "policy": {
     "fail_closed": true,
@@ -12,6 +16,8 @@
   },
   "entrypoints": {
     "brand_pdf": "scripts/pdf_two_pass.py",
+    "brand_office": "scripts/office_watermark.py",
+    "brand_html": "scripts/html_branding.py",
     "delivery_gate": "scripts/delivery_gate.py"
   }
 }

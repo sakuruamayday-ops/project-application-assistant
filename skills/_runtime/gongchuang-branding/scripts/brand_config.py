@@ -26,6 +26,27 @@ def load_config() -> dict[str, Any]:
     return config
 
 
+def public_identity() -> dict[str, str]:
+    """Return the single public-facing brand contract used by all renderers."""
+    identity = load_config().get("public_identity")
+    if not isinstance(identity, dict):
+        raise ValueError("Public brand identity is missing")
+    required = {
+        "display_name",
+        "product_name",
+        "document_header",
+        "cover_signature",
+        "artifact_slug",
+        "marketplace_name",
+        "plugin_name",
+        "mcp_name",
+    }
+    missing = sorted(required - set(identity))
+    if missing:
+        raise ValueError("Public brand identity fields missing: " + ", ".join(missing))
+    return {key: str(identity[key]) for key in required}
+
+
 def estimate_density(content: Any) -> float:
     """Estimate layout density from Markdown text or structured content blocks."""
     if isinstance(content, str):
@@ -96,12 +117,16 @@ def choose_style(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--density", type=float, required=True)
+    parser.add_argument("--density", type=float, default=0.35)
     parser.add_argument("--luminance", type=float, default=1.0)
     parser.add_argument("--target", choices=["pdf", "pptx", "docx", "xlsx"], default="pdf")
     parser.add_argument("--variant", choices=["gold"])
+    parser.add_argument("--identity", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(choose_style(args.density, args.luminance, args.target, variant=args.variant), ensure_ascii=False))
+    result = public_identity() if args.identity else choose_style(
+        args.density, args.luminance, args.target, variant=args.variant
+    )
+    print(json.dumps(result, ensure_ascii=False))
 
 
 if __name__ == "__main__":

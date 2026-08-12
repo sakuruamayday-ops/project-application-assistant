@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare an isolated 49-Skill Codex desktop-client evaluation workspace."""
+"""Prepare an isolated full-suite Codex desktop-client evaluation workspace."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MATRIX = ROOT / "tests" / "codex-client-49-skill-matrix.json"
+DEFAULT_MATRIX = ROOT / "tests" / "codex-client-skill-matrix.json"
 EXPECTED_PHASES = ("implicit", "explicit", "negative", "functional")
 PHASE_GUARDS = {
     "implicit": (
@@ -112,7 +112,8 @@ def validate_matrix(matrix: dict, declared_skills: list[str]) -> list[dict]:
         missing = sorted(set(declared_skills) - set(names))
         extra = sorted(set(names) - set(declared_skills))
         raise RuntimeError(
-            f"测试矩阵必须按suite-manifest顺序精确覆盖49项；missing={missing}, extra={extra}"
+            "测试矩阵必须按suite-manifest顺序精确覆盖全部技能；"
+            f"expected={len(declared_skills)}, missing={missing}, extra={extra}"
         )
     for expected_index, item in enumerate(cases, start=1):
         if item.get("index") != expected_index:
@@ -146,8 +147,8 @@ def prepare(options: argparse.Namespace) -> dict:
     project_root = Path(options.project_root).expanduser().resolve()
     suite = load_json(skills_root / "suite-manifest.json")
     declared = list(suite.get("skills") or [])
-    if len(declared) != 49 or len(set(declared)) != 49:
-        raise RuntimeError("Codex客户端全量测试要求suite-manifest精确声明49项不重复技能")
+    if not declared or len(set(declared)) != len(declared):
+        raise RuntimeError("Codex客户端全量测试要求suite-manifest声明非空且不重复的技能清单")
     matrix_path = Path(options.matrix).expanduser().resolve()
     matrix = load_json(matrix_path)
     cases = validate_matrix(matrix, declared)
@@ -267,7 +268,7 @@ def prepare(options: argparse.Namespace) -> dict:
         "created_at": created_at.isoformat(timespec="seconds"),
         "status": "prepared",
         "execution_host": "codex-desktop-client",
-        "execution_mode": "49-isolated-client-threads-four-phases",
+        "execution_mode": "full-suite-isolated-client-threads-four-phases",
         "skill_materialization": options.materialization,
         "phase_guards": PHASE_GUARDS,
         "publish_authorized": False,
@@ -283,7 +284,7 @@ def prepare(options: argparse.Namespace) -> dict:
             "estimated_initial_list_chars": description_chars,
             "documented_unknown_context_limit_chars": 8000,
             "compression_risk": description_chars > 8000,
-            "required_test": "all-49-present-implicit-routing",
+            "required_test": "all-declared-skills-present-implicit-routing",
         },
         "skills": skill_records,
         "project_skills_root": str(repo_skills),

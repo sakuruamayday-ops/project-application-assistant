@@ -1,6 +1,16 @@
 {
-  "version": 1,
-  "scope": ["pdf", "pptx", "docx", "xlsx"],
+  "version": 2,
+  "public_identity": {
+    "display_name": "共创研究院",
+    "product_name": "共创研究院企业全生命周期助手",
+    "document_header": "共创研究院",
+    "cover_signature": "共创研究院",
+    "artifact_slug": "gongchuang-research-institute-skills",
+    "marketplace_name": "gongchuang-research-institute",
+    "plugin_name": "gongchuang-research-institute-skills",
+    "mcp_name": "jiaotang-kb"
+  },
+  "scope": ["pdf", "pptx", "docx", "xlsx", "html"],
   "excluded_formats": ["xls", "csv"],
   "policy": {
     "default_required": true,
@@ -9,7 +19,12 @@
     "size_multiplier": 1.3333333333333333,
     "page_level_size_adjustment": false,
     "owner_only_opt_out_phrase": "不许加水印",
-    "generated_skills_may_disable": false
+    "generated_skills_may_disable": false,
+    "header_required": true,
+    "cover_signature_required": true,
+    "header_alignment": "right",
+    "header_font_size_pt": 9,
+    "header_color": "#8A6A2F"
   },
   "dark_background_luminance_threshold": 0.42,
   "density_thresholds": {

@@ -28,11 +28,12 @@ class CodexClientHarnessTests(unittest.TestCase):
     def test_matrix_covers_exact_suite_order_and_four_phases(self):
         suite = json.loads((ROOT / "skills/suite-manifest.json").read_text(encoding="utf-8"))
         matrix = json.loads(
-            (ROOT / "tests/codex-client-49-skill-matrix.json").read_text(encoding="utf-8")
+            (ROOT / "tests/codex-client-skill-matrix.json").read_text(encoding="utf-8")
         )
         cases = PREPARE.validate_matrix(matrix, suite["skills"])
-        self.assertEqual(len(cases), 49)
-        self.assertEqual(sum(4 for _ in cases), 196)
+        expected_count = len(suite["skills"])
+        self.assertEqual(len(cases), expected_count)
+        self.assertEqual(sum(4 for _ in cases), expected_count * 4)
         for case in cases:
             prompt = PREPARE.effective_prompt("implicit", case["implicit_prompt"])
             self.assertNotIn(case["skill"], prompt)
@@ -60,15 +61,18 @@ class CodexClientHarnessTests(unittest.TestCase):
                 {
                     "skills_root": str(ROOT / "skills"),
                     "project_root": str(root),
-                    "matrix": str(ROOT / "tests/codex-client-49-skill-matrix.json"),
+                    "matrix": str(ROOT / "tests/codex-client-skill-matrix.json"),
                     "run_id": "test-run",
                     "replace": False,
                     "materialization": "copy",
                 },
             )()
             manifest = PREPARE.prepare(options)
-            self.assertEqual(manifest["skill_count"], 49)
-            self.assertEqual(manifest["expected_receipt_count"], 196)
+            expected_count = len(
+                json.loads((ROOT / "skills/suite-manifest.json").read_text(encoding="utf-8"))["skills"]
+            )
+            self.assertEqual(manifest["skill_count"], expected_count)
+            self.assertEqual(manifest["expected_receipt_count"], expected_count * 4)
             self.assertTrue(manifest["description_budget"]["compression_risk"])
             self.assertEqual(manifest["skill_materialization"], "copy")
             self.assertTrue(
@@ -77,14 +81,17 @@ class CodexClientHarnessTests(unittest.TestCase):
                     for item in manifest["skills"]
                 )
             )
-            self.assertEqual(len(list((root / ".agents/skills").iterdir())), 49)
+            self.assertEqual(len(list((root / ".agents/skills").iterdir())), expected_count)
             self.assertTrue(
                 all(
                     item.is_dir() and not item.is_symlink()
                     for item in (root / ".agents/skills").iterdir()
                 )
             )
-            self.assertEqual(len(list((root / ".codex-client-harness/runs/test-run/cases").glob("*.json"))), 49)
+            self.assertEqual(
+                len(list((root / ".codex-client-harness/runs/test-run/cases").glob("*.json"))),
+                expected_count,
+            )
             first_case = json.loads(
                 next(
                     (root / ".codex-client-harness/runs/test-run/cases").glob("*.json")
@@ -97,10 +104,10 @@ class CodexClientHarnessTests(unittest.TestCase):
                 "GONGCHUANG_SKILL_DATA_DIR",
                 first_case["effective_prompt"]["functional"],
             )
-            web_case = json.loads(
-                (root / ".codex-client-harness/runs/test-run/cases/49-web-task-operator.json")
-                .read_text(encoding="utf-8")
+            web_case_path = next(
+                (root / ".codex-client-harness/runs/test-run/cases").glob("*-web-task-operator.json")
             )
+            web_case = json.loads(web_case_path.read_text(encoding="utf-8"))
             fixture_path = Path(web_case["functional_fixture_path"])
             self.assertTrue(fixture_path.is_file())
             self.assertIn(str(fixture_path), web_case["effective_prompt"]["functional"])

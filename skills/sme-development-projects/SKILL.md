@@ -26,7 +26,7 @@ description: 分析创新型中小企业、专精特新中小企业、专精特�
 
 任务属于前期培育报告、产品方向选择或未来专利培育时，先完整读取 `references/direction-card-first-template.md`。先分别形成企业现有方向、用户给定方向和建议新增方向三类方向卡，每张卡直接写方向内容、好处、坏处、培育建议、专利布局和申报角色；完成横向比较与推荐后，才进入政策适配和申报成熟度。
 
-方向卡阶段有资料就分析，没有就跳过，不因缺少第三方证据阻断方向判断。共享算法或底层能力不等于同一主导产品，不得用抽象“技术母体”把客户、交付物、收入边界或产业环节明显不同的方向硬合并。生成 Word 报告时优先使用 `$artifact-template-sme` 或 `assets/专精特新小巨人前期培育方向卡模板.docx`。
+方向卡阶段有资料就分析，没有就跳过，不因缺少第三方证据阻断方向判断。共享算法或底层能力不等于同一主导产品，不得用抽象“技术母体”把客户、交付物、收入边界或产业环节明显不同的方向硬合并。生成 Word 报告时复制 `assets/专精特新小巨人前期培育方向卡模板.docx` 到任务输出目录后填写，禁止直接改写技能内母版。
 
 ## 评价流程
 
@@ -38,6 +38,10 @@ description: 分析创新型中小企业、专精特新中小企业、专精特�
 涉及产业链或“工业六基”时，必须调用 `industry-chain-foundation-matcher`，严格使用其目录索引和精确、近似、未命中三级规则。没有精确命中时，输出一个相似目录项和一个推定产业链，均不得伪装成目录原文。
 
 涉及市场占有率、细分领域排名、补短板、锻长板、填空白或国产替代时，必须调用 `industry-positioning`，读取其细分市场边界与产业链价值证据闸门，并将市场边界、测算口径、替代对象和证据状态写入 `evidence-ledger`。行业标准、海关编码和协会分类只按各自适用范围交叉验证，不得代替当期申请表指定的行业或产品分类。
+
+主导产品命名、收入边界和自产自用核心技术载体分别读取 `references/main-product-naming-and-boundary-gate.md`、`references/core-formula-process-performance-matrix.md`。细分市场占有率读取 `references/market-share-workpaper-method.md`；技术先进性和工程落地性读取 `references/technology-advancement-feasibility-rubric.md`。这些方法只统一证据与计算顺序，不替代当期政策门槛。
+
+前期培育报告进入补短板、填空白和六问展开前，读取 `references/direction-card-to-six-questions.md`。每套六问只服务一个已选产品方向；专利结构、未来布局和检索交给 `patent-router`，正式正文交给 `application-writing`，不得另建并行专利或写作入口。
 
 诊断或改写企业总体情况简介时，先读取 `references/enterprise-introduction-method.md`。采用企业基本情况三段和主导产品技术四段加一可选段的结构，保持官方章节兼容，逐段建立行业问题、核心技术、量化指标、验证证据和产业链价值闭环。
 

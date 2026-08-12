@@ -2006,7 +2006,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             )
             self.assertTrue(state_path.is_file())
 
-    def test_all_49_generated_skill_runners_activate_from_default_layout(self):
+    def test_all_generated_skill_runners_activate_from_default_layout(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             home = root / "home"
@@ -2021,8 +2021,8 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 )
             )
             skills = list(suite["skills"])
-            self.assertEqual(len(skills), 49)
-            self.assertEqual(len(set(skills)), 49)
+            self.assertTrue(skills)
+            self.assertEqual(len(set(skills)), len(skills))
             commands = {}
             for skill in skills:
                 source = REPOSITORY / "skills" / skill
@@ -2075,7 +2075,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 self.assertTrue(receipt["state_persisted"])
                 receipts.append(receipt)
 
-            self.assertEqual(receipts[-1]["active_skill_count"], 49)
+            self.assertEqual(receipts[-1]["active_skill_count"], len(skills))
             self.assertEqual(
                 set(receipts[-1]["active_skills_after"]),
                 set(skills),
