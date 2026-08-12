@@ -1,0 +1,57 @@
+{
+  "batch_id": "V1.6.4.2-sme-presale",
+  "state": "approved",
+  "risk_level": "medium",
+  "summary": "将专精特新前期评估收敛为五至八页四部分客户谈单报告，后台保留完整政策项目池。",
+  "snapshot": {
+    "path": "snapshot.md",
+    "sha256": "01fb4c98334b738214a15c0274989a0d133f85c71eb9cbab6055bc3762aab183"
+  },
+  "impact_report": {
+    "path": "impact-report.md",
+    "sha256": "83bcdf5ce1ce71290b9c8776dd3e4e3eb5fadc12f908e96680fe5343ab082005"
+  },
+  "diff": {
+    "path": "candidate-diff.md",
+    "sha256": "fc636a3982067aaf8fea75e0152871be96d2700d093e404e84ee23862c12ccb9"
+  },
+  "test_report": {
+    "path": "test-report.md",
+    "sha256": "c22a39a3e68a2beaea46719633e4d3e1af2e3532ada023f1c119f2ad5bb4d2f1"
+  },
+  "tests": [
+    {"name": "sme-presale-targeted", "status": "pass", "result": "20 passed"},
+    {"name": "root-skill-suite", "status": "pass", "result": "275 passed, 2 skipped, 67 subtests passed"},
+    {"name": "knowledge-portal-suite", "status": "pass", "result": "591 passed, 7 skipped"},
+    {"name": "skill-structure", "status": "pass", "result": "pass"},
+    {"name": "diff-check", "status": "pass", "result": "pass"}
+  ],
+  "targets": [
+    {
+      "path": "skills/sme-score-preassessment/SKILL.md",
+      "before_sha256": "84ee9d4e76abbc975222c934ed9f4807a53045a94d852663d2fdfca9b1309ddc",
+      "after_sha256": "deb5e5160bdd852d4afb349903d732a4ed8d6ec92b47ad50e1fde5e058c1cc24"
+    },
+    {
+      "path": "skills/sme-score-preassessment/references/pre-sale-assessment-report-contract.md",
+      "before_sha256": null,
+      "after_sha256": "06a03548f106dd7ee8d72b585e1415a2b9b9f895a07118c922ef63220b7ca5ae"
+    },
+    {
+      "path": "tests/test_sme_presale_report_contract.py",
+      "before_sha256": null,
+      "after_sha256": "fb5a10d8d102b687247a99ba24f23fe909b0a9b7cbc7ef7dca234691653328d2"
+    },
+    {
+      "path": "tests/test_policy_application_path_contract.py",
+      "before_sha256": "8dbf2b939a684dd86a8ab191a6e967245354a70a57608814394a9d4e7d2b6f73",
+      "after_sha256": "d7a47129846c03688e782b935d15d84ee111d543af8d85e996602e207c71ad12"
+    }
+  ],
+  "approval": {
+    "approved_by": "owner",
+    "approved_at": "2026-08-12T17:00:00+08:00",
+    "approval_scope": "主人明确要求修改专精特新前期评估技能，固定四部分简版报告，且不改企业分析版本及尖兵领雁、市级重大、科技计划类分析。",
+    "diff_sha256": "fc636a3982067aaf8fea75e0152871be96d2700d093e404e84ee23862c12ccb9"
+  }
+}

@@ -61,10 +61,10 @@ def test_active_skills_load_or_enforce_contract() -> None:
 def test_sme_preassessment_delivery_contains_policy_route_outputs() -> None:
     content = read(ROOT / "skills" / "sme-score-preassessment" / "SKILL.md")
     required = (
-        "完整政策申报路径总表",
-        "重点项目路径卡和年度责任路线图",
-        "当前可报、建设后申报、条件触发和长期梯度",
-        "未因当前不具备、暂不需要或优先级低而删除",
+        "后台建立完整相关项目池",
+        "十二字段路径卡只作内部完整性检查",
+        "研发中心、绿色工厂、数字化、知识产权和质量品牌",
+        "每项原则上只占一行",
     )
     for phrase in required:
         assert phrase in content
