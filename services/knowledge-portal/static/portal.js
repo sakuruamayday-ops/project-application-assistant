@@ -406,6 +406,89 @@ function copyGeneratedTextFromGesture(valuePromise) {
   return Promise.resolve(valuePromise).then(copyToClipboard);
 }
 
+function ensureAgentManualCopyPanel(card) {
+  if (!card) return null;
+  const existing = card.querySelector("[data-agent-manual-copy]");
+  if (existing) return existing;
+
+  const panel = document.createElement("section");
+  panel.className = "agent-manual-copy";
+  panel.dataset.agentManualCopy = "";
+  panel.hidden = true;
+  panel.setAttribute("role", "region");
+  panel.setAttribute("aria-label", "手工复制完整指令");
+
+  const heading = document.createElement("strong");
+  heading.dataset.agentManualCopyTitle = "";
+  heading.textContent = "完整指令已保留";
+
+  const guidance = document.createElement("p");
+  guidance.textContent = "自动复制未获浏览器允许。文本已全选，请按 ⌘C 或 Ctrl+C 手工复制。";
+
+  const textarea = document.createElement("textarea");
+  textarea.dataset.agentManualCopyValue = "";
+  textarea.readOnly = true;
+  textarea.rows = 8;
+  textarea.autocomplete = "off";
+  textarea.spellcheck = false;
+  textarea.setAttribute("aria-label", "可手工复制的完整指令");
+
+  const actions = document.createElement("div");
+  actions.className = "agent-manual-copy-actions";
+
+  const retry = document.createElement("button");
+  retry.className = "button secondary";
+  retry.type = "button";
+  retry.dataset.agentManualCopyRetry = "";
+  retry.textContent = "重新尝试复制";
+
+  const hide = document.createElement("button");
+  hide.className = "button secondary";
+  hide.type = "button";
+  hide.dataset.agentManualCopyHide = "";
+  hide.textContent = "隐藏并清除";
+
+  const status = document.createElement("small");
+  status.className = "agent-manual-copy-status";
+  status.dataset.agentManualCopyStatus = "";
+  status.setAttribute("aria-live", "polite");
+
+  actions.append(retry, hide);
+  panel.append(heading, guidance, textarea, actions, status);
+  const anchor = card.querySelector("[data-agent-upgrade-status], [data-agent-copy-status]");
+  if (anchor) anchor.insertAdjacentElement("afterend", panel);
+  else card.appendChild(panel);
+  return panel;
+}
+
+function selectAgentManualCopyText(textarea) {
+  if (!textarea) return;
+  textarea.focus({preventScroll: true});
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+}
+
+function hideAgentManualCopy(card) {
+  const panel = card?.querySelector("[data-agent-manual-copy]");
+  if (!panel) return;
+  const textarea = panel.querySelector("[data-agent-manual-copy-value]");
+  if (textarea) textarea.value = "";
+  panel.hidden = true;
+}
+
+function showAgentManualCopy(card, value, title) {
+  const panel = ensureAgentManualCopyPanel(card);
+  if (!panel) return;
+  const heading = panel.querySelector("[data-agent-manual-copy-title]");
+  const textarea = panel.querySelector("[data-agent-manual-copy-value]");
+  const status = panel.querySelector("[data-agent-manual-copy-status]");
+  if (heading) heading.textContent = title || "完整指令已保留";
+  if (textarea) textarea.value = value;
+  if (status) status.textContent = "本次生成结果已保留，不会再次生成凭据；内容可能包含个人 Token，请勿转发。";
+  panel.hidden = false;
+  window.requestAnimationFrame(() => selectAgentManualCopyText(textarea));
+}
+
 function appendAssistantProgress(list, payload) {
   list.querySelector("li.is-active")?.classList.replace("is-active", "is-complete");
   const item = document.createElement("li");
@@ -635,6 +718,28 @@ const confirmAgentUpgrade = async (card) => {
 };
 
 document.addEventListener("click", async (event) => {
+  const manualCopyRetry = event.target.closest("[data-agent-manual-copy-retry]");
+  if (manualCopyRetry) {
+    const panel = manualCopyRetry.closest("[data-agent-manual-copy]");
+    const textarea = panel?.querySelector("[data-agent-manual-copy-value]");
+    const status = panel?.querySelector("[data-agent-manual-copy-status]");
+    manualCopyRetry.disabled = true;
+    try {
+      await copyToClipboard(textarea?.value || "");
+      if (status) status.textContent = "复制成功，可以粘贴给当前设备的 WorkBuddy。";
+    } catch {
+      selectAgentManualCopyText(textarea);
+      if (status) status.textContent = "浏览器仍未允许自动复制，文本已全选；请按 ⌘C 或 Ctrl+C。";
+    } finally {
+      manualCopyRetry.disabled = false;
+    }
+    return;
+  }
+  const manualCopyHide = event.target.closest("[data-agent-manual-copy-hide]");
+  if (manualCopyHide) {
+    hideAgentManualCopy(manualCopyHide.closest("[data-agent-bootstrap], [data-agent-upgrade]"));
+    return;
+  }
   const agentUpgradeButton = event.target.closest("[data-copy-agent-upgrade]");
   if (agentUpgradeButton) {
     const card = agentUpgradeButton.closest("[data-agent-upgrade]");
@@ -643,9 +748,11 @@ document.addEventListener("click", async (event) => {
     agentUpgradeButton.disabled = true;
     agentUpgradeButton.classList.add("is-loading");
     status?.classList.remove("is-error");
+    hideAgentManualCopy(card);
     agentUpgradeButton.innerHTML = "<span>正在锁定升级版本…</span><small>请稍候</small>";
+    let payloadPromise = null;
     try {
-      const payloadPromise = loadAgentUpgradeReview(card);
+      payloadPromise = loadAgentUpgradeReview(card);
       const copyPromise = copyGeneratedTextFromGesture(
         payloadPromise.then((payload) => payload.prompt),
       );
@@ -663,7 +770,14 @@ document.addEventListener("click", async (event) => {
       agentUpgradeButton.innerHTML = originalMarkup;
       agentUpgradeButton.disabled = false;
       agentUpgradeButton.classList.remove("is-loading");
-      if (status) {
+      const payload = payloadPromise ? await payloadPromise.catch(() => null) : null;
+      if (payload?.prompt) {
+        showAgentManualCopy(card, payload.prompt, "升级审查指令已生成");
+        if (status) {
+          status.classList.add("is-error");
+          status.textContent = "自动复制未获浏览器允许，完整升级审查指令已在下方显示。";
+        }
+      } else if (status) {
         status.classList.add("is-error");
         status.textContent = error.message || "生成升级审查失败。";
       }
@@ -677,8 +791,10 @@ document.addEventListener("click", async (event) => {
     const installCard = card?.closest("[data-agent-bootstrap]");
     confirmUpgradeButton.disabled = true;
     status?.classList.remove("is-error");
+    hideAgentManualCopy(card);
+    let payloadPromise = null;
     try {
-      const payloadPromise = confirmAgentUpgrade(card);
+      payloadPromise = confirmAgentUpgrade(card);
       const copyPromise = copyGeneratedTextFromGesture(
         payloadPromise.then((payload) => payload.prompt),
       );
@@ -687,7 +803,14 @@ document.addEventListener("click", async (event) => {
       if (status) status.textContent = "请粘贴给审查升级计划的同一个 Agent；门户只接受目标版本和目标哈希完全一致的回传。";
       watchAgentUpgradeStatus(installCard);
     } catch (error) {
-      if (status) {
+      const payload = payloadPromise ? await payloadPromise.catch(() => null) : null;
+      if (payload?.prompt) {
+        showAgentManualCopy(card, payload.prompt, "升级确认指令已生成");
+        if (status) {
+          status.classList.add("is-error");
+          status.textContent = "自动复制未获浏览器允许，完整升级确认指令已在下方显示。";
+        }
+      } else if (status) {
         status.classList.add("is-error");
         status.textContent = error.message || "确认升级失败。";
       }
@@ -707,9 +830,11 @@ document.addEventListener("click", async (event) => {
     installButtons.forEach((button) => { button.disabled = true; });
     agentBootstrapButton.classList.add("is-loading");
     status?.classList.remove("is-error");
+    hideAgentManualCopy(card);
     agentBootstrapButton.innerHTML = `<span>正在生成 ${platformLabel} 配置…</span><small>请稍候</small>`;
+    let payloadPromise = null;
     try {
-      const payloadPromise = loadAgentInstallReview(card, {platform});
+      payloadPromise = loadAgentInstallReview(card, {platform});
       const copyPromise = copyGeneratedTextFromGesture(
         payloadPromise.then((payload) => payload.prompt),
       );
@@ -728,7 +853,14 @@ document.addEventListener("click", async (event) => {
       agentBootstrapButton.innerHTML = originalMarkup;
       installButtons.forEach((button) => { button.disabled = false; });
       agentBootstrapButton.classList.remove("is-loading");
-      if (status) {
+      const payload = payloadPromise ? await payloadPromise.catch(() => null) : null;
+      if (payload?.prompt) {
+        showAgentManualCopy(card, payload.prompt, `${platformLabel} 安装指令已生成`);
+        if (status) {
+          status.classList.add("is-error");
+          status.textContent = "自动复制未获浏览器允许，完整安装指令已在下方显示。";
+        }
+      } else if (status) {
         status.classList.add("is-error");
         status.textContent = error.message || "生成失败，请稍后重试。";
       }

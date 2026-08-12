@@ -82,6 +82,21 @@ def test_generated_agent_prompts_start_clipboard_write_inside_user_gesture() -> 
     assert "浏览器未允许复制" in portal_js
 
 
+def test_generated_agent_prompts_have_inline_manual_copy_fallback() -> None:
+    portal_js = (STATIC / "portal.js").read_text(encoding="utf-8")
+    css = (STATIC / "atelier.css").read_text(encoding="utf-8")
+
+    assert "function showAgentManualCopy(card, value, title)" in portal_js
+    assert "function hideAgentManualCopy(card)" in portal_js
+    assert 'textarea.dataset.agentManualCopyValue = ""' in portal_js
+    assert 'textarea.readOnly = true' in portal_js
+    assert 'retry.dataset.agentManualCopyRetry = ""' in portal_js
+    assert "本次生成结果已保留，不会再次生成凭据" in portal_js
+    assert portal_js.count("showAgentManualCopy(card, payload.prompt") == 3
+    assert ".agent-manual-copy textarea" in css
+    assert ".agent-manual-copy[hidden]" in css
+
+
 def test_black_gold_sources_do_not_use_micro_text_below_11px() -> None:
     sources = ("atelier.css", "console.css", "skill-center.css", "demo.css")
     offenders: list[str] = []

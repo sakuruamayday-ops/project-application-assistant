@@ -111,6 +111,51 @@ try {
   const copiedPrompt = await page.evaluate(() => navigator.clipboard.readText());
   assert.match(copiedPrompt, /macOS Hook 启动适配器/);
   assert.match(copiedPrompt, /knowledge_service_status/);
+  await page.evaluate(() => {
+    window.ClipboardItem = undefined;
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: () => Promise.reject(new DOMException(
+          "The request is not allowed by the user agent or the platform in the current context",
+          "NotAllowedError",
+        )),
+      },
+    });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: () => false,
+    });
+  });
+  const blockedCopyResponsePromise = page.waitForResponse((response) => (
+    response.url().endsWith("/agent-bootstrap-codes")
+    && response.request().method() === "POST"
+  ));
+  await windowsInstallButton.click();
+  const blockedCopyResponse = await blockedCopyResponsePromise;
+  const manualCopyPanel = installPane.locator("[data-agent-manual-copy]");
+  await manualCopyPanel.waitFor({state: "visible"});
+  const manualPrompt = await manualCopyPanel.locator("[data-agent-manual-copy-value]").inputValue();
+  assert.equal(blockedCopyResponse.status(), 200, "浏览器拒绝复制时，指令生成接口仍应成功");
+  assert.match(manualPrompt, /Windows 原生 EXE Hook 适配器/);
+  assert.match(manualPrompt, /knowledge_service_status/);
+  assert.match(await installPane.locator("[data-agent-copy-status]").innerText(), /完整安装指令已在下方显示/);
+  assert.match(await manualCopyPanel.innerText(), /不会再次生成凭据/);
+  await manualCopyPanel.locator("[data-agent-manual-copy-retry]").click();
+  assert.match(await manualCopyPanel.locator("[data-agent-manual-copy-status]").innerText(), /文本已全选/);
+  const selection = await manualCopyPanel.locator("[data-agent-manual-copy-value]").evaluate((element) => ({
+    start: element.selectionStart,
+    end: element.selectionEnd,
+    length: element.value.length,
+  }));
+  assert.deepEqual(selection, {start: 0, end: selection.length, length: selection.length}, "手工兜底文本应保持全选");
+  await manualCopyPanel.locator("[data-agent-manual-copy-hide]").click();
+  assert.equal(await manualCopyPanel.isHidden(), true, "用户应能隐藏手工复制区域");
+  assert.equal(
+    await manualCopyPanel.locator("[data-agent-manual-copy-value]").inputValue(),
+    "",
+    "隐藏后必须清除页面内的敏感指令",
+  );
   if (process.env.JIAOTANG_INSTALL_DESKTOP_SCREENSHOT) {
     await page.screenshot({path: process.env.JIAOTANG_INSTALL_DESKTOP_SCREENSHOT, fullPage: true});
   }
