@@ -331,6 +331,15 @@ python3 "${script_dir}/build_policy_version_links.py" \
   --manifest "${manifest}" \
   --content-db "${index_dir}/knowledge_content.sqlite3" \
   --output "${index_dir}"
+echo "[6/10] 重建企业项目数字孪生并应用已核验三首产品修正"
+python3 "${script_dir}/rebuild_target_project_identity_twins.py" \
+  --database "${index_dir}/knowledge_content.sqlite3" \
+  --policy-version-database "${index_dir}/policy_versions.sqlite3" \
+  --product-corrections "${knowledge_root}/50_名单与对标/企业身份时间轴/浙江省/三首产品补充证据_20260812.json" \
+  --knowledge-root "${knowledge_root}" \
+  --output "${index_dir}/enterprise-project-twin-rebuild"
+python3 "${script_dir}/verify_target_project_twin_closure.py" \
+  --database "${index_dir}/knowledge_content.sqlite3"
 stage_mark "convergence-and-aux-indexes" "passed"
 
 stage_mark "validation-and-tests" "started"

@@ -14,9 +14,11 @@ EVENT_PRECEDENCE = {
     "review_due": 30,
     "review_publicity": 40,
     "continued_support": 45,
+    "award": 50,
     "annual_evaluation": 50,
     "review_passed": 60,
     "re_recognition": 70,
+    "directory_exit": 80,
     "changed": 80,
     "revoked": 90,
 }
@@ -170,6 +172,10 @@ def next_state(
         return previous_state, "主体变更只更新身份链，不自动改变资格状态"
     if event_type == "continued_support":
         return previous_state, "继续支持属于支持事件，不覆盖认定批次"
+    if event_type == "award":
+        return previous_state, "奖励事件不等同于新增认定，不覆盖历史资格状态"
+    if event_type == "directory_exit":
+        return "directory_exited", "目录退出仅更新产品目录状态，不删除历史认定事实"
     return previous_state, "未知事件类型不自动改变资格状态"
 
 
@@ -222,6 +228,13 @@ def replay_steps(
                 "valid_through_year": valid_through_year,
                 "cohort_year": event.get("cohort_year"),
                 "batch": str(event.get("batch") or ""),
+                "event_scope": str(event.get("event_scope") or ""),
+                "subject_type": str(event.get("subject_type") or "enterprise"),
+                "subject_key": str(event.get("subject_key") or "enterprise"),
+                "subject_name": str(event.get("subject_name") or ""),
+                "product_name": str(event.get("product_name") or ""),
+                "product_category": str(event.get("product_category") or ""),
+                "recognition_level": str(event.get("recognition_level") or ""),
                 "enterprise_name_at_event": str(
                     event.get("enterprise_name_at_event") or ""
                 ),
@@ -247,6 +260,8 @@ def replay_steps(
                         "event": event_type,
                         "year": event_year,
                         "name": event.get("enterprise_name_at_event"),
+                        "subject_key": event.get("subject_key"),
+                        "product_name": event.get("product_name"),
                     }
                 ),
             }
@@ -408,6 +423,12 @@ def build_project_identity_twins(
                     "event_year": event.get("event_year"),
                     "event_type": str(event.get("event_type") or ""),
                     "batch": str(event.get("batch") or ""),
+                    "subject_type": str(event.get("subject_type") or "enterprise"),
+                    "subject_key": str(event.get("subject_key") or "enterprise"),
+                    "subject_name": str(event.get("subject_name") or ""),
+                    "product_name": str(event.get("product_name") or ""),
+                    "product_category": str(event.get("product_category") or ""),
+                    "recognition_level": str(event.get("recognition_level") or ""),
                     "source_title": str(event.get("source_title") or ""),
                     "source_paths": list(event.get("source_paths", [])),
                     "source_urls": list(event.get("source_urls", [])),
