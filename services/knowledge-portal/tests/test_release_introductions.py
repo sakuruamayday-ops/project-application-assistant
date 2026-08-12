@@ -47,6 +47,7 @@ EXPECTED_RELEASES = (
     "1.6.3",
     "1.6.3.1",
     "1.6.4",
+    "1.6.4.1",
 )
 
 
@@ -122,6 +123,19 @@ def test_v164_includes_humanization_and_skill_reconciliation():
         "十三周现金流",
         "品牌运行时扩展到 PDF、Word、Excel 与 HTML",
         "本地技能与正式清单对账",
+    ):
+        assert text in introduction
+
+
+def test_v1641_includes_complete_policy_application_paths():
+    introduction = release_function_introduction("V1.6.4.1")
+    for text in (
+        "完整政策梯度",
+        "十二字段路径卡",
+        "研发机构",
+        "绿色工厂",
+        "建设后申报、条件触发或长期梯度",
+        "当期通知发布后整体重检",
     ):
         assert text in introduction
 
