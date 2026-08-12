@@ -23,9 +23,9 @@
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.4 候选将同步构建 macOS 与 Windows WorkBuddy 包；外部企业数字身份证和知识索引仍由服务端单独管理，不属于插件包输入。",
+      "workbuddy": "V1.6.4 同步发布 macOS 与 Windows WorkBuddy 包；外部企业数字身份证和知识索引仍由服务端单独管理，不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
-      "verification": "确认 50 项 Skills 可识别、本地与正式技能清单无未登记漂移、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
+      "verification": "确认套件清单声明的全部 Skills 可识别、本地与正式技能清单无未登记漂移、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
     "compatibility": [
       {
@@ -52,7 +52,7 @@
       "preserve_other_mcp_servers": true,
       "reload_count": 1,
       "success_gate": [
-        "50 项 Skills 可识别",
+        "套件清单声明的全部 Skills 可识别",
         "最小行为 Hook 已启用",
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",

@@ -86,7 +86,7 @@ python scripts/python_supply_chain.py verify \
 普通成员：
 
 1. 在门户点击“一键安装”，把生成的一段完整指令粘贴给 WorkBuddy。
-2. WorkBuddy 安装或更新 50 项 Skills，启用失败放行的最小行为 Hook。
+2. WorkBuddy 按当前正式套件清单安装或更新全部 Skills，启用失败放行的最小行为 Hook。
 3. WorkBuddy 只替换用户配置中的 `mcpServers.jiaotang-kb`，保留其他 MCP 条目；公共包不包含个人 Token、本地 MCP 服务或启动器。
 4. 保存后只重载一次；用户在 WorkBuddy 连接器管理中手动信任 `jiaotang-kb`。
 5. 执行 `tools/list`，确认 `knowledge_search`、`knowledge_document`、`knowledge_service_status` 全部出现，再实际调用 `knowledge_service_status`；只有返回 `connected: true` 才报告完成。

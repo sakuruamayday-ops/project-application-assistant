@@ -3,13 +3,12 @@
 <p align="center">
   面向政府项目申报工程师与知识产权顾问的专业 Agent 工作系统。<br>
   把政策、企业、财务、知识产权与申报材料组织成可追溯、可复核的完整工作流。<br>
-  当前包含 50 项顶层 Skills，专利能力收敛为 2 个顶层入口；公司级总路由内部执行 P1、P2、P3 三个阶段。
+  顶层 Skills 数量以套件清单为唯一基线，专利能力收敛为 2 个顶层入口；公司级总路由内部执行 P1、P2、P3 三个阶段。
 </p>
 
 <p align="center">
-  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.6.3.1"><img src="https://img.shields.io/badge/Production-V1.6.3.1-C9A760?style=for-the-badge" alt="Production V1.6.3.1"></a>
-  <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Candidate-V1.6.4-2F7D5C?style=for-the-badge" alt="Candidate V1.6.4"></a>
-  <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-50-17181A?style=for-the-badge" alt="50 Skills"></a>
+  <a href="https://github.com/sakuruamayday-ops/project-application-assistant/releases/tag/V1.6.4"><img src="https://img.shields.io/badge/Production-V1.6.4-C9A760?style=for-the-badge" alt="Production V1.6.4"></a>
+  <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
 
@@ -17,7 +16,7 @@
 
 ## 它解决什么问题
 
-申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。共创研究院企业全生命周期助手把这些要求编排成 50 项可复用 Skills，并通过统一入口自动路由。
+申报工作真正困难的不是生成一段文字，而是同时守住政策版本、企业事实、指标口径、证据来源、章节一致性和交付质量。共创研究院企业全生命周期助手把这些要求编排成套件清单声明的全部 Skills，并通过统一入口自动路由。
 
 | 核心能力 | 能做什么 |
 |---|---|
@@ -42,7 +41,7 @@
 
 ### 团队成员
 
-登录[团队门户](https://zshjiaotang.cn/)，进入「连接我的 Agent」，按电脑系统点击“一键安装 macOS 版”或“一键安装 Windows 版”，把网站生成的一段完整指令粘贴给 WorkBuddy。该指令同时完成50项Skills安装或覆盖、最小行为Hook、远程MCP合并、一次重载和状态验收。
+登录[团队门户](https://zshjiaotang.cn/)，进入「连接我的 Agent」，按电脑系统点击“一键安装 macOS 版”或“一键安装 Windows 版”，把网站生成的一段完整指令粘贴给 WorkBuddy。该指令从当前正式套件清单读取技能总数，同时完成全部 Skills 安装或覆盖、最小行为 Hook、远程 MCP 合并、一次重载和状态验收。
 
 ### GitHub 下载
 
@@ -52,7 +51,7 @@
 | WorkBuddy 5 或更高版本，macOS 与 Windows | 对应系统的 WorkBuddy 包 | 在门户选择 macOS 或 Windows 后复制一段完整指令给 WorkBuddy |
 | 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | 从手工配置页复制已自动填入个人 Token 的完整配置 |
 
-发布目标为通用 Skills 包、macOS WorkBuddy 包和 Windows WorkBuddy 包。两个平台包共享同一套50项Skills和业务规则，并分别使用 macOS Python 核心和 Windows 原生 EXE。
+发布目标为通用 Skills 包、macOS WorkBuddy 包和 Windows WorkBuddy 包。两个平台包共享套件清单声明的全部 Skills 和业务规则，并分别使用 macOS Python 核心和 Windows 原生 EXE。
 
 WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启动器、bootstrap、设备登记、钥匙串或DPAPI；用户侧不执行签名审查和插件目录哈希检查。手工配置页自动复用或生成当前登录用户的个人Token并填入完整远程HTTP MCP配置。
 
@@ -60,7 +59,7 @@ WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启�
 
 #### 一、本版本新增功能
 
-- 中文自然化改写成为第 50 项正式候选 Skill，先锁定数字、名称、政策、知识产权、技术参数和引用，再处理模板腔与机械节奏。
+- 中文自然化改写成为正式 Skill，先锁定数字、名称、政策、知识产权、技术参数和引用，再处理模板腔与机械节奏。
 - 企业体检、产业定位、三表与现金流、专利布局、专精特新写作和税务核验方法归并到正式主技能。
 - 吸收适用于制造企业的十三周现金流、现金安全垫、现金转换周期、情景分析和资本开支回收期方法。
 - 统一品牌运行时扩展到 PDF、Word、Excel 与 HTML。
@@ -83,7 +82,7 @@ WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启�
 
 ### WorkBuddy 平台说明
 
-WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入口与 Python 状态核心，Windows 的提示、Skill 激活和停止事件由原生 EXE 统一处理，不依赖 PowerShell、CMD 或本机 Python。两个平台遵循相同的正式交付规则和轮次状态协议。普通新消息不继承上一轮 Skill；只有上一轮已被门禁阻断且本轮明确继续未完成任务时，才继承正式交付信号和缺项状态。安装完成标准统一为：原包平台预检通过、`package_mutated=false`、50项Skills可识别，`tools/list`出现`knowledge_search`、`knowledge_document`、`knowledge_service_status`，并实际调用状态工具返回`connected: true`。
+WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入口与 Python 状态核心，Windows 的提示、Skill 激活和停止事件由原生 EXE 统一处理，不依赖 PowerShell、CMD 或本机 Python。两个平台遵循相同的正式交付规则和轮次状态协议。普通新消息不继承上一轮 Skill；只有上一轮已被门禁阻断且本轮明确继续未完成任务时，才继承正式交付信号和缺项状态。安装完成标准统一为：原包平台预检通过、`package_mutated=false`、套件清单声明的全部 Skills 可识别，`tools/list`出现`knowledge_search`、`knowledge_document`、`knowledge_service_status`，并实际调用状态工具返回`connected: true`。
 
 ## 安全边界
 
@@ -95,7 +94,7 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 - 最小Hook只约束Skill调用和交付检查；内部异常失败开放，不因插件变化、更新或卸载阻断普通提问。
 - 客户密钥、账号登录态、签名私钥和付费数据库不进入仓库或发布包。
 
-## 50 项 Skills
+## Skills 正式清单
 
 正式技能、依赖关系、外部服务和发布门禁以 [`skills/suite-manifest.json`](skills/suite-manifest.json) 为唯一机器可读基线。
 
@@ -114,7 +113,7 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.4 功能简介](docs/releases/V1.6.4.md) | 当前源码候选的新增功能、归并范围与发布边界 |
+| [V1.6.4 功能简介](docs/releases/V1.6.4.md) | 当前正式版本的新增功能、归并范围与发布边界 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -131,9 +130,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 生产产品标签 | `V1.6.3.1` | 当前网站、GitHub Release 和用户可见最新版 |
-| 源码候选标签 | `V1.6.4` | 本分支候选，已完成本地签名预检，尚未推送或发布 |
-| 候选组件版本 | `1.6.4` | 套件、插件和 Python 组件候选版本 |
+| 生产产品标签 | `V1.6.4` | 当前网站、GitHub Release 和用户可见最新版 |
+| 组件版本 | `1.6.4` | 套件、插件和 Python 组件正式版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界

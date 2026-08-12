@@ -11,19 +11,19 @@
 - 该指令在 Agent 授权范围内完成以下操作：
 
 ```text
-安装或更新 50 项 Skills
+安装或更新套件清单声明的全部 Skills
 启用失败放行的最小行为 Hook
 只替换 mcpServers.jiaotang-kb 并保留其他 MCP。Windows 写入 `%USERPROFILE%\.workbuddy\mcp.json`，macOS 写入 `~/.workbuddy/mcp.json`，不得修改 WorkBuddy 托管的 `.workbuddy/.mcp.json`
 重载 WorkBuddy 一次
 枚举三个知识工具并调用 knowledge_service_status
 ```
 
-- 公共 WorkBuddy 包只包含市场清单、插件清单、50 项 Skills、最小行为 Hook、必要参考资料和业务脚本。个人 Token 不进入公共包。
+- 公共 WorkBuddy 包只包含市场清单、插件清单、套件清单声明的全部 Skills、最小行为 Hook、必要参考资料和业务脚本。个人 Token 不进入公共包。
 
 ## V1.4.6 正式发布门禁
 
 1. 使用已重签的 `skill-release-manager` 生成唯一 WorkBuddy 候选包；服务端发布通道仍校验候选包完整性和固定发布者。
-2. 确认包内存在 50 项 Skills、市场清单、插件清单和最小行为 Hook。macOS 声明 `SessionStart`、`UserPromptSubmit` 与 `Stop`；WorkBuddy 5.3.11 当前会在启动和恢复任务的用户消息前触发 `SessionStart`，该事件用于同会话转录恢复。Windows 仍只声明 `UserPromptSubmit` 与 `Stop`。
+2. 确认包内存在套件清单声明的全部 Skills、市场清单、插件清单和最小行为 Hook。macOS 声明 `SessionStart`、`UserPromptSubmit` 与 `Stop`；WorkBuddy 5.3.11 当前会在启动和恢复任务的用户消息前触发 `SessionStart`，该事件用于同会话转录恢复。Windows 仍只声明 `UserPromptSubmit` 与 `Stop`。
 3. 确认插件声明 `mcp_configuration_mode: user_remote_streamable_http`，不内嵌用户 MCP 配置或真实个人 Token。
 4. 确认候选包没有旧本地知识库服务、启动器、便携运行时或用户侧逐轮哈希检查。
 5. 门户端到端测试必须验证 Token 复用、只替换 `jiaotang-kb`、保留其他 MCP、一次重载和 `connected: true` 验收。
@@ -38,6 +38,6 @@ WorkBuddy 签名包映射为统一 `workbuddy` 通道。旧平台下载 URL 使�
 
 ## 下载权限边界
 
-插件市场 ZIP 在用户登录后可以直接下载。当前没有改成匿名公开下载，是因为该 ZIP 是完整商业套件，包含 50 项技能、最小行为 Hook 和必要业务资料，并受账号与源码使用许可约束。公共 ZIP 不包含任何用户个人 Token。
+插件市场 ZIP 在用户登录后可以直接下载。当前没有改成匿名公开下载，是因为该 ZIP 是完整商业套件，包含套件清单声明的全部技能、最小行为 Hook 和必要业务资料，并受账号与源码使用许可约束。公共 ZIP 不包含任何用户个人 Token。
 
 如以后决定开放匿名下载，应把“公开 Skills 内容”和“登录后签发的知识库访问配置”拆成两层。知识库授权仍由登录页生成个人 Token，该调整属于授权与商业分发策略变化，不在 V1.4.6 安装简化范围内。
