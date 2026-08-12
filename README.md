@@ -116,7 +116,7 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.4.2 功能简介](docs/releases/V1.6.4.2.md) | 当前候选版本的专精特新前期谈单版、技能治理和发布边界 |
+| [V1.6.4.2 功能简介](docs/releases/V1.6.4.2.md) | 当前候选版本的专精特新前期谈单版、高企WPS交付门禁、技能治理和发布边界 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证

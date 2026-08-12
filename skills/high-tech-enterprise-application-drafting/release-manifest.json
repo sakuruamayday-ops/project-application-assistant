@@ -1,16 +1,20 @@
 {
   "schema_version": 2,
   "skill_name": "high-tech-enterprise-application-drafting",
-  "release_tag": "V1.6.4",
+  "release_tag": "V1.6.4.2",
   "required_paths": [
     "SKILL.md",
     "agents/openai.yaml",
     "assets/高新技术企业认定申请书空白模板.docx",
     "references/portable-runtime-protocol.md",
+    "references/rd-core-innovation-format.md",
+    "references/summary-table-contract.md",
     "references/v1.3.1-release-plan.md",
     "references/writing-rules.md",
     "scripts/audit_application_docx.py",
     "scripts/expand_rd_ps_tables.py",
+    "scripts/fill_rd_core_innovation.py",
+    "scripts/hightech_delivery_gate.py",
     "scripts/portable_skill_runtime.py",
     "scripts/verify_skill_installation.py"
   ],
@@ -28,21 +32,28 @@
         "module": "docx",
         "distribution": "python-docx",
         "required": true
+      },
+      {
+        "module": "lxml",
+        "distribution": "lxml",
+        "required": true
       }
     ],
     "executables": []
   },
   "files": {
-    "SKILL.md": "4696ac4b38880c64121b7be0e24e8f81e9eac2db84cbc6bab7d1c4d2ded98bed",
-    "agents/openai.yaml": "b5bcaa928eba28c982f4e53e7f33227e3fe35661b09b6fc46a527e7a6bb21a46",
+    "SKILL.md": "c69f41383afd493f4bd0fd2ce631b1bf74727810c93b7124d12ec89129c1561f",
+    "agents/openai.yaml": "e7a30ae7303f188eaf7be7ce60dcff3b57c98bf6e0db08309296b19d73c3622b",
     "assets/高新技术企业认定申请书空白模板.docx": "449f74c7327f7a486031343cc8f7d6b4cf182a5ad68debddca027c5d15d1f20a",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/rd-core-innovation-format.md": "aa4b071febb052095f599e1e2a27b0985b3dacf6379d1a9d5da4017c84606529",
-    "references/v1.3.1-release-plan.md": "1ad7b68a73e991c1aa7dabf4334e816c9f0a1ccb76d3d6f1cb18dd4d88881bde",
+    "references/summary-table-contract.md": "2df1c7f39af586878fd7c423552345b8811e7fdde015515b23b0ccb70c515a42",
+    "references/v1.3.1-release-plan.md": "c8107f4a862e0c326ebe1d88eee8e1db9c4980fa1cb44792a203292950014255",
     "references/writing-rules.md": "6082d0f400c6b07ec7261ffdd23401244a4ba098b820344d7d00a373e33dceb2",
     "scripts/audit_application_docx.py": "8651892940998a649f4708211fe1282d860cb341665b80f097d7d153fc54c32c",
     "scripts/expand_rd_ps_tables.py": "ddc79ee1a63a2c462934492ed28472d8ba5d1c0b7b39539306feaf30df247fc0",
     "scripts/fill_rd_core_innovation.py": "9d461d9f4ac1ffc843671cfe1fc7931827319023c479692813eea376ca4e1a07",
+    "scripts/hightech_delivery_gate.py": "6a880e525cb2af551c9fd5dc05a371221e1f002b2e6c49dcae8743b7aa311939",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

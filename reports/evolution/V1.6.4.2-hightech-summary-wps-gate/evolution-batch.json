@@ -1,0 +1,39 @@
+{
+  "batch_id": "hightech-summary-wps-gate-20260812",
+  "state": "approved",
+  "risk_level": "protected",
+  "base_release": "V1.6.4.1",
+  "target_release": "V1.6.4.2",
+  "base_commit": "29f86a21326939a82b3b16f4660151f0bcb316c6",
+  "candidate_commit": "0498a75",
+  "merged_commit": "a4609ba",
+  "approved_artifacts": {
+    "snapshot_sha256": "c7010e4588e7ba54b24273fe0ddc955dc694e1a49e5a9a4856b22d9ecdd42ccd",
+    "impact_report_sha256": "10ca69bca49514727f14565014b432fc20448d7ca1457d15e2ac17781ec72855",
+    "test_report_sha256": "f9befff2342efb2b5a83e5957fac1bc80e78725815cdc745f90c7461e33935f6",
+    "diff_sha256": "1a8b49ff1c8bce3fe55a9e60c0bb45a468ce7b56541da03c0a9bc983dbb10b04",
+    "bound_candidate_sha256": "f68b48704d5428cf231609f96022c5b8a8f3fb8a18822db4d0095a0f38d9277c"
+  },
+  "protected_changes": [
+    "High-tech summary-table granularity quality gate",
+    "WPS Office page-by-page visual acceptance gate",
+    "Template-copy and final DOCX hash closure gate"
+  ],
+  "approval": {
+    "status": "approved",
+    "approved_by": "owner",
+    "approved_at": "2026-08-12T19:28:44+08:00",
+    "approval_scope": "更新发布清单、签名、隔离安装、安装回归并合并到V1.6.4.2当前发布；不包含GitHub提升、门户正式切换或知识索引切换。"
+  },
+  "merged_regression": {
+    "root": "282 passed, 2 skipped, 67 subtests passed",
+    "knowledge_portal": "592 passed, 7 skipped",
+    "targeted_root": "23 passed",
+    "targeted_portal": "10 passed",
+    "hightech_install_check": "pass, 14 files"
+  },
+  "installation": {
+    "status": "not_started",
+    "scope": "signed isolated package installation only"
+  }
+}

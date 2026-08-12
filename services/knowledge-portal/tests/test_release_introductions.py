@@ -150,6 +150,9 @@ def test_v1642_includes_sme_presale_and_manifest_driven_governance():
         "待定与待补强",
         "全部可见技能根目录",
         "suite-manifest.json",
+        "高企汇总表",
+        "WPS Office逐页视觉验收",
+        "SHA-256 核对",
     ):
         assert text in introduction
 
