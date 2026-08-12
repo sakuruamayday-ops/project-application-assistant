@@ -14,6 +14,11 @@
   <section class="panel disk-ledger cleanup-ledger"><div class="panel-head"><h3>发布后待清理</h3><span>{{ disk_breakdown.cleanup_pending.target_count }} 个精确目标 · 预计可释放 {{ disk_breakdown.cleanup_pending.size }}</span></div>{% if disk_breakdown.cleanup_pending.required %}<p class="cleanup-notice">这些对象已不被 current 或 previous 引用，但仍在可恢复回收区。永久清理必须使用下列计划哈希单独授权，不再把“已移入回收区”误报为已经释放空间。</p><code class="cleanup-plan-hash">SHA-256 {{ disk_breakdown.cleanup_pending.plan_sha256 }}</code><div class="disk-component-list">{% for item in disk_breakdown.cleanup_pending.rows %}<article><div><strong>{{ item.label }}</strong><small>{{ item.path }} · {{ item.target_count }} 个目标</small></div><span>{{ item.size }}</span><em>待授权</em></article>{% endfor %}</div>{% else %}<p class="empty">当前没有发布后物理清理积压。</p>{% endif %}</section>
   {% endif %}
   {% if section == 'access' %}
+  <section class="panel alert-ledger">
+    <div class="panel-head"><h3>MCP 异常使用预警</h3><span>{{ mcp_security_alerts|length }} 项 · 仅预警，不自动吊销</span></div>
+    <p class="activity-description">仅观测 jiaotang-kb 的 MCP 请求。网络只保存经 HMAC 处理的 IPv4 /24 或 IPv6 /48 网段指纹，不保存原始 IP；单次换网不会触发预警。</p>
+    <div class="alert-list">{% for alert in mcp_security_alerts %}<article class="alert-item alert-{{ alert.level }}"><strong>{{ alert.title }}</strong><p>{{ alert.detail }}</p></article>{% else %}<p class="empty">近24小时没有达到预警阈值的 MCP 异常使用信号。</p>{% endfor %}</div>
+  </section>
   <section class="panel table-panel access-user-panel">
     <div class="panel-head">
       <h3>具体用户</h3>
@@ -48,8 +53,8 @@
     <div class="panel-head"><h3>具体凭据</h3><span>最近 {{ access_tokens|length }} 个 · 状态区分凭据吊销与账号停用</span></div>
     <div class="table-wrap">
       <table class="access-token-table">
-        <thead><tr><th>真实姓名</th><th>登录账号</th><th>凭据标识</th><th>有效状态</th><th>账号状态</th><th>调用次数</th><th>生成时间</th><th>最近调用</th><th>吊销时间</th></tr></thead>
-        <tbody>{% for token in access_tokens %}<tr><td><strong>{{ token.label_display }}</strong></td><td><a class="text-action" href="/admin/users/{{ token.user_id }}">{{ token.username }}</a></td><td><code>{{ token.token_prefix }}…</code></td><td>{% if token.revoked_at %}<span class="table-status off">已吊销</span>{% elif token.activation_state == 'pending' %}<span class="table-status connection-waiting">待激活</span>{% elif not token.user_active %}<span class="table-status connection-blocked">随账号停用</span>{% else %}<span class="table-status">有效</span>{% endif %}</td><td><span class="table-status {{ 'off' if not token.user_active else '' }}">{{ '有效' if token.user_active else '已停用' }}</span></td><td>{{ token.call_count }}</td><td>{{ token.created_at }}</td><td>{{ token.last_used_at or '尚未调用' }}</td><td>{{ token.revoked_at or '—' }}</td></tr>{% else %}<tr><td colspan="9" class="empty">尚无用户凭据</td></tr>{% endfor %}</tbody>
+        <thead><tr><th>真实姓名</th><th>登录账号</th><th>凭据标识</th><th>有效状态</th><th>账号状态</th><th>调用次数</th><th>生成时间</th><th>最近调用</th><th>吊销时间</th><th>吊销依据</th></tr></thead>
+        <tbody>{% for token in access_tokens %}<tr><td><strong>{{ token.label_display }}</strong></td><td><a class="text-action" href="/admin/users/{{ token.user_id }}">{{ token.username }}</a></td><td><code>{{ token.token_prefix }}…</code></td><td>{% if token.revoked_at %}<span class="table-status off">已吊销</span>{% elif token.activation_state == 'pending' %}<span class="table-status connection-waiting">待激活</span>{% elif not token.user_active %}<span class="table-status connection-blocked">随账号停用</span>{% else %}<span class="table-status">有效</span>{% endif %}</td><td><span class="table-status {{ 'off' if not token.user_active else '' }}">{{ '有效' if token.user_active else '已停用' }}</span></td><td>{{ token.call_count }}</td><td>{{ token.created_at }}</td><td>{{ token.last_used_at or '尚未调用' }}</td><td>{{ token.revoked_at or '—' }}</td><td>{% if token.revoked_at %}{{ {'admin_credential_revoked':'管理员吊销','user_revoked':'用户自行吊销','installation_failed':'安装失败自动吊销','superseded_unused_install':'未激活安装指令已替换','superseded_by_new_credential':'新凭据验收后自动接管','single_active_credential_reconciliation':'历史重复凭据归并','pending_activation_expired':'待激活凭据已过期'}.get(token.revoked_reason, token.revoked_reason or '历史记录') }}{% if token.revoked_by %}<small>{{ token.revoked_by }}</small>{% endif %}{% else %}—{% endif %}</td></tr>{% else %}<tr><td colspan="10" class="empty">尚无用户凭据</td></tr>{% endfor %}</tbody>
       </table>
     </div>
   </section>

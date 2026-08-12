@@ -5577,6 +5577,136 @@ def test_init_database_reconciles_legacy_active_credentials_and_enforces_one_act
         ).fetchone()[0] == 1
 
 
+def test_mcp_anomaly_observation_warns_admin_without_revoking_token(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        setup = client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        assert setup.status_code == 200
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+        )
+        assert login.status_code == 200
+
+        with closing(module.database()) as connection:
+            owner_id = int(
+                connection.execute(
+                    "SELECT id FROM users WHERE username='owner'"
+                ).fetchone()["id"]
+            )
+        module.ensure_personal_access_token(owner_id, "MCP异常观测测试")
+        with closing(module.database()) as connection:
+            api_user = connection.execute(
+                """
+                SELECT users.id,device_tokens.id AS device_token_id
+                FROM users
+                JOIN device_tokens ON device_tokens.user_id=users.id
+                WHERE users.id=? AND device_tokens.revoked_at IS NULL
+                  AND device_tokens.activation_state='active'
+                """,
+                (owner_id,),
+            ).fetchone()
+
+        samples = (
+            ("203.0.113.10", "WorkBuddy/macOS"),
+            ("198.51.100.20", "WorkBuddy/Windows"),
+        )
+        for client_ip, user_agent in samples:
+            module.record_api_usage(
+                api_user,
+                "/mcp",
+                "POST",
+                "mcp_search",
+                "knowledge_search",
+                True,
+                client_ip=client_ip,
+                user_agent=user_agent,
+            )
+
+        with closing(module.database()) as connection:
+            assert module.build_mcp_security_alerts(connection) == []
+            observations = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT * FROM mcp_access_observations ORDER BY id"
+                ).fetchall()
+            ]
+        assert len(observations) == 2
+        assert all(len(item["network_fingerprint"]) == 64 for item in observations)
+        assert all(item["network_family"] == "ipv4" for item in observations)
+        assert "203.0.113.10" not in json.dumps(observations)
+        assert "198.51.100.20" not in json.dumps(observations)
+
+        for client_ip, user_agent in samples:
+            module.record_api_usage(
+                api_user,
+                "/mcp",
+                "POST",
+                "mcp_search",
+                "knowledge_search",
+                True,
+                client_ip=client_ip,
+                user_agent=user_agent,
+            )
+
+        with closing(module.database()) as connection:
+            alerts = module.build_mcp_security_alerts(connection)
+            active_token = connection.execute(
+                """
+                SELECT revoked_at,activation_state
+                FROM device_tokens WHERE id=?
+                """,
+                (int(api_user["device_token_id"]),),
+            ).fetchone()
+        assert len(alerts) == 1
+        assert alerts[0]["level"] == "high"
+        assert "短时多网络并发" in alerts[0]["title"]
+        assert "仅预警，未自动吊销" in alerts[0]["detail"]
+        assert active_token["revoked_at"] is None
+        assert active_token["activation_state"] == "active"
+
+        reconciled_seed = "historical-reconciled-fixture"
+        reconciled_token = module.user_access_token(owner_id, reconciled_seed)
+        with closing(module.database()) as connection:
+            connection.execute(
+                """
+                INSERT INTO device_tokens(
+                    user_id,label,token_prefix,token_hash,token_seed,created_at,
+                    revoked_at,revoked_reason,revoked_by,credential_kind,
+                    activation_state,activated_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,'installation','active',?)
+                """,
+                (
+                    owner_id,
+                    "历史重复测试凭据",
+                    reconciled_token[:12],
+                    module.token_hash(reconciled_token),
+                    reconciled_seed,
+                    module.isoformat(module.utc_now()),
+                    module.isoformat(module.utc_now()),
+                    "single_active_credential_reconciliation",
+                    "system",
+                    module.isoformat(module.utc_now()),
+                ),
+            )
+            connection.commit()
+
+        access = client.get("/admin/health/access")
+        assert access.status_code == 200
+        assert "MCP 异常使用预警" in access.text
+        assert "1 项 · 仅预警，不自动吊销" in access.text
+        assert "不保存原始 IP" in access.text
+        assert "吊销依据" in access.text
+        assert "历史重复凭据归并" in access.text
+
+
 def test_public_machine_contracts_use_gongchuang_brand(tmp_path):
     module = load_app(tmp_path)
     assert module.build_provenance_payload()["schema"] == (

@@ -202,6 +202,11 @@ SKILL_DEPLOY_GATE_STATUS_MAX_AGE_SECONDS = max(
 BACKUP_STATUS_MAX_AGE_SECONDS = max(
     60, int(os.environ.get("JIAOTANG_BACKUP_STATUS_MAX_AGE_SECONDS", "172800"))
 )
+MCP_ANOMALY_LOOKBACK_HOURS = 24
+MCP_ANOMALY_CONCURRENT_WINDOW_MINUTES = 10
+MCP_ANOMALY_BURST_CALLS = 120
+MCP_ANOMALY_NETWORK_SPRAWL = 4
+MCP_ANOMALY_NETWORK_SPRAWL_MIN_CALLS = 20
 PREFERENCE_SCHEMA_VERSION = 1
 DEFAULT_USER_PREFERENCES: dict[str, object] = {
     "region": {"province": "", "city": ""},
@@ -1075,6 +1080,33 @@ def format_row_datetimes(
 
 def token_hash(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def mcp_network_fingerprint(client_ip: str) -> tuple[str, str]:
+    """Return a privacy-preserving network identity, never the raw client IP."""
+    try:
+        address = ipaddress.ip_address(str(client_ip or "").strip())
+    except ValueError:
+        return "", ""
+    prefix = 24 if address.version == 4 else 48
+    network = ipaddress.ip_network(f"{address}/{prefix}", strict=False)
+    digest = hmac.new(
+        TOKEN_DERIVATION_SECRET,
+        f"jiaotang-mcp-network:{network.with_prefixlen}".encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return digest, f"ipv{address.version}"
+
+
+def mcp_client_fingerprint(user_agent: str) -> str:
+    normalized = " ".join(str(user_agent or "").strip().lower().split())[:300]
+    if not normalized:
+        return ""
+    return hmac.new(
+        TOKEN_DERIVATION_SECRET,
+        f"jiaotang-mcp-client:{normalized}".encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
 
 
 def user_access_token(user_id: int, token_seed: str) -> str:
@@ -7321,6 +7353,24 @@ def init_database() -> None:
             CREATE INDEX IF NOT EXISTS api_usage_device_token_time_idx
             ON api_usage(device_token_id, called_at DESC);
 
+            CREATE TABLE IF NOT EXISTS mcp_access_observations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                device_token_id INTEGER NOT NULL REFERENCES device_tokens(id) ON DELETE CASCADE,
+                activity_type TEXT NOT NULL,
+                activity_name TEXT NOT NULL DEFAULT '',
+                network_fingerprint TEXT NOT NULL DEFAULT '',
+                network_family TEXT NOT NULL DEFAULT '',
+                client_fingerprint TEXT NOT NULL DEFAULT '',
+                observed_at TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS mcp_access_observations_user_time_idx
+            ON mcp_access_observations(user_id, observed_at DESC);
+
+            CREATE INDEX IF NOT EXISTS mcp_access_observations_token_time_idx
+            ON mcp_access_observations(device_token_id, observed_at DESC);
+
             CREATE TABLE IF NOT EXISTS user_preferences (
                 user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
                 schema_version INTEGER NOT NULL DEFAULT 1,
@@ -8595,11 +8645,14 @@ def record_api_usage(
     counts_toward_usage: bool,
     *,
     body: bytes = b"",
+    client_ip: str = "",
+    user_agent: str = "",
 ) -> None:
     project_rule_id, project_alias = project_usage_metadata_from_request(
         endpoint,
         body,
     )
+    observed_at = isoformat(utc_now())
     with closing(database()) as connection:
         connection.execute(
             """
@@ -8621,10 +8674,135 @@ def record_api_usage(
                 project_rule_id,
                 project_alias,
                 int(counts_toward_usage),
-                isoformat(utc_now()),
+                observed_at,
             ),
         )
+        if endpoint.rstrip("/") == "/mcp" and activity_type.startswith("mcp_"):
+            network_fingerprint, network_family = mcp_network_fingerprint(client_ip)
+            connection.execute(
+                """
+                INSERT INTO mcp_access_observations(
+                    user_id,device_token_id,activity_type,activity_name,
+                    network_fingerprint,network_family,client_fingerprint,observed_at
+                ) VALUES (?,?,?,?,?,?,?,?)
+                """,
+                (
+                    int(user["id"]),
+                    int(user["device_token_id"]),
+                    activity_type,
+                    activity_name,
+                    network_fingerprint,
+                    network_family,
+                    mcp_client_fingerprint(user_agent),
+                    observed_at,
+                ),
+            )
         connection.commit()
+
+
+def build_mcp_security_alerts(
+    connection: sqlite3.Connection,
+    *,
+    now: datetime | None = None,
+) -> list[dict[str, str]]:
+    """Build admin-only warnings. This function never changes credential state."""
+    reference = (now or utc_now()).astimezone(timezone.utc)
+    since_24_hours = isoformat(reference - timedelta(hours=MCP_ANOMALY_LOOKBACK_HOURS))
+    rows = connection.execute(
+        """
+        SELECT observation.user_id,observation.device_token_id,
+               observation.network_fingerprint,observation.client_fingerprint,
+               observation.observed_at,users.username
+        FROM mcp_access_observations observation
+        JOIN users ON users.id=observation.user_id
+        JOIN device_tokens token ON token.id=observation.device_token_id
+        WHERE observation.observed_at>=?
+          AND users.active=1
+          AND token.revoked_at IS NULL
+          AND token.activation_state='active'
+        ORDER BY observation.user_id,observation.device_token_id,
+                 observation.observed_at,observation.id
+        """,
+        (since_24_hours,),
+    ).fetchall()
+    grouped: dict[tuple[int, int, str], list[sqlite3.Row]] = {}
+    for row in rows:
+        key = (int(row["user_id"]), int(row["device_token_id"]), str(row["username"]))
+        grouped.setdefault(key, []).append(row)
+
+    alerts: list[dict[str, str]] = []
+    recent_boundary = reference - timedelta(minutes=MCP_ANOMALY_CONCURRENT_WINDOW_MINUTES)
+    for (_, _, username), observations in grouped.items():
+        recent = [
+            row
+            for row in observations
+            if (parse_status_timestamp(row["observed_at"]) or datetime.min.replace(tzinfo=timezone.utc))
+            >= recent_boundary
+        ]
+        recent_network_counts = Counter(
+            str(row["network_fingerprint"])
+            for row in recent
+            if str(row["network_fingerprint"] or "")
+        )
+        recent_client_fingerprints = {
+            str(row["client_fingerprint"])
+            for row in recent
+            if str(row["client_fingerprint"] or "")
+        }
+        repeated_recent_networks = sum(
+            1 for count in recent_network_counts.values() if count >= 2
+        )
+        if repeated_recent_networks >= 2:
+            level = "high" if len(recent_client_fingerprints) >= 2 else "medium"
+            client_note = (
+                f"，同时出现{len(recent_client_fingerprints)}种客户端特征"
+                if len(recent_client_fingerprints) >= 2
+                else ""
+            )
+            alerts.append(
+                {
+                    "level": level,
+                    "title": f"{username} 出现短时多网络并发",
+                    "detail": (
+                        f"最近{MCP_ANOMALY_CONCURRENT_WINDOW_MINUTES}分钟内，同一MCP凭据在"
+                        f"{repeated_recent_networks}个网络环境均连续调用{client_note}。"
+                        "系统仅预警，未自动吊销凭据。"
+                    ),
+                }
+            )
+        if len(recent) >= MCP_ANOMALY_BURST_CALLS:
+            alerts.append(
+                {
+                    "level": "high",
+                    "title": f"{username} MCP调用频率突增",
+                    "detail": (
+                        f"最近{MCP_ANOMALY_CONCURRENT_WINDOW_MINUTES}分钟记录"
+                        f"{len(recent)}次MCP请求，达到高频预警阈值。"
+                        "系统仅预警，未限速或吊销。"
+                    ),
+                }
+            )
+        networks_24_hours = {
+            str(row["network_fingerprint"])
+            for row in observations
+            if str(row["network_fingerprint"] or "")
+        }
+        if (
+            len(observations) >= MCP_ANOMALY_NETWORK_SPRAWL_MIN_CALLS
+            and len(networks_24_hours) >= MCP_ANOMALY_NETWORK_SPRAWL
+        ):
+            alerts.append(
+                {
+                    "level": "medium",
+                    "title": f"{username} 近24小时网络环境偏多",
+                    "detail": (
+                        f"同一MCP凭据在{len(networks_24_hours)}个网络环境产生"
+                        f"{len(observations)}次调用。单次IP变化不触发预警，本项仅供管理员复核。"
+                    ),
+                }
+            )
+    priority = {"high": 0, "medium": 1, "low": 2}
+    return sorted(alerts, key=lambda item: (priority.get(item["level"], 9), item["title"]))
 
 
 def remote_mcp_platform_label(value: object) -> str:
@@ -9215,6 +9393,8 @@ class MCPBearerMiddleware:
                 activity_name,
                 counts_toward_usage,
                 body=request_body,
+                client_ip=request_client_ip,
+                user_agent=headers.get("user-agent", ""),
             )
 
 
@@ -13208,6 +13388,7 @@ def admin_health_detail(
                    users.active AS user_active,device_tokens.label,
                    device_tokens.token_prefix, device_tokens.created_at,
                    device_tokens.last_used_at, device_tokens.revoked_at,
+                   device_tokens.revoked_reason,device_tokens.revoked_by,
                    device_tokens.credential_kind,device_tokens.activation_state,
                    enrollment.install_platform,
                    COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
@@ -13236,6 +13417,7 @@ def admin_health_detail(
                 if legacy_waiting_label and token_label == legacy_waiting_label
                 else token_label
             )
+        mcp_security_alerts = build_mcp_security_alerts(connection)
         assistant_since_7_days = isoformat(utc_now() - timedelta(days=7))
         assistant_day_start, assistant_day_end = assistant_day_bounds()
         assistant_summary = connection.execute(
@@ -13530,6 +13712,8 @@ def admin_health_detail(
             [
                 ("有效用户", active_users),
                 ("有效 API Key", active_tokens),
+                ("MCP使用预警", len(mcp_security_alerts)),
+                ("自动处置", "关闭，仅管理端预警"),
                 ("权限模式", "统一知识只读权限"),
             ],
         ),
@@ -13583,6 +13767,7 @@ def admin_health_detail(
             "failed_updates": failed_updates if section == "updates" else [],
             "access_users": access_users if section == "access" else [],
             "access_tokens": access_tokens if section == "access" else [],
+            "mcp_security_alerts": mcp_security_alerts if section == "access" else [],
             "assistant_users": assistant_users if section == "assistant" else [],
             "assistant_recent": assistant_recent if section == "assistant" else [],
             "assistant_anomalies": assistant_anomalies if section == "assistant" else [],
