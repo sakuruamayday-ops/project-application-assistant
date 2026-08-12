@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sqlite3
 from pathlib import Path
 
 from app.project_identity_twin import next_state, replay_steps
@@ -15,6 +16,86 @@ SPEC = importlib.util.spec_from_file_location("target_twin_rebuild", SCRIPT_PATH
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+
+
+def create_twin_tables(connection: sqlite3.Connection) -> None:
+    connection.executescript(
+        """
+        CREATE TABLE enterprise_project_identity_twins(
+            twin_id TEXT PRIMARY KEY,
+            identity_key TEXT NOT NULL,
+            project_name TEXT NOT NULL,
+            lifecycle_rule_id TEXT NOT NULL,
+            policy_version_id TEXT NOT NULL,
+            current_state TEXT NOT NULL,
+            current_as_of_year INTEGER,
+            trace_hash TEXT NOT NULL,
+            identity_match_json TEXT NOT NULL,
+            policy_version_json TEXT NOT NULL,
+            list_attachment_trace_json TEXT NOT NULL,
+            coverage_trace_json TEXT NOT NULL,
+            lifecycle_trace_json TEXT NOT NULL,
+            replayable_years_json TEXT NOT NULL
+        );
+        CREATE TABLE enterprise_project_identity_twin_steps(
+            twin_id TEXT NOT NULL,
+            identity_key TEXT NOT NULL,
+            project_name TEXT NOT NULL,
+            step INTEGER NOT NULL,
+            event_year INTEGER,
+            event_type TEXT NOT NULL,
+            previous_state TEXT NOT NULL,
+            next_state TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            evidence_hash TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            PRIMARY KEY(twin_id,step)
+        );
+        """
+    )
+
+
+def insert_existing_twin(
+    connection: sqlite3.Connection,
+    twin_id: str,
+    identity_key: str,
+    project_name: str,
+) -> None:
+    connection.execute(
+        "INSERT INTO enterprise_project_identity_twins VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            twin_id,
+            identity_key,
+            project_name,
+            "rule",
+            "policy",
+            "active",
+            2025,
+            "trace",
+            "{}",
+            "{}",
+            "[]",
+            "[]",
+            "[]",
+            "[]",
+        ),
+    )
+    connection.execute(
+        "INSERT INTO enterprise_project_identity_twin_steps VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            twin_id,
+            identity_key,
+            project_name,
+            1,
+            2025,
+            "recognition",
+            "not_recorded",
+            "active",
+            "existing",
+            "existing-hash",
+            "{}",
+        ),
+    )
 
 
 def test_source_lineage_wins_over_shared_historical_name():
@@ -257,3 +338,164 @@ def test_product_correction_turns_weak_record_into_product_event(tmp_path):
     assert event["product_name"] == "重载工业机器人RV减速器"
     assert event["recognition_level"] == "国内"
     assert event["source_paths"] == [str(source)]
+
+
+def test_incremental_identity_scope_validates_and_deduplicates():
+    assert MODULE.normalize_identity_scope(
+        [" 91330401ma28a7n16u ", "91330401MA28A7N16U"]
+    ) == {"91330401MA28A7N16U"}
+
+    try:
+        MODULE.normalize_identity_scope(["not-a-uscc"])
+    except RuntimeError as error:
+        assert "统一社会信用代码无效" in str(error)
+    else:
+        raise AssertionError("invalid identity key was accepted")
+
+
+def test_replace_selected_twins_preserves_unselected_and_other_projects():
+    connection = sqlite3.connect(":memory:")
+    create_twin_tables(connection)
+    selected = "91330401MA28A7N16U"
+    unselected = "91331000563304198L"
+    insert_existing_twin(
+        connection,
+        "selected-old",
+        selected,
+        "浙江省首批次新材料",
+    )
+    insert_existing_twin(
+        connection,
+        "unselected-old",
+        unselected,
+        "浙江省首批次新材料",
+    )
+    insert_existing_twin(
+        connection,
+        "selected-other-project",
+        selected,
+        "浙江省隐形冠军企业",
+    )
+    new_twin = {
+        "twin_id": "selected-new",
+        "identity_key": selected,
+        "project_name": "浙江省首批次新材料",
+        "lifecycle_rule_id": "rule-v2",
+        "policy_version": {"policy_version_id": "policy-v2"},
+        "current_replay": {"state": "active", "as_of_year": 2025},
+        "trace_hash": "new-trace",
+        "identity_match": {},
+        "list_attachment_trace": [],
+        "coverage_trace": [],
+        "lifecycle_trace": [],
+        "replayable_years": [2025],
+    }
+    new_step = {
+        "twin_id": "selected-new",
+        "identity_key": selected,
+        "project_name": "浙江省首批次新材料",
+        "step": 1,
+        "event_year": 2025,
+        "event_type": "recognition",
+        "previous_state": "not_recorded",
+        "next_state": "active",
+        "reason": "incremental",
+        "evidence_hash": "new-evidence",
+    }
+
+    MODULE.replace_selected_twins(
+        connection,
+        {selected},
+        [new_twin],
+        [new_step],
+    )
+
+    twins = {
+        row[0]
+        for row in connection.execute(
+            "SELECT twin_id FROM enterprise_project_identity_twins"
+        )
+    }
+    steps = {
+        row[0]
+        for row in connection.execute(
+            "SELECT twin_id FROM enterprise_project_identity_twin_steps"
+        )
+    }
+    assert twins == {
+        "selected-new",
+        "unselected-old",
+        "selected-other-project",
+    }
+    assert steps == twins
+
+
+def test_incremental_audit_preserves_full_baseline_and_correction_without_input():
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(
+        """
+        CREATE TABLE enterprise_project_relation_quarantine(
+            identity_key TEXT, current_name TEXT, project_name TEXT,
+            reason TEXT, evidence_json TEXT, source TEXT,
+            PRIMARY KEY(identity_key,project_name)
+        );
+        CREATE TABLE enterprise_project_twin_gaps(
+            identity_key TEXT, current_name TEXT, project_name TEXT,
+            gap_type TEXT, details_json TEXT, source TEXT,
+            PRIMARY KEY(identity_key,project_name,gap_type)
+        );
+        CREATE TABLE enterprise_project_twin_rebuild_audit(
+            audit_key TEXT PRIMARY KEY, audit_value_json TEXT, source TEXT
+        );
+        CREATE TABLE enterprise_project_product_corrections(
+            identity_key TEXT, current_name TEXT, project_name TEXT,
+            recognition_year INTEGER, product_name TEXT,
+            verification_status TEXT, source_title TEXT, source_path TEXT,
+            source_sha256 TEXT, evidence_json TEXT, source TEXT,
+            PRIMARY KEY(identity_key,project_name,recognition_year)
+        );
+        """
+    )
+    selected = "91330401MA28A7N16U"
+    connection.execute(
+        "INSERT INTO enterprise_project_twin_rebuild_audit VALUES(?,?,?)",
+        ("rebuild_report", '{"mode":"full"}', MODULE.PUBLIC_SOURCE),
+    )
+    connection.execute(
+        "INSERT INTO enterprise_project_product_corrections VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            selected,
+            "浙江中泽精密科技股份有限公司",
+            "浙江省首批次新材料",
+            2025,
+            "新能源锂电特种铝制安全防爆材料",
+            "user_confirmed_final_recognition",
+            "source",
+            "",
+            "",
+            "{}",
+            MODULE.PUBLIC_SOURCE,
+        ),
+    )
+
+    MODULE.write_incremental_audit_tables(
+        connection,
+        {selected},
+        [],
+        [],
+        [],
+        {"replay_mode": "incremental"},
+        replace_product_corrections=False,
+    )
+
+    assert connection.execute(
+        "SELECT audit_value_json FROM enterprise_project_twin_rebuild_audit "
+        "WHERE audit_key='rebuild_report'"
+    ).fetchone()[0] == '{"mode":"full"}'
+    assert connection.execute(
+        "SELECT COUNT(*) FROM enterprise_project_product_corrections"
+    ).fetchone()[0] == 1
+    assert connection.execute(
+        "SELECT COUNT(*) FROM enterprise_project_twin_rebuild_audit "
+        "WHERE audit_key='last_incremental_replay'"
+    ).fetchone()[0] == 1
