@@ -697,7 +697,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 ["consistency-check"],
             )
 
-    def test_behavior_hook_requires_primary_role_and_classifies_all_49_skills(self):
+    def test_behavior_hook_requires_primary_role_and_classifies_all_manifest_skills(self):
         contract = json.loads(
             (REPOSITORY / "skills/delivery-contracts.json").read_text(
                 encoding="utf-8"

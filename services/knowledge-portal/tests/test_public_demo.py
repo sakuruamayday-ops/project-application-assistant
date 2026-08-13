@@ -15,6 +15,8 @@ def test_public_demo_requires_no_registration_or_session(tmp_path):
     assert "企业全生命周期助手" in response.text
     assert "无需注册" in response.text
     assert "示例数据" in response.text
+    assert ">50</dt><dd>顶层 Skills" in response.text
+    assert ">49</dt><dd>顶层 Skills" not in response.text
     assert 'href="/login"' in response.text
     assert "jtk_" not in response.text
     assert "/v1/search" not in response.text
