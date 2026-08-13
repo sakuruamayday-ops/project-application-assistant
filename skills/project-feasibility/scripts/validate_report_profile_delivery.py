@@ -103,6 +103,11 @@ def _pdf_text(path: Path) -> str:
         document.close()
 
 
+def _compact_text(value: str) -> str:
+    """Normalize extractor glyph fragmentation without hiding missing text."""
+    return re.sub(r"\s+", "", value or "")
+
+
 def _validate_branding(plugin_root: Path, artifacts: list[Path]) -> list[str]:
     scripts = plugin_root / "skills/_runtime/gongchuang-branding/scripts"
     sys.path.insert(0, str(scripts))
@@ -169,8 +174,9 @@ def validate_profile(
     if pdf:
         try:
             pdf_text = _pdf_text(pdf)
+            compact_pdf_text = _compact_text(pdf_text)
             for section in profile.get("required_sections", []):
-                if str(section) not in pdf_text:
+                if _compact_text(str(section)) not in compact_pdf_text:
                     errors.append(f"PDF缺少必备章节:{section}")
         except Exception as exc:
             errors.append(f"PDF文本读取失败:{exc}")

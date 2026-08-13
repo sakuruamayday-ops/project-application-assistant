@@ -67,3 +67,9 @@ def test_stop_hook_rejects_tampered_profile_receipt(tmp_path):
     assert len(hook.load_profile_validator_receipts(tmp_path, turn_id)) == 1
     artifact.write_bytes(b"tampered")
     assert hook.load_profile_validator_receipts(tmp_path, turn_id) == []
+
+
+def test_pdf_section_matching_tolerates_glyph_fragmentation_but_not_missing_text():
+    fragmented = "\u4e8c\u3001\u7533\n\u62a5\n\u6761\u4ef6\n\u5bf9\n\u7167"
+    assert MODULE._compact_text("申报条件对照") in MODULE._compact_text(fragmented)
+    assert MODULE._compact_text("科技咨询补强") not in MODULE._compact_text(fragmented)
