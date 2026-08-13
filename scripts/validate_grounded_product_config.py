@@ -136,13 +136,15 @@ def main() -> int:
         ),
         "release_manager_builds_windows_runtime_v166": 'runtimeVersion = "1.6.6"' in manager_main_text,
         "release_manager_contains_grounded_delivery_rule": (
-            'intentRuleVersion = "7-delivery-action-scoped-negation"' in manager_contract_text
+            'intentRuleVersion = "8-artifact-targeted-negation"' in manager_contract_text
             and "loadValidatorReceipts" in manager_events_text
+            and "loadProfileValidatorReceipts" in manager_events_text
             and "effectiveBusinessDomain" in manager_events_text
         ),
         "python_hook_contains_grounded_delivery_rule": (
-            'INTENT_RULE_VERSION = "7-delivery-action-scoped-negation"' in manager_python_text
+            'INTENT_RULE_VERSION = "8-artifact-targeted-negation"' in manager_python_text
             and "load_validator_receipts" in manager_python_text
+            and "load_profile_validator_receipts" in manager_python_text
             and "effective_business_domain" in manager_python_text
         ),
         "grounded_contract_owns_receipt_protocol": (

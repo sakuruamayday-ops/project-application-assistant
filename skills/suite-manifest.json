@@ -9,9 +9,9 @@
   },
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.6.5",
-    "version": "1.6.5",
-    "summary": "V1.6.5 为十二类政府项目建立前期评估与可行性分析双报告路由，新增专精线数字化转型诊断和高企研发费用加计扣除补强，并统一共创红色水印与 Word、PDF 双格式交付。",
+    "tag": "V1.6.5.1",
+    "version": "1.6.5.1",
+    "summary": "V1.6.5.1 在 V1.6.5 双报告路由基础上内置十二类项目二十四份可编辑 Word 受控母版、自动选版索引与模板哈希闸门，并使 macOS 和 Windows Stop Hook 一致强制报告画像回执。",
     "changes": [
       "新增项目前期评估报告与项目申报可行性分析报告两类正式交付，前者服务谈单，后者逐项拆解现行条件、评分表、证据和补强任务。",
       "高企、专精特新、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划自动切换项目专属核心评估对象。",
@@ -19,11 +19,14 @@
       "专精线新增数字化转型诊断报告补强，核验五个一级维度、全国与同行对标、优势短板及提升路径。",
       "高企新增研发费用加计扣除规范化服务，贯通立项、人员设备、工时领料、小试中试、结题、专利关联、月度分配、辅助账与明细账。",
       "两类报告统一使用共创红色水印并输出可编辑 Word 与 PDF；无法只加密水印且保持正文可编辑时不设置编辑限制。",
-      "企业分析报告 A、B、C 版以及尖兵领雁、市级重大和科技计划类既有分析逻辑保持不变。"
+      "企业分析报告 A、B、C 版以及尖兵领雁、市级重大和科技计划类既有分析逻辑保持不变。",
+      "内置高企、专精特新、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化和科技计划二十四份 Word 母版，命中时先选版再回填。",
+      "模板索引对项目别名执行最长命中，对未知、冲突、哈希变更或覆盖现有文件一律拒绝。",
+      "macOS 与 Windows Stop Hook 一致识别完成交付语义和对象定向否定，并强制当前轮次的章节、表格、Word、PDF、哈希及红色水印验证回执。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.5 同步提供 macOS 与 Windows WorkBuddy 包；外部企业数字身份证和知识索引仍由服务端单独管理，不属于插件包输入。",
+      "workbuddy": "V1.6.5.1 候选包同步提供 macOS 与 Windows WorkBuddy 结构；外部企业数字身份证和知识索引仍由服务端单独管理，不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认套件清单声明的全部 Skills 可识别、本地与正式技能清单无未登记漂移、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
@@ -57,7 +60,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "安装后只保留一个 V1.6.5 活动正式市场，旧版本可恢复快照不覆盖用户资料",
+        "安装后只保留一个 V1.6.5.1 活动正式市场，旧版本可恢复快照不覆盖用户资料",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [
@@ -190,6 +193,22 @@
       "timeout_seconds": 60
     },
     {
+      "name": "project-report-template-suite",
+      "command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_project_report_templates.py",
+        "tests/test_project_report_profile_delivery.py",
+        "tests/test_project_dual_report_contract_v165.py"
+      ],
+      "environment": {
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "timeout_seconds": 120
+    },
+    {
       "name": "deprecated-policy-semantics",
       "command": [
         "{python}",
@@ -256,6 +275,42 @@
     }
   ],
   "dependencies": {
+    "project-feasibility": {
+      "required_skills": [
+        "policy-retrieval",
+        "evidence-ledger"
+      ],
+      "required_paths": [
+        "project-feasibility/references/report-template-registry.json",
+        "project-feasibility/scripts/select_report_template.py",
+        "project-feasibility/scripts/validate_report_profile_delivery.py",
+        "project-feasibility/assets/report-templates/high-tech-enterprise/preassessment.docx",
+        "project-feasibility/assets/report-templates/high-tech-enterprise/feasibility.docx",
+        "project-feasibility/assets/report-templates/specialized-sme/preassessment.docx",
+        "project-feasibility/assets/report-templates/specialized-sme/feasibility.docx",
+        "project-feasibility/assets/report-templates/little-giant/preassessment.docx",
+        "project-feasibility/assets/report-templates/little-giant/feasibility.docx",
+        "project-feasibility/assets/report-templates/first-equipment/preassessment.docx",
+        "project-feasibility/assets/report-templates/first-equipment/feasibility.docx",
+        "project-feasibility/assets/report-templates/first-material/preassessment.docx",
+        "project-feasibility/assets/report-templates/first-material/feasibility.docx",
+        "project-feasibility/assets/report-templates/first-software/preassessment.docx",
+        "project-feasibility/assets/report-templates/first-software/feasibility.docx",
+        "project-feasibility/assets/report-templates/enterprise-rd-center/preassessment.docx",
+        "project-feasibility/assets/report-templates/enterprise-rd-center/feasibility.docx",
+        "project-feasibility/assets/report-templates/manufacturing-excellence/preassessment.docx",
+        "project-feasibility/assets/report-templates/manufacturing-excellence/feasibility.docx",
+        "project-feasibility/assets/report-templates/single-champion/preassessment.docx",
+        "project-feasibility/assets/report-templates/single-champion/feasibility.docx",
+        "project-feasibility/assets/report-templates/green-factory/preassessment.docx",
+        "project-feasibility/assets/report-templates/green-factory/feasibility.docx",
+        "project-feasibility/assets/report-templates/digitalization/preassessment.docx",
+        "project-feasibility/assets/report-templates/digitalization/feasibility.docx",
+        "project-feasibility/assets/report-templates/science-plan/preassessment.docx",
+        "project-feasibility/assets/report-templates/science-plan/feasibility.docx"
+      ],
+      "reason": "项目前期评估和可行性分析先核验当期政策与证据，并对十二类常规项目强制从受控可编辑 Word 母版选版、回填、导出 PDF 及运行报告画像闸门。"
+    },
     "standard-drafting": {
       "required_skills": [
         "evidence-ledger"

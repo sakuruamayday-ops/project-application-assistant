@@ -140,10 +140,10 @@ def test_delivery_contract_registers_both_report_categories() -> None:
         ]
 
 
-def test_v165_freezes_existing_report_and_project_logic_boundaries() -> None:
+def test_v1651_keeps_v165_report_and_project_logic_boundaries() -> None:
     text = read(CONTRACT)
     assert "企业分析报告 A、B、C 版" in text
     assert "尖兵领雁、市级重大及科技计划类的既有分析逻辑保持不变" in text
     manifest = json.loads(read(SKILLS / "suite-manifest.json"))
-    assert manifest["release"]["tag"] == "V1.6.5"
-    assert manifest["release"]["version"] == "1.6.5"
+    assert manifest["release"]["tag"] == "V1.6.5.1"
+    assert manifest["release"]["version"] == "1.6.5.1"

@@ -17,16 +17,16 @@ def test_product_configuration_validator_passes_on_current_formal_release(tmp_pa
     hook.mkdir(parents=True)
     (hook / "main.go").write_text('const runtimeVersion = "1.6.6"\n', encoding="utf-8")
     (hook / "contract.go").write_text(
-        'const intentRuleVersion = "7-delivery-action-scoped-negation"\n',
+            'const intentRuleVersion = "8-artifact-targeted-negation"\n',
         encoding="utf-8",
     )
     (hook / "events.go").write_text(
-        "func loadValidatorReceipts() {}\nvar effectiveBusinessDomain bool\n",
+            "func loadValidatorReceipts() {}\nfunc loadProfileValidatorReceipts() {}\nvar effectiveBusinessDomain bool\n",
         encoding="utf-8",
     )
     (manager / "scripts" / "workbuddy_behavior_hook.py").write_text(
-        'INTENT_RULE_VERSION = "7-delivery-action-scoped-negation"\n'
-        "def load_validator_receipts(): pass\neffective_business_domain = True\n",
+            'INTENT_RULE_VERSION = "8-artifact-targeted-negation"\n'
+            "def load_validator_receipts(): pass\ndef load_profile_validator_receipts(): pass\neffective_business_domain = True\n",
         encoding="utf-8",
     )
     result = subprocess.run(
