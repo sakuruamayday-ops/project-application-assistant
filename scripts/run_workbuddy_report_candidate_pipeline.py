@@ -256,7 +256,7 @@ def build_contact_sheet(
     output.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(output)
     return {
-        "status": "pending-human-visual-review",
+        "status": "pending-visual-review",
         "platform": platform_label,
         "path": str(output),
         "sha256": sha256_file(output),
@@ -560,7 +560,10 @@ def run_pipeline(options: argparse.Namespace) -> dict[str, Any]:
     public_receipt = sanitize_receipt(
         {
             "schema": "gongchuang-workbuddy-report-candidate-pipeline/v1",
-            "status": "pass",
+            "status": "pending",
+            "automated_gate_status": "pass",
+            "candidate_state": "pending-visual-review",
+            "candidate_ready_for_host_testing": False,
             "release_tag": options.release_tag,
             "candidate_only": True,
             "formal_release_eligible": False,
@@ -583,9 +586,10 @@ def run_pipeline(options: argparse.Namespace) -> dict[str, Any]:
             "post_package_gates": post_package_gates,
             "contact_sheet": contact_sheet,
             "visual_review": {
-                "status": "pending-human-visual-review",
+                "status": "pending-visual-review",
                 "all_pages_rendered": True,
                 "sample_strategy": "前期评估抽首页，可行性分析抽中间条件页，覆盖12类24份成稿",
+                "finalizer": "scripts/record_workbuddy_report_visual_review.py",
             },
             "real_host_acceptance": {
                 "macos": "pending-real-host-receipt",

@@ -15,6 +15,7 @@ REGISTRY = SKILLS / "project-feasibility/references/report-template-registry.jso
 SELECTOR_PATH = SKILLS / "project-feasibility/scripts/select_report_template.py"
 FILLER_PATH = SKILLS / "project-feasibility/scripts/fill_report_template.py"
 PIPELINE_PATH = ROOT / "scripts/run_workbuddy_report_candidate_pipeline.py"
+VISUAL_FINALIZER_PATH = ROOT / "scripts/record_workbuddy_report_visual_review.py"
 
 
 def load_module(name: str, path: Path):
@@ -28,6 +29,7 @@ def load_module(name: str, path: Path):
 SELECTOR = load_module("candidate_test_selector", SELECTOR_PATH)
 FILLER = load_module("candidate_test_filler", FILLER_PATH)
 PIPELINE = load_module("candidate_test_pipeline", PIPELINE_PATH)
+VISUAL_FINALIZER = load_module("candidate_test_visual_finalizer", VISUAL_FINALIZER_PATH)
 
 
 def client_source(path: Path, *, name: str = "某高端装备有限公司") -> Path:
@@ -188,3 +190,77 @@ def test_safe_extract_rejects_path_traversal(tmp_path: Path):
         bundle.writestr("../escape.txt", "bad")
     with pytest.raises(RuntimeError, match="不安全条目"):
         PIPELINE.safe_extract_zip(archive, tmp_path / "out")
+
+
+def visual_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
+    sheet = tmp_path / "contact.png"
+    sheet.write_bytes(b"contact-sheet")
+    digest = PIPELINE.sha256_file(sheet)
+    receipt = tmp_path / "pipeline.json"
+    receipt.write_text(
+        json.dumps(
+            {
+                "schema": "gongchuang-workbuddy-report-candidate-pipeline/v1",
+                "status": "pending",
+                "automated_gate_status": "pass",
+                "candidate_state": "pending-visual-review",
+                "release_tag": "V1.6.5.2",
+                "source_commit": "abc123",
+                "contact_sheet": {"path": str(sheet), "sha256": digest, "sample_count": 24},
+                "real_host_acceptance": {"macos": "pending", "windows": "pending"},
+                "zcode": {"status": "not-built-not-tested"},
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    checklist = tmp_path / "checklist.json"
+    checklist.write_text(
+        json.dumps(
+            {
+                "schema": "gongchuang-report-visual-review/v1",
+                "release_tag": "V1.6.5.2",
+                "contact_sheet_sha256": digest,
+                "reviewer": "test-reviewer",
+                "review_method": "test-visual-review",
+                "reviewed_at": "2026-08-13T21:00:00+08:00",
+                "items": [
+                    {
+                        "project_id": project_id,
+                        "report_type": report_type,
+                        "status": "pass",
+                        "checks": {name: True for name in VISUAL_FINALIZER.REQUIRED_CHECKS},
+                    }
+                    for project_id in PIPELINE.PROJECT_IDS
+                    for report_type in PIPELINE.REPORT_TYPES
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    return receipt, checklist, tmp_path / "visual-receipt.json"
+
+
+def test_visual_finalizer_requires_exact_24_passed_samples(tmp_path: Path):
+    receipt, checklist, output = visual_fixture(tmp_path)
+    result = VISUAL_FINALIZER.finalize_visual_review(
+        repo_root=ROOT,
+        pipeline_receipt=receipt,
+        checklist_path=checklist,
+        output_path=output,
+    )
+    assert result["status"] == "pass"
+    assert result["candidate_state"] == "ready-for-real-host-testing"
+    assert result["formal_release_eligible"] is False
+    payload = json.loads(checklist.read_text(encoding="utf-8"))
+    payload["items"][0]["checks"]["no_missing_glyphs"] = False
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="视觉抽检未通过"):
+        VISUAL_FINALIZER.finalize_visual_review(
+            repo_root=ROOT,
+            pipeline_receipt=receipt,
+            checklist_path=bad,
+            output_path=tmp_path / "bad-receipt.json",
+        )

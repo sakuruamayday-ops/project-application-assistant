@@ -56,6 +56,6 @@ description: 对单个政府项目执行完整可行性分析，覆盖项目与�
 
 受控 Word 母版只固定结构、表格、项目专属核心对象、补强入口和共创红色水印，不固化政策数值。回填时仍须用当期通知原文替换占位项；母版中的条件只是待核验结构，不得当作现行政策证据。完成 Word 回填后导出 PDF，再对 Word 和 PDF 同时运行上述画像校验。
 
-候选发包前如要验证上述常规项目模板，使用根目录 `scripts/run_workbuddy_report_candidate_pipeline.py`：必须恰好提供十二类私有真实客户夹具，逐类生成前期评估和可行性分析共二十四份 Word/PDF，逐页渲染，仅产出 macOS 与 Windows WorkBuddy 未签名候选包，再从两个最终 ZIP 中重新选模和回填四十八次。客户资料隔离、ZIP 路径安全、模板哈希、成稿占位符、两端候选包和视觉抽检任一失败时停止。该流水线不生成 ZCode 候选包，也不将源码或模型测试写成 WorkBuddy 真实宿主验收。
+候选发包前如要验证上述常规项目模板，使用根目录 `scripts/run_workbuddy_report_candidate_pipeline.py`：必须恰好提供十二类私有真实客户夹具，逐类生成前期评估和可行性分析共二十四份 Word/PDF，逐页渲染，仅产出 macOS 与 Windows WorkBuddy 未签名候选包，再从两个最终 ZIP 中重新选模和回填四十八次。自动回执只能保持 `pending-visual-review`；联系表二十四格的缺字、裁切、重叠、表格可读性、层级与水印均通过后，必须用 `scripts/record_workbuddy_report_visual_review.py` 绑定联系表哈希和检查表。客户资料隔离、ZIP 路径安全、模板哈希、成稿占位符、两端候选包和视觉抽检任一失败时停止。该流水线不生成 ZCode 候选包，也不将源码或模型测试写成 WorkBuddy 真实宿主验收。
 
 案例包可用于比较材料结构、指标分布和证据类型，但不得把案例值当成政策阈值或当前企业事实。可行性结论仍以当期政策和当前企业证据为准。
