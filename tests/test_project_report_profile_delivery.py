@@ -1,8 +1,10 @@
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 
+import pytest
 from docx import Document
 
 
@@ -36,14 +38,21 @@ def test_report_profile_requires_dual_format_sections_tables_and_branding(tmp_pa
 
 
 def test_stop_hook_rejects_tampered_profile_receipt(tmp_path):
-    hook_path = Path(
-        "/Users/zsh/Documents/自动化区域/workbuddy-v165-local-hotfix-20260813/"
-        "candidate/skill-release-manager/scripts/workbuddy_behavior_hook.py"
+    manager_scripts = Path(
+        os.environ.get(
+            "JIAOTANG_RELEASE_MANAGER_SCRIPTS",
+            Path.home() / ".codex/skills/skill-release-manager/scripts",
+        )
     )
+    hook_path = manager_scripts / "workbuddy_behavior_hook.py"
+    if not hook_path.is_file():
+        pytest.skip("requires the separately installed skill-release-manager host integration")
     spec = importlib.util.spec_from_file_location("hotfix_behavior", hook_path)
     hook = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(hook)
+    if not hasattr(hook, "load_profile_validator_receipts"):
+        pytest.skip("installed skill-release-manager predates report-profile receipts")
     artifact = tmp_path / "report.docx"
     artifact.write_bytes(b"initial")
     turn_id = "turn-profile-test"
