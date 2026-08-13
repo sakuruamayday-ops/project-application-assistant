@@ -357,9 +357,12 @@ def run_pipeline(options: argparse.Namespace) -> dict[str, Any]:
     if released_adapters != ["workbuddy-macos", "workbuddy-windows"]:
         raise ValueError("候选流水线仅允许macOS和Windows WorkBuddy两个适配器")
     cases = load_fixture_manifest(fixture_manifest, release_tag=options.release_tag)
+    release_manager_scripts = release_manager / "scripts"
+    if str(release_manager_scripts) not in sys.path:
+        sys.path.insert(0, str(release_manager_scripts))
     release_collection = load_module(
         "workbuddy_candidate_release_collection",
-        release_manager / "scripts/package_skill_collection.py",
+        release_manager_scripts / "package_skill_collection.py",
     )
     release_gates = release_collection.run_release_gates(
         repo_root,
