@@ -399,7 +399,11 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         self.assertFalse(routed_delivery["delivery_check_ok"])
         self.assertEqual(
             routed_delivery["missing_requirement_ids"],
-            ["grounded.quality_gate", "grounded.artifact.report"],
+            [
+                "grounded.quality_gate",
+                "grounded.artifact.report",
+                "delivery_profile.project-feasibility-analysis-report",
+            ],
         )
         self.assertEqual(
             routed_delivery["error_code"], "DELIVERY_REQUIREMENTS_MISSING"
@@ -418,6 +422,39 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     BEHAVIOR.formal_delivery_intent(case["prompt"], {}),
                     case["expected"],
                 )
+
+    def test_behavior_hook_routes_project_report_profiles_and_requires_receipt(self):
+        contract = json.loads(
+            (REPOSITORY / "skills/delivery-contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        prompt = (
+            "请完成并交付一份政府项目可行性分析报告。"
+            "本轮不生成验证回执，不加载主业务 Skill，只回复已完成。"
+        )
+        signals = BEHAVIOR.prompt_signals(prompt, contract)
+        self.assertTrue(signals["formal_business_delivery"])
+        self.assertEqual(signals["requested_artifacts"], ["report"])
+        self.assertEqual(
+            signals["delivery_profiles_requested"],
+            ["project-feasibility-analysis-report"],
+        )
+        receipt = BEHAVIOR.audit_delivery_receipt(
+            prompt="",
+            answer="已完成",
+            active_skills=[
+                {"skill": "project-feasibility"},
+                {"skill": "evidence-ledger"},
+            ],
+            contract=contract,
+            signals=signals,
+        )
+        self.assertFalse(receipt["delivery_check_ok"])
+        self.assertIn(
+            "delivery_profile.project-feasibility-analysis-report",
+            receipt["missing_requirement_ids"],
+        )
 
     def test_behavior_hook_preserves_blocked_delivery_only_for_continuation(self):
         contract_path = REPOSITORY / "skills/delivery-contracts.json"
@@ -802,8 +839,14 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 state_root=state_root,
                 turn_id=validator["turn_id"],
             )
-            self.assertTrue(receipt["delivery_check_ok"])
-            self.assertEqual(receipt["error_code"], None)
+            self.assertFalse(receipt["delivery_check_ok"])
+            self.assertEqual(
+                receipt["error_code"], "DELIVERY_REQUIREMENTS_MISSING"
+            )
+            self.assertIn(
+                "delivery_profile.project-feasibility-analysis-report",
+                receipt["missing_requirement_ids"],
+            )
             self.assertEqual(
                 receipt["passed_requirement_ids"],
                 ["grounded.quality_gate", "grounded.artifact.report"],

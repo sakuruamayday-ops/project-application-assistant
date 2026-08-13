@@ -78,13 +78,24 @@ def main() -> int:
         for item in manifest.get("post_package_release_gates") or []
         if isinstance(item, dict)
     }
-    for required in (
-        "workbuddy-server-release-candidate-contract",
-        "workbuddy-all-skill-package-coverage",
-    ):
+    required_platform_gates = {
+        "workbuddy-macos-server-release-candidate-contract": (
+            "{workbuddy_macos_archive}"
+        ),
+        "workbuddy-macos-all-skill-package-coverage": (
+            "{workbuddy_macos_archive}"
+        ),
+        "workbuddy-windows-server-release-candidate-contract": (
+            "{workbuddy_windows_archive}"
+        ),
+        "workbuddy-windows-all-skill-package-coverage": (
+            "{workbuddy_windows_archive}"
+        ),
+    }
+    for required, artifact_placeholder in required_platform_gates.items():
         gate = post_gates.get(required)
         command = gate.get("command") if isinstance(gate, dict) else None
-        if not isinstance(command, list) or "{workbuddy_archive}" not in command:
+        if not isinstance(command, list) or artifact_placeholder not in command:
             errors.append(f"缺少真实候选包门禁：{required}")
         if isinstance(command, list) and "{workbuddy_cli}" in command:
             errors.append(f"发布前候选包门禁不得启动真实 WorkBuddy CLI：{required}")

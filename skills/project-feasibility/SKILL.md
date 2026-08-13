@@ -18,7 +18,7 @@ description: 对单个政府项目执行完整可行性分析，覆盖项目与�
 
 ## 强制执行顺序
 
-1. 确认企业主体、项目全称、地区、申报年度、批次以及新申报或复核类型。任一信息可能改变适用规则时，先调用 `policy-retrieval` 取得管理办法、工作指引和当期通知。任务属于前期评估或培育规划时，同时读取 `references/policy-application-path-contract.md`，不得只给资格判断而省略项目的建设和申报路径。用户要求“项目前期评估报告”或“项目申报可行性分析报告”时，还必须完整读取 `references/two-report-contract.md`，并与对应项目领域技能组合执行。
+1. 确认企业主体、项目全称、地区、申报年度、批次以及新申报或复核类型。任一信息可能改变适用规则时，先调用 `policy-retrieval` 取得管理办法、工作指引和当期通知。任务属于前期评估或培育规划时，同时读取 `references/policy-application-path-contract.md`，不得只给资格判断而省略项目的建设和申报路径。用户要求“项目前期评估报告”或“项目申报可行性分析报告”时，还必须完整读取 `references/two-report-contract.md` 和 `references/report-template-registry.json`，并与对应项目领域技能组合执行。高企、专精特新中小企业、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划类命中受控模板时，必须先运行 `python3 scripts/select_report_template.py --project-type <项目> --report-type <preassessment|feasibility> --output-dir <交付目录> --enterprise <企业>`，基于复制出的可编辑 Word 母版回填；不得脱离模板重新排版。进行自动化成稿时，可将客户资料、原文锚点和项目事实写入技能树之外的私有夹具，再运行 `python3 scripts/fill_report_template.py --template <已复制母版> --output <成稿.docx> --fixture <私有夹具.json> --report-type <preassessment|feasibility> --release-tag <版本> --public-root <公共源码根目录>`。自动成稿必须命中真实原文锚点，且不得将客户原件、绝对路径或客户成稿放入公共候选包。索引未命中时才按统一报告骨架生成，且不得冒充已使用受控模板。
 2. 读取 `references/feasibility-decision-model.md`，建立规则台账。每条规则标明规则类型、原文、来源、适用范围、时间状态和是否一票否决；不得把历史政策或同类项目规则拼入当期规则。
 3. 读取 `references/evidence-state-model.md`，将企业事实逐项映射为“verified、computed、claimed、missing、conflicting、not-applicable”。只有 verified 和复算通过的 computed 可以直接支撑硬门槛。
 4. 先判断排除项和硬门槛，再处理评分项。硬门槛出现 `failed` 时结论为不可申报；出现 `missing`、`conflicting` 或关键 `claimed` 时不得给出确定达标结论。
@@ -47,5 +47,15 @@ description: 对单个政府项目执行完整可行性分析，覆盖项目与�
 `python3 scripts/validate_feasibility_assessment.py <结果.json>`
 
 校验失败时不得交付确定性结论。
+
+生成两类正式报告时，在通用 Grounded 文件回执之外，必须分别运行报告画像校验并将结果写入当前 WorkBuddy 轮次：
+
+`python3 scripts/validate_report_profile_delivery.py --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --profile-id <project-presale-assessment-report|project-feasibility-analysis-report> --artifact <报告.docx> --artifact <报告.pdf>`
+
+画像校验会核对必备章节、必备表格、Word 与 PDF 双格式、文件哈希以及共创红色水印。缺少当前轮次的通过回执时，Stop Hook 必须阻止结束；不得仅在对话中自述“已完成”或“已通过”。
+
+受控 Word 母版只固定结构、表格、项目专属核心对象、补强入口和共创红色水印，不固化政策数值。回填时仍须用当期通知原文替换占位项；母版中的条件只是待核验结构，不得当作现行政策证据。完成 Word 回填后导出 PDF，再对 Word 和 PDF 同时运行上述画像校验。
+
+候选发包前如要验证上述常规项目模板，使用根目录 `scripts/run_workbuddy_report_candidate_pipeline.py`：必须恰好提供十二类私有真实客户夹具，逐类生成前期评估和可行性分析共二十四份 Word/PDF，逐页渲染，仅产出 macOS 与 Windows WorkBuddy 未签名候选包，再从两个最终 ZIP 中重新选模和回填四十八次。自动回执只能保持待视觉复核状态；联系表二十四格的缺字、裁切、重叠、表格可读性、层级与水印均通过后，必须用 `scripts/record_workbuddy_report_visual_review.py` 绑定联系表哈希和检查表。客户资料隔离、ZIP 路径安全、模板哈希、成稿占位符、两端候选包和视觉抽检任一失败时停止。该流水线不生成 ZCode 候选包，也不将源码或模型测试写成 WorkBuddy 真实宿主验收。
 
 案例包可用于比较材料结构、指标分布和证据类型，但不得把案例值当成政策阈值或当前企业事实。可行性结论仍以当期政策和当前企业证据为准。

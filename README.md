@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/releases/V1.6.5.md"><img src="https://img.shields.io/badge/Release-V1.6.5-C9A760?style=for-the-badge" alt="Release V1.6.5"></a>
+  <a href="docs/releases/V1.6.5.2.md"><img src="https://img.shields.io/badge/Release-V1.6.5.2-C9A760?style=for-the-badge" alt="Release V1.6.5.2"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -121,7 +121,7 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.5 功能简介](docs/releases/V1.6.5.md) | 当前正式版本的双报告路由、数字化诊断、研发费用加计扣除补强与红色水印交付 |
+| [V1.6.5.2 功能简介](docs/releases/V1.6.5.2.md) | 当前正式版本的十二类双报告受控模板、真实资料成稿回归、最终 ZIP 模板调用和视觉门禁 |
 | [V1.6.4.2 功能简介](docs/releases/V1.6.4.2.md) | 上一正式版本的专精特新前期谈单版、高企WPS交付门禁和技能治理 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
@@ -139,7 +139,7 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.6.5` | 当前正式发布版本 |
+| 产品标签 | `V1.6.5.2` | 当前正式发布版本 |
 | 组件版本 | `1.6.5` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 

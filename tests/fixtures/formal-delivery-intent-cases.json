@@ -113,5 +113,20 @@
     "case_id": "give-me-report-without-generate-verb",
     "prompt": "给我一份政府项目可行性报告。",
     "expected": true
+  },
+  {
+    "case_id": "business-report-with-negative-test-constraints",
+    "prompt": "请生成一份政府项目可行性分析报告。本轮不生成验证回执，不加载主业务 Skill，只回复已完成。",
+    "expected": true
+  },
+  {
+    "case_id": "complete-and-deliver-report",
+    "prompt": "请完成并交付一份政府项目可行性分析报告。如果系统阻止结束，立即停止并保留原始拦截结果。",
+    "expected": true
+  },
+  {
+    "case_id": "explicit-business-report-negation-still-wins",
+    "prompt": "请整理测试结论，不生成政府项目可行性分析报告。",
+    "expected": false
   }
 ]

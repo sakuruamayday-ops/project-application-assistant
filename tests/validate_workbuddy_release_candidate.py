@@ -118,6 +118,7 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
         names = set(archive.namelist())
         plugin_name = unique_name(names, "/.codebuddy-plugin/plugin.json")
         plugin_root = str(PurePosixPath(plugin_name).parent.parent)
+        marketplace_root = PurePosixPath(plugin_root).parts[0]
         suite_name = f"{plugin_root}/skills/suite-manifest.json"
         hooks_name = f"{plugin_root}/hooks/hooks.json"
         plugin = load_json(archive, plugin_name)
@@ -187,11 +188,14 @@ def validate_all_skill_coverage(suite_zip: Path) -> dict[str, object]:
                 raise RuntimeError(f"行为Hook边界不完整：{skill}")
             if platform == "windows":
                 activation_entry = content[hook_position:hook_end]
+                deterministic_root = (
+                    "$HOME/.workbuddy/plugins/marketplaces/"
+                    f"{marketplace_root}/plugins/{plugin.get('name')}"
+                )
                 if (
                     "${CODEBUDDY_PLUGIN_ROOT}" in activation_entry
                     or "${CODEBUDDY_SKILL_DIR}" in activation_entry
-                    or "$HOME/.workbuddy/plugins/marketplaces/jiaotang"
-                    not in activation_entry
+                    or deterministic_root not in activation_entry
                 ):
                     raise RuntimeError(
                         f"Windows技能激活入口仍依赖不稳定宿主变量：{skill}"
