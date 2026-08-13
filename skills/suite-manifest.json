@@ -250,24 +250,48 @@
   ],
   "post_package_release_gates": [
     {
-      "name": "workbuddy-server-release-candidate-contract",
+      "name": "workbuddy-macos-server-release-candidate-contract",
       "command": [
         "{python}",
         "tests/validate_workbuddy_release_candidate.py",
         "--suite-zip",
-        "{workbuddy_archive}",
+        "{workbuddy_macos_archive}",
         "--check",
         "server-release-contract"
       ],
       "timeout_seconds": 120
     },
     {
-      "name": "workbuddy-all-skill-package-coverage",
+      "name": "workbuddy-macos-all-skill-package-coverage",
       "command": [
         "{python}",
         "tests/validate_workbuddy_release_candidate.py",
         "--suite-zip",
-        "{workbuddy_archive}",
+        "{workbuddy_macos_archive}",
+        "--check",
+        "all-skill-coverage"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "name": "workbuddy-windows-server-release-candidate-contract",
+      "command": [
+        "{python}",
+        "tests/validate_workbuddy_release_candidate.py",
+        "--suite-zip",
+        "{workbuddy_windows_archive}",
+        "--check",
+        "server-release-contract"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "name": "workbuddy-windows-all-skill-package-coverage",
+      "command": [
+        "{python}",
+        "tests/validate_workbuddy_release_candidate.py",
+        "--suite-zip",
+        "{workbuddy_windows_archive}",
         "--check",
         "all-skill-coverage"
       ],
