@@ -37,6 +37,7 @@ EVIDENCE_STATES = {
     "冲突待核",
     "不适用",
 }
+PORTABLE_CJK_FONT = "Hiragino Sans GB"
 
 
 def sha256_file(path: Path) -> str:
@@ -177,6 +178,19 @@ def _set_text(paragraph, value: str) -> None:
             run.text = ""
     else:
         paragraph.add_run(value)
+
+
+def _apply_portable_cjk_font(document: Document) -> None:
+    """Bind visible text to a macOS CJK font before PDF visual regression."""
+    for paragraph in _iter_paragraphs(document):
+        for run in paragraph.runs:
+            if not run.text:
+                continue
+            run.font.name = PORTABLE_CJK_FONT
+            run_properties = run._element.get_or_add_rPr()
+            fonts = run_properties.get_or_add_rFonts()
+            for attribute in ("ascii", "hAnsi", "eastAsia", "cs"):
+                fonts.set(qn(f"w:{attribute}"), PORTABLE_CJK_FONT)
 
 
 def _iter_paragraphs(document: Document) -> Iterable[Any]:
@@ -461,6 +475,7 @@ def complete_report(
     _fill_project_specific_paragraphs(document, validated)
     _generic_fill(document, validated)
     _append_source_ledger(document, validated)
+    _apply_portable_cjk_font(document)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
     rendered = Document(output_path)

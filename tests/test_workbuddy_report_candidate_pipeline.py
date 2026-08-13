@@ -102,6 +102,15 @@ def test_real_source_anchor_fill_produces_complete_editable_report(tmp_path: Pat
     assert "培训模板" not in text
     assert "某高端装备有限公司" in text
     assert "资料来源与证据状态" in text
+    visible_runs = [
+        run
+        for paragraph in list(document.paragraphs)
+        + [p for table in document.tables for row in table.rows for cell in row.cells for p in cell.paragraphs]
+        for run in paragraph.runs
+        if run.text.strip()
+    ]
+    assert visible_runs
+    assert all(run.font.name == FILLER.PORTABLE_CJK_FONT for run in visible_runs)
 
 
 def test_source_anchor_must_match_real_material(tmp_path: Path):

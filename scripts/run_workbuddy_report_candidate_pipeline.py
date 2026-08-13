@@ -170,8 +170,10 @@ def render_report(
     render_python: Path,
     renderer: Path,
     repo_root: Path,
+    office_bin: Path | None,
 ) -> tuple[Path, list[Path], int]:
     render_dir.mkdir(parents=True, exist_ok=False)
+    preferred_office = office_bin or render_python.parent.parent.parent / "bin/override"
     process = subprocess.run(
         [
             str(render_python),
@@ -189,7 +191,10 @@ def render_report(
         env={
             **os.environ,
             "TMPDIR": "/private/tmp",
-            "PATH": f"{render_python.parent.parent.parent / 'bin/override'}:{os.environ.get('PATH', '')}",
+            "PATH": (
+                f"{preferred_office}:{render_python.parent.parent.parent / 'bin/override'}:"
+                f"{os.environ.get('PATH', '')}"
+            ),
         },
     )
     if process.returncode != 0:
@@ -345,6 +350,9 @@ def run_pipeline(options: argparse.Namespace) -> dict[str, Any]:
     release_manager = options.release_manager_root.expanduser().resolve()
     renderer = options.renderer.expanduser().resolve()
     render_python = options.render_python.expanduser().resolve()
+    office_bin = options.office_bin.expanduser().resolve() if options.office_bin else None
+    if office_bin is not None and not (office_bin / "soffice").is_file():
+        raise FileNotFoundError(f"指定Office渲染器不存在:{office_bin / 'soffice'}")
     if output_root.exists():
         raise FileExistsError(f"候选流水线输出已存在，拒绝覆盖:{output_root}")
     if any(marker in str(output_root).casefold() for marker in FORBIDDEN_TARGETS):
@@ -415,6 +423,7 @@ def run_pipeline(options: argparse.Namespace) -> dict[str, Any]:
                 render_python=render_python,
                 renderer=renderer,
                 repo_root=repo_root,
+                office_bin=office_bin,
             )
             delivery_pdf = project_dir / f"{docx.stem}.pdf"
             shutil.copy2(pdf, delivery_pdf)
@@ -613,6 +622,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--release-manager-root", type=Path, required=True)
     result.add_argument("--renderer", type=Path, required=True)
     result.add_argument("--render-python", type=Path, required=True)
+    result.add_argument("--office-bin", type=Path)
     return result
 
 
