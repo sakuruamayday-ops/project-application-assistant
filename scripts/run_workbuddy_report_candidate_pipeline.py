@@ -186,7 +186,11 @@ def render_report(
         capture_output=True,
         text=True,
         timeout=600,
-        env={**os.environ, "TMPDIR": "/private/tmp"},
+        env={
+            **os.environ,
+            "TMPDIR": "/private/tmp",
+            "PATH": f"{render_python.parent.parent.parent / 'bin/override'}:{os.environ.get('PATH', '')}",
+        },
     )
     if process.returncode != 0:
         raise RuntimeError(
