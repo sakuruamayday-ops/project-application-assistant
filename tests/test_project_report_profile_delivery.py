@@ -73,3 +73,25 @@ def test_pdf_section_matching_tolerates_glyph_fragmentation_but_not_missing_text
     fragmented = "\u4e8c\u3001\u7533\n\u62a5\n\u6761\u4ef6\n\u5bf9\n\u7167"
     assert MODULE._compact_text("申报条件对照") in MODULE._compact_text(fragmented)
     assert MODULE._compact_text("科技咨询补强") not in MODULE._compact_text(fragmented)
+
+
+def test_pdf_text_extraction_uses_visual_sort_order(monkeypatch, tmp_path):
+    calls = []
+
+    class Page:
+        def get_text(self, mode, *, sort=False):
+            calls.append((mode, sort))
+            return "申报条件对照"
+
+    class Pdf:
+        def __iter__(self):
+            return iter([Page()])
+
+        def close(self):
+            return None
+
+    import fitz
+
+    monkeypatch.setattr(fitz, "open", lambda _: Pdf())
+    assert MODULE._pdf_text(tmp_path / "fixture.pdf") == "申报条件对照"
+    assert calls == [("text", True)]

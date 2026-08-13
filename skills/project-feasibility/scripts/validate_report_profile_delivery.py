@@ -98,7 +98,7 @@ def _pdf_text(path: Path) -> str:
 
     document = fitz.open(path)
     try:
-        return "\n".join(page.get_text("text") for page in document)
+        return "\n".join(page.get_text("text", sort=True) for page in document)
     finally:
         document.close()
 
