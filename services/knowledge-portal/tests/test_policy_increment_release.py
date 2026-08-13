@@ -250,6 +250,7 @@ def test_prepare_binds_generated_release_manifest_to_state_pointer_and_package(
     monkeypatch.setattr(release, "verify_current_state", lambda *_args: current_index)
     monkeypatch.setattr(release, "build_package", fake_build_package)
     monkeypatch.setattr(release, "prepare_release_files", fake_prepare_release_files)
+    monkeypatch.setenv("JIAOTANG_POLICY_ALLOW_FULL_COPY", "1")
     run_dir = tmp_path / "run"
 
     prepared = release.command_prepare(
