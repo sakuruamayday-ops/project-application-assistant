@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gongchuang.example/schemas/private-real-client-report-fixtures/v1",
+  "title": "十二类常规项目真实客户私有夹具清单",
+  "type": "object",
+  "required": ["schema", "release_tag", "cases"],
+  "properties": {
+    "schema": {
+      "const": "gongchuang-private-real-client-report-fixtures/v1"
+    },
+    "release_tag": {
+      "type": "string",
+      "pattern": "^V[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+    },
+    "classification": {
+      "type": "string",
+      "const": "PRIVATE-CUSTOMER-EVIDENCE-DO-NOT-PACKAGE"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "material": {
+      "type": "object",
+      "required": ["path", "role", "anchors"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1},
+        "anchors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 4}
+        }
+      },
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "required": ["title", "locator"],
+      "properties": {
+        "title": {"type": "string", "minLength": 1},
+        "locator": {"type": "string", "minLength": 1},
+        "status": {"type": "string"},
+        "scope": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "condition": {
+      "type": "object",
+      "required": ["match", "value", "state", "gap", "action"],
+      "properties": {
+        "match": {"type": "string", "minLength": 1},
+        "value": {"type": "string", "minLength": 1},
+        "state": {
+          "enum": [
+            "已具备",
+            "企业提供待核",
+            "待企业确认",
+            "当前检索层未命中",
+            "明确未具备",
+            "存在差距",
+            "冲突待核",
+            "不适用"
+          ]
+        },
+        "gap": {"type": "string", "minLength": 1},
+        "action": {"type": "string", "minLength": 1},
+        "source": {"type": "string"},
+        "fixed_score": {"type": "string"},
+        "conditional_score": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "case": {
+      "type": "object",
+      "required": [
+        "project_id",
+        "enterprise",
+        "project_object",
+        "suggested_year",
+        "deadline",
+        "conclusion",
+        "conclusion_basis",
+        "primary_gap",
+        "next_action",
+        "materials",
+        "policies"
+      ],
+      "properties": {
+        "project_id": {"type": "string"},
+        "enterprise": {"type": "string", "minLength": 1},
+        "project_object": {"type": "string", "minLength": 1},
+        "suggested_year": {"type": "string", "minLength": 1},
+        "deadline": {"type": "string", "minLength": 1},
+        "conclusion": {"type": "string", "minLength": 1},
+        "conclusion_basis": {"type": "string", "minLength": 1},
+        "primary_gap": {"type": "string", "minLength": 1},
+        "next_action": {"type": "string", "minLength": 1},
+        "materials": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/material"}
+        },
+        "policies": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/policy"}
+        },
+        "conditions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/condition"}
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

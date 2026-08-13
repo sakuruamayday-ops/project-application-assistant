@@ -9,9 +9,9 @@
   },
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.6.5.1",
-    "version": "1.6.5.1",
-    "summary": "V1.6.5.1 在 V1.6.5 双报告路由基础上内置十二类项目二十四份可编辑 Word 受控母版、自动选版索引与模板哈希闸门，并使 macOS 和 Windows Stop Hook 一致强制报告画像回执。",
+    "tag": "V1.6.5.2",
+    "version": "1.6.5.2",
+    "summary": "V1.6.5.2 在 V1.6.5.1 受控模板基础上新增私有真实客户资料锚点成稿器，并将十二类双报告完整成稿、逐页渲染、macOS与Windows WorkBuddy未签名候选发包、最终ZIP选模回归及视觉抽检固化为一条候选流水线。",
     "changes": [
       "新增项目前期评估报告与项目申报可行性分析报告两类正式交付，前者服务谈单，后者逐项拆解现行条件、评分表、证据和补强任务。",
       "高企、专精特新、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划自动切换项目专属核心评估对象。",
@@ -22,11 +22,14 @@
       "企业分析报告 A、B、C 版以及尖兵领雁、市级重大和科技计划类既有分析逻辑保持不变。",
       "内置高企、专精特新、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化和科技计划二十四份 Word 母版，命中时先选版再回填。",
       "模板索引对项目别名执行最长命中，对未知、冲突、哈希变更或覆盖现有文件一律拒绝。",
-      "macOS 与 Windows Stop Hook 一致识别完成交付语义和对象定向否定，并强制当前轮次的章节、表格、Word、PDF、哈希及红色水印验证回执。"
+      "macOS 与 Windows Stop Hook 一致识别完成交付语义和对象定向否定，并强制当前轮次的章节、表格、Word、PDF、哈希及红色水印验证回执。",
+      "新增真实客户原文锚点成稿器：客户原件必须位于公共技能树之外，原文锚点未命中或成稿仍有占位符时拒绝交付。",
+      "新增十二类候选流水线：产出二十四份Word/PDF完整成稿、逐页渲染，构建macOS和Windows WorkBuddy两个未签名RC ZIP，再从最终ZIP执行四十八次选模成稿回归。",
+      "ZCode不在本候选流水线内，不生成候选包、不写入发布清单、不给出测试通过状态。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.5.1 候选包同步提供 macOS 与 Windows WorkBuddy 结构；外部企业数字身份证和知识索引仍由服务端单独管理，不属于插件包输入。",
+      "workbuddy": "V1.6.5.2 候选包只提供 macOS 与 Windows WorkBuddy 两种结构；客户原始资料、客户成稿、外部企业数字身份证和知识索引都不属于插件包输入。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认套件清单声明的全部 Skills 可识别、本地与正式技能清单无未登记漂移、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
@@ -60,7 +63,7 @@
         "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
         "knowledge_service_status 返回 connected: true",
         "其他 MCP 条目未被覆盖",
-        "安装后只保留一个 V1.6.5.1 活动正式市场，旧版本可恢复快照不覆盖用户资料",
+        "安装后只保留一个 V1.6.5.2 活动正式市场，旧版本可恢复快照不覆盖用户资料",
         "安装前原包只读平台预检通过且 package_mutated=false"
       ],
       "released_adapters": [
@@ -209,6 +212,20 @@
       "timeout_seconds": 120
     },
     {
+      "name": "workbuddy-report-candidate-pipeline-contract",
+      "command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_workbuddy_report_candidate_pipeline.py"
+      ],
+      "environment": {
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "timeout_seconds": 120
+    },
+    {
       "name": "deprecated-policy-semantics",
       "command": [
         "{python}",
@@ -307,6 +324,7 @@
       "required_paths": [
         "project-feasibility/references/report-template-registry.json",
         "project-feasibility/scripts/select_report_template.py",
+        "project-feasibility/scripts/fill_report_template.py",
         "project-feasibility/scripts/validate_report_profile_delivery.py",
         "project-feasibility/assets/report-templates/high-tech-enterprise/preassessment.docx",
         "project-feasibility/assets/report-templates/high-tech-enterprise/feasibility.docx",
