@@ -1,0 +1,60 @@
+{
+  "batch_id": "knowledge-index-tooling-maintenance-20260813",
+  "state": "tested",
+  "risk_level": "protected",
+  "summary": "修复知识索引增量发布清单摘要继承错误，并为大型候选数据库增加可配置同步目录保护。",
+  "baseline": {
+    "commit": "d579eb723da1ef9a5df6a3d8e831a121fd496f98",
+    "release": "V1.6.5"
+  },
+  "snapshot": {
+    "path": "snapshot.md",
+    "sha256": "30b9f3c5d402fcd6f7ca67efb66fb50348e50d730595e109164d0e626c506ed0"
+  },
+  "impact_report": {
+    "path": "impact-report.md",
+    "sha256": "ee57c214c8e3321c9ef039bcdc5f5adef9962320792d08e867a02972fe011a0f"
+  },
+  "diff": {
+    "path": "candidate-diff.md",
+    "sha256": "4578504e4ba3bd0ee550046223a903c737b24b82e26b9f353e711a12b350c4d7"
+  },
+  "test_report": {
+    "path": "test-report.md",
+    "sha256": "dd252094abfb273906b671b8e1038724f7355fa9badc9d6b68a82531d73ac9ba"
+  },
+  "tests": [
+    {
+      "name": "targeted-policy-index-tooling",
+      "status": "pass",
+      "result": "30 passed"
+    },
+    {
+      "name": "knowledge-portal-full",
+      "status": "pass",
+      "result": "600 passed, 7 skipped"
+    },
+    {
+      "name": "root-tests",
+      "status": "pass",
+      "result": "290 passed, 2 skipped, 67 subtests passed"
+    },
+    {
+      "name": "compileall-and-diff-check",
+      "status": "pass",
+      "result": "pass"
+    }
+  ],
+  "protected_boundaries": [
+    "不修改技能套件版本或插件制品",
+    "不签名、不推送、不上传、不部署",
+    "不切换 OSS 指针或活动知识索引"
+  ],
+  "approval": {
+    "approved_by": "owner",
+    "approved_at": "2026-08-13T13:11:55+08:00",
+    "confirmation_text": "确认执行",
+    "scope": "仅授权隔离实现、测试、可恢复清理和本地提交；不授权签名、正式发布、部署或知识索引切换。",
+    "binding_status": "implementation-scope-only"
+  }
+}

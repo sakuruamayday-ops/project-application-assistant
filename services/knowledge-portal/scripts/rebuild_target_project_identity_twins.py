@@ -26,6 +26,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -56,6 +57,7 @@ TARGET_PROJECTS = (
 )
 THREE_FIRST_PROJECTS = frozenset(TARGET_PROJECTS[2:])
 DEFAULT_RULES = PORTAL_DIR / "references" / "enterprise-lifecycle-rules.json"
+DEFAULT_MAX_SYNCED_CANDIDATE_BYTES = 500 * 1024 * 1024
 USCC_PATTERN = re.compile(r"^[0-9A-HJ-NPQRTUWXY]{18}$")
 EVIDENCE_RANK = {
     "official_final_list": 100,
@@ -268,13 +270,78 @@ def load_product_corrections(
     return result
 
 
-def ensure_candidate_database(path: Path, allow_active: bool) -> None:
+def configured_data_root() -> Path:
+    configured = os.environ.get("JIAOTANG_DATA_DIR")
+    return Path(configured).expanduser() if configured else Path.home() / "JiaotangData"
+
+
+def configured_index_root() -> Path:
+    configured = os.environ.get("JIAOTANG_INDEX_DIR")
+    return (
+        Path(configured).expanduser()
+        if configured
+        else configured_data_root() / "索引"
+    )
+
+
+def configured_synced_roots() -> tuple[Path, ...]:
+    configured = os.environ.get("JIAOTANG_SYNCED_ROOTS")
+    if configured is None:
+        return (Path.home() / "Documents", Path.home() / "Desktop")
+    return tuple(
+        Path(item.strip()).expanduser()
+        for item in configured.split(os.pathsep)
+        if item.strip()
+    )
+
+
+def configured_max_synced_candidate_bytes() -> int:
+    configured = os.environ.get("JIAOTANG_MAX_SYNCED_CANDIDATE_BYTES")
+    if configured is None:
+        return DEFAULT_MAX_SYNCED_CANDIDATE_BYTES
+    try:
+        value = int(configured)
+    except ValueError as error:
+        raise RuntimeError("JIAOTANG_MAX_SYNCED_CANDIDATE_BYTES 必须为正整数") from error
+    if value <= 0:
+        raise RuntimeError("JIAOTANG_MAX_SYNCED_CANDIDATE_BYTES 必须为正整数")
+    return value
+
+
+def ensure_candidate_database(
+    path: Path,
+    allow_active: bool,
+    *,
+    active_root: Path | None = None,
+    synced_roots: Iterable[Path] | None = None,
+    max_synced_candidate_bytes: int | None = None,
+    candidate_root: Path | None = None,
+) -> None:
     resolved = path.resolve()
-    active_root = Path("/Users/zsh/JiaotangData/索引/current").resolve()
+    protected_root = (active_root or configured_index_root() / "current").resolve()
     if not path.is_file():
         raise FileNotFoundError(path)
-    if not allow_active and (resolved == active_root or active_root in resolved.parents):
+    if not allow_active and (
+        resolved == protected_root or protected_root in resolved.parents
+    ):
         raise RuntimeError("禁止直接修改活动索引；请先克隆数据库再执行")
+    roots = tuple(synced_roots) if synced_roots is not None else configured_synced_roots()
+    limit = (
+        max_synced_candidate_bytes
+        if max_synced_candidate_bytes is not None
+        else configured_max_synced_candidate_bytes()
+    )
+    if limit <= 0:
+        raise RuntimeError("同步目录候选库大小阈值必须为正整数")
+    if path.stat().st_size > limit and any(
+        resolved == root.resolve() or root.resolve() in resolved.parents
+        for root in roots
+    ):
+        safe_root = candidate_root or configured_index_root() / "candidates"
+        raise RuntimeError(
+            "完整索引候选不得位于配置的同步目录；"
+            f"请放到 {safe_root.expanduser()} 或任务专用本地临时目录"
+        )
 
 
 def load_rules(path: Path) -> dict[str, dict[str, Any]]:

@@ -18,6 +18,65 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
 
+def test_large_candidate_database_is_rejected_in_configured_synced_scope(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    synced_root = tmp_path / "synced"
+    synced_root.mkdir()
+    database = synced_root / "knowledge_content.sqlite3"
+    database.write_bytes(b"sqlite")
+    data_root = tmp_path / "data"
+    monkeypatch.delenv("JIAOTANG_INDEX_DIR", raising=False)
+    monkeypatch.setenv("JIAOTANG_DATA_DIR", str(data_root))
+    monkeypatch.setenv("JIAOTANG_SYNCED_ROOTS", str(synced_root))
+    monkeypatch.setenv("JIAOTANG_MAX_SYNCED_CANDIDATE_BYTES", "1")
+
+    try:
+        MODULE.ensure_candidate_database(database, allow_active=False)
+    except RuntimeError as error:
+        assert "同步目录" in str(error)
+        assert str(data_root / "索引" / "candidates") in str(error)
+    else:
+        raise AssertionError("同步范围内的大型候选库必须失败关闭")
+
+
+def test_large_candidate_database_is_allowed_in_configured_candidate_root(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    data_root = tmp_path / "data"
+    candidate_root = data_root / "索引" / "candidates"
+    candidate_root.mkdir(parents=True)
+    database = candidate_root / "knowledge_content.sqlite3"
+    database.write_bytes(b"sqlite")
+    monkeypatch.delenv("JIAOTANG_INDEX_DIR", raising=False)
+    monkeypatch.setenv("JIAOTANG_DATA_DIR", str(data_root))
+    monkeypatch.setenv("JIAOTANG_SYNCED_ROOTS", str(tmp_path / "synced"))
+    monkeypatch.setenv("JIAOTANG_MAX_SYNCED_CANDIDATE_BYTES", "1")
+
+    MODULE.ensure_candidate_database(database, allow_active=False)
+
+
+def test_active_index_guard_uses_configured_index_root(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    index_root = tmp_path / "indexes"
+    current = index_root / "current"
+    current.mkdir(parents=True)
+    database = current / "knowledge_content.sqlite3"
+    database.write_bytes(b"sqlite")
+    monkeypatch.setenv("JIAOTANG_INDEX_DIR", str(index_root))
+
+    try:
+        MODULE.ensure_candidate_database(database, allow_active=False)
+    except RuntimeError as error:
+        assert "禁止直接修改活动索引" in str(error)
+    else:
+        raise AssertionError("配置的活动索引必须保持写保护")
+
+
 def create_twin_tables(connection: sqlite3.Connection) -> None:
     connection.executescript(
         """

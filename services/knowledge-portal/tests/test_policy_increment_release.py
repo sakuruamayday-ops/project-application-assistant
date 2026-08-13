@@ -106,6 +106,173 @@ def test_pointer_binds_full_release_manifest_when_present(tmp_path: Path) -> Non
     assert pointer["current_release_manifest_sha256"] == "66" * 32
 
 
+def test_new_release_manifest_replaces_inherited_binding_across_artifacts(
+    tmp_path: Path,
+) -> None:
+    private_path = tmp_path / "private.pem"
+    public_path = tmp_path / "public.pem"
+    generate_key(private_path, public_path)
+    private_key = release.load_private_key(private_path)
+    public_key = release.load_public_key(public_path)
+    raw_release = tmp_path / "candidate-index" / "release.json"
+    package_release = tmp_path / "delta-package" / "release.json"
+    raw_release.parent.mkdir()
+    package_release.parent.mkdir()
+    raw_release.write_text('{"release_id":"policy-new"}\n', encoding="utf-8")
+    package_release.write_bytes(raw_release.read_bytes())
+    state = {
+        "updated_at": "2026-08-13T01:00:00Z",
+        "key_id": release.public_key_id(public_key),
+        "base_release_id": "index-base",
+        "base_index_sha256": "11" * 32,
+        "base_manifest_sha256": "22" * 32,
+        "base_chain_sha256": "33" * 32,
+        "current_release_id": "policy-new",
+        "current_chain_sha256": "44" * 32,
+        "current_index_sha256": "55" * 32,
+        "current_manifest_sha256": "66" * 32,
+        "current_release_manifest_sha256": "77" * 32,
+        "entries": [],
+    }
+
+    digest = release.bind_current_release_manifest(
+        state, raw_release, package_release
+    )
+    pointer = release.pointer_for_state(state, private_key)
+    prepared = {
+        "package_dir": str(package_release.parent),
+        "release_manifest_sha256": digest,
+    }
+
+    assert digest == hashlib.sha256(raw_release.read_bytes()).hexdigest()
+    assert pointer["current_release_manifest_sha256"] == digest
+    assert release.verify_release_manifest_binding(prepared, pointer) == digest
+
+
+def test_release_manifest_binding_rejects_divergent_artifacts(tmp_path: Path) -> None:
+    raw_release = tmp_path / "candidate-release.json"
+    package_release = tmp_path / "package-release.json"
+    raw_release.write_text('{"release_id":"candidate"}\n', encoding="utf-8")
+    package_release.write_text('{"release_id":"package"}\n', encoding="utf-8")
+
+    with pytest.raises(PolicyIncrementError, match="release清单不一致"):
+        release.bind_current_release_manifest({}, raw_release, package_release)
+
+
+def test_release_manifest_binding_rejects_stale_signed_pointer(tmp_path: Path) -> None:
+    package = tmp_path / "package"
+    package.mkdir()
+    release_path = package / "release.json"
+    release_path.write_text('{"release_id":"policy-new"}\n', encoding="utf-8")
+    prepared = {"package_dir": str(package)}
+    pointer = {"current_release_manifest_sha256": "11" * 32}
+
+    with pytest.raises(PolicyIncrementError, match="签名指针绑定摘要不一致"):
+        release.verify_release_manifest_binding(prepared, pointer)
+
+
+def test_prepare_binds_generated_release_manifest_to_state_pointer_and_package(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_path = tmp_path / "private.pem"
+    public_path = tmp_path / "public.pem"
+    generate_key(private_path, public_path)
+    private_key = release.load_private_key(private_path)
+    public_key = release.load_public_key(public_path)
+    current_index = tmp_path / "current-index"
+    current_index.mkdir()
+    database = current_index / "knowledge_content.sqlite3"
+    database.write_bytes(b"sqlite")
+    manifest = current_index / "manifest.jsonl"
+    manifest.write_text("", encoding="utf-8")
+    state_root = tmp_path / "state"
+    state_root.mkdir()
+    previous_release_manifest = "77" * 32
+    state = {
+        "schema": release.STATE_SCHEMA,
+        "created_at": "2026-08-12T01:00:00Z",
+        "updated_at": "2026-08-12T01:00:00Z",
+        "key_id": release.public_key_id(public_key),
+        "trusted_public_key": str(public_path),
+        "base_release_id": "index-base",
+        "base_index_sha256": "11" * 32,
+        "base_manifest_sha256": "22" * 32,
+        "base_chain_sha256": "33" * 32,
+        "base_anchor_dir": str(tmp_path / "base-anchor"),
+        "current_release_id": "policy-previous",
+        "current_index_dir": str(current_index),
+        "current_chain_sha256": "44" * 32,
+        "current_index_sha256": "55" * 32,
+        "current_manifest_sha256": "66" * 32,
+        "current_release_manifest_sha256": previous_release_manifest,
+        "entries": [],
+    }
+    release.write_json(state_root / "state.json", state)
+    handoff_dir = tmp_path / "handoff"
+    handoff_dir.mkdir()
+    release.write_json(handoff_dir / "increment_handoff.json", {"handoff_id": "h1"})
+
+    def fake_build_package(namespace: Namespace) -> dict[str, object]:
+        namespace.candidate_dir.mkdir()
+        namespace.package_dir.mkdir()
+        release.write_json(
+            namespace.package_dir / "delta_manifest.json",
+            {"generated_at": "2026-08-13T01:00:00Z"},
+        )
+        release.write_json(
+            namespace.package_dir / "delta_payload.json",
+            {"manifest_rows": []},
+        )
+        return {
+            "chain_sha256": "88" * 32,
+            "candidate_index_sha256": "99" * 32,
+            "candidate_manifest_sha256": "aa" * 32,
+            "counts": {},
+            "validation": {},
+        }
+
+    def fake_prepare_release_files(
+        candidate: Path,
+        *,
+        prevalidated: bool,
+    ) -> tuple[list[tuple[Path, dict[str, object]]], dict[str, object]]:
+        assert prevalidated is True
+        return (
+            [
+                (candidate / name, file_row(candidate / name))
+                for name in release.PRODUCTION_FILES
+            ],
+            {},
+        )
+
+    monkeypatch.setattr(release, "PRODUCTION_FILES", (database.name, manifest.name))
+    monkeypatch.setattr(release, "verify_current_state", lambda *_args: current_index)
+    monkeypatch.setattr(release, "build_package", fake_build_package)
+    monkeypatch.setattr(release, "prepare_release_files", fake_prepare_release_files)
+    run_dir = tmp_path / "run"
+
+    prepared = release.command_prepare(
+        Namespace(
+            state_root=state_root,
+            handoff_dir=handoff_dir,
+            run_dir=run_dir,
+            knowledge_root=tmp_path / "knowledge",
+            private_key=private_path,
+        )
+    )
+
+    release_digest = release.sha256_file(run_dir / "candidate-index" / "release.json")
+    pending = release.load_json(run_dir / "pending-state.json", "pending")
+    pointer = release.verify_pointer_file(run_dir / "chain-pointer.json", public_path)
+    assert release_digest != previous_release_manifest
+    assert release.sha256_file(run_dir / "delta-package" / "release.json") == release_digest
+    assert prepared["release_manifest_sha256"] == release_digest
+    assert pending["current_release_manifest_sha256"] == release_digest
+    assert pointer["current_release_manifest_sha256"] == release_digest
+    assert release.verify_release_manifest_binding(prepared, pointer) == release_digest
+
+
 def test_remote_pointer_requires_signed_structural_chain_consistency(
     tmp_path: Path,
 ) -> None:

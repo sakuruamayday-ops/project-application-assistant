@@ -234,6 +234,21 @@ def pointer_for_state(state: dict[str, Any], private_key: Ed25519PrivateKey) -> 
     return sign_document(payload, private_key)
 
 
+def bind_current_release_manifest(
+    state: dict[str, Any], *release_paths: Path
+) -> str:
+    """Bind a chain state to identical release manifests produced for its index."""
+
+    if not release_paths:
+        raise PolicyIncrementError("绑定增量release清单时未提供文件")
+    digests = {sha256_file(path) for path in release_paths}
+    if len(digests) != 1:
+        raise PolicyIncrementError("候选索引与增量包的release清单不一致")
+    digest = digests.pop()
+    state["current_release_manifest_sha256"] = digest
+    return digest
+
+
 def command_initialize(args: argparse.Namespace) -> dict[str, Any]:
     root = args.state_root.expanduser().resolve()
     if state_path(root).exists():
@@ -635,6 +650,11 @@ def command_prepare(args: argparse.Namespace) -> dict[str, Any]:
             "entries": [*state.get("entries", []), entry],
         }
     )
+    release_manifest_sha256 = bind_current_release_manifest(
+        new_state,
+        raw_candidate / "release.json",
+        package_dir / "release.json",
+    )
     private_key = load_private_key(args.private_key.expanduser().resolve())
     pointer = pointer_for_state(new_state, private_key)
     previous_pointer = pointer_for_state(state, private_key)
@@ -656,6 +676,7 @@ def command_prepare(args: argparse.Namespace) -> dict[str, Any]:
         "previous_chain_sha256": state["current_chain_sha256"],
         "candidate_index_sha256": result["candidate_index_sha256"],
         "candidate_manifest_sha256": result["candidate_manifest_sha256"],
+        "release_manifest_sha256": release_manifest_sha256,
         "upload_manifest": str(upload_manifest),
         "upload_allowlist": str(upload_allowlist),
         "policy_root": policy_root,
@@ -764,11 +785,33 @@ def verify_pointer_file(path: Path, public_path: Path) -> dict[str, Any]:
     return payload
 
 
+def verify_release_manifest_binding(
+    prepared: dict[str, Any], pointer: dict[str, Any]
+) -> str:
+    """Fail closed unless the prepared package and signed pointer bind one manifest."""
+
+    pointer_digest = require_sha256(
+        pointer.get("current_release_manifest_sha256"),
+        "增量链指针release清单摘要",
+    )
+    package_release = Path(str(prepared["package_dir"])) / "release.json"
+    actual_digest = sha256_file(package_release)
+    if actual_digest != pointer_digest:
+        raise PolicyIncrementError("增量包release清单与签名指针绑定摘要不一致")
+    prepared_digest = prepared.get("release_manifest_sha256")
+    if prepared_digest is not None and require_sha256(
+        prepared_digest, "prepared-release清单摘要"
+    ) != pointer_digest:
+        raise PolicyIncrementError("prepared-release与签名指针的release清单摘要不一致")
+    return pointer_digest
+
+
 def command_upload_immutable(args: argparse.Namespace) -> dict[str, Any]:
     prepared = prepared_payload(args.prepared)
     bucket = build_bucket()
     public_path = Path(str(prepared["trusted_public_key"]))
     pointer = verify_pointer_file(Path(str(prepared["pointer_path"])), public_path)
+    verify_release_manifest_binding(prepared, pointer)
     package_dir = Path(str(prepared["package_dir"]))
     verify_package(
         package_dir,
@@ -902,6 +945,8 @@ def command_switch_pointer(args: argparse.Namespace, *, rollback: bool = False) 
         str(prepared["previous_pointer_path"] if rollback else prepared["pointer_path"])
     )
     target = verify_pointer_file(target_path, public_path)
+    if not rollback:
+        verify_release_manifest_binding(prepared, target)
     expected = str(
         prepared["chain_sha256"] if rollback else prepared["previous_chain_sha256"]
     )
@@ -933,6 +978,7 @@ def command_verify_cloud(args: argparse.Namespace) -> dict[str, Any]:
     )
     if not current or current.get("current_chain_sha256") != prepared["chain_sha256"]:
         raise PolicyIncrementError("OSS增量链current未指向本轮")
+    verify_release_manifest_binding(prepared, current)
     delta_prefix = str(prepared["delta_prefix"])
     errors: list[str] = []
     for path in sorted(Path(str(prepared["package_dir"])).iterdir()):
