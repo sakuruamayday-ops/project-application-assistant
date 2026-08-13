@@ -1,0 +1,28 @@
+{
+  "batch_id": "V1.6.5-dual-report-routes",
+  "state": "approved",
+  "risk_level": "medium",
+  "summary": "为十二类政府项目建立前期评估与可行性分析双报告路由，新增专精数字化诊断和高企研发费用加计扣除补强。",
+  "baseline": {
+    "commit": "916fb9955008474d84c03be8c8b80d602e826375",
+    "release": "V1.6.4.2"
+  },
+  "reports": {
+    "snapshot": "snapshot.md",
+    "impact": "impact-report.md",
+    "diff": "candidate-diff.md",
+    "test": "test-report.md"
+  },
+  "protected_boundaries": [
+    "enterprise-panorama-analysis A/B/C",
+    "尖兵领雁、市级重大和科技计划类既有分析逻辑",
+    "sme late-stage application checkup",
+    "knowledge index and enterprise identity service"
+  ],
+  "approval": {
+    "approved_by": "owner",
+    "approved_at": "2026-08-13T00:00:00+08:00",
+    "confirmation_text": "确认正式发布",
+    "scope": "正式发布 V1.6.5，排除旧工作树五个未跟踪副本，发布后生成十二类项目两类报告的 Word/PDF 培训模板并更新本机插件技能包。"
+  }
+}

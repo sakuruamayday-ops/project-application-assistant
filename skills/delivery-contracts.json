@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "contract_id": "gongchuang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.6.4.2",
+  "rule_version": "1.6.5",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -35,7 +35,7 @@
     "policy-retrieval": {"role": "supporting_business", "owns": []},
     "project-application-assistant": {"role": "primary_business", "owns": []},
     "project-deliverable-archive": {"role": "infrastructure", "owns": []},
-    "project-feasibility": {"role": "primary_business", "owns": ["project-feasibility-report"]},
+    "project-feasibility": {"role": "primary_business", "owns": ["project-presale-assessment-report", "project-feasibility-analysis-report"]},
     "project-matching": {"role": "primary_business", "owns": []},
     "project-memory": {"role": "infrastructure", "owns": []},
     "project-rule-manager": {"role": "infrastructure", "owns": []},
@@ -144,6 +144,12 @@
     }
   },
   "profile_selectors": {
+    "project-feasibility": {
+      "by_report_type": {
+        "preassessment": "project-presale-assessment-report",
+        "feasibility": "project-feasibility-analysis-report"
+      }
+    },
     "enterprise-panorama-analysis": {
       "by_report_variant": {
         "A": "enterprise-panorama-standard",
@@ -167,6 +173,60 @@
     }
   },
   "delivery_profiles": {
+    "project-presale-assessment-report": {
+      "skill_id": "project-feasibility",
+      "report_type": "preassessment",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": false,
+      "requires_policy_selection_trace": true,
+      "requires_four_question_review": true,
+      "required_sections": [
+        "总结结论",
+        "申报条件对照",
+        "项目专属核心对象",
+        "实施路径",
+        "科技咨询补强"
+      ],
+      "required_tables": [
+        {"id": "核心条件表", "required_columns": ["现行条件", "企业值", "证据状态", "差距", "补强动作"], "min_rows": 1},
+        {"id": "申报路径表", "required_columns": ["项目", "申报年度", "申报截止日期", "当前状态", "下一步"], "min_rows": 1}
+      ],
+      "required_artifacts": [
+        {"role": "preassessment_report", "formats": ["docx", "pdf"], "requires_sha256": true, "validation_gate": "document-render-and-structure-gate"}
+      ],
+      "branding_contracts": [
+        {"mode": "required", "variant": "default", "artifact_roles": ["preassessment_report"]}
+      ]
+    },
+    "project-feasibility-analysis-report": {
+      "skill_id": "project-feasibility",
+      "report_type": "feasibility",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_peer_comparison": false,
+      "requires_policy_selection_trace": true,
+      "requires_four_question_review": true,
+      "required_sections": [
+        "项目版本与窗口",
+        "总体结论",
+        "现行条件或完整评分表",
+        "项目专属核心对象",
+        "逐项补强计划",
+        "年度倒排计划",
+        "科技咨询补强"
+      ],
+      "required_tables": [
+        {"id": "条件评分表", "required_columns": ["现行条件或评分项", "企业值", "证据来源", "证据状态", "确定分", "条件分", "差距"], "min_rows": 1},
+        {"id": "补强任务表", "required_columns": ["补强动作", "所需材料", "完成标准", "完成节点"], "min_rows": 1}
+      ],
+      "required_artifacts": [
+        {"role": "feasibility_report", "formats": ["docx", "pdf"], "requires_sha256": true, "validation_gate": "document-render-and-structure-gate"}
+      ],
+      "branding_contracts": [
+        {"mode": "required", "variant": "default", "artifact_roles": ["feasibility_report"]}
+      ]
+    },
     "enterprise-panorama-standard": {
       "skill_id": "enterprise-panorama-analysis",
       "report_variant": "A",

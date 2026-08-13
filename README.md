@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/releases/V1.6.4.2.md"><img src="https://img.shields.io/badge/Candidate-V1.6.4.2-C9A760?style=for-the-badge" alt="Candidate V1.6.4.2"></a>
+  <a href="docs/releases/V1.6.5.md"><img src="https://img.shields.io/badge/Release-V1.6.5-C9A760?style=for-the-badge" alt="Release V1.6.5"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -59,6 +59,11 @@ WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启�
 
 #### 一、本版本新增功能
 
+- 新增“项目前期评估报告”和“项目申报可行性分析报告”两类正式交付，分别服务首次谈单与合作后的实施决策。
+- 十二类项目自动切换高企四关联、专精线质量评价、三首成熟度、研发中心评分表、制造精品产品证据、单项冠军市场边界、绿色绩效或数字化运行证据。
+- 所有项目建议形成国内和国际两份产品技术水平评价咨询报告，证据形成后再判断是否达到国内领先或国际先进。
+- 专精线增加数字化转型诊断报告补强，高企增加研发费用加计扣除规范化服务。
+- 两类报告统一使用共创红色水印并输出可编辑 Word 与 PDF；不为防删水印而限制正文编辑。
 - 企业前期评估、培育规划、多项目矩阵和年度路线图必须保留与企业相关的完整政策梯度，不能只列当前可申报项目。
 - 研发机构、绿色工厂、数字化、知识产权和质量品牌等方向即使当前不具备、暂不需要或低优先级，也须按建设后申报、条件触发或长期梯度列入正文。
 - 每个相关项目使用十二字段路径卡，写清能力建设、前置梯度、申报节点、主管部门、材料闭环、停项条件和责任动作。
@@ -116,7 +121,8 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.4.2 功能简介](docs/releases/V1.6.4.2.md) | 当前候选版本的专精特新前期谈单版、高企WPS交付门禁、技能治理和发布边界 |
+| [V1.6.5 功能简介](docs/releases/V1.6.5.md) | 当前正式版本的双报告路由、数字化诊断、研发费用加计扣除补强与红色水印交付 |
+| [V1.6.4.2 功能简介](docs/releases/V1.6.4.2.md) | 上一正式版本的专精特新前期谈单版、高企WPS交付门禁和技能治理 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
 ## 开发与验证
@@ -133,8 +139,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 候选产品标签 | `V1.6.4.2` | 当前隔离分支候选；正式发布后才进入网站、GitHub Release 和用户可见最新版 |
-| 组件版本 | `1.6.4.2` | 套件、插件和 Python 组件候选版本 |
+| 产品标签 | `V1.6.5` | 当前正式发布版本 |
+| 组件版本 | `1.6.5` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界

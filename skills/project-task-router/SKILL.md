@@ -29,6 +29,7 @@ description: 识别政府项目申报、企业分析、知识产权、财税法�
 执行阶段互斥：
 
 - 找政策使用 `policy-retrieval`，判断能否申报使用 `project-feasibility`。
+- 用户要求某个具体项目的“前期评估报告”或“可行性分析报告”时，以 `project-feasibility` 负责统一报告合同，再按 `references/domain-routing-matrix.md` 选择一个领域技能负责项目专属条件。前者输出谈单版核心条件、企业值、差距和补强，后者输出现行条件或完整评分表、证据、动作、验收标准和倒排计划；不得将两类报告合并成同一深度。
 - 查询哪些企业已经获得某项认定、某产品或行业有哪些获评企业、公示或名单时，路由 `local-knowledge-retrieval` 并调用统一 `recognition_search`；不得进入企业可行性分析。查询计划必须保留全部项目、主题、地区和年度，确切、相关、待核验三档不得混写。
 - 只核验政策版本、效力、是否过期、是否被替代或完整文件链，且暂不判断企业条件时，`policy-retrieval`具有最高主路由优先级；具体项目领域技能只能辅助，不得占用`primary_skill`。旧年度、已截止或有效性不明时同时限制结论。
 - 高企认定的申报年度选择、成长性测算和申报前评分使用 `high-tech-enterprise-preassessment`；按正式申请书母版扩缩RD、PS表并撰写、回填或核稿时使用 `high-tech-enterprise-application-drafting`；普通科技项目匹配仍使用 `technology-innovation-projects`。

@@ -49,6 +49,7 @@ EXPECTED_RELEASES = (
     "1.6.4",
     "1.6.4.1",
     "1.6.4.2",
+    "1.6.5",
 )
 
 
@@ -153,6 +154,21 @@ def test_v1642_includes_sme_presale_and_manifest_driven_governance():
         "高企汇总表",
         "WPS Office逐页视觉验收",
         "SHA-256 核对",
+    ):
+        assert text in introduction
+
+
+def test_v165_includes_dual_report_routes_and_strengthening_services():
+    introduction = release_function_introduction("V1.6.5")
+    for text in (
+        "项目前期评估报告",
+        "项目申报可行性分析报告",
+        "国内产品技术水平评价咨询报告",
+        "国际产品技术水平评价咨询报告",
+        "数字化转型诊断报告",
+        "研发费用加计扣除规范化服务",
+        "共创红色水印",
+        "Word 与 PDF",
     ):
         assert text in introduction
 

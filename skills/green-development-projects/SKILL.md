@@ -30,3 +30,5 @@ description: 分析绿色工厂、绿色供应链、节能节水、降碳、资�
 
 详细口径见 `references/green-metrics-boundaries.md`。结构化指标可运行
 `scripts/validate_green_metrics.py` 检查期间、单位和基准一致性。
+
+用户要求绿色工厂前期评估报告或可行性分析报告时，同时读取 `project-feasibility/references/two-report-contract.md`，按基础设施、能源资源、产品、排放、碳、管理体系和绿色绩效切换核心评估对象。前期报告只列政策明确要求且已有企业数据、已确认差距或会改变结论的条件，不机械铺陈“无处罚”等空泛合规表述；可行性报告再按当期评价表完整拆解。
