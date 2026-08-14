@@ -1,8 +1,10 @@
 import hashlib
 import importlib.util
 import json
+import shutil
 from pathlib import Path
 
+import fitz
 from docx import Document
 
 
@@ -15,6 +17,12 @@ SPEC = importlib.util.spec_from_file_location("report_profile_validator", SCRIPT
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
+
+SELECTOR_PATH = ROOT / "skills/project-feasibility/scripts/select_report_template.py"
+SELECTOR_SPEC = importlib.util.spec_from_file_location("profile_test_selector", SELECTOR_PATH)
+SELECTOR = importlib.util.module_from_spec(SELECTOR_SPEC)
+assert SELECTOR_SPEC.loader is not None
+SELECTOR_SPEC.loader.exec_module(SELECTOR)
 
 
 def test_report_profile_requires_dual_format_sections_tables_and_branding(tmp_path):
@@ -33,6 +41,8 @@ def test_report_profile_requires_dual_format_sections_tables_and_branding(tmp_pa
     assert any("缺少必备章节" in item for item in result["errors"])
     assert any("缺少必备表格" in item for item in result["errors"])
     assert any("品牌校验失败" in item for item in result["errors"])
+    assert "缺少受控模板选型回执" in result["errors"]
+    assert "缺少受控模板成稿回执" in result["errors"]
 
 
 def test_stop_hook_rejects_tampered_profile_receipt(tmp_path):
@@ -95,3 +105,67 @@ def test_pdf_text_extraction_uses_visual_sort_order(monkeypatch, tmp_path):
     monkeypatch.setattr(fitz, "open", lambda _: Pdf())
     assert MODULE._pdf_text(tmp_path / "fixture.pdf") == "申报条件对照"
     assert calls == [("text", True)]
+
+
+def test_template_provenance_binds_registry_master_and_completed_docx(tmp_path):
+    selection = SELECTOR.resolve_template("高新技术企业认定", "前期评估")
+    copied = SELECTOR.materialize(selection, tmp_path / "masters", enterprise="测试企业")
+    master = Path(copied["output_path"])
+    completed = tmp_path / "completed.docx"
+    shutil.copy2(master, completed)
+    completion = {
+        "schema": "gongchuang-completed-project-report/v1",
+        "status": "pass",
+        "project_id": copied["project_id"],
+        "report_type": copied["report_type"],
+        "template_path": str(master),
+        "template_sha256": MODULE.sha256_file(master),
+        "output_path": str(completed),
+        "output_sha256": MODULE.sha256_file(completed),
+    }
+    completion_path = completed.with_suffix(".completion.json")
+    completion_path.write_text(json.dumps(completion, ensure_ascii=False), encoding="utf-8")
+    errors, provenance = MODULE._validate_template_provenance(
+        plugin_root=ROOT,
+        profile_id="project-presale-assessment-report",
+        docx=completed,
+        template_selection_receipt=Path(copied["receipt_path"]),
+        completion_receipt=completion_path,
+    )
+    assert errors == []
+    assert provenance["project_id"] == "high-tech-enterprise"
+    completed.write_bytes(completed.read_bytes() + b"tampered")
+    errors, _ = MODULE._validate_template_provenance(
+        plugin_root=ROOT,
+        profile_id="project-presale-assessment-report",
+        docx=completed,
+        template_selection_receipt=Path(copied["receipt_path"]),
+        completion_receipt=completion_path,
+    )
+    assert "成稿回执与当前DOCX哈希不一致" in errors
+
+
+def test_pdf_portability_rejects_nonembedded_china_s_font(tmp_path):
+    path = tmp_path / "manual-china-s.pdf"
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_text((72, 72), "申报条件对照和总体结论", fontname="china-s", fontsize=12)
+    document.save(path)
+    document.close()
+    errors, details = MODULE._validate_pdf_portability(path)
+    assert details["rendered_page_count"] == 1
+    assert any("中文字体未嵌入" in item for item in errors)
+
+
+def test_cjk_font_support_rejects_embedded_latin_font_with_unicode_mapping():
+    latin = (7, "ttf", "TrueType", "BAAAAA+LinuxLibertineG", "F1", "", 0)
+    type1_latin = (8, "pfa", "Type1", "CAAAAA+FrankRuhlHofshi-Bold", "F2", "", 0)
+    assert MODULE._font_record_supports_cjk(latin) is False
+    assert MODULE._font_record_supports_cjk(type1_latin) is False
+
+
+def test_cjk_font_support_accepts_wps_embedded_identity_h_fonts():
+    hiragino = (16, "ttf", "Type0", "BFTHXX+HiraginoSansGB-W6", "FT16", "Identity-H", 0)
+    subset = (22, "ttf", "Type0", "UGYAVD+CustomerSubsetFont", "FT22", "Identity-H", 0)
+    assert MODULE._font_record_supports_cjk(hiragino) is True
+    assert MODULE._font_record_supports_cjk(subset) is True

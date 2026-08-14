@@ -436,6 +436,8 @@ def run_pipeline(options: argparse.Namespace) -> dict[str, Any]:
                 plugin_root=repo_root,
                 profile_id=profile_id,
                 artifacts=[docx, delivery_pdf],
+                template_selection_receipt=Path(built["selection"]["receipt_path"]),
+                completion_receipt=Path(built["completion"]["receipt_path"]),
             )
             if profile["status"] != "pass":
                 raise RuntimeError(

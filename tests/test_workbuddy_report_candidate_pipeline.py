@@ -14,6 +14,7 @@ SKILLS = ROOT / "skills"
 REGISTRY = SKILLS / "project-feasibility/references/report-template-registry.json"
 SELECTOR_PATH = SKILLS / "project-feasibility/scripts/select_report_template.py"
 FILLER_PATH = SKILLS / "project-feasibility/scripts/fill_report_template.py"
+GROUNDED_PATH = SKILLS / "evidence-ledger/scripts/grounded_evidence.py"
 PIPELINE_PATH = ROOT / "scripts/run_workbuddy_report_candidate_pipeline.py"
 VISUAL_FINALIZER_PATH = ROOT / "scripts/record_workbuddy_report_visual_review.py"
 
@@ -28,6 +29,7 @@ def load_module(name: str, path: Path):
 
 SELECTOR = load_module("candidate_test_selector", SELECTOR_PATH)
 FILLER = load_module("candidate_test_filler", FILLER_PATH)
+GROUNDED = load_module("candidate_test_grounded", GROUNDED_PATH)
 PIPELINE = load_module("candidate_test_pipeline", PIPELINE_PATH)
 VISUAL_FINALIZER = load_module("candidate_test_visual_finalizer", VISUAL_FINALIZER_PATH)
 
@@ -113,6 +115,7 @@ def test_real_source_anchor_fill_produces_complete_editable_report(tmp_path: Pat
     ]
     assert visible_runs
     assert all(run.font.name == FILLER.PORTABLE_CJK_FONT for run in visible_runs)
+    assert GROUNDED._validate_docx(output, "analysis-report")["errors"] == []
 
 
 def test_source_anchor_must_match_real_material(tmp_path: Path):

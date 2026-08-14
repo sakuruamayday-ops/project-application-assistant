@@ -456,6 +456,74 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             receipt["missing_requirement_ids"],
         )
 
+    def test_behavior_hook_failed_current_turn_receipts_cannot_bypass_delivery_gate(self):
+        contract = json.loads(
+            (REPOSITORY / "skills/delivery-contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            state_root = Path(directory)
+            turn_id = "turn-english-receipt-bypass"
+            receipt_dir = state_root / "validator-receipts" / turn_id
+            receipt_dir.mkdir(parents=True)
+            (receipt_dir / "grounded-fail.json").write_text(
+                json.dumps(
+                    {
+                        "validator_id": "grounded-delivery/v1",
+                        "turn_id": turn_id,
+                        "status": "fail",
+                        "errors": ["missing sources"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (receipt_dir / "profile-fail.json").write_text(
+                json.dumps(
+                    {
+                        "validator_id": "gongchuang-report-profile/v1",
+                        "turn_id": turn_id,
+                        "status": "fail",
+                        "profile_id": "project-feasibility-analysis-report",
+                        "errors": ["missing PDF"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            signals = BEHAVIOR.prompt_signals(
+                "Run the host acceptance and preserve the raw failure.",
+                contract,
+            )
+            self.assertFalse(signals["formal_business_delivery"])
+            receipt = BEHAVIOR.audit_delivery_receipt(
+                prompt="",
+                answer="Acceptance completed with failed receipts.",
+                active_skills=[{"skill": "evidence-ledger"}],
+                contract=contract,
+                signals=signals,
+                state_root=state_root,
+                turn_id=turn_id,
+            )
+            self.assertFalse(receipt["delivery_check_ok"])
+            self.assertTrue(receipt["receipt_observed_formal_delivery"])
+            self.assertEqual(
+                receipt["business_domain_source"],
+                "current_turn_profile_receipt",
+            )
+            self.assertEqual(receipt["error_code"], "NO_PRIMARY_BUSINESS_SKILL")
+            self.assertIn(
+                "routing.primary_business_skill",
+                receipt["missing_requirement_ids"],
+            )
+            self.assertIn(
+                "grounded.artifact.report",
+                receipt["missing_requirement_ids"],
+            )
+            self.assertIn(
+                "delivery_profile.project-feasibility-analysis-report",
+                receipt["missing_requirement_ids"],
+            )
+
     def test_behavior_hook_preserves_blocked_delivery_only_for_continuation(self):
         contract_path = REPOSITORY / "skills/delivery-contracts.json"
         with tempfile.TemporaryDirectory() as directory:

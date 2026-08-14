@@ -18,7 +18,7 @@ description: 对单个政府项目执行完整可行性分析，覆盖项目与�
 
 ## 强制执行顺序
 
-1. 确认企业主体、项目全称、地区、申报年度、批次以及新申报或复核类型。任一信息可能改变适用规则时，先调用 `policy-retrieval` 取得管理办法、工作指引和当期通知。任务属于前期评估或培育规划时，同时读取 `references/policy-application-path-contract.md`，不得只给资格判断而省略项目的建设和申报路径。用户要求“项目前期评估报告”或“项目申报可行性分析报告”时，还必须完整读取 `references/two-report-contract.md` 和 `references/report-template-registry.json`，并与对应项目领域技能组合执行。高企、专精特新中小企业、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划类命中受控模板时，必须先运行 `python3 scripts/select_report_template.py --project-type <项目> --report-type <preassessment|feasibility> --output-dir <交付目录> --enterprise <企业>`，基于复制出的可编辑 Word 母版回填；不得脱离模板重新排版。进行自动化成稿时，可将客户资料、原文锚点和项目事实写入技能树之外的私有夹具，再运行 `python3 scripts/fill_report_template.py --template <已复制母版> --output <成稿.docx> --fixture <私有夹具.json> --report-type <preassessment|feasibility> --release-tag <版本> --public-root <公共源码根目录>`。自动成稿必须命中真实原文锚点，且不得将客户原件、绝对路径或客户成稿放入公共候选包。索引未命中时才按统一报告骨架生成，且不得冒充已使用受控模板。
+1. 确认企业主体、项目全称、地区、申报年度、批次以及新申报或复核类型。任一信息可能改变适用规则时，先调用 `policy-retrieval` 取得管理办法、工作指引和当期通知。任务属于前期评估或培育规划时，同时读取 `references/policy-application-path-contract.md`，不得只给资格判断而省略项目的建设和申报路径。用户要求“项目前期评估报告”或“项目申报可行性分析报告”时，还必须完整读取 `references/two-report-contract.md` 和 `references/report-template-registry.json`，并与对应项目领域技能组合执行；在 WorkBuddy 当前轮必须显式调用 `evidence-ledger`，不得只在正文中提及。高企、专精特新中小企业、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划类命中受控模板时，必须先运行 `python3 scripts/select_report_template.py --project-type <项目> --report-type <preassessment|feasibility> --output-dir <交付目录> --enterprise <企业>`，保留其 `.template-selection.json`，再基于复制出的可编辑 Word 母版回填；不得脱离模板重新排版。进行自动化成稿时，将客户资料、原文锚点和项目事实写入技能树之外的私有夹具，再运行 `python3 scripts/fill_report_template.py --template <已复制母版> --output <成稿.docx> --fixture <私有夹具.json> --report-type <preassessment|feasibility> --release-tag <版本> --public-root <公共源码根目录>`，保留其 `.completion.json`。禁止用空白 `Document()` 重建 Word，禁止用 PyMuPDF 的 china-s 字体或其他未嵌入中文字体手工绘制 PDF 后声称使用了受控母版。自动成稿必须命中真实原文锚点，且不得将客户原件、绝对路径或客户成稿放入公共候选包。索引未命中时才按统一报告骨架生成，且不得冒充已使用受控模板。
 2. 读取 `references/feasibility-decision-model.md`，建立规则台账。每条规则标明规则类型、原文、来源、适用范围、时间状态和是否一票否决；不得把历史政策或同类项目规则拼入当期规则。
 3. 读取 `references/evidence-state-model.md`，将企业事实逐项映射为“verified、computed、claimed、missing、conflicting、not-applicable”。只有 verified 和复算通过的 computed 可以直接支撑硬门槛。
 4. 先判断排除项和硬门槛，再处理评分项。硬门槛出现 `failed` 时结论为不可申报；出现 `missing`、`conflicting` 或关键 `claimed` 时不得给出确定达标结论。
@@ -48,11 +48,19 @@ description: 对单个政府项目执行完整可行性分析，覆盖项目与�
 
 校验失败时不得交付确定性结论。
 
-生成两类正式报告时，在通用 Grounded 文件回执之外，必须分别运行报告画像校验并将结果写入当前 WorkBuddy 轮次：
+生成两类正式报告时，先为本次报告建立 `grounded-evidence/v1` 严格证据台账，显式调用 `evidence-ledger`，再对交付的每一个 Word 和 PDF 分别执行当前轮 Grounded 校验。不得只校验其中一个文件，也不得复用上一轮回执：
 
-`python3 scripts/validate_report_profile_delivery.py --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --profile-id <project-presale-assessment-report|project-feasibility-analysis-report> --artifact <报告.docx> --artifact <报告.pdf>`
+`python3 "${CODEBUDDY_PLUGIN_ROOT}/skills/evidence-ledger/scripts/validate_evidence_ledger.py" <证据台账.json> --strict-grounded`
 
-画像校验会核对必备章节、必备表格、Word 与 PDF 双格式、文件哈希以及共创红色水印。缺少当前轮次的通过回执时，Stop Hook 必须阻止结束；不得仅在对话中自述“已完成”或“已通过”。
+`python3 "${CODEBUDDY_PLUGIN_ROOT}/skills/evidence-ledger/scripts/grounded_evidence.py" validate-delivery <证据台账.json> <报告.docx> --profile analysis-report --visual-status <视觉状态> --receipt-export-dir <交付目录/validator-receipts>`
+
+`python3 "${CODEBUDDY_PLUGIN_ROOT}/skills/evidence-ledger/scripts/grounded_evidence.py" validate-delivery <证据台账.json> <报告.pdf> --profile analysis-report --visual-status <视觉状态> --receipt-export-dir <交付目录/validator-receipts>`
+
+视觉状态只允许填写 passed-host-render 或 pending-device-acceptance。只有实际逐页渲染且未见缺字、空白页、裁切和重叠时才能填写前者；渲染器或中文字体不可用时保持后者并停止正式交付。完成上述 Grounded 文件回执后，必须分别运行报告画像校验并将模板来源、全部文件哈希和内容检查写入当前 WorkBuddy 轮次：
+
+`python3 scripts/validate_report_profile_delivery.py --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --profile-id <project-presale-assessment-report|project-feasibility-analysis-report> --artifact <报告.docx> --artifact <报告.pdf> --template-selection-receipt <母版.template-selection.json> --completion-receipt <成稿.completion.json>`
+
+画像校验会核对必备章节、必备表格、Word 与 PDF 双格式、受控母版哈希链、PDF逐页渲染、中文字体嵌入、文件哈希以及共创红色水印。缺少当前轮次的通过回执时，Stop Hook 必须阻止结束；不得仅在对话中自述“已完成”或“已通过”。
 
 受控 Word 母版只固定结构、表格、项目专属核心对象、补强入口和共创红色水印，不固化政策数值。回填时仍须用当期通知原文替换占位项；母版中的条件只是待核验结构，不得当作现行政策证据。完成 Word 回填后导出 PDF，再对 Word 和 PDF 同时运行上述画像校验。
 

@@ -12,7 +12,7 @@ import argparse
 import hashlib
 import json
 import re
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -404,8 +404,34 @@ def _set_cell_shading(cell, fill: str) -> None:
     shading.set(qn("w:fill"), fill)
 
 
+def _declare_repeating_table_headers(document: Document) -> None:
+    """Make every first table row repeat in Word/PDF page flows."""
+    for table in document.tables:
+        if not table.rows:
+            continue
+        properties = table.rows[0]._tr.get_or_add_trPr()
+        if properties.find(qn("w:tblHeader")) is None:
+            header = OxmlElement("w:tblHeader")
+            header.set(qn("w:val"), "true")
+            properties.append(header)
+
+
+def _set_delivery_metadata(document: Document, fixture: dict[str, Any]) -> None:
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    author = str(fixture.get("advisor") or "共创研究院")
+    properties = document.core_properties
+    properties.author = author
+    properties.last_modified_by = author
+    properties.created = now
+    properties.modified = now
+    properties.title = f"{fixture['enterprise']}项目申报咨询报告"
+    properties.subject = str(fixture["project_object"])
+    properties.keywords = "政府项目申报,前期评估,可行性分析,证据台账"
+
+
 def _append_source_ledger(document: Document, fixture: dict[str, Any]) -> None:
-    document.add_heading("附录 C、资料来源与证据状态", level=1)
+    document.add_heading("数据来源", level=1)
+    document.add_paragraph("附录 C、资料来源与证据状态")
     paragraph = document.add_paragraph(
         "本附录只列文件名、校验值和已命中原文锚点，不在公共候选包中保存客户原文或本机绝对路径。"
     )
@@ -422,6 +448,10 @@ def _append_source_ledger(document: Document, fixture: dict[str, Any]) -> None:
             run.font.bold = True
             run.font.size = Pt(8)
     for index, source in enumerate(fixture["_validated_sources"], start=1):
+        document.add_paragraph(
+            f"[{index}] {source['name']}；用途：{source['role']}；"
+            f"SHA-256：{source['sha256']}；原文锚点：{'；'.join(source['anchors'])}。"
+        )
         cells = table.add_row().cells
         values = [
             str(index),
@@ -475,6 +505,8 @@ def complete_report(
     _fill_project_specific_paragraphs(document, validated)
     _generic_fill(document, validated)
     _append_source_ledger(document, validated)
+    _declare_repeating_table_headers(document)
+    _set_delivery_metadata(document, validated)
     _apply_portable_cjk_font(document)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
