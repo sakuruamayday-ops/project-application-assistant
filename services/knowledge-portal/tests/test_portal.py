@@ -735,6 +735,41 @@ def test_desktop_download_page_supports_macos_only_release(tmp_path):
         assert "下载 Windows 安装包" not in page.text
 
 
+def test_desktop_download_page_supports_formal_macos_only_release(tmp_path):
+    write_desktop_release(tmp_path)
+    release_path = tmp_path / "desktop-client-releases" / "release.json"
+    release = json.loads(release_path.read_text(encoding="utf-8"))
+    release["release_status"] = "formal"
+    release["artifacts"] = [
+        artifact
+        for artifact in release["artifacts"]
+        if artifact["platform"] == "macos"
+    ]
+    release_path.write_text(json.dumps(release, ensure_ascii=False), encoding="utf-8")
+    module = load_app(tmp_path)
+    password = "correct-horse-battery"
+
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": password},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": password},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        page = client.get("/downloads")
+        assert page.status_code == 200
+        assert "macOS 正式版可下载，Windows 待实测" in page.text
+        assert "macOS 正式版已经发布；Windows 版待完成实测后再发布。" in page.text
+        assert "尚未正式发布" not in page.text
+        assert "下载 macOS 安装包" in page.text
+        assert "下载 Windows 安装包" not in page.text
+
+
 def test_desktop_update_feed_is_public_while_manual_download_stays_account_bound(tmp_path):
     payloads = write_desktop_release(tmp_path)
     module = load_app(tmp_path)

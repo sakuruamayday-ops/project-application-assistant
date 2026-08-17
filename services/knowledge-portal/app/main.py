@@ -2436,6 +2436,8 @@ def desktop_client_release_payload(*, verify_digest: bool = False) -> dict[str, 
         "available": False,
         "version": "0.1.0",
         "published_at": "",
+        "release_status": "candidate",
+        "is_formal": False,
         "artifacts": [],
         "availability_label": "测试包尚未上架",
         "message": "Windows 与 macOS 内部测试安装包尚未放入服务器下载目录。",
@@ -2451,8 +2453,13 @@ def desktop_client_release_payload(*, verify_digest: bool = False) -> dict[str, 
         return {**unavailable, "message": "客户端发布清单格式无效，下载已暂停。"}
     version = str(payload.get("client_version") or "")
     published_at = str(payload.get("published_at") or "")
+    release_status = str(payload.get("release_status") or "candidate")
     raw_artifacts = payload.get("artifacts")
-    if not re.fullmatch(r"0\.1\.\d+(?:[-+][A-Za-z0-9.-]+)?", version) or not isinstance(raw_artifacts, list):
+    if (
+        not re.fullmatch(r"0\.1\.\d+(?:[-+][A-Za-z0-9.-]+)?", version)
+        or release_status not in {"candidate", "formal"}
+        or not isinstance(raw_artifacts, list)
+    ):
         return {**unavailable, "message": "客户端发布版本或产物清单无效，下载已暂停。"}
     root = DESKTOP_CLIENT_RELEASE_DIR.resolve()
     artifacts: list[dict[str, object]] = []
@@ -2498,19 +2505,22 @@ def desktop_client_release_payload(*, verify_digest: bool = False) -> dict[str, 
     platforms = {str(item["platform"]) for item in artifacts}
     if not platforms or len(platforms) != len(artifacts):
         return {**unavailable, "message": "客户端产物平台记录重复或为空，下载已暂停。"}
+    is_formal = release_status == "formal"
     if platforms == set(CLIENT_AUTHORIZATION_PLATFORMS):
-        availability_label = "双端测试包可下载"
-        message = "仅用于双端实机安装验收，尚未正式发布。"
+        availability_label = "双端正式版可下载" if is_formal else "双端测试包可下载"
+        message = "Windows 与 macOS 正式版已经发布。" if is_formal else "仅用于双端实机安装验收，尚未正式发布。"
     elif platforms == {"macos"}:
-        availability_label = "macOS 测试安装包可下载，Windows 待实测"
-        message = "macOS 安装包可用于实机验收；Windows 版待完成实测后再提供。"
+        availability_label = "macOS 正式版可下载，Windows 待实测" if is_formal else "macOS 测试安装包可下载，Windows 待实测"
+        message = "macOS 正式版已经发布；Windows 版待完成实测后再发布。" if is_formal else "macOS 安装包可用于实机验收；Windows 版待完成实测后再提供。"
     else:
-        availability_label = "Windows 测试安装包可下载，macOS 待实测"
-        message = "Windows 安装包可用于实机验收；macOS 版待完成实测后再提供。"
+        availability_label = "Windows 正式版可下载，macOS 待实测" if is_formal else "Windows 测试安装包可下载，macOS 待实测"
+        message = "Windows 正式版已经发布；macOS 版待完成实测后再发布。" if is_formal else "Windows 安装包可用于实机验收；macOS 版待完成实测后再提供。"
     return {
         "available": True,
         "version": version,
         "published_at": published_at,
+        "release_status": release_status,
+        "is_formal": is_formal,
         "artifacts": artifacts,
         "availability_label": availability_label,
         "message": message,
