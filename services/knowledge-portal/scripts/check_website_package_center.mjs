@@ -5,21 +5,16 @@ import { fileURLToPath } from "node:url";
 const portalRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relative) => fs.readFileSync(path.join(portalRoot, relative), "utf8");
 
-const template = read("templates/skill_center.html");
-const portalScript = read("static/portal.js");
+const skillCenterTemplate = read("templates/skill_center.html");
+const portalTemplate = read("templates/portal.html");
 for (const required of [
   "下载通用包",
-  "下载 macOS 包",
-  "下载 Windows 包",
-  "固定三产物",
-  "其他宿主不再规划或展示平台专用版本",
-  'data-agent-platform="macos"',
-  'data-agent-platform="windows"',
-  "一键安装 macOS 版",
-  "一键安装 Windows 版",
+  "统一通用技能包",
+  "不再提供 WorkBuddy 专用技能包",
+  "前往客户端下载",
 ]) {
-  if (!template.includes(required)) {
-    throw new Error(`网站安装包下载中心缺少必要内容：${required}`);
+  if (!skillCenterTemplate.includes(required)) {
+    throw new Error(`网站技能中心缺少必要内容：${required}`);
   }
 }
 for (const forbidden of [
@@ -30,18 +25,19 @@ for (const forbidden of [
   'data-platform-package="cherry-studio"',
   "下载 WorkBuddy 包",
 ]) {
-  if (template.includes(forbidden)) {
-    throw new Error(`网站安装包下载中心仍包含已停用的平台入口：${forbidden}`);
+  if (skillCenterTemplate.includes(forbidden)) {
+    throw new Error(`网站技能中心仍包含已停用的平台入口：${forbidden}`);
   }
 }
 for (const required of [
-  'form.set("platform", platform)',
-  '["macos", "windows"].includes(platform)',
+  "下载共创企业助手",
+  "下载 {{ artifact.platform_label }} 安装包",
+  "当前安装包仅用于实机安装验收",
 ]) {
-  if (!portalScript.includes(required)) {
-    throw new Error(`网站一键安装入口未绑定用户选择的平台：${required}`);
+  if (!portalTemplate.includes(required)) {
+    throw new Error(`网站客户端下载页缺少必要内容：${required}`);
   }
 }
 console.log(
-  "Website package center gate: generic + native macOS/Windows WorkBuddy packages with explicit install entries",
+  "Website package center gate: universal Skills package plus macOS/Windows desktop test installers",
 );
