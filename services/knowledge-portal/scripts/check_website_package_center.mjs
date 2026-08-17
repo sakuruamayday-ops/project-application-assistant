@@ -32,12 +32,12 @@ for (const forbidden of [
 for (const required of [
   "下载共创企业助手",
   "下载 {{ artifact.platform_label }} 安装包",
-  "当前安装包仅用于实机安装验收",
+  "{{ desktop_release.message }}",
 ]) {
   if (!portalTemplate.includes(required)) {
     throw new Error(`网站客户端下载页缺少必要内容：${required}`);
   }
 }
 console.log(
-  "Website package center gate: universal Skills package plus macOS/Windows desktop test installers",
+  "Website package center gate: universal Skills package plus status-aware desktop releases",
 );
