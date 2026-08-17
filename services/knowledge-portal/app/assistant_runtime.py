@@ -87,7 +87,7 @@ def quick_guide_answer(
     if matched == "api_mcp_import":
         return (
             "一、共创企业助手已内置 Skills 与 MCP，不需要重复安装。在客户端“技能中心”内添加企查查、天眼查或 PaddleOCR，并按页面指引完成授权。\n"
-            f"二、其他 Agent 在网站“Skills → 安装与连接”下载通用包，导入{skill_count}项 Skills；再打开“配置知识库 MCP”，复制当前账号的完整 Streamable HTTP 配置。\n"
+            f"二、其他 Agent 先登录共创研究院网站，再打开“Skills → 安装与连接”下载通用包，导入{skill_count}项 Skills；随后打开“配置知识库 MCP”，复制当前账号的完整 Streamable HTTP 配置。\n"
             "三、保存并重载 Agent，在 tools/list 中确认 knowledge_search、knowledge_document 和 knowledge_service_status，然后实际调用 knowledge_service_status。只有返回 connected: true 才算完成。\n\n"
             "个人 Token 只写入当前宿主的安全凭据或 MCP 配置，不要粘贴到公共代码或聊天回复中；怀疑泄露时在网站撤销并重新生成。",
             "first-run-configuration",
