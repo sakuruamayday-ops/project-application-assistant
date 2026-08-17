@@ -112,7 +112,7 @@ const FLOW_FOCUS_SELECTOR = [
   "select",
 ].join(",");
 
-// API 与用户区块使用真实矩形周长路径，避免宽面板上的锥形渐变被压缩成左右光柱。
+// 宽面板使用真实矩形周长路径，避免锥形渐变被压缩成左右光柱。
 const FLOW_PERIMETER_SELECTOR = "#api-access > .panel";
 const FLOW_SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -1049,7 +1049,7 @@ const ROUTE_SECTIONS = {
   "/portal": "overview",
   "/cockpit": "cockpit",
   "/algorithms": "algorithms",
-  "/access": "api-access",
+  "/downloads": "downloads",
   "/skills": "skills",
   "/feedback": "feedback",
   "/admin/operations": "health-admin",

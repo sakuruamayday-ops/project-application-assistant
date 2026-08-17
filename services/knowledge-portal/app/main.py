@@ -8301,8 +8301,24 @@ def user_count() -> int:
 
 
 def safe_login_redirect(value: str) -> str:
-    del value
-    return "/portal"
+    candidate = value.strip()
+    if not candidate or any(character in candidate for character in "\r\n"):
+        return "/portal"
+    parsed = urlparse(candidate)
+    if parsed.scheme or parsed.netloc or not parsed.path.startswith("/") or parsed.path.startswith("//"):
+        return "/portal"
+    allowed_pages = {
+        "/portal",
+        "/cockpit",
+        "/algorithms",
+        "/downloads",
+        "/feedback",
+        "/skills",
+        "/preferences",
+    }
+    if parsed.path not in allowed_pages and not parsed.path.startswith("/admin/"):
+        return "/portal"
+    return candidate
 
 
 def session_user(session_token: str | None) -> tuple[sqlite3.Row, sqlite3.Row] | None:
@@ -8332,11 +8348,16 @@ def session_user(session_token: str | None) -> tuple[sqlite3.Row, sqlite3.Row] |
 
 
 def require_web_user(
+    request: Request,
     jiaotang_session: Annotated[str | None, Cookie()] = None,
 ) -> sqlite3.Row:
     result = session_user(jiaotang_session)
     if result is None:
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
+        destination = request.url.path
+        if request.url.query:
+            destination = f"{destination}?{request.url.query}"
+        login_url = f"/login?next={quote(destination, safe='')}"
+        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": login_url})
     return result[0]
 
 
@@ -12042,8 +12063,9 @@ def cockpit_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_
 
 
 @app.get("/access", response_class=HTMLResponse)
-def access_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
-    return portal_page_response(request, user, "access")
+def access_page():
+    """Retire the obsolete API/user screen while preserving old bookmarks."""
+    return RedirectResponse("/downloads", status_code=303)
 
 
 @app.get("/mcp-guide", response_class=HTMLResponse)
@@ -12142,6 +12164,55 @@ def download_desktop_client(
             "X-Content-Type-Options": "nosniff",
             "X-Gongchuang-Artifact-SHA256": str(artifact["sha256"]),
         },
+    )
+
+
+@app.get("/client-updates/{asset_name}")
+def desktop_client_update_asset(asset_name: str):
+    """Serve the public electron-updater feed; the account-bound download page stays private."""
+    if Path(asset_name).name != asset_name or any(character in asset_name for character in "\r\n"):
+        raise HTTPException(status_code=404, detail="更新文件不存在")
+    release = desktop_client_release_payload()
+    if not release["available"]:
+        raise HTTPException(status_code=503, detail=str(release["message"]))
+    version = str(release["version"])
+    is_manifest = asset_name in {"latest.yml", "latest-mac.yml"}
+    is_versioned_asset = version in asset_name and (
+        Path(asset_name).suffix.lower() in {".exe", ".zip", ".dmg", ".blockmap"}
+    )
+    if not is_manifest and not is_versioned_asset:
+        raise HTTPException(status_code=404, detail="更新文件不存在")
+    root = DESKTOP_CLIENT_RELEASE_DIR.resolve()
+    path = root / asset_name
+    try:
+        canonical = path.resolve(strict=True)
+        canonical.relative_to(root)
+        if path.is_symlink() or not canonical.is_file():
+            raise ValueError("invalid update asset")
+    except (OSError, ValueError):
+        raise HTTPException(status_code=404, detail="更新文件不存在") from None
+    if is_manifest:
+        content = canonical.read_text(encoding="utf-8")
+        if re.search(rf"(?m)^version:\s*['\"]?{re.escape(version)}(?:['\"]?\s*)$", content) is None:
+            raise HTTPException(status_code=503, detail="更新清单与当前版本不一致")
+        return Response(
+            content=content,
+            media_type="application/x-yaml",
+            headers={"Cache-Control": "public, no-cache", "X-Content-Type-Options": "nosniff"},
+        )
+    media_type = (
+        "application/vnd.microsoft.portable-executable"
+        if asset_name.lower().endswith(".exe")
+        else "application/zip"
+        if asset_name.lower().endswith(".zip")
+        else "application/x-apple-diskimage"
+        if asset_name.lower().endswith(".dmg")
+        else "application/octet-stream"
+    )
+    return FileResponse(
+        path=canonical,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff"},
     )
 
 
@@ -17356,7 +17427,7 @@ def create_device_token(
     return templates.TemplateResponse(
         request,
         "portal.html",
-        portal_payload(request, updated_user, message="个人 API Key 已启用，可随时查看和复制。", active_page="access"),
+        portal_payload(request, updated_user, message="兼容访问凭据已更新。", active_page="skills"),
     )
 
 
@@ -17382,7 +17453,7 @@ def revoke_device_token(
             ),
         )
         connection.commit()
-    return RedirectResponse("/access", status_code=303)
+    return RedirectResponse("/skills", status_code=303)
 
 
 @app.post("/device-binding/replace", response_class=HTMLResponse)

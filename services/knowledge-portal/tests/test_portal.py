@@ -566,6 +566,19 @@ def write_desktop_release(tmp_path: Path) -> dict[str, bytes]:
         ),
         encoding="utf-8",
     )
+    update_zip = b"macos-test-update"
+    update_zip_name = "Gongchuang-Enterprise-Assistant-0.1.0-mac-arm64.zip"
+    (release_dir / update_zip_name).write_bytes(update_zip)
+    (release_dir / f"{update_zip_name}.blockmap").write_bytes(b"test-blockmap")
+    (release_dir / "latest-mac.yml").write_text(
+        f"version: 0.1.0\npath: {update_zip_name}\nsha512: test\n",
+        encoding="utf-8",
+    )
+    (release_dir / "latest.yml").write_text(
+        "version: 0.1.0\npath: 共创企业助手-Setup-0.1.0.exe\nsha512: test\n",
+        encoding="utf-8",
+    )
+    payloads[update_zip_name] = update_zip
     return payloads
 
 
@@ -656,6 +669,8 @@ def test_desktop_download_page_records_requests_and_member_client_login(tmp_path
         assert "下载共创企业助手" in page.text
         assert "下载 macOS 安装包" in page.text
         assert "下载 Windows 安装包" in page.text
+        assert "API 与用户" not in page.text
+        assert '"/downloads": "downloads"' in client.get("/static/portal.js").text
 
         downloaded = client.get("/downloads/macos")
         assert downloaded.status_code == 200
@@ -683,6 +698,55 @@ def test_desktop_download_page_records_requests_and_member_client_login(tmp_path
         members = client.get("/admin/members")
         assert "已登录客户端" in members.text
         assert "V0.1.0" in members.text
+
+
+def test_desktop_update_feed_is_public_while_manual_download_stays_account_bound(tmp_path):
+    payloads = write_desktop_release(tmp_path)
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        manual = client.get("/downloads", follow_redirects=False)
+        assert manual.status_code == 303
+        assert manual.headers["location"] == "/login?next=%2Fdownloads"
+
+        mac_manifest = client.get("/client-updates/latest-mac.yml")
+        assert mac_manifest.status_code == 200
+        assert "version: 0.1.0" in mac_manifest.text
+        assert mac_manifest.headers["cache-control"] == "public, no-cache"
+
+        update_name = "Gongchuang-Enterprise-Assistant-0.1.0-mac-arm64.zip"
+        update = client.get(f"/client-updates/{update_name}")
+        assert update.status_code == 200
+        assert update.content == payloads[update_name]
+        assert "immutable" in update.headers["cache-control"]
+        assert client.get("/client-updates/release.json").status_code == 404
+
+
+def test_desktop_download_login_returns_to_downloads_and_retires_access_page(tmp_path):
+    write_desktop_release(tmp_path)
+    module = load_app(tmp_path)
+    password = "correct-horse-battery"
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": password},
+        )
+        unauthenticated = client.get("/downloads", follow_redirects=False)
+        assert unauthenticated.status_code == 303
+        assert unauthenticated.headers["location"] == "/login?next=%2Fdownloads"
+        login_page = client.get(unauthenticated.headers["location"])
+        assert 'name="next" value="/downloads"' in login_page.text
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": password, "next": "/downloads"},
+            follow_redirects=False,
+        )
+        assert login.status_code == 303
+        assert login.headers["location"] == "/downloads"
+        client.cookies.update(login.cookies)
+        retired = client.get("/access", follow_redirects=False)
+        assert retired.status_code == 303
+        assert retired.headers["location"] == "/downloads"
+        assert "下载共创企业助手" in client.get("/downloads").text
 
 
 def test_desktop_download_fails_closed_after_artifact_tampering(tmp_path):
@@ -1547,9 +1611,9 @@ def test_admin_portal_section_order_and_mcp_activity_status(tmp_path):
         assert portal.status_code == 200
         section_order = [
             portal.text.index('id="algorithms"'),
-            portal.text.index('id="api-access"'),
             portal.text.index('id="feedback"'),
             portal.text.index('id="skills"'),
+            portal.text.index('id="downloads"'),
             portal.text.index('id="health-admin"'),
         ]
         assert section_order == sorted(section_order)
@@ -1849,16 +1913,13 @@ def test_setup_login_and_device_token(tmp_path):
         assert re.search(r'/static/portal\.js\?v=[0-9a-f]{16}', portal.text)
         assert 'class="app-layout portal-page single-page' in portal.text
         assert 'id="cockpit"' in portal.text
-        assert 'id="api-access"' in portal.text
+        assert 'id="api-access"' not in portal.text
+        assert 'id="downloads"' in portal.text
         assert 'id="skills"' in portal.text
         assert 'class="page-continuation"' not in portal.text
-        access_page = client.get("/access")
-        assert "安装通用技能包" in access_page.text
-        assert "不再提供 WorkBuddy 专用版本" in access_page.text
-        assert "管理员 API Key" not in access_page.text
-        assert "管理员豁免" not in access_page.text
-        assert "data-copy-agent-bootstrap" not in access_page.text
-        assert 'data-skill-open="first-run-configuration"' in access_page.text
+        access_page = client.get("/access", follow_redirects=False)
+        assert access_page.status_code == 303
+        assert access_page.headers["location"] == "/downloads"
         cockpit_page = client.get("/cockpit")
         assert "驾驶舱智能看板" in cockpit_page.text
         assert "免费知识检索" in cockpit_page.text
@@ -1961,21 +2022,16 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert token_page.status_code == 200
-        assert "安装通用技能包" in token_page.text
+        assert 'id="skills"' in token_page.text
         assert "管理员凭据" not in token_page.text
         assert 'data-toggle-secret="personal-access"' not in token_page.text
         with closing(module.database()) as connection:
             assert connection.execute("SELECT label FROM device_tokens").fetchone()["label"] == "王小明"
         token = active_user_token(module, int(user["id"]))
 
-        access_page = client.get("/access")
-        assert access_page.status_code == 200
-        assert "page-access" in access_page.text
-        assert 'class="page-continuation"' not in access_page.text
-        assert 'class="page-step' not in access_page.text
-        assert token not in access_page.text
-        assert "REST Base URL、MCP URL 与个人访问凭据缺一不可" not in access_page.text
-        assert "当前唯一访问凭据" not in access_page.text
+        access_page = client.get("/access", follow_redirects=False)
+        assert access_page.status_code == 303
+        assert access_page.headers["location"] == "/downloads"
         repeat_page = client.post(
             "/device-tokens",
             data={
@@ -5967,11 +6023,15 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             headers={"Authorization": f"Bearer {original_token}"},
         ).status_code == 200
 
-        access = client.get("/access")
-        assert "安装通用技能包" in access.text
-        assert "data-copy-agent-bootstrap" not in access.text
-        assert 'data-agent-platform="macos"' not in access.text
-        assert 'data-agent-platform="windows"' not in access.text
+        access = client.get("/access", follow_redirects=False)
+        assert access.status_code == 303
+        assert access.headers["location"] == "/downloads"
+        downloads = client.get("/downloads")
+        assert downloads.status_code == 200
+        assert "下载共创企业助手" in downloads.text
+        assert "data-copy-agent-bootstrap" not in downloads.text
+        assert 'data-agent-platform="macos"' not in downloads.text
+        assert 'data-agent-platform="windows"' not in downloads.text
         skills = client.get("/skills")
         assert skills.status_code == 200
         assert "不再提供 WorkBuddy 专用包" in skills.text
