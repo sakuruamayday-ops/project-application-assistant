@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 
-QCC_INVITATION_URL = "https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY"
+QCC_PLATFORM_URL = "https://agent.qcc.com"
 
 QUICK_GUIDE_QUESTIONS = {
     "agent_usage": "企业全生命周期助手如何导入我的Agent？",
@@ -86,19 +86,19 @@ def quick_guide_answer(
 
     if matched == "api_mcp_import":
         return (
-            "一、登录共创研究院网站，打开“连接我的 Agent”。\n"
-            f"二、点击“一键安装”，把网站生成的一段完整指令粘贴给 macOS 或 Windows 上的 WorkBuddy。该指令会安装或更新{skill_count}项Skills、启用最小行为Hook、只替换 mcpServers.jiaotang-kb 并保留其他MCP。\n"
-            "三、WorkBuddy 重载一次后，应在 tools/list 中看到 knowledge_search、knowledge_document、knowledge_service_status，并实际调用 knowledge_service_status。只有返回 connected: true 才算完成。\n\n"
-            "手工配置页面会自动复用或生成当前登录用户的个人Token，并直接填入完整远程HTTP MCP配置；不需要设备绑定、bootstrap、钥匙串、DPAPI或用户侧签名校验。个人Token不要粘贴到公共代码或聊天回复中，怀疑泄露时在网站撤销，重新打开配置页即可生成新Token。",
+            "一、共创企业助手已内置 Skills 与 MCP，不需要重复安装。在客户端“技能中心”内添加企查查、天眼查或 PaddleOCR，并按页面指引完成授权。\n"
+            f"二、其他 Agent 在网站“Skills → 安装与连接”下载通用包，导入{skill_count}项 Skills；再打开“配置知识库 MCP”，复制当前账号的完整 Streamable HTTP 配置。\n"
+            "三、保存并重载 Agent，在 tools/list 中确认 knowledge_search、knowledge_document 和 knowledge_service_status，然后实际调用 knowledge_service_status。只有返回 connected: true 才算完成。\n\n"
+            "个人 Token 只写入当前宿主的安全凭据或 MCP 配置，不要粘贴到公共代码或聊天回复中；怀疑泄露时在网站撤销并重新生成。",
             "first-run-configuration",
         )
 
     return (
         "一、注册并取得官方配置\n"
-        f"打开企查查智能体数据平台注册入口：{QCC_INVITATION_URL}\n"
+        f"打开企查查智能体数据平台：{QCC_PLATFORM_URL}\n"
         "完成注册和授权，在企查查控制台取得自己的 API Key，或复制控制台提供的官方 MCP 配置。\n\n"
-        "二、导入Agent\n"
-        "在Agent的MCP管理页面新增企查查服务。企查查提供HTTP地址时按远程MCP导入；提供启动命令时按stdio型MCP导入。API Key写入安全凭据或环境变量QCC_API_KEY，不要把普通REST地址当成MCP地址。\n\n"
+        "二、连接\n"
+        "共创企业助手用户在客户端技能中心点击企查查“添加”，按引导完成官方登录和凭据校验。其他 Agent 在 MCP 管理页面导入官方配置，API Key 必须写入安全凭据，不要把普通 REST 地址当成 MCP 地址。\n\n"
         "三、验证\n"
         "完全重启Agent，确认企查查工具出现在工具列表。使用一家非敏感企业测试企业名称、统一社会信用代码和登记状态。随后运行 first-run-configuration，让企业全生命周期助手记录企查查能力已经可用。\n\n"
         "四、使用边界\n"
