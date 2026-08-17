@@ -98,14 +98,14 @@
       <div class="skill-platform-downloads">
         <article class="skill-platform-card is-generic">
           <span class="skill-platform-mark">通</span>
-          <div><span class="skill-card-index">基础能力 · 通用 Skills</span><h3>通用版</h3><small>V{{ latest_release.version }} · SHA-256 {{ latest_release.sha256[:10] }}…{{ latest_release.sha256[-6:] }}</small><p>适用于能够导入 SKILL.md 或读取 Agent Skills 目录的宿主。只包含 {{ skill_center.summary.total }} 项正式 Skills，不写宿主配置，也不附平台 Hooks。</p></div>
+          <div><span class="skill-card-index">基础能力 · 通用 Skills</span><h3>通用版</h3><small>V{{ latest_release.version }}</small><p>适用于能够导入 SKILL.md 或读取 Agent Skills 目录的宿主。只包含 {{ skill_center.summary.total }} 项正式 Skills，不写宿主配置，也不附平台 Hooks。</p></div>
           <div class="skill-platform-status {{ 'is-ready' if latest_release.generic_available else 'is-validating' }}"><i></i>{{ '正式包可下载' if latest_release.generic_available else '完整性校验未通过' }}</div>
           {% if latest_release.generic_available %}<a class="button" href="/skills/latest/download">下载通用包</a>{% else %}<span class="button secondary is-disabled">下载已暂停</span>{% endif %}
         </article>
         <article class="skill-platform-card">
           <span class="skill-platform-mark">端</span>
           <div><span class="skill-card-index">桌面产品 · 已内置 Skills</span><h3>共创企业助手</h3><p>Windows 与 macOS 客户端内置相同 V{{ latest_release.version }} 技能包、MCP 连接入口和专业规则门禁，无需再次下载 Skills ZIP。</p></div>
-          <div class="skill-platform-status {{ 'is-ready' if desktop_release.available else 'is-validating' }}"><i></i>{{ '双端测试包可下载' if desktop_release.available else '测试包尚未上架' }}</div>
+          <div class="skill-platform-status {{ 'is-ready' if desktop_release.available else 'is-validating' }}"><i></i>{{ desktop_release.availability_label }}</div>
           <a class="button secondary" href="/downloads">前往客户端下载</a>
         </article>
       </div>

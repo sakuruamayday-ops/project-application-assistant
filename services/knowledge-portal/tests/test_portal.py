@@ -669,6 +669,8 @@ def test_desktop_download_page_records_requests_and_member_client_login(tmp_path
         assert "下载共创企业助手" in page.text
         assert "下载 macOS 安装包" in page.text
         assert "下载 Windows 安装包" in page.text
+        assert "双端测试包可下载" in page.text
+        assert "SHA-256" not in page.text
         assert "API 与用户" not in page.text
         assert '"/downloads": "downloads"' in client.get("/static/portal.js").text
 
@@ -698,6 +700,39 @@ def test_desktop_download_page_records_requests_and_member_client_login(tmp_path
         members = client.get("/admin/members")
         assert "已登录客户端" in members.text
         assert "V0.1.0" in members.text
+
+
+def test_desktop_download_page_supports_macos_only_release(tmp_path):
+    write_desktop_release(tmp_path)
+    release_path = tmp_path / "desktop-client-releases" / "release.json"
+    release = json.loads(release_path.read_text(encoding="utf-8"))
+    release["artifacts"] = [
+        artifact
+        for artifact in release["artifacts"]
+        if artifact["platform"] == "macos"
+    ]
+    release_path.write_text(json.dumps(release, ensure_ascii=False), encoding="utf-8")
+    module = load_app(tmp_path)
+    password = "correct-horse-battery"
+
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": password},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": password},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        page = client.get("/downloads")
+        assert page.status_code == 200
+        assert "macOS 测试安装包可下载，Windows 待实测" in page.text
+        assert "双端测试包可下载" not in page.text
+        assert "下载 macOS 安装包" in page.text
+        assert "下载 Windows 安装包" not in page.text
 
 
 def test_desktop_update_feed_is_public_while_manual_download_stays_account_bound(tmp_path):
@@ -1534,6 +1569,7 @@ def test_skill_catalog_is_available_to_regular_members_and_blocks_unknown_paths(
 
         catalog = client.get("/skills")
         assert catalog.status_code == 200
+        assert "SHA-256" not in catalog.text
         assert "正式发布清单" in catalog.text
         assert "技能清单" in catalog.text
         assert "版本与下载" in catalog.text
