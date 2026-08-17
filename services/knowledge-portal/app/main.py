@@ -143,6 +143,9 @@ INDEX_DIR = Path(
 CONTENT_DATABASE_PATH = INDEX_DIR / "knowledge_content.sqlite3"
 KNOWLEDGE_FILES_DIR = Path(os.environ.get("JIAOTANG_KNOWLEDGE_FILES_DIR", DATA_DIR / "knowledge-files"))
 SKILL_RELEASE_DIR = Path(os.environ.get("JIAOTANG_SKILL_RELEASE_DIR", DATA_DIR / "skill-releases"))
+DESKTOP_CLIENT_RELEASE_DIR = Path(
+    os.environ.get("JIAOTANG_DESKTOP_CLIENT_RELEASE_DIR", DATA_DIR / "desktop-client-releases")
+)
 FIRST_PUBLIC_SKILL_VERSION = os.environ.get(
     "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION",
     "1.5.0",
@@ -705,6 +708,9 @@ REAL_NAME_PATTERN = re.compile(r"^[\u3400-\u4dbf\u4e00-\u9fff·]{2,20}$")
 IDENTITY_CODE_PATTERN = re.compile(r"^\d{4}$")
 MOBILE_PHONE_PATTERN = re.compile(r"^1\d{10}$")
 DEVICE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$")
+CLIENT_AUTHORIZATION_ID = "cn.gongchuang.enterprise-assistant"
+CLIENT_AUTHORIZATION_PLATFORMS = frozenset({"macos", "windows"})
+CLIENT_DEVICE_ID_PATTERN = re.compile(r"gcd_[A-Za-z0-9_-]{43,128}")
 DEVICE_ID_HEADER = "X-Jiaotang-Device-ID"
 DEVICE_NAME_HEADER = "X-Jiaotang-Device-Name"
 DEVICE_KEY_ID_HEADER = "X-Jiaotang-Key-ID"
@@ -790,6 +796,16 @@ class AgentDeviceActivationRequest(BaseModel):
     key_id: str = Field(min_length=20, max_length=80)
     token: str = Field(min_length=24, max_length=512)
     proof: str = Field(min_length=40, max_length=512)
+
+
+class ClientPasswordLoginRequest(BaseModel):
+    client_id: str = Field(min_length=10, max_length=100)
+    client_version: str = Field(min_length=3, max_length=32)
+    platform: str = Field(min_length=3, max_length=20)
+    device_id: str = Field(min_length=47, max_length=132)
+    device_name: str = Field(min_length=1, max_length=100)
+    username: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=1, max_length=256)
 
 
 class PublicListSearchRequest(BaseModel):
@@ -1170,6 +1186,79 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
             seed = str(active_token["token_seed"])
             raw_token = user_access_token(user_id, seed)
         connection.commit()
+    return raw_token
+
+
+def issue_client_login_token(
+    connection: sqlite3.Connection,
+    *,
+    user_id: int,
+    device_id: str,
+    device_name: str,
+    platform: str,
+    client_version: str,
+    client_ip: str,
+    user_agent: str,
+) -> str:
+    """Rotate the account's sole active desktop session and bind it to one device id."""
+    now = isoformat(utc_now())
+    connection.execute(
+        """
+        UPDATE device_tokens
+        SET revoked_at=?,revoked_reason='superseded_by_client_login',revoked_by='client_login'
+        WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+        """,
+        (now, user_id),
+    )
+    connection.execute(
+        """
+        UPDATE device_bindings
+        SET revoked_at=?,revoked_reason='superseded_by_client_login'
+        WHERE user_id=? AND revoked_at IS NULL
+        """,
+        (now, user_id),
+    )
+    normalized_name = normalize_device_name(device_name, f"{platform} 客户端")
+    binding = connection.execute(
+        """
+        INSERT INTO device_bindings(
+            user_id,device_id_hash,device_id_prefix,device_name,auth_method,
+            first_bound_at,last_seen_at,last_ip,user_agent,installed_version
+        ) VALUES (?,?,?,?,?,?,?,?,?,?)
+        """,
+        (
+            user_id,
+            token_hash(device_id),
+            device_id[:12],
+            normalized_name,
+            "client_password",
+            now,
+            now,
+            client_ip[:100],
+            user_agent[:300],
+            client_version,
+        ),
+    )
+    seed = secrets.token_urlsafe(24)
+    raw_token = user_access_token(user_id, seed)
+    connection.execute(
+        """
+        INSERT INTO device_tokens(
+            user_id,label,token_prefix,token_hash,token_seed,created_at,
+            credential_kind,binding_id,activation_state,activated_at
+        ) VALUES (?,?,?,?,?,?,'client',?,'active',?)
+        """,
+        (
+            user_id,
+            f"共创企业助手 {platform} · {normalized_name}"[:100],
+            raw_token[:12],
+            token_hash(raw_token),
+            seed,
+            now,
+            int(binding.lastrowid),
+            now,
+        ),
+    )
     return raw_token
 
 
@@ -2336,6 +2425,81 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def desktop_client_release_payload(*, verify_digest: bool = False) -> dict[str, object]:
+    """Load the private V0.1 desktop release manifest without inventing availability."""
+    unavailable: dict[str, object] = {
+        "available": False,
+        "version": "0.1.0",
+        "published_at": "",
+        "artifacts": [],
+        "message": "Windows 与 macOS 内部测试安装包尚未放入服务器下载目录。",
+    }
+    manifest_path = DESKTOP_CLIENT_RELEASE_DIR / "release.json"
+    try:
+        if manifest_path.is_symlink() or not manifest_path.is_file():
+            return unavailable
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {**unavailable, "message": "客户端发布清单不可读取，下载已暂停。"}
+    if not isinstance(payload, dict) or payload.get("schema_version") != "gongchuang-desktop-release/v1":
+        return {**unavailable, "message": "客户端发布清单格式无效，下载已暂停。"}
+    version = str(payload.get("client_version") or "")
+    published_at = str(payload.get("published_at") or "")
+    raw_artifacts = payload.get("artifacts")
+    if not re.fullmatch(r"0\.1\.\d+(?:[-+][A-Za-z0-9.-]+)?", version) or not isinstance(raw_artifacts, list):
+        return {**unavailable, "message": "客户端发布版本或产物清单无效，下载已暂停。"}
+    root = DESKTOP_CLIENT_RELEASE_DIR.resolve()
+    artifacts: list[dict[str, object]] = []
+    for row in raw_artifacts:
+        if not isinstance(row, dict):
+            return {**unavailable, "message": "客户端产物记录无效，下载已暂停。"}
+        platform_name = str(row.get("platform") or "")
+        file_name = str(row.get("file_name") or "")
+        expected_sha256 = str(row.get("sha256") or "").lower()
+        expected_size = row.get("size_bytes")
+        allowed_suffixes = {"macos": {".dmg", ".zip"}, "windows": {".exe", ".zip"}}
+        if (
+            platform_name not in CLIENT_AUTHORIZATION_PLATFORMS
+            or Path(file_name).name != file_name
+            or Path(file_name).suffix.lower() not in allowed_suffixes[platform_name]
+            or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256)
+            or not isinstance(expected_size, int)
+            or expected_size <= 0
+        ):
+            return {**unavailable, "message": "客户端产物身份无效，下载已暂停。"}
+        path = root / file_name
+        try:
+            canonical = path.resolve(strict=True)
+            canonical.relative_to(root)
+            if path.is_symlink() or not canonical.is_file() or canonical.stat().st_size != expected_size:
+                raise ValueError("artifact identity mismatch")
+            if verify_digest and not secrets.compare_digest(sha256_file(canonical), expected_sha256):
+                raise ValueError("artifact digest mismatch")
+        except (OSError, ValueError):
+            return {**unavailable, "message": "客户端安装包缺失或摘要不一致，下载已暂停。"}
+        artifacts.append(
+            {
+                "platform": platform_name,
+                "platform_label": "macOS" if platform_name == "macos" else "Windows",
+                "file_name": file_name,
+                "sha256": expected_sha256,
+                "size_bytes": expected_size,
+                "size_label": f"{expected_size / 1024 / 1024:.1f} MB",
+                "download_url": f"/downloads/{platform_name}",
+                "path": canonical,
+            }
+        )
+    if {str(item["platform"]) for item in artifacts} != set(CLIENT_AUTHORIZATION_PLATFORMS):
+        return {**unavailable, "message": "Windows 与 macOS 安装包必须成对提供，下载已暂停。"}
+    return {
+        "available": True,
+        "version": version,
+        "published_at": published_at,
+        "artifacts": artifacts,
+        "message": "仅用于双端实机安装验收，尚未正式发布。",
+    }
 
 
 def save_upload(upload: UploadFile, directory: Path) -> tuple[Path, str, int]:
@@ -7235,6 +7399,20 @@ def init_database() -> None:
             CREATE INDEX IF NOT EXISTS device_bindings_user_history_idx
             ON device_bindings(user_id, id DESC);
 
+            CREATE TABLE IF NOT EXISTS desktop_client_downloads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                platform TEXT NOT NULL,
+                client_version TEXT NOT NULL,
+                artifact_sha256 TEXT NOT NULL,
+                requested_at TEXT NOT NULL,
+                client_ip TEXT NOT NULL DEFAULT '',
+                user_agent TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE INDEX IF NOT EXISTS desktop_client_downloads_user_time_idx
+            ON desktop_client_downloads(user_id, requested_at DESC);
+
             CREATE TABLE IF NOT EXISTS agent_enrollment_codes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -8162,6 +8340,85 @@ def require_web_user(
     return result[0]
 
 
+@app.post("/v1/client-login")
+def client_password_login(
+    payload: ClientPasswordLoginRequest,
+    request: Request,
+):
+    if payload.client_id != CLIENT_AUTHORIZATION_ID:
+        raise HTTPException(status_code=400, detail="客户端标识不受支持")
+    if not re.fullmatch(r"0\.1\.\d+(?:[-+][A-Za-z0-9.-]+)?", payload.client_version):
+        raise HTTPException(status_code=400, detail="客户端版本不受支持")
+    platform_name = payload.platform.strip().lower()
+    if platform_name not in CLIENT_AUTHORIZATION_PLATFORMS:
+        raise HTTPException(status_code=400, detail="客户端平台不受支持")
+    if not CLIENT_DEVICE_ID_PATTERN.fullmatch(payload.device_id):
+        raise HTTPException(status_code=400, detail="客户端设备标识格式无效")
+    normalized_login = payload.username.strip().lower()
+    client_ip = client_ip_from(request)
+    with closing(database()) as connection:
+        if auth_attempts_blocked(connection, "client_login", normalized_login, client_ip, 10):
+            raise HTTPException(status_code=429, detail="登录尝试次数过多，请30分钟后重试")
+        user = connection.execute(
+            """
+            SELECT * FROM users
+            WHERE username=? AND active=1
+              AND (
+                  is_admin=1 OR EXISTS(
+                      SELECT 1 FROM registration_authorizations authorization
+                      WHERE authorization.user_id=users.id
+                        AND authorization.status='registered'
+                        AND authorization.deleted_at IS NULL
+                  )
+              )
+            """,
+            (normalized_login,),
+        ).fetchone()
+        valid = False
+        if user is not None:
+            try:
+                valid = password_hasher.verify(user["password_hash"], payload.password)
+            except (VerifyMismatchError, InvalidHashError):
+                valid = False
+        if not valid:
+            record_auth_attempt(connection, "client_login", normalized_login, client_ip, False)
+            connection.commit()
+            raise HTTPException(status_code=401, detail="用户名称或密码错误")
+        connection.execute("BEGIN IMMEDIATE")
+        current = connection.execute(
+            "SELECT id FROM users WHERE id=? AND active=1",
+            (int(user["id"]),),
+        ).fetchone()
+        if current is None:
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="账号当前不可用")
+        record_auth_attempt(connection, "client_login", normalized_login, client_ip, True)
+        raw_token = issue_client_login_token(
+            connection,
+            user_id=int(user["id"]),
+            device_id=payload.device_id,
+            device_name=payload.device_name,
+            platform=platform_name,
+            client_version=payload.client_version,
+            client_ip=client_ip,
+            user_agent=request.headers.get("user-agent", ""),
+        )
+        connection.commit()
+    public_endpoint = str(request.base_url).rstrip("/")
+    return JSONResponse(
+        {
+            "phase": "authenticated",
+            "token_type": "Bearer",
+            "access_token": raw_token,
+            "username": str(user["username"]),
+            "single_device": True,
+            "api_base_url": f"{public_endpoint}/v1",
+            "mcp_url": f"{public_endpoint}/mcp/",
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 def access_error(status_code: int, detail: str) -> HTTPException:
     return HTTPException(status_code=status_code, detail=detail)
 
@@ -8546,11 +8803,15 @@ def authenticate_api_token(
             """
             SELECT users.id, users.username, device_tokens.id AS device_token_id,
                    users.is_admin,device_tokens.activation_state,
-                   device_tokens.credential_kind,enrollment.expires_at AS enrollment_expires_at
+                   device_tokens.credential_kind,enrollment.expires_at AS enrollment_expires_at,
+                   binding.id AS client_binding_id,binding.device_id_hash AS client_device_id_hash,
+                   binding.revoked_at AS client_binding_revoked_at
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
             LEFT JOIN agent_enrollment_codes enrollment
               ON enrollment.id=device_tokens.enrollment_id
+            LEFT JOIN device_bindings binding
+              ON binding.id=device_tokens.binding_id
             WHERE device_tokens.token_hash = ?
               AND device_tokens.revoked_at IS NULL
               AND users.active = 1
@@ -8566,7 +8827,29 @@ def authenticate_api_token(
             (token_hash(raw_token),),
         ).fetchone()
         if row is None:
+            replaced = connection.execute(
+                """
+                SELECT revoked_reason FROM device_tokens
+                WHERE token_hash=? AND revoked_at IS NOT NULL
+                ORDER BY id DESC LIMIT 1
+                """,
+                (token_hash(raw_token),),
+            ).fetchone()
+            if replaced is not None and str(replaced["revoked_reason"] or "") == "superseded_by_client_login":
+                raise access_error(409, "该账号已在另一台设备登录，本机会话已失效")
             raise access_error(401, "用户访问凭据无效、过期或已吊销")
+        if str(row["credential_kind"] or "") == "client":
+            if not device_id or not CLIENT_DEVICE_ID_PATTERN.fullmatch(device_id):
+                raise access_error(401, "客户端设备标识缺失或无效")
+            if (
+                row["client_binding_id"] is None
+                or row["client_binding_revoked_at"] is not None
+                or not secrets.compare_digest(
+                    str(row["client_device_id_hash"] or ""),
+                    token_hash(device_id),
+                )
+            ):
+                raise access_error(401, "客户端会话与本机设备不匹配")
         if str(row["activation_state"] or "active") == "pending":
             now = isoformat(utc_now())
             if row["enrollment_expires_at"] and str(row["enrollment_expires_at"]) <= now:
@@ -8586,9 +8869,8 @@ def authenticate_api_token(
                     403,
                     "待激活凭据仅允许完成 MCP 握手、工具发现和知识服务状态验收",
                 )
-        # V1.4.5: a valid personal Bearer token is the complete client
-        # credential. Legacy device headers are accepted but deliberately
-        # ignored so old clients can migrate without a binding ceremony.
+        # Personal V1.4.5 credentials keep their bearer-only behavior;
+        # V0.1 client-login credentials above are additionally device-bound.
         del (
             device_id,
             device_name,
@@ -8604,6 +8886,11 @@ def authenticate_api_token(
             "UPDATE device_tokens SET last_used_at = ? WHERE id = ?",
             (isoformat(utc_now()), row["device_token_id"]),
         )
+        if row["client_binding_id"] is not None:
+            connection.execute(
+                "UPDATE device_bindings SET last_seen_at=? WHERE id=? AND revoked_at IS NULL",
+                (isoformat(utc_now()), int(row["client_binding_id"])),
+            )
         if record_usage:
             project_rule_id, project_alias = project_usage_metadata_from_request(
                 endpoint,
@@ -9924,6 +10211,7 @@ def portal_payload(
     algorithm_coverage: str = "",
 ) -> dict[str, object]:
     release_guidance = public_release_guidance()
+    desktop_release = desktop_client_release_payload()
     latest_member_install_version = str(
         release_guidance.get("workbuddy_version") or ""
     )
@@ -10172,6 +10460,32 @@ def portal_payload(
                 )
                 SELECT users.id,users.username,users.real_name,users.company_name,
                        users.is_admin,users.active,users.created_at,
+                       (
+                         SELECT download.requested_at
+                         FROM desktop_client_downloads download
+                         WHERE download.user_id=users.id
+                         ORDER BY download.requested_at DESC,download.id DESC LIMIT 1
+                       ) AS client_download_requested_at,
+                       (
+                         SELECT download.platform
+                         FROM desktop_client_downloads download
+                         WHERE download.user_id=users.id
+                         ORDER BY download.requested_at DESC,download.id DESC LIMIT 1
+                       ) AS client_download_platform,
+                       (
+                         SELECT binding.first_bound_at
+                         FROM device_bindings binding
+                         WHERE binding.user_id=users.id
+                           AND binding.auth_method='client_password'
+                         ORDER BY binding.first_bound_at DESC,binding.id DESC LIMIT 1
+                       ) AS client_login_at,
+                       (
+                         SELECT binding.installed_version
+                         FROM device_bindings binding
+                         WHERE binding.user_id=users.id
+                           AND binding.auth_method='client_password'
+                         ORDER BY binding.first_bound_at DESC,binding.id DESC LIMIT 1
+                       ) AS client_login_version,
                        CASE
                          WHEN connected_key.mcp_connected_at IS NOT NULL THEN 'configured'
                          WHEN latest_mcp.called_at IS NOT NULL
@@ -10264,8 +10578,19 @@ def portal_payload(
                 ORDER BY users.id
                 """
             ).fetchall(), "created_at", "install_reported_at",
+                "client_download_requested_at", "client_login_at",
                 "install_version_observed_at", "install_target_created_at")
             for member in users:
+                member["desktop_client_state"] = (
+                    "logged-in" if member.get("client_login_at")
+                    else "download-requested" if member.get("client_download_requested_at")
+                    else "not-downloaded"
+                )
+                member["desktop_client_label"] = {
+                    "logged-in": "已登录客户端",
+                    "download-requested": "已请求下载",
+                    "not-downloaded": "未下载",
+                }[str(member["desktop_client_state"])]
                 install_version = str(member.get("install_version") or "")
                 install_target_version = str(
                     member.get("install_target_version") or ""
@@ -10319,6 +10644,8 @@ def portal_payload(
                             str(member.get("install_target_version") or ""),
                             str(member.get("install_update_label") or ""),
                             str(member.get("install_version_evidence_label") or ""),
+                            str(member.get("desktop_client_label") or ""),
+                            str(member.get("client_login_version") or ""),
                         )
                     ).casefold()
                 ]
@@ -10561,7 +10888,6 @@ def portal_payload(
             target="generic",
             require_signature=True,
         )
-        latest_workbuddy = latest_workbuddy_artifact()
         latest_release_payload = (
             {
                 **dict(latest_release),
@@ -10577,8 +10903,6 @@ def portal_payload(
                     )
                 ),
                 "generic_available": latest_generic_available,
-                "workbuddy_available": latest_workbuddy["installable"],
-                "workbuddy": latest_workbuddy,
             }
             if latest_release
             else None
@@ -10658,6 +10982,7 @@ def portal_payload(
         ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_guidance": release_guidance,
+        "desktop_release": desktop_release,
         "release_announcement": announcement_payload,
         "knowledge_stats": knowledge_index_stats(),
         "new_token": new_token,
@@ -10755,62 +11080,28 @@ def public_release_guidance() -> dict[str, object]:
     candidate = suite.get("release", {})
     candidate = candidate if isinstance(candidate, dict) else {}
     generic = latest_skill_artifact("generic")
-    macos = latest_skill_artifact("macos")
-    windows = latest_skill_artifact("windows")
-    legacy_workbuddy = latest_skill_artifact("workbuddy")
     generic_version = str((generic or {}).get("version") or "")
-    latest_workbuddy = latest_workbuddy_artifact()
-    platform_versions = latest_workbuddy.get("platform_versions", {})
-    platform_complete = bool(macos and windows)
-    workbuddy = latest_workbuddy if latest_workbuddy.get("included") else legacy_workbuddy
-    workbuddy_version = str(latest_workbuddy.get("version") or "")
-    if not workbuddy_version:
-        workbuddy_version = str((legacy_workbuddy or {}).get("version") or "")
-    platform_version_labels = []
-    for target, label in (("macos", "macOS"), ("windows", "Windows")):
-        version = str(platform_versions.get(target) or "")
-        if version:
-            platform_version_labels.append(f"{label} V{version}")
-    platform_version_label = "、".join(platform_version_labels)
     candidate_version = str(candidate.get("version") or "")
     generic_available = release_artifact_is_servable(
         generic,
         target="generic",
         require_signature=True,
     )
-    workbuddy_installable = bool(latest_workbuddy.get("installable"))
-    if workbuddy_installable:
-        workbuddy_notice = (
-            f"WorkBuddy {platform_version_label or f'V{workbuddy_version}'} 正式包可安装。"
-            f"一段指令完成{skill_count}项Skills安装、远程MCP合并、一次重载和真实工具验收。"
-        )
-    elif workbuddy_version:
-        pending = (
-            f"；安全候选 V{candidate_version} 尚未正式发布"
-            if candidate_version and candidate_version != workbuddy_version
-            else ""
-        )
-        workbuddy_notice = (
-            f"WorkBuddy 正式包 V{workbuddy_version} 已暂停新安装，"
-            f"当前包未满足简化远程 MCP 与最小行为 Hook 能力门禁{pending}。"
-            "请等待网站恢复“可安装”状态。"
-        )
-    else:
-        workbuddy_notice = "当前没有通过简化安装能力门禁的 WorkBuddy 正式包。"
     return {
         "published_version": generic_version,
         "published_label": f"V{generic_version}" if generic_version else "尚未正式发布",
         "candidate_version": candidate_version,
         "candidate_label": f"V{candidate_version}" if candidate_version else "未声明",
         "generic_available": generic_available,
-        "workbuddy_version": workbuddy_version,
-        "workbuddy_platform_versions": platform_versions,
         "generic_version": generic_version,
-        "macos_version": str(platform_versions.get("macos") or ""),
-        "windows_version": str(platform_versions.get("windows") or ""),
-        "platform_version_label": platform_version_label,
-        "workbuddy_installable": workbuddy_installable,
-        "workbuddy_notice": workbuddy_notice,
+        # 兼容旧版 /build 响应字段；当前产品不再发布 WorkBuddy 专用包。
+        "workbuddy_version": "",
+        "workbuddy_platform_versions": {},
+        "macos_version": "",
+        "windows_version": "",
+        "platform_version_label": "",
+        "workbuddy_installable": False,
+        "workbuddy_notice": "WorkBuddy 专用技能包已停止提供。",
         "candidate_summary": str(candidate.get("summary") or ""),
         "skill_count": len(suite.get("skills", []))
         if isinstance(suite.get("skills"), list)
@@ -11785,6 +12076,73 @@ def mcp_guide_page(
 @app.get("/skills", response_class=HTMLResponse)
 def skills_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
     return portal_page_response(request, user, "skills")
+
+
+@app.get("/downloads", response_class=HTMLResponse)
+def desktop_downloads_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    return portal_page_response(request, user, "downloads")
+
+
+@app.get("/downloads/{platform_name}")
+def download_desktop_client(
+    platform_name: str,
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    if platform_name not in CLIENT_AUTHORIZATION_PLATFORMS:
+        raise HTTPException(status_code=404, detail="客户端平台不存在")
+    release = desktop_client_release_payload(verify_digest=True)
+    if not release["available"]:
+        raise HTTPException(status_code=503, detail=str(release["message"]))
+    artifact = next(
+        (
+            item
+            for item in release["artifacts"]
+            if isinstance(item, dict) and item.get("platform") == platform_name
+        ),
+        None,
+    )
+    if artifact is None:
+        raise HTTPException(status_code=404, detail="客户端安装包不存在")
+    with closing(database()) as connection:
+        connection.execute(
+            """
+            INSERT INTO desktop_client_downloads(
+                user_id,platform,client_version,artifact_sha256,
+                requested_at,client_ip,user_agent
+            ) VALUES (?,?,?,?,?,?,?)
+            """,
+            (
+                int(user["id"]),
+                platform_name,
+                str(release["version"]),
+                str(artifact["sha256"]),
+                isoformat(utc_now()),
+                client_ip_from(request)[:100],
+                request.headers.get("user-agent", "")[:300],
+            ),
+        )
+        connection.commit()
+    media_type = (
+        "application/x-apple-diskimage"
+        if str(artifact["file_name"]).lower().endswith(".dmg")
+        else "application/vnd.microsoft.portable-executable"
+        if str(artifact["file_name"]).lower().endswith(".exe")
+        else "application/zip"
+    )
+    return FileResponse(
+        path=Path(artifact["path"]),
+        filename=str(artifact["file_name"]),
+        media_type=media_type,
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+            "X-Gongchuang-Artifact-SHA256": str(artifact["sha256"]),
+        },
+    )
 
 
 @app.get("/skills/diagnostics", response_class=HTMLResponse)
@@ -17619,8 +17977,8 @@ def web_download_latest_workbuddy_skills(
 ):
     del user
     raise HTTPException(
-        status_code=409,
-        detail="WorkBuddy已分为macOS与Windows原生包，请选择当前操作系统。",
+        status_code=410,
+        detail="WorkBuddy 专用技能包已停止提供，请使用通用 Skills 包。",
     )
 
 
@@ -17630,20 +17988,10 @@ def web_download_latest_workbuddy_platform(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     del user
-    if platform_name not in {"macos", "windows"}:
-        raise HTTPException(status_code=404, detail="不支持的 WorkBuddy 平台")
-    platform_pair = latest_workbuddy_platform_pair()
-    release = platform_pair.get(platform_name) if platform_pair else None
-    if release is None:
-        raise HTTPException(status_code=404, detail="尚未发布该平台 WorkBuddy 正式包")
-    if not workbuddy_artifact_is_simple_remote_mcp(release):
-        raise HTTPException(status_code=404, detail="该平台包未通过简化安装能力门禁")
-    require_installable_workbuddy_artifact(release, platform=platform_name)
-    return validated_release_artifact_download(
-        release,
-        target=platform_name,
-        require_signature=True,
-        filename=str(release["file_name"]),
+    del platform_name
+    raise HTTPException(
+        status_code=410,
+        detail="WorkBuddy 专用技能包已停止提供，请使用通用 Skills 包。",
     )
 
 
@@ -19009,10 +19357,9 @@ def latest_skills(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
 
 
 def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
-    if target in {"macos", "windows"}:
-        release = latest_skill_artifact(target)
-    else:
-        release = latest_skill_artifact(target)
+    if target != "generic":
+        return SkillChannelArtifactResponse(id=target, available=False)
+    release = latest_skill_artifact(target)
     if release is None:
         return SkillChannelArtifactResponse(id=target, available=False)
     package_path = Path(str(release["file_path"]))
@@ -19025,14 +19372,6 @@ def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
         require_signature=True,
     ):
         return SkillChannelArtifactResponse(id=target, available=False)
-    if target != "generic" and not workbuddy_artifact_is_simple_remote_mcp(release):
-        return SkillChannelArtifactResponse(id=target, available=False)
-    download_url = {
-        "generic": "/v1/skills/latest/download",
-        "workbuddy": "/v1/skills/latest/workbuddy/download",
-        "macos": "/v1/skills/latest/workbuddy/macos/download",
-        "windows": "/v1/skills/latest/workbuddy/windows/download",
-    }[target]
     return SkillChannelArtifactResponse(
         id=target,
         available=True,
@@ -19045,7 +19384,7 @@ def skill_channel_artifact(target: str) -> SkillChannelArtifactResponse:
             str(release["release_notes"] or ""),
         ),
         published_at=str(release["published_at"]),
-        download_url=download_url,
+        download_url="/v1/skills/latest/download",
     )
 
 
@@ -19055,11 +19394,7 @@ def latest_skill_channels(
 ):
     del user
     return SkillChannelsResponse(
-        channels=[
-            skill_channel_artifact("generic"),
-            skill_channel_artifact("macos"),
-            skill_channel_artifact("windows"),
-        ]
+        channels=[skill_channel_artifact("generic")]
     )
 
 
@@ -19068,19 +19403,11 @@ def web_skill_channels(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     del user
-    channels = [
-        skill_channel_artifact("generic"),
-        skill_channel_artifact("macos"),
-        skill_channel_artifact("windows"),
-    ]
+    channels = [skill_channel_artifact("generic")]
     for channel in channels:
         if not channel.available:
             continue
-        channel.download_url = {
-            "generic": "/skills/latest/download",
-            "macos": "/skills/latest/workbuddy/macos/download",
-            "windows": "/skills/latest/workbuddy/windows/download",
-        }[channel.id]
+        channel.download_url = "/skills/latest/download"
     return SkillChannelsResponse(channels=channels)
 
 
@@ -19104,8 +19431,8 @@ def download_latest_workbuddy_skills(
 ):
     del user
     raise HTTPException(
-        status_code=409,
-        detail="WorkBuddy已分为macOS与Windows原生包，请选择当前操作系统。",
+        status_code=410,
+        detail="WorkBuddy 专用技能包已停止提供，请使用通用 Skills 包。",
     )
 
 
@@ -19115,20 +19442,10 @@ def download_latest_workbuddy_platform_skills(
     user: Annotated[sqlite3.Row, Depends(require_api_user)],
 ):
     del user
-    if platform_name not in {"macos", "windows"}:
-        raise HTTPException(status_code=404, detail="未知 WorkBuddy 客户端")
-    platform_pair = latest_workbuddy_platform_pair()
-    release = platform_pair.get(platform_name) if platform_pair else None
-    if release is None:
-        raise HTTPException(status_code=404, detail="尚未发布该平台 WorkBuddy 正式包")
-    if not workbuddy_artifact_is_simple_remote_mcp(release):
-        raise HTTPException(status_code=404, detail="该平台包未通过简化安装能力门禁")
-    require_installable_workbuddy_artifact(release, platform=platform_name)
-    return validated_release_artifact_download(
-        release,
-        target=platform_name,
-        require_signature=True,
-        filename=str(release["file_name"]),
+    del platform_name
+    raise HTTPException(
+        status_code=410,
+        detail="WorkBuddy 专用技能包已停止提供，请使用通用 Skills 包。",
     )
 
 

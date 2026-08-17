@@ -512,6 +512,9 @@ def create_test_content_index(path):
 def load_app(tmp_path):
     os.environ["JIAOTANG_DATA_DIR"] = str(tmp_path)
     os.environ["JIAOTANG_INDEX_DIR"] = str(tmp_path / "knowledge-index")
+    os.environ["JIAOTANG_DESKTOP_CLIENT_RELEASE_DIR"] = str(
+        tmp_path / "desktop-client-releases"
+    )
     os.environ["JIAOTANG_FIRST_PUBLIC_SKILL_VERSION"] = "1.0"
     os.environ["JIAOTANG_SETUP_KEY"] = "setup-secret"
     os.environ["JIAOTANG_TOKEN_DERIVATION_SECRET"] = "test-token-derivation-secret"
@@ -527,6 +530,204 @@ def load_app(tmp_path):
     module = importlib.reload(app.main)
     module.init_database()
     return module
+
+
+def write_desktop_release(tmp_path: Path) -> dict[str, bytes]:
+    release_dir = tmp_path / "desktop-client-releases"
+    release_dir.mkdir(parents=True, exist_ok=True)
+    payloads = {
+        "共创企业助手-0.1.0-arm64.dmg": b"macos-test-installer",
+        "共创企业助手-Setup-0.1.0.exe": b"windows-test-installer",
+    }
+    artifacts = []
+    for platform_name, file_name in (
+        ("macos", "共创企业助手-0.1.0-arm64.dmg"),
+        ("windows", "共创企业助手-Setup-0.1.0.exe"),
+    ):
+        content = payloads[file_name]
+        (release_dir / file_name).write_bytes(content)
+        artifacts.append(
+            {
+                "platform": platform_name,
+                "file_name": file_name,
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "size_bytes": len(content),
+            }
+        )
+    (release_dir / "release.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "gongchuang-desktop-release/v1",
+                "client_version": "0.1.0",
+                "published_at": "2026-08-16T00:00:00+00:00",
+                "artifacts": artifacts,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    return payloads
+
+
+def test_client_password_login_is_device_bound_and_replaces_the_previous_device(tmp_path):
+    module = load_app(tmp_path)
+    password = "correct-horse-battery"
+    first_device = "gcd_" + "a" * 48
+    second_device = "gcd_" + "b" * 48
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": password},
+        )
+
+        first = client.post(
+            "/v1/client-login",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.1.0",
+                "platform": "macos",
+                "device_id": first_device,
+                "device_name": "第一台电脑",
+                "username": "owner",
+                "password": password,
+            },
+        )
+        assert first.status_code == 200
+        first_receipt = first.json()
+        assert first_receipt["phase"] == "authenticated"
+        assert first_receipt["single_device"] is True
+        assert first_receipt["access_token"].startswith("jtk_")
+        assert password not in first.text
+        first_headers = {
+            "Authorization": f"Bearer {first_receipt['access_token']}",
+            module.DEVICE_ID_HEADER: first_device,
+        }
+        assert client.get("/v1/me", headers=first_headers).status_code == 200
+        wrong_device_headers = dict(first_headers)
+        wrong_device_headers[module.DEVICE_ID_HEADER] = second_device
+        assert client.get("/v1/me", headers=wrong_device_headers).status_code == 401
+
+        second = client.post(
+            "/v1/client-login",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.1.0",
+                "platform": "windows",
+                "device_id": second_device,
+                "device_name": "第二台电脑",
+                "username": "owner",
+                "password": password,
+            },
+        )
+        assert second.status_code == 200
+        second_receipt = second.json()
+        assert second_receipt["access_token"] != first_receipt["access_token"]
+        superseded = client.get("/v1/me", headers=first_headers)
+        assert superseded.status_code == 409
+        assert "另一台设备" in superseded.json()["detail"]
+        second_headers = {
+            "Authorization": f"Bearer {second_receipt['access_token']}",
+            module.DEVICE_ID_HEADER: second_device,
+        }
+        assert client.get("/v1/me", headers=second_headers).json() == {
+            "username": "owner",
+            "access": "unified",
+        }
+
+
+def test_desktop_download_page_records_requests_and_member_client_login(tmp_path):
+    payloads = write_desktop_release(tmp_path)
+    module = load_app(tmp_path)
+    password = "correct-horse-battery"
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": password},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": password},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        page = client.get("/downloads")
+        assert page.status_code == 200
+        assert "下载共创企业助手" in page.text
+        assert "下载 macOS 安装包" in page.text
+        assert "下载 Windows 安装包" in page.text
+
+        downloaded = client.get("/downloads/macos")
+        assert downloaded.status_code == 200
+        assert downloaded.content == payloads["共创企业助手-0.1.0-arm64.dmg"]
+        assert re.fullmatch(
+            r"[0-9a-f]{64}", downloaded.headers["x-gongchuang-artifact-sha256"]
+        )
+        members = client.get("/admin/members")
+        assert members.status_code == 200
+        assert "已请求下载" in members.text
+
+        desktop_login = client.post(
+            "/v1/client-login",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.1.0",
+                "platform": "macos",
+                "device_id": "gcd_" + "d" * 48,
+                "device_name": "测试 Mac",
+                "username": "owner",
+                "password": password,
+            },
+        )
+        assert desktop_login.status_code == 200
+        members = client.get("/admin/members")
+        assert "已登录客户端" in members.text
+        assert "V0.1.0" in members.text
+
+
+def test_desktop_download_fails_closed_after_artifact_tampering(tmp_path):
+    write_desktop_release(tmp_path)
+    module = load_app(tmp_path)
+    password = "correct-horse-battery"
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": password},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": password},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        artifact = tmp_path / "desktop-client-releases" / "共创企业助手-0.1.0-arm64.dmg"
+        artifact.write_bytes(b"tampered-installer")
+        response = client.get("/downloads/macos")
+        assert response.status_code == 503
+        assert "下载已暂停" in response.json()["detail"]
+
+
+def test_client_password_login_rejects_invalid_password_without_disclosing_account(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        payload = {
+            "client_id": module.CLIENT_AUTHORIZATION_ID,
+            "client_version": "0.1.0",
+            "platform": "macos",
+            "device_id": "gcd_" + "a" * 48,
+            "device_name": "测试电脑",
+            "username": "owner",
+            "password": "wrong-password",
+        }
+        wrong = client.post("/v1/client-login", json=payload)
+        missing = client.post("/v1/client-login", json={**payload, "username": "missing"})
+        assert wrong.status_code == missing.status_code == 401
+        assert wrong.json() == missing.json() == {"detail": "用户名称或密码错误"}
+        assert "owner" not in wrong.text
 
 
 def test_active_index_release_id_resolves_current_release_symlink(tmp_path):
@@ -1652,7 +1853,8 @@ def test_setup_login_and_device_token(tmp_path):
         assert 'id="skills"' in portal.text
         assert 'class="page-continuation"' not in portal.text
         access_page = client.get("/access")
-        assert "WorkBuddy 新安装已暂停" in access_page.text
+        assert "安装通用技能包" in access_page.text
+        assert "不再提供 WorkBuddy 专用版本" in access_page.text
         assert "管理员 API Key" not in access_page.text
         assert "管理员豁免" not in access_page.text
         assert "data-copy-agent-bootstrap" not in access_page.text
@@ -1735,10 +1937,9 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert api_guide.status_code == 200
-        assert "点击“一键安装”" in api_guide.json()["answer"]
-        assert "不需要设备绑定" in api_guide.json()["answer"]
-        assert "自动复用或生成" in api_guide.json()["answer"]
-        assert "macOS 或 Windows" in api_guide.json()["answer"]
+        assert "共创企业助手已内置 Skills 与 MCP" in api_guide.json()["answer"]
+        assert "通用包" in api_guide.json()["answer"]
+        assert "Streamable HTTP" in api_guide.json()["answer"]
 
         qcc_guide = client.post(
             "/assistant/answer",
@@ -1748,8 +1949,8 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert qcc_guide.status_code == 200
-        assert "agent.qcc.com/invitation" in qcc_guide.json()["answer"]
-        assert "QCC_API_KEY" in qcc_guide.json()["answer"]
+        assert "https://agent.qcc.com" in qcc_guide.json()["answer"]
+        assert "客户端技能中心" in qcc_guide.json()["answer"]
 
         token_page = client.post(
             "/device-tokens",
@@ -1760,7 +1961,7 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert token_page.status_code == 200
-        assert "WorkBuddy 新安装已暂停" in token_page.text
+        assert "安装通用技能包" in token_page.text
         assert "管理员凭据" not in token_page.text
         assert 'data-toggle-secret="personal-access"' not in token_page.text
         with closing(module.database()) as connection:
@@ -5767,16 +5968,14 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         ).status_code == 200
 
         access = client.get("/access")
-        assert "一键安装" in access.text
-        assert access.text.count("data-copy-agent-bootstrap") >= 2
-        assert 'data-agent-platform="macos"' in access.text
-        assert 'data-agent-platform="windows"' in access.text
+        assert "安装通用技能包" in access.text
+        assert "data-copy-agent-bootstrap" not in access.text
+        assert 'data-agent-platform="macos"' not in access.text
+        assert 'data-agent-platform="windows"' not in access.text
         skills = client.get("/skills")
         assert skills.status_code == 200
-        assert "一键安装" in skills.text
-        assert skills.text.count("data-copy-agent-bootstrap") >= 2
-        assert "只替换" in skills.text
-        assert "knowledge_service_status" in skills.text
+        assert "不再提供 WorkBuddy 专用包" in skills.text
+        assert "data-copy-agent-bootstrap" not in skills.text
         assert "data-copy-agent-binding" not in skills.text
         assert "第三步 · 执行 bootstrap" not in skills.text
         assert "设备登记" not in skills.text
@@ -6041,9 +6240,11 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         guide_token = re.search(r"jtk_[A-Za-z0-9_-]+", guide.text).group(0)
         assert guide_token == second_token
         assert "Bearer 你的个人Token" not in guide.text
-        assert r"%USERPROFILE%\.workbuddy\mcp.json" in guide.text
-        assert "~/.workbuddy/mcp.json" in guide.text
-        assert ".workbuddy/.mcp.json" in guide.text
+        assert r"%USERPROFILE%\.workbuddy\mcp.json" not in guide.text
+        assert "~/.workbuddy/mcp.json" not in guide.text
+        assert "具体文件位置以当前宿主官方说明为准" in guide.text
+        assert "外部服务" in guide.text
+        assert "已统一收入 Skills 中心" in guide.text
         assert "手动信任" in guide.text
         assert client.get(
             "/v1/me",
@@ -8367,7 +8568,7 @@ def test_latest_skill_release_metadata_and_download(tmp_path, monkeypatch):
         assert historical_download.content == b"historical-skill-package"
 
 
-def test_workbuddy_downloads_show_platforms_without_confirmation_status(
+def test_workbuddy_current_downloads_are_retired_from_public_surface(
     tmp_path,
     monkeypatch,
 ):
@@ -8447,26 +8648,16 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
         )
         client.cookies.update(login.cookies)
         page = client.get("/skills")
-        assert "macOS" in page.text
-        assert "Windows" in page.text
-        assert "macOS 与 Windows 使用两个独立签名插件市场 ZIP" in page.text
-        assert "固定三产物" in page.text
-        assert "其他宿主不再规划或展示平台专用版本" in page.text
-        assert "平台增强版 · TRAE" not in page.text
-        assert "平台插件版 · Kimi Code" not in page.text
-        assert "等待人工反馈" not in page.text
-        assert "人工反馈" not in page.text
-        assert "自动实机证据" not in page.text
-        assert "GitHub Job" not in page.text
-        assert "OIDC 签名证明" not in page.text
+        assert "统一通用技能包" in page.text
+        assert "不再提供 WorkBuddy 专用技能包" in page.text
+        assert "下载 macOS 包" not in page.text
+        assert "下载 Windows 包" not in page.text
+        assert "data-copy-agent-bootstrap" not in page.text
         macos_download = client.get("/skills/latest/workbuddy/macos/download")
         windows_download = client.get("/skills/latest/workbuddy/windows/download")
-        assert macos_download.status_code == 200
-        assert windows_download.status_code == 200
-        assert macos_download.content == macos_package.read_bytes()
-        assert windows_download.content == windows_package.read_bytes()
-        assert macos_download.content != windows_download.content
-        assert client.get("/skills/latest/workbuddy/download").status_code == 409
+        assert macos_download.status_code == 410
+        assert windows_download.status_code == 410
+        assert client.get("/skills/latest/workbuddy/download").status_code == 410
 
 
 def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
@@ -8587,16 +8778,14 @@ def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
             item["id"]: item for item in web_channels.json()["channels"]
         }
         assert web_artifacts["generic"]["download_url"] == "/skills/latest/download"
-        assert set(web_artifacts) == {"generic", "macos", "windows"}
-        assert web_artifacts["macos"]["available"] is False
-        assert web_artifacts["windows"]["available"] is False
+        assert set(web_artifacts) == {"generic"}
         assert client.get("/skills/latest/download").content == generic.read_bytes()
         for path in (
             "/skills/latest/workbuddy/macos/download",
             "/skills/latest/workbuddy/windows/download",
         ):
-            assert client.get(path).status_code == 404
-        assert client.get("/skills/latest/workbuddy/download").status_code == 409
+            assert client.get(path).status_code == 410
+        assert client.get("/skills/latest/workbuddy/download").status_code == 410
         historical = client.get(
             f"/skills/releases/{windows_release_id}/workbuddy/download"
         )
@@ -8605,17 +8794,13 @@ def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
         page = client.get("/skills")
         assert page.status_code == 200
         assert "打开双端管理器" not in page.text
-        assert "固定三产物" in page.text
+        assert "统一通用技能包" in page.text
         assert "平台增强版 · TRAE" not in page.text
         assert "平台增强版 · Qoder" not in page.text
         assert "平台增强版 · 通义灵码" not in page.text
         assert "平台插件版 · Kimi Code" not in page.text
         assert "平台增强版 · Cherry Studio" not in page.text
-        assert (
-            'class="skill-platform-card is-workbuddy" data-platform-version=""'
-            in page.text
-        )
-        assert "当前版本未包含" in page.text
+        assert "WorkBuddy 专用技能包" in page.text
         assert "下载 WorkBuddy 包" not in page.text
         assert "下载 macOS 包" not in page.text
         assert "下载 Windows 包" not in page.text
@@ -8628,9 +8813,7 @@ def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
         assert channels.json()["schema"] == "jiaotang-skill-channels/v1"
         artifacts = {item["id"]: item for item in channels.json()["channels"]}
         assert artifacts["generic"]["version"] == "1.3.1"
-        assert set(artifacts) == {"generic", "macos", "windows"}
-        assert artifacts["macos"]["available"] is False
-        assert artifacts["windows"]["available"] is False
+        assert set(artifacts) == {"generic"}
 
 
 def test_workbuddy_distribution_revision_uses_public_intro_without_rewriting_audit_notes(
@@ -8714,9 +8897,8 @@ def test_workbuddy_distribution_revision_uses_public_intro_without_rewriting_aud
         client.cookies.update(login.cookies)
         page = client.get("/skills")
         assert page.status_code == 200
-        assert "查看 WorkBuddy 分发修订说明" in page.text
-        assert "跨平台分发修订：移除外层固定安装器。" in page.text
-        assert "查看不可变发行记录" in page.text
+        assert "统一通用技能包" in page.text
+        assert "跨平台分发修订：移除外层固定安装器。" not in page.text
         assert "一、本版本新增功能" in page.text
         assert "初始 Windows 历史说明" not in page.text
 
@@ -8899,8 +9081,8 @@ def test_selective_macos_release_preserves_only_historical_client_downloads(
             "/skills/latest/workbuddy/macos/download",
             "/skills/latest/workbuddy/windows/download",
         ):
-            assert client.get(path).status_code == 404
-        assert client.get("/skills/latest/workbuddy/download").status_code == 409
+            assert client.get(path).status_code == 410
+        assert client.get("/skills/latest/workbuddy/download").status_code == 410
         old_historical = client.get(
             f"/skills/releases/{old_release_id}/workbuddy/download"
         )
@@ -9437,12 +9619,13 @@ def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
         assert "移入回收站" in ordered_knowledge.text
         assert "2026-07-18T00:00:00+00:00" not in ordered_knowledge.text
         assert "2026-07-18 08:00:00" in ordered_knowledge.text
-        access_portal = client.get("/access")
-        assert "www.tianyancha.com/ai" in access_portal.text
-        assert "agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4" in access_portal.text
-        assert "docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" in access_portal.text
-        assert "aiqice.cn" not in access_portal.text
-        assert "pss-system.cponline.cnipa.gov.cn" not in access_portal.text
+        skills_portal = client.get("/skills")
+        assert "www.tianyancha.com/ai" in skills_portal.text
+        assert "agent.qcc.com" in skills_portal.text
+        assert "aistudio.baidu.com" in skills_portal.text
+        assert "docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" not in skills_portal.text
+        assert "aiqice.cn" not in skills_portal.text
+        assert "pss-system.cponline.cnipa.gov.cn" not in skills_portal.text
         assert "epo.org/en/searching-for-patents" not in portal.text
         assert "DeepSeek开放平台" not in portal.text
         assert client.get("/mcp").status_code == 401
@@ -9966,11 +10149,11 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
         blocked_download = client.get("/skills/latest/workbuddy/download")
         generic_download = client.get("/skills/latest/download")
 
-    assert "已暂停新安装" in skills.text
-    assert "等待安全正式版" in skills.text
+    assert "统一通用技能包" in skills.text
+    assert "不再提供 WorkBuddy 专用技能包" in skills.text
     assert "data-manual-package-download" not in skills.text
     assert "data-copy-agent-bootstrap" not in access.text
-    assert blocked_download.status_code == 409
+    assert blocked_download.status_code == 410
     assert generic_download.status_code == 200
     assert generic_download.content == generic.read_bytes()
 
