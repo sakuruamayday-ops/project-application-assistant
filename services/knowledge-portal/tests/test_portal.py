@@ -674,6 +674,9 @@ def test_desktop_download_page_records_requests_and_member_client_login(tmp_path
         assert "共创企业助手-0.1.0-arm64.dmg" not in page.text
         assert "若系统提示“已损坏”" in page.text
         assert "xattr -dr com.apple.quarantine" in page.text
+        assert "手动复制" in page.text
+        assert 'data-copy-fallback="#macos-open-command-1"' in page.text
+        assert "可手动复制的 macOS 打开命令" in page.text
         assert "SHA-256" not in page.text
         assert "API 与用户" not in page.text
         assert '"/downloads": "downloads"' in client.get("/static/portal.js").text
@@ -2708,11 +2711,28 @@ def test_structured_list_policy_and_project_tools(tmp_path):
     )
     assert policy_result["results"][0]["title"] == "2025年浙江省专精特新小巨人申报通知"
 
+    natural_language_policy_result = module.search_policy_documents(
+        query="专精特新小巨人 申报条件",
+        region="浙江省",
+        year=2025,
+    )
+    assert natural_language_policy_result["results"][0]["title"] == (
+        "2025年浙江省专精特新小巨人申报通知"
+    )
+
     project_result = module.match_project_catalog(
         regions=["全国"], keywords=["小巨人"], limit=10
     )
     assert project_result["status"] == "candidate_only"
     assert any("小巨人" in item["canonical_project_name"] for item in project_result["results"])
+
+    compatible_project_result = module.match_project_catalog(
+        regions="全国", keywords="小巨人", limit=10
+    )
+    assert any(
+        "小巨人" in item["canonical_project_name"]
+        for item in compatible_project_result["results"]
+    )
 
     ranked_result = module.match_project_catalog(
         regions=["浙江省"], keywords=["专精特新", "研发"], limit=5

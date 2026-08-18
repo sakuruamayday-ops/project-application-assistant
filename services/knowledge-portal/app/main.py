@@ -4641,7 +4641,16 @@ def search_policy_documents(
     )
     _like_filter("document_stage", document_stage, conditions, parameters)
     _like_filter("validity_status", validity_status, conditions, parameters)
-    if query.strip():
+    resolved_query_projects = (
+        resolved_canonical_projects(query)
+        if query.strip() and not project_name.strip()
+        else []
+    )
+    if resolved_query_projects:
+        placeholders = ",".join("?" for _ in resolved_query_projects)
+        conditions.append(f"canonical_project_name IN ({placeholders})")
+        parameters.extend(resolved_query_projects)
+    elif query.strip():
         escaped = query.strip().replace("%", "\\%").replace("_", "\\_")
         value = f"%{escaped}%"
         conditions.append(
@@ -4957,14 +4966,21 @@ def load_project_index_records() -> tuple[dict[str, object], ...]:
 
 
 def match_project_catalog(
-    regions: list[str] | None = None,
-    keywords: list[str] | None = None,
+    regions: list[str] | str | None = None,
+    keywords: list[str] | str | None = None,
     limit: int = 20,
 ) -> dict[str, object]:
     from scripts.project_catalog_matching import match_project_records
 
     try:
-        return match_project_records(regions, keywords, limit, PROJECT_INDEX_PATH)
+        normalized_regions = [regions] if isinstance(regions, str) else regions
+        normalized_keywords = [keywords] if isinstance(keywords, str) else keywords
+        return match_project_records(
+            normalized_regions,
+            normalized_keywords,
+            limit,
+            PROJECT_INDEX_PATH,
+        )
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -6409,8 +6425,12 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
     if name == "project_catalog_match":
         regions = arguments.get("regions") or []
         keywords = arguments.get("keywords") or []
+        if isinstance(regions, str):
+            regions = [regions]
+        if isinstance(keywords, str):
+            keywords = [keywords]
         if not isinstance(regions, list) or not isinstance(keywords, list):
-            raise ValueError("地区和关键词必须使用数组")
+            raise ValueError("地区和关键词必须使用字符串或字符串数组")
         return (
             match_project_catalog(
                 regions=[str(region)[:100] for region in regions[:20]],
@@ -19736,8 +19756,8 @@ def policy_search(
 
 @knowledge_mcp.tool()
 def project_catalog_match(
-    regions: list[str] | None = None,
-    keywords: list[str] | None = None,
+    regions: list[str] | str | None = None,
+    keywords: list[str] | str | None = None,
     limit: int = 20,
 ) -> dict[str, object]:
     """按地区和企业关键词匹配理论候选项目，不替代当期政策核验。"""

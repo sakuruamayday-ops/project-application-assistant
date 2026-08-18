@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 import sqlite3
+import re
 from typing import Any
 
 
 CASE_PACK_SCHEMA_VERSION = "2.0"
+
+
+def normalized_sql_text(column: str) -> str:
+    """Return a punctuation-insensitive SQLite expression for trusted columns."""
+    return (
+        f"REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE("
+        f"REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({column}, '“', ''), '”', ''), "
+        f"'\"', ''), '''', ''), '《', ''), '》', ''), '（', ''), '）', ''), "
+        f"'(', ''), ')', ''), ' ', ''), '·', '')"
+    )
 
 
 def table_exists(connection: sqlite3.Connection, table: str) -> bool:
@@ -62,8 +73,13 @@ def query_case_packs(
         parameters.append(year)
     normalized_query = query.strip()
     if normalized_query:
-        conditions.append("(p.title LIKE ? OR p.enterprise_name LIKE ? OR p.project_name LIKE ?)")
-        like = f"%{normalized_query}%"
+        compact_query = re.sub(r"[\s\"'“”‘’《》〈〉（）()·•]+", "", normalized_query)
+        conditions.append(
+            f"({normalized_sql_text('p.title')} LIKE ? OR "
+            f"{normalized_sql_text('p.enterprise_name')} LIKE ? OR "
+            f"{normalized_sql_text('p.project_name')} LIKE ?)"
+        )
+        like = f"%{compact_query}%"
         parameters.extend((like, like, like))
     rows = connection.execute(
         f"""

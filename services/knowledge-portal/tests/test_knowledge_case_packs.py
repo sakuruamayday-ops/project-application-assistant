@@ -60,6 +60,16 @@ def test_case_pack_capability_and_layered_query():
     assert "不得把案例企业事实复制" in result["results"][0]["reference_boundary"]
 
 
+def test_case_pack_project_query_ignores_chinese_quotes():
+    connection = case_pack_database()
+    connection.execute(
+        "UPDATE case_packs SET project_name=? WHERE case_pack_id='case-1'",
+        ('国家专精特新“小巨人”企业',),
+    )
+    result = query_case_packs(connection, query="专精特新小巨人")
+    assert result["result_count"] == 1
+
+
 def test_old_index_reports_capability_unavailable_without_fallback():
     connection = sqlite3.connect(":memory:")
     connection.execute("CREATE TABLE documents(id INTEGER PRIMARY KEY)")

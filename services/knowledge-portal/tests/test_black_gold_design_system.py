@@ -97,6 +97,16 @@ def test_generated_agent_prompts_have_inline_manual_copy_fallback() -> None:
     assert ".agent-manual-copy[hidden]" in css
 
 
+def test_static_download_commands_have_manual_copy_fallback() -> None:
+    template = (TEMPLATES / "portal.html").read_text(encoding="utf-8")
+    portal_js = (STATIC / "portal.js").read_text(encoding="utf-8")
+
+    assert 'data-copy-fallback="#macos-open-command-{{ loop.index }}"' in template
+    assert 'data-reveal-copy="#macos-open-command-{{ loop.index }}"' in template
+    assert "function showManualCopyTarget(selector)" in portal_js
+    assert "showManualCopyTarget(button.dataset.copyFallback)" in portal_js
+
+
 def test_black_gold_sources_do_not_use_micro_text_below_11px() -> None:
     sources = ("atelier.css", "console.css", "skill-center.css", "demo.css")
     offenders: list[str] = []

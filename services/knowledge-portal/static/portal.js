@@ -406,6 +406,20 @@ function copyGeneratedTextFromGesture(valuePromise) {
   return Promise.resolve(valuePromise).then(copyToClipboard);
 }
 
+function showManualCopyTarget(selector) {
+  if (!selector) return false;
+  const panel = document.querySelector(selector);
+  const textarea = panel?.querySelector("textarea");
+  if (!panel || !textarea) return false;
+  panel.hidden = false;
+  window.requestAnimationFrame(() => {
+    textarea.focus({preventScroll: true});
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+  });
+  return true;
+}
+
 function ensureAgentManualCopyPanel(card) {
   if (!card) return null;
   const existing = card.querySelector("[data-agent-manual-copy]");
@@ -902,6 +916,12 @@ document.addEventListener("click", async (event) => {
     }
     return;
   }
+  const revealCopyButton = event.target.closest("[data-reveal-copy]");
+  if (revealCopyButton) {
+    showManualCopyTarget(revealCopyButton.dataset.revealCopy);
+    return;
+  }
+
   const button = event.target.closest(
     "[data-copy-target], [data-copy-config], [data-copy-value], [data-copy-device-id]"
   );
@@ -930,7 +950,9 @@ document.addEventListener("click", async (event) => {
       button.classList.remove("copy-success");
     }, 1800);
   } catch {
-    window.prompt("请复制以下内容", value);
+    if (!showManualCopyTarget(button.dataset.copyFallback)) {
+      window.prompt("请复制以下内容", value);
+    }
   }
 });
 
