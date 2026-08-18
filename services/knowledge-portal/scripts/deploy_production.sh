@@ -325,6 +325,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
     scripts/evaluate_structured_knowledge.py \
     scripts/project_catalog_matching.py \
     scripts/migrate_first_public_release.py scripts/publish_skill_release.py \
+    scripts/publish_generic_skill_release.py \
     scripts/reconcile_release_metadata.py \
     scripts/audit_release_locations.py \
     scripts/release_transaction.py scripts/smoke_test_production.sh \

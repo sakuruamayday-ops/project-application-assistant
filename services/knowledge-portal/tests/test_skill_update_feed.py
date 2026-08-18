@@ -5,6 +5,61 @@ from fastapi.testclient import TestClient
 from test_portal import load_app
 
 
+def test_publish_skill_update_feed_creates_client_manifest(tmp_path):
+    from app.skill_update_feed import publish_skill_update_feed
+
+    source = tmp_path / "universal.zip"
+    source.write_bytes(b"signed universal suite")
+    release_dir = tmp_path / "updates"
+
+    receipt = publish_skill_update_feed(
+        release_directory=release_dir,
+        archive=source,
+        version="V1.6.6",
+        release_notes="更新共创通用技能包。",
+    )
+
+    assert receipt.version == "1.6.6"
+    assert receipt.archive_path.read_bytes() == source.read_bytes()
+    manifest = json.loads(receipt.manifest_path.read_text(encoding="utf-8"))
+    assert manifest == {
+        "schemaVersion": 1,
+        "productId": "cn.gongchuang.enterprise-assistant",
+        "skillBundleVersion": "1.6.6",
+        "sourceReleaseTag": "V1.6.6",
+        "archiveUrl": "./gongchuang-research-institute-skills-V1.6.6.zip",
+        "releaseNotes": "更新共创通用技能包。",
+    }
+
+
+def test_publish_skill_update_feed_rejects_reusing_version_for_other_bytes(tmp_path):
+    from app.skill_update_feed import publish_skill_update_feed
+
+    release_dir = tmp_path / "updates"
+    first = tmp_path / "first.zip"
+    second = tmp_path / "second.zip"
+    first.write_bytes(b"first")
+    second.write_bytes(b"second")
+    publish_skill_update_feed(
+        release_directory=release_dir,
+        archive=first,
+        version="1.6.6",
+        release_notes="第一版",
+    )
+
+    try:
+        publish_skill_update_feed(
+            release_directory=release_dir,
+            archive=second,
+            version="1.6.6",
+            release_notes="不应覆盖",
+        )
+    except ValueError as error:
+        assert "不同内容" in str(error)
+    else:
+        raise AssertionError("同版本不同内容必须被拒绝")
+
+
 def write_skill_update_feed(tmp_path, monkeypatch):
     release_dir = tmp_path / "skill-update-releases"
     release_dir.mkdir()
