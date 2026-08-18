@@ -10438,6 +10438,7 @@ def portal_payload(
                            3 AS evidence_rank
                     FROM device_bindings binding
                     WHERE binding.revoked_at IS NULL
+                      AND COALESCE(binding.auth_method,'')<>'client_password'
                       AND COALESCE(binding.installed_version,'')<>''
                     UNION ALL
                     SELECT enrollment.user_id,enrollment.workbuddy_version,
@@ -10643,8 +10644,8 @@ def portal_payload(
                 )
                 evidence = str(member.get("install_version_evidence") or "")
                 member["install_version_evidence_label"] = {
-                    "reported": "客户端安装回执",
-                    "runtime_attested": "客户端自动识别版本",
+                    "reported": "技能包安装回执",
+                    "runtime_attested": "技能包自动识别版本",
                     "connected_target": "连接自动识别版本",
                 }.get(evidence, "版本未确认")
                 member["install_update_state"] = "unknown"

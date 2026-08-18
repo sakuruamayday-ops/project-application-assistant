@@ -687,6 +687,8 @@ def test_desktop_download_page_records_requests_and_member_client_login(tmp_path
         members = client.get("/admin/members")
         assert members.status_code == 200
         assert "已请求下载" in members.text
+        assert "macOS" in members.text
+        assert "尚无安装包请求或客户端登录回执" not in members.text
 
         desktop_login = client.post(
             "/v1/client-login",
@@ -704,6 +706,9 @@ def test_desktop_download_page_records_requests_and_member_client_login(tmp_path
         members = client.get("/admin/members")
         assert "已登录客户端" in members.text
         assert "V0.1.0" in members.text
+        assert "尚无安装包请求或客户端登录回执" not in members.text
+        assert "插件 V0.1.0" not in members.text
+        assert "技能包 V0.1.0" not in members.text
 
 
 def test_desktop_download_page_supports_macos_only_release(tmp_path):
@@ -5119,15 +5124,15 @@ def test_admin_members_displays_installed_version_and_update_state(
 
     assert members.status_code == 200
     current_row = member_row(members.text, member_ids["current-member"])
-    assert "插件 V1.6.3" in current_row
+    assert "技能包 V1.6.3" in current_row
     assert "连接自动识别版本" in current_row
     assert "最新版本" in current_row
     old_row = member_row(members.text, member_ids["old-member"])
-    assert "插件 V1.6.2" in old_row
-    assert "客户端安装回执" in old_row
+    assert "技能包 V1.6.2" in old_row
+    assert "技能包安装回执" in old_row
     assert "待更新" in old_row
     pending_row = member_row(members.text, member_ids["pending-member"])
-    assert "目标插件 V1.6.3" in pending_row
+    assert "目标技能包 V1.6.3" in pending_row
     assert "尚未确认安装" in pending_row
     assert f'href="/admin/users/{member_ids["current-member"]}"' not in outdated.text
     assert f'href="/admin/users/{member_ids["old-member"]}"' in outdated.text
@@ -5214,7 +5219,7 @@ def test_admin_ignores_legacy_manual_install_confirmation(tmp_path, monkeypatch)
         )
 
     assert "管理员确认版本" not in members.text
-    assert "目标插件 V1.6.3.1" in members.text
+    assert "目标技能包 V1.6.3.1" in members.text
     assert "确认手动安装" not in detail.text
     assert removed_route.status_code == 404
 
@@ -5408,8 +5413,8 @@ def test_admin_members_ignores_revoked_install_version_evidence(
     )
     assert row is not None
     member_row = row.group(0)
-    assert "插件 V1.4.4" not in member_row
-    assert "目标插件 V1.6.3" in member_row
+    assert "技能包 V1.4.4" not in member_row
+    assert "目标技能包 V1.6.3" in member_row
     assert "尚未确认安装" in member_row
     assert "待更新" not in member_row
 
@@ -6561,8 +6566,8 @@ def test_runtime_install_attestation_updates_version_with_personal_token(
     assert result["result_reported_at"]
     assert active_personal["credential_kind"] == "personal"
     assert active_personal["revoked_at"] is None
-    assert "插件 V1.6.3.1" in members.text
-    assert "客户端自动识别版本" in members.text
+    assert "技能包 V1.6.3.1" in members.text
+    assert "技能包自动识别版本" in members.text
     assert "管理员确认版本" not in members.text
 
 
