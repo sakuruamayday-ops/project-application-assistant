@@ -670,6 +670,10 @@ def test_desktop_download_page_records_requests_and_member_client_login(tmp_path
         assert "下载 macOS 安装包" in page.text
         assert "下载 Windows 安装包" in page.text
         assert "双端测试包可下载" in page.text
+        assert "共创企业助手 V0.1.0" in page.text
+        assert "共创企业助手-0.1.0-arm64.dmg" not in page.text
+        assert "若系统提示“已损坏”" in page.text
+        assert "xattr -dr com.apple.quarantine" in page.text
         assert "SHA-256" not in page.text
         assert "API 与用户" not in page.text
         assert '"/downloads": "downloads"' in client.get("/static/portal.js").text
