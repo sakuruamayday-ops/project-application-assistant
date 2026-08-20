@@ -145,5 +145,5 @@ def test_v1652_keeps_v165_report_and_project_logic_boundaries() -> None:
     assert "企业分析报告 A、B、C 版" in text
     assert "尖兵领雁、市级重大及科技计划类的既有分析逻辑保持不变" in text
     manifest = json.loads(read(SKILLS / "suite-manifest.json"))
-    assert manifest["release"]["tag"] == "V1.6.5.2"
-    assert manifest["release"]["version"] == "1.6.5.2"
+    assert manifest["release"]["tag"] == "V1.6.7"
+    assert manifest["release"]["version"] == "1.6.7"

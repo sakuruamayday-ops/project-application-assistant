@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-application-assistant"
-version = "1.6.5.2"
+version = "1.6.7"
 description = "面向政府项目申报工程师的技能包与本地配置工具"
 requires-python = ">=3.10"
 dependencies = [

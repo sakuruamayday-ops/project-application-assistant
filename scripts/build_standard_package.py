@@ -180,6 +180,7 @@ def included(path):
     return (
         not any(part in FORBIDDEN_ARCHIVE_PATH_PARTS or part.startswith("._") for part in path.parts)
         and path.suffix not in {".pyc", ".pyo"}
+        and path.as_posix() != "skills/local-skill-reconciliation.json"
         and path.parts[:3] != ("skills", "_runtime", "jiaotang-kb")
         and path.as_posix() not in LEGACY_BRAND_DUPLICATES
         and not (

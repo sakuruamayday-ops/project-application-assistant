@@ -1,0 +1,211 @@
+{
+  "schema_version": "gongchuang-client-runtime-gates/v1",
+  "release_tag": "V1.6.7",
+  "host": {
+    "upstream": "deepseek-ai/deepseek-harness",
+    "pinned_commit": "47f943859bef60e4160492346772ded9b24f765a",
+    "upstream_stage": "developer-preview",
+    "upgrade_policy": "pin-and-revalidate"
+  },
+  "dsh_hook_compatibility": {
+    "package": "@deepseek-ai/dsh-hooks-codex",
+    "role": "migration-adapter-only",
+    "trusted_enforcement_boundary": false,
+    "verified_limitations": [
+      "supports-only-five-of-ten-codex-hook-points",
+      "session-start-is-detached-and-can-miss-first-request",
+      "continue-false-is-not-fully-enforced",
+      "non-shell-tool-input-is-not-faithfully-exposed",
+      "process-level-config-is-read-once"
+    ]
+  },
+  "enforcement": {
+    "mode": "fail-closed",
+    "owner": "signed-desktop-host-plus-native-cordis-plugin",
+    "model_compliance_is_not_enforcement": true,
+    "unavailable_gate_behavior": "refuse-agent-start-or-block-current-action",
+    "unsigned-or-user-removable-gate_is_forbidden": true,
+    "all_model_providers_share_the_same_gate": true
+  },
+  "professional_execution": {
+    "binding": "same-host-verified-skill-suite",
+    "contract_files": [
+      "delivery-contracts.json",
+      "skill-call-graph.json"
+    ],
+    "skill_is_execution_bundle": [
+      "SKILL.md",
+      "references",
+      "scripts",
+      "templates-and-assets",
+      "tests-and-machine-validators"
+    ],
+    "activation_proof": "successful-skill-tool-call-or-explicit-user-skill-invocation",
+    "required_chain": [
+      "route-task-to-specific-professional-skill",
+      "expand-requires-and-quality-gate-relations",
+      "load-every-required-skill",
+      "preserve-fact-policy-calculation-and-evidence-boundaries",
+      "validate-exact-candidate-with-local-professional-kernel",
+      "bind-final-chat-answer-to-validated-candidate-sha256",
+      "validate-required-response-structure-in-contract-order",
+      "require-current-turn-artifact-receipts-for-formal-files"
+    ],
+    "unmatched_business_task": "require-project-task-router-and-refuse-generic-fallback",
+    "provider_independent": true,
+    "humanizer_order": [
+      "lock-facts-policy-numbers-and-citations",
+      "apply-domain-writing-skill",
+      "apply-gongchuang-humanizer-zh",
+      "rerun-consistency-check"
+    ],
+    "failure_behavior": "block-current-turn-and-show-missing-skill-structure-evidence-or-receipt"
+  },
+  "enforcement_components": [
+    {
+      "component": "signed-desktop-host",
+      "responsibility": [
+        "verify-runtime-and-policy-signatures-before-dsh-start",
+        "lock-controlled-cordis-profile",
+        "start-last-known-good-runtime-or-refuse-start"
+      ]
+    },
+    {
+      "component": "native-cordis-policy-gate",
+      "responsibility": [
+        "initialize-policy-synchronously-before-agent-admission",
+        "use-awaited-agent-pre-step-for-first-request-gating",
+        "enforce-prompt-tool-and-stop-decisions",
+        "fail-closed-on-timeout-crash-or-invalid-decision"
+      ]
+    },
+    {
+      "component": "central-tool-broker",
+      "responsibility": [
+        "force-every-model-visible-tool-through-one-pre-and-post-execute-path",
+        "deny-direct-network-process-filesystem-or-browser-bypass",
+        "apply-workspace-domain-command-and-plugin-allowlists"
+      ]
+    },
+    {
+      "component": "artifact-delivery-gate",
+      "responsibility": [
+        "run-deterministic-business-and-document-validators",
+        "block-export-publish-or-completion-without-current-turn-receipts",
+        "seal-auditable-receipts"
+      ]
+    }
+  ],
+  "lifecycle": [
+    {
+      "point": "startup",
+      "blocking": true,
+      "requirements": [
+        "verify-client-signature",
+        "verify-suite-manifest-signature",
+        "verify-gate-plugin-digest",
+        "load-last-known-good-policy"
+      ]
+    },
+    {
+      "point": "session-start",
+      "blocking": true,
+      "requirements": [
+        "do-not-rely-on-detached-dsh-session-start-for-first-request",
+        "initialize-session-state-before-first-awaited-agent-pre-step",
+        "bind-suite-version",
+        "record-policy-snapshot"
+      ]
+    },
+    {
+      "point": "user-prompt-submit",
+      "blocking": true,
+      "requirements": [
+        "create-new-turn-id",
+        "reset-active-skills-for-new-turn",
+        "preserve-only-blocked-continuation-state",
+        "run-input-policy"
+      ]
+    },
+    {
+      "point": "skill-activation",
+      "blocking": true,
+      "requirements": [
+        "observe-tool-and-user-explicit-invocation",
+        "register-every-activated-skill-in-turn-state",
+        "reject-unverified-skill-body",
+        "accumulate-multiple-skills",
+        "expand-signed-requires-and-quality-gate-relations",
+        "bind-professional-contract-version-to-suite-version"
+      ]
+    },
+    {
+      "point": "tool-pre-execute",
+      "blocking": true,
+      "requirements": [
+        "enforce-workspace-allowlist",
+        "enforce-network-allowlist",
+        "enforce-command-and-browser-policy",
+        "deny-unregistered-bypass-path"
+      ]
+    },
+    {
+      "point": "tool-post-execute",
+      "blocking": true,
+      "requirements": [
+        "append-verifiable-receipt",
+        "mark-failed-or-partial-outcome",
+        "do-not-upgrade-failure-to-success"
+      ]
+    },
+    {
+      "point": "turn-stopping",
+      "blocking": true,
+      "requirements": [
+        "run-delivery-gates-for-all-active-skills",
+        "reject-missing-required-skill-or-contract-ordered-section",
+        "reject-evidence-boundary-or-quality-gate-omission",
+        "require-current-turn-receipts",
+        "force-continuation-on-failure",
+        "cap-continuation-loop-with-human-visible-block"
+      ]
+    },
+    {
+      "point": "turn-end",
+      "blocking": false,
+      "requirements": [
+        "seal-turn-receipt",
+        "clear-transient-state",
+        "retain-audit-log"
+      ]
+    }
+  ],
+  "mandatory_regressions": [
+    "first-request-waits-for-session-start",
+    "new-turn-resets-skill-state",
+    "same-turn-multi-skill-accumulates",
+    "blocked-continuation-keeps-original-turn-state",
+    "missing-or-crashed-gate-fails-closed",
+    "direct-tool-call-cannot-bypass-policy",
+    "compatibility-hook-bridge-cannot-be-trusted-as-enforcement-boundary",
+    "unsigned-third-party-plugin-cannot-register-a-bypass-tool-path",
+    "tampered-skill-or-manifest-is-rejected",
+    "signed-upgrade-preserves-hooks",
+    "rollback-restores-last-known-good-runtime",
+    "windows-and-macos-produce-equivalent-decisions"
+  ],
+  "release_acceptance": {
+    "candidate_only_if_missing": [
+      "platform-build",
+      "automated-regressions",
+      "signed-artifacts"
+    ],
+    "formal_only_if_all": [
+      "macos-signed-and-notarized",
+      "windows-authenticode-signed",
+      "fresh-machine-install",
+      "real-host-hook-receipts",
+      "update-and-rollback-receipts"
+    ]
+  }
+}

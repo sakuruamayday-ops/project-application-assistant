@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 
-QCC_INVITATION_URL = "https://agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4&ch=LINK_COPY"
+QCC_PLATFORM_URL = "https://agent.qcc.com"
 
 QUICK_GUIDE_QUESTIONS = {
     "agent_usage": "企业全生命周期助手如何导入我的Agent？",
@@ -73,34 +73,32 @@ def quick_guide_answer(
     endpoint = public_endpoint.rstrip("/")
     if matched == "agent_usage":
         return (
-            "一、统一安装\n"
-            "1. 在网站下载最新版企业全生命周期助手 ZIP 并解压。\n"
-            "2. 将包内 skills 文件夹拖入当前 Agent 的 Skills 目录或工作区。\n"
-            "3. 完全重启 Agent，在对话框输入：请检查企业全生命周期助手是否安装完整，并启动首次配置向导。\n\n"
-            "二、导入Agent\n"
-            "将 skills 文件夹导入Agent支持的Skills目录或当前工作区，刷新技能列表并重新打开会话。\n\n"
+            "一、共创客户端\n"
+            "登录共创研究院网站后打开“客户端下载”，选择 macOS 或 Windows 安装包。安装后使用服务器账号密码登录，官方 Skills 会由客户端完成签名校验、安装和更新，不需要手动复制目录。\n\n"
+            "二、其他 Agent\n"
+            "在网站 Skills 中心下载通用技能包，将 skills 文件夹导入宿主支持的 Skills 目录；知识库 MCP 使用标准 Streamable HTTP 配置。网站不再提供 WorkBuddy 专用技能包。\n\n"
             "三、日常使用\n"
-            "不需要记 Skill 名称，直接说明企业名称、地区、拟申报项目、已有资料和希望输出的结果。首次安装应先检查并完成 jiaotang-kb 知识库连接；连接验证成功后，再输入：帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills。",
+            "不需要记 Skill 名称，直接说明企业名称、地区、拟申报项目、已有资料和希望输出的结果。模型、企查查、天眼查、PaddleOCR 和社区仓库统一在共创客户端 Skills 中心的“安装与连接”中管理；只有真实授权和健康检查通过后才显示已连接。",
             "first-run-configuration",
         )
 
     if matched == "api_mcp_import":
         return (
-            "一、登录共创研究院网站，打开“连接我的 Agent”。\n"
-            f"二、点击“一键安装”，把网站生成的一段完整指令粘贴给 macOS 或 Windows 上的 WorkBuddy。该指令会安装或更新{skill_count}项Skills、启用最小行为Hook、只替换 mcpServers.jiaotang-kb 并保留其他MCP。\n"
-            "三、WorkBuddy 重载一次后，应在 tools/list 中看到 knowledge_search、knowledge_document、knowledge_service_status，并实际调用 knowledge_service_status。只有返回 connected: true 才算完成。\n\n"
-            "手工配置页面会自动复用或生成当前登录用户的个人Token，并直接填入完整远程HTTP MCP配置；不需要设备绑定、bootstrap、钥匙串、DPAPI或用户侧签名校验。个人Token不要粘贴到公共代码或聊天回复中，怀疑泄露时在网站撤销，重新打开配置页即可生成新Token。",
+            "一、共创客户端不再设置独立“API 与用户”标签。登录客户端后，进入 Skills 中心的“安装与连接”。\n"
+            f"二、官方{skill_count}项 Skills 由客户端自动校验和更新；共创知识库 MCP 使用当前客户端账号建立连接，不要求用户复制 WorkBuddy 安装指令。\n"
+            "三、DeepSeek、OpenCode 和自定义 API 在模型设置中连接；企查查、天眼查、PaddleOCR 等第三方服务在对应技能详情点击“添加”，跳转官方注册或授权。\n"
+            "四、返回客户端后必须完成 tools/list 和服务健康调用。只有真实返回成功才显示“已连接”，不能以用户点击“我已完成配置”代替校验。其他 Agent 仍可从 Skills 中心下载通用包，并在“安装与连接”复制标准知识库 MCP 配置。",
             "first-run-configuration",
         )
 
     return (
         "一、注册并取得官方配置\n"
-        f"打开企查查智能体数据平台注册入口：{QCC_INVITATION_URL}\n"
-        "完成注册和授权，在企查查控制台取得自己的 API Key，或复制控制台提供的官方 MCP 配置。\n\n"
-        "二、导入Agent\n"
-        "在Agent的MCP管理页面新增企查查服务。企查查提供HTTP地址时按远程MCP导入；提供启动命令时按stdio型MCP导入。API Key写入安全凭据或环境变量QCC_API_KEY，不要把普通REST地址当成MCP地址。\n\n"
+        f"在共创客户端 Skills 中心打开企查查连接卡，点击“添加”后进入官方平台：{QCC_PLATFORM_URL}\n"
+        "完成注册和登录。现阶段按企查查官方控制台提供的 API Key 或 MCP 配置接入；在未取得企查查官方 OAuth 合作能力前，客户端不能伪装成已自动授权。\n\n"
+        "二、返回客户端连接\n"
+        "将官方 API Key 粘贴到系统安全凭据窗口，或按官方 MCP 配置完成连接。API Key只进入钥匙串或 Windows 凭据管理器，不写普通配置文件；兼容宿主可使用环境变量QCC_API_KEY。\n\n"
         "三、验证\n"
-        "完全重启Agent，确认企查查工具出现在工具列表。使用一家非敏感企业测试企业名称、统一社会信用代码和登记状态。随后运行 first-run-configuration，让企业全生命周期助手记录企查查能力已经可用。\n\n"
+        "客户端自动执行工具发现和非敏感健康检查。企查查工具真实返回后才显示“已连接”；失败时保留具体错误和重新授权入口。\n\n"
         "四、使用边界\n"
         "企查查用于工商、股权、风险、资质和知识产权事实补充；财务数据仍以客户提供的现行资料为准，政策条件仍以政府原文为准。",
         "first-run-configuration",

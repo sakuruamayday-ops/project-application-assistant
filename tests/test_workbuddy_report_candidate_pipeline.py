@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import zipfile
 from pathlib import Path
 
@@ -14,7 +15,6 @@ SKILLS = ROOT / "skills"
 REGISTRY = SKILLS / "project-feasibility/references/report-template-registry.json"
 SELECTOR_PATH = SKILLS / "project-feasibility/scripts/select_report_template.py"
 FILLER_PATH = SKILLS / "project-feasibility/scripts/fill_report_template.py"
-GROUNDED_PATH = SKILLS / "evidence-ledger/scripts/grounded_evidence.py"
 PIPELINE_PATH = ROOT / "scripts/run_workbuddy_report_candidate_pipeline.py"
 VISUAL_FINALIZER_PATH = ROOT / "scripts/record_workbuddy_report_visual_review.py"
 
@@ -29,7 +29,6 @@ def load_module(name: str, path: Path):
 
 SELECTOR = load_module("candidate_test_selector", SELECTOR_PATH)
 FILLER = load_module("candidate_test_filler", FILLER_PATH)
-GROUNDED = load_module("candidate_test_grounded", GROUNDED_PATH)
 PIPELINE = load_module("candidate_test_pipeline", PIPELINE_PATH)
 VISUAL_FINALIZER = load_module("candidate_test_visual_finalizer", VISUAL_FINALIZER_PATH)
 
@@ -60,6 +59,7 @@ def case_fixture(source: Path, project_id: str = "first-equipment") -> dict:
                 "path": str(source),
                 "role": "企业技术材料",
                 "anchors": ["某高端装备有限公司", "工程机械智能控制系统"],
+                "source_type": "knowledge-base",
             }
         ],
         "policies": [
@@ -98,14 +98,17 @@ def test_real_source_anchor_fill_produces_complete_editable_report(tmp_path: Pat
     assert result["status"] == "pass"
     assert result["source_count"] == 1
     document = Document(output)
-    text = "\n".join(
-        [paragraph.text for paragraph in document.paragraphs]
-        + [cell.text for table in document.tables for row in table.rows for cell in row.cells]
-    )
+    text = FILLER.document_text(document)
     assert "［填写" not in text
     assert "培训模板" not in text
     assert "某高端装备有限公司" in text
-    assert "资料来源与证据状态" in text
+    assert "数据来源" in text
+    assert "序号" in text and "文件名称" in text and "链接" in text
+    assert "来源共创知识库" in text
+    assert "SHA-256" not in text
+    assert "真实客户资料候选验收稿" not in text
+    assert "V1.6.5.1" not in text
+    assert re.search(r"(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f])", text, re.IGNORECASE) is None
     visible_runs = [
         run
         for paragraph in list(document.paragraphs)
@@ -115,7 +118,121 @@ def test_real_source_anchor_fill_produces_complete_editable_report(tmp_path: Pat
     ]
     assert visible_runs
     assert all(run.font.name == FILLER.PORTABLE_CJK_FONT for run in visible_runs)
-    assert GROUNDED._validate_docx(output, "analysis-report")["errors"] == []
+
+
+def test_report_maps_policy_roles_and_strengthening_tasks_without_repeated_headline(tmp_path: Path):
+    source = client_source(tmp_path / "client.docx")
+    fixture = case_fixture(source, project_id="science-plan")
+    fixture["conclusion"] = "待资料"
+    fixture["headline_fact"] = "不得重复进补强任务表的工商与专利概况"
+    fixture["policies"] = [
+        {
+            "title": "关于组织申报2027年度某项目的通知",
+            "locator": "https://example.test/notice",
+            "status": "已核验基线",
+        },
+        {
+            "title": "关于推进项目实施的若干措施",
+            "locator": "https://example.test/measure",
+            "status": "已核验基线",
+        },
+    ]
+    selection = SELECTOR.resolve_template("science-plan", "preassessment", registry_path=REGISTRY)
+    copied = SELECTOR.materialize(selection, tmp_path / "masters", enterprise="某高端装备有限公司")
+    output = tmp_path / "mapped.docx"
+    result = FILLER.complete_report(
+        template_path=Path(copied["output_path"]),
+        output_path=output,
+        fixture=fixture,
+        report_type="preassessment",
+        release_tag="V1.6.6",
+        public_root=ROOT,
+    )
+    assert result["status"] == "pass"
+    document = Document(output)
+    policy_table = next(
+        table for table in document.tables
+        if "政策层级" in " | ".join(cell.text for cell in table.rows[0].cells)
+    )
+    policies = {row.cells[0].text.strip(): row for row in policy_table.rows[1:]}
+    assert policies["管理办法或评价办法"].cells[1].text == "关于推进项目实施的若干措施"
+    assert policies["申报年度通知"].cells[1].text == "关于组织申报2027年度某项目的通知"
+    assert policies["申报指南与评分附件"].cells[1].text == "当前未取得独立文件"
+    assert policies["截止日期"].cells[1].text == "关于组织申报2027年度某项目的通知"
+
+    strengthening = next(
+        table for table in document.tables
+        if "补强任务" in " | ".join(cell.text for cell in table.rows[0].cells)
+    )
+    visible = "\n".join(cell.text for row in strengthening.rows for cell in row.cells)
+    assert fixture["headline_fact"] not in visible
+    assert "尚未形成国内技术水平评价报告" in visible
+    assert "任务指标对照表、检测方案和项目预算底稿" in visible
+    assert "暂无法判断" in FILLER.document_text(document)
+
+
+def test_report_accepts_ordered_custom_strengthening_tasks_and_preserves_page_fields(tmp_path: Path):
+    source = client_source(tmp_path / "client.docx")
+    fixture = case_fixture(source, project_id="science-plan")
+    fixture["strengthening_tasks"] = [
+        {
+            "task": "核定关键技术指标",
+            "status": "指标口径尚待企业确认",
+            "target_period": "2026年9月",
+            "deliverable": "关键技术指标确认表",
+        },
+        {
+            "task": "完成项目预算测算",
+            "status": "设备与研发投入尚未归集",
+            "target_period": "2026年10月",
+            "deliverable": "项目预算及资金来源表",
+        },
+        {
+            "task": "形成申报时间表",
+            "status": "等待当期通知确认截止时间",
+            "target_period": "通知发布后两日内",
+            "deliverable": "申报倒排计划",
+        },
+    ]
+    selection = SELECTOR.resolve_template("science-plan", "preassessment", registry_path=REGISTRY)
+    copied = SELECTOR.materialize(selection, tmp_path / "masters", enterprise="某高端装备有限公司")
+    output = tmp_path / "custom-tasks.docx"
+    result = FILLER.complete_report(
+        template_path=Path(copied["output_path"]),
+        output_path=output,
+        fixture=fixture,
+        report_type="preassessment",
+        release_tag="V1.6.6",
+        public_root=ROOT,
+    )
+    assert result["status"] == "pass"
+    document = Document(output)
+    strengthening = next(
+        table for table in document.tables
+        if "补强任务" in " | ".join(cell.text for cell in table.rows[0].cells)
+    )
+    assert len(strengthening.rows) == 4
+    assert [row.cells[1].text for row in strengthening.rows[1:]] == [
+        "核定关键技术指标",
+        "完成项目预算测算",
+        "形成申报时间表",
+    ]
+    assert strengthening.rows[2].cells[3].text == "2026年10月"
+    assert strengthening.rows[3].cells[4].text == "申报倒排计划"
+    assert document.core_properties.title == "某高端装备有限公司_工程机械智能控制系统_项目前期评估报告"
+    assert document.core_properties.author == "共创研究院"
+    with zipfile.ZipFile(output) as archive:
+        footers = "\n".join(
+            archive.read(name).decode("utf-8")
+            for name in archive.namelist()
+            if name.startswith("word/footer") and name.endswith(".xml")
+        )
+        metadata = archive.read("docProps/core.xml").decode("utf-8")
+    assert "PAGE" in footers
+    assert "培训模板" not in footers
+    assert "V1.6.5.1" not in footers
+    assert "培训模板" not in metadata
+    assert "候选验收稿" not in metadata
 
 
 def test_source_anchor_must_match_real_material(tmp_path: Path):

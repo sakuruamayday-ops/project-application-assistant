@@ -32,16 +32,19 @@ def _insert_public_brand_text(page: fitz.Page, *, cover: bool) -> None:
         page.rect.x1 - 28,
         page.rect.y0 + 14 + font_size * 2.2,
     )
-    page.insert_textbox(
-        header_rect,
-        identity["document_header"],
-        fontname="china-s",
-        fontsize=font_size,
-        color=color,
-        align=fitz.TEXT_ALIGN_RIGHT,
-        overlay=True,
-    )
-    if cover:
+    existing = page.get_text().count(identity["document_header"])
+    if existing == 0:
+        page.insert_textbox(
+            header_rect,
+            identity["document_header"],
+            fontname="china-s",
+            fontsize=font_size,
+            color=color,
+            align=fitz.TEXT_ALIGN_RIGHT,
+            overlay=True,
+        )
+        existing += 1
+    if cover and existing < 2:
         cover_rect = fitz.Rect(
             page.rect.x0 + 28,
             page.rect.y1 - 48,
@@ -156,6 +159,8 @@ def brand_pdf_bytes(
         * float(config["policy"]["size_multiplier"])
     )
 
+    from delivery_gate import GateFailure, pdf_brand_watermark_rects
+
     for page_index, page in enumerate(doc):
         rects = page_metrics[page_index]["rects"]
         density = page_metrics[page_index]["density"]
@@ -165,7 +170,13 @@ def brand_pdf_bytes(
         overlap = sum(_overlap_area(main_rect, rect) for rect in rects)
         overlap_score = overlap / max(1.0, main_rect.width * main_rect.height)
 
-        page.insert_image(main_rect, filename=style["asset_path"], keep_proportion=True, overlay=True)
+        existing_marks = pdf_brand_watermark_rects(doc, page)
+        if len(existing_marks) > 1:
+            raise GateFailure(
+                f"PDF第{page_index + 1}页已有{len(existing_marks)}个品牌水印，拒绝继续叠加"
+            )
+        if not existing_marks:
+            page.insert_image(main_rect, filename=style["asset_path"], keep_proportion=True, overlay=True)
         _insert_public_brand_text(page, cover=page_index == 0)
 
         audit.append({
@@ -179,6 +190,7 @@ def brand_pdf_bytes(
             "variant": style["variant"],
             "document_header": public_identity()["document_header"],
             "cover_signature": page_index == 0,
+            "watermark_action": "preserved" if existing_marks else "inserted",
         })
 
     output_path = Path(output_path)

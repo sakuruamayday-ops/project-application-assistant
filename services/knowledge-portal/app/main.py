@@ -143,6 +143,9 @@ INDEX_DIR = Path(
 CONTENT_DATABASE_PATH = INDEX_DIR / "knowledge_content.sqlite3"
 KNOWLEDGE_FILES_DIR = Path(os.environ.get("JIAOTANG_KNOWLEDGE_FILES_DIR", DATA_DIR / "knowledge-files"))
 SKILL_RELEASE_DIR = Path(os.environ.get("JIAOTANG_SKILL_RELEASE_DIR", DATA_DIR / "skill-releases"))
+CLIENT_RELEASE_DIR = Path(
+    os.environ.get("JIAOTANG_CLIENT_RELEASE_DIR", DATA_DIR / "client-releases")
+)
 FIRST_PUBLIC_SKILL_VERSION = os.environ.get(
     "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION",
     "1.5.0",
@@ -208,6 +211,13 @@ MCP_ANOMALY_BURST_CALLS = 120
 MCP_ANOMALY_NETWORK_SPRAWL = 4
 MCP_ANOMALY_NETWORK_SPRAWL_MIN_CALLS = 20
 PREFERENCE_SCHEMA_VERSION = 1
+CLIENT_AUTHORIZATION_MINUTES = 10
+CLIENT_AUTHORIZATION_POLL_SECONDS = 3
+CLIENT_AUTHORIZATION_ID = "cn.gongchuang.enterprise-assistant"
+CLIENT_AUTHORIZATION_PLATFORMS = frozenset({"macos", "windows"})
+CLIENT_AUTHORIZATION_CODE_PATTERN = re.compile(r"[A-Z2-9]{4}-[A-Z2-9]{4}")
+CLIENT_AUTHORIZATION_CHALLENGE_PATTERN = re.compile(r"[A-Za-z0-9_-]{43,128}")
+CLIENT_DEVICE_ID_PATTERN = re.compile(r"gcd_[A-Za-z0-9_-]{43,128}")
 DEFAULT_USER_PREFERENCES: dict[str, object] = {
     "region": {"province": "", "city": ""},
     "output": {
@@ -792,6 +802,31 @@ class AgentDeviceActivationRequest(BaseModel):
     proof: str = Field(min_length=40, max_length=512)
 
 
+class ClientAuthorizationStartRequest(BaseModel):
+    client_id: str = Field(min_length=10, max_length=100)
+    client_version: str = Field(min_length=3, max_length=32)
+    platform: str = Field(min_length=3, max_length=20)
+    device_name: str = Field(min_length=1, max_length=100)
+    code_challenge: str = Field(min_length=43, max_length=128)
+    code_challenge_method: str = Field(default="S256", max_length=10)
+
+
+class ClientAuthorizationTokenRequest(BaseModel):
+    client_id: str = Field(min_length=10, max_length=100)
+    device_code: str = Field(min_length=40, max_length=256)
+    code_verifier: str = Field(min_length=43, max_length=128)
+
+
+class ClientPasswordLoginRequest(BaseModel):
+    client_id: str = Field(min_length=10, max_length=100)
+    client_version: str = Field(min_length=3, max_length=32)
+    platform: str = Field(min_length=3, max_length=20)
+    device_id: str = Field(min_length=47, max_length=132)
+    device_name: str = Field(min_length=1, max_length=100)
+    username: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=1, max_length=256)
+
+
 class PublicListSearchRequest(BaseModel):
     enterprise_name: str = Field(default="", max_length=200)
     project_name: str = Field(default="", max_length=200)
@@ -1170,6 +1205,79 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
             seed = str(active_token["token_seed"])
             raw_token = user_access_token(user_id, seed)
         connection.commit()
+    return raw_token
+
+
+def issue_client_login_token(
+    connection: sqlite3.Connection,
+    *,
+    user_id: int,
+    device_id: str,
+    device_name: str,
+    platform: str,
+    client_version: str,
+    client_ip: str,
+    user_agent: str,
+) -> str:
+    """Rotate the account's only active client session and bind it to one device secret."""
+    now = isoformat(utc_now())
+    connection.execute(
+        """
+        UPDATE device_tokens
+        SET revoked_at=?,revoked_reason='superseded_by_client_login',revoked_by='client_login'
+        WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+        """,
+        (now, user_id),
+    )
+    connection.execute(
+        """
+        UPDATE device_bindings
+        SET revoked_at=?,revoked_reason='superseded_by_client_login'
+        WHERE user_id=? AND revoked_at IS NULL
+        """,
+        (now, user_id),
+    )
+    normalized_name = normalize_device_name(device_name, f"{platform} 客户端")
+    binding = connection.execute(
+        """
+        INSERT INTO device_bindings(
+            user_id,device_id_hash,device_id_prefix,device_name,auth_method,
+            first_bound_at,last_seen_at,last_ip,user_agent,installed_version
+        ) VALUES (?,?,?,?,?,?,?,?,?,?)
+        """,
+        (
+            user_id,
+            token_hash(device_id),
+            device_id[:12],
+            normalized_name,
+            "client_password",
+            now,
+            now,
+            client_ip[:100],
+            user_agent[:300],
+            client_version,
+        ),
+    )
+    seed = secrets.token_urlsafe(24)
+    raw_token = user_access_token(user_id, seed)
+    connection.execute(
+        """
+        INSERT INTO device_tokens(
+            user_id,label,token_prefix,token_hash,token_seed,created_at,
+            credential_kind,binding_id,activation_state,activated_at
+        ) VALUES (?,?,?,?,?,?,'client',?,'active',?)
+        """,
+        (
+            user_id,
+            f"共创企业助手 {platform} · {normalized_name}"[:100],
+            raw_token[:12],
+            token_hash(raw_token),
+            seed,
+            now,
+            int(binding.lastrowid),
+            now,
+        ),
+    )
     return raw_token
 
 
@@ -7167,6 +7275,31 @@ def init_database() -> None:
                 created_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS client_authorizations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                device_code_hash TEXT NOT NULL UNIQUE,
+                user_code_hash TEXT NOT NULL UNIQUE,
+                client_id TEXT NOT NULL,
+                client_version TEXT NOT NULL,
+                platform TEXT NOT NULL,
+                device_name TEXT NOT NULL,
+                code_challenge TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                last_polled_at TEXT,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                approved_at TEXT,
+                denied_at TEXT,
+                delivered_at TEXT,
+                approved_ip TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE INDEX IF NOT EXISTS client_authorizations_expiry_idx
+            ON client_authorizations(expires_at);
+
+            CREATE INDEX IF NOT EXISTS client_authorizations_user_idx
+            ON client_authorizations(user_id, id DESC);
+
             CREATE TABLE IF NOT EXISTS password_reset_attempts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL,
@@ -7492,6 +7625,50 @@ def init_database() -> None:
                 promoted_at TEXT,
                 PRIMARY KEY(version,target)
             );
+
+            CREATE TABLE IF NOT EXISTS client_releases (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                version TEXT NOT NULL UNIQUE,
+                status TEXT NOT NULL DEFAULT 'draft',
+                release_notes TEXT NOT NULL DEFAULT '',
+                published_at TEXT,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS client_release_artifacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                release_id INTEGER NOT NULL
+                    REFERENCES client_releases(id) ON DELETE CASCADE,
+                platform TEXT NOT NULL,
+                architecture TEXT NOT NULL,
+                file_kind TEXT NOT NULL,
+                file_name TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                sha256 TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL DEFAULT 0,
+                signature_status TEXT NOT NULL DEFAULT 'pending',
+                signature_identity TEXT NOT NULL DEFAULT '',
+                UNIQUE(release_id,platform,architecture,file_kind)
+            );
+
+            CREATE INDEX IF NOT EXISTS client_release_artifacts_release_idx
+            ON client_release_artifacts(release_id,platform,architecture,file_kind);
+
+            CREATE TABLE IF NOT EXISTS client_download_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                release_id INTEGER NOT NULL
+                    REFERENCES client_releases(id) ON DELETE CASCADE,
+                artifact_id INTEGER NOT NULL
+                    REFERENCES client_release_artifacts(id) ON DELETE CASCADE,
+                platform TEXT NOT NULL,
+                architecture TEXT NOT NULL,
+                client_fingerprint TEXT NOT NULL DEFAULT '',
+                downloaded_at TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS client_download_events_user_time_idx
+            ON client_download_events(user_id,downloaded_at DESC);
 
             CREATE TABLE IF NOT EXISTS release_announcements (
                 release_id INTEGER PRIMARY KEY REFERENCES skill_releases(id) ON DELETE CASCADE,
@@ -8123,8 +8300,41 @@ def user_count() -> int:
 
 
 def safe_login_redirect(value: str) -> str:
-    del value
+    candidate = str(value or "").strip()
+    if re.fullmatch(r"/client-authorize\?code=[A-Z2-9]{4}-[A-Z2-9]{4}", candidate):
+        return candidate
     return "/portal"
+
+
+def normalized_client_user_code(value: str) -> str:
+    compact = re.sub(r"[^A-Za-z0-9]", "", str(value or "")).upper()
+    if len(compact) == 8:
+        compact = f"{compact[:4]}-{compact[4:]}"
+    if not CLIENT_AUTHORIZATION_CODE_PATTERN.fullmatch(compact):
+        raise HTTPException(status_code=400, detail="客户端授权码格式无效")
+    return compact
+
+
+def client_authorization_user_code(connection: sqlite3.Connection) -> str:
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    for _ in range(20):
+        compact = "".join(secrets.choice(alphabet) for _ in range(8))
+        user_code = f"{compact[:4]}-{compact[4:]}"
+        existing = connection.execute(
+            "SELECT 1 FROM client_authorizations WHERE user_code_hash=?",
+            (token_hash(user_code),),
+        ).fetchone()
+        if existing is None:
+            return user_code
+    raise HTTPException(status_code=503, detail="暂时无法生成客户端授权码，请稍后重试")
+
+
+def client_authorization_row(user_code: str) -> sqlite3.Row | None:
+    with closing(database()) as connection:
+        return connection.execute(
+            "SELECT * FROM client_authorizations WHERE user_code_hash=?",
+            (token_hash(user_code),),
+        ).fetchone()
 
 
 def session_user(session_token: str | None) -> tuple[sqlite3.Row, sqlite3.Row] | None:
@@ -8160,6 +8370,347 @@ def require_web_user(
     if result is None:
         raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
     return result[0]
+
+
+@app.post("/v1/client-login")
+def client_password_login(
+    payload: ClientPasswordLoginRequest,
+    request: Request,
+):
+    if payload.client_id != CLIENT_AUTHORIZATION_ID:
+        raise HTTPException(status_code=400, detail="客户端标识不受支持")
+    if not re.fullmatch(r"0\.1\.\d+(?:[-+][A-Za-z0-9.-]+)?", payload.client_version):
+        raise HTTPException(status_code=400, detail="客户端版本不受支持")
+    platform_name = payload.platform.strip().lower()
+    if platform_name not in CLIENT_AUTHORIZATION_PLATFORMS:
+        raise HTTPException(status_code=400, detail="客户端平台不受支持")
+    if not CLIENT_DEVICE_ID_PATTERN.fullmatch(payload.device_id):
+        raise HTTPException(status_code=400, detail="客户端设备标识格式无效")
+    normalized_login = payload.username.strip().lower()
+    client_ip = client_ip_from(request)
+    with closing(database()) as connection:
+        if auth_attempts_blocked(connection, "client_login", normalized_login, client_ip, 10):
+            raise HTTPException(status_code=429, detail="登录尝试次数过多，请30分钟后重试")
+        user = connection.execute(
+            """
+            SELECT * FROM users
+            WHERE username=? AND active=1
+              AND (
+                  is_admin=1 OR EXISTS(
+                      SELECT 1 FROM registration_authorizations authorization
+                      WHERE authorization.user_id=users.id
+                        AND authorization.status='registered'
+                        AND authorization.deleted_at IS NULL
+                  )
+              )
+            """,
+            (normalized_login,),
+        ).fetchone()
+        valid = False
+        if user is not None:
+            try:
+                valid = password_hasher.verify(user["password_hash"], payload.password)
+            except (VerifyMismatchError, InvalidHashError):
+                valid = False
+        if not valid:
+            record_auth_attempt(connection, "client_login", normalized_login, client_ip, False)
+            connection.commit()
+            raise HTTPException(status_code=401, detail="用户名称或密码错误")
+        connection.execute("BEGIN IMMEDIATE")
+        current = connection.execute(
+            "SELECT id FROM users WHERE id=? AND active=1",
+            (int(user["id"]),),
+        ).fetchone()
+        if current is None:
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="账号当前不可用")
+        record_auth_attempt(connection, "client_login", normalized_login, client_ip, True)
+        raw_token = issue_client_login_token(
+            connection,
+            user_id=int(user["id"]),
+            device_id=payload.device_id,
+            device_name=payload.device_name,
+            platform=platform_name,
+            client_version=payload.client_version,
+            client_ip=client_ip,
+            user_agent=request.headers.get("user-agent", ""),
+        )
+        connection.commit()
+    public_endpoint = str(request.base_url).rstrip("/")
+    return JSONResponse(
+        {
+            "phase": "authenticated",
+            "token_type": "Bearer",
+            "access_token": raw_token,
+            "username": str(user["username"]),
+            "single_device": True,
+            "api_base_url": f"{public_endpoint}/v1",
+            "mcp_url": f"{public_endpoint}/mcp/",
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.post("/v1/client-authorizations")
+def begin_client_authorization(
+    payload: ClientAuthorizationStartRequest,
+    request: Request,
+):
+    if payload.client_id != CLIENT_AUTHORIZATION_ID:
+        raise HTTPException(status_code=400, detail="客户端标识不受支持")
+    if not re.fullmatch(r"0\.1\.\d+(?:[-+][A-Za-z0-9.-]+)?", payload.client_version):
+        raise HTTPException(status_code=400, detail="客户端版本不受支持")
+    platform_name = payload.platform.strip().lower()
+    if platform_name not in CLIENT_AUTHORIZATION_PLATFORMS:
+        raise HTTPException(status_code=400, detail="客户端平台不受支持")
+    if payload.code_challenge_method != "S256":
+        raise HTTPException(status_code=400, detail="仅支持 S256 客户端授权校验")
+    if not CLIENT_AUTHORIZATION_CHALLENGE_PATTERN.fullmatch(payload.code_challenge):
+        raise HTTPException(status_code=400, detail="客户端授权校验值格式无效")
+    device_name = normalize_device_name(payload.device_name, f"{platform_name} 客户端")
+    now_value = utc_now()
+    now = isoformat(now_value)
+    expires_at = isoformat(now_value + timedelta(minutes=CLIENT_AUTHORIZATION_MINUTES))
+    raw_device_code = "gca_" + secrets.token_urlsafe(48)
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            "DELETE FROM client_authorizations WHERE expires_at<?",
+            (isoformat(now_value - timedelta(days=1)),),
+        )
+        outstanding = int(
+            connection.execute(
+                "SELECT COUNT(*) FROM client_authorizations WHERE expires_at>?",
+                (now,),
+            ).fetchone()[0]
+        )
+        if outstanding >= 5000:
+            connection.rollback()
+            raise HTTPException(status_code=429, detail="客户端授权请求过多，请稍后重试")
+        user_code = client_authorization_user_code(connection)
+        connection.execute(
+            """
+            INSERT INTO client_authorizations(
+                device_code_hash,user_code_hash,client_id,client_version,
+                platform,device_name,code_challenge,created_at,expires_at
+            ) VALUES (?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                token_hash(raw_device_code),
+                token_hash(user_code),
+                payload.client_id,
+                payload.client_version,
+                platform_name,
+                device_name,
+                payload.code_challenge,
+                now,
+                expires_at,
+            ),
+        )
+        connection.commit()
+    public_endpoint = str(request.base_url).rstrip("/")
+    verification_uri = f"{public_endpoint}/client-authorize"
+    return JSONResponse(
+        {
+            "phase": "authorization_pending",
+            "device_code": raw_device_code,
+            "user_code": user_code,
+            "verification_uri": verification_uri,
+            "verification_uri_complete": f"{verification_uri}?code={quote(user_code)}",
+            "expires_in": CLIENT_AUTHORIZATION_MINUTES * 60,
+            "interval": CLIENT_AUTHORIZATION_POLL_SECONDS,
+        },
+        status_code=201,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/client-authorize", response_class=HTMLResponse)
+def client_authorization_page(
+    request: Request,
+    code: str = "",
+    result: str = "",
+    jiaotang_session: Annotated[str | None, Cookie()] = None,
+):
+    user_code = normalized_client_user_code(code)
+    session = session_user(jiaotang_session)
+    if session is None:
+        next_path = f"/client-authorize?code={user_code}"
+        return RedirectResponse(
+            f"/login?next={quote(next_path, safe='')}",
+            status_code=303,
+        )
+    user = session[0]
+    authorization = client_authorization_row(user_code)
+    now = isoformat(utc_now())
+    expired = authorization is None or str(authorization["expires_at"]) <= now
+    if authorization is not None and authorization["user_id"] is not None:
+        owned = int(authorization["user_id"]) == int(user["id"])
+    else:
+        owned = True
+    return templates.TemplateResponse(
+        request,
+        "client_authorize.html",
+        {
+            "user": user,
+            "authorization": authorization,
+            "user_code": user_code,
+            "expired": expired,
+            "owned": owned,
+            "result": result if result in {"approved", "denied"} else "",
+        },
+        status_code=404 if authorization is None else 200,
+    )
+
+
+@app.post("/client-authorize")
+def decide_client_authorization(
+    request: Request,
+    code: Annotated[str, Form()],
+    decision: Annotated[str, Form()],
+    csrf_token: Annotated[str, Form()],
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    validate_csrf(user, csrf_token)
+    user_code = normalized_client_user_code(code)
+    if decision not in {"approve", "deny"}:
+        raise HTTPException(status_code=400, detail="客户端授权决定无效")
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        authorization = connection.execute(
+            "SELECT * FROM client_authorizations WHERE user_code_hash=?",
+            (token_hash(user_code),),
+        ).fetchone()
+        if authorization is None or str(authorization["expires_at"]) <= now:
+            connection.rollback()
+            raise HTTPException(status_code=410, detail="客户端授权已过期，请回到客户端重新发起")
+        if authorization["approved_at"] or authorization["denied_at"]:
+            connection.rollback()
+            if authorization["user_id"] is not None and int(authorization["user_id"]) != int(user["id"]):
+                raise HTTPException(status_code=409, detail="该客户端授权已由其他账号处理")
+            outcome = "approved" if authorization["approved_at"] else "denied"
+            return RedirectResponse(
+                f"/client-authorize?code={quote(user_code)}&result={outcome}",
+                status_code=303,
+            )
+        approved_at = now if decision == "approve" else None
+        denied_at = now if decision == "deny" else None
+        connection.execute(
+            """
+            UPDATE client_authorizations
+            SET user_id=?,approved_at=?,denied_at=?,approved_ip=?
+            WHERE id=? AND approved_at IS NULL AND denied_at IS NULL
+            """,
+            (
+                int(user["id"]),
+                approved_at,
+                denied_at,
+                (client_ip_from(request) or "unknown")[:100],
+                int(authorization["id"]),
+            ),
+        )
+        connection.commit()
+    outcome = "approved" if decision == "approve" else "denied"
+    return RedirectResponse(
+        f"/client-authorize?code={quote(user_code)}&result={outcome}",
+        status_code=303,
+    )
+
+
+@app.post("/v1/client-authorizations/token")
+def exchange_client_authorization(
+    payload: ClientAuthorizationTokenRequest,
+    request: Request,
+):
+    if payload.client_id != CLIENT_AUTHORIZATION_ID:
+        raise HTTPException(status_code=400, detail="客户端标识不受支持")
+    if not CLIENT_AUTHORIZATION_CHALLENGE_PATTERN.fullmatch(payload.code_verifier):
+        raise HTTPException(status_code=400, detail="客户端授权校验值格式无效")
+    verifier_challenge = urlsafe_b64encode(
+        hashlib.sha256(payload.code_verifier.encode("ascii")).digest()
+    ).decode("ascii").rstrip("=")
+    now_value = utc_now()
+    now = isoformat(now_value)
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        authorization = connection.execute(
+            "SELECT * FROM client_authorizations WHERE device_code_hash=?",
+            (token_hash(payload.device_code),),
+        ).fetchone()
+        if authorization is None or str(authorization["expires_at"]) <= now:
+            connection.rollback()
+            raise HTTPException(status_code=410, detail="客户端授权不存在或已过期")
+        if not secrets.compare_digest(str(authorization["client_id"]), payload.client_id):
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="客户端授权标识不匹配")
+        if not secrets.compare_digest(str(authorization["code_challenge"]), verifier_challenge):
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="客户端授权校验失败")
+        if authorization["denied_at"]:
+            connection.rollback()
+            return JSONResponse(
+                {"phase": "access_denied", "detail": "用户已拒绝客户端授权"},
+                status_code=403,
+                headers={"Cache-Control": "no-store"},
+            )
+        if not authorization["approved_at"] or authorization["user_id"] is None:
+            last_polled = str(authorization["last_polled_at"] or "")
+            if last_polled and datetime.fromisoformat(last_polled) > now_value - timedelta(
+                seconds=max(1, CLIENT_AUTHORIZATION_POLL_SECONDS - 1)
+            ):
+                connection.rollback()
+                return JSONResponse(
+                    {"phase": "slow_down", "detail": "客户端轮询过快"},
+                    status_code=429,
+                    headers={
+                        "Cache-Control": "no-store",
+                        "Retry-After": str(CLIENT_AUTHORIZATION_POLL_SECONDS),
+                    },
+                )
+            connection.execute(
+                "UPDATE client_authorizations SET last_polled_at=? WHERE id=?",
+                (now, int(authorization["id"])),
+            )
+            connection.commit()
+            return JSONResponse(
+                {"phase": "authorization_pending"},
+                status_code=202,
+                headers={
+                    "Cache-Control": "no-store",
+                    "Retry-After": str(CLIENT_AUTHORIZATION_POLL_SECONDS),
+                },
+            )
+        user = connection.execute(
+            "SELECT username FROM users WHERE id=? AND active=1",
+            (int(authorization["user_id"]),),
+        ).fetchone()
+        if user is None:
+            connection.rollback()
+            raise HTTPException(status_code=403, detail="授权账号当前不可用")
+        connection.commit()
+    raw_token = ensure_personal_access_token(
+        int(authorization["user_id"]),
+        label="共创企业助手统一访问凭据",
+    )
+    with closing(database()) as connection:
+        connection.execute(
+            "UPDATE client_authorizations SET delivered_at=COALESCE(delivered_at,?) WHERE id=?",
+            (now, int(authorization["id"])),
+        )
+        connection.commit()
+    public_endpoint = str(request.base_url).rstrip("/")
+    return JSONResponse(
+        {
+            "phase": "authorized",
+            "token_type": "Bearer",
+            "access_token": raw_token,
+            "username": str(user["username"]),
+            "api_base_url": f"{public_endpoint}/v1",
+            "mcp_url": f"{public_endpoint}/mcp/",
+        },
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 def access_error(status_code: int, detail: str) -> HTTPException:
@@ -8546,11 +9097,15 @@ def authenticate_api_token(
             """
             SELECT users.id, users.username, device_tokens.id AS device_token_id,
                    users.is_admin,device_tokens.activation_state,
-                   device_tokens.credential_kind,enrollment.expires_at AS enrollment_expires_at
+                   device_tokens.credential_kind,enrollment.expires_at AS enrollment_expires_at,
+                   binding.id AS client_binding_id,binding.device_id_hash AS client_device_id_hash,
+                   binding.revoked_at AS client_binding_revoked_at
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
             LEFT JOIN agent_enrollment_codes enrollment
               ON enrollment.id=device_tokens.enrollment_id
+            LEFT JOIN device_bindings binding
+              ON binding.id=device_tokens.binding_id
             WHERE device_tokens.token_hash = ?
               AND device_tokens.revoked_at IS NULL
               AND users.active = 1
@@ -8566,7 +9121,29 @@ def authenticate_api_token(
             (token_hash(raw_token),),
         ).fetchone()
         if row is None:
+            replaced = connection.execute(
+                """
+                SELECT revoked_reason FROM device_tokens
+                WHERE token_hash=? AND revoked_at IS NOT NULL
+                ORDER BY id DESC LIMIT 1
+                """,
+                (token_hash(raw_token),),
+            ).fetchone()
+            if replaced is not None and str(replaced["revoked_reason"] or "") == "superseded_by_client_login":
+                raise access_error(409, "该账号已在另一台设备登录，本机会话已失效")
             raise access_error(401, "用户访问凭据无效、过期或已吊销")
+        if str(row["credential_kind"] or "") == "client":
+            if not device_id or not CLIENT_DEVICE_ID_PATTERN.fullmatch(device_id):
+                raise access_error(401, "客户端设备标识缺失或无效")
+            if (
+                row["client_binding_id"] is None
+                or row["client_binding_revoked_at"] is not None
+                or not secrets.compare_digest(
+                    str(row["client_device_id_hash"] or ""),
+                    token_hash(device_id),
+                )
+            ):
+                raise access_error(401, "客户端会话与本机设备不匹配")
         if str(row["activation_state"] or "active") == "pending":
             now = isoformat(utc_now())
             if row["enrollment_expires_at"] and str(row["enrollment_expires_at"]) <= now:
@@ -8586,11 +9163,9 @@ def authenticate_api_token(
                     403,
                     "待激活凭据仅允许完成 MCP 握手、工具发现和知识服务状态验收",
                 )
-        # V1.4.5: a valid personal Bearer token is the complete client
-        # credential. Legacy device headers are accepted but deliberately
-        # ignored so old clients can migrate without a binding ceremony.
+        # Personal V1.4.5 credentials keep their legacy bearer-only behavior;
+        # V0.1 client-login credentials above are additionally device-bound.
         del (
-            device_id,
             device_name,
             device_key_id,
             device_timestamp,
@@ -8604,6 +9179,11 @@ def authenticate_api_token(
             "UPDATE device_tokens SET last_used_at = ? WHERE id = ?",
             (isoformat(utc_now()), row["device_token_id"]),
         )
+        if row["client_binding_id"] is not None:
+            connection.execute(
+                "UPDATE device_bindings SET last_seen_at=? WHERE id=? AND revoked_at IS NULL",
+                (isoformat(utc_now()), int(row["client_binding_id"])),
+            )
         if record_usage:
             project_rule_id, project_alias = project_usage_metadata_from_request(
                 endpoint,
@@ -9661,8 +10241,8 @@ class AllPortalSections(str):
         "overview",
         "cockpit",
         "algorithms",
+        "downloads",
         "health",
-        "access",
         "skills",
         "knowledge-admin",
         "skill-admin",
@@ -9676,6 +10256,94 @@ class AllPortalSections(str):
         return super().__eq__(other)
 
     __hash__ = str.__hash__
+
+
+def client_artifact_is_servable(artifact: dict[str, object] | sqlite3.Row | None) -> bool:
+    if artifact is None:
+        return False
+    platform = str(artifact["platform"] or "")
+    signature_status = str(artifact["signature_status"] or "")
+    expected_sha256 = str(artifact["sha256"] or "").lower()
+    package_path = Path(str(artifact["file_path"] or ""))
+    try:
+        release_root = CLIENT_RELEASE_DIR.resolve(strict=False)
+        resolved_package = package_path.resolve(strict=True)
+        resolved_package.relative_to(release_root)
+    except (OSError, ValueError):
+        return False
+    if platform not in CLIENT_AUTHORIZATION_PLATFORMS:
+        return False
+    if signature_status not in {"verified", "notarized"}:
+        return False
+    if not re.fullmatch(r"[a-f0-9]{64}", expected_sha256):
+        return False
+    if not resolved_package.is_file():
+        return False
+    return secrets.compare_digest(sha256_file(resolved_package), expected_sha256)
+
+
+def latest_client_release_payload(
+    connection: sqlite3.Connection,
+) -> dict[str, object] | None:
+    release = connection.execute(
+        """
+        SELECT id,version,status,release_notes,published_at,created_at
+        FROM client_releases
+        WHERE status='published' AND published_at IS NOT NULL
+        ORDER BY published_at DESC,id DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    if release is None:
+        return None
+    rows = connection.execute(
+        """
+        SELECT id,release_id,platform,architecture,file_kind,file_name,file_path,
+               sha256,size_bytes,signature_status,signature_identity
+        FROM client_release_artifacts
+        WHERE release_id=?
+        ORDER BY platform,
+                 CASE file_kind WHEN 'dmg' THEN 0 WHEN 'nsis' THEN 0 ELSE 1 END,
+                 architecture,id
+        """,
+        (int(release["id"]),),
+    ).fetchall()
+    artifacts: dict[str, list[dict[str, object]]] = {"macos": [], "windows": []}
+    for row in rows:
+        item = dict(row)
+        item["available"] = client_artifact_is_servable(row)
+        item["size_display"] = (
+            f"{int(item['size_bytes']) / 1024 / 1024:.1f} MB"
+            if int(item["size_bytes"] or 0) > 0
+            else "待核验"
+        )
+        item["download_url"] = (
+            f"/client-downloads/{item['platform']}/{int(item['id'])}"
+        )
+        artifacts.setdefault(str(item["platform"]), []).append(item)
+    preferred: dict[str, dict[str, object] | None] = {}
+    for platform in CLIENT_AUTHORIZATION_PLATFORMS:
+        preferred[platform] = next(
+            (
+                item
+                for item in artifacts.get(platform, [])
+                if item["available"]
+                and str(item["file_kind"])
+                == ("dmg" if platform == "macos" else "nsis")
+            ),
+            next(
+                (item for item in artifacts.get(platform, []) if item["available"]),
+                None,
+            ),
+        )
+    return {
+        **dict(release),
+        "published_at_display": format_chinese_datetime(release["published_at"]),
+        "release_notes_html": render_guide_markdown(str(release["release_notes"] or "")),
+        "artifacts": artifacts,
+        "preferred": preferred,
+        "ready": all(preferred.get(platform) is not None for platform in CLIENT_AUTHORIZATION_PLATFORMS),
+    }
 
 
 def complete_assistant_usage(
@@ -10081,6 +10749,59 @@ def portal_payload(
         assistant_daily_limit = (
             None if user["is_admin"] else assistant_limit_for_user(int(user["id"]), connection)
         )
+        client_release = latest_client_release_payload(connection)
+        latest_client_download = connection.execute(
+            """
+            SELECT event.platform,event.architecture,event.downloaded_at,
+                   release.version,artifact.file_name
+            FROM client_download_events event
+            JOIN client_releases release ON release.id=event.release_id
+            JOIN client_release_artifacts artifact ON artifact.id=event.artifact_id
+            WHERE event.user_id=?
+            ORDER BY event.downloaded_at DESC,event.id DESC
+            LIMIT 1
+            """,
+            (int(user["id"]),),
+        ).fetchone()
+        latest_client_login = connection.execute(
+            """
+            SELECT created_at,last_used_at
+            FROM device_tokens
+            WHERE user_id=? AND credential_kind='client'
+            ORDER BY id DESC LIMIT 1
+            """,
+            (int(user["id"]),),
+        ).fetchone()
+        client_usage = {
+            "state": (
+                "active"
+                if latest_client_login is not None
+                else ("downloaded" if latest_client_download is not None else "not-downloaded")
+            ),
+            "label": (
+                "已登录使用"
+                if latest_client_login is not None
+                else ("已下载" if latest_client_download is not None else "未下载")
+            ),
+            "download": (
+                {
+                    **dict(latest_client_download),
+                    "downloaded_at_display": format_chinese_datetime(
+                        latest_client_download["downloaded_at"]
+                    ),
+                }
+                if latest_client_download is not None
+                else None
+            ),
+            "last_login_at_display": (
+                format_chinese_datetime(
+                    latest_client_login["last_used_at"]
+                    or latest_client_login["created_at"]
+                )
+                if latest_client_login is not None
+                else None
+            ),
+        }
         users = []
         registration_authorizations = []
         registration_authorizations_total = 0
@@ -10172,6 +10893,12 @@ def portal_payload(
                 )
                 SELECT users.id,users.username,users.real_name,users.company_name,
                        users.is_admin,users.active,users.created_at,
+                       latest_client_download.platform AS client_download_platform,
+                       latest_client_download.architecture AS client_download_architecture,
+                       latest_client_download.downloaded_at AS client_downloaded_at,
+                       latest_client_download.version AS client_download_version,
+                       latest_client_login.last_used_at AS client_last_login_at,
+                       latest_client_login.created_at AS client_first_login_at,
                        CASE
                          WHEN connected_key.mcp_connected_at IS NOT NULL THEN 'configured'
                          WHEN latest_mcp.called_at IS NOT NULL
@@ -10203,6 +10930,33 @@ def portal_payload(
                        latest_target.workbuddy_version AS install_target_version,
                        latest_target.created_at AS install_target_created_at
                 FROM users
+                LEFT JOIN (
+                    SELECT event.user_id,event.platform,event.architecture,
+                           event.downloaded_at,release.version
+                    FROM client_download_events event
+                    JOIN client_releases release ON release.id=event.release_id
+                    WHERE event.id=(
+                        SELECT latest_event.id
+                        FROM client_download_events latest_event
+                        WHERE latest_event.user_id=event.user_id
+                        ORDER BY latest_event.downloaded_at DESC,latest_event.id DESC
+                        LIMIT 1
+                    )
+                ) latest_client_download
+                  ON latest_client_download.user_id=users.id
+                LEFT JOIN (
+                    SELECT token.user_id,token.created_at,token.last_used_at
+                    FROM device_tokens token
+                    WHERE token.credential_kind='client'
+                      AND token.id=(
+                        SELECT latest_token.id
+                        FROM device_tokens latest_token
+                        WHERE latest_token.user_id=token.user_id
+                          AND latest_token.credential_kind='client'
+                        ORDER BY latest_token.id DESC LIMIT 1
+                      )
+                ) latest_client_login
+                  ON latest_client_login.user_id=users.id
                 LEFT JOIN ranked_versions latest_version
                   ON latest_version.user_id=users.id
                  AND latest_version.row_number=1
@@ -10264,8 +11018,19 @@ def portal_payload(
                 ORDER BY users.id
                 """
             ).fetchall(), "created_at", "install_reported_at",
-                "install_version_observed_at", "install_target_created_at")
+                "install_version_observed_at", "install_target_created_at",
+                "client_downloaded_at", "client_last_login_at", "client_first_login_at")
             for member in users:
+                member["client_status"] = (
+                    "active"
+                    if member.get("client_first_login_at")
+                    else ("downloaded" if member.get("client_downloaded_at") else "not-downloaded")
+                )
+                member["client_status_label"] = {
+                    "active": "已登录使用",
+                    "downloaded": "已下载",
+                    "not-downloaded": "未下载",
+                }[str(member["client_status"])]
                 install_version = str(member.get("install_version") or "")
                 install_target_version = str(
                     member.get("install_target_version") or ""
@@ -10319,6 +11084,9 @@ def portal_payload(
                             str(member.get("install_target_version") or ""),
                             str(member.get("install_update_label") or ""),
                             str(member.get("install_version_evidence_label") or ""),
+                            str(member.get("client_status_label") or ""),
+                            str(member.get("client_download_platform") or ""),
+                            str(member.get("client_download_version") or ""),
                         )
                     ).casefold()
                 ]
@@ -10619,6 +11387,8 @@ def portal_payload(
         "device_binding_history": device_binding_history,
         "recent_calls": recent_calls,
         "usage_total": usage_total,
+        "client_release": client_release,
+        "client_usage": client_usage,
         "assistant_daily_limit": assistant_daily_limit,
         "assistant_question_retention_hours": ASSISTANT_QUESTION_RETENTION_HOURS,
         "assistant_used_today": assistant_used_today,
@@ -11752,7 +12522,16 @@ def cockpit_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_
 
 @app.get("/access", response_class=HTMLResponse)
 def access_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
-    return portal_page_response(request, user, "access")
+    del request, user
+    return RedirectResponse("/skills#skills-install", status_code=303)
+
+
+@app.get("/downloads", response_class=HTMLResponse)
+def downloads_page(
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    return portal_page_response(request, user, "downloads")
 
 
 @app.get("/mcp-guide", response_class=HTMLResponse)
@@ -18558,6 +19337,131 @@ def release_artifact_is_servable(
     except (OSError, ValueError, zipfile.BadZipFile):
         return False
     return True
+
+
+def validated_client_artifact_download(
+    artifact: dict[str, object] | sqlite3.Row,
+    *,
+    user_id: int,
+    client_fingerprint: str,
+) -> StreamingResponse:
+    if not client_artifact_is_servable(artifact):
+        raise HTTPException(
+            status_code=503,
+            detail="客户端安装包签名状态、文件范围或 SHA-256 校验未通过，下载已暂停。",
+        )
+    try:
+        snapshot, snapshot_path, actual_sha256, total_bytes = snapshot_release_artifact(
+            artifact
+        )
+    except (OSError, ValueError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail="客户端安装包在下载准备期间发生变化，下载已暂停。",
+        ) from error
+    expected_sha256 = str(artifact["sha256"] or "")
+    if not secrets.compare_digest(actual_sha256, expected_sha256):
+        close_release_artifact_snapshot(snapshot, snapshot_path)
+        raise HTTPException(status_code=503, detail="客户端安装包内容身份不一致。")
+
+    try:
+        with closing(database()) as connection:
+            connection.execute(
+                """
+                INSERT INTO client_download_events(
+                    user_id,release_id,artifact_id,platform,architecture,
+                    client_fingerprint,downloaded_at
+                ) VALUES (?,?,?,?,?,?,?)
+                """,
+                (
+                    user_id,
+                    int(artifact["release_id"]),
+                    int(artifact["id"]),
+                    str(artifact["platform"]),
+                    str(artifact["architecture"]),
+                    client_fingerprint,
+                    isoformat(utc_now()),
+                ),
+            )
+            connection.commit()
+    except Exception:
+        close_release_artifact_snapshot(snapshot, snapshot_path)
+        raise
+
+    cleanup_lock = threading.Lock()
+    cleaned_up = False
+
+    def cleanup() -> None:
+        nonlocal cleaned_up
+        with cleanup_lock:
+            if cleaned_up:
+                return
+            cleaned_up = True
+            close_release_artifact_snapshot(snapshot, snapshot_path)
+
+    def body() -> Iterator[bytes]:
+        try:
+            snapshot.seek(0)
+            while chunk := snapshot.read(1024 * 1024):
+                yield chunk
+        finally:
+            cleanup()
+
+    media_types = {
+        "dmg": "application/x-apple-diskimage",
+        "nsis": "application/vnd.microsoft.portable-executable",
+        "exe": "application/vnd.microsoft.portable-executable",
+        "zip": "application/zip",
+    }
+    safe_name = safe_file_name(str(artifact["file_name"]))
+    return StreamingResponse(
+        body(),
+        media_type=media_types.get(str(artifact["file_kind"]), "application/octet-stream"),
+        headers={
+            "Content-Disposition": "attachment; filename*=UTF-8''" + quote(safe_name, safe=""),
+            "Content-Length": str(total_bytes),
+            "Cache-Control": "private, no-store",
+            "X-Gongchuang-Client-Version": str(artifact["version"]),
+            "X-Gongchuang-Artifact-Sha256": actual_sha256,
+        },
+        background=BackgroundTask(cleanup),
+    )
+
+
+@app.get("/client-downloads/{platform_name}/{artifact_id}")
+def download_client_artifact(
+    platform_name: str,
+    artifact_id: int,
+    request: Request,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    if platform_name not in CLIENT_AUTHORIZATION_PLATFORMS:
+        raise HTTPException(status_code=404, detail="不支持的客户端平台")
+    with closing(database()) as connection:
+        artifact = connection.execute(
+            """
+            SELECT artifact.*,release.version,release.status,release.published_at
+            FROM client_release_artifacts artifact
+            JOIN client_releases release ON release.id=artifact.release_id
+            WHERE artifact.id=? AND artifact.platform=?
+              AND release.status='published' AND release.published_at IS NOT NULL
+              AND release.id=(
+                  SELECT id FROM client_releases
+                  WHERE status='published' AND published_at IS NOT NULL
+                  ORDER BY published_at DESC,id DESC LIMIT 1
+              )
+            """,
+            (artifact_id, platform_name),
+        ).fetchone()
+    if artifact is None:
+        raise HTTPException(status_code=404, detail="客户端正式安装包不存在")
+    return validated_client_artifact_download(
+        artifact,
+        user_id=int(user["id"]),
+        client_fingerprint=mcp_client_fingerprint(
+            request.headers.get("user-agent", "")
+        ),
+    )
 
 
 def require_release_artifact_for_serving(

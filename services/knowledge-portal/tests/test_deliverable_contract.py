@@ -195,6 +195,11 @@ def test_panorama_standard_profile_accepts_structured_same_hash_proof():
             "peers": [{"name": "同行A", "source_url": "https://gov.cn/a"}],
             "dimensions": ["研发创新", "项目资质"],
         },
+        "policy_selection": {
+            "status": "official-original",
+            "selected_documents": [{"title": "现行项目政策原文"}],
+            "prohibited_claims": [],
+        },
     }
     contract = build_delivery_contract("生成A标准销售版企业全景报告", base)
     sources, evidence = _trace()

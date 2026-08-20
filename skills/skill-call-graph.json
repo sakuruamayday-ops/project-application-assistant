@@ -285,6 +285,12 @@
       "reason": "申请书中的研发、知识产权、产品、人员和财务数据必须保持来源与待补字段可追溯。"
     },
     {
+      "from": "high-tech-enterprise-application-drafting",
+      "to": "consistency-check",
+      "type": "quality_gate",
+      "reason": "高企正式申请书交付前必须复核四栏顺序、事实边界、数据勾稽、知识产权状态和跨章节一致性。"
+    },
+    {
       "from": "sme-score-preassessment",
       "to": "sme-development-projects",
       "type": "requires",

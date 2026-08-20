@@ -41,6 +41,23 @@ def _asset_alpha_hashes() -> set[str]:
     return hashes
 
 
+def pdf_brand_watermark_rects(document: fitz.Document, page: fitz.Page) -> list[fitz.Rect]:
+    """Return actual placements without recounting shared image xrefs."""
+    alpha_hashes = _asset_alpha_hashes()
+    brand_xrefs: set[int] = set()
+    for image in page.get_images(full=True):
+        xref, soft_mask = int(image[0]), int(image[1])
+        if xref in brand_xrefs or not soft_mask:
+            continue
+        alpha = fitz.Pixmap(document, soft_mask)
+        if hashlib.sha256(alpha.samples).hexdigest() in alpha_hashes:
+            brand_xrefs.add(xref)
+    marks: list[fitz.Rect] = []
+    for xref in sorted(brand_xrefs):
+        marks.extend(fitz.Rect(rect) for rect in page.get_image_rects(xref))
+    return marks
+
+
 def validate_pdf(
     path: str | Path,
     *,
@@ -51,7 +68,6 @@ def validate_pdf(
     pdf_path = Path(path)
     if not pdf_path.is_file():
         raise FileNotFoundError(pdf_path)
-    alpha_hashes = _asset_alpha_hashes()
     document = fitz.open(pdf_path)
     try:
         if not document.page_count:
@@ -67,14 +83,7 @@ def validate_pdf(
         sizes: list[tuple[float, float]] = []
         page_audit: list[dict[str, Any]] = []
         for page_number, page in enumerate(document, start=1):
-            marks: list[fitz.Rect] = []
-            for image in page.get_images(full=True):
-                xref, soft_mask = image[0], image[1]
-                if not soft_mask:
-                    continue
-                alpha = fitz.Pixmap(document, soft_mask)
-                if hashlib.sha256(alpha.samples).hexdigest() in alpha_hashes:
-                    marks.extend(page.get_image_rects(xref))
+            marks = pdf_brand_watermark_rects(document, page)
             if len(marks) != 1:
                 raise GateFailure(f"PDF第{page_number}页品牌水印数量为{len(marks)}，要求为1")
             mark = marks[0]

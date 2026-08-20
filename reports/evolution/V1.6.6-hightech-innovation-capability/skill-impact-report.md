@@ -1,0 +1,341 @@
+# 技能变更影响图报告
+
+生成时间：2026-08-14T17:32:56.283103+00:00
+
+## 变更源
+
+- `skills/high-tech-enterprise-application-drafting/SKILL.md`
+- `skills/high-tech-enterprise-application-drafting/references/enterprise-innovation-capability-format.md`
+- `skills/high-tech-enterprise-application-drafting/references/writing-rules.md`
+- `skills/high-tech-enterprise-application-drafting/scripts/audit_application_docx.py`
+- `tests/test_hightech_application_drafting.py`
+
+## 受影响对象
+
+### skill
+
+- 深度 1：`skills/project-application-assistant/SKILL.md`
+- 深度 1：`skills/project-task-router/SKILL.md`
+- 深度 2：`skills/evidence-ledger/SKILL.md`
+- 深度 2：`skills/third-party-data-indexing/SKILL.md`
+- 深度 3：`skills/application-writing/SKILL.md`
+- 深度 3：`skills/enterprise-panorama-analysis/SKILL.md`
+- 深度 3：`skills/first-run-configuration/SKILL.md`
+- 深度 3：`skills/patent-router/SKILL.md`
+- 深度 3：`skills/project-feasibility/SKILL.md`
+- 深度 3：`skills/project-matching/SKILL.md`
+- 深度 3：`skills/quality-brand-projects/SKILL.md`
+- 深度 3：`skills/sme-development-projects/SKILL.md`
+- 深度 3：`skills/standard-drafting/SKILL.md`
+- 深度 4：`skills/checking-patdocx-cn-single-agent/SKILL.md`
+- 深度 4：`skills/digitalization-projects/SKILL.md`
+- 深度 4：`skills/enterprise-profile/SKILL.md`
+- 深度 4：`skills/experience-recorder/SKILL.md`
+- 深度 4：`skills/green-development-projects/SKILL.md`
+- 深度 4：`skills/high-tech-enterprise-preassessment/SKILL.md`
+- 深度 4：`skills/industrialization-projects/SKILL.md`
+- 深度 4：`skills/ip-assessment/SKILL.md`
+- 深度 4：`skills/manufacturing-tax-risk-analysis/SKILL.md`
+- 深度 4：`skills/regional-special-projects/SKILL.md`
+- 深度 4：`skills/sme-score-preassessment/SKILL.md`
+- 深度 4：`skills/talent-projects/SKILL.md`
+- 深度 4：`skills/technology-innovation-projects/SKILL.md`
+- 深度 4：`skills/web-task-operator/SKILL.md`
+
+### template
+
+- 深度 1：`tests/test_template_fidelity.py`
+- 深度 2：`tests/test_project_report_templates.py`
+- 深度 4：`skills/sme-score-preassessment/references/direction-card-first-template.md`
+
+### script
+
+- 深度 1：`tests/test_install.py`
+- 深度 1：`tests/test_v166_hightech_innovation_merge_slot.py`
+- 深度 1：`tests/test_v166_professional_client_contract.py`
+- 深度 2：`docs/archive/runner/check_runner_fleet.py`
+- 深度 2：`docs/archive/runner/controlled_release_runner.py`
+- 深度 2：`scripts/audit_workbuddy_report_runtime_install.py`
+- 深度 2：`scripts/build_standard_package.py`
+- 深度 2：`scripts/controlled_release.py`
+- 深度 2：`scripts/post_release_skill_gate.py`
+- 深度 2：`scripts/public_namespace_gate.py`
+- 深度 2：`scripts/render_skill_call_graph.py`
+- 深度 2：`scripts/run_grounded_citations_gate.py`
+- 深度 2：`skills/first-run-configuration/scripts/configure.py`
+- 深度 2：`skills/patent-router/scripts/patent_index.py`
+- 深度 2：`skills/project-application-assistant/scripts/user_region_profile.py`
+- 深度 2：`skills/third-party-data-indexing/scripts/daily_update.py`
+- 深度 2：`skills/third-party-data-indexing/scripts/index_engine.py`
+- 深度 2：`tests/run_adversarial_eval.py`
+- 深度 2：`tests/test_codex_client_harness.py`
+- 深度 2：`tests/test_financial_facts.py`
+- 深度 2：`tests/test_market_boundary_evidence_gate.py`
+- 深度 2：`tests/test_patent_router.py`
+- 深度 2：`tests/test_policy_application_path_contract.py`
+- 深度 2：`tests/test_project_map.py`
+- 深度 2：`tests/test_suite_manifest_release_identity.py`
+- 深度 2：`tests/test_workbuddy_report_runtime_install.py`
+- 深度 2：`tests/test_workbuddy_runtime_hardening.py`
+- 深度 3：`scripts/generate_grounded_registry.py`
+- 深度 3：`skills/_runtime/grounded-citations/codex_adapter.py`
+- 深度 3：`skills/_runtime/grounded-citations/workbuddy_adapter.py`
+- 深度 3：`src/project_assistant/guide.py`
+- 深度 3：`tests/fixtures/grounded-citations/build_document_fixtures.py`
+- 深度 3：`tests/generate_adversarial_cases.py`
+- 深度 3：`tests/test_data_indexing.py`
+- 深度 3：`tests/test_grounded_delivery_profiles.py`
+- 深度 3：`tests/test_grounded_delivery_receipts.py`
+- 深度 3：`tests/test_grounded_evidence.py`
+- 深度 3：`tests/test_patent_foundation.py`
+- 深度 3：`tests/test_project_report_profile_delivery.py`
+- 深度 3：`tests/test_public_branding_contract.py`
+- 深度 3：`tests/test_workbuddy_report_candidate_pipeline.py`
+- 深度 4：`scripts/run_workbuddy_report_candidate_pipeline.py`
+- 深度 4：`skills/patent-router/scripts/build_patent_application.py`
+- 深度 4：`skills/patent-router/scripts/patent_route.py`
+- 深度 4：`src/project_assistant/cli.py`
+- 深度 4：`src/project_assistant/doctor.py`
+- 深度 4：`tests/test_core_skill_engines.py`
+- 深度 4：`tests/test_evolution.py`
+- 深度 4：`tests/test_grounded_product_configuration.py`
+- 深度 4：`tests/test_high_risk_scripts.py`
+- 深度 4：`tests/test_onboarding.py`
+- 深度 4：`tests/test_preferences.py`
+- 深度 4：`tests/test_project_dual_report_contract_v165.py`
+- 深度 4：`tests/test_skill_preference_migration.py`
+- 深度 4：`tests/test_sme_presale_report_contract.py`
+
+### gate
+
+- 深度 1：`tests/validate_skill_behavior_coverage.py`
+- 深度 2：`skills/project-feasibility/scripts/validate_report_profile_delivery.py`
+- 深度 2：`tests/validate_single_knowledge_mcp.py`
+- 深度 2：`tests/validate_skill_content_suite.py`
+- 深度 2：`tests/validate_workbuddy_release_candidate.py`
+- 深度 3：`scripts/validate_grounded_product_config.py`
+- 深度 4：`scripts/validate_deprecated_policy_rules.py`
+
+### reference
+
+- 深度 1：`skills/high-tech-enterprise-application-drafting/references/v1.3.1-release-plan.md`
+- 深度 2：`skills/first-run-configuration/references/first-startup-protocol.md`
+- 深度 3：`skills/third-party-data-indexing/references/daily-automation-prompt.md`
+- 深度 4：`skills/enterprise-profile/references/enterprise-checkup-routing.md`
+- 深度 4：`skills/legal-regulations/references/local-retrieval.md`
+- 深度 4：`skills/patent-router/references/routing-matrix.md`
+- 深度 4：`skills/project-feasibility/references/two-report-contract.md`
+- 深度 4：`skills/project-task-router/references/domain-routing-matrix.md`
+
+### rule
+
+- 深度 1：`config/grounded-citations.json`
+- 深度 1：`skills/high-tech-enterprise-application-drafting/agents/openai.yaml`
+- 深度 4：`config/common.yaml`
+
+### document
+
+- 深度 1：`docs/provenance/v1.1-skill-call-audit.md`
+- 深度 1：`skills/curated-skill-catalog.json`
+- 深度 1：`skills/delivery-contracts.json`
+- 深度 1：`skills/high-tech-enterprise-application-drafting/release-manifest.json`
+- 深度 1：`skills/local-skill-reconciliation.json`
+- 深度 1：`skills/report-skill-registry.json`
+- 深度 1：`skills/skill-call-graph.json`
+- 深度 1：`skills/suite-manifest.json`
+- 深度 1：`src/project_application_assistant.egg-info/SOURCES.txt`
+- 深度 1：`tests/codex-client-skill-matrix.json`
+- 深度 2：`docs/archive/runner/workbuddy-self-hosted-runners.md`
+- 深度 2：`docs/final-backlog.md`
+- 深度 2：`docs/product/README.md`
+- 深度 2：`docs/product/prd-v1.2.md`
+- 深度 2：`docs/product/product-brief.md`
+- 深度 2：`docs/product/roadmap.md`
+- 深度 2：`docs/provenance/v1.0-56-skill-release-audit.md`
+- 深度 2：`docs/provenance/v1.1-originality-audit.md`
+- 深度 2：`docs/provenance/v1.1-skill-classification.md`
+- 深度 2：`docs/release-scope-v2-selected.md`
+- 深度 2：`docs/releases/V1.6.4.1.md`
+- 深度 2：`docs/releases/V1.6.4.2.md`
+- 深度 2：`docs/releases/V1.6.5.1.md`
+- 深度 2：`docs/releases/V1.6.5.md`
+- 深度 2：`docs/skills-audit-53.md`
+- 深度 2：`docs/user-guide/api-mcp-configuration.md`
+- 深度 2：`skills/project-application-assistant/release-manifest.json`
+- 深度 2：`skills/project-task-router/release-manifest.json`
+- 深度 3：`docs/archive/runner/README.md`
+- 深度 3：`docs/config/mcp.md`
+- 深度 3：`docs/product/atomic-skill-upgrade-and-audit.md`
+- 深度 3：`docs/product/external-tools-evaluation.md`
+- 深度 3：`skills/evidence-ledger/release-manifest.json`
+- 深度 3：`skills/first-run-configuration/release-manifest.json`
+- 深度 3：`skills/patent-router/release-manifest.json`
+- 深度 3：`skills/third-party-data-indexing/release-manifest.json`
+- 深度 3：`tests/adversarial-expected.json`
+- 深度 3：`tests/high-risk-script-matrix.json`
+- 深度 3：`tests/skill_content_cases.json`
+- 深度 4：`docs/provenance/patent-skills.md`
+- 深度 4：`docs/releases/V1.4.0.md`
+- 深度 4：`skills/application-writing/release-manifest.json`
+- 深度 4：`skills/enterprise-panorama-analysis/release-manifest.json`
+- 深度 4：`skills/policy-freshness-manifest.json`
+- 深度 4：`skills/project-feasibility/release-manifest.json`
+- 深度 4：`skills/project-matching/release-manifest.json`
+- 深度 4：`skills/quality-brand-projects/release-manifest.json`
+- 深度 4：`skills/sme-development-projects/release-manifest.json`
+- 深度 4：`skills/standard-drafting/release-manifest.json`
+
+## 关系证据
+
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `config/grounded-citations.json`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `docs/provenance/v1.1-skill-call-audit.md`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/curated-skill-catalog.json`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/delivery-contracts.json`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/high-tech-enterprise-application-drafting/agents/openai.yaml`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/high-tech-enterprise-application-drafting/references/v1.3.1-release-plan.md`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/local-skill-reconciliation.json`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/project-application-assistant/SKILL.md`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/project-task-router/SKILL.md`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/report-skill-registry.json`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/skill-call-graph.json`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `skills/suite-manifest.json`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `tests/codex-client-skill-matrix.json`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `tests/test_install.py`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `tests/test_template_fidelity.py`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `tests/test_v166_hightech_innovation_merge_slot.py`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `tests/test_v166_professional_client_contract.py`
+- `skills/high-tech-enterprise-application-drafting/SKILL.md` --invoked-by--> `tests/validate_skill_behavior_coverage.py`
+- `skills/high-tech-enterprise-application-drafting/scripts/audit_application_docx.py` --referenced-by--> `skills/high-tech-enterprise-application-drafting/release-manifest.json`
+- `tests/test_hightech_application_drafting.py` --referenced-by--> `src/project_application_assistant.egg-info/SOURCES.txt`
+- `config/grounded-citations.json` --referenced-by--> `scripts/run_grounded_citations_gate.py`
+- `config/grounded-citations.json` --referenced-by--> `skills/evidence-ledger/SKILL.md`
+- `skills/delivery-contracts.json` --referenced-by--> `skills/project-feasibility/scripts/validate_report_profile_delivery.py`
+- `skills/delivery-contracts.json` --referenced-by--> `tests/test_project_report_templates.py`
+- `skills/delivery-contracts.json` --referenced-by--> `tests/test_workbuddy_runtime_hardening.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/archive/runner/check_runner_fleet.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/archive/runner/controlled_release_runner.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/archive/runner/workbuddy-self-hosted-runners.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/final-backlog.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/product/prd-v1.2.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/provenance/v1.0-56-skill-release-audit.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/provenance/v1.1-originality-audit.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/provenance/v1.1-skill-classification.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/release-scope-v2-selected.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/skills-audit-53.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `docs/user-guide/api-mcp-configuration.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `scripts/build_standard_package.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `scripts/controlled_release.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `scripts/render_skill_call_graph.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `skills/first-run-configuration/references/first-startup-protocol.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `skills/first-run-configuration/scripts/configure.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `skills/patent-router/scripts/patent_index.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `skills/project-application-assistant/release-manifest.json`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `skills/project-application-assistant/scripts/user_region_profile.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `skills/third-party-data-indexing/SKILL.md`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `skills/third-party-data-indexing/scripts/daily_update.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `skills/third-party-data-indexing/scripts/index_engine.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `tests/test_financial_facts.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `tests/test_policy_application_path_contract.py`
+- `skills/project-application-assistant/SKILL.md` --invoked-by--> `tests/test_project_map.py`
+- `skills/project-task-router/SKILL.md` --invoked-by--> `skills/project-task-router/release-manifest.json`
+- `skills/project-task-router/SKILL.md` --invoked-by--> `tests/run_adversarial_eval.py`
+- `skills/project-task-router/SKILL.md` --invoked-by--> `tests/validate_single_knowledge_mcp.py`
+- `skills/project-task-router/SKILL.md` --invoked-by--> `tests/validate_skill_content_suite.py`
+- `skills/skill-call-graph.json` --referenced-by--> `tests/test_market_boundary_evidence_gate.py`
+- `skills/suite-manifest.json` --referenced-by--> `docs/product/README.md`
+- `skills/suite-manifest.json` --referenced-by--> `docs/product/product-brief.md`
+- `skills/suite-manifest.json` --referenced-by--> `docs/product/roadmap.md`
+- `skills/suite-manifest.json` --referenced-by--> `docs/releases/V1.6.4.1.md`
+- `skills/suite-manifest.json` --referenced-by--> `docs/releases/V1.6.4.2.md`
+- `skills/suite-manifest.json` --referenced-by--> `docs/releases/V1.6.5.1.md`
+- `skills/suite-manifest.json` --referenced-by--> `docs/releases/V1.6.5.md`
+- `skills/suite-manifest.json` --referenced-by--> `scripts/audit_workbuddy_report_runtime_install.py`
+- `skills/suite-manifest.json` --referenced-by--> `scripts/post_release_skill_gate.py`
+- `skills/suite-manifest.json` --referenced-by--> `scripts/public_namespace_gate.py`
+- `skills/suite-manifest.json` --referenced-by--> `tests/test_codex_client_harness.py`
+- `skills/suite-manifest.json` --referenced-by--> `tests/test_patent_router.py`
+- `skills/suite-manifest.json` --referenced-by--> `tests/test_workbuddy_report_runtime_install.py`
+- `skills/suite-manifest.json` --referenced-by--> `tests/validate_workbuddy_release_candidate.py`
+- `tests/codex-client-skill-matrix.json` --referenced-by--> `tests/test_suite_manifest_release_identity.py`
+- `docs/product/prd-v1.2.md` --referenced-by--> `docs/product/external-tools-evaluation.md`
+- `docs/user-guide/api-mcp-configuration.md` --referenced-by--> `docs/config/mcp.md`
+- `docs/user-guide/api-mcp-configuration.md` --referenced-by--> `skills/enterprise-panorama-analysis/SKILL.md`
+- `docs/user-guide/api-mcp-configuration.md` --referenced-by--> `skills/first-run-configuration/SKILL.md`
+- `docs/user-guide/api-mcp-configuration.md` --referenced-by--> `src/project_assistant/guide.py`
+- `scripts/build_standard_package.py` --referenced-by--> `tests/test_public_branding_contract.py`
+- `scripts/controlled_release.py` --referenced-by--> `docs/archive/runner/README.md`
+- `scripts/controlled_release.py` --referenced-by--> `docs/product/atomic-skill-upgrade-and-audit.md`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `scripts/generate_grounded_registry.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `scripts/validate_grounded_product_config.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `skills/_runtime/grounded-citations/codex_adapter.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `skills/_runtime/grounded-citations/workbuddy_adapter.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `skills/application-writing/SKILL.md`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `skills/evidence-ledger/release-manifest.json`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `skills/project-feasibility/SKILL.md`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `skills/quality-brand-projects/SKILL.md`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `skills/sme-development-projects/SKILL.md`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `skills/standard-drafting/SKILL.md`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `tests/adversarial-expected.json`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `tests/fixtures/grounded-citations/build_document_fixtures.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `tests/generate_adversarial_cases.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `tests/skill_content_cases.json`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `tests/test_grounded_delivery_profiles.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `tests/test_grounded_delivery_receipts.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `tests/test_grounded_evidence.py`
+- `skills/evidence-ledger/SKILL.md` --invoked-by--> `tests/test_workbuddy_report_candidate_pipeline.py`
+- `skills/first-run-configuration/scripts/configure.py` --referenced-by--> `skills/first-run-configuration/release-manifest.json`
+- `skills/patent-router/scripts/patent_index.py` --owned-by-skill--> `skills/patent-router/SKILL.md`
+- `skills/patent-router/scripts/patent_index.py` --referenced-by--> `skills/patent-router/release-manifest.json`
+- `skills/patent-router/scripts/patent_index.py` --referenced-by--> `tests/test_patent_foundation.py`
+- `skills/project-feasibility/scripts/validate_report_profile_delivery.py` --referenced-by--> `tests/test_project_report_profile_delivery.py`
+- `skills/third-party-data-indexing/SKILL.md` --invoked-by--> `skills/project-matching/SKILL.md`
+- `skills/third-party-data-indexing/SKILL.md` --invoked-by--> `skills/third-party-data-indexing/references/daily-automation-prompt.md`
+- `skills/third-party-data-indexing/SKILL.md` --invoked-by--> `skills/third-party-data-indexing/release-manifest.json`
+- `skills/third-party-data-indexing/SKILL.md` --invoked-by--> `tests/test_data_indexing.py`
+- `tests/test_financial_facts.py` --referenced-by--> `tests/high-risk-script-matrix.json`
+- `scripts/validate_grounded_product_config.py` --referenced-by--> `tests/test_grounded_product_configuration.py`
+- `skills/application-writing/SKILL.md` --invoked-by--> `skills/application-writing/release-manifest.json`
+- `skills/application-writing/SKILL.md` --invoked-by--> `skills/enterprise-profile/references/enterprise-checkup-routing.md`
+- `skills/enterprise-panorama-analysis/SKILL.md` --invoked-by--> `skills/enterprise-panorama-analysis/release-manifest.json`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `config/common.yaml`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `skills/experience-recorder/SKILL.md`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `skills/legal-regulations/references/local-retrieval.md`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `skills/web-task-operator/SKILL.md`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `src/project_assistant/cli.py`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `src/project_assistant/doctor.py`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `tests/test_onboarding.py`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `tests/test_preferences.py`
+- `skills/first-run-configuration/SKILL.md` --invoked-by--> `tests/test_skill_preference_migration.py`
+- `skills/patent-router/SKILL.md` --invoked-by--> `docs/provenance/patent-skills.md`
+- `skills/patent-router/SKILL.md` --invoked-by--> `docs/releases/V1.4.0.md`
+- `skills/patent-router/SKILL.md` --invoked-by--> `skills/checking-patdocx-cn-single-agent/SKILL.md`
+- `skills/patent-router/SKILL.md` --invoked-by--> `skills/ip-assessment/SKILL.md`
+- `skills/patent-router/SKILL.md` --invoked-by--> `skills/patent-router/references/routing-matrix.md`
+- `skills/patent-router/SKILL.md` --invoked-by--> `skills/patent-router/scripts/build_patent_application.py`
+- `skills/patent-router/SKILL.md` --invoked-by--> `skills/patent-router/scripts/patent_route.py`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `scripts/run_workbuddy_report_candidate_pipeline.py`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/digitalization-projects/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/enterprise-profile/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/green-development-projects/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/high-tech-enterprise-preassessment/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/industrialization-projects/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/manufacturing-tax-risk-analysis/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/project-feasibility/release-manifest.json`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/regional-special-projects/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/sme-score-preassessment/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `skills/technology-innovation-projects/SKILL.md`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `tests/test_core_skill_engines.py`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `tests/test_project_dual_report_contract_v165.py`
+- `skills/project-feasibility/SKILL.md` --invoked-by--> `tests/test_sme_presale_report_contract.py`
+- `skills/project-matching/SKILL.md` --invoked-by--> `skills/project-matching/release-manifest.json`
+- `skills/project-matching/SKILL.md` --invoked-by--> `skills/talent-projects/SKILL.md`
+- `skills/quality-brand-projects/SKILL.md` --invoked-by--> `skills/project-feasibility/references/two-report-contract.md`
+- `skills/quality-brand-projects/SKILL.md` --invoked-by--> `skills/project-task-router/references/domain-routing-matrix.md`
+- `skills/quality-brand-projects/SKILL.md` --invoked-by--> `skills/quality-brand-projects/release-manifest.json`
+- `skills/sme-development-projects/SKILL.md` --invoked-by--> `scripts/validate_deprecated_policy_rules.py`
+- `skills/sme-development-projects/SKILL.md` --invoked-by--> `skills/policy-freshness-manifest.json`
+- `skills/sme-development-projects/SKILL.md` --invoked-by--> `skills/sme-development-projects/release-manifest.json`
+- `skills/sme-development-projects/SKILL.md` --invoked-by--> `skills/sme-score-preassessment/references/direction-card-first-template.md`
+- `skills/sme-development-projects/SKILL.md` --invoked-by--> `tests/test_evolution.py`
+- `skills/standard-drafting/SKILL.md` --invoked-by--> `skills/standard-drafting/release-manifest.json`
+- `skills/standard-drafting/SKILL.md` --invoked-by--> `tests/test_high_risk_scripts.py`

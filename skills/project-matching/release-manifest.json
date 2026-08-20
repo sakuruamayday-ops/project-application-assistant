@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-matching",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.6",
   "required_paths": [
     "SKILL.md",
     "references/canonical-project-index.jsonl",
@@ -32,11 +32,12 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "5056527426da2fc80327be8f9306e83d393a7603b54c13d1f5d2c412368446e2",
+    "SKILL.md": "e9a697267df0f62904ce67812d3afb30e6de980bf90540869e26087c77504101",
     "references/canonical-project-index.jsonl": "368f67de07094d16d10b3e92e4ba50c70c86c058b603762c43f4655867ff4b99",
     "references/high-frequency-project-gold-standard.jsonl": "0d9de12dff6c74ea38c290cefe807c5b7726a66a11d4393b525d96308ade5a8b",
     "references/high-frequency-project-retrieval-rules.json": "7748832c135f838e103d6176260e003d020602ffc05e72a6483a0ef68d599097",
     "references/high-frequency-project-rules.jsonl": "6c881ff2911e171d9e7d3ec56bf0f1204bc0160048bfb7dfc54f9bcad9427f45",
+    "references/policy-application-path-contract.md": "10e4ba0247f4d874f3594457f3cae2667b75ce8451936c539a07f0d4da336ef1",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/project-map.jsonl": "f912bd0ef840a67f31b88cde0288e1c5d5863e28a069a969f078b9ef9c42b909",
     "references/project-matching-rules.md": "3471d7b8aee5e754daf60ffec43cd49f3676eac1cf2f93445e531de3f6e22900",

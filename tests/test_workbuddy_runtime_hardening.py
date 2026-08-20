@@ -17,6 +17,16 @@ from pathlib import Path
 from unittest import mock
 
 
+REPOSITORY = Path(__file__).resolve().parents[1]
+SUITE_MANIFEST = json.loads(
+    (REPOSITORY / "skills/suite-manifest.json").read_text(encoding="utf-8")
+)
+if (SUITE_MANIFEST.get("workbuddy_plugin") or {}).get("package_mode") == "not-released":
+    raise unittest.SkipTest(
+        "V1.6.6 does not release a WorkBuddy-specific package; legacy adapter tests are retained but do not gate this release"
+    )
+
+
 RELEASE_MANAGER = Path(
     os.environ.get(
         "JIAOTANG_RELEASE_MANAGER_SCRIPTS",
@@ -65,7 +75,6 @@ BEHAVIOR = load_module(
     "workbuddy_behavior_hook",
     RELEASE_MANAGER / "workbuddy_behavior_hook.py",
 )
-REPOSITORY = Path(__file__).resolve().parents[1]
 GROUNDED_ENGINE = load_module(
     "grounded_evidence",
     REPOSITORY / "skills/evidence-ledger/scripts/grounded_evidence.py",

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-application-assistant",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.6",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,12 +23,14 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "93796003e4f76eb5dfb74a9080a0735d9316cbe6933aecd8381437c6523833fc",
+    "SKILL.md": "8c97317ab48e9cc80a72d52435b7371fce0e332292ec6a71e4f9bca55ea97cbe",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/region-loading-rules.md": "54fd7da44ac24e4aada3560157b86920a1a130f70e2b6cc8c0a2c500093820e9",
+    "scripts/extract_workspace_document.py": "1a817359e3fbb05a63ef5e0d2b1efc595dd87e296693983d1594d95561951578",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/user_region_profile.py": "e8fd44cb54da80954d51fd8b866c0e08f82d067bec85f92166ddb27c43870ca0",
-    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
+    "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
+    "tests/test_extract_workspace_document.py": "58066a17d4fef61267d020e04ecea81ae921bd07a78d05f9aca6455e448a5557"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

@@ -1,0 +1,205 @@
+{
+  "schema_version": "gongchuang-curated-skill-catalog/v1",
+  "release_tag": "V1.6.7",
+  "title": "共创精选",
+  "subtitle": "为中小企业探路点灯",
+  "install_experience": {
+    "card_fields": [
+      "icon",
+      "name",
+      "summary",
+      "action"
+    ],
+    "action_label": "添加",
+    "behavior": "将内置技能组合添加到当前企业空间，不重复下载技能文件",
+    "technical_permissions_hidden_by_default": true
+  },
+  "entries": [
+    {
+      "id": "enterprise-checkup",
+      "icon": "building-search",
+      "name": "企业申报体检",
+      "summary": "建立企业画像，快速识别可申报方向、硬门槛和资料缺口。",
+      "category": "企业服务",
+      "skills": [
+        "project-application-assistant",
+        "enterprise-profile",
+        "project-matching"
+      ],
+      "featured": true
+    },
+    {
+      "id": "policy-match",
+      "icon": "compass",
+      "name": "政策检索与项目匹配",
+      "summary": "检索现行政策原文，按地区、年度和企业条件匹配项目。",
+      "category": "项目申报",
+      "skills": [
+        "policy-retrieval",
+        "project-matching",
+        "project-rule-manager"
+      ],
+      "featured": true
+    },
+    {
+      "id": "project-feasibility",
+      "icon": "clipboard-check",
+      "name": "项目可行性分析",
+      "summary": "逐项判断申报条件、评分空间、证据缺口和补强任务。",
+      "category": "项目申报",
+      "skills": [
+        "project-feasibility",
+        "evidence-ledger",
+        "financial-verification"
+      ],
+      "featured": true
+    },
+    {
+      "id": "hightech",
+      "icon": "flask",
+      "name": "高新技术企业申报",
+      "summary": "覆盖申报前评估、研发项目与成果转化表、申请书成稿及WPS验收。",
+      "category": "专项申报",
+      "skills": [
+        "high-tech-enterprise-preassessment",
+        "high-tech-enterprise-application-drafting"
+      ],
+      "featured": true
+    },
+    {
+      "id": "sme",
+      "icon": "medal",
+      "name": "专精特新与小巨人",
+      "summary": "完成专精特新与小巨人差距测算、评分预评估和培育路线。",
+      "category": "专项申报",
+      "skills": [
+        "sme-development-projects",
+        "sme-score-preassessment"
+      ],
+      "featured": true
+    },
+    {
+      "id": "manufacturing-upgrade",
+      "icon": "factory",
+      "name": "制造业升级专项",
+      "summary": "统一承接技改、三首、绿色、数字化、质量品牌和研发平台项目。",
+      "category": "专项申报",
+      "skills": [
+        "investment-subsidy-projects",
+        "industrialization-projects",
+        "green-development-projects",
+        "digitalization-projects",
+        "quality-brand-projects",
+        "technology-innovation-projects"
+      ],
+      "featured": false
+    },
+    {
+      "id": "enterprise-panorama",
+      "icon": "radar",
+      "name": "企业公开信息全景",
+      "summary": "汇总工商、经营、风险、知识产权和公开证据，形成合作前全景报告。",
+      "category": "企业服务",
+      "skills": [
+        "enterprise-panorama-analysis",
+        "enterprise-profile",
+        "peer-benchmarking"
+      ],
+      "featured": true
+    },
+    {
+      "id": "ip-patent",
+      "icon": "shield-search",
+      "name": "知识产权与专利工作台",
+      "summary": "开展知识产权体检、专利检索、布局、申请案卷和项目关联分析。",
+      "category": "知识产权",
+      "skills": [
+        "ip-assessment",
+        "intellectual-property-projects",
+        "patent-router",
+        "checking-patdocx-cn-single-agent"
+      ],
+      "featured": true
+    },
+    {
+      "id": "finance-tax",
+      "icon": "calculator",
+      "name": "财务指标与税务风险",
+      "summary": "复算申报财务指标、研发投入和制造企业税务风险，不补造财务事实。",
+      "category": "财税核验",
+      "skills": [
+        "financial-verification",
+        "manufacturing-tax-risk-analysis"
+      ],
+      "featured": false
+    },
+    {
+      "id": "formal-writing",
+      "icon": "file-edit",
+      "name": "正式材料写作",
+      "summary": "在事实、政策和证据锁定后撰写正式申报文本并执行自然化审校。",
+      "category": "材料交付",
+      "skills": [
+        "application-writing",
+        "gongchuang-humanizer-zh",
+        "evidence-ledger"
+      ],
+      "featured": true
+    },
+    {
+      "id": "quality-gate",
+      "icon": "scan-check",
+      "name": "材料核稿与一致性门禁",
+      "summary": "对比版本、核对数字事实、检查跨章节一致性并阻止不合格交付。",
+      "category": "材料交付",
+      "skills": [
+        "application-version-diff",
+        "consistency-check",
+        "project-deliverable-archive"
+      ],
+      "featured": true
+    },
+    {
+      "id": "knowledge-web",
+      "icon": "globe-search",
+      "name": "知识库与联网检索",
+      "summary": "组合共创知识库、网页搜索、网页读取和可审计来源记录。",
+      "category": "检索工具",
+      "skills": [
+        "local-knowledge-retrieval",
+        "web-task-operator",
+        "legal-regulations"
+      ],
+      "featured": true
+    }
+  ],
+  "community_sources": [
+    {
+      "id": "modelscope",
+      "name": "魔搭 Skills",
+      "url": "https://modelscope.cn/skills",
+      "mode": "embedded-browser",
+      "installation": "security-review-then-one-click"
+    },
+    {
+      "id": "skillhub",
+      "name": "SkillHub",
+      "url": "https://skillhub.cn",
+      "mode": "embedded-browser",
+      "installation": "security-review-then-one-click"
+    }
+  ],
+  "external_install_policy": {
+    "direct_install_without_review": false,
+    "required_checks": [
+      "source-identity",
+      "license",
+      "manifest-structure",
+      "malware-scan",
+      "network-and-command-review",
+      "platform-compatibility",
+      "signature-or-pinned-digest"
+    ],
+    "decision": "第三方页面可以直接浏览；一键安装必须先进入本地隔离审查，门禁通过后才写入用户技能目录。"
+  }
+}

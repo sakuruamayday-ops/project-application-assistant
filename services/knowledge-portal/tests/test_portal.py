@@ -512,6 +512,7 @@ def create_test_content_index(path):
 def load_app(tmp_path):
     os.environ["JIAOTANG_DATA_DIR"] = str(tmp_path)
     os.environ["JIAOTANG_INDEX_DIR"] = str(tmp_path / "knowledge-index")
+    os.environ["JIAOTANG_CLIENT_RELEASE_DIR"] = str(tmp_path / "client-releases")
     os.environ["JIAOTANG_FIRST_PUBLIC_SKILL_VERSION"] = "1.0"
     os.environ["JIAOTANG_SETUP_KEY"] = "setup-secret"
     os.environ["JIAOTANG_TOKEN_DERIVATION_SECRET"] = "test-token-derivation-secret"
@@ -527,6 +528,415 @@ def load_app(tmp_path):
     module = importlib.reload(app.main)
     module.init_database()
     return module
+
+
+def publish_test_client_release(module, *, version="0.1.0", signature_status="verified"):
+    module.CLIENT_RELEASE_DIR.mkdir(parents=True, exist_ok=True)
+    now = module.isoformat(module.utc_now())
+    artifacts = []
+    for platform, architecture, file_kind, file_name in (
+        ("macos", "arm64", "dmg", "Gongchuang-Enterprise-Assistant-0.1.0-mac-arm64.dmg"),
+        ("windows", "x64", "nsis", "Gongchuang-Enterprise-Assistant-0.1.0-win-x64.exe"),
+    ):
+        path = module.CLIENT_RELEASE_DIR / file_name
+        path.write_bytes(f"signed-{platform}-{version}".encode("utf-8"))
+        artifacts.append(
+            (platform, architecture, file_kind, file_name, path, module.sha256_file(path))
+        )
+    with closing(module.database()) as connection:
+        release_id = int(
+            connection.execute(
+                """
+                INSERT INTO client_releases(
+                    version,status,release_notes,published_at,created_at
+                ) VALUES (?,'published','首个双端客户端正式版',?,?)
+                """,
+                (version, now, now),
+            ).lastrowid
+        )
+        artifact_ids = {}
+        for platform, architecture, file_kind, file_name, path, digest in artifacts:
+            artifact_ids[platform] = int(
+                connection.execute(
+                    """
+                    INSERT INTO client_release_artifacts(
+                        release_id,platform,architecture,file_kind,file_name,
+                        file_path,sha256,size_bytes,signature_status,signature_identity
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?)
+                    """,
+                    (
+                        release_id,
+                        platform,
+                        architecture,
+                        file_kind,
+                        file_name,
+                        str(path),
+                        digest,
+                        path.stat().st_size,
+                        signature_status,
+                        "test-signing-identity",
+                    ),
+                ).lastrowid
+            )
+        connection.commit()
+    return release_id, artifact_ids
+
+
+def client_authorization_payload(module, verifier: str, *, platform: str = "macos"):
+    challenge = module.urlsafe_b64encode(
+        hashlib.sha256(verifier.encode("ascii")).digest()
+    ).decode("ascii").rstrip("=")
+    return {
+        "client_id": module.CLIENT_AUTHORIZATION_ID,
+        "client_version": "0.1.0",
+        "platform": platform,
+        "device_name": "测试电脑",
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
+    }
+
+
+def test_client_password_login_is_device_bound_and_replaces_the_previous_device(tmp_path):
+    module = load_app(tmp_path)
+    password = "correct-horse-battery"
+    first_device = "gcd_" + "a" * 48
+    second_device = "gcd_" + "b" * 48
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": password},
+        )
+
+        first = client.post(
+            "/v1/client-login",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.1.0",
+                "platform": "macos",
+                "device_id": first_device,
+                "device_name": "第一台电脑",
+                "username": "owner",
+                "password": password,
+            },
+        )
+        assert first.status_code == 200
+        first_receipt = first.json()
+        assert first_receipt["phase"] == "authenticated"
+        assert first_receipt["single_device"] is True
+        assert first_receipt["access_token"].startswith("jtk_")
+        assert password not in first.text
+        first_headers = {
+            "Authorization": f"Bearer {first_receipt['access_token']}",
+            module.DEVICE_ID_HEADER: first_device,
+        }
+        assert client.get("/v1/me", headers=first_headers).status_code == 200
+        wrong_device_headers = dict(first_headers)
+        wrong_device_headers[module.DEVICE_ID_HEADER] = second_device
+        assert client.get("/v1/me", headers=wrong_device_headers).status_code == 401
+
+        second = client.post(
+            "/v1/client-login",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.1.0",
+                "platform": "windows",
+                "device_id": second_device,
+                "device_name": "第二台电脑",
+                "username": "owner",
+                "password": password,
+            },
+        )
+        assert second.status_code == 200
+        second_receipt = second.json()
+        assert second_receipt["access_token"] != first_receipt["access_token"]
+        superseded = client.get("/v1/me", headers=first_headers)
+        assert superseded.status_code == 409
+        assert "另一台设备" in superseded.json()["detail"]
+        second_headers = {
+            "Authorization": f"Bearer {second_receipt['access_token']}",
+            module.DEVICE_ID_HEADER: second_device,
+        }
+        assert client.get("/v1/me", headers=second_headers).json() == {
+            "username": "owner",
+            "access": "unified",
+        }
+
+        with module.closing(module.database()) as connection:
+            active_tokens = connection.execute(
+                "SELECT COUNT(*) FROM device_tokens WHERE revoked_at IS NULL AND activation_state='active'"
+            ).fetchone()[0]
+            active_bindings = connection.execute(
+                "SELECT COUNT(*) FROM device_bindings WHERE revoked_at IS NULL"
+            ).fetchone()[0]
+            assert int(active_tokens) == 1
+            assert int(active_bindings) == 1
+
+
+def test_client_password_login_rejects_invalid_password_without_disclosing_account(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        response = client.post(
+            "/v1/client-login",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.1.0",
+                "platform": "macos",
+                "device_id": "gcd_" + "c" * 48,
+                "device_name": "测试电脑",
+                "username": "owner",
+                "password": "wrong-password",
+            },
+        )
+        assert response.status_code == 401
+        assert response.json()["detail"] == "用户名称或密码错误"
+
+
+def test_client_download_page_tracks_download_and_real_client_login_separately(tmp_path):
+    module = load_app(tmp_path)
+    _, artifact_ids = publish_test_client_release(module)
+    password = "owner-password-123"
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": password},
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": password},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        page = client.get("/downloads")
+        assert page.status_code == 200
+        assert "下载共创企业助手" in page.text
+        assert "共创企业助手 V0.1" in page.text
+        assert "内置技能包" in page.text
+        assert "下载 macOS 版" in page.text
+        assert "下载 Windows 版" in page.text
+        assert 'data-section-link="downloads"' in page.text
+        assert 'data-section-link="api-access"' not in page.text
+        legacy_access = client.get("/access", follow_redirects=False)
+        assert legacy_access.status_code == 303
+        assert legacy_access.headers["location"] == "/skills#skills-install"
+
+        download = client.get(f"/client-downloads/macos/{artifact_ids['macos']}")
+        assert download.status_code == 200
+        assert download.content == b"signed-macos-0.1.0"
+        assert download.headers["x-gongchuang-client-version"] == "0.1.0"
+        with closing(module.database()) as connection:
+            event = connection.execute(
+                """
+                SELECT platform,architecture,downloaded_at
+                FROM client_download_events
+                """
+            ).fetchone()
+            assert dict(event) == {
+                "platform": "macos",
+                "architecture": "arm64",
+                "downloaded_at": event["downloaded_at"],
+            }
+
+        members_after_download = client.get("/admin/members")
+        assert "客户端下载与使用状态" in members_after_download.text
+        assert "已下载" in members_after_download.text
+        assert "macOS · 客户端 V0.1.0" in members_after_download.text
+
+        authenticated = client.post(
+            "/v1/client-login",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.1.0",
+                "platform": "macos",
+                "device_id": "gcd_" + "d" * 48,
+                "device_name": "下载后的测试电脑",
+                "username": "owner",
+                "password": password,
+            },
+        )
+        assert authenticated.status_code == 200
+        members_after_login = client.get("/admin/members")
+        assert "已登录使用" in members_after_login.text
+
+
+def test_client_download_refuses_unsigned_or_tampered_artifact_without_receipt(tmp_path):
+    module = load_app(tmp_path)
+    _, artifact_ids = publish_test_client_release(module, signature_status="pending")
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        page = client.get("/downloads")
+        assert "签名包尚未就绪" in page.text
+        refused = client.get(f"/client-downloads/windows/{artifact_ids['windows']}")
+        assert refused.status_code == 503
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT COUNT(*) FROM client_download_events"
+            ).fetchone()[0] == 0
+
+
+def test_client_device_authorization_uses_browser_login_and_server_receipt(tmp_path):
+    module = load_app(tmp_path)
+    verifier = "v" * 64
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        started = client.post(
+            "/v1/client-authorizations",
+            json=client_authorization_payload(module, verifier),
+        )
+        assert started.status_code == 201
+        grant = started.json()
+        assert grant["phase"] == "authorization_pending"
+        assert grant["verification_uri_complete"].endswith(
+            f"/client-authorize?code={grant['user_code']}"
+        )
+        assert "access_token" not in grant
+
+        pending = client.post(
+            "/v1/client-authorizations/token",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "device_code": grant["device_code"],
+                "code_verifier": verifier,
+            },
+        )
+        assert pending.status_code == 202
+        assert pending.json() == {"phase": "authorization_pending"}
+
+        browser_entry = client.get(
+            f"/client-authorize?code={grant['user_code']}",
+            follow_redirects=False,
+        )
+        assert browser_entry.status_code == 303
+        assert browser_entry.headers["location"].startswith("/login?next=")
+        login = client.post(
+            "/login",
+            data={
+                "username": "owner",
+                "password": "correct-horse-battery",
+                "next": f"/client-authorize?code={grant['user_code']}",
+            },
+            follow_redirects=False,
+        )
+        assert login.headers["location"] == f"/client-authorize?code={grant['user_code']}"
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        review = client.get(f"/client-authorize?code={grant['user_code']}")
+        assert review.status_code == 200
+        assert "共创企业助手 V0.1.0" in review.text
+        assert grant["device_code"] not in review.text
+        approved = client.post(
+            "/client-authorize",
+            data={
+                "csrf_token": user["csrf_token"],
+                "code": grant["user_code"],
+                "decision": "approve",
+            },
+            follow_redirects=False,
+        )
+        assert approved.status_code == 303
+        assert "result=approved" in approved.headers["location"]
+
+        exchanged = client.post(
+            "/v1/client-authorizations/token",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "device_code": grant["device_code"],
+                "code_verifier": verifier,
+            },
+        )
+        assert exchanged.status_code == 200
+        receipt = exchanged.json()
+        assert receipt["phase"] == "authorized"
+        assert receipt["access_token"].startswith("jtk_")
+        assert receipt["api_base_url"] == "http://testserver/v1"
+        assert receipt["mcp_url"] == "http://testserver/mcp/"
+        me = client.get(
+            "/v1/me",
+            headers={"Authorization": f"Bearer {receipt['access_token']}"},
+        )
+        assert me.status_code == 200
+        assert me.json() == {"username": "owner", "access": "unified"}
+
+
+def test_client_device_authorization_rejects_wrong_pkce_and_denial(tmp_path):
+    module = load_app(tmp_path)
+    verifier = "k" * 64
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        started = client.post(
+            "/v1/client-authorizations",
+            json=client_authorization_payload(module, verifier, platform="windows"),
+        ).json()
+        wrong = client.post(
+            "/v1/client-authorizations/token",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "device_code": started["device_code"],
+                "code_verifier": "x" * 64,
+            },
+        )
+        assert wrong.status_code == 403
+
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "correct-horse-battery"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        user = module.session_user(login.cookies[module.SESSION_COOKIE])[0]
+        denied = client.post(
+            "/client-authorize",
+            data={
+                "csrf_token": user["csrf_token"],
+                "code": started["user_code"],
+                "decision": "deny",
+            },
+            follow_redirects=False,
+        )
+        assert denied.status_code == 303
+        exchange = client.post(
+            "/v1/client-authorizations/token",
+            json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "device_code": started["device_code"],
+                "code_verifier": verifier,
+            },
+        )
+        assert exchange.status_code == 403
+        assert exchange.json()["phase"] == "access_denied"
+
+
+def test_login_redirect_allows_only_client_authorization_path(tmp_path):
+    module = load_app(tmp_path)
+    assert module.safe_login_redirect(
+        "/client-authorize?code=ABCD-EFGH"
+    ) == "/client-authorize?code=ABCD-EFGH"
+    assert module.safe_login_redirect("https://evil.example/client-authorize?code=ABCD-EFGH") == "/portal"
+    assert module.safe_login_redirect("/client-authorize?code=ABCD-EFGH&next=https://evil.example") == "/portal"
 
 
 def test_active_index_release_id_resolves_current_release_symlink(tmp_path):
@@ -1346,7 +1756,7 @@ def test_admin_portal_section_order_and_mcp_activity_status(tmp_path):
         assert portal.status_code == 200
         section_order = [
             portal.text.index('id="algorithms"'),
-            portal.text.index('id="api-access"'),
+            portal.text.index('id="downloads"'),
             portal.text.index('id="feedback"'),
             portal.text.index('id="skills"'),
             portal.text.index('id="health-admin"'),
@@ -1648,11 +2058,13 @@ def test_setup_login_and_device_token(tmp_path):
         assert re.search(r'/static/portal\.js\?v=[0-9a-f]{16}', portal.text)
         assert 'class="app-layout portal-page single-page' in portal.text
         assert 'id="cockpit"' in portal.text
-        assert 'id="api-access"' in portal.text
+        assert 'id="downloads"' in portal.text
+        assert 'id="api-access"' not in portal.text
         assert 'id="skills"' in portal.text
         assert 'class="page-continuation"' not in portal.text
         access_page = client.get("/access")
-        assert "WorkBuddy 新安装已暂停" in access_page.text
+        assert "下载共创客户端" in access_page.text
+        assert "不再提供 WorkBuddy 专用包" in access_page.text
         assert "管理员 API Key" not in access_page.text
         assert "管理员豁免" not in access_page.text
         assert "data-copy-agent-bootstrap" not in access_page.text
@@ -1724,7 +2136,8 @@ def test_setup_login_and_device_token(tmp_path):
         )
         assert usage_guide.status_code == 200
         assert usage_guide.json()["mode"] == "usage-guide"
-        assert "当前 Agent" in usage_guide.json()["answer"]
+        assert "共创客户端" in usage_guide.json()["answer"]
+        assert "其他 Agent" in usage_guide.json()["answer"]
         assert usage_guide.json()["sources"] == []
 
         api_guide = client.post(
@@ -1735,10 +2148,9 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert api_guide.status_code == 200
-        assert "点击“一键安装”" in api_guide.json()["answer"]
-        assert "不需要设备绑定" in api_guide.json()["answer"]
-        assert "自动复用或生成" in api_guide.json()["answer"]
-        assert "macOS 或 Windows" in api_guide.json()["answer"]
+        assert "不再设置独立“API 与用户”标签" in api_guide.json()["answer"]
+        assert "Skills 中心的“安装与连接”" in api_guide.json()["answer"]
+        assert "真实返回成功" in api_guide.json()["answer"]
 
         qcc_guide = client.post(
             "/assistant/answer",
@@ -1748,7 +2160,7 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert qcc_guide.status_code == 200
-        assert "agent.qcc.com/invitation" in qcc_guide.json()["answer"]
+        assert "https://agent.qcc.com" in qcc_guide.json()["answer"]
         assert "QCC_API_KEY" in qcc_guide.json()["answer"]
 
         token_page = client.post(
@@ -1760,7 +2172,8 @@ def test_setup_login_and_device_token(tmp_path):
             },
         )
         assert token_page.status_code == 200
-        assert "WorkBuddy 新安装已暂停" in token_page.text
+        assert "下载共创客户端" in token_page.text
+        assert "不再提供 WorkBuddy 专用包" in token_page.text
         assert "管理员凭据" not in token_page.text
         assert 'data-toggle-secret="personal-access"' not in token_page.text
         with closing(module.database()) as connection:
@@ -1769,7 +2182,7 @@ def test_setup_login_and_device_token(tmp_path):
 
         access_page = client.get("/access")
         assert access_page.status_code == 200
-        assert "page-access" in access_page.text
+        assert "page-skills" in access_page.text
         assert 'class="page-continuation"' not in access_page.text
         assert 'class="page-step' not in access_page.text
         assert token not in access_page.text
@@ -4767,6 +5180,7 @@ def test_admin_members_displays_installed_version_and_update_state(
         connection.commit()
 
     def member_row(page_text: str, member_id: int) -> str:
+        page_text = page_text.split("<h3>已注册账号</h3>", 1)[1]
         match = re.search(
             rf'<tr><td><a class="record-link" href="/admin/users/{member_id}">.*?</tr>',
             page_text,
@@ -5069,9 +5483,10 @@ def test_admin_members_ignores_revoked_install_version_evidence(
         client.cookies.update(login.cookies)
         members = client.get("/admin/members")
 
+    account_table = members.text.split("<h3>已注册账号</h3>", 1)[1]
     row = re.search(
         rf'<tr><td><a class="record-link" href="/admin/users/{member_id}">.*?</tr>',
-        members.text,
+        account_table,
         re.DOTALL,
     )
     assert row is not None
@@ -5766,17 +6181,15 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
             headers={"Authorization": f"Bearer {original_token}"},
         ).status_code == 200
 
-        access = client.get("/access")
-        assert "一键安装" in access.text
-        assert access.text.count("data-copy-agent-bootstrap") >= 2
-        assert 'data-agent-platform="macos"' in access.text
-        assert 'data-agent-platform="windows"' in access.text
+        access = client.get("/access", follow_redirects=False)
+        assert access.status_code == 303
+        assert access.headers["location"] == "/skills#skills-install"
         skills = client.get("/skills")
         assert skills.status_code == 200
-        assert "一键安装" in skills.text
-        assert skills.text.count("data-copy-agent-bootstrap") >= 2
-        assert "只替换" in skills.text
-        assert "knowledge_service_status" in skills.text
+        assert "不再提供 WorkBuddy 专用包" in skills.text
+        assert "下载共创客户端" in skills.text
+        assert "共创知识库 MCP" in skills.text
+        assert "data-copy-agent-bootstrap" not in skills.text
         assert "data-copy-agent-binding" not in skills.text
         assert "第三步 · 执行 bootstrap" not in skills.text
         assert "设备登记" not in skills.text
@@ -8449,9 +8862,9 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
         page = client.get("/skills")
         assert "macOS" in page.text
         assert "Windows" in page.text
-        assert "macOS 与 Windows 使用两个独立签名插件市场 ZIP" in page.text
-        assert "固定三产物" in page.text
-        assert "其他宿主不再规划或展示平台专用版本" in page.text
+        assert "统一通用包" in page.text
+        assert "不再提供 WorkBuddy 专用包" in page.text
+        assert "平台增强版 · WorkBuddy" not in page.text
         assert "平台增强版 · TRAE" not in page.text
         assert "平台插件版 · Kimi Code" not in page.text
         assert "等待人工反馈" not in page.text
@@ -8605,17 +9018,13 @@ def test_legacy_platform_artifacts_do_not_feed_unified_workbuddy_channel(
         page = client.get("/skills")
         assert page.status_code == 200
         assert "打开双端管理器" not in page.text
-        assert "固定三产物" in page.text
+        assert "统一通用包" in page.text
         assert "平台增强版 · TRAE" not in page.text
         assert "平台增强版 · Qoder" not in page.text
         assert "平台增强版 · 通义灵码" not in page.text
         assert "平台插件版 · Kimi Code" not in page.text
         assert "平台增强版 · Cherry Studio" not in page.text
-        assert (
-            'class="skill-platform-card is-workbuddy" data-platform-version=""'
-            in page.text
-        )
-        assert "当前版本未包含" in page.text
+        assert 'class="skill-platform-card is-workbuddy"' not in page.text
         assert "下载 WorkBuddy 包" not in page.text
         assert "下载 macOS 包" not in page.text
         assert "下载 Windows 包" not in page.text
@@ -8714,9 +9123,9 @@ def test_workbuddy_distribution_revision_uses_public_intro_without_rewriting_aud
         client.cookies.update(login.cookies)
         page = client.get("/skills")
         assert page.status_code == 200
-        assert "查看 WorkBuddy 分发修订说明" in page.text
-        assert "跨平台分发修订：移除外层固定安装器。" in page.text
-        assert "查看不可变发行记录" in page.text
+        assert "查看 WorkBuddy 分发修订说明" not in page.text
+        assert "跨平台分发修订：移除外层固定安装器。" not in page.text
+        assert "查看不可变发行记录" not in page.text
         assert "一、本版本新增功能" in page.text
         assert "初始 Windows 历史说明" not in page.text
 
@@ -9438,9 +9847,8 @@ def test_admin_can_view_edit_and_rollback_knowledge(tmp_path):
         assert "2026-07-18T00:00:00+00:00" not in ordered_knowledge.text
         assert "2026-07-18 08:00:00" in ordered_knowledge.text
         access_portal = client.get("/access")
-        assert "www.tianyancha.com/ai" in access_portal.text
-        assert "agent.qcc.com/invitation?code=3ZRZPHF7Q5MH4" in access_portal.text
-        assert "docs.cloud.google.com/bigquery/docs/use-bigquery-mcp" in access_portal.text
+        assert "外部服务入口" in access_portal.text
+        assert "DeepSeek、OpenCode、企查查、天眼查、PaddleOCR" in access_portal.text
         assert "aiqice.cn" not in access_portal.text
         assert "pss-system.cponline.cnipa.gov.cn" not in access_portal.text
         assert "epo.org/en/searching-for-patents" not in portal.text
@@ -9966,8 +10374,8 @@ def test_unsafe_published_workbuddy_is_visible_but_not_installable(
         blocked_download = client.get("/skills/latest/workbuddy/download")
         generic_download = client.get("/skills/latest/download")
 
-    assert "已暂停新安装" in skills.text
-    assert "等待安全正式版" in skills.text
+    assert "统一通用包" in skills.text
+    assert "平台增强版 · WorkBuddy" not in skills.text
     assert "data-manual-package-download" not in skills.text
     assert "data-copy-agent-bootstrap" not in access.text
     assert blocked_download.status_code == 409

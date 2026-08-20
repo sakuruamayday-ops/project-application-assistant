@@ -11,30 +11,11 @@ def load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def test_product_configuration_validator_passes_on_current_formal_release(tmp_path):
-    manager = tmp_path / "skill-release-manager"
-    hook = manager / "scripts" / "windows_hook"
-    hook.mkdir(parents=True)
-    (hook / "main.go").write_text('const runtimeVersion = "1.6.6"\n', encoding="utf-8")
-    (hook / "contract.go").write_text(
-            'const intentRuleVersion = "8-artifact-targeted-negation"\n',
-        encoding="utf-8",
-    )
-    (hook / "events.go").write_text(
-            "func loadValidatorReceipts() {}\nfunc loadProfileValidatorReceipts() {}\nvar effectiveBusinessDomain bool\n",
-        encoding="utf-8",
-    )
-    (manager / "scripts" / "workbuddy_behavior_hook.py").write_text(
-            'INTENT_RULE_VERSION = "8-artifact-targeted-negation"\n'
-            "def load_validator_receipts(): pass\ndef load_profile_validator_receipts(): pass\neffective_business_domain = True\n",
-        encoding="utf-8",
-    )
+def test_product_configuration_validator_passes_on_current_formal_release():
     result = subprocess.run(
         [
             sys.executable,
             "scripts/validate_grounded_product_config.py",
-            "--release-manager-root",
-            str(manager),
         ],
         cwd=ROOT,
         text=True,
@@ -46,9 +27,9 @@ def test_product_configuration_validator_passes_on_current_formal_release(tmp_pa
     release_tag = load(ROOT / "skills" / "suite-manifest.json")["release"]["tag"]
     assert receipt["status"] == "pass"
     assert receipt["channels"] == {
-        "workbuddy_windows_stable": release_tag,
-        "workbuddy_macos_stable": release_tag,
-        "candidate": release_tag,
+        "client_windows_candidate": release_tag,
+        "client_macos_candidate": release_tag,
+        "skills_candidate": release_tag,
     }
     assert receipt["skills_contract"] == release_tag
     assert receipt["grounded_candidate_release"] == release_tag

@@ -149,8 +149,8 @@ def write_receipt(output_dir: Path, receipt: dict[str, object]) -> None:
         f"- 总状态：`{receipt['status']}`",
         f"- 分支：`{receipt['git']['branch']}`",
         f"- 提交：`{receipt['git']['commit']}`",
-        f"- 稳定通道：Windows `{receipt['product_baseline']['channels']['workbuddy_windows_stable']}` / macOS `{receipt['product_baseline']['channels']['workbuddy_macos_stable']}`",
-        f"- 隔离候选：`{receipt['product_baseline']['channels']['candidate']}`",
+        f"- 客户端候选：Windows `{receipt['product_baseline']['channels']['client_windows_candidate']}` / macOS `{receipt['product_baseline']['channels']['client_macos_candidate']}`",
+        f"- Skills 候选：`{receipt['product_baseline']['channels']['skills_candidate']}`",
         f"- Skills 契约：`{receipt['product_baseline']['skills_contract']}`",
         f"- 双适配器输出一致：`{receipt['host_adapters']['identical_output']}`",
         "",
@@ -179,12 +179,6 @@ def write_receipt(output_dir: Path, receipt: dict[str, object]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path)
-    parser.add_argument(
-        "--release-manager-root",
-        type=Path,
-        default=Path.home() / ".codex" / "skills" / "skill-release-manager",
-        help="发布管理器源码或候选根目录；默认检查当前已安装版本",
-    )
     args = parser.parse_args()
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output_dir = (args.output_dir or ROOT / ".project-assistant" / "grounded-citations" / run_id).resolve()
@@ -199,43 +193,10 @@ def main() -> int:
     steps.append(run_step("registry-and-call-graph", [str(paths["python"]), "scripts/generate_grounded_registry.py"], env=env))
     product_step = run_step(
         "product-configuration",
-        [
-            str(paths["python"]),
-            "scripts/validate_grounded_product_config.py",
-            "--release-manager-root",
-            str(args.release_manager_root.expanduser().resolve()),
-        ],
+        [str(paths["python"]), "scripts/validate_grounded_product_config.py"],
         env=env,
     )
     steps.append(product_step)
-    manager_root = args.release_manager_root.expanduser().resolve()
-    env["JIAOTANG_RELEASE_MANAGER_SCRIPTS"] = str(manager_root / "scripts")
-    steps.append(
-        run_step(
-            "release-manager-pytest",
-            [
-                str(paths["pytest_python"]),
-                "-m",
-                "pytest",
-                "-q",
-                str(manager_root / "tests" / "test_release_security.py"),
-            ],
-            env=env,
-        )
-    )
-    steps.append(
-        run_step(
-            "windows-hook-go-test",
-            [
-                str(paths["go"]),
-                "-C",
-                str(manager_root / "scripts" / "windows_hook"),
-                "test",
-                "./...",
-            ],
-            env=env,
-        )
-    )
     steps.append(run_step("docx-fixtures", [str(paths["python"]), "tests/fixtures/grounded-citations/build_document_fixtures.py"], env=env))
     for name, file_name, render_dir in (
         ("render-report", "grounded-analysis-report.docx", "render-report"),

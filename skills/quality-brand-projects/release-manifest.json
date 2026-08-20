@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "quality-brand-projects",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.6",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -22,7 +22,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "661813bd18dbd4918ebc0a7e7a02c3d604faa46550e3ee81a557c1ee19fa866d",
+    "SKILL.md": "a223372bbcb4e01f2f9348f3a1a044a949d8e833e6e9277f30df509e74c4b314",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/quality-brand-taxonomy.md": "022a75163ec9c26dca42c4b10fb77f2ba13e076b9a67214db580e4db50b2bdb0",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",

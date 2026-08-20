@@ -11,6 +11,7 @@ cache/
 logs/
 outputs/
 .tmp/
+services/knowledge-portal/.playwright-cli/
 services/knowledge-portal/ocr_*_inventory.json
 .project-assistant/
 用户使用指南.md

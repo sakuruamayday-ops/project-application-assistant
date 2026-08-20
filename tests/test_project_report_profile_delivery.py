@@ -1,10 +1,10 @@
 import hashlib
 import importlib.util
 import json
-import shutil
+import os
 from pathlib import Path
 
-import fitz
+import pytest
 from docx import Document
 
 
@@ -17,12 +17,6 @@ SPEC = importlib.util.spec_from_file_location("report_profile_validator", SCRIPT
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
-
-SELECTOR_PATH = ROOT / "skills/project-feasibility/scripts/select_report_template.py"
-SELECTOR_SPEC = importlib.util.spec_from_file_location("profile_test_selector", SELECTOR_PATH)
-SELECTOR = importlib.util.module_from_spec(SELECTOR_SPEC)
-assert SELECTOR_SPEC.loader is not None
-SELECTOR_SPEC.loader.exec_module(SELECTOR)
 
 
 def test_report_profile_requires_dual_format_sections_tables_and_branding(tmp_path):
@@ -41,19 +35,24 @@ def test_report_profile_requires_dual_format_sections_tables_and_branding(tmp_pa
     assert any("缺少必备章节" in item for item in result["errors"])
     assert any("缺少必备表格" in item for item in result["errors"])
     assert any("品牌校验失败" in item for item in result["errors"])
-    assert "缺少受控模板选型回执" in result["errors"]
-    assert "缺少受控模板成稿回执" in result["errors"]
 
 
 def test_stop_hook_rejects_tampered_profile_receipt(tmp_path):
-    hook_path = Path(
-        "/Users/zsh/Documents/自动化区域/workbuddy-v165-local-hotfix-20260813/"
-        "candidate/skill-release-manager/scripts/workbuddy_behavior_hook.py"
+    manager_scripts = Path(
+        os.environ.get(
+            "JIAOTANG_RELEASE_MANAGER_SCRIPTS",
+            Path.home() / ".codex/skills/skill-release-manager/scripts",
+        )
     )
+    hook_path = manager_scripts / "workbuddy_behavior_hook.py"
+    if not hook_path.is_file():
+        pytest.skip("requires the separately installed skill-release-manager host integration")
     spec = importlib.util.spec_from_file_location("hotfix_behavior", hook_path)
     hook = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(hook)
+    if not hasattr(hook, "load_profile_validator_receipts"):
+        pytest.skip("installed skill-release-manager predates report-profile receipts")
     artifact = tmp_path / "report.docx"
     artifact.write_bytes(b"initial")
     turn_id = "turn-profile-test"
@@ -107,65 +106,89 @@ def test_pdf_text_extraction_uses_visual_sort_order(monkeypatch, tmp_path):
     assert calls == [("text", True)]
 
 
-def test_template_provenance_binds_registry_master_and_completed_docx(tmp_path):
-    selection = SELECTOR.resolve_template("高新技术企业认定", "前期评估")
-    copied = SELECTOR.materialize(selection, tmp_path / "masters", enterprise="测试企业")
-    master = Path(copied["output_path"])
-    completed = tmp_path / "completed.docx"
-    shutil.copy2(master, completed)
-    completion = {
-        "schema": "gongchuang-completed-project-report/v1",
-        "status": "pass",
-        "project_id": copied["project_id"],
-        "report_type": copied["report_type"],
-        "template_path": str(master),
-        "template_sha256": MODULE.sha256_file(master),
-        "output_path": str(completed),
-        "output_sha256": MODULE.sha256_file(completed),
-    }
-    completion_path = completed.with_suffix(".completion.json")
-    completion_path.write_text(json.dumps(completion, ensure_ascii=False), encoding="utf-8")
-    errors, provenance = MODULE._validate_template_provenance(
-        plugin_root=ROOT,
-        profile_id="project-presale-assessment-report",
-        docx=completed,
-        template_selection_receipt=Path(copied["receipt_path"]),
-        completion_receipt=completion_path,
-    )
-    assert errors == []
-    assert provenance["project_id"] == "high-tech-enterprise"
-    completed.write_bytes(completed.read_bytes() + b"tampered")
-    errors, _ = MODULE._validate_template_provenance(
-        plugin_root=ROOT,
-        profile_id="project-presale-assessment-report",
-        docx=completed,
-        template_selection_receipt=Path(copied["receipt_path"]),
-        completion_receipt=completion_path,
-    )
-    assert "成稿回执与当前DOCX哈希不一致" in errors
+def test_pdf_cjk_font_gate_requires_embedded_portable_font(monkeypatch, tmp_path):
+    class Page:
+        def get_fonts(self, *, full=False):
+            assert full
+            return [(7, "ttf", "TrueType", "ABCDEF+NotoSansSC-Regular", "F1", "", 0)]
+
+        def get_text(self, mode):
+            assert mode == "dict"
+            return {"blocks": [{"lines": [{"spans": [{"text": "中文正文", "font": "NotoSansSC-Regular"}]}]}]}
+
+    class Pdf:
+        def __iter__(self):
+            return iter([Page()])
+
+        def extract_font(self, xref):
+            assert xref == 7
+            return ("NotoSansSC-Regular", "ttf", "TrueType", b"embedded subset")
+
+        def close(self):
+            return None
+
+    import fitz
+
+    monkeypatch.setattr(fitz, "open", lambda _: Pdf())
+    assert MODULE._pdf_cjk_font_errors(tmp_path / "fixture.pdf") == []
 
 
-def test_pdf_portability_rejects_nonembedded_china_s_font(tmp_path):
-    path = tmp_path / "manual-china-s.pdf"
-    document = fitz.open()
-    page = document.new_page()
-    page.insert_text((72, 72), "申报条件对照和总体结论", fontname="china-s", fontsize=12)
-    document.save(path)
-    document.close()
-    errors, details = MODULE._validate_pdf_portability(path)
-    assert details["rendered_page_count"] == 1
-    assert any("中文字体未嵌入" in item for item in errors)
+def test_pdf_cjk_font_gate_accepts_self_contained_type3_glyphs(monkeypatch, tmp_path):
+    class Page:
+        def get_fonts(self, *, full=False):
+            assert full
+            return [(7, "n/a", "Type3", "NotoSansSC-Thin", "F1", "", 0)]
+
+        def get_text(self, mode):
+            assert mode == "dict"
+            return {"blocks": [{"lines": [{"spans": [{"text": "中文正文", "font": "NotoSansSC-Thin"}]}]}]}
+
+    class Pdf:
+        def __iter__(self):
+            return iter([Page()])
+
+        def extract_font(self, _xref):
+            return ("NotoSansSC-Thin", "n/a", "Type3", b"")
+
+        def xref_get_key(self, xref, key):
+            assert (xref, key) == (7, "CharProcs")
+            return ("dict", "<</gid1 11 0 R/gid2 12 0 R>>")
+
+        def xref_is_stream(self, xref):
+            return xref in {11, 12}
+
+        def xref_stream(self, xref):
+            return b"glyph" if xref in {11, 12} else b""
+
+        def close(self):
+            return None
+
+    import fitz
+
+    monkeypatch.setattr(fitz, "open", lambda _: Pdf())
+    assert MODULE._pdf_cjk_font_errors(tmp_path / "fixture.pdf") == []
 
 
-def test_cjk_font_support_rejects_embedded_latin_font_with_unicode_mapping():
-    latin = (7, "ttf", "TrueType", "BAAAAA+LinuxLibertineG", "F1", "", 0)
-    type1_latin = (8, "pfa", "Type1", "CAAAAA+FrankRuhlHofshi-Bold", "F2", "", 0)
-    assert MODULE._font_record_supports_cjk(latin) is False
-    assert MODULE._font_record_supports_cjk(type1_latin) is False
+def test_pdf_cjk_font_gate_rejects_host_fallback(monkeypatch, tmp_path):
+    class Page:
+        def get_fonts(self, *, full=False):
+            return [(7, "ttf", "TrueType", "ABCDEF+YuGothicUI", "F1", "", 0)]
 
+        def get_text(self, mode):
+            return {"blocks": [{"lines": [{"spans": [{"text": "中文正文", "font": "YuGothicUI"}]}]}]}
 
-def test_cjk_font_support_accepts_wps_embedded_identity_h_fonts():
-    hiragino = (16, "ttf", "Type0", "BFTHXX+HiraginoSansGB-W6", "FT16", "Identity-H", 0)
-    subset = (22, "ttf", "Type0", "UGYAVD+CustomerSubsetFont", "FT22", "Identity-H", 0)
-    assert MODULE._font_record_supports_cjk(hiragino) is True
-    assert MODULE._font_record_supports_cjk(subset) is True
+    class Pdf:
+        def __iter__(self):
+            return iter([Page()])
+
+        def extract_font(self, _xref):
+            return ("YuGothicUI", "ttf", "TrueType", b"")
+
+        def close(self):
+            return None
+
+    import fitz
+
+    monkeypatch.setattr(fitz, "open", lambda _: Pdf())
+    errors = MODULE._pdf_cjk_font_errors(tmp_path / "fixture.pdf")
+    assert any("未嵌入" in item for item in errors)

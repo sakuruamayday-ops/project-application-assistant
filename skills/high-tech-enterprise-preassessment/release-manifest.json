@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "high-tech-enterprise-preassessment",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.6",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,10 +21,11 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "84233357c857c1b4c1e7fbddf72d5193f67a99360211fb2d24245266d728440e",
+    "SKILL.md": "c704dce303741a6b4a4927b507c464831a6f4f4654059711e51b3a89ec85bbf8",
     "assets/高企预评估双年度采集表.xlsx": "a48395325873bd6358cfef32508097cd0cfb019c6559728891b226956c811e7e",
     "references/policy-baseline.md": "403115db3406b1148df6ed9437de084e1646c203d4376e680543c3b7ac5e27ba",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/rd-super-deduction-strengthening.md": "454238267430501cfa71de8c041852a68738ddccc5f70f748d8fa7c3cdaa0b32",
     "references/scoring-evidence-rubric.md": "04988b47bbe59598570904cf564e0cfee97600f09c06bd19ce89adb0ef66295b",
     "references/timing-and-remediation.md": "d8c7eb71aa15c9ac94e9ed4fd63030279df1da303ab949c5bc8e360ec9200b5b",
     "scripts/compare_scenarios.py": "2a32d3bb5ae7c86a9a993d1b45f50b1e756040a2ff57fea75aea6ce67ad645e7",

@@ -1,0 +1,44 @@
+<section id="downloads" class="section-block client-downloads">
+  <div class="section-heading">
+    <div><p class="eyebrow">Desktop Client</p><h2>下载共创企业助手</h2></div>
+    <span class="status-pill client-usage-state is-{{ client_usage.state }}">{{ client_usage.label }}</span>
+  </div>
+  <article class="client-download-hero">
+    <div>
+      <span class="skill-kicker">共创企业助手 V0.1</span>
+      <h3>为中小企业探路点灯</h3>
+      <p>安装后使用服务器账号登录。客户端内置门禁、技能中心、MCP、联网检索、自动化任务和企业空间；同一账号同一时间只允许一台设备在线。</p>
+    </div>
+    <dl>
+      <div><dt>客户端版本</dt><dd>{{ 'V' ~ client_release.version if client_release else '待发布' }}</dd></div>
+      <div><dt>内置技能包</dt><dd>{{ skill_center.release_tag }}</dd></div>
+      <div><dt>当前状态</dt><dd>{{ client_usage.label }}</dd></div>
+    </dl>
+  </article>
+
+  {% if client_release %}
+  <div class="client-platform-grid">
+    {% set macos = client_release.preferred.macos %}
+    <article class="client-platform-card">
+      <span class="client-platform-mark">mac</span>
+      <div><span class="skill-card-index">macOS</span><h3>Mac 客户端</h3><p>适用于 Apple Silicon 与已发布架构。安装包必须完成 Developer ID 签名与公证门禁后才开放。</p>{% if macos %}<small>{{ macos.architecture }} · {{ macos.size_display }} · SHA-256 {{ macos.sha256[:10] }}…{{ macos.sha256[-6:] }}</small>{% endif %}</div>
+      {% if macos %}<a class="button" href="{{ macos.download_url }}">下载 macOS 版</a>{% else %}<span class="button secondary is-disabled">签名包尚未就绪</span>{% endif %}
+    </article>
+    {% set windows = client_release.preferred.windows %}
+    <article class="client-platform-card">
+      <span class="client-platform-mark">win</span>
+      <div><span class="skill-card-index">Windows</span><h3>Windows 客户端</h3><p>使用标准安装程序，不要求管理员权限。安装包必须完成 Authenticode 签名门禁后才开放。</p>{% if windows %}<small>{{ windows.architecture }} · {{ windows.size_display }} · SHA-256 {{ windows.sha256[:10] }}…{{ windows.sha256[-6:] }}</small>{% endif %}</div>
+      {% if windows %}<a class="button" href="{{ windows.download_url }}">下载 Windows 版</a>{% else %}<span class="button secondary is-disabled">签名包尚未就绪</span>{% endif %}
+    </article>
+  </div>
+  {% if client_release.release_notes %}<details class="panel skill-release-notes"><summary>查看 V{{ client_release.version }} 更新说明</summary><div class="manual-content">{{ client_release.release_notes_html }}</div></details>{% endif %}
+  {% else %}
+  <article class="panel client-release-pending"><span class="download-icon">V0.1</span><div><h3>Windows 与 macOS 正式安装包正在完成发布门禁</h3><p>未签名、未公证或摘要不一致的文件不会出现下载按钮。正式包发布后本页自动开放，并分别记录成员的下载状态。</p></div></article>
+  {% endif %}
+
+  <div class="client-download-notes">
+    <article><strong>登录与同步</strong><p>账号密码登录、保存密码和自动登录由系统钥匙串或 Windows 凭据管理器保护；新设备登录会使旧设备退出。</p></article>
+    <article><strong>Skills 与外部服务</strong><p>客户端自动带入共创正式技能包。DeepSeek、OpenCode、企查查、天眼查、PaddleOCR 等注册与授权入口统一放在客户端 Skills 中心的“安装与连接”。</p></article>
+    <article><strong>下载记录边界</strong><p>服务器记录已开始下载的账号、平台和版本；只有客户端完成账号登录后，管理端才显示“已登录使用”。</p></article>
+  </div>
+</section>

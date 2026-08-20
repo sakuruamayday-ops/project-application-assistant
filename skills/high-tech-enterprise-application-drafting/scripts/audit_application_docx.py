@@ -16,6 +16,23 @@ UNIT_OR_BOUNDARY = re.compile(
     r"(%|秒|分钟|小时|天|毫米|厘米|微米|千米|米|赫兹|分贝|摄氏度|℃|兆帕|MPa|"
     r"伏|安|瓦|帧|次|个|类|项|套|点|条|不低于|不高于|不大于|不小于|不超过|不少于)"
 )
+INNOVATION_SECTION_ORDER = (
+    "知识产权对企业竞争力的作用",
+    "科技成果转化情况",
+    "研究开发与技术创新组织管理情况",
+    "管理与科技人员情况",
+)
+PENDING_IP_TERMS = ("申请", "受理", "审中", "实质审查")
+AUTHORIZED_IP_TERMS = ("已授权", "获得发明专利", "授权成果")
+STATUS_BOUNDARY_TERMS = ("不计入", "不得", "不能", "尚未", "仅作为", "不作为")
+UNSUPPORTED_RESULT_PHRASES = (
+    "营业收入增长率",
+    "用户高度认可",
+    "大型工程",
+    "多所高校",
+    "科技项目资助",
+    "税收优惠",
+)
 
 
 def unique_cells(row):
@@ -56,6 +73,128 @@ def xml_cell_text(cell) -> str:
 
 def normalized(value: str) -> str:
     return "".join(value.replace("\u3000", " ").split())
+
+
+def canonical_innovation_label(value: str) -> str | None:
+    compact = normalized(value)
+    for label in INNOVATION_SECTION_ORDER:
+        if compact.startswith(normalized(label)):
+            return label
+    return None
+
+
+def _evidence_list(evidence: dict | None, key: str) -> list[str]:
+    if not evidence:
+        return []
+    value = evidence.get(key, [])
+    return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+
+
+def audit_innovation_capability(document, evidence: dict | None = None) -> tuple[dict, list[dict]]:
+    """Audit fixed section order, length, enterprise isolation and evidence boundaries."""
+    result: dict[str, dict] = {}
+    order: list[str] = []
+    issues: list[dict] = []
+    for table in document.tables:
+        for row in table.rows:
+            cells = list(unique_cells(row))
+            if len(cells) < 2:
+                continue
+            label = canonical_innovation_label(cells[0].text)
+            if label is None:
+                continue
+            text = cells[1].text.strip()
+            length = len(normalized(text))
+            order.append(label)
+            result[label] = {"length": length, "text": text, "issues": []}
+
+    if not order:
+        return result, issues
+    if order != list(INNOVATION_SECTION_ORDER):
+        issues.append(
+            {
+                "section": "企业创新能力",
+                "issue": f"四栏顺序或完整性错误：{order}",
+            }
+        )
+    for label in INNOVATION_SECTION_ORDER:
+        if label not in result:
+            continue
+        if result[label]["length"] < 390:
+            issue = f"正文{result[label]['length']}字，少于390字"
+            result[label]["issues"].append(issue)
+            issues.append({"section": label, "issue": issue})
+
+    if not evidence:
+        return result, issues
+
+    allowed_names = set(_evidence_list(evidence, "allowed_corporate_names"))
+    company_pattern = re.compile(r"[\u4e00-\u9fffA-Za-z0-9·（）()]{2,50}有限公司")
+    for label, item in result.items():
+        foreign_names = sorted(
+            {
+                matched
+                for matched in company_pattern.findall(item["text"])
+                if not any(matched.endswith(name) for name in allowed_names)
+            }
+        )
+        if foreign_names:
+            issue = f"出现未在本企业证据中登记的企业名称：{foreign_names}"
+            item["issues"].append(issue)
+            issues.append({"section": label, "issue": issue})
+
+    ip_text = result.get(INNOVATION_SECTION_ORDER[0], {}).get("text", "")
+    for sentence in re.split(r"[。；;\n]", ip_text):
+        if (
+            any(term in sentence for term in PENDING_IP_TERMS)
+            and any(term in sentence for term in AUTHORIZED_IP_TERMS)
+            and not any(term in sentence for term in STATUS_BOUNDARY_TERMS)
+        ):
+            issue = f"申请、受理或审中知识产权疑似被写成授权成果：{sentence.strip()}"
+            result[INNOVATION_SECTION_ORDER[0]]["issues"].append(issue)
+            issues.append({"section": INNOVATION_SECTION_ORDER[0], "issue": issue})
+    if not evidence.get("allow_financing_claims", False):
+        financing = [term for term in ("融资", "估值", "投资者") if term in ip_text]
+        if financing:
+            issue = f"缺少融资作用证据但出现相关表述：{financing}"
+            result[INNOVATION_SECTION_ORDER[0]]["issues"].append(issue)
+            issues.append({"section": INNOVATION_SECTION_ORDER[0], "issue": issue})
+
+    result_text = result.get(INNOVATION_SECTION_ORDER[1], {}).get("text", "")
+    allowed_result_claims = _evidence_list(evidence, "allowed_result_claims")
+    for phrase in UNSUPPORTED_RESULT_PHRASES:
+        if phrase in result_text and not any(phrase in claim for claim in allowed_result_claims):
+            issue = f"科技成果转化栏出现未登记的市场、合作或政策主张：{phrase}"
+            result[INNOVATION_SECTION_ORDER[1]]["issues"].append(issue)
+            issues.append({"section": INNOVATION_SECTION_ORDER[1], "issue": issue})
+
+    management_text = result.get(INNOVATION_SECTION_ORDER[2], {}).get("text", "")
+    policy_titles = set(_evidence_list(evidence, "policy_titles"))
+    used_titles = set(re.findall(r"《([^》]+)》", management_text))
+    unknown_titles = sorted(used_titles - policy_titles)
+    if unknown_titles:
+        issue = f"制度名称未逐字命中详细制度文件：{unknown_titles}"
+        result[INNOVATION_SECTION_ORDER[2]]["issues"].append(issue)
+        issues.append({"section": INNOVATION_SECTION_ORDER[2], "issue": issue})
+    if policy_titles and not used_titles:
+        issue = "已提供制度文件但组织管理栏未引用任何制度全称"
+        result[INNOVATION_SECTION_ORDER[2]]["issues"].append(issue)
+        issues.append({"section": INNOVATION_SECTION_ORDER[2], "issue": issue})
+
+    personnel_text = result.get(INNOVATION_SECTION_ORDER[3], {}).get("text", "")
+    allowed_personnel_claims = _evidence_list(evidence, "allowed_personnel_claims")
+    for term in ("博士", "硕士", "留任率"):
+        if term in personnel_text and not any(term in claim for claim in allowed_personnel_claims):
+            issue = f"人员栏出现未登记的人员结构或稳定性主张：{term}"
+            result[INNOVATION_SECTION_ORDER[3]]["issues"].append(issue)
+            issues.append({"section": INNOVATION_SECTION_ORDER[3], "issue": issue})
+    for value, unit in re.findall(r"(\d+(?:\.\d+)?)\s*(名|人|%)", personnel_text):
+        token = f"{value}{unit}"
+        if not any(token in claim.replace(" ", "") for claim in allowed_personnel_claims):
+            issue = f"人员栏出现未登记的数量或比例：{token}"
+            result[INNOVATION_SECTION_ORDER[3]]["issues"].append(issue)
+            issues.append({"section": INNOVATION_SECTION_ORDER[3], "issue": issue})
+    return result, issues
 
 
 def find_xml_label_cell(table, label: str):
@@ -139,9 +278,19 @@ def main():
     parser.add_argument("docx", type=Path)
     parser.add_argument("--font", default="宋体")
     parser.add_argument("--size", type=float, default=12.0)
+    parser.add_argument(
+        "--innovation-evidence",
+        type=Path,
+        help="企业创新能力四栏证据边界JSON；正式回填时必须提供",
+    )
     args = parser.parse_args()
 
     document = Document(args.docx)
+    evidence = None
+    if args.innovation_evidence:
+        evidence = json.loads(args.innovation_evidence.read_text(encoding="utf-8"))
+        if not isinstance(evidence, dict):
+            raise SystemExit("--innovation-evidence必须指向JSON对象")
     font_issues = []
     placeholders = []
 
@@ -160,20 +309,10 @@ def main():
                     {"text": run.text[:40], "font": run.font.name, "eastAsia": east_asia, "size": size}
                 )
 
-    innovation = {}
-    labels = {
-        "知识产权对企业竞争力的作用",
-        "科技成果转化情况",
-        "研究开发与技术创新组织管理情况",
-        "管理与科技人员情况",
+    innovation_detail, innovation_issues = audit_innovation_capability(document, evidence)
+    innovation_lengths = {
+        label: item["length"] for label, item in innovation_detail.items()
     }
-    for table in document.tables:
-        for row in table.rows:
-            cells = list(unique_cells(row))
-            if len(cells) >= 2:
-                label = "".join(cells[0].text.split())
-                if label in labels:
-                    innovation[label] = len(cells[1].text.replace("\n", ""))
 
     rd_core_innovation, rd_core_issues = audit_rd_core_innovation(document)
 
@@ -182,8 +321,13 @@ def main():
         "tables": len(document.tables),
         "font_issue_count": len(font_issues),
         "font_issue_sample": font_issues[:20],
-        "innovation_capability_lengths": innovation,
-        "innovation_below_390": {k: v for k, v in innovation.items() if v < 390},
+        "innovation_capability_lengths": innovation_lengths,
+        "innovation_below_390": {
+            label: length for label, length in innovation_lengths.items() if length < 390
+        },
+        "innovation_capability": innovation_detail,
+        "innovation_issue_count": len(innovation_issues),
+        "innovation_issues": innovation_issues,
         "rd_core_innovation": rd_core_innovation,
         "rd_core_issue_count": len(rd_core_issues),
         "rd_core_issues": rd_core_issues,
@@ -191,7 +335,7 @@ def main():
         "placeholder_sample": placeholders[:20],
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    raise SystemExit(1 if font_issues or result["innovation_below_390"] or rd_core_issues else 0)
+    raise SystemExit(1 if font_issues or innovation_issues or rd_core_issues else 0)
 
 
 if __name__ == "__main__":

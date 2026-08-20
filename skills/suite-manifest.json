@@ -9,71 +9,59 @@
   },
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.6.5.2",
-    "version": "1.6.5.2",
-    "summary": "V1.6.5.2 在 V1.6.5.1 受控模板基础上新增私有真实客户资料锚点成稿器，并将十二类双报告完整成稿、逐页渲染、macOS与Windows WorkBuddy未签名候选发包、最终ZIP选模回归及视觉抽检固化为一条候选流水线。",
+    "tag": "V1.6.7",
+    "version": "1.6.7",
+    "summary": "V1.6.7 汇总未发布的 V1.6.6 共创精选与专业报告能力，并修复十二类项目报告的最简提示词路由和同行检索未优先使用本地知识库的问题。",
     "changes": [
-      "新增项目前期评估报告与项目申报可行性分析报告两类正式交付，前者服务谈单，后者逐项拆解现行条件、评分表、证据和补强任务。",
-      "高企、专精特新、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划自动切换项目专属核心评估对象。",
-      "所有项目报告建议形成国内产品技术水平评价咨询报告和国际产品技术水平评价咨询报告；证据形成前不得承诺国内领先或国际先进。",
-      "专精线新增数字化转型诊断报告补强，核验五个一级维度、全国与同行对标、优势短板及提升路径。",
-      "高企新增研发费用加计扣除规范化服务，贯通立项、人员设备、工时领料、小试中试、结题、专利关联、月度分配、辅助账与明细账。",
-      "两类报告统一使用共创红色水印并输出可编辑 Word 与 PDF；无法只加密水印且保持正文可编辑时不设置编辑限制。",
-      "企业分析报告 A、B、C 版以及尖兵领雁、市级重大和科技计划类既有分析逻辑保持不变。",
-      "内置高企、专精特新、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化和科技计划二十四份 Word 母版，命中时先选版再回填。",
-      "模板索引对项目别名执行最长命中，对未知、冲突、哈希变更或覆盖现有文件一律拒绝。",
-      "macOS 与 Windows Stop Hook 一致识别完成交付语义和对象定向否定，并强制当前轮次的章节、表格、Word、PDF、哈希及红色水印验证回执。",
-      "新增真实客户原文锚点成稿器：客户原件必须位于公共技能树之外，原文锚点未命中或成稿仍有占位符时拒绝交付。",
-      "新增十二类候选流水线：产出二十四份Word/PDF完整成稿、逐页渲染，构建macOS和Windows WorkBuddy两个未签名RC ZIP，再从最终ZIP执行四十八次选模成稿回归。",
-      "ZCode不在本候选流水线内，不生成候选包、不写入发布清单、不给出测试通过状态。"
+      "企业名称加现有资料即可启动十二类项目前期评估或可行性分析；主体缺口按天眼查、企查查和官方来源补齐，无法核验字段如实标为待核验。",
+      "高企、专精特新和小巨人等常用短提示词进入专业报告路由，普通“给朋友出报告”等非专业对话不误触发。",
+      "同行及获评企业检索固定本地知识库 → 天眼查 → 企查查 → 官方网页或联网搜索，禁止首步直接联网。",
+      "V1.6.7 汇总 V1.6.6 的共创精选、国知局专利首轮发现、十二类双报告母版和共创客户端专业执行合同，只发布签名通用 Skills 包。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.5.2 候选包只提供 macOS 与 Windows WorkBuddy 两种结构；客户原始资料、客户成稿、外部企业数字身份证和知识索引都不属于插件包输入。",
+      "workbuddy": "V1.6.7 不再发布 macOS 或 Windows WorkBuddy 专用包。WorkBuddy 历史适配代码只保留为兼容性资料，不进入正式资产、发布门禁或安装入口。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
-      "verification": "确认套件清单声明的全部 Skills 可识别、本地与正式技能清单无未登记漂移、Windows 原生 Hook 生成 schema 4 回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
+      "verification": "确认套件清单声明的全部 Skills 可识别、本地与正式技能清单无未登记漂移、共创客户端生成专业候选与正式交付当前轮回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
     "compatibility": [
       {
         "target": "通用 Skills",
         "status": "正式发布",
-        "note": "包含高企 RD 核心技术及创新点批量回填、企业能力校准、汇总表字段粒度校验、WPS逐页验收与哈希闭环，以及 Grounded 算法、注册表、调用图、方向卡规则和专利规则；通用 Skills 包已完成结构与安装门禁。"
+        "note": "包含 V1.6.5.2 全部正式能力和 V1.6.6 候选中的共创精选、国知局首轮发现、十二类双报告与客户端合同，并新增最简报告提示词和本地知识库优先同行检索；通用 Skills 包继续执行结构、依赖、签名和安装门禁。"
       },
       {
         "target": "macOS WorkBuddy",
-        "status": "结构兼容，发布后补充实机结果",
-        "note": "增加受限的 SessionStart 冷启动恢复并保留原生 UserPromptSubmit 路径；确定性回归通过后仍须完成两个独立真实任务的原始 Hook 与 Stop 回执。"
+        "status": "不再发布专用包",
+        "note": "历史兼容实现保留在源码中供审计与迁移参考，但 V1.6.7 正式资产不包含 WorkBuddy 包、安装指令或专用 Hook。"
       },
       {
         "target": "Windows WorkBuddy",
-        "status": "结构兼容，发布后补充实机结果",
-        "note": "Windows 原生 EXE 已修复生命周期命令根路径，并增加受限 Skill 激活转录恢复、消息事件去重、跨轮 Skill 隔离与 Stop 会话对齐收据；确定性回归通过后仍须由 Windows 真实宿主验证。"
+        "status": "不再发布专用包",
+        "note": "历史兼容实现保留在源码中供审计与迁移参考，但 V1.6.7 正式资产不包含 WorkBuddy 包、安装指令或 Windows 专用 Hook。"
+      },
+      {
+        "target": "共创独立客户端",
+        "status": "发布门禁已定义，双端正式发布单独验收",
+        "note": "固定 DeepSeek Harness 提交 47f943859bef60e4160492346772ded9b24f765a；必须由签名宿主插件失败关闭执行完整 Hook 生命周期，并取得 macOS 公证、Windows Authenticode、全新设备安装、升级和回滚回执。"
       }
     ],
-    "one_step_installation_protocol": {
-      "scope": "workbuddy_only",
-      "copy_paste_rounds": 1,
-      "personal_token_prefilled": true,
-      "mcp_configuration_mode": "user_remote_streamable_http",
-      "preserve_other_mcp_servers": true,
-      "reload_count": 1,
+    "distribution_protocol": {
+      "generic_skill_package": "signed-universal-zip",
+      "first_party_client": "bundled-signed-skill-suite",
+      "workbuddy_specific_package": false,
+      "external_service_setup": "skills-center-install-and-connect",
       "success_gate": [
-        "套件清单声明的全部 Skills 可识别",
-        "最小行为 Hook 已启用",
-        "tools/list 枚举 knowledge_search、knowledge_document、knowledge_service_status",
-        "knowledge_service_status 返回 connected: true",
-        "其他 MCP 条目未被覆盖",
-        "安装后只保留一个 V1.6.5.2 活动正式市场，旧版本可恢复快照不覆盖用户资料",
-        "安装前原包只读平台预检通过且 package_mutated=false"
-      ],
-      "released_adapters": [
-        "workbuddy-macos",
-        "workbuddy-windows"
+        "套件清单声明的全部 Skills 可识别并与签名索引一致",
+        "共创客户端只从已验签 V1.6.7 技能目录加载正式 Skills",
+        "专业任务必须激活命中技能、依赖技能和质量门禁技能",
+        "外部 MCP 只有完成 OAuth 或令牌交换、tools/list 和健康调用后才显示已连接",
+        "其他兼容 Agent 只下载同一通用 Skills 包并按标准 Streamable HTTP 配置 MCP"
       ]
     },
     "rollback": [
       "通用 Skills 回滚时恢复上一版本 skills 目录，并重新运行安装完整性检查。",
-      "WorkBuddy 安装或升级失败时从 plugins 之外的回滚快照恢复原插件目录和用户 MCP 配置；不覆盖其他 MCP 条目。",
+      "共创客户端升级失败时恢复上一签名客户端、上一签名技能包和原 MCP 配置；不覆盖用户企业资料或第三方连接。",
       "回滚不得覆盖个人项目资料、本地政策规则、个人偏好或系统凭据。"
     ]
   },
@@ -133,6 +121,8 @@
     "_runtime/gongchuang-branding",
     "_runtime/grounded-citations",
     "_runtime/template-fidelity",
+    "curated-skill-catalog.json",
+    "client-runtime-gates.json",
     "delivery-contracts.json",
     "SOURCE-USE-LICENSE.txt",
     "policy-freshness-manifest.json",
@@ -144,16 +134,42 @@
   "policy_freshness_manifest": "policy-freshness-manifest.json",
   "release_gates": [
     {
+      "name": "v166-hightech-innovation-capability-merge",
+      "command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_v166_hightech_innovation_merge_slot.py"
+      ],
+      "environment": {
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "name": "curated-catalog-and-client-runtime-contract",
+      "command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_curated_skill_catalog.py",
+        "skills/patent-router/tests/test_cnipa_epub_search.py",
+        "tests/test_patent_router.py"
+      ],
+      "environment": {
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+      },
+      "timeout_seconds": 120
+    },
+    {
       "name": "local-formal-skill-reconciliation",
       "command": [
         "{python}",
         "scripts/audit_local_formal_skill_drift.py",
         "--skills-root",
-        "skills",
-        "--local-root",
-        "~/.codex/skills",
-        "--local-root",
-        "~/.agents/skills"
+        "skills"
       ],
       "timeout_seconds": 60
     },
@@ -212,20 +228,6 @@
       "timeout_seconds": 120
     },
     {
-      "name": "workbuddy-report-candidate-pipeline-contract",
-      "command": [
-        "{python}",
-        "-m",
-        "pytest",
-        "-q",
-        "tests/test_workbuddy_report_candidate_pipeline.py"
-      ],
-      "environment": {
-        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
-      },
-      "timeout_seconds": 120
-    },
-    {
       "name": "deprecated-policy-semantics",
       "command": [
         "{python}",
@@ -248,73 +250,9 @@
         "tests/validate_three_first_gold.py"
       ],
       "timeout_seconds": 60
-    },
-    {
-      "name": "workbuddy-one-step-install-contract",
-      "command": [
-        "{python}",
-        "-m",
-        "pytest",
-        "-q",
-        "services/knowledge-portal/tests/test_portal.py::test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only"
-      ],
-      "environment": {
-        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
-        "PYTHONPATH": "services/knowledge-portal"
-      },
-      "timeout_seconds": 180
     }
   ],
-  "post_package_release_gates": [
-    {
-      "name": "workbuddy-macos-server-release-candidate-contract",
-      "command": [
-        "{python}",
-        "tests/validate_workbuddy_release_candidate.py",
-        "--suite-zip",
-        "{workbuddy_macos_archive}",
-        "--check",
-        "server-release-contract"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "name": "workbuddy-macos-all-skill-package-coverage",
-      "command": [
-        "{python}",
-        "tests/validate_workbuddy_release_candidate.py",
-        "--suite-zip",
-        "{workbuddy_macos_archive}",
-        "--check",
-        "all-skill-coverage"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "name": "workbuddy-windows-server-release-candidate-contract",
-      "command": [
-        "{python}",
-        "tests/validate_workbuddy_release_candidate.py",
-        "--suite-zip",
-        "{workbuddy_windows_archive}",
-        "--check",
-        "server-release-contract"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "name": "workbuddy-windows-all-skill-package-coverage",
-      "command": [
-        "{python}",
-        "tests/validate_workbuddy_release_candidate.py",
-        "--suite-zip",
-        "{workbuddy_windows_archive}",
-        "--check",
-        "all-skill-coverage"
-      ],
-      "timeout_seconds": 120
-    }
-  ],
+  "post_package_release_gates": [],
   "dependencies": {
     "project-feasibility": {
       "required_skills": [
@@ -464,21 +402,13 @@
     "jiaotang-kb"
   ],
   "workbuddy_plugin": {
-    "package_mode": "skills_minimal_behavior_hook",
-    "hook_mode": "behavior_only_fail_open",
-    "mcp_configuration_mode": "user_remote_streamable_http",
+    "package_mode": "not-released",
+    "hook_mode": "legacy-compatibility-only",
+    "mcp_configuration_mode": "standard-streamable-http-manual",
     "release_matrix": {
-      "hosts": [
-        "macos",
-        "windows"
-      ],
-      "required_flow": [
-        "marketplace-add",
-        "plugin-install",
-        "plugin-enable",
-        "skill-trigger",
-        "user-remote-mcp-validation"
-      ]
+      "released": false,
+      "hosts": [],
+      "required_flow": []
     }
   },
   "ignored_reference_tokens": [

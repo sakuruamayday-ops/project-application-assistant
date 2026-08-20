@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}授权共创企业助手｜知识产权大脑{% endblock %}
+{% block content %}
+<main class="auth-shell client-authorization-shell">
+  <section class="auth-story">
+    <a class="brand brand-on-dark" href="/portal"><span class="brand-mark brand-mark-wide">GCIP</span><span><strong>共创企业助手</strong><small>为中小企业探路点灯</small></span></a>
+    <div class="archive-number">CLIENT AUTHORIZATION</div>
+    <div class="story-copy"><p class="eyebrow light">Windows · macOS</p><h1>由网站账号<br>授权本机客户端</h1><p>客户端只接收一次性授权结果。访问凭据不会出现在浏览器地址或页面正文中，并由客户端保存到系统安全凭据库。</p></div>
+    <div class="story-foot"><span class="live-dot"></span>一次性授权 · 十分钟有效 · 服务端回执</div>
+  </section>
+  <section class="auth-panel">
+    <div class="auth-form-wrap client-authorization-panel">
+      <p class="eyebrow">Device Authorization</p><h2>连接共创账号</h2>
+      <p class="muted">当前登录账号：<strong>{{ user.username }}</strong></p>
+      {% if authorization and not expired %}
+        <div class="client-authorization-code"><span>客户端授权码</span><strong>{{ user_code }}</strong></div>
+        <dl class="client-authorization-facts">
+          <div><dt>应用</dt><dd>共创企业助手 V{{ authorization.client_version }}</dd></div>
+          <div><dt>设备</dt><dd>{{ authorization.device_name }}</dd></div>
+          <div><dt>平台</dt><dd>{{ 'macOS' if authorization.platform == 'macos' else 'Windows' }}</dd></div>
+        </dl>
+      {% endif %}
+      {% if expired %}
+        <div class="notice alert">该一次性授权已过期或不存在，请回到客户端重新点击“登录共创账号”。</div>
+      {% elif not owned %}
+        <div class="notice alert">该授权已由其他账号处理，不能切换到当前账号。</div>
+      {% elif result == 'approved' or authorization.approved_at %}
+        <div class="notice success">授权成功。共创企业助手会自动完成连接，您可以关闭此页面。</div>
+      {% elif result == 'denied' or authorization.denied_at %}
+        <div class="notice alert">已拒绝授权。客户端不会获得账号访问凭据。</div>
+      {% else %}
+        <div class="notice">授权后，客户端可同步个人偏好、共创技能与知识库连接。模型 API 密钥仍只保存在您的电脑上，不会上传到共创服务器。</div>
+        <form method="post" action="/client-authorize" class="client-authorization-actions">
+          <input type="hidden" name="csrf_token" value="{{ user.csrf_token }}">
+          <input type="hidden" name="code" value="{{ user_code }}">
+          <button class="button" type="submit" name="decision" value="approve">授权并连接客户端</button>
+          <button class="button secondary" type="submit" name="decision" value="deny">拒绝</button>
+        </form>
+      {% endif %}
+      <p class="auth-switch"><a href="/portal">返回团队工作台</a></p>
+    </div>
+  </section>
+</main>
+{% endblock %}

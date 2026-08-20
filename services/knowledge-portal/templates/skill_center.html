@@ -94,21 +94,13 @@
       {% endif %}
       <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '共创研究院企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本功能简介</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
-      <div class="skill-platform-note"><strong>固定三产物</strong><p>正式发布只保留通用版、macOS WorkBuddy 版与 Windows WorkBuddy 版。两个 WorkBuddy 包包含同一套 Skills 与业务规则，并分别使用 macOS Python 核心和 Windows 原生 EXE；不需要重复安装通用版。其他宿主不再规划或展示平台专用版本。</p></div>
+      <div class="skill-platform-note"><strong>统一通用包</strong><p>Skills 只发布一个经过签名的通用 ZIP，不再提供 WorkBuddy 专用包。共创客户端会自动带入并更新同一正式技能包；其他兼容宿主可下载通用包后自行导入。</p></div>
       <div class="skill-platform-downloads">
         <article class="skill-platform-card is-generic">
           <span class="skill-platform-mark">通</span>
-          <div><span class="skill-card-index">基础能力 · 通用 Skills</span><h3>通用版</h3><small>V{{ latest_release.version }} · SHA-256 {{ latest_release.sha256[:10] }}…{{ latest_release.sha256[-6:] }}</small><p>适用于能够导入 SKILL.md 或读取 Agent Skills 目录的宿主。只包含 {{ skill_center.summary.total }} 项正式 Skills，不写宿主配置，也不附平台 Hooks。</p></div>
+          <div><span class="skill-card-index">正式能力包 · 通用 Skills</span><h3>通用版</h3><small>V{{ latest_release.version }} · SHA-256 {{ latest_release.sha256[:10] }}…{{ latest_release.sha256[-6:] }}</small><p>适用于能够导入 SKILL.md 或读取 Agent Skills 目录的宿主。只包含 {{ skill_center.summary.total }} 项正式 Skills，不写宿主配置、不携带个人凭据，也不再附带 WorkBuddy 专用 Hooks。</p></div>
           <div class="skill-platform-status {{ 'is-ready' if latest_release.generic_available else 'is-validating' }}"><i></i>{{ '正式包可下载' if latest_release.generic_available else '完整性校验未通过' }}</div>
           {% if latest_release.generic_available %}<a class="button" href="/skills/latest/download">下载通用包</a>{% else %}<span class="button secondary is-disabled">下载已暂停</span>{% endif %}
-        </article>
-        {% set workbuddy = latest_release.workbuddy %}
-        <article class="skill-platform-card is-workbuddy" data-platform-version="{{ workbuddy.version or '' }}">
-          <span class="skill-platform-mark">WB</span>
-          <div><span class="skill-card-index">平台增强版 · WorkBuddy</span><h3>WorkBuddy</h3>{% if workbuddy.platform_versions %}<small>macOS V{{ workbuddy.platform_versions.macos or '—' }} · Windows V{{ workbuddy.platform_versions.windows or '—' }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% elif workbuddy.version %}<small>当前提供 V{{ workbuddy.version }}{% if workbuddy.distribution_published_at_display %} · 分发修订 {{ workbuddy.distribution_published_at_display }}{% endif %}</small>{% endif %}<p>macOS 与 Windows 使用两个独立签名插件市场 ZIP，共用 {{ skill_center.summary.total }} 项 Skills、业务规则、远程 MCP 与 schema 3 轮次状态；macOS 使用 shell 与 Python Hook，Windows 使用原生 EXE Hook。</p>{% if workbuddy.distribution_notes_html %}<details class="skill-release-notes"><summary>查看 WorkBuddy 分发修订说明</summary><div class="manual-content">{{ workbuddy.distribution_notes_html }}</div>{% if workbuddy.distribution_url %}<a href="{{ workbuddy.distribution_url }}" target="_blank" rel="noreferrer">查看不可变发行记录</a>{% endif %}</details>{% endif %}</div>
-          <div class="skill-platform-status {{ 'is-ready' if workbuddy.installable else 'is-validating' }}"><i></i>{{ '正式包可安装' if workbuddy.installable else ('已暂停新安装' if workbuddy.included else '尚未发布') }}</div>
-          {% if workbuddy.installable %}<a class="button" href="{{ workbuddy.download_urls.macos }}">下载 macOS 包</a><a class="button secondary" href="{{ workbuddy.download_urls.windows }}">下载 Windows 包</a>{% else %}<span class="button secondary is-disabled">{{ '等待安全正式版' if workbuddy.included else '当前版本未包含' }}</span>{% endif %}
-          {% if workbuddy.included and not workbuddy.installable %}<p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>{% endif %}
         </article>
       </div>
       {% endif %}
@@ -131,39 +123,30 @@
   </div>
 
   <div id="skills-panel-install" class="skill-section-pane" data-skill-section-pane="install" role="tabpanel" aria-labelledby="skills-tab-install" hidden>
-    <div class="skill-pane-heading"><span class="skill-kicker">ONE-STEP SETUP</span><h2>安装与连接</h2><p>网页暂未提供 WorkBuddy 深链，因此“一键安装”表示只复制粘贴一次；请按当前电脑选择 macOS 版或 Windows 版。</p><a class="button secondary" href="/skills/diagnostics">打开无敏感信息一键诊断</a></div>
+    <div class="skill-pane-heading"><span class="skill-kicker">INSTALL & CONNECT</span><h2>安装与连接</h2><p>共创客户端自动管理官方 Skills，不再提供 WorkBuddy 专用包；模型、MCP 和需要第三方账号的工具统一从客户端 Skills 中心完成安装、跳转登录与连接校验。</p><a class="button" href="/downloads">下载共创客户端</a></div>
     <div class="skill-install-grid">
-      <article class="skill-install-plan" data-agent-bootstrap data-csrf-token="{{ user.csrf_token }}" data-install-status-url="/agent-installation-status">
-        <span class="skill-card-index">01 / 一键安装</span>
-        <h3>复制完整指令给 WorkBuddy</h3>
-        {% if release_guidance.workbuddy_installable %}
-        <p>两个入口共用 {{ skill_center.summary.total }} 项 Skills、业务规则和 <code>mcpServers.jiaotang-kb</code>；操作系统路径与 Hook 启动适配指令相互独立。</p>
-        <div class="agent-install-actions">
-          <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap data-agent-platform="macos"><span>一键安装 macOS 版</span><small>复制 macOS 启动适配指令</small></button>
-          <button class="button agent-copy-primary" type="button" data-copy-agent-bootstrap data-agent-platform="windows"><span>一键安装 Windows 版</span><small>复制 Windows 启动适配指令</small></button>
-        </div>
-        <p class="agent-copy-status" data-agent-copy-status aria-live="polite">请只选择当前电脑对应的版本；只有 {{ skill_center.summary.total }} 项 Skills、tools/list 和 knowledge_service_status 全部通过才算完成。</p>
-        {% else %}
-        <p class="agent-copy-status is-error">{{ release_guidance.workbuddy_notice }}</p>
-        <span class="button secondary is-disabled">新安装已暂停</span>
-        {% endif %}
-        <div class="non-workbuddy-mcp-entry"><strong>手工配置远程 MCP</strong><p>网站会为当前登录用户自动复用或生成个人 Token，并填入完整配置；WorkBuddy 和其他支持 Streamable HTTP MCP 的 Agent 均可直接复制。</p><a class="button secondary" href="/mcp-guide">复制完整 MCP 配置</a></div>
+      <article class="skill-install-plan">
+        <span class="skill-card-index">01 / 共创客户端</span>
+        <h3>登录后自动配置官方能力</h3>
+        <p>客户端校验内置技能包 V{{ latest_release.version if latest_release else skill_center.release_tag }} 的签名与哈希，并通过门禁适配层加载，不要求普通用户复制目录或修改配置文件。</p>
+        <a class="button" href="/downloads">选择 Windows 或 macOS 安装包</a>
+        <div class="non-workbuddy-mcp-entry"><strong>其他 Agent 使用通用包</strong><p>下载通用 ZIP 后按宿主自己的 Skills 目录导入。共创知识库 MCP 仍可使用标准 Streamable HTTP 配置。</p>{% if latest_release and latest_release.generic_available %}<a class="button secondary" href="/skills/latest/download">下载通用 Skills</a>{% endif %}<a class="button secondary" href="/mcp-guide">复制知识库 MCP 配置</a></div>
       </article>
       <article class="skill-install-status">
-        <span class="skill-card-index">02 / 完成标准</span>
-        <h3>WorkBuddy 运行时验收</h3>
+        <span class="skill-card-index">02 / 客户端完成标准</span>
+        <h3>安装、授权与真实连接</h3>
         <div class="agent-connection-summary is-{{ agent_connection_status.state }}" data-agent-install-status aria-live="polite">
           <i></i><div><strong data-agent-connection-label>{{ agent_connection_status.label }}</strong><small data-agent-connection-detail>{{ agent_connection_status.detail }}</small></div>
         </div>
         <ol class="skill-install-stages">
-          <li><i></i><span><strong>{{ skill_center.summary.total }} 项 Skills</strong><small>全部安装并可识别</small></span></li>
-          <li><i></i><span><strong>tools/list</strong><small>出现三个核心知识工具</small></span></li>
-          <li><i></i><span><strong>knowledge_service_status</strong><small>实际调用返回 connected: true</small></span></li>
-          <li><i></i><span><strong>配置合并</strong><small>其他 MCP 条目未被覆盖</small></span></li>
+          <li><i></i><span><strong>Skills 签名校验</strong><small>失败关闭，不加载漂移版本</small></span></li>
+          <li><i></i><span><strong>官方登录或密钥授权</strong><small>跳转完成后由回调或真实工具发现确认</small></span></li>
+          <li><i></i><span><strong>tools/list 与健康调用</strong><small>只有服务端实际返回才显示“已连接”</small></span></li>
+          <li><i></i><span><strong>配置隔离</strong><small>新增连接不覆盖其他 MCP 与个人设置</small></span></li>
         </ol>
       </article>
     </div>
-    <div class="skill-install-safety"><span>安全边界</span><p>个人 Token 只出现在当前登录用户的一键安装指令和手工配置页，不写入公共包或公共代码；Agent 最终回复不得复述 Token。</p></div>
+    <div class="skill-install-safety"><span>外部服务入口</span><p>DeepSeek、OpenCode、企查查、天眼查、PaddleOCR 以及社区技能仓库不再占用独立“API 与用户”页面；入口统一在客户端 Skills 中心，点击“添加”后跳转官方注册或授权，回到客户端后必须真实校验成功才显示已连接。</p></div>
   </div>
 
   <dialog class="skill-detail-dialog" data-skill-dialog aria-labelledby="skill-detail-title">

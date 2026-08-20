@@ -113,6 +113,18 @@ body::before {
 .button.full { width: 100%; }
 .auth-switch, .auth-guide-link, .form-help { color: var(--atelier-muted); font-size: 12px; text-align: center; }
 .auth-switch a, .auth-guide-link a { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 10px 6px; color: var(--atelier-gold); }
+.client-authorization-panel { max-width: 460px; }
+.client-authorization-code { margin: 24px 0 16px; padding: 18px 20px; text-align: center; border: 1px solid var(--atelier-line-strong); border-radius: 14px; background: #111214; }
+.client-authorization-code span, .client-authorization-code strong { display: block; }
+.client-authorization-code span { color: var(--atelier-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.client-authorization-code strong { margin-top: 8px; color: var(--atelier-gold-light); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 28px; letter-spacing: .12em; }
+.client-authorization-facts { display: grid; gap: 0; margin: 0 0 20px; border: 1px solid var(--atelier-line); border-radius: 12px; background: #111214; }
+.client-authorization-facts div { display: grid; grid-template-columns: 72px 1fr; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--atelier-line); }
+.client-authorization-facts div:last-child { border-bottom: 0; }
+.client-authorization-facts dt { color: var(--atelier-muted); }
+.client-authorization-facts dd { margin: 0; color: var(--atelier-ink); text-align: right; overflow-wrap: anywhere; }
+.client-authorization-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin-top: 20px; }
+.client-authorization-actions .button { min-height: 48px; }
 .invite-confirmation { margin: 18px 0; padding: 15px; border: 1px solid var(--atelier-line-strong); border-radius: 11px; background: #111214; }
 .invite-confirmation span, .invite-confirmation strong, .invite-confirmation small { display: block; }
 .invite-confirmation span, .invite-confirmation small { color: var(--atelier-muted); font-size: 11px; }
@@ -247,8 +259,33 @@ textarea:focus-visible, select:focus-visible {
 .single-page .section-block.algorithm-section {
   min-height: auto;
 }
-.page-overview #overview, .page-cockpit #cockpit, .page-access #api-access, .page-skills #skills,
+.page-overview #overview, .page-cockpit #cockpit, .page-access #api-access, .page-downloads #downloads, .page-skills #skills,
 .page-health #health-admin, .page-knowledge-admin #knowledge-admin, .page-skill-admin #skill-admin, .page-members #members { display: grid; }
+.client-downloads { gap: 24px; }
+.client-download-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, .6fr); gap: 36px; align-items: end; padding: clamp(28px, 5vw, 54px); color: #f8f4eb; background: radial-gradient(circle at 82% 18%, rgba(202,169,105,.28), transparent 34%), #151516; border: 1px solid rgba(202,169,105,.28); border-radius: 24px; }
+.client-download-hero h3 { margin: 8px 0 14px; font-size: clamp(32px, 5vw, 60px); line-height: 1.05; }
+.client-download-hero p { max-width: 720px; color: #d6d0c7; line-height: 1.75; }
+.client-download-hero dl { display: grid; gap: 1px; margin: 0; overflow: hidden; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; }
+.client-download-hero dl div { display: flex; justify-content: space-between; gap: 18px; padding: 15px 17px; background: rgba(255,255,255,.05); }
+.client-download-hero dt { color: #aaa39a; }
+.client-download-hero dd { margin: 0; font-weight: 700; }
+.client-platform-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.client-platform-card { display: grid; grid-template-columns: auto 1fr; gap: 18px 22px; align-items: start; padding: 26px; background: #fff; border: 1px solid var(--atelier-line); border-radius: 20px; box-shadow: 0 18px 46px rgba(22,18,13,.06); }
+.client-platform-card > .button, .client-platform-card > .is-disabled { grid-column: 2; justify-self: start; }
+.client-platform-card h3 { margin: 5px 0 9px; font-size: 26px; }
+.client-platform-card p { margin: 0 0 10px; color: var(--atelier-muted); line-height: 1.65; }
+.client-platform-card small { display: block; overflow-wrap: anywhere; color: var(--atelier-muted); }
+.client-platform-mark { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 15px; color: #fff; background: #171717; font: 700 14px/1 ui-monospace, monospace; text-transform: uppercase; }
+.client-release-pending { display: flex; align-items: center; gap: 22px; }
+.client-release-pending h3 { margin: 0 0 7px; }
+.client-release-pending p { margin: 0; color: var(--atelier-muted); }
+.client-download-notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.client-download-notes article { padding: 20px; background: rgba(202,169,105,.08); border: 1px solid rgba(202,169,105,.22); border-radius: 16px; }
+.client-download-notes p { margin: 7px 0 0; color: var(--atelier-muted); line-height: 1.6; }
+.client-usage-state.is-active { border-color: #74b78b; color: #2b7043; }
+.client-usage-state.is-downloaded { border-color: #caaa69; color: #82601e; }
+.member-client-adoption { order: 20; }
+.member-client-note { display: block; padding: 0 22px 20px; color: var(--atelier-muted); }
 .page-heading, .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 30px; }
 .page-heading h1, .section-heading h2 { margin: 4px 0 0; color: var(--atelier-ink); font-size: clamp(30px, 4vw, 56px); line-height: 1.08; letter-spacing: -.02em; text-wrap: balance; }
 .section-heading h2 { font-size: clamp(28px, 3.2vw, 46px); }
@@ -1003,11 +1040,14 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 }
 
 @media (max-width: 760px) {
+  .client-download-hero, .client-platform-grid, .client-download-notes { grid-template-columns: 1fr; }
+  .client-platform-card > .button, .client-platform-card > .is-disabled { grid-column: 1 / -1; }
   .auth-shell { width: min(100% - 20px, 560px); min-height: auto; margin: 10px auto; grid-template-columns: 1fr; }
   .auth-story { min-height: 290px; padding: 28px; }
   .story-copy h1 { font-size: 42px; }
   .story-foot { display: none; }
   .auth-panel { padding: 32px 22px; }
+  .client-authorization-actions { grid-template-columns: 1fr; }
   .app-layout { display: block; }
   .sidebar { position: sticky; top: 0; width: 100%; height: auto; max-height: none; overflow: visible; padding: 12px 16px; display: block; border-right: 0; border-bottom: 1px solid var(--atelier-line); }
   .brand { margin: 0 0 10px; }

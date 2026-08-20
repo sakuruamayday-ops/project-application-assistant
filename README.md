@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/releases/V1.6.5.2.md"><img src="https://img.shields.io/badge/Release-V1.6.5.2-C9A760?style=for-the-badge" alt="Release V1.6.5.2"></a>
+  <a href="docs/releases/V1.6.7.md"><img src="https://img.shields.io/badge/Release-V1.6.7-C9A760?style=for-the-badge" alt="Release V1.6.7"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -41,24 +41,26 @@
 
 ### 团队成员
 
-登录[团队门户](https://zshjiaotang.cn/)，进入「连接我的 Agent」，按电脑系统点击“一键安装 macOS 版”或“一键安装 Windows 版”，把网站生成的一段完整指令粘贴给 WorkBuddy。该指令从当前正式套件清单读取技能总数，同时完成全部 Skills 安装或覆盖、最小行为 Hook、远程 MCP 合并、一次重载和状态验收。
+登录[团队门户](https://zshjiaotang.cn/)，进入「客户端下载」获取共创企业助手 macOS 或 Windows 版。客户端登录后自动校验内置 V1.6.7 技能包；需要企查查、天眼查、PaddleOCR 或共创知识库时，在客户端 Skills 中心点击「安装与连接」，完成官方授权、`tools/list` 和健康调用后才显示已连接。
 
 ### GitHub 下载
 
 | 使用环境 | 下载 | 安装入口 |
 |---|---|---|
+| 共创企业助手 V0.1，macOS 与 Windows | 对应系统的签名客户端 | 门户「客户端下载」 |
 | 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
-| WorkBuddy 5 或更高版本，macOS 与 Windows | 对应系统的 WorkBuddy 包 | 在门户选择 macOS 或 Windows 后复制一段完整指令给 WorkBuddy |
-| 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | 从手工配置页复制已自动填入个人 Token 的完整配置 |
+| 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | Skills 中心下载通用包，并从「安装与连接」复制标准配置 |
 
-发布目标为通用 Skills 包、macOS WorkBuddy 包和 Windows WorkBuddy 包。两个平台包共享套件清单声明的全部 Skills 和业务规则，并分别使用 macOS Python 核心和 Windows 原生 EXE。
-
-WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启动器、bootstrap、设备登记、钥匙串或DPAPI；用户侧不执行签名审查和插件目录哈希检查。手工配置页自动复用或生成当前登录用户的个人Token并填入完整远程HTTP MCP配置。
+V1.6.7 只发布一个签名通用 Skills 包，不再提供 WorkBuddy 专用包。共创企业助手 V0.1 将同一技能内容作为已验签内置资产加载，并在 macOS 与 Windows 使用同一专业执行合同；客户端与技能包分别版本化、分别验收。
 
 ### 当前版本功能简介
 
 #### 一、本版本新增功能
 
+- 新增“共创精选”十二张业务成果卡片；点击添加只组合内置正式技能，不重复下载技能文件。
+- 新增魔搭 Skills 与 SkillHub 社区浏览入口；第三方技能先进入本地隔离审查，通过来源、许可证、代码、网络命令和平台门禁后才允许添加。
+- 专利总路由新增国家知识产权局公布公告首轮发现，发现级结果必须回到官方全文、权利要求和法律状态来源复核。
+- 新增自有客户端机器可读运行门禁，要求完整 Hook 生命周期由签名宿主插件失败关闭执行，并对 Windows、macOS 分别验收升级与回滚。
 - 新增“项目前期评估报告”和“项目申报可行性分析报告”两类正式交付，分别服务首次谈单与合作后的实施决策。
 - 十二类项目自动切换高企四关联、专精线质量评价、三首成熟度、研发中心评分表、制造精品产品证据、单项冠军市场边界、绿色绩效或数字化运行证据。
 - 所有项目建议形成国内和国际两份产品技术水平评价咨询报告，证据形成后再判断是否达到国内领先或国际先进。
@@ -88,18 +90,18 @@ WorkBuddy用户只复制粘贴一次。安装包不含本地MCP服务、Node启�
 - 支持申报材料和标准文件撰写、版本对比、一致性检查、证据台账和成果归档。
 - 支持 Word、Excel、PowerPoint、PDF 等常用交付格式，并对正式文件执行内容、数据、来源和版式检查。
 
-### WorkBuddy 平台说明
+### 专业执行链说明
 
-WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入口与 Python 状态核心，Windows 的提示、Skill 激活和停止事件由原生 EXE 统一处理，不依赖 PowerShell、CMD 或本机 Python。两个平台遵循相同的正式交付规则和轮次状态协议。普通新消息不继承上一轮 Skill；只有上一轮已被门禁阻断且本轮明确继续未完成任务时，才继承正式交付信号和缺项状态。安装完成标准统一为：原包平台预检通过、`package_mutated=false`、套件清单声明的全部 Skills 可识别，`tools/list`出现`knowledge_search`、`knowledge_document`、`knowledge_service_status`，并实际调用状态工具返回`connected: true`。
+共创企业助手不会把正式 Skills 只当作提示词目录。签名宿主在模型首个请求前绑定技能包版本、任务命中的专业 Skill、必需依赖、质量门禁和交付结构；模型必须真实调用 `skill` 加载完整规则。高企申请书固定四栏、项目报告章节、证据边界、数字与政策一致性以及中文自然化后的事实复核均由机器合同继续检查。专业聊天结果还要把最终候选、证据台账和复算过程交给本地校验器，通过后绑定正文摘要；之后改动任何正文都必须重验。缺少技能、结构、证据状态或当前轮次验证回执时，任务不能结束。所有 DeepSeek、OpenCode 和自定义 API 共享同一执行链，不能通过切换模型绕过。
 
 ## 安全边界
 
-- 受控发布通道对最终产物和门禁报告执行Ed25519签名与SHA-256校验；WorkBuddy用户侧不重复执行验签或全目录哈希。
+- 受控发布通道对通用技能包、客户端内置技能索引、策略和门禁报告执行 Ed25519 签名与 SHA-256 校验。
 - 安装与更新流程拒绝路径穿越、绝对路径、符号链接、重复条目和哈希不一致。
 - 安装前先以原始发布文件执行只读平台预检；安装侧不得改写 Hook、转换编码、修改 `hooks.json` 或加入权限绕过参数。
 - 主人下达发布指令后由受控发布流程生成正式包；安装指令不包含网页动态命令字段。
 - 安装只替换用户配置中的`mcpServers.jiaotang-kb`，保留其他MCP条目。
-- 最小Hook只约束Skill调用和交付检查；内部异常失败开放，不因插件变化、更新或卸载阻断普通提问。
+- 共创自有客户端由签名桌面宿主、原生 Cordis 门禁插件和中央工具代理执行完整 Hook 生命周期，门禁缺失、篡改或崩溃时失败关闭；不能依赖模型自觉遵守。
 - 客户密钥、账号登录态、签名私钥和付费数据库不进入仓库或发布包。
 
 ## Skills 正式清单
@@ -121,7 +123,8 @@ WorkBuddy的系统差异由两个独立签名包处理：macOS 使用 Shell 入�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.5.2 功能简介](docs/releases/V1.6.5.2.md) | 当前正式版本的十二类双报告受控模板、真实资料成稿回归、最终 ZIP 模板调用和视觉门禁 |
+| [V1.6.7 功能简介](docs/releases/V1.6.7.md) | 当前正式版本的最简报告提示词、主体自动补齐和本地知识库优先同行检索 |
+| [V1.6.5.2 功能简介](docs/releases/V1.6.5.2.md) | 上一正式版本的十二类双报告受控模板、真实资料成稿回归、最终 ZIP 模板调用和视觉门禁 |
 | [V1.6.4.2 功能简介](docs/releases/V1.6.4.2.md) | 上一正式版本的专精特新前期谈单版、高企WPS交付门禁和技能治理 |
 | [产品文档](docs/product/README.md) | 产品定位、PRD、路线图与外部工具评估 |
 
@@ -139,8 +142,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.6.5.2` | 当前正式发布版本 |
-| 组件版本 | `1.6.5` | 套件、插件和 Python 组件版本 |
+| 产品标签 | `V1.6.7` | 当前正式发布版本 |
+| 组件版本 | `1.6.7` | 套件、插件和 Python 组件版本 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界

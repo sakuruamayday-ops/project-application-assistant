@@ -1,0 +1,232 @@
+{
+  "schema_version": "gongchuang-signed-skill-operations/v1",
+  "skill_bundle_version": "1.6.7",
+  "operations": [
+    {
+      "id": "consistency-check.scan-formal-material",
+      "skill": "consistency-check",
+      "description": "扫描已提取正式正文中的括号和待核验占位符。",
+      "script": "consistency-check/scripts/scan_formal_material.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 262144,
+      "result_exit_codes": [0],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "textFile": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".txt", ".md"],
+          "max_bytes": 16777216
+        }
+      },
+      "argv": [
+        { "parameter": "textFile" }
+      ]
+    },
+    {
+      "id": "evidence-ledger.validate-strict-ledger",
+      "skill": "evidence-ledger",
+      "description": "按严格落地证据口径校验证据台账。",
+      "script": "evidence-ledger/scripts/validate_evidence_ledger.py",
+      "files": ["report-skill-registry.json"],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 524288,
+      "result_exit_codes": [0, 2],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "ledger": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".json", ".jsonl"],
+          "max_bytes": 67108864
+        }
+      },
+      "argv": [
+        { "parameter": "ledger" },
+        { "literal": "--strict-grounded" }
+      ]
+    },
+    {
+      "id": "high-tech-enterprise-application-drafting.audit-application",
+      "skill": "high-tech-enterprise-application-drafting",
+      "description": "审计高企申请书字体、研发活动和企业创新能力四栏证据边界。",
+      "script": "high-tech-enterprise-application-drafting/scripts/audit_application_docx.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 60000,
+      "max_output_bytes": 1048576,
+      "result_exit_codes": [0, 1],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "applicationDocx": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".docx"],
+          "max_bytes": 134217728
+        },
+        "innovationEvidence": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".json"],
+          "max_bytes": 16777216
+        }
+      },
+      "argv": [
+        { "parameter": "applicationDocx" },
+        { "literal": "--innovation-evidence" },
+        { "parameter": "innovationEvidence" }
+      ]
+    },
+    {
+      "id": "project-feasibility.validate-assessment",
+      "skill": "project-feasibility",
+      "description": "校验项目可行性结构化结果、硬门槛和计算复算。",
+      "script": "project-feasibility/scripts/validate_feasibility_assessment.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 524288,
+      "result_exit_codes": [0, 2],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "assessment": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".json"],
+          "max_bytes": 33554432
+        }
+      },
+      "argv": [
+        { "parameter": "assessment" }
+      ]
+    },
+    {
+      "id": "project-application-assistant.extract-workspace-document",
+      "skill": "project-application-assistant",
+      "description": "提取企业空间内 DOCX、XLSX、文本 PDF 或 TXT 的可审计正文；扫描 PDF 返回需要 OCR，不猜测内容。",
+      "script": "project-application-assistant/scripts/extract_workspace_document.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 60000,
+      "max_output_bytes": 1048576,
+      "result_exit_codes": [0, 2],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "document": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".docx", ".xlsx", ".pdf", ".txt"],
+          "max_bytes": 134217728
+        }
+      },
+      "argv": [
+        { "parameter": "document" }
+      ]
+    },
+    {
+      "id": "sme-development-projects.validate-assessment",
+      "skill": "sme-development-projects",
+      "description": "校验优质中小企业诊断版本、政策状态、四项判断和平台质量分。",
+      "script": "sme-development-projects/scripts/validate_sme_assessment.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 524288,
+      "result_exit_codes": [0, 2],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "assessment": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".json"],
+          "max_bytes": 33554432
+        }
+      },
+      "argv": [
+        { "parameter": "assessment" }
+      ]
+    },
+    {
+      "id": "standard-drafting.audit-draft",
+      "skill": "standard-drafting",
+      "description": "审计标准草案必备章节、要求型条款、验证方法和占位符。",
+      "script": "standard-drafting/scripts/audit_standard_draft.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 524288,
+      "result_exit_codes": [0, 1],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "draft": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".md"],
+          "max_bytes": 16777216
+        }
+      },
+      "argv": [
+        { "parameter": "draft" },
+        { "literal": "--json" }
+      ]
+    },
+    {
+      "id": "talent-projects.validate-timeline",
+      "skill": "talent-projects",
+      "description": "校验人才项目关键日期格式和先后关系。",
+      "script": "talent-projects/scripts/validate_talent_timeline.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 262144,
+      "result_exit_codes": [0, 2],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "timeline": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".json"],
+          "max_bytes": 16777216
+        }
+      },
+      "argv": [
+        { "parameter": "timeline" }
+      ]
+    },
+    {
+      "id": "trade-and-open-economy-projects.validate-records",
+      "skill": "trade-and-open-economy-projects",
+      "description": "校验外经贸记录的订单、凭证、币种、期间和汇率来源字段。",
+      "script": "trade-and-open-economy-projects/scripts/validate_trade_records.py",
+      "files": [],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 524288,
+      "result_exit_codes": [0, 2],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "records": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".json"],
+          "max_bytes": 33554432
+        }
+      },
+      "argv": [
+        { "parameter": "records" }
+      ]
+    }
+  ]
+}

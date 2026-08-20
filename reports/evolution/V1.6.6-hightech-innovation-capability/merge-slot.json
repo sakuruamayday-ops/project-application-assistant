@@ -1,0 +1,52 @@
+{
+  "schema_version": "gongchuang-release-merge-slot/v1",
+  "release_tag": "V1.6.6",
+  "source_thread_id": "019fa0fb-9093-7391-93f9-4ef0b93cc46f",
+  "target_skill": "high-tech-enterprise-application-drafting",
+  "status": "merged",
+  "scope": "高新技术企业认定申请书七、企业创新能力四栏固定写法",
+  "required_section_order": [
+    "知识产权对竞争力",
+    "科技成果转化",
+    "研究开发组织管理",
+    "管理与科技人员"
+  ],
+  "length_contract": {
+    "recommended_min_chinese_characters": 390,
+    "recommended_max_chinese_characters": 450,
+    "style": "按参考样式形成完整叙事，不复制参考企业事实"
+  },
+  "required_evidence_boundaries": [
+    "申请或受理不得写成授权，无证据不得写融资估值",
+    "成果转化不得混入其他企业名称、收入增长率或客户数量",
+    "制度名称必须逐字提取客户提供的详细制度文件并说明执行逻辑",
+    "人数、学历和留任率只使用人员材料"
+  ],
+  "sanitized_diff": "reports/evolution/V1.6.6-hightech-innovation-capability/sanitized-diff.md",
+  "expected_files": [
+    "skills/high-tech-enterprise-application-drafting/SKILL.md",
+    "skills/high-tech-enterprise-application-drafting/references/writing-rules.md",
+    "skills/high-tech-enterprise-application-drafting/references/enterprise-innovation-capability-format.md",
+    "skills/high-tech-enterprise-application-drafting/scripts/audit_application_docx.py",
+    "tests/test_hightech_application_drafting.py",
+    "reports/evolution/V1.6.6-hightech-innovation-capability/sanitized-diff.md",
+    "reports/evolution/V1.6.6-hightech-innovation-capability/skill-impact-graph.json",
+    "reports/evolution/V1.6.6-hightech-innovation-capability/skill-impact-report.md"
+  ],
+  "expected_sha256": {
+    "skills/high-tech-enterprise-application-drafting/SKILL.md": "965687498870fbbba3f77c1ee37588d44898cba0ab7951416ecafb0b267b1c77",
+    "skills/high-tech-enterprise-application-drafting/references/writing-rules.md": "fdb4deb79a7fc432475d5b414406ee31c3dc6c8e80aea14e4601888a1fb85f1c",
+    "skills/high-tech-enterprise-application-drafting/references/enterprise-innovation-capability-format.md": "fcc30074b5e0dadc7464609983a5178466c8177e4996b1912980870449eb8dab",
+    "skills/high-tech-enterprise-application-drafting/scripts/audit_application_docx.py": "ac36b2262df031f1a6a1da1927531ec0bc844d73b3fe1f5f3ed5792a09a66911",
+    "tests/test_hightech_application_drafting.py": "b5eef37815718d7531abd90f266f98d7f287c3782fd826e9ac4f8847fa77f10d",
+    "reports/evolution/V1.6.6-hightech-innovation-capability/sanitized-diff.md": "95fd7933d48e4553de24c13f1f3b5ed86faff3a0d11e7d01fca56e58bcecfbfa",
+    "reports/evolution/V1.6.6-hightech-innovation-capability/skill-impact-graph.json": "fe59911b89c04cc3c958c62308589c00b39f52e6e448f51d2eb29c0f8cf61f9a",
+    "reports/evolution/V1.6.6-hightech-innovation-capability/skill-impact-report.md": "bb9f40ea0cda589357ca2a9359505acf87284193d64cd0d72e0e2d546b1b575d"
+  },
+  "merged_commit": null,
+  "acceptance": {
+    "machine_regression": "pass",
+    "full_suite_regression": "pass",
+    "impact_graph_regenerated": true
+  }
+}

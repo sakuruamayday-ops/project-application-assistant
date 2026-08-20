@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "standard-drafting",
-  "release_tag": "V1.6.3",
+  "release_tag": "V1.6.6",
   "required_paths": [
     "SKILL.md",
     "assets/compilation-note-template.md",

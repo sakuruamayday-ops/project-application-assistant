@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import re
 import subprocess
@@ -38,15 +37,9 @@ def git_output(*args: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--release-manager-root",
-        type=Path,
-        default=Path.home() / ".codex" / "skills" / "skill-release-manager",
-    )
-    args = parser.parse_args()
     manifest = load(SKILLS / "suite-manifest.json")
     delivery_contract = load(SKILLS / "delivery-contracts.json")
+    client_runtime = load(SKILLS / "client-runtime-gates.json")
     registry = load(SKILLS / "report-skill-registry.json")
     config = load(ROOT / "config" / "grounded-citations.json")
     release_tag = str(manifest["release"]["tag"])
@@ -54,21 +47,11 @@ def main() -> int:
     notes = notes_path.read_text(encoding="utf-8")
     stable_notes_path = notes_path
     stable_notes = notes
-    release_script = (ROOT / "scripts" / "controlled_release.py").read_text(encoding="utf-8")
-    manager_root = args.release_manager_root.expanduser().resolve()
-    manager_main = manager_root / "scripts" / "windows_hook" / "main.go"
-    manager_contract = manager_root / "scripts" / "windows_hook" / "contract.go"
-    manager_events = manager_root / "scripts" / "windows_hook" / "events.go"
-    manager_python = manager_root / "scripts" / "workbuddy_behavior_hook.py"
-    manager_main_text = manager_main.read_text(encoding="utf-8") if manager_main.is_file() else ""
-    manager_contract_text = manager_contract.read_text(encoding="utf-8") if manager_contract.is_file() else ""
-    manager_events_text = manager_events.read_text(encoding="utf-8") if manager_events.is_file() else ""
-    manager_python_text = manager_python.read_text(encoding="utf-8") if manager_python.is_file() else ""
     engine_text = (SKILLS / "evidence-ledger" / "scripts" / "grounded_evidence.py").read_text(encoding="utf-8")
     evidence_skill_text = (SKILLS / "evidence-ledger" / "SKILL.md").read_text(encoding="utf-8")
 
     escaped_release_tag = re.escape(release_tag)
-    windows_match = re.search(rf"(?s)({escaped_release_tag}).*Windows WorkBuddy", stable_notes)
+    windows_match = re.search(rf"(?s)({escaped_release_tag}).*?Windows", stable_notes)
     macos_match = re.search(rf"(?s)({escaped_release_tag}).*?macOS", stable_notes)
     skills_contract = str(manifest["release"]["tag"])
 
@@ -80,8 +63,8 @@ def main() -> int:
     }
     shared_paths = set(manifest.get("shared_paths", []))
     checks = {
-        "release_notes_identify_current_windows": bool(windows_match),
-        "release_notes_identify_current_macos": bool(macos_match),
+        "release_notes_identify_current_client_windows": bool(windows_match),
+        "release_notes_identify_current_client_macos": bool(macos_match),
         "release_notes_keep_identity_out_of_plugin": (
             "企业数字身份证不进入插件包" in notes
             or "不包含知识索引、企业数字身份证" in notes
@@ -92,9 +75,11 @@ def main() -> int:
             delivery_contract.get("rule_version") == manifest["release"]["version"]
         ),
         "release_notes_file_present": notes_path.is_file() and stable_notes_path.is_file(),
-        "controlled_release_supports_windows_hotfix": (
-            '"--platform-hotfix"' in release_script
-            and 'choices=("windows",)' in release_script
+        "workbuddy_specific_package_is_not_released": (
+            (manifest.get("workbuddy_plugin") or {}).get("package_mode") == "not-released"
+            and (manifest.get("release", {}).get("distribution_protocol") or {}).get(
+                "workbuddy_specific_package"
+            ) is False
         ),
         "registry_covers_declared_skills": (
             len(registry.get("skills", [])) == len(manifest.get("skills", []))
@@ -134,18 +119,24 @@ def main() -> int:
             config,
             {"permissions", "permission", "mcpServers", "mcp_servers"},
         ),
-        "release_manager_builds_windows_runtime_v166": 'runtimeVersion = "1.6.6"' in manager_main_text,
-        "release_manager_contains_grounded_delivery_rule": (
-            'intentRuleVersion = "8-artifact-targeted-negation"' in manager_contract_text
-            and "loadValidatorReceipts" in manager_events_text
-            and "loadProfileValidatorReceipts" in manager_events_text
-            and "effectiveBusinessDomain" in manager_events_text
+        "client_runtime_matches_skills_release": (
+            client_runtime.get("release_tag") == release_tag
         ),
-        "python_hook_contains_grounded_delivery_rule": (
-            'INTENT_RULE_VERSION = "8-artifact-targeted-negation"' in manager_python_text
-            and "load_validator_receipts" in manager_python_text
-            and "load_profile_validator_receipts" in manager_python_text
-            and "effective_business_domain" in manager_python_text
+        "client_runtime_fails_closed": (
+            client_runtime.get("enforcement", {}).get("mode") == "fail-closed"
+            and client_runtime.get("enforcement", {}).get(
+                "model_compliance_is_not_enforcement"
+            ) is True
+        ),
+        "client_runtime_binds_professional_skill_contracts": (
+            client_runtime.get("professional_execution", {}).get("binding")
+            == "same-host-verified-skill-suite"
+            and client_runtime.get("professional_execution", {}).get(
+                "contract_files"
+            ) == ["delivery-contracts.json", "skill-call-graph.json"]
+            and client_runtime.get("professional_execution", {}).get(
+                "provider_independent"
+            ) is True
         ),
         "grounded_contract_owns_receipt_protocol": (
             delivery_contract.get("grounded_delivery", {}).get("validator_id") == "grounded-delivery/v1"
@@ -168,14 +159,13 @@ def main() -> int:
     payload = {
         "status": "pass" if not failures else "fail",
         "channels": {
-            "workbuddy_windows_stable": windows_match.group(1) if windows_match else None,
-            "workbuddy_macos_stable": macos_match.group(1) if macos_match else None,
-            "candidate": skills_contract,
+            "client_windows_candidate": windows_match.group(1) if windows_match else None,
+            "client_macos_candidate": macos_match.group(1) if macos_match else None,
+            "skills_candidate": skills_contract,
         },
         "skills_contract": skills_contract,
         "grounded_candidate_release": skills_contract,
         "release_notes": str(notes_path.relative_to(ROOT)),
-        "release_manager_root": str(manager_root),
         "checks": checks,
         "errors": failures,
     }

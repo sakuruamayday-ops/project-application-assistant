@@ -73,32 +73,18 @@ def main() -> int:
             f"缺少{sorted(EXPECTED_SKILLS - declared)}；"
             f"新增{sorted(declared - EXPECTED_SKILLS)}"
         )
-    post_gates = {
-        str(item.get("name") or ""): item
-        for item in manifest.get("post_package_release_gates") or []
-        if isinstance(item, dict)
-    }
-    required_platform_gates = {
-        "workbuddy-macos-server-release-candidate-contract": (
-            "{workbuddy_macos_archive}"
-        ),
-        "workbuddy-macos-all-skill-package-coverage": (
-            "{workbuddy_macos_archive}"
-        ),
-        "workbuddy-windows-server-release-candidate-contract": (
-            "{workbuddy_windows_archive}"
-        ),
-        "workbuddy-windows-all-skill-package-coverage": (
-            "{workbuddy_windows_archive}"
-        ),
-    }
-    for required, artifact_placeholder in required_platform_gates.items():
-        gate = post_gates.get(required)
-        command = gate.get("command") if isinstance(gate, dict) else None
-        if not isinstance(command, list) or artifact_placeholder not in command:
-            errors.append(f"缺少真实候选包门禁：{required}")
-        if isinstance(command, list) and "{workbuddy_cli}" in command:
-            errors.append(f"发布前候选包门禁不得启动真实 WorkBuddy CLI：{required}")
+    plugin = manifest.get("workbuddy_plugin") or {}
+    if plugin.get("package_mode") != "not-released":
+        errors.append("V1.6.6 不得重新启用 WorkBuddy 专用包")
+    if manifest.get("post_package_release_gates") != []:
+        errors.append("V1.6.6 不得声明 WorkBuddy 候选包发布后门禁")
+    distribution = (manifest.get("release") or {}).get("distribution_protocol") or {}
+    if distribution.get("generic_skill_package") != "signed-universal-zip":
+        errors.append("缺少签名通用 Skills 包发布合同")
+    if distribution.get("first_party_client") != "bundled-signed-skill-suite":
+        errors.append("缺少共创独立客户端内置签名技能包合同")
+    if distribution.get("workbuddy_specific_package") is not False:
+        errors.append("WorkBuddy 专用包必须显式关闭")
     adversarial = json.loads(
         (ROOT / "tests" / "adversarial-expected.json").read_text(
             encoding="utf-8"
@@ -117,8 +103,9 @@ def main() -> int:
         "declared_skills": len(declared),
         "explicit_behavior_baseline": len(EXPECTED_SKILLS),
         "adversarial_primary_skills": len(routed & declared),
-        "workbuddy_candidate_package_gates": "declared",
-        "real_host_acceptance": "post-release-required",
+        "distribution": "generic-signed-zip-plus-first-party-client",
+        "workbuddy_specific_package": "not-released",
+        "real_client_acceptance": "separate-v0.1-release-required",
         "errors": errors,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))

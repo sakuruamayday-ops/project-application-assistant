@@ -287,6 +287,97 @@ def test_fill_requires_scale_and_patent_evidence(tmp_path: Path) -> None:
     assert not output.exists()
 
 
+def make_innovation_document(texts: list[str]) -> Document:
+    document = Document()
+    table = document.add_table(rows=4, cols=2)
+    labels = [
+        "知识产权对企业\n竞争力的作用（限400字）",
+        "科技成果转化情况\n（限400字）",
+        "研究开发与技术创新组织管理情况（限400字）",
+        "管理与科技人员情况\n（限400字）",
+    ]
+    for index, (label, value) in enumerate(zip(labels, texts, strict=True)):
+        table.rows[index].cells[0].text = label
+        table.rows[index].cells[1].text = value
+    return document
+
+
+def pad_innovation_text(seed: str) -> str:
+    supplement = (
+        "公司围绕现有产品和生产环节建立研发、成果、知识产权与人员资料的对应关系，"
+        "各项主张以本企业提供的汇总表、制度原件、项目记录和人员材料为核验边界，"
+        "不能确认的经营成效和执行结果留待企业补充记录后再写入正式申请材料。"
+    )
+    return seed + supplement * 5
+
+
+def innovation_evidence() -> dict:
+    return {
+        "allowed_corporate_names": ["某制造有限公司"],
+        "policy_titles": [
+            "关于成立企业研发中心的通知",
+            "科研项目研究开发组织管理制度",
+            "研发经费投入核算制度",
+        ],
+        "allowed_personnel_claims": ["现有科技人员8名"],
+        "allowed_result_claims": ["近三年形成10项科技成果转化记录"],
+        "allow_financing_claims": False,
+    }
+
+
+def test_innovation_capability_accepts_fixed_order_and_evidence_boundaries() -> None:
+    texts = [
+        pad_innovation_text(
+            "某制造有限公司围绕主营产品保护关键结构和工艺成果，已登记成果与RD及PS建立对应关系。"
+            "另有专利申请处于受理阶段，仅作为审中成果列示，不计入已授权数量。"
+        ),
+        pad_innovation_text(
+            "近三年形成10项科技成果转化记录，成果通过企业自主投资实施转化并导入现有生产环节。"
+        ),
+        pad_innovation_text(
+            "公司依据《关于成立企业研发中心的通知》《科研项目研究开发组织管理制度》"
+            "和《研发经费投入核算制度》明确研发机构、项目及经费管理规则。"
+        ),
+        pad_innovation_text(
+            "人员材料能够独立核定现有科技人员8名，岗位覆盖研发组织、设备、工艺、测试和辅助环节。"
+        ),
+    ]
+    result, issues = AUDIT_MODULE.audit_innovation_capability(
+        make_innovation_document(texts), innovation_evidence()
+    )
+    assert issues == []
+    assert list(result) == list(AUDIT_MODULE.INNOVATION_SECTION_ORDER)
+    assert all(item["length"] >= 390 for item in result.values())
+
+
+def test_innovation_capability_blocks_cross_enterprise_and_unverified_claims() -> None:
+    texts = [
+        pad_innovation_text(
+            "另一示例科技有限公司拥有申请受理专利并已形成授权成果，相关知识产权提高了企业融资估值。"
+        ),
+        pad_innovation_text(
+            "成果已在10余个大型工程中应用，用户高度认可，营业收入增长率超过30%，并获得科技项目资助。"
+        ),
+        pad_innovation_text(
+            "公司依据《通用科研管理制度》开展项目管理，但当前企业详细制度文件未提供该名称。"
+        ),
+        pad_innovation_text(
+            "公司拥有9名科技人员，包括博士和硕士，核心成员留任率较高，能够持续支持研发工作。"
+        ),
+    ]
+    _, issues = AUDIT_MODULE.audit_innovation_capability(
+        make_innovation_document(texts), innovation_evidence()
+    )
+    joined = "\n".join(item["issue"] for item in issues)
+    assert "未在本企业证据中登记的企业名称" in joined
+    assert "写成授权成果" in joined
+    assert "融资作用证据" in joined
+    assert "未登记的市场、合作或政策主张" in joined
+    assert "制度名称未逐字命中" in joined
+    assert "未登记的人员结构或稳定性主张" in joined
+    assert "未登记的数量或比例：9名" in joined
+
+
 def run_gate(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, str(DELIVERY_GATE), *args],

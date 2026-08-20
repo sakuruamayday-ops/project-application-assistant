@@ -297,6 +297,14 @@
       "package_policy": "exclude_from_suite",
       "reason": "保留主人本地RAG路径扩展；正式检索入口仍为local-knowledge-retrieval。"
     },
+    "grill-me": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "产品需求访谈由宿主按需提供；本次正式套件不复制或依赖该技能。"
+    },
     "multi-project-matrix": {
       "status": "merged_into",
       "formal_targets": ["project-matching", "project-feasibility"],

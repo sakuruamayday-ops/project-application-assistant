@@ -120,14 +120,16 @@ python3 scripts/expand_rd_ps_tables.py \
 
 ### 6. 企业创新能力
 
-四栏均写成完整申报逻辑：
+四栏固定按以下顺序出现，顺序和栏名不得互换：
 
 - 知识产权对企业竞争力的作用；
 - 科技成果转化情况；
 - 研究开发与技术创新组织管理情况；
 - 管理与科技人员情况。
 
-按“战略或管理逻辑—现有事实—对产品及经营的作用—证据缺口”展开。不得用制度名称替代执行情况，也不得在人员资料缺失时填入人数和比例。篇幅、证据边界与表达结构见 [writing-rules.md](references/writing-rules.md)。
+每栏按“企业自身逻辑—已核定事实—与RD、PS或人员管理的对应作用—证据边界”形成完整叙事，建议390至450字。制度名称必须逐字取自该企业提供的详细制度文件，并结合制度实际规定说明项目、经费、成果、培训、绩效和人才管理逻辑；不得照搬参考企业的制度名称、人数、学历、客户、收入、融资或合作事实。申请、受理、审中和授权必须分开表述，人员材料内部不勾稽时只写能够单独核定的字段并在正文外提示。
+
+正式回填前建立企业创新能力证据JSON，正式核稿时运行 `scripts/audit_application_docx.py --innovation-evidence <证据JSON>`。门禁固定检查四栏完整顺序、篇幅、跨企业名称、知识产权法律状态、无证据融资或市场主张、制度全称以及人员数量、学历和留任率。固定写法、证据JSON契约和正常、边界、拒绝示例见 [enterprise-innovation-capability-format.md](references/enterprise-innovation-capability-format.md)，通用篇幅规则见 [writing-rules.md](references/writing-rules.md)。
 
 ### 7. 汇总表字段粒度
 
@@ -149,7 +151,7 @@ python3 scripts/expand_rd_ps_tables.py \
 生成后必须：
 
 1. 从用户指定模板或技能空白母版复制到新路径，禁止覆盖母版；立即运行 `scripts/hightech_delivery_gate.py template-copy` 记录模板与工作副本SHA-256。严格原样填充任务再运行共享模板保真门禁；结构扩展任务记录扩表审计，不冒充文本节点原样填充。
-2. 运行 `scripts/audit_application_docx.py` 检查字体、字号、RD核心技术格式、逐项目领域一致性、创新能力篇幅和占位符。
+2. 运行 `scripts/audit_application_docx.py --innovation-evidence <证据JSON>` 检查字体、字号、RD核心技术格式、逐项目领域一致性、企业创新能力四栏顺序、篇幅、事实边界和占位符。
 3. 全部修改结束后运行水印脚本和品牌交付闸门；随后对知识产权、高新产品和科技成果转化汇总表运行 `scripts/hightech_delivery_gate.py summary-lint`，确认字段粒度和连续表结构。字段粒度回执必须绑定加水印后的最终候选哈希。
 4. 使用本机WPS Office打开最终候选DOCX并逐页检查。检查页数、抬头、红字、表格边界、跨页重复表头、合并单元格、溢出、断裂、重叠、空白页、页眉页脚、连续编号和字段缺失；每页记录页码、结论和截图SHA-256，再运行 `scripts/hightech_delivery_gate.py record-wps-review` 生成绑定候选文件哈希的WPS验收回执。任何后续保存都会使WPS回执失效，必须重新用WPS逐页检查。
 5. 最后运行 `scripts/hightech_delivery_gate.py finalize` 核对模板复制、字段粒度、WPS逐页回执、截图数量、当前DOCX哈希和品牌闸门状态，输出最终JSON回执；返回非零状态时禁止交付。

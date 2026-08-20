@@ -12,7 +12,8 @@ import argparse
 import hashlib
 import json
 import re
-from datetime import date, datetime, timezone
+from copy import deepcopy
+from datetime import date
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -21,23 +22,33 @@ from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.shared import Pt, RGBColor
 
 
 PLACEHOLDER = re.compile(r"［[^］\r\n]{1,120}］")
 TRAINING_MARKERS = ("培训模板", "培训说明", "灰色提示文字")
+INTERNAL_DRAFT_MARKERS = ("真实客户资料候选验收稿", "候选验收稿")
 REPORT_TYPES = {"preassessment", "feasibility"}
+CONCLUSION_ALIASES = {
+    "待资料": "暂无法判断",
+    "培育后申报": "有条件申报",
+    "建议申报": "可申报",
+}
+CONCLUSIONS = {"可申报", "有条件申报", "不可申报", "暂无法判断"}
 EVIDENCE_STATES = {
     "已具备",
     "企业提供待核",
     "待企业确认",
+    "第三方平台查询，待企业确认",
     "当前检索层未命中",
     "明确未具备",
     "存在差距",
     "冲突待核",
     "不适用",
 }
-PORTABLE_CJK_FONT = "Hiragino Sans GB"
+PORTABLE_CJK_FONT = "Noto Sans SC"
+PUBLIC_DIGEST = re.compile(r"(?:SHA[\s_-]*256|(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f]))", re.IGNORECASE)
 
 
 def sha256_file(path: Path) -> str:
@@ -89,6 +100,22 @@ def extract_source_text(path: Path) -> str:
     if suffix in {".txt", ".md", ".csv", ".json", ".jsonl"}:
         return path.read_text(encoding="utf-8")
     raise ValueError(f"不支持的客户资料格式:{path.name}")
+
+
+def _public_source_reference(material: dict[str, Any]) -> dict[str, str | None]:
+    source_type = str(material.get("source_type") or "").strip().casefold()
+    raw = str(
+        material.get("url")
+        or material.get("official_url")
+        or material.get("link")
+        or material.get("source")
+        or ""
+    ).strip()
+    if source_type in {"knowledge-base", "knowledge_base", "gongchuang-knowledge"} or raw == "共创知识库":
+        return {"label": "来源共创知识库", "url": None}
+    if raw.startswith(("https://", "http://")):
+        return {"label": raw, "url": raw}
+    return {"label": raw or "用户提供", "url": None}
 
 
 def validate_case_fixture(
@@ -154,6 +181,7 @@ def validate_case_fixture(
                 "sha256": sha256_file(path),
                 "anchors": checked_anchors,
                 "role": str(material.get("role") or "企业资料"),
+                "public_source": _public_source_reference(material),
             }
         )
     policies = fixture.get("policies")
@@ -168,7 +196,10 @@ def validate_case_fixture(
         state = str(condition.get("state") or "待企业确认")
         if state not in EVIDENCE_STATES:
             raise ValueError(f"不受控的证据状态:{state}")
-    return {**fixture, "_validated_sources": normalized_sources}
+    conclusion = CONCLUSION_ALIASES.get(str(fixture["conclusion"]).strip(), str(fixture["conclusion"]).strip())
+    if conclusion not in CONCLUSIONS:
+        raise ValueError("前期评估结论必须为可申报、有条件申报、不可申报或暂无法判断")
+    return {**fixture, "conclusion": conclusion, "_validated_sources": normalized_sources}
 
 
 def _set_text(paragraph, value: str) -> None:
@@ -199,12 +230,21 @@ def _iter_paragraphs(document: Document) -> Iterable[Any]:
         for row in table.rows:
             for cell in row.cells:
                 yield from cell.paragraphs
+    for section in document.sections:
+        for container in (section.header, section.footer):
+            yield from container.paragraphs
+            for table in container.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        yield from cell.paragraphs
 
 
 def _replace_training_text(value: str, fixture: dict[str, Any], release_tag: str) -> str:
     replacements = {
-        f"{release_tag} 培训模板": f"{release_tag} 真实客户资料候选验收稿",
-        "V1.6.5.1 培训模板": f"{release_tag} 真实客户资料候选验收稿",
+        f"{release_tag} 培训模板 | 共创研究院": "共创研究院",
+        "V1.6.5.1 培训模板 | 共创研究院": "共创研究院",
+        f"{release_tag} 培训模板": "",
+        "V1.6.5.1 培训模板": "",
         "企业名称：［填写］": f"企业名称：{fixture['enterprise']}",
         "报告日期：［填写］": f"报告日期：{fixture.get('report_date') or date.today().isoformat()}",
         "顾问：［填写］": f"顾问：{fixture.get('advisor') or '共创研究院'}",
@@ -212,6 +252,13 @@ def _replace_training_text(value: str, fixture: dict[str, Any], release_tag: str
     }
     for source, target in replacements.items():
         value = value.replace(source, target)
+    version_pattern = rf"(?:{re.escape(release_tag)}|V\d+(?:\.\d+){{2,3}})"
+    value = re.sub(
+        rf"{version_pattern}\s*培训模板\s*\|\s*共创研究院",
+        "共创研究院",
+        value,
+    )
+    value = re.sub(rf"{version_pattern}\s*培训模板", "", value)
     return value
 
 
@@ -262,18 +309,62 @@ def _condition_match(fixture: dict[str, Any], condition_text: str) -> dict[str, 
 
 def _fill_policy_table(table, fixture: dict[str, Any], feasibility: bool) -> None:
     policies = fixture["policies"]
-    for index, row in enumerate(table.rows[1:]):
-        policy = policies[min(index, len(policies) - 1)]
+    if len(table.rows[0].cells) >= 3:
+        _set_text(table.rows[0].cells[2].paragraphs[0], "官方来源")
+
+    def categories(policy: dict[str, Any]) -> set[str]:
+        declared = str(policy.get("kind") or "").strip().casefold()
+        result = {declared} if declared else set()
+        title = str(policy.get("title") or "")
+        if re.search(r"管理办法|评价办法|实施办法|工作指引|若干措施|实施细则", title):
+            result.add("management")
+        if re.search(r"组织申报|申报通知|年度.*通知", title):
+            result.update({"annual-notice", "deadline"})
+        if re.search(r"申报指南|评分附件|评分细则|榜单|指南", title):
+            result.add("guidance")
+        return result
+
+    row_kinds = {
+        "管理办法或评价办法": "management",
+        "申报年度通知": "annual-notice",
+        "申报指南与评分附件": "guidance",
+        "截止日期": "deadline",
+    }
+    for row in table.rows[1:]:
+        row_name = row.cells[0].text.strip()
+        expected = row_kinds.get(row_name)
+        policy = next((item for item in policies if expected in categories(item)), None)
         cells = row.cells
         if len(cells) == 4:
+            if policy is None:
+                cells[1].text = "当前未取得独立文件"
+                cells[2].text = "—"
+                cells[3].text = "待核验"
+                continue
             cells[1].text = str(policy["title"])
-            cells[2].text = str(policy["locator"])
+            locator = str(policy["locator"])
+            if locator.startswith(("https://", "http://")):
+                _set_cell_text(cells[2], "")
+                _add_hyperlink(cells[2].paragraphs[0], "查看官方原文", locator)
+            else:
+                cells[2].text = locator
             cells[3].text = str(policy.get("status") or "已锁定基线")
         elif len(cells) >= 5:
+            if policy is None:
+                cells[1].text = "当前未取得独立文件"
+                cells[2].text = "—"
+                cells[3].text = "—"
+                cells[4].text = "待核验"
+                continue
             cells[1].text = str(policy["title"])
             cells[2].text = str(policy.get("scope") or "以通知和附件适用范围为准")
-            cells[3].text = str(policy["locator"])
-            cells[4].text = str(fixture.get("advisor") or "共创研究院")
+            locator = str(policy["locator"])
+            if locator.startswith(("https://", "http://")):
+                _set_cell_text(cells[3], "")
+                _add_hyperlink(cells[3].paragraphs[0], "查看官方原文", locator)
+            else:
+                cells[3].text = locator
+            cells[4].text = str(policy.get("status") or "已锁定基线")
 
 
 def _fill_summary_table(table, fixture: dict[str, Any], feasibility: bool) -> None:
@@ -313,6 +404,9 @@ def _fill_condition_table(table, fixture: dict[str, Any], feasibility: bool) -> 
         match = _condition_match(fixture, condition) or {}
         value = str(match.get("value") or "当前资料未提供可复算数据")
         state = str(match.get("state") or "待企业确认")
+        source = str(match.get("source") or primary_source)
+        if state == "企业提供待核" and re.search(r"(?:企查查|天眼查|\bQCC\b|\bTYC\b)", source, re.IGNORECASE):
+            state = "第三方平台查询，待企业确认"
         gap = str(match.get("gap") or "数据和证据尚未闭合")
         action = str(match.get("action") or fixture["next_action"])
         if len(cells) == 5:
@@ -322,7 +416,7 @@ def _fill_condition_table(table, fixture: dict[str, Any], feasibility: bool) -> 
             cells[4].text = action
         elif len(cells) >= 7:
             cells[1].text = value
-            cells[2].text = str(match.get("source") or primary_source)
+            cells[2].text = source
             cells[3].text = state
             cells[4].text = str(match.get("fixed_score") or "不计分")
             cells[5].text = str(match.get("conditional_score") or "不计分")
@@ -337,6 +431,67 @@ def _fill_path_table(table, fixture: dict[str, Any]) -> None:
             cells[2].text = str(fixture["deadline"])
             cells[3].text = str(fixture.get("window_status") or "按报告基准日核验")
             cells[4].text = str(fixture["next_action"])
+
+
+def _fill_strengthening_table(table, fixture: dict[str, Any]) -> None:
+    defaults = {
+        "国内产品技术水平评价咨询报告": (
+            "尚未形成国内技术水平评价报告",
+            "国内产品技术水平评价咨询报告",
+        ),
+        "国际产品技术水平评价咨询报告": (
+            "尚未形成国际技术水平评价报告",
+            "国际产品技术水平评价咨询报告",
+        ),
+        "技术查新或科技咨询": (
+            "尚未提供技术查新或科技咨询成果",
+            "技术查新报告或科技咨询意见",
+        ),
+        "任务指标检测方案和项目预算底稿": (
+            "任务指标与项目预算底稿尚未闭合",
+            "任务指标对照表、检测方案和项目预算底稿",
+        ),
+    }
+    configured = [
+        item
+        for item in fixture.get("strengthening_tasks", [])
+        if isinstance(item, dict) and str(item.get("task") or "").strip()
+    ]
+    if configured:
+        template_row = table.rows[-1]._tr
+        while len(table.rows) - 1 < len(configured):
+            table._tbl.append(deepcopy(template_row))
+        while len(table.rows) - 1 > len(configured):
+            table._tbl.remove(table.rows[-1]._tr)
+    suggested_year = str(fixture["suggested_year"])
+    default_period = f"{suggested_year}申报前" if suggested_year.endswith("年") else f"{suggested_year}年申报前"
+    for index, row in enumerate(table.rows[1:], start=1):
+        cells = row.cells
+        task = cells[1].text.strip()
+        item = configured[index - 1] if configured else {}
+        default_status, default_deliverable = defaults.get(
+            task,
+            ("尚未形成该项成果", "形成可核验的成果文件"),
+        )
+        cells[0].text = str(index)
+        cells[1].text = str(item.get("task") or task)
+        cells[2].text = str(item.get("status") or default_status)
+        cells[3].text = str(item.get("target_period") or fixture.get("target_period") or default_period)
+        cells[4].text = str(item.get("deliverable") or default_deliverable)
+
+
+def _lock_table_pagination(table) -> None:
+    if not table.rows:
+        return
+    header_properties = table.rows[0]._tr.get_or_add_trPr()
+    repeat = OxmlElement("w:tblHeader")
+    repeat.set(qn("w:val"), "true")
+    header_properties.append(repeat)
+    for row in table.rows:
+        properties = row._tr.get_or_add_trPr()
+        cant_split = OxmlElement("w:cantSplit")
+        cant_split.set(qn("w:val"), "true")
+        properties.append(cant_split)
 
 
 def _fill_project_specific_paragraphs(document: Document, fixture: dict[str, Any]) -> None:
@@ -367,11 +522,23 @@ def _fill_table_by_header(table, fixture: dict[str, Any], feasibility: bool) -> 
         _fill_condition_table(table, fixture, feasibility)
     elif "项目 | 申报年度 | 申报截止日期" in header:
         _fill_path_table(table, fixture)
+    elif "补强任务" in header and "成果证据" in header:
+        _fill_strengthening_table(table, fixture)
 
 
 def _generic_fill(document: Document, fixture: dict[str, Any]) -> None:
     source_name = fixture["_validated_sources"][0]["name"]
     for paragraph in _iter_paragraphs(document):
+        if paragraph._p.findall(".//" + qn("w:fldChar")) or paragraph._p.findall(".//" + qn("w:instrText")):
+            for run in paragraph.runs:
+                value = _replace_training_text(
+                    run.text,
+                    fixture,
+                    str(fixture.get("release_tag") or "V1.6.5.2"),
+                )
+                if value != run.text:
+                    run.text = value
+            continue
         original = paragraph.text
         value = _replace_training_text(original, fixture, str(fixture.get("release_tag") or "V1.6.5.2"))
         if "□可申报" in value:
@@ -395,6 +562,17 @@ def _generic_fill(document: Document, fixture: dict[str, Any]) -> None:
             paragraph.text = PLACEHOLDER.sub(source_name, paragraph.text)
 
 
+def _set_public_document_metadata(document: Document, fixture: dict[str, Any]) -> None:
+    properties = document.core_properties
+    properties.title = f"{fixture['enterprise']}_{fixture['project_object']}_项目前期评估报告"
+    properties.subject = "政府项目申报前期评估"
+    properties.author = "共创研究院"
+    properties.last_modified_by = "共创研究院"
+    properties.keywords = "政府项目申报,前期评估,共创研究院"
+    properties.category = "政府项目咨询报告"
+    properties.comments = ""
+
+
 def _set_cell_shading(cell, fill: str) -> None:
     tc_pr = cell._tc.get_or_add_tcPr()
     shading = tc_pr.find(qn("w:shd"))
@@ -404,41 +582,47 @@ def _set_cell_shading(cell, fill: str) -> None:
     shading.set(qn("w:fill"), fill)
 
 
-def _declare_repeating_table_headers(document: Document) -> None:
-    """Make every first table row repeat in Word/PDF page flows."""
-    for table in document.tables:
-        if not table.rows:
-            continue
-        properties = table.rows[0]._tr.get_or_add_trPr()
-        if properties.find(qn("w:tblHeader")) is None:
-            header = OxmlElement("w:tblHeader")
-            header.set(qn("w:val"), "true")
-            properties.append(header)
+def _set_cell_text(cell, value: str, *, centered: bool = False) -> None:
+    cell.text = value
+    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+    for paragraph in cell.paragraphs:
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER if centered else WD_ALIGN_PARAGRAPH.LEFT
+        for run in paragraph.runs:
+            run.font.size = Pt(8)
 
 
-def _set_delivery_metadata(document: Document, fixture: dict[str, Any]) -> None:
-    now = datetime.now(timezone.utc).replace(microsecond=0)
-    author = str(fixture.get("advisor") or "共创研究院")
-    properties = document.core_properties
-    properties.author = author
-    properties.last_modified_by = author
-    properties.created = now
-    properties.modified = now
-    properties.title = f"{fixture['enterprise']}项目申报咨询报告"
-    properties.subject = str(fixture["project_object"])
-    properties.keywords = "政府项目申报,前期评估,可行性分析,证据台账"
+def _add_hyperlink(paragraph, label: str, url: str) -> None:
+    relation_id = paragraph.part.relate_to(url, RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), relation_id)
+    run = OxmlElement("w:r")
+    properties = OxmlElement("w:rPr")
+    fonts = OxmlElement("w:rFonts")
+    for attribute in ("ascii", "hAnsi", "eastAsia", "cs"):
+        fonts.set(qn(f"w:{attribute}"), PORTABLE_CJK_FONT)
+    properties.append(fonts)
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "0563C1")
+    properties.append(color)
+    underline = OxmlElement("w:u")
+    underline.set(qn("w:val"), "single")
+    properties.append(underline)
+    size = OxmlElement("w:sz")
+    size.set(qn("w:val"), "16")
+    properties.append(size)
+    text = OxmlElement("w:t")
+    text.text = label
+    run.append(properties)
+    run.append(text)
+    hyperlink.append(run)
+    paragraph._p.append(hyperlink)
 
 
 def _append_source_ledger(document: Document, fixture: dict[str, Any]) -> None:
-    document.add_heading("数据来源", level=1)
-    document.add_paragraph("附录 C、资料来源与证据状态")
-    paragraph = document.add_paragraph(
-        "本附录只列文件名、校验值和已命中原文锚点，不在公共候选包中保存客户原文或本机绝对路径。"
-    )
-    paragraph.style = document.styles["Normal"]
-    table = document.add_table(rows=1, cols=5)
+    document.add_heading("附录 C、数据来源", level=1)
+    table = document.add_table(rows=1, cols=3)
     table.style = "Table Grid"
-    headers = ["序号", "资料名称", "资料作用", "SHA-256", "原文锚点"]
+    headers = ["序号", "文件名称", "链接"]
     for index, value in enumerate(headers):
         cell = table.rows[0].cells[index]
         cell.text = value
@@ -448,28 +632,15 @@ def _append_source_ledger(document: Document, fixture: dict[str, Any]) -> None:
             run.font.bold = True
             run.font.size = Pt(8)
     for index, source in enumerate(fixture["_validated_sources"], start=1):
-        document.add_paragraph(
-            f"[{index}] {source['name']}；用途：{source['role']}；"
-            f"SHA-256：{source['sha256']}；原文锚点：{'；'.join(source['anchors'])}。"
-        )
         cells = table.add_row().cells
-        values = [
-            str(index),
-            source["name"],
-            source["role"],
-            source["sha256"],
-            "；".join(source["anchors"]),
-        ]
-        for cell, value in zip(cells, values):
-            cell.text = value
-            cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-            for paragraph in cell.paragraphs:
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT if cell is not cells[0] else WD_ALIGN_PARAGRAPH.CENTER
-                for run in paragraph.runs:
-                    run.font.size = Pt(7.5)
-    document.add_paragraph(
-        "政策边界：下一次对外交付前重新核验当期通知、附件、补充通知和属地截止时间；未核验数据不得改写为已满足。"
-    )
+        _set_cell_text(cells[0], str(index), centered=True)
+        _set_cell_text(cells[1], source["name"])
+        reference = source["public_source"]
+        if reference["url"] is None:
+            _set_cell_text(cells[2], str(reference["label"]))
+        else:
+            _set_cell_text(cells[2], "")
+            _add_hyperlink(cells[2].paragraphs[0], str(reference["label"]), str(reference["url"]))
 
 
 def document_text(document: Document) -> str:
@@ -502,12 +673,13 @@ def complete_report(
     feasibility = report_type == "feasibility"
     for table in document.tables:
         _fill_table_by_header(table, validated, feasibility)
+        _lock_table_pagination(table)
     _fill_project_specific_paragraphs(document, validated)
     _generic_fill(document, validated)
     _append_source_ledger(document, validated)
-    _declare_repeating_table_headers(document)
-    _set_delivery_metadata(document, validated)
+    _lock_table_pagination(document.tables[-1])
     _apply_portable_cjk_font(document)
+    _set_public_document_metadata(document, validated)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
     rendered = Document(output_path)
@@ -518,12 +690,17 @@ def complete_report(
     for marker in TRAINING_MARKERS:
         if marker in text:
             errors.append(f"仍存在培训标记:{marker}")
+    for marker in INTERNAL_DRAFT_MARKERS:
+        if marker in text:
+            errors.append(f"仍存在内部候选标记:{marker}")
     if str(validated["enterprise"]) not in text:
         errors.append("成稿缺企业名称")
     if str(validated["project_object"]) not in text:
         errors.append("成稿缺项目核心对象")
-    if "资料来源与证据状态" not in text:
+    if "数据来源" not in text:
         errors.append("成稿缺资料来源台账")
+    if PUBLIC_DIGEST.search(text):
+        errors.append("对外成稿不得展示内部文件校验值")
     result = {
         "schema": "gongchuang-completed-project-report/v1",
         "status": "pass" if not errors else "fail",
