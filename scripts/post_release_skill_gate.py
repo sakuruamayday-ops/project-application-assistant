@@ -241,6 +241,14 @@ def parser() -> argparse.ArgumentParser:
     command.add_argument("--development-root", type=Path, required=True)
     command.add_argument("--release-archive", type=Path, required=True)
     command.add_argument(
+        "--workspace-root",
+        type=Path,
+        help=(
+            "隔离验收工作区；设置后统一派生 installed-skills、config、audit "
+            "和 report.json，避免后置门禁写入源码或用户正式配置。"
+        ),
+    )
+    command.add_argument(
         "--install-root",
         type=Path,
         default=Path.home() / ".codex" / "skills",
@@ -264,14 +272,39 @@ def parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     arguments = parser().parse_args()
+    workspace_root = (
+        arguments.workspace_root.expanduser().resolve()
+        if arguments.workspace_root is not None
+        else None
+    )
+    install_root = (
+        workspace_root / "installed-skills"
+        if workspace_root is not None
+        else arguments.install_root
+    )
+    config_dir = (
+        workspace_root / "config"
+        if workspace_root is not None
+        else arguments.config_dir
+    )
+    audit_dir = (
+        workspace_root / "audit"
+        if workspace_root is not None
+        else arguments.audit_dir
+    )
+    report_path = (
+        workspace_root / "report.json"
+        if workspace_root is not None
+        else arguments.report
+    )
     try:
         result = run_gate(
             development_root=arguments.development_root,
             release_archive=arguments.release_archive,
-            install_root=arguments.install_root,
-            config_dir=arguments.config_dir,
-            audit_dir=arguments.audit_dir,
-            report_path=arguments.report,
+            install_root=install_root,
+            config_dir=config_dir,
+            audit_dir=audit_dir,
+            report_path=report_path,
             command=[sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]],
         )
         print(

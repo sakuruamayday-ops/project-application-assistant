@@ -86,8 +86,10 @@ def test_natural_language_routes_and_local_first_peer_workflow() -> None:
 
 
 def test_client_runtime_registry_exposes_only_existing_first_party_scripts() -> None:
+    suite = load("suite-manifest.json")
     registry = load("client-runtime-operations.json")
 
+    assert "client-runtime-operations.json" in suite["shared_paths"]
     assert registry["schema_version"] == "gongchuang-signed-skill-operations/v1"
     assert registry["skill_bundle_version"] == "1.6.7"
     operations = registry["operations"]
@@ -99,6 +101,8 @@ def test_client_runtime_registry_exposes_only_existing_first_party_scripts() -> 
         assert script.startswith(f"{skill}/scripts/")
         assert script.endswith(".py")
         assert (SKILLS / script).is_file()
+        for additional_file in operation["files"]:
+            assert (SKILLS / additional_file).is_file()
         assert operation["network"] == "none"
         assert operation["sandbox_mode"] in {"read-only", "workspace-write"}
         assert set(operation["passing_exit_codes"]) <= set(operation["result_exit_codes"])

@@ -126,6 +126,7 @@
     "_runtime/template-fidelity",
     "curated-skill-catalog.json",
     "client-runtime-gates.json",
+    "client-runtime-operations.json",
     "delivery-contracts.json",
     "SOURCE-USE-LICENSE.txt",
     "policy-freshness-manifest.json",
@@ -267,14 +268,8 @@
         "skills",
         "--release-archive",
         "{generic_archive}",
-        "--install-root",
-        "{gate_output}/installed-skills",
-        "--config-dir",
-        "{gate_output}/config",
-        "--audit-dir",
-        "{gate_output}/audit",
-        "--report",
-        "{gate_output}/report.json"
+        "--workspace-root",
+        "{gate_output}"
       ],
       "timeout_seconds": 180
     },

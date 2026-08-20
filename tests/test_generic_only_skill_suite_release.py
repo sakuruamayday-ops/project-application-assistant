@@ -29,6 +29,12 @@ def test_v167_releases_signed_generic_and_platform_pair_with_real_artifact_gates
         "windows-platform-server-release-contract",
         "windows-platform-all-skill-coverage",
     }
+    generic_gate = next(
+        item
+        for item in MANIFEST["post_package_release_gates"]
+        if item["name"] == "generic-suite-isolated-installation"
+    )
+    assert generic_gate["command"][-2:] == ["--workspace-root", "{gate_output}"]
 
 
 def test_collection_builder_creates_both_platform_assets():
