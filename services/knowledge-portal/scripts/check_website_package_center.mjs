@@ -5,21 +5,40 @@ import { fileURLToPath } from "node:url";
 const portalRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relative) => fs.readFileSync(path.join(portalRoot, relative), "utf8");
 
-const template = read("templates/skill_center.html");
+const skillTemplate = read("templates/skill_center.html");
+const clientTemplate = read("templates/client_downloads.html");
+const portalTemplate = read("templates/portal.html");
 const portalScript = read("static/portal.js");
 for (const required of [
   "下载通用包",
-  "下载 macOS 包",
-  "下载 Windows 包",
-  "固定三产物",
-  "其他宿主不再规划或展示平台专用版本",
+  "统一通用包",
+  "其他兼容宿主可下载通用包后自行导入",
+]) {
+  if (!skillTemplate.includes(required)) {
+    throw new Error(`Skills 下载中心缺少必要内容：${required}`);
+  }
+}
+for (const required of [
+  "client_release.downloads.macos",
+  "macos.architecture_label",
+  "下载 macOS {{ macos.architecture_label }}版",
+  "client_release.downloads.windows",
+  "下载 Windows 版",
+  "xattr -dr com.apple.quarantine",
+  "无法一键复制？显示手动粘贴方法",
+]) {
+  if (!clientTemplate.includes(required)) {
+    throw new Error(`客户端下载中心缺少必要内容：${required}`);
+  }
+}
+for (const required of [
   'data-agent-platform="macos"',
   'data-agent-platform="windows"',
   "一键安装 macOS 版",
   "一键安装 Windows 版",
 ]) {
-  if (!template.includes(required)) {
-    throw new Error(`网站安装包下载中心缺少必要内容：${required}`);
+  if (!portalTemplate.includes(required)) {
+    throw new Error(`Agent 连接入口缺少必要内容：${required}`);
   }
 }
 for (const forbidden of [
@@ -30,7 +49,7 @@ for (const forbidden of [
   'data-platform-package="cherry-studio"',
   "下载旧版宿主专用包",
 ]) {
-  if (template.includes(forbidden)) {
+  if (skillTemplate.includes(forbidden)) {
     throw new Error(`网站安装包下载中心仍包含已停用的平台入口：${forbidden}`);
   }
 }
@@ -43,5 +62,5 @@ for (const required of [
   }
 }
 console.log(
-  "Website package center gate: generic + native macOS/Windows WorkBuddy packages with explicit install entries",
+  "Website package center gate: generic Skills + dual-architecture macOS client + Windows placeholder + explicit Agent install entries",
 );
