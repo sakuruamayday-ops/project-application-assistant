@@ -50,7 +50,8 @@
     {
       "index": 6,
       "skill": "deep-clarification",
-      "implicit_prompt": "我要设计一套涉及客户端、签名技能包、双架构安装包和发布回滚的复杂新功能，目标和验收边界还不完整。请先判断怎样避免带着歧义直接实施。",
+      "implicit_prompt": "我要设计一套涉及客户端、签名技能包、双架构安装包和发布回滚的复杂新功能，目标和验收边界还不完整。请直接继续当前任务，不要启动任何未由我明确选择的访谈流程。",
+      "implicit_expected_behavior": "not_triggered",
       "explicit_prompt": "请显式使用项目级 deep-clarification Skill，读取其SKILL.md后以中文名称说明分轮澄清机制，并报告实际读取路径。",
       "negative_prompt": "把这句话改得更简洁：本公司一直以来始终重视技术创新。只返回改写结果。",
       "negative_expected_skill": null,

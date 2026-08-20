@@ -40,6 +40,10 @@ class CodexClientHarnessTests(unittest.TestCase):
             self.assertIn("不读取其他工作区文件", prompt)
         by_skill = {case["skill"]: case for case in cases}
         self.assertEqual(
+            by_skill["deep-clarification"]["implicit_expected_behavior"],
+            "not_triggered",
+        )
+        self.assertEqual(
             by_skill["project-rule-manager"]["negative_expected_behavior"],
             "refused_in_scope",
         )

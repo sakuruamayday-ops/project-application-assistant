@@ -124,6 +124,9 @@ def validate_matrix(matrix: dict, declared_skills: list[str]) -> list[dict]:
                 raise RuntimeError(f"{item['skill']}缺少{phase}测试提示")
         if item["skill"] in item["implicit_prompt"]:
             raise RuntimeError(f"{item['skill']}隐式路由提示泄露目标技能名")
+        implicit_behavior = item.get("implicit_expected_behavior") or "triggered"
+        if implicit_behavior not in {"triggered", "not_triggered"}:
+            raise RuntimeError(f"{item['skill']}隐式行为类型无效：{implicit_behavior}")
         expected_negative = item.get("negative_expected_skill")
         expected_behavior = item.get("negative_expected_behavior") or (
             "rerouted" if expected_negative else "not_triggered"

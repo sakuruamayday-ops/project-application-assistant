@@ -54,6 +54,7 @@ def main() -> int:
             continue
         case = load(case_path)
         expected_negative_skill = case.get("negative_expected_skill")
+        expected_implicit_behavior = case.get("implicit_expected_behavior") or "triggered"
         expected_negative_behavior = case.get("negative_expected_behavior") or (
             "rerouted" if expected_negative_skill else "not_triggered"
         )
@@ -77,7 +78,9 @@ def main() -> int:
             if item.get("prompt_sha256") != expected_prompt_sha256:
                 errors.append(f"{skill}/{phase}: prompt hash mismatch")
             expected_target = (
-                phase != "negative"
+                False
+                if phase == "implicit" and expected_implicit_behavior == "not_triggered"
+                else phase != "negative"
                 or expected_negative_behavior == "refused_in_scope"
             )
             target_observed = item.get("target_skill_observed") is True

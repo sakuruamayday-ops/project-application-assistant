@@ -11,13 +11,16 @@ def test_deep_clarification_is_business_facing_and_preserves_license():
     license_text = (SKILL_DIR / "LICENSE-MIT.txt").read_text(encoding="utf-8")
 
     assert 'display_name: "深度澄清"' in interface
-    assert "开始深度澄清" in skill
-    assert "直接继续" in skill
+    assert "启动“深度澄清”" in skill
+    assert "不得自行建议或隐式触发" in skill
+    assert "allow_implicit_invocation: false" in interface
     assert "当前可决定集合中的全部问题" in skill
     assert "每题编号" in skill and "推荐答案" in skill
     assert "事实，由助手自行核验" in skill
     assert "共同理解与执行清单" in skill
     assert "用户尚未确认时，不得进入实质实施" in skill
+    assert "不新增普通对话的 Host 硬门禁" in skill
+    assert "客户端的非阻塞建议和用户拒绝状态属于客户端交互职责" in skill
     assert "普通查询、闲聊、简单改写" in skill
     assert "885e2ca4d842d139e9aef4e48d366c63cb1b8013" in skill
     assert "Copyright (c) 2026 Matt Pocock" in license_text
