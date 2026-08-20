@@ -76,8 +76,11 @@ def main() -> int:
     plugin = manifest.get("workbuddy_plugin") or {}
     if plugin.get("package_mode") != "not-released":
         errors.append("V1.6.6 不得重新启用 WorkBuddy 专用包")
-    if manifest.get("post_package_release_gates") != []:
-        errors.append("V1.6.6 不得声明 WorkBuddy 候选包发布后门禁")
+    post_package_gates = manifest.get("post_package_release_gates")
+    if not isinstance(post_package_gates, list) or len(post_package_gates) != 1:
+        errors.append("V1.6.7 必须声明唯一的通用包真实产物门禁")
+    elif post_package_gates[0].get("name") != "generic-suite-isolated-installation":
+        errors.append("V1.6.7 的发布后门禁必须验证通用包隔离安装")
     distribution = (manifest.get("release") or {}).get("distribution_protocol") or {}
     if distribution.get("generic_skill_package") != "signed-universal-zip":
         errors.append("缺少签名通用 Skills 包发布合同")

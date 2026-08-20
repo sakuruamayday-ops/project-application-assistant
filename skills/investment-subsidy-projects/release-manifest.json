@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "investment-subsidy-projects",
-  "release_tag": "V1.6.6",
+  "release_tag": "V1.6.7",
   "required_paths": [
     "SKILL.md",
     "references/investment-evidence-chain.md",

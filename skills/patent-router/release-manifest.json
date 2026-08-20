@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "patent-router",
-  "release_tag": "V1.6.6",
+  "release_tag": "V1.6.7",
   "required_paths": [
     "SKILL.md",
     "publisher-ed25519.pub",
@@ -67,7 +67,7 @@
   },
   "files": {
     "SKILL.md": "1f81ed5392bb0f98c50180055f1d2a39064a0d60e654d1b53171362ab72be670",
-    "THIRD_PARTY_NOTICES.md": "7952486003e1ac6de9db63200a8797aa56dc9a6315f26a359edb5d963be816e5",
+    "THIRD_PARTY_NOTICES.md": "f9d8130b58b8e7b245fd9c1087c07864ec186b04b4a064f091374db8bc475324",
     "references/ai-patent-practice.md": "72465c41a0cbc124c472fd788a8d57cda15475fd2e1c916350ab796a949dd4f9",
     "references/claim-prior-art-matrix.md": "e7734245c823a30982b26efb821839e825ab4482d6f96512e76658d65577b2c5",
     "references/claims-and-office-action-practice.md": "2d06dfd00aed8a7ef5011c72f8d5e3062128c70c8dad7ade6740cbb6181337d7",
@@ -94,7 +94,7 @@
     "references/routing-matrix.md": "a00d87f85105d3b205efb2d92c8fd9ac783158fa3102e3e7b657c74b66153db1",
     "references/technical-equivalence-rules.json": "1e9f0f431ff96579b6fa4a82d0df362fb366a58cc5374d2a8e60a8a444b15b3f",
     "references/technical-feature-evidence-map.md": "9e72f529e937abe5b1236138f4de0f30f23834659462c9a7380cf8a6ca7f598c",
-    "requirements-cnipa.txt": "390e8c9381e4136fb1ea25b224ed0cd29016cc8273f06a4e6358c5783a16929d",
+    "requirements-cnipa.txt": "13bc00b9b09e3925dbd615969d7c7374d7953ea0bf481d510530cc1ac45e3ab4",
     "requirements.txt": "1ce1e6e3bdc0d530350744673257a65b8a02f02aee08b556f05983030f43bf2f",
     "scripts/audit_preexam_rules.py": "306b0bf8fecf7f165d63ed2ed515673ee0809701c46c68eb164219b3e071c17a",
     "scripts/build_anonymized_fixture.py": "47f98ecf63cceec6a26fcdba29e5eee23a30e96c42f1f4cdb52016e08e2edada",

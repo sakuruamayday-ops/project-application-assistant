@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-feasibility",
-  "release_tag": "V1.6.6",
+  "release_tag": "V1.6.7",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,7 +21,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "dc59a624dbec7a277188e1f2d5ea6c272ad166a5b94fbbffe891c6c33a95e36a",
+    "SKILL.md": "89450dbdfb2bcf2f62f66dab9067d61ab5efa02c45cb294d76bb4500da1a8910",
     "assets/report-templates/digitalization/feasibility.docx": "083f16c248c41e07312bc7112df443f52b732712f5102ce4ece571d7f8f1c816",
     "assets/report-templates/digitalization/preassessment.docx": "c478c4ab9357775899b63779c99daaa39db6451d60d117b1e094b1dbec5bc907",
     "assets/report-templates/enterprise-rd-center/feasibility.docx": "929a1b2d1c3187c91a06f56e7895fb56d365813a4b2fc2f6e96f6443ee071f9f",
@@ -52,13 +52,13 @@
     "references/feasibility-decision-model.md": "e609448d727bb32a0b441ec262836c415c7e00b86b26d841ce1b3fc56b6b3b29",
     "references/policy-application-path-contract.md": "10e4ba0247f4d874f3594457f3cae2667b75ce8451936c539a07f0d4da336ef1",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "references/report-template-registry.json": "b6af54ae4ccfb51fcc145499c1cda3df30af5f7fbb69781a67476a971890ec90",
-    "references/two-report-contract.md": "5683066e9d52b164539f67463f179d00fa4200794f4350ce4d25ac787408b8a8",
-    "scripts/fill_report_template.py": "911f506507dd68e21365cfa7c3a719b806b3bbcd4bde1546e18dd857065fa820",
+    "references/report-template-registry.json": "b575f4af83db477583ce8ab7aeea2768e49900eb157d68d60da92c001e70c2f5",
+    "references/two-report-contract.md": "6b3a094b2046b3576f2bb49b42835ad247a73c86e75e266c564372e656f6bca0",
+    "scripts/fill_report_template.py": "e0b08f3efff0b7ec49d2ade333eb75dee6e54984a0425d5234da4bf2460b1cba",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/select_report_template.py": "eb99d4c0f378e91e96fe7edcafe5b623060750c3f5f4bc0fbe188d9737b9fb35",
     "scripts/validate_feasibility_assessment.py": "7e85154437bb8c4c79a166b21ebf86a2b6901dde38b52b4b74ce26926265bf7a",
-    "scripts/validate_report_profile_delivery.py": "cde5aff8492dd315947a946ed549cf0e7a2c412befe2608abb1b175a1add5857",
+    "scripts/validate_report_profile_delivery.py": "1c462dc3307fef0a9e5d6959486ff0716f2f4833a4148aa3f27c0f50c5e55045",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [

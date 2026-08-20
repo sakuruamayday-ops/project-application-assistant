@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "gongchuang-humanizer-zh",
-  "release_tag": "V1.6.6",
+  "release_tag": "V1.6.7",
   "required_paths": [
     "SKILL.md",
     "agents/openai.yaml",

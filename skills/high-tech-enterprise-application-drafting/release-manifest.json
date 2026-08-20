@@ -1,12 +1,11 @@
 {
   "schema_version": 2,
   "skill_name": "high-tech-enterprise-application-drafting",
-  "release_tag": "V1.6.6",
+  "release_tag": "V1.6.7",
   "required_paths": [
     "SKILL.md",
     "agents/openai.yaml",
     "assets/高新技术企业认定申请书空白模板.docx",
-    "references/enterprise-innovation-capability-format.md",
     "references/portable-runtime-protocol.md",
     "references/rd-core-innovation-format.md",
     "references/summary-table-contract.md",

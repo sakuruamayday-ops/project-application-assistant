@@ -252,7 +252,28 @@
       "timeout_seconds": 60
     }
   ],
-  "post_package_release_gates": [],
+  "post_package_release_gates": [
+    {
+      "name": "generic-suite-isolated-installation",
+      "command": [
+        "{python}",
+        "scripts/post_release_skill_gate.py",
+        "--development-root",
+        "skills",
+        "--release-archive",
+        "{generic_archive}",
+        "--install-root",
+        "{gate_output}/installed-skills",
+        "--config-dir",
+        "{gate_output}/config",
+        "--audit-dir",
+        "{gate_output}/audit",
+        "--report",
+        "{gate_output}/report.json"
+      ],
+      "timeout_seconds": 180
+    }
+  ],
   "dependencies": {
     "project-feasibility": {
       "required_skills": [

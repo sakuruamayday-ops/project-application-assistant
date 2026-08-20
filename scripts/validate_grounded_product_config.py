@@ -81,6 +81,12 @@ def main() -> int:
                 "workbuddy_specific_package"
             ) is False
         ),
+        "generic_package_has_isolated_installation_gate": (
+            isinstance(manifest.get("post_package_release_gates"), list)
+            and len(manifest["post_package_release_gates"]) == 1
+            and manifest["post_package_release_gates"][0].get("name")
+            == "generic-suite-isolated-installation"
+        ),
         "registry_covers_declared_skills": (
             len(registry.get("skills", [])) == len(manifest.get("skills", []))
             and len(manifest.get("skills", [])) > 0
