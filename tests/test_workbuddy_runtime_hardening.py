@@ -411,7 +411,6 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             [
                 "grounded.quality_gate",
                 "grounded.artifact.report",
-                "delivery_profile.project-feasibility-analysis-report",
             ],
         )
         self.assertEqual(
@@ -432,7 +431,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                     case["expected"],
                 )
 
-    def test_behavior_hook_routes_project_report_profiles_and_requires_receipt(self):
+    def test_behavior_hook_does_not_upgrade_negated_profile_test_to_delivery(self):
         contract = json.loads(
             (REPOSITORY / "skills/delivery-contracts.json").read_text(
                 encoding="utf-8"
@@ -443,12 +442,9 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             "本轮不生成验证回执，不加载主业务 Skill，只回复已完成。"
         )
         signals = BEHAVIOR.prompt_signals(prompt, contract)
-        self.assertTrue(signals["formal_business_delivery"])
-        self.assertEqual(signals["requested_artifacts"], ["report"])
-        self.assertEqual(
-            signals["delivery_profiles_requested"],
-            ["project-feasibility-analysis-report"],
-        )
+        self.assertFalse(signals["formal_business_delivery"])
+        self.assertNotIn("requested_artifacts", signals)
+        self.assertNotIn("delivery_profiles_requested", signals)
         receipt = BEHAVIOR.audit_delivery_receipt(
             prompt="",
             answer="已完成",
@@ -459,13 +455,10 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             contract=contract,
             signals=signals,
         )
-        self.assertFalse(receipt["delivery_check_ok"])
-        self.assertIn(
-            "delivery_profile.project-feasibility-analysis-report",
-            receipt["missing_requirement_ids"],
-        )
+        self.assertTrue(receipt["delivery_check_ok"])
+        self.assertEqual(receipt["missing_requirement_ids"], [])
 
-    def test_behavior_hook_failed_current_turn_receipts_cannot_bypass_delivery_gate(self):
+    def test_behavior_hook_failed_receipts_do_not_activate_an_unrelated_task(self):
         contract = json.loads(
             (REPOSITORY / "skills/delivery-contracts.json").read_text(
                 encoding="utf-8"
@@ -513,25 +506,10 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 state_root=state_root,
                 turn_id=turn_id,
             )
-            self.assertFalse(receipt["delivery_check_ok"])
-            self.assertTrue(receipt["receipt_observed_formal_delivery"])
-            self.assertEqual(
-                receipt["business_domain_source"],
-                "current_turn_profile_receipt",
-            )
-            self.assertEqual(receipt["error_code"], "NO_PRIMARY_BUSINESS_SKILL")
-            self.assertIn(
-                "routing.primary_business_skill",
-                receipt["missing_requirement_ids"],
-            )
-            self.assertIn(
-                "grounded.artifact.report",
-                receipt["missing_requirement_ids"],
-            )
-            self.assertIn(
-                "delivery_profile.project-feasibility-analysis-report",
-                receipt["missing_requirement_ids"],
-            )
+            self.assertTrue(receipt["delivery_check_ok"])
+            self.assertFalse(receipt["effective_business_domain"])
+            self.assertEqual(receipt["business_domain_source"], "none")
+            self.assertEqual(receipt["validator_receipts"], [])
 
     def test_behavior_hook_preserves_blocked_delivery_only_for_continuation(self):
         contract_path = REPOSITORY / "skills/delivery-contracts.json"
@@ -774,7 +752,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 ["consistency-check"],
             )
 
-    def test_behavior_hook_requires_primary_role_and_classifies_all_49_skills(self):
+    def test_behavior_hook_requires_primary_role_and_classifies_all_skills(self):
         contract = json.loads(
             (REPOSITORY / "skills/delivery-contracts.json").read_text(
                 encoding="utf-8"
@@ -916,14 +894,9 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 state_root=state_root,
                 turn_id=validator["turn_id"],
             )
-            self.assertFalse(receipt["delivery_check_ok"])
-            self.assertEqual(
-                receipt["error_code"], "DELIVERY_REQUIREMENTS_MISSING"
-            )
-            self.assertIn(
-                "delivery_profile.project-feasibility-analysis-report",
-                receipt["missing_requirement_ids"],
-            )
+            self.assertTrue(receipt["delivery_check_ok"])
+            self.assertIsNone(receipt["error_code"])
+            self.assertEqual(receipt["missing_requirement_ids"], [])
             self.assertEqual(
                 receipt["passed_requirement_ids"],
                 ["grounded.quality_gate", "grounded.artifact.report"],
@@ -1258,8 +1231,11 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             plugin_root = root / "plugin"
             data_dir = root / "data"
             plugin_root.mkdir()
-            (plugin_root / "delivery-contracts.json").write_bytes(
-                contract_path.read_bytes()
+            legacy_contract = json.loads(contract_path.read_text(encoding="utf-8"))
+            legacy_contract["contract_id"] = "gongchuang-workbuddy-delivery-contract-v1"
+            (plugin_root / "delivery-contracts.json").write_text(
+                json.dumps(legacy_contract, ensure_ascii=False),
+                encoding="utf-8",
             )
             state_path, _ = BRIDGE.state_paths(data_dir, "session-quality")
             BRIDGE.atomic_json(

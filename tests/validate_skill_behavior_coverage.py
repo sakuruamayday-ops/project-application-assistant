@@ -75,20 +75,30 @@ def main() -> int:
             f"新增{sorted(declared - EXPECTED_SKILLS)}"
         )
     plugin = manifest.get("workbuddy_plugin") or {}
-    if plugin.get("package_mode") != "not-released":
-        errors.append("V1.6.6 不得重新启用 WorkBuddy 专用包")
+    if plugin.get("package_mode") != "skills_minimal_behavior_hook":
+        errors.append("V1.6.7 必须启用最小行为 Hook 平台包")
     post_package_gates = manifest.get("post_package_release_gates")
-    if not isinstance(post_package_gates, list) or len(post_package_gates) != 1:
-        errors.append("V1.6.7 必须声明唯一的通用包真实产物门禁")
-    elif post_package_gates[0].get("name") != "generic-suite-isolated-installation":
-        errors.append("V1.6.7 的发布后门禁必须验证通用包隔离安装")
+    post_gate_names = {
+        str(item.get("name") or "")
+        for item in post_package_gates or []
+        if isinstance(item, dict)
+    }
+    expected_post_gate_names = {
+        "generic-suite-isolated-installation",
+        "macos-platform-server-release-contract",
+        "macos-platform-all-skill-coverage",
+        "windows-platform-server-release-contract",
+        "windows-platform-all-skill-coverage",
+    }
+    if post_gate_names != expected_post_gate_names:
+        errors.append("V1.6.7 必须分别验证通用包和两个平台包的真实产物")
     distribution = (manifest.get("release") or {}).get("distribution_protocol") or {}
     if distribution.get("generic_skill_package") != "signed-universal-zip":
         errors.append("缺少签名通用 Skills 包发布合同")
     if distribution.get("first_party_client") != "bundled-signed-skill-suite":
         errors.append("缺少共创独立客户端内置签名技能包合同")
-    if distribution.get("workbuddy_specific_package") is not False:
-        errors.append("WorkBuddy 专用包必须显式关闭")
+    if distribution.get("workbuddy_specific_package") is not True:
+        errors.append("macOS 与 Windows 平台专用包必须显式启用")
     adversarial = json.loads(
         (ROOT / "tests" / "adversarial-expected.json").read_text(
             encoding="utf-8"
@@ -107,8 +117,8 @@ def main() -> int:
         "declared_skills": len(declared),
         "explicit_behavior_baseline": len(EXPECTED_SKILLS),
         "adversarial_primary_skills": len(routed & declared),
-        "distribution": "generic-signed-zip-plus-first-party-client",
-        "workbuddy_specific_package": "not-released",
+        "distribution": "generic-signed-zip-plus-macos-windows-platform-suites",
+        "workbuddy_specific_package": "released-platform-pair",
         "real_client_acceptance": "separate-v0.1-release-required",
         "errors": errors,
     }

@@ -8,6 +8,7 @@
     "application-writing": {"role": "primary_business", "owns": []},
     "checking-patdocx-cn-single-agent": {"role": "primary_business", "owns": []},
     "consistency-check": {"role": "quality_gate", "owns": []},
+    "deep-clarification": {"role": "infrastructure", "owns": []},
     "digitalization-projects": {"role": "primary_business", "owns": []},
     "enterprise-panorama-analysis": {"role": "primary_business", "owns": ["enterprise-panorama-standard", "enterprise-panorama-professional", "enterprise-panorama-dual"]},
     "enterprise-profile": {"role": "primary_business", "owns": []},

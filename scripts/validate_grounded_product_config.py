@@ -75,17 +75,26 @@ def main() -> int:
             delivery_contract.get("rule_version") == manifest["release"]["version"]
         ),
         "release_notes_file_present": notes_path.is_file() and stable_notes_path.is_file(),
-        "workbuddy_specific_package_is_not_released": (
-            (manifest.get("workbuddy_plugin") or {}).get("package_mode") == "not-released"
+        "platform_specific_packages_are_released": (
+            (manifest.get("workbuddy_plugin") or {}).get("package_mode")
+            == "skills_minimal_behavior_hook"
             and (manifest.get("release", {}).get("distribution_protocol") or {}).get(
                 "workbuddy_specific_package"
-            ) is False
+            ) is True
         ),
-        "generic_package_has_isolated_installation_gate": (
+        "all_three_packages_have_post_package_gates": (
             isinstance(manifest.get("post_package_release_gates"), list)
-            and len(manifest["post_package_release_gates"]) == 1
-            and manifest["post_package_release_gates"][0].get("name")
-            == "generic-suite-isolated-installation"
+            and {
+                str(item.get("name") or "")
+                for item in manifest["post_package_release_gates"]
+            }
+            == {
+                "generic-suite-isolated-installation",
+                "macos-platform-server-release-contract",
+                "macos-platform-all-skill-coverage",
+                "windows-platform-server-release-contract",
+                "windows-platform-all-skill-coverage",
+            }
         ),
         "registry_covers_declared_skills": (
             len(registry.get("skills", [])) == len(manifest.get("skills", []))

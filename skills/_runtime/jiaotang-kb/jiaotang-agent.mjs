@@ -813,7 +813,7 @@ async function install(argumentsValue) {
   }
   const activationRequired = host === "workbuddy" && !pluginMode;
   const nextAction = activationRequired
-    ? "连接成功。请在 WorkBuddy 左侧「连接器」中找到 `jiaotang-kb`，然后点击「启用」。"
+    ? "连接成功。请在共创企业助手左侧「连接器」中找到 `jiaotang-kb`，然后点击「启用」。"
     : null;
   return {
     schema: "jiaotang-agent-result/v1",
@@ -829,7 +829,7 @@ async function install(argumentsValue) {
     activation_required: activationRequired,
     next_action: nextAction,
     user_message: activationRequired
-      ? "配置成功，WorkBuddy 还需要启用新连接器。"
+      ? "配置成功，共创企业助手还需要启用新连接器。"
       : "配置成功",
   };
   } catch (error) {
@@ -981,7 +981,7 @@ function setupTools() {
     {
       name: SETUP_TOOL_NAME,
       description: (
-        "使用焦糖门户生成的一次性引导地址绑定当前 WorkBuddy 设备。"
+        "使用焦糖门户生成的一次性引导地址绑定当前共创企业助手设备。"
         + "地址仅在本机插件进程中使用，成功后凭据写入系统凭据库。"
       ),
       inputSchema: {
@@ -1219,7 +1219,7 @@ async function handleSetupRequest(request, context) {
           configured: true,
           stages: result.stages,
           message: "设备绑定、凭据保存、签名验签和 MCP 首次连接均已完成。",
-          next_action: "知识库工具清单正在刷新；如未自动出现，请完全退出并重启 WorkBuddy。",
+          next_action: "知识库工具清单正在刷新；如未自动出现，请完全退出并重启共创企业助手。",
         }),
       }],
       notifyToolsChanged: true,
