@@ -137,6 +137,9 @@ def _managed_entries(source: Path) -> tuple[list[dict[str, Any]], dict[str, Any]
     shared_paths.extend(
         str(value) for value in suite_manifest.get("shared_paths", [])
     )
+    shared_paths.extend(
+        str(value) for value in suite_manifest.get("generic_shared_paths", [])
+    )
     for value in shared_paths:
         relative = _safe_relative(value)
         shared_source = source / relative
