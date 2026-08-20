@@ -939,6 +939,32 @@ def test_login_redirect_allows_only_client_authorization_path(tmp_path):
     assert module.safe_login_redirect("/client-authorize?code=ABCD-EFGH&next=https://evil.example") == "/portal"
 
 
+def test_client_password_login_rejects_invalid_password_without_disclosing_account(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
+        )
+        payload = {
+            "client_id": module.CLIENT_AUTHORIZATION_ID,
+            "client_version": "0.1.0",
+            "platform": "macos",
+            "device_id": "gcd_" + "a" * 48,
+            "device_name": "测试电脑",
+            "username": "owner",
+            "password": "wrong-password",
+        }
+        wrong = client.post("/v1/client-login", json=payload)
+        missing = client.post("/v1/client-login", json={**payload, "username": "missing"})
+        assert wrong.status_code == missing.status_code == 401
+        assert wrong.json() == missing.json() == {
+            "detail": "用户名称或密码错误",
+            "diagnostic_code": "GC-REQ-401",
+        }
+        assert "owner" not in wrong.text
+
+
 def test_active_index_release_id_resolves_current_release_symlink(tmp_path):
     module = load_app(tmp_path)
     release_id = "policy-test-release-0001"
@@ -6290,7 +6316,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert "不含 `.mcp.json`、`bin` 或 `mcp`" in prompt
         assert "手动点击信任" in prompt
         assert "不得尝试绕过宿主安全确认" in prompt
-        assert "只重载 WorkBuddy 一次" in prompt
+        assert "只重载共创企业助手兼容宿主一次" in prompt
         assert "knowledge_service_status" in prompt
         assert "connected: true" in prompt
         assert "不可变发布产物" in prompt
@@ -6416,7 +6442,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert automatic_receipt["result_schema"] == module.RUNTIME_INSTALL_RESULT_SCHEMA
         assert automatic_receipt["result_ok"] == 1
         assert automatic_receipt["result_status"] == "configured"
-        assert automatic_receipt["result_host"] == "WorkBuddy MCP 自动回传"
+        assert automatic_receipt["result_host"] == "共创企业助手 MCP 自动回传"
         mismatched_report = client.post(
             f"/v1/agent-install-result/{second_enrollment_code}",
             json={
@@ -6633,7 +6659,7 @@ def test_runtime_install_attestation_updates_version_with_personal_token(
     assert result["result_schema"] == module.RUNTIME_INSTALL_RESULT_SCHEMA
     assert result["result_ok"] == 1
     assert result["result_status"] == "configured"
-    assert result["result_host"] == "WorkBuddy MCP 自动回传"
+    assert result["result_host"] == "共创企业助手 MCP 自动回传"
     assert result["result_platform"] == "macOS"
     assert result["result_reported_at"]
     assert active_personal["credential_kind"] == "personal"
@@ -7300,7 +7326,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
 
         access = client.get("/access")
         assert "复制给 Agent" in access.text
-        assert "非 WorkBuddy 手工配置 MCP" in access.text
+        assert "WorkBuddy" not in access.text
         assert "data-toggle-manual-agent-config" not in access.text
         assert "data-confirm-manual-agent-bootstrap" not in access.text
         assert "data-copy-agent-binding" in access.text
@@ -7319,7 +7345,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert "binding_authorized" in portal_script.text
         skills = client.get("/skills")
         assert skills.status_code == 200
-        assert "非 WorkBuddy 手工配置 MCP" in skills.text
+        assert "WorkBuddy" not in skills.text
         assert "data-toggle-manual-agent-config" not in skills.text
         assert "data-confirm-manual-agent-bootstrap" not in skills.text
         assert "data-manual-package-download" not in skills.text
@@ -7327,7 +7353,7 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert 'href="/mcp-guide"' in skills.text
         mcp_guide = client.get("/mcp-guide")
         assert mcp_guide.status_code == 200
-        assert "非 WorkBuddy 用户手工配置 MCP" in mcp_guide.text
+        assert "WorkBuddy" not in mcp_guide.text
         assert "不下载插件包、不使用 bootstrap_url" in mcp_guide.text
         assert "Authorization" in mcp_guide.text
 
@@ -7341,9 +7367,8 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         prompt = bootstrap.json()["prompt"]
         assert "不要开始安装" in prompt
         assert "本阶段不包含 bootstrap_url" in prompt
-        assert "先确认当前宿主是 WorkBuddy 5" in prompt
-        assert "本安装计划只适配 WorkBuddy" in prompt
-        assert "不是 WorkBuddy 5 或更高版本" in prompt
+        assert "第一步确认的兼容宿主 5 或更高版本" in prompt
+        assert "WorkBuddy" not in prompt
         assert "签名插件包" in prompt
         assert "不包含动态命令字段" in prompt
         assert "宿主插件文件" in prompt
@@ -7491,12 +7516,12 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         assert confirmed.status_code == 200
         assert confirmed.json()["phase"] == "install_authorized"
         assert "明确授权继续安装" in confirmed.json()["prompt"]
-        assert "当前宿主仍是 WorkBuddy 5" in confirmed.json()["prompt"]
+        assert "当前兼容宿主仍是 5 或更高版本" in confirmed.json()["prompt"]
         assert "`jiaotang-kb`" in confirmed.json()["prompt"]
         assert "不是必须出现在 Agent 工具列表中的工具" in confirmed.json()["prompt"]
         assert "`jiaotang_kb_setup`" in confirmed.json()["prompt"]
         assert "签名插件根目录 .mcp.json" in confirmed.json()["prompt"]
-        assert "WorkBuddy 5.3.x" in confirmed.json()["prompt"]
+        assert "兼容宿主 5.3.x" in confirmed.json()["prompt"]
         assert "runtimeInjected=false" in confirmed.json()["prompt"]
         assert "仅合并用户级 ~/.workbuddy/mcp.json" in confirmed.json()["prompt"]
         assert "不得直接注册临时下载或临时解压目录" in confirmed.json()["prompt"]
@@ -7671,7 +7696,8 @@ def test_member_agent_bootstrap_device_signature_and_replacement(
         installer = client.get("/install/jiaotang-agent.mjs")
         assert installer.status_code == 200
         assert "activation_required" in installer.text
-        assert "WorkBuddy 左侧「连接器」" in installer.text
+        assert "共创企业助手左侧「连接器」" in installer.text
+        assert "WorkBuddy" not in installer.text
         installer_path = tmp_path / "jiaotang-agent.mjs"
         installer_path.write_text(installer.text, encoding="utf-8")
         failed_install = subprocess.run(
@@ -8386,10 +8412,10 @@ def test_skills_diagnostics_uses_current_platform_pair_and_redacts_secrets(
         client.cookies.update(login.cookies)
         page = client.get("/skills/diagnostics")
         assert page.status_code == 200
-        assert "WorkBuddy 一键诊断" in page.text
+        assert "共创企业助手一键诊断" in page.text
         assert package_sha256["macos"] in page.text
         assert package_sha256["windows"] in page.text
-        assert "WorkBuddy V1.6.3" in page.text
+        assert "共创企业助手 V1.6.3" in page.text
         assert "Ed25519 双端签名有效" in page.text
         assert "636 个文件已核验" in page.text
         assert "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI" in page.text
@@ -10204,7 +10230,10 @@ def test_security_headers_storage_cache_robots_health_and_404_contract(tmp_path)
         assert "不在当前档案中" in html_missing.text
         assert html_missing.headers["cache-control"] == "private, no-store"
         assert api_missing.status_code == 404
-        assert api_missing.json() == {"detail": "资源不存在"}
+        assert api_missing.json() == {
+            "detail": "资源不存在",
+            "diagnostic_code": "GC-REQ-404",
+        }
         assert api_missing.headers["cache-control"] == "no-store"
 
 
@@ -10808,7 +10837,9 @@ def test_admin_invalid_signature_upload_keeps_previous_latest(
         current_download = client.get("/skills/latest/download")
 
     assert rejected.status_code == 400
-    assert "Skills 发布包校验失败" in rejected.text
+    assert "Skills 发布包未通过完整性校验" in rejected.text
+    assert "GC-REQ-400" in rejected.text
+    assert "发布公钥不是 OpenSSH Ed25519 公钥" not in rejected.text
     with closing(module.database()) as connection:
         versions = [
             row["version"]

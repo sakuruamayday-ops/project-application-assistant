@@ -28,7 +28,7 @@ for (const forbidden of [
   'data-platform-package="lingma"',
   'data-platform-package="kimi-code"',
   'data-platform-package="cherry-studio"',
-  "下载 WorkBuddy 包",
+  "下载旧版宿主专用包",
 ]) {
   if (template.includes(forbidden)) {
     throw new Error(`网站安装包下载中心仍包含已停用的平台入口：${forbidden}`);

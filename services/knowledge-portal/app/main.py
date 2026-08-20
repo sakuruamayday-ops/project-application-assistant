@@ -10,6 +10,7 @@ import ipaddress
 import csv
 import io
 import json
+import logging
 import math
 import os
 import queue
@@ -41,6 +42,7 @@ from urllib.parse import quote, urlparse
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
 from fastapi import Cookie, Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -51,6 +53,7 @@ from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 from starlette.background import BackgroundTask
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.assistant_runtime import (
     assistant_tool_schemas,
@@ -120,6 +123,15 @@ from app.recognized_enterprise_discovery import (
     recognition_search as execute_recognition_search,
 )
 from app.release_introductions import release_function_introduction
+from app.public_errors import (
+    public_error,
+    public_error_payload,
+    public_error_text,
+    redacted_log_detail,
+)
+
+
+LOGGER = logging.getLogger(__name__)
 
 # Production may supply this private extension as a server-managed overlay.
 try:
@@ -765,6 +777,70 @@ async def lifespan(application: FastAPI):
 app = FastAPI(title="企业全生命周期助手知识库", docs_url=None, redoc_url=None, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=500, compresslevel=6)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def controlled_http_error(request: Request, error: StarletteHTTPException):
+    del request
+    controlled = public_error(error.status_code, error.detail)
+    if controlled.redacted:
+        LOGGER.warning(
+            "Portal error %s redacted: %s",
+            controlled.diagnostic_code,
+            redacted_log_detail(error.detail),
+        )
+    return JSONResponse(
+        {
+            "detail": controlled.detail,
+            "diagnostic_code": controlled.diagnostic_code,
+        },
+        status_code=error.status_code,
+        headers=error.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def controlled_validation_error(request: Request, error: RequestValidationError):
+    del request
+    controlled = public_error(422, "", unexpected=True)
+    validation_summary = [
+        {
+            "location": list(item.get("loc") or ()),
+            "type": str(item.get("type") or "validation_error"),
+        }
+        for item in error.errors()
+    ]
+    LOGGER.info(
+        "Portal validation rejected [%s]: %s",
+        controlled.diagnostic_code,
+        redacted_log_detail(validation_summary),
+    )
+    return JSONResponse(
+        {
+            "detail": "请求参数不完整或格式不正确。",
+            "diagnostic_code": "GC-REQ-422",
+        },
+        status_code=422,
+    )
+
+
+@app.exception_handler(Exception)
+async def controlled_unexpected_error(request: Request, error: Exception):
+    del request
+    controlled = public_error(500, error, unexpected=True)
+    LOGGER.error(
+        "Portal unexpected error [%s] %s: %s",
+        controlled.diagnostic_code,
+        type(error).__name__,
+        redacted_log_detail(error),
+    )
+    return JSONResponse(
+        {
+            "detail": controlled.detail,
+            "diagnostic_code": controlled.diagnostic_code,
+        },
+        status_code=500,
+    )
 
 
 class SearchRequest(BaseModel):
@@ -1768,17 +1844,23 @@ def runtime_operational_status_view() -> dict[str, object]:
             if isinstance(runtime.get("warnings"), list)
             else []
         )
-        detail = str(
-            privacy.get("error")
-            or privacy.get("freshness_label")
-            or "状态未知"
-        )
+        if privacy.get("error"):
+            detail = public_error_text(503, privacy["error"], unexpected=True)
+        else:
+            detail = str(privacy.get("freshness_label") or "状态未知")
         warnings.append(f"问答原文定时清理告警：{detail}")
         runtime["warnings"] = warnings
         if runtime.get("is_fresh") and runtime.get("status") == "正常":
             runtime["status"] = "告警"
             runtime["display_status"] = "告警"
-    runtime["privacy_redaction"] = privacy
+    public_privacy = dict(privacy)
+    if public_privacy.get("error"):
+        public_privacy["error"] = public_error_text(
+            503,
+            public_privacy["error"],
+            unexpected=True,
+        )
+    runtime["privacy_redaction"] = public_privacy
     return runtime
 
 
@@ -6868,7 +6950,15 @@ def answer_with_knowledge(
                 merge_assistant_sources_for_question(question, *collected_sources),
                 routed_skills,
             )
-        raise HTTPException(status_code=502, detail=f"智能答疑服务暂不可用：{type(error).__name__}") from error
+        LOGGER.warning(
+            "Assistant model unavailable [GC-SVC-502] %s: %s",
+            type(error).__name__,
+            redacted_log_detail(error),
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="智能答疑服务暂不可用，请稍后重试。",
+        ) from error
 
 
 def answer_with_knowledge_without_model(results: list[dict[str, str]]) -> tuple[str, str]:
@@ -9485,7 +9575,7 @@ def record_runtime_install_observation(
         UPDATE agent_enrollment_codes
         SET result_schema=?,result_ok=1,result_status=?,
             result_error_stage=NULL,result_user_message=?,result_next_action=NULL,
-            result_host='WorkBuddy MCP 自动回传',result_platform=?,
+            result_host='共创企业助手 MCP 自动回传',result_platform=?,
             result_activation_required=0,result_reported_at=?,result_ip=?
         WHERE id=? AND user_id=?
         """,
@@ -9895,8 +9985,18 @@ class MCPBearerMiddleware:
                 record_usage=False,
             )
         except HTTPException as error:
+            controlled = public_error(error.status_code, error.detail)
+            if controlled.redacted:
+                LOGGER.warning(
+                    "MCP access error %s redacted: %s",
+                    controlled.diagnostic_code,
+                    redacted_log_detail(error.detail),
+                )
             response = JSONResponse(
-                {"detail": error.detail},
+                {
+                    "detail": controlled.detail,
+                    "diagnostic_code": controlled.diagnostic_code,
+                },
                 status_code=error.status_code,
                 headers=error.headers,
             )
@@ -10145,10 +10245,12 @@ def run_assistant_question_redaction_cycle() -> int:
         )
         return redacted_rows
     except Exception as error:
+        redacted_error = redacted_log_detail(error)
+        LOGGER.warning("Assistant privacy cleanup failed: %s", redacted_error)
         try:
             write_assistant_privacy_status(
                 status="异常",
-                error=f"{type(error).__name__}: {error}",
+                error=f"{type(error).__name__}: {redacted_error}",
             )
         except OSError:
             pass
@@ -10528,7 +10630,7 @@ def agent_connection_status_payload(
         detail = str(result.get("result_reported_at_display") or "等待首次 MCP 调用")
     else:
         label = "等待 MCP 连接"
-        detail = "完成 WorkBuddy 重载和 knowledge_service_status 验收后自动显示"
+        detail = "完成共创企业助手重载和 knowledge_service_status 验收后自动显示"
     verified_at = activity_at or (
         str(result.get("result_reported_at") or "") if result_verified and result else ""
     )
@@ -11200,6 +11302,13 @@ def portal_payload(
                 LIMIT 20
                 """
             ).fetchall(), "created_at", "completed_at", "rolled_back_at")
+            for job in update_jobs:
+                if job.get("error_message"):
+                    job["error_message"] = public_error_text(
+                        500,
+                        job["error_message"],
+                        unexpected=True,
+                    )
         release_rows = connection.execute(
             """
             SELECT id, version, file_name, file_path, sha256, release_notes, published_at
@@ -11482,14 +11591,14 @@ def require_installable_workbuddy_artifact(
     target = platform if platform in {"macos", "windows"} else "workbuddy"
     selected = artifact or latest_skill_artifact(target)
     if selected is None:
-        raise HTTPException(status_code=503, detail="当前没有可安装的 WorkBuddy 正式包。")
+        raise HTTPException(status_code=503, detail="当前没有可安装的共创企业助手正式包。")
     if not workbuddy_artifact_is_simple_remote_mcp(selected):
         version = str(selected.get("version") or "")
         version_label = f" V{version}" if version else ""
         raise HTTPException(
             status_code=503,
             detail=(
-                f"WorkBuddy 正式包{version_label}未通过简化远程 MCP 与最小行为 Hook "
+                f"共创企业助手正式包{version_label}未通过简化远程 MCP 与最小行为 Hook "
                 "能力门禁，新安装与升级已暂停，请等待正式版。"
             ),
         )
@@ -11710,7 +11819,7 @@ async def not_found_page(request: Request, error: Exception):
             status_code=404,
         )
     return JSONResponse(
-        {"detail": "资源不存在"},
+        public_error_payload(404, "资源不存在"),
         status_code=404,
         headers={"Cache-Control": "no-store"},
     )
@@ -12365,7 +12474,11 @@ def preferences_submit(
         return templates.TemplateResponse(
             request,
             "preferences.html",
-            preference_page_context(request, user, error=detail),
+            preference_page_context(
+                request,
+                user,
+                error=public_error_text(status_code, detail),
+            ),
             status_code=status_code,
         )
     return RedirectResponse("/preferences?saved=1", status_code=303)
@@ -13805,10 +13918,29 @@ def assistant_answer_stream(
                 duration_ms=round((time.perf_counter() - started) * 1000),
                 fallback_reason=str(trace["fallback_reason"] or "") or None,
                 error_type=type(error).__name__,
-                error_message=str(error),
+                error_message=redacted_log_detail(error),
             )
-            detail = error.detail if isinstance(error, HTTPException) else "知识库答疑暂时不可用，请稍后重试。"
-            events.put(("error", {"detail": str(detail)}))
+            status_code = error.status_code if isinstance(error, HTTPException) else 500
+            detail = error.detail if isinstance(error, HTTPException) else error
+            controlled = public_error(
+                status_code,
+                detail,
+                unexpected=not isinstance(error, HTTPException),
+            )
+            LOGGER.warning(
+                "Assistant stream error %s: %s",
+                controlled.diagnostic_code,
+                redacted_log_detail(detail),
+            )
+            events.put(
+                (
+                    "error",
+                    {
+                        "detail": controlled.detail,
+                        "diagnostic_code": controlled.diagnostic_code,
+                    },
+                )
+            )
 
     threading.Thread(target=worker, daemon=True, name=f"assistant-{usage_id}").start()
     while True:
@@ -13973,7 +14105,7 @@ def assistant_answer(
             duration_ms=round((time.perf_counter() - started) * 1000),
             fallback_reason=str(trace["fallback_reason"] or "") or None,
             error_type=type(error).__name__,
-            error_message=str(error),
+            error_message=redacted_log_detail(error),
         )
         raise
 
@@ -14145,6 +14277,13 @@ def admin_health_detail(
             ORDER BY id DESC LIMIT 30
             """
         ).fetchall(), "created_at", "completed_at")
+        for job in failed_updates:
+            if job.get("error_message"):
+                job["error_message"] = public_error_text(
+                    500,
+                    job["error_message"],
+                    unexpected=True,
+                )
         access_user_rows = connection.execute(
             """
             WITH token_stats AS (
@@ -14435,6 +14574,14 @@ def admin_health_detail(
             if item.get("status") == "failed" or item.get("fallback_reason"):
                 metrics["abnormal"] += 1
     assistant_anomalies = format_row_datetimes(assistant_anomaly_rows, "started_at")
+    for item in assistant_anomalies:
+        error_detail = (
+            item.get("fallback_reason")
+            or item.get("error_type")
+            or item.get("error_message")
+        )
+        if error_detail:
+            item["public_error_display"] = public_error_text(503, error_detail)
     assistant_problem_questions = format_row_datetimes(
         assistant_problem_question_rows, "last_called_at"
     )
@@ -15092,7 +15239,14 @@ def admin_knowledge_trash(
     trash_items = []
     for row in rows:
         payload = json.loads(row["document_payload"])
-        trash_items.append({**dict(row), "title": payload.get("title", "未命名资料")})
+        item = {**dict(row), "title": payload.get("title", "未命名资料")}
+        if item.get("error_message"):
+            item["error_message"] = public_error_text(
+                500,
+                item["error_message"],
+                unexpected=True,
+            )
+        trash_items.append(item)
     trash_total = len(trash_items)
     normalized_trash_query = " ".join(trash_query.strip().split())[:100]
     if normalized_trash_query:
@@ -15184,7 +15338,7 @@ def admin_knowledge_move_to_trash(
         with closing(database()) as connection:
             connection.execute(
                 "UPDATE knowledge_document_trash SET status = 'failed', error_message = ? WHERE id = ?",
-                (str(error)[:2000], trash_id),
+                (redacted_log_detail(error), trash_id),
             )
             connection.commit()
         raise
@@ -15341,7 +15495,7 @@ def build_agent_bootstrap_prompt(
     }
     profile = platform_profiles.get(platform)
     if profile is None:
-        raise ValueError("不支持的 WorkBuddy 安装平台")
+        raise ValueError("不支持的共创企业助手安装平台")
     skill_count = len(skill_catalog_payload()["skills"])
     configuration = json.dumps(
         remote_mcp_configuration(
@@ -15368,7 +15522,7 @@ def build_agent_bootstrap_prompt(
         separators=(",", ":"),
     )
     return (
-        "请在当前 WorkBuddy 中完成企业全生命周期助手的一次安装或覆盖升级。"
+        "请在当前共创企业助手兼容宿主中完成一次安装或覆盖升级。"
         f"本次选择的是 {profile['label']} 版，只能使用{profile['adapter']}。"
         f"开始前先确认当前操作系统为 {profile['label']}；如果不匹配，立即停止并"
         "提示用户回到门户选择另一个安装按钮，不得改用其他平台的路径或启动方式。"
@@ -15383,7 +15537,7 @@ def build_agent_bootstrap_prompt(
         f"远程 MCP 边界；{profile['preflight']}"
         "预检失败时保持旧版和原 MCP 配置完全不动。预检通过后记录解压目录的逐文件摘要，安装后"
         "再次核对，必须逐字节一致；只要 package_mutated=true，验收立即失败并回滚。"
-        f"然后使用 WorkBuddy 内置插件管理安装或替换共创研究院插件，确认 {skill_count} 项 Skills 可识别并启用包内"
+        f"然后使用兼容宿主的内置插件管理安装或替换共创研究院插件，确认 {skill_count} 项 Skills 可识别并启用包内"
         "最小行为约束 Hook。安装前同时检查当前用户目录下"
         f" {profile['host_roots']} 的 plugins、plugins/marketplaces 以及宿主已登记的本地市场，"
         "识别所有共创研究院旧版、重复副本和历史技术名称副本；不得扫描或改动无关插件。先把命中的旧版移出"
@@ -15396,10 +15550,10 @@ def build_agent_bootstrap_prompt(
         " `mcp` 旧本地启动器残留。随后只替换当前用户配置中的 `mcpServers.jiaotang-kb`，保留所有"
         f"其他 MCP 条目。本次只能写入 {profile['mcp_path']}；文件名是不带点前缀的 "
         f"`mcp.json`。{profile['managed_mcp_path']} 是"
-        " WorkBuddy 托管的代理配置，禁止读取、修改或覆盖。目标 `mcp.json` 不存在时创建，存在时"
+        " 由兼容宿主托管的代理配置，禁止读取、修改或覆盖。目标 `mcp.json` 不存在时创建，存在时"
         "解析原 JSON 后只合并 `jiaotang-kb`，不得重建整个 `mcpServers`。完整远程 MCP 配置如下：\n\n"
         f"{configuration}\n\n"
-        "保存后只重载 WorkBuddy 一次。打开连接器管理，确认自定义连接器中出现 `jiaotang-kb`；"
+        "保存后只重载共创企业助手兼容宿主一次。打开连接器管理，确认自定义连接器中出现 `jiaotang-kb`；"
         "若显示未信任，提示用户在界面手动点击信任，不得尝试绕过宿主安全确认。信任后执行 tools/list，确认 knowledge_search、"
         "knowledge_document、knowledge_service_status 已出现，再实际调用 "
         f"knowledge_service_status；只有返回 connected: true、{skill_count} 项 Skills 可识别且其他 MCP "
@@ -15410,7 +15564,7 @@ def build_agent_bootstrap_prompt(
         "marketplaces 或用户 MCP 配置。回滚快照保持在活动搜索路径之外，不会被 Hook 或插件发现逻辑"
         "选中。不要执行安装包签名审查、用户侧签名校验、设备登记、"
         "bootstrap 或本地 MCP 启动器步骤。Authorization 中的个人 Token 仅可写入当前用户的 "
-        "WorkBuddy MCP 配置，不得在最终回复、普通日志或其他文件中复述。失败时先把失败的新目录移入"
+        "共创企业助手兼容宿主的 MCP 配置，不得在最终回复、普通日志或其他文件中复述。失败时先把失败的新目录移入"
         "系统回收站，再把搜索路径外的回滚快照恢复到原活动位置，同时恢复原 MCP 配置并说明恢复"
         "结果。最终机器回执至少包含 installation_ok、package_mutated、preflight_passed、"
         "failed_stage、error_code 和 rollback_restored；错误码只能按实际阶段使用 "
@@ -15446,20 +15600,20 @@ def build_agent_install_prompt(install_protocol_url: str) -> str:
     return (
         "我已在共创研究院门户完成安装说明审查，并明确授权继续安装。请重新读取下面的 HTTPS 安装说明，"
         "校验 schema 为 gongchuang-research-institute-agent-install/v1、phase 为 install_authorized，按协议中固定的"
-        "SHA-256、发布者指纹和 Ed25519 签名完成校验，再安全解压插件市场包，并在 WorkBuddy 内"
+        "SHA-256、发布者指纹和 Ed25519 签名完成校验，再安全解压插件市场包，并在共创企业助手兼容宿主内"
         "完成市场添加与插件安装：\n\n"
         f"{install_protocol_url}\n\n"
-        "开始写入前再次确认当前宿主仍是 WorkBuddy 5 或更高版本，且本轮包类型为"
+        "开始写入前再次确认当前兼容宿主仍是 5 或更高版本，且本轮包类型为"
         " signed_workbuddy_plugin；若宿主或适配包类型与审查阶段不一致，立即停止。"
         "禁止执行网页动态命令；本协议没有动态命令字段。允许执行的范围仅限已核验插件市场包、"
-        "WorkBuddy 应用内插件注册和插件本地 MCP setup 工具，不允许通过外部 CLI 手工运行包内脚本；插件启用后"
-        "由 WorkBuddy 按已验签清单启动声明的 MCP 入口属于正常运行。协议中的 /plugin 只是 WorkBuddy"
-        "宿主的插件管理入口，不是必须出现在 Agent 工具列表中的工具；不要仅因缺少同名工具而中止。"
-        "当前会话如具备本地文件、插件管理或 WorkBuddy 配置能力，可以使用这些已授权能力完成协议"
-        "列出的固定步骤。安全解压后必须先把完整 gongchuang-research-institute 市场持久保存到当前 WorkBuddy 实际使用的"
+        "兼容宿主应用内插件注册和插件本地 MCP setup 工具，不允许通过外部 CLI 手工运行包内脚本；插件启用后"
+        "由兼容宿主按已验签清单启动声明的 MCP 入口属于正常运行。协议中的 /plugin 只是兼容宿主的"
+        "插件管理入口，不是必须出现在 Agent 工具列表中的工具；不要仅因缺少同名工具而中止。"
+        "当前会话如具备本地文件、插件管理或兼容宿主配置能力，可以使用这些已授权能力完成协议"
+        "列出的固定步骤。安全解压后必须先把完整 gongchuang-research-institute 市场持久保存到当前兼容宿主实际使用的"
         "用户插件市场目录，再从该持久目录注册；不得直接注册临时下载或临时解压目录，清理时也不得"
         "删除已注册的 gongchuang-research-institute 市场。`jiaotang-kb` 的 MCP 声明位于签名插件根目录 .mcp.json，"
-        "plugin.json 只保留相对路径声明。先让宿主直接加载签名声明；如 WorkBuddy 5.3.x 日志明确显示"
+        "plugin.json 只保留相对路径声明。先让宿主直接加载签名声明；如兼容宿主 5.3.x 日志明确显示"
         " `command=${CODEBUDDY_PLUGIN_ROOT}/bin/run-node`、`runtimeInjected=false` 或因字面量占位符导致 "
         "MCP -32000，允许执行一次限定兼容修复：仅合并用户级 ~/.workbuddy/mcp.json 的 `jiaotang-kb` 条目，"
         "command 与 args 必须是指向已验签持久插件目录中 run-node 和 jiaotang-agent.mjs 的绝对路径，"
@@ -15512,13 +15666,13 @@ def build_agent_upgrade_prompt(protocol_url: str) -> str:
         "HTTPS 升级协议，严格核对当前版本、目标版本、目标包 SHA-256、Ed25519 "
         "发布者指纹和持久市场路径：\n\n"
         f"{protocol_url}\n\n"
-        "使用 WorkBuddy 内置插件管理器从已签名的 gongchuang-research-institute 持久市场升级 "
+        "使用兼容宿主内置插件管理器从已签名的 gongchuang-research-institute 持久市场升级 "
         "gongchuang-research-institute-skills；复用现有设备标识、设备密钥、API Token "
         "和 jiaotang-kb MCP 身份，不得重新登记设备或创建第二个 "
         "MCP。升级前保留当前插件目录作为可恢复备份；新包验签、启用和任一只读 "
         "jiaotang-kb 调用均通过后，再按协议回传目标版本和包哈希。升级后必须确认宿主"
         "已读取插件根目录 .mcp.json，且 tools/list 包含 knowledge_search。失败时恢复旧版，"
-        "并回传失败阶段。不得执行网页动态命令，不得删除整个 WorkBuddy 用户目录。"
+        "并回传失败阶段。不得执行网页动态命令，不得删除整个兼容宿主用户目录。"
     )
 
 
@@ -15534,20 +15688,20 @@ def workbuddy_storage_layers() -> list[dict[str, object]]:
             "label": "宿主插件文件",
             "scope": "workbuddy_managed",
             "path": (
-                "当前 WorkBuddy 实际用户目录的 plugins/marketplaces/gongchuang-research-institute；"
-                "WorkBuddy 5 通常为 ~/.workbuddy/plugins/marketplaces/gongchuang-research-institute，"
+                "当前兼容宿主实际用户目录的 plugins/marketplaces/gongchuang-research-institute；"
+                "兼容宿主 5 通常为 ~/.workbuddy/plugins/marketplaces/gongchuang-research-institute，"
                 "兼容版本可能为 ~/.codebuddy/plugins/marketplaces/gongchuang-research-institute"
             ),
             "purpose": (
-                "持久保存 WorkBuddy 本地市场、插件运行文件和启用状态；"
+                "持久保存兼容宿主本地市场、插件运行文件和启用状态；"
                 "不得使用安装临时目录替代，也不得在安装后清理；"
                 "插件内置模式下 jiaotang-kb MCP 声明位于签名插件根目录 .mcp.json，"
                 "plugin.json 保留相对路径声明，运行文件也位于该插件目录"
             ),
-            "created_when": "安装或启用签名 WorkBuddy 插件时",
+            "created_when": "安装或启用签名兼容宿主插件时",
             "required_for_signed_plugin": True,
             "rollback": (
-                "在 WorkBuddy 插件管理中停用并卸载 "
+                "在兼容宿主插件管理中停用并卸载 "
                 "gongchuang-research-institute-skills@gongchuang-research-institute，再移除共创研究院本地市场；"
                 "不要删除整个 ~/.workbuddy 或 ~/.codebuddy"
             ),
@@ -15561,7 +15715,7 @@ def workbuddy_storage_layers() -> list[dict[str, object]]:
                 "签名插件内置模式通常不重复创建该文件"
             ),
             "purpose": (
-                "仅供独立运行或旧版兼容接入使用，不是 WorkBuddy 插件市场或插件登记目录"
+                "仅供独立运行或旧版兼容接入使用，不是共创企业助手插件市场或插件登记目录"
             ),
             "created_when": "仅在独立运行或兼容接入模式需要时",
             "required_for_signed_plugin": False,
@@ -15648,7 +15802,7 @@ def pinned_agent_install_artifact(
             current = latest_skill_artifact(requested_target)
             if current is None:
                 connection.rollback()
-                raise HTTPException(status_code=503, detail="当前 WorkBuddy 签名包暂不可用。")
+                raise HTTPException(status_code=503, detail="当前共创企业助手签名包暂不可用。")
             artifact = {
                 "version": str(current.get("version") or ""),
                 "file_name": str(
@@ -15684,7 +15838,7 @@ def pinned_agent_install_artifact(
         or not re.fullmatch(r"[a-f0-9]{64}", expected_sha256)
         or not secrets.compare_digest(sha256_file(package_path), expected_sha256)
     ):
-        raise HTTPException(status_code=503, detail="WorkBuddy 签名包与发布记录不一致，下载已暂停。")
+        raise HTTPException(status_code=503, detail="共创企业助手签名包与发布记录不一致，下载已暂停。")
     require_installable_workbuddy_artifact(artifact)
     return enrollment_payload, artifact
 
@@ -16377,7 +16531,7 @@ def agent_install_protocol(
                         },
                     ],
                     "authorization_rule": (
-                        "第二步只允许在第一步确认的 WorkBuddy 5 或更高版本中安装"
+                        "第二步只允许在第一步确认的兼容宿主 5 或更高版本中安装"
                         "包哈希完全一致的已发布签名插件包"
                     ),
                     "workbuddy_only": True,
@@ -16502,17 +16656,17 @@ def agent_install_protocol(
                     },
                     "plugin_download_url": plugin_download_url,
                     "steps": [
-                        "从安装协议的一次性受限地址下载签名 WorkBuddy 插件包。",
+                        "从安装协议的一次性受限地址下载签名兼容宿主插件包。",
                         "核对发布包 SHA-256、固定发布者指纹和 Ed25519 签名。",
                         "先拒绝绝对路径、父目录穿越、符号链接、重复路径和超限归档，再安全解压；不执行包内内容。",
-                        "识别当前 WorkBuddy 实际用户目录；优先使用 ~/.workbuddy，兼容版本可能使用 ~/.codebuddy。",
+                        "识别当前兼容宿主实际用户目录；优先使用 ~/.workbuddy，兼容版本可能使用 ~/.codebuddy。",
                         "把解压后的完整 gongchuang-research-institute 目录持久保存到该宿主目录的 plugins/marketplaces/gongchuang-research-institute；"
                         "不得直接从临时下载目录或临时解压目录注册。",
-                        "使用 WorkBuddy 内置插件管理添加上述共创研究院本地市场；/plugin 是界面入口，不是 Agent 工具名。",
-                        "在 WorkBuddy 内安装并启用 gongchuang-research-institute-skills@gongchuang-research-institute；"
+                        "使用兼容宿主内置插件管理添加上述共创研究院本地市场；/plugin 是界面入口，不是 Agent 工具名。",
+                        "在兼容宿主内安装并启用 gongchuang-research-institute-skills@gongchuang-research-institute；"
                         "由宿主读取签名插件根目录 .mcp.json 中的 jiaotang-kb MCP 声明，"
                         "正常情况不另写用户级或项目级 MCP 配置。",
-                        "若 WorkBuddy 5.3.x 把 ${CODEBUDDY_PLUGIN_ROOT} 作为字面量命令导致 MCP -32000，"
+                        "若兼容宿主 5.3.x 把 ${CODEBUDDY_PLUGIN_ROOT} 作为字面量命令导致 MCP -32000，"
                         "仅将 ~/.workbuddy/mcp.json 中 jiaotang-kb 的 command 和 args 合并为已验签持久插件运行文件的绝对路径；"
                         "保留其他 MCP，不修改签名插件副本。",
                         "首次加载时由未绑定的本地 MCP 仅枚举 jiaotang_kb_setup 与状态工具；"
@@ -16688,7 +16842,7 @@ def agent_upgrade_protocol(
                         "核对现有设备身份、当前版本和当前包哈希。",
                         "下载本协议固定的目标包并验证 SHA-256、Ed25519 签名和发布者指纹。",
                         "把当前已注册插件目录移动到可恢复备份位置，不删除设备凭据。",
-                        "使用 WorkBuddy 内置插件管理器从持久共创研究院市场升级并启用插件。",
+                        "使用兼容宿主内置插件管理器从持久共创研究院市场升级并启用插件。",
                         "确认宿主已读取签名插件根目录 .mcp.json，jiaotang-kb 仍为同一连接，"
                         "tools/list 包含 knowledge_search，且任一只读调用成功。",
                         "向 result_url 回传目标版本、目标包哈希和升级结果。",
@@ -16906,7 +17060,7 @@ def agent_bootstrap_manifest(
     except (OSError, ValueError, zipfile.BadZipFile, json.JSONDecodeError) as error:
         raise HTTPException(
             status_code=503,
-            detail="WorkBuddy 正式连接器完整性校验失败",
+            detail="共创企业助手正式连接器完整性校验失败",
         ) from error
     bootstrap_url = (
         f"{public_endpoint}/v1/agent-bootstrap/{quote(enrollment_code)}"
@@ -16925,7 +17079,7 @@ def agent_bootstrap_manifest(
             "supported_platforms": ["darwin", "win32"],
             "supported_hosts": ["workbuddy"],
             "instructions": [
-                "Install only the signed WorkBuddy plugin package downloaded from the authenticated portal.",
+                "仅安装从已认证门户下载的签名兼容宿主插件包。",
                 "Pass bootstrap_url exactly once to the local jiaotang_kb_setup MCP tool; never store it in settings.json.",
                 "Do not execute any command returned by this website; this manifest contains no command field.",
                 "Never print or return enrollment codes, API tokens, private keys, or credential files.",
@@ -17150,7 +17304,7 @@ def register_agent_device(
                     status_code=426,
                     detail=(
                         "当前正式版本要求凭据保存后再激活。"
-                        "请更新到 V1.3.1.4 或更高版本的 WorkBuddy 插件后重试。"
+                        "请更新到 V1.3.1.4 或更高版本的共创企业助手兼容插件后重试。"
                     ),
                     headers={"Upgrade": "jiaotang-registration-transaction-v1"},
                 )
@@ -18160,7 +18314,7 @@ def create_knowledge_update(
                 SET status = 'failed', error_message = ?, completed_at = ?
                 WHERE id = ?
                 """,
-                (str(error)[:2000], isoformat(utc_now()), job_id),
+                (redacted_log_detail(error), isoformat(utc_now()), job_id),
             )
             connection.commit()
     return RedirectResponse("/admin/knowledge-update", status_code=303)
@@ -18353,6 +18507,10 @@ def publish_skill_release(
             require_signature=True,
         )
     except (OSError, zipfile.BadZipFile, ValueError) as error:
+        LOGGER.warning(
+            "Skill release validation rejected [GC-REQ-400]: %s",
+            redacted_log_detail(error),
+        )
         rejected = SKILL_RELEASE_DIR / "rejected"
         rejected.mkdir(parents=True, exist_ok=True)
         stored_path.replace(rejected / stored_path.name)
@@ -18362,7 +18520,10 @@ def publish_skill_release(
             portal_payload(
                 request,
                 user,
-                error=f"Skills 发布包校验失败：{error}",
+                error=public_error_text(
+                    400,
+                    "Skills 发布包未通过完整性校验，请核对签名和清单后重试。",
+                ),
                 active_page="skill-admin",
             ),
             status_code=400,
@@ -18565,7 +18726,7 @@ def web_download_historical_workbuddy_skills(
             (release_id,),
         ).fetchone()
     if release is None:
-        raise HTTPException(status_code=404, detail="该历史版本没有带哈希记录的 WorkBuddy 插件包")
+        raise HTTPException(status_code=404, detail="该历史版本没有带哈希记录的兼容宿主插件包")
     return validated_release_artifact_download(
         release,
         target="workbuddy",
@@ -19363,7 +19524,7 @@ def validated_release_artifact_download(
             snapshot_release_artifact(artifact)
         )
     except (OSError, ValueError, zipfile.BadZipFile) as error:
-        label = "通用 Skills" if target == "generic" else "WorkBuddy"
+        label = "通用 Skills" if target == "generic" else "共创企业助手"
         raise HTTPException(
             status_code=503,
             detail=f"{label} 发布产物在下载准备期间发生变化，下载已暂停。",
@@ -19568,7 +19729,7 @@ def require_release_artifact_for_serving(
             require_signature=require_signature,
         )
     except (OSError, ValueError, zipfile.BadZipFile) as error:
-        label = "通用 Skills" if target == "generic" else "WorkBuddy"
+        label = "通用 Skills" if target == "generic" else "共创企业助手"
         raise HTTPException(
             status_code=503,
             detail=f"{label} 发布产物完整性或固定公钥验签未通过，下载已暂停。",
@@ -19578,7 +19739,7 @@ def require_release_artifact_for_serving(
 def workbuddy_connector_sha256(artifact: dict[str, object]) -> str:
     package_path = Path(str(artifact.get("file_path") or ""))
     if not package_path.is_file():
-        raise ValueError("WorkBuddy 正式发布包不存在")
+        raise ValueError("共创企业助手正式发布包不存在")
     with zipfile.ZipFile(package_path) as archive:
         files = [
             name
@@ -19593,7 +19754,7 @@ def workbuddy_connector_sha256(artifact: dict[str, object]) -> str:
             and not name.endswith("/")
         ]
         if len(files) != 1 or len(manifests) != 1:
-            raise ValueError("WorkBuddy 连接器或签名清单数量不正确")
+            raise ValueError("共创企业助手连接器或签名清单数量不正确")
         connector_bytes = archive.read(files[0])
         connector_sha256 = hashlib.sha256(connector_bytes).hexdigest()
         manifest = json.loads(archive.read(manifests[0]).decode("utf-8"))
@@ -19602,7 +19763,7 @@ def workbuddy_connector_sha256(artifact: dict[str, object]) -> str:
             not isinstance(manifest_files, dict)
             or manifest_files.get("mcp/jiaotang-agent.mjs") != connector_sha256
         ):
-            raise ValueError("WorkBuddy 连接器与插件签名清单不一致")
+            raise ValueError("共创企业助手连接器与插件签名清单不一致")
     return connector_sha256
 
 
@@ -19622,7 +19783,7 @@ def validate_workbuddy_artifact_for_diagnostics(
         != "user_remote_streamable_http"
         or integrity.get("hook_mode") != "behavior_only_fail_open"
     ):
-        raise ValueError("WorkBuddy简化安装边界未通过")
+        raise ValueError("共创企业助手简化安装边界未通过")
     return {
         "status": str(integrity.get("status") or ""),
         "publisher_fingerprint": str(
@@ -19866,7 +20027,7 @@ def workbuddy_artifact(version: str) -> dict[str, object]:
         distribution_revision = None
     return {
         "id": "workbuddy",
-        "name": "WorkBuddy",
+        "name": "共创企业助手",
         "version": version if included else None,
         "included": included,
         "installable": installable,
@@ -19935,7 +20096,7 @@ def latest_workbuddy_artifact() -> dict[str, object]:
         )
         return {
             "id": "workbuddy",
-            "name": "WorkBuddy",
+            "name": "共创企业助手",
             "version": latest_version if platform_complete else None,
             "included": platform_complete,
             "installable": platform_installable,

@@ -1,4 +1,26 @@
 const USER_API_SESSION_STORAGE_KEY = "gongchuang-user-model-api";
+const PORTAL_DIAGNOSTIC_CODE = /^GC-(?:REQ|SVC|CLIENT)-[A-Z0-9-]+$/;
+
+function portalPublicError(message, diagnosticCode = "GC-CLIENT-REQUEST") {
+  const error = new Error(`${message}（诊断码：${diagnosticCode}）`);
+  error.isPortalPublicError = true;
+  return error;
+}
+
+function portalResponseError(payload, fallback) {
+  const diagnosticCode = String(payload?.diagnostic_code || "");
+  if (PORTAL_DIAGNOSTIC_CODE.test(diagnosticCode) && typeof payload?.detail === "string") {
+    return portalPublicError(payload.detail, diagnosticCode);
+  }
+  return portalPublicError(fallback, "GC-CLIENT-RESPONSE");
+}
+
+function portalErrorText(error, fallback) {
+  return error?.isPortalPublicError
+    ? error.message
+    : `${fallback}（诊断码：GC-CLIENT-NETWORK）`;
+}
+
 if (document.querySelector("[data-clear-sensitive-storage-on-load]")) {
   try {
     sessionStorage.removeItem(USER_API_SESSION_STORAGE_KEY);
@@ -605,7 +627,7 @@ const renderAgentInstallStatus = (payload) => {
     const label = statusPanel.querySelector("[data-agent-connection-label]");
     const detail = statusPanel.querySelector("[data-agent-connection-detail]");
     if (label) label.textContent = payload.connection.label || "等待 MCP 连接";
-    if (detail) detail.textContent = payload.connection.detail || "等待 WorkBuddy 完成验收";
+    if (detail) detail.textContent = payload.connection.detail || "等待共创企业助手完成验收";
   });
 };
 
@@ -665,7 +687,7 @@ const watchAgentUpgradeStatus = (card) => {
 };
 
 const loadAgentInstallReview = async (card, {platform = ""} = {}) => {
-  if (!["macos", "windows"].includes(platform)) throw new Error("请选择 macOS 版或 Windows 版。");
+  if (!["macos", "windows"].includes(platform)) throw portalPublicError("请选择 macOS 版或 Windows 版。");
   const form = new URLSearchParams();
   form.set("csrf_token", card?.dataset.csrfToken || "");
   form.set("platform", platform);
@@ -676,7 +698,7 @@ const loadAgentInstallReview = async (card, {platform = ""} = {}) => {
   });
   const payload = await response.json();
   if (!response.ok || payload.phase !== "install_ready" || !payload.prompt) {
-    throw new Error(payload.detail || "无法生成完整安装指令");
+    throw portalResponseError(payload, "无法生成完整安装指令。");
   }
   return payload;
 };
@@ -691,7 +713,7 @@ const loadAgentUpgradeReview = async (card) => {
   });
   const payload = await response.json();
   if (!response.ok || payload.phase !== "review" || !payload.prompt || !payload.review_code || !payload.review_url) {
-    throw new Error(payload.detail || "无法生成升级审查");
+    throw portalResponseError(payload, "无法生成升级审查。");
   }
   card.dataset.agentUpgradeCode = payload.review_code;
   card.dataset.agentUpgradeUrl = payload.review_url;
@@ -701,7 +723,7 @@ const loadAgentUpgradeReview = async (card) => {
 
 const confirmAgentUpgrade = async (card) => {
   const upgradeCode = card?.dataset.agentUpgradeCode || "";
-  if (!upgradeCode) throw new Error("请先生成并审查升级计划。");
+  if (!upgradeCode) throw portalPublicError("请先生成并审查升级计划。");
   const form = new URLSearchParams();
   form.set("csrf_token", card?.dataset.csrfToken || "");
   form.set("upgrade_code", upgradeCode);
@@ -712,7 +734,7 @@ const confirmAgentUpgrade = async (card) => {
   });
   const payload = await response.json();
   if (!response.ok || payload.phase !== "upgrade_authorized" || !payload.prompt) {
-    throw new Error(payload.detail || "无法确认升级");
+    throw portalResponseError(payload, "无法确认升级。");
   }
   return payload;
 };
@@ -726,7 +748,7 @@ document.addEventListener("click", async (event) => {
     manualCopyRetry.disabled = true;
     try {
       await copyToClipboard(textarea?.value || "");
-      if (status) status.textContent = "复制成功，可以粘贴给当前设备的 WorkBuddy。";
+      if (status) status.textContent = "复制成功，可以粘贴给当前设备的共创企业助手。";
     } catch {
       selectAgentManualCopyText(textarea);
       if (status) status.textContent = "浏览器仍未允许自动复制，文本已全选；请按 ⌘C 或 Ctrl+C。";
@@ -779,7 +801,7 @@ document.addEventListener("click", async (event) => {
         }
       } else if (status) {
         status.classList.add("is-error");
-        status.textContent = error.message || "生成升级审查失败。";
+        status.textContent = portalErrorText(error, "生成升级审查失败。");
       }
     }
     return;
@@ -812,7 +834,7 @@ document.addEventListener("click", async (event) => {
         }
       } else if (status) {
         status.classList.add("is-error");
-        status.textContent = error.message || "确认升级失败。";
+        status.textContent = portalErrorText(error, "确认升级失败。");
       }
     } finally {
       confirmUpgradeButton.disabled = false;
@@ -840,9 +862,9 @@ document.addEventListener("click", async (event) => {
       );
       await Promise.all([payloadPromise, copyPromise]);
       agentBootstrapButton.classList.remove("is-loading");
-      agentBootstrapButton.innerHTML = `<span>${platformLabel} 指令已复制</span><small>粘贴到 WorkBuddy 执行</small>`;
+      agentBootstrapButton.innerHTML = `<span>${platformLabel} 指令已复制</span><small>粘贴到共创企业助手执行</small>`;
       agentBootstrapButton.classList.add("copy-success");
-      if (status) status.textContent = `请粘贴到 ${platformLabel} 版 WorkBuddy；安装、远程 MCP 合并、一次重载和验收会在同一轮完成。`;
+      if (status) status.textContent = `请粘贴到 ${platformLabel} 版共创企业助手；安装、远程 MCP 合并、一次重载和验收会在同一轮完成。`;
       watchAgentInstallStatus(card);
       window.setTimeout(() => {
         agentBootstrapButton.innerHTML = originalMarkup;
@@ -862,7 +884,7 @@ document.addEventListener("click", async (event) => {
         }
       } else if (status) {
         status.classList.add("is-error");
-        status.textContent = error.message || "生成失败，请稍后重试。";
+        status.textContent = portalErrorText(error, "生成失败，请稍后重试。");
       }
     }
     return;
@@ -970,7 +992,7 @@ document.querySelector("#assistant-form")?.addEventListener("submit", async (eve
     const response = await fetch("/assistant/answer", {method: "POST", body});
     if (!response.ok) {
       const payload = await response.json();
-      throw new Error(payload.detail || "答疑失败");
+      throw portalResponseError(payload, "答疑失败。");
     }
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -992,12 +1014,12 @@ document.querySelector("#assistant-form")?.addEventListener("submit", async (eve
         const payload = JSON.parse(dataLines.join("\n"));
         if (eventName === "progress") appendAssistantProgress(progressList, payload);
         if (eventName === "result") renderAssistantResult(payload, elements);
-        if (eventName === "error") throw new Error(payload.detail || "答疑失败");
+        if (eventName === "error") throw portalResponseError(payload, "答疑失败。");
       }
       if (done) break;
     }
   } catch (error) {
-    answer.textContent = error.message;
+    answer.textContent = portalErrorText(error, "答疑失败。");
     mode.textContent = "需要检查";
     skills.replaceChildren();
     sources.replaceChildren();
@@ -1409,12 +1431,12 @@ if (skillCenter) {
     else dialog.setAttribute("open", "");
     try {
       const response = await fetch(`/skills/catalog/${encodeURIComponent(row.dataset.skillOpen)}`, {headers: {Accept: "application/json"}});
-      if (!response.ok) throw new Error("技能详情暂时不可用");
+      if (!response.ok) throw portalResponseError(await response.json(), "技能详情暂时不可用。");
       renderSkillDetail(await response.json());
       loading.hidden = true;
       content.hidden = false;
     } catch (error) {
-      loading.textContent = error.message || "技能详情暂时不可用";
+      loading.textContent = portalErrorText(error, "技能详情暂时不可用。");
     }
   }));
 }

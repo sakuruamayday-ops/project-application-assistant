@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}WorkBuddy 一键诊断｜知识产权大脑{% endblock %}
+{% block title %}共创企业助手一键诊断｜知识产权大脑{% endblock %}
 {% block body_class %}app-body diagnostics-body{% endblock %}
 {% block content %}
 <main class="diagnostics-page">
   <header class="diagnostics-header">
     <div>
       <span class="eyebrow">Safe Connection Diagnostics</span>
-      <h1>WorkBuddy 一键诊断</h1>
+      <h1>共创企业助手一键诊断</h1>
       <p>只展示正式包摘要、发布签名和简化安装边界，不读取或显示个人 Token。</p>
     </div>
     <div class="button-row">
@@ -19,7 +19,7 @@
     <article class="{{ 'is-ok' if diagnostics.package.digest_matches else 'is-alert' }}">
       <span>包摘要</span>
       <strong>{{ '一致' if diagnostics.package.digest_matches else '需检查' }}</strong>
-      <small>WorkBuddy {{ diagnostics.package.version_label or '—' }}</small>
+      <small>共创企业助手 {{ diagnostics.package.version_label or '—' }}</small>
     </article>
     <article class="{{ 'is-ok' if diagnostics.signature.status == 'verified' else 'is-alert' }}">
       <span>签名状态</span>
