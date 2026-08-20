@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = json.loads((ROOT / "skills" / "suite-manifest.json").read_text(encoding="utf-8"))
@@ -38,10 +40,13 @@ def test_v167_releases_signed_generic_and_platform_pair_with_real_artifact_gates
 
 
 def test_collection_builder_creates_both_platform_assets():
-    script = (
+    script_path = (
         Path.home()
         / ".codex/skills/skill-release-manager/scripts/package_skill_collection.py"
-    ).read_text(
+    )
+    if not script_path.is_file():
+        pytest.skip("skill-release-manager 是独立管理员工具，CI 不安装本机技能")
+    script = script_path.read_text(
         encoding="utf-8"
     )
     assert "package_skill_suite.py" in script
