@@ -981,7 +981,7 @@ function setupTools() {
     {
       name: SETUP_TOOL_NAME,
       description: (
-        "使用焦糖门户生成的一次性引导地址绑定当前共创企业助手设备。"
+        "使用共创研究院门户生成的一次性引导地址绑定当前共创企业助手设备。"
         + "地址仅在本机插件进程中使用，成功后凭据写入系统凭据库。"
       ),
       inputSchema: {
@@ -989,7 +989,7 @@ function setupTools() {
         properties: {
           bootstrap_url: {
             type: "string",
-            description: "焦糖门户生成的一次性 HTTPS 引导地址",
+            description: "共创研究院门户生成的一次性 HTTPS 引导地址",
           },
         },
         required: ["bootstrap_url"],
