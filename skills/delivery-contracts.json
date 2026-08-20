@@ -1,7 +1,7 @@
 {
-  "schema_version": 2,
-  "contract_id": "gongchuang-workbuddy-delivery-contract-v1",
-  "rule_version": "1.6.5.2",
+  "schema_version": 3,
+  "contract_id": "gongchuang-professional-delivery-contract-v3",
+  "rule_version": "1.6.7",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -75,6 +75,15 @@
     "财务",
     "税务",
     "企业分析",
+    "企业数字身份证",
+    "企业体检",
+    "体检",
+    "评分",
+    "测评",
+    "打分",
+    "出报告",
+    "生成报告",
+    "报告文件",
     "同行对标",
     "市场占有率",
     "市场份额",
@@ -85,6 +94,17 @@
     "首批次",
     "首版次",
     "行业分析",
+    "高企",
+    "高新技术企业",
+    "专精特新",
+    "小巨人",
+    "研发中心",
+    "制造精品",
+    "绿色工厂",
+    "智能工厂",
+    "数字化车间",
+    "科技计划",
+    "尖兵领雁",
     "标准"
   ],
   "complex_task_markers": [
@@ -99,6 +119,7 @@
   ],
   "policy_task_markers": [
     "政策",
+    "查政策",
     "管理办法",
     "年度通知",
     "申报条件",
@@ -108,10 +129,45 @@
   ],
   "peer_task_markers": [
     "同行",
+    "找同行",
     "对标",
     "竞争企业",
     "企业分析报告",
     "全景分析报告"
+  ],
+  "route_resolution_skills": [
+    "agriculture-and-rural-projects",
+    "application-version-diff",
+    "application-writing",
+    "checking-patdocx-cn-single-agent",
+    "digitalization-projects",
+    "enterprise-panorama-analysis",
+    "enterprise-profile",
+    "financial-verification",
+    "green-development-projects",
+    "high-tech-enterprise-application-drafting",
+    "high-tech-enterprise-preassessment",
+    "industrialization-projects",
+    "industry-chain-foundation-matcher",
+    "industry-positioning",
+    "intellectual-property-projects",
+    "investment-subsidy-projects",
+    "ip-assessment",
+    "legal-regulations",
+    "manufacturing-tax-risk-analysis",
+    "patent-router",
+    "peer-benchmarking",
+    "policy-retrieval",
+    "project-feasibility",
+    "project-matching",
+    "quality-brand-projects",
+    "regional-special-projects",
+    "sme-development-projects",
+    "sme-score-preassessment",
+    "standard-drafting",
+    "talent-projects",
+    "technology-innovation-projects",
+    "trade-and-open-economy-projects"
   ],
   "four_question_marker_groups": [
     ["最没有把握", "不确定性最高"],
@@ -233,6 +289,7 @@
       "requires_source_trace": true,
       "requires_evidence_ledger": true,
       "requires_peer_comparison": true,
+      "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
       "required_sections": [
         "工商基本信息",
@@ -293,6 +350,7 @@
       "requires_source_trace": true,
       "requires_evidence_ledger": true,
       "requires_peer_comparison": true,
+      "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
       "required_sections": [
         "决策摘要",
@@ -358,6 +416,7 @@
       "requires_source_trace": true,
       "requires_evidence_ledger": true,
       "requires_peer_comparison": true,
+      "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
       "required_sections": ["A标准销售版", "B深度顾问版"],
       "required_tables": [
@@ -616,8 +675,50 @@
     }
   },
   "skills": {
+    "enterprise-profile": {
+      "applies_when_prompt_contains": ["企业数字身份证", "企业画像", "主体核验", "企业体检"],
+      "required_marker_groups": [
+        ["主体锚定", "统一社会信用代码"],
+        ["已核验", "用户提供", "计算", "待补", "冲突"],
+        ["数据时点", "核验日期"],
+        ["来源", "证据台账"],
+        ["暂无法判断", "结论"]
+      ]
+    },
+    "high-tech-enterprise-application-drafting": {
+      "applies_when_prompt_contains": ["高企申请书", "高新技术企业申请书", "企业创新能力", "知识产权对企业竞争力的作用", "科技成果转化情况"],
+      "required_marker_groups": [
+        ["知识产权对企业竞争力的作用"],
+        ["科技成果转化情况"],
+        ["研究开发与技术创新组织管理情况"],
+        ["管理与科技人员情况"],
+        ["证据", "来源", "待核验", "冲突"]
+      ]
+    },
+    "gongchuang-humanizer-zh": {
+      "applies_when_prompt_contains": ["去AI味", "去 AI 味", "降低机器腔", "改得像真人", "自然化润色", "减少套话"],
+      "required_marker_groups": []
+    },
     "project-feasibility": {
-      "applies_when_prompt_contains": ["项目可行性", "申报可行性", "能不能申报", "硬门槛", "申报差距"],
+      "applies_when_prompt_contains": [
+        "项目可行性",
+        "申报可行性",
+        "可行性分析",
+        "可行性分析报告",
+        "前期评估",
+        "前期评估报告",
+        "专精特新双报告",
+        "小巨人双报告",
+        "高企评估",
+        "高新技术企业评估",
+        "专精特新评估",
+        "小巨人评估",
+        "能不能申报",
+        "硬门槛",
+        "申报差距",
+        "给公司出报告",
+        "给企业出报告"
+      ],
       "required_marker_groups": [
         ["项目版本", "适用版本"],
         ["总体结论", "可申报", "有条件申报", "不可申报", "暂无法判断"],
@@ -626,6 +727,23 @@
         ["不确定性", "没有把握"],
         ["风险"],
         ["行动清单", "下一步"]
+      ]
+    },
+    "high-tech-enterprise-preassessment": {
+      "applies_when_prompt_contains": [
+        "高企预评估",
+        "高企前期评估",
+        "高企评估",
+        "高新技术企业评估",
+        "高企申报评估",
+        "高企可行性分析"
+      ],
+      "required_marker_groups": [
+        ["硬门槛", "门槛"],
+        ["目标分", "保守分", "压力分"],
+        ["申报年度", "今年申报", "明年申报"],
+        ["证据缺口", "待企业确认", "补强"],
+        ["总体结论", "建议"]
       ]
     },
     "enterprise-panorama-analysis": {
@@ -659,7 +777,18 @@
       ]
     },
     "sme-score-preassessment": {
-      "applies_when_prompt_contains": ["专精特新评分", "专精特新测分", "小巨人测分", "前期预评估"],
+      "applies_when_prompt_contains": [
+        "专精特新评分",
+        "专精特新测分",
+        "专精特新评估",
+        "专精特新前期评估",
+        "专精特新双报告",
+        "小巨人测分",
+        "小巨人评估",
+        "小巨人前期评估",
+        "小巨人双报告",
+        "前期预评估"
+      ],
       "required_marker_groups": [
         ["项目层级", "省级专精特新", "专精特新小巨人"],
         ["申请类型", "新申报", "复核"],
@@ -709,7 +838,16 @@
       ]
     },
     "peer-benchmarking": {
-      "applies_when_prompt_contains": ["同行对标", "可比企业", "竞争企业", "公示名单对比"],
+      "applies_when_prompt_contains": [
+        "同行对标",
+        "可比企业",
+        "竞争企业",
+        "公示名单对比",
+        "专精特新企业帮我查",
+        "小巨人企业帮我查",
+        "查专精特新同行",
+        "查小巨人同行"
+      ],
       "required_marker_groups": [
         ["来源清单", "来源"],
         ["可比性评分", "可比性"],
