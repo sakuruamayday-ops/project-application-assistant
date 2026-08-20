@@ -6,12 +6,29 @@
     "preassessment": {
       "label": "项目前期评估报告",
       "profile_id": "project-presale-assessment-report",
-      "aliases": ["前期评估", "前期评估报告", "项目前期评估报告", "A版"]
+      "aliases": ["前期评估", "前期报告", "前期评估报告", "项目前期评估报告", "A版"]
     },
     "feasibility": {
       "label": "项目申报可行性分析报告",
       "profile_id": "project-feasibility-analysis-report",
-      "aliases": ["可行性分析", "可行性分析报告", "项目申报可行性分析报告", "B版"]
+      "aliases": ["可行性分析", "可行性分析报告", "中期可行性分析", "项目申报可行性分析报告", "B版"]
+    }
+  },
+  "dual_report_requests": {
+    "report_types": ["preassessment", "feasibility"],
+    "project_aliases": {
+      "high-tech-enterprise": ["高企双报告", "高新技术企业双报告"],
+      "specialized-sme": ["专精特新双报告", "专精双报告", "专精的前期报告和中期分析", "专精特新的前期报告和中期分析"],
+      "little-giant": ["小巨人双报告", "专精特新小巨人双报告"],
+      "first-equipment": ["首台套双报告"],
+      "first-material": ["首批次双报告", "首批次新材料双报告"],
+      "first-software": ["首版次双报告", "首版次软件双报告"],
+      "enterprise-rd-center": ["研发中心双报告", "企业研发中心双报告"],
+      "manufacturing-excellence": ["制造精品双报告"],
+      "single-champion": ["单项冠军双报告", "制造业单项冠军双报告"],
+      "green-factory": ["绿色工厂双报告"],
+      "digitalization": ["智能工厂双报告", "数字化项目双报告"],
+      "science-plan": ["科技计划双报告"]
     }
   },
   "projects": [

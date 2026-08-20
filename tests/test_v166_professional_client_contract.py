@@ -73,7 +73,8 @@ def test_natural_language_routes_and_local_first_peer_workflow() -> None:
     assert {"专精特新企业帮我查", "查专精特新同行"} <= peer
 
     feasibility_text = (SKILLS / "project-feasibility/SKILL.md").read_text(encoding="utf-8")
-    assert "企业名称加现有资料即可启动" in feasibility_text
+    assert "企业名称加项目名和报告意图即可启动" in feasibility_text
+    assert "现有资料可同时提供但不是启动前提" in feasibility_text
     assert feasibility_text.index("天眼查") < feasibility_text.index("企查查")
 
     peer_text = (SKILLS / "peer-benchmarking/SKILL.md").read_text(encoding="utf-8")

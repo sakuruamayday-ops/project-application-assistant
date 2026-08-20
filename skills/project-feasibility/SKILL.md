@@ -1,6 +1,6 @@
 ---
 name: project-feasibility
-description: 对单个政府项目执行完整可行性分析，覆盖项目与版本确认、硬门槛、评分映射、证据状态、财务计算复核、不确定性、材料差距和结论生成。用户询问某企业能否申报、申报成功条件、差距、预评分或需要补什么材料时使用。
+description: 对单个政府项目执行完整可行性分析。用户只给企业名称和高企、专精特新、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、智能工厂或科技计划等项目名，并说“前期评估报告”“可行性分析报告”“双报告”或“专精的前期报告和中期分析”时也必须使用；不要求用户另填企业基本信息表。仅解释、摘录或普通改写已有报告时不新建报告。
 ---
 
 # 可行性分析
@@ -18,7 +18,7 @@ description: 对单个政府项目执行完整可行性分析，覆盖项目与�
 
 ## 强制执行顺序
 
-1. 企业名称加现有资料即可启动，不要求用户重复填写企业基本信息。先以企业名称作为主体检索键，通过天眼查、企查查及当前可用的企业数据工具补齐统一社会信用代码、现名、曾用名、登记地区和主体状态；无法核验的字段在报告中明确标为待核验，不因缺少单独的“企业基本信息表”拒绝出具前期评估或可行性分析。项目全称、地区、申报年度、批次以及新申报或复核类型仍从用户资料、团队知识库和政策原文中提取；任一信息可能改变适用规则时，先调用 `policy-retrieval` 取得管理办法、工作指引和当期通知。任务属于前期评估或培育规划时，同时读取 `references/policy-application-path-contract.md`，不得只给资格判断而省略项目的建设和申报路径。用户要求“项目前期评估报告”或“项目申报可行性分析报告”时，还必须完整读取 `references/two-report-contract.md` 和 `references/report-template-registry.json`，并与对应项目领域技能组合执行。高企、专精特新中小企业、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划类命中受控模板时，必须先运行 `python3 scripts/select_report_template.py --project-type <项目> --report-type <preassessment|feasibility> --output-dir <交付目录> --enterprise <企业>`，基于复制出的可编辑 Word 母版回填；不得脱离模板重新排版。进行自动化成稿时，可将客户资料、原文锚点和项目事实写入技能树之外的私有夹具，再运行 `python3 scripts/fill_report_template.py --template <已复制母版> --output <成稿.docx> --fixture <私有夹具.json> --report-type <preassessment|feasibility> --release-tag <版本> --public-root <公共源码根目录>`。自动成稿必须命中真实原文锚点，且不得将客户原件、绝对路径或客户成稿放入公共候选包。夹具中的公开来源必须显式提供官方链接，或将知识库资料标为 `source_type=knowledge-base`；不得把内部校验值、原文锚点、绝对路径、候选验收标记或培训版本字样写入对外交付。索引未命中时才按统一报告骨架生成，且不得冒充已使用受控模板。
+1. 企业名称加项目名和报告意图即可启动，现有资料可同时提供但不是启动前提，不要求用户重复填写企业基本信息。先以企业名称作为主体检索键，通过天眼查、企查查及当前可用的企业数据工具补齐统一社会信用代码、现名、曾用名、登记地区和主体状态；无法核验的字段在报告中明确标为待核验，不因缺少单独的“企业基本信息表”拒绝出具前期评估或可行性分析。“双报告”以及“专精的前期报告和中期分析”等受控别名，只映射为“项目前期评估报告”和“项目申报可行性分析报告”两份交付；不新增“中期报告”第三种报告。分别以 `preassessment` 和 `feasibility` 运行受控模板选择。仅解释、摘录或普通改写已有报告时，不得重新生成两类报告或创建新文件。项目全称、地区、申报年度、批次以及新申报或复核类型仍从用户资料、团队知识库和政策原文中提取；任一信息可能改变适用规则时，先调用 `policy-retrieval` 取得管理办法、工作指引和当期通知。任务属于前期评估或培育规划时，同时读取 `references/policy-application-path-contract.md`，不得只给资格判断而省略项目的建设和申报路径。用户要求“项目前期评估报告”或“项目申报可行性分析报告”时，还必须完整读取 `references/two-report-contract.md` 和 `references/report-template-registry.json`，并与对应项目领域技能组合执行。高企、专精特新中小企业、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划类命中受控模板时，必须先运行 `python3 scripts/select_report_template.py --project-type <项目> --report-type <preassessment|feasibility> --output-dir <交付目录> --enterprise <企业>`，基于复制出的可编辑 Word 母版回填；不得脱离模板重新排版。进行自动化成稿时，可将客户资料、原文锚点和项目事实写入技能树之外的私有夹具，再运行 `python3 scripts/fill_report_template.py --template <已复制母版> --output <成稿.docx> --fixture <私有夹具.json> --report-type <preassessment|feasibility> --release-tag <版本> --public-root <公共源码根目录>`。自动成稿必须命中真实原文锚点，且不得将客户原件、绝对路径或客户成稿放入公共候选包。夹具中的公开来源必须显式提供官方链接，或将知识库资料标为 `source_type=knowledge-base`；不得把内部校验值、原文锚点、绝对路径、候选验收标记或培训版本字样写入对外交付。索引未命中时才按统一报告骨架生成，且不得冒充已使用受控模板。
 2. 读取 `references/feasibility-decision-model.md`，建立规则台账。每条规则标明规则类型、原文、来源、适用范围、时间状态和是否一票否决；不得把历史政策或同类项目规则拼入当期规则。
 3. 读取 `references/evidence-state-model.md`，将企业事实逐项映射为“verified、computed、claimed、missing、conflicting、not-applicable”。只有 verified 和复算通过的 computed 可以直接支撑硬门槛。
 4. 先判断排除项和硬门槛，再处理评分项。硬门槛出现 `failed` 时结论为不可申报；出现 `missing`、`conflicting` 或关键 `claimed` 时不得给出确定达标结论。
