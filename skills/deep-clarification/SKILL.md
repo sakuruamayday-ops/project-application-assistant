@@ -5,6 +5,17 @@ description: 面向复杂、歧义较大或会形成正式交付物的任务开�
 
 # 深度澄清
 
+
+<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
+## 便携运行门禁
+
+!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+
+!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "deep-clarification" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
+
+每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+<!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
 在开始复杂实施前，与用户形成可确认的共同理解。全过程留在当前会话中，不创建独立向导、隐藏状态或额外文件；产品开发等任务如受工作区规则要求，仍按原有规则维护产品文档。
 
 ## 进入方式
