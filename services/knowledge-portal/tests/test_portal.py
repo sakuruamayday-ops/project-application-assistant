@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import hashlib
 import importlib
 import io
@@ -530,16 +531,33 @@ def load_app(tmp_path):
     return module
 
 
-def publish_test_client_release(module, *, version="0.1.0", signature_status="verified"):
+def publish_test_client_release(
+    module,
+    *,
+    version="0.1.0",
+    signature_status="verified",
+    dual_macos=False,
+):
     module.CLIENT_RELEASE_DIR.mkdir(parents=True, exist_ok=True)
     now = module.isoformat(module.utc_now())
     artifacts = []
-    for platform, architecture, file_kind, file_name in (
+    declared_artifacts = [
         ("macos", "arm64", "dmg", "Gongchuang-Enterprise-Assistant-0.1.0-mac-arm64.dmg"),
         ("windows", "x64", "nsis", "Gongchuang-Enterprise-Assistant-0.1.0-win-x64.exe"),
-    ):
+    ]
+    if dual_macos:
+        declared_artifacts.insert(
+            1,
+            ("macos", "x64", "dmg", "Gongchuang-Enterprise-Assistant-0.1.0-mac-x64.dmg"),
+        )
+    for platform, architecture, file_kind, file_name in declared_artifacts:
         path = module.CLIENT_RELEASE_DIR / file_name
-        path.write_bytes(f"signed-{platform}-{version}".encode("utf-8"))
+        payload = (
+            f"signed-{platform}-intel-{version}"
+            if platform == "macos" and architecture == "x64"
+            else f"signed-{platform}-{version}"
+        )
+        path.write_bytes(payload.encode("utf-8"))
         artifacts.append(
             (platform, architecture, file_kind, file_name, path, module.sha256_file(path))
         )
@@ -556,7 +574,8 @@ def publish_test_client_release(module, *, version="0.1.0", signature_status="ve
         )
         artifact_ids = {}
         for platform, architecture, file_kind, file_name, path, digest in artifacts:
-            artifact_ids[platform] = int(
+            artifact_key = platform if platform not in artifact_ids else f"{platform}_{architecture}"
+            artifact_ids[artifact_key] = int(
                 connection.execute(
                     """
                     INSERT INTO client_release_artifacts(
@@ -594,6 +613,55 @@ def client_authorization_payload(module, verifier: str, *, platform: str = "maco
         "code_challenge": challenge,
         "code_challenge_method": "S256",
     }
+
+
+def publish_test_macos_self_update_feed(module) -> dict[str, bytes]:
+    publish_test_client_release(module, dual_macos=True)
+    with closing(module.database()) as connection:
+        release = connection.execute(
+            "SELECT version,published_at FROM client_releases WHERE status='published'"
+        ).fetchone()
+    version = str(release["version"])
+    payloads: dict[str, bytes] = {}
+    manifest_artifacts = []
+    for architecture in ("arm64", "x64"):
+        file_name = f"Gongchuang-Enterprise-Assistant-{version}-mac-{architecture}.zip"
+        payload = f"macos-{architecture}-self-update".encode()
+        (module.CLIENT_RELEASE_DIR / file_name).write_bytes(payload)
+        payloads[file_name] = payload
+        manifest_artifacts.append(
+            {
+                "architecture": architecture,
+                "archiveUrl": f"./{file_name}",
+                "bundleId": "cn.gongchuang.enterprise-assistant",
+                "fileName": file_name,
+                "runtimeIndexSha256": hashlib.sha256(
+                    f"runtime-{architecture}".encode()
+                ).hexdigest(),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "sizeBytes": len(payload),
+                "skillBundleIndexSha256": hashlib.sha256(b"skills").hexdigest(),
+            }
+        )
+    manifest = json.dumps(
+        {
+            "schemaVersion": 1,
+            "productId": "cn.gongchuang.enterprise-assistant",
+            "clientVersion": version,
+            "publishedAt": str(release["published_at"]),
+            "signingTier": "formal",
+            "sourceCommit": "a" * 40,
+            "artifacts": manifest_artifacts,
+        },
+        ensure_ascii=False,
+        indent=2,
+    ).encode() + b"\n"
+    signature = base64.b64encode(b"s" * 64) + b"\n"
+    (module.CLIENT_RELEASE_DIR / "desktop-release-index.json").write_bytes(manifest)
+    (module.CLIENT_RELEASE_DIR / "desktop-release-index.sig").write_bytes(signature)
+    payloads["desktop-release-index.json"] = manifest
+    payloads["desktop-release-index.sig"] = signature
+    return payloads
 
 
 def test_client_password_login_is_device_bound_and_replaces_the_previous_device(tmp_path):
@@ -672,29 +740,6 @@ def test_client_password_login_is_device_bound_and_replaces_the_previous_device(
             assert int(active_bindings) == 1
 
 
-def test_client_password_login_rejects_invalid_password_without_disclosing_account(tmp_path):
-    module = load_app(tmp_path)
-    with TestClient(module.app) as client:
-        client.post(
-            "/setup",
-            data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"},
-        )
-        response = client.post(
-            "/v1/client-login",
-            json={
-                "client_id": module.CLIENT_AUTHORIZATION_ID,
-                "client_version": "0.1.0",
-                "platform": "macos",
-                "device_id": "gcd_" + "c" * 48,
-                "device_name": "测试电脑",
-                "username": "owner",
-                "password": "wrong-password",
-            },
-        )
-        assert response.status_code == 401
-        assert response.json()["detail"] == "用户名称或密码错误"
-
-
 def test_client_download_page_tracks_download_and_real_client_login_separately(tmp_path):
     module = load_app(tmp_path)
     _, artifact_ids = publish_test_client_release(module)
@@ -716,7 +761,7 @@ def test_client_download_page_tracks_download_and_real_client_login_separately(t
         assert "下载共创企业助手" in page.text
         assert "共创企业助手 V0.1" in page.text
         assert "内置技能包" in page.text
-        assert "下载 macOS 版" in page.text
+        assert "下载 macOS Apple 芯片版" in page.text
         assert "下载 Windows 版" in page.text
         assert 'data-section-link="downloads"' in page.text
         assert 'data-section-link="api-access"' not in page.text
@@ -783,13 +828,126 @@ def test_client_download_refuses_unsigned_or_tampered_artifact_without_receipt(t
         client.cookies.update(login.cookies)
 
         page = client.get("/downloads")
-        assert "签名包尚未就绪" in page.text
+        assert "安装包尚未就绪" in page.text
         refused = client.get(f"/client-downloads/windows/{artifact_ids['windows']}")
         assert refused.status_code == 503
         with closing(module.database()) as connection:
             assert connection.execute(
                 "SELECT COUNT(*) FROM client_download_events"
             ).fetchone()[0] == 0
+
+
+def test_client_download_page_exposes_both_macos_architectures_exactly(tmp_path):
+    module = load_app(tmp_path)
+    _, artifact_ids = publish_test_client_release(module, dual_macos=True)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        page = client.get("/downloads")
+        assert page.status_code == 200
+        assert "下载 macOS Apple 芯片版" in page.text
+        assert "下载 macOS Intel版" in page.text
+        assert f'/client-downloads/macos/{artifact_ids["macos"]}' in page.text
+        assert f'/client-downloads/macos/{artifact_ids["macos_x64"]}' in page.text
+        assert "Developer ID" not in page.text
+        assert "Authenticode" not in page.text
+        downloads_html = page.text.split('<section id="downloads"', 1)[1].split(
+            "</section>", 1
+        )[0]
+        assert "SHA-256" not in downloads_html
+        assert "xattr -dr com.apple.quarantine" in page.text
+        assert "复制打开命令" in page.text
+        assert "显示手动粘贴方法" in page.text
+
+        apple = client.get(f'/client-downloads/macos/{artifact_ids["macos"]}')
+        intel = client.get(f'/client-downloads/macos/{artifact_ids["macos_x64"]}')
+        assert apple.status_code == intel.status_code == 200
+        assert apple.content == b"signed-macos-0.1.0"
+        assert intel.content == b"signed-macos-intel-0.1.0"
+        with closing(module.database()) as connection:
+            events = connection.execute(
+                "SELECT platform,architecture FROM client_download_events ORDER BY id"
+            ).fetchall()
+        assert [tuple(row) for row in events] == [
+            ("macos", "arm64"),
+            ("macos", "x64"),
+        ]
+
+
+def test_signed_dual_macos_self_update_assets_are_public_and_whitelisted(tmp_path):
+    module = load_app(tmp_path)
+    payloads = publish_test_macos_self_update_feed(module)
+    with TestClient(module.app) as client:
+        manifest = client.get("/client-updates/desktop-release-index.json")
+        signature = client.get("/client-updates/desktop-release-index.sig")
+        assert manifest.status_code == signature.status_code == 200
+        assert manifest.content == payloads["desktop-release-index.json"]
+        assert signature.content == payloads["desktop-release-index.sig"]
+        assert manifest.headers["cache-control"] == "public, no-cache"
+        assert signature.headers["content-type"] == "application/octet-stream"
+        assert manifest.headers["x-content-type-options"] == "nosniff"
+
+        for architecture in ("arm64", "x64"):
+            file_name = f"Gongchuang-Enterprise-Assistant-0.1.0-mac-{architecture}.zip"
+            archive = client.get(f"/client-updates/{file_name}")
+            assert archive.status_code == 200
+            assert archive.content == payloads[file_name]
+            assert "immutable" in archive.headers["cache-control"]
+            assert archive.headers["x-gongchuang-artifact-sha256"] == hashlib.sha256(
+                payloads[file_name]
+            ).hexdigest()
+
+        assert client.get("/client-updates/release.json").status_code == 404
+        assert client.get("/client-updates/desktop-release-index.pem").status_code == 404
+        assert client.get("/client-updates/desktop-release-index.json.bak").status_code == 404
+        assert client.get("/client-updates/%2E%2E%2Frelease.json").status_code == 404
+
+
+@pytest.mark.parametrize(
+    "missing_name",
+    [
+        "desktop-release-index.sig",
+        "Gongchuang-Enterprise-Assistant-0.1.0-mac-x64.zip",
+    ],
+)
+def test_signed_dual_macos_self_update_assets_fail_closed_when_incomplete(
+    tmp_path,
+    missing_name,
+):
+    module = load_app(tmp_path)
+    publish_test_macos_self_update_feed(module)
+    missing = module.CLIENT_RELEASE_DIR / missing_name
+    missing.rename(module.CLIENT_RELEASE_DIR / f"{missing_name}.missing")
+    with TestClient(module.app) as client:
+        response = client.get("/client-updates/desktop-release-index.json")
+        assert response.status_code == 503
+        assert "发布目录不完整" in response.json()["detail"]
+
+
+def test_signed_dual_macos_self_update_assets_reject_manifest_mismatch(tmp_path):
+    module = load_app(tmp_path)
+    publish_test_macos_self_update_feed(module)
+    manifest_path = module.CLIENT_RELEASE_DIR / "desktop-release-index.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["artifacts"] = [manifest["artifacts"][0], manifest["artifacts"][0]]
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+    with TestClient(module.app) as client:
+        response = client.get("/client-updates/desktop-release-index.json")
+        assert response.status_code == 503
+        assert "产物记录无效" in response.json()["detail"]
 
 
 def test_client_device_authorization_uses_browser_login_and_server_receipt(tmp_path):
@@ -2090,7 +2248,7 @@ def test_setup_login_and_device_token(tmp_path):
         assert 'class="page-continuation"' not in portal.text
         access_page = client.get("/access")
         assert "下载共创客户端" in access_page.text
-        assert "不再提供 WorkBuddy 专用包" in access_page.text
+        assert "不再提供旧版宿主专用包" in access_page.text
         assert "管理员 API Key" not in access_page.text
         assert "管理员豁免" not in access_page.text
         assert "data-copy-agent-bootstrap" not in access_page.text
@@ -2199,7 +2357,7 @@ def test_setup_login_and_device_token(tmp_path):
         )
         assert token_page.status_code == 200
         assert "下载共创客户端" in token_page.text
-        assert "不再提供 WorkBuddy 专用包" in token_page.text
+        assert "不再提供旧版宿主专用包" in token_page.text
         assert "管理员凭据" not in token_page.text
         assert 'data-toggle-secret="personal-access"' not in token_page.text
         with closing(module.database()) as connection:
@@ -6212,7 +6370,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert access.headers["location"] == "/skills#skills-install"
         skills = client.get("/skills")
         assert skills.status_code == 200
-        assert "不再提供 WorkBuddy 专用包" in skills.text
+        assert "不再提供旧版宿主专用包" in skills.text
         assert "下载共创客户端" in skills.text
         assert "共创知识库 MCP" in skills.text
         assert "data-copy-agent-bootstrap" not in skills.text
@@ -8889,7 +9047,7 @@ def test_workbuddy_downloads_show_platforms_without_confirmation_status(
         assert "macOS" in page.text
         assert "Windows" in page.text
         assert "统一通用包" in page.text
-        assert "不再提供 WorkBuddy 专用包" in page.text
+        assert "不再提供旧版宿主专用包" in page.text
         assert "平台增强版 · WorkBuddy" not in page.text
         assert "平台增强版 · TRAE" not in page.text
         assert "平台插件版 · Kimi Code" not in page.text

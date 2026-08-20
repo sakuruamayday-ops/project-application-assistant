@@ -18,22 +18,40 @@
 
   {% if client_release %}
   <div class="client-platform-grid">
-    {% set macos = client_release.preferred.macos %}
+    {% for macos in client_release.downloads.macos %}
     <article class="client-platform-card">
       <span class="client-platform-mark">mac</span>
-      <div><span class="skill-card-index">macOS</span><h3>Mac 客户端</h3><p>适用于 Apple Silicon 与已发布架构。安装包必须完成 Developer ID 签名与公证门禁后才开放。</p>{% if macos %}<small>{{ macos.architecture }} · {{ macos.size_display }} · SHA-256 {{ macos.sha256[:10] }}…{{ macos.sha256[-6:] }}</small>{% endif %}</div>
-      {% if macos %}<a class="button" href="{{ macos.download_url }}">下载 macOS 版</a>{% else %}<span class="button secondary is-disabled">签名包尚未就绪</span>{% endif %}
+      <div><span class="skill-card-index">macOS · {{ macos.architecture_label }}</span><h3>Mac {{ macos.architecture_label }} 客户端</h3><p>按芯片架构提供独立安装包，下载后按本页的首次打开说明操作。</p><small>{{ macos.size_display }}</small></div>
+      <a class="button" href="{{ macos.download_url }}">下载 macOS {{ macos.architecture_label }}版</a>
     </article>
-    {% set windows = client_release.preferred.windows %}
+    {% endfor %}
+    {% if not client_release.downloads.macos %}
+    <article class="client-platform-card"><span class="client-platform-mark">mac</span><div><span class="skill-card-index">macOS</span><h3>Mac 客户端</h3><p>安装包尚未通过完整性校验。</p></div><span class="button secondary is-disabled">安装包尚未就绪</span></article>
+    {% endif %}
+    {% for windows in client_release.downloads.windows %}
     <article class="client-platform-card">
       <span class="client-platform-mark">win</span>
-      <div><span class="skill-card-index">Windows</span><h3>Windows 客户端</h3><p>使用标准安装程序，不要求管理员权限。安装包必须完成 Authenticode 签名门禁后才开放。</p>{% if windows %}<small>{{ windows.architecture }} · {{ windows.size_display }} · SHA-256 {{ windows.sha256[:10] }}…{{ windows.sha256[-6:] }}</small>{% endif %}</div>
-      {% if windows %}<a class="button" href="{{ windows.download_url }}">下载 Windows 版</a>{% else %}<span class="button secondary is-disabled">签名包尚未就绪</span>{% endif %}
+      <div><span class="skill-card-index">Windows · {{ windows.architecture_label }}</span><h3>Windows 客户端</h3><p>使用标准安装程序，不要求管理员权限。</p><small>{{ windows.size_display }}</small></div>
+      <a class="button" href="{{ windows.download_url }}">下载 Windows 版</a>
     </article>
+    {% endfor %}
+    {% if not client_release.downloads.windows %}
+    <article class="client-platform-card"><span class="client-platform-mark">win</span><div><span class="skill-card-index">Windows</span><h3>Windows 客户端</h3><p>Windows 版待完成实机测试后再发布。</p></div><span class="button secondary is-disabled">Windows 版待实测</span></article>
+    {% endif %}
   </div>
+  {% if client_release.downloads.macos %}
+  <article class="panel client-macos-open-guide">
+    <span class="skill-card-index">macOS 首次打开</span>
+    <h3>如系统提示无法打开</h3>
+    <p>将应用拖入“应用程序”后，复制以下命令到“终端”执行。浏览器无法一键复制时，可展开手动粘贴。</p>
+    <pre id="macos-open-command">xattr -dr com.apple.quarantine "/Applications/共创企业助手.app" &amp;&amp; open "/Applications/共创企业助手.app"</pre>
+    <button class="button secondary" type="button" data-copy-target="#macos-open-command">复制打开命令</button>
+    <details><summary>无法一键复制？显示手动粘贴方法</summary><p>选中上方整行命令并复制，打开“终端”，粘贴后按回车。</p></details>
+  </article>
+  {% endif %}
   {% if client_release.release_notes %}<details class="panel skill-release-notes"><summary>查看 V{{ client_release.version }} 更新说明</summary><div class="manual-content">{{ client_release.release_notes_html }}</div></details>{% endif %}
   {% else %}
-  <article class="panel client-release-pending"><span class="download-icon">V0.1</span><div><h3>Windows 与 macOS 正式安装包正在完成发布门禁</h3><p>未签名、未公证或摘要不一致的文件不会出现下载按钮。正式包发布后本页自动开放，并分别记录成员的下载状态。</p></div></article>
+  <article class="panel client-release-pending"><span class="download-icon">V0.1</span><div><h3>Windows 与 macOS 正式安装包正在完成发布验收</h3><p>摘要或发布身份不一致的文件不会出现下载按钮。正式包发布后本页自动开放，并分别记录成员的下载状态。</p></div></article>
   {% endif %}
 
   <div class="client-download-notes">

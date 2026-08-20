@@ -27,7 +27,7 @@ import urllib.error
 import urllib.request
 import zipfile
 import xml.etree.ElementTree as ET
-from base64 import urlsafe_b64decode, urlsafe_b64encode
+from base64 import b64decode, urlsafe_b64decode, urlsafe_b64encode
 from copy import deepcopy
 from contextlib import asynccontextmanager, closing, contextmanager
 from collections import Counter
@@ -163,6 +163,11 @@ SKILL_UPDATE_RELEASE_DIR = Path(
 )
 CLIENT_RELEASE_DIR = Path(
     os.environ.get("JIAOTANG_CLIENT_RELEASE_DIR", DATA_DIR / "client-releases")
+)
+DESKTOP_SELF_UPDATE_MANIFEST_NAME = "desktop-release-index.json"
+DESKTOP_SELF_UPDATE_SIGNATURE_NAME = "desktop-release-index.sig"
+DESKTOP_SELF_UPDATE_INDEX_NAMES = frozenset(
+    {DESKTOP_SELF_UPDATE_MANIFEST_NAME, DESKTOP_SELF_UPDATE_SIGNATURE_NAME}
 )
 FIRST_PUBLIC_SKILL_VERSION = os.environ.get(
     "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION",
@@ -10420,6 +10425,16 @@ def latest_client_release_payload(
     for row in rows:
         item = dict(row)
         item["available"] = client_artifact_is_servable(row)
+        architecture = str(item.get("architecture") or "").lower()
+        item["architecture_label"] = (
+            "Apple 芯片"
+            if architecture == "arm64"
+            else "Intel"
+            if architecture == "x64" and str(item.get("platform")) == "macos"
+            else "x64"
+            if architecture == "x64"
+            else architecture
+        )
         item["size_display"] = (
             f"{int(item['size_bytes']) / 1024 / 1024:.1f} MB"
             if int(item["size_bytes"] or 0) > 0
@@ -10430,27 +10445,135 @@ def latest_client_release_payload(
         )
         artifacts.setdefault(str(item["platform"]), []).append(item)
     preferred: dict[str, dict[str, object] | None] = {}
+    downloads: dict[str, list[dict[str, object]]] = {}
     for platform in CLIENT_AUTHORIZATION_PLATFORMS:
-        preferred[platform] = next(
-            (
-                item
-                for item in artifacts.get(platform, [])
-                if item["available"]
-                and str(item["file_kind"])
-                == ("dmg" if platform == "macos" else "nsis")
-            ),
-            next(
-                (item for item in artifacts.get(platform, []) if item["available"]),
-                None,
-            ),
-        )
+        primary_kind = "dmg" if platform == "macos" else "nsis"
+        primary = [
+            item
+            for item in artifacts.get(platform, [])
+            if item["available"] and str(item["file_kind"]) == primary_kind
+        ]
+        downloads[platform] = primary or [
+            item for item in artifacts.get(platform, []) if item["available"]
+        ]
+        preferred[platform] = downloads[platform][0] if downloads[platform] else None
     return {
         **dict(release),
         "published_at_display": format_chinese_datetime(release["published_at"]),
         "release_notes_html": render_guide_markdown(str(release["release_notes"] or "")),
         "artifacts": artifacts,
+        "downloads": downloads,
         "preferred": preferred,
         "ready": all(preferred.get(platform) is not None for platform in CLIENT_AUTHORIZATION_PLATFORMS),
+    }
+
+
+def desktop_self_update_feed_assets(
+    release: dict[str, object] | None,
+) -> dict[str, object]:
+    """Validate the fixed-name signed macOS feed against the latest published release."""
+    if release is None or str(release.get("status") or "") != "published":
+        raise HTTPException(status_code=503, detail="macOS 自动更新正式清单尚未发布")
+    downloads = release.get("downloads")
+    if not isinstance(downloads, dict):
+        raise HTTPException(status_code=503, detail="macOS 自动更新发布目录不完整")
+    macos_downloads = downloads.get("macos")
+    if not isinstance(macos_downloads, list) or {
+        str(item.get("architecture") or "")
+        for item in macos_downloads
+        if isinstance(item, dict)
+    } != {"arm64", "x64"}:
+        raise HTTPException(status_code=503, detail="macOS 自动更新缺少双架构正式产物")
+
+    root = CLIENT_RELEASE_DIR.resolve(strict=False)
+
+    def exact_asset_path(file_name: str) -> Path:
+        path = root / file_name
+        try:
+            canonical = path.resolve(strict=True)
+            canonical.relative_to(root)
+            if path.is_symlink() or not canonical.is_file() or canonical.stat().st_size <= 0:
+                raise ValueError("invalid self-update asset")
+        except (OSError, ValueError):
+            raise HTTPException(status_code=503, detail="macOS 自动更新发布目录不完整") from None
+        return canonical
+
+    manifest_path = exact_asset_path(DESKTOP_SELF_UPDATE_MANIFEST_NAME)
+    signature_path = exact_asset_path(DESKTOP_SELF_UPDATE_SIGNATURE_NAME)
+    try:
+        manifest_bytes = manifest_path.read_bytes()
+        if len(manifest_bytes) > 64 * 1024:
+            raise ValueError("manifest too large")
+        manifest = json.loads(manifest_bytes.decode("utf-8"))
+        signature_bytes = b64decode(
+            signature_path.read_text(encoding="ascii").strip(),
+            validate=True,
+        )
+    except (OSError, UnicodeError, ValueError, json.JSONDecodeError):
+        raise HTTPException(status_code=503, detail="macOS 自动更新清单或签名无效") from None
+    if not isinstance(manifest, dict) or len(signature_bytes) != 64:
+        raise HTTPException(status_code=503, detail="macOS 自动更新清单或签名无效")
+
+    release_version = str(release.get("version") or "")
+    release_published_at = str(release.get("published_at") or "")
+    manifest_artifacts = manifest.get("artifacts")
+    if (
+        manifest.get("schemaVersion") != 1
+        or manifest.get("productId") != "cn.gongchuang.enterprise-assistant"
+        or manifest.get("clientVersion") != release_version
+        or manifest.get("publishedAt") != release_published_at
+        or manifest.get("signingTier") != "formal"
+        or re.fullmatch(r"[0-9a-f]{40}", str(manifest.get("sourceCommit") or "")) is None
+        or not isinstance(manifest_artifacts, list)
+        or len(manifest_artifacts) != 2
+    ):
+        raise HTTPException(status_code=503, detail="macOS 自动更新清单与正式发布不一致")
+
+    update_artifacts: dict[str, dict[str, object]] = {}
+    for row in manifest_artifacts:
+        if not isinstance(row, dict):
+            raise HTTPException(status_code=503, detail="macOS 自动更新产物记录无效")
+        architecture = str(row.get("architecture") or "")
+        expected_file_name = (
+            f"Gongchuang-Enterprise-Assistant-{release_version}-mac-{architecture}.zip"
+        )
+        file_name = str(row.get("fileName") or "")
+        expected_sha256 = str(row.get("sha256") or "").lower()
+        expected_size = row.get("sizeBytes")
+        runtime_index_sha256 = str(row.get("runtimeIndexSha256") or "").lower()
+        skill_bundle_index_sha256 = str(row.get("skillBundleIndexSha256") or "").lower()
+        if (
+            architecture not in {"arm64", "x64"}
+            or file_name != expected_file_name
+            or row.get("archiveUrl") != f"./{expected_file_name}"
+            or row.get("bundleId") != "cn.gongchuang.enterprise-assistant"
+            or re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None
+            or re.fullmatch(r"[0-9a-f]{64}", runtime_index_sha256) is None
+            or re.fullmatch(r"[0-9a-f]{64}", skill_bundle_index_sha256) is None
+            or not isinstance(expected_size, int)
+            or expected_size <= 0
+            or expected_size > 2 * 1024 * 1024 * 1024
+            or file_name in update_artifacts
+        ):
+            raise HTTPException(status_code=503, detail="macOS 自动更新产物记录无效")
+        archive_path = exact_asset_path(file_name)
+        if archive_path.stat().st_size != expected_size:
+            raise HTTPException(status_code=503, detail="macOS 自动更新包体积不一致")
+        update_artifacts[file_name] = {
+            "path": archive_path,
+            "sha256": expected_sha256,
+            "size_bytes": expected_size,
+            "architecture": architecture,
+        }
+    if {str(item["architecture"]) for item in update_artifacts.values()} != {
+        "arm64",
+        "x64",
+    }:
+        raise HTTPException(status_code=503, detail="macOS 自动更新清单缺少双架构产物")
+    return {
+        "manifest": manifest_path,
+        "signature": signature_path,
+        "artifacts": update_artifacts,
     }
 
 
@@ -11666,7 +11789,7 @@ def public_release_guidance() -> dict[str, object]:
     workbuddy_installable = bool(latest_workbuddy.get("installable"))
     if workbuddy_installable:
         workbuddy_notice = (
-            f"WorkBuddy {platform_version_label or f'V{workbuddy_version}'} 正式包可安装。"
+            f"平台专用技能包 {platform_version_label or f'V{workbuddy_version}'} 可安装。"
             f"一段指令完成{skill_count}项Skills安装、远程MCP合并、一次重载和真实工具验收。"
         )
     elif workbuddy_version:
@@ -11676,12 +11799,12 @@ def public_release_guidance() -> dict[str, object]:
             else ""
         )
         workbuddy_notice = (
-            f"WorkBuddy 正式包 V{workbuddy_version} 已暂停新安装，"
+            f"平台专用技能包 V{workbuddy_version} 已暂停新安装，"
             f"当前包未满足简化远程 MCP 与最小行为 Hook 能力门禁{pending}。"
             "请等待网站恢复“可安装”状态。"
         )
     else:
-        workbuddy_notice = "当前没有通过简化安装能力门禁的 WorkBuddy 正式包。"
+        workbuddy_notice = "当前没有通过简化安装能力门禁的平台专用正式包。"
     return {
         "published_version": generic_version,
         "published_label": f"V{generic_version}" if generic_version else "尚未正式发布",
@@ -18651,7 +18774,7 @@ def web_download_latest_workbuddy_skills(
     del user
     raise HTTPException(
         status_code=409,
-        detail="WorkBuddy已分为macOS与Windows原生包，请选择当前操作系统。",
+        detail="平台技能包已分为macOS与Windows原生包，请选择当前操作系统。",
     )
 
 
@@ -18662,11 +18785,11 @@ def web_download_latest_workbuddy_platform(
 ):
     del user
     if platform_name not in {"macos", "windows"}:
-        raise HTTPException(status_code=404, detail="不支持的 WorkBuddy 平台")
+        raise HTTPException(status_code=404, detail="不支持的宿主平台")
     platform_pair = latest_workbuddy_platform_pair()
     release = platform_pair.get(platform_name) if platform_pair else None
     if release is None:
-        raise HTTPException(status_code=404, detail="尚未发布该平台 WorkBuddy 正式包")
+        raise HTTPException(status_code=404, detail="尚未发布该平台正式包")
     if not workbuddy_artifact_is_simple_remote_mcp(release):
         raise HTTPException(status_code=404, detail="该平台包未通过简化安装能力门禁")
     require_installable_workbuddy_artifact(release, platform=platform_name)
@@ -19716,6 +19839,59 @@ def download_client_artifact(
     )
 
 
+@app.get("/client-updates/{asset_name}")
+def desktop_client_update_asset(asset_name: str):
+    """Serve only the signed dual-architecture macOS update index and its assets."""
+    if (
+        Path(asset_name).name != asset_name
+        or any(character in asset_name for character in "\r\n")
+        or (
+            asset_name not in DESKTOP_SELF_UPDATE_INDEX_NAMES
+            and re.fullmatch(
+                r"Gongchuang-Enterprise-Assistant-[0-9.]+-mac-(?:arm64|x64)\.zip",
+                asset_name,
+            )
+            is None
+        )
+    ):
+        raise HTTPException(status_code=404, detail="更新文件不存在")
+    with closing(database()) as connection:
+        release = latest_client_release_payload(connection)
+    feed = desktop_self_update_feed_assets(release)
+    if asset_name in DESKTOP_SELF_UPDATE_INDEX_NAMES:
+        path = Path(
+            feed[
+                "manifest"
+                if asset_name == DESKTOP_SELF_UPDATE_MANIFEST_NAME
+                else "signature"
+            ]
+        )
+        return FileResponse(
+            path=path,
+            media_type=(
+                "application/json"
+                if asset_name == DESKTOP_SELF_UPDATE_MANIFEST_NAME
+                else "application/octet-stream"
+            ),
+            headers={
+                "Cache-Control": "public, no-cache",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
+    artifact = feed["artifacts"].get(asset_name)
+    if not isinstance(artifact, dict):
+        raise HTTPException(status_code=404, detail="更新文件不存在")
+    return FileResponse(
+        path=Path(artifact["path"]),
+        media_type="application/zip",
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "X-Content-Type-Options": "nosniff",
+            "X-Gongchuang-Artifact-Sha256": str(artifact["sha256"]),
+        },
+    )
+
+
 def require_release_artifact_for_serving(
     artifact: dict[str, object] | sqlite3.Row | None,
     *,
@@ -20261,7 +20437,7 @@ def download_latest_workbuddy_skills(
     del user
     raise HTTPException(
         status_code=409,
-        detail="WorkBuddy已分为macOS与Windows原生包，请选择当前操作系统。",
+        detail="平台技能包已分为macOS与Windows原生包，请选择当前操作系统。",
     )
 
 
@@ -20272,11 +20448,11 @@ def download_latest_workbuddy_platform_skills(
 ):
     del user
     if platform_name not in {"macos", "windows"}:
-        raise HTTPException(status_code=404, detail="未知 WorkBuddy 客户端")
+        raise HTTPException(status_code=404, detail="未知宿主客户端")
     platform_pair = latest_workbuddy_platform_pair()
     release = platform_pair.get(platform_name) if platform_pair else None
     if release is None:
-        raise HTTPException(status_code=404, detail="尚未发布该平台 WorkBuddy 正式包")
+        raise HTTPException(status_code=404, detail="尚未发布该平台正式包")
     if not workbuddy_artifact_is_simple_remote_mcp(release):
         raise HTTPException(status_code=404, detail="该平台包未通过简化安装能力门禁")
     require_installable_workbuddy_artifact(release, platform=platform_name)

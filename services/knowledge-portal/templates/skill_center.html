@@ -94,11 +94,11 @@
       {% endif %}
       <article class="skill-current-release"><span class="download-icon">V{{ latest_release.version if latest_release else '—' }}</span><div><h3>{{ '共创研究院企业全生命周期助手 V' ~ latest_release.version if latest_release else '尚未发布 Skills' }}</h3>{% if latest_release %}<small>发布时间 {{ latest_release.published_at_display }}</small><details class="skill-release-notes skill-current-release-notes"><summary>查看当前版本功能简介</summary><div class="manual-content">{{ latest_release.release_notes_html }}</div></details>{% else %}<p>管理员发布后，团队成员可在这里直接下载。</p>{% endif %}</div></article>
       {% if latest_release %}
-      <div class="skill-platform-note"><strong>统一通用包</strong><p>Skills 只发布一个经过签名的通用 ZIP，不再提供 WorkBuddy 专用包。共创客户端会自动带入并更新同一正式技能包；其他兼容宿主可下载通用包后自行导入。</p></div>
+      <div class="skill-platform-note"><strong>统一通用包</strong><p>Skills 只发布一个经过签名的通用 ZIP，不再提供旧版宿主专用包。共创客户端会自动带入并更新同一正式技能包；其他兼容宿主可下载通用包后自行导入。</p></div>
       <div class="skill-platform-downloads">
         <article class="skill-platform-card is-generic">
           <span class="skill-platform-mark">通</span>
-          <div><span class="skill-card-index">正式能力包 · 通用 Skills</span><h3>通用版</h3><small>V{{ latest_release.version }} · SHA-256 {{ latest_release.sha256[:10] }}…{{ latest_release.sha256[-6:] }}</small><p>适用于能够导入 SKILL.md 或读取 Agent Skills 目录的宿主。只包含 {{ skill_center.summary.total }} 项正式 Skills，不写宿主配置、不携带个人凭据，也不再附带 WorkBuddy 专用 Hooks。</p></div>
+          <div><span class="skill-card-index">正式能力包 · 通用 Skills</span><h3>通用版</h3><small>V{{ latest_release.version }} · SHA-256 {{ latest_release.sha256[:10] }}…{{ latest_release.sha256[-6:] }}</small><p>适用于能够导入 SKILL.md 或读取 Agent Skills 目录的宿主。只包含 {{ skill_center.summary.total }} 项正式 Skills，不写宿主配置、不携带个人凭据，也不再附带旧版宿主专用 Hooks。</p></div>
           <div class="skill-platform-status {{ 'is-ready' if latest_release.generic_available else 'is-validating' }}"><i></i>{{ '正式包可下载' if latest_release.generic_available else '完整性校验未通过' }}</div>
           {% if latest_release.generic_available %}<a class="button" href="/skills/latest/download">下载通用包</a>{% else %}<span class="button secondary is-disabled">下载已暂停</span>{% endif %}
         </article>
@@ -123,7 +123,7 @@
   </div>
 
   <div id="skills-panel-install" class="skill-section-pane" data-skill-section-pane="install" role="tabpanel" aria-labelledby="skills-tab-install" hidden>
-    <div class="skill-pane-heading"><span class="skill-kicker">INSTALL & CONNECT</span><h2>安装与连接</h2><p>共创客户端自动管理官方 Skills，不再提供 WorkBuddy 专用包；模型、MCP 和需要第三方账号的工具统一从客户端 Skills 中心完成安装、跳转登录与连接校验。</p><a class="button" href="/downloads">下载共创客户端</a></div>
+    <div class="skill-pane-heading"><span class="skill-kicker">INSTALL & CONNECT</span><h2>安装与连接</h2><p>共创客户端自动管理官方 Skills，不再提供旧版宿主专用包；模型、MCP 和需要第三方账号的工具统一从客户端 Skills 中心完成安装、跳转登录与连接校验。</p><a class="button" href="/downloads">下载共创客户端</a></div>
     <div class="skill-install-grid">
       <article class="skill-install-plan">
         <span class="skill-card-index">01 / 共创客户端</span>
