@@ -9,6 +9,20 @@ STATIC = ROOT / "static"
 TEMPLATES = ROOT / "templates"
 
 
+def _relative_luminance(hex_color: str) -> float:
+    channels = [int(hex_color[index : index + 2], 16) / 255 for index in (1, 3, 5)]
+    linear = [
+        channel / 12.92 if channel <= 0.04045 else ((channel + 0.055) / 1.055) ** 2.4
+        for channel in channels
+    ]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def _contrast_ratio(first: str, second: str) -> float:
+    bright, dark = sorted((_relative_luminance(first), _relative_luminance(second)), reverse=True)
+    return (bright + 0.05) / (dark + 0.05)
+
+
 def test_black_gold_risk_tokens_and_three_confirmation_levels_are_present() -> None:
     base_css = (STATIC / "style.css").read_text(encoding="utf-8")
     theme_css = (STATIC / "atelier.css").read_text(encoding="utf-8")
@@ -40,6 +54,21 @@ def test_base_stylesheet_is_only_foundation_not_a_second_light_theme() -> None:
         assert retired_selector not in css
     for retired_light_token in ("--paper", "--surface", "#fff", "#f4f1ed"):
         assert retired_light_token not in css
+
+
+def test_client_download_cards_use_readable_light_surface_tokens() -> None:
+    css = (STATIC / "atelier.css").read_text(encoding="utf-8")
+
+    assert ".client-platform-card {" in css
+    assert "--atelier-ink: #1d1b17;" in css
+    assert "--atelier-muted: #6b665d;" in css
+    assert "--skill-gold: #7a5a1f;" in css
+    assert "color-scheme: light;" in css
+    assert ".client-platform-card .button.secondary.is-disabled" in css
+    assert _contrast_ratio("#1d1b17", "#ffffff") >= 4.5
+    assert _contrast_ratio("#6b665d", "#ffffff") >= 4.5
+    assert _contrast_ratio("#7a5a1f", "#ffffff") >= 4.5
+    assert _contrast_ratio("#665c4a", "#f8f4ec") >= 4.5
 
 
 def test_progress_vendor_pseudo_elements_are_in_separate_rules() -> None:

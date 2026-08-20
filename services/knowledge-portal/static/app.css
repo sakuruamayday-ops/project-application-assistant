@@ -1560,11 +1560,29 @@ textarea:focus-visible, select:focus-visible {
 .client-download-hero dt { color: #aaa39a; }
 .client-download-hero dd { margin: 0; font-weight: 700; }
 .client-platform-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-.client-platform-card { display: grid; grid-template-columns: auto 1fr; gap: 18px 22px; align-items: start; padding: 26px; background: #fff; border: 1px solid var(--atelier-line); border-radius: 20px; box-shadow: 0 18px 46px rgba(22,18,13,.06); }
+.client-platform-card {
+  --atelier-ink: #1d1b17;
+  --atelier-muted: #6b665d;
+  --atelier-line: rgba(82,69,44,.16);
+  --atelier-line-strong: rgba(126,91,31,.42);
+  --skill-gold: #7a5a1f;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px 22px;
+  align-items: start;
+  padding: 26px;
+  color: var(--atelier-ink);
+  color-scheme: light;
+  background: #fff;
+  border: 1px solid var(--atelier-line);
+  border-radius: 20px;
+  box-shadow: 0 18px 46px rgba(22,18,13,.06);
+}
 .client-platform-card > .button, .client-platform-card > .is-disabled { grid-column: 2; justify-self: start; }
 .client-platform-card h3 { margin: 5px 0 9px; font-size: 26px; }
 .client-platform-card p { margin: 0 0 10px; color: var(--atelier-muted); line-height: 1.65; }
 .client-platform-card small { display: block; overflow-wrap: anywhere; color: var(--atelier-muted); }
+.client-platform-card .button.secondary.is-disabled { color: #665c4a; background: #f8f4ec; border-color: rgba(126,91,31,.34); cursor: default; }
 .client-platform-mark { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 15px; color: #fff; background: #171717; font: 700 14px/1 ui-monospace, monospace; text-transform: uppercase; }
 .client-release-pending { display: flex; align-items: center; gap: 22px; }
 .client-release-pending h3 { margin: 0 0 7px; }
