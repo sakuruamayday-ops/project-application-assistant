@@ -3,7 +3,7 @@
   "release_tag": "V1.6.7",
   "host": {
     "upstream": "deepseek-ai/deepseek-harness",
-    "pinned_commit": "47f943859bef60e4160492346772ded9b24f765a",
+    "pinned_commit": "141eb6fef83422698aef7a981029e843e8161531",
     "upstream_stage": "developer-preview",
     "upgrade_policy": "pin-and-revalidate"
   },

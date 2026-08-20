@@ -44,7 +44,7 @@
       {
         "target": "共创独立客户端",
         "status": "发布门禁已定义，双端正式发布单独验收",
-        "note": "固定 DeepSeek Harness 提交 47f943859bef60e4160492346772ded9b24f765a；必须由签名宿主插件失败关闭执行完整 Hook 生命周期，并取得 macOS 公证、Windows Authenticode、全新设备安装、升级和回滚回执。"
+        "note": "固定 DeepSeek Harness 0.1.0-rc.8 上游提交 141eb6fef83422698aef7a981029e843e8161531；必须由签名宿主插件失败关闭执行完整 Hook 生命周期，并取得 macOS 公证、Windows Authenticode、全新设备安装、升级和回滚回执。"
       }
     ],
     "distribution_protocol": {
