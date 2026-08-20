@@ -10,7 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "audit_local_formal_skill_drift.py"
 
 
-def run_audit(skills_root: Path, *local_roots: Path) -> subprocess.CompletedProcess[str]:
+def run_audit(
+    skills_root: Path,
+    *local_roots: Path,
+    candidate_skill_dirs: tuple[Path, ...] = (),
+) -> subprocess.CompletedProcess[str]:
     command = [
         sys.executable,
         str(SCRIPT),
@@ -19,6 +23,8 @@ def run_audit(skills_root: Path, *local_roots: Path) -> subprocess.CompletedProc
     ]
     for local_root in local_roots:
         command.extend(["--local-root", str(local_root)])
+    for candidate_skill_dir in candidate_skill_dirs:
+        command.extend(["--candidate-skill-dir", str(candidate_skill_dir)])
     return subprocess.run(command, check=False, capture_output=True, text=True)
 
 
@@ -112,6 +118,26 @@ def test_audit_rejects_missing_formal_skill(tmp_path: Path) -> None:
     result = run_audit(skills, local)
     assert result.returncode == 2
     assert "gongchuang-humanizer-zh" in result.stdout
+
+
+def test_audit_accepts_a_new_source_skill_pending_post_release_local_sync(tmp_path: Path) -> None:
+    skills = write_fixture(tmp_path)
+    local = tmp_path / "local"
+    write_skill(local, "enterprise-profile")
+    write_skill(skills, "gongchuang-humanizer-zh")
+
+    result = run_audit(
+        skills,
+        local,
+        candidate_skill_dirs=(skills / "gongchuang-humanizer-zh",),
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["missing_formal_skills"] == []
+    assert payload["candidate_skills_pending_local_sync"] == [
+        "gongchuang-humanizer-zh"
+    ]
 
 
 def test_audit_rejects_nonformal_classification_for_manifest_skill(tmp_path: Path) -> None:

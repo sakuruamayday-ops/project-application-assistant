@@ -15,6 +15,9 @@
       "project-task-router",
       "first-run-configuration"
     ],
+    "work_method": [
+      "deep-clarification"
+    ],
     "knowledge_and_evidence": [
       "local-knowledge-retrieval",
       "policy-retrieval",

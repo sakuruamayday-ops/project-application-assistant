@@ -41,6 +41,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--skills-root", type=Path, required=True)
     parser.add_argument("--local-root", type=Path, action="append", default=[])
+    parser.add_argument("--candidate-skill-dir", type=Path, action="append", default=[])
     args = parser.parse_args()
 
     skills_root = args.skills_root.expanduser().resolve()
@@ -52,6 +53,19 @@ def main() -> int:
     root_policies = list(ledger.get("root_policies") or [])
     shared_paths = set(manifest.get("shared_paths") or [])
     errors: list[str] = []
+
+    candidate_names: set[str] = set()
+    for raw_candidate in args.candidate_skill_dir:
+        candidate = raw_candidate.expanduser().resolve()
+        if candidate.parent != skills_root or not (candidate / "SKILL.md").is_file():
+            errors.append(
+                f"candidate skill must be a direct source child with SKILL.md: {candidate}"
+            )
+            continue
+        if candidate.name not in formal:
+            errors.append(f"candidate skill is not declared formal: {candidate.name}")
+            continue
+        candidate_names.add(candidate.name)
 
     if not formal_list or len(formal_list) != len(formal):
         errors.append("suite-manifest formal skill list is empty or duplicated")
@@ -159,7 +173,7 @@ def main() -> int:
     if unregistered:
         errors.append("unregistered local skills: " + ", ".join(unregistered))
 
-    missing_formal = sorted(formal - discovered)
+    missing_formal = sorted(formal - discovered - candidate_names)
     if missing_formal:
         errors.append("formal skills missing from local roots: " + ", ".join(missing_formal))
 
@@ -195,6 +209,7 @@ def main() -> int:
         "registered_non_formal_skills": sorted(entries),
         "unregistered_local_skills": unregistered,
         "missing_formal_skills": missing_formal,
+        "candidate_skills_pending_local_sync": sorted(candidate_names - discovered),
         "package_input": "suite-manifest.json:skills",
         "errors": errors,
     }

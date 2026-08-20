@@ -15,6 +15,7 @@ EXPECTED_SKILLS = {
     "application-writing",
     "checking-patdocx-cn-single-agent",
     "consistency-check",
+    "deep-clarification",
     "digitalization-projects",
     "enterprise-panorama-analysis",
     "enterprise-profile",

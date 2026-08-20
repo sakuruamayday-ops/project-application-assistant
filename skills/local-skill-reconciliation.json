@@ -305,6 +305,30 @@
       "package_policy": "exclude_from_suite",
       "reason": "产品需求访谈由宿主按需提供；本次正式套件不复制或依赖该技能。"
     },
+    "domain-modeling": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "mattpocock/skills@885e2ca4d842d139e9aef4e48d366c63cb1b8013",
+      "owner": "Matt Pocock",
+      "package_policy": "exclude_from_suite",
+      "reason": "宿主中的工程领域建模能力仅供产品开发工作流使用，不复制进面向业务用户的正式套件。"
+    },
+    "grill-with-docs": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "mattpocock/skills@885e2ca4d842d139e9aef4e48d366c63cb1b8013",
+      "owner": "Matt Pocock",
+      "package_policy": "exclude_from_suite",
+      "reason": "宿主中的工程访谈与文档组合能力不复制进面向业务用户的正式套件。"
+    },
+    "grilling": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "mattpocock/skills@885e2ca4d842d139e9aef4e48d366c63cb1b8013",
+      "owner": "Matt Pocock",
+      "package_policy": "exclude_from_suite",
+      "reason": "原版开发者访谈技能不进入正式套件；正式套件只分发业务化改写后的深度澄清。"
+    },
     "multi-project-matrix": {
       "status": "merged_into",
       "formal_targets": ["project-matching", "project-feasibility"],

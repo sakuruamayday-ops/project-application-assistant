@@ -1,0 +1,7 @@
+interface:
+  display_name: "深度澄清"
+  short_description: "分轮确认复杂任务的目标、范围、依赖、风险与验收边界"
+  brand_color: "#5B5BD6"
+  default_prompt: "使用 $deep-clarification 与我分轮澄清这个复杂任务，每题给出推荐答案，形成共同理解与执行清单并等待我确认。"
+policy:
+  allow_implicit_invocation: true

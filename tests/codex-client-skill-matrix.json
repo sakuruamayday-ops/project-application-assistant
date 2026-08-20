@@ -49,6 +49,15 @@
     },
     {
       "index": 6,
+      "skill": "deep-clarification",
+      "implicit_prompt": "我要设计一套涉及客户端、签名技能包、双架构安装包和发布回滚的复杂新功能，目标和验收边界还不完整。请先判断怎样避免带着歧义直接实施。",
+      "explicit_prompt": "请显式使用项目级 deep-clarification Skill，读取其SKILL.md后以中文名称说明分轮澄清机制，并报告实际读取路径。",
+      "negative_prompt": "把这句话改得更简洁：本公司一直以来始终重视技术创新。只返回改写结果。",
+      "negative_expected_skill": null,
+      "functional_prompt": "使用项目级 deep-clarification 处理一个脱敏产品任务：目标是新增批量导出，但导出格式、权限范围和失败恢复尚未决定。只输出当前依赖已满足的一轮问题，每题给推荐答案；不得开始实现或创建文件。"
+    },
+    {
+      "index": 7,
       "skill": "digitalization-projects",
       "implicit_prompt": "一家制造工厂准备申报数字化车间，已经部署MES、设备采集和质量追溯。请判断设备联网、系统运行、数据集成和闭环绩效需要哪些证据。",
       "explicit_prompt": "请显式使用项目级 digitalization-projects Skill，读取其SKILL.md后概括数字化车间核验主线，并报告实际读取路径。",
@@ -57,7 +66,7 @@
       "functional_prompt": "使用项目级 digitalization-projects 分析脱敏事实：设备100台，联网75台，MES已运行6个月，质检数据尚未回写工艺参数。输出已满足、缺口、风险和补证动作。"
     },
     {
-      "index": 7,
+      "index": 8,
       "skill": "enterprise-panorama-analysis",
       "implicit_prompt": "合作签约前想对一家企业做公开信息全景调研，覆盖工商股权、关联方、经营战略、同行竞争、风险、知识产权和未来合作机会，并形成销售版和深度顾问版。",
       "explicit_prompt": "请显式使用项目级 enterprise-panorama-analysis Skill，读取其SKILL.md后说明A、B、C三种报告选择规则，并报告实际读取路径。",
@@ -66,7 +75,7 @@
       "functional_prompt": "使用项目级 enterprise-panorama-analysis 对一个完全虚构主体执行只读流程设计测试，选择A标准销售版，列出事实底稿字段和报告章节；不得查询或编造真实企业。"
     },
     {
-      "index": 8,
+      "index": 9,
       "skill": "enterprise-profile",
       "implicit_prompt": "请先整理一家企业用于政府项目申报的基础画像，包括工商、产品、研发、资质、荣誉、知识产权、风险和经营轨迹。",
       "explicit_prompt": "请显式使用项目级 enterprise-profile Skill，读取其SKILL.md后列出企业画像字段，并报告实际读取路径。",
@@ -75,7 +84,7 @@
       "functional_prompt": "使用项目级 enterprise-profile 将脱敏事实整理成画像：2021年成立，主营工业传感器，员工52人，研发人员12人，有效发明专利2件，其他资质未提供。明确缺失字段，不补造。"
     },
     {
-      "index": 9,
+      "index": 10,
       "skill": "evidence-ledger",
       "implicit_prompt": "请把当前分析中的事实、计算、推断和待核验信息分开，建立来源登记，并检查每项主张能否追溯到原文或计算输入。",
       "explicit_prompt": "请显式使用项目级 evidence-ledger Skill，读取其SKILL.md后说明四类证据和主张映射要求，并报告实际读取路径。",
@@ -84,7 +93,7 @@
       "functional_prompt": "使用项目级 evidence-ledger 为以下内容建台账：营收3000万元来自审计报告；研发占比由450除以3000计算；行业领先属于企业自述；当期通知未取得。输出四类记录。"
     },
     {
-      "index": 10,
+      "index": 11,
       "skill": "evolution-governance",
       "implicit_prompt": "现在有一项自动生成的技能优化候选，请先检查审批、快照、测试、签名、发布和回滚条件，不要合并或发布。",
       "explicit_prompt": "请显式使用项目级 evolution-governance Skill，读取其SKILL.md后说明候选变更进入正式版前的治理步骤，并报告实际读取路径。",
@@ -93,7 +102,7 @@
       "functional_prompt": "使用项目级 evolution-governance 审核一个虚构候选：只有1次纠正、没有跨任务复现、没有回滚点。输出阻断结论；不得创建、合并或发布候选。"
     },
     {
-      "index": 11,
+      "index": 12,
       "skill": "experience-recorder",
       "implicit_prompt": "这次复杂基础设施任务已经结束，请提取可复用经验、失败原因和质量规则，并实际回答四问复盘。",
       "explicit_prompt": "请显式使用项目级 experience-recorder Skill，读取其SKILL.md后说明哪些内容可以进入候选经验、哪些不能，并报告实际读取路径。",
@@ -102,7 +111,7 @@
       "functional_prompt": "使用项目级 experience-recorder 对一个脱敏失败做复盘：单元测试通过但跨仓契约失败。输出四问答案和一条可泛化规则；不得写正式技能或持久记录。"
     },
     {
-      "index": 12,
+      "index": 13,
       "skill": "financial-verification",
       "implicit_prompt": "我已提供可靠财务报表，请核验营业收入、利润、研发投入、资产负债、增长率和专项申报指标，并展示关键复算过程。",
       "explicit_prompt": "请显式使用项目级 financial-verification Skill，读取其SKILL.md后说明财务核验的数据边界，并报告实际读取路径。",
@@ -111,7 +120,7 @@
       "functional_prompt": "使用项目级 financial-verification 复算脱敏数据：2024营收2400万元、2025营收3000万元、2025研发投入450万元、资产2000万元、负债800万元。输出增长率、研发占比、资产负债率和公式。"
     },
     {
-      "index": 13,
+      "index": 14,
       "skill": "first-run-configuration",
       "implicit_prompt": "我刚把整套企业助手放进本地Codex项目，请检查知识库、企业信息、专利、浏览器、OCR、文档和技能进化能力是否配置好，只生成脱敏能力报告。",
       "explicit_prompt": "请显式使用项目级 first-run-configuration Skill，读取其SKILL.md后说明首次配置的检测范围和凭据边界，并报告实际读取路径。",
@@ -120,7 +129,7 @@
       "functional_prompt": "使用项目级 first-run-configuration 对当前测试任务做只读能力检测，输出available、missing、not-tested三类；不得索要、展示或写入任何真实凭据。"
     },
     {
-      "index": 14,
+      "index": 15,
       "skill": "gongchuang-humanizer-zh",
       "implicit_prompt": "请把这段已经核验过事实的中文申报材料改得更自然，降低机器腔，同时原样保留企业名称、数字、政策口径、限定词和技术关系，改写后给出事实保持审计结果。",
       "explicit_prompt": "请显式使用项目级 gongchuang-humanizer-zh Skill，读取其SKILL.md后说明事实锁、处理强度和改写后审计要求，并报告实际读取路径。",
@@ -129,7 +138,7 @@
       "functional_prompt": "使用项目级 gongchuang-humanizer-zh 改写以下脱敏文本并做事实锁审计：公司2025年营收3000万元，研发人员18人，MES覆盖率80%。原文为，公司始终聚焦行业发展，以创新赋能业务，取得了令人瞩目的成绩。不得新增任何事实。"
     },
     {
-      "index": 15,
+      "index": 16,
       "skill": "graphify",
       "implicit_prompt": "请把一个代码目录构建成可查询的知识图谱，分析关键节点、依赖路径、社区聚类和潜在架构风险。",
       "explicit_prompt": "请显式使用项目级 graphify Skill，读取其SKILL.md后说明何时应建立图、何时不应使用，并报告实际读取路径。",
@@ -138,7 +147,7 @@
       "functional_prompt": "使用项目级 graphify 对当前测试目录中的两个小型文本文件做隔离演示规划，列出初始化、索引、查询和审计命令；不得修改正式知识库。"
     },
     {
-      "index": 16,
+      "index": 17,
       "skill": "green-development-projects",
       "implicit_prompt": "一家制造企业准备申报绿色工厂，请核验能源、水、碳排、资源利用、清洁生产、合规和基准期绩效需要哪些证据。",
       "explicit_prompt": "请显式使用项目级 green-development-projects Skill，读取其SKILL.md后说明绿色项目统计边界和成效核验要求，并报告实际读取路径。",
@@ -147,7 +156,7 @@
       "functional_prompt": "使用项目级 green-development-projects 分析脱敏数据：单位产值能耗下降8%，但基准期产值口径不同；环保处罚情况未提供。输出可用事实、口径风险和补证清单。"
     },
     {
-      "index": 17,
+      "index": 18,
       "skill": "high-tech-enterprise-application-drafting",
       "implicit_prompt": "企业已经提供研发项目周期、知识产权、成果转化和高新产品资料，请按高企申请书结构完成RD、PS及相关汇总表，表格不够时保持原格式扩表。",
       "explicit_prompt": "请显式使用项目级 high-tech-enterprise-application-drafting Skill，读取其SKILL.md后说明高企申请书撰写和扩表边界，并报告实际读取路径。",
@@ -156,7 +165,7 @@
       "functional_prompt": "使用项目级 high-tech-enterprise-application-drafting 根据已锁定事实生成一条RD活动结构示例：项目名智能传感器标定技术研发，周期2024年1月至2025年6月，其他数据未提供。必须保留缺口，不补造人员和预算。"
     },
     {
-      "index": 18,
+      "index": 19,
       "skill": "high-tech-enterprise-preassessment",
       "implicit_prompt": "请评估一家企业今年还是明年申报高企更合适，覆盖硬门槛、知识产权、成果转化、成长性和三档评分，不编造地区通过率。",
       "explicit_prompt": "请显式使用项目级 high-tech-enterprise-preassessment Skill，读取其SKILL.md后说明高企预评估的三档评分和年度选择规则，并报告实际读取路径。",
@@ -165,7 +174,7 @@
       "functional_prompt": "使用项目级 high-tech-enterprise-preassessment 对脱敏事实做简评：成立满3年，有效发明2件，成果转化6项，近两年收入持平，研发管理资料不完整。输出硬门槛、三档风险和补强动作。"
     },
     {
-      "index": 19,
+      "index": 20,
       "skill": "industrialization-projects",
       "implicit_prompt": "企业有一套新装备样机，已经完成检测并有示范用户，想评估首台套或产业化示范项目，需要核验哪些技术、检测和应用证据？",
       "explicit_prompt": "请显式使用项目级 industrialization-projects Skill，读取其SKILL.md后说明三首及产业化项目的对象边界，并报告实际读取路径。",
@@ -174,7 +183,7 @@
       "functional_prompt": "使用项目级 industrialization-projects 分析脱敏事实：装备已完成样机，第三方检测合格，只有内部试用，无外部示范合同。输出项目方向、已具备证据和关键缺口。"
     },
     {
-      "index": 20,
+      "index": 21,
       "skill": "industry-chain-foundation-matcher",
       "implicit_prompt": "请严格依据我提供的产业链架构和产业基础创新发展目录，判断主导产品属于哪个产业链层级以及工业六基分类，不使用模糊推测。",
       "explicit_prompt": "请显式使用项目级 industry-chain-foundation-matcher Skill，读取其SKILL.md后说明目录匹配的输入和禁止事项，并报告实际读取路径。",
@@ -183,7 +192,7 @@
       "functional_prompt": "使用项目级 industry-chain-foundation-matcher 处理脱敏对象：工业机器人用高精度减速器。只给出目录匹配所需的证据字段和候选验证步骤，不擅自创造目录结论。"
     },
     {
-      "index": 21,
+      "index": 22,
       "skill": "industry-positioning",
       "implicit_prompt": "产业链和工业六基目录候选已经给出，请进一步判断主导产品是否有收入、技术、客户、产线和知识产权证据支撑关键环节、补短板和国产替代定位。",
       "explicit_prompt": "请显式使用项目级 industry-positioning Skill，读取其SKILL.md后说明证据化产业定位和三档结论，并报告实际读取路径。",
@@ -192,7 +201,7 @@
       "functional_prompt": "使用项目级 industry-positioning 判断脱敏事实：产品销售占比65%，有2条产线和3件关联专利，但国产替代只有企业自述。分别给出主导产品、补短板、国产替代三档结论。"
     },
     {
-      "index": 22,
+      "index": 23,
       "skill": "intellectual-property-projects",
       "implicit_prompt": "企业准备申报知识产权示范、专利产业化或高价值专利组合项目，请核验权利事实、运用成效和项目证据。",
       "explicit_prompt": "请显式使用项目级 intellectual-property-projects Skill，读取其SKILL.md后说明知识产权类政府项目的分析边界，并报告实际读取路径。",
@@ -201,7 +210,7 @@
       "functional_prompt": "使用项目级 intellectual-property-projects 分析脱敏事实：有效发明4件，其中2件转让取得；有专利产品收入但无许可合同。输出适合方向、权利风险和材料缺口。"
     },
     {
-      "index": 23,
+      "index": 24,
       "skill": "investment-subsidy-projects",
       "implicit_prompt": "企业准备申报技术改造和设备投资补助，请核验备案、建设期、合同、发票、付款和固定资产证据链，并复算适格投资。",
       "explicit_prompt": "请显式使用项目级 investment-subsidy-projects Skill，读取其SKILL.md后说明适格投资证据链和审计边界，并报告实际读取路径。",
@@ -210,7 +219,7 @@
       "functional_prompt": "使用项目级 investment-subsidy-projects 分析脱敏设备清单：合同1000万元，发票800万元，付款600万元，其中二手设备200万元。输出各口径金额、待核项和不得直接认定部分。"
     },
     {
-      "index": 24,
+      "index": 25,
       "skill": "ip-assessment",
       "implicit_prompt": "请建立企业专利、商标和软著事实底稿，核验权利状态、取得方式、主体变更、产品技术关联以及在政府项目中的证据价值。",
       "explicit_prompt": "请显式使用项目级 ip-assessment Skill，读取其SKILL.md后说明知识产权事实底稿字段，并报告实际读取路径。",
@@ -219,7 +228,7 @@
       "functional_prompt": "使用项目级 ip-assessment 整理脱敏清单：自主申请有效发明2件，转让取得有效发明1件，审中发明2件，软著3件。输出事实状态和申报使用风险。"
     },
     {
-      "index": 25,
+      "index": 26,
       "skill": "legal-regulations",
       "implicit_prompt": "请分国家、浙江省、杭州市和区县检索并核验与政府奖补、知识产权和企业合规有关的现行法律法规，说明效力和合规红线。",
       "explicit_prompt": "请显式使用项目级 legal-regulations Skill，读取其SKILL.md后说明法规层级、效力和行业补查规则，并报告实际读取路径。",
@@ -228,7 +237,7 @@
       "functional_prompt": "使用项目级 legal-regulations 对虚构场景做方法测试：浙江制造企业申请财政奖补并涉及商业秘密。列出需要核验的法规层级、事实问题和来源要求，不给无来源条文。"
     },
     {
-      "index": 26,
+      "index": 27,
       "skill": "local-knowledge-retrieval",
       "implicit_prompt": "请在团队知识服务中检索历史政策、相似案例、模板和企业名单，同时使用简称全称、年份批次变体以及结构化名单和全文双路径；一次未命中不能断言不存在。",
       "explicit_prompt": "请显式使用项目级 local-knowledge-retrieval Skill，读取其SKILL.md后说明知识服务双路径和未命中表述，并报告实际读取路径。",
@@ -237,7 +246,7 @@
       "functional_prompt": "使用项目级 local-knowledge-retrieval 设计一条只读测试查询：浙江省2025年专精特新中小企业名单。列出简称全称、年份批次、结构化和全文四类检索变体；若当前工具不可用必须明确未覆盖。"
     },
     {
-      "index": 27,
+      "index": 28,
       "skill": "manufacturing-tax-risk-analysis",
       "implicit_prompt": "请基于制造企业近三年审计报告、财务报表和税务资料做三表复算、税务风险、订单往来、研发和所得税核验，并规划金色顾问版报告。",
       "explicit_prompt": "请显式使用项目级 manufacturing-tax-risk-analysis Skill，读取其SKILL.md后说明制造企业财税体检的数据门槛和报告要求，并报告实际读取路径。",
@@ -246,7 +255,7 @@
       "functional_prompt": "使用项目级 manufacturing-tax-risk-analysis 对脱敏异常做风险筛查：收入增长25%，应收账款增长80%，研发费用增长5%，存货周转明显下降。只输出需要进一步核验的风险信号，不形成税务违法结论。"
     },
     {
-      "index": 28,
+      "index": 29,
       "skill": "patent-router",
       "implicit_prompt": "请为一家公司的技术方案做专利查新、技术特征拆分、专利布局、权利要求策略和保护中心预审方向建议，并记录法域与检索边界。",
       "explicit_prompt": "请显式使用项目级 patent-router Skill，读取其SKILL.md后说明公司级专利任务路由和证据链，并报告实际读取路径。",
@@ -255,7 +264,7 @@
       "functional_prompt": "使用项目级 patent-router 对脱敏技术做专利挖掘框架：用视觉模型识别纺织品表面缺陷并动态调整照明。输出技术特征图、检索层级和三项候选发明点，不声称已完成真实查新。"
     },
     {
-      "index": 29,
+      "index": 30,
       "skill": "peer-benchmarking",
       "implicit_prompt": "请从政府公示名单和公开资料中找同项目、同政策版本、同地区、同产品的可比企业，建立事实对标，但不能从入选结果反推未公开评分。",
       "explicit_prompt": "请显式使用项目级 peer-benchmarking Skill，读取其SKILL.md后说明同行对标的六同口径和推断边界，并报告实际读取路径。",
@@ -264,7 +273,7 @@
       "functional_prompt": "使用项目级 peer-benchmarking 为脱敏产品工业视觉检测设备设计对标表头，必须包含项目、政策版本、地区、产品边界、年度和来源；不填造企业名称。"
     },
     {
-      "index": 30,
+      "index": 31,
       "skill": "policy-retrieval",
       "implicit_prompt": "请核验一个政府项目从管理办法、当期通知、指南附件、官方答疑、更正延期到公示结果的完整政策链，并判断旧文件是否被替代。",
       "explicit_prompt": "请显式使用项目级 policy-retrieval Skill，读取其SKILL.md后说明完整政策链和版本效力判断，并报告实际读取路径。",
@@ -273,7 +282,7 @@
       "functional_prompt": "使用项目级 policy-retrieval 对一个离线测试场景给出核验计划：已有2024管理办法和2025申报通知，但缺指南附件与更正公告。输出已取得、待查、不能下结论的部分。"
     },
     {
-      "index": 31,
+      "index": 32,
       "skill": "project-application-assistant",
       "implicit_prompt": "我有一个企业项目申报综合任务，涉及企业画像、政策检索、可行性、专利、财务、正式材料和归档，请帮我安排正确的专业能力执行顺序。",
       "explicit_prompt": "请显式使用项目级 project-application-assistant Skill，读取其SKILL.md后说明总控路由职责和专业技能边界，并报告实际读取路径。",
@@ -282,7 +291,7 @@
       "functional_prompt": "使用项目级 project-application-assistant 为脱敏任务编排流程：一家制造企业希望同时评估高企、专精特新和技改补助，并整理专利。只输出路由顺序和每步输入输出。"
     },
     {
-      "index": 32,
+      "index": 33,
       "skill": "project-deliverable-archive",
       "implicit_prompt": "复杂项目已经形成经过核验的正式报告、来源清单和计算底稿，请在可写工作区按项目、版本和来源整理归档，不依赖特定笔记软件。",
       "explicit_prompt": "请显式使用项目级 project-deliverable-archive Skill，读取其SKILL.md后说明归档目录、版本和来源清单要求，并报告实际读取路径。",
@@ -291,7 +300,7 @@
       "functional_prompt": "使用项目级 project-deliverable-archive 在当前任务专用测试目录中为三个虚构文件设计归档结构和manifest内容；只写测试目录，不接触正式客户资料。"
     },
     {
-      "index": 33,
+      "index": 34,
       "skill": "project-feasibility",
       "implicit_prompt": "请判断一家企业能否申报某个单一政府项目，核验项目版本、硬门槛、评分、财务计算、证据状态、材料差距和最终结论。",
       "explicit_prompt": "请显式使用项目级 project-feasibility Skill，读取其SKILL.md后说明单项目可行性分析的完整结构，并报告实际读取路径。",
@@ -300,7 +309,7 @@
       "functional_prompt": "使用项目级 project-feasibility 分析脱敏场景：项目要求研发占比不低于5%，企业营收3000万元、研发120万元，其他硬门槛满足。复算并给出结论、缺口和行动。"
     },
     {
-      "index": 34,
+      "index": 35,
       "skill": "project-matching",
       "implicit_prompt": "请根据一家企业的行业、产品、研发和资质，从政府项目库中匹配未来一年可申报方向，形成多项目优先级和路线图。",
       "explicit_prompt": "请显式使用项目级 project-matching Skill，读取其SKILL.md后说明项目匹配的输入、输出和优先级规则，并报告实际读取路径。",
@@ -309,7 +318,7 @@
       "functional_prompt": "使用项目级 project-matching 为脱敏企业匹配方向：主营工业传感器，研发占比8%，有发明专利3件，计划扩建产线。输出不超过4个项目类别和排序理由，不编造具体当期通知。"
     },
     {
-      "index": 35,
+      "index": 36,
       "skill": "project-memory",
       "implicit_prompt": "继续上次那个客户项目，请先恢复企业身份、政策版本、事实锁、已决定事项、待办和交付物，再告诉我当前下一步。",
       "explicit_prompt": "请显式使用项目级 project-memory Skill，读取其SKILL.md后说明客户项目连续性与个人偏好的分离规则，并报告实际读取路径。",
@@ -318,7 +327,7 @@
       "functional_prompt": "使用项目级 project-memory 为一个虚构客户测试案例设计状态卡：企业A、项目B、政策版本2026、待核财务、已决定不联网。只输出测试结构，不写正式记忆。"
     },
     {
-      "index": 36,
+      "index": 37,
       "skill": "project-rule-manager",
       "implicit_prompt": "请在本地工作区录入并管理一个区县政府项目规则，包含年度版本、门槛、评分、材料、截止日期、主管部门、官方来源和核验状态。",
       "explicit_prompt": "请显式使用项目级 project-rule-manager Skill，读取其SKILL.md后说明本地规则的版本管理和来源要求，并报告实际读取路径。",
@@ -328,7 +337,7 @@
       "functional_prompt": "使用项目级 project-rule-manager 在当前任务测试目录中设计一条虚构规则记录：测试区、2026版、截止日期待核、来源未提供。必须标记待核，不写云端。"
     },
     {
-      "index": 37,
+      "index": 38,
       "skill": "project-task-router",
       "implicit_prompt": "我同时需要查政策、判断企业能报什么、核验专利、检查财务并最终写材料，但不知道该先用哪些能力，请先路由任务阶段。",
       "explicit_prompt": "请显式使用项目级 project-task-router Skill，读取其SKILL.md后说明多任务阶段识别和专业技能路由，并报告实际读取路径。",
@@ -337,7 +346,7 @@
       "functional_prompt": "使用项目级 project-task-router 路由脱敏组合任务：先查2026通知，再评估高企，之后写申请书并归档。输出主技能、辅助技能和执行顺序，不开展业务正文。"
     },
     {
-      "index": 38,
+      "index": 39,
       "skill": "quality-brand-projects",
       "implicit_prompt": "企业想申报浙江制造精品、政府质量奖、单项冠军或隐形冠军，请先识别项目类型，再核验质量、标准、认证、管理和市场证据。",
       "explicit_prompt": "请显式使用项目级 quality-brand-projects Skill，读取其SKILL.md后说明质量品牌项目的类型识别和证据边界，并报告实际读取路径。",
@@ -346,7 +355,7 @@
       "functional_prompt": "使用项目级 quality-brand-projects 分析脱敏事实：企业有ISO9001和团体标准，细分市场排名只有企业自述，近三年无质量事故资料。输出可能方向和证据缺口。"
     },
     {
-      "index": 39,
+      "index": 40,
       "skill": "regional-special-projects",
       "implicit_prompt": "某园区刚发布一个未纳入固定领域的临时申报通知，请把原文条件转换为带位置的候选规则，核验后再交给可行性分析，不要为它新建永久技能。",
       "explicit_prompt": "请显式使用项目级 regional-special-projects Skill，读取其SKILL.md后说明临时通知转候选规则的流程，并报告实际读取路径。",
@@ -355,7 +364,7 @@
       "functional_prompt": "使用项目级 regional-special-projects 将脱敏通知片段转为候选规则：测试园区企业，2026年设备投资不少于500万元，截止日期未提供，原文第3条。保留待核状态。"
     },
     {
-      "index": 40,
+      "index": 41,
       "skill": "skill-authoring",
       "implicit_prompt": "作为管理员，我要为本套件设计一个新的专业技能候选，请规划触发、互斥、工作流、资源、脚本、许可证、测试和审批，但不要直接改正式技能。",
       "explicit_prompt": "请显式使用项目级 skill-authoring Skill，读取其SKILL.md后说明候选技能设计和治理边界，并报告实际读取路径。",
@@ -364,7 +373,7 @@
       "functional_prompt": "使用项目级 skill-authoring 为虚构的海洋经济项目技能写一个候选设计摘要，包含触发、互斥、输入输出和3个测试；不得创建文件或改正式Skills。"
     },
     {
-      "index": 41,
+      "index": 42,
       "skill": "skill-curator",
       "implicit_prompt": "请根据近期使用记录、用户纠正和复盘，检查技能是否重复、触发冲突、过期或长期不用，并提出保留、合并、拆分或归档建议。",
       "explicit_prompt": "请显式使用项目级 skill-curator Skill，读取其SKILL.md后说明技能策展的证据门槛和去重规则，并报告实际读取路径。",
@@ -373,7 +382,7 @@
       "functional_prompt": "使用项目级 skill-curator 审查虚构信号：两个技能描述相似，但没有共同任务记录或误路由证据。给出策展结论，不合并、不归档。"
     },
     {
-      "index": 42,
+      "index": 43,
       "skill": "skill-evolution",
       "implicit_prompt": "一个技能质量问题已经在多个任务中重复出现，请基于脱敏测试、轨迹和评分生成候选优化，比较准确性、来源完整性、边界和上下文成本，但不要发布。",
       "explicit_prompt": "请显式使用项目级 skill-evolution Skill，读取其SKILL.md后说明进化批次阈值、候选和正式发布边界，并报告实际读取路径。",
@@ -382,7 +391,7 @@
       "functional_prompt": "使用项目级 skill-evolution 评估虚构信号：同一规则2条已核验纠正、覆盖2个任务。判断是否达到默认批次阈值；不得为了凑数生成候选。"
     },
     {
-      "index": 43,
+      "index": 44,
       "skill": "sme-development-projects",
       "implicit_prompt": "企业准备申报专精特新中小企业或小巨人，请分析主导产品、企业简介、补短板、填空白和产业链归属，并核验项目专属条件。",
       "explicit_prompt": "请显式使用项目级 sme-development-projects Skill，读取其SKILL.md后说明专精特新与小巨人分析范围，并报告实际读取路径。",
@@ -391,7 +400,7 @@
       "functional_prompt": "使用项目级 sme-development-projects 分析脱敏事实：主营工业传感器，细分收入占比70%，有核心专利3件，补短板仅有企业自述。输出主导产品和补短板三档结论。"
     },
     {
-      "index": 44,
+      "index": 45,
       "skill": "sme-score-preassessment",
       "implicit_prompt": "请按2026年现行政策做专精特新中小企业与小巨人申报前门槛预评估、质量分核验和差距诊断，不使用历史四维百分制。",
       "explicit_prompt": "请显式使用项目级 sme-score-preassessment Skill，读取其SKILL.md后说明2026预评估口径和禁止使用的旧评分方式，并报告实际读取路径。",
@@ -400,7 +409,7 @@
       "functional_prompt": "使用项目级 sme-score-preassessment 对脱敏事实做门槛表：成立4年，营收3000万元，研发占比6%，主导产品占比70%，有效发明2件。未知条件必须列为待核。"
     },
     {
-      "index": 45,
+      "index": 46,
       "skill": "standard-drafting",
       "implicit_prompt": "请按现行GB/T 1.1起草一份企业产品标准，完成范围、规范性引用文件、术语、技术要求、试验方法、检验规则、标志包装以及编制说明。",
       "explicit_prompt": "请显式使用项目级 standard-drafting Skill，读取其SKILL.md后说明标准类型识别、条款结构和一致性要求，并报告实际读取路径。",
@@ -409,7 +418,7 @@
       "functional_prompt": "使用项目级 standard-drafting 为虚构产品工业视觉检测器设计企业标准目录，并指出需要企业补充的量化技术指标；不得编造具体指标。"
     },
     {
-      "index": 46,
+      "index": 47,
       "skill": "talent-projects",
       "implicit_prompt": "一名博士计划在杭州创业，请比较人才项目、创业落地区、常规和破格通道、到岗关系及隐私边界，并在业务适配时考虑算力券。",
       "explicit_prompt": "请显式使用项目级 talent-projects Skill，读取其SKILL.md后说明人才项目身份、关系、时间和隐私核验要求，并报告实际读取路径。",
@@ -418,7 +427,7 @@
       "functional_prompt": "使用项目级 talent-projects 分析脱敏画像：博士，尚未在杭注册公司，计划做工业AI，未确定落地区。输出待核身份、落地比较维度和不能提前承诺的事项。"
     },
     {
-      "index": 47,
+      "index": 48,
       "skill": "technology-innovation-projects",
       "implicit_prompt": "企业计划申报企业研究院、科技计划或科技奖励，请核验研发条件、任务、预算、里程碑、成果和验收指标。",
       "explicit_prompt": "请显式使用项目级 technology-innovation-projects Skill，读取其SKILL.md后说明科技创新项目与量产建设项目的边界，并报告实际读取路径。",
@@ -427,7 +436,7 @@
       "functional_prompt": "使用项目级 technology-innovation-projects 分析脱敏计划：建设企业研究院，研发人员20人，年度预算500万元，已有3个课题但没有里程碑和验收指标。输出条件和缺口。"
     },
     {
-      "index": 48,
+      "index": 49,
       "skill": "third-party-data-indexing",
       "implicit_prompt": "我已明确授权使用第三方政策数据，请增量建立本地SQLite索引，支持断点、限速、去重、版本、官方链接健康检查和JSONL导出。",
       "explicit_prompt": "请显式使用项目级 third-party-data-indexing Skill，读取其SKILL.md后说明显式授权、增量索引和版本审计边界，并报告实际读取路径。",
@@ -436,7 +445,7 @@
       "functional_prompt": "使用项目级 third-party-data-indexing 设计一个只处理3条虚构JSON记录的离线增量测试，列出去重键、版本字段、断点和导出结构；不得联网或写正式索引。"
     },
     {
-      "index": 49,
+      "index": 50,
       "skill": "trade-and-open-economy-projects",
       "implicit_prompt": "企业准备申报跨境电商、境外展会或服务贸易项目，请核验订单、报关、物流、收汇、平台、币种和期间。",
       "explicit_prompt": "请显式使用项目级 trade-and-open-economy-projects Skill，读取其SKILL.md后说明外贸项目证据链和国内业务边界，并报告实际读取路径。",
@@ -445,7 +454,7 @@
       "functional_prompt": "使用项目级 trade-and-open-economy-projects 分析脱敏事实：跨境平台订单500万元，报关金额420万元，收汇380万元，期间口径未统一。输出可用证据和对账缺口。"
     },
     {
-      "index": 50,
+      "index": 51,
       "skill": "web-task-operator",
       "implicit_prompt": "我需要在当前客户端对一个本地离线HTML测试页设计导航、按status=active且year=2026筛选，并结构化提取页面标题、首段文字和记录名。请先判断应使用哪类能力并给出执行计划，不要实际读取页面。",
       "explicit_prompt": "请显式使用项目级 web-task-operator Skill，读取其SKILL.md后说明网页操作的授权、安全和结果核验边界，并报告实际读取路径。",

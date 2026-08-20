@@ -171,6 +171,17 @@
         "legal-regulations"
       ],
       "featured": true
+    },
+    {
+      "id": "deep-clarification",
+      "icon": "list-tree",
+      "name": "深度澄清",
+      "summary": "把复杂任务按依赖分轮确认，形成共同理解与执行清单后再实施。",
+      "category": "工作方法",
+      "skills": [
+        "deep-clarification"
+      ],
+      "featured": true
     }
   ],
   "community_sources": [
