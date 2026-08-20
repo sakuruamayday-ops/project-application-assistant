@@ -1,4 +1,4 @@
-"""Regression coverage for the V1.6.7 minimal professional-report prompts."""
+"""Regression coverage for the V1.6.8 minimal professional-report prompts."""
 
 import json
 import re

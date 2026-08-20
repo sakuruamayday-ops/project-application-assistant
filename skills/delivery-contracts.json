@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "contract_id": "gongchuang-professional-delivery-contract-v3",
-  "rule_version": "1.6.7",
+  "rule_version": "1.6.8",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},

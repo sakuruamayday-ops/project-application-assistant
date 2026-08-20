@@ -9,19 +9,20 @@
   },
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.6.7",
-    "version": "1.6.7",
-    "summary": "V1.6.7 汇总未发布的 V1.6.6 共创精选与专业报告能力，修复最简报告提示词与本地知识库优先路由，并新增面向复杂任务的深度澄清能力。",
+    "tag": "V1.6.8",
+    "version": "1.6.8",
+    "summary": "V1.6.8 补齐通用技能包的知识服务运行入口，并保留 V1.6.7 的最简报告提示词、本地知识库优先路由与深度澄清能力。",
     "changes": [
       "企业名称加现有资料即可启动十二类项目前期评估或可行性分析；主体缺口按天眼查、企查查和官方来源补齐，无法核验字段如实标为待核验。",
       "高企、专精特新和小巨人等常用短提示词进入专业报告路由，普通“给朋友出报告”等非专业对话不误触发。",
       "同行及获评企业检索固定本地知识库 → 天眼查 → 企查查 → 官方网页或联网搜索，禁止首步直接联网。",
       "新增深度澄清：复杂、歧义或正式交付任务可按依赖分轮确认；普通任务不误触发，未形成共同理解并经用户确认前不得实施。",
-      "V1.6.7 汇总 V1.6.6 的共创精选、国知局专利首轮发现、十二类双报告母版和共创客户端专业执行合同，同步发布签名通用 Skills 包与 macOS、Windows 平台专用包。"
+      "修复 V1.6.7 通用技能包遗漏知识服务运行入口的问题，通用 ZIP 的完整投影恢复为 550 个源文件。",
+      "V1.6.8 汇总 V1.6.7 的共创精选、国知局专利首轮发现、十二类双报告母版和共创客户端专业执行合同，同步发布签名通用 Skills 包与 macOS、Windows 平台专用包。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.7 同步提供 macOS 与 Windows 平台专用包；平台包只包含 Skills、最小行为 Hook 和远程知识服务配置，不携带用户凭据或本地 MCP。",
+      "workbuddy": "V1.6.8 同步提供 macOS 与 Windows 平台专用包；平台包只包含 Skills、最小行为 Hook 和远程知识服务配置，不携带用户凭据或本地 MCP。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认套件清单声明的全部 Skills 可识别、本地与正式技能清单无未登记漂移、共创客户端生成专业候选与正式交付当前轮回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
@@ -54,7 +55,7 @@
       "external_service_setup": "skills-center-install-and-connect",
       "success_gate": [
         "套件清单声明的全部 Skills 可识别并与签名索引一致",
-        "共创客户端只从已验签 V1.6.7 技能目录加载正式 Skills",
+        "共创客户端只从已验签 V1.6.8 技能目录加载正式 Skills",
         "专业任务必须激活命中技能、依赖技能和质量门禁技能",
         "外部 MCP 只有完成 OAuth 或令牌交换、tools/list 和健康调用后才显示已连接",
         "macOS 与 Windows 平台包分别通过运行时隔离、完整技能覆盖和服务端发布合同门禁",
@@ -133,6 +134,9 @@
     "policy-freshness-manifest.md",
     "report-skill-registry.json",
     "skill-call-graph.json"
+  ],
+  "generic_shared_paths": [
+    "_runtime/jiaotang-kb"
   ],
   "skill_call_graph": "skill-call-graph.json",
   "policy_freshness_manifest": "policy-freshness-manifest.json",

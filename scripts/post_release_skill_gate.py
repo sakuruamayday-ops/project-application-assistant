@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import stat
@@ -143,6 +144,36 @@ def run_gate(
         bundle_root = locate_bundle_root(extracted_root)
         release_root = bundle_root / "skills"
         report["bundle_root"] = str(bundle_root)
+        suite_manifest = json.loads(
+            (development_root / "suite-manifest.json").read_text(encoding="utf-8")
+        )
+        connector_relative = Path("_runtime/jiaotang-kb/jiaotang-agent.mjs")
+        if "_runtime/jiaotang-kb" in suite_manifest.get(
+            "generic_shared_paths", []
+        ):
+            development_connector = development_root / connector_relative
+            release_connector = release_root / connector_relative
+            if not development_connector.is_file():
+                raise RuntimeError(
+                    f"开发源缺少通用知识服务运行入口：{connector_relative}"
+                )
+            if not release_connector.is_file():
+                raise RuntimeError(
+                    f"通用正式包缺少知识服务运行入口：{connector_relative}"
+                )
+            development_connector_sha256 = hashlib.sha256(
+                development_connector.read_bytes()
+            ).hexdigest()
+            release_connector_sha256 = hashlib.sha256(
+                release_connector.read_bytes()
+            ).hexdigest()
+            if release_connector_sha256 != development_connector_sha256:
+                raise RuntimeError("通用正式包知识服务运行入口与开发源不一致")
+            report["stages"]["generic_runtime_projection"] = {
+                "status": "pass",
+                "path": connector_relative.as_posix(),
+                "sha256": release_connector_sha256,
+            }
         trusted_fingerprint = trusted_publisher_fingerprint(
             development_root
         )

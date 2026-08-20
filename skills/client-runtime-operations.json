@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.6.7",
+  "skill_bundle_version": "1.6.8",
   "operations": [
     {
       "id": "consistency-check.scan-formal-material",

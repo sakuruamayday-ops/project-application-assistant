@@ -76,7 +76,7 @@ def main() -> int:
         )
     plugin = manifest.get("workbuddy_plugin") or {}
     if plugin.get("package_mode") != "skills_minimal_behavior_hook":
-        errors.append("V1.6.7 必须启用最小行为 Hook 平台包")
+        errors.append("V1.6.8 必须启用最小行为 Hook 平台包")
     post_package_gates = manifest.get("post_package_release_gates")
     post_gate_names = {
         str(item.get("name") or "")
@@ -91,7 +91,7 @@ def main() -> int:
         "windows-platform-all-skill-coverage",
     }
     if post_gate_names != expected_post_gate_names:
-        errors.append("V1.6.7 必须分别验证通用包和两个平台包的真实产物")
+        errors.append("V1.6.8 必须分别验证通用包和两个平台包的真实产物")
     distribution = (manifest.get("release") or {}).get("distribution_protocol") or {}
     if distribution.get("generic_skill_package") != "signed-universal-zip":
         errors.append("缺少签名通用 Skills 包发布合同")

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-development-projects",
-  "release_tag": "V1.6.7",
+  "release_tag": "V1.6.8",
   "required_paths": [
     "SKILL.md",
     "references/current-policy-baseline-2026.md",
