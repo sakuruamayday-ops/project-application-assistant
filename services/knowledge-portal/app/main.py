@@ -143,6 +143,12 @@ INDEX_DIR = Path(
 CONTENT_DATABASE_PATH = INDEX_DIR / "knowledge_content.sqlite3"
 KNOWLEDGE_FILES_DIR = Path(os.environ.get("JIAOTANG_KNOWLEDGE_FILES_DIR", DATA_DIR / "knowledge-files"))
 SKILL_RELEASE_DIR = Path(os.environ.get("JIAOTANG_SKILL_RELEASE_DIR", DATA_DIR / "skill-releases"))
+SKILL_UPDATE_RELEASE_DIR = Path(
+    os.environ.get(
+        "JIAOTANG_SKILL_UPDATE_RELEASE_DIR",
+        DATA_DIR / "skill-update-releases",
+    )
+)
 CLIENT_RELEASE_DIR = Path(
     os.environ.get("JIAOTANG_CLIENT_RELEASE_DIR", DATA_DIR / "client-releases")
 )
@@ -11693,7 +11699,9 @@ async def not_found_page(request: Request, error: Exception):
     del error
     wants_html = (
         request.method == "GET"
-        and not request.url.path.startswith(("/v1/", "/mcp/", "/assistant/"))
+        and not request.url.path.startswith(
+            ("/v1/", "/mcp/", "/assistant/", "/skill-updates/")
+        )
     )
     if wants_html:
         return templates.TemplateResponse(
@@ -12564,6 +12572,89 @@ def mcp_guide_page(
 @app.get("/skills", response_class=HTMLResponse)
 def skills_page(request: Request, user: Annotated[sqlite3.Row, Depends(require_web_user)]):
     return portal_page_response(request, user, "skills")
+
+
+def skill_update_asset_path(asset_name: str) -> Path:
+    """Resolve one public skill-update asset without exposing sibling files."""
+    if (
+        not asset_name
+        or len(asset_name) > 255
+        or Path(asset_name).name != asset_name
+        or any(character in asset_name for character in "/\\\\\0\r\n")
+        or (asset_name != "latest.json" and not asset_name.endswith(".zip"))
+    ):
+        raise HTTPException(status_code=404, detail="技能包更新文件不存在")
+    root = SKILL_UPDATE_RELEASE_DIR.resolve()
+    path = root / asset_name
+    try:
+        canonical = path.resolve(strict=True)
+        canonical.relative_to(root)
+        if path.is_symlink() or not canonical.is_file():
+            raise ValueError("invalid skill-update asset")
+    except (OSError, ValueError):
+        raise HTTPException(status_code=404, detail="技能包更新文件不存在") from None
+    return canonical
+
+
+def skill_update_manifest_payload(path: Path) -> dict[str, object]:
+    """Validate the public feed against the desktop client's v1 contract."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        raise HTTPException(status_code=503, detail="技能包更新清单不可读") from None
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=503, detail="技能包更新清单格式无效")
+    version = payload.get("skillBundleVersion")
+    release_tag = payload.get("sourceReleaseTag")
+    archive_url = payload.get("archiveUrl")
+    if (
+        payload.get("schemaVersion") != 1
+        or payload.get("productId") != "cn.gongchuang.enterprise-assistant"
+        or not isinstance(version, str)
+        or re.fullmatch(
+            r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)",
+            version,
+        )
+        is None
+        or release_tag != f"V{version}"
+        or not isinstance(archive_url, str)
+        or not isinstance(payload.get("releaseNotes"), str)
+    ):
+        raise HTTPException(status_code=503, detail="技能包更新清单身份或版本无效")
+    parsed_archive = urlparse(archive_url)
+    archive_name = Path(parsed_archive.path).name
+    if (
+        parsed_archive.scheme not in {"", "https"}
+        or (parsed_archive.scheme == "" and bool(parsed_archive.netloc))
+        or (parsed_archive.scheme == "https" and not parsed_archive.netloc)
+        or parsed_archive.username is not None
+        or parsed_archive.password is not None
+        or parsed_archive.params
+        or parsed_archive.query
+        or parsed_archive.fragment
+        or parsed_archive.path
+        not in {
+            archive_name,
+            f"./{archive_name}",
+            f"/skill-updates/{archive_name}",
+        }
+        or not archive_name.endswith(".zip")
+    ):
+        raise HTTPException(status_code=503, detail="技能包下载地址无效")
+    skill_update_asset_path(archive_name)
+    return payload
+
+
+@app.get("/skill-updates/{asset_name:path}")
+def skill_update_asset(asset_name: str):
+    """Serve the public signed skill-suite feed independently of app releases."""
+    path = skill_update_asset_path(asset_name)
+    headers = {"X-Content-Type-Options": "nosniff"}
+    if asset_name == "latest.json":
+        headers["Cache-Control"] = "public, no-cache"
+        return JSONResponse(skill_update_manifest_payload(path), headers=headers)
+    headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return FileResponse(path=path, media_type="application/zip", headers=headers)
 
 
 @app.get("/skills/diagnostics", response_class=HTMLResponse)
