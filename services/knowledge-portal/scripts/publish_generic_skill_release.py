@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish one signed universal Skills ZIP and its desktop update feed."""
+"""Publish one signed universal Skills ZIP and its desktop projection feed."""
 
 from __future__ import annotations
 
@@ -20,12 +20,13 @@ from publish_skill_release import publish_selective  # noqa: E402
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="发布已签名的通用 Skills ZIP，并同步桌面客户端技能更新 feed。"
+        description="发布已签名的通用 Skills ZIP，并同步独立验签的桌面技能投影 feed。"
     )
     parser.add_argument("--database", type=Path, required=True)
     parser.add_argument("--release-dir", type=Path, required=True)
     parser.add_argument("--skill-update-release-dir", type=Path, required=True)
     parser.add_argument("--generic-package", type=Path, required=True)
+    parser.add_argument("--client-update-package", type=Path, required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--release-notes-file", type=Path, required=True)
     arguments = parser.parse_args()
@@ -46,7 +47,7 @@ def main() -> None:
         raise RuntimeError("通用技能包未形成有效发布记录")
     feed = publish_skill_update_feed(
         release_directory=arguments.skill_update_release_dir,
-        archive=Path(str(artifact["path"])),
+        archive=arguments.client_update_package,
         version=arguments.version,
         release_notes=release_notes,
     )
@@ -60,6 +61,7 @@ def main() -> None:
                 "skill_count": result["skill_count"],
                 "skill_update_manifest": str(feed.manifest_path),
                 "skill_update_archive": str(feed.archive_path),
+                "generic_archive": str(artifact["path"]),
                 "workbuddy_specific_package": False,
             },
             ensure_ascii=False,

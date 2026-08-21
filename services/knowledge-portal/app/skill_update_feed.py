@@ -88,9 +88,12 @@ def publish_skill_update_feed(
     version: str,
     release_notes: str,
 ) -> SkillUpdateFeedReceipt:
-    """Atomically expose a validated generic ZIP through the public v1 feed.
+    """Atomically expose a validated desktop projection through the public v1 feed.
 
-    The caller must validate the signed suite before invoking this function.
+    The archive must use the desktop updater's root-level signed-index layout;
+    the independently downloadable generic suite is a different artifact and
+    must never be placed behind this feed. The caller validates the projection
+    before invoking this function.
     A versioned archive is immutable: publishing different bytes under an
     existing version is rejected and requires a new release version.
     """
@@ -104,9 +107,7 @@ def publish_skill_update_feed(
         raise ValueError("技能包更新源必须是 ZIP 文件")
 
     release_directory.mkdir(parents=True, exist_ok=True)
-    archive_name = (
-        f"gongchuang-research-institute-skills-V{normalized_version}.zip"
-    )
+    archive_name = f"Gongchuang-Enterprise-Assistant-Skills-V{normalized_version}.zip"
     destination = release_directory / archive_name
     if destination.exists():
         if destination.is_symlink() or not destination.is_file():

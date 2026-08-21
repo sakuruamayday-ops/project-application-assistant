@@ -8,8 +8,8 @@ from test_portal import load_app
 def test_publish_skill_update_feed_creates_client_manifest(tmp_path):
     from app.skill_update_feed import publish_skill_update_feed
 
-    source = tmp_path / "universal.zip"
-    source.write_bytes(b"signed universal suite")
+    source = tmp_path / "desktop-projection.zip"
+    source.write_bytes(b"signed desktop projection")
     release_dir = tmp_path / "updates"
 
     receipt = publish_skill_update_feed(
@@ -27,7 +27,7 @@ def test_publish_skill_update_feed_creates_client_manifest(tmp_path):
         "productId": "cn.gongchuang.enterprise-assistant",
         "skillBundleVersion": "1.6.6",
         "sourceReleaseTag": "V1.6.6",
-        "archiveUrl": "./gongchuang-research-institute-skills-V1.6.6.zip",
+        "archiveUrl": "./Gongchuang-Enterprise-Assistant-Skills-V1.6.6.zip",
         "releaseNotes": "更新共创通用技能包。",
     }
 
@@ -64,7 +64,7 @@ def write_skill_update_feed(tmp_path, monkeypatch):
     release_dir = tmp_path / "skill-update-releases"
     release_dir.mkdir()
     monkeypatch.setenv("JIAOTANG_SKILL_UPDATE_RELEASE_DIR", str(release_dir))
-    archive_name = "gongchuang-skills-1.6.7.zip"
+    archive_name = "Gongchuang-Enterprise-Assistant-Skills-V1.6.7.zip"
     archive = b"signed-skill-suite-fixture"
     manifest = {
         "schemaVersion": 1,
