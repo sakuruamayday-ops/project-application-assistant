@@ -42,6 +42,12 @@ def main() -> None:
     from app import main as portal
 
     portal.init_database()
+    if os.environ.get("JIAOTANG_BROWSER_TEST_DESKTOP_RELEASE_FIXTURE") == "1":
+        helpers.publish_test_client_release(
+            portal,
+            version="0.1.3",
+            dual_macos=True,
+        )
     if os.environ.get("JIAOTANG_BROWSER_TEST_SKILL_RELEASE_FIXTURE") == "1":
         release_dir = data_dir / "skill-releases"
         release_dir.mkdir(parents=True, exist_ok=True)

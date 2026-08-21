@@ -33,6 +33,7 @@ const server = spawn(python, ["tests/browser_route_server.py"], {
     ...process.env,
     JIAOTANG_BROWSER_TEST_DATA: dataDir,
     JIAOTANG_BROWSER_TEST_PORT: String(port),
+    JIAOTANG_BROWSER_TEST_DESKTOP_RELEASE_FIXTURE: "1",
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -405,6 +406,20 @@ try {
       assert.equal(await page.locator('a[href="/admin/health/deploy-gate"]').isVisible(), true, "健康看板应展示 Skills 部署门禁");
     }
   }
+  await page.goto(`${baseUrl}/downloads`, {waitUntil: "networkidle"});
+  const downloadCardTheme = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll(".client-platform-card")];
+    return cards.map((card) => {
+      const style = getComputedStyle(card);
+      return {background: style.backgroundColor, color: style.color, colorScheme: style.colorScheme};
+    });
+  });
+  assert.equal(downloadCardTheme.length, 3, "下载页必须呈现 Apple 芯片、Intel 与 Windows 三张卡片");
+  assert.ok(
+    downloadCardTheme.every((card) => card.background === "rgb(21, 22, 24)" && card.color === "rgb(244, 240, 231)"),
+    `下载卡片必须沿用全站深色表面与文字：${JSON.stringify(downloadCardTheme)}`,
+  );
+  assert.ok(downloadCardTheme.every((card) => card.colorScheme !== "light"), "下载卡片不得局部切换成白色主题");
   await page.goto(`${baseUrl}/mcp-guide`, {waitUntil: "networkidle"});
   await page.goto(`${baseUrl}/admin/health/access`, {waitUntil: "networkidle"});
   const credentialSummary = page.locator('.credential-summary-link[href="/admin/users/1#access-credentials"]');

@@ -56,19 +56,28 @@ def test_base_stylesheet_is_only_foundation_not_a_second_light_theme() -> None:
         assert retired_light_token not in css
 
 
-def test_client_download_cards_use_readable_light_surface_tokens() -> None:
+def test_client_download_cards_use_the_shared_readable_dark_surface() -> None:
     css = (STATIC / "atelier.css").read_text(encoding="utf-8")
 
     assert ".client-platform-card {" in css
-    assert "--atelier-ink: #1d1b17;" in css
-    assert "--atelier-muted: #6b665d;" in css
-    assert "--skill-gold: #7a5a1f;" in css
-    assert "color-scheme: light;" in css
+    assert "var(--atelier-panel);" in css
+    assert "color-scheme: light;" not in css
+    assert "background: #fff;" not in css
     assert ".client-platform-card .button.secondary.is-disabled" in css
-    assert _contrast_ratio("#1d1b17", "#ffffff") >= 4.5
-    assert _contrast_ratio("#6b665d", "#ffffff") >= 4.5
-    assert _contrast_ratio("#7a5a1f", "#ffffff") >= 4.5
-    assert _contrast_ratio("#665c4a", "#f8f4ec") >= 4.5
+    assert _contrast_ratio("#f4f0e7", "#151618") >= 4.5
+    assert _contrast_ratio("#a8a39a", "#151618") >= 4.5
+    assert _contrast_ratio("#caaa69", "#151618") >= 4.5
+    assert _contrast_ratio("#a8a39a", "#191a1c") >= 4.5
+
+
+def test_single_generic_skill_package_uses_the_full_download_width() -> None:
+    css = (STATIC / "skill-center.css").read_text(encoding="utf-8")
+
+    assert ".skill-platform-downloads { display:grid; grid-template-columns:minmax(0,1fr);" in css
+    assert not re.search(
+        r"\.skill-platform-downloads\s*\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)",
+        css,
+    )
 
 
 def test_progress_vendor_pseudo_elements_are_in_separate_rules() -> None:

@@ -14,11 +14,9 @@ const baseUrl = `http://127.0.0.1:${port}`;
 const dataDir = await mkdtemp(join(tmpdir(), "gongchuang-research-institute-skills-ux-"));
 const skillCenterTemplate = await readFile(new URL("../templates/skill_center.html", import.meta.url), "utf8");
 assert.match(skillCenterTemplate, /<details class="skill-release-notes skill-current-release-notes">/, "当前版本发布说明必须使用默认折叠的 details");
-assert.match(skillCenterTemplate, /latest_release\.workbuddy/, "下载区必须渲染跨平台 WorkBuddy 包");
-assert.match(skillCenterTemplate, /workbuddy\.download_urls\.macos/, "WorkBuddy 必须提供 macOS 下载入口");
-assert.match(skillCenterTemplate, /workbuddy\.download_urls\.windows/, "WorkBuddy 必须提供 Windows 下载入口");
-assert.match(skillCenterTemplate, /固定三产物/, "下载区必须声明通用包和双平台包三个正式产物");
-assert.match(skillCenterTemplate, /其他宿主不再规划或展示平台专用版本/, "下载区必须移除其他平台专用版本");
+assert.match(skillCenterTemplate, /统一通用包/, "下载区必须明确只提供统一通用包");
+assert.match(skillCenterTemplate, /只发布一个经过签名的通用 ZIP/, "下载区必须说明单一正式产物");
+assert.doesNotMatch(skillCenterTemplate, /latest_release\.workbuddy|workbuddy\.download_urls/, "下载区不得恢复旧版宿主专用包");
 assert.match(skillCenterTemplate, /historical_releases|Release Archive|data-skill-history/, "下载区必须展示只读历史版本");
 assert.doesNotMatch(skillCenterTemplate, /platform\.feedback_status|OIDC 签名证明|GitHub Job/, "下载区不应再展示平台确认状态");
 const python = process.env.JIAOTANG_BROWSER_TEST_PYTHON || ".venv/bin/python";
@@ -219,11 +217,23 @@ try {
 
   await page.locator('[data-skill-section-tab="downloads"]').click();
   assert.equal(await page.locator('[data-skill-section-pane="downloads"]').isVisible(), true);
-  assert.equal(await page.locator(".skill-platform-card").count(), 2, "下载区只能呈现通用版与 WorkBuddy 版");
-  assert.equal(await page.locator(".skill-platform-card.is-workbuddy").isVisible(), true);
+  assert.equal(await page.locator(".skill-platform-card").count(), 1, "下载区只呈现统一通用包");
+  assert.equal(await page.locator(".skill-platform-card.is-generic").isVisible(), true);
   assert.equal(await page.locator(".skill-platform-card.is-planned").count(), 0, "不得展示其他平台专用版本");
-  assert.equal(await page.locator(".skill-platform-status.is-ready").count(), 2, "只允许通用版与 WorkBuddy 标记为正式发布");
+  assert.equal(await page.locator(".skill-platform-status.is-ready").count(), 1, "只允许通用版标记为正式发布");
   assert.equal(await page.locator(".skill-platform-status.is-validating").count(), 0, "下载区不保留其他平台适配状态");
+  const desktopDownloadLayout = await page.evaluate(() => {
+    const downloads = document.querySelector(".skill-platform-downloads");
+    const card = document.querySelector(".skill-platform-card.is-generic");
+    const downloadsRect = downloads.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    return {
+      columns: getComputedStyle(downloads).gridTemplateColumns,
+      widthDelta: Math.abs(downloadsRect.width - cardRect.width),
+    };
+  });
+  assert.equal(desktopDownloadLayout.columns.split(" ").length, 1, "桌面下载区也必须是单列");
+  assert.ok(desktopDownloadLayout.widthDelta <= 1, "通用包卡片必须铺满下载区，不能留下空白半列");
   assert.equal(await page.getByRole("link", {name: "下载通用包"}).count(), 1, "通用正式包只保留一个主下载入口");
   assert.equal(await page.getByRole("link", {name: "下载 macOS 包"}).count(), 1, "macOS WorkBuddy 必须只有一个下载入口");
   assert.equal(await page.getByRole("link", {name: "下载 Windows 包"}).count(), 1, "Windows WorkBuddy 必须只有一个下载入口");
