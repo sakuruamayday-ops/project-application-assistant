@@ -622,6 +622,7 @@ def command_prepare(args: argparse.Namespace) -> dict[str, Any]:
     }
     write_json(raw_candidate / "release.json", release)
     shutil.copy2(raw_candidate / "release.json", package_dir / "release.json")
+    release_manifest_sha256 = sha256_file(raw_candidate / "release.json")
     upload_manifest, upload_allowlist = create_upload_files(package_dir, run_dir)
     new_state = dict(state)
     new_state.update(
@@ -631,6 +632,7 @@ def command_prepare(args: argparse.Namespace) -> dict[str, Any]:
             "current_index_dir": str(raw_candidate),
             "current_index_sha256": result["candidate_index_sha256"],
             "current_manifest_sha256": result["candidate_manifest_sha256"],
+            "current_release_manifest_sha256": release_manifest_sha256,
             "current_chain_sha256": chain_sha,
             "entries": [*state.get("entries", []), entry],
         }
