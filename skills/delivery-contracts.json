@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "contract_id": "gongchuang-professional-delivery-contract-v3",
-  "rule_version": "1.6.8",
+  "rule_version": "1.6.9",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -331,16 +331,16 @@
       ],
       "required_artifacts": [
         {
-          "role": "standard_report_pdf",
-          "formats": ["pdf"],
+          "role": "standard_report",
+          "formats": ["docx", "pdf"],
           "requires_sha256": true,
-          "validation_gate": "render_sales_pdf.py"
+          "validation_gate": "document-render-and-structure-gate"
         }
       ],
       "branding_contracts": [
         {
           "mode": "forbidden",
-          "artifact_roles": ["standard_report_pdf"],
+          "artifact_roles": ["standard_report"],
           "exception_id": "enterprise-panorama-a-permanent-no-watermark"
         }
       ]
@@ -397,17 +397,17 @@
       ],
       "required_artifacts": [
         {
-          "role": "professional_report_pdf",
-          "formats": ["pdf"],
+          "role": "professional_report",
+          "formats": ["docx", "pdf"],
           "requires_sha256": true,
-          "validation_gate": "validate_report_pdf.py"
+          "validation_gate": "document-render-and-structure-gate"
         }
       ],
       "branding_contracts": [
         {
           "mode": "required",
           "variant": "gold",
-          "artifact_roles": ["professional_report_pdf"]
+          "artifact_roles": ["professional_report"]
         }
       ]
     },
@@ -434,28 +434,28 @@
       ],
       "required_artifacts": [
         {
-          "role": "standard_report_pdf",
-          "formats": ["pdf"],
+          "role": "standard_report",
+          "formats": ["docx", "pdf"],
           "requires_sha256": true,
-          "validation_gate": "render_sales_pdf.py"
+          "validation_gate": "document-render-and-structure-gate"
         },
         {
-          "role": "professional_report_pdf",
-          "formats": ["pdf"],
+          "role": "professional_report",
+          "formats": ["docx", "pdf"],
           "requires_sha256": true,
-          "validation_gate": "validate_report_pdf.py"
+          "validation_gate": "document-render-and-structure-gate"
         }
       ],
       "branding_contracts": [
         {
           "mode": "forbidden",
-          "artifact_roles": ["standard_report_pdf"],
+          "artifact_roles": ["standard_report"],
           "exception_id": "enterprise-panorama-a-permanent-no-watermark"
         },
         {
           "mode": "required",
           "variant": "gold",
-          "artifact_roles": ["professional_report_pdf"]
+          "artifact_roles": ["professional_report"]
         }
       ]
     },
@@ -780,7 +780,7 @@
         ["可申报项目表", "可申报项目矩阵"],
         ["五年规划表", "未来五年发展与申报规划"],
         ["来源清单", "证据台账"],
-        ["standard_report_pdf", "professional_report_pdf", "交付PDF"],
+        ["standard_report", "professional_report", "交付Word", "交付PDF"],
         ["免水印审计通过", "金色居中水印审计通过", "品牌审计通过"]
       ]
     },

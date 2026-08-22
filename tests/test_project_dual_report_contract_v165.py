@@ -68,7 +68,8 @@ def test_common_strengthening_and_watermark_contract_are_mandatory() -> None:
         "国际产品技术水平评价咨询报告",
         "国内领先、国际先进",
         "共创红色居中水印",
-        "可编辑 Word 和 PDF",
+        "默认只输出一份可编辑 Word",
+        "用户明确要求 PDF",
         "不设置文档加密或编辑限制",
     ):
         assert phrase in text
@@ -145,5 +146,16 @@ def test_v1652_keeps_v165_report_and_project_logic_boundaries() -> None:
     assert "企业分析报告 A、B、C 版" in text
     assert "尖兵领雁、市级重大及科技计划类的既有分析逻辑保持不变" in text
     manifest = json.loads(read(SKILLS / "suite-manifest.json"))
-    assert manifest["release"]["tag"] == "V1.6.8"
-    assert manifest["release"]["version"] == "1.6.8"
+    assert manifest["release"]["tag"] == "V1.6.9"
+
+
+def test_enterprise_panorama_keeps_business_modes_but_defaults_each_to_word() -> None:
+    text = read(SKILLS / "enterprise-panorama-analysis" / "SKILL.md")
+    manifest = json.loads(read(SKILLS / "suite-manifest.json"))
+    assert "A 第一版｜标准销售版" in text
+    assert "B 第二版｜GCIP深度顾问版" in text
+    assert "C 全生成｜同时生成A和B" in text
+    assert "每种已选报告默认只交付一份可编辑 Word" in text
+    assert "用户明确要求 PDF 时才生成对应 PDF" in text
+    assert "不再提供标准销售版" not in text
+    assert manifest["release"]["version"] == "1.6.9"

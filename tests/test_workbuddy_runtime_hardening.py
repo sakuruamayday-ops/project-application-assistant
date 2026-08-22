@@ -1144,7 +1144,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
         同行对比与同行项目对比表：选择官方公示名单中的可比企业，按技术和市场比较维度
         给出可比性评分；同时列明口径差异、不可比较项和数据缺口。
         风险与下一步行动已进入90天整改表，可申报项目矩阵和五年规划表均已生成。
-        来源清单和证据台账已经绑定；professional_report_pdf交付PDF
+        来源清单和证据台账已经绑定；professional_report交付Word
         已通过金色居中水印审计通过。
         最没有把握：同行未公开指标。
         最大遗漏：企业研发台账尚未取得。
