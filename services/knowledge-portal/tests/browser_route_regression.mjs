@@ -414,7 +414,7 @@ try {
       return {background: style.backgroundColor, color: style.color, colorScheme: style.colorScheme};
     });
   });
-  assert.equal(downloadCardTheme.length, 3, "下载页必须呈现 Apple 芯片、Intel 与 Windows 三张卡片");
+  assert.equal(downloadCardTheme.length, 2, "下载页必须呈现 Apple 芯片与 Intel 两张 macOS 卡片");
   assert.ok(
     downloadCardTheme.every((card) => card.background === "rgb(21, 22, 24)" && card.color === "rgb(244, 240, 231)"),
     `下载卡片必须沿用全站深色表面与文字：${JSON.stringify(downloadCardTheme)}`,
