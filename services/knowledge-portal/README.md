@@ -163,6 +163,10 @@ curl -L -H "Authorization: Bearer $JIAOTANG_KB_TOKEN" \
 
 所有 `/v1` 接口接受网站生成的 `Authorization: Bearer jtk_xxx` API Key。普通成员还必须通过已登记的 Ed25519 公钥逐请求签名；管理员豁免设备签名。原始资料与运行索引的上传边界见项目根目录 `docs/cloud-upload-scope.md`。
 
+## 桌面客户端发布
+
+`/v1/client-login` 接收规范语义版本，登录回执与客户端 Token 访问 `/v1/me` 时一致返回 `supported`、`upgrade-advised` 或 `upgrade-required` 之一，并返回 `minimum_supported_version`。V0.1.4 的签名 macOS 更新源固定在 `/client-updates/`；V0.2 使用独立的 `/client-updates/v0.2/macos/`，两个路径分别校验对应的正式发布记录、双架构清单、产物大小和 SHA-256。受控门户的客户端下载页仅展示当前 macOS DMG 与按芯片区分的 V0.1.4 一次性过渡程序。
+
 ## 知识库索引
 
 生产环境通过 `JIAOTANG_INDEX_DIR` 指向包含以下文件的目录：

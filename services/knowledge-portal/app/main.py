@@ -169,6 +169,16 @@ DESKTOP_SELF_UPDATE_SIGNATURE_NAME = "desktop-release-index.sig"
 DESKTOP_SELF_UPDATE_INDEX_NAMES = frozenset(
     {DESKTOP_SELF_UPDATE_MANIFEST_NAME, DESKTOP_SELF_UPDATE_SIGNATURE_NAME}
 )
+LEGACY_DESKTOP_SELF_UPDATE_VERSION = "0.1.4"
+CURRENT_DESKTOP_SELF_UPDATE_VERSION = "0.2.0"
+MINIMUM_SUPPORTED_CLIENT_VERSION = os.environ.get(
+    "JIAOTANG_MINIMUM_SUPPORTED_CLIENT_VERSION",
+    LEGACY_DESKTOP_SELF_UPDATE_VERSION,
+).strip()
+RECOMMENDED_CLIENT_VERSION = os.environ.get(
+    "JIAOTANG_RECOMMENDED_CLIENT_VERSION",
+    CURRENT_DESKTOP_SELF_UPDATE_VERSION,
+).strip()
 FIRST_PUBLIC_SKILL_VERSION = os.environ.get(
     "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION",
     "1.5.0",
@@ -8407,6 +8417,72 @@ def safe_login_redirect(value: str) -> str:
     return "/portal"
 
 
+SEMANTIC_VERSION_PATTERN = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)"
+    r"(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
+)
+
+
+def parsed_semantic_version(value: str) -> tuple[tuple[int, int, int], tuple[str, ...] | None]:
+    match = SEMANTIC_VERSION_PATTERN.fullmatch(str(value or "").strip())
+    if match is None:
+        raise ValueError("客户端版本必须是规范语义版本")
+    prerelease = match.group(4)
+    return (
+        (int(match.group(1)), int(match.group(2)), int(match.group(3))),
+        tuple(prerelease.split(".")) if prerelease is not None else None,
+    )
+
+
+def compare_semantic_versions(left: str, right: str) -> int:
+    left_core, left_prerelease = parsed_semantic_version(left)
+    right_core, right_prerelease = parsed_semantic_version(right)
+    if left_core != right_core:
+        return -1 if left_core < right_core else 1
+    if left_prerelease is None or right_prerelease is None:
+        if left_prerelease is right_prerelease:
+            return 0
+        return 1 if left_prerelease is None else -1
+    for left_part, right_part in zip(left_prerelease, right_prerelease):
+        if left_part == right_part:
+            continue
+        left_numeric = left_part.isdigit()
+        right_numeric = right_part.isdigit()
+        if left_numeric and right_numeric:
+            return -1 if int(left_part) < int(right_part) else 1
+        if left_numeric != right_numeric:
+            return -1 if left_numeric else 1
+        return -1 if left_part < right_part else 1
+    if len(left_prerelease) == len(right_prerelease):
+        return 0
+    return -1 if len(left_prerelease) < len(right_prerelease) else 1
+
+
+def client_compatibility_receipt(client_version: str) -> dict[str, str]:
+    parsed_semantic_version(client_version)
+    if compare_semantic_versions(client_version, MINIMUM_SUPPORTED_CLIENT_VERSION) < 0:
+        compatibility = "upgrade-required"
+    elif compare_semantic_versions(client_version, RECOMMENDED_CLIENT_VERSION) < 0:
+        compatibility = "upgrade-advised"
+    else:
+        compatibility = "supported"
+    return {
+        "client_compatibility": compatibility,
+        "minimum_supported_version": MINIMUM_SUPPORTED_CLIENT_VERSION,
+    }
+
+
+parsed_semantic_version(MINIMUM_SUPPORTED_CLIENT_VERSION)
+parsed_semantic_version(RECOMMENDED_CLIENT_VERSION)
+if compare_semantic_versions(
+    MINIMUM_SUPPORTED_CLIENT_VERSION,
+    RECOMMENDED_CLIENT_VERSION,
+) > 0:
+    raise RuntimeError("最低支持客户端版本不得高于建议客户端版本")
+
+
 def normalized_client_user_code(value: str) -> str:
     compact = re.sub(r"[^A-Za-z0-9]", "", str(value or "")).upper()
     if len(compact) == 8:
@@ -8480,7 +8556,7 @@ def client_password_login(
 ):
     if payload.client_id != CLIENT_AUTHORIZATION_ID:
         raise HTTPException(status_code=400, detail="客户端标识不受支持")
-    if not re.fullmatch(r"0\.1\.\d+(?:[-+][A-Za-z0-9.-]+)?", payload.client_version):
+    if SEMANTIC_VERSION_PATTERN.fullmatch(payload.client_version) is None:
         raise HTTPException(status_code=400, detail="客户端版本不受支持")
     platform_name = payload.platform.strip().lower()
     if platform_name not in CLIENT_AUTHORIZATION_PLATFORMS:
@@ -8547,6 +8623,7 @@ def client_password_login(
             "single_device": True,
             "api_base_url": f"{public_endpoint}/v1",
             "mcp_url": f"{public_endpoint}/mcp/",
+            **client_compatibility_receipt(payload.client_version),
         },
         headers={"Cache-Control": "no-store"},
     )
@@ -9200,7 +9277,8 @@ def authenticate_api_token(
                    users.is_admin,device_tokens.activation_state,
                    device_tokens.credential_kind,enrollment.expires_at AS enrollment_expires_at,
                    binding.id AS client_binding_id,binding.device_id_hash AS client_device_id_hash,
-                   binding.revoked_at AS client_binding_revoked_at
+                   binding.revoked_at AS client_binding_revoked_at,
+                   binding.installed_version AS client_installed_version
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
             LEFT JOIN agent_enrollment_codes enrollment
@@ -9264,8 +9342,8 @@ def authenticate_api_token(
                     403,
                     "待激活凭据仅允许完成 MCP 握手、工具发现和知识服务状态验收",
                 )
-        # Personal V1.4.5 credentials keep their legacy bearer-only behavior;
-        # V0.1 client-login credentials above are additionally device-bound.
+        # Personal credentials keep their bearer-only behavior; client-login
+        # credentials are additionally device-bound.
         del (
             device_name,
             device_key_id,
@@ -10395,17 +10473,21 @@ def client_artifact_is_servable(artifact: dict[str, object] | sqlite3.Row | None
     return secrets.compare_digest(sha256_file(resolved_package), expected_sha256)
 
 
-def latest_client_release_payload(
+def published_client_release_payload(
     connection: sqlite3.Connection,
+    *,
+    version: str | None = None,
 ) -> dict[str, object] | None:
     release = connection.execute(
         """
         SELECT id,version,status,release_notes,published_at,created_at
         FROM client_releases
         WHERE status='published' AND published_at IS NOT NULL
+          AND (? IS NULL OR version=?)
         ORDER BY published_at DESC,id DESC
         LIMIT 1
-        """
+        """,
+        (version, version),
     ).fetchone()
     if release is None:
         return None
@@ -10457,21 +10539,39 @@ def latest_client_release_payload(
             item for item in artifacts.get(platform, []) if item["available"]
         ]
         preferred[platform] = downloads[platform][0] if downloads[platform] else None
+    transitions = [
+        item
+        for item in artifacts.get("macos", [])
+        if item["available"] and str(item["file_kind"]) == "transition"
+    ]
+    macos_architectures = {
+        str(item.get("architecture") or "")
+        for item in downloads.get("macos", [])
+    }
     return {
         **dict(release),
         "published_at_display": format_chinese_datetime(release["published_at"]),
         "release_notes_html": render_guide_markdown(str(release["release_notes"] or "")),
         "artifacts": artifacts,
         "downloads": downloads,
+        "transitions": transitions,
         "preferred": preferred,
-        "ready": all(preferred.get(platform) is not None for platform in CLIENT_AUTHORIZATION_PLATFORMS),
+        "ready": macos_architectures == {"arm64", "x64"},
     }
+
+
+def latest_client_release_payload(
+    connection: sqlite3.Connection,
+) -> dict[str, object] | None:
+    return published_client_release_payload(connection)
 
 
 def desktop_self_update_feed_assets(
     release: dict[str, object] | None,
+    *,
+    release_root: Path,
 ) -> dict[str, object]:
-    """Validate the fixed-name signed macOS feed against the latest published release."""
+    """Validate one fixed-name signed macOS feed against its published release."""
     if release is None or str(release.get("status") or "") != "published":
         raise HTTPException(status_code=503, detail="macOS 自动更新正式清单尚未发布")
     downloads = release.get("downloads")
@@ -10485,7 +10585,7 @@ def desktop_self_update_feed_assets(
     } != {"arm64", "x64"}:
         raise HTTPException(status_code=503, detail="macOS 自动更新缺少双架构正式产物")
 
-    root = CLIENT_RELEASE_DIR.resolve(strict=False)
+    root = release_root.resolve(strict=False)
 
     def exact_asset_path(file_name: str) -> Path:
         path = root / file_name
@@ -18860,7 +18960,15 @@ def web_download_historical_workbuddy_skills(
 
 @app.get("/v1/me")
 def api_me(user: Annotated[sqlite3.Row, Depends(require_api_user)]):
-    return {"username": user["username"], "access": "unified"}
+    response = {
+        "username": user["username"],
+        "access": "unified",
+    }
+    if str(user["credential_kind"] or "") == "client":
+        response.update(
+            client_compatibility_receipt(str(user["client_installed_version"] or ""))
+        )
+    return response
 
 
 def device_installation_status(user_id: int, key_id: str) -> dict[str, object]:
@@ -19839,9 +19947,13 @@ def download_client_artifact(
     )
 
 
-@app.get("/client-updates/{asset_name}")
-def desktop_client_update_asset(asset_name: str):
-    """Serve only the signed dual-architecture macOS update index and its assets."""
+def desktop_client_update_response(
+    asset_name: str,
+    *,
+    release_version: str,
+    release_root: Path,
+):
+    """Serve one immutable signed dual-architecture macOS update feed."""
     if (
         Path(asset_name).name != asset_name
         or any(character in asset_name for character in "\r\n")
@@ -19856,8 +19968,11 @@ def desktop_client_update_asset(asset_name: str):
     ):
         raise HTTPException(status_code=404, detail="更新文件不存在")
     with closing(database()) as connection:
-        release = latest_client_release_payload(connection)
-    feed = desktop_self_update_feed_assets(release)
+        release = published_client_release_payload(
+            connection,
+            version=release_version,
+        )
+    feed = desktop_self_update_feed_assets(release, release_root=release_root)
     if asset_name in DESKTOP_SELF_UPDATE_INDEX_NAMES:
         path = Path(
             feed[
@@ -19889,6 +20004,25 @@ def desktop_client_update_asset(asset_name: str):
             "X-Content-Type-Options": "nosniff",
             "X-Gongchuang-Artifact-Sha256": str(artifact["sha256"]),
         },
+    )
+
+
+@app.get("/client-updates/v0.2/macos/{asset_name}")
+def current_desktop_client_update_asset(asset_name: str):
+    return desktop_client_update_response(
+        asset_name,
+        release_version=CURRENT_DESKTOP_SELF_UPDATE_VERSION,
+        release_root=CLIENT_RELEASE_DIR / "v0.2" / "macos",
+    )
+
+
+@app.get("/client-updates/{asset_name}")
+def legacy_desktop_client_update_asset(asset_name: str):
+    """Keep the V0.1.4 update feed immutable during the V0.2 transition."""
+    return desktop_client_update_response(
+        asset_name,
+        release_version=LEGACY_DESKTOP_SELF_UPDATE_VERSION,
+        release_root=CLIENT_RELEASE_DIR,
     )
 
 

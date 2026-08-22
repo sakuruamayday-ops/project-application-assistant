@@ -537,18 +537,29 @@ def publish_test_client_release(
     version="0.1.0",
     signature_status="verified",
     dual_macos=False,
+    include_transitions=False,
 ):
     module.CLIENT_RELEASE_DIR.mkdir(parents=True, exist_ok=True)
     now = module.isoformat(module.utc_now())
     artifacts = []
     declared_artifacts = [
-        ("macos", "arm64", "dmg", "Gongchuang-Enterprise-Assistant-0.1.0-mac-arm64.dmg"),
-        ("windows", "x64", "nsis", "Gongchuang-Enterprise-Assistant-0.1.0-win-x64.exe"),
+        ("macos", "arm64", "dmg", f"Gongchuang-Enterprise-Assistant-{version}-mac-arm64.dmg"),
+        ("windows", "x64", "nsis", f"Gongchuang-Enterprise-Assistant-{version}-win-x64.exe"),
     ]
     if dual_macos:
         declared_artifacts.insert(
             1,
-            ("macos", "x64", "dmg", "Gongchuang-Enterprise-Assistant-0.1.0-mac-x64.dmg"),
+            ("macos", "x64", "dmg", f"Gongchuang-Enterprise-Assistant-{version}-mac-x64.dmg"),
+        )
+    if include_transitions:
+        declared_artifacts.extend(
+            (
+                "macos",
+                architecture,
+                "transition",
+                f"Gongchuang-Enterprise-Assistant-{version}-Transition-{architecture}.zip",
+            )
+            for architecture in ("arm64", "x64")
         )
     for platform, architecture, file_kind, file_name in declared_artifacts:
         path = module.CLIENT_RELEASE_DIR / file_name
@@ -615,19 +626,27 @@ def client_authorization_payload(module, verifier: str, *, platform: str = "maco
     }
 
 
-def publish_test_macos_self_update_feed(module) -> dict[str, bytes]:
-    publish_test_client_release(module, dual_macos=True)
+def publish_test_macos_self_update_feed(
+    module,
+    *,
+    version="0.1.4",
+    release_root=None,
+) -> dict[str, bytes]:
+    publish_test_client_release(module, version=version, dual_macos=True)
     with closing(module.database()) as connection:
         release = connection.execute(
-            "SELECT version,published_at FROM client_releases WHERE status='published'"
+            "SELECT version,published_at FROM client_releases WHERE version=?",
+            (version,),
         ).fetchone()
     version = str(release["version"])
+    root = release_root or module.CLIENT_RELEASE_DIR
+    root.mkdir(parents=True, exist_ok=True)
     payloads: dict[str, bytes] = {}
     manifest_artifacts = []
     for architecture in ("arm64", "x64"):
         file_name = f"Gongchuang-Enterprise-Assistant-{version}-mac-{architecture}.zip"
         payload = f"macos-{architecture}-self-update".encode()
-        (module.CLIENT_RELEASE_DIR / file_name).write_bytes(payload)
+        (root / file_name).write_bytes(payload)
         payloads[file_name] = payload
         manifest_artifacts.append(
             {
@@ -657,8 +676,8 @@ def publish_test_macos_self_update_feed(module) -> dict[str, bytes]:
         indent=2,
     ).encode() + b"\n"
     signature = base64.b64encode(b"s" * 64) + b"\n"
-    (module.CLIENT_RELEASE_DIR / "desktop-release-index.json").write_bytes(manifest)
-    (module.CLIENT_RELEASE_DIR / "desktop-release-index.sig").write_bytes(signature)
+    (root / "desktop-release-index.json").write_bytes(manifest)
+    (root / "desktop-release-index.sig").write_bytes(signature)
     payloads["desktop-release-index.json"] = manifest
     payloads["desktop-release-index.sig"] = signature
     return payloads
@@ -691,6 +710,8 @@ def test_client_password_login_is_device_bound_and_replaces_the_previous_device(
         first_receipt = first.json()
         assert first_receipt["phase"] == "authenticated"
         assert first_receipt["single_device"] is True
+        assert first_receipt["client_compatibility"] == "upgrade-required"
+        assert first_receipt["minimum_supported_version"] == "0.1.4"
         assert first_receipt["access_token"].startswith("jtk_")
         assert password not in first.text
         first_headers = {
@@ -727,6 +748,8 @@ def test_client_password_login_is_device_bound_and_replaces_the_previous_device(
         assert client.get("/v1/me", headers=second_headers).json() == {
             "username": "owner",
             "access": "unified",
+            "client_compatibility": "upgrade-required",
+            "minimum_supported_version": "0.1.4",
         }
 
         with module.closing(module.database()) as connection:
@@ -762,7 +785,7 @@ def test_client_download_page_tracks_download_and_real_client_login_separately(t
         assert "共创企业助手 V0.1" in page.text
         assert "内置技能包" in page.text
         assert "下载 macOS Apple 芯片版" in page.text
-        assert "下载 Windows 版" in page.text
+        assert "下载 Windows 版" not in page.text
         assert 'data-section-link="downloads"' in page.text
         assert 'data-section-link="api-access"' not in page.text
         legacy_access = client.get("/access", follow_redirects=False)
@@ -901,7 +924,7 @@ def test_signed_dual_macos_self_update_assets_are_public_and_whitelisted(tmp_pat
         assert manifest.headers["x-content-type-options"] == "nosniff"
 
         for architecture in ("arm64", "x64"):
-            file_name = f"Gongchuang-Enterprise-Assistant-0.1.0-mac-{architecture}.zip"
+            file_name = f"Gongchuang-Enterprise-Assistant-0.1.4-mac-{architecture}.zip"
             archive = client.get(f"/client-updates/{file_name}")
             assert archive.status_code == 200
             assert archive.content == payloads[file_name]
@@ -916,11 +939,91 @@ def test_signed_dual_macos_self_update_assets_are_public_and_whitelisted(tmp_pat
         assert client.get("/client-updates/%2E%2E%2Frelease.json").status_code == 404
 
 
+def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
+    module = load_app(tmp_path)
+
+    assert module.client_compatibility_receipt("0.1.3") == {
+        "client_compatibility": "upgrade-required",
+        "minimum_supported_version": "0.1.4",
+    }
+    assert module.client_compatibility_receipt("0.1.4") == {
+        "client_compatibility": "upgrade-advised",
+        "minimum_supported_version": "0.1.4",
+    }
+    assert module.client_compatibility_receipt("0.2.0") == {
+        "client_compatibility": "supported",
+        "minimum_supported_version": "0.1.4",
+    }
+    assert module.client_compatibility_receipt("0.2.1") == {
+        "client_compatibility": "supported",
+        "minimum_supported_version": "0.1.4",
+    }
+    with pytest.raises(ValueError, match="语义版本"):
+        module.client_compatibility_receipt("v0.2")
+
+
+def test_v020_signed_feed_is_separate_from_frozen_v014_feed(tmp_path):
+    module = load_app(tmp_path)
+    old_payloads = publish_test_macos_self_update_feed(module)
+    old_hash = hashlib.sha256(old_payloads["desktop-release-index.json"]).hexdigest()
+    v020_root = module.CLIENT_RELEASE_DIR / "v0.2" / "macos"
+    new_payloads = publish_test_macos_self_update_feed(
+        module,
+        version="0.2.0",
+        release_root=v020_root,
+    )
+
+    with TestClient(module.app) as client:
+        old_response = client.get("/client-updates/desktop-release-index.json")
+        new_response = client.get(
+            "/client-updates/v0.2/macos/desktop-release-index.json"
+        )
+        assert old_response.status_code == new_response.status_code == 200
+        assert hashlib.sha256(old_response.content).hexdigest() == old_hash
+        assert new_response.content == new_payloads["desktop-release-index.json"]
+        assert client.get("/client-updates/v0.2/macos/release.json").status_code == 404
+        assert client.get(
+            "/client-updates/v0.2/macos/%2E%2E%2Fdesktop-release-index.json"
+        ).status_code == 404
+
+
+def test_v020_download_page_exposes_transition_programs_without_windows(tmp_path):
+    module = load_app(tmp_path)
+    publish_test_client_release(
+        module,
+        version="0.2.0",
+        dual_macos=True,
+        include_transitions=True,
+    )
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        page = client.get("/downloads")
+
+    assert page.status_code == 200
+    assert "V0.1.4 一次性过渡" in page.text
+    assert "Apple 芯片 过渡程序" in page.text
+    assert "Intel 过渡程序" in page.text
+    assert "下载 Windows 版" not in page.text
+
+
 @pytest.mark.parametrize(
     "missing_name",
     [
         "desktop-release-index.sig",
-        "Gongchuang-Enterprise-Assistant-0.1.0-mac-x64.zip",
+        "Gongchuang-Enterprise-Assistant-0.1.4-mac-x64.zip",
     ],
 )
 def test_signed_dual_macos_self_update_assets_fail_closed_when_incomplete(
