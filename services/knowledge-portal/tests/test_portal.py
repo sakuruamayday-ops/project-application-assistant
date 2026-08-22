@@ -536,6 +536,7 @@ def publish_test_client_release(
     *,
     version="0.1.0",
     signature_status="verified",
+    windows_signature_status=None,
     dual_macos=False,
     include_transitions=False,
 ):
@@ -603,7 +604,9 @@ def publish_test_client_release(
                         str(path),
                         digest,
                         path.stat().st_size,
-                        signature_status,
+                        windows_signature_status
+                        if platform == "windows" and windows_signature_status is not None
+                        else signature_status,
                         "test-signing-identity",
                     ),
                 ).lastrowid
@@ -785,7 +788,7 @@ def test_client_download_page_tracks_download_and_real_client_login_separately(t
         assert "共创企业助手 V0.1" in page.text
         assert "内置技能包" in page.text
         assert "下载 macOS Apple 芯片版" in page.text
-        assert "下载 Windows 版" not in page.text
+        assert "下载 Windows 版" in page.text
         assert 'data-section-link="downloads"' in page.text
         assert 'data-section-link="api-access"' not in page.text
         legacy_access = client.get("/access", follow_redirects=False)
@@ -987,7 +990,7 @@ def test_v020_signed_feed_is_separate_from_frozen_v014_feed(tmp_path):
         ).status_code == 404
 
 
-def test_v020_download_page_exposes_transition_programs_without_windows(tmp_path):
+def test_v020_download_page_uses_manual_macos_upgrade_and_windows(tmp_path):
     module = load_app(tmp_path)
     publish_test_client_release(
         module,
@@ -1013,10 +1016,79 @@ def test_v020_download_page_exposes_transition_programs_without_windows(tmp_path
         page = client.get("/downloads")
 
     assert page.status_code == 200
-    assert "V0.1.4 一次性过渡" in page.text
-    assert "Apple 芯片 过渡程序" in page.text
-    assert "Intel 过渡程序" in page.text
-    assert "下载 Windows 版" not in page.text
+    assert "V0.1.4 一次性过渡" not in page.text
+    assert "过渡程序" not in page.text
+    assert "直接覆盖安装 V0.2.0" in page.text
+    assert "下载 Windows 版" in page.text
+
+
+def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(tmp_path):
+    module = load_app(tmp_path)
+    _, artifact_ids = publish_test_client_release(
+        module,
+        version="0.2.0",
+        dual_macos=True,
+        windows_signature_status="unsigned-approved",
+    )
+    installer_name = "Gongchuang-Enterprise-Assistant-0.2.0-win-x64.exe"
+    release_root = module.CLIENT_RELEASE_DIR / "v0.2" / "windows"
+    release_root.mkdir(parents=True)
+    installer_path = release_root / installer_name
+    (module.CLIENT_RELEASE_DIR / installer_name).replace(installer_path)
+    with closing(module.database()) as connection:
+        connection.execute(
+            "UPDATE client_release_artifacts SET file_path=? WHERE id=?",
+            (str(installer_path), artifact_ids["windows"]),
+        )
+        connection.commit()
+    sha512 = base64.b64encode(hashlib.sha512(installer_path.read_bytes()).digest()).decode()
+    manifest = (
+        "version: 0.2.0\n"
+        "files:\n"
+        f"  - url: '{installer_name}'\n"
+        f"    sha512: {sha512}\n"
+        f"    size: {installer_path.stat().st_size}\n"
+        f"path: '{installer_name}'\n"
+        f"sha512: {sha512}\n"
+        "releaseDate: '2026-08-22T12:00:00.000Z'\n"
+    )
+    (release_root / "latest.yml").write_text(manifest, encoding="utf-8")
+
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        page = client.get("/downloads")
+        update_manifest = client.get("/client-updates/v0.2/latest.yml")
+        update_installer = client.get(f"/client-updates/v0.2/{installer_name}")
+        portal_installer = client.get(
+            f'/client-downloads/windows/{artifact_ids["windows"]}'
+        )
+
+        assert page.status_code == 200
+        assert "未签名方式发布" in page.text
+        assert "尚未执行 V0.2.0 Windows 真机验收" in page.text
+        assert update_manifest.status_code == 200
+        assert update_manifest.text == manifest
+        assert update_installer.content == portal_installer.content == installer_path.read_bytes()
+        assert update_installer.headers["x-gongchuang-artifact-sha256"] == module.sha256_file(installer_path)
+
+        (release_root / "latest.yml").write_text(
+            manifest.replace(sha512, "A" * len(sha512)),
+            encoding="utf-8",
+        )
+        assert client.get("/client-updates/v0.2/latest.yml").status_code == 503
 
 
 @pytest.mark.parametrize(

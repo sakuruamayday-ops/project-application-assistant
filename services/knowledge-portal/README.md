@@ -165,7 +165,7 @@ curl -L -H "Authorization: Bearer $JIAOTANG_KB_TOKEN" \
 
 ## 桌面客户端发布
 
-`/v1/client-login` 接收规范语义版本，登录回执与客户端 Token 访问 `/v1/me` 时一致返回 `supported`、`upgrade-advised` 或 `upgrade-required` 之一，并返回 `minimum_supported_version`。V0.1.4 的签名 macOS 更新源固定在 `/client-updates/`；V0.2 使用独立的 `/client-updates/v0.2/macos/`，两个路径分别校验对应的正式发布记录、双架构清单、产物大小和 SHA-256。受控门户的客户端下载页仅展示当前 macOS DMG 与按芯片区分的 V0.1.4 一次性过渡程序。
+`/v1/client-login` 接收规范语义版本，登录回执与客户端 Token 访问 `/v1/me` 时一致返回 `supported`、`upgrade-advised` 或 `upgrade-required` 之一，并返回 `minimum_supported_version`。V0.1.4 的签名 macOS 更新源固定在 `/client-updates/`；V0.2 的 macOS 签名清单位于 `/client-updates/v0.2/macos/`，Windows 更新元数据与安装器位于 `/client-updates/v0.2/`。受控门户展示双架构 macOS DMG 和 Windows x64 安装器；V0.1.4 Mac 用户直接用匹配架构的 V0.2.0 DMG 覆盖安装。Windows V0.2.0 按明确风险接受以未签名方式发布，门户必须披露尚未执行本版 Windows 真机验收。
 
 ## 知识库索引
 

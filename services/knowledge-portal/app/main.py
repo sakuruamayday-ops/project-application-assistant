@@ -27,7 +27,7 @@ import urllib.error
 import urllib.request
 import zipfile
 import xml.etree.ElementTree as ET
-from base64 import b64decode, urlsafe_b64decode, urlsafe_b64encode
+from base64 import b64decode, b64encode, urlsafe_b64decode, urlsafe_b64encode
 from copy import deepcopy
 from contextlib import asynccontextmanager, closing, contextmanager
 from collections import Counter
@@ -169,6 +169,7 @@ DESKTOP_SELF_UPDATE_SIGNATURE_NAME = "desktop-release-index.sig"
 DESKTOP_SELF_UPDATE_INDEX_NAMES = frozenset(
     {DESKTOP_SELF_UPDATE_MANIFEST_NAME, DESKTOP_SELF_UPDATE_SIGNATURE_NAME}
 )
+WINDOWS_SELF_UPDATE_MANIFEST_NAME = "latest.yml"
 LEGACY_DESKTOP_SELF_UPDATE_VERSION = "0.1.4"
 CURRENT_DESKTOP_SELF_UPDATE_VERSION = "0.2.0"
 MINIMUM_SUPPORTED_CLIENT_VERSION = os.environ.get(
@@ -2547,6 +2548,14 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def sha512_file_base64(path: Path) -> str:
+    digest = hashlib.sha512()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return b64encode(digest.digest()).decode("ascii")
 
 
 def save_upload(upload: UploadFile, directory: Path) -> tuple[Path, str, int]:
@@ -10464,7 +10473,10 @@ def client_artifact_is_servable(artifact: dict[str, object] | sqlite3.Row | None
         return False
     if platform not in CLIENT_AUTHORIZATION_PLATFORMS:
         return False
-    if signature_status not in {"verified", "notarized"}:
+    accepted_signature_statuses = {"verified", "notarized"}
+    if platform == "windows":
+        accepted_signature_statuses.add("unsigned-approved")
+    if signature_status not in accepted_signature_statuses:
         return False
     if not re.fullmatch(r"[a-f0-9]{64}", expected_sha256):
         return False
@@ -10539,11 +10551,6 @@ def published_client_release_payload(
             item for item in artifacts.get(platform, []) if item["available"]
         ]
         preferred[platform] = downloads[platform][0] if downloads[platform] else None
-    transitions = [
-        item
-        for item in artifacts.get("macos", [])
-        if item["available"] and str(item["file_kind"]) == "transition"
-    ]
     macos_architectures = {
         str(item.get("architecture") or "")
         for item in downloads.get("macos", [])
@@ -10554,7 +10561,6 @@ def published_client_release_payload(
         "release_notes_html": render_guide_markdown(str(release["release_notes"] or "")),
         "artifacts": artifacts,
         "downloads": downloads,
-        "transitions": transitions,
         "preferred": preferred,
         "ready": macos_architectures == {"arm64", "x64"},
     }
@@ -20007,6 +20013,82 @@ def desktop_client_update_response(
     )
 
 
+def windows_desktop_update_response(asset_name: str):
+    """Serve the approved unsigned Windows x64 updater files from V0.2."""
+    installer_name = (
+        f"Gongchuang-Enterprise-Assistant-"
+        f"{CURRENT_DESKTOP_SELF_UPDATE_VERSION}-win-x64.exe"
+    )
+    if asset_name not in {WINDOWS_SELF_UPDATE_MANIFEST_NAME, installer_name}:
+        raise HTTPException(status_code=404, detail="更新文件不存在")
+    with closing(database()) as connection:
+        release = published_client_release_payload(
+            connection,
+            version=CURRENT_DESKTOP_SELF_UPDATE_VERSION,
+        )
+    if release is None:
+        raise HTTPException(status_code=503, detail="Windows 自动更新正式清单尚未发布")
+    downloads = release.get("downloads")
+    windows_downloads = downloads.get("windows") if isinstance(downloads, dict) else None
+    installers = [
+        item
+        for item in windows_downloads or []
+        if isinstance(item, dict)
+        and item.get("available") is True
+        and str(item.get("file_kind") or "") == "nsis"
+        and str(item.get("file_name") or "") == installer_name
+    ]
+    if len(installers) != 1:
+        raise HTTPException(status_code=503, detail="Windows 自动更新正式安装包不完整")
+    installer = installers[0]
+    installer_path = Path(str(installer["file_path"])).resolve(strict=True)
+    release_root = (CLIENT_RELEASE_DIR / "v0.2" / "windows").resolve(strict=False)
+    try:
+        installer_path.relative_to(release_root)
+    except ValueError:
+        raise HTTPException(status_code=503, detail="Windows 自动更新正式安装包路径无效") from None
+    if asset_name == installer_name:
+        return FileResponse(
+            path=installer_path,
+            media_type="application/vnd.microsoft.portable-executable",
+            headers={
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "X-Content-Type-Options": "nosniff",
+                "X-Gongchuang-Artifact-Sha256": str(installer["sha256"]),
+            },
+        )
+
+    manifest_path = release_root / WINDOWS_SELF_UPDATE_MANIFEST_NAME
+    try:
+        canonical_manifest = manifest_path.resolve(strict=True)
+        canonical_manifest.relative_to(release_root)
+        if manifest_path.is_symlink() or not canonical_manifest.is_file():
+            raise ValueError("invalid Windows update manifest")
+        manifest_text = canonical_manifest.read_text(encoding="utf-8")
+    except (OSError, UnicodeError, ValueError):
+        raise HTTPException(status_code=503, detail="Windows 自动更新清单无效") from None
+    expected_sha512 = sha512_file_base64(installer_path)
+    expected_pattern = re.compile(
+        rf"version: {re.escape(CURRENT_DESKTOP_SELF_UPDATE_VERSION)}\n"
+        rf"files:\n  - url: '{re.escape(installer_name)}'\n"
+        rf"    sha512: {re.escape(expected_sha512)}\n"
+        rf"    size: {installer_path.stat().st_size}\n"
+        rf"path: '{re.escape(installer_name)}'\n"
+        rf"sha512: {re.escape(expected_sha512)}\n"
+        r"releaseDate: '[^'\r\n]+'\n"
+    )
+    if expected_pattern.fullmatch(manifest_text) is None:
+        raise HTTPException(status_code=503, detail="Windows 自动更新清单与正式安装包不一致")
+    return FileResponse(
+        path=canonical_manifest,
+        media_type="application/yaml",
+        headers={
+            "Cache-Control": "public, no-cache",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @app.get("/client-updates/v0.2/macos/{asset_name}")
 def current_desktop_client_update_asset(asset_name: str):
     return desktop_client_update_response(
@@ -20014,6 +20096,11 @@ def current_desktop_client_update_asset(asset_name: str):
         release_version=CURRENT_DESKTOP_SELF_UPDATE_VERSION,
         release_root=CLIENT_RELEASE_DIR / "v0.2" / "macos",
     )
+
+
+@app.get("/client-updates/v0.2/{asset_name}")
+def current_windows_desktop_update_asset(asset_name: str):
+    return windows_desktop_update_response(asset_name)
 
 
 @app.get("/client-updates/{asset_name}")

@@ -22,9 +22,9 @@ for (const required of [
   "client_release.downloads.macos",
   "macos.architecture_label",
   "下载 macOS {{ macos.architecture_label }}版",
-  "client_release.transitions",
-  "下载 {{ transition.architecture_label }} 过渡程序",
-  "macos-transition-open-command",
+  "client_release.downloads.windows",
+  "下载 Windows 版",
+  "直接覆盖安装 V0.2.0",
   "xattr -dr com.apple.quarantine",
   "无法一键复制？显示手动粘贴方法",
 ]) {
@@ -63,5 +63,5 @@ for (const required of [
   }
 }
 console.log(
-  "Website package center gate: generic Skills + dual-architecture macOS client + V0.1.4 transition + explicit Agent install entries",
+  "Website package center gate: generic Skills + dual-architecture macOS client + Windows client + explicit Agent install entries",
 );

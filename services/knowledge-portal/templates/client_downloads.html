@@ -17,18 +17,6 @@
   </article>
 
   {% if client_release %}
-  {% if client_release.transitions %}
-  <article class="panel client-transition-guide">
-    <span class="skill-card-index">V0.1.4 一次性过渡</span>
-    <h3>已安装 V0.1.4 的 Mac 先运行过渡程序</h3>
-    <p>过渡程序会校验发布签名、芯片架构、V0.2.0 完整性和内置运行时，备份旧应用后启动新版，失败时恢复 V0.1.4。</p>
-    <div class="button-row">
-      {% for transition in client_release.transitions %}<a class="button" href="{{ transition.download_url }}">下载 {{ transition.architecture_label }} 过渡程序</a>{% endfor %}
-    </div>
-    <pre id="macos-transition-open-command">xattr -dr com.apple.quarantine "$HOME/Downloads/共创企业助手 V0.2.0 过渡安装程序.app" &amp;&amp; open "$HOME/Downloads/共创企业助手 V0.2.0 过渡安装程序.app"</pre>
-    <button class="button secondary" type="button" data-copy-target="#macos-transition-open-command">复制过渡程序打开命令</button>
-  </article>
-  {% endif %}
   <div class="client-platform-grid">
     {% for macos in client_release.downloads.macos %}
     <article class="client-platform-card">
@@ -40,8 +28,20 @@
     {% if not client_release.downloads.macos %}
     <article class="client-platform-card"><span class="client-platform-mark">mac</span><div><span class="skill-card-index">macOS</span><h3>Mac 客户端</h3><p>安装包尚未通过完整性校验。</p></div><span class="button secondary is-disabled">安装包尚未就绪</span></article>
     {% endif %}
+    {% for windows in client_release.downloads.windows %}
+    <article class="client-platform-card">
+      <span class="client-platform-mark">win</span>
+      <div><span class="skill-card-index">Windows · {{ windows.architecture_label }}</span><h3>Windows {{ windows.architecture_label }} 客户端</h3><p>本版按明确授权以未签名方式发布，尚未执行 V0.2.0 Windows 真机验收，安装时可能出现系统安全提示。</p><small>{{ windows.size_display }}</small></div>
+      <a class="button" href="{{ windows.download_url }}">下载 Windows 版</a>
+    </article>
+    {% endfor %}
   </div>
   {% if client_release.downloads.macos %}
+  <article class="panel client-macos-upgrade-guide">
+    <span class="skill-card-index">V0.1.4 升级</span>
+    <h3>直接覆盖安装 V0.2.0</h3>
+    <p>退出正在运行的旧版，下载与芯片匹配的 DMG，将新版拖入“应用程序”，系统询问时选择“替换”。</p>
+  </article>
   <article class="panel client-macos-open-guide">
     <span class="skill-card-index">macOS 首次打开</span>
     <h3>如系统提示无法打开</h3>
