@@ -14,28 +14,28 @@
   </form>
 </dialog>
 {% endif %}
-<div class="app-layout portal-page single-page page-{{ active_page }}">
+<div class="app-layout portal-page {{ 'single-page' if single_page else 'section-page' }} page-{{ active_page }}">
   <aside class="sidebar">
     <a class="brand brand-on-dark" href="/portal"><span class="brand-mark brand-mark-wide">GCIP</span><span><strong>知识产权大脑</strong><small>共创团队知识服务</small></span></a>
     <p class="nav-label">成员服务</p>
     <nav class="side-nav">
-      <a href="#overview" data-section-link="overview">工作台</a>
-      <a href="#cockpit" data-section-link="cockpit">智能驾驶舱</a>
-      <a href="#algorithms" data-section-link="algorithms">项目算法包</a>
-      <a href="#downloads" data-section-link="downloads">客户端下载</a>
-      <a href="#feedback" data-section-link="feedback">留言反馈</a>
-      <a href="#skills" data-section-link="skills">Skills 中心</a>
+      <a href="/portal" data-section-link="overview">工作台</a>
+      <a href="/cockpit" data-section-link="cockpit">智能驾驶舱</a>
+      <a href="/algorithms" data-section-link="algorithms">项目算法包</a>
+      <a href="/downloads" data-section-link="downloads">客户端下载</a>
+      <a href="/feedback" data-section-link="feedback">留言反馈</a>
+      <a href="/skills" data-section-link="skills">Skills 中心</a>
     </nav>
     {% if user.is_admin %}
     <p class="nav-label">管理员</p>
     <nav class="side-nav">
-      <a href="#health-admin" data-section-link="health-admin">健康看板</a>
+      <a href="/admin/operations" data-section-link="health-admin">健康看板</a>
       {% include "_private_admin_nav.html" ignore missing %}
       <a href="/admin/knowledge">知识库管理</a>
       <a href="/admin/metadata-review">知识校准</a>
-      <a href="#knowledge-admin" data-section-link="knowledge-admin">知识库更新</a>
-      <a href="#skill-admin" data-section-link="skill-admin">版本发布</a>
-      <a href="#members" data-section-link="members">成员管理</a>
+      <a href="/admin/knowledge-update" data-section-link="knowledge-admin">知识库更新</a>
+      <a href="/admin/releases" data-section-link="skill-admin">版本发布</a>
+      <a href="/admin/members" data-section-link="members">成员管理</a>
     </nav>
     {% endif %}
     <div class="service-state"><span class="live-dot"></span><div><strong>{{ "知识服务在线" if knowledge_stats.connected else "索引未连接" }}</strong><small>{{ (knowledge_stats.documents ~ ' 份全文资料') if user.is_admin else '统一知识服务已连接' }}</small></div></div>
@@ -56,7 +56,7 @@ GONGCHUANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-valu
       {% if single_page or active_page == 'overview' %}<section id="overview" class="section-block">
         <div class="page-heading"><div><p class="eyebrow">Team Workspace</p><h1>{{ greeting }}，{{ user.real_name or user.username }}</h1><p class="muted">在一个工作台连接团队知识、智能答疑与项目申报 Skills。</p></div><span class="status-pill"><i></i>统一知识权限</span></div>
         <div class="hero-banner"><div class="hero-copy"><p class="eyebrow light">AI Knowledge Workspace</p><h2>让每个 Agent 都能调用<br>同一套可信项目知识</h2><p>政策原文、申报资料、专业 Skills 与个人凭据统一连接。知识由管理员维护，团队成员随时调用。</p><div class="button-row"><a class="button white page-transition-link" href="/cockpit">立即开始答疑</a><a class="button outline-light page-transition-link" href="/downloads">下载客户端</a></div></div><div class="hero-command"><div class="command-head"><span>工作台状态</span><b>{{ 'ONLINE' if knowledge_stats.connected else 'CHECK' }}</b></div><div class="command-row"><span>客户端版本</span><strong>{{ 'V' ~ client_release.version if client_release else '待发布' }}</strong></div><div class="command-row"><span>Skills 版本</span><strong>{{ 'V' ~ latest_release.version if latest_release else '待发布' }}</strong></div><div class="command-row"><span>客户端状态</span><strong>{{ client_usage.label }}</strong></div><a class="page-transition-link" href="/downloads">打开下载页 <span>→</span></a></div></div>
-        <div class="metrics {{ 'is-admin' if user.is_admin else 'is-member' }}">{% if user.is_admin %}<a href="/admin/health/index"><span class="metric-index">01</span><strong>{{ knowledge_stats.documents }}</strong><span>全文资料</span><em>查看索引详情</em></a>{% endif %}<a href="#recent-calls"><span class="metric-index">{{ '02' if user.is_admin else '01' }}</span><strong>{{ usage_total }}</strong><span>累计调用</span><em>查看调用记录</em></a><a href="#downloads"><span class="metric-index">{{ '03' if user.is_admin else '02' }}</span><strong>{{ client_usage.label }}</strong><span>客户端</span><em>下载或查看登录状态</em></a><a href="#skills"><span class="metric-index">{{ '04' if user.is_admin else '03' }}</span><strong>{{ 'V' ~ latest_release.version if latest_release else '—' }}</strong><span>Skills 版本</span><em>查看版本详情</em></a></div>
+        <div class="metrics {{ 'is-admin' if user.is_admin else 'is-member' }}">{% if user.is_admin %}<a href="/admin/health/index"><span class="metric-index">01</span><strong>{{ knowledge_stats.documents }}</strong><span>全文资料</span><em>查看索引详情</em></a>{% endif %}<a href="/cockpit"><span class="metric-index">{{ '02' if user.is_admin else '01' }}</span><strong>{{ usage_total }}</strong><span>累计调用</span><em>打开智能驾驶舱</em></a><a href="/downloads"><span class="metric-index">{{ '03' if user.is_admin else '02' }}</span><strong>{{ client_usage.label }}</strong><span>客户端</span><em>下载或查看登录状态</em></a><a href="/skills"><span class="metric-index">{{ '04' if user.is_admin else '03' }}</span><strong>{{ 'V' ~ latest_release.version if latest_release else '—' }}</strong><span>Skills 版本</span><em>查看版本详情</em></a></div>
       </section>{% endif %}
 
       {% if single_page or active_page == 'cockpit' %}<section id="cockpit" class="section-block cockpit-section">
@@ -193,7 +193,7 @@ GONGCHUANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-valu
           <a href="/admin/health/access"><span>用户与凭据</span><strong>{{ admin_health.active_users }} / {{ admin_health.active_tokens }}</strong><small>有效用户 / 有效 API 访问凭据</small><em>查看详情 →</em></a>
           <a href="/admin/health/calls"><span>24 小时调用</span><strong>{{ admin_health.calls_24h }}</strong><small>REST API 与 MCP</small><em>查看详情 →</em></a>
           <a href="/admin/health/assistant"><span>问答分析</span><strong>{{ admin_health.assistant_7d }}</strong><small>近7日问答 · {{ admin_health.assistant_anomalies }}项异常</small><em>查看详情 →</em></a>
-          <a href="#feedback"><span>待处理留言</span><strong>{{ admin_health.pending_feedback }}</strong><small>问题、建议与内容纠错</small><em>进入留言板 →</em></a>
+          <a href="/feedback"><span>待处理留言</span><strong>{{ admin_health.pending_feedback }}</strong><small>问题、建议与内容纠错</small><em>进入留言板 →</em></a>
           <a href="/admin/health/updates"><span>失败更新</span><strong>{{ admin_health.failed_updates }}</strong><small>{{ '无需处理' if admin_health.failed_updates == 0 else '请检查任务记录' }}</small><em>查看详情 →</em></a>
           <a href="/admin/health/deploy-gate" class="{{ 'is-alert' if admin_health.deploy_gate and admin_health.deploy_gate.status != 'pass' else 'is-verified' }}"><span>Skills 部署门禁</span><strong>{{ '通过' if admin_health.deploy_gate.status == 'pass' else ('阻断' if admin_health.deploy_gate else '待记录') }}</strong><small>{{ admin_health.deploy_gate.verified_count or 0 }} / {{ admin_health.deploy_gate.skill_total or 0 }} 项真实验签</small><em>查看最近部署结果 →</em></a>
         </div>
@@ -218,10 +218,12 @@ GONGCHUANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-valu
       </section>{% endif %}
       {% if not single_page %}
       {% if active_page == 'overview' %}{% set next_page = '/cockpit' %}{% set previous_page = '' %}
-      {% elif active_page == 'cockpit' %}{% set next_page = '/access' %}{% set previous_page = '/portal' %}
-      {% elif active_page == 'access' %}{% set next_page = '/skills' %}{% set previous_page = '/cockpit' %}
-      {% elif active_page == 'skills' and user.is_admin %}{% set next_page = '/admin/operations' %}{% set previous_page = '/access' %}
-      {% elif active_page == 'skills' %}{% set next_page = '/portal' %}{% set previous_page = '/access' %}
+      {% elif active_page == 'cockpit' %}{% set next_page = '/algorithms' %}{% set previous_page = '/portal' %}
+      {% elif active_page == 'algorithms' %}{% set next_page = '/downloads' %}{% set previous_page = '/cockpit' %}
+      {% elif active_page == 'downloads' %}{% set next_page = '/feedback' %}{% set previous_page = '/algorithms' %}
+      {% elif active_page == 'feedback' %}{% set next_page = '/skills' %}{% set previous_page = '/downloads' %}
+      {% elif active_page == 'skills' and user.is_admin %}{% set next_page = '/admin/operations' %}{% set previous_page = '/feedback' %}
+      {% elif active_page == 'skills' %}{% set next_page = '/portal' %}{% set previous_page = '/feedback' %}
       {% elif active_page == 'health' %}{% set next_page = '/admin/knowledge-update' %}{% set previous_page = '/skills' %}
       {% elif active_page == 'knowledge-admin' %}{% set next_page = '/admin/releases' %}{% set previous_page = '/admin/operations' %}
       {% elif active_page == 'skill-admin' %}{% set next_page = '/admin/members' %}{% set previous_page = '/admin/knowledge-update' %}

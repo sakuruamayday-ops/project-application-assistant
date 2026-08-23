@@ -2558,6 +2558,32 @@ def sha512_file_base64(path: Path) -> str:
     return b64encode(digest.digest()).decode("ascii")
 
 
+@lru_cache(maxsize=32)
+def sha512_file_base64_for_identity(
+    path_value: str,
+    device: int,
+    inode: int,
+    size: int,
+    modified_ns: int,
+    changed_ns: int,
+) -> str:
+    """Reuse a digest only while every filesystem identity field is unchanged."""
+    del device, inode, size, modified_ns, changed_ns
+    return sha512_file_base64(Path(path_value))
+
+
+def cached_sha512_file_base64(path: Path) -> str:
+    stat = path.stat()
+    return sha512_file_base64_for_identity(
+        str(path),
+        int(stat.st_dev),
+        int(stat.st_ino),
+        int(stat.st_size),
+        int(stat.st_mtime_ns),
+        int(stat.st_ctime_ns),
+    )
+
+
 def save_upload(upload: UploadFile, directory: Path) -> tuple[Path, str, int]:
     directory.mkdir(parents=True, exist_ok=True)
     temporary = directory / f"upload-{secrets.token_hex(12)}.tmp"
@@ -10436,26 +10462,19 @@ def assistant_quota_payload(
     }
 
 
-class AllPortalSections(str):
-    visible_sections = {
-        "overview",
-        "cockpit",
-        "algorithms",
-        "downloads",
-        "health",
-        "skills",
-        "knowledge-admin",
-        "skill-admin",
-        "members",
-        "feedback",
-    }
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, str) and other in self.visible_sections:
-            return True
-        return super().__eq__(other)
-
-    __hash__ = str.__hash__
+@lru_cache(maxsize=64)
+def client_artifact_digest_matches_identity(
+    path_value: str,
+    expected_sha256: str,
+    device: int,
+    inode: int,
+    size: int,
+    modified_ns: int,
+    changed_ns: int,
+) -> bool:
+    """Cache page-level availability until the artifact's file identity changes."""
+    del device, inode, size, modified_ns, changed_ns
+    return secrets.compare_digest(sha256_file(Path(path_value)), expected_sha256)
 
 
 def client_artifact_is_servable(artifact: dict[str, object] | sqlite3.Row | None) -> bool:
@@ -10482,7 +10501,22 @@ def client_artifact_is_servable(artifact: dict[str, object] | sqlite3.Row | None
         return False
     if not resolved_package.is_file():
         return False
-    return secrets.compare_digest(sha256_file(resolved_package), expected_sha256)
+    try:
+        stat = resolved_package.stat()
+    except OSError:
+        return False
+    try:
+        return client_artifact_digest_matches_identity(
+            str(resolved_package),
+            expected_sha256,
+            int(stat.st_dev),
+            int(stat.st_ino),
+            int(stat.st_size),
+            int(stat.st_mtime_ns),
+            int(stat.st_ctime_ns),
+        )
+    except OSError:
+        return False
 
 
 def published_client_release_payload(
@@ -10928,7 +10962,11 @@ def portal_payload(
     algorithm_project_id: str = "",
     algorithm_coverage: str = "",
 ) -> dict[str, object]:
-    release_guidance = public_release_guidance()
+    release_guidance = (
+        public_release_guidance()
+        if active_page in {"legacy-access-disabled", "members"}
+        else {}
+    )
     latest_member_install_version = str(
         release_guidance.get("workbuddy_version") or ""
     )
@@ -10969,10 +11007,12 @@ def portal_payload(
             """,
             (int(user["id"]),),
         ).fetchone()
-        workbuddy_upgrade_channel = current_workbuddy_upgrade_channel(
-            str(active_device_binding["platform"] or "")
-            if active_device_binding
-            else ""
+        workbuddy_upgrade_channel = (
+            current_workbuddy_upgrade_channel(
+                str(active_device_binding["platform"] or "")
+            )
+            if active_device_binding and active_page == "legacy-access-disabled"
+            else {}
         )
         installed_version = (
             str(active_device_binding["installed_version"] or "")
@@ -11086,7 +11126,11 @@ def portal_payload(
         assistant_daily_limit = (
             None if user["is_admin"] else assistant_limit_for_user(int(user["id"]), connection)
         )
-        client_release = latest_client_release_payload(connection)
+        client_release = (
+            latest_client_release_payload(connection)
+            if active_page in {"overview", "downloads"}
+            else None
+        )
         latest_client_download = connection.execute(
             """
             SELECT event.platform,event.architecture,event.downloaded_at,
@@ -11148,7 +11192,7 @@ def portal_payload(
         releases = []
         historical_releases = []
         admin_health: dict[str, object] = {}
-        if user["is_admin"]:
+        if user["is_admin"] and active_page == "members":
             users = format_row_datetimes(connection.execute(
                 """
                 WITH version_observations AS (
@@ -11486,7 +11530,9 @@ def portal_payload(
             JOIN users ON users.id=feedback_messages.user_id
         """
         feedback_parameters: tuple[object, ...] = ()
-        if not user["is_admin"]:
+        if active_page != "feedback":
+            feedback_sql += " WHERE 0"
+        elif not user["is_admin"]:
             feedback_sql += " WHERE feedback_messages.user_id=?"
             feedback_parameters = (int(user["id"]),)
         feedback_sql += " ORDER BY feedback_messages.id DESC LIMIT 100"
@@ -11520,7 +11566,7 @@ def portal_payload(
                     )
                 ).casefold()
             ]
-        if user["is_admin"]:
+        if user["is_admin"] and active_page == "knowledge-admin":
             update_jobs = format_row_datetimes(connection.execute(
                 """
                 SELECT id, original_name, status, extraction_status, text_characters,
@@ -11563,7 +11609,7 @@ def portal_payload(
             for row in release_rows
             if is_public_skill_release_version(str(row["version"]))
         ]
-        if user["is_admin"]:
+        if user["is_admin"] and active_page == "health":
             since_24_hours = isoformat(utc_now() - timedelta(hours=24))
             since_7_days = isoformat(utc_now() - timedelta(days=7))
             admin_health = {
@@ -11756,19 +11802,35 @@ def portal_payload(
         "latest_release": latest_release_payload,
         "release_stage": release_stage_payload,
         "historical_releases": historical_releases,
-        "skill_center": skill_catalog_payload(),
-        "project_algorithms": project_algorithm_catalog_payload(algorithm_coverage),
-        "project_algorithm_detail": project_algorithm_detail_payload(
-            algorithm_project_id
+        "skill_center": (
+            skill_catalog_payload()
+            if active_page in {"downloads", "skills"}
+            else {}
+        ),
+        "project_algorithms": (
+            project_algorithm_catalog_payload(algorithm_coverage)
+            if active_page == "algorithms"
+            else {}
+        ),
+        "project_algorithm_detail": (
+            project_algorithm_detail_payload(algorithm_project_id)
+            if active_page == "algorithms"
+            else None
         ),
         "four_city_policy_registry": (
             load_four_city_rd_platform_policy_registry()
+            if active_page == "algorithms"
+            else {}
         ),
         "four_city_rd_platform_threshold_packs": (
             load_four_city_rd_platform_threshold_packs()
+            if active_page == "algorithms"
+            else {}
         ),
         "four_city_green_factory_policy_registry": (
             load_four_city_green_factory_policy_registry()
+            if active_page == "algorithms"
+            else {}
         ),
         "first_public_skill_version": FIRST_PUBLIC_SKILL_VERSION,
         "release_guidance": release_guidance,
@@ -11780,8 +11842,8 @@ def portal_payload(
         "admin_health": admin_health,
         "assistant_mode": "大模型增强" if AI_API_BASE and AI_API_KEY and AI_MODEL else "免费知识检索",
         "public_endpoint": str(request.base_url).rstrip("/"),
-        "active_page": AllPortalSections(active_page),
-        "single_page": True,
+        "active_page": active_page,
+        "single_page": False,
         "greeting": (
             "晚上好"
             if datetime.now(ASSISTANT_TIMEZONE).hour >= 18
@@ -11937,6 +11999,8 @@ def prewarm_portal_read_caches() -> None:
     skill_catalog_payload()
     knowledge_index_stats()
     public_release_guidance()
+    with closing(database()) as connection:
+        latest_client_release_payload(connection)
 
 
 def build_provenance_payload() -> dict[str, object]:
@@ -18181,7 +18245,7 @@ def create_device_token(
                 request,
                 user,
                 error="团队成员请使用“复制给 Agent”完成安全配置。",
-                active_page="access",
+                active_page="skills",
             ),
             status_code=403,
         )
@@ -18191,7 +18255,7 @@ def create_device_token(
         return templates.TemplateResponse(
             request,
             "portal.html",
-            portal_payload(request, user, error=str(exc), active_page="access"),
+            portal_payload(request, user, error=str(exc), active_page="skills"),
             status_code=400,
         )
     if not company_verified(company_name):
@@ -18202,7 +18266,7 @@ def create_device_token(
                 request,
                 user,
                 error="公司名称验证未通过，未生成用户凭据。",
-                active_page="access",
+                active_page="skills",
             ),
             status_code=403,
         )
@@ -18251,7 +18315,7 @@ def create_device_token(
     return templates.TemplateResponse(
         request,
         "portal.html",
-        portal_payload(request, updated_user, message="个人 API Key 已启用，可随时查看和复制。", active_page="access"),
+        portal_payload(request, updated_user, message="个人 API Key 已启用，可随时查看和复制。", active_page="skills"),
     )
 
 
@@ -20065,9 +20129,9 @@ def windows_desktop_update_response(asset_name: str):
         if manifest_path.is_symlink() or not canonical_manifest.is_file():
             raise ValueError("invalid Windows update manifest")
         manifest_text = canonical_manifest.read_text(encoding="utf-8")
+        expected_sha512 = cached_sha512_file_base64(installer_path)
     except (OSError, UnicodeError, ValueError):
         raise HTTPException(status_code=503, detail="Windows 自动更新清单无效") from None
-    expected_sha512 = sha512_file_base64(installer_path)
     expected_pattern = re.compile(
         rf"version: {re.escape(CURRENT_DESKTOP_SELF_UPDATE_VERSION)}\n"
         rf"files:\n  - url: '{re.escape(installer_name)}'\n"

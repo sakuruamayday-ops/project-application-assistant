@@ -1022,7 +1022,10 @@ def test_v020_download_page_uses_manual_macos_upgrade_and_windows(tmp_path):
     assert "下载 Windows 版" in page.text
 
 
-def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(tmp_path):
+def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
+    tmp_path,
+    monkeypatch,
+):
     module = load_app(tmp_path)
     _, artifact_ids = publish_test_client_release(
         module,
@@ -1089,6 +1092,81 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(tmp_path)
             encoding="utf-8",
         )
         assert client.get("/client-updates/v0.2/latest.yml").status_code == 503
+
+        (release_root / "latest.yml").write_text(manifest, encoding="utf-8")
+
+        def replaced_during_sha512(_path):
+            raise OSError("artifact replaced")
+
+        monkeypatch.setattr(module, "cached_sha512_file_base64", replaced_during_sha512)
+        assert client.get("/client-updates/v0.2/latest.yml").status_code == 503
+
+
+def test_client_artifact_availability_digest_cache_tracks_file_identity(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    module.CLIENT_RELEASE_DIR.mkdir(parents=True, exist_ok=True)
+    artifact_path = module.CLIENT_RELEASE_DIR / "client.dmg"
+    artifact_path.write_bytes(b"signed-client-a")
+    artifact = {
+        "platform": "macos",
+        "signature_status": "verified",
+        "file_path": str(artifact_path),
+        "sha256": hashlib.sha256(b"signed-client-a").hexdigest(),
+    }
+    original_sha256_file = module.sha256_file
+    digest_calls = 0
+
+    def counted_sha256_file(path):
+        nonlocal digest_calls
+        digest_calls += 1
+        return original_sha256_file(path)
+
+    module.client_artifact_digest_matches_identity.cache_clear()
+    monkeypatch.setattr(module, "sha256_file", counted_sha256_file)
+
+    assert module.client_artifact_is_servable(artifact) is True
+    assert module.client_artifact_is_servable(artifact) is True
+    assert digest_calls == 1
+
+    artifact_path.write_bytes(b"signed-client-b")
+    assert module.client_artifact_is_servable(artifact) is False
+    assert digest_calls == 2
+
+    artifact_path.write_bytes(b"signed-client-c")
+
+    def replaced_during_hash(_path):
+        raise OSError("artifact replaced")
+
+    monkeypatch.setattr(module, "sha256_file", replaced_during_hash)
+    assert module.client_artifact_is_servable(artifact) is False
+
+
+def test_windows_update_sha512_cache_tracks_file_identity(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    artifact_path = tmp_path / "client.exe"
+    artifact_path.write_bytes(b"windows-client-a")
+    original_sha512_file = module.sha512_file_base64
+    digest_calls = 0
+
+    def counted_sha512_file(path):
+        nonlocal digest_calls
+        digest_calls += 1
+        return original_sha512_file(path)
+
+    module.sha512_file_base64_for_identity.cache_clear()
+    monkeypatch.setattr(module, "sha512_file_base64", counted_sha512_file)
+
+    first = module.cached_sha512_file_base64(artifact_path)
+    second = module.cached_sha512_file_base64(artifact_path)
+    assert first == second
+    assert digest_calls == 1
+
+    artifact_path.write_bytes(b"windows-client-b")
+    assert module.cached_sha512_file_base64(artifact_path) != first
+    assert digest_calls == 2
 
 
 @pytest.mark.parametrize(
@@ -2113,15 +2191,17 @@ def test_admin_portal_section_order_and_mcp_activity_status(tmp_path):
 
         portal = client.get("/portal")
         assert portal.status_code == 200
-        section_order = [
-            portal.text.index('id="algorithms"'),
-            portal.text.index('id="downloads"'),
-            portal.text.index('id="feedback"'),
-            portal.text.index('id="skills"'),
-            portal.text.index('id="health-admin"'),
-        ]
-        assert section_order == sorted(section_order)
-        assert "MCP 最近活跃" in portal.text
+        for route, section_id in (
+            ("/algorithms", "algorithms"),
+            ("/downloads", "downloads"),
+            ("/feedback", "feedback"),
+            ("/skills", "skills"),
+            ("/admin/operations", "health-admin"),
+        ):
+            page = client.get(route)
+            assert page.status_code == 200
+            assert f'id="{section_id}"' in page.text
+        assert "MCP 最近活跃" in client.get("/skills").text
         assert "评价插件包" not in portal.text
         assert "查看常用指令" not in portal.text
 
@@ -2415,12 +2495,15 @@ def test_setup_login_and_device_token(tmp_path):
         assert "page-overview" in portal.text
         assert re.search(r'/static/app\.css\?v=[0-9a-f]{16}', portal.text)
         assert re.search(r'/static/portal\.js\?v=[0-9a-f]{16}', portal.text)
-        assert 'class="app-layout portal-page single-page' in portal.text
-        assert 'id="cockpit"' in portal.text
-        assert 'id="downloads"' in portal.text
+        assert 'class="app-layout portal-page section-page page-overview"' in portal.text
+        assert 'id="overview"' in portal.text
+        assert 'id="cockpit"' not in portal.text
+        assert 'id="downloads"' not in portal.text
         assert 'id="api-access"' not in portal.text
-        assert 'id="skills"' in portal.text
-        assert 'class="page-continuation"' not in portal.text
+        assert 'id="skills"' not in portal.text
+        assert 'href="/cockpit" data-section-link="cockpit"' in portal.text
+        assert 'href="/downloads" data-section-link="downloads"' in portal.text
+        assert 'class="page-continuation"' in portal.text
         access_page = client.get("/access")
         assert "下载共创客户端" in access_page.text
         assert "不再提供旧版宿主专用包" in access_page.text
@@ -2542,7 +2625,8 @@ def test_setup_login_and_device_token(tmp_path):
         access_page = client.get("/access")
         assert access_page.status_code == 200
         assert "page-skills" in access_page.text
-        assert 'class="page-continuation"' not in access_page.text
+        assert 'class="page-continuation"' in access_page.text
+        assert 'href="/feedback"' in access_page.text
         assert 'class="page-step' not in access_page.text
         assert token not in access_page.text
         assert "REST Base URL、MCP URL 与个人访问凭据缺一不可" not in access_page.text
@@ -10819,14 +10903,14 @@ def test_operational_health_staleness_and_provenance_are_visible(tmp_path):
             follow_redirects=False,
         )
         client.cookies.update(login.cookies)
-        portal = client.get("/portal")
+        operations = client.get("/admin/operations")
         runtime = client.get("/admin/health/runtime")
         backup = client.get("/admin/health/backup")
         oss = client.get("/admin/health/oss")
 
-    assert 'href="/admin/health/runtime" class="is-alert"' in portal.text
-    assert 'href="/admin/health/oss" class="is-alert"' in portal.text
-    assert "/admin/health/snapshot" not in portal.text
+    assert 'href="/admin/health/runtime" class="is-alert"' in operations.text
+    assert 'href="/admin/health/oss" class="is-alert"' in operations.text
+    assert "/admin/health/snapshot" not in operations.text
     assert "状态过期" in runtime.text
     assert "数据库探测失败" in runtime.text
     assert "jiaotang-kb-index-refresh.service" in runtime.text
