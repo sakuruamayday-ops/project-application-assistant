@@ -24,12 +24,16 @@ for (const required of [
   "下载 macOS {{ macos.architecture_label }}版",
   "client_release.downloads.windows",
   "下载 Windows 版",
-  "直接覆盖安装 V{{ client_release.version }}",
   "xattr -dr com.apple.quarantine",
   "无法一键复制？显示手动粘贴方法",
 ]) {
   if (!clientTemplate.includes(required)) {
     throw new Error(`客户端下载中心缺少必要内容：${required}`);
+  }
+}
+for (const forbidden of ["V0.1.4 升级", "直接覆盖安装"]) {
+  if (clientTemplate.includes(forbidden)) {
+    throw new Error(`客户端下载中心仍包含已取消的升级说明：${forbidden}`);
   }
 }
 for (const required of [

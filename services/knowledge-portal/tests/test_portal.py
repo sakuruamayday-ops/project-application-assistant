@@ -991,7 +991,7 @@ def test_v020_signed_feed_is_separate_from_frozen_v014_feed(tmp_path):
         ).status_code == 404
 
 
-def test_v020_download_page_uses_manual_macos_upgrade_and_windows(tmp_path):
+def test_v020_download_page_hides_macos_upgrade_guide_and_shows_windows(tmp_path):
     module = load_app(tmp_path)
     current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
     publish_test_client_release(
@@ -1020,7 +1020,8 @@ def test_v020_download_page_uses_manual_macos_upgrade_and_windows(tmp_path):
     assert page.status_code == 200
     assert "V0.1.4 一次性过渡" not in page.text
     assert "过渡程序" not in page.text
-    assert f"直接覆盖安装 V{current_version}" in page.text
+    assert "V0.1.4 升级" not in page.text
+    assert "直接覆盖安装" not in page.text
     assert "下载 Windows 版" in page.text
 
 
