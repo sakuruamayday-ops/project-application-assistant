@@ -24,7 +24,7 @@ for (const required of [
   "下载 macOS {{ macos.architecture_label }}版",
   "client_release.downloads.windows",
   "下载 Windows 版",
-  "直接覆盖安装 V0.2.0",
+  "直接覆盖安装 V{{ client_release.version }}",
   "xattr -dr com.apple.quarantine",
   "无法一键复制？显示手动粘贴方法",
 ]) {

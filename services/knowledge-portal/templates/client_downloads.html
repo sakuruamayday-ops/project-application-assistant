@@ -31,7 +31,7 @@
     {% for windows in client_release.downloads.windows %}
     <article class="client-platform-card">
       <span class="client-platform-mark">win</span>
-      <div><span class="skill-card-index">Windows · {{ windows.architecture_label }}</span><h3>Windows {{ windows.architecture_label }} 客户端</h3><p>本版按明确授权以未签名方式发布，尚未执行 V0.2.0 Windows 真机验收，安装时可能出现系统安全提示。</p><small>{{ windows.size_display }}</small></div>
+      <div><span class="skill-card-index">Windows · {{ windows.architecture_label }}</span><h3>Windows {{ windows.architecture_label }} 客户端</h3><p>本版按明确授权以未签名方式发布，尚未执行 V{{ client_release.version }} Windows 真机验收，安装时可能出现系统安全提示。</p><small>{{ windows.size_display }}</small></div>
       <a class="button" href="{{ windows.download_url }}">下载 Windows 版</a>
     </article>
     {% endfor %}
@@ -39,7 +39,7 @@
   {% if client_release.downloads.macos %}
   <article class="panel client-macos-upgrade-guide">
     <span class="skill-card-index">V0.1.4 升级</span>
-    <h3>直接覆盖安装 V0.2.0</h3>
+    <h3>直接覆盖安装 V{{ client_release.version }}</h3>
     <p>退出正在运行的旧版，下载与芯片匹配的 DMG，将新版拖入“应用程序”，系统询问时选择“替换”。</p>
   </article>
   <article class="panel client-macos-open-guide">

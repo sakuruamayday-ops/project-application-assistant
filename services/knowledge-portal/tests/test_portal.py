@@ -954,7 +954,7 @@ def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
         "minimum_supported_version": "0.1.4",
     }
     assert module.client_compatibility_receipt("0.2.0") == {
-        "client_compatibility": "supported",
+        "client_compatibility": "upgrade-advised",
         "minimum_supported_version": "0.1.4",
     }
     assert module.client_compatibility_receipt("0.2.1") == {
@@ -967,12 +967,13 @@ def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
 
 def test_v020_signed_feed_is_separate_from_frozen_v014_feed(tmp_path):
     module = load_app(tmp_path)
+    current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
     old_payloads = publish_test_macos_self_update_feed(module)
     old_hash = hashlib.sha256(old_payloads["desktop-release-index.json"]).hexdigest()
     v020_root = module.CLIENT_RELEASE_DIR / "v0.2" / "macos"
     new_payloads = publish_test_macos_self_update_feed(
         module,
-        version="0.2.0",
+        version=current_version,
         release_root=v020_root,
     )
 
@@ -992,9 +993,10 @@ def test_v020_signed_feed_is_separate_from_frozen_v014_feed(tmp_path):
 
 def test_v020_download_page_uses_manual_macos_upgrade_and_windows(tmp_path):
     module = load_app(tmp_path)
+    current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
     publish_test_client_release(
         module,
-        version="0.2.0",
+        version=current_version,
         dual_macos=True,
         include_transitions=True,
     )
@@ -1018,7 +1020,7 @@ def test_v020_download_page_uses_manual_macos_upgrade_and_windows(tmp_path):
     assert page.status_code == 200
     assert "V0.1.4 一次性过渡" not in page.text
     assert "过渡程序" not in page.text
-    assert "直接覆盖安装 V0.2.0" in page.text
+    assert f"直接覆盖安装 V{current_version}" in page.text
     assert "下载 Windows 版" in page.text
 
 
@@ -1027,13 +1029,14 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
     monkeypatch,
 ):
     module = load_app(tmp_path)
+    current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
     _, artifact_ids = publish_test_client_release(
         module,
-        version="0.2.0",
+        version=current_version,
         dual_macos=True,
         windows_signature_status="unsigned-approved",
     )
-    installer_name = "Gongchuang-Enterprise-Assistant-0.2.0-win-x64.exe"
+    installer_name = f"Gongchuang-Enterprise-Assistant-{current_version}-win-x64.exe"
     release_root = module.CLIENT_RELEASE_DIR / "v0.2" / "windows"
     release_root.mkdir(parents=True)
     installer_path = release_root / installer_name
@@ -1046,7 +1049,7 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
         connection.commit()
     sha512 = base64.b64encode(hashlib.sha512(installer_path.read_bytes()).digest()).decode()
     manifest = (
-        "version: 0.2.0\n"
+        f"version: {current_version}\n"
         "files:\n"
         f"  - url: '{installer_name}'\n"
         f"    sha512: {sha512}\n"
@@ -1081,7 +1084,7 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
 
         assert page.status_code == 200
         assert "未签名方式发布" in page.text
-        assert "尚未执行 V0.2.0 Windows 真机验收" in page.text
+        assert f"尚未执行 V{current_version} Windows 真机验收" in page.text
         assert update_manifest.status_code == 200
         assert update_manifest.text == manifest
         assert update_installer.content == portal_installer.content == installer_path.read_bytes()
