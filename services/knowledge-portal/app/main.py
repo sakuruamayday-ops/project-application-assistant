@@ -10962,6 +10962,13 @@ def portal_payload(
     algorithm_project_id: str = "",
     algorithm_coverage: str = "",
 ) -> dict[str, object]:
+    needs_agent_state = active_page in {"skills", "legacy-access-disabled"}
+    needs_client_usage = active_page in {"overview", "downloads"}
+    needs_usage_summary = active_page in {
+        "overview",
+        "cockpit",
+        "legacy-access-disabled",
+    }
     release_guidance = (
         public_release_guidance()
         if active_page in {"legacy-access-disabled", "members"}
@@ -10971,42 +10978,50 @@ def portal_payload(
         release_guidance.get("workbuddy_version") or ""
     )
     with closing(database()) as connection:
-        device_tokens = connection.execute(
-            """
-            SELECT device_tokens.id, device_tokens.label, device_tokens.token_prefix,
-                   device_tokens.token_seed,
-                   device_tokens.created_at, device_tokens.last_used_at,
-                   device_tokens.revoked_at,device_tokens.activation_state,
-                   COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
-            FROM device_tokens
-            LEFT JOIN api_usage ON api_usage.device_token_id = device_tokens.id
-            WHERE device_tokens.user_id = ? AND device_tokens.revoked_at IS NULL
-              AND device_tokens.activation_state='active'
-            GROUP BY device_tokens.id
-            ORDER BY device_tokens.id DESC
-            """,
-            (user["id"],),
-        ).fetchall()
+        device_tokens = (
+            connection.execute(
+                """
+                SELECT device_tokens.id, device_tokens.label, device_tokens.token_prefix,
+                       device_tokens.token_seed,
+                       device_tokens.created_at, device_tokens.last_used_at,
+                       device_tokens.revoked_at,device_tokens.activation_state,
+                       COUNT(CASE WHEN api_usage.counts_toward_usage = 1 THEN 1 END) AS call_count
+                FROM device_tokens
+                LEFT JOIN api_usage ON api_usage.device_token_id = device_tokens.id
+                WHERE device_tokens.user_id = ? AND device_tokens.revoked_at IS NULL
+                  AND device_tokens.activation_state='active'
+                GROUP BY device_tokens.id
+                ORDER BY device_tokens.id DESC
+                """,
+                (user["id"],),
+            ).fetchall()
+            if active_page == "legacy-access-disabled"
+            else []
+        )
         active_device_token = next(
             (row for row in device_tokens if not row["revoked_at"]), None
         )
-        active_device_binding = connection.execute(
-            """
-            SELECT device_bindings.*,device_keys.key_id,
-                   device_keys.platform,device_keys.agent_host,
-                   device_keys.credential_saved_at,
-                   device_keys.first_verified_at,
-                   device_keys.mcp_connected_at,
-                   device_keys.last_verified_at
-            FROM device_bindings
-            LEFT JOIN device_keys
-              ON device_keys.binding_id=device_bindings.id
-             AND device_keys.revoked_at IS NULL
-            WHERE device_bindings.user_id=? AND device_bindings.revoked_at IS NULL
-            ORDER BY device_bindings.id DESC LIMIT 1
-            """,
-            (int(user["id"]),),
-        ).fetchone()
+        active_device_binding = (
+            connection.execute(
+                """
+                SELECT device_bindings.*,device_keys.key_id,
+                       device_keys.platform,device_keys.agent_host,
+                       device_keys.credential_saved_at,
+                       device_keys.first_verified_at,
+                       device_keys.mcp_connected_at,
+                       device_keys.last_verified_at
+                FROM device_bindings
+                LEFT JOIN device_keys
+                  ON device_keys.binding_id=device_bindings.id
+                 AND device_keys.revoked_at IS NULL
+                WHERE device_bindings.user_id=? AND device_bindings.revoked_at IS NULL
+                ORDER BY device_bindings.id DESC LIMIT 1
+                """,
+                (int(user["id"]),),
+            ).fetchone()
+            if needs_agent_state
+            else None
+        )
         workbuddy_upgrade_channel = (
             current_workbuddy_upgrade_channel(
                 str(active_device_binding["platform"] or "")
@@ -11072,87 +11087,127 @@ def portal_payload(
             if active_device_binding
             else None
         )
-        latest_agent_install_result = latest_agent_install_result_payload(
-            connection,
-            int(user["id"]),
+        latest_agent_install_result = (
+            latest_agent_install_result_payload(connection, int(user["id"]))
+            if needs_agent_state
+            else None
         )
-        agent_connection_status = agent_connection_status_payload(
-            connection,
-            int(user["id"]),
-            latest_agent_install_result,
+        agent_connection_status = (
+            agent_connection_status_payload(
+                connection,
+                int(user["id"]),
+                latest_agent_install_result,
+            )
+            if needs_agent_state
+            else {}
         )
-        device_binding_history = [
-            {
-                **dict(binding),
-                "first_bound_at_display": format_chinese_datetime(binding["first_bound_at"]),
-                "last_seen_at_display": format_chinese_datetime(binding["last_seen_at"]),
-                "revoked_at_display": format_chinese_datetime(binding["revoked_at"]),
-            }
-            for binding in connection.execute(
-                """
-                SELECT * FROM device_bindings
-                WHERE user_id=? AND revoked_at IS NOT NULL
-                ORDER BY id DESC LIMIT 5
-                """,
-                (int(user["id"]),),
-            ).fetchall()
-        ]
-        recent_calls = format_row_datetimes(connection.execute(
-            """
-            SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
-                   api_usage.activity_type, api_usage.activity_name,
-                   COALESCE(NULLIF(api_usage.activity_name,''), api_usage.endpoint) AS activity_display,
-                   device_tokens.label
-            FROM api_usage
-            JOIN device_tokens ON device_tokens.id = api_usage.device_token_id
-            WHERE api_usage.user_id = ?
-            ORDER BY api_usage.id DESC
-            LIMIT 12
-            """,
-            (user["id"],),
-        ).fetchall(), "called_at")
-        usage_total = int(
-            connection.execute(
-                "SELECT COUNT(*) FROM api_usage WHERE user_id = ? AND counts_toward_usage = 1",
-                (user["id"],)
-            ).fetchone()[0]
+        device_binding_history = (
+            [
+                {
+                    **dict(binding),
+                    "first_bound_at_display": format_chinese_datetime(
+                        binding["first_bound_at"]
+                    ),
+                    "last_seen_at_display": format_chinese_datetime(
+                        binding["last_seen_at"]
+                    ),
+                    "revoked_at_display": format_chinese_datetime(
+                        binding["revoked_at"]
+                    ),
+                }
+                for binding in connection.execute(
+                    """
+                    SELECT * FROM device_bindings
+                    WHERE user_id=? AND revoked_at IS NOT NULL
+                    ORDER BY id DESC LIMIT 5
+                    """,
+                    (int(user["id"]),),
+                ).fetchall()
+            ]
+            if active_page == "legacy-access-disabled"
+            else []
         )
-        assistant_used_today = int(
-            connection.execute(
-                "SELECT COUNT(*) FROM assistant_usage WHERE user_id = ? AND started_at >= ? AND started_at < ? AND status IN ('running', 'completed') AND quota_counted = 1",
-                (user["id"], *assistant_day_bounds()),
-            ).fetchone()[0]
+        recent_calls = (
+            format_row_datetimes(
+                connection.execute(
+                    """
+                    SELECT api_usage.endpoint, api_usage.method, api_usage.called_at,
+                           api_usage.activity_type, api_usage.activity_name,
+                           COALESCE(NULLIF(api_usage.activity_name,''), api_usage.endpoint) AS activity_display,
+                           device_tokens.label
+                    FROM api_usage
+                    JOIN device_tokens ON device_tokens.id = api_usage.device_token_id
+                    WHERE api_usage.user_id = ?
+                    ORDER BY api_usage.id DESC
+                    LIMIT 12
+                    """,
+                    (user["id"],),
+                ).fetchall(),
+                "called_at",
+            )
+            if active_page == "legacy-access-disabled"
+            else []
+        )
+        usage_total = (
+            int(
+                connection.execute(
+                    "SELECT COUNT(*) FROM api_usage WHERE user_id = ? AND counts_toward_usage = 1",
+                    (user["id"],),
+                ).fetchone()[0]
+            )
+            if needs_usage_summary
+            else 0
+        )
+        assistant_used_today = (
+            int(
+                connection.execute(
+                    "SELECT COUNT(*) FROM assistant_usage WHERE user_id = ? AND started_at >= ? AND started_at < ? AND status IN ('running', 'completed') AND quota_counted = 1",
+                    (user["id"], *assistant_day_bounds()),
+                ).fetchone()[0]
+            )
+            if active_page == "cockpit"
+            else 0
         )
         assistant_daily_limit = (
-            None if user["is_admin"] else assistant_limit_for_user(int(user["id"]), connection)
+            None
+            if user["is_admin"] or active_page != "cockpit"
+            else assistant_limit_for_user(int(user["id"]), connection)
         )
         client_release = (
             latest_client_release_payload(connection)
             if active_page in {"overview", "downloads"}
             else None
         )
-        latest_client_download = connection.execute(
-            """
-            SELECT event.platform,event.architecture,event.downloaded_at,
-                   release.version,artifact.file_name
-            FROM client_download_events event
-            JOIN client_releases release ON release.id=event.release_id
-            JOIN client_release_artifacts artifact ON artifact.id=event.artifact_id
-            WHERE event.user_id=?
-            ORDER BY event.downloaded_at DESC,event.id DESC
-            LIMIT 1
-            """,
-            (int(user["id"]),),
-        ).fetchone()
-        latest_client_login = connection.execute(
-            """
-            SELECT created_at,last_used_at
-            FROM device_tokens
-            WHERE user_id=? AND credential_kind='client'
-            ORDER BY id DESC LIMIT 1
-            """,
-            (int(user["id"]),),
-        ).fetchone()
+        latest_client_download = (
+            connection.execute(
+                """
+                SELECT event.platform,event.architecture,event.downloaded_at,
+                       release.version,artifact.file_name
+                FROM client_download_events event
+                JOIN client_releases release ON release.id=event.release_id
+                JOIN client_release_artifacts artifact ON artifact.id=event.artifact_id
+                WHERE event.user_id=?
+                ORDER BY event.downloaded_at DESC,event.id DESC
+                LIMIT 1
+                """,
+                (int(user["id"]),),
+            ).fetchone()
+            if needs_client_usage
+            else None
+        )
+        latest_client_login = (
+            connection.execute(
+                """
+                SELECT created_at,last_used_at
+                FROM device_tokens
+                WHERE user_id=? AND credential_kind='client'
+                ORDER BY id DESC LIMIT 1
+                """,
+                (int(user["id"]),),
+            ).fetchone()
+            if needs_client_usage
+            else None
+        )
         client_usage = {
             "state": (
                 "active"
@@ -11591,24 +11646,27 @@ def portal_payload(
             ORDER BY published_at DESC, id DESC
             """,
         ).fetchall()
-        releases = [
-            {
-                **dict(row),
-                "release_notes": public_release_notes(
-                    str(row["version"]),
-                    str(row["release_notes"]),
-                ),
-                "published_at_display": format_chinese_datetime(row["published_at"]),
-                "release_notes_html": render_guide_markdown(
-                    public_release_notes(
+        if active_page in {"skills", "skill-admin"}:
+            releases = [
+                {
+                    **dict(row),
+                    "release_notes": public_release_notes(
                         str(row["version"]),
                         str(row["release_notes"]),
-                    )
-                ),
-            }
-            for row in release_rows
-            if is_public_skill_release_version(str(row["version"]))
-        ]
+                    ),
+                    "published_at_display": format_chinese_datetime(
+                        row["published_at"]
+                    ),
+                    "release_notes_html": render_guide_markdown(
+                        public_release_notes(
+                            str(row["version"]),
+                            str(row["release_notes"]),
+                        )
+                    ),
+                }
+                for row in release_rows
+                if is_public_skill_release_version(str(row["version"]))
+            ]
         if user["is_admin"] and active_page == "health":
             since_24_hours = isoformat(utc_now() - timedelta(hours=24))
             since_7_days = isoformat(utc_now() - timedelta(days=7))
@@ -11694,16 +11752,20 @@ def portal_payload(
                 ),
                 None,
             )
-        release_stage = connection.execute(
-            """
-            SELECT version,status,generic_sha256,workbuddy_sha256,
-                   git_commit,github_url,staged_at
-            FROM skill_release_stages
-            WHERE status IN ('releasing','staged-awaiting-acceptance')
-            ORDER BY staged_at DESC
-            LIMIT 1
-            """
-        ).fetchone()
+        release_stage = (
+            connection.execute(
+                """
+                SELECT version,status,generic_sha256,workbuddy_sha256,
+                       git_commit,github_url,staged_at
+                FROM skill_release_stages
+                WHERE status IN ('releasing','staged-awaiting-acceptance')
+                ORDER BY staged_at DESC
+                LIMIT 1
+                """
+            ).fetchone()
+            if active_page == "skills"
+            else None
+        )
         release_stage_payload = (
             {
                 **dict(release_stage),
@@ -11714,20 +11776,28 @@ def portal_payload(
             if release_stage
             else None
         )
-        latest_generic_available = release_artifact_is_servable(
-            latest_generic_artifact,
-            target="generic",
-            require_signature=True,
-        )
-        latest_workbuddy = latest_workbuddy_artifact()
-        latest_release_payload = (
-            {
+        latest_release_payload = None
+        if latest_release and active_page in {"overview", "cockpit"}:
+            latest_release_payload = {
+                "id": latest_release["id"],
+                "version": latest_release["version"],
+            }
+        elif latest_release and active_page == "skills":
+            latest_generic_available = release_artifact_is_servable(
+                latest_generic_artifact,
+                target="generic",
+                require_signature=True,
+            )
+            latest_workbuddy = latest_workbuddy_artifact()
+            latest_release_payload = {
                 **dict(latest_release),
                 "release_notes": public_release_notes(
                     str(latest_release["version"]),
                     str(latest_release["release_notes"]),
                 ),
-                "published_at_display": format_chinese_datetime(latest_release["published_at"]),
+                "published_at_display": format_chinese_datetime(
+                    latest_release["published_at"]
+                ),
                 "release_notes_html": render_guide_markdown(
                     public_release_notes(
                         str(latest_release["version"]),
@@ -11738,14 +11808,13 @@ def portal_payload(
                 "workbuddy_available": latest_workbuddy["installable"],
                 "workbuddy": latest_workbuddy,
             }
-            if latest_release
-            else None
-        )
-        historical_releases = [
-            release
-            for release in releases
-            if latest_release is None or int(release["id"]) != int(latest_release["id"])
-        ]
+        if active_page == "skills":
+            historical_releases = [
+                release
+                for release in releases
+                if latest_release is None
+                or int(release["id"]) != int(latest_release["id"])
+            ]
         release_announcement = None
         if latest_release:
             release_announcement = connection.execute(
@@ -11802,11 +11871,7 @@ def portal_payload(
         "latest_release": latest_release_payload,
         "release_stage": release_stage_payload,
         "historical_releases": historical_releases,
-        "skill_center": (
-            skill_catalog_payload()
-            if active_page in {"downloads", "skills"}
-            else {}
-        ),
+        "skill_center": skill_catalog_payload() if active_page == "skills" else {},
         "project_algorithms": (
             project_algorithm_catalog_payload(algorithm_coverage)
             if active_page == "algorithms"

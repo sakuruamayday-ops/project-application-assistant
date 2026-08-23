@@ -1174,6 +1174,88 @@ def test_windows_update_sha512_cache_tracks_file_identity(tmp_path, monkeypatch)
 
 
 @pytest.mark.parametrize(
+    "route",
+    (
+        "/portal",
+        "/cockpit",
+        "/downloads",
+        "/feedback",
+        "/algorithms",
+        "/admin/operations",
+        "/admin/knowledge-update",
+        "/admin/releases",
+    ),
+)
+def test_unrelated_portal_pages_skip_skill_artifact_integrity_work(
+    tmp_path,
+    monkeypatch,
+    route,
+):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        def unexpected(*_args, **_kwargs):
+            raise AssertionError("unrelated page loaded Skills artifact integrity")
+
+        monkeypatch.setattr(module, "release_artifact_is_servable", unexpected)
+        monkeypatch.setattr(module, "latest_workbuddy_artifact", unexpected)
+        monkeypatch.setattr(module, "skill_catalog_payload", unexpected)
+
+        response = client.get(route)
+
+    assert response.status_code == 200
+
+
+def test_feedback_page_skips_unrelated_member_runtime_queries(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        def unexpected(*_args, **_kwargs):
+            raise AssertionError("feedback page loaded unrelated member runtime data")
+
+        monkeypatch.setattr(
+            module,
+            "latest_agent_install_result_payload",
+            unexpected,
+        )
+        monkeypatch.setattr(module, "agent_connection_status_payload", unexpected)
+        monkeypatch.setattr(module, "latest_client_release_payload", unexpected)
+        monkeypatch.setattr(module, "assistant_limit_for_user", unexpected)
+
+        response = client.get("/feedback")
+
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
     "missing_name",
     [
         "desktop-release-index.sig",
