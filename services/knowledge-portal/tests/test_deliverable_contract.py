@@ -157,7 +157,7 @@ def _artifact(
     }
 
 
-def test_panorama_standard_profile_blocks_missing_tables_artifacts_and_brand_audit():
+def test_panorama_standard_profile_blocks_missing_tables_word_and_brand_audit():
     deliverable = {
         "task_type": "analysis-report",
         "skill_id": "enterprise-panorama-analysis",
@@ -172,9 +172,9 @@ def test_panorama_standard_profile_blocks_missing_tables_artifacts_and_brand_aud
     assert contract["branding_contracts"][0]["mode"] == "forbidden"
     assert "同行竞品与行业定位" in contract["required_sections"]
     assert "风险整改表" in audit["missing_items"]
-    assert "standard_report_pdf" in audit["missing_items"]
+    assert "standard_report" in audit["missing_items"]
     assert any(
-        task["target_path"] == "branding_audits.standard_report_pdf"
+        task["target_path"] == "branding_audits.standard_report"
         for task in audit["repair_plan"]["tasks"]
     )
     assert any(
@@ -184,7 +184,7 @@ def test_panorama_standard_profile_blocks_missing_tables_artifacts_and_brand_aud
     )
 
 
-def test_panorama_standard_profile_accepts_structured_same_hash_proof():
+def test_panorama_standard_profile_accepts_default_word_same_hash_proof():
     digest = "a" * 64
     base = {
         "task_type": "analysis-report",
@@ -213,15 +213,15 @@ def test_panorama_standard_profile_accepts_structured_same_hash_proof():
         "tables": _tables(contract),
         "artifacts": [
             _artifact(
-                role="standard_report_pdf",
-                artifact_format="pdf",
-                gate="render_sales_pdf.py",
+                role="standard_report",
+                artifact_format="docx",
+                gate="document-render-and-structure-gate",
                 digest=digest,
             )
         ],
         "branding_audits": [
             {
-                "artifact_role": "standard_report_pdf",
+                "artifact_role": "standard_report",
                 "status": "passed",
                 "pages": 18,
                 "watermarks": 0,
