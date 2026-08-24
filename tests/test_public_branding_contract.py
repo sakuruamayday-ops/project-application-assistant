@@ -101,6 +101,9 @@ def test_public_namespace_gate_covers_current_public_sources():
     assert report["status"] == "pass"
     assert report["finding_count"] == 0
     assert report["allowed_identifiers"] == ["jiaotang-kb", "zshjiaotang.cn"]
+    assert report["allowed_compatibility_components"] == [
+        "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs"
+    ]
     assert report["historical_release_policy"] == "preserve_immutable"
 
 
@@ -142,6 +145,31 @@ def test_public_namespace_gate_allows_only_exact_mcp_and_domain_exceptions(tmp_p
     extended_report = verify_public_namespace(archives=[extended_identifier])
     assert extended_report["status"] == "fail"
     assert extended_report["findings"][0]["kind"] == "archive_content"
+
+
+def test_public_namespace_gate_allows_only_exact_generic_runtime_component(tmp_path):
+    package = tmp_path / "gongchuang-release.zip"
+    component = "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs"
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr(
+            "gongchuang-research-institute-skills/" + component,
+            'const protocol = "JIAOTANG-SIGNATURE-V1";',
+        )
+        archive.writestr(
+            "gongchuang-research-institute-skills/suite-release-manifest.json",
+            json.dumps({component: "0" * 64}),
+        )
+    report = verify_public_namespace(archives=[package])
+    assert report["status"] == "pass"
+
+    rejected = tmp_path / "wrong-runtime-location.zip"
+    with zipfile.ZipFile(rejected, "w") as archive:
+        archive.writestr(
+            "mcp/jiaotang-agent.mjs",
+            'const protocol = "JIAOTANG-SIGNATURE-V1";',
+        )
+    rejected_report = verify_public_namespace(archives=[rejected])
+    assert rejected_report["status"] == "fail"
 
 
 def test_standard_package_excludes_legacy_local_mcp_runtime():

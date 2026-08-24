@@ -14,6 +14,9 @@ from typing import Iterable
 
 PUBLIC_BRAND = "共创研究院"
 ALLOWED_IDENTIFIERS = ("jiaotang-kb", "zshjiaotang.cn")
+ALLOWED_COMPATIBILITY_COMPONENTS = (
+    "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs",
+)
 HISTORICAL_RELEASE_POLICY = "preserve_immutable"
 PUBLIC_SOURCE_PATHS = (
     Path("README.md"),
@@ -33,6 +36,11 @@ LEGACY_PUBLIC_ROUTE = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 ALLOWED_TEXT_PATTERNS = (
+    re.compile(
+        r"(?<![A-Za-z0-9_./-])"
+        r"skills/_runtime/jiaotang-kb/jiaotang-agent\.mjs"
+        r"(?![A-Za-z0-9_./-])"
+    ),
     re.compile(r"(?<![A-Za-z0-9_-])jiaotang-kb(?![A-Za-z0-9_-])"),
     re.compile(r"(?<![A-Za-z0-9.-])zshjiaotang\.cn(?![A-Za-z0-9.-])"),
 )
@@ -118,6 +126,12 @@ def audit_archive(path: Path) -> tuple[list[dict[str, str]], int]:
             if info.is_dir():
                 continue
             checked += 1
+            if any(
+                info.filename == component
+                or info.filename.endswith("/" + component)
+                for component in ALLOWED_COMPATIBILITY_COMPONENTS
+            ):
+                continue
             if _path_has_legacy_brand(info.filename):
                 findings.append(
                     {
@@ -177,6 +191,9 @@ def verify_public_namespace(
         "status": "pass" if not findings else "fail",
         "public_brand": PUBLIC_BRAND,
         "allowed_identifiers": list(ALLOWED_IDENTIFIERS),
+        "allowed_compatibility_components": list(
+            ALLOWED_COMPATIBILITY_COMPONENTS
+        ),
         "historical_release_policy": HISTORICAL_RELEASE_POLICY,
         "scopes": scopes,
         "checked": checked,
