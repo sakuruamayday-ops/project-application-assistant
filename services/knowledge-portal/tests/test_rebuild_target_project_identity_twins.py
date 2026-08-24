@@ -18,6 +18,48 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
 
+def test_candidate_database_guards_configured_active_index(
+    tmp_path: Path, monkeypatch
+) -> None:
+    index_root = tmp_path / "indexes"
+    current = index_root / "current"
+    current.mkdir(parents=True)
+    database = current / "knowledge_content.sqlite3"
+    database.write_bytes(b"sqlite")
+    monkeypatch.setenv("JIAOTANG_INDEX_DIR", str(index_root))
+
+    try:
+        MODULE.ensure_candidate_database(database, allow_active=False)
+    except RuntimeError as error:
+        assert "禁止直接修改活动索引" in str(error)
+    else:
+        raise AssertionError("配置的活动索引必须保持写保护")
+
+
+def test_large_candidate_database_only_blocks_explicit_synced_roots(
+    tmp_path: Path, monkeypatch
+) -> None:
+    synced_root = tmp_path / "synced"
+    local_root = tmp_path / "local"
+    synced_root.mkdir()
+    local_root.mkdir()
+    synced_database = synced_root / "knowledge_content.sqlite3"
+    local_database = local_root / "knowledge_content.sqlite3"
+    synced_database.write_bytes(b"sqlite")
+    local_database.write_bytes(b"sqlite")
+    monkeypatch.setattr(MODULE, "DEFAULT_MAX_SYNCED_CANDIDATE_BYTES", 1)
+    monkeypatch.setenv("JIAOTANG_SYNCED_ROOTS", str(synced_root))
+
+    try:
+        MODULE.ensure_candidate_database(synced_database, allow_active=False)
+    except RuntimeError as error:
+        assert "明确配置的同步目录" in str(error)
+    else:
+        raise AssertionError("大型候选库位于明确同步目录时必须失败关闭")
+
+    MODULE.ensure_candidate_database(local_database, allow_active=False)
+
+
 def create_twin_tables(connection: sqlite3.Connection) -> None:
     connection.executescript(
         """

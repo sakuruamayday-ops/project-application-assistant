@@ -26,6 +26,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -56,6 +57,7 @@ TARGET_PROJECTS = (
 )
 THREE_FIRST_PROJECTS = frozenset(TARGET_PROJECTS[2:])
 DEFAULT_RULES = PORTAL_DIR / "references" / "enterprise-lifecycle-rules.json"
+DEFAULT_MAX_SYNCED_CANDIDATE_BYTES = 500 * 1024 * 1024
 USCC_PATTERN = re.compile(r"^[0-9A-HJ-NPQRTUWXY]{18}$")
 EVIDENCE_RANK = {
     "official_final_list": 100,
@@ -268,13 +270,46 @@ def load_product_corrections(
     return result
 
 
+def configured_data_root() -> Path:
+    configured = os.environ.get("JIAOTANG_DATA_DIR")
+    return Path(configured).expanduser() if configured else Path.home() / "JiaotangData"
+
+
+def configured_index_root() -> Path:
+    configured = os.environ.get("JIAOTANG_INDEX_DIR")
+    return (
+        Path(configured).expanduser()
+        if configured
+        else configured_data_root() / "索引"
+    )
+
+
+def configured_synced_roots() -> tuple[Path, ...]:
+    configured = os.environ.get("JIAOTANG_SYNCED_ROOTS", "")
+    return tuple(
+        Path(item.strip()).expanduser()
+        for item in configured.split(os.pathsep)
+        if item.strip()
+    )
+
+
 def ensure_candidate_database(path: Path, allow_active: bool) -> None:
     resolved = path.resolve()
-    active_root = Path("/Users/zsh/JiaotangData/索引/current").resolve()
+    active_root = (configured_index_root() / "current").resolve()
     if not path.is_file():
         raise FileNotFoundError(path)
     if not allow_active and (resolved == active_root or active_root in resolved.parents):
         raise RuntimeError("禁止直接修改活动索引；请先克隆数据库再执行")
+    if path.stat().st_size <= DEFAULT_MAX_SYNCED_CANDIDATE_BYTES:
+        return
+    if any(
+        resolved == root.resolve() or root.resolve() in resolved.parents
+        for root in configured_synced_roots()
+    ):
+        raise RuntimeError(
+            "大型完整索引候选不得位于明确配置的同步目录；"
+            f"请放到 {configured_index_root() / 'candidates'} 或任务专用本地临时目录"
+        )
 
 
 def load_rules(path: Path) -> dict[str, dict[str, Any]]:

@@ -766,17 +766,48 @@ def verify_pointer_file(path: Path, public_path: Path) -> dict[str, Any]:
     return payload
 
 
+def release_manifest_digest(pointer: dict[str, Any]) -> str:
+    return require_sha256(
+        pointer.get("current_release_manifest_sha256"),
+        "增量链指针release清单摘要",
+    )
+
+
+def verify_local_release_manifest_binding(
+    prepared: dict[str, Any], pointer: dict[str, Any]
+) -> str:
+    expected = release_manifest_digest(pointer)
+    release_path = Path(str(prepared["package_dir"])) / "release.json"
+    if sha256_file(release_path) != expected:
+        raise PolicyIncrementError("增量包release清单与签名指针绑定摘要不一致")
+    return expected
+
+
+def verify_remote_release_manifest_binding(
+    bucket: object, prepared: dict[str, Any], pointer: dict[str, Any]
+) -> str:
+    expected = release_manifest_digest(pointer)
+    key = f"{prepared['delta_prefix']}/release.json"
+    if immutable_head(bucket, key) is None:
+        raise PolicyIncrementError(f"OSS增量包缺少release清单：{key}")
+    actual = hashlib.sha256(bucket.get_object(key).read()).hexdigest()
+    if actual != expected:
+        raise PolicyIncrementError("OSS增量包release清单与签名指针绑定摘要不一致")
+    return expected
+
+
 def command_upload_immutable(args: argparse.Namespace) -> dict[str, Any]:
     prepared = prepared_payload(args.prepared)
-    bucket = build_bucket()
     public_path = Path(str(prepared["trusted_public_key"]))
     pointer = verify_pointer_file(Path(str(prepared["pointer_path"])), public_path)
+    verify_local_release_manifest_binding(prepared, pointer)
     package_dir = Path(str(prepared["package_dir"]))
     verify_package(
         package_dir,
         public_path,
         str(prepared["previous_chain_sha256"]),
     )
+    bucket = build_bucket()
     uploaded = existing = 0
     delta_prefix = str(prepared["delta_prefix"])
     for path in sorted(item for item in package_dir.iterdir() if item.is_file()):
@@ -908,6 +939,8 @@ def command_switch_pointer(args: argparse.Namespace, *, rollback: bool = False) 
         prepared["chain_sha256"] if rollback else prepared["previous_chain_sha256"]
     )
     bucket = build_bucket()
+    if not rollback:
+        verify_remote_release_manifest_binding(bucket, prepared, target)
     key = f"{prepared['policy_root']}/current.json"
     result = overwrite_current_pointer(
         bucket,
@@ -935,6 +968,7 @@ def command_verify_cloud(args: argparse.Namespace) -> dict[str, Any]:
     )
     if not current or current.get("current_chain_sha256") != prepared["chain_sha256"]:
         raise PolicyIncrementError("OSS增量链current未指向本轮")
+    verify_remote_release_manifest_binding(bucket, prepared, current)
     delta_prefix = str(prepared["delta_prefix"])
     errors: list[str] = []
     for path in sorted(Path(str(prepared["package_dir"])).iterdir()):

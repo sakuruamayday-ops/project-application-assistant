@@ -106,6 +106,64 @@ def test_pointer_binds_full_release_manifest_when_present(tmp_path: Path) -> Non
     assert pointer["current_release_manifest_sha256"] == "66" * 32
 
 
+def test_local_release_manifest_must_match_signed_pointer(tmp_path: Path) -> None:
+    package = tmp_path / "package"
+    package.mkdir()
+    release_path = package / "release.json"
+    release_path.write_text('{"release_id":"policy-current"}\n', encoding="utf-8")
+    digest = hashlib.sha256(release_path.read_bytes()).hexdigest()
+    prepared = {"package_dir": str(package)}
+    pointer = {"current_release_manifest_sha256": digest}
+
+    assert release.verify_local_release_manifest_binding(prepared, pointer) == digest
+    release_path.write_text('{"release_id":"policy-other"}\n', encoding="utf-8")
+    with pytest.raises(PolicyIncrementError, match="签名指针绑定摘要不一致"):
+        release.verify_local_release_manifest_binding(prepared, pointer)
+
+
+def test_remote_release_manifest_must_match_signed_pointer() -> None:
+    body = b'{"release_id":"policy-current"}\n'
+    digest = hashlib.sha256(body).hexdigest()
+
+    class StoredObject:
+        def __init__(self, payload: bytes) -> None:
+            self.payload = payload
+
+        def read(self) -> bytes:
+            return self.payload
+
+    class Bucket:
+        def __init__(self, payload: bytes | None) -> None:
+            self.payload = payload
+
+        def head_object(self, _key: str) -> object:
+            if self.payload is None:
+                raise release.oss2.exceptions.NoSuchKey(404, {}, b"", {})
+            return SimpleNamespace()
+
+        def get_object(self, _key: str) -> StoredObject:
+            assert self.payload is not None
+            return StoredObject(self.payload)
+
+    prepared = {"delta_prefix": "production/index/policy/deltas/current"}
+    pointer = {"current_release_manifest_sha256": digest}
+
+    assert (
+        release.verify_remote_release_manifest_binding(
+            Bucket(body), prepared, pointer
+        )
+        == digest
+    )
+    with pytest.raises(PolicyIncrementError, match="签名指针绑定摘要不一致"):
+        release.verify_remote_release_manifest_binding(
+            Bucket(b"changed"), prepared, pointer
+        )
+    with pytest.raises(PolicyIncrementError, match="缺少release清单"):
+        release.verify_remote_release_manifest_binding(
+            Bucket(None), prepared, pointer
+        )
+
+
 def test_remote_pointer_requires_signed_structural_chain_consistency(
     tmp_path: Path,
 ) -> None:
