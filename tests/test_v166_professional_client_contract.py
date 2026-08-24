@@ -16,7 +16,7 @@ def test_client_professional_routes_cover_identity_hightech_and_humanizer() -> N
 
     assert contract["schema_version"] == 3
     assert contract["contract_id"] == "gongchuang-professional-delivery-contract-v3"
-    assert contract["rule_version"] == "1.6.9"
+    assert contract["rule_version"] == "1.6.10"
     assert {"找同行", "评分", "测评", "体检", "出报告", "生成报告"} <= (
         set(contract["business_domain_markers"])
         | set(contract["peer_task_markers"])
@@ -91,7 +91,7 @@ def test_client_runtime_registry_exposes_only_existing_first_party_scripts() -> 
 
     assert "client-runtime-operations.json" in suite["shared_paths"]
     assert registry["schema_version"] == "gongchuang-signed-skill-operations/v1"
-    assert registry["skill_bundle_version"] == "1.6.9"
+    assert registry["skill_bundle_version"] == "1.6.10"
     operations = registry["operations"]
     assert len(operations) >= 8
     assert len({operation["id"] for operation in operations}) == len(operations)

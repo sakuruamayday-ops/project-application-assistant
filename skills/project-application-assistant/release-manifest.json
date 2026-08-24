@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-application-assistant",
-  "release_tag": "V1.6.8",
+  "release_tag": "V1.6.10",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "8c97317ab48e9cc80a72d52435b7371fce0e332292ec6a71e4f9bca55ea97cbe",
+    "SKILL.md": "f2fd036091077dfc1cf9ea0020de43b586362291b2e48a8e26c8fd9fc3091d34",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/region-loading-rules.md": "54fd7da44ac24e4aada3560157b86920a1a130f70e2b6cc8c0a2c500093820e9",
     "scripts/extract_workspace_document.py": "1a817359e3fbb05a63ef5e0d2b1efc595dd87e296693983d1594d95561951578",

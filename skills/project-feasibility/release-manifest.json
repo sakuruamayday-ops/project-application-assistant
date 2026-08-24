@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-feasibility",
-  "release_tag": "V1.6.8",
+  "release_tag": "V1.6.10",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,7 +21,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "042441836478c654597f60bc6ecf35559b5062bee66424390384a4938a360ea5",
+    "SKILL.md": "252a62c6ce66d6ccf8fc07c140aebd7a0d5064b90b9ae0a68a87c3b4ccdbc2b3",
     "assets/report-templates/digitalization/feasibility.docx": "083f16c248c41e07312bc7112df443f52b732712f5102ce4ece571d7f8f1c816",
     "assets/report-templates/digitalization/preassessment.docx": "c478c4ab9357775899b63779c99daaa39db6451d60d117b1e094b1dbec5bc907",
     "assets/report-templates/enterprise-rd-center/feasibility.docx": "929a1b2d1c3187c91a06f56e7895fb56d365813a4b2fc2f6e96f6443ee071f9f",
@@ -52,8 +52,8 @@
     "references/feasibility-decision-model.md": "e609448d727bb32a0b441ec262836c415c7e00b86b26d841ce1b3fc56b6b3b29",
     "references/policy-application-path-contract.md": "10e4ba0247f4d874f3594457f3cae2667b75ce8451936c539a07f0d4da336ef1",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "references/report-template-registry.json": "b56cc1a58a6a531c375ee4a6f5fede4be9fce4f744a19f6123ad7a9789eb1b3a",
-    "references/two-report-contract.md": "6b3a094b2046b3576f2bb49b42835ad247a73c86e75e266c564372e656f6bca0",
+    "references/report-template-registry.json": "db506a44157f4a18e83caf5453fe973d7544eb2231406f92c7ab3295f7d41202",
+    "references/two-report-contract.md": "b277e556b3d9f47f882d9afe7d3a27f567bb325d299c283abc9c7a97cb9fffa7",
     "scripts/fill_report_template.py": "e0b08f3efff0b7ec49d2ade333eb75dee6e54984a0425d5234da4bf2460b1cba",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/select_report_template.py": "eb99d4c0f378e91e96fe7edcafe5b623060750c3f5f4bc0fbe188d9737b9fb35",

@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "contract_id": "gongchuang-professional-delivery-contract-v3",
-  "rule_version": "1.6.9",
+  "rule_version": "1.6.10",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -677,7 +677,9 @@
   },
   "skills": {
     "enterprise-profile": {
-      "applies_when_prompt_contains": ["企业数字身份证", "企业画像", "主体核验", "企业体检"],
+      "applies_when_prompt_contains": ["企业数字身份证", "企业画像", "企业主体核验", "企业体检"],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["主体锚定", "统一社会信用代码"],
         ["已核验", "用户提供", "计算", "待补", "冲突"],
@@ -687,7 +689,9 @@
       ]
     },
     "high-tech-enterprise-application-drafting": {
-      "applies_when_prompt_contains": ["高企申请书", "高新技术企业申请书", "企业创新能力", "知识产权对企业竞争力的作用", "科技成果转化情况"],
+      "applies_when_prompt_contains": ["高企申请书", "高新技术企业申请书", "高企企业创新能力", "高企创新能力", "高企知识产权对企业竞争力的作用", "高企科技成果转化情况"],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["知识产权对企业竞争力的作用"],
         ["科技成果转化情况"],
@@ -698,6 +702,8 @@
     },
     "gongchuang-humanizer-zh": {
       "applies_when_prompt_contains": ["去AI味", "去 AI 味", "降低机器腔", "改得像真人", "自然化润色", "减少套话"],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": []
     },
     "project-feasibility": {
@@ -740,6 +746,8 @@
         "给公司出报告",
         "给企业出报告"
       ],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["项目版本", "适用版本"],
         ["总体结论", "可申报", "有条件申报", "不可申报", "暂无法判断"],
@@ -761,6 +769,8 @@
         "高企双报告",
         "高新技术企业双报告"
       ],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["硬门槛", "门槛"],
         ["目标分", "保守分", "压力分"],
@@ -770,7 +780,9 @@
       ]
     },
     "enterprise-panorama-analysis": {
-      "applies_when_prompt_contains": ["企业全景", "合作前尽调", "全景调研", "A版", "B版", "C版"],
+      "applies_when_prompt_contains": ["企业全景", "合作前尽调", "全景调研", "企业全景A版", "企业全景B版", "企业全景C版", "标准销售版", "GCIP深度顾问版"],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["A标准销售版", "B深度顾问版", "C两版", "标准销售版", "GCIP深度顾问版"],
         ["企业主体", "工商信息", "主体锚定"],
@@ -786,6 +798,8 @@
     },
     "manufacturing-tax-risk-analysis": {
       "applies_when_prompt_contains": ["税务风险", "金税四期", "制造业财税", "纳税风险"],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["enterprise-financial-facts/v1", "共享财务事实"],
         ["九个固定专题", "profitability"],
@@ -816,6 +830,8 @@
         "专精特新小巨人双报告",
         "前期预评估"
       ],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["项目层级", "省级专精特新", "专精特新小巨人"],
         ["申请类型", "新申报", "复核"],
@@ -830,7 +846,9 @@
       ]
     },
     "sme-development-projects": {
-      "applies_when_prompt_contains": ["专精特新体检", "申请书审核", "小巨人材料核稿", "后期体检"],
+      "applies_when_prompt_contains": ["专精特新体检", "专精特新申请书审核", "审核专精特新申请书", "小巨人申请书审核", "审核小巨人申请书", "小巨人材料核稿", "专精特新后期体检", "小巨人后期体检"],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["申请版本与政策口径", "申请书版本已确认"],
         ["总体结论"],
@@ -853,6 +871,8 @@
         "完整申请文件",
         "形成专利申请"
       ],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["全案唯一清单", "patent-case-manifest"],
         ["事实锁", "技术交底"],
@@ -875,6 +895,8 @@
         "查专精特新同行",
         "查小巨人同行"
       ],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["来源清单", "来源"],
         ["可比性评分", "可比性"],
@@ -885,6 +907,8 @@
     },
     "project-application-assistant": {
       "applies_when_prompt_contains": ["政府项目申报", "申报策略", "项目匹配", "申报材料总控", "企业全生命周期"],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["结论", "完成结果"],
         ["依据", "来源", "证据"],
@@ -901,6 +925,8 @@
         "质量品牌",
         "单项冠军"
       ],
+      "query_marker_groups": [],
+      "analysis_marker_groups": [],
       "required_marker_groups": [
         ["市场地位证据分析", "项目类型"],
         ["市场占有率", "市场份额"],

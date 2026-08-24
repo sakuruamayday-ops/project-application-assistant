@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-development-projects",
-  "release_tag": "V1.6.8",
+  "release_tag": "V1.6.10",
   "required_paths": [
     "SKILL.md",
     "references/current-policy-baseline-2026.md",
@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "84102e572206686c8afd92c6413b8b865792c91423a1a6a66dc87b80934022a0",
+    "SKILL.md": "af301036366710cdbd2e650b3fd64b5edeee4cc48958ed2974b09261e9680850",
     "assets/专精特新小巨人前期培育方向卡模板.docx": "3e6dadd6f7955799eaf3f1e6a1188ef7b5e85e46c933ee6e1d6f36f544375bff",
     "references/application-version-gate.md": "43d651b1c2c61f28746b74266d2f7280507e471a35436be2b9d48f4656408d9a",
     "references/core-formula-process-performance-matrix.md": "9be9c917fba75a880de7ebc56880a20fa5bdf26d3c8313e81406106f7bac69b9",

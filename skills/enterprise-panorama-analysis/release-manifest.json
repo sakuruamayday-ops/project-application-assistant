@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "enterprise-panorama-analysis",
-  "release_tag": "V1.6.8",
+  "release_tag": "V1.6.10",
   "required_paths": [
     "SKILL.md",
     "assets/brand-gold-07.png",
@@ -45,7 +45,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "25d24d70900820f30ba5d89a709a1f2181714d5bd718d3c9ed99794b7668597e",
+    "SKILL.md": "c91b3af51a728c4c04806fd6923e0de3dbf53e4ab67a51f21213b11154455b5f",
     "assets/brand-gold-07.png": "9698d9c63a16a3389b80250bfb211147fac8d8ca3a5bb7ef3beafb5b4ce377b4",
     "assets/brand-gold-10.png": "292ab0d923085de57f3ecac37b78e31df2c9b720b17c9b7249b55a8c161bffbf",
     "assets/brand-gold-12.png": "32f8ae85d31cdda6a35bdba6e7c8fcca802e7e3bdd8f4938f66cc400cae19305",

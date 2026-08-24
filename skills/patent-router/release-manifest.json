@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "patent-router",
-  "release_tag": "V1.6.8",
+  "release_tag": "V1.6.10",
   "required_paths": [
     "SKILL.md",
     "publisher-ed25519.pub",
@@ -66,7 +66,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "1f81ed5392bb0f98c50180055f1d2a39064a0d60e654d1b53171362ab72be670",
+    "SKILL.md": "d0b87931d71c0fd40be9e0d59adb2b1b9549f5aec1854e085df8b61f93ff23b8",
     "THIRD_PARTY_NOTICES.md": "f9d8130b58b8e7b245fd9c1087c07864ec186b04b4a064f091374db8bc475324",
     "references/ai-patent-practice.md": "72465c41a0cbc124c472fd788a8d57cda15475fd2e1c916350ab796a949dd4f9",
     "references/claim-prior-art-matrix.md": "e7734245c823a30982b26efb821839e825ab4482d6f96512e76658d65577b2c5",

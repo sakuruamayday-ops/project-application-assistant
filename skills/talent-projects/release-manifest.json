@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "talent-projects",
-  "release_tag": "V1.6.8",
+  "release_tag": "V1.6.10",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",

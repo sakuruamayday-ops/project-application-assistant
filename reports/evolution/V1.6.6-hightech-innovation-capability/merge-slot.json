@@ -34,7 +34,7 @@
     "reports/evolution/V1.6.6-hightech-innovation-capability/skill-impact-report.md"
   ],
   "expected_sha256": {
-    "skills/high-tech-enterprise-application-drafting/SKILL.md": "965687498870fbbba3f77c1ee37588d44898cba0ab7951416ecafb0b267b1c77",
+    "skills/high-tech-enterprise-application-drafting/SKILL.md": "9b53ca4817690dba2b636557b300099cc51637b11958f976945c7abdd8333fac",
     "skills/high-tech-enterprise-application-drafting/references/writing-rules.md": "fdb4deb79a7fc432475d5b414406ee31c3dc6c8e80aea14e4601888a1fb85f1c",
     "skills/high-tech-enterprise-application-drafting/references/enterprise-innovation-capability-format.md": "fcc30074b5e0dadc7464609983a5178466c8177e4996b1912980870449eb8dab",
     "skills/high-tech-enterprise-application-drafting/scripts/audit_application_docx.py": "ac36b2262df031f1a6a1da1927531ec0bc844d73b3fe1f5f3ed5792a09a66911",

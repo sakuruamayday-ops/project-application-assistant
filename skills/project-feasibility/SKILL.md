@@ -16,6 +16,8 @@ description: 对单个政府项目执行完整可行性分析。用户只给企�
 每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
+用户只问“能不能申报”、某一项硬门槛、单个差距或一条政策条件时，只核验并回答该问题，不自动生成完整门槛矩阵、评分映射、行动清单或报告文件。以下完整流程只在用户明确要求前期评估、可行性分析、报告或完整项目判断时执行。
+
 ## 强制执行顺序
 
 1. 企业名称加项目名和报告意图即可启动，现有资料可同时提供但不是启动前提，不要求用户重复填写企业基本信息。先以企业名称作为主体检索键，通过天眼查、企查查及当前可用的企业数据工具补齐统一社会信用代码、现名、曾用名、登记地区和主体状态；无法核验的字段在报告中明确标为待核验，不因缺少单独的“企业基本信息表”拒绝出具前期评估或可行性分析。“双报告”以及“专精的前期报告和中期分析”等受控别名，只映射为“项目前期评估报告”和“项目申报可行性分析报告”两份交付；不新增“中期报告”第三种报告。分别以 `preassessment` 和 `feasibility` 运行受控模板选择。仅解释、摘录或普通改写已有报告时，不得重新生成两类报告或创建新文件。项目全称、地区、申报年度、批次以及新申报或复核类型仍从用户资料、团队知识库和政策原文中提取；任一信息可能改变适用规则时，先调用 `policy-retrieval` 取得管理办法、工作指引和当期通知。任务属于前期评估或培育规划时，同时读取 `references/policy-application-path-contract.md`，不得只给资格判断而省略项目的建设和申报路径。用户要求“项目前期评估报告”或“项目申报可行性分析报告”时，还必须完整读取 `references/two-report-contract.md` 和 `references/report-template-registry.json`，并与对应项目领域技能组合执行。高企、专精特新中小企业、小巨人、三首、研发中心、制造精品、单项冠军、绿色工厂、数字化及科技计划类命中受控模板时，必须先运行 `python3 scripts/select_report_template.py --project-type <项目> --report-type <preassessment|feasibility> --output-dir <交付目录> --enterprise <企业>`，基于复制出的可编辑 Word 母版回填；不得脱离模板重新排版。进行自动化成稿时，可将客户资料、原文锚点和项目事实写入技能树之外的私有夹具，再运行 `python3 scripts/fill_report_template.py --template <已复制母版> --output <成稿.docx> --fixture <私有夹具.json> --report-type <preassessment|feasibility> --release-tag <版本> --public-root <公共源码根目录>`。自动成稿必须命中真实原文锚点，且不得将客户原件、绝对路径或客户成稿放入公共候选包。夹具中的公开来源必须显式提供官方链接，或将知识库资料标为 `source_type=knowledge-base`；不得把内部校验值、原文锚点、绝对路径、候选验收标记或培训版本字样写入对外交付。索引未命中时才按统一报告骨架生成，且不得冒充已使用受控模板。
