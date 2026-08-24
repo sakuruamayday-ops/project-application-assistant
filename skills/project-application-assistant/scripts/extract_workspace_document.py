@@ -124,6 +124,58 @@ def extract_xlsx(path: Path) -> dict[str, object]:
     return {"kind": "xlsx", "status": "extracted", "sheets": len(worksheet_paths), "text": text, "truncated": truncated}
 
 
+def xls_number_text(book: object, cell: object) -> str:
+    value = float(cell.value)
+    format_code = ""
+    try:
+        xf = book.xf_list[cell.xf_index]
+        format_code = book.format_map[xf.format_key].format_str
+    except (AttributeError, IndexError, KeyError):
+        pass
+    if "%" in format_code:
+        match = re.search(r"\.([0#]+)[^%]*%", format_code)
+        places = len(match.group(1)) if match else 0
+        return f"{value * 100:.{places}f}%"
+    return str(int(value)) if value.is_integer() else format(value, ".15g")
+
+
+def xls_cell_text(book: object, cell: object) -> str:
+    import xlrd
+
+    if cell.ctype in (xlrd.XL_CELL_EMPTY, xlrd.XL_CELL_BLANK):
+        return ""
+    if cell.ctype == xlrd.XL_CELL_DATE:
+        value = xlrd.xldate_as_datetime(cell.value, book.datemode)
+        return value.isoformat(sep=" ", timespec="seconds")
+    if cell.ctype == xlrd.XL_CELL_NUMBER:
+        return xls_number_text(book, cell)
+    if cell.ctype == xlrd.XL_CELL_BOOLEAN:
+        return "TRUE" if cell.value else "FALSE"
+    if cell.ctype == xlrd.XL_CELL_ERROR:
+        return xlrd.error_text_from_code.get(cell.value, "#ERROR")
+    return str(cell.value)
+
+
+def extract_xls(path: Path) -> dict[str, object]:
+    try:
+        import xlrd
+    except ImportError as error:
+        raise RuntimeError("内置 XLS 解析组件不可用") from error
+    workbook = xlrd.open_workbook(path, on_demand=True, formatting_info=True)
+    sheet_count = workbook.nsheets
+    parts: list[str] = []
+    try:
+        for worksheet in workbook.sheets():
+            parts.append(f"## {worksheet.name}\n")
+            for row_index in range(worksheet.nrows):
+                values = [xls_cell_text(workbook, worksheet.cell(row_index, column)) for column in range(worksheet.ncols)]
+                parts.append("\t".join(values).rstrip() + "\n")
+    finally:
+        workbook.release_resources()
+    text, truncated = bounded_join(parts)
+    return {"kind": "xls", "status": "extracted", "sheets": sheet_count, "text": text, "truncated": truncated}
+
+
 def extract_pdf(path: Path) -> dict[str, object]:
     try:
         import pypdfium2 as pdfium
@@ -181,7 +233,7 @@ def main() -> int:
     parser.add_argument("document", type=Path)
     args = parser.parse_args()
     path = args.document
-    handlers = {".docx": extract_docx, ".xlsx": extract_xlsx, ".pdf": extract_pdf, ".txt": extract_txt}
+    handlers = {".docx": extract_docx, ".xls": extract_xls, ".xlsx": extract_xlsx, ".pdf": extract_pdf, ".txt": extract_txt}
     try:
         if not path.is_file() or path.is_symlink():
             raise ValueError("输入必须是普通文件")

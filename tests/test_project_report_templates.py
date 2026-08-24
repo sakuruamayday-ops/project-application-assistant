@@ -45,7 +45,7 @@ def docx_text_and_tables(path: Path) -> tuple[str, list[list[str]]]:
 def test_registry_has_twelve_projects_and_twenty_four_verified_editable_masters():
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
-    assert registry["release_tag"] == "V1.6.10"
+    assert registry["release_tag"] == "V1.6.11"
     assert len(registry["projects"]) == 12
     assert set(registry["report_types"]) == {"preassessment", "feasibility"}
     seen = set()

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-task-router",
-  "release_tag": "V1.6.10",
+  "release_tag": "V1.6.11",
   "required_paths": [
     "SKILL.md",
     "references/domain-routing-matrix.md",

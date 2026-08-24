@@ -10,6 +10,8 @@ import pypdfium2 as pdfium
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "extract_workspace_document.py"
+FIXTURES = Path(__file__).parent / "fixtures"
+OPERATIONS = Path(__file__).parents[2] / "client-runtime-operations.json"
 
 
 def run(path: Path) -> tuple[int, dict[str, object]]:
@@ -57,6 +59,16 @@ def test_extracts_xlsx_shared_strings(tmp_path: Path) -> None:
     assert "营业收入\t100" in str(result["text"])
 
 
+def test_extracts_legacy_xls_visible_values() -> None:
+    code, result = run(FIXTURES / "document-extraction-sample.xls")
+    assert code == 0
+    assert result["kind"] == "xls"
+    assert result["status"] == "extracted"
+    assert result["sheets"] == 1
+    assert "研发人数\t6" in str(result["text"])
+    assert "增长率\t190.00%" in str(result["text"])
+
+
 def test_image_only_pdf_requires_ocr_instead_of_counting_page_heading_as_text(tmp_path: Path) -> None:
     source = tmp_path / "扫描件.pdf"
     document = pdfium.PdfDocument.new()
@@ -77,3 +89,12 @@ def test_rejects_unsupported_file(tmp_path: Path) -> None:
     code, result = run(source)
     assert code == 2
     assert result["status"] == "rejected"
+
+
+def test_signed_operation_requires_the_document_extraction_schema_only() -> None:
+    registry = json.loads(OPERATIONS.read_text(encoding="utf-8"))
+    operations = {item["id"]: item for item in registry["operations"]}
+    extractor = operations["project-application-assistant.extract-workspace-document"]
+    ledger = operations["evidence-ledger.validate-strict-ledger"]
+    assert extractor["stdout_json_schema_version"] == "gongchuang-document-extraction/v1"
+    assert "stdout_json_schema_version" not in ledger

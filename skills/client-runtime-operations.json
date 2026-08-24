@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.6.10",
+  "skill_bundle_version": "1.6.11",
   "operations": [
     {
       "id": "consistency-check.scan-formal-material",
@@ -110,7 +110,7 @@
     {
       "id": "project-application-assistant.extract-workspace-document",
       "skill": "project-application-assistant",
-      "description": "提取企业空间内 DOCX、XLSX、文本 PDF 或 TXT 的可审计正文；扫描 PDF 返回需要 OCR，不猜测内容。",
+      "description": "提取企业空间内 DOCX、XLS、XLSX、文本 PDF 或 TXT 的可审计正文；扫描 PDF 返回需要 OCR，不猜测内容。",
       "script": "project-application-assistant/scripts/extract_workspace_document.py",
       "files": [],
       "sandbox_mode": "read-only",
@@ -119,11 +119,12 @@
       "max_output_bytes": 1048576,
       "result_exit_codes": [0, 2],
       "passing_exit_codes": [0],
+      "stdout_json_schema_version": "gongchuang-document-extraction/v1",
       "parameters": {
         "document": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".docx", ".xlsx", ".pdf", ".txt"],
+          "extensions": [".docx", ".xls", ".xlsx", ".pdf", ".txt"],
           "max_bytes": 134217728
         }
       },

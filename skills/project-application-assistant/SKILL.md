@@ -58,7 +58,7 @@ description: 企业全生命周期总控技能。用于政府项目匹配、政�
 
 ## 企业资料导入与读取
 
-用户从客户端输入框添加 DOCX、XLSX、PDF 或 TXT 后，资料必须先复制到当前具体企业空间的 `共创导入资料` 目录，再读取副本；不得把源文件绝对路径、文件字节或账户凭据送入对话。读取 DOCX、XLSX、文本型 PDF 和 TXT 时，优先调用已验签操作 `project-application-assistant.extract-workspace-document`，参数 `document` 只能是当前企业空间内的相对路径。
+用户从客户端输入框添加 DOCX、XLS、XLSX、PDF 或 TXT 后，资料必须先复制到当前具体企业空间的 `共创导入资料` 目录，再读取副本；不得把源文件绝对路径、文件字节或账户凭据送入对话。读取 DOCX、XLS、XLSX、文本型 PDF 和 TXT 时，优先调用已验签操作 `project-application-assistant.extract-workspace-document`，参数 `document` 只能是当前企业空间内的相对路径。
 
 解析结果为 `extracted` 时，依据返回正文回答并保留文件名、页码或工作表等出处。解析结果为 `needs_ocr` 时，说明该 PDF 没有可提取文字，改用已配置的 PaddleOCR 识别扫描页；OCR 未成功前不得猜测图片内容。结果为 `rejected`、输出被截断或文件损坏时，明确说明边界并要求用户拆分或换用有效文件，不得把导入成功写成读取成功。
 
