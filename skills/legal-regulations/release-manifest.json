@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "legal-regulations",
-  "release_tag": "V1.6.11",
+  "release_tag": "V1.6.12",
   "required_paths": [
     "SKILL.md",
     "publisher-ed25519.pub",

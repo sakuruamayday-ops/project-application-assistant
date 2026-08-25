@@ -16,6 +16,10 @@ def test_deep_clarification_is_business_facing_and_preserves_license():
     assert "allow_implicit_invocation: false" in interface
     assert "当前可决定集合中的全部问题" in skill
     assert "每题编号" in skill and "推荐答案" in skill
+    assert "按推荐继续" in skill and "跳过澄清" in skill and "取消任务" in skill
+    assert "连续两轮没有取得进展" in skill
+    assert "不得发起第三轮相同问题" in skill
+    assert "不重复调用同一不可达能力" in skill
     assert "事实，由助手自行核验" in skill
     assert "共同理解与执行清单" in skill
     assert "用户尚未确认时，不得进入实质实施" in skill

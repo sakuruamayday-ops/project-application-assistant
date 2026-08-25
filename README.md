@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/releases/V1.6.11.md"><img src="https://img.shields.io/badge/Release-V1.6.11-C9A760?style=for-the-badge" alt="Release V1.6.11"></a>
+  <a href="docs/releases/V1.6.12.md"><img src="https://img.shields.io/badge/Release-V1.6.12-C9A760?style=for-the-badge" alt="Release V1.6.12"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -41,7 +41,7 @@
 
 ### 团队成员
 
-登录[团队门户](https://zshjiaotang.cn/)，进入「客户端下载」获取共创企业助手 macOS 或 Windows 版。客户端登录后自动校验内置 V1.6.11 技能包；需要企查查、天眼查、PaddleOCR 或共创知识库时，在客户端 Skills 中心点击「安装与连接」，完成官方授权、`tools/list` 和健康调用后才显示已连接。
+登录[团队门户](https://zshjiaotang.cn/)，进入「客户端下载」获取共创企业助手 macOS 或 Windows 版。客户端登录后自动校验内置技能包；需要企查查、天眼查、PaddleOCR 或共创知识库时，在客户端 Skills 中心点击「安装与连接」，完成官方授权、`tools/list` 和健康调用后才显示已连接。
 
 ### GitHub 下载
 
@@ -51,7 +51,7 @@
 | 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
 | 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | Skills 中心下载通用包，并从「安装与连接」复制标准配置 |
 
-V1.6.11 发布签名通用 Skills 包以及 macOS、Windows 平台专用包。共创企业助手 V0.2.6 将同一技能内容作为已验签内置资产加载，并在 macOS 与 Windows 使用同一专业执行合同；客户端与技能包分别版本化、分别验收。
+V1.6.12 发布签名通用 Skills 包以及 macOS、Windows 平台专用包。共创企业助手将同一技能内容作为已验签内置资产加载，并在 macOS 与 Windows 使用同一专业执行合同；客户端与技能包分别版本化、分别验收。
 
 ### 当前版本功能简介
 
@@ -129,7 +129,7 @@ V1.6.11 发布签名通用 Skills 包以及 macOS、Windows 平台专用包。�
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
-| [V1.6.11 功能简介](docs/releases/V1.6.11.md) | 当前候选版本的旧式 XLS、结构化回执、证据绑定与专业文件发布收敛 |
+| [V1.6.12 功能简介](docs/releases/V1.6.12.md) | 深度澄清主动结束、无进展收敛与不可达能力停止重试 |
 | [V1.6.10 功能简介](docs/releases/V1.6.10.md) | 当前正式版本的回答深度收敛、最小充分响应和完整正式交付边界 |
 | [V1.6.7 功能简介](docs/releases/V1.6.7.md) | 历史版本的最简报告提示词、主体自动补齐和本地知识库优先同行检索 |
 | [V1.6.5.2 功能简介](docs/releases/V1.6.5.2.md) | 上一正式版本的十二类双报告受控模板、真实资料成稿回归、最终 ZIP 模板调用和视觉门禁 |
