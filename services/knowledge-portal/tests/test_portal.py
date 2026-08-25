@@ -984,6 +984,14 @@ def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
         "minimum_supported_version": "0.1.4",
     }
     assert module.client_compatibility_receipt("0.2.7") == {
+        "client_compatibility": "upgrade-advised",
+        "minimum_supported_version": "0.1.4",
+    }
+    assert module.client_compatibility_receipt("0.2.8") == {
+        "client_compatibility": "supported",
+        "minimum_supported_version": "0.1.4",
+    }
+    assert module.client_compatibility_receipt("0.2.9") == {
         "client_compatibility": "supported",
         "minimum_supported_version": "0.1.4",
     }
