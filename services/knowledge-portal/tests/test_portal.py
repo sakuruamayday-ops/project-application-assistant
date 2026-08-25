@@ -978,6 +978,10 @@ def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
         "minimum_supported_version": "0.1.4",
     }
     assert module.client_compatibility_receipt("0.2.6") == {
+        "client_compatibility": "upgrade-advised",
+        "minimum_supported_version": "0.1.4",
+    }
+    assert module.client_compatibility_receipt("0.2.7") == {
         "client_compatibility": "supported",
         "minimum_supported_version": "0.1.4",
     }
@@ -1124,6 +1128,41 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
 
         monkeypatch.setattr(module, "cached_sha512_file_base64", replaced_during_sha512)
         assert client.get("/client-updates/v0.2/latest.yml").status_code == 503
+
+
+def test_current_client_repair_routes_serve_only_verified_full_installers(tmp_path):
+    module = load_app(tmp_path)
+    current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
+    _, artifact_ids = publish_test_client_release(
+        module,
+        version=current_version,
+        dual_macos=True,
+        windows_signature_status="unsigned-approved",
+    )
+
+    with TestClient(module.app) as client:
+        mac_arm64 = client.get("/client-updates/v0.2/repair/macos/arm64")
+        mac_x64 = client.get("/client-updates/v0.2/repair/macos/x64")
+        windows = client.get("/client-updates/v0.2/repair/windows/x64")
+        unsupported = client.get("/client-updates/v0.2/repair/windows/arm64")
+
+        assert mac_arm64.content == f"signed-macos-{current_version}".encode()
+        assert mac_x64.content == f"signed-macos-intel-{current_version}".encode()
+        assert windows.content == f"signed-windows-{current_version}".encode()
+        assert unsupported.status_code == 404
+        for response in (mac_arm64, mac_x64, windows):
+            assert response.status_code == 200
+            assert response.headers["x-gongchuang-client-version"] == current_version
+            assert len(response.headers["x-gongchuang-artifact-sha256"]) == 64
+            assert response.headers["cache-control"] == "public, no-cache"
+
+        with closing(module.database()) as connection:
+            connection.execute(
+                "UPDATE client_release_artifacts SET signature_status='pending' WHERE id=?",
+                (artifact_ids["windows"],),
+            )
+            connection.commit()
+        assert client.get("/client-updates/v0.2/repair/windows/x64").status_code == 503
 
 
 def test_client_artifact_availability_digest_cache_tracks_file_identity(

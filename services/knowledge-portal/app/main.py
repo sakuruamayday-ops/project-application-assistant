@@ -171,7 +171,7 @@ DESKTOP_SELF_UPDATE_INDEX_NAMES = frozenset(
 )
 WINDOWS_SELF_UPDATE_MANIFEST_NAME = "latest.yml"
 LEGACY_DESKTOP_SELF_UPDATE_VERSION = "0.1.4"
-CURRENT_DESKTOP_SELF_UPDATE_VERSION = "0.2.6"
+CURRENT_DESKTOP_SELF_UPDATE_VERSION = "0.2.7"
 MINIMUM_SUPPORTED_CLIENT_VERSION = os.environ.get(
     "JIAOTANG_MINIMUM_SUPPORTED_CLIENT_VERSION",
     LEGACY_DESKTOP_SELF_UPDATE_VERSION,
@@ -20216,6 +20216,59 @@ def windows_desktop_update_response(asset_name: str):
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+def current_client_repair_response(platform_name: str, architecture: str):
+    """Serve the current verified full installer after a client startup failure."""
+    file_kind = "dmg" if platform_name == "macos" else "nsis"
+    if (
+        platform_name not in CLIENT_AUTHORIZATION_PLATFORMS
+        or architecture not in {"arm64", "x64"}
+        or (platform_name == "windows" and architecture != "x64")
+    ):
+        raise HTTPException(status_code=404, detail="不支持的客户端修复安装包")
+    with closing(database()) as connection:
+        artifact = connection.execute(
+            """
+            SELECT artifact.*,release.version,release.status,release.published_at
+            FROM client_release_artifacts artifact
+            JOIN client_releases release ON release.id=artifact.release_id
+            WHERE release.version=? AND release.status='published'
+              AND release.published_at IS NOT NULL
+              AND artifact.platform=? AND artifact.architecture=?
+              AND artifact.file_kind=?
+            ORDER BY artifact.id DESC LIMIT 1
+            """,
+            (
+                CURRENT_DESKTOP_SELF_UPDATE_VERSION,
+                platform_name,
+                architecture,
+                file_kind,
+            ),
+        ).fetchone()
+    if not client_artifact_is_servable(artifact):
+        raise HTTPException(status_code=503, detail="当前客户端修复安装包未通过完整性校验")
+    path = Path(str(artifact["file_path"])).resolve(strict=True)
+    return FileResponse(
+        path=path,
+        media_type=(
+            "application/x-apple-diskimage"
+            if platform_name == "macos"
+            else "application/vnd.microsoft.portable-executable"
+        ),
+        filename=str(artifact["file_name"]),
+        headers={
+            "Cache-Control": "public, no-cache",
+            "X-Content-Type-Options": "nosniff",
+            "X-Gongchuang-Client-Version": str(artifact["version"]),
+            "X-Gongchuang-Artifact-Sha256": str(artifact["sha256"]),
+        },
+    )
+
+
+@app.get("/client-updates/v0.2/repair/{platform_name}/{architecture}")
+def current_client_repair_installer(platform_name: str, architecture: str):
+    return current_client_repair_response(platform_name, architecture)
 
 
 @app.get("/client-updates/v0.2/macos/{asset_name}")
