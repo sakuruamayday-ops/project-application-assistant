@@ -535,6 +535,7 @@ def publish_test_client_release(
     module,
     *,
     version="0.1.0",
+    skill_bundle_version="1.6.11",
     signature_status="verified",
     windows_signature_status=None,
     dual_macos=False,
@@ -578,10 +579,10 @@ def publish_test_client_release(
             connection.execute(
                 """
                 INSERT INTO client_releases(
-                    version,status,release_notes,published_at,created_at
-                ) VALUES (?,'published','首个双端客户端正式版',?,?)
+                    version,skill_bundle_version,status,release_notes,published_at,created_at
+                ) VALUES (?,?,'published','首个双端客户端正式版',?,?)
                 """,
-                (version, now, now),
+                (version, skill_bundle_version, now, now),
             ).lastrowid
         )
         artifact_ids = {}
@@ -787,6 +788,7 @@ def test_client_download_page_tracks_download_and_real_client_login_separately(t
         assert "下载共创企业助手" in page.text
         assert "共创企业助手 V0.1" in page.text
         assert "内置技能包" in page.text
+        assert "<dd>V1.6.11</dd>" in page.text
         assert "下载 macOS Apple 芯片版" in page.text
         assert "下载 Windows 版" in page.text
         assert 'data-section-link="downloads"' in page.text

@@ -7775,6 +7775,7 @@ def init_database() -> None:
             CREATE TABLE IF NOT EXISTS client_releases (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 version TEXT NOT NULL UNIQUE,
+                skill_bundle_version TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT 'draft',
                 release_notes TEXT NOT NULL DEFAULT '',
                 published_at TEXT,
@@ -7918,6 +7919,15 @@ def init_database() -> None:
             END;
             """
         )
+        client_release_columns = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(client_releases)").fetchall()
+        }
+        if "skill_bundle_version" not in client_release_columns:
+            connection.execute(
+                "ALTER TABLE client_releases "
+                "ADD COLUMN skill_bundle_version TEXT NOT NULL DEFAULT ''"
+            )
         user_columns = {
             row["name"] for row in connection.execute("PRAGMA table_info(users)").fetchall()
         }
@@ -10526,7 +10536,7 @@ def published_client_release_payload(
 ) -> dict[str, object] | None:
     release = connection.execute(
         """
-        SELECT id,version,status,release_notes,published_at,created_at
+        SELECT id,version,skill_bundle_version,status,release_notes,published_at,created_at
         FROM client_releases
         WHERE status='published' AND published_at IS NOT NULL
           AND (? IS NULL OR version=?)

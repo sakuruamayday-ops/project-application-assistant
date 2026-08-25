@@ -11,7 +11,7 @@
     </div>
     <dl>
       <div><dt>客户端版本</dt><dd>{{ 'V' ~ client_release.version if client_release else '待发布' }}</dd></div>
-      <div><dt>内置技能包</dt><dd>{{ skill_center.release_tag }}</dd></div>
+      <div><dt>内置技能包</dt><dd>{{ 'V' ~ client_release.skill_bundle_version if client_release and client_release.skill_bundle_version else '待回填' }}</dd></div>
       <div><dt>当前状态</dt><dd>{{ client_usage.label }}</dd></div>
     </dl>
   </article>
