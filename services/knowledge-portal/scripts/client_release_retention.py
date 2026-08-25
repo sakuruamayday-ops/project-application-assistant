@@ -27,6 +27,9 @@ FIXED_MACOS_MANIFESTS = {
     "desktop-release-index.sig",
 }
 FIXED_WINDOWS_MANIFEST = "latest.yml"
+STAGING_DIRECTORY_PATTERN = re.compile(
+    r"^v(?P<version>\d+\.\d+\.\d+)-[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+)
 
 
 def utc_now() -> str:
@@ -265,7 +268,30 @@ def plan_client_release_retention(
                 {
                     "path": str(child),
                     "version": version,
+                    "kind": "artifact",
                     "bytes": child.stat().st_size,
+                }
+            )
+
+    staging_root = release_root / ".staging"
+    if staging_root.exists():
+        if staging_root.is_symlink() or not staging_root.is_dir():
+            raise RuntimeError(f"客户端暂存根目录必须是实体目录：{staging_root}")
+        for child in sorted(staging_root.iterdir(), key=lambda item: item.name):
+            match = STAGING_DIRECTORY_PATTERN.fullmatch(child.name)
+            if match is None:
+                continue
+            version = match.group("version")
+            if version in retained_versions or version not in retired_versions:
+                continue
+            if child.is_symlink() or not child.is_dir():
+                raise RuntimeError(f"旧客户端暂存项不是实体目录：{child}")
+            candidates.append(
+                {
+                    "path": str(child),
+                    "version": version,
+                    "kind": "staging",
+                    "bytes": directory_reclaimable_bytes(child),
                 }
             )
     return {

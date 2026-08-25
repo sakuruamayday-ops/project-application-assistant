@@ -88,13 +88,32 @@ def make_layout(tmp_path: Path):
     )
     (macos_root / "desktop-release-index.sig").write_bytes(b"signature")
     (windows_root / "latest.yml").write_text("version: 0.2.8\n", encoding="utf-8")
+    staging_root = release_root / ".staging"
+    old_staging = staging_root / "v0.2.3-old-release"
+    previous_staging = staging_root / "v0.2.7-previous-release"
+    current_staging = staging_root / "v0.2.8-current-release"
+    candidate_staging = staging_root / "v0.2.9-next-candidate"
+    for directory in (
+        old_staging,
+        previous_staging,
+        current_staging,
+        candidate_staging,
+    ):
+        directory.mkdir(parents=True)
+        (directory / "release.json").write_text("{}\n", encoding="utf-8")
     connection.commit()
     connection.close()
-    return database, release_root, files
+    staging = {
+        "old": old_staging,
+        "previous": previous_staging,
+        "current": current_staging,
+        "candidate": candidate_staging,
+    }
+    return database, release_root, files, staging
 
 
 def test_dry_run_keeps_current_and_previous(tmp_path: Path):
-    database, release_root, files = make_layout(tmp_path)
+    database, release_root, files, staging = make_layout(tmp_path)
 
     report = MODULE.prune_client_release_artifacts(
         database, release_root, apply=False
@@ -102,15 +121,16 @@ def test_dry_run_keeps_current_and_previous(tmp_path: Path):
 
     assert report["current"] == "0.2.8"
     assert report["previous"] == "0.2.7"
-    assert report["candidate_count"] == 2
+    assert report["candidate_count"] == 3
     assert report["trashed_count"] == 0
     assert all(path.is_file() for path in files.values())
+    assert all(path.is_dir() for path in staging.values())
 
 
 def test_apply_moves_only_older_retired_assets_to_recoverable_trash(
     tmp_path: Path,
 ):
-    database, release_root, files = make_layout(tmp_path)
+    database, release_root, files, staging = make_layout(tmp_path)
     trash = tmp_path / "trash"
 
     report = MODULE.prune_client_release_artifacts(
@@ -120,12 +140,16 @@ def test_apply_moves_only_older_retired_assets_to_recoverable_trash(
         trash_root=trash,
     )
 
-    assert report["trashed_count"] == 2
+    assert report["trashed_count"] == 3
     assert report["delete_mode"] == "recoverable_system_trash"
     assert not files["0.2.3"].exists()
     assert not files["old_windows"].exists()
     assert files["0.2.7"].is_file()
     assert files["0.2.8"].is_file()
+    assert not staging["old"].exists()
+    assert staging["previous"].is_dir()
+    assert staging["current"].is_dir()
+    assert staging["candidate"].is_dir()
     assert (release_root / "v0.2/macos/desktop-release-index.json").is_file()
     assert (release_root / "v0.2/windows/latest.yml").is_file()
     assert report["cleanup_pending"]["authorization_required"] is True
@@ -133,7 +157,7 @@ def test_apply_moves_only_older_retired_assets_to_recoverable_trash(
 
 
 def test_refuses_manifest_version_drift(tmp_path: Path):
-    database, release_root, _ = make_layout(tmp_path)
+    database, release_root, _, _ = make_layout(tmp_path)
     (release_root / "v0.2/windows/latest.yml").write_text(
         "version: 0.2.7\n", encoding="utf-8"
     )
@@ -143,7 +167,7 @@ def test_refuses_manifest_version_drift(tmp_path: Path):
 
 
 def test_refuses_unretired_orphan_asset(tmp_path: Path):
-    database, release_root, _ = make_layout(tmp_path)
+    database, release_root, _, _ = make_layout(tmp_path)
     orphan = (
         release_root
         / "v0.2/macos/Gongchuang-Enterprise-Assistant-0.2.9-mac-arm64.dmg"
@@ -157,7 +181,7 @@ def test_refuses_unretired_orphan_asset(tmp_path: Path):
 
 
 def test_refuses_retained_artifact_outside_release_root(tmp_path: Path):
-    database, release_root, files = make_layout(tmp_path)
+    database, release_root, files, _ = make_layout(tmp_path)
     outside = tmp_path / "outside.dmg"
     outside.write_bytes(files["0.2.8"].read_bytes())
     connection = sqlite3.connect(database)
