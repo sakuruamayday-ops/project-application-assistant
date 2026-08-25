@@ -476,6 +476,26 @@ def execute(request_path: Path, state_path: Path) -> int:
         run_checked(
             ["systemctl", "enable", "--now", "jiaotang-kb-backup.timer"]
         )
+        client_retention: dict[str, Any]
+        try:
+            run_checked(
+                [
+                    "systemctl",
+                    "enable",
+                    "--now",
+                    "jiaotang-kb-client-release-retention.timer",
+                ]
+            )
+            run_checked(
+                ["systemctl", "start", "jiaotang-kb-client-release-retention.service"]
+            )
+            client_retention = {"enabled": True, "initial_run": "completed"}
+        except Exception as retention_error:
+            client_retention = {
+                "enabled": False,
+                "initial_run": "failed",
+                "error": str(retention_error)[:2000],
+            }
         # Keep the health timer stopped until the active index verifier has
         # atomically refreshed the receipt consumed by the health service.
         # Otherwise a minute-boundary activation can race the verifier and
@@ -514,6 +534,7 @@ def execute(request_path: Path, state_path: Path) -> int:
                     "plan_sha256", ""
                 )
             ),
+            client_release_retention=client_retention,
         )
         return 0
     except Exception as error:

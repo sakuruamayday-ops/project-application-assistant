@@ -1,0 +1,17 @@
+[Unit]
+Description=Retain current and previous Jiaotang desktop client artifacts
+After=jiaotang-kb.service
+OnFailure=jiaotang-kb-failure-report@%n.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/jiaotang-kb-app.env
+ExecStart=/usr/local/libexec/jiaotang-client-release-retention --apply
+User=root
+Group=root
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jiaotang-kb
+NoNewPrivileges=true
+

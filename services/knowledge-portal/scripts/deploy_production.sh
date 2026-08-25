@@ -306,6 +306,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
     scripts/oss_incremental_sync.py scripts/archive_index_snapshots.py \
     scripts/refresh_index_from_oss.py scripts/publish_index_to_oss.py \
     scripts/release_retention.py \
+    scripts/client_release_retention.py \
     scripts/oss_reconciliation.py \
     scripts/stream_to_command.py \
     scripts/release_progress.py \
@@ -627,6 +628,8 @@ unit_names = (
     'jiaotang-kb-health-recovery@.service',
     'jiaotang-kb-backup.service',
     'jiaotang-kb-backup.timer',
+    'jiaotang-kb-client-release-retention.service',
+    'jiaotang-kb-client-release-retention.timer',
     'jiaotang-kb-index-refresh.service',
     'jiaotang-kb-oss-verify.service',
     'jiaotang-kb-oss-verify.timer',
@@ -683,6 +686,9 @@ stable_entries = {
     ),
     '/usr/local/libexec/release_retention.py': (
         'scripts/release_retention.py', 0o644
+    ),
+    '/usr/local/libexec/jiaotang-client-release-retention': (
+        'scripts/client_release_retention.py', 0o755
     ),
     '/usr/local/libexec/jiaotang-policy-increment-verify': (
         'scripts/verify_policy_increment_server.py', 0o755
