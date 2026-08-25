@@ -47,6 +47,27 @@ def test_stream_to_command_delivers_complete_input() -> None:
     assert result == 0
 
 
+def test_stream_to_command_handles_consumer_backpressure() -> None:
+    payload = b"jiaotang" * 500_000
+    code = (
+        "import sys,time; total=0; "
+        "\nwhile data := sys.stdin.buffer.read(16384): "
+        "total += len(data); time.sleep(0.001)\n"
+        f"raise SystemExit(0 if total=={len(payload)} else 7)"
+    )
+
+    result = stream(
+        io.BytesIO(payload),
+        [sys.executable, "-c", code],
+        label="backpressure-fixture",
+        stall_timeout_seconds=2,
+        completion_timeout_seconds=2,
+        report_interval_seconds=10,
+    )
+
+    assert result == 0
+
+
 def test_stream_to_command_stops_a_stalled_consumer() -> None:
     started = time.monotonic()
 

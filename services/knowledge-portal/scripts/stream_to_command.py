@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable
 from typing import BinaryIO
 
 
@@ -33,6 +35,33 @@ def write_all(destination: BinaryIO, payload: bytes) -> int:
     return written_total
 
 
+def write_process_input(
+    destination: BinaryIO,
+    payload: bytes,
+    process: subprocess.Popen[bytes],
+    on_progress: Callable[[int], None],
+) -> int:
+    """Write payload without blocking the transfer watchdog thread."""
+
+    descriptor = destination.fileno()
+    os.set_blocking(descriptor, False)
+    view = memoryview(payload)
+    written_total = 0
+    while written_total < len(view):
+        if process.poll() is not None:
+            raise BrokenPipeError("目标命令在接收完整输入前退出")
+        try:
+            written = os.write(descriptor, view[written_total:])
+        except BlockingIOError:
+            time.sleep(0.01)
+            continue
+        if written <= 0:
+            raise BrokenPipeError("目标管道未接受剩余数据")
+        written_total += written
+        on_progress(written)
+    return written_total
+
+
 def stream(
     source: BinaryIO,
     command: list[str],
@@ -54,11 +83,14 @@ def stream(
 
     def pump() -> None:
         assert process.stdin is not None
+
+        def record_progress(written: int) -> None:
+            state["bytes"] = int(state["bytes"]) + written
+            state["last_progress"] = time.monotonic()
+
         try:
             while chunk := source.read(256 * 1024):
-                written = write_all(process.stdin, chunk)
-                state["bytes"] = int(state["bytes"]) + written
-                state["last_progress"] = time.monotonic()
+                write_process_input(process.stdin, chunk, process, record_progress)
             process.stdin.close()
             state["input_complete"] = True
             state["input_completed_at"] = time.monotonic()
