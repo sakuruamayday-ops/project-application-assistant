@@ -112,7 +112,7 @@ def make_layout(tmp_path: Path):
     return database, release_root, files, staging
 
 
-def test_dry_run_keeps_current_and_previous(tmp_path: Path):
+def test_dry_run_keeps_release_artifacts_and_reports_completed_staging(tmp_path: Path):
     database, release_root, files, staging = make_layout(tmp_path)
 
     report = MODULE.prune_client_release_artifacts(
@@ -121,13 +121,13 @@ def test_dry_run_keeps_current_and_previous(tmp_path: Path):
 
     assert report["current"] == "0.2.8"
     assert report["previous"] == "0.2.7"
-    assert report["candidate_count"] == 3
+    assert report["candidate_count"] == 5
     assert report["trashed_count"] == 0
     assert all(path.is_file() for path in files.values())
     assert all(path.is_dir() for path in staging.values())
 
 
-def test_apply_moves_only_older_retired_assets_to_recoverable_trash(
+def test_apply_keeps_current_and_previous_artifacts_but_cleans_known_staging(
     tmp_path: Path,
 ):
     database, release_root, files, staging = make_layout(tmp_path)
@@ -140,15 +140,15 @@ def test_apply_moves_only_older_retired_assets_to_recoverable_trash(
         trash_root=trash,
     )
 
-    assert report["trashed_count"] == 3
+    assert report["trashed_count"] == 5
     assert report["delete_mode"] == "recoverable_system_trash"
     assert not files["0.2.3"].exists()
     assert not files["old_windows"].exists()
     assert files["0.2.7"].is_file()
     assert files["0.2.8"].is_file()
     assert not staging["old"].exists()
-    assert staging["previous"].is_dir()
-    assert staging["current"].is_dir()
+    assert not staging["previous"].exists()
+    assert not staging["current"].exists()
     assert staging["candidate"].is_dir()
     assert (release_root / "v0.2/macos/desktop-release-index.json").is_file()
     assert (release_root / "v0.2/windows/latest.yml").is_file()

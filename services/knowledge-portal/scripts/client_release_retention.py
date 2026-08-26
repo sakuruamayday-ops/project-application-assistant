@@ -282,7 +282,8 @@ def plan_client_release_retention(
             if match is None:
                 continue
             version = match.group("version")
-            if version in retained_versions or version not in retired_versions:
+            # 只有数据库已经确认发布或退役的版本才可自动收尾；未知版本可能仍在上传，必须保留。
+            if version not in retained_versions and version not in retired_versions:
                 continue
             if child.is_symlink() or not child.is_dir():
                 raise RuntimeError(f"旧客户端暂存项不是实体目录：{child}")
