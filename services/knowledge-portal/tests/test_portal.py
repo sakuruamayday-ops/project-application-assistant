@@ -946,6 +946,8 @@ def test_signed_dual_macos_self_update_assets_are_public_and_whitelisted(tmp_pat
 
 def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
     module = load_app(tmp_path)
+    current_version = "0.3.1"
+    publish_test_client_release(module, version=current_version)
 
     assert module.client_compatibility_receipt("0.1.3") == {
         "client_compatibility": "upgrade-required",
@@ -996,6 +998,19 @@ def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
         "minimum_supported_version": "0.1.4",
     }
     assert module.client_compatibility_receipt("0.3.0") == {
+        "client_compatibility": "upgrade-advised",
+        "minimum_supported_version": "0.1.4",
+    }
+    assert module.client_compatibility_receipt(current_version) == {
+        "client_compatibility": "supported",
+        "minimum_supported_version": "0.1.4",
+    }
+    publish_test_client_release(module, version="0.3.2")
+    assert module.client_compatibility_receipt(current_version) == {
+        "client_compatibility": "upgrade-advised",
+        "minimum_supported_version": "0.1.4",
+    }
+    assert module.client_compatibility_receipt("0.3.2") == {
         "client_compatibility": "supported",
         "minimum_supported_version": "0.1.4",
     }
@@ -1005,7 +1020,7 @@ def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
 
 def test_v020_signed_feed_is_separate_from_frozen_v014_feed(tmp_path):
     module = load_app(tmp_path)
-    current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
+    current_version = "0.3.1"
     old_payloads = publish_test_macos_self_update_feed(module)
     old_hash = hashlib.sha256(old_payloads["desktop-release-index.json"]).hexdigest()
     v020_root = module.CLIENT_RELEASE_DIR / "v0.2" / "macos"
@@ -1031,7 +1046,7 @@ def test_v020_signed_feed_is_separate_from_frozen_v014_feed(tmp_path):
 
 def test_v020_download_page_hides_macos_upgrade_guide_and_shows_windows(tmp_path):
     module = load_app(tmp_path)
-    current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
+    current_version = "0.3.1"
     publish_test_client_release(
         module,
         version=current_version,
@@ -1068,7 +1083,7 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
     monkeypatch,
 ):
     module = load_app(tmp_path)
-    current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
+    current_version = "0.3.1"
     _, artifact_ids = publish_test_client_release(
         module,
         version=current_version,
@@ -1146,7 +1161,7 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
 
 def test_current_client_repair_routes_serve_only_verified_full_installers(tmp_path):
     module = load_app(tmp_path)
-    current_version = module.CURRENT_DESKTOP_SELF_UPDATE_VERSION
+    current_version = "0.3.1"
     _, artifact_ids = publish_test_client_release(
         module,
         version=current_version,

@@ -171,14 +171,13 @@ DESKTOP_SELF_UPDATE_INDEX_NAMES = frozenset(
 )
 WINDOWS_SELF_UPDATE_MANIFEST_NAME = "latest.yml"
 LEGACY_DESKTOP_SELF_UPDATE_VERSION = "0.1.4"
-CURRENT_DESKTOP_SELF_UPDATE_VERSION = "0.3.0"
 MINIMUM_SUPPORTED_CLIENT_VERSION = os.environ.get(
     "JIAOTANG_MINIMUM_SUPPORTED_CLIENT_VERSION",
     LEGACY_DESKTOP_SELF_UPDATE_VERSION,
 ).strip()
-RECOMMENDED_CLIENT_VERSION = os.environ.get(
+RECOMMENDED_CLIENT_VERSION_OVERRIDE = os.environ.get(
     "JIAOTANG_RECOMMENDED_CLIENT_VERSION",
-    CURRENT_DESKTOP_SELF_UPDATE_VERSION,
+    "",
 ).strip()
 FIRST_PUBLIC_SKILL_VERSION = os.environ.get(
     "JIAOTANG_FIRST_PUBLIC_SKILL_VERSION",
@@ -8505,11 +8504,32 @@ def compare_semantic_versions(left: str, right: str) -> int:
     return -1 if len(left_prerelease) < len(right_prerelease) else 1
 
 
+def current_recommended_client_version() -> str:
+    """Resolve the recommendation from the newest committed client release."""
+    if RECOMMENDED_CLIENT_VERSION_OVERRIDE:
+        return RECOMMENDED_CLIENT_VERSION_OVERRIDE
+    # 正式发布记录才是当前版本来源；这里禁止再维护随版本发布手工修改的常量。
+    with closing(database()) as connection:
+        release = connection.execute(
+            """
+            SELECT version FROM client_releases
+            WHERE status='published' AND published_at IS NOT NULL
+            ORDER BY published_at DESC,id DESC LIMIT 1
+            """
+        ).fetchone()
+    return (
+        str(release["version"])
+        if release is not None
+        else MINIMUM_SUPPORTED_CLIENT_VERSION
+    )
+
+
 def client_compatibility_receipt(client_version: str) -> dict[str, str]:
     parsed_semantic_version(client_version)
+    recommended_version = current_recommended_client_version()
     if compare_semantic_versions(client_version, MINIMUM_SUPPORTED_CLIENT_VERSION) < 0:
         compatibility = "upgrade-required"
-    elif compare_semantic_versions(client_version, RECOMMENDED_CLIENT_VERSION) < 0:
+    elif compare_semantic_versions(client_version, recommended_version) < 0:
         compatibility = "upgrade-advised"
     else:
         compatibility = "supported"
@@ -8520,10 +8540,11 @@ def client_compatibility_receipt(client_version: str) -> dict[str, str]:
 
 
 parsed_semantic_version(MINIMUM_SUPPORTED_CLIENT_VERSION)
-parsed_semantic_version(RECOMMENDED_CLIENT_VERSION)
-if compare_semantic_versions(
+if RECOMMENDED_CLIENT_VERSION_OVERRIDE:
+    parsed_semantic_version(RECOMMENDED_CLIENT_VERSION_OVERRIDE)
+if RECOMMENDED_CLIENT_VERSION_OVERRIDE and compare_semantic_versions(
     MINIMUM_SUPPORTED_CLIENT_VERSION,
-    RECOMMENDED_CLIENT_VERSION,
+    RECOMMENDED_CLIENT_VERSION_OVERRIDE,
 ) > 0:
     raise RuntimeError("最低支持客户端版本不得高于建议客户端版本")
 
@@ -20154,19 +20175,17 @@ def desktop_client_update_response(
 
 def windows_desktop_update_response(asset_name: str):
     """Serve the approved unsigned Windows x64 updater files from V0.2."""
+    with closing(database()) as connection:
+        release = published_client_release_payload(connection)
+    if release is None:
+        raise HTTPException(status_code=503, detail="Windows 自动更新正式清单尚未发布")
+    release_version = str(release["version"])
     installer_name = (
         f"Gongchuang-Enterprise-Assistant-"
-        f"{CURRENT_DESKTOP_SELF_UPDATE_VERSION}-win-x64.exe"
+        f"{release_version}-win-x64.exe"
     )
     if asset_name not in {WINDOWS_SELF_UPDATE_MANIFEST_NAME, installer_name}:
         raise HTTPException(status_code=404, detail="更新文件不存在")
-    with closing(database()) as connection:
-        release = published_client_release_payload(
-            connection,
-            version=CURRENT_DESKTOP_SELF_UPDATE_VERSION,
-        )
-    if release is None:
-        raise HTTPException(status_code=503, detail="Windows 自动更新正式清单尚未发布")
     downloads = release.get("downloads")
     windows_downloads = downloads.get("windows") if isinstance(downloads, dict) else None
     installers = [
@@ -20208,7 +20227,7 @@ def windows_desktop_update_response(asset_name: str):
     except (OSError, UnicodeError, ValueError):
         raise HTTPException(status_code=503, detail="Windows 自动更新清单无效") from None
     expected_pattern = re.compile(
-        rf"version: {re.escape(CURRENT_DESKTOP_SELF_UPDATE_VERSION)}\n"
+        rf"version: {re.escape(release_version)}\n"
         rf"files:\n  - url: '{re.escape(installer_name)}'\n"
         rf"    sha512: {re.escape(expected_sha512)}\n"
         rf"    size: {installer_path.stat().st_size}\n"
@@ -20243,14 +20262,16 @@ def current_client_repair_response(platform_name: str, architecture: str):
             SELECT artifact.*,release.version,release.status,release.published_at
             FROM client_release_artifacts artifact
             JOIN client_releases release ON release.id=artifact.release_id
-            WHERE release.version=? AND release.status='published'
-              AND release.published_at IS NOT NULL
+            WHERE artifact.release_id=(
+                SELECT id FROM client_releases
+                WHERE status='published' AND published_at IS NOT NULL
+                ORDER BY published_at DESC,id DESC LIMIT 1
+              )
               AND artifact.platform=? AND artifact.architecture=?
               AND artifact.file_kind=?
             ORDER BY artifact.id DESC LIMIT 1
             """,
             (
-                CURRENT_DESKTOP_SELF_UPDATE_VERSION,
                 platform_name,
                 architecture,
                 file_kind,
@@ -20283,9 +20304,13 @@ def current_client_repair_installer(platform_name: str, architecture: str):
 
 @app.get("/client-updates/v0.2/macos/{asset_name}")
 def current_desktop_client_update_asset(asset_name: str):
+    with closing(database()) as connection:
+        release = published_client_release_payload(connection)
+    if release is None:
+        raise HTTPException(status_code=503, detail="macOS 自动更新正式清单尚未发布")
     return desktop_client_update_response(
         asset_name,
-        release_version=CURRENT_DESKTOP_SELF_UPDATE_VERSION,
+        release_version=str(release["version"]),
         release_root=CLIENT_RELEASE_DIR / "v0.2" / "macos",
     )
 
