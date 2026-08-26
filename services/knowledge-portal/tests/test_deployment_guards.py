@@ -216,6 +216,19 @@ def test_deploy_rolls_back_previous_release_when_new_index_health_fails():
     assert "rsync " not in delta_script
 
 
+def test_index_refresh_restart_defers_to_health_check_and_rollback():
+    delta_script = (
+        SCRIPT_DIR / "deploy_index_delta_to_server.sh"
+    ).read_text(encoding="utf-8")
+
+    # systemd 恢复器可能接管首次启动；restart 的瞬时返回值不能跳过后续健康复检。
+    assert delta_script.count("systemctl restart jiaotang-kb || true") == 2
+    restart = delta_script.index("systemctl restart jiaotang-kb || true")
+    health_loop = delta_script.index("for attempt in", restart)
+    rollback = delta_script.index("jiaotang-kb-refresh-index --rollback", health_loop)
+    assert restart < health_loop < rollback
+
+
 def test_deploy_transfers_release_retention_dependency():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
 

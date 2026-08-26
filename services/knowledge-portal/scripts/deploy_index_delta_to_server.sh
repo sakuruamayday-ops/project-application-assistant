@@ -48,7 +48,8 @@ ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
      sleep \"\${progress_interval}\"
    done
    index_after=\$(readlink \"\${JIAOTANG_INDEX_DIR}/current\" 2>/dev/null || true)
-   systemctl restart jiaotang-kb
+   # OnFailure 恢复器可能接管首次启动并让 restart 瞬时返回非零；最终结果仍由下面的健康复检和回滚决定。
+   systemctl restart jiaotang-kb || true
    healthy=0
    for attempt in \$(seq 1 30); do
      if curl --fail --silent --show-error http://127.0.0.1:8100/health >/dev/null 2>&1; then
@@ -63,7 +64,7 @@ ssh -i "${deploy_key}" -o BatchMode=yes "${deploy_host}" \
        source /etc/jiaotang-kb-ops.env
        set +a
        /usr/local/sbin/jiaotang-kb-refresh-index --rollback
-       systemctl restart jiaotang-kb
+       systemctl restart jiaotang-kb || true
        curl --fail --silent --show-error --retry 10 --retry-delay 2 \
          http://127.0.0.1:8100/health >/dev/null
        echo '新索引健康失败；已自动回滚previous并复检通过' >&2
