@@ -47,7 +47,14 @@ def test_extracts_docx_paragraphs(tmp_path: Path) -> None:
 def test_extracts_xlsx_shared_strings(tmp_path: Path) -> None:
     source = tmp_path / "财务数据.xlsx"
     with zipfile.ZipFile(source, "w") as archive:
-        archive.writestr("xl/workbook.xml", '<workbook><sheets><sheet name="财务数据"/></sheets></workbook>')
+        archive.writestr(
+            "xl/workbook.xml",
+            '<workbook xmlns:r="urn:relationships"><sheets><sheet name="财务数据" r:id="rId1"/></sheets></workbook>',
+        )
+        archive.writestr(
+            "xl/_rels/workbook.xml.rels",
+            '<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>',
+        )
         archive.writestr("xl/sharedStrings.xml", '<sst><si><t>营业收入</t></si></sst>')
         archive.writestr(
             "xl/worksheets/sheet1.xml",
@@ -59,6 +66,45 @@ def test_extracts_xlsx_shared_strings(tmp_path: Path) -> None:
     assert "营业收入\t100" in str(result["text"])
 
 
+def test_extracts_xlsx_relationship_order_sparse_cells_and_visible_percentages(tmp_path: Path) -> None:
+    source = tmp_path / "多表财务数据.xlsx"
+    with zipfile.ZipFile(source, "w") as archive:
+        archive.writestr(
+            "xl/workbook.xml",
+            '<workbook xmlns:r="urn:relationships"><sheets>'
+            '<sheet name="增长数据" r:id="rId10"/><sheet name="人员数据" r:id="rId1"/>'
+            '</sheets></workbook>',
+        )
+        archive.writestr(
+            "xl/_rels/workbook.xml.rels",
+            '<Relationships>'
+            '<Relationship Id="rId1" Target="worksheets/sheet1.xml"/>'
+            '<Relationship Id="rId10" Target="worksheets/sheet10.xml"/>'
+            '</Relationships>',
+        )
+        archive.writestr(
+            "xl/styles.xml",
+            '<styleSheet><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="10"/></cellXfs></styleSheet>',
+        )
+        archive.writestr(
+            "xl/worksheets/sheet10.xml",
+            '<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>增长率</t></is></c>'
+            '<c r="C1" s="1"><v>1.9</v></c></row></sheetData></worksheet>',
+        )
+        archive.writestr(
+            "xl/worksheets/sheet1.xml",
+            '<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>研发人数</t></is></c>'
+            '<c r="B1"><v>6</v></c></row></sheetData></worksheet>',
+        )
+    code, result = run(source)
+    assert code == 0
+    assert result["status"] == "extracted"
+    text = str(result["text"])
+    assert text.index("## 增长数据") < text.index("## 人员数据")
+    assert "增长率\t\t190.00%" in text
+    assert "研发人数\t6" in text
+
+
 def test_extracts_legacy_xls_visible_values() -> None:
     code, result = run(FIXTURES / "document-extraction-sample.xls")
     assert code == 0
@@ -66,6 +112,7 @@ def test_extracts_legacy_xls_visible_values() -> None:
     assert result["status"] == "extracted"
     assert result["sheets"] == 1
     assert "研发人数\t6" in str(result["text"])
+    # Evidence binds the value visible in Excel, not the stored numeric 1.9.
     assert "增长率\t190.00%" in str(result["text"])
 
 

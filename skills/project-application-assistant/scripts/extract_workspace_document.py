@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import posixpath
 import re
 import sys
 import zipfile
@@ -84,15 +85,84 @@ def shared_strings(archive: zipfile.ZipFile) -> list[str]:
     return ["".join(node.text or "" for node in item.iter() if local_name(node.tag) == "t") for item in root]
 
 
-def workbook_sheet_names(archive: zipfile.ZipFile) -> list[str]:
+def workbook_sheets(archive: zipfile.ZipFile) -> list[tuple[str, str]]:
     try:
-        root = ElementTree.fromstring(archive.read("xl/workbook.xml"))
+        workbook = ElementTree.fromstring(archive.read("xl/workbook.xml"))
+        relationships = ElementTree.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
     except KeyError:
         return []
-    return [node.attrib.get("name", "工作表") for node in root.iter() if local_name(node.tag) == "sheet"]
+    targets = {
+        relation.attrib.get("Id", ""): relation.attrib.get("Target", "")
+        for relation in relationships
+        if local_name(relation.tag) == "Relationship"
+    }
+    sheets: list[tuple[str, str]] = []
+    for index, node in enumerate(item for item in workbook.iter() if local_name(item.tag) == "sheet"):
+        relationship_id = next(
+            (value for key, value in node.attrib.items() if local_name(key) == "id"),
+            "",
+        )
+        target = targets.get(relationship_id, "")
+        if target.startswith("/"):
+            worksheet_path = posixpath.normpath(target.lstrip("/"))
+        else:
+            worksheet_path = posixpath.normpath(posixpath.join("xl", target))
+        if not worksheet_path.startswith("xl/worksheets/") or worksheet_path not in archive.namelist():
+            raise ValueError("XLSX 工作表关系无效")
+        sheets.append((node.attrib.get("name", f"工作表{index + 1}"), worksheet_path))
+    return sheets
 
 
-def cell_text(cell: ElementTree.Element, shared: list[str]) -> str:
+def workbook_uses_1904_epoch(archive: zipfile.ZipFile) -> bool:
+    root = ElementTree.fromstring(archive.read("xl/workbook.xml"))
+    properties = next((node for node in root.iter() if local_name(node.tag) == "workbookPr"), None)
+    return properties is not None and properties.attrib.get("date1904", "").lower() in {"1", "true"}
+
+
+def workbook_number_formats(archive: zipfile.ZipFile) -> list[str]:
+    try:
+        root = ElementTree.fromstring(archive.read("xl/styles.xml"))
+    except KeyError:
+        return []
+    from openpyxl.styles.numbers import BUILTIN_FORMATS
+
+    custom = {
+        int(node.attrib["numFmtId"]): node.attrib.get("formatCode", "General")
+        for node in root.iter()
+        if local_name(node.tag) == "numFmt" and node.attrib.get("numFmtId", "").isdigit()
+    }
+    cell_formats = next((node for node in root if local_name(node.tag) == "cellXfs"), None)
+    if cell_formats is None:
+        return []
+    return [
+        custom.get(int(node.attrib.get("numFmtId", "0")), BUILTIN_FORMATS.get(int(node.attrib.get("numFmtId", "0")), "General"))
+        for node in cell_formats
+        if local_name(node.tag) == "xf"
+    ]
+
+
+def xlsx_number_text(value_text: str, format_code: str, uses_1904_epoch: bool) -> str:
+    value = float(value_text)
+    if "%" in format_code:
+        match = re.search(r"\.([0#]+)[^%]*%", format_code)
+        places = len(match.group(1)) if match else 0
+        return f"{value * 100:.{places}f}%"
+    from openpyxl.styles.numbers import is_date_format
+    from openpyxl.utils.datetime import CALENDAR_MAC_1904, CALENDAR_WINDOWS_1900, from_excel
+
+    if is_date_format(format_code):
+        epoch = CALENDAR_MAC_1904 if uses_1904_epoch else CALENDAR_WINDOWS_1900
+        converted = from_excel(value, epoch=epoch)
+        return converted.isoformat(sep=" ", timespec="seconds")
+    return str(int(value)) if value.is_integer() else format(value, ".15g")
+
+
+def cell_text(
+    cell: ElementTree.Element,
+    shared: list[str],
+    number_formats: list[str],
+    uses_1904_epoch: bool,
+) -> str:
     kind = cell.attrib.get("t")
     inline = "".join(node.text or "" for node in cell.iter() if local_name(node.tag) == "t")
     if inline:
@@ -101,27 +171,55 @@ def cell_text(cell: ElementTree.Element, shared: list[str]) -> str:
     if kind == "s" and value.isdigit():
         index = int(value)
         return shared[index] if index < len(shared) else value
-    return value
+    if kind == "b":
+        return "TRUE" if value == "1" else "FALSE"
+    if kind in {"e", "str"} or value == "":
+        return value
+    style_index = int(cell.attrib.get("s", "0")) if cell.attrib.get("s", "0").isdigit() else 0
+    format_code = number_formats[style_index] if style_index < len(number_formats) else "General"
+    try:
+        return xlsx_number_text(value, format_code, uses_1904_epoch)
+    except (TypeError, ValueError, OverflowError):
+        return value
+
+
+def xlsx_column_index(reference: str, fallback: int) -> int:
+    match = re.fullmatch(r"([A-Z]{1,3})\d+", reference.upper())
+    if match is None:
+        return fallback
+    index = 0
+    for letter in match.group(1):
+        index = index * 26 + ord(letter) - ord("A") + 1
+    if index > 16_384:
+        raise ValueError("XLSX 单元格列号超出范围")
+    return index
 
 
 def extract_xlsx(path: Path) -> dict[str, object]:
     with safe_archive(path) as archive:
-        worksheet_paths = sorted(
-            name for name in archive.namelist() if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", name)
-        )
-        if not worksheet_paths:
+        worksheets = workbook_sheets(archive)
+        if not worksheets:
             raise ValueError("XLSX 缺少工作表")
-        names = workbook_sheet_names(archive)
         shared = shared_strings(archive)
+        number_formats = workbook_number_formats(archive)
+        uses_1904_epoch = workbook_uses_1904_epoch(archive)
         parts: list[str] = []
-        for index, worksheet_path in enumerate(worksheet_paths):
-            parts.append(f"## {names[index] if index < len(names) else f'工作表{index + 1}'}\n")
+        for worksheet_name, worksheet_path in worksheets:
+            parts.append(f"## {worksheet_name}\n")
             root = ElementTree.fromstring(archive.read(worksheet_path))
             for row in (node for node in root.iter() if local_name(node.tag) == "row"):
-                values = [cell_text(cell, shared) for cell in row if local_name(cell.tag) == "c"]
+                values: list[str] = []
+                next_column = 1
+                for cell in (item for item in row if local_name(item.tag) == "c"):
+                    column = xlsx_column_index(cell.attrib.get("r", ""), next_column)
+                    if column < next_column:
+                        raise ValueError("XLSX 单元格顺序无效")
+                    values.extend([""] * (column - next_column))
+                    values.append(cell_text(cell, shared, number_formats, uses_1904_epoch))
+                    next_column = column + 1
                 parts.append("\t".join(values).rstrip() + "\n")
     text, truncated = bounded_join(parts)
-    return {"kind": "xlsx", "status": "extracted", "sheets": len(worksheet_paths), "text": text, "truncated": truncated}
+    return {"kind": "xlsx", "status": "extracted", "sheets": len(worksheets), "text": text, "truncated": truncated}
 
 
 def xls_number_text(book: object, cell: object) -> str:

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-score-preassessment",
-  "release_tag": "V1.6.12",
+  "release_tag": "V1.6.13",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
