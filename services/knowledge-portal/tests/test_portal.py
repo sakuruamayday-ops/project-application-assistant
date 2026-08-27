@@ -823,7 +823,7 @@ def test_client_download_page_tracks_download_and_real_client_login_separately(t
             "/v1/client-login",
             json={
                 "client_id": module.CLIENT_AUTHORIZATION_ID,
-                "client_version": "0.1.0",
+                "client_version": "0.2.0",
                 "platform": "macos",
                 "device_id": "gcd_" + "d" * 48,
                 "device_name": "下载后的测试电脑",
@@ -834,6 +834,29 @@ def test_client_download_page_tracks_download_and_real_client_login_separately(t
         assert authenticated.status_code == 200
         members_after_login = client.get("/admin/members")
         assert "已登录使用" in members_after_login.text
+        assert "macOS · 客户端 V0.2.0" in members_after_login.text
+
+        token = authenticated.json()["access_token"]
+        heartbeat_headers = {
+            "Authorization": f"Bearer {token}",
+            module.DEVICE_ID_HEADER: "gcd_" + "d" * 48,
+            module.CLIENT_VERSION_HEADER: "not-semver",
+        }
+        assert client.get("/v1/me", headers=heartbeat_headers).status_code == 400
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT installed_version FROM device_bindings WHERE revoked_at IS NULL"
+            ).fetchone()[0] == "0.2.0"
+
+        heartbeat_headers[module.CLIENT_VERSION_HEADER] = "0.3.2"
+        assert client.get("/v1/me", headers=heartbeat_headers).status_code == 200
+        with closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT installed_version FROM device_bindings WHERE revoked_at IS NULL"
+            ).fetchone()[0] == "0.3.2"
+        members_after_upgrade = client.get("/admin/members")
+        assert "macOS · 客户端 V0.3.2" in members_after_upgrade.text
+        assert "macOS · 客户端 V0.1.0" not in members_after_upgrade.text
 
 
 def test_client_download_refuses_unsigned_or_tampered_artifact_without_receipt(tmp_path):

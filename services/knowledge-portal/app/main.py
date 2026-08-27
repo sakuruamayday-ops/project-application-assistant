@@ -750,6 +750,7 @@ MOBILE_PHONE_PATTERN = re.compile(r"^1\d{10}$")
 DEVICE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$")
 DEVICE_ID_HEADER = "X-Jiaotang-Device-ID"
 DEVICE_NAME_HEADER = "X-Jiaotang-Device-Name"
+CLIENT_VERSION_HEADER = "X-Jiaotang-Client-Version"
 DEVICE_KEY_ID_HEADER = "X-Jiaotang-Key-ID"
 DEVICE_TIMESTAMP_HEADER = "X-Jiaotang-Timestamp"
 DEVICE_NONCE_HEADER = "X-Jiaotang-Nonce"
@@ -9320,6 +9321,7 @@ def authenticate_api_token(
     *,
     device_id: str | None = None,
     device_name: str | None = None,
+    client_version: str | None = None,
     device_key_id: str | None = None,
     device_timestamp: str | None = None,
     device_nonce: str | None = None,
@@ -9332,7 +9334,7 @@ def authenticate_api_token(
     activity_type: str = "rest_api",
     activity_name: str = "",
     counts_toward_usage: bool = True,
-) -> sqlite3.Row:
+) -> sqlite3.Row | dict[str, object]:
     if not authorization or not authorization.startswith("Bearer "):
         raise access_error(401, "缺少用户访问凭据")
     raw_token = authorization.removeprefix("Bearer ").strip()
@@ -9389,6 +9391,10 @@ def authenticate_api_token(
                 )
             ):
                 raise access_error(401, "客户端会话与本机设备不匹配")
+            if client_version is not None:
+                client_version = client_version.strip()
+                if SEMANTIC_VERSION_PATTERN.fullmatch(client_version) is None:
+                    raise access_error(400, "客户端版本不是规范语义版本")
         if str(row["activation_state"] or "active") == "pending":
             now = isoformat(utc_now())
             if row["enrollment_expires_at"] and str(row["enrollment_expires_at"]) <= now:
@@ -9420,15 +9426,27 @@ def authenticate_api_token(
             client_ip,
             user_agent,
         )
+        now = isoformat(utc_now())
         connection.execute(
             "UPDATE device_tokens SET last_used_at = ? WHERE id = ?",
-            (isoformat(utc_now()), row["device_token_id"]),
+            (now, row["device_token_id"]),
         )
         if row["client_binding_id"] is not None:
-            connection.execute(
-                "UPDATE device_bindings SET last_seen_at=? WHERE id=? AND revoked_at IS NULL",
-                (isoformat(utc_now()), int(row["client_binding_id"])),
-            )
+            if client_version is None:
+                connection.execute(
+                    "UPDATE device_bindings SET last_seen_at=? WHERE id=? AND revoked_at IS NULL",
+                    (now, int(row["client_binding_id"])),
+                )
+            else:
+                # 保存令牌会跨客户端升级复用，当前二进制必须在验证时刷新设备版本。
+                connection.execute(
+                    """
+                    UPDATE device_bindings
+                    SET last_seen_at=?,installed_version=?
+                    WHERE id=? AND revoked_at IS NULL
+                    """,
+                    (now, client_version, int(row["client_binding_id"])),
+                )
         if record_usage:
             project_rule_id, project_alias = project_usage_metadata_from_request(
                 endpoint,
@@ -9458,6 +9476,10 @@ def authenticate_api_token(
                 ),
             )
         connection.commit()
+        if client_version is not None and row["client_binding_id"] is not None:
+            current = dict(row)
+            current["client_installed_version"] = client_version
+            return current
         return row
 
 
@@ -10038,6 +10060,9 @@ async def require_api_user(
     x_jiaotang_device_name: Annotated[
         str | None, Header(alias=DEVICE_NAME_HEADER)
     ] = None,
+    x_jiaotang_client_version: Annotated[
+        str | None, Header(alias=CLIENT_VERSION_HEADER)
+    ] = None,
     x_jiaotang_key_id: Annotated[
         str | None, Header(alias=DEVICE_KEY_ID_HEADER)
     ] = None,
@@ -10050,7 +10075,7 @@ async def require_api_user(
     x_jiaotang_signature: Annotated[
         str | None, Header(alias=DEVICE_SIGNATURE_HEADER)
     ] = None,
-) -> sqlite3.Row:
+) -> sqlite3.Row | dict[str, object]:
     client_ip = client_ip_from(request)
     return authenticate_api_token(
         authorization,
@@ -10058,6 +10083,7 @@ async def require_api_user(
         request.method,
         device_id=x_jiaotang_device_id,
         device_name=x_jiaotang_device_name,
+        client_version=x_jiaotang_client_version,
         device_key_id=x_jiaotang_key_id,
         device_timestamp=x_jiaotang_timestamp,
         device_nonce=x_jiaotang_nonce,
@@ -11364,6 +11390,7 @@ def portal_payload(
                        latest_client_download.architecture AS client_download_architecture,
                        latest_client_download.downloaded_at AS client_downloaded_at,
                        latest_client_download.version AS client_download_version,
+                       latest_client_login.client_version AS client_reported_version,
                        latest_client_login.last_used_at AS client_last_login_at,
                        latest_client_login.created_at AS client_first_login_at,
                        CASE
@@ -11412,14 +11439,24 @@ def portal_payload(
                 ) latest_client_download
                   ON latest_client_download.user_id=users.id
                 LEFT JOIN (
-                    SELECT token.user_id,token.created_at,token.last_used_at
+                    SELECT token.user_id,token.created_at,token.last_used_at,
+                           binding.installed_version AS client_version
                     FROM device_tokens token
+                    JOIN device_bindings binding ON binding.id=token.binding_id
                     WHERE token.credential_kind='client'
+                      AND token.revoked_at IS NULL
+                      AND token.activation_state='active'
+                      AND binding.revoked_at IS NULL
                       AND token.id=(
                         SELECT latest_token.id
                         FROM device_tokens latest_token
+                        JOIN device_bindings latest_binding
+                          ON latest_binding.id=latest_token.binding_id
                         WHERE latest_token.user_id=token.user_id
                           AND latest_token.credential_kind='client'
+                          AND latest_token.revoked_at IS NULL
+                          AND latest_token.activation_state='active'
+                          AND latest_binding.revoked_at IS NULL
                         ORDER BY latest_token.id DESC LIMIT 1
                       )
                 ) latest_client_login
@@ -11498,6 +11535,10 @@ def portal_payload(
                     "downloaded": "已下载",
                     "not-downloaded": "未下载",
                 }[str(member["client_status"])]
+                member["client_display_version"] = (
+                    member.get("client_reported_version")
+                    or member.get("client_download_version")
+                )
                 install_version = str(member.get("install_version") or "")
                 install_target_version = str(
                     member.get("install_target_version") or ""
