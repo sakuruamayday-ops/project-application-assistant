@@ -8176,6 +8176,12 @@ def init_database() -> None:
             UPDATE device_tokens
             SET credential_kind=CASE
                 WHEN enrollment_id IS NOT NULL THEN 'installation'
+                -- 历史迁移曾把桌面客户端令牌误改为 device；绑定来源才是稳定身份。
+                WHEN binding_id IS NOT NULL AND EXISTS(
+                    SELECT 1 FROM device_bindings binding
+                    WHERE binding.id=device_tokens.binding_id
+                      AND binding.auth_method='client_password'
+                ) THEN 'client'
                 WHEN binding_id IS NOT NULL THEN 'device'
                 ELSE credential_kind
             END
@@ -9346,6 +9352,7 @@ def authenticate_api_token(
                    device_tokens.credential_kind,enrollment.expires_at AS enrollment_expires_at,
                    binding.id AS client_binding_id,binding.device_id_hash AS client_device_id_hash,
                    binding.revoked_at AS client_binding_revoked_at,
+                   binding.auth_method AS client_binding_auth_method,
                    binding.installed_version AS client_installed_version
             FROM device_tokens
             JOIN users ON users.id = device_tokens.user_id
@@ -9379,7 +9386,10 @@ def authenticate_api_token(
             if replaced is not None and str(replaced["revoked_reason"] or "") == "superseded_by_client_login":
                 raise access_error(409, "该账号已在另一台设备登录，本机会话已失效")
             raise access_error(401, "用户访问凭据无效、过期或已吊销")
-        if str(row["credential_kind"] or "") == "client":
+        is_client_credential = (
+            str(row["client_binding_auth_method"] or "") == "client_password"
+        )
+        if is_client_credential:
             if not device_id or not CLIENT_DEVICE_ID_PATTERN.fullmatch(device_id):
                 raise access_error(401, "客户端设备标识缺失或无效")
             if (
@@ -11255,10 +11265,13 @@ def portal_payload(
         latest_client_login = (
             connection.execute(
                 """
-                SELECT created_at,last_used_at
-                FROM device_tokens
-                WHERE user_id=? AND credential_kind='client'
-                ORDER BY id DESC LIMIT 1
+                SELECT token.created_at,token.last_used_at
+                FROM device_tokens token
+                JOIN device_bindings binding ON binding.id=token.binding_id
+                WHERE token.user_id=?
+                  AND token.credential_kind IN ('client','device')
+                  AND binding.auth_method='client_password'
+                ORDER BY token.id DESC LIMIT 1
                 """,
                 (int(user["id"]),),
             ).fetchone()
@@ -11443,7 +11456,8 @@ def portal_payload(
                            binding.installed_version AS client_version
                     FROM device_tokens token
                     JOIN device_bindings binding ON binding.id=token.binding_id
-                    WHERE token.credential_kind='client'
+                    WHERE token.credential_kind IN ('client','device')
+                      AND binding.auth_method='client_password'
                       AND token.revoked_at IS NULL
                       AND token.activation_state='active'
                       AND binding.revoked_at IS NULL
@@ -11453,7 +11467,8 @@ def portal_payload(
                         JOIN device_bindings latest_binding
                           ON latest_binding.id=latest_token.binding_id
                         WHERE latest_token.user_id=token.user_id
-                          AND latest_token.credential_kind='client'
+                          AND latest_token.credential_kind IN ('client','device')
+                          AND latest_binding.auth_method='client_password'
                           AND latest_token.revoked_at IS NULL
                           AND latest_token.activation_state='active'
                           AND latest_binding.revoked_at IS NULL

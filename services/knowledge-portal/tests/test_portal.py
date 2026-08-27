@@ -756,6 +756,24 @@ def test_client_password_login_is_device_bound_and_replaces_the_previous_device(
             "minimum_supported_version": "0.1.4",
         }
 
+        # 旧迁移会把带绑定的桌面令牌误写为 device；重启迁移必须恢复客户端身份。
+        with module.closing(module.database()) as connection:
+            connection.execute(
+                "UPDATE device_tokens SET credential_kind='device' WHERE revoked_at IS NULL"
+            )
+            connection.commit()
+        module.init_database()
+        with module.closing(module.database()) as connection:
+            assert connection.execute(
+                "SELECT credential_kind FROM device_tokens WHERE revoked_at IS NULL"
+            ).fetchone()[0] == "client"
+        assert client.get("/v1/me", headers=second_headers).json() == {
+            "username": "owner",
+            "access": "unified",
+            "client_compatibility": "upgrade-required",
+            "minimum_supported_version": "0.1.4",
+        }
+
         with module.closing(module.database()) as connection:
             active_tokens = connection.execute(
                 "SELECT COUNT(*) FROM device_tokens WHERE revoked_at IS NULL AND activation_state='active'"
@@ -832,6 +850,12 @@ def test_client_download_page_tracks_download_and_real_client_login_separately(t
             },
         )
         assert authenticated.status_code == 200
+        with closing(module.database()) as connection:
+            connection.execute(
+                "UPDATE device_tokens SET credential_kind='device' WHERE revoked_at IS NULL"
+            )
+            connection.commit()
+        module.init_database()
         members_after_login = client.get("/admin/members")
         assert "已登录使用" in members_after_login.text
         assert "macOS · 客户端 V0.2.0" in members_after_login.text
