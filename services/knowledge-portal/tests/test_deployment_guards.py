@@ -283,6 +283,8 @@ def test_deploy_injects_and_verifies_exact_build_identity():
     assert "JIAOTANG_DEPENDENCY_IDENTITY_SHA256" in deploy_script
     assert "JIAOTANG_DEPENDENCY_RELEASE_RECORD_SHA256" in deploy_script
     assert "JIAOTANG_PRIVATE_OVERLAY_IDENTITY_SHA256" in deploy_script
+    assert "JIAOTANG_PRIVATE_OVERLAY_DIR" in deploy_script
+    assert "--label private-overlay" in deploy_script
     assert "jiaotang-private-overlay/v1" in deploy_script
     assert "app/kindle_library.py" in deploy_script
     assert "static/kindle.css" in deploy_script
@@ -297,7 +299,7 @@ def test_deploy_preflights_signed_binding_before_detached_transaction():
 
     assert "scripts/oss_reconciliation.py" in deploy_script
     assert "scripts/stream_to_command.py" in deploy_script
-    assert deploy_script.count('python3 "${script_dir}/stream_to_command.py"') == 3
+    assert deploy_script.count('python3 "${script_dir}/stream_to_command.py"') == 4
     assert "--exclude='*/__pycache__' --exclude='*.pyc'" in deploy_script
     assert "JIAOTANG_DEPLOY_TRANSFER_STALL_TIMEOUT_SECONDS" in deploy_script
     assert "JIAOTANG_DEPLOY_TRANSFER_COMPLETION_TIMEOUT_SECONDS" in deploy_script

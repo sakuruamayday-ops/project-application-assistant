@@ -60,6 +60,7 @@ dependency_release_record="${JIAOTANG_DEPENDENCY_RELEASE_RECORD:?请提供main�
 legacy_app_dir="${JIAOTANG_REMOTE_APP_DIR:-/opt/jiaotang-kb}"
 runtime_root="${JIAOTANG_REMOTE_RUNTIME_ROOT:-/opt/jiaotang-kb-runtime}"
 release_root="${JIAOTANG_REMOTE_RELEASE_ROOT:-/opt/jiaotang-kb-release-slots}"
+private_overlay_dir="${JIAOTANG_PRIVATE_OVERLAY_DIR:-}"
 build_commit="$(git -C "${repository_dir}" rev-parse HEAD)"
 skill_release_version="$(python3 - "${repository_dir}/skills/suite-manifest.json" <<'PY'
 import json
@@ -103,6 +104,36 @@ for command in ssh tar; do
         exit 1
     }
 done
+
+private_overlay_files=()
+if [[ -n "${private_overlay_dir}" ]]; then
+    private_overlay_dir="$(cd "${private_overlay_dir}" && pwd -P)"
+    private_overlay_allowlist=(
+        app/kindle_library.py
+        templates/admin_kindle.html
+        templates/kindle_public.html
+        templates/_private_admin_nav.html
+        static/kindle.css
+    )
+    for relative in "${private_overlay_allowlist[@]}"; do
+        candidate="${private_overlay_dir}/${relative}"
+        if [[ -L "${candidate}" ]]; then
+            echo "私有覆盖层只接受普通文件：${candidate}" >&2
+            exit 81
+        fi
+        if [[ -f "${candidate}" ]]; then
+            if [[ "$(wc -c < "${candidate}")" -gt $((2 * 1024 * 1024)) ]]; then
+                echo "私有覆盖层文件异常过大：${candidate}" >&2
+                exit 81
+            fi
+            private_overlay_files+=("${relative}")
+        fi
+    done
+    if [[ "${#private_overlay_files[@]}" -eq 0 ]]; then
+        echo "JIAOTANG_PRIVATE_OVERLAY_DIR 未包含任何允许的 Kindle 覆盖层文件。" >&2
+        exit 81
+    fi
+fi
 
 if [[ ! "${expected_wheelhouse_manifest_sha256}" =~ ^[0-9a-f]{64}$ ]]; then
     echo "JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256格式非法。" >&2
@@ -362,6 +393,17 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
         -- ssh "${ssh_args[@]}" "${deploy_host}" \
         "tar -C '${remote_release_dir}' -xf -"
 
+if [[ "${#private_overlay_files[@]}" -gt 0 ]]; then
+    COPYFILE_DISABLE=1 tar --no-xattrs -C "${private_overlay_dir}" -cf - \
+        "${private_overlay_files[@]}" \
+        | python3 "${script_dir}/stream_to_command.py" \
+            --label private-overlay \
+            --stall-timeout-seconds "${transfer_stall_timeout_seconds}" \
+            --completion-timeout-seconds "${transfer_completion_timeout_seconds}" \
+            -- ssh "${ssh_args[@]}" "${deploy_host}" \
+            "tar -C '${remote_release_dir}' -xf -"
+fi
+
 private_overlay_identity_sha256="$(
     ssh "${ssh_args[@]}" "${deploy_host}" \
         "RUNTIME_ROOT='${runtime_root}' RELEASE_DIR='${remote_release_dir}' python3 - <<'PY'
@@ -384,7 +426,8 @@ allowlist = (
 )
 files = []
 for relative in allowlist:
-    source = current / relative
+    destination = release / relative
+    source = destination if destination.exists() else current / relative
     if not source.exists():
         continue
     source_stat = source.lstat()
@@ -392,9 +435,9 @@ for relative in allowlist:
         raise SystemExit(f'私有覆盖层只接受普通文件：{source}')
     if source_stat.st_size > 2 * 1024 * 1024:
         raise SystemExit(f'私有覆盖层文件异常过大：{source}')
-    destination = release / relative
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, destination)
+    if source != destination:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
     os.chmod(destination, 0o640)
     digest = hashlib.sha256(destination.read_bytes()).hexdigest()
     files.append(

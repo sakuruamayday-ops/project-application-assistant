@@ -253,7 +253,7 @@ export JIAOTANG_EXPECTED_WHEELHOUSE_MANIFEST_SHA256=由对应main分支CI记录�
 
 索引发生变化时，必须改用 `sync_archived_knowledge_to_production.sh`；该编排执行全库扫描、生成 Harness 回执、把回执纳入签名索引 release，切换索引后再以 `JIAOTANG_RELEASE_MODE=index` 部署应用。禁止直接把 `deploy_production.sh` 当作索引发布入口。索引编排会把各阶段墙钟写入 `release-timings/*.jsonl` 并同步输出；SHA-256 与 CRC64 在同一遍读取中计算，OSS 上传、OSS 下载和服务器刷新持续输出字节数、百分比及已用时间。已由当前 Harness 回执验证的候选索引不会再重复运行 SQLite 全库检查，但它的摘要仍必须与签名回执一致。可用 `JIAOTANG_RELEASE_PROGRESS_INTERVAL_SECONDS` 调整本地传输回报间隔，用 `JIAOTANG_INDEX_REFRESH_PROGRESS_INTERVAL_SECONDS` 调整服务器轮询间隔。
 
-部署脚本先在本地核验 wheelhouse、外部绑定摘要、依赖身份和 main 分支 CI 发布记录，再把源码、锁、wheelhouse 和发布记录一起写入新槽。服务器安装阶段设置 `PIP_NO_INDEX=1`，只从该槽内的 wheelhouse 安装；生产主机不会访问 PyPI。若服务器启用了私有 Kindle 管理扩展，部署只会把 `app/kindle_library.py`、对应两个页面模板和私有导航模板四个白名单文件复制到新槽，并生成只含路径、大小和 SHA-256 的 `private-overlay-manifest.json`；其身份摘要会进入 `/build`，私有内容不会回传本地或进入公开仓库。
+部署脚本先在本地核验 wheelhouse、外部绑定摘要、依赖身份和 main 分支 CI 发布记录，再把源码、锁、wheelhouse 和发布记录一起写入新槽。服务器安装阶段设置 `PIP_NO_INDEX=1`，只从该槽内的 wheelhouse 安装；生产主机不会访问 PyPI。若服务器启用了私有 Kindle 管理扩展，部署只处理 `app/kindle_library.py`、两个 Kindle 页面模板、私有导航模板和 `static/kindle.css` 五个白名单文件，并生成只含路径、大小和 SHA-256 的 `private-overlay-manifest.json`；其身份摘要会进入 `/build`，私有内容不会回传本地或进入公开仓库。默认从当前生产槽继承这些文件；需要发布私有修复时，将 `JIAOTANG_PRIVATE_OVERLAY_DIR` 指向包含上述相对路径的本地受控目录，脚本只上传其中命中的白名单普通文件，其余文件仍从当前生产槽继承。
 
 源码、wheelhouse 和依赖发布记录通过非阻塞分段输入传给 SSH。远端解包产生背压时按实际写入字节持续更新进度；只有连续无字节写入超过 `JIAOTANG_DEPLOY_TRANSFER_STALL_TIMEOUT_SECONDS` 才终止该次传输，避免把正常背压误判为网络卡死。
 
