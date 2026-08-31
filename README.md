@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/releases/V1.6.14.md"><img src="https://img.shields.io/badge/Release-V1.6.14-C9A760?style=for-the-badge" alt="Release V1.6.14"></a>
+  <a href="docs/releases/V1.6.15.md"><img src="https://img.shields.io/badge/Release-V1.6.15-C9A760?style=for-the-badge" alt="Release V1.6.15"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -51,7 +51,7 @@
 | 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
 | 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | Skills 中心下载通用包，并从「安装与连接」复制标准配置 |
 
-V1.6.14 候选收敛 Office／WPS 兼容资料读取、高企申请书旧式 DOC 输入与合并单元格写入路径。正式发布后，共创企业助手才会将同一技能内容作为已验签内置资产加载；客户端与技能包分别版本化、分别验收。
+V1.6.15 候选在 V1.6.14 的 Office／WPS 兼容读取基础上，收敛专业校验、企业数据源降级与模板发布检查。正式发布后，共创企业助手才会将同一技能内容作为已验签内置资产加载；客户端与技能包分别版本化、分别验收。
 
 ### 当前版本功能简介
 
@@ -129,6 +129,7 @@ V1.6.14 候选收敛 Office／WPS 兼容资料读取、高企申请书旧式 DOC
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
+| [V1.6.15 功能简介](docs/releases/V1.6.15.md) | 有限专业校验、企业数据源有限降级与每次含模板发布的全量模板检查 |
 | [V1.6.14 功能简介](docs/releases/V1.6.14.md) | Office／WPS 兼容资料内容嗅探、高企旧式 DOC 收敛与合并单元格写入复验 |
 | [V1.6.12 功能简介](docs/releases/V1.6.12.md) | 深度澄清主动结束、无进展收敛与不可达能力停止重试 |
 | [V1.6.10 功能简介](docs/releases/V1.6.10.md) | 当前正式版本的回答深度收敛、最小充分响应和完整正式交付边界 |

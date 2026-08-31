@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "first-run-configuration",
-  "release_tag": "V1.6.14",
+  "release_tag": "V1.6.15",
   "required_paths": [
     "SKILL.md",
     "references/first-startup-protocol.md",

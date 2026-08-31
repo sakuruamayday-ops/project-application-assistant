@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-client-runtime-gates/v1",
-  "release_tag": "V1.6.14",
+  "release_tag": "V1.6.15",
   "host": {
     "upstream": "deepseek-ai/deepseek-harness",
     "pinned_commit": "0a53fb55bea101816fa226bb964ae2bed71c343b",

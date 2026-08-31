@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "local-knowledge-retrieval",
-  "release_tag": "V1.6.14",
+  "release_tag": "V1.6.15",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,9 +21,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "4e523431968cfe35805a0821c46fde7906a05a3a2f28b51c5cef5085da3965cc",
+    "SKILL.md": "bee19f8cdb3fe4758a7596aec8c12551bfddd310910f37e1cbc07737af44d156",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "references/search-orchestration.md": "5e2f480c06f301071aab7740d6e433164a6c26b5c5baeae67becdc4e3c767cf9",
+    "references/search-orchestration.md": "a6efc2000e63227fe9817b57b443d087948999990dca62ac6c315c26154f47f4",
     "references/three-first-project-list-schema.md": "e5bb2a26d8bb6be60b628b7ac6af59630983d120c2070670b5b02b1d4be020b8",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

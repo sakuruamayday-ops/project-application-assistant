@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "enterprise-panorama-analysis",
-  "release_tag": "V1.6.14",
+  "release_tag": "V1.6.15",
   "required_paths": [
     "SKILL.md",
     "assets/brand-gold-07.png",
@@ -45,7 +45,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "c91b3af51a728c4c04806fd6923e0de3dbf53e4ab67a51f21213b11154455b5f",
+    "SKILL.md": "c7ab91353a9dae506f1db5a166ab7a175590d43748a5430846e3dee5aee79dc7",
     "assets/brand-gold-07.png": "9698d9c63a16a3389b80250bfb211147fac8d8ca3a5bb7ef3beafb5b4ce377b4",
     "assets/brand-gold-10.png": "292ab0d923085de57f3ecac37b78e31df2c9b720b17c9b7249b55a8c161bffbf",
     "assets/brand-gold-12.png": "32f8ae85d31cdda6a35bdba6e7c8fcca802e7e3bdd8f4938f66cc400cae19305",
@@ -55,7 +55,7 @@
     "assets/sales-master-reference.pdf": "df17b5248a9284d2a4b8cd928350d3540f59beb67d9d13e995cfd363f9eaa0ff",
     "assets/sales-style.css": "b4006036cafde5d593142d70353fe1acf25b774b9fa2ca1db759bf778f9acfa3",
     "references/brand_config.json": "7fb62581ae1a24f759dd9feb321759926be73db19caa118a5ec9a831912395dd",
-    "references/enterprise-info-verification.md": "a2fc270bbaefd8b822a0746e5289660002262981134a85db732599343f0df24b",
+    "references/enterprise-info-verification.md": "120d8426df0a3beccfac76de87d0520377ea079b1850804d35c85871af237d25",
     "references/peer-selection-rules.md": "83f9cd8aa6e747a445b390dc13a83eaacb433d0621f1f26d321841fb661c8e79",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/public-source-map.md": "4fbc404572eff40bdb45f3fbbef404cb781da59cb1d1a6bf5ced28247d029b55",

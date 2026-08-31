@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-application-assistant",
-  "release_tag": "V1.6.14",
+  "release_tag": "V1.6.15",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,16 +23,16 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "3bccc6acde22604bb16ddfc2f022eaee866abcf64bbc3e74b9b8d86fdcfb1a12",
+    "SKILL.md": "371c173f81b004ba13ad4af1ccc2e431d75f42e97a6b6b66c0801e670a8f9c41",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "references/region-loading-rules.md": "54fd7da44ac24e4aada3560157b86920a1a130f70e2b6cc8c0a2c500093820e9",
     "scripts/document_format_detection.py": "1c34abe486d5f4dd6f18ee009ea37218295111b68dc5df5d1104a6f19ca64037",
-    "scripts/extract_workspace_document.py": "fe9bece5d24c9e8e7ab141c4e70570a710fe65b740e8f654bcfb714514758f63",
+    "scripts/extract_workspace_document.py": "26be2ad618ef6474c27df3a253b74bc72236267624ba339067057cc1cdf7e51d",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/user_region_profile.py": "e8fd44cb54da80954d51fd8b866c0e08f82d067bec85f92166ddb27c43870ca0",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
     "tests/fixtures/document-extraction-sample.xls": "950b3b55400461294aa3d1b3fa690347d4c2691a8b590bbe9c50daa412de5ba1",
-    "tests/test_extract_workspace_document.py": "a5d5445372a96ae47905bf41ff74e27489cf6ffc5dd36c72b15bce76e83f21e0"
+    "tests/test_extract_workspace_document.py": "6c804a329c02ad575083347e843d78d893d39f199027cd3b0d951037ee713c94"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

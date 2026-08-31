@@ -146,7 +146,7 @@ def test_v1652_keeps_v165_report_and_project_logic_boundaries() -> None:
     assert "企业分析报告 A、B、C 版" in text
     assert "尖兵领雁、市级重大及科技计划类的既有分析逻辑保持不变" in text
     manifest = json.loads(read(SKILLS / "suite-manifest.json"))
-    assert manifest["release"]["tag"] == "V1.6.14"
+    assert manifest["release"]["tag"] == "V1.6.15"
 
 
 def test_enterprise_panorama_keeps_business_modes_but_defaults_each_to_word() -> None:
@@ -158,4 +158,4 @@ def test_enterprise_panorama_keeps_business_modes_but_defaults_each_to_word() ->
     assert "每种已选报告默认只交付一份可编辑 Word" in text
     assert "用户明确要求 PDF 时才生成对应 PDF" in text
     assert "不再提供标准销售版" not in text
-    assert manifest["release"]["version"] == "1.6.14"
+    assert manifest["release"]["version"] == "1.6.15"

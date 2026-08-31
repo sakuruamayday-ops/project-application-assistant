@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "peer-benchmarking",
-  "release_tag": "V1.6.14",
+  "release_tag": "V1.6.15",
   "required_paths": [
     "SKILL.md",
     "references/peer-comparability-rules.md",
@@ -22,7 +22,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "37dea48b7dba3cf14714ee359900d0db171e458886a522fd4c9a5262602bcc01",
+    "SKILL.md": "f882a9a44155741e144650de9dd2489ab9ce5162f2c47f3473e3f75c731d283f",
     "references/peer-comparability-rules.md": "d56f65e585ede611a7f5d5471a6b808c393e4354f5ff0c49662add54fd77c961",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
