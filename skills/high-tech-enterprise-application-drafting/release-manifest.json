@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "high-tech-enterprise-application-drafting",
-  "release_tag": "V1.6.13",
+  "release_tag": "V1.6.14",
   "required_paths": [
     "SKILL.md",
     "agents/openai.yaml",
@@ -42,19 +42,20 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "9b53ca4817690dba2b636557b300099cc51637b11958f976945c7abdd8333fac",
+    "SKILL.md": "55cb538998e47b130849d10648d692bb2ef83f7aeb1f30536c512d745e49f751",
     "agents/openai.yaml": "e7a30ae7303f188eaf7be7ce60dcff3b57c98bf6e0db08309296b19d73c3622b",
     "assets/高新技术企业认定申请书空白模板.docx": "449f74c7327f7a486031343cc8f7d6b4cf182a5ad68debddca027c5d15d1f20a",
-    "references/enterprise-innovation-capability-format.md": "fcc30074b5e0dadc7464609983a5178466c8177e4996b1912980870449eb8dab",
+    "references/enterprise-innovation-capability-format.md": "8920194f5dd3957f18b436f6cee359a974d24eec4e845bc34ab64aa45c54a87e",
     "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "references/rd-core-innovation-format.md": "aa4b071febb052095f599e1e2a27b0985b3dacf6379d1a9d5da4017c84606529",
+    "references/rd-core-innovation-format.md": "1c08e4428cc9a8718b0c7bb735e424324d386ca6845710abaa512d7bb202822f",
     "references/summary-table-contract.md": "2df1c7f39af586878fd7c423552345b8811e7fdde015515b23b0ccb70c515a42",
-    "references/v1.3.1-release-plan.md": "c8107f4a862e0c326ebe1d88eee8e1db9c4980fa1cb44792a203292950014255",
-    "references/writing-rules.md": "fdb4deb79a7fc432475d5b414406ee31c3dc6c8e80aea14e4601888a1fb85f1c",
-    "scripts/audit_application_docx.py": "ac36b2262df031f1a6a1da1927531ec0bc844d73b3fe1f5f3ed5792a09a66911",
-    "scripts/expand_rd_ps_tables.py": "ddc79ee1a63a2c462934492ed28472d8ba5d1c0b7b39539306feaf30df247fc0",
-    "scripts/fill_rd_core_innovation.py": "9d461d9f4ac1ffc843671cfe1fc7931827319023c479692813eea376ca4e1a07",
+    "references/v1.3.1-release-plan.md": "be69375a17511bbd4ff1403ed50e21e3b46354e02ad0a0812ca80aed215912b5",
+    "references/writing-rules.md": "c5ff84c6089f38132462daa32252e8481fad1270be33e94e91460c6435b78e67",
+    "scripts/audit_application_docx.py": "212a1d97525a1bcee88c287b58eb03d1b560ba8da9d3298812f1765bea54a5cc",
+    "scripts/expand_rd_ps_tables.py": "a06a5ed0d1cd8ca1d6eb7bfe8731b257a24006407ee76a279d79dfd319abea63",
+    "scripts/fill_rd_core_innovation.py": "3452bc2a18f66164b927abe88351336b8205baa3a5f8604d28a05e24f5f95dba",
     "scripts/hightech_delivery_gate.py": "6a880e525cb2af551c9fd5dc05a371221e1f002b2e6c49dcae8743b7aa311939",
+    "scripts/plan_hightech_inputs.py": "60e66413e65e4c8b6ad0bc8b4b4a4a4bd2a7512e55363ac7137214f285e9af1c",
     "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

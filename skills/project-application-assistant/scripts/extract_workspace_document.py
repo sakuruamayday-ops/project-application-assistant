@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import json
 import posixpath
 import re
@@ -12,11 +14,31 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
+from document_format_detection import DocumentDetection, detect_document
+
 
 MAX_OUTPUT_CHARACTERS = 500_000
+MAX_JSON_OUTPUT_BYTES = 900 * 1024
 MAX_ARCHIVE_MEMBER_BYTES = 64 * 1024 * 1024
 MAX_ARCHIVE_TOTAL_BYTES = 256 * 1024 * 1024
 MAX_PDF_PAGES = 1_000
+MAX_ARCHIVE_COMPRESSION_RATIO = 2_000
+MAX_ODS_COLUMNS = 16_384
+MAX_ODS_ROWS = 1_048_576
+MAX_ODS_SHEETS = 1_024
+MAX_ODS_EXPANDED_CELLS = 1_000_000
+MAX_RTF_BINARY_BYTES = 8 * 1024 * 1024
+
+
+class UnsafeDocumentError(ValueError):
+    """The document exceeds a bounded, read-only parsing limit."""
+
+
+def safe_xml_root(data: bytes) -> ElementTree.Element:
+    upper = data.upper()
+    if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
+        raise UnsafeDocumentError("文档 XML 含有不允许的实体或文档类型声明")
+    return ElementTree.fromstring(data)
 
 
 def local_name(tag: str) -> str:
@@ -32,6 +54,31 @@ def bounded_join(parts: list[str]) -> tuple[str, bool]:
     return compact[:MAX_OUTPUT_CHARACTERS].rstrip(), True
 
 
+def serialize_result(result: dict[str, object]) -> str:
+    """Fit stdout under the signed operation byte limit after JSON escaping."""
+
+    serialized = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
+    if len(serialized.encode("utf-8")) <= MAX_JSON_OUTPUT_BYTES:
+        return serialized
+    text = result.get("text")
+    if not isinstance(text, str):
+        return serialized
+    low = 0
+    high = len(text)
+    fitted = dict(result)
+    fitted["truncated"] = True
+    while low < high:
+        middle = (low + high + 1) // 2
+        fitted["text"] = text[:middle].rstrip()
+        candidate = json.dumps(fitted, ensure_ascii=False, separators=(",", ":"))
+        if len(candidate.encode("utf-8")) <= MAX_JSON_OUTPUT_BYTES:
+            low = middle
+        else:
+            high = middle - 1
+    fitted["text"] = text[:low].rstrip()
+    return json.dumps(fitted, ensure_ascii=False, separators=(",", ":"))
+
+
 def safe_archive(path: Path) -> zipfile.ZipFile:
     archive = zipfile.ZipFile(path)
     total = 0
@@ -40,16 +87,19 @@ def safe_archive(path: Path) -> zipfile.ZipFile:
             continue
         if info.file_size < 0 or info.file_size > MAX_ARCHIVE_MEMBER_BYTES:
             archive.close()
-            raise ValueError("文档内部单个文件过大")
+            raise UnsafeDocumentError("文档内部单个文件过大")
+        if info.compress_size > 0 and info.file_size / info.compress_size > MAX_ARCHIVE_COMPRESSION_RATIO:
+            archive.close()
+            raise UnsafeDocumentError("文档压缩比例超出安全上限")
         total += info.file_size
         if total > MAX_ARCHIVE_TOTAL_BYTES:
             archive.close()
-            raise ValueError("文档解压后内容过大")
+            raise UnsafeDocumentError("文档解压后内容过大")
     return archive
 
 
 def xml_text(data: bytes, paragraph_tags: set[str]) -> str:
-    root = ElementTree.fromstring(data)
+    root = safe_xml_root(data)
     parts: list[str] = []
     for element in root.iter():
         tag = local_name(element.tag)
@@ -81,14 +131,14 @@ def shared_strings(archive: zipfile.ZipFile) -> list[str]:
         data = archive.read("xl/sharedStrings.xml")
     except KeyError:
         return []
-    root = ElementTree.fromstring(data)
+    root = safe_xml_root(data)
     return ["".join(node.text or "" for node in item.iter() if local_name(node.tag) == "t") for item in root]
 
 
 def workbook_sheets(archive: zipfile.ZipFile) -> list[tuple[str, str]]:
     try:
-        workbook = ElementTree.fromstring(archive.read("xl/workbook.xml"))
-        relationships = ElementTree.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+        workbook = safe_xml_root(archive.read("xl/workbook.xml"))
+        relationships = safe_xml_root(archive.read("xl/_rels/workbook.xml.rels"))
     except KeyError:
         return []
     targets = {
@@ -114,14 +164,14 @@ def workbook_sheets(archive: zipfile.ZipFile) -> list[tuple[str, str]]:
 
 
 def workbook_uses_1904_epoch(archive: zipfile.ZipFile) -> bool:
-    root = ElementTree.fromstring(archive.read("xl/workbook.xml"))
+    root = safe_xml_root(archive.read("xl/workbook.xml"))
     properties = next((node for node in root.iter() if local_name(node.tag) == "workbookPr"), None)
     return properties is not None and properties.attrib.get("date1904", "").lower() in {"1", "true"}
 
 
 def workbook_number_formats(archive: zipfile.ZipFile) -> list[str]:
     try:
-        root = ElementTree.fromstring(archive.read("xl/styles.xml"))
+        root = safe_xml_root(archive.read("xl/styles.xml"))
     except KeyError:
         return []
     from openpyxl.styles.numbers import BUILTIN_FORMATS
@@ -206,7 +256,7 @@ def extract_xlsx(path: Path) -> dict[str, object]:
         parts: list[str] = []
         for worksheet_name, worksheet_path in worksheets:
             parts.append(f"## {worksheet_name}\n")
-            root = ElementTree.fromstring(archive.read(worksheet_path))
+            root = safe_xml_root(archive.read(worksheet_path))
             for row in (node for node in root.iter() if local_name(node.tag) == "row"):
                 values: list[str] = []
                 next_column = 1
@@ -220,6 +270,130 @@ def extract_xlsx(path: Path) -> dict[str, object]:
                 parts.append("\t".join(values).rstrip() + "\n")
     text, truncated = bounded_join(parts)
     return {"kind": "xlsx", "status": "extracted", "sheets": len(worksheets), "text": text, "truncated": truncated}
+
+
+def odf_attribute(element: ElementTree.Element, name: str, default: str = "") -> str:
+    return next((value for key, value in element.attrib.items() if local_name(key) == name), default)
+
+
+def bounded_repeat(element: ElementTree.Element, name: str, maximum: int) -> int:
+    raw = odf_attribute(element, name, "1")
+    try:
+        value = int(raw)
+    except ValueError as error:
+        raise ValueError(f"ODF {name} 属性无效") from error
+    if value < 1 or value > maximum:
+        raise UnsafeDocumentError(f"ODF {name} 超出安全上限")
+    return value
+
+
+def odf_cell_text(cell: ElementTree.Element) -> str:
+    paragraphs = [
+        "".join(paragraph.itertext()).strip()
+        for paragraph in cell.iter()
+        if local_name(paragraph.tag) in {"p", "h"}
+    ]
+    visible = "\n".join(value for value in paragraphs if value)
+    if visible:
+        return visible
+    for attribute in ("string-value", "date-value", "time-value", "boolean-value", "value"):
+        value = odf_attribute(cell, attribute)
+        if value:
+            return value
+    return ""
+
+
+def extract_ods(path: Path) -> dict[str, object]:
+    with safe_archive(path) as archive:
+        try:
+            root = safe_xml_root(archive.read("content.xml"))
+        except KeyError as error:
+            raise ValueError("ODS 缺少 content.xml") from error
+        tables = [node for node in root.iter() if local_name(node.tag) == "table"]
+        if not tables:
+            raise ValueError("ODS 缺少工作表")
+        if len(tables) > MAX_ODS_SHEETS:
+            raise UnsafeDocumentError("ODS 工作表数量超出安全上限")
+        parts: list[str] = []
+        output_size = 0
+        expanded_cells = 0
+        expanded_rows = 0
+        truncated = False
+        for table_index, table in enumerate(tables):
+            name = odf_attribute(table, "name", f"工作表{table_index + 1}")
+            heading = f"## {name}\n"
+            if output_size + len(heading) > MAX_OUTPUT_CHARACTERS:
+                truncated = True
+                break
+            parts.append(heading)
+            output_size += len(heading)
+            for row in (node for node in table.iter() if local_name(node.tag) == "table-row"):
+                row_repeat = bounded_repeat(row, "number-rows-repeated", MAX_ODS_ROWS)
+                values: list[str] = []
+                for cell in row:
+                    if local_name(cell.tag) not in {"table-cell", "covered-table-cell"}:
+                        continue
+                    column_repeat = bounded_repeat(cell, "number-columns-repeated", MAX_ODS_COLUMNS)
+                    if len(values) + column_repeat > MAX_ODS_COLUMNS:
+                        raise UnsafeDocumentError("ODS 单行列数超出安全上限")
+                    expanded_cells += column_repeat * row_repeat
+                    if expanded_cells > MAX_ODS_EXPANDED_CELLS:
+                        raise UnsafeDocumentError("ODS 重复单元格展开超出安全上限")
+                    values.extend([odf_cell_text(cell)] * column_repeat)
+                expanded_rows += row_repeat
+                if expanded_rows > MAX_ODS_ROWS:
+                    raise UnsafeDocumentError("ODS 行数超出安全上限")
+                line = "\t".join(values).rstrip() + "\n"
+                if not line.strip():
+                    row_repeat = min(row_repeat, 1)
+                for _ in range(row_repeat):
+                    if output_size + len(line) > MAX_OUTPUT_CHARACTERS:
+                        remaining = MAX_OUTPUT_CHARACTERS - output_size
+                        if remaining > 0:
+                            parts.append(line[:remaining])
+                        truncated = True
+                        break
+                    parts.append(line)
+                    output_size += len(line)
+                if truncated:
+                    break
+            if truncated:
+                break
+    text, joined_truncated = bounded_join(parts)
+    return {
+        "kind": "ods",
+        "status": "extracted",
+        "sheets": len(tables),
+        "text": text,
+        "truncated": truncated or joined_truncated,
+    }
+
+
+def extract_odt(path: Path) -> dict[str, object]:
+    with safe_archive(path) as archive:
+        try:
+            root = safe_xml_root(archive.read("content.xml"))
+        except KeyError as error:
+            raise ValueError("ODT 缺少 content.xml") from error
+        parts: list[str] = []
+        output_size = 0
+        truncated = False
+        for node in root.iter():
+            if local_name(node.tag) not in {"p", "h"}:
+                continue
+            value = "".join(node.itertext()).strip()
+            if value:
+                line = value + "\n"
+                if output_size + len(line) > MAX_OUTPUT_CHARACTERS:
+                    remaining = MAX_OUTPUT_CHARACTERS - output_size
+                    if remaining > 0:
+                        parts.append(line[:remaining])
+                    truncated = True
+                    break
+                parts.append(line)
+                output_size += len(line)
+    text, joined_truncated = bounded_join(parts)
+    return {"kind": "odt", "status": "extracted", "text": text, "truncated": truncated or joined_truncated}
 
 
 def xls_number_text(book: object, cell: object) -> str:
@@ -311,19 +485,304 @@ def extract_pdf(path: Path) -> dict[str, object]:
     }
 
 
-def extract_txt(path: Path) -> dict[str, object]:
-    data = path.read_bytes()
-    text = None
+def decode_plain_text(data: bytes) -> str:
     for encoding in ("utf-8-sig", "gb18030"):
         try:
-            text = data.decode(encoding)
-            break
+            return data.decode(encoding)
         except UnicodeDecodeError:
             continue
-    if text is None:
-        raise ValueError("TXT 不是 UTF-8 或 GB18030 文本")
+    raise ValueError("文本不是 UTF-8 或 GB18030 编码")
+
+
+def stable_delimiter(text: str, preferred: str | None) -> str | None:
+    if preferred is not None:
+        return preferred
+    lines = [line for line in text[:64_000].splitlines() if line.strip()]
+    if len(lines) < 3:
+        return None
+    for delimiter in ("\t", ",", ";"):
+        counts = [line.count(delimiter) for line in lines]
+        if counts[0] > 0 and len(set(counts)) == 1:
+            return delimiter
+    return None
+
+
+def delimited_text(text: str, preferred: str | None = None) -> tuple[str, str, bool] | None:
+    delimiter = stable_delimiter(text, preferred)
+    if delimiter is None:
+        return None
+    output: list[str] = []
+    size = 0
+    try:
+        reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+        for row_index, row in enumerate(reader, start=1):
+            if row_index > MAX_ODS_ROWS or len(row) > MAX_ODS_COLUMNS:
+                raise UnsafeDocumentError("分隔文本行列数超出安全上限")
+            line = "\t".join(row).rstrip() + "\n"
+            if size + len(line) > MAX_OUTPUT_CHARACTERS:
+                remaining = MAX_OUTPUT_CHARACTERS - size
+                if remaining > 0:
+                    output.append(line[:remaining])
+                return "".join(output).rstrip(), "csv" if delimiter != "\t" else "tsv", True
+            output.append(line)
+            size += len(line)
+    except csv.Error:
+        return None
+    return "".join(output).strip(), "csv" if delimiter != "\t" else "tsv", False
+
+
+def extract_txt(path: Path) -> dict[str, object]:
+    text = decode_plain_text(path.read_bytes())
+    suffix = path.suffix.casefold()
+    preferred = "\t" if suffix == ".tsv" else ("," if suffix == ".csv" else None)
+    table = delimited_text(text, preferred) if suffix in {".csv", ".tsv", ".et"} or stable_delimiter(text, None) else None
+    if table is not None:
+        table_text, kind, truncated = table
+        return {"kind": kind, "status": "extracted", "text": table_text, "truncated": truncated}
     text, truncated = bounded_join([text])
     return {"kind": "txt", "status": "extracted", "text": text, "truncated": truncated}
+
+
+RTF_DESTINATIONS = {
+    "annotation",
+    "author",
+    "colortbl",
+    "comment",
+    "datastore",
+    "filetbl",
+    "fontemb",
+    "fontfile",
+    "fonttbl",
+    "footer",
+    "footerf",
+    "footerl",
+    "footerr",
+    "generator",
+    "header",
+    "headerf",
+    "headerl",
+    "headerr",
+    "info",
+    "listoverridetable",
+    "listtable",
+    "nonshppict",
+    "object",
+    "pict",
+    "revtbl",
+    "rsidtbl",
+    "shp",
+    "shpinst",
+    "stylesheet",
+    "themedata",
+    "xmlnstbl",
+}
+
+
+def rtf_codec(codepage: int) -> str:
+    candidate = f"cp{codepage}"
+    try:
+        b"".decode(candidate)
+        return candidate
+    except LookupError:
+        return "cp1252"
+
+
+def extract_rtf(path: Path) -> dict[str, object]:
+    raw = path.read_bytes()
+    source = raw.decode("latin-1")
+    if not source.lstrip("\ufeff \t\r\n").lower().startswith("{\\rtf"):
+        raise ValueError("RTF 文件头无效")
+    # State is copied at every group boundary so hidden destinations never leak.
+    state = {"ignorable": False, "ucskip": 1, "codepage": 1252}
+    stack: list[dict[str, object]] = []
+    output: list[str] = []
+    output_size = 0
+    fallback_skip = 0
+    truncated = False
+    index = 0
+
+    def append(value: str) -> None:
+        nonlocal output_size, truncated
+        if not value or bool(state["ignorable"]) or truncated:
+            return
+        remaining = MAX_OUTPUT_CHARACTERS - output_size
+        if remaining <= 0:
+            truncated = True
+            return
+        if len(value) > remaining:
+            output.append(value[:remaining])
+            output_size += remaining
+            truncated = True
+            return
+        output.append(value)
+        output_size += len(value)
+
+    while index < len(source):
+        char = source[index]
+        if char == "{":
+            stack.append(dict(state))
+            index += 1
+            continue
+        if char == "}":
+            if stack:
+                state = stack.pop()
+            index += 1
+            continue
+        if char != "\\":
+            if char not in "\r\n":
+                if fallback_skip:
+                    fallback_skip -= 1
+                else:
+                    append(char)
+            index += 1
+            continue
+
+        index += 1
+        if index >= len(source):
+            break
+        symbol = source[index]
+        if symbol in "{}\\":
+            if fallback_skip:
+                fallback_skip -= 1
+            else:
+                append(symbol)
+            index += 1
+            continue
+        if symbol == "'" and index + 2 < len(source):
+            token = source[index + 1 : index + 3]
+            try:
+                decoded = bytes([int(token, 16)]).decode(rtf_codec(int(state["codepage"])), errors="replace")
+            except ValueError:
+                decoded = ""
+            if fallback_skip:
+                fallback_skip -= 1
+            else:
+                append(decoded)
+            index += 3
+            continue
+        if symbol == "*":
+            state["ignorable"] = True
+            index += 1
+            continue
+        if not symbol.isalpha():
+            if symbol == "~":
+                append("\u00a0")
+            elif symbol in {"_", "-"}:
+                append("-")
+            index += 1
+            continue
+
+        word_start = index
+        while index < len(source) and source[index].isalpha():
+            index += 1
+        word = source[word_start:index].lower()
+        sign = 1
+        if index < len(source) and source[index] == "-":
+            sign = -1
+            index += 1
+        number_start = index
+        while index < len(source) and source[index].isdigit():
+            index += 1
+        argument = sign * int(source[number_start:index]) if index > number_start else None
+        if index < len(source) and source[index] == " ":
+            index += 1
+
+        if word in RTF_DESTINATIONS:
+            state["ignorable"] = True
+        elif word == "ansicpg" and argument is not None:
+            state["codepage"] = argument
+        elif word == "uc" and argument is not None:
+            state["ucskip"] = max(0, min(argument, 16))
+        elif word == "u" and argument is not None:
+            codepoint = argument if argument >= 0 else argument + 65_536
+            append(chr(codepoint))
+            fallback_skip = int(state["ucskip"])
+        elif word in {"par", "line", "row"}:
+            append("\n")
+        elif word in {"tab", "cell"}:
+            append("\t")
+        elif word == "bin" and argument is not None:
+            if argument < 0 or argument > MAX_RTF_BINARY_BYTES or index + argument > len(source):
+                raise UnsafeDocumentError("RTF 二进制块超出安全上限或已损坏")
+            index += argument
+
+    text, joined_truncated = bounded_join(output)
+    return {"kind": "rtf", "status": "extracted", "text": text, "truncated": truncated or joined_truncated}
+
+
+def outcome(
+    path: Path,
+    detection: DocumentDetection,
+    status: str,
+    message: str,
+    action: str,
+    *,
+    retryable: bool = False,
+) -> dict[str, object]:
+    return {
+        "schema_version": "gongchuang-document-extraction/v1",
+        "name": path.name,
+        **detection.to_dict(),
+        "status": status,
+        "message": message,
+        "action": action,
+        "retryable": retryable,
+        "text": "",
+        "truncated": False,
+    }
+
+
+def non_extractable_outcome(path: Path, detection: DocumentDetection) -> dict[str, object]:
+    kind = detection.detected_kind
+    if kind == "doc":
+        return outcome(
+            path,
+            detection,
+            "conversion_required",
+            "检测到旧式二进制 Word 文档。请另存为 DOCX、ODT 或 RTF 后再读取；原文件不会被修改。",
+            "convert_to_supported_format",
+        )
+    if kind in {"encrypted-office", "encrypted-archive"}:
+        return outcome(
+            path,
+            detection,
+            "encrypted_document",
+            "文档已加密，当前只读提取器不会请求、保存或尝试破解密码。",
+            "provide_password_free_copy",
+        )
+    if kind.startswith("damaged-"):
+        return outcome(
+            path,
+            detection,
+            "damaged_document",
+            "文档容器不完整或已损坏，请从原应用重新另存一份有效副本。",
+            "replace_with_valid_copy",
+        )
+    if kind == "unsafe-archive":
+        return outcome(
+            path,
+            detection,
+            "unsafe_document",
+            detection.detail or "文档容器超出只读嗅探安全上限。",
+            "split_or_resave_document",
+        )
+    if kind == "proprietary-office":
+        return outcome(
+            path,
+            detection,
+            "conversion_required",
+            "检测到当前内置解析器无法确认的 WPS／ET 专有文档，请另存为 DOCX、XLSX、ODT、ODS、RTF 或文本后再读取。",
+            "convert_to_supported_format",
+        )
+    if kind == "unreadable":
+        return outcome(path, detection, "unavailable", "文档当前不可读取，请检查权限。", "check_permissions")
+    return outcome(
+        path,
+        detection,
+        "unsupported_format",
+        "未识别到可安全读取的 Office、ODF、PDF、RTF 或文本结构。",
+        "provide_supported_format",
+    )
 
 
 def main() -> int:
@@ -331,25 +790,66 @@ def main() -> int:
     parser.add_argument("document", type=Path)
     args = parser.parse_args()
     path = args.document
-    handlers = {".docx": extract_docx, ".xls": extract_xls, ".xlsx": extract_xlsx, ".pdf": extract_pdf, ".txt": extract_txt}
     try:
         if not path.is_file() or path.is_symlink():
             raise ValueError("输入必须是普通文件")
-        handler = handlers.get(path.suffix.lower())
+        detection = detect_document(path)
+        handlers = {
+            "docx": extract_docx,
+            "xlsx": extract_xlsx,
+            "ods": extract_ods,
+            "odt": extract_odt,
+            "xls": extract_xls,
+            "pdf": extract_pdf,
+            "rtf": extract_rtf,
+            "text": extract_txt,
+        }
+        handler = handlers.get(detection.detected_kind)
         if handler is None:
-            raise ValueError("不支持该文档类型")
+            print(serialize_result(non_extractable_outcome(path, detection)))
+            return 0
         result = handler(path)
-        result.update({"schema_version": "gongchuang-document-extraction/v1", "name": path.name})
-        print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+        result.update({
+            "schema_version": "gongchuang-document-extraction/v1",
+            "name": path.name,
+            **detection.to_dict(),
+            "retryable": False,
+            "macro_policy": "ignored-read-only" if detection.contains_macros else "not-present",
+            "formula_policy": "cached-values-only" if detection.detected_kind in {"xlsx", "xls", "ods"} else "not-applicable",
+            "external_links": "not-followed",
+        })
+        print(serialize_result(result))
         return 0
-    except (OSError, ValueError, RuntimeError, zipfile.BadZipFile, ElementTree.ParseError) as error:
-        print(json.dumps({
+    except UnsafeDocumentError as error:
+        detection = locals().get("detection", DocumentDetection(path.suffix.casefold(), "unknown"))
+        result = outcome(path, detection, "unsafe_document", str(error), "split_or_resave_document")
+        print(serialize_result(result))
+        return 0
+    except (zipfile.BadZipFile, ElementTree.ParseError) as error:
+        detection = locals().get("detection", DocumentDetection(path.suffix.casefold(), "unknown"))
+        result = outcome(path, detection, "damaged_document", str(error), "replace_with_valid_copy")
+        print(serialize_result(result))
+        return 0
+    except ValueError as error:
+        if "detection" in locals():
+            result = outcome(path, detection, "damaged_document", str(error), "replace_with_valid_copy")
+            print(serialize_result(result))
+            return 0
+        print(serialize_result({
             "schema_version": "gongchuang-document-extraction/v1",
             "name": path.name,
             "status": "rejected",
             "error": str(error),
-        }, ensure_ascii=False, separators=(",", ":")))
+        }))
         return 2
+    except OSError as error:
+        detection = locals().get("detection", DocumentDetection(path.suffix.casefold(), "unreadable", detail=str(error)))
+        print(serialize_result(outcome(path, detection, "unavailable", str(error), "check_permissions")))
+        return 0
+    except RuntimeError as error:
+        detection = locals().get("detection", DocumentDetection(path.suffix.casefold(), "component-unavailable"))
+        print(serialize_result(outcome(path, detection, "component_unavailable", str(error), "update_client")))
+        return 0
 
 
 if __name__ == "__main__":

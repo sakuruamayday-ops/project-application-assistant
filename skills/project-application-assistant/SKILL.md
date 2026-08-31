@@ -58,9 +58,11 @@ description: 企业全生命周期总控技能。用于政府项目匹配、政�
 
 ## 企业资料导入与读取
 
-用户从客户端输入框添加 DOCX、XLS、XLSX、PDF 或 TXT 后，资料必须先复制到当前具体企业空间的 `共创导入资料` 目录，再读取副本；不得把源文件绝对路径、文件字节或账户凭据送入对话。读取 DOCX、XLS、XLSX、文本型 PDF 和 TXT 时，优先调用已验签操作 `project-application-assistant.extract-workspace-document`，参数 `document` 只能是当前企业空间内的相对路径。
+用户从客户端输入框添加 Word、Excel、WPS 兼容文件、ODF、RTF、CSV／TSV、PDF 或 TXT 后，资料必须先复制到当前具体企业空间的 `共创导入资料` 目录，再读取副本；不得把源文件绝对路径、文件字节或账户凭据送入对话。优先调用已验签操作 `project-application-assistant.extract-workspace-document`，参数 `document` 只能是当前企业空间内的相对路径。提取器先按文件真实内容识别 OOXML、OLE、ODF、RTF、PDF 或文本结构，再选择只读解析器；扩展名只用于记录和受控入口白名单，不得据此猜测内容。
 
-解析结果为 `extracted` 时，依据返回正文回答并保留文件名、页码或工作表等出处。解析结果为 `needs_ocr` 时，说明该 PDF 没有可提取文字，改用已配置的 PaddleOCR 识别扫描页；OCR 未成功前不得猜测图片内容。结果为 `rejected`、输出被截断或文件损坏时，明确说明边界并要求用户拆分或换用有效文件，不得把导入成功写成读取成功。
+DOCM、XLSM 等宏文档只读取正文或已缓存单元格值，不执行宏、公式、对象或外链。扩展名为 WPS 或 ET 但真实内容属于受支持的 DOCX、XLSX、XLS 或 ODF 时按真实格式读取；真专有 WPS／ET、旧式二进制 DOC、加密、损坏或未知容器分别返回 `conversion_required`、`encrypted_document`、`damaged_document`、`unsupported_format` 或 `unsafe_document`，同一文件不得换解析器循环试错。
+
+解析结果为 `extracted` 时，依据返回正文回答并保留文件名、页码或工作表等出处。解析结果为 `needs_ocr` 时，说明该 PDF 没有可提取文字，改用已配置的 PaddleOCR 识别扫描页；OCR 未成功前不得猜测图片内容。输出被截断时要求用户拆分；其他结构化状态按返回的 `action` 一次性请求转换、无密码副本或有效副本，不得把导入成功写成读取成功。
 
 ## 前期评估政策路径总闸门
 

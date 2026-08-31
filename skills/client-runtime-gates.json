@@ -1,10 +1,10 @@
 {
   "schema_version": "gongchuang-client-runtime-gates/v1",
-  "release_tag": "V1.6.13",
+  "release_tag": "V1.6.14",
   "host": {
     "upstream": "deepseek-ai/deepseek-harness",
-    "pinned_commit": "b150a551b8d465e31e418e1b2eaf5e79bbb7d28e",
-    "upstream_stage": "developer-preview",
+    "pinned_commit": "0a53fb55bea101816fa226bb964ae2bed71c343b",
+    "upstream_stage": "alpha-pre-release",
     "upgrade_policy": "pin-and-revalidate"
   },
   "dsh_hook_compatibility": {
@@ -201,9 +201,11 @@
       "signed-artifacts"
     ],
     "formal_only_if_all": [
-      "macos-signed-and-notarized",
-      "windows-authenticode-signed",
-      "fresh-machine-install",
+      "macos-final-ad-hoc-code-integrity",
+      "macos-clean-browser-download-and-gatekeeper-manual-open",
+      "windows-explicit-unsigned-owner-exception",
+      "windows-cross-platform-static-validation",
+      "embedded-runtime-and-skill-signatures",
       "real-host-hook-receipts",
       "update-and-rollback-receipts"
     ]

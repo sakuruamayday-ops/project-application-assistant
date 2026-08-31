@@ -1,5 +1,6 @@
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 
@@ -13,12 +14,15 @@ SLOT = (
 )
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+def historical_sha256(commit: str, relative: str) -> str:
+    """Hash the immutable release blob instead of today's mutable working tree."""
+    payload = subprocess.run(
+        ["git", "show", f"{commit}:{relative}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    ).stdout
+    return hashlib.sha256(payload).hexdigest()
 
 
 def test_v166_hightech_innovation_capability_merge_is_complete_and_hash_bound():
@@ -33,15 +37,14 @@ def test_v166_hightech_innovation_capability_merge_is_complete_and_hash_bound():
         "管理与科技人员",
     ]
     assert slot["status"] == "merged", "等待当前任务返回脱敏差异路径和哈希，V1.6.6 禁止签名"
+    assert slot["merged_commit"]
     assert slot["sanitized_diff"]
     assert slot["expected_files"]
     assert set(slot["expected_files"]) == set(slot["expected_sha256"])
 
     for relative in slot["expected_files"]:
-        target = (ROOT / relative).resolve()
-        assert target.is_relative_to(ROOT)
-        assert target.is_file()
-        assert sha256(target) == slot["expected_sha256"][relative]
+        # 历史发布必须绑定当时的 Git 对象；核对当前文件会让每次正常演进都破坏旧版门禁。
+        assert historical_sha256(slot["merged_commit"], relative) == slot["expected_sha256"][relative]
 
     acceptance = slot["acceptance"]
     assert acceptance == {

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from docx import Document
 from docx.oxml.ns import qn
+from docx.text.paragraph import Paragraph
 
 
 RD_PATTERN = re.compile(r"研发活动编号[:：]?\s*(RD\d{2})", re.IGNORECASE)
@@ -35,21 +36,18 @@ UNSUPPORTED_RESULT_PHRASES = (
 )
 
 
-def unique_cells(row):
-    seen = set()
-    for cell in row.cells:
-        key = id(cell._tc)
-        if key not in seen:
-            seen.add(key)
-            yield cell
+def physical_cells(row):
+    """Return the row's real w:tc nodes instead of the grid-expanded proxy list."""
+    yield from row._tr.findall(qn("w:tc"))
 
 
 def iter_paragraphs(document):
     yield from document.paragraphs
     for table in document.tables:
         for row in table.rows:
-            for cell in unique_cells(row):
-                yield from cell.paragraphs
+            for cell in physical_cells(row):
+                for paragraph in cell.iter(qn("w:p")):
+                    yield Paragraph(paragraph, table)
 
 
 def xml_text(node) -> str:
@@ -97,13 +95,13 @@ def audit_innovation_capability(document, evidence: dict | None = None) -> tuple
     issues: list[dict] = []
     for table in document.tables:
         for row in table.rows:
-            cells = list(unique_cells(row))
+            cells = list(physical_cells(row))
             if len(cells) < 2:
                 continue
-            label = canonical_innovation_label(cells[0].text)
+            label = canonical_innovation_label(xml_cell_text(cells[0]))
             if label is None:
                 continue
-            text = cells[1].text.strip()
+            text = xml_cell_text(cells[1]).strip()
             length = len(normalized(text))
             order.append(label)
             result[label] = {"length": length, "text": text, "issues": []}
@@ -120,8 +118,8 @@ def audit_innovation_capability(document, evidence: dict | None = None) -> tuple
     for label in INNOVATION_SECTION_ORDER:
         if label not in result:
             continue
-        if result[label]["length"] < 390:
-            issue = f"正文{result[label]['length']}字，少于390字"
+        if result[label]["length"] > 400:
+            issue = f"正文{result[label]['length']}字，超过400字上限"
             result[label]["issues"].append(issue)
             issues.append({"section": label, "issue": issue})
 
@@ -255,8 +253,8 @@ def audit_rd_core_innovation(document) -> tuple[dict, list[dict]]:
         for index, number in ((5, "1、"), (6, "2、")):
             if len(lines) <= index or not lines[index].startswith(number):
                 item_issues.append(f"第{index + 1}行必须以{number}开头")
-        if body_length < 400:
-            item_issues.append(f"核心技术与创新点合计{body_length}字，少于400字")
+        if body_length > 400:
+            item_issues.append(f"核心技术与创新点合计{body_length}字，超过400字上限")
         result[current_rd] = {
             "field": field,
             "line_count": len(lines),
@@ -270,6 +268,82 @@ def audit_rd_core_innovation(document) -> tuple[dict, list[dict]]:
             "issues": item_issues,
         }
         issues.extend({"rd_id": current_rd, "issue": issue} for issue in item_issues)
+    return result, issues
+
+
+def audit_rd_stage_results(document) -> tuple[dict, list[dict]]:
+    result: dict[str, dict] = {}
+    issues: list[dict] = []
+    current_rd = None
+    for child in document.element.body.iterchildren():
+        if child.tag == qn("w:p"):
+            match = RD_PATTERN.search(xml_text(child))
+            if match:
+                current_rd = match.group(1).upper()
+            continue
+        if child.tag != qn("w:tbl") or current_rd is None:
+            continue
+        title_row = find_xml_label_cell(child, "研发活动名称")
+        result_row = find_xml_label_cell(child, "取得的阶段性成果")
+        if not title_row or not result_row:
+            continue
+        cells, label_index = result_row
+        if label_index + 1 >= len(cells):
+            issues.append({"rd_id": current_rd, "issue": "阶段性成果数据单元格缺失"})
+            continue
+        text = xml_cell_text(cells[label_index + 1]).strip()
+        if not text:
+            continue
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        item_issues: list[str] = []
+        if len(lines) != 4:
+            item_issues.append(f"阶段性成果应为4条，实际为{len(lines)}条")
+        for index, line in enumerate(lines[:4], 1):
+            if not line.startswith(f"{index}、"):
+                item_issues.append(f"阶段性成果第{index}条必须以{index}、开头")
+        body_length = len(normalized(text))
+        if body_length > 400:
+            item_issues.append(f"阶段性成果合计{body_length}字，超过400字上限")
+        result[current_rd] = {
+            "line_count": len(lines),
+            "body_length": body_length,
+            "issues": item_issues,
+        }
+        issues.extend({"rd_id": current_rd, "issue": issue} for issue in item_issues)
+    return result, issues
+
+
+def audit_limited_fields(document) -> tuple[list[dict], list[dict]]:
+    """Audit every populated table field whose physical label says “限400字”."""
+    result: list[dict] = []
+    issues: list[dict] = []
+    for table_index, table in enumerate(document.tables, 1):
+        for row_index, row in enumerate(table.rows, 1):
+            cells = list(physical_cells(row))
+            for cell_index, label_cell in enumerate(cells):
+                label = normalized(xml_cell_text(label_cell))
+                if "限400字" not in label:
+                    continue
+                # RD专项检查按业务口径计数：核心正文不计领域和标题，
+                # 阶段成果把四条合并计数，这里不重复审计。
+                if label.startswith(("核心技术及创新点", "取得的阶段性成果")):
+                    continue
+                if cell_index + 1 >= len(cells):
+                    issues.append({"field": label, "issue": "标签后缺少数据单元格"})
+                    continue
+                text = xml_cell_text(cells[cell_index + 1]).strip()
+                if not text:
+                    continue
+                length = len(normalized(text))
+                record = {
+                    "table": table_index,
+                    "row": row_index,
+                    "field": label,
+                    "length": length,
+                }
+                result.append(record)
+                if length > 400:
+                    issues.append({**record, "issue": f"正文{length}字，超过400字上限"})
     return result, issues
 
 
@@ -315,6 +389,8 @@ def main():
     }
 
     rd_core_innovation, rd_core_issues = audit_rd_core_innovation(document)
+    rd_stage_results, rd_stage_issues = audit_rd_stage_results(document)
+    limited_fields, limited_field_issues = audit_limited_fields(document)
 
     result = {
         "file": str(args.docx),
@@ -322,8 +398,8 @@ def main():
         "font_issue_count": len(font_issues),
         "font_issue_sample": font_issues[:20],
         "innovation_capability_lengths": innovation_lengths,
-        "innovation_below_390": {
-            label: length for label, length in innovation_lengths.items() if length < 390
+        "innovation_over_400": {
+            label: length for label, length in innovation_lengths.items() if length > 400
         },
         "innovation_capability": innovation_detail,
         "innovation_issue_count": len(innovation_issues),
@@ -331,11 +407,21 @@ def main():
         "rd_core_innovation": rd_core_innovation,
         "rd_core_issue_count": len(rd_core_issues),
         "rd_core_issues": rd_core_issues,
+        "rd_stage_results": rd_stage_results,
+        "rd_stage_issue_count": len(rd_stage_issues),
+        "rd_stage_issues": rd_stage_issues,
+        "limited_fields": limited_fields,
+        "limited_field_issue_count": len(limited_field_issues),
+        "limited_field_issues": limited_field_issues,
         "placeholder_count": len(placeholders),
         "placeholder_sample": placeholders[:20],
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    raise SystemExit(1 if font_issues or innovation_issues or rd_core_issues else 0)
+    raise SystemExit(
+        1
+        if font_issues or innovation_issues or rd_core_issues or rd_stage_issues or limited_field_issues
+        else 0
+    )
 
 
 if __name__ == "__main__":

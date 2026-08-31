@@ -5,6 +5,7 @@ import json
 import struct
 import subprocess
 import sys
+import zipfile
 import zlib
 from pathlib import Path
 
@@ -19,6 +20,8 @@ SKILL_ROOT = ROOT / "skills" / "high-tech-enterprise-application-drafting"
 SCRIPT = SKILL_ROOT / "scripts" / "expand_rd_ps_tables.py"
 FILL_SCRIPT = SKILL_ROOT / "scripts" / "fill_rd_core_innovation.py"
 AUDIT_SCRIPT = SKILL_ROOT / "scripts" / "audit_application_docx.py"
+INPUT_PLAN_SCRIPT = SKILL_ROOT / "scripts" / "plan_hightech_inputs.py"
+XLS_FIXTURE = ROOT / "skills" / "project-application-assistant" / "tests" / "fixtures" / "document-extraction-sample.xls"
 DELIVERY_GATE = SKILL_ROOT / "scripts" / "hightech_delivery_gate.py"
 TEMPLATE = SKILL_ROOT / "assets" / "高新技术企业认定申请书空白模板.docx"
 SPEC = importlib.util.spec_from_file_location("expand_rd_ps_tables", SCRIPT)
@@ -80,35 +83,24 @@ def realistic_spec() -> dict:
                 "core_technologies": [
                     {
                         "name": "弹性浮动夹持与重复定位技术",
-                        "description": (
-                            "围绕薄壁零件受力后易翘曲、边缘易产生压痕的问题，采用分区弹片、限位台阶和可调预紧结构形成柔性夹持，"
-                            "并利用底板定位孔与设备定位柱配合控制装夹基准。结构设计优先复用企业现有机加工、线切割和常规检测条件，"
-                            "不依赖超出企业设备能力的复杂控制系统；通过对夹爪接触面、支撑高度和受力路径的协同优化，兼顾装夹稳定性、"
-                            "表面防护和不同规格工件的快速切换"
-                        ),
+                        "description": "采用分区弹片、限位台阶和可调预紧结构形成柔性夹持，以底板定位孔和设备定位柱控制装夹基准，减少薄壁零件翘曲与边缘压痕",
                         "indicators": "重复装夹位置偏差控制在±0.20毫米以内，单件装夹时间不超过45秒，边缘可见压痕发生率不高于1%",
                     },
                     {
                         "name": "模块化遮挡防护与换型技术",
-                        "description": (
-                            "针对不同工件孔位、外形和非加工区域差异，将通用载具与可拆卸遮挡片分体设计，采用卡扣和定位销实现快速安装，"
-                            "减少整套治具重复制造。依据现有冲压、激光切割和人工检验条件确定遮挡片厚度、搭接量与防错方向，"
-                            "通过首件确认、过程巡检和末件复核闭合质量记录，使多品种小批量生产中的换型动作、遮挡边界和清洁维护要求可执行、可追溯"
-                        ),
+                        "description": "将通用载具与可拆遮挡片分体设计，用卡扣和定位销快速安装，通过孔位防错、首件确认和末件复核闭合换型记录",
                         "indicators": "不同型号换型时间不超过30分钟，遮挡边界偏差不大于0.30毫米，通用载具复用率不低于70%",
                     },
                 ],
                 "innovations": [
-                    (
-                        "将弹性夹持、基准定位和双面作业空间集成在同一套可加工治具中，在不改造主体设备的前提下减少翻面后的二次找正；"
-                        "与传统刚性压紧方式相比，夹持力沿工件边缘分散，可降低薄壁部位局部受力和划伤风险，同时保留操作人员能够观察、"
-                        "清洁和调整的结构空间，适合企业现有人员、设备和小批量订单条件"
-                    ),
-                    (
-                        "将易随产品型号变化的遮挡件从载具主体中分离，通过更换低成本薄片而不是重新制作整套治具完成换型；"
-                        "同时建立孔位防错、首件确认和更换记录，使结构改进与现场质量控制相衔接，减少因型号混用、遮挡不到位和清洁不充分造成的返工，"
-                        "形成符合中小制造企业实际能力的渐进式工艺改进路径"
-                    ),
+                    "将弹性夹持、基准定位和双面作业集成，在不改造主体设备的前提下减少翻面二次找正和薄壁局部受力",
+                    "将遮挡件与载具主体分离，通过更换低成本薄片完成换型，并用防错与首件记录减少型号混用和遮挡不到位",
+                ],
+                "stage_results": [
+                    "项目已完成结构方案与试制验证",
+                    "已形成治具图纸、工艺参数表和样件记录",
+                    "知识产权情况按企业提供汇总表填写",
+                    "已具备后续产品导入和小批试用基础",
                 ],
             }
         ],
@@ -228,9 +220,12 @@ def test_fill_rd_core_innovation_uses_exact_field_and_seven_line_format(tmp_path
     assert process.returncode == 0, process.stderr
     report = json.loads(report_path.read_text(encoding="utf-8"))
     assert report["status"] == "pass"
-    assert report["rd"]["RD01"]["body_length"] >= 400
+    assert report["rd"]["RD01"]["body_length"] <= 400
     assert report["rd"]["RD01"]["core_technology_count"] == 2
     assert report["rd"]["RD01"]["innovation_count"] == 2
+    assert report["rd"]["RD01"]["stage_result_count"] == 4
+    assert report["rd"]["RD01"]["stage_result_length"] <= 400
+    assert report["postcondition_verified"] is True
     assert report["enterprise"]["scale_evidence_count"] == 1
     assert report["enterprise"]["patent_evidence_count"] == 1
 
@@ -238,9 +233,12 @@ def test_fill_rd_core_innovation_uses_exact_field_and_seven_line_format(tmp_path
     assert issues == []
     assert rd_result["RD01"]["field"] == FOUR_LEVEL_FIELD
     assert rd_result["RD01"]["line_count"] == 7
-    assert rd_result["RD01"]["body_length"] >= 400
+    assert rd_result["RD01"]["body_length"] <= 400
     assert rd_result["RD01"]["core_technology_count"] == 2
     assert rd_result["RD01"]["innovation_count"] == 2
+    stage_result, stage_issues = AUDIT_MODULE.audit_rd_stage_results(Document(output))
+    assert stage_issues == []
+    assert stage_result["RD01"]["line_count"] == 4
 
 
 def test_fill_blocks_unverified_advanced_terms_before_output(tmp_path: Path) -> None:
@@ -262,6 +260,29 @@ def test_fill_blocks_unverified_advanced_terms_before_output(tmp_path: Path) -> 
     )
     assert process.returncode != 0
     assert "缺少企业能力证据的高阶技术词" in process.stderr
+    assert not output.exists()
+
+
+def test_fill_rejects_core_body_over_400_without_creating_output(tmp_path: Path) -> None:
+    source = tmp_path / "source.docx"
+    output = tmp_path / "blocked.docx"
+    spec_path = tmp_path / "spec.json"
+    document = Document(TEMPLATE)
+    set_first_rd_field(document)
+    document.save(source)
+    data = realistic_spec()
+    data["items"][0]["innovations"][1] += "超" * 401
+    spec_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    process = subprocess.run(
+        [sys.executable, str(FILL_SCRIPT), str(source), str(spec_path), str(output)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert process.returncode != 0
+    assert "超过400字上限" in process.stderr
     assert not output.exists()
 
 
@@ -287,6 +308,150 @@ def test_fill_requires_scale_and_patent_evidence(tmp_path: Path) -> None:
     assert not output.exists()
 
 
+@pytest.mark.parametrize(("length", "passes"), [(399, True), (400, True), (401, False)])
+def test_limit_400_is_a_maximum_boundary(length: int, passes: bool) -> None:
+    document = Document()
+    table = document.add_table(rows=1, cols=3)
+    table.cell(0, 0).merge(table.cell(0, 1)).text = "目的及组织实施方式（限400字）"
+    table.cell(0, 2).text = "甲" * length
+
+    fields, issues = AUDIT_MODULE.audit_limited_fields(document)
+
+    assert fields[0]["length"] == length
+    assert (issues == []) is passes
+    if not passes:
+        assert "超过400字上限" in issues[0]["issue"]
+
+
+def test_physical_merged_cells_preserve_semantic_label_and_value_pairing() -> None:
+    document = Document()
+    labels = list(AUDIT_MODULE.INNOVATION_SECTION_ORDER)
+    for label in labels:
+        table = document.add_table(rows=1, cols=3)
+        table.cell(0, 0).merge(table.cell(0, 1)).text = f"{label}（限400字）"
+        table.cell(0, 2).text = "已核定事实"
+
+    result, issues = AUDIT_MODULE.audit_innovation_capability(document)
+
+    assert issues == []
+    assert list(result) == labels
+    assert all(item["text"] == "已核定事实" for item in result.values())
+
+
+def run_input_plan(manifest: Path, state: Path, report: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(INPUT_PLAN_SCRIPT),
+            str(manifest),
+            "--state",
+            str(state),
+            "--report",
+            str(report),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
+def write_input_manifest(path: Path, documents: list[dict[str, str]]) -> None:
+    path.write_text(
+        json.dumps({"schema_version": 1, "documents": documents}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def write_plan_docx(path: Path) -> None:
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr(
+            "[Content_Types].xml",
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Override PartName="/word/document.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            '</Types>',
+        )
+        archive.writestr("word/document.xml", "<document/>")
+
+
+def write_plan_ole_doc(path: Path) -> None:
+    data = bytearray(XLS_FIXTURE.read_bytes())
+    needle = "Workbook\0".encode("utf-16le")
+    position = data.find(needle)
+    assert position >= 0
+    entry_start = position - (position % 128)
+    data[entry_start : entry_start + 64] = b"\0" * 64
+    name = "WordDocument\0".encode("utf-16le")
+    data[entry_start : entry_start + len(name)] = name
+    struct.pack_into("<H", data, entry_start + 64, len(name))
+    path.write_bytes(data)
+
+
+def test_input_plan_allows_one_signed_extraction_attempt_for_legacy_doc(tmp_path: Path) -> None:
+    legacy = tmp_path / "支撑专利.doc"
+    write_plan_ole_doc(legacy)
+    application = tmp_path / "申请书.docx"
+    write_plan_docx(application)
+    original = legacy.read_bytes()
+    manifest = tmp_path / "inputs.json"
+    state = tmp_path / "state.json"
+    report = tmp_path / "report.json"
+    write_input_manifest(
+        manifest,
+        [
+            {"path": legacy.name, "role": "supporting"},
+            {"path": application.name, "role": "essential"},
+        ],
+    )
+
+    process = run_input_plan(manifest, state, report)
+
+    assert process.returncode == 0, process.stderr
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    assert payload["status"] == "ready"
+    assert payload["supported_count"] == 2
+    assert payload["documents"][0]["status"] == "legacy_doc_probe"
+    assert payload["documents"][0]["action"] == "extract_once_then_convert_if_required"
+    assert "COM" in payload["documents"][0]["reason"]
+    assert payload["originals_modified"] is False
+    assert legacy.read_bytes() == original
+
+    repeated = run_input_plan(manifest, state, report)
+    repeated_payload = json.loads(report.read_text(encoding="utf-8"))
+    assert repeated.returncode == 3
+    assert repeated_payload["status"] == "stopped_no_progress"
+    assert json.loads(state.read_text(encoding="utf-8"))["retry_allowed"] is False
+
+
+def test_input_plan_stops_second_unchanged_proprietary_wps_failure(tmp_path: Path) -> None:
+    legacy = tmp_path / "必需资料.wps"
+    legacy.write_bytes(b"\x01WPS-PROPRIETARY\x00\xff")
+    original = legacy.read_bytes()
+    manifest = tmp_path / "inputs.json"
+    state = tmp_path / "state.json"
+    report = tmp_path / "report.json"
+    write_input_manifest(manifest, [{"path": legacy.name, "role": "essential"}])
+
+    first = run_input_plan(manifest, state, report)
+    first_payload = json.loads(report.read_text(encoding="utf-8"))
+    second = run_input_plan(manifest, state, report)
+    second_payload = json.loads(report.read_text(encoding="utf-8"))
+
+    assert first.returncode == 2
+    assert first_payload["status"] == "blocked_conversion_required"
+    assert second.returncode == 3
+    assert second_payload["status"] == "stopped_no_progress"
+    assert json.loads(state.read_text(encoding="utf-8"))["retry_allowed"] is False
+    assert legacy.read_bytes() == original
+
+
+def test_hightech_input_plan_declares_shared_detector_packaging_dependency() -> None:
+    manifest = json.loads((ROOT / "skills" / "suite-manifest.json").read_text(encoding="utf-8"))
+    dependency = manifest["dependencies"]["high-tech-enterprise-application-drafting"]
+    assert "project-application-assistant" in dependency["required_skills"]
+    assert "project-application-assistant/scripts/document_format_detection.py" in dependency["required_paths"]
+
+
 def make_innovation_document(texts: list[str]) -> Document:
     document = Document()
     table = document.add_table(rows=4, cols=2)
@@ -308,7 +473,7 @@ def pad_innovation_text(seed: str) -> str:
         "各项主张以本企业提供的汇总表、制度原件、项目记录和人员材料为核验边界，"
         "不能确认的经营成效和执行结果留待企业补充记录后再写入正式申请材料。"
     )
-    return seed + supplement * 5
+    return seed + supplement * 3
 
 
 def innovation_evidence() -> dict:
@@ -347,7 +512,7 @@ def test_innovation_capability_accepts_fixed_order_and_evidence_boundaries() -> 
     )
     assert issues == []
     assert list(result) == list(AUDIT_MODULE.INNOVATION_SECTION_ORDER)
-    assert all(item["length"] >= 390 for item in result.values())
+    assert all(item["length"] <= 400 for item in result.values())
 
 
 def test_innovation_capability_blocks_cross_enterprise_and_unverified_claims() -> None:

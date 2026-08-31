@@ -11,6 +11,7 @@ from pathlib import Path
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.table import _Cell
 
 
 RD_MARKER = "研发活动编号"
@@ -52,12 +53,9 @@ def normalize(text: str) -> str:
 
 
 def unique_cells(row):
-    seen = set()
-    for cell in row.cells:
-        key = cell._tc
-        if key not in seen:
-            seen.add(key)
-            yield cell
+    """Yield physical OOXML cells; row.cells expands merged grid positions."""
+    for cell_element in row._tr.findall(qn("w:tc")):
+        yield _Cell(cell_element, row._parent)
 
 
 def table_kind(table) -> str | None:
@@ -171,13 +169,8 @@ def meaningful_table_values(table, kind: str):
     labels = RD_LABELS if kind == "rd" else PS_LABELS
     normalized_labels = {normalize(label) for label in labels}
     values = []
-    seen_cells = set()
     for row_index, row in enumerate(table.rows, 1):
-        for column_index, cell in enumerate(row.cells, 1):
-            key = cell._tc
-            if key in seen_cells:
-                continue
-            seen_cells.add(key)
+        for column_index, cell in enumerate(unique_cells(row), 1):
             raw_value = cell.text.strip()
             normalized_value = normalize(raw_value)
             if normalized_value and normalized_value not in normalized_labels:

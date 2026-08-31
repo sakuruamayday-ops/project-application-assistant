@@ -9,18 +9,19 @@
   },
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.6.13",
-    "version": "1.6.13",
-    "summary": "V1.6.13 修复 XLSX 工作表关系、稀疏单元格和百分比显示值提取，避免表格证据错列或失真。",
+    "tag": "V1.6.14",
+    "version": "1.6.14",
+    "summary": "V1.6.14 按真实内容统一读取常见 Office／WPS 兼容资料，并收敛高企申请书旧式 DOC、合并单元格和批量写入的重复试错。",
     "changes": [
-      "XLSX 按工作簿关系映射解析实际工作表文件，不再假设 sheet1.xml、sheet2.xml 与界面顺序相同。",
-      "XLSX 按单元格坐标恢复空列和稀疏行，避免缺省单元格导致后续字段整体左移。",
-      "XLSX 解析 styles.xml 的百分比数字格式，以用户可见的百分比文本进入证据链。",
-      "V1.6.13 继承 V1.6.12 的深度澄清收敛、三档回答深度、Word 默认交付、文档操作、证据合同、共创精选、本地知识库优先路由与共创客户端专业执行合同。"
+      "常见 Office、WPS 兼容、ODF、RTF 和分隔文本先按真实内容嗅探；宏、公式和外链不执行，专有、加密、损坏与未知容器返回一次性动作。",
+      "高企资料先执行一次格式与能力盘点；旧式 DOC 允许一次签名提取，当前宿主不支持时只请求一次转换，相同输入第二次停止。",
+      "高企申请书按物理 w:tc 单元格和语义标签定位，不再依赖 python-docx 网格展开对象、固定行号或对象地址去重。",
+      "RD 核心技术、创新点与四项阶段成果同批写入，并重新打开 DOCX 逐项核对；限 400 字字段执行不超过 400 字的硬上限。",
+      "V1.6.14 继承 V1.6.13 的 XLSX 结构读取、V1.6.12 的深度澄清收敛及既有专业执行合同。"
     ],
     "installation": {
       "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.13 同步提供 macOS 与 Windows 平台专用包；平台包只包含 Skills、最小行为 Hook 和远程知识服务配置，不携带用户凭据或本地 MCP。",
+      "workbuddy": "V1.6.14 正式发布时同步提供 macOS 与 Windows 平台专用包；平台包只包含 Skills、最小行为 Hook 和远程知识服务配置，不携带用户凭据或本地 MCP。",
       "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认套件清单声明的全部 Skills 可识别、本地与正式技能清单无未登记漂移、共创客户端生成专业候选与正式交付当前轮回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
@@ -43,7 +44,7 @@
       {
         "target": "共创独立客户端",
         "status": "发布门禁已定义，双端正式发布单独验收",
-        "note": "固定 DeepSeek Harness 0.1.1-rc.2 上游提交 b150a551b8d465e31e418e1b2eaf5e79bbb7d28e；必须由签名宿主插件失败关闭执行完整 Hook 生命周期，并取得 macOS 双架构候选、服务器发布和真实安装回执。"
+        "note": "V0.4.0 当前采用 DeepSeek Harness dsh-v0.1.2-alpha.2 上游提交 0a53fb55bea101816fa226bb964ae2bed71c343b；后续客户端冻结前继续审计新版本。必须由签名宿主插件失败关闭执行完整 Hook 生命周期，并取得 macOS 双架构候选、服务器发布和真实安装回执。"
       }
     ],
     "distribution_protocol": {
@@ -53,7 +54,7 @@
       "external_service_setup": "skills-center-install-and-connect",
       "success_gate": [
         "套件清单声明的全部 Skills 可识别并与签名索引一致",
-        "共创客户端只从已验签 V1.6.13 技能目录加载正式 Skills",
+        "共创客户端只从已验签 V1.6.14 技能目录加载正式 Skills",
         "专业任务必须激活命中技能、依赖技能和质量门禁技能",
         "外部 MCP 只有完成 OAuth 或令牌交换、tools/list 和健康调用后才显示已连接",
         "macOS 与 Windows 平台包分别通过运行时隔离、完整技能覆盖和服务端发布合同门禁",
@@ -398,14 +399,17 @@
     "high-tech-enterprise-application-drafting": {
       "required_skills": [
         "high-tech-enterprise-preassessment",
-        "evidence-ledger"
+        "evidence-ledger",
+        "project-application-assistant"
       ],
       "required_paths": [
         "high-tech-enterprise-application-drafting/assets/高新技术企业认定申请书空白模板.docx",
         "high-tech-enterprise-application-drafting/scripts/expand_rd_ps_tables.py",
-        "high-tech-enterprise-application-drafting/scripts/audit_application_docx.py"
+        "high-tech-enterprise-application-drafting/scripts/audit_application_docx.py",
+        "high-tech-enterprise-application-drafting/scripts/plan_hightech_inputs.py",
+        "project-application-assistant/scripts/document_format_detection.py"
       ],
-      "reason": "高企申请书撰写先锁定申报基线与企业事实，并使用完整母版、扩缩表脚本和自动审计保证正式文档结构与证据边界。"
+      "reason": "高企申请书撰写先锁定申报基线与企业事实，并复用总控技能唯一的文档内容嗅探器，再使用完整母版、扩缩表脚本和自动审计保证正式文档结构与证据边界。"
     },
     "intellectual-property-projects": {
       "required_skills": [

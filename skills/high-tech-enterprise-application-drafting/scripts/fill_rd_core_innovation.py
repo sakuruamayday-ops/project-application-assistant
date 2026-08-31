@@ -32,10 +32,7 @@ ADVANCED_TERMS = (
     "自主决策",
     "预测性维护",
 )
-VALIDATION_SENTENCE = (
-    "项目实施时将通过输入覆盖、边界工况、连续运行、异常注入、通信中断恢复和闭环记录等测试逐项核定上述指标，"
-    "最终以企业检测报告、产品规格书及现场运行记录为准，不将拟定指标视为已取得的第三方检测结论。"
-)
+VALIDATION_SENTENCE = "以上拟定指标以企业检测报告、产品规格书或现场运行记录校准。"
 UNIT_OR_BOUNDARY = re.compile(
     r"(%|秒|分钟|小时|天|毫米|厘米|微米|千米|米|赫兹|分贝|摄氏度|℃|兆帕|MPa|"
     r"伏|安|瓦|帧|次|个|类|项|套|点|条|不低于|不高于|不大于|不小于|不超过|不少于)"
@@ -84,18 +81,28 @@ def collect_rd_targets(root: etree._Element) -> dict[str, dict[str, object]]:
         title_row = find_label_row(rows, "研发活动名称")
         field_row = find_label_row(rows, "技术领域")
         core_row = find_label_row(rows, "核心技术及创新点")
-        if not title_row or not field_row or not core_row:
+        result_row = find_label_row(rows, "取得的阶段性成果")
+        if not title_row or not field_row or not core_row or not result_row:
             continue
         field_cells, field_index = field_row
         core_cells, core_index = core_row
-        if field_index + 1 >= len(field_cells) or core_index + 1 >= len(core_cells):
-            raise ValueError(f"{current_rd}表的领域或核心技术数据单元格缺失")
+        result_cells, result_index = result_row
+        if (
+            field_index + 1 >= len(field_cells)
+            or core_index + 1 >= len(core_cells)
+            or result_index + 1 >= len(result_cells)
+        ):
+            raise ValueError(f"{current_rd}表的领域、核心技术或阶段性成果数据单元格缺失")
         field = element_text(field_cells[field_index + 1]).strip()
         if not field or "—" not in field:
             raise ValueError(f"{current_rd}表头未填写完整四级领域：{field!r}")
         if current_rd in targets:
             raise ValueError(f"文档存在重复编号：{current_rd}")
-        targets[current_rd] = {"field": field, "cell": core_cells[core_index + 1]}
+        targets[current_rd] = {
+            "field": field,
+            "core_cell": core_cells[core_index + 1],
+            "result_cell": result_cells[result_index + 1],
+        }
     return targets
 
 
@@ -146,7 +153,7 @@ def format_technology(index: int, value: dict, rd_id: str) -> str:
     return f"{index}、{name}：{ensure_sentence(description)}拟定技术指标为{ensure_sentence(indicators)}"
 
 
-def format_item(item: dict, field: str, min_body_chars: int) -> tuple[str, int]:
+def format_item(item: dict, field: str, max_body_chars: int) -> tuple[str, int]:
     rd_id = require_string(item, "rd_id", "item").upper()
     technologies = item.get("core_technologies")
     innovations = item.get("innovations")
@@ -166,8 +173,24 @@ def format_item(item: dict, field: str, min_body_chars: int) -> tuple[str, int]:
         f"2、{ensure_sentence(innovations[1])}{VALIDATION_SENTENCE}",
     ]
     body_length = len("".join(lines[index] for index in (2, 3, 5, 6)))
-    if body_length < min_body_chars:
-        raise ValueError(f"{rd_id}核心技术与创新点合计{body_length}字，少于{min_body_chars}字")
+    if body_length > max_body_chars:
+        raise ValueError(f"{rd_id}核心技术与创新点合计{body_length}字，超过{max_body_chars}字上限")
+    return "\n".join(lines), body_length
+
+
+def format_stage_results(item: dict, max_body_chars: int) -> tuple[str | None, int]:
+    rd_id = require_string(item, "rd_id", "item").upper()
+    results = item.get("stage_results")
+    if results is None:
+        return None, 0
+    if not isinstance(results, list) or len(results) != 4:
+        raise ValueError(f"{rd_id}.stage_results必须且只能有4条")
+    if not all(isinstance(value, str) and value.strip() for value in results):
+        raise ValueError(f"{rd_id}.stage_results必须为4条非空字符串")
+    lines = [f"{index}、{ensure_sentence(str(value))}" for index, value in enumerate(results, 1)]
+    body_length = len("".join(lines))
+    if body_length > max_body_chars:
+        raise ValueError(f"{rd_id}阶段性成果合计{body_length}字，超过{max_body_chars}字上限")
     return "\n".join(lines), body_length
 
 
@@ -220,13 +243,44 @@ def replace_cell_content(cell: etree._Element, value: str) -> None:
                     other_run.remove(child)
 
 
+def verify_written_targets(root: etree._Element, expected: dict[str, dict[str, object]]) -> None:
+    actual = collect_rd_targets(root)
+    for rd_id, record in expected.items():
+        target = actual.get(rd_id)
+        if target is None:
+            raise ValueError(f"写入后未找到目标RD表：{rd_id}")
+        core_text = xml_cell_text(target["core_cell"]).strip()
+        if core_text != str(record["core_value"]):
+            raise ValueError(f"{rd_id}核心技术及创新点写入后置校验失败")
+        result_value = record.get("result_value")
+        if result_value is not None:
+            result_text = xml_cell_text(target["result_cell"]).strip()
+            if result_text != str(result_value):
+                raise ValueError(f"{rd_id}阶段性成果写入后置校验失败")
+
+
+def xml_cell_text(cell: etree._Element) -> str:
+    paragraphs: list[str] = []
+    for paragraph in cell.xpath("./w:p", namespaces=NS):
+        parts: list[str] = []
+        for node in paragraph.iter():
+            if node.tag == W + "t":
+                parts.append(node.text or "")
+            elif node.tag == W + "br":
+                parts.append("\n")
+            elif node.tag == W + "tab":
+                parts.append("\t")
+        paragraphs.append("".join(parts))
+    return "\n".join(paragraphs)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="按高企格式批量回填RD核心技术及创新点，并校准企业能力边界。")
     parser.add_argument("input", type=Path, help="输入DOCX")
     parser.add_argument("spec", type=Path, help="结构化JSON")
     parser.add_argument("output", type=Path, help="输出DOCX，不得与输入相同")
     parser.add_argument("--report", type=Path, help="JSON审计报告；默认输出DOCX同名.audit.json")
-    parser.add_argument("--min-body-chars", type=int, default=400)
+    parser.add_argument("--max-body-chars", type=int, default=400)
     parser.add_argument("--overwrite", action="store_true", help="允许覆盖已有输出；原文件先保存为时间戳备份")
     return parser.parse_args()
 
@@ -251,8 +305,8 @@ def main() -> None:
         raise SystemExit("输出文件不得与输入文件相同")
     if not input_path.is_file() or not spec_path.is_file():
         raise SystemExit("输入DOCX或JSON不存在")
-    if args.min_body_chars < 400:
-        raise SystemExit("--min-body-chars不得小于400")
+    if args.max_body_chars < 1 or args.max_body_chars > 400:
+        raise SystemExit("--max-body-chars必须在1至400之间")
     if output_path.exists() and not args.overwrite:
         raise SystemExit(f"输出文件已存在；如需覆盖请增加 --overwrite：{output_path}")
 
@@ -281,9 +335,20 @@ def main() -> None:
                     raise ValueError(f"文档中未找到目标RD表：{rd_id}")
                 seen.add(rd_id)
                 field = str(targets[rd_id]["field"])
-                value, body_length = format_item(raw_item, field, args.min_body_chars)
-                formatted[rd_id] = {"field": field, "body_length": body_length, "value": value}
-                all_text.append(value)
+                core_value, body_length = format_item(raw_item, field, args.max_body_chars)
+                result_value, result_length = format_stage_results(raw_item, args.max_body_chars)
+                formatted[rd_id] = {
+                    "field": field,
+                    "body_length": body_length,
+                    "core_value": core_value,
+                    "result_value": result_value,
+                    "result_length": result_length,
+                }
+                all_text.append(core_value)
+
+            result_modes = {record["result_value"] is not None for record in formatted.values()}
+            if len(result_modes) > 1:
+                raise ValueError("同一批次的RD必须全部提供stage_results，或全部不提供")
 
             verified = set(profile.get("verified_advanced_terms", []))
             found = sorted(term for term in ADVANCED_TERMS if term in "\n".join(all_text))
@@ -296,7 +361,10 @@ def main() -> None:
                 )
 
             for rd_id, record in formatted.items():
-                replace_cell_content(targets[rd_id]["cell"], str(record["value"]))
+                replace_cell_content(targets[rd_id]["core_cell"], str(record["core_value"]))
+                if record["result_value"] is not None:
+                    replace_cell_content(targets[rd_id]["result_cell"], str(record["result_value"]))
+            verify_written_targets(root, formatted)
             new_xml = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             backup_path = None
@@ -311,11 +379,17 @@ def main() -> None:
                         payload = new_xml if member.filename == "word/document.xml" else source_zip.read(member.filename)
                         output_zip.writestr(copy.deepcopy(member), payload)
                 temporary_path.replace(output_path)
+                with zipfile.ZipFile(output_path, "r") as written_zip:
+                    written_root = etree.fromstring(written_zip.read("word/document.xml"))
+                verify_written_targets(written_root, formatted)
             except Exception:
                 if temporary_path.exists():
                     failed_path = unique_recovery_path(output_path, "failed-write")
                     shutil.move(temporary_path, failed_path)
-                if backup_path and backup_path.exists() and not output_path.exists():
+                elif output_path.exists():
+                    failed_path = unique_recovery_path(output_path, "failed-output")
+                    shutil.move(output_path, failed_path)
+                if backup_path and backup_path.exists():
                     shutil.move(backup_path, output_path)
                 raise
 
@@ -344,6 +418,8 @@ def main() -> None:
                     "body_length": record["body_length"],
                     "core_technology_count": 2,
                     "innovation_count": 2,
+                    "stage_result_count": 4 if record["result_value"] is not None else 0,
+                    "stage_result_length": record["result_length"],
                 }
                 for rd_id, record in formatted.items()
             },
@@ -351,6 +427,7 @@ def main() -> None:
             "font": "宋体小四",
             "field_source": "each RD header",
             "indicator_status": "draft targets unless source-backed actual values are supplied outside this formatter",
+            "postcondition_verified": True,
         }
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
