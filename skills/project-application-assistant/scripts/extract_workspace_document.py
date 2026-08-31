@@ -450,11 +450,11 @@ def extract_xls(path: Path) -> dict[str, object]:
 
 def extract_pdf(path: Path) -> dict[str, object]:
     try:
-        import pypdfium2 as pdfium
+        import pymupdf
     except ImportError as error:
         raise RuntimeError("内置 PDF 解析组件不可用") from error
-    document = pdfium.PdfDocument(str(path))
-    pages = len(document)
+    document = pymupdf.open(path)
+    pages = document.page_count
     if pages > MAX_PDF_PAGES:
         document.close()
         raise ValueError(f"PDF 页数超过 {MAX_PDF_PAGES} 页")
@@ -462,13 +462,7 @@ def extract_pdf(path: Path) -> dict[str, object]:
     has_text = False
     try:
         for index in range(pages):
-            page = document[index]
-            text_page = page.get_textpage()
-            try:
-                page_text = text_page.get_text_range()
-            finally:
-                text_page.close()
-                page.close()
+            page_text = document.load_page(index).get_text("text", sort=True)
             if re.search(r"[A-Za-z0-9\u3400-\u9fff]", page_text):
                 has_text = True
             parts.append(f"\n## 第 {index + 1} 页\n{page_text}\n")

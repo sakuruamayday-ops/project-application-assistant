@@ -121,6 +121,7 @@
     "web-task-operator"
   ],
   "shared_paths": [
+    "_runtime/enterprise-source-fallback.md",
     "_runtime/gongchuang-branding",
     "_runtime/grounded-citations",
     "_runtime/template-fidelity",
@@ -140,6 +141,18 @@
   "skill_call_graph": "skill-call-graph.json",
   "policy_freshness_manifest": "policy-freshness-manifest.json",
   "release_gates": [
+    {
+      "name": "all-skill-template-baseline",
+      "command": [
+        "{python}",
+        "scripts/validate_skill_templates.py",
+        "--expected-office-count",
+        "29",
+        "--expected-source-count",
+        "4"
+      ],
+      "timeout_seconds": 120
+    },
     {
       "name": "v166-hightech-innovation-capability-merge",
       "command": [

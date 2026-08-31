@@ -238,6 +238,8 @@
       "requires_peer_comparison": false,
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "policy-selection-trace"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": [
         "总结结论",
         "申报条件对照",
@@ -264,6 +266,8 @@
       "requires_peer_comparison": false,
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "policy-selection-trace"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": [
         "项目版本与窗口",
         "总体结论",
@@ -292,6 +296,8 @@
       "requires_peer_comparison": true,
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "peer-comparison", "policy-selection-trace"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": [
         "工商基本信息",
         "股权结构与管理层",
@@ -353,6 +359,8 @@
       "requires_peer_comparison": true,
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "peer-comparison", "policy-selection-trace"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": [
         "决策摘要",
         "主体事实核验",
@@ -419,6 +427,8 @@
       "requires_peer_comparison": true,
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "peer-comparison", "policy-selection-trace"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": ["A标准销售版", "B深度顾问版"],
       "required_tables": [
         {
@@ -466,6 +476,8 @@
       "requires_peer_comparison": false,
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "policy-selection-trace"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": [
         "profitability",
         "cash_flow",
@@ -540,6 +552,8 @@
       "requires_peer_comparison": false,
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "policy-selection-trace"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": [
         "项目与政策版本",
         "总体结论",
@@ -563,6 +577,8 @@
       "requires_peer_comparison": false,
       "requires_policy_selection_trace": true,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "policy-selection-trace"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": [
         "申请版本与政策口径",
         "总体结论",
@@ -625,6 +641,8 @@
       "requires_peer_comparison": false,
       "requires_policy_selection_trace": false,
       "requires_four_question_review": true,
+      "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger"],
+      "advisory_requirements": ["four-question-review"],
       "required_sections": [
         "申请主题与事实锁",
         "检索范围与现有技术",

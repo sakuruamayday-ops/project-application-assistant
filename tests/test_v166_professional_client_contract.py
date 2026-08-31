@@ -61,7 +61,7 @@ def test_hightech_drafting_has_a_machine_readable_consistency_gate() -> None:
     ) in relations
 
 
-def test_natural_language_routes_and_local_first_peer_workflow() -> None:
+def test_natural_language_routes_and_finite_enterprise_source_fallback() -> None:
     contract = load("delivery-contracts.json")
     rules = contract["skills"]
     feasibility = set(rules["project-feasibility"]["applies_when_prompt_contains"])
@@ -75,14 +75,21 @@ def test_natural_language_routes_and_local_first_peer_workflow() -> None:
     feasibility_text = (SKILLS / "project-feasibility/SKILL.md").read_text(encoding="utf-8")
     assert "企业名称加项目名和报告意图即可启动" in feasibility_text
     assert "现有资料可同时提供但不是启动前提" in feasibility_text
-    assert feasibility_text.index("天眼查") < feasibility_text.index("企查查")
+    assert "企业数据源有限降级协议" in feasibility_text
 
     peer_text = (SKILLS / "peer-benchmarking/SKILL.md").read_text(encoding="utf-8")
-    local = peer_text.index("先检索本地知识库")
-    tyc = peer_text.index("先用天眼查", local)
-    qcc = peer_text.index("再用企查查", tyc)
-    web = peer_text.index("最后才调用官方网页或联网搜索", qcc)
-    assert local < tyc < qcc < web
+    assert "先检索本地知识库" in peer_text
+    assert "企业数据源有限降级协议" in peer_text
+
+    # 数据源顺序集中在共享协议中，避免多个 Skill 各自复制后再次形成无限重试。
+    fallback = (SKILLS / "_runtime/enterprise-source-fallback.md").read_text(
+        encoding="utf-8"
+    )
+    assert "天眼查 → 企查查" in fallback
+    assert "最多重试一次" in fallback
+    assert "不重试，也不再次弹出授权" in fallback
+    assert "第二次失败立即转下一来源" in fallback
+    assert "不重复调用刷新回执" in fallback
 
 
 def test_client_runtime_registry_exposes_only_existing_first_party_scripts() -> None:

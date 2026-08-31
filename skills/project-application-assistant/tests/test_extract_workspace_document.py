@@ -7,7 +7,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-import pypdfium2 as pdfium
+import pymupdf
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "extract_workspace_document.py"
@@ -410,7 +410,7 @@ def test_encrypted_office_container_returns_password_free_copy_action(tmp_path: 
 
 def test_image_only_pdf_requires_ocr_instead_of_counting_page_heading_as_text(tmp_path: Path) -> None:
     source = tmp_path / "扫描件.pdf"
-    document = pdfium.PdfDocument.new()
+    document = pymupdf.open()
     document.new_page(width=595, height=842)
     document.save(source)
     document.close()

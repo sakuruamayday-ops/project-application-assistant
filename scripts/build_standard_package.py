@@ -11,8 +11,10 @@ from pathlib import Path
 
 try:
     from scripts.public_namespace_gate import require_public_namespace
+    from scripts.validate_skill_templates import validate_templates
 except ModuleNotFoundError:  # Direct execution from the scripts directory.
     from public_namespace_gate import require_public_namespace
+    from validate_skill_templates import validate_templates
 
 
 PORTABLE_REPORT_REQUIRED = [
@@ -193,6 +195,14 @@ def included(path):
 
 def validate_release_source(root: Path) -> None:
     failures = []
+    try:
+        validate_templates(
+            root,
+            expected_office_count=29,
+            expected_source_count=4,
+        )
+    except Exception as exc:
+        failures.append(f"技能模板基线检查失败：{exc}")
     for relative_path in PORTABLE_REPORT_REQUIRED:
         if not (root / relative_path).is_file():
             failures.append(f"缺少便携报告运行文件：{relative_path}")
