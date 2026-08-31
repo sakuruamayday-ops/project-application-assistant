@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>macOS 候选验收｜共创企业助手</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css?v=6ac754709798105a">
+</head>
+<body class="auth-body">
+  <main class="auth-shell">
+    <section class="auth-story">
+      <a class="brand brand-on-dark" href="/downloads"><span class="brand-mark brand-mark-wide">GCIP</span><span><strong>共创企业助手</strong><small>macOS 候选验收</small></span></a>
+      <div class="archive-number">V{{ acceptance.version }}</div>
+      <div class="story-copy"><p class="eyebrow light">Browser Download Acceptance</p><h1>从浏览器下载<br>本次候选安装包</h1><p>下载后将应用拖入“应用程序”，再完成首次打开验收。</p></div>
+    </section>
+    <section class="auth-panel">
+      <div class="auth-form-wrap">
+        <p class="eyebrow">macOS Candidate</p>
+        <h2>选择 Mac 架构</h2>
+        <p class="muted">候选 V{{ acceptance.version }} · {{ acceptance.candidate_id }}</p>
+        <div class="form-stack">
+          {% for artifact in acceptance.artifacts %}
+          <a class="button full" href="{{ artifact.download_url }}">下载 {{ artifact.architecture_label }}版</a>
+          {% endfor %}
+        </div>
+        <p class="auth-guide-link"><a href="/downloads">返回正式下载页</a></p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

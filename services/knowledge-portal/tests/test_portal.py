@@ -519,6 +519,10 @@ def load_app(tmp_path):
     os.environ["JIAOTANG_TOKEN_DERIVATION_SECRET"] = "test-token-derivation-secret"
     os.environ["JIAOTANG_SECURE_COOKIES"] = "false"
     os.environ["JIAOTANG_PUBLIC_HOST"] = "testserver"
+    os.environ.pop("JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_ID", None)
+    os.environ.pop(
+        "JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_RELEASE_JSON_SHA256", None
+    )
     os.environ.pop("JIAOTANG_AI_API_BASE", None)
     os.environ.pop("JIAOTANG_AI_API_KEY", None)
     os.environ.pop("JIAOTANG_AI_MODEL", None)
@@ -614,6 +618,66 @@ def publish_test_client_release(
             )
         connection.commit()
     return release_id, artifact_ids
+
+
+def stage_test_client_release_acceptance(
+    module,
+    monkeypatch,
+    *,
+    candidate_id="v0.4.0-aaaaaaaaaa",
+):
+    candidate_dir = module.CLIENT_RELEASE_DIR / ".staging" / candidate_id
+    candidate_dir.mkdir(parents=True)
+    version = candidate_id.split("-", 1)[0].removeprefix("v")
+    payloads = {
+        architecture: f"candidate-{architecture}-{version}".encode("utf-8")
+        for architecture in ("arm64", "x64")
+    }
+    files = []
+    for architecture, payload in payloads.items():
+        file_name = (
+            f"Gongchuang-Enterprise-Assistant-{version}-mac-{architecture}.dmg"
+        )
+        (candidate_dir / file_name).write_bytes(payload)
+        files.append(
+            {
+                "name": file_name,
+                "sizeBytes": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "role": "installer",
+                "platform": "macos",
+                "architecture": architecture,
+            }
+        )
+    manifest = {
+        "schema": "gongchuang-desktop-release/v1",
+        "productId": "cn.gongchuang.enterprise-assistant",
+        "clientVersion": version,
+        "sourceCommit": "a" * 40,
+        "distributionAuthority": "controlled-portal",
+        "githubInstallerAssets": False,
+        "files": files,
+    }
+
+    def write_manifest(payload):
+        manifest_bytes = (
+            json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
+        )
+        (candidate_dir / "release.json").write_bytes(manifest_bytes)
+        monkeypatch.setenv(
+            "JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_RELEASE_JSON_SHA256",
+            hashlib.sha256(manifest_bytes).hexdigest(),
+        )
+
+    write_manifest(manifest)
+    monkeypatch.setenv("JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_ID", candidate_id)
+    return {
+        "candidate_id": candidate_id,
+        "candidate_dir": candidate_dir,
+        "manifest": manifest,
+        "payloads": payloads,
+        "write_manifest": write_manifest,
+    }
 
 
 def client_authorization_payload(module, verifier: str, *, platform: str = "macos"):
@@ -783,6 +847,259 @@ def test_client_password_login_is_device_bound_and_replaces_the_previous_device(
             ).fetchone()[0]
             assert int(active_tokens) == 1
             assert int(active_bindings) == 1
+
+
+def test_client_release_acceptance_is_login_bound_and_does_not_switch_current(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    publish_test_client_release(module, version="0.3.3", dual_macos=True)
+    candidate_id = "v0.4.0-aaaaaaaaaa"
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+
+        disabled = client.get(f"/client-release-acceptance/{candidate_id}")
+        assert disabled.status_code == 404
+        assert "共创企业助手 V0.3.3" in client.get("/downloads").text
+
+        staged = stage_test_client_release_acceptance(module, monkeypatch)
+        session_cookie = client.cookies.get(module.SESSION_COOKIE)
+        client.cookies.clear()
+        login_required = client.get(
+            f"/client-release-acceptance/{candidate_id}",
+            follow_redirects=False,
+        )
+        assert login_required.status_code == 303
+        assert login_required.headers["location"] == "/login"
+        client.cookies.set(module.SESSION_COOKIE, session_cookie)
+
+        page = client.get(f"/client-release-acceptance/{candidate_id}")
+        assert page.status_code == 200
+        assert page.headers["cache-control"] == "private, no-store"
+        assert page.headers["x-robots-tag"] == "noindex, nofollow"
+        assert "<script" not in page.text.lower()
+        assert "blob:" not in page.text.lower()
+        for architecture in ("arm64", "x64"):
+            file_name = (
+                "Gongchuang-Enterprise-Assistant-0.4.0-mac-"
+                f"{architecture}.dmg"
+            )
+            download_url = (
+                f"/client-release-acceptance/{candidate_id}/macos/"
+                f"{architecture}/{file_name}"
+            )
+            assert f'href="{download_url}"' in page.text
+            download = client.get(
+                download_url,
+                headers={"Accept-Encoding": "gzip"},
+            )
+            assert download.status_code == 200
+            assert download.content == staged["payloads"][architecture]
+            assert download.headers["content-type"] == (
+                "application/x-apple-diskimage"
+            )
+            assert download.headers["cache-control"] == "private, no-store"
+            assert download.headers["content-encoding"] == "identity"
+            assert download.headers["content-length"] == str(
+                len(staged["payloads"][architecture])
+            )
+            assert download.headers["x-gongchuang-client-version"] == "0.4.0"
+            assert download.headers["x-gongchuang-artifact-sha256"] == (
+                hashlib.sha256(staged["payloads"][architecture]).hexdigest()
+            )
+            assert file_name in download.headers["content-disposition"]
+
+        assert "共创企业助手 V0.3.3" in client.get("/downloads").text
+        with closing(module.database()) as connection:
+            release_rows = connection.execute(
+                "SELECT id,version,status FROM client_releases"
+            ).fetchall()
+            assert [tuple(row) for row in release_rows] == [
+                (1, "0.3.3", "published")
+            ]
+            assert connection.execute(
+                "SELECT COUNT(*) FROM client_download_events"
+            ).fetchone()[0] == 0
+
+        monkeypatch.delenv("JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_ID")
+        monkeypatch.delenv(
+            "JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_RELEASE_JSON_SHA256"
+        )
+        assert client.get(
+            f"/client-release-acceptance/{candidate_id}"
+        ).status_code == 404
+        assert client.get(download_url).status_code == 404
+
+
+@pytest.mark.parametrize("configured_field", ["candidate_id", "release_json_sha256"])
+def test_client_release_acceptance_requires_both_environment_bindings(
+    tmp_path,
+    monkeypatch,
+    configured_field,
+):
+    module = load_app(tmp_path)
+    staged = stage_test_client_release_acceptance(module, monkeypatch)
+    if configured_field == "candidate_id":
+        monkeypatch.delenv(
+            "JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_RELEASE_JSON_SHA256"
+        )
+    else:
+        monkeypatch.delenv("JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_ID")
+
+    with TestClient(module.app) as client:
+        refused = client.get(
+            f"/client-release-acceptance/{staged['candidate_id']}",
+            follow_redirects=False,
+        )
+
+    assert refused.status_code == 404
+
+
+@pytest.mark.parametrize(
+    "invalid_field",
+    ["version", "source_commit", "name", "architecture", "size", "sha256"],
+)
+def test_client_release_acceptance_rejects_invalid_manifest_or_artifact_identity(
+    tmp_path,
+    monkeypatch,
+    invalid_field,
+):
+    module = load_app(tmp_path)
+    staged = stage_test_client_release_acceptance(module, monkeypatch)
+    manifest = json.loads(json.dumps(staged["manifest"]))
+    if invalid_field == "version":
+        manifest["clientVersion"] = "0.4.1"
+    elif invalid_field == "source_commit":
+        manifest["sourceCommit"] = "b" * 40
+    elif invalid_field == "name":
+        manifest["files"][0]["name"] = "renamed-mac-arm64.dmg"
+    elif invalid_field == "architecture":
+        manifest["files"][0]["architecture"] = "universal"
+    elif invalid_field == "size":
+        manifest["files"][0]["sizeBytes"] += 1
+    elif invalid_field == "sha256":
+        manifest["files"][0]["sha256"] = "0" * 64
+    staged["write_manifest"](manifest)
+
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        refused = client.get(
+            f"/client-release-acceptance/{staged['candidate_id']}"
+        )
+    assert refused.status_code == 503
+
+
+@pytest.mark.parametrize("symlink_kind", ["candidate", "manifest", "artifact"])
+def test_client_release_acceptance_rejects_symbolic_links(
+    tmp_path,
+    monkeypatch,
+    symlink_kind,
+):
+    module = load_app(tmp_path)
+    staged = stage_test_client_release_acceptance(module, monkeypatch)
+    candidate_dir = staged["candidate_dir"]
+    if symlink_kind == "candidate":
+        real_candidate = candidate_dir.with_name(candidate_dir.name + "-real")
+        candidate_dir.rename(real_candidate)
+        candidate_dir.symlink_to(real_candidate, target_is_directory=True)
+    elif symlink_kind == "manifest":
+        manifest = candidate_dir / "release.json"
+        real_manifest = candidate_dir / "release-real.json"
+        manifest.rename(real_manifest)
+        manifest.symlink_to(real_manifest.name)
+    else:
+        artifact = candidate_dir / staged["manifest"]["files"][0]["name"]
+        real_artifact = candidate_dir / (artifact.name + ".real")
+        artifact.rename(real_artifact)
+        artifact.symlink_to(real_artifact.name)
+
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        refused = client.get(
+            f"/client-release-acceptance/{staged['candidate_id']}"
+        )
+    assert refused.status_code == 503
+
+
+def test_client_release_acceptance_rejects_unbound_paths_and_tampering(
+    tmp_path,
+    monkeypatch,
+):
+    module = load_app(tmp_path)
+    staged = stage_test_client_release_acceptance(module, monkeypatch)
+    candidate_id = staged["candidate_id"]
+    arm64_name = staged["manifest"]["files"][0]["name"]
+    arm64_path = staged["candidate_dir"] / arm64_name
+    original = arm64_path.read_bytes()
+    arm64_path.write_bytes(bytes([original[0] ^ 1]) + original[1:])
+
+    with TestClient(module.app) as client:
+        client.post(
+            "/setup",
+            data={
+                "setup_key": "setup-secret",
+                "username": "owner",
+                "password": "owner-password-123",
+            },
+        )
+        login = client.post(
+            "/login",
+            data={"username": "owner", "password": "owner-password-123"},
+            follow_redirects=False,
+        )
+        client.cookies.update(login.cookies)
+        assert client.get(
+            "/client-release-acceptance/v0.4.0-bbbbbbbbbb"
+        ).status_code == 404
+        assert client.get(
+            f"/client-release-acceptance/{candidate_id}/macos/universal/{arm64_name}"
+        ).status_code == 404
+        assert client.get(
+            f"/client-release-acceptance/{candidate_id}/macos/arm64/release.json"
+        ).status_code == 404
+        assert client.get(
+            f"/client-release-acceptance/{candidate_id}"
+        ).status_code == 503
 
 
 def test_client_download_page_tracks_download_and_real_client_login_separately(tmp_path):

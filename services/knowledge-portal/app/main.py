@@ -20,6 +20,7 @@ import shutil
 import socket
 import sqlite3
 import ssl
+import stat
 import tempfile
 import threading
 import time
@@ -163,6 +164,13 @@ SKILL_UPDATE_RELEASE_DIR = Path(
 )
 CLIENT_RELEASE_DIR = Path(
     os.environ.get("JIAOTANG_CLIENT_RELEASE_DIR", DATA_DIR / "client-releases")
+)
+CLIENT_RELEASE_ACCEPTANCE_ID_ENV = "JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_ID"
+CLIENT_RELEASE_ACCEPTANCE_SHA256_ENV = (
+    "JIAOTANG_CLIENT_RELEASE_ACCEPTANCE_RELEASE_JSON_SHA256"
+)
+CLIENT_RELEASE_ACCEPTANCE_ID_PATTERN = re.compile(
+    r"^v(?P<version>\d+\.\d+\.\d+)-(?P<commit>[a-f0-9]{10,40})$"
 )
 DESKTOP_SELF_UPDATE_MANIFEST_NAME = "desktop-release-index.json"
 DESKTOP_SELF_UPDATE_SIGNATURE_NAME = "desktop-release-index.sig"
@@ -10586,6 +10594,319 @@ def client_artifact_is_servable(artifact: dict[str, object] | sqlite3.Row | None
         return False
 
 
+def client_release_acceptance_configuration(
+    candidate_id: str,
+) -> tuple[str, str, re.Match[str]]:
+    configured_id = os.environ.get(CLIENT_RELEASE_ACCEPTANCE_ID_ENV, "").strip()
+    release_json_sha256 = os.environ.get(
+        CLIENT_RELEASE_ACCEPTANCE_SHA256_ENV, ""
+    ).strip().lower()
+    match = CLIENT_RELEASE_ACCEPTANCE_ID_PATTERN.fullmatch(configured_id)
+    if (
+        match is None
+        or re.fullmatch(r"[a-f0-9]{64}", release_json_sha256) is None
+        or not secrets.compare_digest(candidate_id, configured_id)
+    ):
+        # 两项绑定同时存在时才开放；撤销或配错任一项都不暴露候选目录。
+        raise HTTPException(status_code=404, detail="客户端候选验收入口未启用")
+    return configured_id, release_json_sha256, match
+
+
+def require_client_release_acceptance_user(
+    candidate_id: str,
+    jiaotang_session: Annotated[str | None, Cookie()] = None,
+) -> sqlite3.Row:
+    client_release_acceptance_configuration(candidate_id)
+    return require_web_user(jiaotang_session)
+
+
+@contextmanager
+def open_client_release_acceptance_directory(candidate_id: str) -> Iterator[int]:
+    client_release_acceptance_configuration(candidate_id)
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW
+    descriptors: list[int] = []
+    try:
+        if CLIENT_RELEASE_DIR.is_symlink():
+            raise OSError("client release root is a symbolic link")
+        release_root_fd = os.open(CLIENT_RELEASE_DIR, directory_flags)
+        descriptors.append(release_root_fd)
+        staging_fd = os.open(".staging", directory_flags, dir_fd=release_root_fd)
+        descriptors.append(staging_fd)
+        candidate_fd = os.open(candidate_id, directory_flags, dir_fd=staging_fd)
+        descriptors.append(candidate_fd)
+        if not stat.S_ISDIR(os.fstat(candidate_fd).st_mode):
+            raise OSError("candidate is not a directory")
+        yield candidate_fd
+    except HTTPException:
+        raise
+    except OSError as error:
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选目录不可用，验收下载已暂停。",
+        ) from error
+    finally:
+        for descriptor in reversed(descriptors):
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+
+
+def open_client_release_acceptance_file(
+    candidate_fd: int,
+    file_name: str,
+) -> tuple[io.BufferedReader, os.stat_result]:
+    if Path(file_name).name != file_name or any(
+        character in file_name for character in "\x00\r\n"
+    ):
+        raise HTTPException(status_code=404, detail="客户端候选文件不存在")
+    file_flags = os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(file_name, file_flags, dir_fd=candidate_fd)
+        file_stat = os.fstat(descriptor)
+        if not stat.S_ISREG(file_stat.st_mode):
+            raise OSError("candidate file is not regular")
+        stream = os.fdopen(descriptor, "rb")
+        descriptor = None
+        return stream, file_stat
+    except HTTPException:
+        raise
+    except OSError as error:
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选文件不可用，验收下载已暂停。",
+        ) from error
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def verify_client_release_acceptance_stream(
+    stream: io.BufferedReader,
+    file_stat: os.stat_result,
+    *,
+    expected_size: int,
+    expected_sha256: str,
+) -> str:
+    if file_stat.st_size != expected_size:
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选文件体积与清单不一致，验收下载已暂停。",
+        )
+    digest = hashlib.sha256()
+    stream.seek(0)
+    while chunk := stream.read(1024 * 1024):
+        digest.update(chunk)
+    actual_sha256 = digest.hexdigest()
+    if not secrets.compare_digest(actual_sha256, expected_sha256):
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选文件内容与清单不一致，验收下载已暂停。",
+        )
+    stream.seek(0)
+    return actual_sha256
+
+
+def read_client_release_acceptance_manifest(
+    candidate_id: str,
+    candidate_fd: int,
+) -> dict[str, object]:
+    _, expected_manifest_sha256, candidate_match = (
+        client_release_acceptance_configuration(candidate_id)
+    )
+    manifest_stream, manifest_stat = open_client_release_acceptance_file(
+        candidate_fd, "release.json"
+    )
+    with closing(manifest_stream):
+        if manifest_stat.st_size <= 0 or manifest_stat.st_size > 1024 * 1024:
+            raise HTTPException(
+                status_code=503,
+                detail="客户端候选清单体积无效，验收下载已暂停。",
+            )
+        manifest_bytes = manifest_stream.read()
+    actual_manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+    if not secrets.compare_digest(actual_manifest_sha256, expected_manifest_sha256):
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选清单身份不一致，验收下载已暂停。",
+        )
+    try:
+        manifest = json.loads(manifest_bytes.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选清单无法解析，验收下载已暂停。",
+        ) from error
+    version = str(manifest.get("clientVersion") or "")
+    source_commit = str(manifest.get("sourceCommit") or "").lower()
+    if (
+        manifest.get("schema") != "gongchuang-desktop-release/v1"
+        or manifest.get("productId") != "cn.gongchuang.enterprise-assistant"
+        or manifest.get("distributionAuthority") != "controlled-portal"
+        or manifest.get("githubInstallerAssets") is not False
+        or version != candidate_match.group("version")
+        or re.fullmatch(r"[a-f0-9]{40}", source_commit) is None
+        or not source_commit.startswith(candidate_match.group("commit"))
+    ):
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选清单版本或源码身份不一致，验收下载已暂停。",
+        )
+    files = manifest.get("files")
+    if not isinstance(files, list):
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选清单缺少安装包记录，验收下载已暂停。",
+        )
+    artifacts: dict[str, dict[str, object]] = {}
+    for item in files:
+        if not isinstance(item, dict):
+            continue
+        if item.get("platform") != "macos" or item.get("role") != "installer":
+            continue
+        architecture = str(item.get("architecture") or "")
+        expected_name = (
+            f"Gongchuang-Enterprise-Assistant-{version}-mac-{architecture}.dmg"
+        )
+        size_bytes = item.get("sizeBytes")
+        sha256 = str(item.get("sha256") or "").lower()
+        if (
+            architecture not in {"arm64", "x64"}
+            or item.get("name") != expected_name
+            or isinstance(size_bytes, bool)
+            or not isinstance(size_bytes, int)
+            or size_bytes <= 0
+            or re.fullmatch(r"[a-f0-9]{64}", sha256) is None
+            or architecture in artifacts
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="客户端候选安装包记录无效，验收下载已暂停。",
+            )
+        artifacts[architecture] = {
+            "architecture": architecture,
+            "architecture_label": "Apple 芯片" if architecture == "arm64" else "Intel",
+            "file_name": expected_name,
+            "size_bytes": size_bytes,
+            "sha256": sha256,
+        }
+    if set(artifacts) != {"arm64", "x64"}:
+        raise HTTPException(
+            status_code=503,
+            detail="客户端候选双架构安装包不完整，验收下载已暂停。",
+        )
+    return {
+        "candidate_id": candidate_id,
+        "version": version,
+        "source_commit": source_commit,
+        "release_json_sha256": actual_manifest_sha256,
+        "artifacts": [artifacts["arm64"], artifacts["x64"]],
+    }
+
+
+def verified_client_release_acceptance_payload(candidate_id: str) -> dict[str, object]:
+    with open_client_release_acceptance_directory(candidate_id) as candidate_fd:
+        acceptance = read_client_release_acceptance_manifest(candidate_id, candidate_fd)
+        artifacts = []
+        for item in acceptance["artifacts"]:
+            artifact = dict(item)
+            stream, file_stat = open_client_release_acceptance_file(
+                candidate_fd, str(artifact["file_name"])
+            )
+            with closing(stream):
+                verify_client_release_acceptance_stream(
+                    stream,
+                    file_stat,
+                    expected_size=int(artifact["size_bytes"]),
+                    expected_sha256=str(artifact["sha256"]),
+                )
+            artifact["download_url"] = (
+                f"/client-release-acceptance/{candidate_id}/macos/"
+                f"{artifact['architecture']}/{artifact['file_name']}"
+            )
+            artifacts.append(artifact)
+    return {**acceptance, "artifacts": artifacts}
+
+
+def client_release_acceptance_download_response(
+    candidate_id: str,
+    architecture: str,
+    asset_name: str,
+) -> StreamingResponse:
+    if architecture not in {"arm64", "x64"}:
+        raise HTTPException(status_code=404, detail="客户端候选架构不存在")
+    stream: io.BufferedReader | None = None
+    try:
+        with open_client_release_acceptance_directory(candidate_id) as candidate_fd:
+            acceptance = read_client_release_acceptance_manifest(
+                candidate_id, candidate_fd
+            )
+            artifact = next(
+                (
+                    dict(item)
+                    for item in acceptance["artifacts"]
+                    if item["architecture"] == architecture
+                ),
+                None,
+            )
+            if artifact is None or not secrets.compare_digest(
+                str(artifact["file_name"]), asset_name
+            ):
+                raise HTTPException(status_code=404, detail="客户端候选文件不存在")
+            stream, file_stat = open_client_release_acceptance_file(
+                candidate_fd, asset_name
+            )
+            actual_sha256 = verify_client_release_acceptance_stream(
+                stream,
+                file_stat,
+                expected_size=int(artifact["size_bytes"]),
+                expected_sha256=str(artifact["sha256"]),
+            )
+    except Exception:
+        if stream is not None:
+            stream.close()
+        raise
+
+    cleanup_lock = threading.Lock()
+    cleaned_up = False
+
+    def cleanup() -> None:
+        nonlocal cleaned_up
+        with cleanup_lock:
+            if cleaned_up:
+                return
+            cleaned_up = True
+            stream.close()
+
+    def body() -> Iterator[bytes]:
+        try:
+            while chunk := stream.read(1024 * 1024):
+                yield chunk
+        finally:
+            cleanup()
+
+    return StreamingResponse(
+        body(),
+        media_type="application/x-apple-diskimage",
+        headers={
+            "Content-Disposition": (
+                "attachment; filename*=UTF-8''" + quote(asset_name, safe="")
+            ),
+            "Content-Length": str(artifact["size_bytes"]),
+            # 禁止全站 GZip 中间件改写 DMG 传输字节；浏览器应收到清单绑定的原始文件。
+            "Content-Encoding": "identity",
+            "Cache-Control": "private, no-store",
+            "X-Gongchuang-Client-Version": str(acceptance["version"]),
+            "X-Gongchuang-Artifact-Sha256": actual_sha256,
+            "X-Gongchuang-Release-Json-Sha256": str(
+                acceptance["release_json_sha256"]
+            ),
+        },
+        background=BackgroundTask(cleanup),
+    )
+
+
 def published_client_release_payload(
     connection: sqlite3.Connection,
     *,
@@ -13098,6 +13419,48 @@ def downloads_page(
     user: Annotated[sqlite3.Row, Depends(require_web_user)],
 ):
     return portal_page_response(request, user, "downloads")
+
+
+@app.get(
+    "/client-release-acceptance/{candidate_id}",
+    response_class=HTMLResponse,
+)
+def client_release_acceptance_page(
+    candidate_id: str,
+    request: Request,
+    user: Annotated[
+        sqlite3.Row, Depends(require_client_release_acceptance_user)
+    ],
+):
+    acceptance = verified_client_release_acceptance_payload(candidate_id)
+    return templates.TemplateResponse(
+        request,
+        "client_release_acceptance.html",
+        {"acceptance": acceptance, "user": user},
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Robots-Tag": "noindex, nofollow",
+        },
+    )
+
+
+@app.get(
+    "/client-release-acceptance/{candidate_id}/macos/{architecture}/{asset_name}"
+)
+def download_client_release_acceptance_artifact(
+    candidate_id: str,
+    architecture: str,
+    asset_name: str,
+    user: Annotated[
+        sqlite3.Row, Depends(require_client_release_acceptance_user)
+    ],
+):
+    del user
+    return client_release_acceptance_download_response(
+        candidate_id,
+        architecture,
+        asset_name,
+    )
 
 
 @app.get("/mcp-guide", response_class=HTMLResponse)
