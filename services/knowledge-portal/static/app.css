@@ -1580,6 +1580,13 @@ textarea:focus-visible, select:focus-visible {
 .client-platform-card small { display: block; overflow-wrap: anywhere; color: var(--atelier-muted); }
 .client-platform-card .button.secondary.is-disabled { color: var(--atelier-muted); background: #191a1c; border-color: var(--atelier-line); cursor: default; }
 .client-platform-mark { display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid var(--atelier-line-strong); border-radius: 15px; color: var(--atelier-gold-light); background: #101113; font: 700 14px/1 ui-monospace, monospace; text-transform: uppercase; }
+.client-macos-open-guide h3 { margin-top: 7px; }
+.client-macos-open-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 22px 0 18px; padding: 0; list-style: none; }
+.client-macos-open-steps li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; align-items: start; padding: 18px; border: 1px solid var(--atelier-line); border-radius: 16px; background: #111214; }
+.client-macos-open-steps li > span { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--atelier-line-strong); border-radius: 50%; color: var(--atelier-gold-light); font-weight: 800; }
+.client-macos-open-steps strong { display: block; margin: 2px 0 7px; }
+.client-macos-open-steps p { margin: 0; color: var(--atelier-muted); line-height: 1.6; }
+.client-macos-open-guide > small { color: var(--atelier-muted); }
 .client-release-pending { display: flex; align-items: center; gap: 22px; }
 .client-release-pending h3 { margin: 0 0 7px; }
 .client-release-pending p { margin: 0; color: var(--atelier-muted); }
@@ -2344,7 +2351,7 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
 }
 
 @media (max-width: 760px) {
-  .client-download-hero, .client-platform-grid, .client-download-notes { grid-template-columns: 1fr; }
+  .client-download-hero, .client-platform-grid, .client-download-notes, .client-macos-open-steps { grid-template-columns: 1fr; }
   .client-platform-card > .button, .client-platform-card > .is-disabled { grid-column: 1 / -1; }
   .auth-shell { width: min(100% - 20px, 560px); min-height: auto; margin: 10px auto; grid-template-columns: 1fr; }
   .auth-story { min-height: 290px; padding: 28px; }

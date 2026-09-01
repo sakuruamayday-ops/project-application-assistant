@@ -39,11 +39,13 @@
   {% if client_release.downloads.macos %}
   <article class="panel client-macos-open-guide">
     <span class="skill-card-index">macOS 首次打开</span>
-    <h3>如系统提示无法打开</h3>
-    <p>将应用拖入“应用程序”后，复制以下命令到“终端”执行。浏览器无法一键复制时，可展开手动粘贴。</p>
-    <pre id="macos-open-command">xattr -dr com.apple.quarantine "/Applications/共创企业助手.app" &amp;&amp; open "/Applications/共创企业助手.app"</pre>
-    <button class="button secondary" type="button" data-copy-target="#macos-open-command">复制打开命令</button>
-    <details><summary>无法一键复制？显示手动粘贴方法</summary><p>选中上方整行命令并复制，打开“终端”，粘贴后按回车。</p></details>
+    <h3>首次安装三步</h3>
+    <ol class="client-macos-open-steps">
+      <li><span aria-hidden="true">1</span><div><strong>拖入应用程序</strong><p>打开下载的 DMG，将“共创企业助手”拖入“应用程序”。</p></div></li>
+      <li><span aria-hidden="true">2</span><div><strong>首次双击</strong><p>在“应用程序”中双击客户端；系统拦截后关闭提示。</p></div></li>
+      <li><span aria-hidden="true">3</span><div><strong>仍要打开</strong><p>进入“系统设置 → 隐私与安全性”，点击“仍要打开”，并在确认窗口再次点击“仍要打开”。</p></div></li>
+    </ol>
+    <small>以上操作仅在首次安装时需要。</small>
   </article>
   {% endif %}
   {% if client_release.release_notes %}<details class="panel skill-release-notes"><summary>查看 V{{ client_release.version }} 更新说明</summary><div class="manual-content">{{ client_release.release_notes_html }}</div></details>{% endif %}

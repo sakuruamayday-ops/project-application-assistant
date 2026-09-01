@@ -1260,9 +1260,12 @@ def test_client_download_page_exposes_both_macos_architectures_exactly(tmp_path)
             "</section>", 1
         )[0]
         assert "SHA-256" not in downloads_html
-        assert "xattr -dr com.apple.quarantine" in page.text
-        assert "复制打开命令" in page.text
-        assert "显示手动粘贴方法" in page.text
+        assert "首次安装三步" in page.text
+        assert "拖入应用程序" in page.text
+        assert "系统设置 → 隐私与安全性" in page.text
+        assert downloads_html.count("仍要打开") == 3
+        assert "xattr" not in page.text
+        assert "终端" not in page.text
 
         apple = client.get(f'/client-downloads/macos/{artifact_ids["macos"]}')
         intel = client.get(f'/client-downloads/macos/{artifact_ids["macos_x64"]}')
