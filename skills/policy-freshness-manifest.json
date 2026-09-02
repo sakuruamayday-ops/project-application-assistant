@@ -16,11 +16,11 @@
     {
       "id": "hangzhou-zhejiang-rd-platform-2026",
       "path": "technology-innovation-projects/references/current-rd-platform-baseline-2026.md",
-      "verified_at": "2026-07-30",
+      "verified_at": "2026-09-02",
       "effective_from": "2026-05-29",
       "effective_until": null,
-      "next_review_at": "2026-08-31",
-      "source_locator": "杭州市与浙江省研发机构政策本地核验基线，含征求意见稿状态、明确替代关系和当年申报前准备口径",
+      "next_review_at": "2026-09-30",
+      "source_locator": "2026-09-02复核杭州科技局、杭州政府公报和杭州市政府域名；杭科高〔2022〕39号有效至2027-12-31，杭州市企业研究院正式办法当前检索层未命中，2026年征求意见稿继续按draft使用；浙江省执行浙经信高新〔2025〕169号",
       "source_sha256": "a006640da35bbf5c78f810cb73b7e4e0c7a8582397a1f4f06797bca3f1ce0b67",
       "block_after_next_review": true
     },
@@ -60,22 +60,22 @@
     {
       "id": "high-frequency-retrieval-rules",
       "path": "project-matching/references/high-frequency-project-retrieval-rules.json",
-      "verified_at": "2026-07-30",
+      "verified_at": "2026-09-02",
       "effective_from": "2026-07-24",
       "effective_until": null,
-      "next_review_at": "2026-08-31",
-      "source_locator": "高频项目简称召回、四市企业技术中心合并路由与排除规则本地快照",
+      "next_review_at": "2026-09-30",
+      "source_locator": "2026-09-02复核27条高频项目简称、地区选择、标题允许与排除规则；该文件只承担检索路由，不承载当期政策资格结论",
       "source_sha256": "7748832c135f838e103d6176260e003d020602ffc05e72a6483a0ef68d599097",
       "block_after_next_review": true
     },
     {
       "id": "high-frequency-policy-rules",
       "path": "project-matching/references/high-frequency-project-rules.jsonl",
-      "verified_at": "2026-07-24",
+      "verified_at": "2026-09-02",
       "effective_from": "2026-07-24",
       "effective_until": null,
-      "next_review_at": "2026-08-31",
-      "source_locator": "高频项目政策条件、来源地址与历史状态本地快照",
+      "next_review_at": "2026-09-30",
+      "source_locator": "2026-09-02复核308条高频规则：303条historical-reference、4条current、1条draft-not-effective，全部要求正式使用前回到官方原文核验；现行与草案状态已按工信部、省经信厅及杭州官方域名复核",
       "source_sha256": "6c881ff2911e171d9e7d3ec56bf0f1204bc0160048bfb7dfc54f9bcad9427f45",
       "block_after_next_review": true
     },

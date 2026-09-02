@@ -344,7 +344,7 @@ def test_policy_freshness_current_manifest_passes():
             "--skills-root",
             str(SKILLS),
             "--as-of",
-            "2026-08-02",
+            "2026-09-02",
         ],
         check=False,
         capture_output=True,
