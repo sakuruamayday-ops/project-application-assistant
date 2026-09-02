@@ -148,6 +148,23 @@ def test_code_deploy_entrypoint_fixes_code_mode_without_index_work():
     assert "sync_archived_knowledge_to_production" not in wrapper
 
 
+def test_deploy_carries_client_skill_update_publisher():
+    deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(
+        encoding="utf-8"
+    )
+    source_archive_start = deploy_script.index(
+        "COPYFILE_DISABLE=1 tar --no-xattrs"
+    )
+    source_archive_end = deploy_script.index(
+        "--label application-source", source_archive_start
+    )
+    source_archive = deploy_script[source_archive_start:source_archive_end]
+
+    # app/ 提供验签实现，独立脚本是受控发布从本机调用的远端入口；二者缺一都会让更新源停在旧版。
+    assert "    app references templates static installers deploy" in source_archive
+    assert "scripts/publish_client_skill_update.py" in source_archive
+
+
 def test_legacy_oss_sync_is_disabled_without_touching_historical_snapshots():
     deploy_script = (SCRIPT_DIR / "deploy_production.sh").read_text(encoding="utf-8")
     legacy_wrapper = (DEPLOY_DIR / "oss-sync.sh").read_text(encoding="utf-8")

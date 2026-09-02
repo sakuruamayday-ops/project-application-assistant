@@ -326,6 +326,7 @@ if release.exists() or release.is_symlink():
 release.mkdir(parents=True, mode=0o755)
 PY"
 
+# 客户端技能更新由服务器端发布入口完成；该入口必须和 app/ 内的验签模块一起进入不可变应用槽位。
 COPYFILE_DISABLE=1 tar --no-xattrs \
     --exclude='*/__pycache__' --exclude='*.pyc' \
     -C "${service_dir}" -cf - \
@@ -357,6 +358,7 @@ COPYFILE_DISABLE=1 tar --no-xattrs \
     scripts/evaluate_structured_knowledge.py \
     scripts/project_catalog_matching.py \
     scripts/migrate_first_public_release.py scripts/publish_skill_release.py \
+    scripts/publish_client_skill_update.py \
     scripts/reconcile_release_metadata.py \
     scripts/audit_release_locations.py \
     scripts/release_transaction.py scripts/smoke_test_production.sh \
