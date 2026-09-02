@@ -70,6 +70,15 @@ def test_client_download_cards_use_the_shared_readable_dark_surface() -> None:
     assert _contrast_ratio("#a8a39a", "#191a1c") >= 4.5
 
 
+def test_section_routes_show_their_rendered_content_without_a_page_allowlist() -> None:
+    css = (STATIC / "atelier.css").read_text(encoding="utf-8")
+
+    assert ".section-page .section-block { display: grid; }" in css
+    assert ".page-overview #overview" not in css
+    assert ".page-algorithms #algorithms" not in css
+    assert ".page-feedback #feedback" not in css
+
+
 def test_single_generic_skill_package_uses_the_full_download_width() -> None:
     css = (STATIC / "skill-center.css").read_text(encoding="utf-8")
 

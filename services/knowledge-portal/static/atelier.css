@@ -259,8 +259,9 @@ textarea:focus-visible, select:focus-visible {
 .single-page .section-block.algorithm-section {
   min-height: auto;
 }
-.page-overview #overview, .page-cockpit #cockpit, .page-access #api-access, .page-downloads #downloads, .page-skills #skills,
-.page-health #health-admin, .page-knowledge-admin #knowledge-admin, .page-skill-admin #skill-admin, .page-members #members { display: grid; }
+/* Section routes render only their active section, so page visibility must not
+   depend on a manually maintained route allowlist. */
+.section-page .section-block { display: grid; }
 .client-downloads { gap: 24px; }
 .client-download-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, .6fr); gap: 36px; align-items: end; padding: clamp(28px, 5vw, 54px); color: #f8f4eb; background: radial-gradient(circle at 82% 18%, rgba(202,169,105,.28), transparent 34%), #151516; border: 1px solid rgba(202,169,105,.28); border-radius: 24px; }
 .client-download-hero h3 { margin: 8px 0 14px; font-size: clamp(32px, 5vw, 60px); line-height: 1.05; }
