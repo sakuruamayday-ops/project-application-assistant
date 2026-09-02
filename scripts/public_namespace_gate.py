@@ -16,6 +16,8 @@ PUBLIC_BRAND = "共创研究院"
 ALLOWED_IDENTIFIERS = ("jiaotang-kb", "zshjiaotang.cn")
 ALLOWED_COMPATIBILITY_COMPONENTS = (
     "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs",
+    # 桌面更新索引以 skills/ 为隐含根目录，签名内容只能记录这条等价相对路径。
+    "_runtime/jiaotang-kb/jiaotang-agent.mjs",
 )
 HISTORICAL_RELEASE_POLICY = "preserve_immutable"
 PUBLIC_SOURCE_PATHS = (
@@ -39,6 +41,11 @@ ALLOWED_TEXT_PATTERNS = (
     re.compile(
         r"(?<![A-Za-z0-9_./-])"
         r"skills/_runtime/jiaotang-kb/jiaotang-agent\.mjs"
+        r"(?![A-Za-z0-9_./-])"
+    ),
+    re.compile(
+        r"(?<![A-Za-z0-9_./-])"
+        r"_runtime/jiaotang-kb/jiaotang-agent\.mjs"
         r"(?![A-Za-z0-9_./-])"
     ),
     re.compile(r"(?<![A-Za-z0-9_-])jiaotang-kb(?![A-Za-z0-9_-])"),

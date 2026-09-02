@@ -102,7 +102,8 @@ def test_public_namespace_gate_covers_current_public_sources():
     assert report["finding_count"] == 0
     assert report["allowed_identifiers"] == ["jiaotang-kb", "zshjiaotang.cn"]
     assert report["allowed_compatibility_components"] == [
-        "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs"
+        "skills/_runtime/jiaotang-kb/jiaotang-agent.mjs",
+        "_runtime/jiaotang-kb/jiaotang-agent.mjs",
     ]
     assert report["historical_release_policy"] == "preserve_immutable"
 
@@ -161,6 +162,15 @@ def test_public_namespace_gate_allows_only_exact_generic_runtime_component(tmp_p
         )
     report = verify_public_namespace(archives=[package])
     assert report["status"] == "pass"
+
+    desktop_index = tmp_path / "desktop-index.zip"
+    with zipfile.ZipFile(desktop_index, "w") as archive:
+        archive.writestr(
+            "skill-bundle-index.json",
+            json.dumps({"files": {"_runtime/jiaotang-kb/jiaotang-agent.mjs": "0" * 64}}),
+        )
+    desktop_report = verify_public_namespace(archives=[desktop_index])
+    assert desktop_report["status"] == "pass"
 
     rejected = tmp_path / "wrong-runtime-location.zip"
     with zipfile.ZipFile(rejected, "w") as archive:

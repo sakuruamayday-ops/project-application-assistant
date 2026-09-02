@@ -18,6 +18,7 @@ import time
 import zipfile
 from contextlib import contextmanager
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
 
 try:
     from scripts.public_namespace_gate import require_public_namespace
@@ -32,9 +33,15 @@ OFFICIAL_PUBLISHER_FINGERPRINT = (
 GATE_SIGNATURE_NAMESPACE = "codex-skill-release-gate"
 REMOTE_RELEASE_ROOT = "/opt/jiaotang-kb-runtime/current"
 REMOTE_RELEASE_TRASH_ROOT = "/var/lib/jiaotang-kb/release-trash/files"
+REMOTE_CLIENT_SKILL_UPDATE_RELEASE_DIR = (
+    "/var/lib/jiaotang-kb/skill-update-releases"
+)
 DEFAULT_LOCAL_RELEASE_SYNC_SCRIPT = Path(
     "/Users/zsh/Documents/自动化区域/"
     "jiaotang-local-release-sync/local_release_sync.py"
+)
+DEFAULT_CLIENT_SKILL_UPDATE_URL = (
+    "https://zshjiaotang.cn/skill-updates/latest.json"
 )
 
 
@@ -378,6 +385,19 @@ def load_release_transaction_module(root: Path):
     return module
 
 
+def load_skill_update_feed_module(root: Path):
+    path = root / "services/knowledge-portal/app/skill_update_feed.py"
+    specification = importlib.util.spec_from_file_location(
+        "skill_update_feed", path
+    )
+    if specification is None or specification.loader is None:
+        raise RuntimeError("无法加载客户端技能更新校验模块")
+    module = importlib.util.module_from_spec(specification)
+    sys.modules[specification.name] = module
+    specification.loader.exec_module(module)
+    return module
+
+
 def generic_publisher_fingerprint(archive: Path) -> str:
     with zipfile.ZipFile(archive, "r") as bundle:
         matches = [
@@ -404,6 +424,7 @@ def build_release_transaction_manifest(
     release_assets: list[Path],
     publisher_fingerprint: str,
     local_sync_script_sha256: str,
+    client_update: dict[str, object] | None = None,
 ) -> dict[str, object]:
     asset_hashes = {
         path.name: sha256(path) for path in sorted(release_assets)
@@ -412,6 +433,46 @@ def build_release_transaction_manifest(
         target: str(data["sha256"])
         for target, data in validation["artifacts"].items()
     }
+    participants = {
+        "github": {
+            "release_tag": validation["tag"],
+            "target_commit": commit,
+            "required_asset_sha256": asset_hashes,
+        },
+        "portal": {
+            "release_version": validation["short_version"],
+            "package_sha256": package_hashes,
+        },
+        "installation": {
+            "release_tag": validation["tag"],
+            "generic_package_sha256": package_hashes.get("generic", ""),
+            "skill_count": validation["skill_total"],
+            "publisher_fingerprint": publisher_fingerprint,
+            "required_result": (
+                "platform-hotfix-package-validation-pass"
+                if set(package_hashes) == {"windows"}
+                else "atomic-install-and-three-way-signature-audit-pass"
+            ),
+        },
+        "local_sync": {
+            "mode": "formal-release-immediate",
+            "required_version": validation["short_version"],
+            "generic_package_sha256": package_hashes.get("generic", ""),
+            "sync_script_sha256": local_sync_script_sha256,
+            "required_result": (
+                "signed-local-install-and-index-verification-pass"
+                if "generic" in package_hashes
+                else "not-applicable-platform-hotfix"
+            ),
+        },
+    }
+    if client_update is not None:
+        participants["client_update"] = {
+            "release_version": validation["short_version"],
+            "archive_sha256": client_update["archive_sha256"],
+            "public_key_sha256": client_update["public_key_sha256"],
+            "required_result": "public-feed-readback-and-client-verification-pass",
+        }
     return {
         "schema": "gongchuang-release-transaction/v1",
         "version": validation["short_version"],
@@ -420,39 +481,7 @@ def build_release_transaction_manifest(
         "repository": repository,
         "git_commit": commit,
         "publisher_fingerprint": publisher_fingerprint,
-        "participants": {
-            "github": {
-                "release_tag": validation["tag"],
-                "target_commit": commit,
-                "required_asset_sha256": asset_hashes,
-            },
-            "portal": {
-                "release_version": validation["short_version"],
-                "package_sha256": package_hashes,
-            },
-            "installation": {
-                "release_tag": validation["tag"],
-                "generic_package_sha256": package_hashes.get("generic", ""),
-                "skill_count": validation["skill_total"],
-                "publisher_fingerprint": publisher_fingerprint,
-                "required_result": (
-                    "platform-hotfix-package-validation-pass"
-                    if set(package_hashes) == {"windows"}
-                    else "atomic-install-and-three-way-signature-audit-pass"
-                ),
-            },
-            "local_sync": {
-                "mode": "formal-release-immediate",
-                "required_version": validation["short_version"],
-                "generic_package_sha256": package_hashes.get("generic", ""),
-                "sync_script_sha256": local_sync_script_sha256,
-                "required_result": (
-                    "signed-local-install-and-index-verification-pass"
-                    if "generic" in package_hashes
-                    else "not-applicable-platform-hotfix"
-                ),
-            },
-        },
+        "participants": participants,
         "lease_policy": {
             "scope": "release-version",
             "single_writer": True,
@@ -728,6 +757,7 @@ def prepare_ascii_assets(
     packages: dict[str, Path],
     gate_report: Path,
     product_slug: str = "gongchuang-research-institute-skills",
+    client_update_package: Path | None = None,
 ) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
     names = {
@@ -740,6 +770,10 @@ def prepare_ascii_assets(
     for target_name, source in packages.items():
         target = directory / names[target_name]
         shutil.copy2(source, target)
+        targets.append(target)
+    if client_update_package is not None:
+        target = directory / f"gongchuang-desktop-skill-update-{tag}.zip"
+        shutil.copy2(client_update_package, target)
         targets.append(target)
     gate_target = directory / gate_report.name
     shutil.copy2(gate_report, gate_target)
@@ -1095,6 +1129,123 @@ def promote_portal(
     return result
 
 
+def publish_client_skill_update(
+    version: str,
+    archive: Path,
+    notes: Path,
+    *,
+    transaction_files: list[Path],
+) -> dict[str, object]:
+    """Publish the desktop projection only after the generic portal release exists."""
+    ssh, deploy_host, deploy_key = _remote_release_context()
+    remote_stage = (
+        f"/tmp/gongchuang-client-skill-update-{version}-"
+        f"{int(time.time())}-{secrets.token_hex(4)}"
+    )
+    uploads = [archive, notes, *transaction_files]
+    run([*ssh, f"install -d -m 0700 {shlex.quote(remote_stage)}"])
+    run(
+        [
+            "scp",
+            "-i",
+            deploy_key,
+            "-o",
+            "IdentitiesOnly=yes",
+            *(str(path) for path in uploads),
+            f"{deploy_host}:{remote_stage}/",
+        ]
+    )
+    remote_command = (
+        "set -a; source /etc/jiaotang-kb.env; set +a; "
+        f"{REMOTE_RELEASE_ROOT}/.venv/bin/python "
+        f"{REMOTE_RELEASE_ROOT}/scripts/publish_client_skill_update.py "
+        "--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
+        f"--release-dir {shlex.quote(REMOTE_CLIENT_SKILL_UPDATE_RELEASE_DIR)} "
+        f"--archive {shlex.quote(f'{remote_stage}/{archive.name}')} "
+        f"--version {shlex.quote(version)} "
+        f"--release-notes-file {shlex.quote(f'{remote_stage}/{notes.name}')} "
+        "--transaction-manifest "
+        f"{shlex.quote(f'{remote_stage}/{transaction_files[0].name}')} "
+        "--transaction-signature "
+        f"{shlex.quote(f'{remote_stage}/{transaction_files[1].name}')} "
+        "--publisher-public-key "
+        f"{shlex.quote(f'{remote_stage}/{transaction_files[2].name}')}")
+    result = json.loads(run([*ssh, remote_command]))
+    result["remote_workspace_cleanup"] = archive_remote_release_workspace(
+        ssh, remote_stage
+    )
+    return result
+
+
+def verify_public_client_skill_update(
+    *,
+    manifest_url: str,
+    version: str,
+    expected_archive_sha256: str,
+) -> dict[str, object]:
+    """Read the public feed and validate the exact downloaded desktop archive."""
+    manifest = json.loads(
+        run(
+            [
+                "curl",
+                "--fail",
+                "--silent",
+                "--show-error",
+                "--location",
+                "--max-time",
+                "30",
+                "--header",
+                "Cache-Control: no-cache",
+                manifest_url,
+            ]
+        )
+    )
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("skillBundleVersion") != version
+        or manifest.get("sourceReleaseTag") != f"V{version}"
+        or not isinstance(manifest.get("archiveUrl"), str)
+    ):
+        raise RuntimeError("公网客户端技能更新清单未回读到本次版本")
+    archive_url = urljoin(manifest_url, str(manifest["archiveUrl"]))
+    manifest_origin = urlparse(manifest_url)
+    archive_origin = urlparse(archive_url)
+    if (
+        archive_origin.scheme != manifest_origin.scheme
+        or archive_origin.netloc != manifest_origin.netloc
+    ):
+        raise RuntimeError("公网客户端技能更新归档不是同源地址")
+    with recoverable_workspace("gongchuang-public-skill-update-readback-") as workspace:
+        downloaded = workspace / f"skills-V{version}.zip"
+        run(
+            [
+                "curl",
+                "--fail",
+                "--silent",
+                "--show-error",
+                "--location",
+                "--max-time",
+                "120",
+                "--output",
+                str(downloaded),
+                archive_url,
+            ]
+        )
+        actual_sha256 = sha256(downloaded)
+        if actual_sha256 != expected_archive_sha256:
+            raise RuntimeError("公网客户端技能更新归档与签名事务哈希不一致")
+        validation = load_skill_update_feed_module(ROOT).validate_skill_update_archive(
+            downloaded, version
+        )
+    return {
+        "status": "pass",
+        "manifest_url": manifest_url,
+        "archive_url": archive_url,
+        "archive_sha256": actual_sha256,
+        "validation": validation,
+    }
+
+
 def run_isolated_skill_acceptance_gate(
     *,
     development_root: Path,
@@ -1157,6 +1308,11 @@ def main() -> None:
     )
     parser.add_argument("--version", required=True)
     parser.add_argument("--generic-package", type=Path)
+    parser.add_argument(
+        "--client-update-package",
+        type=Path,
+        help="桌面客户端独立更新使用的根级formal签名技能ZIP",
+    )
     parser.add_argument(
         "--workbuddy-package",
         type=Path,
@@ -1246,6 +1402,11 @@ def main() -> None:
         default=DEFAULT_LOCAL_RELEASE_SYNC_SCRIPT,
         help="正式发布成为GitHub Latest后立即执行的本机同步程序",
     )
+    parser.add_argument(
+        "--client-skill-update-url",
+        default=DEFAULT_CLIENT_SKILL_UPDATE_URL,
+        help="正式提升后必须逐字节回读的公网客户端技能更新清单",
+    )
     parser.add_argument("--lease-owner", default="")
     parser.add_argument(
         "--lease-ttl-seconds",
@@ -1324,10 +1485,17 @@ def main() -> None:
     if arguments.platform_hotfix:
         if set(packages) != {arguments.platform_hotfix}:
             parser.error("平台热修事务只能提供对应的单个平台包")
+        if arguments.client_update_package is not None:
+            parser.error("平台热修事务不得夹带客户端技能更新包")
     elif "generic" not in packages:
         parser.error(
             "受控发布必须提供--generic-package，"
             "用于正式提升前的隔离安装、全量验签和三方哈希门禁"
+        )
+    elif arguments.client_update_package is None:
+        parser.error(
+            "通用技能正式发布必须提供--client-update-package，"
+            "否则桌面客户端无法发现本次技能版本"
         )
     platform_targets = {target for target in packages if target in {"macos", "windows"}}
     if platform_targets and platform_targets != {"macos", "windows"} and not arguments.platform_hotfix:
@@ -1348,6 +1516,20 @@ def main() -> None:
         commit,
         arguments.platform_hotfix,
     )
+    client_update_package = (
+        arguments.client_update_package.resolve()
+        if arguments.client_update_package is not None
+        else None
+    )
+    client_update_validation: dict[str, object] | None = None
+    if client_update_package is not None:
+        client_update_validation = load_skill_update_feed_module(
+            ROOT
+        ).validate_skill_update_archive(
+            client_update_package,
+            str(validation["short_version"]),
+        )
+        require_public_namespace(archives=[client_update_package])
     with recoverable_workspace(
         "jiaotang-controlled-release-transaction-"
     ) as workspace:
@@ -1357,6 +1539,7 @@ def main() -> None:
             packages,
             gate_report,
             str(validation["product_slug"]),
+            client_update_package,
         )
         package_fingerprint = (
             generic_publisher_fingerprint(packages["generic"])
@@ -1376,6 +1559,7 @@ def main() -> None:
                 if "generic" in packages
                 else ""
             ),
+            client_update=client_update_validation,
         )
         transaction_files, transaction_verification = (
             prepare_release_transaction_assets(
@@ -1407,12 +1591,7 @@ def main() -> None:
                 ],
                 "publisher_fingerprint": package_fingerprint,
                 "github_asset_count": len(all_assets),
-                "participants": [
-                    "github",
-                    "portal",
-                    "installation",
-                    "local_sync",
-                ],
+                "participants": list(transaction_manifest["participants"]),
             },
             "public_namespace": {
                 "source_and_archives": validation["public_namespace"],
@@ -1434,6 +1613,7 @@ def main() -> None:
         portal_result: dict[str, object] | None = None
         github_published = False
         local_sync_result: dict[str, object] | None = None
+        client_update_result: dict[str, object] | None = None
         try:
             credential = load_or_create_lease_credential(
                 path=credential_path,
@@ -1659,6 +1839,24 @@ def main() -> None:
                     "status": "not-applicable-platform-hotfix",
                     "mode": "formal-release-immediate",
                 }
+            if client_update_package is not None and client_update_validation is not None:
+                published_update = publish_client_skill_update(
+                    str(validation["short_version"]),
+                    client_update_package,
+                    release_notes,
+                    transaction_files=transaction_files,
+                )
+                public_readback = verify_public_client_skill_update(
+                    manifest_url=arguments.client_skill_update_url,
+                    version=str(validation["short_version"]),
+                    expected_archive_sha256=str(
+                        client_update_validation["archive_sha256"]
+                    ),
+                )
+                client_update_result = {
+                    "publication": published_update,
+                    "public_readback": public_readback,
+                }
             completed = transition(
                 "completed",
                 {
@@ -1666,6 +1864,7 @@ def main() -> None:
                     "portal": portal_result.get("release_state"),
                     "installation": installation_acceptance.get("status"),
                     "local_sync": local_sync_result,
+                    "client_update": client_update_result,
                 },
             )
         except Exception as exc:
@@ -1675,13 +1874,18 @@ def main() -> None:
                     {
                         "promote_error": str(exc),
                         "partial_state": (
-                            "github-published-local-sync-pending"
-                            if github_published and local_sync_result is None
+                            "github-published-client-update-pending"
+                            if github_published and client_update_result is None
+                            and client_update_package is not None
                             else (
-                                "portal-published-github-pending"
-                                if portal_result is not None
-                                and not github_published
-                                else "pre-publication-failed"
+                                "github-published-local-sync-pending"
+                                if github_published and local_sync_result is None
+                                else (
+                                    "portal-published-github-pending"
+                                    if portal_result is not None
+                                    and not github_published
+                                    else "pre-publication-failed"
+                                )
                             )
                         ),
                         "portal": (
@@ -1709,6 +1913,7 @@ def main() -> None:
                     "release_url": release_url,
                     "isolated_skill_acceptance": installation_acceptance,
                     "local_sync": local_sync_result,
+                    "client_update": client_update_result,
                     "portal": portal_result,
                     "release_transaction": completed,
                 })

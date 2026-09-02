@@ -107,8 +107,32 @@ Shell 文本还原。
 `scripts/controlled_release.py --promote` 在主人独立确认后、网站正式提升和 GitHub
 Latest 切换前，自动在持久化的隔离验收目录调用 `scripts/post_release_skill_gate.py`。它不再修改
 发布者正在使用的 `~/.codex/skills`。受控发布必须同时
-提供通用签名包；只有 WorkBuddy 包时不得正式提升。所有写操作还必须携带相同的
-事务清单、签名、公钥和租约凭证。
+提供通用签名包和客户端专用根级 formal 投影；只有 WorkBuddy 包或缺少
+`--client-update-package` 时不得正式提升。客户端投影作为同一签名事务的独立参与方，
+必须在门户通用版、GitHub 和本机同步成功后原子推进公网更新源，并由发布命令完整下载、
+核对事务摘要和归档格式后才完成。所有写操作还必须携带相同的事务清单、签名、公钥和租约凭证。
+
+客户端投影从已确认的技能源单独暂存和构建，不能复用带外层目录的通用 ZIP：
+
+```bash
+pnpm --dir <client-repo>/apps/desktop run stage:skills \
+  --source <skills-repo>/skills \
+  --out <candidate>/desktop-client-update/staged \
+  --key <formal-ed25519-private-key> \
+  --tier formal \
+  --purpose independent-update \
+  --expected-version 1.6.17
+
+pnpm --dir <client-repo>/apps/desktop run build:skill-update \
+  --source <candidate>/desktop-client-update/staged \
+  --out <candidate>/desktop-client-update/skills-V1.6.17.zip \
+  --expected-version 1.6.17 \
+  --expected-public-key-sha256 <client-pinned-public-key-sha256>
+```
+
+归档只能包含四个根级签名伴随文件和签名索引声明的 `skills/**`；`config/common.yaml`
+等内嵌打包资源即使存在于暂存目录，也不得进入独立更新包。历史
+`publish_generic_skill_release.py` 不属于两阶段正式发布入口，不能替代受控事务。
 
 只读监控命令：
 

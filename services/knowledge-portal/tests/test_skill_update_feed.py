@@ -1,15 +1,89 @@
+import base64
+import hashlib
 import json
+import zipfile
 
+import pytest
 from fastapi.testclient import TestClient
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from test_portal import load_app
+
+
+def make_desktop_projection(
+    path,
+    *,
+    version="1.6.6",
+    private_key=None,
+    description="Fixture skill.",
+):
+    from app import skill_update_feed
+
+    key = private_key or Ed25519PrivateKey.generate()
+    public_pem = key.public_key().public_bytes(
+        serialization.Encoding.PEM,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    skill_update_feed.CLIENT_SKILL_UPDATE_PUBLIC_KEY_SHA256 = hashlib.sha256(
+        public_pem
+    ).hexdigest()
+    suite = {
+        "release": {"version": version, "tag": f"V{version}"},
+        "skills": ["fixture-skill"],
+    }
+    suite_bytes = (json.dumps(suite, ensure_ascii=False) + "\n").encode("utf-8")
+    skill_bytes = (
+        "---\nname: fixture-skill\ndescription: " + description + "\n---\n"
+    ).encode("utf-8")
+    declared = {
+        "fixture-skill/SKILL.md": hashlib.sha256(skill_bytes).hexdigest(),
+        "suite-manifest.json": hashlib.sha256(suite_bytes).hexdigest(),
+    }
+    index_bytes = (
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "productId": "cn.gongchuang.enterprise-assistant",
+                "skillBundleVersion": version,
+                "sourceReleaseTag": f"V{version}",
+                "signingTier": "formal",
+                "skills": ["fixture-skill"],
+                "files": declared,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n"
+    ).encode("utf-8")
+    receipt = {
+        "schemaVersion": 1,
+        "skillBundleVersion": version,
+        "projectionPurpose": "independent-update",
+        "signingTier": "formal",
+        "indexSha256": hashlib.sha256(index_bytes).hexdigest(),
+        "publicKeySha256": hashlib.sha256(public_pem).hexdigest(),
+        "fileCount": len(declared),
+        "skillCount": 1,
+    }
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("skill-bundle-index.json", index_bytes)
+        archive.writestr(
+            "skill-bundle-index.sig",
+            base64.b64encode(key.sign(index_bytes)).decode("ascii") + "\n",
+        )
+        archive.writestr("skill-bundle-index.pub.pem", public_pem)
+        archive.writestr("staging-receipt.json", json.dumps(receipt))
+        archive.writestr("skills/suite-manifest.json", suite_bytes)
+        archive.writestr("skills/fixture-skill/SKILL.md", skill_bytes)
+    return key
 
 
 def test_publish_skill_update_feed_creates_client_manifest(tmp_path):
     from app.skill_update_feed import publish_skill_update_feed
 
     source = tmp_path / "desktop-projection.zip"
-    source.write_bytes(b"signed desktop projection")
+    make_desktop_projection(source)
     release_dir = tmp_path / "updates"
 
     receipt = publish_skill_update_feed(
@@ -38,8 +112,10 @@ def test_publish_skill_update_feed_rejects_reusing_version_for_other_bytes(tmp_p
     release_dir = tmp_path / "updates"
     first = tmp_path / "first.zip"
     second = tmp_path / "second.zip"
-    first.write_bytes(b"first")
-    second.write_bytes(b"second")
+    key = make_desktop_projection(first)
+    make_desktop_projection(second, private_key=key)
+    with zipfile.ZipFile(second, "a") as archive:
+        archive.comment = b"different valid archive bytes"
     publish_skill_update_feed(
         release_directory=release_dir,
         archive=first,
@@ -58,6 +134,64 @@ def test_publish_skill_update_feed_rejects_reusing_version_for_other_bytes(tmp_p
         assert "不同内容" in str(error)
     else:
         raise AssertionError("同版本不同内容必须被拒绝")
+
+
+def test_publish_skill_update_feed_rejects_downgrade_and_generic_zip(tmp_path):
+    from app.skill_update_feed import publish_skill_update_feed
+
+    release_dir = tmp_path / "updates"
+    current = tmp_path / "current.zip"
+    key = make_desktop_projection(current, version="1.6.7")
+    publish_skill_update_feed(
+        release_directory=release_dir,
+        archive=current,
+        version="1.6.7",
+        release_notes="current",
+    )
+    old = tmp_path / "old.zip"
+    make_desktop_projection(old, version="1.6.6", private_key=key)
+    try:
+        publish_skill_update_feed(
+            release_directory=release_dir,
+            archive=old,
+            version="1.6.6",
+            release_notes="old",
+        )
+    except ValueError as error:
+        assert "降级" in str(error)
+    else:
+        raise AssertionError("older client update must not replace latest.json")
+
+    generic = tmp_path / "generic.zip"
+    with zipfile.ZipFile(generic, "w") as archive:
+        archive.writestr("bundle/skills/suite-manifest.json", "{}")
+    try:
+        publish_skill_update_feed(
+            release_directory=tmp_path / "generic-feed",
+            archive=generic,
+            version="1.6.8",
+            release_notes="wrong package type",
+        )
+    except ValueError as error:
+        assert "skill-bundle-index.json" in str(error)
+    else:
+        raise AssertionError("generic skill ZIP must not enter the client feed")
+
+
+def test_validate_skill_update_archive_rejects_unsigned_packaging_resources(
+    tmp_path,
+):
+    from app.skill_update_feed import validate_skill_update_archive
+
+    archive_path = tmp_path / "desktop-projection.zip"
+    make_desktop_projection(archive_path)
+    # The V0.4.1 updater permits only four signed root companions and
+    # `skills/**`. Bundled-only resources must never enter an update archive.
+    with zipfile.ZipFile(archive_path, "a") as archive:
+        archive.writestr("config/common.yaml", "provider: bundled-only\n")
+
+    with pytest.raises(ValueError, match="签名索引文件集合"):
+        validate_skill_update_archive(archive_path, "1.6.6")
 
 
 def write_skill_update_feed(tmp_path, monkeypatch):

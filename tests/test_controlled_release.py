@@ -35,7 +35,11 @@ def test_remote_release_commands_use_current_runtime_slot() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
 
     assert MODULE.REMOTE_RELEASE_ROOT == "/opt/jiaotang-kb-runtime/current"
-    assert source.count("REMOTE_RELEASE_ROOT") == 7
+    assert MODULE.REMOTE_CLIENT_SKILL_UPDATE_RELEASE_DIR == (
+        "/var/lib/jiaotang-kb/skill-update-releases"
+    )
+    assert "publish_client_skill_update.py" in source
+    assert '"$JIAOTANG_SKILL_UPDATE_RELEASE_DIR"' not in source
     assert "/opt/jiaotang-kb/.venv/bin/python" not in source
 
 
@@ -334,6 +338,30 @@ def test_controlled_release_requires_generic_package(
     assert "--generic-package" in capsys.readouterr().err
 
 
+def test_controlled_release_requires_client_update_package(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    monkeypatch.setattr(
+        MODULE.sys,
+        "argv",
+        [
+            "controlled_release.py",
+            "--version",
+            "1.4.0",
+            "--generic-package",
+            str(tmp_path / "generic.zip"),
+            "--gate-report",
+            str(tmp_path / "gate.json"),
+            "--release-notes",
+            str(tmp_path / "notes.md"),
+        ],
+    )
+    with pytest.raises(SystemExit) as raised:
+        MODULE.main()
+    assert raised.value.code == 2
+    assert "--client-update-package" in capsys.readouterr().err
+
+
 def test_transaction_manifest_binds_all_release_participants(
     tmp_path,
 ) -> None:
@@ -360,6 +388,10 @@ def test_transaction_manifest_binds_all_release_participants(
         release_assets=[release_notes, workbuddy, generic],
         publisher_fingerprint="SHA256:publisher",
         local_sync_script_sha256="a" * 64,
+        client_update={
+            "archive_sha256": "b" * 64,
+            "public_key_sha256": "c" * 64,
+        },
     )
     repeated = MODULE.build_release_transaction_manifest(
         repository="owner/repository",
@@ -368,6 +400,10 @@ def test_transaction_manifest_binds_all_release_participants(
         release_assets=[generic, release_notes, workbuddy],
         publisher_fingerprint="SHA256:publisher",
         local_sync_script_sha256="a" * 64,
+        client_update={
+            "archive_sha256": "b" * 64,
+            "public_key_sha256": "c" * 64,
+        },
     )
 
     assert manifest == repeated
@@ -377,6 +413,7 @@ def test_transaction_manifest_binds_all_release_participants(
         "portal",
         "installation",
         "local_sync",
+        "client_update",
     }
     assert (
         manifest["participants"]["portal"]["package_sha256"]["generic"]
@@ -385,6 +422,12 @@ def test_transaction_manifest_binds_all_release_participants(
     assert manifest["participants"]["local_sync"]["sync_script_sha256"] == (
         "a" * 64
     )
+    assert manifest["participants"]["client_update"] == {
+        "release_version": "1.4.1",
+        "archive_sha256": "b" * 64,
+        "public_key_sha256": "c" * 64,
+        "required_result": "public-feed-readback-and-client-verification-pass",
+    }
     assert manifest["lease_policy"]["single_writer"] is True
     assert (
         manifest["lease_policy"]["non_holder_mode"]
