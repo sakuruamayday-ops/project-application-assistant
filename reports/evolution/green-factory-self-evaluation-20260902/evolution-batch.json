@@ -1,0 +1,113 @@
+{
+  "batch_id": "green-factory-self-evaluation-20260902",
+  "state": "approved",
+  "risk_level": "medium",
+  "summary": "完善绿色工厂自评价报告的版本识别、基本要求阻断、评分证据矩阵、指标边界、附件索引和确定性校验。",
+  "baseline": {
+    "commit": "e52a82f56222a27d8bdf88bab6300a0963562f27",
+    "branch": "main"
+  },
+  "snapshot": {
+    "path": "snapshot.md",
+    "sha256": "ee04eaa6ed3c36385146bee808af5113b15c308930737c931f32308e87597b32"
+  },
+  "impact_report": {
+    "path": "impact-report.md",
+    "sha256": "761e0ba5149736f3a84317d8e3348073f17fbe29705c6536248c223a2f9e4974"
+  },
+  "diff": {
+    "path": "candidate-diff.md",
+    "sha256": "a3bc62ee537f452e92f54d2bb7204b79f9d6546600c0427a6ad2a95fd767dbe8"
+  },
+  "test_report": {
+    "path": "test-report.md",
+    "sha256": "61be03e59f7f889dc64f186eb56fce7bd451e4c26845fc5ab84e453229fccfa4"
+  },
+  "source_review": {
+    "path": "source-and-license.md",
+    "sha256": "e3aa68fb4e35921eb9ec6dbdef7666227f51456302de8335c869dc1beb86c8bc"
+  },
+  "targets": [
+    {
+      "path": "skills/green-development-projects/SKILL.md",
+      "before_sha256": "49b41d12adb34b81788531f6d1a9ad1d326aed83478493ea1f471975ac6eddab",
+      "after_sha256": "10d80d04efdd3208ab2e65b0ebb620554088a95f6d76b56c6307476bd4833f11"
+    },
+    {
+      "path": "skills/green-development-projects/references/green-metrics-boundaries.md",
+      "before_sha256": "368b1ba1e73509d82cee6fae4d319650a9ef733efd8dd34aeddff6258a55c8b5",
+      "after_sha256": "d5997c3d44a8717df9887b3ef095851f7013e5c2fbbf70f54de78a9b9bbaa34f"
+    },
+    {
+      "path": "skills/green-development-projects/references/green-factory-self-evaluation.md",
+      "before_sha256": null,
+      "after_sha256": "d5c796ff971464c4be455c9e76a0c2ce854ef3cdc1aa8c0015aa9e4b3e233811"
+    },
+    {
+      "path": "skills/green-development-projects/scripts/validate_green_factory_ledger.py",
+      "before_sha256": null,
+      "after_sha256": "520ab93bba064c257985081e18d8fe034ea94a13261db3ea24d76ec488c0371f"
+    },
+    {
+      "path": "tests/skill_content_cases.json",
+      "before_sha256": "ea61dff96f58526b5f29ca5d109ba0e681f2e610efe3ebefbf7b878e2de72210",
+      "after_sha256": "b0ef15880ed489f550736146f503ae1d2cd32de3e5996134fb2001f37890b22b"
+    },
+    {
+      "path": "tests/test_green_factory_skill.py",
+      "before_sha256": null,
+      "after_sha256": "1a2e4a954a7fe3fd342faf097fd8d563fb8671290973c1dc569fea68b4b0d6a3"
+    }
+  ],
+  "tests": [
+    {
+      "name": "green-factory-and-linked-unit-tests",
+      "status": "pass",
+      "result": "32 passed"
+    },
+    {
+      "name": "repository-full-test-suite",
+      "status": "pass",
+      "result": "384 passed, 3 skipped and 74 subtests passed"
+    },
+    {
+      "name": "skill-content-suite",
+      "status": "pass",
+      "result": "22 skills and 88 cases"
+    },
+    {
+      "name": "skill-behavior-coverage",
+      "status": "pass",
+      "result": "51 skills"
+    },
+    {
+      "name": "skill-structure-and-diff",
+      "status": "pass",
+      "result": "quick validation, suite structure, py_compile and git diff check passed"
+    },
+    {
+      "name": "sample-privacy-scan",
+      "status": "pass",
+      "result": "no customer company-name or mainland-mobile pattern in candidate files"
+    }
+  ],
+  "protected_boundaries": [
+    "policy validity and official-source verification",
+    "truthfulness and formal material quality gates",
+    "signature, installation and release controls",
+    "customer confidentiality"
+  ],
+  "approval": {
+    "approved_by": "owner",
+    "approved_at": "2026-09-02T09:33:29+08:00",
+    "confirmation_text": "批准 V1.6.16 最终候选进入签名和正式发布中",
+    "scope": "批准本批次最终哈希对应的绿色工厂候选进入签名、三套件回归、默认分支提交和正式发布中；不授权晋级 GitHub Latest、网站正式版或本机正式同步。",
+    "binding_status": "candidate-targets-test-report-and-diff-hashes",
+    "diff_sha256": "a3bc62ee537f452e92f54d2bb7204b79f9d6546600c0427a6ad2a95fd767dbe8"
+  },
+  "release": {
+    "signed": false,
+    "installed": false,
+    "published": false
+  }
+}
