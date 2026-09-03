@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import fcntl
 import hashlib
 import json
 import os
@@ -287,40 +288,44 @@ def publish_skill_update_feed(
     validate_skill_update_archive(archive, normalized_version)
 
     release_directory.mkdir(parents=True, exist_ok=True)
-    manifest_path = release_directory / "latest.json"
-    if manifest_path.exists():
-        if manifest_path.is_symlink() or not manifest_path.is_file():
-            raise ValueError("技能包更新清单被非普通文件占用")
-        current = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if not isinstance(current, dict) or not isinstance(
-            current.get("skillBundleVersion"), str
-        ):
-            raise ValueError("现有技能包更新清单格式错误")
-        current_version = _version_tuple(str(current["skillBundleVersion"]))
-        if incoming_version < current_version:
-            raise ValueError("禁止把客户端技能更新源降级到旧版本")
+    # 各版本租约不能保护共享 latest。比较、不可变归档和清单替换必须
+    # 持有同一个跨进程锁；锁文件保留，避免删除后产生两个不同的锁 inode。
+    with (release_directory / ".publish.lock").open("a+b") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        manifest_path = release_directory / "latest.json"
+        if manifest_path.exists():
+            if manifest_path.is_symlink() or not manifest_path.is_file():
+                raise ValueError("技能包更新清单被非普通文件占用")
+            current = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if not isinstance(current, dict) or not isinstance(
+                current.get("skillBundleVersion"), str
+            ):
+                raise ValueError("现有技能包更新清单格式错误")
+            current_version = _version_tuple(str(current["skillBundleVersion"]))
+            if incoming_version < current_version:
+                raise ValueError("禁止把客户端技能更新源降级到旧版本")
 
-    archive_name = f"Gongchuang-Enterprise-Assistant-Skills-V{normalized_version}.zip"
-    destination = release_directory / archive_name
-    if destination.exists():
-        if destination.is_symlink() or not destination.is_file():
-            raise ValueError("技能包更新目标被非普通文件占用")
-        if not _same_file_bytes(destination, archive):
-            raise ValueError("同一技能包版本已存在不同内容")
-    else:
-        _atomic_copy(archive, destination)
+        archive_name = f"Gongchuang-Enterprise-Assistant-Skills-V{normalized_version}.zip"
+        destination = release_directory / archive_name
+        if destination.exists():
+            if destination.is_symlink() or not destination.is_file():
+                raise ValueError("技能包更新目标被非普通文件占用")
+            if not _same_file_bytes(destination, archive):
+                raise ValueError("同一技能包版本已存在不同内容")
+        else:
+            _atomic_copy(archive, destination)
 
-    _atomic_json(
-        {
-            "schemaVersion": 1,
-            "productId": PRODUCT_ID,
-            "skillBundleVersion": normalized_version,
-            "sourceReleaseTag": f"V{normalized_version}",
-            "archiveUrl": f"./{archive_name}",
-            "releaseNotes": release_notes.strip(),
-        },
-        manifest_path,
-    )
+        _atomic_json(
+            {
+                "schemaVersion": 1,
+                "productId": PRODUCT_ID,
+                "skillBundleVersion": normalized_version,
+                "sourceReleaseTag": f"V{normalized_version}",
+                "archiveUrl": f"./{archive_name}",
+                "releaseNotes": release_notes.strip(),
+            },
+            manifest_path,
+        )
     return SkillUpdateFeedReceipt(
         archive_path=destination,
         manifest_path=manifest_path,

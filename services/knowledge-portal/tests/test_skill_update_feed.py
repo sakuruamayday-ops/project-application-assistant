@@ -2,6 +2,8 @@ import base64
 import hashlib
 import json
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event, local
 
 import pytest
 from fastapi.testclient import TestClient
@@ -176,6 +178,70 @@ def test_publish_skill_update_feed_rejects_downgrade_and_generic_zip(tmp_path):
         assert "skill-bundle-index.json" in str(error)
     else:
         raise AssertionError("generic skill ZIP must not enter the client feed")
+
+
+def test_concurrent_versions_cannot_overwrite_a_newer_latest(tmp_path, monkeypatch):
+    from app import skill_update_feed
+
+    newer = tmp_path / "newer.zip"
+    older = tmp_path / "older.zip"
+    key = make_desktop_projection(newer, version="1.6.18")
+    make_desktop_projection(older, version="1.6.17", private_key=key)
+    release_dir = tmp_path / "updates"
+    newer_at_commit = Event()
+    allow_commit = Event()
+    older_contended = Event()
+    publisher = local()
+    original_write = skill_update_feed._atomic_json
+    original_validate = skill_update_feed.validate_skill_update_archive
+    original_lock = skill_update_feed.fcntl.flock
+
+    def pause_newer(payload, destination):
+        if payload["skillBundleVersion"] == "1.6.18":
+            newer_at_commit.set()
+            assert allow_commit.wait(5), "test did not release newer publisher"
+        original_write(payload, destination)
+
+    def observe_validation(archive, version):
+        result = original_validate(archive, version)
+        publisher.version = version
+        return result
+
+    def observe_contention(descriptor, operation):
+        if publisher.version == "1.6.17":
+            # The loser must reach a held lock before the winner is released.
+            # Merely observing validation leaves the downgrade race untested.
+            with pytest.raises(BlockingIOError):
+                original_lock(descriptor, operation | skill_update_feed.fcntl.LOCK_NB)
+            older_contended.set()
+        return original_lock(descriptor, operation)
+
+    monkeypatch.setattr(skill_update_feed, "_atomic_json", pause_newer)
+    monkeypatch.setattr(skill_update_feed, "validate_skill_update_archive", observe_validation)
+    monkeypatch.setattr(skill_update_feed.fcntl, "flock", observe_contention)
+
+    def publish(archive, version):
+        return skill_update_feed.publish_skill_update_feed(
+            release_directory=release_dir, archive=archive,
+            version=version, release_notes=version,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        first = workers.submit(publish, newer, "1.6.18")
+        try:
+            assert newer_at_commit.wait(5)
+            second = workers.submit(publish, older, "1.6.17")
+            assert older_contended.wait(5), "older publisher did not contend for latest"
+        finally:
+            allow_commit.set()
+        assert first.result(timeout=5).version == "1.6.18"
+        with pytest.raises(ValueError, match="降级"):
+            second.result(timeout=5)
+
+    manifest = json.loads((release_dir / "latest.json").read_text())
+    assert manifest["skillBundleVersion"] == "1.6.18"
+    # A rejected contender must release the lock; retrying the winner remains valid.
+    assert publish(newer, "1.6.18").version == "1.6.18"
 
 
 def test_validate_skill_update_archive_rejects_unsigned_packaging_resources(
