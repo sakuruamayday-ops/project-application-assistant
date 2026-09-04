@@ -8670,18 +8670,18 @@ def client_password_login(
                 valid = password_hasher.verify(user["password_hash"], payload.password)
             except (VerifyMismatchError, InvalidHashError):
                 valid = False
+        if valid:
+            connection.execute("BEGIN IMMEDIATE")
+            current = connection.execute(
+                "SELECT password_hash FROM users WHERE id=? AND active=1 AND deleted_at IS NULL",
+                (int(user["id"]),),
+            ).fetchone()
+            # A reset can commit while Argon2 verifies the old password.
+            valid = current is not None and current["password_hash"] == user["password_hash"]
         if not valid:
             record_auth_attempt(connection, "client_login", normalized_login, client_ip, False)
             connection.commit()
             raise HTTPException(status_code=401, detail="用户名称或密码错误")
-        connection.execute("BEGIN IMMEDIATE")
-        current = connection.execute(
-            "SELECT id FROM users WHERE id=? AND active=1",
-            (int(user["id"]),),
-        ).fetchone()
-        if current is None:
-            connection.rollback()
-            raise HTTPException(status_code=403, detail="账号当前不可用")
         record_auth_attempt(connection, "client_login", normalized_login, client_ip, True)
         raw_token = issue_client_login_token(
             connection,
@@ -12764,19 +12764,119 @@ def record_registration_attempt(
 def password_reset_page(request: Request):
     if user_count() == 0:
         return RedirectResponse("/setup", status_code=303)
-    return templates.TemplateResponse(request, "password_reset.html", {"error": None})
+    return password_reset_response(request)
+
+
+def password_reset_response(
+    request: Request, *, error: str | None = None, status_code: int = 200
+) -> HTMLResponse:
+    csrf_token = request.cookies.get("gc_password_reset_csrf", "")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{43}", csrf_token):
+        csrf_token = secrets.token_urlsafe(32)
+    response = templates.TemplateResponse(
+        request,
+        "password_reset.html",
+        {"error": error, "csrf_token": csrf_token},
+        status_code=status_code,
+    )
+    response.set_cookie(
+        "gc_password_reset_csrf", csrf_token, max_age=900,
+        path="/password/reset", httponly=True, secure=SECURE_COOKIES,
+        samesite="strict",
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @app.post("/password/reset", response_class=HTMLResponse)
-def password_reset_submit(request: Request):
-    # 自助密码重置已停用：仅凭姓名与公司全称即可重置任意账号（含管理员），
-    # 构成账号接管风险。重置一律由管理员在成员详情页发起。
-    return templates.TemplateResponse(
-        request,
-        "password_reset.html",
-        {"error": "自助找回已停用。请联系团队管理员，在「成员管理 → 账号详情」中为你重置密码。"},
-        status_code=410,
-    )
+def password_reset_submit(
+    request: Request,
+    username: Annotated[str, Form(min_length=3, max_length=64)],
+    company_name: Annotated[str, Form(min_length=2, max_length=100)],
+    password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
+    confirm_password: Annotated[str, Form(min_length=MIN_PASSWORD_LENGTH, max_length=256)],
+    csrf_token: Annotated[str, Form(max_length=100)] = "",
+):
+    cookie_token = request.cookies.get("gc_password_reset_csrf", "")
+    if (
+        not re.fullmatch(r"[A-Za-z0-9_-]{43}", cookie_token)
+        or not secrets.compare_digest(cookie_token.encode(), csrf_token.encode())
+    ):
+        return password_reset_response(
+            request, error="页面已失效，请刷新后重新填写。", status_code=403
+        )
+    if password != confirm_password:
+        return password_reset_response(
+            request, error="两次输入的密码不一致。", status_code=400
+        )
+    normalized_username = username.strip().lower()
+    client_ip = client_ip_from(request)
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            "DELETE FROM password_reset_attempts WHERE attempted_at < ?",
+            (isoformat(utc_now() - timedelta(days=1)),),
+        )
+        failures = connection.execute(
+            """
+            SELECT COUNT(*) FROM password_reset_attempts
+            WHERE succeeded=0 AND attempted_at>=?
+              AND (username=? OR client_ip=?)
+            """,
+            (isoformat(utc_now() - timedelta(minutes=30)), normalized_username, client_ip),
+        ).fetchone()[0]
+        if failures >= 5:
+            connection.commit()
+            return password_reset_response(
+                request, error="尝试次数过多，请30分钟后重试。", status_code=429
+            )
+        user = connection.execute(
+            """
+            SELECT * FROM users
+            WHERE username=? AND active=1 AND deleted_at IS NULL
+              AND (is_admin=1 OR EXISTS(
+                  SELECT 1 FROM registration_authorizations authorization
+                  WHERE authorization.user_id=users.id
+                    AND authorization.status='registered'
+                    AND authorization.deleted_at IS NULL
+              ))
+            """,
+            (normalized_username,),
+        ).fetchone()
+        # Owner-approved low-assurance recovery: match this account's registered
+        # company, never a shared override. Company names are not identity proof.
+        valid = user is not None and bool(str(user["company_name"]).strip()) and secrets.compare_digest(
+            str(user["company_name"]).strip().encode(), company_name.strip().encode()
+        )
+        connection.execute(
+            """
+            INSERT INTO password_reset_attempts(username,client_ip,succeeded,attempted_at)
+            VALUES (?,?,?,?)
+            """,
+            (normalized_username, client_ip, int(valid), now),
+        )
+        if not valid:
+            connection.commit()
+            return password_reset_response(
+                request,
+                error="账号或所属公司全称不匹配，或账号暂不可用，请核对后重试。",
+                status_code=400,
+            )
+        connection.execute(
+            "UPDATE users SET password_hash=? WHERE id=?",
+            (password_hasher.hash(password), user["id"]),
+        )
+        connection.execute("DELETE FROM sessions WHERE user_id=?", (user["id"],))
+        revoke_client_password_sessions(
+            connection, int(user["id"]), operated_by="self_service_password_reset"
+        )
+        connection.commit()
+    response = RedirectResponse("/login?password_reset=1", status_code=303)
+    response.delete_cookie(SESSION_COOKIE)
+    response.delete_cookie("gc_password_reset_csrf", path="/password/reset")
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @app.get("/register", response_class=HTMLResponse)
@@ -13037,6 +13137,13 @@ def login_submit(
                 valid = password_hasher.verify(user["password_hash"], password)
             except (VerifyMismatchError, InvalidHashError):
                 valid = False
+        if valid:
+            connection.execute("BEGIN IMMEDIATE")
+            current = connection.execute(
+                "SELECT password_hash FROM users WHERE id=? AND active=1 AND deleted_at IS NULL",
+                (int(user["id"]),),
+            ).fetchone()
+            valid = current is not None and current["password_hash"] == user["password_hash"]
         if not valid:
             record_auth_attempt(connection, "login", normalized_login, client_ip, False)
             connection.commit()
@@ -14380,6 +14487,56 @@ def admin_revoke_member_credentials(
     )
 
 
+def revoke_client_password_sessions(
+    connection: sqlite3.Connection, user_id: int, *, operated_by: str
+) -> None:
+    """Revoke password-login credentials inside the caller's password transaction."""
+    now = isoformat(utc_now())
+    bindings = connection.execute(
+        """
+        SELECT id FROM device_bindings
+        WHERE user_id=? AND (
+            auth_method='client_password' OR id IN (
+                SELECT binding_id FROM device_tokens
+                WHERE user_id=? AND credential_kind='client'
+            )
+        )
+        """,
+        (user_id, user_id),
+    ).fetchall()
+    binding_ids = [int(row["id"]) for row in bindings]
+    placeholders = ",".join("?" for _ in binding_ids) or "NULL"
+    # Binding provenance also covers historical client tokens mislabeled as device.
+    # Independent personal MCP tokens are deliberately not tied to password login.
+    connection.execute(
+        f"""
+        UPDATE device_tokens
+        SET revoked_at=?,revoked_reason='password_changed',revoked_by=?
+        WHERE user_id=? AND revoked_at IS NULL
+          AND (credential_kind='client' OR binding_id IN ({placeholders}))
+        """,
+        (now, operated_by[:100], user_id, *binding_ids),
+    )
+    if binding_ids:
+        connection.execute(
+            f"""
+            UPDATE device_keys
+            SET revoked_at=?,revoked_reason='password_changed'
+            WHERE user_id=? AND revoked_at IS NULL
+              AND binding_id IN ({placeholders})
+            """,
+            (now, user_id, *binding_ids),
+        )
+        connection.execute(
+            f"""
+            UPDATE device_bindings
+            SET revoked_at=?,revoked_reason='password_changed'
+            WHERE user_id=? AND revoked_at IS NULL AND id IN ({placeholders})
+            """,
+            (now, user_id, *binding_ids),
+        )
+
+
 @app.post("/admin/users/{member_id}/password-reset")
 def admin_reset_user_password(
     member_id: int,
@@ -14406,6 +14563,9 @@ def admin_reset_user_password(
             (password_hasher.hash(new_password), member_id),
         )
         connection.execute("DELETE FROM sessions WHERE user_id=?", (member_id,))
+        revoke_client_password_sessions(
+            connection, member_id, operated_by=str(user["username"])
+        )
         connection.execute(
             "DELETE FROM password_reset_attempts WHERE username=?",
             (member["username"],),
@@ -18945,6 +19105,9 @@ def change_password(
             (password_hasher.hash(new_password), user["id"]),
         )
         connection.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
+        revoke_client_password_sessions(
+            connection, int(user["id"]), operated_by=str(user["username"])
+        )
         connection.commit()
     response = RedirectResponse("/login", status_code=303)
     response.delete_cookie(SESSION_COOKIE)

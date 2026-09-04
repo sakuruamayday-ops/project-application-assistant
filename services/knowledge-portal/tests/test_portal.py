@@ -3303,8 +3303,8 @@ def test_setup_login_and_device_token(tmp_path):
 
         reset_page = client.get("/password/reset")
         assert reset_page.status_code == 200
-        assert "自助密码重置已经停用" in reset_page.text
-        assert '<form method="post" action="/password/reset"' not in reset_page.text
+        assert '<form method="post" action="/password/reset"' in reset_page.text
+        reset_csrf = re.search(r'name="csrf_token" value="([^"]+)"', reset_page.text).group(1)
         failed_reset = client.post(
             "/password/reset",
             data={
@@ -3313,9 +3313,10 @@ def test_setup_login_and_device_token(tmp_path):
                 "company_name": "错误公司",
                 "password": "new-owner-password-123",
                 "confirm_password": "new-owner-password-123",
+                "csrf_token": reset_csrf,
             },
         )
-        assert failed_reset.status_code == 410
+        assert failed_reset.status_code == 400
         reset = client.post(
             "/password/reset",
             data={
@@ -3324,25 +3325,26 @@ def test_setup_login_and_device_token(tmp_path):
                 "company_name": "共创集团",
                 "password": "new-owner-password-123",
                 "confirm_password": "new-owner-password-123",
+                "csrf_token": reset_csrf,
             },
             follow_redirects=False,
         )
-        assert reset.status_code == 410
-        assert "自助找回已停用" in reset.text
-        assert client.get("/portal", follow_redirects=False).status_code == 200
+        assert reset.status_code == 303
+        assert reset.headers["location"] == "/login?password_reset=1"
+        assert client.get("/portal", follow_redirects=False).status_code == 303
         assert client.post(
             "/login",
             data={"username": "owner", "password": "correct-horse-battery"},
             follow_redirects=False,
-        ).status_code == 303
+        ).status_code == 401
         assert client.post(
             "/login",
             data={"username": "owner", "password": "new-owner-password-123"},
             follow_redirects=False,
-        ).status_code == 401
+        ).status_code == 303
 
 
-def test_self_service_password_reset_is_disabled(tmp_path):
+def test_self_service_password_reset_limits_failed_company_checks(tmp_path):
     module = load_app(tmp_path)
     with closing(module.database()) as connection:
         connection.execute(
@@ -3384,10 +3386,17 @@ def test_self_service_password_reset_is_disabled(tmp_path):
         "confirm_password": "new-member-password-123",
     }
     with TestClient(module.app) as client:
-        for _ in range(6):
+        page = client.get("/password/reset")
+        payload["csrf_token"] = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+        for _ in range(5):
             response = client.post("/password/reset", data=payload)
-            assert response.status_code == 410
-            assert "自助找回已停用" in response.text
+            assert response.status_code == 400
+            assert "账号或所属公司全称不匹配" in response.text
+            assert payload["password"] not in response.text
+        payload["company_name"] = "共创集团"
+        assert client.post("/password/reset", data=payload).status_code == 429
+        with closing(module.database()) as connection:
+            assert connection.execute("SELECT COUNT(*) FROM password_reset_attempts").fetchone()[0] == 5
         assert client.post(
             "/login",
             data={"username": "member", "password": "member-password-123"},
@@ -3398,6 +3407,138 @@ def test_self_service_password_reset_is_disabled(tmp_path):
             data={"username": "member", "password": "new-member-password-123"},
             follow_redirects=False,
         ).status_code == 401
+
+
+@pytest.mark.parametrize("method", ["recovery", "admin", "change"])
+@pytest.mark.parametrize("credential", ["client", "personal"])
+def test_password_changes_revoke_client_logins_but_preserve_personal_mcp(tmp_path, method, credential):
+    module = load_app(tmp_path)
+    now = module.isoformat(module.utc_now())
+    with closing(module.database()) as connection:
+        for username, company in (("owner", "示例甲公司"), ("member", "示例乙公司")):
+            connection.execute(
+                "INSERT INTO users(username,company_name,password_hash,is_admin,created_at) VALUES (?,?,?,1,?)",
+                (username, company, module.password_hasher.hash("old-password-123"), now),
+            )
+        member_id = connection.execute("SELECT id FROM users WHERE username='member'").fetchone()[0]
+        owner_id = connection.execute("SELECT id FROM users WHERE username='owner'").fetchone()[0]
+        connection.commit()
+    owner_token = module.ensure_personal_access_token(owner_id)
+    with TestClient(module.app) as client:
+        login = client.post("/login", data={"username": "member", "password": "old-password-123"}, follow_redirects=False)
+        session_token = login.cookies[module.SESSION_COOKIE]
+        member = module.session_user(session_token)[0]
+        device_id = "gcd_" + "c" * 48
+        if credential == "client":
+            desktop_login = client.post("/v1/client-login", json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID, "client_version": "0.4.4",
+                "platform": "macos", "device_id": device_id, "device_name": "Recovery fixture",
+                "username": "member", "password": "old-password-123",
+            })
+            assert desktop_login.status_code == 200
+            headers = {"Authorization": f"Bearer {desktop_login.json()['access_token']}", module.DEVICE_ID_HEADER: device_id}
+        else:
+            headers = api_headers(module.ensure_personal_access_token(member_id))
+        assert client.get("/v1/me", headers=headers).status_code == 200
+        new_password = "new-password-456"
+        if method == "recovery":
+            page = client.get("/password/reset")
+            response = client.post("/password/reset", data={
+                "username": " MEMBER ", "company_name": " 示例乙公司 ",
+                "password": new_password, "confirm_password": new_password,
+                "csrf_token": re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1),
+            }, follow_redirects=False)
+        elif method == "admin":
+            admin_login = client.post("/login", data={"username": "owner", "password": "old-password-123"}, follow_redirects=False)
+            admin = module.session_user(admin_login.cookies[module.SESSION_COOKIE])[0]
+            response = client.post(f"/admin/users/{member_id}/password-reset", data={
+                "new_password": new_password, "confirm_password": new_password,
+                "csrf_token": admin["csrf_token"],
+            }, follow_redirects=False)
+        else:
+            response = client.post("/password", data={
+                "current_password": "old-password-123", "new_password": new_password,
+                "csrf_token": member["csrf_token"],
+            }, follow_redirects=False)
+        assert response.status_code == 303
+        assert module.session_user(session_token) is None
+        assert client.get("/v1/me", headers=headers).status_code == (401 if credential == "client" else 200)
+        assert client.get("/v1/me", headers=api_headers(owner_token)).status_code == 200
+        with closing(module.database()) as connection:
+            owner = connection.execute("SELECT * FROM users WHERE username='owner'").fetchone()
+            assert module.password_hasher.verify(owner["password_hash"], "old-password-123")
+            if credential == "client":
+                assert connection.execute("SELECT revoked_reason FROM device_bindings WHERE user_id=?", (member_id,)).fetchone()[0] == "password_changed"
+        for password, status in (("old-password-123", 401), (new_password, 303)):
+            assert client.post("/login", data={"username": "member", "password": password}, follow_redirects=False).status_code == status
+        assert client.post("/v1/client-login", json={
+            "client_id": module.CLIENT_AUTHORIZATION_ID, "client_version": "0.4.4",
+            "platform": "windows", "device_id": device_id, "device_name": "Recovery fixture",
+            "username": "member", "password": new_password,
+        }).status_code == 200
+
+
+def test_password_reset_requires_csrf_and_has_no_shared_company_override(tmp_path):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post("/setup", data={"setup_key": "setup-secret", "username": "owner", "password": "old-password-123"})
+        with closing(module.database()) as connection:
+            connection.execute("UPDATE users SET company_name='独立公司全称' WHERE username='owner'")
+            connection.commit()
+        payload = {"username": "owner", "company_name": "共创集团", "password": "new-password-456", "confirm_password": "new-password-456"}
+        assert client.post("/password/reset", data=payload).status_code == 403
+        page = client.get("/password/reset")
+        assert page.headers["cache-control"] == "private, no-store"
+        assert "HttpOnly" in page.headers["set-cookie"]
+        assert "SameSite=strict" in page.headers["set-cookie"]
+        payload["csrf_token"] = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+        wrong_company = client.post("/password/reset", data=payload)
+        assert wrong_company.status_code == 400
+        payload["username"] = "missing-user"
+        absent = client.post("/password/reset", data=payload)
+        assert absent.status_code == 400
+        assert absent.text == wrong_company.text
+        payload.update(username="owner", company_name="独立公司全称", confirm_password="different-password")
+        assert "两次输入的密码不一致" in client.post("/password/reset", data=payload).text
+        payload["confirm_password"] = payload["password"]
+        with closing(module.database()) as connection:
+            connection.execute("UPDATE users SET active=0 WHERE username='owner'")
+            connection.commit()
+        assert client.post("/password/reset", data=payload).text == wrong_company.text
+        with closing(module.database()) as connection:
+            user = connection.execute("SELECT * FROM users WHERE username='owner'").fetchone()
+            assert module.password_hasher.verify(user["password_hash"], "old-password-123")
+
+
+@pytest.mark.parametrize("endpoint", ["/login", "/v1/client-login"])
+def test_password_reset_during_login_does_not_issue_an_old_password_session(tmp_path, monkeypatch, endpoint):
+    from types import SimpleNamespace
+
+    module = load_app(tmp_path)
+    hasher = module.password_hasher
+    with TestClient(module.app) as client:
+        client.post("/setup", data={"setup_key": "setup-secret", "username": "owner", "password": "old-password-123"})
+        replacement_hash = hasher.hash("new-password-456")
+
+        def reset_during_verify(encoded, supplied):
+            valid = hasher.verify(encoded, supplied)
+            with closing(module.database()) as connection:
+                connection.execute("UPDATE users SET password_hash=? WHERE username='owner'", (replacement_hash,))
+                connection.commit()
+            return valid
+
+        monkeypatch.setattr(module, "password_hasher", SimpleNamespace(hash=hasher.hash, verify=reset_during_verify))
+        payload = {"username": "owner", "password": "old-password-123"}
+        if endpoint == "/login":
+            response = client.post(endpoint, data=payload, follow_redirects=False)
+        else:
+            payload.update(client_id=module.CLIENT_AUTHORIZATION_ID, client_version="0.4.4", platform="macos", device_id="gcd_" + "d" * 48, device_name="Race fixture")
+            response = client.post(endpoint, json=payload)
+        assert response.status_code == 401
+        assert "access_token" not in response.text
+        with closing(module.database()) as connection:
+            assert connection.execute("SELECT COUNT(*) FROM sessions").fetchone()[0] == 0
+            assert connection.execute("SELECT COUNT(*) FROM device_tokens").fetchone()[0] == 0
 
 
 def test_admin_can_reset_member_password_and_revoke_sessions(tmp_path):
