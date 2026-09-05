@@ -30,13 +30,13 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 | one_line_conclusion | string | 执行摘要总判断 |
 | sources | array | name、period、status、pages、limitation |
 | executive_findings | array | title、conclusion、level、source，最多取5项 |
-| financial_overview | object | years、kpis、rows、conclusion；每行含 name、values、source_pages、formula |
+| financial_overview | object | years、kpis、rows、conclusion；KPI 必填 label、value，可选 note；每行含 name、values、source_pages、formula |
 | sections | object | 固定9个专题 |
 | risks | array | 风险地图 |
 | roadmap | array | 30、60、90天阶段；每项含 period、actions、owner、completion |
 | p0_documents | array | 高优先补充资料 |
-| calculations | array | indicator、formula、result、source |
-| policies | array | name、issuer、date、url |
+| calculations | array | 可为空；仅填写确定性指标文件尚未覆盖的补充计算，每项含 indicator、formula、result、source |
+| policies | array | 至少一项本轮核验的现行官方政策，每项含非空 name、issuer、date、url |
 | final_judgment | object/string | 最终判断 |
 | monthly_indicators | array | name、rule、owner、frequency |
 | limitations | array | 资料限制和免责声明 |
@@ -73,7 +73,9 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 `--metrics-json` 必须指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
 
-客户端专业校验必须覆盖报告里的全部展示形式。同一差额若同时显示为 `300万元` 与 `3,000,000元`，复算参数要同时包含万元差额和乘以10000后的元值。政策表只有在本轮官方原文已核验并进入证据时才填写精确年份、文号、日期和直达链接；未完成核验时使用不含数字的“现行状态待核验”说明，不从示例或记忆补齐。
+客户端专业校验必须覆盖报告里的全部展示形式。同一差额若同时显示为 `300万元` 与 `3,000,000元`，复算参数要同时包含万元差额和乘以10000后的元值。政策表只有在本轮官方原文已核验并进入证据时才填写，且至少包含一项现行政策的名称、发布机关、日期和官方直达链接。不从示例或记忆补齐；无法核验时停止正式报告链，交付明确标注缺少政策来源的草稿，不要用空链接或“现行状态待核验”占位冒充正式政策证据。
+
+`calculations` 默认写 `[]`。确定性指标文件的 `report_rows` 会自动进入“计算过程与来源”页；只有确有新增、已绑定的计算且未被确定性文件覆盖时才添加补充行，避免重复展示造成固定页面溢出。
 
 报告中的比例、增长率和阈值优先使用确定性指标文件已经输出的结果。不要自行增加当前计算器或专业校验器无法复算的复合指标，例如未提供连续年度复合增长率计算链时直接写 CAGR；确需增加时，应先扩展确定性计算器及其测试。月度规则中的硬阈值只有在本轮证据或复算参数能够绑定时才填写具体数字，否则改写为不含虚构阈值的趋势监测或核验动作。
 

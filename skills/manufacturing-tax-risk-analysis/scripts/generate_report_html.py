@@ -36,10 +36,16 @@ def require(obj: dict[str, Any], key: str, path: str) -> Any:
     return obj[key]
 
 
-def require_list(obj: dict[str, Any], key: str, path: str) -> list[Any]:
-    value = require(obj, key, path)
+def require_list(
+    obj: dict[str, Any], key: str, path: str, *, allow_empty: bool = False
+) -> list[Any]:
+    if key not in obj or obj[key] in (None, ""):
+        raise ValueError(f"missing required field: {path}.{key}")
+    value = obj[key]
     if not isinstance(value, list):
         raise ValueError(f"field must be a list: {path}.{key}")
+    if not allow_empty and not value:
+        raise ValueError(f"missing required field: {path}.{key}")
     return value
 
 
@@ -137,8 +143,10 @@ def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
     limit(kpis, 4, "root.financial_overview.kpis")
     for i, kpi_value in enumerate(kpis):
         kpi = require_object(kpi_value, f"root.financial_overview.kpis[{i}]")
-        for key in ("label", "value", "note"):
+        for key in ("label", "value"):
             require_text_field(kpi, key, f"root.financial_overview.kpis[{i}]")
+        if "note" in kpi:
+            require_text(kpi["note"], f"root.financial_overview.kpis[{i}].note")
     for i, row in enumerate(overview_rows):
         if not isinstance(row, dict):
             raise ValueError(f"financial_overview.rows[{i}] must be an object")
@@ -206,7 +214,9 @@ def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
     p0_documents = require_list(data, "p0_documents", "root")
     limit(p0_documents, 10, "root.p0_documents")
     validate_text_list(p0_documents, "root.p0_documents")
-    calculations = require_list(data, "calculations", "root")
+    # 确定性指标文件已经提供主计算表。补充计算可以为空，避免模型为了满足
+    # 非业务必需的占位项反复改写 JSON，并把同一计算重复塞进固定页面。
+    calculations = require_list(data, "calculations", "root", allow_empty=True)
     limit(calculations, 10, "root.calculations")
     for i, calculation_value in enumerate(calculations):
         calculation = require_object(calculation_value, f"root.calculations[{i}]")
@@ -397,14 +407,16 @@ def render_final(data: dict[str, Any]) -> str:
         title, text = "最终判断", final
     else:
         title, text = final.get("title", "最终判断"), final.get("text", "—")
-    indicators = "".join(
-        f'<article class="card"><h3>{esc(x.get("name", "指标"))}</h3><div class="metric-rule">{esc(x.get("rule", "—"))}</div>'
-        f'<p>{esc(x.get("owner", "财务负责人"))}｜{esc(x.get("frequency", "每月"))}</p></article>'
+    indicator_rows = [
+        [x["name"], x["rule"], x["owner"], x["frequency"]]
         for x in data["monthly_indicators"]
-    )
+    ]
     limitations = data.get("limitations", ["本报告不替代税务鉴证或法律意见。"])
     body = f'<div class="hero-card"><div class="risk-level">{esc(data["risk_level"])}</div><h3>{esc(title)}</h3><p>{esc(text)}</p></div>'
-    body += f'<div class="card-grid">{indicators}</div><div class="callout risk">{bullets(limitations)}</div>'
+    body += '<h3>月度监测指标</h3>' + table(
+        ["指标", "监测规则", "责任岗位", "频率"], indicator_rows, "final-indicator-table"
+    )
+    body += f'<div class="callout risk final-limitations">{bullets(limitations)}</div>'
     return page("16", "最终判断", title, body, "final-page")
 
 

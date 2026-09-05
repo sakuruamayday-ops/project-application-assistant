@@ -52,5 +52,12 @@ td{border-bottom:1px solid #eadfce;border-right:1px solid #efe5d6;padding:2mm 2.
 tr:nth-child(even) td{background:#f8f1e5}
 .bar{background:#eee6d9;border:1px solid #ded0bc}
 .bar span{background:linear-gradient(90deg,var(--gold-dark),var(--gold),#edcf88)}
+.final-page .hero-card{padding:3mm 4mm;margin:2mm 0 3mm}
+.final-page .final-indicator-table{font-size:7.9pt;line-height:1.35}
+.final-page .final-indicator-table th{padding:1.6mm 2mm}
+.final-page .final-indicator-table td{padding:1.3mm 2mm}
+.final-page .final-limitations{font-size:8.2pt;line-height:1.35;margin:3mm 0;padding:2mm 3mm}
+.final-page .final-limitations .clean-list{margin:1mm 0}
+.final-page .final-limitations .clean-list li{margin:.4mm 0}
 .page-no{color:var(--gold-dark);font-weight:700;letter-spacing:.11em}
 @media print{html,body{background:#fff}.page{margin:0;width:auto;height:269mm}}

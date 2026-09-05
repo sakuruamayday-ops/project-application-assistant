@@ -181,6 +181,37 @@ class PortableReportTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn(expected, result.stderr)
 
+    def test_optional_kpi_note_and_empty_supplemental_calculations_are_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            metrics = self.generate_metrics(directory_path)
+            candidate = json.loads(
+                (self.tax / "references/report-data.example.json").read_text(encoding="utf-8")
+            )
+            candidate["financial_overview"]["kpis"][0].pop("note")
+            candidate["calculations"] = []
+            input_path = directory_path / "optional-fields.json"
+            output_path = directory_path / "optional-fields.html"
+            input_path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(self.tax / "scripts/generate_report_html.py"),
+                    str(input_path),
+                    str(output_path),
+                    "--metrics-json",
+                    str(metrics),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            html = output_path.read_text(encoding="utf-8")
+            self.assertIn("2025年研发费用率", html)
+            self.assertIn("final-indicator-table", html)
+            self.assertNotIn("None", html)
+
     def test_portable_scripts_do_not_contain_machine_paths(self):
         forbidden = ("/Users/", "/Volumes/", ".agents/skills")
         paths = [
