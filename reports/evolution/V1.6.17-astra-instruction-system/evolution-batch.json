@@ -17,10 +17,10 @@
   },
   "diff": {
     "path": "candidate-diff.md",
-    "sha256": "bb49950b70ebddfa43ed75a3a5b040484562ee39b37fd8eacb98bbbba1f822e8",
-    "source_diff_sha256": "a60ce5d13edadefb1d6707fb5b648f13d504eb14a073cf5332e58e62768386f1",
+    "sha256": "e074cd070b263d36a4d6f9c4f791ec7e821014f1d00afb3828eb0be83ba6b31e",
+    "source_diff_sha256": "d7cbdcced8a064fa2ddb98ef48f8a56b4c9476d940a303bc6afcb94b8bce2a97",
     "targets_path": "target-hashes.json",
-    "targets_sha256": "08702d20d66b0293786ef46a709820d56b9b40aa675767635fbe6d2f8e944d38"
+    "targets_sha256": "791e55b8dc833581a1cdba2955b6d302bdfdd74ecf692d1757026cedb8059682"
   },
   "test_report": {
     "path": "test-report.md",
@@ -77,6 +77,6 @@
     "approved_at": "2026-09-05T17:37:49+08:00",
     "confirmation_text": "是",
     "approval_scope": "继续执行V1.6.17正式发布：落实已确认指令体系建议，P04沿用每项任务的用户模型与推理选择；修复、验签、推送、发布通用51项Skills与独立发布管理器并同步本机，客户端只消费同一精确签名包。",
-    "diff_sha256": "a60ce5d13edadefb1d6707fb5b648f13d504eb14a073cf5332e58e62768386f1"
+    "diff_sha256": "d7cbdcced8a064fa2ddb98ef48f8a56b4c9476d940a303bc6afcb94b8bce2a97"
   }
 }
