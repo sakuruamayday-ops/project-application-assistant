@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "af82b9e922d96ed0323194a69fd86516cf36132af7b070c8d3017cc7561e6f85",
+    "SKILL.md": "df5a7caa69af8d5b7368aff145e913594f2f1c20f41807820fd2137dbcc1e089",
     "references/official-source-routing.md": "31e100f5d6e22fd3343cecb8fed1cac4fa87f60735e4ebed19a869cca1e527ed",
     "references/policy-record-schema.md": "8be2da31575606c014803018f58841e608063881bb0c0dacd9a4deb0b2679836",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",

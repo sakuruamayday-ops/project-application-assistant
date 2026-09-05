@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "dae03120a4c535f22dfd44a2659d8102c6cff83760904f336d08e3fe9eb4c7e0",
+    "SKILL.md": "4ac15de31b3218cbb7751d1b79d64c3d4cbf5a5cb6935c48d2e4dc6421ec59e4",
     "examples/market-share-enterprise-statement.json": "89f8fb5e4ace6da6cb161e42aae59f1fcdbfb476242eca5100e24459288588c5",
     "examples/normal-grounded-report.json": "be8690917cb784ce383873cd5f983bf75649902058549296e1e5d860ab26f1af",
     "examples/reference-only-market-share.json": "ccb30881e283f432b621502b597d44a5bf16ea09c3eb9358c0560191bd58755c",

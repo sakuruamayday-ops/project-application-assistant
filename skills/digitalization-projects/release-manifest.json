@@ -22,7 +22,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "0e5a0d0d022df15d35cc993289a1a9a4c1c16152cb47a2fdf4f045d055edebbe",
+    "SKILL.md": "8474ab922aa68dd29e21f6dd5e0756f6f5ef7938a4898952c7f8b6f179d90152",
     "references/digital-maturity-model.md": "d4f76712ac3516af741ac0604f00cc693e5be954691e20f7f0f44e18a7fd95d6",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

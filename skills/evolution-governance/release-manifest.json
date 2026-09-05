@@ -21,7 +21,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "5571aed7836e03b8407532932d8f600036ebd0b9c09934bdcbe72c36e22bc119",
+    "SKILL.md": "255c94fe62a38a8b3d794cce40965b08202778c4bf7dd9eabd6b95fb9540a65e",
     "references/approval-contract.md": "8e7c105a02a5bf3653157efd08637b29d62b05873cfc9512a4ca6bd1e672c2c3",
     "references/change-risk-classification.md": "437404de9db633d03a4b4ec959b0c61ed8d0003fcb009500441e5aebf46e36fc",
     "references/governance-state-machine.md": "29104e5ecd74dd6e78cea09d1ea5c06b8bc45c9602bfa25ee03ba36b0699331c",

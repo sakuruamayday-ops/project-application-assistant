@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "60e0503973064b8647120a3d79b3633bffb81a89fa96958e54f61b4bd8019b44",
+    "SKILL.md": "cc65c5d67590ad1da9cb54a2812e4f74304f3903c976d50a3dc549b1256c1a8f",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/region-loading-rules.md": "54fd7da44ac24e4aada3560157b86920a1a130f70e2b6cc8c0a2c500093820e9",
     "scripts/document_format_detection.py": "4c56893a113198c9429e236fa62a91cfd6c50fa481dbc57430f8203b33c981d5",

@@ -26,7 +26,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "78f3ac008faf4faa0c0eefc8fde4266b58188342142d9d60d52d2325732e4163",
+    "SKILL.md": "e4ccbc72d156aa5c994d89a678f9517e304a55b44b6001f465d9777a400010fe",
     "references/daily-automation-prompt.md": "a4eaa1dbf4e995467ce519cf63dd674cc28278fdfab44f8551455a576ba95d9d",
     "references/index-schema.md": "94ffa95f342e3e40f7e638e66cd44b6128939c03977f82ba9743d67ebc6676f3",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",

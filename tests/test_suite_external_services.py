@@ -85,7 +85,10 @@ def test_distributed_portable_runtime_blocks_are_compact_and_host_neutral():
         assert "workbuddy_preference_bridge.py" not in block
         assert "真实性、安全、验签和质量门禁" in block
         assert "await tools.<name>(...)" in block
-        assert "不得为理解用法预读脚本、模板、示例或测试" in block
+        # 脚本名是执行入口；不能让不同技能把它解释成预读源码许可。
+        assert "脚本名或命令表示执行入口，不是预读源码许可" in block
+        assert "首次执行前不得读取 `scripts/**`" in block
+        assert "与该失败直接相关的一个源码文件" in block
         blocks.append(block)
     # 中文注释：这是发布器托管的公共说明，任何单项技能漂移都会让
     # Agent 在不同业务中采用不同的工具调用和源码读取策略。

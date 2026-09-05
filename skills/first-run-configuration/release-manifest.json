@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "768202ce6e475bcce8e1820e3df857c80fe028d7557c653a2d3d6e0db78e185c",
+    "SKILL.md": "0d3b2ff807e87bdfc3d46d97f264fbf50cd085807d3d29193888838813b0c591",
     "references/capability-delegation-protocol.md": "650ad5628f00573765a2c5345a3dd46ee6f5edd0ca7adfda2a26fb2d92f57417",
     "references/first-startup-protocol.md": "fca955c47dc961a70fb8b9eb95b958ab5691e8aa5365cc069815575b7c6399d7",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",

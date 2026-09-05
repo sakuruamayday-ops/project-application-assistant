@@ -34,7 +34,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "19455a0fd9dd86630553613f0a30c5cd6e0c67f7e9d98f595e965b2f4d41efc9",
+    "SKILL.md": "d9e4ff72d0b93ff58e21c21d8850455e4c928a50f9220ee225065c990292e112",
     "agents/openai.yaml": "768dcaefb3b32fbaa66942a3a77fe5de412f97e70c4fbd35b7a9149570905abf",
     "references/detector.md": "1daeb0da81739cf15f98f41a0b2f0a5b422b631526b508fc3c0fd5d222659da2",
     "references/evolution.md": "0c2df784e60ee56f752fa1cd08642bbbf8a35f03495c9481d677916bfdd744da",
