@@ -2,8 +2,14 @@
   "schema_version": 1,
   "baseline_commit": "9f76db6f52d4766d33241f814549988992b6d2ad",
   "target_release": "V1.6.17",
-  "target_count": 407,
+  "target_count": 408,
   "targets": [
+    {
+      "status": "M",
+      "path": "README.md",
+      "before_sha256": "a90577278d1402675ac425a4b321e2d91a56ab2e07b6f21de0f338518e9f0201",
+      "after_sha256": "ce21d29beab0d53141526446cfb8fac7f4c31d436d7f7fd065aa8ba8dfd3003d"
+    },
     {
       "status": "M",
       "path": "config/grounded-citations.json",
@@ -14,7 +20,7 @@
       "status": "M",
       "path": "docs/product/README.md",
       "before_sha256": "95d88ebf55a87316087395b960ad0b377853fec87f41a955736cb4ff5e178064",
-      "after_sha256": "41ecacb829ba3af4432ee73325c84e0c74dcd14cc305baef96295c440bebba17"
+      "after_sha256": "d4900f88ff056315efcf3fa9688dd4e378e5cc2a611acb5784a651c8149ff9e9"
     },
     {
       "status": "M",
@@ -26,7 +32,7 @@
       "status": "M",
       "path": "docs/product/product-brief.md",
       "before_sha256": "d7204dfc51c1b2f87c68a4dfc6f75e74b0eddcc610694fb0966dad53be872c54",
-      "after_sha256": "1a3013a24fa514a7010ea5ee95cc8b29bbf4c6b0ad2d67462fcbf2cce4f2e9b3"
+      "after_sha256": "9d1ade25016e601112f36440ea1e8540359ef9bfe4efcc92f2a66ce577d9c564"
     },
     {
       "status": "M",
@@ -38,7 +44,7 @@
       "status": "M",
       "path": "docs/product/roadmap.md",
       "before_sha256": "3b8a92515ebbb650997bf1693ae893f093579ffb4f30ec41d318fdc79cbba25d",
-      "after_sha256": "50ec41e9705627b9ec1ffecf9f9b19f5927cf6f2a0a02ddb8d964bb98912f5a4"
+      "after_sha256": "0bf815da9799a212991feecf75000e1e929cbc85d14366ff5c0ea1d5fdd9461b"
     },
     {
       "status": "M",
@@ -56,7 +62,7 @@
       "status": "A",
       "path": "docs/releases/V1.6.17.md",
       "before_sha256": null,
-      "after_sha256": "dac148675d94fbea6f3d3a9d0d6cf07101a7368b96a8615a9979460e1bb5e4e0"
+      "after_sha256": "6026dc3c95017e6a8822eefb260b1d372ff3ed59923949d696e1542b6f7e93c9"
     },
     {
       "status": "M",
