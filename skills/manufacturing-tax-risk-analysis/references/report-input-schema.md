@@ -2,11 +2,15 @@
 
 ## 使用方法
 
-复制同目录的 `report-data.example.json`，用当前企业事实替换示例内容。先校验，再生成：
+复制同目录的 `metrics-input.example.json` 和 `report-data.example.json`，用当前企业事实替换示例内容。先用确定性计算器生成共享事实与报告指标，再校验并生成报告：
 
 ```bash
-python3 scripts/generate_report_html.py report-data.json --validate-only
-python3 scripts/generate_report_html.py report-data.json report.html
+python3 scripts/calculate_metrics.py metrics-input.json enterprise-financial-facts.v1.json \
+  --metrics-output manufacturing-tax-risk-metrics.v1.json
+python3 scripts/generate_report_html.py report-data.json --validate-only \
+  --metrics-json manufacturing-tax-risk-metrics.v1.json
+python3 scripts/generate_report_html.py report-data.json report.html \
+  --metrics-json manufacturing-tax-risk-metrics.v1.json
 ```
 
 生成器将 `gold-advisor.css` 内嵌到 HTML，输出文件可独立移动。所有文本均自动 HTML 转义。
@@ -26,10 +30,10 @@ python3 scripts/generate_report_html.py report-data.json report.html
 | one_line_conclusion | string | 执行摘要总判断 |
 | sources | array | name、period、status、pages、limitation |
 | executive_findings | array | title、conclusion、level、source，最多取5项 |
-| financial_overview | object | years、kpis、rows、conclusion |
+| financial_overview | object | years、kpis、rows、conclusion；每行含 name、values、source_pages、formula |
 | sections | object | 固定9个专题 |
 | risks | array | 风险地图 |
-| roadmap | array | 30、60、90天阶段 |
+| roadmap | array | 30、60、90天阶段；每项含 period、actions、owner、completion |
 | p0_documents | array | 高优先补充资料 |
 | calculations | array | indicator、formula、result、source |
 | policies | array | name、issuer、date、url |
@@ -59,7 +63,11 @@ python3 scripts/generate_report_html.py report-data.json report.html
 
 ## 财务总览
 
-`financial_overview.years` 至少两个年度。每个 `rows` 项的 `values` 数量必须与年度数量一致。展示值应提前格式化为“13,515.26万元”“99.21%”等，生成器不猜测金额单位。
+`financial_overview.years` 至少两个年度。每个 `rows` 项的 `values` 数量必须与年度数量一致，并提供 `source_pages` 与 `formula`。展示值应提前格式化为“13,515.26万元”“99.21%”等，生成器不猜测金额单位。
+
+## 确定性指标文件
+
+`--metrics-json` 必须指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
 
 ## 风险表达
 

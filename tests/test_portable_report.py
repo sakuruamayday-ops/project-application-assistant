@@ -15,15 +15,37 @@ class PortableReportTests(unittest.TestCase):
         cls.tax = cls.skills / "manufacturing-tax-risk-analysis"
         cls.runtime = cls.skills / "_runtime" / "gongchuang-branding"
 
+    def generate_metrics(self, directory: Path) -> Path:
+        facts = directory / "facts.json"
+        metrics = directory / "metrics.json"
+        subprocess.run(
+            [
+                sys.executable,
+                str(self.tax / "scripts/calculate_metrics.py"),
+                str(self.tax / "references/metrics-input.example.json"),
+                str(facts),
+                "--metrics-output",
+                str(metrics),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return metrics
+
     def test_generator_outputs_exactly_seventeen_page_sections(self):
         with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "report.html"
+            directory_path = Path(directory)
+            output = directory_path / "report.html"
+            metrics = self.generate_metrics(directory_path)
             result = subprocess.run(
                 [
                     sys.executable,
                     str(self.tax / "scripts/generate_report_html.py"),
                     str(self.tax / "references/report-data.example.json"),
                     str(output),
+                    "--metrics-json",
+                    str(metrics),
                 ],
                 check=True,
                 capture_output=True,
@@ -35,6 +57,38 @@ class PortableReportTests(unittest.TestCase):
                 output.read_text(encoding="utf-8").count('<section class="page'),
                 17,
             )
+
+    def test_generator_and_delivery_contract_use_the_same_visible_structure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            output = directory_path / "report.html"
+            metrics = self.generate_metrics(directory_path)
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(self.tax / "scripts/generate_report_html.py"),
+                    str(self.tax / "references/report-data.example.json"),
+                    str(output),
+                    "--metrics-json",
+                    str(metrics),
+                ],
+                check=True,
+            )
+            html = output.read_text(encoding="utf-8")
+            contracts = json.loads((self.skills / "delivery-contracts.json").read_text(encoding="utf-8"))
+            profile = contracts["delivery_profiles"]["manufacturing-tax-risk-report"]
+            cursor = 0
+            for section in profile["required_sections"]:
+                cursor = html.index(section, cursor) + len(section)
+            for table_rule in profile["required_tables"]:
+                self.assertIn(table_rule["id"], html)
+                for column in table_rule["required_columns"]:
+                    self.assertIn(column, html)
+            for expected in (
+                "2024年营业收入同比增长率",
+                "2025年研发费用率",
+            ):
+                self.assertIn(expected, html)
 
     def test_portable_scripts_do_not_contain_machine_paths(self):
         forbidden = ("/Users/", "/Volumes/", ".agents/skills")

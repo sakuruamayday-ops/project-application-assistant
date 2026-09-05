@@ -68,6 +68,66 @@ def test_calculator_emits_reusable_financial_facts(tmp_path):
     )
 
 
+def test_calculator_emits_case_28_material_cross_period_findings(tmp_path):
+    source = tmp_path / "input.json"
+    facts_output = tmp_path / "facts.json"
+    metrics_output = tmp_path / "metrics.json"
+    years = {}
+    rows = {
+        "2023": (18000000, 14000000, 6000000, 8000000, 1800000, 2000000),
+        "2024": (24000000, 18000000, 8000000, 10000000, 3000000, 3000000),
+        "2025": (30000000, 20000000, 8000000, 9000000, 4500000, 5400000),
+    }
+    for year, (revenue, assets, liabilities, equity, research, receivables) in rows.items():
+        record = {name: None for name in load_calculator().REQUIRED}
+        record.update(
+            {
+                "revenue": revenue,
+                "assets": assets,
+                "liabilities": liabilities,
+                "equity": equity,
+                "research_expense": research,
+                "receivables": receivables,
+                "current_assets": 10000000,
+                "current_liabilities": 5000000,
+                "inventory": 2000000,
+                "net_profit": 1000000,
+            }
+        )
+        years[year] = record
+    source.write_text(
+        json.dumps(
+            {
+                "company": {"name": "共创测试制造企业"},
+                "basis": {"currency": "CNY", "unit": "yuan"},
+                "years": years,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            str(CALCULATOR),
+            str(source),
+            str(facts_output),
+            "--metrics-output",
+            str(metrics_output),
+        ],
+        check=True,
+    )
+    metrics = json.loads(metrics_output.read_text(encoding="utf-8"))
+    assert metrics["schema"] == "manufacturing-tax-risk-metrics/v1"
+    report = {row["indicator"]: row["result"] for row in metrics["report_rows"]}
+    assert report["2024年营业收入同比增长率"] == "33.33%"
+    assert report["2025年营业收入同比增长率"] == "25.00%"
+    assert report["2025年应收账款同比增长率"] == "80.00%"
+    assert report["2025年研发费用率"] == "15.00%"
+    assert report["2025年资产负债表恒等式差额"] == "3,000,000.00元（300.00万元）"
+    assert "缺少营业成本、期初存货，无法计算" in report["2025年存货周转天数"]
+
+
 def test_cross_skill_financial_reuse_is_declared():
     expected = {
         "skills/manufacturing-tax-risk-analysis/SKILL.md": "enterprise-financial-facts/v1",

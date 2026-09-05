@@ -30,7 +30,9 @@ def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
         tax_root / "scripts" / "generate_report_html.py",
         tax_root / "scripts" / "render_pdf_stdout.js",
         tax_root / "scripts" / "brand_gold_pdf.py",
+        tax_root / "scripts" / "calculate_metrics.py",
         tax_root / "references" / "report-data.example.json",
+        tax_root / "references" / "metrics-input.example.json",
         tax_root / "assets" / "gold-advisor.css",
         runtime_root / "scripts" / "delivery_gate.py",
         runtime_root / "scripts" / "pdf_two_pass.py",
@@ -46,6 +48,19 @@ def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
     pdf_path = output_directory / "tax-risk-sample.pdf"
     brand_audit_path = output_directory / "brand-audit.json"
     delivery_audit_path = output_directory / "delivery-audit.json"
+    facts_path = output_directory / "enterprise-financial-facts.v1.json"
+    metrics_path = output_directory / "manufacturing-tax-risk-metrics.v1.json"
+
+    run_checked(
+        [
+            sys.executable,
+            str(tax_root / "scripts" / "calculate_metrics.py"),
+            str(tax_root / "references" / "metrics-input.example.json"),
+            str(facts_path),
+            "--metrics-output",
+            str(metrics_path),
+        ]
+    )
 
     generate = run_checked(
         [
@@ -53,6 +68,8 @@ def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
             str(tax_root / "scripts" / "generate_report_html.py"),
             str(tax_root / "references" / "report-data.example.json"),
             str(html_path),
+            "--metrics-json",
+            str(metrics_path),
         ]
     )
     html_text = html_path.read_text(encoding="utf-8")
@@ -121,6 +138,8 @@ def verify(skills_root: Path, output_directory: Path) -> dict[str, object]:
         "skills_root": str(skills_root),
         "html": str(html_path),
         "pdf": str(pdf_path),
+        "financial_facts": str(facts_path),
+        "metrics": str(metrics_path),
         "pdf_sha256": hashlib.sha256(pdf_path.read_bytes()).hexdigest(),
         "pages": audit["pages"],
         "watermarks": audit["watermarks"],

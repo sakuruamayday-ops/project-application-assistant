@@ -114,10 +114,163 @@ def quality_for(source, year, facts):
     }
 
 
+def format_ratio(value):
+    if value is None:
+        return "无法计算"
+    return f"{value * 100:.2f}%"
+
+
+def format_amount(value, unit):
+    if value is None:
+        return "无法计算"
+    if unit == "yuan" and abs(value) >= 10000:
+        return f"{value:,.2f}元（{value / 10000:,.2f}万元）"
+    return f"{value:,.2f}{unit}"
+
+
+def unavailable_reason(metric, facts):
+    requirements = {
+        "inventory_days": (
+            ("cost", "营业成本"),
+            ("inventory", "期末存货"),
+            ("inventory_open", "期初存货"),
+        ),
+    }
+    missing = [label for field, label in requirements.get(metric, ()) if facts.get(field) in (None, 0)]
+    return f"缺少{'、'.join(missing)}，无法计算" if missing else "输入不足，无法计算"
+
+
+def build_metrics_summary(financial_facts):
+    """Build report-ready deterministic rows so the model cannot omit material math."""
+    periods = financial_facts["periods"]
+    years = sorted(periods)
+    unit = financial_facts["basis"]["unit"]
+    indicators = {
+        "revenue_growth": {
+            "label": "营业收入同比增长率",
+            "formula": "（本年营业收入－上年营业收入）÷上年营业收入",
+            "values": {},
+        },
+        "receivables_growth": {
+            "label": "应收账款同比增长率",
+            "formula": "（本年应收账款－上年应收账款）÷上年应收账款",
+            "values": {},
+        },
+        "research_to_revenue": {
+            "label": "研发费用率",
+            "formula": "研发费用÷营业收入",
+            "values": {},
+        },
+        "balance_equation_gap": {
+            "label": "资产负债表恒等式差额",
+            "formula": "资产总额－负债总额－权益",
+            "values": {},
+        },
+    }
+    unavailable = []
+
+    for index, year in enumerate(years):
+        current = periods[year]
+        facts = current["facts"]
+        metrics = current["metrics"]
+        indicators["research_to_revenue"]["values"][year] = metrics["research_to_revenue"]
+        gap = subtract(subtract(facts.get("assets"), facts.get("liabilities")), facts.get("equity"))
+        indicators["balance_equation_gap"]["values"][year] = gap
+        if index:
+            previous = periods[years[index - 1]]["facts"]
+            indicators["revenue_growth"]["values"][year] = div(
+                subtract(facts.get("revenue"), previous.get("revenue")),
+                previous.get("revenue"),
+            )
+            indicators["receivables_growth"]["values"][year] = div(
+                subtract(facts.get("receivables"), previous.get("receivables")),
+                previous.get("receivables"),
+            )
+        if metrics.get("inventory_days") is None:
+            unavailable.append(
+                {
+                    "indicator": "存货周转天数",
+                    "year": year,
+                    "reason": unavailable_reason("inventory_days", facts),
+                }
+            )
+
+    report_rows = []
+    recent_growth_years = years[-3:]
+    for key in ("revenue_growth", "receivables_growth"):
+        indicator = indicators[key]
+        for year in recent_growth_years:
+            if year not in indicator["values"]:
+                continue
+            value = indicator["values"][year]
+            report_rows.append(
+                {
+                    "indicator": f"{year}年{indicator['label']}",
+                    "formula": indicator["formula"],
+                    "result": format_ratio(value),
+                    "source": "enterprise-financial-facts/v1确定性复算",
+                }
+            )
+    if years:
+        latest = years[-1]
+        research = indicators["research_to_revenue"]["values"][latest]
+        report_rows.append(
+            {
+                "indicator": f"{latest}年研发费用率",
+                "formula": indicators["research_to_revenue"]["formula"],
+                "result": format_ratio(research),
+                "source": "enterprise-financial-facts/v1确定性复算",
+            }
+        )
+    for year in recent_growth_years:
+        gap = indicators["balance_equation_gap"]["values"].get(year)
+        if gap not in (None, 0):
+            report_rows.append(
+                {
+                    "indicator": f"{year}年资产负债表恒等式差额",
+                    "formula": indicators["balance_equation_gap"]["formula"],
+                    "result": format_amount(gap, unit),
+                    "source": "enterprise-financial-facts/v1确定性复算",
+                }
+            )
+    if years:
+        latest_unavailable = [item for item in unavailable if item["year"] == years[-1]]
+        for item in latest_unavailable[:1]:
+            report_rows.append(
+                {
+                    "indicator": f"{item['year']}年{item['indicator']}",
+                    "formula": "平均存货÷营业成本×365",
+                    "result": item["reason"],
+                    "source": "enterprise-financial-facts/v1缺失字段检查",
+                }
+            )
+
+    return {
+        "schema": "manufacturing-tax-risk-metrics/v1",
+        "company": financial_facts["company"],
+        "basis": financial_facts["basis"],
+        "period": {
+            "start": f"{years[0]}年度",
+            "end": f"{years[-1]}年度",
+        },
+        "indicators": indicators,
+        "uncomputable_indicators": unavailable,
+        "report_rows": report_rows,
+        "producer": "manufacturing-tax-risk-analysis",
+        "generated_at": financial_facts["generated_at"],
+        "note": "本文件由确定性计算器生成；缺失输入不会按零处理。",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument(
+        "--metrics-output",
+        type=Path,
+        help="optional manufacturing-tax-risk-metrics/v1 companion output",
+    )
     args = parser.parse_args()
     source = json.loads(args.input.read_text(encoding="utf-8"))
     years = source.get("years")
@@ -149,7 +302,23 @@ def main():
         }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(args.output)
+    metrics_output = None
+    if args.metrics_output:
+        metrics_output = build_metrics_summary(result)
+        args.metrics_output.parent.mkdir(parents=True, exist_ok=True)
+        args.metrics_output.write_text(
+            json.dumps(metrics_output, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    print(
+        json.dumps(
+            {
+                "financial_facts": str(args.output),
+                "metrics": str(args.metrics_output) if args.metrics_output else None,
+            },
+            ensure_ascii=False,
+        )
+    )
 
 
 if __name__ == "__main__":

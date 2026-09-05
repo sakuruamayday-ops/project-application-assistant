@@ -54,10 +54,11 @@ description: 基于制造企业近三年审计报告、财务报表及税务资�
 按 [数据结构与公式](references/data-schema.md) 准备 JSON，运行：
 
 ```bash
-python3 scripts/calculate_metrics.py input.json output.json
+python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-facts.v1.json \
+  --metrics-output artifacts/manufacturing-tax-risk-metrics.v1.json
 ```
 
-`output.json` 必须使用 `enterprise-financial-facts/v1` 共享事实契约，保留企业身份、年度、单位、合并口径、原始数值、计算指标、证据页和质量状态。默认同时保存为任务工作区的 `artifacts/enterprise-financial-facts.v1.json`，供 `financial-verification`、`project-feasibility`、专精特新体检和其他申报技能复用。共享文件只传递数据与可复算指标，不把税务风险判断自动传递为项目资格结论。
+`enterprise-financial-facts.v1.json` 必须使用 `enterprise-financial-facts/v1` 共享事实契约，保留企业身份、年度、单位、合并口径、原始数值、计算指标、证据页和质量状态。`manufacturing-tax-risk-metrics.v1.json` 由同一确定性计算器生成，固定包含跨年收入与应收增速、研发费用率、资产负债表恒等式差额，以及缺少输入时无法计算的指标和原因。不得手工重写这两份计算结果。共享事实文件可供 `financial-verification`、`project-feasibility`、专精特新体检和其他申报技能复用，但不把税务风险判断自动传递为项目资格结论。
 
 禁止把现金流量表“支付的税费 ÷ 收入”称为增值税税负率；统一称“现金税费支付率”。制造业经验基准只作提示，不能代替企业订单周期和行业对标。
 
@@ -102,10 +103,11 @@ python3 scripts/calculate_metrics.py input.json output.json
 [完整示例](references/report-data.example.json)，然后运行：
 
 ```bash
-python3 scripts/generate_report_html.py report-data.json report.html
+python3 scripts/generate_report_html.py report-data.json report.html \
+  --metrics-json artifacts/manufacturing-tax-risk-metrics.v1.json
 ```
 
-生成器必须输出17个固定页面区块并完成必填字段、字段长度和未解析占位符检查。
+生成器必须读取确定性指标文件，输出17个固定页面区块，并完成必填字段、字段长度、报告主体一致性和未解析占位符检查。财务总览、风险地图、90天整改路线、计算过程与来源四张表由生成器固定输出；跨年增速、研发费用率、资产负债表恒等式差额和无法计算原因直接来自指标文件，不能由模型省略或改写。
 不得用模型临时拼接的普通HTML替代该生成器。
 
 ### 7. 生成金色顾问版 PDF

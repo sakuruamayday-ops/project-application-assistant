@@ -20,6 +20,7 @@ except ModuleNotFoundError:  # Direct execution from the scripts directory.
 PORTABLE_REPORT_REQUIRED = [
     "skills/manufacturing-tax-risk-analysis/assets/deep-gold-advisor-template.html",
     "skills/manufacturing-tax-risk-analysis/assets/gold-advisor.css",
+    "skills/manufacturing-tax-risk-analysis/references/metrics-input.example.json",
     "skills/manufacturing-tax-risk-analysis/references/report-data.example.json",
     "skills/manufacturing-tax-risk-analysis/references/report-input-schema.md",
     "skills/manufacturing-tax-risk-analysis/references/report-spec.md",
@@ -148,7 +149,10 @@ RELEASE_GATE_SNIPPETS = {
     ),
     "skills/local-knowledge-retrieval/SKILL.md": ("企业身份时间轴", "天眼查"),
     "skills/enterprise-profile/SKILL.md": ("天眼查", "企查查", "官方来源"),
-    "skills/manufacturing-tax-risk-analysis/SKILL.md": ("enterprise-financial-facts/v1",),
+    "skills/manufacturing-tax-risk-analysis/SKILL.md": (
+        "enterprise-financial-facts/v1",
+        "manufacturing-tax-risk-metrics/v1",
+    ),
     "skills/project-feasibility/SKILL.md": ("enterprise-financial-facts.v1.json",),
     "skills/project-application-assistant/SKILL.md": (
         "必须调用 `experience-recorder`",

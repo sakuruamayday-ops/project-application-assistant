@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-feasibility",
-  "release_tag": "V1.6.17",
+  "release_tag": "V1.6.18",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -54,7 +54,7 @@
     "references/feasibility-decision-model.md": "e609448d727bb32a0b441ec262836c415c7e00b86b26d841ce1b3fc56b6b3b29",
     "references/policy-application-path-contract.md": "10e4ba0247f4d874f3594457f3cae2667b75ce8451936c539a07f0d4da336ef1",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/report-template-registry.json": "59f290c27c4593317165f94548cfe0819c534a452d2afccfd4a8528d353b11f7",
+    "references/report-template-registry.json": "ae080f08e4f591bcf8390ce61c25f01094a7b8893c857ed15cd9a1dc6e40f08c",
     "references/two-report-contract.md": "b277e556b3d9f47f882d9afe7d3a27f567bb325d299c283abc9c7a97cb9fffa7",
     "scripts/fill_report_template.py": "79edc5435b6de0bfb92157f8f1b617684d48ea3fccd00ed2f5a8c118cc812aa8",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

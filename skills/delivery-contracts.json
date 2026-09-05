@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "contract_id": "gongchuang-professional-delivery-contract-v3",
-  "rule_version": "1.6.17",
+  "rule_version": "1.6.18",
   "skill_roles": {
     "agriculture-and-rural-projects": {"role": "primary_business", "owns": []},
     "application-version-diff": {"role": "primary_business", "owns": []},
@@ -479,15 +479,15 @@
       "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "policy-selection-trace"],
       "advisory_requirements": ["four-question-review"],
       "required_sections": [
-        "profitability",
-        "cash_flow",
-        "solvency",
-        "asset_quality",
-        "bills_deposits",
-        "related_parties",
-        "guarantees",
-        "income_tax_rd",
-        "accrual_revenue"
+        "盈利能力",
+        "现金流",
+        "偿债能力",
+        "资产质量",
+        "票据与保证金",
+        "往来与关联方",
+        "对外担保",
+        "所得税与研发",
+        "暂估预提与收入"
       ],
       "required_tables": [
         {

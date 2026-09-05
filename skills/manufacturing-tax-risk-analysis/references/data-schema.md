@@ -52,7 +52,7 @@
 
 金额统一用元。至少提供两个连续年度才能计算周转天数；缺失值使用 `null`，不要用零代替未知。
 
-输出固定使用 `enterprise-financial-facts/v1`，年度数据位于 `periods.<年度>.facts`，指标位于 `periods.<年度>.metrics`，并保留 `evidence` 和 `quality`供其他 Skill 校验复用。
+主输出固定使用 `enterprise-financial-facts/v1`，年度数据位于 `periods.<年度>.facts`，指标位于 `periods.<年度>.metrics`，并保留 `evidence` 和 `quality` 供其他 Skill 校验复用。正式报告同时使用 `--metrics-output` 生成 `manufacturing-tax-risk-metrics/v1`；该文件保留跨年增长率、研发费用率、资产负债表恒等式差额、无法计算项及可直接进入报告的确定性复算行。
 
 ## 公式
 

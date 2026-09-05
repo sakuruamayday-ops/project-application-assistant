@@ -21,6 +21,7 @@ SECTION_KEYS = [
     ("income_tax_rd", "11", "所得税与研发"),
     ("accrual_revenue", "12", "暂估预提与收入"),
 ]
+METRICS_SCHEMA = "manufacturing-tax-risk-metrics/v1"
 
 
 def esc(value: Any) -> str:
@@ -52,7 +53,25 @@ def text_limit(value: Any, maximum: int, path: str) -> None:
         raise ValueError(f"text too long: {path} supports at most {maximum} characters")
 
 
-def validate(data: dict[str, Any]) -> None:
+def validate_metrics(metrics: dict[str, Any], company: str) -> list[dict[str, Any]]:
+    if metrics.get("schema") != METRICS_SCHEMA:
+        raise ValueError(f"metrics JSON must use {METRICS_SCHEMA}")
+    metrics_company = metrics.get("company")
+    if isinstance(metrics_company, dict):
+        metrics_company = metrics_company.get("name")
+    if str(metrics_company or "").strip() != company.strip():
+        raise ValueError("metrics JSON company does not match report company")
+    rows = require_list(metrics, "report_rows", "metrics")
+    limit(rows, 8, "metrics.report_rows")
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise ValueError(f"metrics.report_rows[{index}] must be an object")
+        for key in ("indicator", "formula", "result", "source"):
+            require(row, key, f"metrics.report_rows[{index}]")
+    return rows
+
+
+def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
     for key in ("company", "report_date", "risk_level", "one_line_conclusion"):
         require(data, key, "root")
     text_limit(data["company"], 40, "root.company")
@@ -85,6 +104,8 @@ def validate(data: dict[str, Any]) -> None:
         values = require_list(row, "values", f"financial_overview.rows[{i}]")
         if len(values) != len(years):
             raise ValueError(f"financial_overview.rows[{i}].values length must match years")
+        require(row, "source_pages", f"financial_overview.rows[{i}]")
+        require(row, "formula", f"financial_overview.rows[{i}]")
 
     sections = require(data, "sections", "root")
     if not isinstance(sections, dict):
@@ -114,8 +135,17 @@ def validate(data: dict[str, Any]) -> None:
     roadmap = require_list(data, "roadmap", "root")
     if len(roadmap) != 3:
         raise ValueError("root.roadmap must contain exactly three stages")
+    for i, stage in enumerate(roadmap):
+        if not isinstance(stage, dict):
+            raise ValueError(f"root.roadmap[{i}] must be an object")
+        for key in ("period", "actions", "owner", "completion"):
+            require(stage, key, f"root.roadmap[{i}]")
+        if not isinstance(stage["actions"], list):
+            raise ValueError(f"root.roadmap[{i}].actions must be a list")
     limit(require_list(data, "p0_documents", "root"), 10, "root.p0_documents")
-    limit(require_list(data, "calculations", "root"), 10, "root.calculations")
+    calculations = require_list(data, "calculations", "root")
+    limit(calculations, 10, "root.calculations")
+    validate_metrics(metrics, str(data["company"]))
     limit(require_list(data, "policies", "root"), 5, "root.policies")
     require(data, "final_judgment", "root")
     limit(require_list(data, "monthly_indicators", "root"), 5, "root.monthly_indicators")
@@ -211,14 +241,17 @@ def render_overview(data: dict[str, Any]) -> str:
     years = overview["years"]
     rows = []
     for row in overview["rows"]:
-        values = list(row["values"])
-        rows.append([row["name"], *values, row.get("trend", "—"), row.get("source", "—")])
+        annual_values = "；".join(
+            f"{year}年：{value}" for year, value in zip(years, row["values"], strict=True)
+        )
+        rows.append([row["name"], annual_values, row["source_pages"], row["formula"]])
     kpis = "".join(
         f'<article class="card kpi"><small>{esc(x.get("label"))}</small><div class="num">{esc(x.get("value"))}</div><p>{esc(x.get("note", ""))}</p></article>'
         for x in overview.get("kpis", [])[:4]
     )
     body = f'<div class="kpi-grid">{kpis}</div>'
-    body += table(["指标", *years, "趋势判断", "来源"], rows, "overview-table")
+    body += '<h3>财务总览</h3>'
+    body += table(["指标", "年度值", "来源页码", "公式"], rows, "overview-table")
     body += f'<div class="callout">{esc(overview.get("conclusion", ""))}</div>'
     return page("03", "三年财务总览", "规模、利润、现金与负债同屏观察", body)
 
@@ -244,27 +277,35 @@ def render_risks(data: dict[str, Any]) -> str:
             risk.get("chain", "—"), risk.get("fact", "—"), risk.get("alternative", "—"),
             risk.get("missing_evidence", "—"), risk.get("action", "—"), risk.get("level", "—"),
         ])
-    body = table(["风险链", "事实与计算", "替代解释", "缺失证据", "动作", "等级"], rows, "risk-table")
+    body = '<h3>风险地图</h3>'
+    body += table(["风险链", "事实", "替代解释", "缺失证据", "动作", "等级"], rows, "risk-table")
     return page("13", "金税风险地图", "以证据强度管理优先级", body)
 
 
 def render_roadmap(data: dict[str, Any]) -> str:
-    stages = "".join(
-        f'<article class="card stage"><div class="stage-day">{esc(stage.get("period", "阶段"))}</div>'
-        f'<h3>{esc(stage.get("goal", "目标"))}</h3>{bullets(stage.get("actions", []))}'
-        f'<p class="owner">责任：{esc(stage.get("owner", "财务负责人"))}</p></article>'
+    rows = [
+        [
+            stage["period"],
+            "；".join(str(action) for action in stage["actions"]),
+            stage["owner"],
+            stage["completion"],
+        ]
         for stage in data["roadmap"]
-    )
-    body = f'<div class="roadmap">{stages}</div><div class="callout risk"><h3>P0补充资料</h3>{bullets(data["p0_documents"])}</div>'
-    return page("14", "整改路线", "90天内完成证据封存、复算与机制固化", body)
+    ]
+    body = '<h3>90天整改路线</h3>'
+    body += table(["阶段", "动作", "责任岗位", "完成条件"], rows, "roadmap-table")
+    body += f'<div class="callout risk"><h3>P0补充资料</h3>{bullets(data["p0_documents"])}</div>'
+    return page("14", "90天整改路线", "90天内完成证据封存、复算与机制固化", body)
 
 
-def render_sources(data: dict[str, Any]) -> str:
-    calc_rows = [[x.get("indicator"), x.get("formula"), x.get("result"), x.get("source")] for x in data["calculations"]]
+def render_sources(data: dict[str, Any], metrics: dict[str, Any]) -> str:
+    # Deterministic rows take priority; authored rows fill the remaining page capacity.
+    calculations = [*metrics["report_rows"], *data["calculations"]][:10]
+    calc_rows = [[x.get("indicator"), x.get("formula"), x.get("result"), x.get("source")] for x in calculations]
     policy_rows = [[x.get("name"), x.get("issuer"), x.get("date"), x.get("url")] for x in data["policies"]]
-    body = '<h3>关键复算</h3>' + table(["指标", "公式", "结果", "来源"], calc_rows)
+    body = '<h3>计算过程与来源</h3>' + table(["指标", "公式", "结果", "来源"], calc_rows, "calculation-table")
     body += '<h3>政策依据</h3>' + table(["文件", "发布机关", "日期", "链接"], policy_rows, "policy-table")
-    return page("15", "计算与来源", "每个金额可回到原页，每个比例可复算", body)
+    return page("15", "计算过程与来源", "每个金额可回到原页，每个比例可复算", body)
 
 
 def render_final(data: dict[str, Any]) -> str:
@@ -284,11 +325,11 @@ def render_final(data: dict[str, Any]) -> str:
     return page("16", "最终判断", title, body, "final-page")
 
 
-def render(data: dict[str, Any], css: str) -> str:
+def render(data: dict[str, Any], metrics: dict[str, Any], css: str) -> str:
     pages = [render_cover(data), render_executive(data), render_scope(data), render_overview(data)]
     for key, number, label in SECTION_KEYS:
         pages.append(render_section(number, label, data["sections"][key]))
-    pages.extend([render_risks(data), render_roadmap(data), render_sources(data), render_final(data)])
+    pages.extend([render_risks(data), render_roadmap(data), render_sources(data, metrics), render_final(data)])
     title = f"{data['company']}｜金税四期财务分析报告"
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -299,6 +340,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="report-data JSON")
     parser.add_argument("output", type=Path, nargs="?", help="generated HTML")
+    parser.add_argument(
+        "--metrics-json",
+        type=Path,
+        required=True,
+        help="deterministic manufacturing-tax-risk-metrics/v1 JSON",
+    )
     parser.add_argument("--css", type=Path, help="gold-advisor.css path")
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
@@ -306,7 +353,10 @@ def main() -> None:
     data = json.loads(args.input.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("input root must be an object")
-    validate(data)
+    metrics = json.loads(args.metrics_json.read_text(encoding="utf-8"))
+    if not isinstance(metrics, dict):
+        raise ValueError("metrics JSON root must be an object")
+    validate(data, metrics)
     if args.validate_only:
         print(json.dumps({"status": "valid", "input": str(args.input)}, ensure_ascii=False))
         return
@@ -314,13 +364,23 @@ def main() -> None:
         parser.error("output is required unless --validate-only is used")
     css_path = args.css or Path(__file__).resolve().parent.parent / "assets" / "gold-advisor.css"
     css = css_path.read_text(encoding="utf-8")
-    result = render(data, css)
+    result = render(data, metrics, css)
     body_html = result.split("</style>", 1)[-1]
     if "{{" in body_html or "}}" in body_html:
         raise ValueError("unresolved template marker detected in generated HTML")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(result, encoding="utf-8")
-    print(json.dumps({"status": "ok", "pages": 17, "output": str(args.output)}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {
+                "status": "ok",
+                "pages": 17,
+                "output": str(args.output),
+                "metrics": str(args.metrics_json),
+            },
+            ensure_ascii=False,
+        )
+    )
 
 
 if __name__ == "__main__":
