@@ -139,7 +139,9 @@ LEGACY_BRAND_DUPLICATES = {
 }
 RELEASE_GATE_SNIPPETS = {
     "skills/first-run-configuration/SKILL.md": (
-        "自动启用受控自进化",
+        # 首次配置只声明受控能力可用；未经授权不得自动持久化或发布。
+        "标记为可用",
+        "不自动改写或发布正式Skill",
         "本轮实际暴露的工具",
         "first-startup-protocol.md",
         "preferences.json",
@@ -147,15 +149,19 @@ RELEASE_GATE_SNIPPETS = {
         "capability-delegation-protocol.md",
         "天眼查",
     ),
-    "skills/local-knowledge-retrieval/SKILL.md": ("企业身份时间轴", "天眼查"),
+    # 供应商名称会随统一降级协议演进，发布门禁验证协议而非某一家商业源。
+    "skills/local-knowledge-retrieval/SKILL.md": (
+        "企业身份时间轴",
+        "企业数据源有限降级协议",
+    ),
     "skills/enterprise-profile/SKILL.md": ("天眼查", "企查查", "官方来源"),
     "skills/manufacturing-tax-risk-analysis/SKILL.md": (
         "enterprise-financial-facts/v1",
-        "manufacturing-tax-risk-metrics/v1",
+        "manufacturing-tax-risk-metrics.v1.json",
     ),
     "skills/project-feasibility/SKILL.md": ("enterprise-financial-facts.v1.json",),
     "skills/project-application-assistant/SKILL.md": (
-        "必须调用 `experience-recorder`",
+        "调用 `experience-recorder` 形成可泛化经验候选",
         "眼下最没有把握的事情是什么",
         "最大的遗漏是什么",
     ),
