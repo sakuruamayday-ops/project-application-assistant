@@ -31,17 +31,13 @@ def main() -> int:
             f"清单缺少{sorted(discovered - declared)}；"
             f"清单多出{sorted(declared - discovered)}"
         )
-    plugin = manifest.get("workbuddy_plugin") or {}
     distribution = (manifest.get("release") or {}).get("distribution_protocol") or {}
-    workbuddy_released = (
-        distribution.get("workbuddy_specific_package") is True
-        and plugin.get("package_mode") == "skills_minimal_behavior_hook"
-    )
+    platform_specific_package = distribution.get("platform_specific_package")
     generic_only = (
-        distribution.get("workbuddy_specific_package") is False
-        and plugin.get("package_mode") == "not-released"
+        platform_specific_package is False
+        and "workbuddy_plugin" not in manifest
     )
-    if not (workbuddy_released or generic_only):
+    if not generic_only:
         errors.append("套件清单中的宿主专用包声明互相矛盾")
     post_package_gates = manifest.get("post_package_release_gates")
     post_gate_names = {
@@ -50,15 +46,6 @@ def main() -> int:
         if isinstance(item, dict)
     }
     expected_post_gate_names = {"generic-suite-isolated-installation"}
-    if workbuddy_released:
-        expected_post_gate_names.update(
-            {
-                "macos-platform-server-release-contract",
-                "macos-platform-all-skill-coverage",
-                "windows-platform-server-release-contract",
-                "windows-platform-all-skill-coverage",
-            }
-        )
     if post_gate_names != expected_post_gate_names:
         errors.append("发布后门禁与套件清单声明的产物不一致")
     if distribution.get("generic_skill_package") != "signed-universal-zip":
@@ -84,7 +71,7 @@ def main() -> int:
         "discovered_skills": len(discovered),
         "adversarial_primary_skills": len(routed & declared),
         "distribution": "generic-signed-zip-plus-first-party-client",
-        "workbuddy_specific_package": "released" if workbuddy_released else "not-released",
+        "platform_specific_package": platform_specific_package,
         "real_client_acceptance": "separate-client-release-required",
         "errors": errors,
     }
