@@ -41,6 +41,8 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 | monthly_indicators | array | name、rule、owner、frequency |
 | limitations | array | 资料限制和免责声明 |
 
+所有面向正文的列表项都必须使用纯字符串。`missing_documents`、各专题的 `actions`、`roadmap[*].actions`、`p0_documents` 和 `limitations` 不接受 `{ "text": "..." }`、`{ "owner": "..." }` 等对象形式。生成器会在渲染前拒绝类型不符的数据，避免把 Python/JSON 对象字面量写进正式报告。
+
 ## 九个固定专题
 
 `sections` 必须包含：
@@ -57,6 +59,8 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 每个专题必须包含 `conclusion`、`facts` 和 `actions`。可选 `title` 与 `table`。`facts` 每项使用 `title`、`text`、`source`；表格使用 `headers` 和 `rows`。
 
+`actions` 是字符串数组，例如 `["补齐期后回款凭证", "逐笔复核关联往来"]`。整改责任岗位写入 `roadmap[*].owner`，不要把动作改成对象数组。
+
 为保证固定17页不溢出：执行判断不超过5项；总览指标行不超过8行；每个专题事实不超过4项、动作不超过6项、专题表格不超过8行；风险地图不超过8项；计算不超过10项；政策不超过5项；月度指标不超过5项。十四项风险闸门都要检查，但报告只汇总最重要的8项风险链。
 
 生成器同时执行文字长度门禁：公司名称不超过40字；总判断和专题结论分别不超过180字；单项事实不超过140字；单项动作不超过80字；风险矩阵单元不超过120字；最终判断正文不超过260字。超过限制时先压缩表达，不要缩小字号。
@@ -70,6 +74,8 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 `--metrics-json` 必须指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
 
 客户端专业校验必须覆盖报告里的全部展示形式。同一差额若同时显示为 `300万元` 与 `3,000,000元`，复算参数要同时包含万元差额和乘以10000后的元值。政策表只有在本轮官方原文已核验并进入证据时才填写精确年份、文号、日期和直达链接；未完成核验时使用不含数字的“现行状态待核验”说明，不从示例或记忆补齐。
+
+报告中的比例、增长率和阈值优先使用确定性指标文件已经输出的结果。不要自行增加当前计算器或专业校验器无法复算的复合指标，例如未提供连续年度复合增长率计算链时直接写 CAGR；确需增加时，应先扩展确定性计算器及其测试。月度规则中的硬阈值只有在本轮证据或复算参数能够绑定时才填写具体数字，否则改写为不含虚构阈值的趋势监测或核验动作。
 
 ## 风险表达
 

@@ -43,13 +43,36 @@ def require_list(obj: dict[str, Any], key: str, path: str) -> list[Any]:
     return value
 
 
+def require_object(value: Any, path: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError(f"field must be an object: {path}")
+    return value
+
+
+def require_text(value: Any, path: str) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"field must be text: {path}")
+    return value
+
+
+def require_text_field(obj: dict[str, Any], key: str, path: str) -> str:
+    return require_text(require(obj, key, path), f"{path}.{key}")
+
+
+def validate_text_list(items: list[Any], path: str) -> list[str]:
+    return [require_text(item, f"{path}[{index}]") for index, item in enumerate(items)]
+
+
 def limit(items: list[Any], maximum: int, path: str) -> None:
     if len(items) > maximum:
         raise ValueError(f"too many items: {path} supports at most {maximum}, got {len(items)}")
 
 
 def text_limit(value: Any, maximum: int, path: str) -> None:
-    if value is not None and len(str(value)) > maximum:
+    if value is None:
+        return
+    text = require_text(value, path)
+    if len(text) > maximum:
         raise ValueError(f"text too long: {path} supports at most {maximum} characters")
 
 
@@ -67,45 +90,66 @@ def validate_metrics(metrics: dict[str, Any], company: str) -> list[dict[str, An
         if not isinstance(row, dict):
             raise ValueError(f"metrics.report_rows[{index}] must be an object")
         for key in ("indicator", "formula", "result", "source"):
-            require(row, key, f"metrics.report_rows[{index}]")
+            require_text_field(row, key, f"metrics.report_rows[{index}]")
     return rows
 
 
 def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
     for key in ("company", "report_date", "risk_level", "one_line_conclusion"):
-        require(data, key, "root")
+        require_text_field(data, key, "root")
     text_limit(data["company"], 40, "root.company")
     text_limit(data["one_line_conclusion"], 180, "root.one_line_conclusion")
     text_limit(data.get("use_restriction"), 120, "root.use_restriction")
-    period = require(data, "period", "root")
-    if not isinstance(period, dict):
-        raise ValueError("root.period must be an object")
-    require(period, "start", "root.period")
-    require(period, "end", "root.period")
-    limit(require_list(data, "sources", "root"), 6, "root.sources")
+    for key in ("preparer", "source_status"):
+        if key in data:
+            require_text(data[key], f"root.{key}")
+    if "internal_only" in data and not isinstance(data["internal_only"], bool):
+        raise ValueError("field must be boolean: root.internal_only")
+    period = require_object(require(data, "period", "root"), "root.period")
+    require_text_field(period, "start", "root.period")
+    require_text_field(period, "end", "root.period")
+
+    sources = require_list(data, "sources", "root")
+    limit(sources, 6, "root.sources")
+    for i, source_value in enumerate(sources):
+        source = require_object(source_value, f"root.sources[{i}]")
+        for key in ("name", "period", "status", "pages", "limitation"):
+            require_text_field(source, key, f"root.sources[{i}]")
+    if "missing_documents" in data:
+        validate_text_list(require_list(data, "missing_documents", "root"), "root.missing_documents")
+
     executive = require_list(data, "executive_findings", "root")
     limit(executive, 5, "root.executive_findings")
-    for i, finding in enumerate(executive):
+    for i, finding_value in enumerate(executive):
+        finding = require_object(finding_value, f"root.executive_findings[{i}]")
+        for key in ("title", "conclusion", "level", "source"):
+            require_text_field(finding, key, f"root.executive_findings[{i}]")
         text_limit(finding.get("conclusion"), 120, f"root.executive_findings[{i}].conclusion")
 
-    overview = require(data, "financial_overview", "root")
-    if not isinstance(overview, dict):
-        raise ValueError("root.financial_overview must be an object")
+    overview = require_object(require(data, "financial_overview", "root"), "root.financial_overview")
     years = require_list(overview, "years", "root.financial_overview")
     if len(years) < 2:
         raise ValueError("financial_overview.years must contain at least two years")
+    validate_text_list(years, "root.financial_overview.years")
     overview_rows = require_list(overview, "rows", "root.financial_overview")
     limit(overview_rows, 8, "root.financial_overview.rows")
-    limit(overview.get("kpis", []), 4, "root.financial_overview.kpis")
+    kpis = require_list(overview, "kpis", "root.financial_overview")
+    limit(kpis, 4, "root.financial_overview.kpis")
+    for i, kpi_value in enumerate(kpis):
+        kpi = require_object(kpi_value, f"root.financial_overview.kpis[{i}]")
+        for key in ("label", "value", "note"):
+            require_text_field(kpi, key, f"root.financial_overview.kpis[{i}]")
     for i, row in enumerate(overview_rows):
         if not isinstance(row, dict):
             raise ValueError(f"financial_overview.rows[{i}] must be an object")
-        require(row, "name", f"financial_overview.rows[{i}]")
+        require_text_field(row, "name", f"root.financial_overview.rows[{i}]")
         values = require_list(row, "values", f"financial_overview.rows[{i}]")
         if len(values) != len(years):
             raise ValueError(f"financial_overview.rows[{i}].values length must match years")
-        require(row, "source_pages", f"financial_overview.rows[{i}]")
-        require(row, "formula", f"financial_overview.rows[{i}]")
+        validate_text_list(values, f"root.financial_overview.rows[{i}].values")
+        require_text_field(row, "source_pages", f"root.financial_overview.rows[{i}]")
+        require_text_field(row, "formula", f"root.financial_overview.rows[{i}]")
+    require_text_field(overview, "conclusion", "root.financial_overview")
 
     sections = require(data, "sections", "root")
     if not isinstance(sections, dict):
@@ -114,22 +158,38 @@ def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
         section = require(sections, key, "root.sections")
         if not isinstance(section, dict):
             raise ValueError(f"root.sections.{key} must be an object")
-        require(section, "conclusion", f"root.sections.{key}")
+        require_text_field(section, "conclusion", f"root.sections.{key}")
+        if "title" in section:
+            require_text(section["title"], f"root.sections.{key}.title")
         facts = require_list(section, "facts", f"root.sections.{key}")
         actions = require_list(section, "actions", f"root.sections.{key}")
         limit(facts, 4, f"root.sections.{key}.facts")
         limit(actions, 6, f"root.sections.{key}.actions")
         text_limit(section["conclusion"], 180, f"root.sections.{key}.conclusion")
-        for i, fact in enumerate(facts):
+        for i, fact_value in enumerate(facts):
+            fact = require_object(fact_value, f"root.sections.{key}.facts[{i}]")
+            for field in ("title", "text", "source"):
+                require_text_field(fact, field, f"root.sections.{key}.facts[{i}]")
             text_limit(fact.get("text"), 140, f"root.sections.{key}.facts[{i}].text")
         for i, action in enumerate(actions):
             text_limit(action, 80, f"root.sections.{key}.actions[{i}]")
-        if section.get("table"):
-            limit(section["table"].get("rows", []), 8, f"root.sections.{key}.table.rows")
+        if section.get("table") is not None:
+            table_data = require_object(section["table"], f"root.sections.{key}.table")
+            headers = require_list(table_data, "headers", f"root.sections.{key}.table")
+            validate_text_list(headers, f"root.sections.{key}.table.headers")
+            table_rows = require_list(table_data, "rows", f"root.sections.{key}.table")
+            limit(table_rows, 8, f"root.sections.{key}.table.rows")
+            for row_index, row_value in enumerate(table_rows):
+                if not isinstance(row_value, list):
+                    raise ValueError(f"field must be a list: root.sections.{key}.table.rows[{row_index}]")
+                validate_text_list(row_value, f"root.sections.{key}.table.rows[{row_index}]")
 
     risks = require_list(data, "risks", "root")
     limit(risks, 8, "root.risks")
-    for i, risk in enumerate(risks):
+    for i, risk_value in enumerate(risks):
+        risk = require_object(risk_value, f"root.risks[{i}]")
+        for key in ("chain", "fact", "alternative", "missing_evidence", "action", "level"):
+            require_text_field(risk, key, f"root.risks[{i}]")
         for key in ("fact", "alternative", "missing_evidence", "action"):
             text_limit(risk.get(key), 120, f"root.risks[{i}].{key}")
     roadmap = require_list(data, "roadmap", "root")
@@ -138,18 +198,41 @@ def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
     for i, stage in enumerate(roadmap):
         if not isinstance(stage, dict):
             raise ValueError(f"root.roadmap[{i}] must be an object")
-        for key in ("period", "actions", "owner", "completion"):
-            require(stage, key, f"root.roadmap[{i}]")
-        if not isinstance(stage["actions"], list):
-            raise ValueError(f"root.roadmap[{i}].actions must be a list")
-    limit(require_list(data, "p0_documents", "root"), 10, "root.p0_documents")
+        for key in ("period", "owner", "completion"):
+            require_text_field(stage, key, f"root.roadmap[{i}]")
+        if "goal" in stage:
+            require_text(stage["goal"], f"root.roadmap[{i}].goal")
+        validate_text_list(require_list(stage, "actions", f"root.roadmap[{i}]"), f"root.roadmap[{i}].actions")
+    p0_documents = require_list(data, "p0_documents", "root")
+    limit(p0_documents, 10, "root.p0_documents")
+    validate_text_list(p0_documents, "root.p0_documents")
     calculations = require_list(data, "calculations", "root")
     limit(calculations, 10, "root.calculations")
+    for i, calculation_value in enumerate(calculations):
+        calculation = require_object(calculation_value, f"root.calculations[{i}]")
+        for key in ("indicator", "formula", "result", "source"):
+            require_text_field(calculation, key, f"root.calculations[{i}]")
     validate_metrics(metrics, str(data["company"]))
-    limit(require_list(data, "policies", "root"), 5, "root.policies")
-    require(data, "final_judgment", "root")
-    limit(require_list(data, "monthly_indicators", "root"), 5, "root.monthly_indicators")
-    final = data["final_judgment"]
+    policies = require_list(data, "policies", "root")
+    limit(policies, 5, "root.policies")
+    for i, policy_value in enumerate(policies):
+        policy = require_object(policy_value, f"root.policies[{i}]")
+        for key in ("name", "issuer", "date", "url"):
+            require_text_field(policy, key, f"root.policies[{i}]")
+    final = require(data, "final_judgment", "root")
+    if isinstance(final, dict):
+        require_text_field(final, "title", "root.final_judgment")
+        require_text_field(final, "text", "root.final_judgment")
+    elif not isinstance(final, str):
+        raise ValueError("field must be text or an object: root.final_judgment")
+    monthly_indicators = require_list(data, "monthly_indicators", "root")
+    limit(monthly_indicators, 5, "root.monthly_indicators")
+    for i, indicator_value in enumerate(monthly_indicators):
+        indicator = require_object(indicator_value, f"root.monthly_indicators[{i}]")
+        for key in ("name", "rule", "owner", "frequency"):
+            require_text_field(indicator, key, f"root.monthly_indicators[{i}]")
+    if "limitations" in data:
+        validate_text_list(require_list(data, "limitations", "root"), "root.limitations")
     text_limit(final if isinstance(final, str) else final.get("text"), 260, "root.final_judgment.text")
 
 
@@ -157,7 +240,7 @@ def tag(text: Any, cls: str = "tag") -> str:
     return f'<span class="{cls}">{esc(text)}</span>'
 
 
-def bullets(items: list[Any], ordered: bool = False) -> str:
+def bullets(items: list[str], ordered: bool = False) -> str:
     element = "ol" if ordered else "ul"
     lis = "".join(f"<li>{esc(x)}</li>" for x in items)
     return f'<{element} class="clean-list">{lis}</{element}>'
@@ -286,7 +369,7 @@ def render_roadmap(data: dict[str, Any]) -> str:
     rows = [
         [
             stage["period"],
-            "；".join(str(action) for action in stage["actions"]),
+            "；".join(stage["actions"]),
             stage["owner"],
             stage["completion"],
         ]

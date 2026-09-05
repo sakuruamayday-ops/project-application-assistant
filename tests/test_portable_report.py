@@ -90,6 +90,97 @@ class PortableReportTests(unittest.TestCase):
             ):
                 self.assertIn(expected, html)
 
+    def test_generator_rejects_structured_values_in_all_human_text_lists(self):
+        mutations = (
+            (
+                "section action",
+                lambda data: data["sections"]["profitability"]["actions"].__setitem__(0, {"text": "错误对象"}),
+                "field must be text: root.sections.profitability.actions[0]",
+            ),
+            (
+                "roadmap action",
+                lambda data: data["roadmap"][0]["actions"].__setitem__(0, {"text": "错误对象"}),
+                "field must be text: root.roadmap[0].actions[0]",
+            ),
+            (
+                "p0 document",
+                lambda data: data["p0_documents"].__setitem__(0, {"name": "错误对象"}),
+                "field must be text: root.p0_documents[0]",
+            ),
+            (
+                "missing document",
+                lambda data: data["missing_documents"].__setitem__(0, {"name": "错误对象"}),
+                "field must be text: root.missing_documents[0]",
+            ),
+            (
+                "limitation",
+                lambda data: data["limitations"].__setitem__(0, {"text": "错误对象"}),
+                "field must be text: root.limitations[0]",
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            metrics = self.generate_metrics(directory_path)
+            example = json.loads(
+                (self.tax / "references/report-data.example.json").read_text(encoding="utf-8")
+            )
+            for index, (label, mutate, expected) in enumerate(mutations):
+                with self.subTest(label=label):
+                    candidate = json.loads(json.dumps(example, ensure_ascii=False))
+                    mutate(candidate)
+                    input_path = directory_path / f"invalid-{index}.json"
+                    input_path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            str(self.tax / "scripts/generate_report_html.py"),
+                            str(input_path),
+                            "--validate-only",
+                            "--metrics-json",
+                            str(metrics),
+                        ],
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(expected, result.stderr)
+
+    def test_generator_rejects_non_object_report_rows_before_rendering(self):
+        mutations = (
+            ("sources", "field must be an object: root.sources[0]"),
+            ("executive_findings", "field must be an object: root.executive_findings[0]"),
+            ("risks", "field must be an object: root.risks[0]"),
+            ("calculations", "field must be an object: root.calculations[0]"),
+            ("policies", "field must be an object: root.policies[0]"),
+            ("monthly_indicators", "field must be an object: root.monthly_indicators[0]"),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            metrics = self.generate_metrics(directory_path)
+            example = json.loads(
+                (self.tax / "references/report-data.example.json").read_text(encoding="utf-8")
+            )
+            for index, (field, expected) in enumerate(mutations):
+                with self.subTest(field=field):
+                    candidate = json.loads(json.dumps(example, ensure_ascii=False))
+                    candidate[field][0] = "错误字符串"
+                    input_path = directory_path / f"invalid-object-{index}.json"
+                    input_path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            str(self.tax / "scripts/generate_report_html.py"),
+                            str(input_path),
+                            "--validate-only",
+                            "--metrics-json",
+                            str(metrics),
+                        ],
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(expected, result.stderr)
+
     def test_portable_scripts_do_not_contain_machine_paths(self):
         forbidden = ("/Users/", "/Volumes/", ".agents/skills")
         paths = [
