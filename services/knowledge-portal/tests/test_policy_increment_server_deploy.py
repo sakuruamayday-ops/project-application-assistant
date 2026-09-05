@@ -91,6 +91,21 @@ def fake_remote_commands(tmp_path: Path) -> Path:
         exit 0
         """,
     )
+    write_executable(
+        commands / "du",
+        """
+        #!/bin/sh
+        printf '%s\\t%s\\n' "${FAKE_DU_KIB:-1}" "${2:-${1:-.}}"
+        """,
+    )
+    write_executable(
+        commands / "df",
+        """
+        #!/bin/sh
+        printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\\n'
+        printf 'fake 41943040 1 %s 1%% /\\n' "${FAKE_DF_AVAILABLE_KIB:-2097152}"
+        """,
+    )
     for name in ("systemctl", "chown", "find", "sleep"):
         write_executable(commands / name, "#!/bin/sh\nexit 0\n")
     return commands
@@ -206,6 +221,25 @@ def test_current_only_rsync_failure_keeps_current_and_previous_absent(tmp_path: 
     assert (remote / "current").resolve().name == "index-base"
     assert not (remote / "previous").exists()
     assert not (remote / "releases" / release_id).exists()
+
+
+def test_current_only_requires_one_gibibyte_free_after_peak_copy(tmp_path: Path) -> None:
+    prepared, remote, _, release_id = build_fixture(tmp_path)
+
+    result = deploy(
+        tmp_path,
+        prepared,
+        remote,
+        FAKE_DU_KIB="10",
+        FAKE_DF_AVAILABLE_KIB=str(1_048_576 + 19),
+    )
+
+    assert result.returncode != 0
+    assert "含1048576KiB安全余量" in result.stderr
+    assert (remote / "current").resolve().name == "index-base"
+    assert not (remote / "previous").exists()
+    assert not (remote / "releases" / release_id).exists()
+    assert not (remote / "releases" / f".policy-stage-{release_id}").exists()
 
 
 def test_current_only_health_failure_restores_original_current(tmp_path: Path) -> None:

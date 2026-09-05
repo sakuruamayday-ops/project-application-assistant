@@ -203,9 +203,10 @@ case "${remote_previous_state}" in
          else
            current_kib=\$(du -sk '${remote_current}' | awk '{print \$1}')
            available_kib=\$(df -Pk '${remote_index_root}/releases' | awk 'NR==2 {print \$4}')
-           required_kib=\$((current_kib + ${candidate_kib}))
+           reserve_kib=1048576
+           required_kib=\$((current_kib + ${candidate_kib} + reserve_kib))
            [ \"\${available_kib}\" -ge \"\${required_kib}\" ] || {
-             echo \"服务器current-only候选槽容量不足：需要\${required_kib}KiB，可用\${available_kib}KiB\" >&2
+             echo \"服务器current-only候选槽容量不足：需要\${required_kib}KiB（含\${reserve_kib}KiB安全余量），可用\${available_kib}KiB\" >&2
              exit 1
            }
            staging='${remote_stage}.prepare-'\$\$
