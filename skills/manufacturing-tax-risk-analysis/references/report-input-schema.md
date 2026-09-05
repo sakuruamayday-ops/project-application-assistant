@@ -36,7 +36,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 | roadmap | array | 30、60、90天阶段；每项含 period、actions、owner、completion |
 | p0_documents | array | 高优先补充资料 |
 | calculations | array | 可为空；仅填写确定性指标文件尚未覆盖的补充计算，每项含 indicator、formula、result、source |
-| policies | array | 至少一项本轮核验的现行官方政策，每项含非空 name、issuer、date、url |
+| policies | array | 本轮已核验的现行官方政策；每项含非空 name、issuer、date、官方直达 url。无法取得官方原文时必须为空数组，生成器自动输出明确标注的草稿 |
 | final_judgment | object/string | 最终判断 |
 | monthly_indicators | array | name、rule、owner、frequency |
 | limitations | array | 资料限制和免责声明 |
@@ -73,7 +73,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 `--metrics-json` 必须指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
 
-共创客户端通过 `manufacturing-tax-risk-analysis.calculate-metrics` 的已验签回执覆盖报告里的确定性展示形式。同一差额同时显示为万元和元时，由计算器生成两种可绑定数值；不得让模型重新读取成品、枚举全部数字或手工复制复算数组。政策表只有在本轮官方原文已核验并进入证据时才填写，且至少包含一项现行政策的名称、发布机关、日期和官方直达链接。不从示例或记忆补齐；无法核验时停止正式报告链，交付明确标注缺少政策来源的草稿，不要用空链接或“现行状态待核验”占位冒充正式政策证据。
+共创客户端通过 `manufacturing-tax-risk-analysis.calculate-metrics` 的已验签回执覆盖报告里的确定性展示形式。同一差额同时显示为万元和元时，由计算器生成两种可绑定数值；不得让模型重新读取成品、枚举全部数字或手工复制复算数组。政策表只有在本轮官方原文已核验并进入证据时才填写，且至少包含一项现行政策的名称、发布机关、日期和官方直达链接。不从示例或记忆补齐；无法核验时把 `policies` 写为空数组并继续生成，生成器会在封面和来源页明确标注草稿。不要用空链接或“现行状态待核验”占位冒充正式政策证据，也不要为此重复联网或停止交付。
 
 `calculations` 默认写 `[]`。确定性指标文件的 `report_rows` 会自动进入“计算过程与来源”页；只有确有新增、已绑定的计算且未被确定性文件覆盖时才添加补充行，避免重复展示造成固定页面溢出。
 

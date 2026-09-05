@@ -223,12 +223,16 @@ def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
         for key in ("indicator", "formula", "result", "source"):
             require_text_field(calculation, key, f"root.calculations[{i}]")
     validate_metrics(metrics, str(data["company"]))
-    policies = require_list(data, "policies", "root")
+    policies = require_list(data, "policies", "root", allow_empty=True)
     limit(policies, 5, "root.policies")
     for i, policy_value in enumerate(policies):
         policy = require_object(policy_value, f"root.policies[{i}]")
         for key in ("name", "issuer", "date", "url"):
             require_text_field(policy, key, f"root.policies[{i}]")
+        if any("待核验" in str(policy[key]) for key in ("name", "issuer", "date", "url")):
+            raise ValueError(f"placeholder policy is not allowed: root.policies[{i}]")
+        if not str(policy["url"]).startswith(("https://", "http://")):
+            raise ValueError(f"official policy URL is required: root.policies[{i}].url")
     final = require(data, "final_judgment", "root")
     if isinstance(final, dict):
         require_text_field(final, "title", "root.final_judgment")
@@ -274,10 +278,11 @@ def page(number: str, label: str, title: str, content: str, extra: str = "") -> 
 
 def render_cover(data: dict[str, Any]) -> str:
     period = data["period"]
-    status = data.get("source_status", "正式资料")
+    policy_draft = not data["policies"]
+    status = "草稿：政策原文未核验" if policy_draft else data.get("source_status", "正式资料")
     internal = data.get("internal_only", False)
     restriction = data.get("use_restriction", "")
-    warning = "仅供内部自查" if internal else status
+    warning = "草稿，不用于正式税务结论" if policy_draft else "仅供内部自查" if internal else status
     return f"""
     <section class="page cover">
       <div class="cover-inner">
@@ -395,9 +400,12 @@ def render_sources(data: dict[str, Any], metrics: dict[str, Any]) -> str:
     # Deterministic rows take priority; authored rows fill the remaining page capacity.
     calculations = [*metrics["report_rows"], *data["calculations"]][:10]
     calc_rows = [[x.get("indicator"), x.get("formula"), x.get("result"), x.get("source")] for x in calculations]
-    policy_rows = [[x.get("name"), x.get("issuer"), x.get("date"), x.get("url")] for x in data["policies"]]
     body = '<h3>计算过程与来源</h3>' + table(["指标", "公式", "结果", "来源"], calc_rows, "calculation-table")
-    body += '<h3>政策依据</h3>' + table(["文件", "发布机关", "日期", "链接"], policy_rows, "policy-table")
+    if data["policies"]:
+        policy_rows = [[x.get("name"), x.get("issuer"), x.get("date"), x.get("url")] for x in data["policies"]]
+        body += '<h3>政策依据</h3>' + table(["文件", "发布机关", "日期", "链接"], policy_rows, "policy-table")
+    else:
+        body += '<h3>政策依据</h3><div class="callout risk">本轮未取得可逐字核验的官方政策原文，本报告为草稿，不得作为正式税务结论使用。</div>'
     return page("15", "计算过程与来源", "每个金额可回到原页，每个比例可复算", body)
 
 
@@ -425,7 +433,8 @@ def render(data: dict[str, Any], metrics: dict[str, Any], css: str) -> str:
     for key, number, label in SECTION_KEYS:
         pages.append(render_section(number, label, data["sections"][key]))
     pages.extend([render_risks(data), render_roadmap(data), render_sources(data, metrics), render_final(data)])
-    title = f"{data['company']}｜金税四期财务分析报告"
+    suffix = "｜草稿" if not data["policies"] else ""
+    title = f"{data['company']}｜金税四期财务分析报告{suffix}"
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(title)}</title><style>{css}</style></head><body>{''.join(pages)}</body></html>"""

@@ -212,6 +212,67 @@ class PortableReportTests(unittest.TestCase):
             self.assertIn("final-indicator-table", html)
             self.assertNotIn("None", html)
 
+    def test_missing_official_policy_generates_an_explicit_draft(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            metrics = self.generate_metrics(directory_path)
+            candidate = json.loads(
+                (self.tax / "references/report-data.example.json").read_text(encoding="utf-8")
+            )
+            candidate["policies"] = []
+            input_path = directory_path / "draft.json"
+            output_path = directory_path / "draft.html"
+            input_path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(self.tax / "scripts/generate_report_html.py"),
+                    str(input_path),
+                    str(output_path),
+                    "--metrics-json",
+                    str(metrics),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            html = output_path.read_text(encoding="utf-8")
+            self.assertEqual(html.count('<section class="page'), 17)
+            self.assertIn("草稿：政策原文未核验", html)
+            self.assertIn("本报告为草稿，不得作为正式税务结论使用", html)
+
+    def test_placeholder_policy_is_rejected_instead_of_presented_as_verified(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            metrics = self.generate_metrics(directory_path)
+            candidate = json.loads(
+                (self.tax / "references/report-data.example.json").read_text(encoding="utf-8")
+            )
+            candidate["policies"] = [{
+                "name": "研发费用加计扣除政策",
+                "issuer": "现行状态待核验",
+                "date": "待核验",
+                "url": "https://example.invalid/pending",
+            }]
+            input_path = directory_path / "placeholder-policy.json"
+            input_path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(self.tax / "scripts/generate_report_html.py"),
+                    str(input_path),
+                    "--validate-only",
+                    "--metrics-json",
+                    str(metrics),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("placeholder policy is not allowed", result.stderr)
+
     def test_portable_scripts_do_not_contain_machine_paths(self):
         forbidden = ("/Users/", "/Volumes/", ".agents/skills")
         paths = [
