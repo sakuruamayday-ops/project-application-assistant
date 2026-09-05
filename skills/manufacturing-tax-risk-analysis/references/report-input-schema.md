@@ -30,7 +30,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 | one_line_conclusion | string | 执行摘要总判断 |
 | sources | array | name、period、status、pages、limitation |
 | executive_findings | array | title、conclusion、level、source，最多取5项 |
-| financial_overview | object | years、kpis、rows、conclusion；KPI 必填 label、value，可选 note；每行含 name、values、source_pages、formula |
+| financial_overview | object | years、kpis、rows、conclusion；kpis 最多4项，KPI 必填 label、value，可选 note；每行含 name、values、source_pages、formula |
 | sections | object | 固定9个专题 |
 | risks | array | 风险地图 |
 | roadmap | array | 30、60、90天阶段；每项含 period、actions、owner、completion |
@@ -61,13 +61,15 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 `actions` 是字符串数组，例如 `["补齐期后回款凭证", "逐笔复核关联往来"]`。整改责任岗位写入 `roadmap[*].owner`，不要把动作改成对象数组。
 
-为保证固定17页不溢出：执行判断不超过5项；总览指标行不超过8行；每个专题事实不超过4项、动作不超过6项、专题表格不超过8行；风险地图不超过8项；计算不超过10项；政策不超过5项；月度指标不超过5项。十四项风险闸门都要检查，但报告只汇总最重要的8项风险链。
+为保证固定17页不溢出：执行判断不超过5项；KPI 卡片不超过4项；总览指标行不超过8行；每个专题事实不超过4项、动作不超过6项、专题表格不超过8行；风险地图不超过8项；计算不超过10项；政策不超过5项；月度指标不超过5项。十四项风险闸门都要检查，但报告只汇总最重要的8项风险链。
 
 生成器同时执行文字长度门禁：公司名称不超过40字；总判断和专题结论分别不超过180字；单项事实不超过140字；单项动作不超过80字；风险矩阵单元不超过120字；最终判断正文不超过260字。超过限制时先压缩表达，不要缩小字号。
 
 ## 财务总览
 
 `financial_overview.years` 至少两个年度。每个 `rows` 项的 `values` 数量必须与年度数量一致，并提供 `source_pages` 与 `formula`。展示值应提前格式化为“13,515.26万元”“99.21%”等，生成器不猜测金额单位。
+
+KPI、结论和专题正文中的数字只允许直接取自原始年度数据，或取自确定性指标文件已经输出的展示值。不得自行计算三年复合增长率、累计净利润、均值、合计值或其他计算器尚未覆盖的派生数值；例如不得把三年收入改写为 CAGR，也不得把各年净利润相加后写成累计净利润。确有业务需要时，先扩展确定性计算器及测试，再用于报告。
 
 ## 确定性指标文件
 

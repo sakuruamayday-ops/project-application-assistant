@@ -20,6 +20,10 @@ class PortableReportTests(unittest.TestCase):
         schema = (self.tax / "references/report-input-schema.md").read_text(encoding="utf-8")
         self.assertIn("首次生成不得读取或复制该示例", skill)
         self.assertIn("不要在首次运行前读取或复制同目录的示例文件", schema)
+        self.assertIn("不得重新读取完整 HTML", skill)
+        self.assertIn("KPI 卡片不超过4项", schema)
+        self.assertIn("不得自行计算三年复合增长率", schema)
+        self.assertIn("不得把各年净利润相加后写成累计净利润", schema)
 
     def generate_metrics(self, directory: Path) -> Path:
         facts = directory / "facts.json"
