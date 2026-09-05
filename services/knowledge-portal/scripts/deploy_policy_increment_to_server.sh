@@ -153,15 +153,80 @@ with sqlite3.connect(f"file:{root/'knowledge_content.sqlite3'}?mode=ro",uri=True
     if db.execute("PRAGMA quick_check").fetchone()[0] != "ok": raise SystemExit("候选SQLite quick_check失败")
 PY
 
-readarray_output="$("${ssh_base[@]}" \
-  "set -e; current=\$(readlink -f '${remote_index_root}/current'); previous=\$(readlink -f '${remote_index_root}/previous'); \
-   printf '%s\t%s\n' \"\${current}\" \"\${previous}\"")"
-IFS=$'\t' read -r remote_current remote_inactive <<<"${readarray_output}"
-case "${remote_current}" in "${remote_index_root}"/releases/*) ;; *) echo "服务器current路径越界" >&2; exit 1;; esac
-case "${remote_inactive}" in "${remote_index_root}"/releases/*) ;; *) echo "服务器previous路径越界" >&2; exit 1;; esac
-[[ "${remote_current}" != "${remote_inactive}" ]] || { echo "服务器current与previous指向同一目录" >&2; exit 1; }
-
 remote_target="${remote_index_root}/releases/${release_id}"
+remote_stage="${remote_index_root}/releases/.policy-stage-${release_id}"
+readarray_output="$("${ssh_base[@]}" \
+  "set -e
+   current=\$(readlink -f '${remote_index_root}/current')
+   [ -d \"\${current}\" ] || { echo '服务器current指针无效' >&2; exit 1; }
+   if [ -e '${remote_index_root}/previous' ] || [ -L '${remote_index_root}/previous' ]; then
+     previous_state=present
+     previous=\$(readlink -f '${remote_index_root}/previous')
+     [ -d \"\${previous}\" ] || { echo '服务器previous指针无效' >&2; exit 1; }
+   else
+     previous_state=absent
+     previous=
+   fi
+   printf '%s|%s|%s\n' \"\${current}\" \"\${previous_state}\" \"\${previous}\"")"
+IFS='|' read -r remote_current remote_previous_state remote_previous <<<"${readarray_output}"
+case "${remote_current}" in "${remote_index_root}"/releases/*) ;; *) echo "服务器current路径越界" >&2; exit 1;; esac
+case "${remote_previous_state}" in
+  present)
+    remote_inactive="${remote_previous}"
+    case "${remote_inactive}" in "${remote_index_root}"/releases/*) ;; *) echo "服务器previous路径越界" >&2; exit 1;; esac
+    [[ "${remote_current}" != "${remote_inactive}" ]] || { echo "服务器current与previous指向同一目录" >&2; exit 1; }
+    ;;
+  absent)
+    target_state="$("${ssh_base[@]}" \
+      "set -e
+       if [ -e '${remote_target}' ] || [ -L '${remote_target}' ]; then
+         target=\$(readlink -f '${remote_target}')
+         [ \"\${target}\" = '${remote_target}' ] && [ -d \"\${target}\" ] || {
+           echo '同名服务器release路径无效' >&2
+           exit 1
+         }
+         printf present
+       else
+         printf absent
+       fi")"
+    if [[ "${target_state}" == "present" ]]; then
+      remote_inactive="${remote_target}"
+    else
+      candidate_kib="$(du -sk "${candidate_dir}" | awk '{print $1}')"
+      "${ssh_base[@]}" \
+        "set -e
+         if [ -e '${remote_stage}' ] || [ -L '${remote_stage}' ]; then
+           [ ! -L '${remote_stage}' ] && [ -d '${remote_stage}' ] || {
+             echo '服务器current-only候选槽无效' >&2
+             exit 1
+           }
+         else
+           current_kib=\$(du -sk '${remote_current}' | awk '{print \$1}')
+           available_kib=\$(df -Pk '${remote_index_root}/releases' | awk 'NR==2 {print \$4}')
+           required_kib=\$((current_kib + ${candidate_kib}))
+           [ \"\${available_kib}\" -ge \"\${required_kib}\" ] || {
+             echo \"服务器current-only候选槽容量不足：需要\${required_kib}KiB，可用\${available_kib}KiB\" >&2
+             exit 1
+           }
+           staging='${remote_stage}.prepare-'\$\$
+           [ ! -e \"\${staging}\" ] && [ ! -L \"\${staging}\" ] || {
+             echo '服务器current-only临时候选槽已存在' >&2
+             exit 1
+           }
+           mkdir \"\${staging}\"
+           cp -a '${remote_current}/.' \"\${staging}/\"
+           mv \"\${staging}\" '${remote_stage}'
+         fi"
+      remote_inactive="${remote_stage}"
+    fi
+    ;;
+  *)
+    echo "服务器previous状态无效：${remote_previous_state}" >&2
+    exit 1
+    ;;
+esac
+case "${remote_inactive}" in "${remote_index_root}"/releases/*) ;; *) echo "服务器候选槽路径越界" >&2; exit 1;; esac
+
 remote_current_relative="${remote_current#${remote_index_root}/}"
 remote_target_relative="${remote_target#${remote_index_root}/}"
 rsync_stats="$(dirname "${receipt_path}")/rsync-stats.txt"
