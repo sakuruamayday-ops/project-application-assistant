@@ -69,6 +69,8 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 `--metrics-json` 必须指向 `calculate_metrics.py --metrics-output` 生成的 `manufacturing-tax-risk-metrics/v1` 文件。生成器会核对企业名称并把 `report_rows` 写入“计算过程与来源”表。跨年增速、研发费用率、资产负债表恒等式差额及无法计算原因因此不依赖模型自行抄写。
 
+客户端专业校验必须覆盖报告里的全部展示形式。同一差额若同时显示为 `300万元` 与 `3,000,000元`，复算参数要同时包含万元差额和乘以10000后的元值。政策表只有在本轮官方原文已核验并进入证据时才填写精确年份、文号、日期和直达链接；未完成核验时使用不含数字的“现行状态待核验”说明，不从示例或记忆补齐。
+
 ## 风险表达
 
 每项风险固定填写 `chain`、`fact`、`alternative`、`missing_evidence`、`action`、`level`。缺交易级证据时用“需核验”，不得直接写违法结论。

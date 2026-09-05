@@ -62,6 +62,8 @@ python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-f
 
 `enterprise-financial-facts.v1.json` 必须使用 `enterprise-financial-facts/v1` 共享事实契约，保留企业身份、年度、单位、合并口径、原始数值、计算指标、证据页和质量状态。`manufacturing-tax-risk-metrics.v1.json` 由同一确定性计算器生成，固定包含跨年收入与应收增速、研发费用率、资产负债表恒等式差额，以及缺少输入时无法计算的指标和原因。不得手工重写这两份计算结果。共享事实文件可供 `financial-verification`、`project-feasibility`、专精特新体检和其他申报技能复用，但不把税务风险判断自动传递为项目资格结论。
 
+文档已经给出连续命令时，在同一个 `run_code` 中按依赖顺序执行相邻的输入校验、生成、导出和成品检查；除非前一步结果会改变下一步参数，不要每成功一个命令就返回模型重新规划。报告同时展示同一结果的元、万元或百分比形式时，专业校验的复算参数必须覆盖每一种展示单位，例如 `300万元` 与 `3,000,000元` 分别有可复算关系，不能只提交其中一种。
+
 禁止把现金流量表“支付的税费 ÷ 收入”称为增值税税负率；统一称“现金税费支付率”。制造业经验基准只作提示，不能代替企业订单周期和行业对标。
 
 ### 4. 执行风险闸门
@@ -84,6 +86,8 @@ python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-f
 ### 5. 核验政策
 
 每次任务重新核验现行官方来源。优先国家税务总局政策法规库、财政部、政府门户和企业所在地税务局。参考 [政策基线](references/policy-baseline.md)，但不得假定其中状态永久有效。
+
+只有本轮已打开的官方原文能够逐字支持时，报告才列精确政策年份、文号、成文日期和直达链接，并把对应原文纳入证据。无法访问官方原文时，只保留不含编号和日期的政策核验方向并明确“现行状态待核验”，不得依据示例、记忆或通用首页补写精确文号和日期。
 
 涉及具体税种、税率、优惠、计税依据或申报期限时，同时读取 [税种计算与政策时效协议](references/tax-calculation-and-freshness-protocol.md)。不得把外部通用税务技能中的历史税率、优惠期限、截止日或处罚金额复制为正式常量。
 
