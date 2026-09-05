@@ -24,7 +24,7 @@
   },
   "files": {
     "LICENSE-MIT.txt": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
-    "SKILL.md": "a16fc930aec2a48548fd29e0c4afa7ef868351fe7ca7b5f24fc727499461e355",
+    "SKILL.md": "2cbfe0099db4e80b1dd084dc4055996e687615ade296a853a34f7ea307bf1865",
     "agents/openai.yaml": "1556b32c1a624d910cdc65c89dfd523057f43ec34c7282e0dece4238ee412156",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

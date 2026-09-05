@@ -24,7 +24,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "e3e7c8e7e324970944918156a7051e2997ff04e4a57d0665c3c10708fc7ecb39",
+    "SKILL.md": "93bc4f0a85c8247fcd93950e7586f10f56108fc266fe879ab77e7b35ef8e45d9",
     "references/impact-graph-schema.md": "dec82f72005531320e6b92e8043290a5a19c77c8dad307c0e013c3e90a331b71",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/aggregate_corrections.py": "8374ef3abf02672490e1b9f579e3d1e0a70c0a43bbe610615fc93cee03ca5577",

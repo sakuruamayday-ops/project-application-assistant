@@ -71,6 +71,7 @@ def test_undeclared_external_service_is_still_blocked(tmp_path):
 
 def test_distributed_portable_runtime_blocks_are_compact_and_host_neutral():
     repository = Path(__file__).resolve().parents[1]
+    blocks = []
     for path in sorted((repository / "skills").glob("*/SKILL.md")):
         text = path.read_text(encoding="utf-8")
         match = re.search(
@@ -83,3 +84,9 @@ def test_distributed_portable_runtime_blocks_are_compact_and_host_neutral():
         assert "portable_skill_runtime.py" in block
         assert "workbuddy_preference_bridge.py" not in block
         assert "真实性、安全、验签和质量门禁" in block
+        assert "await tools.<name>(...)" in block
+        assert "不得为理解用法预读脚本、模板、示例或测试" in block
+        blocks.append(block)
+    # 中文注释：这是发布器托管的公共说明，任何单项技能漂移都会让
+    # Agent 在不同业务中采用不同的工具调用和源码读取策略。
+    assert len(set(blocks)) == 1

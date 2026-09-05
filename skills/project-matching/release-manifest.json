@@ -32,7 +32,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "97005d57308de04d22202bd965ee2c00f3755371593ebce03ba8d3d0486a17cc",
+    "SKILL.md": "91e281f5e6cb15f7dfcbc220eea9d4f8cf469bffcf6774d0cdfdf10d89028e66",
     "references/canonical-project-index.jsonl": "368f67de07094d16d10b3e92e4ba50c70c86c058b603762c43f4655867ff4b99",
     "references/high-frequency-project-gold-standard.jsonl": "0d9de12dff6c74ea38c290cefe807c5b7726a66a11d4393b525d96308ade5a8b",
     "references/high-frequency-project-retrieval-rules.json": "7748832c135f838e103d6176260e003d020602ffc05e72a6483a0ef68d599097",

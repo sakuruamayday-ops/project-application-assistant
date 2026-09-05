@@ -22,7 +22,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "222d52e4de6e1f1b605cebf6436447d45e9e8cdab48454392a70e9e6f95c45fa",
+    "SKILL.md": "dc6fc79e7a0f5afa928f07e28eb8f1f4d099241fcb86cfaa95b1bea152ccd393",
     "references/domain-routing-matrix.md": "dbf4ae2e7211b65323c7ef55fcbd89653c786dcf7587b02d77dd571aeb7a91b5",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

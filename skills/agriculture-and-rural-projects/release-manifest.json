@@ -22,7 +22,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "acdab7b4524fa3ae12dd5bbbc5aaad24b261ec8f9c18369b396d061d0bb9972a",
+    "SKILL.md": "f519b730895c49477e88fb665894f71c924cc88f5c020e72638ded1c68eef2d6",
     "references/agriculture-evidence-matrix.md": "466ae9b19a6f6481390fb95dfe3f16b62185ed1d717b14b2a898a0d53552f96a",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

@@ -21,7 +21,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "c873d2d03b138c0fd59c52647b3204dbbeaa8b354be06aa4872b38b9ac505018",
+    "SKILL.md": "1abced954e23c1fe1be1fc9c7910087b293890eec2cba487956c0680889c6a6a",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
