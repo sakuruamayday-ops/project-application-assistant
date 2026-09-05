@@ -5,6 +5,8 @@ import json
 import re
 import zipfile
 from pathlib import Path
+from uuid import UUID
+from xml.etree import ElementTree as ET
 
 import pytest
 from docx import Document
@@ -15,6 +17,7 @@ SKILLS = ROOT / "skills"
 REGISTRY = SKILLS / "project-feasibility/references/report-template-registry.json"
 SELECTOR_PATH = SKILLS / "project-feasibility/scripts/select_report_template.py"
 FILLER_PATH = SKILLS / "project-feasibility/scripts/fill_report_template.py"
+PROFILE_VALIDATOR_PATH = SKILLS / "project-feasibility/scripts/validate_report_profile_delivery.py"
 PIPELINE_PATH = ROOT / "scripts/run_workbuddy_report_candidate_pipeline.py"
 VISUAL_FINALIZER_PATH = ROOT / "scripts/record_workbuddy_report_visual_review.py"
 
@@ -29,8 +32,61 @@ def load_module(name: str, path: Path):
 
 SELECTOR = load_module("candidate_test_selector", SELECTOR_PATH)
 FILLER = load_module("candidate_test_filler", FILLER_PATH)
+PROFILE_VALIDATOR = load_module("candidate_test_profile_validator", PROFILE_VALIDATOR_PATH)
 PIPELINE = load_module("candidate_test_pipeline", PIPELINE_PATH)
 VISUAL_FINALIZER = load_module("candidate_test_visual_finalizer", VISUAL_FINALIZER_PATH)
+
+
+def test_report_font_is_embedded_and_document_remains_editable(tmp_path: Path):
+    document = Document()
+    document.add_paragraph("GC-QA 字体兼容 17 + 31 = 48")
+    document.sections[0].first_page_header.paragraphs[0].text = "首页页眉"
+    FILLER._apply_portable_cjk_font(document)
+    # 字体处理不能换掉 Document 持有的 XML 根，否则后续修改会悄悄不保存。
+    document.add_paragraph("字体处理后新增段落")
+    output = tmp_path / "embedded.docx"
+    document.save(output)
+    reopened = Document(output)
+    assert "字体处理后新增段落" in [paragraph.text for paragraph in reopened.paragraphs]
+    with zipfile.ZipFile(output) as archive:
+        namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        table = ET.fromstring(archive.read("word/fontTable.xml"))
+        fonts = table.findall("w:font", namespace)
+        assert len(fonts) == 1
+        assert fonts[0].get(f"{{{namespace['w']}}}name") == "Noto Sans SC"
+        regular = fonts[0].find("w:embedRegular", namespace)
+        assert regular is not None
+        key = UUID(regular.get(f"{{{namespace['w']}}}fontKey")).bytes[::-1]
+        data = bytearray(archive.read("word/fonts/gongchuang-noto-sans-sc.odttf"))
+        for index in range(32):
+            data[index] ^= key[index % 16]
+        assert bytes(data) == FILLER.PORTABLE_CJK_FONT_PATH.read_bytes()
+        assert b"Microsoft YaHei" not in archive.read("word/styles.xml")
+        assert "首页页眉" in archive.read("word/header1.xml").decode("utf-8")
+
+
+def test_table_spacers_do_not_consume_body_lines_or_remove_chapter_breaks():
+    document = Document()
+    document.add_table(rows=1, cols=1)
+    spacer = document.add_paragraph()
+    document.add_table(rows=1, cols=1)
+    chapter_break = document.add_paragraph()
+    chapter_break.paragraph_format.page_break_before = True
+    document.add_table(rows=1, cols=1)
+    content = document.add_paragraph("仍需保留的说明")
+    heading = document.add_heading("6.2 任务排序", level=2)
+    first = document.add_paragraph("一级：完成关键证据。", style="List Bullet")
+    last = document.add_paragraph("二级：补齐一般材料。", style="List Bullet")
+    FILLER._preserve_report_pagination(document)
+    assert spacer.paragraph_format.line_spacing.pt == 1
+    assert spacer.paragraph_format.keep_with_next is True
+    assert chapter_break.paragraph_format.page_break_before is True
+    assert chapter_break.paragraph_format.line_spacing is None
+    assert content.text == "仍需保留的说明"
+    assert content.paragraph_format.line_spacing is None
+    assert heading.text == "6.2 任务排序"
+    assert first.paragraph_format.keep_with_next is True
+    assert last.paragraph_format.keep_with_next is None
 
 
 def client_source(path: Path, *, name: str = "某高端装备有限公司") -> Path:
@@ -98,6 +154,9 @@ def test_real_source_anchor_fill_produces_complete_editable_report(tmp_path: Pat
     assert result["status"] == "pass"
     assert result["source_count"] == 1
     document = Document(output)
+    expected_label = "项目前期评估报告" if report_type == "preassessment" else "项目申报可行性分析报告"
+    assert document.core_properties.title.endswith(expected_label)
+    assert document.core_properties.subject == expected_label
     text = FILLER.document_text(document)
     assert "［填写" not in text
     assert "培训模板" not in text
@@ -118,6 +177,15 @@ def test_real_source_anchor_fill_produces_complete_editable_report(tmp_path: Pat
     ]
     assert visible_runs
     assert all(run.font.name == FILLER.PORTABLE_CJK_FONT for run in visible_runs)
+    profile_id = (
+        "project-presale-assessment-report"
+        if report_type == "preassessment"
+        else "project-feasibility-analysis-report"
+    )
+    validation = PROFILE_VALIDATOR.validate_profile(
+        plugin_root=ROOT, profile_id=profile_id, artifacts=[output]
+    )
+    assert validation["status"] == "pass", validation["errors"]
 
 
 def test_report_maps_policy_roles_and_strengthening_tasks_without_repeated_headline(tmp_path: Path):

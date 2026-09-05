@@ -1,4 +1,6 @@
 import json
+import hashlib
+import importlib.util
 import os
 import sqlite3
 import subprocess
@@ -42,6 +44,77 @@ class DataIndexingTests(unittest.TestCase):
                 "beneficiary_count": 1,
             },
         ]
+
+    def query(self, db, *options):
+        result = subprocess.run(
+            [sys.executable, str(ENGINE), "--db", str(db), "query", *options],
+            check=True, capture_output=True, text=True,
+        )
+        return [json.loads(line) for line in result.stdout.splitlines()]
+
+    def test_source_id_year_status_and_history_survive_raw_import(self):
+        initial = [
+            {"id": "Q1", "version": 1, "year": 2025, "title": "测试设备政策", "status": "active", "source": "GC-QA fixture 1"},
+            {"id": "Q2", "version": 1, "year": 2026, "title": "测试研发政策", "status": "active", "source": "GC-QA fixture 2"},
+        ]
+        update = [
+            {"id": "Q1", "version": 2, "year": 2026, "title": "测试设备政策更新", "status": "active", "source": "GC-QA fixture 3"},
+            {"id": "Q2", "version": 2, "year": 2026, "title": "测试研发政策", "status": "inactive", "source": "GC-QA fixture 4"},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            db, input_path = root / "index.sqlite3", root / "records.json"
+            command = [sys.executable, str(ENGINE), "--db", str(db), "ingest", "--input", str(input_path), "--source", "synthetic"]
+            input_path.write_text(json.dumps(initial + [initial[0]]), encoding="utf-8")
+            first = self.run_json(command)
+            self.assertEqual((first["inserted"], first["unchanged"], first["failed"]), (2, 1, 0))
+            self.assertEqual([row["source_record_id"] for row in self.query(db, "--year", "2026")], ["Q2"])
+            input_path.write_text(json.dumps(update), encoding="utf-8")
+            second = self.run_json(command)
+            self.assertEqual((second["inserted"], second["updated"], second["failed"]), (0, 2, 0))
+            self.assertEqual([row["source_record_id"] for row in self.query(db, "--year", "2026")], ["Q1"])
+            rows = {row["source_record_id"]: row for row in self.query(db, "--year", "2026", "--include-inactive")}
+            self.assertEqual(set(rows), {"Q1", "Q2"})
+            self.assertEqual(rows["Q1"]["publish_date"], "")
+            self.assertEqual(rows["Q1"]["source_version"], "2")
+            self.assertEqual(rows["Q1"]["source"], "synthetic")
+            self.assertEqual(rows["Q1"]["article_source"], "GC-QA fixture 3")
+            self.assertEqual((rows["Q2"]["application_status"], rows["Q2"]["active"]), ("inactive", 0))
+            repeated = self.run_json(command)
+            self.assertEqual(repeated["unchanged"], 2)
+            self.assertEqual(len(self.query(db, "--year", "2026")), 1)
+            with closing(sqlite3.connect(db)) as connection:
+                versions = [json.loads(row[0]) for row in connection.execute("SELECT canonical_json FROM record_versions ORDER BY id")]
+            self.assertEqual(len(versions), 4)
+            self.assertEqual(versions[0]["year"], "2025")
+            self.assertEqual(versions[0]["article_source"], "GC-QA fixture 1")
+            self.assertEqual(versions[1]["active"], 1)
+            self.assertEqual(versions[3]["active"], 0)
+
+    def test_distinct_source_ids_and_collection_sources_are_not_merged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            db, input_path = root / "index.sqlite3", root / "records.json"
+            records = [{"id": identity, "title": "同名记录", "year": 2026} for identity in (0, "Q2")]
+            input_path.write_text(json.dumps(records), encoding="utf-8")
+            command = [sys.executable, str(ENGINE), "--db", str(db), "ingest", "--input", str(input_path)]
+            for source in ("source-a", "source-b"):
+                self.assertEqual(self.run_json(command + ["--source", source])["inserted"], 2)
+            self.assertEqual(len(self.query(db, "--include-inactive")), 4)
+            # 无源 ID 的旧格式也不能把不同来源的同名记录合并。
+            input_path.write_text(json.dumps([{"title": "旧格式同名记录", "publish_date": "2026-07-13"}]), encoding="utf-8")
+            for source in ("source-a", "source-b"):
+                self.assertEqual(self.run_json(command + ["--source", source])["inserted"], 1)
+            self.assertEqual(len(self.query(db, "--year", "2026")), 6)
+
+    def test_new_empty_fields_keep_existing_record_digest(self):
+        spec = importlib.util.spec_from_file_location("index_engine", ENGINE)
+        engine = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(engine)
+        record = engine.canonicalize(self.sample_records()[0], "aiqice", "local")
+        original = {key: value for key, value in record.items() if key not in {"authorization_scope", "source_record_id", "year", "source_version", "active"}}
+        digest = hashlib.sha256(json.dumps(original, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+        self.assertEqual(engine.record_hash(record), digest)
 
     def test_sqlite_ingest_dedupe_version_and_export(self):
         with tempfile.TemporaryDirectory() as directory:

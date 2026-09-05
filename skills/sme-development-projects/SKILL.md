@@ -9,11 +9,9 @@ description: 分析创新型中小企业、专精特新中小企业、专精特�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "sme-development-projects" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 用户只问专精特新或小巨人的一个条件、一个产品定位、一个专利方向或一段文本时，只处理该问题，不自动进入完整体检、四项判断全表、项目路径或报告。只有明确要求专精特新或小巨人申请书审核、后期体检、培育报告或完整项目分析时，才执行对应完整流程。
@@ -53,11 +51,13 @@ description: 分析创新型中小企业、专精特新中小企业、专精特�
 
 前期培育报告进入补短板、填空白和六问展开前，读取 `references/direction-card-to-six-questions.md`。每套六问只服务一个已选产品方向；专利结构、未来布局和检索交给 `patent-router`，正式正文交给 `application-writing`，不得另建并行专利或写作入口。
 
-诊断或改写企业总体情况简介时，先读取 `references/enterprise-introduction-method.md`。采用企业基本情况三段和主导产品技术四段加一可选段的结构，保持官方章节兼容，逐段建立行业问题、核心技术、量化指标、验证证据和产业链价值闭环。
+诊断或改写企业总体情况简介时，先读取 `references/enterprise-introduction-method.md`。默认采用企业基本情况三段和主导产品及技术五段的固定结构，其中精细化管理是第四段，不得降为可选项；当期已确认的强制表单另有结构时服从该表单。逐段建立行业问题、核心技术、量化指标、验证证据和产业链价值闭环，资料不足时明确缺口，不补造管理体系、客户或技术指标。
 
 ## 四项独立判断
 
 读取 `references/four-judgment-decision-table.md`，分别对主导产品、补短板、填空白和国产替代作出“保留、替换、补证后保留”结论，并单列锻长板证据。四项属于待审判断，不因申请书已经填写而自动成立；每项必须说明对象、同类环节、证据和联动修改。主导产品、四项判断、收入、客户和 I 类知识产权必须跨章节一致。
+
+本技能固定采用现实锚定的事实锁：政策、目录、企业登记和现实对标回到可核验现实资料；申请书列示的财务、经营、技术、客户、产能、指标和专利法律状态作为本轮推导事实使用。出现材料内部矛盾、计算不成立或更高等级现实来源明确冲突时，保留原填写并指出冲突，不得静默改写。主导产品与四项判断允许依据企业自述成立，但仍须通过产品边界、技术因果、同类环节和跨章节一致性审查。
 
 不得把审中专利视为有效授权成果。财务、市场份额、客户、领先地位和进口替代等信息没有可靠来源时，不推算、不补造，只列证据缺口。不得把“全球前三或国内第一”写成专精特新和小巨人的通用门槛；2026年小巨人新申请按当期申请书的占有率或排名条件执行，且不要求另行提交第三方市场占有率证明。
 

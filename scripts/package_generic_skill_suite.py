@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build the signed generic suite when WorkBuddy assets are not released.
+"""Build the signed generic suite for the current host-neutral release.
 
-The collection manifest is authoritative: it may declare the first-party
-client consumes the generic suite while explicitly disabling WorkBuddy plugin
-assets.  This builder preserves the same release-gate, signing, provenance,
-archive and post-package validation contracts for that one permitted artifact.
+The collection manifest is authoritative: the first-party client consumes the
+same signed suite and no platform-specific plugin is emitted. This builder
+preserves the release-gate, signing, provenance, archive and post-package
+validation contracts for the one permitted artifact.
 """
 
 from __future__ import annotations
@@ -63,6 +63,17 @@ def invoke_json(command: list[str], *, cwd: Path) -> dict:
     return payload
 
 
+def existing_gate_attestation_paths(gate_report: Path) -> list[Path]:
+    """Return immutable gate evidence paths that already occupy this release name."""
+    candidates = [
+        gate_report,
+        gate_report.with_name(gate_report.name + ".sig"),
+        gate_report.with_name(gate_report.name + ".signature.json"),
+        gate_report.with_name(gate_report.stem + "-publisher-ed25519.pub"),
+    ]
+    return [path for path in candidates if path.exists()]
+
+
 def main() -> int:
     options = parse_args()
     skills_root = options.skills_root.expanduser().resolve()
@@ -90,16 +101,32 @@ def main() -> int:
         return 2
     manifest = suite.load_suite_manifest(skills_root)
     distribution = manifest.get("release", {}).get("distribution_protocol", {})
-    plugin = manifest.get("workbuddy_plugin", {})
     if not (
-        distribution.get("workbuddy_specific_package") is False
-        and plugin.get("package_mode") == "not-released"
+        distribution.get("generic_skill_package") == "signed-universal-zip"
+        and distribution.get("platform_specific_package") is False
     ):
         print(json.dumps({"status": "fail", "errors": ["当前套件未声明仅通用包发布"]}, ensure_ascii=False, indent=2))
         return 2
     release_tag, _ = suite.release_identity(manifest, options.release_tag)
     output_dir.mkdir(parents=True, exist_ok=True)
     gate_report = output_dir / f"release-gates-{release_tag}.json"
+    occupied = existing_gate_attestation_paths(gate_report)
+    if occupied:
+        print(
+            json.dumps(
+                {
+                    "status": "fail",
+                    "release_tag": release_tag,
+                    "errors": [
+                        "发布证据名称已被占用；请使用新的空输出目录，现有证据不会被覆盖"
+                    ],
+                    "existing_evidence": [path.name for path in occupied],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 2
     pre_gates = collection.run_release_gates(source_root, skills_root, manifest)
     if pre_gates["status"] != "pass":
         pre_gates["final_artifacts"] = {}
@@ -139,7 +166,7 @@ def main() -> int:
             **pre_gates,
             "final_artifacts": artifacts,
             "post_package_gates": post_gates,
-            "workbuddy_platform_pair": {"status": "not-applicable", "reason": "suite-manifest disables WorkBuddy assets"},
+            "platform_specific_package": {"status": "not-applicable", "reason": "suite-manifest declares a host-neutral generic release"},
             "final_artifacts_complete": post_gates["status"] == "pass",
         }
         report = collection.publicize_gate_paths(report, source_root)

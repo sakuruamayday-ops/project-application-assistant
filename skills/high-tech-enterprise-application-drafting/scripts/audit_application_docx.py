@@ -237,6 +237,8 @@ def audit_rd_core_innovation(document) -> tuple[dict, list[dict]]:
             else 0
         )
         item_issues = []
+        if field == "待企业确认四级领域":
+            item_issues.append("四级技术领域待确认，不能作为已核定领域交付")
         if len(lines) != 7:
             item_issues.append(f"应为7行，实际为{len(lines)}行")
         if len(lines) >= 1 and lines[0] != f"所属技术领域：{field}。":

@@ -107,7 +107,7 @@ def test_capability_profile_contains_names_not_secret_values(tmp_path):
     assert report["capabilities"]["team_knowledge"]["endpoint"] == "https://knowledge.example.com"
 
 
-def test_first_run_waits_for_knowledge_connection_before_host_skills(tmp_path):
+def test_first_run_uses_actual_capabilities_without_requiring_knowledge_or_host_skills(tmp_path):
     report, _, report_file = MODULE.run(
         tmp_path,
         non_interactive=True,
@@ -117,21 +117,48 @@ def test_first_run_waits_for_knowledge_connection_before_host_skills(tmp_path):
     onboarding = report["onboarding"]
     assert onboarding["controlled_evolution_enabled"] is True
     assert onboarding["four_question_review_enabled"] is True
+    assert onboarding["startup_protocol_completed"] is True
+    assert onboarding["knowledge_connection_check_required"] is False
+    assert onboarding["knowledge_connection_check_prompt"] == ""
+    assert "host_skill_install_prompt" not in onboarding
+    report_text = report_file.read_text(encoding="utf-8")
+    assert "受控自进化能力可用" in report_text
+    assert "检查下知识库连接状态" not in report_text
+    assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" not in report_text
+    assert not (tmp_path / "preferences.json").exists()
+    assert report["personal_preferences"]["status"] == "not-created"
+    assert report["report_role"] == "historical-capability-snapshot"
+
+
+def test_first_run_requires_knowledge_only_for_a_task_that_needs_it(tmp_path):
+    report, _, report_file = MODULE.run(
+        tmp_path,
+        non_interactive=True,
+        network=False,
+        environment={"PROJECT_ASSISTANT_KNOWLEDGE_REQUIRED": "true"},
+    )
+    onboarding = report["onboarding"]
     assert onboarding["startup_protocol_completed"] is False
     assert onboarding["knowledge_connection_check_required"] is True
-    assert onboarding["knowledge_connection_check_prompt"] == "检查下知识库连接状态"
-    assert onboarding["host_skill_install_prompt"] == ""
-    report_text = report_file.read_text(encoding="utf-8")
-    assert "受控自进化已启用" in report_text
-    assert "检查下知识库连接状态" in report_text
-    assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" not in report_text
+    assert report["capabilities"]["team_knowledge"]["required"] is True
+    assert "检查下知识库连接状态" in report_file.read_text(encoding="utf-8")
+
+
+def test_first_run_initializes_preferences_only_with_explicit_authorization(tmp_path):
+    report, _, _ = MODULE.run(
+        tmp_path,
+        non_interactive=True,
+        network=False,
+        environment={},
+        persist_preferences=True,
+    )
     preferences = json.loads((tmp_path / "preferences.json").read_text(encoding="utf-8"))
     assert preferences["schema_version"] == 1
     assert preferences["_meta"]["dirty"] is False
     assert report["personal_preferences"]["status"] == "local"
 
 
-def test_host_skill_prompt_appears_after_knowledge_connection(tmp_path):
+def test_knowledge_connection_does_not_trigger_host_skill_install_prompt(tmp_path):
     report, _, report_file = MODULE.run(
         tmp_path,
         non_interactive=True,
@@ -142,12 +169,10 @@ def test_host_skill_prompt_appears_after_knowledge_connection(tmp_path):
     assert onboarding["startup_protocol_completed"] is True
     assert onboarding["knowledge_connection_check_required"] is False
     assert onboarding["knowledge_connection_check_prompt"] == ""
-    assert onboarding["host_skill_install_prompt"] == (
-        "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
-    )
+    assert "host_skill_install_prompt" not in onboarding
     report_text = report_file.read_text(encoding="utf-8")
     assert "检查下知识库连接状态" not in report_text
-    assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in report_text
+    assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" not in report_text
     assert report["capabilities"]["team_knowledge"]["status"] == "ready"
 
 
@@ -164,27 +189,28 @@ def test_api_probe_does_not_replace_runtime_mcp_connection(tmp_path, monkeypatch
         environment={
             "GONGCHUANG_KB_ENDPOINT": "https://knowledge.example.com",
             "GONGCHUANG_KB_TOKEN": "hidden-value",
+            "PROJECT_ASSISTANT_KNOWLEDGE_REQUIRED": "true",
         },
     )
     assert report["capabilities"]["team_knowledge"]["status"] == "ready"
     assert report["onboarding"]["startup_protocol_completed"] is False
     assert report["onboarding"]["knowledge_connection_check_required"] is True
-    assert report["onboarding"]["host_skill_install_prompt"] == ""
+    assert "host_skill_install_prompt" not in report["onboarding"]
     assert "检查下知识库连接状态" in report_file.read_text(encoding="utf-8")
 
 
-def test_incomplete_knowledge_connection_remains_in_startup_protocol(tmp_path):
+def test_incomplete_required_knowledge_connection_remains_in_startup_protocol(tmp_path):
     first, _, first_report = MODULE.run(
         tmp_path,
         non_interactive=True,
         network=False,
-        environment={},
+        environment={"PROJECT_ASSISTANT_KNOWLEDGE_REQUIRED": "true"},
     )
     second, _, second_report = MODULE.run(
         tmp_path,
         non_interactive=True,
         network=False,
-        environment={},
+        environment={"PROJECT_ASSISTANT_KNOWLEDGE_REQUIRED": "true"},
     )
     assert first["onboarding"]["startup_prompt_required"] is True
     assert second["onboarding"]["startup_prompt_required"] is True
@@ -201,7 +227,7 @@ def test_startup_prompt_only_appears_once_per_protocol_version(tmp_path):
         environment={"GONGCHUANG_KB_MCP_READY": "true"},
     )
     assert first["onboarding"]["startup_prompt_required"] is True
-    assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" in first_report.read_text(encoding="utf-8")
+    assert "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills" not in first_report.read_text(encoding="utf-8")
 
     second, _, second_report = MODULE.run(
         tmp_path,

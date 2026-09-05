@@ -9,11 +9,9 @@ description: 高新技术企业认定申请书的正式撰写、扩表、回填�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "high-tech-enterprise-application-drafting" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 使用边界
@@ -32,6 +30,8 @@ description: 高新技术企业认定申请书的正式撰写、扩表、回填�
 
 未取得支撑材料的人员数量、科技人员占比、预算、研发费用、销售收入、验收结论、专利名称与编号不得补造。可用 `XXX` 或“待企业核定”保留位置，并列出需要的证据。
 
+已知企业有研发中心或研发人员，不等于每个RD均有专职团队、独立费用归集、制度执行或验收记录。组织实施方式只写本项目资料明确记载的安排，其余留待企业核定。用户禁止补造指标时，不把示例JSON、同类产品数值或拟定值写入正文；指标填 `null`，脚本生成带缺口的草稿。四级领域未核实则填“待企业确认四级领域”，不拼接貌似目录的条目。草稿不等于正式核稿通过。
+
 ## 母版
 
 每次复制 [高新技术企业认定申请书空白模板.docx](assets/高新技术企业认定申请书空白模板.docx) 到任务输出目录后填写，禁止直接改写技能内母版。正式流程不依赖个人模板技能。
@@ -40,7 +40,7 @@ description: 高新技术企业认定申请书的正式撰写、扩表、回填�
 
 只有用户明确要求增加或减少RD、PS表时，才切换为结构扩展模式。结构扩展不得冒充严格原样填充；优先运行 `scripts/expand_rd_ps_tables.py` 批量处理，不手工重建近似表格。脚本深拷贝编号段落和完整表格的底层OOXML，保留列宽、合并单元格、边框、行高、段落格式、分页属性和页眉页脚，清空新增表的数据区，并按 `RD01`、`RD02` 或 `PS01`、`PS02` 连续编号。知识产权和成果转化表仍复制同类完整表格后扩展，IP按用户汇总表顺序编排。
 
-RD核心技术、创新点和四项阶段性成果的批量回填使用 `scripts/fill_rd_core_innovation.py`。该脚本只改目标RD的“核心技术及创新点”和“取得的阶段性成果”数据单元格，在单元格既有段落内加入内容换行，不改变表格、行列、合并关系、页眉页脚或节属性。脚本按物理OOXML单元格和语义标签定位，不按固定行号或 `id(cell._tc)` 去重；写入后立即重新打开输出文件并逐RD核对期望文本。
+RD基本字段、核心技术、创新点和四项阶段性成果的批量回填使用 `scripts/fill_rd_core_innovation.py`，输入格式见 [rd-core-innovation-format.md](references/rd-core-innovation-format.md)。通过每个RD的 `basic_fields` 一次写入名称、起止时间、技术领域、技术来源、知识产权编号、预算与目的及组织实施方式；不另写固定行号脚本或逐表试探。省略的基本字段保持原样。脚本按物理OOXML单元格和语义标签定位，不按固定行号或 `id(cell._tc)` 去重；只修改目标单元格，保留表格、行列、合并关系、页眉页脚及节属性，写入后重新打开输出文件并逐RD核对。
 
 当实际项目数少于现有表数时，默认仍禁止缩表。只有用户明确要求按实际数量缩减，才可增加 `--trim-empty-tail`。脚本仅从末尾逐表检查并删除完全空白的RD、PS表；任何待删除表只要存在项目或产品名称、周期、正文、经费、销售收入、知识产权、勾选状态或其他填写值，就必须阻断整个缩表操作，不得部分删除，不得删除中间表。成功删除后重新连续编号，并在JSON审计报告中记录删除位置、原编号、删除原因和连续编号状态。缩表未显式指定 `--report` 时，脚本自动在输出DOCX旁生成同名 `.docx.audit.json` 审计文件。
 
@@ -116,7 +116,7 @@ python3 scripts/expand_rd_ps_tables.py \
 
 核心技术固定写两条，均使用“XXXX技术：”开头并展开技术机理、实现路径、关键参数和适用条件。创新点应说明相对于既有方式改变了什么、为什么能改善性能以及如何验证。具体要求见 [writing-rules.md](references/writing-rules.md)。
 
-“核心技术及创新点”栏固定使用以下七行顺序：所属技术领域、核心技术标题、两条核心技术、创新点标题、两条创新点。所属技术领域必须逐RD读取并与该表表头四级领域一致；核心技术和创新点正文合计最多400字，所属领域不计入。两条核心技术都必须包含“拟定技术指标”或有来源的实测指标，拟定值不得冒充第三方检测结论。“取得的阶段性成果”固定四条且合计最多400字。
+“核心技术及创新点”栏固定使用以下七行顺序：所属技术领域、核心技术标题、两条核心技术、创新点标题、两条创新点。所属技术领域必须逐RD读取并与该表表头四级领域一致；核心技术和创新点正文合计最多400字，所属领域不计入。正式稿的两条核心技术均须包含有依据的拟定指标或有来源的实测指标，拟定值不得冒充第三方检测结论；证据不足的草稿按使用边界保留缺口，不能为通过检查自行填数字。“取得的阶段性成果”固定四条且合计最多400字。
 
 ### 5. PS高新技术产品
 

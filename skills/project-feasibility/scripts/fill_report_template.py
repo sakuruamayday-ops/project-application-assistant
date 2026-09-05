@@ -16,14 +16,18 @@ from copy import deepcopy
 from datetime import date
 from pathlib import Path
 from typing import Any, Iterable
+from uuid import uuid4
 
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement
+from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
 from docx.opc.constants import RELATIONSHIP_TYPE
+from docx.opc.packuri import PackURI
+from docx.opc.part import Part, XmlPart
 from docx.shared import Pt, RGBColor
+from lxml import etree
 
 
 PLACEHOLDER = re.compile(r"［[^］\r\n]{1,120}］")
@@ -48,6 +52,7 @@ EVIDENCE_STATES = {
     "不适用",
 }
 PORTABLE_CJK_FONT = "Noto Sans SC"
+PORTABLE_CJK_FONT_PATH = Path(__file__).resolve().parents[1] / "assets/fonts/NotoSansSC-Variable.ttf"
 PUBLIC_DIGEST = re.compile(r"(?:SHA[\s_-]*256|(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f]))", re.IGNORECASE)
 
 
@@ -212,7 +217,7 @@ def _set_text(paragraph, value: str) -> None:
 
 
 def _apply_portable_cjk_font(document: Document) -> None:
-    """Bind visible text to a macOS CJK font before PDF visual regression."""
+    """Embed the report font without depending on the reader's installed fonts."""
     for paragraph in _iter_paragraphs(document):
         for run in paragraph.runs:
             if not run.text:
@@ -222,6 +227,54 @@ def _apply_portable_cjk_font(document: Document) -> None:
             fonts = run_properties.get_or_add_rFonts()
             for attribute in ("ascii", "hAnsi", "eastAsia", "cs"):
                 fonts.set(qn(f"w:{attribute}"), PORTABLE_CJK_FONT)
+
+    # 样式、链接、奇偶页页眉与主题也参与字体解析，不能只替换可见正文后留下缺失字体。
+    for part in document.part.package.parts:
+        if not str(part.partname).startswith("/word/") or not str(part.partname).endswith(".xml"):
+            continue
+        root = part._element if isinstance(part, XmlPart) else parse_xml(part.blob)
+        for fonts in root.iter(qn("w:rFonts")):
+            fonts.attrib.clear()
+            for attribute in ("ascii", "hAnsi", "eastAsia", "cs"):
+                fonts.set(qn(f"w:{attribute}"), PORTABLE_CJK_FONT)
+        for scheme in root.iter(qn("a:fontScheme")):
+            for element in scheme.iter():
+                if "typeface" in element.attrib:
+                    element.set("typeface", PORTABLE_CJK_FONT)
+        if not isinstance(part, XmlPart):
+            part._blob = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+
+    font_table = document.part.part_related_by(RELATIONSHIP_TYPE.FONT_TABLE)
+    fonts = OxmlElement("w:fonts")
+    font = OxmlElement("w:font")
+    font.set(qn("w:name"), PORTABLE_CJK_FONT)
+    fonts.append(font)
+    # OOXML 字体混淆只作用于前 32 字节；保留完整字符集，便于用户继续编辑报告。
+    font_data = bytearray(PORTABLE_CJK_FONT_PATH.read_bytes())
+    key = uuid4()
+    mask = key.bytes[::-1]
+    for index in range(32):
+        font_data[index] ^= mask[index % 16]
+    for relation_id, relation in list(font_table.rels.items()):
+        if relation.reltype == RELATIONSHIP_TYPE.FONT:
+            del font_table.rels[relation_id]
+    embedded = Part(
+        PackURI("/word/fonts/gongchuang-noto-sans-sc.odttf"),
+        "application/vnd.openxmlformats-officedocument.obfuscatedFont",
+        bytes(font_data), document.part.package,
+    )
+    relation_id = font_table.relate_to(embedded, RELATIONSHIP_TYPE.FONT)
+    regular = OxmlElement("w:embedRegular")
+    regular.set(qn("r:id"), relation_id)
+    regular.set(qn("w:fontKey"), "{" + str(key).upper() + "}")
+    font.append(regular)
+    if isinstance(font_table, XmlPart):
+        font_table._element = fonts
+    else:
+        font_table._blob = etree.tostring(fonts, xml_declaration=True, encoding="UTF-8", standalone=True)
+    settings = document.settings.element
+    if settings.find(qn("w:embedTrueTypeFonts")) is None:
+        settings.append(OxmlElement("w:embedTrueTypeFonts"))
 
 
 def _iter_paragraphs(document: Document) -> Iterable[Any]:
@@ -494,6 +547,28 @@ def _lock_table_pagination(table) -> None:
         properties.append(cant_split)
 
 
+def _preserve_report_pagination(document: Document) -> None:
+    # 表后空段仍占正文行高，嵌入字体后会把短清单挤到独立页；保留段落与章节分页，只压缩纯空白间隔。
+    for paragraph in document.paragraphs:
+        previous = paragraph._p.getprevious()
+        if previous is None or previous.tag != qn("w:tbl") or paragraph.text:
+            continue
+        if any(list(paragraph._p.iter(qn(tag))) for tag in ("w:drawing", "w:pict", "w:object", "w:br", "w:fldChar", "w:sectPr")):
+            continue
+        if paragraph.paragraph_format.page_break_before:
+            continue
+        paragraph.paragraph_format.line_spacing = Pt(1)
+        paragraph.paragraph_format.space_before = Pt(0)
+        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.keep_with_next = True
+    # 母版中的短清单应连同标题保留，不能把最后一两条单独挤到新页。
+    paragraphs = document.paragraphs
+    for paragraph, following in zip(paragraphs, paragraphs[1:]):
+        if (paragraph.style.name == "List Bullet" and following.style.name == "List Bullet"
+                and paragraph._p.getnext() is following._p):
+            paragraph.paragraph_format.keep_with_next = True
+
+
 def _fill_project_specific_paragraphs(document: Document, fixture: dict[str, Any]) -> None:
     replacements = {
         "申报主体：": f"申报主体：{fixture['enterprise']}",
@@ -562,10 +637,11 @@ def _generic_fill(document: Document, fixture: dict[str, Any]) -> None:
             paragraph.text = PLACEHOLDER.sub(source_name, paragraph.text)
 
 
-def _set_public_document_metadata(document: Document, fixture: dict[str, Any]) -> None:
+def _set_public_document_metadata(document: Document, fixture: dict[str, Any], report_type: str) -> None:
     properties = document.core_properties
-    properties.title = f"{fixture['enterprise']}_{fixture['project_object']}_项目前期评估报告"
-    properties.subject = "政府项目申报前期评估"
+    label = "项目前期评估报告" if report_type == "preassessment" else "项目申报可行性分析报告"
+    properties.title = f"{fixture['enterprise']}_{fixture['project_object']}_{label}"
+    properties.subject = label
     properties.author = "共创研究院"
     properties.last_modified_by = "共创研究院"
     properties.keywords = "政府项目申报,前期评估,共创研究院"
@@ -679,7 +755,8 @@ def complete_report(
     _append_source_ledger(document, validated)
     _lock_table_pagination(document.tables[-1])
     _apply_portable_cjk_font(document)
-    _set_public_document_metadata(document, validated)
+    _preserve_report_pagination(document)
+    _set_public_document_metadata(document, validated, report_type)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
     rendered = Document(output_path)

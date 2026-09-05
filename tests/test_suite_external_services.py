@@ -21,7 +21,6 @@ SPEC = importlib.util.spec_from_file_location("suite_validation", VALIDATOR_PATH
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
-RELEASE_SCRIPT = VALIDATOR_PATH.with_name("package_skill_release.py")
 
 
 def write_skill(root: Path, name: str, body: str) -> None:
@@ -70,15 +69,17 @@ def test_undeclared_external_service_is_still_blocked(tmp_path):
     assert "jiaotang-kb" in result["unresolved_references"]
 
 
-def test_managed_portable_runtime_template_stays_compact():
-    text = RELEASE_SCRIPT.read_text(encoding="utf-8")
-    match = re.search(
-        r'block = f"""([\s\S]*?)"""',
-        text,
-    )
-    assert match is not None
-    template = match.group(1)
-    assert len(template) < 850
-    assert "portable_skill_runtime.py" in template
-    assert "workbuddy_preference_bridge.py" in template
-    assert "真实性、安全、验签和质量门禁" in template
+def test_distributed_portable_runtime_blocks_are_compact_and_host_neutral():
+    repository = Path(__file__).resolve().parents[1]
+    for path in sorted((repository / "skills").glob("*/SKILL.md")):
+        text = path.read_text(encoding="utf-8")
+        match = re.search(
+            r"<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->([\s\S]*?)<!-- END MANAGED PORTABLE SKILL RUNTIME -->",
+            text,
+        )
+        assert match is not None, path
+        block = match.group(1)
+        assert len(block) < 700, path
+        assert "portable_skill_runtime.py" in block
+        assert "workbuddy_preference_bridge.py" not in block
+        assert "真实性、安全、验签和质量门禁" in block

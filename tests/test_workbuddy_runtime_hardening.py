@@ -1077,19 +1077,16 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
                 markers = set(specification["applies_when_prompt_contains"])
                 self.assertFalse(markers & forbidden)
 
-    def test_simplified_plugin_uses_user_remote_mcp_without_local_connector(self):
+    def test_current_suite_is_host_neutral_without_platform_plugin(self):
         suite_manifest = json.loads(
             (REPOSITORY / "skills/suite-manifest.json").read_text(
                 encoding="utf-8"
             )
         )
-        plugin = suite_manifest["workbuddy_plugin"]
-        self.assertEqual(plugin["hook_mode"], "behavior_only_fail_open")
-        self.assertEqual(
-            plugin["mcp_configuration_mode"],
-            "user_remote_streamable_http",
-        )
-        self.assertNotIn("mcp_connector", plugin)
+        distribution = suite_manifest["release"]["distribution_protocol"]
+        self.assertFalse(distribution["platform_specific_package"])
+        self.assertNotIn("workbuddy_plugin", suite_manifest)
+        self.assertEqual(suite_manifest["generic_shared_paths"], [])
         self.assertFalse(
             hasattr(SUITE_PACKAGER, "embed_workbuddy_mcp_connector")
         )
@@ -1276,19 +1273,22 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             self.assertEqual(state["quality_retry_count"], 4)
             self.assertEqual(state["status"], "quality-blocked")
 
-    def test_workbuddy_package_declares_no_local_mcp_runtime(self):
+    def test_generic_package_declares_no_local_mcp_runtime(self):
         skills_root = Path(__file__).resolve().parents[1] / "skills"
         suite_manifest = json.loads(
             (skills_root / "suite-manifest.json").read_text(encoding="utf-8")
         )
-        plugin = suite_manifest["workbuddy_plugin"]
-        self.assertEqual(
-            plugin["mcp_configuration_mode"],
-            "user_remote_streamable_http",
-        )
-        self.assertNotIn("mcp_connector", plugin)
         self.assertFalse(
-            any("jiaotang-kb" in Path(shared).parts for shared in suite_manifest["shared_paths"])
+            suite_manifest["release"]["distribution_protocol"][
+                "platform_specific_package"
+            ]
+        )
+        self.assertNotIn("workbuddy_plugin", suite_manifest)
+        self.assertFalse(
+            any(
+                "jiaotang-kb" in Path(shared).parts
+                for shared in suite_manifest["generic_shared_paths"]
+            )
         )
 
     def test_workbuddy_connector_matches_portal_installer_and_preserves_query(self):

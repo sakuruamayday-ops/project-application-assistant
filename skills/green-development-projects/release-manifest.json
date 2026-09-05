@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "green-development-projects",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/green-factory-self-evaluation.md",
@@ -25,11 +25,11 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "10d80d04efdd3208ab2e65b0ebb620554088a95f6d76b56c6307476bd4833f11",
+    "SKILL.md": "c616e594533f1d0451bfee79a578beba59789bb099824015a5fa6a84b8587f45",
     "references/green-factory-self-evaluation.md": "d5c796ff971464c4be455c9e76a0c2ce854ef3cdc1aa8c0015aa9e4b3e233811",
     "references/green-metrics-boundaries.md": "d5997c3d44a8717df9887b3ef095851f7013e5c2fbbf70f54de78a9b9bbaa34f",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_green_factory_ledger.py": "520ab93bba064c257985081e18d8fe034ea94a13261db3ea24d76ec488c0371f",
     "scripts/validate_green_metrics.py": "73e724372f52a9207d8c10372c04a43e608e15885ba55855f306afee3d25df70",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

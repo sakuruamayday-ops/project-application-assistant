@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "selection_rule": "exact-or-longest-alias",
   "report_types": {
     "preassessment": {
@@ -38,8 +38,8 @@
       "aliases": ["高企", "高新", "高新认定", "高新技术企业"],
       "core_object": "高企四关联、研发费用、高品收入和创新能力",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/high-tech-enterprise/preassessment.docx", "sha256": "8290023cc07243155459039046e2ca51ca02f467a8781fd2aca6d02c00c59a72"},
-        "feasibility": {"path": "assets/report-templates/high-tech-enterprise/feasibility.docx", "sha256": "a3d889a496a50ad59aabc60f55bd219988540032f1f608f8e93799b4b017172b"}
+        "preassessment": {"path": "assets/report-templates/high-tech-enterprise/preassessment.docx", "sha256": "37cf7a6002fba73118f1e99ddff2c395db3f95427f8bcc8c42c5154e6b9a2363"},
+        "feasibility": {"path": "assets/report-templates/high-tech-enterprise/feasibility.docx", "sha256": "a2407a71f01e313735e5273b02ffb146eeb68fc36bfcd4c3b9bdecd524818651"}
       }
     },
     {
@@ -48,8 +48,8 @@
       "aliases": ["专精特新", "省级专精特新", "市级专精特新"],
       "core_object": "专业化、精细化、特色化、创新能力及基础条件",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/specialized-sme/preassessment.docx", "sha256": "772b2a22bda79a114b900c29cb8854d47c5d7430877c1a143bbc457b4b38946c"},
-        "feasibility": {"path": "assets/report-templates/specialized-sme/feasibility.docx", "sha256": "d3838a8226a4c49ef7b9f52d5469bfb388a848d4550ce928bc87596d5123028d"}
+        "preassessment": {"path": "assets/report-templates/specialized-sme/preassessment.docx", "sha256": "05c9afe014c730aefc5334fb4f95eb12663e4a9bd788f5c08e45d810ca72161e"},
+        "feasibility": {"path": "assets/report-templates/specialized-sme/feasibility.docx", "sha256": "4740a5783fc98b9dc62c4dafe3163a43962274151f5d0d065effba0155a0f522"}
       }
     },
     {
@@ -58,8 +58,8 @@
       "aliases": ["小巨人", "专精特新小巨人", "国家级小巨人"],
       "core_object": "主导产品、细分市场、创新能力、产业链价值及质量提升项",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/little-giant/preassessment.docx", "sha256": "4c3b06fac241ddabd2a02695ee19f0b653465fe4ea519e8f4113756d6cd50ea9"},
-        "feasibility": {"path": "assets/report-templates/little-giant/feasibility.docx", "sha256": "691a0444d27d82ff6a8c16612fc2cb2654970bb7b42d618aa642ef6d9888a94c"}
+        "preassessment": {"path": "assets/report-templates/little-giant/preassessment.docx", "sha256": "4f07d6d7e5744b59ee0942bcd31a2dd68c2c80debcb0fa937646a6cd3ed0690d"},
+        "feasibility": {"path": "assets/report-templates/little-giant/feasibility.docx", "sha256": "aab910b75281341386d48266e32301d5954f6030994e3a5ded5fee38be31a870"}
       }
     },
     {
@@ -68,8 +68,8 @@
       "aliases": ["首台套", "首台套产品", "首台套技术装备"],
       "core_object": "装备产品分类、创新性、成熟度、销售应用及自主知识产权",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/first-equipment/preassessment.docx", "sha256": "f38f3fe239972839ed50352bb6093c71431e591e7e20b94adba2ebf4713a743e"},
-        "feasibility": {"path": "assets/report-templates/first-equipment/feasibility.docx", "sha256": "4efd18a14b34da26612572945d5df841961e488f0088abd8bd23fe1e38652311"}
+        "preassessment": {"path": "assets/report-templates/first-equipment/preassessment.docx", "sha256": "bd8ac28036f06afc0bafba91fdc0b2825d1d4188061c2687af328c2e731bc1e4"},
+        "feasibility": {"path": "assets/report-templates/first-equipment/feasibility.docx", "sha256": "c043048ad2c57a708a38dac231dce42eafc9158667f73f3d03719a6cf3176a70"}
       }
     },
     {
@@ -78,8 +78,8 @@
       "aliases": ["首批次", "新材料首批次"],
       "core_object": "新材料产品边界、关键性能、批次稳定性、首次应用及自主知识产权",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/first-material/preassessment.docx", "sha256": "114221b9e3051ccb71d757c12c98d287878d975c407bbc4422957ee6f6344a1d"},
-        "feasibility": {"path": "assets/report-templates/first-material/feasibility.docx", "sha256": "ccc3015fe1d56df513181e88b7634ae88e5512df9c8b43cb0986c0adc239e4f5"}
+        "preassessment": {"path": "assets/report-templates/first-material/preassessment.docx", "sha256": "8b771145c8fb9b908942a02a9669dd934b371e1e97cf8e4f9a80b28863f08222"},
+        "feasibility": {"path": "assets/report-templates/first-material/feasibility.docx", "sha256": "3ff2c6a09c28f7141c77f85928514b0c9c47080e3b2ba4f3ea95006f747ddf45"}
       }
     },
     {
@@ -88,8 +88,8 @@
       "aliases": ["首版次", "软件首版次"],
       "core_object": "软件产品边界、核心功能、技术创新、成熟度、知识产权和首次市场应用",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/first-software/preassessment.docx", "sha256": "2dfbf6bea094a83abb6cf7acb4105d38231c99c915cd10be2cf8be0def465c53"},
-        "feasibility": {"path": "assets/report-templates/first-software/feasibility.docx", "sha256": "c422ead0aa67736e534a81fde3c8ba9b53c0e4de4513c0440f4ece2c3beac193"}
+        "preassessment": {"path": "assets/report-templates/first-software/preassessment.docx", "sha256": "2ec68bfb20eac19dcd99934d942853d57e135a87761c7adadfa1d6c6b39c7c14"},
+        "feasibility": {"path": "assets/report-templates/first-software/feasibility.docx", "sha256": "627ec82d6970c26c8431ad914ed5f63f1a29473e0400a940ebf80ef093a25927"}
       }
     },
     {
@@ -98,8 +98,8 @@
       "aliases": ["研发中心", "企业研究院", "研发机构", "技术中心"],
       "core_object": "独立研发组织、稳定人员、研发投入、场地设备、项目成果和制度运行",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/enterprise-rd-center/preassessment.docx", "sha256": "c4b476e7fcd12adf3910636ff1e66d73ce8fce4b89a51e190b6022564fb55fab"},
-        "feasibility": {"path": "assets/report-templates/enterprise-rd-center/feasibility.docx", "sha256": "929a1b2d1c3187c91a06f56e7895fb56d365813a4b2fc2f6e96f6443ee071f9f"}
+        "preassessment": {"path": "assets/report-templates/enterprise-rd-center/preassessment.docx", "sha256": "fc90112da9aaf6f2ef526df05559d0e3c460e4a1c1e958b6aab4452c3690df64"},
+        "feasibility": {"path": "assets/report-templates/enterprise-rd-center/feasibility.docx", "sha256": "170f3d7191f9dd7948bc84945fffb94abec70ba5cb87096fd0e8f0d7149bb12a"}
       }
     },
     {
@@ -108,8 +108,8 @@
       "aliases": ["浙江制造精品", "市级制造精品"],
       "core_object": "产品技术质量、市场表现、品牌、标准、知识产权和制造能力",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/manufacturing-excellence/preassessment.docx", "sha256": "0c0ea670deb16793d734fd07d5b001cde7e00949244042a015b357761db9de89"},
-        "feasibility": {"path": "assets/report-templates/manufacturing-excellence/feasibility.docx", "sha256": "94d08f4901df826b8a5b431e403a0b602da383369cc1beaa5e71f421fd4572c3"}
+        "preassessment": {"path": "assets/report-templates/manufacturing-excellence/preassessment.docx", "sha256": "e972308418df9183a977cb71d9d116ae717eaa104db494d7fff66cffd2b8d68f"},
+        "feasibility": {"path": "assets/report-templates/manufacturing-excellence/feasibility.docx", "sha256": "03cb2bf224c8284ce3962e2d449de923e33c624791d6fac3badaad9e8db50338"}
       }
     },
     {
@@ -118,8 +118,8 @@
       "aliases": ["单项冠军", "制造业冠军", "省级单项冠军"],
       "core_object": "长期专注的细分产品、市场地位、创新能力、质量效益和全球化经营",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/single-champion/preassessment.docx", "sha256": "d9e940794fe43c8ba0579574a17273774a5225316fc386c877890c24f41c117f"},
-        "feasibility": {"path": "assets/report-templates/single-champion/feasibility.docx", "sha256": "78f6d439a65d77a4a0b0307516eba4986eebe220fb87885d944915f74e0fe5cc"}
+        "preassessment": {"path": "assets/report-templates/single-champion/preassessment.docx", "sha256": "4c3f660bea673ae322268b2c1ac107f6f83193c8c630d17a4a37fd3da3e8d732"},
+        "feasibility": {"path": "assets/report-templates/single-champion/feasibility.docx", "sha256": "fc00231ab7df5e0c6dbbc36bdfd6018f5c25d185fb80eba562932fed316209e7"}
       }
     },
     {
@@ -128,8 +128,8 @@
       "aliases": ["绿色制造", "国家级绿色工厂", "省级绿色工厂"],
       "core_object": "基础设施、管理体系、能源资源投入、产品、环境排放及绩效改进",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/green-factory/preassessment.docx", "sha256": "c4e347955b8c9b1743a05b6e68becf5ab4f0a83424c521fa1e140ff71d0203ce"},
-        "feasibility": {"path": "assets/report-templates/green-factory/feasibility.docx", "sha256": "cbb6151a169aa8726a077eaa26502bc6057284634d79d514543cf44a2f5e57da"}
+        "preassessment": {"path": "assets/report-templates/green-factory/preassessment.docx", "sha256": "2a956dca5ea6b14f45fdafb0baecd3c7a2d440e800fa72ae2ca3f882475c1011"},
+        "feasibility": {"path": "assets/report-templates/green-factory/feasibility.docx", "sha256": "ae1415ba5eb4bc5aab9ef167c7d3e5c56db69c33b15ae1911babec465de900c3"}
       }
     },
     {
@@ -138,8 +138,8 @@
       "aliases": ["数字化车间", "智能工厂", "未来工厂", "数字化改造"],
       "core_object": "设备联网、系统集成、数据贯通、业务场景、数字化绩效和安全治理",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/digitalization/preassessment.docx", "sha256": "c478c4ab9357775899b63779c99daaa39db6451d60d117b1e094b1dbec5bc907"},
-        "feasibility": {"path": "assets/report-templates/digitalization/feasibility.docx", "sha256": "083f16c248c41e07312bc7112df443f52b732712f5102ce4ece571d7f8f1c816"}
+        "preassessment": {"path": "assets/report-templates/digitalization/preassessment.docx", "sha256": "ef1468029b9add75adc27b6c4dbe8354c38ca3e4e27d15108759194cf13cc8ee"},
+        "feasibility": {"path": "assets/report-templates/digitalization/feasibility.docx", "sha256": "bf9dc6141dfb0d8dbc9f31cc888533c08e7b8301e813222fcd7a8d9322ce6fd4"}
       }
     },
     {
@@ -148,8 +148,8 @@
       "aliases": ["科技计划", "科技项目", "尖兵领雁", "市级重大"],
       "core_object": "指南方向、技术问题、研发基础、任务指标、预算和成果产业化",
       "templates": {
-        "preassessment": {"path": "assets/report-templates/science-plan/preassessment.docx", "sha256": "51aa182770790e230c3acc6e9d92b8a95ee557cf9ec478118c05f54ad60b8132"},
-        "feasibility": {"path": "assets/report-templates/science-plan/feasibility.docx", "sha256": "733045aac07330b063b918b2b19fdb938f421579539bcc2d859758e2c346077c"}
+        "preassessment": {"path": "assets/report-templates/science-plan/preassessment.docx", "sha256": "65d24fa727751a8ec6850e97dcdee835e11719bd6b0c2406e4ea8e640ffc45b8"},
+        "feasibility": {"path": "assets/report-templates/science-plan/feasibility.docx", "sha256": "b5f5943d17323f6de36db2e8649a74c96531ecd8bb633b7f8d447f8860824e5c"}
       }
     }
   ]

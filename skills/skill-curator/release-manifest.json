@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "skill-curator",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/impact-graph-schema.md",
@@ -24,12 +24,12 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "0afd0632aca0f26e2534f6afeb0fcb4a29e9ee6af56984a07640746ffaa41078",
+    "SKILL.md": "e3e7c8e7e324970944918156a7051e2997ff04e4a57d0665c3c10708fc7ecb39",
     "references/impact-graph-schema.md": "dec82f72005531320e6b92e8043290a5a19c77c8dad307c0e013c3e90a331b71",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/aggregate_corrections.py": "8374ef3abf02672490e1b9f579e3d1e0a70c0a43bbe610615fc93cee03ca5577",
     "scripts/build_impact_graph.py": "c82c0cea7bf01344df3973497b6684819ac6b243b26d9b5a61ba7659b8cb5ecd",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [

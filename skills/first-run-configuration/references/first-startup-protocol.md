@@ -2,13 +2,13 @@
 
 本协议适用于把完整技能包放入Agent后的第一次对话。
 
-1. 检查用户配置目录中的 `capabilities.json`。文件不存在或 `startup_protocol_version` 低于当前版本时，立即运行 `first-run-configuration`。
-2. 启用 `experience-recorder`、`skill-curator`、`skill-evolution` 和 `evolution-governance`。自动能力仅包括脱敏记录、四问复盘、冲突诊断和候选优化；正式Skill修改、合并、归档和发布仍需审批。
-3. 完成云端知识库及可选供应商能力检测，生成不含凭据的能力报告。团队知识库只允许配置一个名为 `jiaotang-kb` 的 MCP；新增三首分析等服务端能力必须沿用该连接，安装或升级不得创建第二个知识库 MCP、要求用户重新申请凭据或复制新的 MCP 地址。
-4. 创建个人覆盖层并执行 `manage_preferences.py sync`。同步失败时保留本地偏好，标记待同步，不阻塞基础能力。
-5. 检查当前运行时的`jiaotang-kb` MCP连接状态，并实际调用`knowledge_service_status`。未连接时先在当前Agent已获授权的范围内完成远程HTTP配置合并和一次重载；不得仅凭插件启用或配置文件存在宣布首次配置结束，只有返回`connected: true`才算通过。
-6. 仅在知识库状态工具调用成功后提醒用户输入：`帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills`。该提示在本协议首次完成时只出现一次。
+1. 先检查本轮工具目录和实际连接状态，再读取 `capabilities.json` 作为历史快照。报告不存在或版本较低不自动触发安装或写入；当前任务所需能力确实缺失时才运行对应配置。
+2. 将 `experience-recorder`、`skill-curator`、`skill-evolution` 和 `evolution-governance` 标记为可用。适用任务执行一次四问、冲突诊断和候选优化；实际写入脱敏日志、持久记忆、知识库或归档仍需对应授权，正式Skill修改、合并和发布仍需审批。
+3. 仅检测当前任务需要的云端知识库和可选供应商能力，生成不含凭据的能力报告。团队知识库只允许配置一个名为 `jiaotang-kb` 的 MCP；新增服务端能力沿用该连接，不创建第二个知识库 MCP，也不得新增知识库 MCP 或重复索要凭据。
+4. 仅在用户明确授权保存长期习惯时创建个人覆盖层并执行 `manage_preferences.py sync`。同步失败时保留本轮有效要求并标记尚未持久化，不阻塞业务能力。
+5. 本轮存在 `jiaotang-kb` 时实际调用 `knowledge_service_status`。当前任务依赖知识库而连接缺失时，才在已授权范围内刷新配置；不得仅凭配置文件存在宣布连接成功，也不得因辅助连接失败停止不依赖它的工作。
+6. Word、PDF、PPT、Excel、OCR 和联网检索以本轮实际工具为准。已有能力直接使用，缺少哪一项只配置哪一项，不再输出统一的重复安装指令。
 7. 进入 `project-application-assistant` 总入口。复杂任务结束时调用 `experience-recorder` 并实际回答四问；四问不得进入正式客户交付正文。
-8. 将 `startup_protocol_version`、`startup_protocol_completed` 和偏好协议版本写入能力报告。知识库连接尚未验证时保持未完成，下次继续检查；完成后更换模型或重启Agent时不重复首次提示。协议升级时重新执行新增步骤，但只能刷新原 `jiaotang-kb` 工具列表，不得新增知识库 MCP。
+8. 执行过首次配置时才将 `startup_protocol_version`、`startup_protocol_completed` 和偏好协议版本写入能力报告。只有当前任务需要知识库时，连接尚未验证才把该能力标记为待验证；不阻塞无关任务。更换模型或重启Agent不重复提示。协议升级只执行新增且当前必需的步骤，并继续复用原 `jiaotang-kb`。
 
-Skills没有统一安装钩子。Agent未自动触发时，应在发现本技能包且能力报告缺失的第一轮对话执行本协议。
+能力报告是一次检测快照，不是日常调用许可证。Agent 未自动触发时，也只在用户进入首次配置或任务所需能力确实缺失时执行本协议。

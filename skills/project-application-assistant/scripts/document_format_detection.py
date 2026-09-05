@@ -22,11 +22,12 @@ MAX_CFB_DIRECTORY_SECTORS = 16_384
 MAX_ZIP_MEMBERS = 20_000
 MAX_ZIP_SNIFF_MEMBER_BYTES = 2 * 1024 * 1024
 MAX_ZIP_SNIFF_COMPRESSION_RATIO = 2_000
-PROPRIETARY_OFFICE_SUFFIXES = {".wps", ".et"}
+PROPRIETARY_OFFICE_SUFFIXES = {".wps", ".et", ".dps"}
 KNOWN_DOCUMENT_SUFFIXES = {
     ".doc", ".docx", ".docm", ".dotx", ".dotm", ".wps", ".rtf",
     ".xls", ".xlsx", ".xlsm", ".xltx", ".xltm", ".ods", ".odt", ".csv",
     ".tsv", ".et", ".pdf", ".txt",
+    ".ppt", ".pptx", ".pptm", ".potx", ".potm", ".ppsx", ".ppsm", ".dps",
 }
 WORD_MAIN_CONTENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
@@ -39,6 +40,14 @@ EXCEL_MAIN_CONTENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml",
     "application/vnd.ms-excel.sheet.macroEnabled.main+xml",
     "application/vnd.ms-excel.template.macroEnabled.main+xml",
+}
+PRESENTATION_MAIN_CONTENT_TYPES = {
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
+    "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml",
+    "application/vnd.openxmlformats-officedocument.presentationml.slideshow.main+xml",
+    "application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml",
+    "application/vnd.ms-powerpoint.template.macroEnabled.main+xml",
+    "application/vnd.ms-powerpoint.slideshow.macroEnabled.main+xml",
 }
 
 
@@ -220,6 +229,11 @@ def _detect_zip(path: Path, declared_suffix: str) -> DocumentDetection:
             ):
                 macros = "xl/vbaProject.bin" in names
                 return DocumentDetection(declared_suffix, "xlsx", macros)
+            if (
+                "ppt/presentation.xml" in names
+                and overrides.get("ppt/presentation.xml") in PRESENTATION_MAIN_CONTENT_TYPES
+            ):
+                return DocumentDetection(declared_suffix, "pptx", "ppt/vbaProject.bin" in names)
             if "content.xml" in names:
                 try:
                     mimetype = _read_small_zip_member(archive, "mimetype", 512).decode("ascii", errors="replace").strip()
@@ -252,10 +266,12 @@ def _detect_ole(path: Path, declared_suffix: str) -> DocumentDetection:
         return DocumentDetection(declared_suffix, "xls")
     if "worddocument" in folded:
         return DocumentDetection(declared_suffix, "doc")
+    if "powerpoint document" in folded:
+        return DocumentDetection(declared_suffix, "ppt")
     return DocumentDetection(
         declared_suffix,
         "proprietary-office" if declared_suffix in PROPRIETARY_OFFICE_SUFFIXES else "unknown-ole",
-        detail="OLE 容器不含 WordDocument、Workbook 或 Book 流",
+        detail="OLE 容器不含 WordDocument、Workbook、Book 或 PowerPoint Document 流",
     )
 
 
@@ -286,11 +302,11 @@ def detect_document(path: Path) -> DocumentDetection:
         return _detect_zip(path, declared_suffix)
     if prefix.startswith(OLE_MAGIC):
         return _detect_ole(path, declared_suffix)
-    if declared_suffix == ".et":
+    if declared_suffix in {".et", ".dps"}:
         return DocumentDetection(
             declared_suffix,
             "proprietary-office",
-            detail="ET 文件未识别为 XLS、XLSX 或 ODS 兼容容器",
+            detail="文件未识别为兼容 Office 或 ODF 容器",
         )
     if prefix.startswith(PDF_MAGIC):
         return DocumentDetection(declared_suffix, "pdf")

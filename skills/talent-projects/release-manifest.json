@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "talent-projects",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,12 +23,12 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "ef16f4bf584c93e5c62e7f1949c0d267d65ea8b2e7d7ed04bdb7c2a6b061001e",
+    "SKILL.md": "e629a17da342b5cb18980fd12c7dea950a1478576d6b058faa90d878ab2463cb",
     "references/hangzhou-talent-and-ai-voucher-snapshot-2026-08-06.md": "97cd95fc2eed5161c4bb3fd889d1d9daa456ee389798201f17ad7f7824b87d1f",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/talent-evidence-matrix.md": "995b4d0c45cf566f523f188b70dfdc9e10817e60d512f3f9737751c4df859bd4",
     "references/talent-startup-location-preassessment.md": "fc0d40367915e7071859b2df64b4b7e8280d78cb3fb2e0b9e4d5b0d6b4d01e44",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_talent_timeline.py": "97362cad588094fdf6da22bca281e133fe9a6e3e57b95e471d1544235718ac85",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

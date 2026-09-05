@@ -10,7 +10,9 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from xml.etree import ElementTree as ET
+# Word 的 mc:Ignorable 引用的是前缀名称，即使正文没有使用这些命名空间，
+# 也必须保留声明。ElementTree 会丢弃它们，产生可解压却无法被 Office 打开的文件。
+from lxml import etree as ET
 
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"

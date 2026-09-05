@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "patent-router",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "publisher-ed25519.pub",
@@ -66,7 +66,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "2e3aeb8ba34a7d2f99112aae905e6c29ca9c33eec3c970893f5d4a40ebed693e",
+    "SKILL.md": "5969d98d7b707c6c791d30895744e194b52f29b5bd19e0cdb4cfd1b43afab1a4",
     "THIRD_PARTY_NOTICES.md": "f9d8130b58b8e7b245fd9c1087c07864ec186b04b4a064f091374db8bc475324",
     "references/ai-patent-practice.md": "72465c41a0cbc124c472fd788a8d57cda15475fd2e1c916350ab796a949dd4f9",
     "references/claim-prior-art-matrix.md": "e7734245c823a30982b26efb821839e825ab4482d6f96512e76658d65577b2c5",
@@ -87,7 +87,7 @@
     "references/p3-preexam.md": "63c7a7a61ff8ee384f059e2043e1ebb66c7c24c8661b0687e72883d4e276066c",
     "references/patent-application-delivery-contract.json": "fdbf253a6f61bc061be07cd82b8d2d3d5536d5358af74e73880000a5ad3041de",
     "references/patent-layout-planning.md": "c8cce21e296e9c8a9035665c0de225f0280bd5d1263961c352b0325c4ba2eaae",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/preexam-center-recommendation.md": "401ac74d34883628b7c134d3e57c5d2002ec4d0ed59f5e6aea6ff8a9e1114570",
     "references/preexam-default-centers.md": "574cd07f896b71ee3573a1bc0f6eabbd8afec57460a888d43ba386c593ab3c28",
     "references/regression-gates.md": "295ec46ee4941aec2f2b12a6293b76c077d8791449d6659a7930ea888c67e304",
@@ -111,7 +111,7 @@
     "scripts/patent_case_manifest.py": "6102b29d528faa6870af6252da22c2432240ccf2587331ba7e35adb263f0e50e",
     "scripts/patent_index.py": "505b8d030dd83906b2977c19cab1080591f5e6ff01628954f9d4c01934bc6a9e",
     "scripts/patent_route.py": "4aaa69382ef175ccf9e2dcb93140264eeeb74d3255761f5e2754dd3fcc418b1d",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/recommend_preexam_center.py": "9ca6bcf0caacb52efc0dc6ae9243774f5eabf7bb838f03e6339ba01caada8c76",
     "scripts/render_docx.py": "7684ce104c82f848c2b115c279702c48b8d073b821b3e8bc80947fcd62388943",
     "scripts/safe_temp.py": "b2451d4d5462ac8d85e70027bb757fdcd7284adf42e41b3ed530b91c7f38bda4",

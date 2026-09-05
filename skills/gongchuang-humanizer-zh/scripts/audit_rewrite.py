@@ -11,7 +11,8 @@ from pathlib import Path
 NUMBER_RE = re.compile(
     r"(?<![A-Za-z0-9])(?:\d+(?:\.\d+)?(?:×10[⁻−-]?[⁰¹²³⁴⁵⁶⁷⁸⁹0-9]+)?)(?:%|％|毫秒|秒|分钟|小时|天|年|万元|亿元|元|项|个|组|家|人|次|GWh|Wh|K|mm|cm|m)?"
 )
-ACRONYM_RE = re.compile(r"\b[A-Z][A-Z0-9-]{1,}\b")
+# 中文属于 Unicode 单词字符；使用 ASCII 边界才能识别紧贴中文的 X1、MES。
+ACRONYM_RE = re.compile(r"\b[A-Z][A-Z0-9-]{1,}\b", re.ASCII)
 STRONG_RE = re.compile(
     r"首创|唯一|(?:国内|国际|行业)?第一|(?:国内|国际|行业)?领先|国际先进|"
     r"填补[^，。；\n]{0,24}空白|替代(?:进口|[^，。；\n]{1,24})|自主可控"

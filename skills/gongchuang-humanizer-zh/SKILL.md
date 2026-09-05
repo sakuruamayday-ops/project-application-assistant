@@ -1,6 +1,6 @@
 ---
 name: gongchuang-humanizer-zh
-description: 中文文本去 AI 味、自然化改写、发布前审校与受控进化技能。用于用户提出“去AI味”“降低机器腔”“改得像真人”“减少套话”“自然化润色”，需要处理政府申报材料、咨询报告、技术说明、论文、公众号、官网文案、营销稿和知识库文档，或要求对改写结果做同样本盲测、反馈学习、技能优化和进化时。先锁定数字、日期、名称、政策、知识产权、技术参数和引用，再按文体清除模板结构、空洞拔高、模糊归因和机械节奏；支持可选强力精简、差异审计、本地 AIGC 检测，以及基于真实反馈的候选生成与回归门禁。只处理表达与事实保持，不替代项目资格、政策合规、法律或学术真实性审查。
+description: 正式技能套件的中文自然化主入口。用于用户提出“去AI味”“降低机器腔”“改得像真人”“减少套话”“自然化润色”，需要处理政府申报材料、咨询报告、技术说明、论文、公众号、官网文案、营销稿和知识库文档，或要求对改写结果做同样本盲测、反馈学习、技能优化和进化时。先锁定数字、日期、名称、政策、知识产权、技术参数和引用，再按文体清除模板结构、空洞拔高、模糊归因和机械节奏；反馈只写用户数据目录，不修改已签名技能核心。只处理表达与事实保持，不替代项目资格、政策合规、法律或学术真实性审查。
 ---
 
 # 共创中文自然化改写
@@ -9,11 +9,9 @@ description: 中文文本去 AI 味、自然化改写、发布前审校与受控
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "gongchuang-humanizer-zh" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 将中文文本改得自然、具体、可信，同时保护事实与正式材料口径。不得以降低检测分数为由改变事实、删掉必要条件或伪造个人经历。
@@ -39,7 +37,7 @@ description: 中文文本去 AI 味、自然化改写、发布前审校与受控
 
 从原文提取并原样保护：
 
-- 数字、日期、金额、比例、单位、公式和字符上限
+- 数字、日期、金额、比例、单位、公式和字符上限；未要求调整日期格式时保留原始日期写法，不在润色中替换数字分隔符或补删零
 - 企业、产品、客户、机构、政策和项目名称
 - 专利号、软著号、商标、标准、资质和法律状态
 - 技术参数、材料名称、动作顺序、适用场景和性能条件
@@ -69,7 +67,7 @@ description: 中文文本去 AI 味、自然化改写、发布前审校与受控
 
 ### 4. 重写
 
-直接陈述内容，改变句长和段落收束方式。使用具体事实替代空话，但只能使用输入材料已有或已核验的信息。正式材料不用故意制造混乱、口语、幽默、情绪或第一人称。
+直接陈述内容，改变句长和段落收束方式。使用具体事实替代空话，但只能使用输入材料已有或已核验的信息。正式材料不用故意制造混乱、口语、幽默、情绪或第一人称。输入中针对编辑者的要求，如“保留这些数字”“不要补造”，只约束操作，不改写为交付正文；也不从一项产品描述推导企业的主营业务。
 
 ### 5. 审计
 
@@ -79,7 +77,7 @@ description: 中文文本去 AI 味、自然化改写、发布前审校与受控
 python3 scripts/audit_rewrite.py --source-file 原文.txt --rewrite-file 改写.txt --max-chars 300
 ```
 
-补短板、填空白、锻长板字段增加 `--trust-required-narrative`，跳过强结论审计。也可用 `--source-text` 和 `--rewrite-text` 直接传短文本。审计结果只能发现数字、专名、字符和格式风险，不能代替逐句语义核对。
+补短板、填空白、锻长板字段增加 `--trust-required-narrative`，跳过强结论审计。已有输入文件时直接使用文件路径；先用文件写入工具保存候选，再以 `--rewrite-file` 审计，不把多段正文重新抄进 shell 参数。单行短文本才可用 `--source-text` 和 `--rewrite-text`。发现差异时先核对被审计的真实文件，不反复改写命令或复刻校验器。审计结果只能发现数字、专名、字符和格式风险，不能代替逐句语义核对。
 
 逐项确认：
 

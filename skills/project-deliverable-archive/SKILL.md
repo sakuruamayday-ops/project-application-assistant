@@ -1,22 +1,20 @@
 ---
 name: project-deliverable-archive
-description: 自动整理政府项目、企业分析、知识产权分析和正式报告的已核验成果。用于复杂任务完成、生成正式交付物或用户要求归档时，在Agent可写工作区建立项目目录、版本和来源清单；不依赖特定笔记软件。
+description: 为政府项目、企业分析、知识产权分析和正式报告生成待归档清单；只有用户明确要求归档或当前任务已有对应授权时，才在Agent可写工作区建立项目目录、版本和来源清单。不依赖特定笔记软件。
 ---
 
-# 项目成果自动归档
+# 项目成果归档
 
 
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "project-deliverable-archive" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
-任务形成可复用成果后，自动整理到当前工作区 `企业全生命周期助手归档/`。归档只复制或生成文件，不改动原始资料，不保存账号、密码、Cookie、Token或无关客户信息。
+任务形成可复用成果后，默认只生成待归档清单。用户明确要求归档，或当前任务已有同一内容、同一目标位置的归档授权时，才整理到当前工作区 `企业全生命周期助手归档/`；已获授权的同一动作无需再次确认。归档只复制或生成文件，不改动原始资料，不保存账号、密码、Cookie、Token或无关客户信息。生成本轮交付文件不等于授权归档、写入知识库、持久记忆或对外共享。
 
 ## 目录
 

@@ -37,39 +37,14 @@ def _path_is_within(path: Path, root: Path) -> bool:
         return False
 
 
-def _default_state_root(plugin_root: Path) -> Path:
+def _default_state_root(_suite_root: Path) -> Path:
     explicit = os.environ.get("GONGCHUANG_BEHAVIOR_STATE_ROOT", "").strip()
     if explicit:
         return Path(explicit).expanduser().resolve()
-    plugin_data = os.environ.get("CODEBUDDY_PLUGIN_DATA", "").strip()
-    if plugin_data and not plugin_data.startswith("${"):
-        return Path(plugin_data).expanduser().resolve() / "behavior-hook"
-    resolved = plugin_root.expanduser().resolve()
-    plugin_container = resolved.parent
-    marketplace = plugin_container.parent
-    marketplaces = marketplace.parent
-    host_plugins = marketplaces.parent
-    host_home = host_plugins.parent
-    safe_component = re.compile(r"[A-Za-z0-9._-]{1,128}")
-    if (
-        plugin_container.name == "plugins"
-        and marketplaces.name == "marketplaces"
-        and host_plugins.name == "plugins"
-        and host_home.name in {".workbuddy", ".codebuddy"}
-        and safe_component.fullmatch(resolved.name)
-        and safe_component.fullmatch(marketplace.name)
-    ):
-        return (
-            host_plugins
-            / "data"
-            / f"{resolved.name}-{marketplace.name}"
-            / "behavior-hook"
-        )
-    raise ValueError("无法定位WorkBuddy行为状态目录，请显式传入--state-root")
-
-
-def _canonical_state_root(plugin_root: Path) -> Path:
-    return _default_state_root(plugin_root).expanduser().resolve()
+    raise ValueError(
+        "无法定位当前轮次行为状态目录；请显式传入--state-root或设置"
+        "GONGCHUANG_BEHAVIOR_STATE_ROOT"
+    )
 
 
 def _docx_blocks(path: Path) -> tuple[list[str], list[list[str]]]:
@@ -137,7 +112,7 @@ def _pdf_font_is_self_contained(document: Any, xref: int, subtype: str) -> bool:
 
 
 def _pdf_cjk_font_errors(path: Path) -> list[str]:
-    """Require visible Chinese spans to use the bundled, embedded CJK font."""
+    """Require visible Chinese spans to have self-contained glyph data."""
     import fitz
 
     errors: list[str] = []
@@ -161,9 +136,7 @@ def _pdf_cjk_font_errors(path: Path) -> list[str]:
                 matching = [item for item in fonts if family and (family in item[0] or item[0] in family)]
                 if not matching or not any(embedded for _, embedded in matching):
                     errors.append(f"PDF第{page_number}页中文字体未嵌入")
-                    continue
-                if "notosanssc" not in family:
-                    errors.append(f"PDF第{page_number}页中文未绑定便携字体 Noto Sans SC")
+                # 已嵌入的宿主字体同样便携，不能按字体名称误拒绝有效 PDF。
     finally:
         document.close()
     return list(dict.fromkeys(errors))
@@ -204,12 +177,17 @@ def validate_profile(
     profile = contract.get("delivery_profiles", {}).get(profile_id)
     if not isinstance(profile, dict):
         raise ValueError(f"未知报告画像:{profile_id}")
-    errors: list[str] = []
+    errors = [
+        f"交付文件不存在或不是文件:{path.name}"
+        for path in artifacts
+        if not path.is_file()
+    ]
     by_format = {path.suffix.casefold().lstrip("."): path for path in artifacts if path.is_file()}
     for requirement in profile.get("required_artifacts", []):
-        for suffix in requirement.get("formats", []):
-            if str(suffix).casefold() not in by_format:
-                errors.append(f"缺少要求格式:{suffix}")
+        # 与客户端保持一致：formats 是同一交付物的可选格式，不是全部必交。
+        formats = [str(suffix).casefold() for suffix in requirement.get("formats", [])]
+        if formats and not any(suffix in by_format for suffix in formats):
+            errors.append(f"缺少要求格式:{'或'.join(formats)}")
     docx = by_format.get("docx")
     pdf = by_format.get("pdf")
     paragraphs: list[str] = []
@@ -286,10 +264,6 @@ def main() -> int:
         if args.state_root
         else _default_state_root(plugin_root)
     )
-    if (plugin_root / ".codebuddy-plugin/plugin.json").is_file():
-        canonical = _canonical_state_root(plugin_root)
-        if root != canonical:
-            raise ValueError("WorkBuddy正式画像回执必须写入宿主行为状态目录")
     current = json.loads((root / "current-turn.json").read_text(encoding="utf-8"))
     turn_id = str(current.get("turn_id") or "").strip()
     if not turn_id:

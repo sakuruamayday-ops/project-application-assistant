@@ -9,16 +9,14 @@ description: 检索团队统一云端知识服务。需要历史政策、相似�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "local-knowledge-retrieval" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
-先检查当前宿主是否已经连接`jiaotang-kb` MCP。未连接时，引导用户登录门户点击“一键安装”，并直接执行用户粘贴的一段完整指令；手工配置页会自动填入当前登录用户的真实个人Token，不让用户去其他页面寻找后再回来填写。
+先检查当前宿主是否实际暴露团队知识工具或已经连接`jiaotang-kb` MCP。普通独立客户端使用其已配置的团队知识服务，不读取管理员本机镜像或绝对路径；本机管理员环境若已有活动本地索引，按本机规则直接使用，并将当期适用性回到官方原文。当前任务确实需要团队知识但连接缺失时，才进入当前客户端或登录门户提供的连接流程，不假设任何特定第三方宿主、插件市场或安装命令。
 
-普通成员通过远程HTTP`jiaotang-kb`访问团队知识。个人Bearer Token只保存在当前用户的WorkBuddy MCP配置中；Skill不读取、不输出、不写入普通日志，也不在最终回复中复述。通过固定协议调用团队知识服务：
+普通成员通过远程HTTP`jiaotang-kb`访问团队知识。个人Bearer Token只保存在当前宿主的安全凭据存储中；Skill不读取、不输出、不写入普通日志，也不在最终回复中复述。未连接、无权限、工具未暴露和当前检索层未命中必须分别报告，均不得写成资料不存在。通过固定协议调用团队知识服务：
 
 1. 先调用`knowledge_service_status`检查连接，只有返回`connected: true`才视为连接成功。
 2. 解析企业、项目、地区、年份、批次和文件类型意图，读取 [检索编排协议](references/search-orchestration.md)。
@@ -49,7 +47,7 @@ description: 检索团队统一云端知识服务。需要历史政策、相似�
 - 文档命中数、名单事实行数、去重企业数和“企业＋项目＋年度/批次”记录数必须分开，不得相互换算。
 - 最终写 `statement_conflicts=无` 前，必须逐项复核“声称逐一核验的企业数、实际名单核验调用数、各分级显式企业数、分级合计和总计”。`6/5家`、同一对象出现两个计数、调用数与声称核验数不一致，都必须列为冲突，不得写“无”。
 - Skill 调用回执中的 `activation_ok`、`prompt_context_ok` 和 `delivery_check_ok` 是三层独立状态。`activation_ok=true` 且 `state_origin=activation_fallback` 只证明技能已激活并持久化；应报告 `prompt_hook_observable=false`、`delivery_check=unavailable`，不得把它改写为技能激活失败，也不得声称完整 Hook 闭环。
-- 验收任务默认只读。用户没有明确要求归档、保存日志或生成本地收据文件时，不创建 `.workbuddy/memory`、工作日志或业务文件；宿主自动缓存仍须如实计入文件写入事件。
+- 验收任务默认只读。用户没有明确要求归档、保存日志或生成本地收据文件时，不创建宿主管理的记忆目录、工作日志或业务文件；宿主自动缓存仍须如实计入文件写入事件。
 - 不得把尚未取得官方最终认定名单的当期或未来批次写成“主表遗漏”。只有官方最终名单已经可读且未进入主表时，才能列为名单覆盖缺口；否则写“尚未形成或尚未核验最终名单”。
 - 连接器超时后只做一次工具重发现和一次 `knowledge_service_status` 复核。若 deferred tool 索引仍不可用，立即停止新增查询，保留已取得证据并标记部分完成；不得连续空转重试，也不得声称连接已恢复。
 

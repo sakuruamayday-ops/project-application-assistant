@@ -105,6 +105,6 @@
   },
   "host_adapters": {
     "codex": "_runtime/grounded-citations/codex_adapter.py",
-    "workbuddy": "_runtime/grounded-citations/workbuddy_adapter.py"
+    "first_party_client": "_runtime/grounded-citations/first_party_client_adapter.py"
   }
 }

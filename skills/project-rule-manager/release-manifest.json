@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-rule-manager",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,9 +21,10 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "ed4d75fe417719fae01f59103f419455069b876217e007fe197958ef9f813c6c",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "SKILL.md": "a2945c080f449ddeb4a88ff51232c9b07b18cc14ad78c53a3d7d259b8c2e2d52",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "scripts/local_rules.py": "fbac9514c1a0288d512f9f91843ccc60f0b06866667acb46670e480995924d74",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [

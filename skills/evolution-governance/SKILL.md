@@ -9,18 +9,18 @@ description: 安装企业全生命周期助手后自动启用，管理技能自�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "evolution-governance" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 治理状态机
 
 默认进入“observed”，依次经过“candidate、dry-run、impact-reviewed、tested、approved、signed、installed、stable”。任一门禁失败进入“blocked”；安装或运行回归失败进入“rollback-required”。详细进入和退出条件见 `references/governance-state-machine.md`。
 
-允许自动记录问题、诊断、评分、生成候选差异和运行测试；不得自动跨过审批、签名或安装回归。正式文件变更前必须创建可恢复快照，不得以覆盖原目录代替快照。
+允许在本轮形成问题候选、诊断、评分、候选差异并运行测试；没有对应授权时不得把候选写入持久记忆、审计日志或知识库，也不得自动跨过审批、签名或安装回归。正式文件变更前必须创建可恢复快照，不得以覆盖原目录代替快照。
+
+用户明确要求修复已经复现或已核验的问题时，该请求可以直接建立有界候选，不等待自主进化的纠正次数、跨任务阈值或冷却期；仍须绑定实际影响范围、候选差异、测试、目标哈希和本次授权。用户只要求修复不自动等于授权签名、安装或正式发布，除非同一请求已明确包含这些动作。
 
 ## 风险与审批
 
@@ -35,9 +35,15 @@ description: 安装企业全生命周期助手后自动启用，管理技能自�
 
 ## 审批材料
 
+先锁定本次候选的明确标识及用户指定材料范围。另一候选的纠正次数、失败回执和变更内容不能合并成本次证据；同目录或同一技能名称不代表同一候选。没有候选关联标识时，只使用本轮明确提供的事实，将其他记录列为未关联，不据此扩大或替换本次变更内容。
+
+材料状态依输入事实填写：用户明确说“没有回退记录”才记该记录已知缺失；没有提到稳定快照，只记快照未提供或未核验，不能由缺回退记录推成没有快照。审批规则要求某材料必须存在，只说明它是审批前提，不证明本候选实际上没有该材料。一次脚本通过必须保留为已有局部测试证据，不能写成全部回归结果缺失；它也不能代替完整回归或真实业务验收。可用动作由这些状态决定，不因要给审批结论而补造候选事实。
+
+不实际发布技能是指不签署、安装、上架或切换正式版本。用户要求治理记录文件及打开入口时，仍应生成本地说明文件并使用客户端文件卡提供入口；显示本地文件不等于发布技能或向外部传送文件。
+
 审批前必须同时具备：`evolution-batch.json`、影响报告、稳定快照、候选差异、回归结果和目标文件哈希。按 `references/approval-contract.md` 绑定审批对象与差异哈希；审批后源码变化即使测试仍通过，也必须重新审批。
 
-影响图中的每个技能、模板、脚本、共享资产和门禁必须标记为“需要修改、仅需回归、不受影响”。缺少任一材料或存在未解析影响时保持“dry-run”。
+影响图中的每个技能、模板、脚本、共享资产和门禁必须标记为“需要修改、仅需回归、不受影响”。未确认材料全部齐备、有效或影响范围仍未解析时，不能晋级审批。结论、动作和正文沿用材料表中的同一状态：未知项要求先取得并核验，确认缺失项才要求补建，不把“未确认齐备”缩写为“全部缺失”。只有纠正次数而没有差异内容时不能推定行为已改变或风险至少为中风险。
 
 运行 `python3 scripts/validate_evolution_batch.py <evolution-batch.json>`。结果非 `pass` 时禁止签名和发布。
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from io import BytesIO
 import struct
 import subprocess
 import sys
@@ -8,6 +9,8 @@ import zipfile
 from pathlib import Path
 
 import pymupdf
+from pptx import Presentation
+from pptx.util import Inches
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "extract_workspace_document.py"
@@ -422,6 +425,163 @@ def test_image_only_pdf_requires_ocr_instead_of_counting_page_heading_as_text(tm
     assert result["pages"] == 1
 
 
+def test_encrypted_pdf_requests_an_unlocked_copy_without_calling_it_damaged(tmp_path: Path) -> None:
+    source = tmp_path / "encrypted.pdf"
+    with pymupdf.open() as document:
+        document.new_page().insert_text((72, 72), "GC-QA encrypted input")
+        document.save(source, encryption=pymupdf.PDF_ENCRYPT_AES_256, user_pw="test-only", owner_pw="owner-test-only")
+    code, result = run(source)
+    assert code == 0
+    assert result["status"] == "encrypted_document"
+    assert result["action"] == "provide_password_free_copy"
+    assert result["retryable"] is False
+
+
+def test_mixed_pdf_retains_text_and_identifies_the_scanned_pages(tmp_path: Path) -> None:
+    source = tmp_path / "mixed.pdf"
+    with pymupdf.open() as image_source:
+        image_source.new_page(width=400, height=300).insert_text((30, 80), "GC-QA scanned page")
+        pixels = image_source[0].get_pixmap().tobytes("png")
+    with pymupdf.open() as document:
+        document.new_page().insert_text((72, 72), "GC-QA retained text")
+        page = document.new_page(width=400, height=300)
+        page.insert_image(page.rect, stream=pixels)
+        document.save(source)
+    code, result = run(source)
+    assert code == 0
+    assert result["status"] == "needs_ocr"
+    assert result["ocr_pages"] == [2]
+    assert "GC-QA retained text" in result["text"]
+    assert result["action"] == "ocr_selected_pages"
+    assert result["retryable"] is False
+
+
+def test_large_scanned_page_with_a_text_header_still_requires_ocr(tmp_path: Path) -> None:
+    source = tmp_path / "scan-with-header.pdf"
+    with pymupdf.open() as image_source:
+        image_source.new_page(width=400, height=300).insert_text((30, 80), "GC-QA raster body")
+        pixels = image_source[0].get_pixmap().tobytes("png")
+    with pymupdf.open() as document:
+        page = document.new_page(width=400, height=360)
+        page.insert_text((30, 25), "GC-QA text header")
+        page.insert_image(pymupdf.Rect(0, 60, 400, 360), stream=pixels)
+        document.save(source)
+    _, result = run(source)
+    assert result["status"] == "needs_ocr"
+    assert result["ocr_pages"] == [1]
+    assert "GC-QA text header" in result["text"]
+
+
+def test_extracts_presentation_slide_order_tables_and_notes(tmp_path: Path) -> None:
+    source = tmp_path / "slides.pptx"
+    document = Presentation()
+    first = document.slides.add_slide(document.slide_layouts[1])
+    first.shapes.title.text = "GC-QA first slide"
+    first.placeholders[1].text = "GC-QA body"
+    first.notes_slide.notes_text_frame.text = "GC-QA speaker note"
+    second = document.slides.add_slide(document.slide_layouts[5])
+    second.shapes.title.text = "GC-QA second slide"
+    table = second.shapes.add_table(2, 2, Inches(1), Inches(2), Inches(6), Inches(2)).table
+    table.cell(0, 0).text = "GC-QA table"
+    table.cell(1, 1).text = "48"
+    document.save(source)
+    code, result = run(source)
+    assert code == 0
+    assert result["status"] == "extracted"
+    assert result["detected_kind"] == "pptx"
+    assert result["slides"] == 2
+    assert result["text"].index("GC-QA first slide") < result["text"].index("GC-QA second slide")
+    assert "GC-QA table" in result["text"]
+    assert "GC-QA speaker note" in result["text"]
+    assert result["external_links"] == "not-followed"
+    compatible = tmp_path / "renamed.dps"
+    compatible.write_bytes(source.read_bytes())
+    assert run(compatible)[1]["detected_kind"] == "pptx"
+
+
+def test_presentation_scan_below_text_title_still_requests_ocr(tmp_path: Path) -> None:
+    source = tmp_path / "slide-with-raster-body.pptx"
+    with pymupdf.open() as image_source:
+        image_source.new_page(width=600, height=300).insert_text((30, 80), "GC-QA raster slide body")
+        pixels = image_source[0].get_pixmap().tobytes("png")
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[5])
+    slide.shapes.title.text = "GC-QA text title"
+    picture = slide.shapes.add_picture(BytesIO(pixels), Inches(0), Inches(1), width=Inches(10), height=Inches(6))
+    presentation.save(source)
+    _, result = run(source)
+    assert result["status"] == "needs_ocr"
+    assert result["ocr_pages"] == [1]
+    assert "GC-QA text title" in result["text"]
+    assert result["retryable"] is False
+    picture.width = Inches(1)
+    picture.height = Inches(1)
+    presentation.save(source)
+    assert run(source)[1]["status"] == "extracted"
+    group = slide.shapes.add_group_shape()
+    group.shapes.add_picture(BytesIO(pixels), Inches(0), Inches(1), width=Inches(1), height=Inches(1))
+    group.width = Inches(10)
+    group.height = Inches(6)
+    presentation.save(source)
+    assert run(source)[1]["ocr_pages"] == [1]
+    group.width = Inches(1)
+    group.height = Inches(1)
+    presentation.save(source)
+    assert run(source)[1]["status"] == "extracted"
+
+
+def test_mixed_pdf_vector_only_page_is_not_silently_dropped(tmp_path: Path) -> None:
+    source = tmp_path / "mixed-vector.pdf"
+    with pymupdf.open() as document:
+        document.new_page().insert_text((72, 72), "GC-QA retained text")
+        page = document.new_page()
+        page.draw_rect(pymupdf.Rect(72, 72, 500, 300), color=(0, 0, 0), fill=(0.2, 0.4, 0.6))
+        document.save(source)
+    _, result = run(source)
+    assert result["status"] == "needs_ocr"
+    assert result["ocr_pages"] == [2]
+    assert "GC-QA retained text" in result["text"]
+
+
+def test_legacy_presentation_has_an_explicit_conversion_action(tmp_path: Path) -> None:
+    source = tmp_path / "legacy.ppt"
+    data = bytearray((FIXTURES / "document-extraction-sample.xls").read_bytes())
+    replace_ole_directory_name(data, "Workbook", "PowerPoint Document")
+    source.write_bytes(data)
+    code, result = run(source)
+    assert code == 0
+    assert result["detected_kind"] == "ppt"
+    assert result["status"] == "conversion_required"
+    assert result["action"] == "convert_to_supported_format"
+    assert result["retryable"] is False
+    assert result["text"] == ""
+
+
+def test_dps_compatibility_input_uses_the_real_pptx_container(tmp_path: Path) -> None:
+    source = tmp_path / "兼容演示.dps"
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[5])
+    slide.shapes.title.text = "GC-QA 演示文稿 17 + 31 = 48"
+    presentation.save(source)
+    code, result = run(source)
+    assert code == 0
+    assert result["detected_kind"] == "pptx"
+    assert result["status"] == "extracted"
+    assert result["slides"] == 1
+    assert "17 + 31 = 48" in result["text"]
+
+
+def test_proprietary_dps_does_not_guess_binary_text_or_retry(tmp_path: Path) -> None:
+    source = tmp_path / "专有演示.dps"
+    source.write_bytes(b"WPS-DPS-unknown\x00\xff\x00")
+    code, result = run(source)
+    assert code == 0
+    assert result["status"] == "conversion_required"
+    assert result["action"] == "convert_to_supported_format"
+    assert result["retryable"] is False
+    assert result["text"] == ""
+
+
 def test_rejects_unsupported_file(tmp_path: Path) -> None:
     source = tmp_path / "payload.exe"
     source.write_bytes(b"MZ")
@@ -438,9 +598,19 @@ def test_signed_operation_requires_the_document_extraction_schema_only() -> None
     ledger = operations["evidence-ledger.validate-strict-ledger"]
     assert extractor["stdout_json_schema_version"] == "gongchuang-document-extraction/v1"
     extensions = extractor["parameters"]["document"]["extensions"]
-    assert len(extensions) == 19
+    assert len(extensions) == 27
     assert set(extensions) == {
         ".doc", ".docx", ".docm", ".dotx", ".dotm", ".wps", ".rtf", ".xls", ".xlsx",
         ".xlsm", ".xltx", ".xltm", ".ods", ".odt", ".csv", ".tsv", ".et", ".pdf", ".txt",
+        ".ppt", ".pptx", ".pptm", ".potx", ".potm", ".ppsx", ".ppsm", ".dps",
     }
     assert "stdout_json_schema_version" not in ledger
+
+
+def test_reading_guidance_distinguishes_remote_ocr_from_offline_and_human_review() -> None:
+    guidance = (SCRIPT.parents[1] / "SKILL.md").read_text(encoding="utf-8")
+    assert "`code`、`description` 等必填参数" in guidance
+    assert "`input_data`，不是 `input` 或 `image`" in guidance
+    assert "未联网检索”不等于“全程未联网" in guidance
+    assert "没有真实人员参与就不得称“人工复核”" in guidance
+    assert "用户明确禁止网络传输时，不发送到云端 OCR 或远端视觉服务" in guidance

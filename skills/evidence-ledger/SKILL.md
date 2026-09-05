@@ -9,11 +9,9 @@ description: 建立事实、计算、推断和待核验四类证据台账及统�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "evidence-ledger" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责
@@ -60,16 +58,16 @@ python3 scripts/grounded_evidence.py market-share <市场占有率台账.json>
 python3 scripts/grounded_evidence.py xlsx-dump <输入.xlsx> --output <只读内容.json>
 python3 scripts/grounded_evidence.py render-profile <台账.json> --profile analysis-report --artifact pdf
 python3 scripts/grounded_evidence.py render-profile <台账.json> --profile standard-native --artifact docx
-python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report
-python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report --receipt-export-dir <交付目录/validator-receipts>
-python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标准正文.docx> --profile standard-native --source-memo <标准数据来源说明.docx>
+python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report --state-root <当前轮次行为状态目录>
+python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文件.docx> --profile analysis-report --state-root <当前轮次行为状态目录> --receipt-export-dir <交付目录/validator-receipts>
+python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标准正文.docx> --profile standard-native --source-memo <标准数据来源说明.docx> --state-root <当前轮次行为状态目录>
 ```
 
 旧版数组或 JSONL 台账继续支持基础校验；新交付和市场占有率使用 `grounded-evidence/v1` 严格模式。校验失败不得进入正式写作。
 
 生成 Word、PDF、Excel 或 PowerPoint 后，按 `config/grounded-citations.json` 的 `artifact_validation` 分格式验收。PDF 必须逐页渲染并检查空白页和缺字；Excel 使用表格原生引擎逐表渲染；PowerPoint 逐页渲染；Word 在当前宿主存在可用渲染器时逐页渲染。缺少 Word 或中文字体时记录状态 pending-device-acceptance，禁止把文本提取成功写成视觉通过，也禁止用 PDF、Excel 或 PPT 的成功代替 Word 验收。
 
-正式文件交付前必须运行 grounded_evidence.py 的 validate-delivery 子命令，使台账哈希、交付文件哈希、结构检查和当前 `turn_id` 形成 `grounded-delivery/v1` 回执；没有非空回执时不得宣称交付门禁通过。WorkBuddy 正式交付时不得把 `--state-root` 指向工作区、`artifacts` 或交付目录，默认路径会自动与当前宿主 Hook 的行为状态目录对齐。需要给用户保留一份可见收据时使用 `--receipt-export-dir`，该参数只复制回执，不改变 Stop 消费的正式回执位置。报告生成器、读取器或渲染器发生降级时，最终答复必须写实际产生最终文件的工具，不得把早先尝试过但未生成终稿的通道写成最终来源。读取普通 XLSX 优先使用同一脚本的 xlsx-dump 子命令，不得为了只读用户文件临时联网安装 openpyxl 等依赖。
+正式文件交付前必须运行 grounded_evidence.py 的 validate-delivery 子命令，使台账哈希、交付文件哈希、结构检查和当前 `turn_id` 形成 `grounded-delivery/v1` 回执；没有非空回执时不得宣称交付门禁通过。`--state-root`必须来自当前宿主或项目运行层实际维护的本轮状态目录，其中已有带`turn_id`的`current-turn.json`；不得猜测任何特定宿主路径。需要给用户保留一份可见收据时使用`--receipt-export-dir`，该参数只复制回执，不改变运行层消费的正式回执位置。报告生成器、读取器或渲染器发生降级时，最终答复必须写实际产生最终文件的工具，不得把早先尝试过但未生成终稿的通道写成最终来源。读取普通 XLSX 优先使用同一脚本的 xlsx-dump 子命令，不得为了只读用户文件临时联网安装 openpyxl 等依赖。
 
 未经用户明确授权，不得把用户输入、台账或交付文件上传到 COS、云渲染、在线转换或其他外部服务。宿主找不到 WPS、Word 或 LibreOffice 自动化入口时，只能写“当前自动化通道未定位到可用渲染器”，不得据此断言用户设备未安装对应软件。
 

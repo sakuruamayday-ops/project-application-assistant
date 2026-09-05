@@ -36,6 +36,10 @@ PROTECTED_PHRASES = (
 )
 
 
+class PublisherTrustMismatch(RuntimeError):
+    """The external trust record conflicts with the pinned publisher identity."""
+
+
 def now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
@@ -54,27 +58,11 @@ def arguments() -> argparse.Namespace:
         "--data-dir",
         help=f"覆盖用户数据根目录；默认读取{PROFILE_DIR_ENV}或平台配置目录",
     )
-    parser.add_argument(
-        "--skill-root",
-        help="WorkBuddy共享运行时使用的目标技能目录",
-    )
-    parser.add_argument(
-        "--plugin-root",
-        help="WorkBuddy插件根目录；设置后由插件级签名承担完整性校验",
-    )
     return parser.parse_args()
 
 
 def skill_root() -> Path:
     return Path(__file__).resolve().parents[1]
-
-
-def resolved_skill_root(value: str | None) -> Path:
-    return (
-        Path(value).expanduser().resolve()
-        if value
-        else skill_root()
-    )
 
 
 def read_manifest(root: Path) -> dict:
@@ -311,77 +299,76 @@ def prepare(
     manifest: dict,
     profile_path: Path,
     backup_dir: Path,
-    plugin_root: Path | None = None,
 ) -> dict:
-    if plugin_root is None:
-        check = run_install_check(root)
-        signature_check = verify_embedded_signature(root)
-    else:
-        expected_root = (plugin_root / "skills" / root.name).resolve()
-        if root != expected_root or not (root / "SKILL.md").is_file():
-            raise RuntimeError("共享运行时目标技能不属于当前WorkBuddy插件")
-        metadata_path = plugin_root / "plugin-release-signature.json"
-        if not metadata_path.is_file():
-            raise RuntimeError("缺少WorkBuddy插件签名元数据")
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        if (
-            not isinstance(metadata, dict)
-            or metadata.get("public_key_fingerprint")
-            != OFFICIAL_PUBLISHER_FINGERPRINT
-            or metadata.get("signature_namespace")
-            != "codex-workbuddy-plugin-manifest"
-        ):
-            raise RuntimeError("WorkBuddy插件发布身份或签名命名空间不合规")
-        check = {
-            "status": "pass",
-            "scope": "workbuddy-plugin",
-            "checked_by": "plugin-release-manifest",
-        }
-        signature_check = {
-            "status": "delegated",
-            "scope": "workbuddy-plugin",
-            "public_key_fingerprint": metadata.get(
-                "public_key_fingerprint"
-            ),
-            "reason": "插件钩子已完成插件级签名与完整性校验",
-        }
+    """Verify the signed skill first, then load the optional preference layer.
+
+    Package integrity and publisher identity are mandatory.  The external
+    preference profile is an auxiliary user feature: an unavailable or
+    unwritable profile must be reported, but must not turn a verified skill
+    into an unusable copy.
+    """
+    check = run_install_check(root)
+    signature_check = verify_embedded_signature(root)
     capability_check = check_runtime_requirements(manifest)
-    profile = load_profile(profile_path, manifest["skill_name"])
-    current_fingerprint = signature_check.get("public_key_fingerprint")
-    trusted_fingerprint = profile.get("trusted_publisher_fingerprint")
-    trust_established = False
-    if current_fingerprint:
-        if current_fingerprint != OFFICIAL_PUBLISHER_FINGERPRINT:
-            raise RuntimeError("当前发布者不是共创研究院官方固定发布身份")
-        if trusted_fingerprint and trusted_fingerprint != current_fingerprint:
-            raise RuntimeError(
-                "新版技能的发布公钥与首次信任的发布者不一致，停止升级"
-            )
-        if not trusted_fingerprint:
-            profile["trusted_publisher_fingerprint"] = current_fingerprint
-            trust_established = True
     release_tag = manifest.get("release_tag")
-    previous = profile.get("last_seen_release")
+    profile = empty_profile(manifest["skill_name"])
+    previous = None
     backup = None
-    if previous != release_tag:
-        backup = backup_profile(profile_path, backup_dir)
-        profile["last_seen_release"] = release_tag
-        history = profile.setdefault("release_history", [])
-        history.append(
-            {
-                "release_tag": release_tag,
-                "first_seen_at": now(),
-                "previous_release": previous,
-            }
-        )
-        profile["release_history"] = history[-50:]
-        profile["updated_at"] = now()
-        atomic_write(profile_path, profile)
-    elif not profile_path.exists() or trust_established:
-        profile["updated_at"] = now()
-        atomic_write(profile_path, profile)
+    trust_established = False
+    preference_check: dict[str, object] = {"status": "pass"}
+    try:
+        profile_path.parent.mkdir(parents=True, exist_ok=True)
+        profile = load_profile(profile_path, manifest["skill_name"])
+        current_fingerprint = signature_check.get("public_key_fingerprint")
+        trusted_fingerprint = profile.get("trusted_publisher_fingerprint")
+        if current_fingerprint:
+            if current_fingerprint != OFFICIAL_PUBLISHER_FINGERPRINT:
+                raise RuntimeError("当前发布者不是共创研究院官方固定发布身份")
+            if trusted_fingerprint and trusted_fingerprint != current_fingerprint:
+                raise PublisherTrustMismatch(
+                    "个人配置中的发布者指纹与官方固定发布身份不一致"
+                )
+            if not trusted_fingerprint:
+                profile["trusted_publisher_fingerprint"] = current_fingerprint
+                trust_established = True
+        previous = profile.get("last_seen_release")
+        if previous != release_tag:
+            backup = backup_profile(profile_path, backup_dir)
+            profile["last_seen_release"] = release_tag
+            history = profile.setdefault("release_history", [])
+            history.append(
+                {
+                    "release_tag": release_tag,
+                    "first_seen_at": now(),
+                    "previous_release": previous,
+                }
+            )
+            profile["release_history"] = history[-50:]
+            profile["updated_at"] = now()
+            atomic_write(profile_path, profile)
+        elif not profile_path.exists() or trust_established:
+            profile["updated_at"] = now()
+            atomic_write(profile_path, profile)
+    except PublisherTrustMismatch:
+        raise
+    except Exception as exc:
+        preference_check = {
+            "status": "unavailable",
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+        }
+        profile = empty_profile(manifest["skill_name"])
+        previous = None
+        backup = None
+        trust_established = False
+
+    limited_reasons = []
+    if capability_check.get("status") == "limited":
+        limited_reasons.append("runtime-requirements-unavailable")
+    if preference_check["status"] != "pass":
+        limited_reasons.append("preference-storage-unavailable")
     return {
-        "status": "pass",
+        "status": "limited" if limited_reasons else "pass",
         "skill": manifest["skill_name"],
         "release_tag": release_tag,
         "upgrade_detected": previous not in (None, release_tag),
@@ -391,6 +378,8 @@ def prepare(
         "install_check": check,
         "capability_check": capability_check,
         "signature_check": signature_check,
+        "preference_check": preference_check,
+        "limited_reasons": limited_reasons,
         "publisher_trust_established": trust_established,
         "active_preferences": active_preferences(profile),
     }
@@ -475,12 +464,11 @@ def forget(
 
 def main() -> int:
     options = arguments()
-    root = resolved_skill_root(options.skill_root)
+    root = skill_root()
     try:
         manifest = read_manifest(root)
         skill_name = manifest["skill_name"]
         profile_dir, profile_path, backup_dir = paths(skill_name, options.data_dir)
-        profile_dir.mkdir(parents=True, exist_ok=True)
 
         if options.command == "prepare":
             result = prepare(
@@ -488,13 +476,9 @@ def main() -> int:
                 manifest,
                 profile_path,
                 backup_dir,
-                (
-                    Path(options.plugin_root).expanduser().resolve()
-                    if options.plugin_root
-                    else None
-                ),
             )
         else:
+            profile_dir.mkdir(parents=True, exist_ok=True)
             profile = load_profile(profile_path, skill_name)
             if options.command in {"context", "list"}:
                 result = {

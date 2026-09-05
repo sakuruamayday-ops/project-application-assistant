@@ -9,23 +9,23 @@ description: 供管理员为本套件创建或修改专业技能候选，规划�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "skill-authoring" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责与权限
 
 为本套件创建或修改技能候选。仅在用户明确要求维护技能时触发，不进入普通企业或政府项目路由，不直接改写已签名发布核心。
 
+用户明确要求修复已经复现或已核验的问题时，直接进入有界候选修改与相称验证，不等待自动进化的纠正次数、跨任务阈值或冷却期。该授权只覆盖用户点名范围；正式签名、安装或发布仍按独立授权与发布流程执行。
+
 ## 流程
 
 1. 收集至少三个真实使用示例，包括正常任务、边界任务和应拒绝或转路由的任务。
 2. 明确技能职责、触发描述、互斥技能、输入、输出、失败模式和依赖。
 3. 只加入模型无法稳定自行完成的领域规则；详细内容放入一层 `references/`。
-4. 重复、脆弱或需复算的操作才编写脚本，并实际运行测试。
+4. 重复、脆弱或需复算的操作才编写脚本，并实际运行测试。按记录处理的脚本还要把缺失、冲突记录单独执行并移到首条，确认结果不依赖上一条记录残留变量；预期值独立确定，不用程序实际输出反填预期。结构通过不能替代这些业务分支执行。
 5. 记录来源、作者或机构、许可证、可再分发性和脱敏结论；权属不明内容不得复制。
 6. 运行结构验证、依赖检查和脱敏前向测试。
 7. 将修改作为候选提交 `skill-curator`、`skill-evolution` 和 `evolution-governance`，批准后再由统一发布流程签名。

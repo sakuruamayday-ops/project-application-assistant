@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "application-writing",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/application-section-patterns.md",
@@ -22,10 +22,10 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "09092e8225b14165c9821f9bc59dcf1c809079bf8de1ee6900467e3acf6a6e70",
-    "references/application-section-patterns.md": "b8686df0c52c2800d78fdbc4140561bb32651580c6990737a62c2ffb506497b4",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "SKILL.md": "f066a526f909b8d611c55e1111b82ab7482e730e90d363741e4d8787f5bb9896",
+    "references/application-section-patterns.md": "eacf946deffc7fea4635121b02f5d48bc152b39eb4189d7c5289e4ba37d747e2",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [

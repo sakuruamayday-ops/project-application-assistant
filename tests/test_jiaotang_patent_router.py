@@ -134,6 +134,7 @@ def test_checker_extracts_extended_docx_objects_contract():
 
 def test_comment_anchor_splits_cross_run_text_exactly():
     module = load_module(CHECKER / "scripts" / "review_adder.py")
+    ET = module.ET
     paragraph = ET.Element(module.qname(module.W, "p"))
     for value in ("前缀", "目标", "文本", "后缀"):
         run = ET.SubElement(paragraph, module.qname(module.W, "r"))

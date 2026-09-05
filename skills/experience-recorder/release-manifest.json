@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "experience-recorder",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -22,9 +22,9 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "040e8166c573285be72d824d44ea590f5bd25b2cdf87b00bfc7fb5e23827b2ca",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "SKILL.md": "d351fcade9e803ebe20f87cc3b4e449f67b434609a7f8f88a8cda0671408686c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/record_correction.py": "9b741b166f5f5a6530dae68faf8e9080be1f8896d29e39fada3b6778fb850bff",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

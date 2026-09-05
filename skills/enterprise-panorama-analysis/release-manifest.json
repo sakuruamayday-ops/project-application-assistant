@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "enterprise-panorama-analysis",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "assets/brand-gold-07.png",
@@ -45,7 +45,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "c7ab91353a9dae506f1db5a166ab7a175590d43748a5430846e3dee5aee79dc7",
+    "SKILL.md": "9b5268d13b39b886b1952c75e669abfcb70d639b012db77813be53e0d35a1096",
     "assets/brand-gold-07.png": "9698d9c63a16a3389b80250bfb211147fac8d8ca3a5bb7ef3beafb5b4ce377b4",
     "assets/brand-gold-10.png": "292ab0d923085de57f3ecac37b78e31df2c9b720b17c9b7249b55a8c161bffbf",
     "assets/brand-gold-12.png": "32f8ae85d31cdda6a35bdba6e7c8fcca802e7e3bdd8f4938f66cc400cae19305",
@@ -57,7 +57,7 @@
     "references/brand_config.json": "7fb62581ae1a24f759dd9feb321759926be73db19caa118a5ec9a831912395dd",
     "references/enterprise-info-verification.md": "120d8426df0a3beccfac76de87d0520377ea079b1850804d35c85871af237d25",
     "references/peer-selection-rules.md": "83f9cd8aa6e747a445b390dc13a83eaacb433d0621f1f26d321841fb661c8e79",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/public-source-map.md": "4fbc404572eff40bdb45f3fbbef404cb781da59cb1d1a6bf5ced28247d029b55",
     "references/relationship-graph-spec.md": "5bd3486500279d6941ed6c2d0c21964bf85344a189c8cbac058c9139286b8ce6",
     "references/report-spec.md": "32ce19ebebdb082f14868ede25555a38855aa2ba96124e2e86a61e8cf9b19e3f",
@@ -67,7 +67,7 @@
     "references/visual-style.md": "c3073df7901da7b34e1ffc4f1379640de7222038a3f7bb3f0142a42694c8a05b",
     "scripts/brand_config.py": "4e1fa2150982fceaa87914a6b6249231a27210e1fcf8cea7cc311f591e25dc01",
     "scripts/pdf_two_pass.py": "1aeec6aee8f42939c11cd0d388f012c8897c5ce9b0244c7e4c9ae94a8118bdb7",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/render_html_report.py": "9840ec65f521add8d2b1760952bad1e660dcd34d045d0c7e5f77a8d3342f55ea",
     "scripts/render_pdf_bytes.js": "c3c9e9d27e9a3489c5c42e1c0e4d0cbf832585ec7f70f9a66a955040241c5885",
     "scripts/render_sales_pdf.py": "2607d7ac866cf4d66535b31da319b3ddba2b8f40438c55af8009279416083a8e",

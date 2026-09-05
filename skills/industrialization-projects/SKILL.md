@@ -9,11 +9,9 @@ description: 分析首台套、首批次新材料、首版次软件、工业新�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "industrialization-projects" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 分类
@@ -24,6 +22,7 @@ description: 分析首台套、首批次新材料、首版次软件、工业新�
 4. 读取 `references/maturity-evidence-matrix.md`，分别核验技术成熟度、创新性、知识产权、检测鉴定、用户应用、合同发票和产业化能力。样机、送检、试用、首单、销售和批量应用不得互相替代。
 5. 分析浙江省首批次新材料时，必须同时读取当期申报通知与当期现行《浙江省重点新材料首批次应用示范指导目录》。指导目录只用于核验材料范围、性能要求和应用领域，不得把目录条目当作企业公示、认定或奖励记录；历史项目复盘使用对应年度目录。
 6. 当期政策原文、产品分类或关键成熟度证据缺失时，只输出候选项目和补证清单，不给“符合申报”结论。
+   政策未核验时，各章节都不得使用“通常要求”“必须取得”或确定性申报层级暗示政策结论。可将可靠性测试、查新、外部试用和交易材料列为建议核验项，但应区分技术建议与尚未确认的申报硬条件；不要一面写“政策待核验”，一面按未经核验的门槛判为不符合。知识产权权利人、法律状态与RD/产品对应关系分别按输入字段使用，不能把部分关联缺口改写为全部权属未知。
 7. 输出主项目、备选项目、分类依据、成熟度阶段、七类证据状态、排除风险和下一步。结构化结果运行 `python3 scripts/validate_industrialization_assessment.py <结果.json>`。
 
 用户要求首台套、首批次新材料或首版次软件的前期评估报告或可行性分析报告时，同时读取 `project-feasibility/references/two-report-contract.md`。不得要求用户预先选择国际、国内、省内或市级档次；先按申报对象、目录、创新性、成熟度、检测查新、首次应用、知识产权和产业化能力给出首选与备选层级。首台套当前检索层未命中研发机构时写明证据未闭合并建议补强，不直接断言企业没有研发机构。

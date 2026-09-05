@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
 from docx import Document
 from docx.oxml.ns import qn
 
@@ -74,43 +75,16 @@ def test_delivery_receipt_keeps_canonical_copy_and_exports_user_visible_copy(tmp
     assert json.loads(exported.read_text(encoding="utf-8"))["turn_id"] == "turn-grounded-export"
 
 
-def test_macos_marketplace_state_root_matches_hook_data_directory(tmp_path: Path, monkeypatch):
-    plugin_root = (
-        tmp_path
-        / ".workbuddy"
-        / "plugins"
-        / "marketplaces"
-        / "jiaotang"
-        / "plugins"
-        / "jiaotang-workbuddy-skills"
-    )
-    (plugin_root / ".codebuddy-plugin").mkdir(parents=True)
-    (plugin_root / ".codebuddy-plugin" / "plugin.json").write_text("{}", encoding="utf-8")
+def test_state_root_uses_explicit_host_neutral_runtime_path(tmp_path: Path, monkeypatch):
+    expected = tmp_path / "current-runtime-state"
+    monkeypatch.setenv("GONGCHUANG_BEHAVIOR_STATE_ROOT", str(expected))
+    assert MODULE._default_state_root() == expected.resolve()
+
+
+def test_state_root_refuses_to_guess_a_host_specific_path(monkeypatch):
     monkeypatch.delenv("GONGCHUANG_BEHAVIOR_STATE_ROOT", raising=False)
-    monkeypatch.delenv("CODEBUDDY_PLUGIN_DATA", raising=False)
-    monkeypatch.setenv("CODEBUDDY_PLUGIN_ROOT", str(plugin_root))
-
-    assert MODULE._default_state_root() == (
-        tmp_path
-        / ".workbuddy"
-        / "plugins"
-        / "data"
-        / "jiaotang-workbuddy-skills-jiaotang"
-        / "behavior-hook"
-    )
-
-
-def test_windows_state_root_ignores_transient_plugin_data(tmp_path: Path, monkeypatch):
-    explicit_home = tmp_path / "profile"
-    transient_plugin_data = tmp_path / "host-plugin-data"
-    monkeypatch.delenv("GONGCHUANG_BEHAVIOR_STATE_ROOT", raising=False)
-    monkeypatch.setenv("CODEBUDDY_PLUGIN_DATA", str(transient_plugin_data))
-    monkeypatch.setattr(MODULE.os, "name", "nt")
-    monkeypatch.setattr(MODULE.Path, "home", classmethod(lambda cls: explicit_home))
-
-    assert MODULE._default_state_root() == (
-        explicit_home / ".workbuddy" / "state" / "gongchuang-behavior"
-    )
+    with pytest.raises(ValueError, match="当前轮次行为状态目录"):
+        MODULE._default_state_root()
 
 
 def test_docx_validator_rejects_user_observed_provenance_and_structure_defects(tmp_path: Path):

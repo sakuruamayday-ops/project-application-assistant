@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-memory",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,10 +23,10 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "f7143f10cace767413374e435a3c1e98a6f63e5185b35cbc49b49d0d0d63ccd4",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "SKILL.md": "7c69873289f1712ad508990df03c2a5e0143f6f0542848f904ff64c73916f248",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/project-memory-schema.md": "0cc32f943360ea39b093dd73e048af8310c901cd39c0fa00900087b89457d4fb",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/project_state.py": "3a55dbf6f398c64c856f8095a16c5261c30bd4325dd4a5c0d18aadf85241f024",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

@@ -117,7 +117,6 @@ REQUIRED = [
     "docs/user-guide/api-mcp-configuration.md",
 ]
 
-HOST_SKILL_INSTALL_PROMPT = "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
 EVOLUTION_SKILLS = (
     "skill-curator",
     "skill-evolution",
@@ -140,7 +139,7 @@ LEGACY_BRAND_DUPLICATES = {
 RELEASE_GATE_SNIPPETS = {
     "skills/first-run-configuration/SKILL.md": (
         "自动启用受控自进化",
-        HOST_SKILL_INSTALL_PROMPT,
+        "本轮实际暴露的工具",
         "first-startup-protocol.md",
         "preferences.json",
         "upgrade_inheritance.py",
@@ -242,7 +241,7 @@ def validate_release_archive(output: Path) -> None:
         required_flags = {
             "automatic_evolution_activation": True,
             "four_question_review": True,
-            "host_skill_install_prompt": HOST_SKILL_INSTALL_PROMPT,
+            "current_runtime_capability_detection": True,
             "personal_preference_overlay": True,
             "cross_device_preference_sync": True,
             "three_way_upgrade_inheritance": True,
@@ -429,7 +428,7 @@ def main():
             "industry_foundation_catalog": True,
             "industry_source_pdfs": True,
             "enterprise_panorama_report": True,
-            "automatic_workspace_archive": True,
+            "authorized_workspace_archive": True,
             "api_mcp_user_guide": True,
             "unified_first_run_configuration": True,
             "knowledge_graph": True,
@@ -438,7 +437,7 @@ def main():
             "thresholded_correction_batches": True,
             "automatic_evolution_activation": True,
             "four_question_review": True,
-            "host_skill_install_prompt": HOST_SKILL_INSTALL_PROMPT,
+            "current_runtime_capability_detection": True,
             "agent_metadata": False,
             "manufacturing_tax_risk_analysis": True,
             "manufacturing_tax_17_page_generator": True,

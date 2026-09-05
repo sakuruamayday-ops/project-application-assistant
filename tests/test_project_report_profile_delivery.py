@@ -19,7 +19,7 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
 
 
-def test_report_profile_requires_dual_format_sections_tables_and_branding(tmp_path):
+def test_report_profile_requires_sections_tables_and_branding_without_forcing_pdf(tmp_path):
     document = Document()
     document.add_heading("项目版本与窗口", level=1)
     document.add_heading("总体结论", level=1)
@@ -31,10 +31,23 @@ def test_report_profile_requires_dual_format_sections_tables_and_branding(tmp_pa
         artifacts=[target],
     )
     assert result["status"] == "fail"
-    assert "缺少要求格式:pdf" in result["errors"]
+    assert "缺少要求格式:pdf" not in result["errors"]
     assert any("缺少必备章节" in item for item in result["errors"])
     assert any("缺少必备表格" in item for item in result["errors"])
     assert any("品牌校验失败" in item for item in result["errors"])
+
+
+def test_report_profile_does_not_ignore_an_explicit_missing_pdf(tmp_path):
+    target = tmp_path / "report.docx"
+    Document().save(target)
+    missing_pdf = tmp_path / "requested.pdf"
+    result = MODULE.validate_profile(
+        plugin_root=ROOT,
+        profile_id="project-feasibility-analysis-report",
+        artifacts=[target, missing_pdf],
+    )
+    assert result["status"] == "fail"
+    assert f"交付文件不存在或不是文件:{missing_pdf.name}" in result["errors"]
 
 
 def test_stop_hook_rejects_tampered_profile_receipt(tmp_path):
@@ -106,15 +119,16 @@ def test_pdf_text_extraction_uses_visual_sort_order(monkeypatch, tmp_path):
     assert calls == [("text", True)]
 
 
-def test_pdf_cjk_font_gate_requires_embedded_portable_font(monkeypatch, tmp_path):
+@pytest.mark.parametrize("family", ["NotoSansSC-Regular", "SongtiSC-Regular", "SimSun", "YuGothicUI"])
+def test_pdf_cjk_font_gate_accepts_embedded_cjk_families(monkeypatch, tmp_path, family):
     class Page:
         def get_fonts(self, *, full=False):
             assert full
-            return [(7, "ttf", "TrueType", "ABCDEF+NotoSansSC-Regular", "F1", "", 0)]
+            return [(7, "ttf", "TrueType", f"ABCDEF+{family}", "F1", "", 0)]
 
         def get_text(self, mode):
             assert mode == "dict"
-            return {"blocks": [{"lines": [{"spans": [{"text": "中文正文", "font": "NotoSansSC-Regular"}]}]}]}
+            return {"blocks": [{"lines": [{"spans": [{"text": "中文正文", "font": family}]}]}]}
 
     class Pdf:
         def __iter__(self):
@@ -122,7 +136,7 @@ def test_pdf_cjk_font_gate_requires_embedded_portable_font(monkeypatch, tmp_path
 
         def extract_font(self, xref):
             assert xref == 7
-            return ("NotoSansSC-Regular", "ttf", "TrueType", b"embedded subset")
+            return (family, "ttf", "TrueType", b"embedded subset")
 
         def close(self):
             return None

@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.6.16",
+  "skill_bundle_version": "1.6.17",
   "operations": [
     {
       "id": "consistency-check.scan-formal-material",
@@ -110,7 +110,7 @@
     {
       "id": "project-application-assistant.extract-workspace-document",
       "skill": "project-application-assistant",
-      "description": "按真实内容类型只读提取企业空间内常见 Word、Excel、WPS 兼容格式、ODF、RTF、分隔文本、文本 PDF 或 TXT；宏、公式和外链均不执行，扫描 PDF 返回需要 OCR。",
+      "description": "按真实内容类型只读提取 Word、Excel、现代演示文稿、WPS 兼容格式、ODF、RTF、分隔文本、PDF 或 TXT；宏、公式和外链均不执行，PDF 与图片幻灯片逐页标记 OCR 缺口。",
       "script": "project-application-assistant/scripts/extract_workspace_document.py",
       "files": [],
       "sandbox_mode": "read-only",
@@ -124,7 +124,7 @@
         "document": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".doc", ".docx", ".docm", ".dotx", ".dotm", ".wps", ".rtf", ".xls", ".xlsx", ".xlsm", ".xltx", ".xltm", ".ods", ".odt", ".csv", ".tsv", ".et", ".pdf", ".txt"],
+          "extensions": [".doc", ".docx", ".docm", ".dotx", ".dotm", ".wps", ".rtf", ".xls", ".xlsx", ".xlsm", ".xltx", ".xltm", ".ods", ".odt", ".csv", ".tsv", ".et", ".pdf", ".txt", ".ppt", ".pptx", ".pptm", ".potx", ".potm", ".ppsx", ".ppsm", ".dps"],
           "max_bytes": 134217728
         }
       },

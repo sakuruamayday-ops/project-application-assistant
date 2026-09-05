@@ -4,12 +4,17 @@
 
 | 字段 | 含义 |
 |---|---|
+| `source_record_id` | 原始记录 ID，接受 `id`；与 SQLite 内部主键分开 |
+| `year` | 记录适用年度；不补造成发布日期 |
+| `source_version` | 来源标示的版本，接受 `version`；与本地递增版本分开 |
+| `article_source` | 逐条文章来源，接受 `source`；`--source` 单独标记采集来源命名空间 |
 | `title` | 政策、项目或公示标题 |
 | `region` | 页面显示的适用地区 |
 | `record_type` | 申报通知、管理办法、公示等 |
 | `publish_date` | 发布日期 |
 | `issuer` | 发布或发文机构 |
-| `application_status` | 申报中、已截止或未标明 |
+| `application_status` | 保留来源状态，接受 `status`，包括申报中、已截止、active、inactive 等 |
+| `active` | 索引可用状态；显式 inactive、false、0 为失效，保留记录和版本，通过 `--include-inactive` 查询；申报已截止本身不使政策失效 |
 | `application_period` | 页面显示的申报时间 |
 | `detail_url` | 第三方详情页 |
 | `official_url` | 政府官方原文链接 |
@@ -29,9 +34,12 @@
 
 ## 去重顺序
 
-1. `detail_url` 中的 `id` 和 `indexId` 组合。
-2. 官方原文URL。
-3. 规范化标题、发文机构和发布日期组合哈希。
+1. 采集来源命名空间内的 `source_record_id`，标题、年度或源版本变化仍更新同一记录。
+2. `detail_url` 中的 `id` 和 `indexId` 组合。
+3. 官方原文URL。
+4. 规范化标题、发文机构和发布日期组合哈希。
+
+不同采集来源或不同显式记录 ID 不因同名合并。`query --year 2026` 优先匹配明确年度；无年度的旧记录按发布日期年份查询，不将推导年份写入原始数据。
 
 同一去重键的内容哈希变化时新建版本，不静默覆盖历史记录。
 

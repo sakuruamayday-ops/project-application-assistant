@@ -134,6 +134,7 @@ def test_checker_extracts_extended_docx_objects_contract():
 
 def test_comment_anchor_splits_cross_run_text_exactly():
     module = load_module(CHECKER / "scripts" / "review_adder.py")
+    ET = module.ET
     paragraph = ET.Element(module.qname(module.W, "p"))
     for value in ("前缀", "目标", "文本", "后缀"):
         run = ET.SubElement(paragraph, module.qname(module.W, "r"))
@@ -143,6 +144,39 @@ def test_comment_anchor_splits_cross_run_text_exactly():
     tags = [child.tag.rsplit("}", 1)[-1] for child in paragraph]
     assert tags.index("commentRangeStart") < tags.index("commentRangeEnd")
     assert module.paragraph_text(paragraph) == "前缀目标文本后缀"
+
+
+def test_comment_roundtrip_preserves_word_namespace_bindings(tmp_path):
+    from docx import Document
+    from zipfile import ZipFile
+    from lxml import etree
+
+    module = load_module(CHECKER / "scripts" / "review_adder.py")
+    source, target = tmp_path / "source.docx", tmp_path / "commented.docx"
+    document = Document()
+    document.add_paragraph("前缀目标文本后缀")
+    document.save(source)
+    result = module.add_comments(source, target, [{"highlight_text": "目标文本", "comment": "核对技术特征"}])
+    assert result["applied"] == 1
+    with ZipFile(source) as before, ZipFile(target) as after:
+        original = etree.fromstring(before.read("word/document.xml"))
+        output = etree.fromstring(after.read("word/document.xml"))
+        assert output.nsmap == original.nsmap
+        ignorable = output.get("{http://schemas.openxmlformats.org/markup-compatibility/2006}Ignorable", "")
+        assert all(prefix in output.nsmap for prefix in ignorable.split())
+    assert Document(target).paragraphs[0].text == "前缀目标文本后缀"
+    verifier = load_module(CHECKER / "scripts" / "verify.py")
+    assert verifier.verify(source, target)["valid"]
+    broken = tmp_path / "missing-namespace.docx"
+    with ZipFile(target) as original, ZipFile(broken, "w") as output:
+        for info in original.infolist():
+            data = original.read(info.filename)
+            if info.filename == "word/document.xml":
+                data = ET.tostring(ET.fromstring(data))
+            output.writestr(info, data)
+    result = verifier.verify(source, broken)
+    assert result["text_equal"] and not result["valid"]
+    assert result["unbound_namespace_prefixes"]
 
 
 def test_no_unfused_patent_skill_names_remain():

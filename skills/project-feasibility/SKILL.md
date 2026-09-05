@@ -9,11 +9,9 @@ description: 对单个政府项目执行完整可行性分析。用户只给企�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "project-feasibility" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 用户只问“能不能申报”、某一项硬门槛、单个差距或一条政策条件时，只核验并回答该问题，不自动生成完整门槛矩阵、评分映射、行动清单或报告文件。以下完整流程只在用户明确要求前期评估、可行性分析、报告或完整项目判断时执行。
@@ -52,9 +50,9 @@ description: 对单个政府项目执行完整可行性分析。用户只给企�
 
 生成两类正式报告时，应分别运行报告画像校验。共创客户端会提供当前已验签技能包根目录；其他兼容宿主可显式传入技能包根目录：
 
-`python3 scripts/validate_report_profile_delivery.py --plugin-root "${GONGCHUANG_SKILL_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}" --state-root <当前企业空间/.gongchuang/report-validation> --profile-id <project-presale-assessment-report|project-feasibility-analysis-report> --artifact <报告.docx> --artifact <报告.pdf>`
+`python3 scripts/validate_report_profile_delivery.py --plugin-root "${GONGCHUANG_SKILL_PLUGIN_ROOT}" --state-root <当前企业空间/.gongchuang/report-validation> --profile-id <project-presale-assessment-report|project-feasibility-analysis-report> --artifact <报告.docx>`
 
-画像校验会按本轮实际交付格式核对必备章节、必备表格、可打开性、中文字体和共创红色水印；默认只校验 Word，用户明确要求 PDF 时才追加 PDF 校验。实际内容或版式不合格时先修复再交付；内部状态目录或回执写入不可用时如实说明，不得把内部回执编号、校验值或本机路径写入对外交付，也不得据此拒绝用户继续修改已经生成的文件。
+画像校验会按本轮实际交付格式核对必备章节、必备表格、可打开性、中文字体和共创红色水印；默认只校验 Word，用户明确要求 PDF 时才追加 `--artifact <报告.pdf>` 并校验其字体嵌入与正文。报告回填器使用随技能分发的 OFL 开源 Noto Sans SC，并把完整字体嵌入生成的 DOCX，供未安装该字体的阅读端显示和继续编辑；不修改用户的系统字体。字体文件与许可位于 `assets/fonts/`，不得只声明字体名称而遗漏字体载荷。实际内容或版式不合格时先修复再交付；内部状态目录或回执写入不可用时如实说明，不得把内部回执编号、校验值或本机路径写入对外交付，也不得据此拒绝用户继续修改已经生成的文件。
 
 受控 Word 母版只固定结构、表格、项目专属核心对象、补强入口和共创红色水印，不固化政策数值。回填时仍须用当期通知原文替换占位项；母版中的条件只是待核验结构，不得当作现行政策证据。默认只交付并校验一份可编辑 Word；只有用户明确要求 PDF 时，才从同一份已定稿正文导出 PDF 并追加 PDF 验收，不得重新生成正文或默认同时交付两种格式。
 

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "industry-positioning",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/industry-positioning-assessment.md",
@@ -22,16 +22,16 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "09cce83766cbb3ab2904efd77ba2ae6448760dd9d80cacf9bf2a294700052687",
+    "SKILL.md": "ed5b0773f96149eebe431a7bc00693820c6654e9075d0ebd9c1bc668822ac259",
     "assets/enterprise-technical-product-revenue-matrix.template.json": "7b8e35cabedc6afca049aa806970e57b6b3c607ed2d5240b72fc02290f63864e",
     "references/automatic-master-matrix-orchestration.md": "8486325240775cf8f444d6251ace12a1ec8a2700d7f766b2506e25df4b6b60de",
     "references/cross-project-technical-commercialization-gate.md": "4eed84497a6c7c9470a560da34090a735644b2c134e484b6b51fc0715603a04b",
     "references/industry-positioning-assessment.md": "b6422c8fcecf127e87b6c110fb8c32eb15c61cf70b3670f2bd45f01fff4385a7",
     "references/market-boundary-and-substitution-gate.md": "c8ce8cbc222da3b879fb7a18fa5e2697a2d062c872b8f8919f4a98dd400e447d",
     "references/master-matrix-generator-guide.md": "c40f358aa907e4f4d3e5cc40128d3356d2c003f39c0b84d16d20fd40ad60512f",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/project-view-adapters.json": "cc67f6500d405eb04807b140339cbf119d104b69a803c19d00617dc649b8a047",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/technical_product_revenue_matrix.py": "f75a442be5959b828e0203d6176699e2cb7db8898c579a47674a144d8f804028",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

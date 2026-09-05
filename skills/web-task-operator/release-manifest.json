@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "web-task-operator",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/aiqice-browser-profile.md",
@@ -24,12 +24,12 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "3cd6f2b79f01071c7ea34f5c0ad8e53e93e660de66673958dcc3ad18b4e64691",
+    "SKILL.md": "bd721a6ba4d70ae7d9dfbfb72d2924d4d9ee731a4b6596118d7d7a1b497cdf67",
     "references/aiqice-browser-profile.md": "10debafcfcd385bdd80a48483fde5341e902b270a159c4f05a35bff8d3130062",
     "references/browser-local-replay.md": "b5383e2150f5e3dd0b4ed5be375386ddaef11ed5de862a4c4b7052c17c51e64f",
     "references/execution-protocol.md": "e19dbfa9bcda3f07ba3df632528f6663e1f282b79cdf20afe65515ce022fd5b9",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [
