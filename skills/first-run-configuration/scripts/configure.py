@@ -21,10 +21,9 @@ from typing import Callable
 
 DEFAULT_ENDPOINT = ""
 DEFAULT_CONFIG_DIR = Path.home() / ".config" / "project-assistant"
-STARTUP_PROTOCOL_VERSION = 2
+STARTUP_PROTOCOL_VERSION = 3
 PREFERENCE_PROTOCOL_VERSION = 1
 KNOWLEDGE_CONNECTION_CHECK_PROMPT = "检查下知识库连接状态"
-HOST_SKILL_INSTALL_PROMPT = "帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills"
 SECRET_NAMES = {
     "GONGCHUANG_KB_TOKEN",
     "QCC_API_KEY",
@@ -43,6 +42,7 @@ BOOLEAN_NAMES = {
     "PROJECT_ASSISTANT_BROWSER_READY",
     "PROJECT_ASSISTANT_DOCUMENT_TOOLS_READY",
     "PROJECT_ASSISTANT_OCR_READY",
+    "PROJECT_ASSISTANT_KNOWLEDGE_REQUIRED",
 }
 REGION_PROFILE_PATH = Path.home() / ".project-application-assistant" / "profile.json"
 
@@ -237,28 +237,25 @@ def capability_report(
     )
 
     knowledge_connection_verified = knowledge_mcp_ready
-    show_host_skill_prompt = startup_required and knowledge_connection_verified
+    knowledge_required = truthy(values.get("PROJECT_ASSISTANT_KNOWLEDGE_REQUIRED"))
+    knowledge_check_required = knowledge_required and not knowledge_connection_verified
     return {
         "schema_version": 1,
         "checked_at": datetime.now(timezone.utc).isoformat(),
+        "report_role": "historical-capability-snapshot",
         "onboarding": {
             "startup_protocol_version": STARTUP_PROTOCOL_VERSION,
             "preference_protocol_version": PREFERENCE_PROTOCOL_VERSION,
             "startup_protocol_executed": True,
-            "startup_protocol_completed": knowledge_connection_verified,
+            "startup_protocol_completed": not knowledge_check_required,
             "startup_prompt_required": startup_required,
             "controlled_evolution_enabled": True,
             "four_question_review_enabled": True,
-            "knowledge_connection_check_required": (
-                startup_required and not knowledge_connection_verified
-            ),
+            "knowledge_connection_check_required": knowledge_check_required,
             "knowledge_connection_check_prompt": (
                 KNOWLEDGE_CONNECTION_CHECK_PROMPT
-                if startup_required and not knowledge_connection_verified
+                if knowledge_check_required
                 else ""
-            ),
-            "host_skill_install_prompt": (
-                HOST_SKILL_INSTALL_PROMPT if show_host_skill_prompt else ""
             ),
         },
         "credentials": {
@@ -274,7 +271,7 @@ def capability_report(
                 "status": cloud_status,
                 "detail": cloud_detail,
                 "endpoint": endpoint,
-                "required": True,
+                "required": knowledge_required,
             },
             "tyc": {
                 "status": "ready" if tyc_mcp else "optional",
@@ -337,7 +334,7 @@ def render_markdown(report: dict[str, object], credentials_file: Path) -> str:
             "- 其他Skill先读取本报告，不再分别询问已经配置的凭据。",
             "- 团队云端知识对成员只读；成员政策规则写入本地 `project-rules/`。",
             "- 可选能力不可用时执行降级，不补造企业、政策、专利或OCR结果。",
-            "- 受控自进化已启用：自动记录脱敏经验、执行四问复盘并生成改进候选；正式Skill修改和发布仍需审批。",
+            "- 受控自进化能力可用：适用任务执行一次四问并生成改进候选；日志、记忆和归档按各自授权写入，正式Skill修改和发布仍需审批。",
             "",
         ]
     onboarding = report.get("onboarding", {})
@@ -351,21 +348,7 @@ def render_markdown(report: dict[str, object], credentials_file: Path) -> str:
                 "",
                 f"`{KNOWLEDGE_CONNECTION_CHECK_PROMPT}`",
                 "",
-                "当前首次配置尚未结束。请先让当前Agent检查并完成 `jiaotang-kb` 运行时连接；只有知识库状态工具调用成功后，才继续安装通用能力。",
-                "",
-            ]
-        )
-    elif (
-        isinstance(onboarding, dict)
-        and onboarding.get("host_skill_install_prompt")
-    ):
-        lines.extend(
-            [
-                "## 请在当前Agent对话框继续输入",
-                "",
-                f"`{HOST_SKILL_INSTALL_PROMPT}`",
-                "",
-                "这些通用能力由当前Agent安装，企业全生命周期助手不重复打包。若已经具备这些能力，可忽略本提示。",
+                "当前任务需要团队知识。请先让当前Agent检查并完成 `jiaotang-kb` 运行时连接；其他不依赖知识库的工作继续按本轮实际工具使用，不触发统一安装。",
                 "",
             ]
         )
@@ -458,6 +441,7 @@ def run(
     network: bool,
     environment: dict[str, str] | None = None,
     input_fn: Callable[[str], str] | None = None,
+    persist_preferences: bool = False,
 ) -> tuple[dict[str, object], Path, Path]:
     del input_fn
     credentials_file = config_dir / "credentials.env"
@@ -494,13 +478,21 @@ def run(
     )
     write_region_profile(values.get("PROJECT_ASSISTANT_DEFAULT_REGION", ""))
     config_dir.mkdir(parents=True, exist_ok=True)
-    preference_status, preference_detail = initialize_preferences(
-        config_dir, values, network=network
-    )
+    preference_file = config_dir / "preferences.json"
+    if persist_preferences:
+        preference_status, preference_detail = initialize_preferences(
+            config_dir, values, network=network
+        )
+    elif preference_file.is_file():
+        preference_status = "existing"
+        preference_detail = "检测到现有个人覆盖层，本次能力检测未修改"
+    else:
+        preference_status = "not-created"
+        preference_detail = "未取得长期偏好保存授权，本次能力检测未创建个人覆盖层"
     report["personal_preferences"] = {
         "status": preference_status,
         "detail": preference_detail,
-        "file": str(config_dir / "preferences.json"),
+        "file": str(preference_file),
     }
     profile_file.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     report_file.write_text(render_markdown(report, credentials_file), encoding="utf-8")
@@ -512,11 +504,17 @@ def main() -> int:
     parser.add_argument("--config-dir", type=Path, default=DEFAULT_CONFIG_DIR)
     parser.add_argument("--non-interactive", action="store_true")
     parser.add_argument("--skip-network", action="store_true")
+    parser.add_argument(
+        "--initialize-preferences",
+        action="store_true",
+        help="用户已明确授权保存长期偏好时创建个人覆盖层",
+    )
     args = parser.parse_args()
     report, profile_file, report_file = run(
         args.config_dir.expanduser().resolve(),
         non_interactive=args.non_interactive,
         network=not args.skip_network,
+        persist_preferences=args.initialize_preferences,
     )
     capabilities = report["capabilities"]
     assert isinstance(capabilities, dict)
@@ -528,7 +526,7 @@ def main() -> int:
     print(f"能力配置：{profile_file}")
     print(f"检测报告：{report_file}")
     print("凭据内容未写入报告。")
-    print("受控自进化和四问复盘已启用。")
+    print("受控自进化分析能力和一次性四问复盘可用。")
     preferences = report.get("personal_preferences", {})
     if isinstance(preferences, dict):
         print(f"个人偏好：{preferences.get('detail', '已初始化')}")
@@ -538,11 +536,6 @@ def main() -> int:
         and onboarding.get("knowledge_connection_check_required")
     ):
         print(f"请先在当前Agent中执行：{KNOWLEDGE_CONNECTION_CHECK_PROMPT}")
-    elif (
-        isinstance(onboarding, dict)
-        and onboarding.get("host_skill_install_prompt")
-    ):
-        print(f"请在当前Agent对话框输入：{HOST_SKILL_INSTALL_PROMPT}")
     if missing_required:
         print("仍需配置：" + "、".join(missing_required))
         return 1

@@ -71,6 +71,35 @@ class IndustryCatalogTests(unittest.TestCase):
                 self.assertTrue(path.is_file())
                 self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), digest)
 
+    def search(self, query, limit=10):
+        result = subprocess.run(
+            ["python3", str(self.skill / "scripts" / "search_catalogs.py"), query, "--limit", str(limit)],
+            check=True, capture_output=True, text=True,
+        )
+        return json.loads(result.stdout)
+
+    def test_excluded_gearbox_still_counts_as_a_search_hit(self):
+        payload = self.search("齿轮箱")
+        summary = payload["search_summary"]["industry_foundation"]
+        self.assertEqual(summary["scanned_records"], 1047)
+        self.assertEqual(summary["normalized_term_matches"], 1)
+        item = next(item for item in payload["industry_foundation"] if item["item"] == "大功率掘锚机截割齿轮箱")
+        self.assertEqual((item["field"], item["page"]), ("工程机械", 53))
+
+    def test_return_limit_does_not_change_full_catalog_counts(self):
+        empty = self.search("齿轮箱", 0)
+        full = self.search("齿轮箱", 10)
+        for catalog in ("industry_chain", "industry_foundation"):
+            self.assertEqual(empty[catalog], [])
+            for field in ("scanned_records", "normalized_term_matches", "scored_candidates"):
+                self.assertEqual(empty["search_summary"][catalog][field], full["search_summary"][catalog][field])
+            self.assertEqual(empty["search_summary"][catalog]["returned_candidates"], 0)
+
+    def test_reducer_is_present_in_chain_not_foundation_terms(self):
+        payload = self.search("减速器")
+        self.assertGreater(payload["search_summary"]["industry_chain"]["normalized_term_matches"], 0)
+        self.assertEqual(payload["search_summary"]["industry_foundation"]["normalized_term_matches"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

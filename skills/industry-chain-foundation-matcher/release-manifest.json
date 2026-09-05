@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "industry-chain-foundation-matcher",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/classification-rules.md",
@@ -29,17 +29,17 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "d2a45483b45d01ffe63d4264690a599d55c155f6bd5e898d35a518ecee264f3f",
+    "SKILL.md": "7afce3b18018fb1479fcf9c5b8c858b75827ff96013ae24b727ff7b18c7f67e9",
     "references/classification-rules.md": "ed55c7772894051036025398d85c87b142cdcd6f5bd66d6a005ae76b7fbe0eb6",
     "references/industry-chain-index.jsonl": "0c9330ba5a04ab77f1c63047760213aff02ded921a591e1325d818c214b7739d",
     "references/industry-foundation-index.jsonl": "fdce232f16e5ec79811c625b3d4fd06976ca5aea4e667f15efbd07b36a57c640",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/source-documents/产业链架构(2).pdf": "0235e6eef74f76aa94e81e6d85294345f8b979ce3cbadef024bd684056f4bd56",
     "references/source-documents/工业六基领域目录(2).pdf": "c19cd2af7c329b143cf4862f88deddfc79bc4f8c2a3a33e134eba3c454feb6fc",
     "references/source-manifest.json": "e1ad3921aa3a6a729a288fece10bb43b47eb7b0f6d7d7a1bde55d08e6a696aab",
     "scripts/build_catalog_indexes.py": "d8f80a3cffd467e17f789cda908e888602fc60ec4318b48bfde0240bbd467a8a",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
-    "scripts/search_catalogs.py": "e3fe2cb30467bb2dd8db54906c2ce125bef0512ca9341879c52ca742ae48453b",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
+    "scripts/search_catalogs.py": "0c2587f52959c93735fb9ae1825d30f26f66e59bfef1933fc14904645708b6d7",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [

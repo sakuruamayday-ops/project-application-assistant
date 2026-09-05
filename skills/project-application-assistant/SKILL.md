@@ -9,14 +9,16 @@ description: 企业全生命周期总控技能。用于政府项目匹配、政�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "project-application-assistant" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 本技能是对外唯一推荐总入口。先识别企业、地区、年度、目标项目和当前任务阶段，再选择专业技能；`project-task-router` 只作为内部阶段路由器，不与本技能同时向用户争抢入口。
+
+依据本轮请求与已确认上下文持续完成已授权且范围未变的工作，常规、可逆的实现选择由Agent判断。只有缺失信息会改变核心结论、数据边界或外部动作时，才说明影响并提出一个最少必要问题；已获授权的同一动作无需重复确认，新的对象、范围、费用或权限变化重新判断授权。该规则不授予新的发布、发送、付费、归档或持久记忆写入权限。
+
+模型和推理档位始终以用户对当前任务的实际选择为准。本技能不得固定任何模型、供应商或档位，不因旧记忆恢复旧设置，也不增加固定思考时长、固定搜索轮数或无条件多Agent要求。
 
 每次开始实质任务前读取 `~/.config/project-assistant/preferences.json` 的 `preferences`，将其作为官方规则之后的个人覆盖层。个人偏好只能调整地域、格式、详细度、语气、术语和工作流选择，不得覆盖政策有效性、事实核验、财务真实性、权限和正式材料质量门禁。
 
@@ -34,7 +36,7 @@ description: 企业全生命周期总控技能。用于政府项目匹配、政�
 
 ## 首次加载
 
-1. 先读取 `first-run-configuration` 生成的统一能力报告；报告不存在时先运行该Skill，不允许云端、企查查、专利、浏览器和OCR能力分别重复索要凭据。
+1. 先看本轮工具目录和实际连接结果，再把 `first-run-configuration` 的能力报告作为历史快照。报告不存在本身不触发安装；只有当前任务需要且确实缺失的云端、企查查、专利、浏览器或OCR能力才进入对应配置，不重复索要已有凭据。
 2. 确认受控自进化套件处于启用状态：`experience-recorder` 负责记录脱敏经验，`skill-curator` 负责发现冲突，`skill-evolution` 负责生成候选优化，`evolution-governance` 负责审批、快照和回滚。不得因更换Agent平台而跳过。
 3. 再检查宿主持久记忆中的 `project_application_assistant.default_region`；宿主无持久记忆时，运行 `scripts/user_region_profile.py get`。
 4. 未设置时，在执行其他申报任务前询问：“你的默认政策地区是哪里？请填写到省、市，例如浙江省杭州市。”
@@ -48,7 +50,7 @@ description: 企业全生命周期总控技能。用于政府项目匹配、政�
 ## 工作流
 
 1. 信息不足时列出缺口，不自行补造。
-2. 先调用 `local-knowledge-retrieval` 检索团队云端知识库，再按默认地区加载当地、上级省级和国家级项目地图。用户已明确启用 `third-party-data-indexing` 时可将其作为发现线索；无论是否启用，都必须继续核验管理办法和官方当期通知。
+2. 先使用当前宿主已具备的可审计知识能力：普通团队客户端使用 `local-knowledge-retrieval` 访问团队服务；本机管理员环境已有活动索引时可按本机规则优先检索。两者都要按默认地区加载当地、上级省级和国家级项目地图。用户已明确启用 `third-party-data-indexing` 时可将其作为发现线索；无论是否启用，都必须继续核验管理办法和官方当期通知。
    “哪些企业已认定”“某产品或行业有哪些获评企业”等名单反向发现统一由 `local-knowledge-retrieval` 调用 `recognition_search`，不得误路由成企业可行性分析；三首项目的历年目录差异和企业产品匹配继续由 `three_first_analysis` 完成。用户仍按自然语言提问，不新增 MCP、不重新配置凭据，也不向用户展示内部工具选择过程。
    涉及企业公开数据时统一执行 [企业数据源有限降级协议](../_runtime/enterprise-source-fallback.md)，不得因单一商业源失败重复授权、循环调用或停止整项任务。
 3. 项目涉及营收、利润、研发投入、资产或负债门槛时，先查找当前企业的 `enterprise-financial-facts/v1` 共享事实文件；通过 `financial-verification` 校验后复用，不重复索要已有可靠财务数据。
@@ -59,11 +61,19 @@ description: 企业全生命周期总控技能。用于政府项目匹配、政�
 
 ## 企业资料导入与读取
 
-用户从客户端输入框添加 Word、Excel、WPS 兼容文件、ODF、RTF、CSV／TSV、PDF 或 TXT 后，资料必须先复制到当前具体企业空间的 `共创导入资料` 目录，再读取副本；不得把源文件绝对路径、文件字节或账户凭据送入对话。优先调用已验签操作 `project-application-assistant.extract-workspace-document`，参数 `document` 只能是当前企业空间内的相对路径。提取器先按文件真实内容识别 OOXML、OLE、ODF、RTF、PDF 或文本结构，再选择只读解析器；扩展名只用于记录和受控入口白名单，不得据此猜测内容。
+仅要求读取、摘录或核对附件内容时，只执行本节，不启动首次配置、地区问答、企业调研或专业报告流程。用户明确提出申报分析或报告要求后，才进入相应专业流程。
 
-DOCM、XLSM 等宏文档只读取正文或已缓存单元格值，不执行宏、公式、对象或外链。扩展名为 WPS 或 ET 但真实内容属于受支持的 DOCX、XLSX、XLS 或 ODF 时按真实格式读取；真专有 WPS／ET、旧式二进制 DOC、加密、损坏或未知容器分别返回 `conversion_required`、`encrypted_document`、`damaged_document`、`unsupported_format` 或 `unsafe_document`，同一文件不得换解析器循环试错。
+Word、PDF、Excel和演示文稿的读取、创建与编辑优先使用当前宿主已经提供的原生文档能力；只有任务已经确认品牌、模板、美化或版式要求时，才增加对应的专业美化与品牌能力。内容、结构、公式、证据和真实渲染分别验收，不因文件已经生成就宣称版式通过，也不为同一正文重复生成多套等价文件。
 
-解析结果为 `extracted` 时，依据返回正文回答并保留文件名、页码或工作表等出处。解析结果为 `needs_ocr` 时，说明该 PDF 没有可提取文字，改用已配置的 PaddleOCR 识别扫描页；OCR 未成功前不得猜测图片内容。输出被截断时要求用户拆分；其他结构化状态按返回的 `action` 一次性请求转换、无密码副本或有效副本，不得把导入成功写成读取成功。
+用户从客户端输入框添加 Word、Excel、演示文稿、WPS 兼容文件、ODF、RTF、CSV／TSV、PDF 或 TXT 后，资料必须先复制到当前具体企业空间的 `共创导入资料` 目录，再读取副本；不得把源文件绝对路径、文件字节或账户凭据送入对话。激活本技能后，优先调用已验签操作 `project-application-assistant.extract-workspace-document`，参数为 `{"document":"共创导入资料/文件名"}`，只使用当前企业空间内的相对路径，无需查找安装目录、运行清单或解释器。提取器先按文件真实内容识别 OOXML、OLE、ODF、RTF、PDF 或文本结构，再选择只读解析器；扩展名只用于记录和受控入口白名单，不得据此猜测内容。
+
+DOCM、XLSM、PPTM 等宏文档只读取正文、幻灯片或已缓存单元格值，不执行宏、公式、对象或外链。现代 Word、Excel、演示文稿及其模板格式使用对应只读解析器。扩展名为 WPS、ET 或 DPS 但真实内容属于受支持的 OOXML、XLS 或 ODF 时按真实格式读取；旧式 DOC 由客户端在同一次操作中尝试固定的隔离提取器，宿主不支持或提取失败时明确返回需转换状态。专有 WPS／ET／DPS、旧 PPT、加密、损坏或未知容器返回 `conversion_required`、`encrypted_document`、`damaged_document`、`unsupported_format` 或 `unsafe_document` 等结构化状态，同一文件不得换解析器循环试错。
+
+仅开放 `run_code` 的客户端，按当轮 Schema 提供 `code`；`description` 是可选的简短执行说明。在程序内先 `await tools.skill({name:"project-application-assistant"})`，成功后再 `await tools.gongchuang_skill_operation({operation:"project-application-assistant.extract-workspace-document",parameters:{document:"共创导入资料/实际文件名"}})`。文件名使用本轮附件路径；`document` 是字符串，不是 `{type, path, extensions}` 参数定义对象。不要把 `skill`、`write` 当成未开放的根工具，不探测安装目录或重复安装解析器。
+
+解析结果为 `extracted` 时，依据返回正文回答并保留文件名、页码或工作表等出处；同一文件成功提取后不要再调用提取器。解析结果为 `needs_ocr` 时，保留已提取文字，不能把少量标题当成完整正文。PDF 直接调用 `tools.mcp__paddle_ocr__workspace_pdf({document:"本轮原始相对路径",pages:ocr_pages})`，宿主在内存中选择所需原页后提交至已配置的 PaddleOCR，返回原页码映射；不要手写拆页脚本、创建临时 PDF 或重复提取同一文件。参数始终以当轮工具 SDK 为准，旧宿主未公开 `pages` 时一次性说明只支持整份 OCR，由用户决定是否整份识别，不猜测参数。幻灯片须先用可用的受控渲染能力转成页面图像再识别。渲染或 OCR 不可用、失败时一次性说明缺失页与下一步，不能声称已读完或猜测图片内容。输出被截断时要求用户拆分；其他结构化状态按返回的 `action` 一次性请求转换、无密码副本或有效副本，不得把导入成功写成读取成功。
+
+执行说明必须与真实工具记录一致。云端 OCR 和远端模型视觉处理需要网络；“未联网检索”不等于“全程未联网”，不能把云端处理写成本地离线处理。模型查看图像只能称“模型视觉核对”，没有真实人员参与就不得称“人工复核”。临时文件只有实际可恢复清理成功才可写“已清理”，不得为了说明整洁而虚构操作；原始附件和已有企业资料始终保留。用户明确禁止网络传输时，不发送到云端 OCR 或远端视觉服务，改用可用的本地能力或明确说明缺失页。
 
 ## 前期评估政策路径总闸门
 
@@ -83,7 +93,7 @@ DOCM、XLSM 等宏文档只读取正文或已缓存单元格值，不执行宏�
 
 ## 任务结束
 
-客户项目分析、正式申报材料、复杂分析、重要规则变更或基础设施迁移完成后，必须调用 `experience-recorder` 记录可泛化经验，并在对话结尾实际回答四问，不得只列问题：
+客户项目分析、正式申报材料、复杂分析、重要规则变更或基础设施迁移完成后，调用 `experience-recorder` 形成可泛化经验候选，并在最终对话中实际回答四问，不得只列问题。同一成果即使串联多个技能也只回答一组：
 
 1. 眼下最没有把握的事情是什么？
 2. 关于当前情况，最大的遗漏是什么，还有什么没有意识到？
@@ -91,6 +101,8 @@ DOCM、XLSM 等宏文档只读取正文或已缓存单元格值，不执行宏�
 4. 可以用哪些不同做法提高本次任务效率？
 
 普通问候、单句确认和不产生实质成果的轻量任务可不执行四问。四问只写在对话总结中，不写入正式申报书、企业报告或客户交付正文。
+
+经验候选、归档清单、持久记忆、审计日志和对外共享是不同动作。实际写入知识库、长期存储或日志前检查对应授权；用户已经明确要求保存同一内容时直接按该范围执行，不重复询问。技能自动触发本身不构成持久化授权。
 
 ## 签单后资料移交
 

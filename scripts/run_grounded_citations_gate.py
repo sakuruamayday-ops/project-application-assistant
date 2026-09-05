@@ -108,7 +108,7 @@ def host_adapter_receipt(python: Path, env: dict[str, str]) -> dict[str, object]
     fixture = ROOT / "skills" / "evidence-ledger" / "examples" / "normal-grounded-report.json"
     outputs: dict[str, bytes] = {}
     details: dict[str, object] = {}
-    for host in ("codex", "workbuddy"):
+    for host in ("codex", "first_party_client"):
         adapter = ROOT / "skills" / "_runtime" / "grounded-citations" / f"{host}_adapter.py"
         result = subprocess.run(
             [str(python), str(adapter), "render-profile", str(fixture), "--profile", "analysis-report", "--artifact", "pdf"],
@@ -125,7 +125,7 @@ def host_adapter_receipt(python: Path, env: dict[str, str]) -> dict[str, object]
             "bytes": len(result.stdout),
             "stderr_tail": result.stderr.decode("utf-8", errors="replace")[-1000:],
         }
-    identical = outputs.get("codex") == outputs.get("workbuddy") and bool(outputs.get("codex"))
+    identical = outputs.get("codex") == outputs.get("first_party_client") and bool(outputs.get("codex"))
     return {"status": "pass" if identical and all(item["status"] == "pass" for item in details.values()) else "fail", "identical_output": identical, "hosts": details}
 
 

@@ -9,11 +9,9 @@ description: 严格依据用户提供的《产业链架构》和《产业基础�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "industry-chain-foundation-matcher" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 适用边界
@@ -29,9 +27,9 @@ description: 严格依据用户提供的《产业链架构》和《产业基础�
 ## 工作流
 
 1. 收集企业主导产品名称、用途、材料或软件属性、核心工艺、客户行业、上下游位置和可核验证据。
-2. 使用 `scripts/search_catalogs.py` 检索候选，或直接逐条查询两个 JSONL 索引。
+2. 使用 `scripts/search_catalogs.py` 检索候选，或直接逐条查询两个 JSONL 索引。报告检索数量时注明检索词与范围，引用 `search_summary`，不要把返回前 N 条当作全部结果；`normalized_term_matches` 只表示规范化整词包含数，不表示业务匹配。
 3. 先判产业基础目录，再判产业链路径；不得只凭企业经营范围或宽泛行业名称匹配。
-4. 对候选逐项比较对象、功能、材料、工艺、应用场景和产业环节。
+4. 对候选逐项比较对象、功能、材料、工艺、应用场景和产业环节。已检出但不适用的条目保留原词、来源位置与排除理由，不得改写为“检索未命中”；关键词没有整词命中但有模糊召回时也须区分。
 5. 按“精确匹配、近似匹配、未命中”三级输出，并给出来源文件、页码和原始分类。
 6. 在专精特新或小巨人体检中，将结果与主导产品、核心技术、客户验证、补短板叙事及有效授权 I 类知识产权交叉校验。
 7. 每次输出标注两份来源文件、对应页码、《产业基础创新发展目录（2021年版）》的版本年份及“默认有效”状态。产业链架构不单独标注机构和日期。

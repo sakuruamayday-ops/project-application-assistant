@@ -38,12 +38,23 @@ def load_jsonl(path):
 
 def ranked(query, records, text_builder, limit):
     results = []
+    normalized_query = normalize(query)
+    term_matches = 0
     for record in records:
         candidate = text_builder(record)
+        if normalized_query and normalized_query in normalize(candidate):
+            term_matches += 1
         candidate_score = score(query, candidate)
         if candidate_score > 0:
             results.append({"score": round(candidate_score, 2), **record})
-    return sorted(results, key=lambda item: (-item["score"], item.get("page", 0)))[:limit]
+    returned = sorted(results, key=lambda item: (-item["score"], item.get("page", 0)))[:limit]
+    # 检索计数不随返回条数或后续业务排除改变，避免把“不适用”写成“未检出”。
+    return returned, {
+        "scanned_records": len(records),
+        "normalized_term_matches": term_matches,
+        "scored_candidates": len(results),
+        "returned_candidates": len(returned),
+    }
 
 
 def main():
@@ -54,15 +65,22 @@ def main():
     args = parser.parse_args()
     chain = load_jsonl(args.references / "industry-chain-index.jsonl")
     foundation = load_jsonl(args.references / "industry-foundation-index.jsonl")
+    chain_candidates, chain_summary = ranked(args.query, chain, lambda item: item["path"], args.limit)
+    foundation_candidates, foundation_summary = ranked(
+        args.query,
+        foundation,
+        lambda item: f'{item["field"]}{item["category"]}{item["item"]}',
+        args.limit,
+    )
     output = {
-        "notice": "候选分数仅用于召回，精确匹配必须按 SKILL.md 的六要素人工核验。",
-        "industry_chain": ranked(args.query, chain, lambda item: item["path"], args.limit),
-        "industry_foundation": ranked(
-            args.query,
-            foundation,
-            lambda item: f'{item["field"]}{item["category"]}{item["item"]}',
-            args.limit,
-        ),
+        "notice": "候选分数仅用于召回，精确匹配必须按 SKILL.md 的六要素人工核验。normalized_term_matches 是忽略标点、空白和英文大小写后的整词包含数，不是业务匹配数；排除不适用候选不得改写检索计数。",
+        "search_summary": {
+            "query": args.query,
+            "industry_chain": chain_summary,
+            "industry_foundation": foundation_summary,
+        },
+        "industry_chain": chain_candidates,
+        "industry_foundation": foundation_candidates,
     }
     print(json.dumps(output, ensure_ascii=False, indent=2))
 

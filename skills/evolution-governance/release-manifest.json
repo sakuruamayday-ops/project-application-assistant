@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "evolution-governance",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,13 +21,13 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "18bb9dec0e99fc9dee0a74334bcbf228ea6568bf0ba4cc20d4df3822103b62e1",
+    "SKILL.md": "f43575b8d80495ef8e9ccf6edf61d336c27bb2aacf441dd1e2082d981ea4c888",
     "references/approval-contract.md": "8e7c105a02a5bf3653157efd08637b29d62b05873cfc9512a4ca6bd1e672c2c3",
     "references/change-risk-classification.md": "437404de9db633d03a4b4ec959b0c61ed8d0003fcb009500441e5aebf46e36fc",
     "references/governance-state-machine.md": "29104e5ecd74dd6e78cea09d1ea5c06b8bc45c9602bfa25ee03ba36b0699331c",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/rollback-protocol.md": "969f7a7eaefa344c21dda201ee6d4b566fca48549aa4bd3d372fee00d6f96e5a",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_evolution_batch.py": "0bf6fe064c70fecb761fdd4c0dd860a896d079e418480f634be1a5ccadbab6f2",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

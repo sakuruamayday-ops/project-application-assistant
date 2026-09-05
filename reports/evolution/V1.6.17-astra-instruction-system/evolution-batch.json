@@ -1,0 +1,82 @@
+{
+  "batch_id": "V1.6.17-astra-instruction-system",
+  "state": "approved",
+  "risk_level": "protected",
+  "summary": "落实已确认的指令体系优化，修复51项正式Skills的宿主中立运行时、文档读取、专业交付收束、首次配置和通用签名发布链。",
+  "baseline": {
+    "commit": "9f76db6f52d4766d33241f814549988992b6d2ad",
+    "release": "V1.6.16"
+  },
+  "snapshot": {
+    "path": "snapshot.md",
+    "sha256": "93a29f4fce11268c675ad19805c85dd0322982bbc175372f9f7cbe906de17f8a"
+  },
+  "impact_report": {
+    "path": "impact-report.md",
+    "sha256": "0fd9e833bd436a244eef32dc2e0f87a50d40528a3659e72458287e5800188fb5"
+  },
+  "diff": {
+    "path": "candidate-diff.md",
+    "sha256": "38644b9d5178641ff12f72664e19da60465dcc6cab477dabe10cf9bbe85690ff",
+    "source_diff_sha256": "19ac99f93cb7e9172bb5a17751d7962d16608180456dbd4e271a17cbd9ff0f3e",
+    "targets_path": "target-hashes.json",
+    "targets_sha256": "77b9adaaf372bbde138405a7ba51258c62b4a5daf51ec085635b36c45db7c33d"
+  },
+  "test_report": {
+    "path": "test-report.md",
+    "sha256": "46e6d3025805e4b23c5c14289e575735059a60ff0620dbf9f3dc06555f8b2b94"
+  },
+  "tests": [
+    {
+      "name": "root-suite",
+      "status": "pass",
+      "result": "420 passed, 3 skipped, 74 subtests passed"
+    },
+    {
+      "name": "portable-runtime-and-receipts",
+      "status": "pass",
+      "result": "47 passed, 1 skipped"
+    },
+    {
+      "name": "release-manager-v1.15.8",
+      "status": "pass",
+      "result": "11 passed; source and packaged install checks pass"
+    },
+    {
+      "name": "signed-skill-manifest-refresh",
+      "status": "pass",
+      "result": "51 of 51 pass; pinned official publisher"
+    },
+    {
+      "name": "grounded-product-configuration",
+      "status": "pass",
+      "result": "all checks true"
+    },
+    {
+      "name": "diff-check",
+      "status": "pass",
+      "result": "pass"
+    }
+  ],
+  "protected_boundaries": [
+    "Ed25519 skill integrity and fixed publisher trust",
+    "user-selected model and reasoning settings",
+    "permissions, sensitive data and persistence consent",
+    "formal release and rollback transaction",
+    "client release remains a separate verified transaction",
+    "knowledge index and enterprise identity are not build inputs"
+  ],
+  "independent_release_manager": {
+    "version": "V1.15.8",
+    "archive": "/Users/zsh/Documents/自动化区域/skill-release-manager-v1158-generic-only-release-20260905/skill-release-manager-V1.15.8.zip",
+    "sha256": "a8f7dfaff28eb55f02418fc25149e409983d90ff29e1bbe69565f2852770f1a8",
+    "publisher_fingerprint": "SHA256:+BLR7x5xFci+u1Ue3KoFs9jFzzS+ebNk46JlfDUoEJI"
+  },
+  "approval": {
+    "approved_by": "owner",
+    "approved_at": "2026-09-05T17:37:49+08:00",
+    "confirmation_text": "是",
+    "approval_scope": "继续执行V1.6.17正式发布：落实已确认指令体系建议，P04沿用每项任务的用户模型与推理选择；修复、验签、推送、发布通用51项Skills与独立发布管理器并同步本机，客户端只消费同一精确签名包。",
+    "diff_sha256": "19ac99f93cb7e9172bb5a17751d7962d16608180456dbd4e271a17cbd9ff0f3e"
+  }
+}

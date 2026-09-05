@@ -14,14 +14,17 @@ from urllib.parse import parse_qs, urlparse, urlunparse
 
 
 FIELD_ALIASES = {
+    "source_record_id": ["source_record_id", "recordId", "id", "源记录ID"],
+    "year": ["year", "application_year", "年度"],
+    "source_version": ["source_version", "version", "源版本"],
     "title": ["title", "name", "policyTitle", "projectName", "标题", "项目名称", "政策名称"],
     "region": ["region", "area", "district", "地区", "区域"],
     "record_type": ["record_type", "recordType", "type", "类型", "政策类型"],
     "topics": ["topics", "tags", "labels", "标签", "主题"],
     "publish_date": ["publish_date", "publishDate", "releaseDate", "发布日期"],
     "issuer": ["issuer", "department", "publishOrg", "发文机构", "发布部门"],
-    "article_source": ["article_source", "articleSource", "sourceName", "文章来源"],
-    "application_status": ["application_status", "applicationStatus", "declareStatus", "申报状态"],
+    "article_source": ["article_source", "articleSource", "sourceName", "文章来源", "source"],
+    "application_status": ["application_status", "applicationStatus", "declareStatus", "申报状态", "status"],
     "application_period": ["application_period", "applicationPeriod", "declareTime", "申报时间"],
     "detail_url": ["detail_url", "detailUrl", "url", "详情链接"],
     "official_url": ["official_url", "officialUrl", "sourceUrl", "官方链接", "原文链接"],
@@ -65,6 +68,9 @@ def initialize(connection):
             id INTEGER PRIMARY KEY,
             dedupe_key TEXT NOT NULL UNIQUE,
             source TEXT NOT NULL,
+            source_record_id TEXT NOT NULL DEFAULT '',
+            year TEXT NOT NULL DEFAULT '',
+            source_version TEXT NOT NULL DEFAULT '',
             title TEXT NOT NULL,
             normalized_title TEXT NOT NULL,
             region TEXT NOT NULL DEFAULT '',
@@ -179,6 +185,9 @@ def initialize(connection):
     )
     existing_columns = {row[1] for row in connection.execute("PRAGMA table_info(records)")}
     migrations = {
+        "source_record_id": "TEXT NOT NULL DEFAULT ''",
+        "year": "TEXT NOT NULL DEFAULT ''",
+        "source_version": "TEXT NOT NULL DEFAULT ''",
         "eligibility_conditions": "TEXT NOT NULL DEFAULT ''",
         "beneficiary_companies_json": "TEXT NOT NULL DEFAULT '[]'",
         "beneficiary_count": "INTEGER NOT NULL DEFAULT 0",
@@ -230,7 +239,7 @@ def canonicalize(raw, source, authorization_scope):
     record["beneficiary_companies"] = list(dict.fromkeys(str(item).strip() for item in companies if str(item).strip()))
     for field in FIELD_ALIASES:
         if field not in {"topics", "beneficiary_companies"}:
-            record[field] = str(record[field] or "").strip()
+            record[field] = str(record[field]).strip()
     try:
         record["beneficiary_count"] = int(float(record["beneficiary_count"] or len(record["beneficiary_companies"])))
     except ValueError:
@@ -245,10 +254,16 @@ def canonicalize(raw, source, authorization_scope):
     record["detail_url"] = normalize_url(record["detail_url"])
     record["official_url"] = normalize_url(record["official_url"])
     record["verification_status"] = record["verification_status"] or "未核验"
+    # 索引有效性与申报截止不同，只有显式 inactive/active 或 active 字段改变可查询状态。
+    active = raw.get("active", record["application_status"])
+    record["active"] = 0 if str(active).strip().lower() in {"inactive", "false", "0"} else 1
     return record
 
 
 def dedupe_key(record):
+    # 源记录 ID 不能冒充 SQLite 主键，也不能靠可变标题或年度识别同一记录。
+    if record["source_record_id"]:
+        return f'{record["source"]}:id:{record["source_record_id"]}'
     detail = urlparse(record["detail_url"])
     query = parse_qs(detail.query)
     identifiers = [query.get("id", [""])[0], query.get("indexId", [""])[0]]
@@ -262,6 +277,12 @@ def dedupe_key(record):
 
 def record_hash(record):
     payload = {key: value for key, value in record.items() if key not in {"authorization_scope"}}
+    # 老索引重新导入未变化的数据时，不因新增的空字段产生伪版本。
+    for field in ("source_record_id", "year", "source_version"):
+        if not payload.get(field):
+            payload.pop(field, None)
+    if payload.get("active") == 1:
+        payload.pop("active", None)
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
 
 
@@ -293,8 +314,9 @@ def upsert_record(connection, record, collected_at):
     existing = connection.execute("SELECT * FROM records WHERE dedupe_key = ?", (key,)).fetchone()
     if existing is None:
         existing = connection.execute(
-            "SELECT * FROM records WHERE normalized_title=? AND issuer=? AND publish_date=? ORDER BY current_version DESC LIMIT 1",
-            (record["normalized_title"], record["issuer"], record["publish_date"]),
+            """SELECT * FROM records WHERE source=? AND normalized_title=? AND issuer=? AND publish_date=?
+            AND source_record_id='' ORDER BY current_version DESC LIMIT 1""",
+            (record["source"], record["normalized_title"], record["issuer"], record["publish_date"]),
         ).fetchone()
         if existing is not None and existing["dedupe_key"] != key:
             connection.execute("UPDATE records SET dedupe_key=? WHERE id=?", (key, existing["id"]))
@@ -302,20 +324,21 @@ def upsert_record(connection, record, collected_at):
     if existing is None:
         cursor = connection.execute(
             """INSERT INTO records (
-                dedupe_key, source, title, normalized_title, region, record_type, topics_json,
+                dedupe_key, source, source_record_id, year, source_version, title, normalized_title, region, record_type, topics_json,
                 publish_date, issuer, article_source, application_status, application_period,
                 detail_url, official_url, verification_status, authorization_scope, content,
                 eligibility_conditions, beneficiary_companies_json, beneficiary_count, query_text,
-                page_number, content_hash, current_version, first_seen_at, last_seen_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)""",
+                page_number, content_hash, current_version, first_seen_at, last_seen_at, active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)""",
             (
-                key, record["source"], record["title"], record["normalized_title"], record["region"],
+                key, record["source"], record["source_record_id"], record["year"], record["source_version"],
+                record["title"], record["normalized_title"], record["region"],
                 record["record_type"], json.dumps(record["topics"], ensure_ascii=False), record["publish_date"],
                 record["issuer"], record["article_source"], record["application_status"], record["application_period"],
                 record["detail_url"], record["official_url"], record["verification_status"],
                 record["authorization_scope"], record["content"], record["eligibility_conditions"],
                 json.dumps(record["beneficiary_companies"], ensure_ascii=False), record["beneficiary_count"],
-                record["query"], record["page_number"], digest, collected_at, collected_at,
+                record["query"], record["page_number"], digest, collected_at, collected_at, record["active"],
             ),
         )
         record_id = cursor.lastrowid
@@ -325,7 +348,7 @@ def upsert_record(connection, record, collected_at):
         )
         return "inserted", not bool(record["official_url"])
     if existing["content_hash"] == digest:
-        connection.execute("UPDATE records SET last_seen_at = ?, active = 1 WHERE id = ?", (collected_at, existing["id"]))
+        connection.execute("UPDATE records SET last_seen_at = ?, active = ? WHERE id = ?", (collected_at, record["active"], existing["id"]))
         return "unchanged", not bool(existing["official_url"])
     version = existing["current_version"] + 1
     connection.execute(
@@ -334,7 +357,7 @@ def upsert_record(connection, record, collected_at):
             article_source=?, application_status=?, application_period=?, detail_url=?, official_url=?,
             verification_status=?, authorization_scope=?, content=?, content_hash=?, current_version=?,
             eligibility_conditions=?, beneficiary_companies_json=?, beneficiary_count=?, query_text=?,
-            page_number=?, last_seen_at=?, active=1 WHERE id=?""",
+            page_number=?, last_seen_at=?, source_record_id=?, year=?, source_version=?, active=? WHERE id=?""",
         (
             record["title"], record["normalized_title"], record["region"], record["record_type"],
             json.dumps(record["topics"], ensure_ascii=False), record["publish_date"], record["issuer"],
@@ -342,7 +365,8 @@ def upsert_record(connection, record, collected_at):
             record["detail_url"], record["official_url"], record["verification_status"],
             record["authorization_scope"], record["content"], digest, version,
             record["eligibility_conditions"], json.dumps(record["beneficiary_companies"], ensure_ascii=False),
-            record["beneficiary_count"], record["query"], record["page_number"], collected_at, existing["id"],
+            record["beneficiary_count"], record["query"], record["page_number"], collected_at,
+            record["source_record_id"], record["year"], record["source_version"], record["active"], existing["id"],
         ),
     )
     connection.execute(
@@ -412,7 +436,7 @@ def ingest(connection, input_path, source, collection_date, authorization_scope,
         raise
 
 
-def query_records(connection, regions, keywords, limit, include_inactive):
+def query_records(connection, regions, keywords, limit, include_inactive, years=()):
     clauses = []
     parameters = []
     if not include_inactive:
@@ -420,6 +444,9 @@ def query_records(connection, regions, keywords, limit, include_inactive):
     if regions:
         clauses.append("(" + " OR ".join("region LIKE ?" for _ in regions) + ")")
         parameters.extend(f"%{region}%" for region in regions)
+    if years:
+        clauses.append("COALESCE(NULLIF(year, ''), SUBSTR(publish_date, 1, 4)) IN (" + ",".join("?" for _ in years) + ")")
+        parameters.extend(str(year) for year in years)
     for keyword in keywords:
         clauses.append("(title LIKE ? OR issuer LIKE ? OR topics_json LIKE ? OR content LIKE ? OR eligibility_conditions LIKE ? OR beneficiary_companies_json LIKE ?)")
         parameters.extend([f"%{keyword}%"] * 6)
@@ -507,6 +534,7 @@ def main():
     query_parser = subparsers.add_parser("query")
     query_parser.add_argument("--region", action="append", default=[])
     query_parser.add_argument("--keyword", action="append", default=[])
+    query_parser.add_argument("--year", action="append", type=int, default=[])
     query_parser.add_argument("--limit", type=int, default=50)
     query_parser.add_argument("--include-inactive", action="store_true")
     subparsers.add_parser("status")
@@ -522,7 +550,7 @@ def main():
         elif args.command == "ingest":
             result = ingest(connection, args.input, args.source, args.collection_date, args.authorization_scope, {"regions": args.region})
         elif args.command == "query":
-            print_rows(query_records(connection, args.region, args.keyword, args.limit, args.include_inactive))
+            print_rows(query_records(connection, args.region, args.keyword, args.limit, args.include_inactive, args.year))
             return
         elif args.command == "status":
             result = {

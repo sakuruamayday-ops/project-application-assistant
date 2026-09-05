@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Thin WorkBuddy host adapter for the shared grounded-evidence engine."""
+"""Thin first-party client adapter for the shared grounded-evidence engine."""
 
 from __future__ import annotations
 
@@ -12,4 +12,8 @@ ENGINE = SKILLS_ROOT / "evidence-ledger" / "scripts" / "grounded_evidence.py"
 
 
 if __name__ == "__main__":
-    runpy.run_path(str(ENGINE), run_name="__main__", init_globals={"HOST_ADAPTER": "workbuddy"})
+    runpy.run_path(
+        str(ENGINE),
+        run_name="__main__",
+        init_globals={"HOST_ADAPTER": "first_party_client"},
+    )

@@ -9,16 +9,14 @@ description: 管理政府项目客户任务的企业与项目身份、事实锁�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "project-memory" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责
 
-保存和召回客户项目连续性信息。项目事实与个人写作偏好分开管理；本技能不代替WorkBuddy偏好桥。
+召回客户项目连续性信息，并在用户明确要求保存、记住或延续该项目状态时写入。项目事实与个人写作偏好分开管理；本技能不代替宿主的用户级偏好管理。读取历史不构成新增写入授权，生成交付物也不构成归档或持久保存授权。
 
 ## 可保存内容
 
@@ -36,7 +34,7 @@ description: 管理政府项目客户任务的企业与项目身份、事实锁�
 2. 召回时只加载当前任务所需字段，并标注记录来源和更新时间。
 3. 七天以上的可变状态标记为待复核；政策、截止日期、企业状态和专利状态必须重新核验。
 4. 新事实与旧记录冲突时保留历史版本，记录冲突和确认结果。
-5. 阶段结束时形成检查点，不自动归档正式材料。
+5. 阶段结束时形成本轮检查点摘要；仅在已有项目记忆写入授权时持久化。不得自动归档正式材料、写入知识库或对外共享。
 
 项目记录结构和过期规则见 `references/project-memory-schema.md`。结构化项目状态可使用
 `scripts/project_state.py` 校验、写入和读取。

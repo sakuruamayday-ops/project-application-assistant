@@ -12,7 +12,6 @@ from unittest import mock
 
 from project_assistant.installer import classify_skill_change, install_skills
 from scripts.build_standard_package import (
-    HOST_SKILL_INSTALL_PROMPT,
     PORTABLE_REPORT_REQUIRED,
     included,
     validate_release_archive,
@@ -109,7 +108,8 @@ class InstallTests(unittest.TestCase):
                 manifest["version"],
                 suite_manifest["release"]["version"],
             )
-            self.assertEqual(manifest["includes"]["host_skill_install_prompt"], HOST_SKILL_INSTALL_PROMPT)
+            self.assertTrue(manifest["includes"]["current_runtime_capability_detection"])
+            self.assertNotIn("host_skill_install_prompt", manifest["includes"])
             self.assertTrue(manifest["includes"]["manufacturing_tax_risk_analysis"])
             self.assertTrue(manifest["includes"]["legal_regulations_dynamic_routing"])
             self.assertTrue(manifest["includes"]["personal_preference_overlay"])
@@ -588,7 +588,8 @@ class InstallTests(unittest.TestCase):
             / "skills/first-run-configuration/references/first-startup-protocol.md"
         ).read_text(encoding="utf-8")
         self.assertIn("Agent", protocol)
-        self.assertIn(HOST_SKILL_INSTALL_PROMPT, protocol)
+        self.assertIn("本轮实际工具", protocol)
+        self.assertNotIn("帮我安装OCR、PDF、Word、PPT、Excel和联网检索这几个Skills", protocol)
 
     def test_standard_drafting_skill_has_rules_templates_and_audit(self):
         repository = Path(__file__).resolve().parents[1]
@@ -622,7 +623,7 @@ class InstallTests(unittest.TestCase):
         self.assertIn("knowledge_search", skill)
         self.assertIn("truncated` 输出 `true`、`false` 或 `unavailable`", skill)
         self.assertIn("prompt_hook_observable=false", skill)
-        self.assertIn("不创建 `.workbuddy/memory`", skill)
+        self.assertIn("不创建宿主管理的记忆目录", skill)
         self.assertIn("尚未取得官方最终认定名单", skill)
         self.assertIn("同一对象出现两个计数", skill)
         self.assertIn("年份替换为认定批次", protocol)

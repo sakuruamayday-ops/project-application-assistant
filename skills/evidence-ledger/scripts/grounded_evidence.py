@@ -1271,41 +1271,10 @@ def _default_state_root() -> Path:
     explicit = os.environ.get("GONGCHUANG_BEHAVIOR_STATE_ROOT", "").strip()
     if explicit:
         return Path(explicit).expanduser().resolve()
-    windows_root = Path.home() / ".workbuddy" / "state" / "gongchuang-behavior"
-    if os.name == "nt":
-        # Windows lifecycle hooks and inline Skill activation do not inherit
-        # CODEBUDDY_PLUGIN_DATA consistently.  The native Hook deliberately
-        # keeps every event on this stable per-user root, so the validator must
-        # use the same root and ignore a transient host plugin-data value.
-        return windows_root
-    plugin_data = os.environ.get("CODEBUDDY_PLUGIN_DATA", "").strip()
-    if plugin_data and not plugin_data.startswith("${"):
-        return Path(plugin_data).expanduser().resolve() / "behavior-hook"
-    plugin_root = os.environ.get("CODEBUDDY_PLUGIN_ROOT", "").strip()
-    packaged_root = Path(plugin_root).expanduser().resolve() if plugin_root and not plugin_root.startswith("${") else SKILLS_ROOT.parent.resolve()
-    if (packaged_root / ".codebuddy-plugin" / "plugin.json").is_file():
-        plugin_container = packaged_root.parent
-        marketplace = plugin_container.parent
-        marketplaces = marketplace.parent
-        host_plugins = marketplaces.parent
-        host_home = host_plugins.parent
-        safe_component = re.compile(r"[A-Za-z0-9._-]{1,128}")
-        if (
-            plugin_container.name == "plugins"
-            and marketplaces.name == "marketplaces"
-            and host_plugins.name == "plugins"
-            and host_home.name in {".workbuddy", ".codebuddy"}
-            and safe_component.fullmatch(packaged_root.name)
-            and safe_component.fullmatch(marketplace.name)
-        ):
-            return (
-                host_plugins
-                / "data"
-                / f"{packaged_root.name}-{marketplace.name}"
-                / "behavior-hook"
-            )
-        return packaged_root / ".behavior-data"
-    raise ValueError("无法定位WorkBuddy行为状态目录，请传入--state-root")
+    raise ValueError(
+        "无法定位当前轮次行为状态目录；请传入--state-root或设置"
+        "GONGCHUANG_BEHAVIOR_STATE_ROOT"
+    )
 
 
 def write_delivery_receipt(
@@ -1356,14 +1325,6 @@ def write_delivery_receipt(
                     }
                 )
     root = (state_root or _default_state_root()).expanduser().resolve()
-    packaged_root = SKILLS_ROOT.parent.resolve()
-    if state_root is not None and (packaged_root / ".codebuddy-plugin" / "plugin.json").is_file():
-        canonical_root = _default_state_root()
-        if root != canonical_root:
-            raise ValueError(
-                "WorkBuddy正式回执必须写入宿主行为状态目录；"
-                "如需交付副本请使用--receipt-export-dir"
-            )
     current = json.loads((root / "current-turn.json").read_text(encoding="utf-8"))
     turn_id = str(current.get("turn_id", "")).strip()
     if not turn_id:

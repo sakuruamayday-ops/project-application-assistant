@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "checking-patdocx-cn-single-agent",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -25,13 +25,13 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "9e0d3b816541db1fefec620801bf9ac4e9f4fb48f34c98fee642eed675a80626",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "SKILL.md": "278b293c21624d601a01b8233168344279c154242db9f52758df5c7f3d15187f",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/review-method.md": "0b0e84b3f7d25223ecc73f035f7bb374befc47bcff8f2a0987f9556ddbc347db",
     "scripts/patent_extractor.py": "92d98c62711af2d3ad89a5d2b431c8b821ca7b867311d35fbae172b36ba2ae6a",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
-    "scripts/review_adder.py": "864c030e04188dea6a7bf769e6a1caa58a657f6053027d930c9a774bd6f2fc1f",
-    "scripts/verify.py": "5aea00deb6213906266301788f542a52e6781df9a0a052eca69338b45a22b93d",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
+    "scripts/review_adder.py": "8fd0513b00d8bbac4d63673bdccbb24e66c9b55c439e50caa0a286d488f0912c",
+    "scripts/verify.py": "316d1df61067dd5cd719bde55cc85a54a6848073a6e24e67ebc2cd2896095277",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [

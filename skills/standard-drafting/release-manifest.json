@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "standard-drafting",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "assets/compilation-note-template.md",
@@ -33,18 +33,18 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "4ad2c8d3b418a35fc2fca4a40ea1cf556d8a2069932c612d19223dfd676433cb",
+    "SKILL.md": "a9d9fa55595ecd0cdcdb91a1cec0bc34e60687e69731c476f461c4cf2207e273",
     "assets/compilation-note-template.md": "30e1752d3016f8dd1452ed3c04bef689f1cf7b620caada5a7522dbd474a0e414",
     "assets/gbt-1-1-enterprise-standard-template-preview.png": "7e61b457b47ed35c304f51326ec431682af6a34c1ee36b525c3c999bd86c693b",
     "assets/gbt-1-1-enterprise-standard-template.docx": "5f1cccea6a2171e77081b14bb4e3439b3b3ceace302562fffce1755f75b418bf",
     "assets/standard-draft-template.md": "e53994ff0d1bc8608e95a21e5b2f3866eeeb3d7c6af41684989859b53804c94d",
     "references/gbt-1-1-drafting-rules.md": "8695bc5381b4119cd0ee6a161723e1f36726753764e06edf2a650a9b82377c4b",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/standard-type-structures.md": "7394a525b6af53a8a6c7806fce1be62e5837e6f0204f95e1b99c8f9944cd8a0e",
     "scripts/audit_enterprise_standard_docx.py": "1205c7535a090c89ab84116740f1522f3892212967b301ac76f0c145c680e713",
     "scripts/audit_standard_draft.py": "5a734afc0f462e800fc39bdab20dd4fa13fae0671dcb585e9636c03362025609",
     "scripts/initialize_enterprise_standard.py": "7fe6c34d5a9933f943e78cb0bcb85bf48cf8084e25a24edbe713d7fc66925920",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },
   "integrity_excludes": [

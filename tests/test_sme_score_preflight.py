@@ -128,10 +128,8 @@ def test_skill_contract_requires_preflight_and_current_baseline():
     skill_text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
 
     assert "scripts/preflight.py" in skill_text
-    assert (
-        'scripts/preflight.py" --task-type explanation`'
-        in skill_text
-    )
+    assert "python3 <本技能实际目录>/scripts/preflight.py" in skill_text
+    assert "--task-type quality-preassessment" in skill_text
     assert "current-policy-baseline-2026.md" in skill_text
     assert "省级质量分门槛为 50 分" in skill_text
     assert "内部二十二项百分制" in skill_text

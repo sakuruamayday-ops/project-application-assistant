@@ -57,6 +57,8 @@ def main() -> int:
 
     adapters = config.get("host_adapters", {})
     artifact_validation = config.get("artifact_validation", {})
+    distribution = manifest.get("release", {}).get("distribution_protocol", {})
+    expected_post_package_gates = {"generic-suite-isolated-installation"}
     adapter_paths = {
         host: SKILLS / str(relative)
         for host, relative in adapters.items()
@@ -75,26 +77,18 @@ def main() -> int:
             delivery_contract.get("rule_version") == manifest["release"]["version"]
         ),
         "release_notes_file_present": notes_path.is_file() and stable_notes_path.is_file(),
-        "platform_specific_packages_are_released": (
-            (manifest.get("workbuddy_plugin") or {}).get("package_mode")
-            == "skills_minimal_behavior_hook"
-            and (manifest.get("release", {}).get("distribution_protocol") or {}).get(
-                "workbuddy_specific_package"
-            ) is True
+        "distribution_declares_supported_artifacts": (
+            distribution.get("generic_skill_package") == "signed-universal-zip"
+            and distribution.get("first_party_client") == "bundled-signed-skill-suite"
+            and distribution.get("platform_specific_package") is False
         ),
-        "all_three_packages_have_post_package_gates": (
+        "declared_artifacts_have_post_package_gates": (
             isinstance(manifest.get("post_package_release_gates"), list)
             and {
                 str(item.get("name") or "")
                 for item in manifest["post_package_release_gates"]
             }
-            == {
-                "generic-suite-isolated-installation",
-                "macos-platform-server-release-contract",
-                "macos-platform-all-skill-coverage",
-                "windows-platform-server-release-contract",
-                "windows-platform-all-skill-coverage",
-            }
+            == expected_post_package_gates
         ),
         "registry_covers_declared_skills": (
             len(registry.get("skills", [])) == len(manifest.get("skills", []))
@@ -106,7 +100,8 @@ def main() -> int:
         "registry_release_is_skills_contract": registry.get("release") == manifest.get("release"),
         "grounded_registry_is_shared_package_asset": "report-skill-registry.json" in shared_paths,
         "host_adapters_are_shared_package_assets": "_runtime/grounded-citations" in shared_paths,
-        "exactly_two_host_adapters": set(adapters) == {"codex", "workbuddy"},
+        "exactly_two_host_adapters": set(adapters)
+        == {"codex", "first_party_client"},
         "host_adapter_files_exist": all(path.is_file() for path in adapter_paths.values()),
         "host_adapters_are_package_relative": all(
             str(relative).startswith("_runtime/grounded-citations/")

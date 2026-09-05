@@ -9,11 +9,9 @@ description: 建立企业专利、商标和软著等知识产权事实底稿，�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "ip-assessment" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责与边界
@@ -28,6 +26,10 @@ description: 建立企业专利、商标和软著等知识产权事实底稿，�
 4. 核验申请人或权利人变更、取得时间、共同权利人和项目政策认可范围。
 5. 逐项映射主导产品、核心技术、生产工艺和项目任务，关系不明时不得仅凭名称判定相关。
 6. 输出可直接使用、仅作技术分析、待补证和不建议用于申报四类。
+
+缺口按已读取清单的具体字段列出，事实表、分类结论和待补项必须一致。已提供当前权利人的，不再写成当前权利人未知；尚需转让文件核验时区分“清单记载的权利人”与“变更证明未取得”，不能把后者改写成前者缺失。原权利人、转让日期、实施情况和 RD 关联分别判断，不整组标成未提供。
+
+“可直接使用”指当前任务中可使用的权利事实，不等于任何项目均予认可。只整理清单、没有选定项目和核验政策时，统计有效授权、已登记、审中、失效及取得方式，不把合计数改称“可申报权利数量”，也不无依据断言受让与自主研发必然适用不同政策。
 
 权利状态和关联规则见 `references/ip-assessment-rules.md`。结构化清单可运行
 `scripts/validate_ip_inventory.py`。

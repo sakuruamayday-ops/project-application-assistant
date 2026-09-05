@@ -9,11 +9,9 @@ description: 在政府项目材料提交前执行括号、数据、事实、四�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "consistency-check" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责
@@ -34,10 +32,14 @@ description: 在政府项目材料提交前执行括号、数据、事实、四�
 
 问题分为阻断、重大、一般和提示四级。主导产品、补短板、填空白和国产替代分别给出“保留、替换、补证后保留”，不得为保持原文而牵强解释。
 
+缺少佐证不等于业务尚未发生。原件声明已完成、已建成，但未提供验收记录时，保留原声明并标注待核验，不能直接改写成研发中、未完成或未验收。只有相反事实或可定位的内部矛盾才能支持替换；不同项目、年度的状态不得互相代用。
+
 ## 输出与脚本
 
 按位置列出原文、问题、证据、影响和建议修改。规则见
 `references/consistency-gates.md`；纯文本初筛运行
 `scripts/scan_formal_material.py`，脚本通过不等于专业检查通过。
+
+生成 Word 核查稿时，沿用可用模板和真实标题样式；换行写为文档换行，不把 `<br>` 等 HTML 标记直接放入正文。标题与下一段保持同页，使用当前环境可用字体。交付前查看实际渲染页，不能用 ZIP 可打开或文本可提取代替排版核对。
 
 增加案例串用检查：正文中的企业名称、数字、客户、专利和技术指标必须能回溯到当前企业事实台账；仅出现在 `case_reference` 或其他案例包中的内容一律阻断终稿。

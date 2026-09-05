@@ -39,7 +39,7 @@ def test_grounded_host_adapters_are_in_the_shared_package_surface():
     manifest = load(ROOT / "skills" / "suite-manifest.json")
     registry = load(ROOT / "skills" / "report-skill-registry.json")
     assert "_runtime/grounded-citations" in manifest["shared_paths"]
-    assert set(registry["host_adapters"]) == {"codex", "workbuddy"}
+    assert set(registry["host_adapters"]) == {"codex", "first_party_client"}
     for relative in registry["host_adapters"].values():
         assert relative.startswith("_runtime/grounded-citations/")
         assert (ROOT / "skills" / relative).is_file()

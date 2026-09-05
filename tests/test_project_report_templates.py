@@ -12,6 +12,7 @@ SKILL = ROOT / "skills/project-feasibility"
 REGISTRY = SKILL / "references/report-template-registry.json"
 SELECTOR = SKILL / "scripts/select_report_template.py"
 CONTRACT = ROOT / "skills/delivery-contracts.json"
+SUITE_MANIFEST = ROOT / "skills/suite-manifest.json"
 WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
 SPEC = importlib.util.spec_from_file_location("project_report_template_selector", SELECTOR)
@@ -45,7 +46,8 @@ def docx_text_and_tables(path: Path) -> tuple[str, list[list[str]]]:
 def test_registry_has_twelve_projects_and_twenty_four_verified_editable_masters():
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
-    assert registry["release_tag"] == "V1.6.16"
+    suite = json.loads(SUITE_MANIFEST.read_text(encoding="utf-8"))
+    assert registry["release_tag"] == suite["release"]["tag"]
     assert len(registry["projects"]) == 12
     assert set(registry["report_types"]) == {"preassessment", "feasibility"}
     seen = set()
@@ -119,3 +121,15 @@ def test_unknown_project_fails_closed():
         assert "未命中" in str(exc)
     else:
         raise AssertionError("未知项目不得默认套用模板")
+
+
+def test_report_chapter_page_breaks_are_attached_to_headings():
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    for project in registry["projects"]:
+        for report_type, template in project["templates"].items():
+            with zipfile.ZipFile(SKILL / template["path"]) as archive:
+                root = ET.fromstring(archive.read("word/document.xml"))
+            # 独立分页段落曾在表格填满页面后产生只有水印的空页；不改变章节另起页的要求。
+            assert not root.findall(f"./{{{WORD_NS}}}body/{{{WORD_NS}}}p//{{{WORD_NS}}}br[@{{{WORD_NS}}}type='page']"), (project["id"], report_type)
+            headings = root.findall(f"./{{{WORD_NS}}}body/{{{WORD_NS}}}p/{{{WORD_NS}}}pPr/{{{WORD_NS}}}pageBreakBefore")
+            assert len(headings) >= 4, (project["id"], report_type)

@@ -9,21 +9,21 @@ description: 安装企业全生命周期助手后自动启用。持续使用脱�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "skill-evolution" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 稳定版本保持不变，优化只生成候选版本。比较准确性、来源完整性、边界遵守和上下文成本。候选通过测试并经人工批准后才能发布，保留完整差异和回滚点。
+
+用户明确要求修复已经复现或已核验的问题时，可直接生成该范围的候选差异并运行相称测试，不等待自主进化阈值或冷却期；不得据此扩大修改范围、跳过治理审批或把本地候选写成正式发布。
 
 个人输出习惯、默认地域、术语和单个用户的工作流选择不进入正式Skill进化，统一写入个人偏好覆盖层。只有跨任务、跨用户复现并经核验的通用质量问题，才进入进化批次。
 
 ## 自动运行边界
 
-- 首次配置完成后自动进入启用状态，不要求用户再次下达开启指令。
-- 每次适用任务结束后只由 `experience-recorder` 记录脱敏信号，不因单条纠正立即运行进化。
+- 首次配置完成后标记分析能力可用，不要求用户再次下达开启指令；这不授予常驻调度、周期巡检或持久日志写入权限。
+- 每次适用任务结束后由 `experience-recorder` 形成脱敏候选信号；只有已有对应记录授权时才持久化，不因单条纠正立即运行自主进化。
 - 先由 `skill-curator` 去重并按技能、规则键和任务聚合；只有 `evolution-batch.json` 的 `ready=true` 时才生成批量候选。默认阈值为同一规则至少3条已核验纠正、覆盖至少2个不同任务，每批最多2个技能，候选后冷却7天。
 - 自动运行仅限记录、评分、诊断和候选差异；修改正式Skill、合并、归档和发布必须交给 `evolution-governance` 审批。
 - GEPA或外部评判模型只在批次已就绪且主人明确批准成本后运行。批次未达阈值时保留信号，不为了凑批次放宽标准。
@@ -34,7 +34,8 @@ description: 安装企业全生命周期助手后自动启用。持续使用脱�
 
 ## 模型选择
 
-- 默认使用当前宿主Agent已经提供的模型，不要求额外申请API。
+- 使用用户为当前任务实际选择的模型和推理档位，不固定 Astra、max 或任何其他组合，也不从旧记忆恢复旧设置。
+- 默认复用当前宿主Agent已经提供的模型，不要求额外申请API；不增加固定思考时长、固定搜索轮数或无条件多Agent要求。
 - 用户需要单独的评判模型或批量优化时，可使用任意兼容模型API，不绑定DeepSeek、OpenAI、Anthropic或其他固定供应商。
 - 配置时记录模型地址、模型名称和宿主要求的认证参数；能力检测只判断是否可调用。
 - 模型不可用时保留人工评审和规则测试流程，不阻塞技能审计、候选差异生成及回滚。

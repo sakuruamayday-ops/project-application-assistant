@@ -1,0 +1,2450 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "9f76db6f52d4766d33241f814549988992b6d2ad",
+  "target_release": "V1.6.17",
+  "target_count": 407,
+  "targets": [
+    {
+      "status": "M",
+      "path": "config/grounded-citations.json",
+      "before_sha256": "125a8c13bafbddbf11a5693797f4878ca49e8bc2c3994d8f5bbaca69ba47950f",
+      "after_sha256": "d36fd4520d5c5d86227f062346349d7344028f74918fb9695f9bc921e2e92f7e"
+    },
+    {
+      "status": "M",
+      "path": "docs/product/README.md",
+      "before_sha256": "95d88ebf55a87316087395b960ad0b377853fec87f41a955736cb4ff5e178064",
+      "after_sha256": "41ecacb829ba3af4432ee73325c84e0c74dcd14cc305baef96295c440bebba17"
+    },
+    {
+      "status": "M",
+      "path": "docs/product/atomic-skill-upgrade-and-audit.md",
+      "before_sha256": "1e2de075f8b672448985b50d03f15043c861a713fb3e27ab9558c4a6e0582ce3",
+      "after_sha256": "36f042a283bd3ae56b188e171f9c2c5bd3370930d11d78d62dd1b7a2a2bd7928"
+    },
+    {
+      "status": "M",
+      "path": "docs/product/product-brief.md",
+      "before_sha256": "d7204dfc51c1b2f87c68a4dfc6f75e74b0eddcc610694fb0966dad53be872c54",
+      "after_sha256": "1a3013a24fa514a7010ea5ee95cc8b29bbf4c6b0ad2d67462fcbf2cce4f2e9b3"
+    },
+    {
+      "status": "M",
+      "path": "docs/product/release-gate-slimming.md",
+      "before_sha256": "ee23b7740d7b7f311d84012383e6ffe0a9cf543d13ae9ec2aa0dfdd8a683581b",
+      "after_sha256": "0ffecc32eadad93e46768130331c0670f65a13fc2ea3613bc89fa020e8df422d"
+    },
+    {
+      "status": "M",
+      "path": "docs/product/roadmap.md",
+      "before_sha256": "3b8a92515ebbb650997bf1693ae893f093579ffb4f30ec41d318fdc79cbba25d",
+      "after_sha256": "50ec41e9705627b9ec1ffecf9f9b19f5927cf6f2a0a02ddb8d964bb98912f5a4"
+    },
+    {
+      "status": "M",
+      "path": "docs/product/website-package-distribution.md",
+      "before_sha256": "b4cf25903012ffe5c4afe48c6de4bac314f7bd1536bb0d1866c22018439e8a6c",
+      "after_sha256": "74003df3ffefdb4db10f2de63e5b570ad6f62ec90d5d9191d7dd93ac62e7bd66"
+    },
+    {
+      "status": "M",
+      "path": "docs/product/企业全生命周期助手-产品文档.md",
+      "before_sha256": "d4c254b28f59019d00b220ef39f138c9f21f0bee4ef0eebb96cd048dd8050f9b",
+      "after_sha256": "80500f0d62db7692ff0fab07d4ea3cb1d0752a2fb92202f899f8eba29ebd5665"
+    },
+    {
+      "status": "A",
+      "path": "docs/releases/V1.6.17.md",
+      "before_sha256": null,
+      "after_sha256": "dac148675d94fbea6f3d3a9d0d6cf07101a7368b96a8615a9979460e1bb5e4e0"
+    },
+    {
+      "status": "M",
+      "path": "pyproject.toml",
+      "before_sha256": "0c97e51828ed86c06bd1aee0a4f6d0a930ac932f54e4993afb24ba516364c265",
+      "after_sha256": "277811b0401eb7a4729d4d33b21011d8fe2545a6f872972c0c2a022c739a6a40"
+    },
+    {
+      "status": "M",
+      "path": "scripts/build_standard_package.py",
+      "before_sha256": "8f7a7a38f34513e668aa4695c52c4da2d1331bfce9dee2e0b3dac33bac6ee4c5",
+      "after_sha256": "cd95524d78758c5b719041a50db74bda099a693241960c878b2c88cefc1fdfd8"
+    },
+    {
+      "status": "M",
+      "path": "scripts/package_generic_skill_suite.py",
+      "before_sha256": "807aed1fedaaae684a03054e6a2ea6cfd050c759e87c5c240150eb1ded7ef5be",
+      "after_sha256": "533c87832a2875f62817c9aedfcfd88fc962b46f84c5469001798222f870a14e"
+    },
+    {
+      "status": "M",
+      "path": "scripts/refresh_skill_release_manifests.py",
+      "before_sha256": "3993d7b7c1f03b2108b3b5cbff49dee5057d7b3ed5ee1849f2bccabed6cc7d43",
+      "after_sha256": "7b09e6080c6bad5a01fbffd181593fa2b3cfa49ddbdd46c31603617da0fcc070"
+    },
+    {
+      "status": "M",
+      "path": "scripts/run_grounded_citations_gate.py",
+      "before_sha256": "71433e347717121be7b9ca780c7b140f19f1da46a32f3e0fefc611b34e8bc746",
+      "after_sha256": "99841f48c257531055324b1b55de8f509029bc2ebe092d425403147dd62349f8"
+    },
+    {
+      "status": "M",
+      "path": "scripts/validate_grounded_product_config.py",
+      "before_sha256": "55b82128975b8b55cab92ad4b91c9a29d0eb67b92e73b8ce7f95314263bb05d7",
+      "after_sha256": "dd26ce91110ab19bcf761627f0519ba6ed65f88cf91bfc97816b57d633324f34"
+    },
+    {
+      "status": "A",
+      "path": "skills/_runtime/grounded-citations/first_party_client_adapter.py",
+      "before_sha256": null,
+      "after_sha256": "93334a9d8eb276af71d6a52133040d17904bc89c6c4545c0de523dfba6a32b52"
+    },
+    {
+      "status": "D",
+      "path": "skills/_runtime/grounded-citations/workbuddy_adapter.py",
+      "before_sha256": "2817ff1ef95b2ad1ed157fc5699960ca3dc114ed6a313987ee8e9851b5ec9426",
+      "after_sha256": null
+    },
+    {
+      "status": "M",
+      "path": "skills/agriculture-and-rural-projects/SKILL.md",
+      "before_sha256": "70d89b09319705601d19a16fa98b7391eb7721b2cf4e7fb78d289753a1d4b867",
+      "after_sha256": "acdab7b4524fa3ae12dd5bbbc5aaad24b261ec8f9c18369b396d061d0bb9972a"
+    },
+    {
+      "status": "M",
+      "path": "skills/agriculture-and-rural-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/agriculture-and-rural-projects/release-manifest.json",
+      "before_sha256": "f5bd634720682c7cd74a4112fc7a7463cd0fd163d73e57862323898908585a8b",
+      "after_sha256": "fa3ae22fc3df258d5f214179a7ffecf60d37e06b389a17e5ebf615367b880c4d"
+    },
+    {
+      "status": "M",
+      "path": "skills/agriculture-and-rural-projects/release-manifest.json.sig",
+      "before_sha256": "a427b372b3b2cf34ef070d675430ac81bbe095287a8001f883c5a4bd94a010f1",
+      "after_sha256": "a56fbb435af0031006514e5d5844f1729270cc83255d91f9d99558cf2f9a359c"
+    },
+    {
+      "status": "M",
+      "path": "skills/agriculture-and-rural-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/agriculture-and-rural-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-version-diff/SKILL.md",
+      "before_sha256": "6c331c579ef36d2300dcaa382db7ac11a9d22c4df9db01e39c6a9732e1650d43",
+      "after_sha256": "87a4bfc98e85d0fa16d59c12458b9c291c17393a48a40004dfa02c9b4fb45868"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-version-diff/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-version-diff/release-manifest.json",
+      "before_sha256": "195d9fc34a861f2285490697839976726b0ac8472a322ed86d3e5f774ab04c5e",
+      "after_sha256": "c1f1b166811d3474e79276c30175c6b92e4d550023a9ca365aea5c3e1df12b8e"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-version-diff/release-manifest.json.sig",
+      "before_sha256": "7564317bb6f63e2fc89e5d14fed065304db9a44d820e9509e2222393829bec6f",
+      "after_sha256": "24ffb83ad37d2915ca1ccfc15c11ea85941a36a74b7d001146be8fa897036043"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-version-diff/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-version-diff/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-writing/SKILL.md",
+      "before_sha256": "09092e8225b14165c9821f9bc59dcf1c809079bf8de1ee6900467e3acf6a6e70",
+      "after_sha256": "f066a526f909b8d611c55e1111b82ab7482e730e90d363741e4d8787f5bb9896"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-writing/references/application-section-patterns.md",
+      "before_sha256": "b8686df0c52c2800d78fdbc4140561bb32651580c6990737a62c2ffb506497b4",
+      "after_sha256": "eacf946deffc7fea4635121b02f5d48bc152b39eb4189d7c5289e4ba37d747e2"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-writing/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-writing/release-manifest.json",
+      "before_sha256": "0a7e4bdf4efa190644ccb15163d555b21ddb8aec023dac50eff8f73b93c614e9",
+      "after_sha256": "346e3ee4d59c38a95bc498a090926a66d7499aa7527ec830992da8475acaae70"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-writing/release-manifest.json.sig",
+      "before_sha256": "0929c442e8698b231a5cfdc07ee0470fcc4af8aff4aa204b5607c429b40f3488",
+      "after_sha256": "b26c54b8a37414fbec0f0efadf10aacf844a018bc93e03070efd2a8c2e417327"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-writing/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/application-writing/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/checking-patdocx-cn-single-agent/SKILL.md",
+      "before_sha256": "9e0d3b816541db1fefec620801bf9ac4e9f4fb48f34c98fee642eed675a80626",
+      "after_sha256": "278b293c21624d601a01b8233168344279c154242db9f52758df5c7f3d15187f"
+    },
+    {
+      "status": "M",
+      "path": "skills/checking-patdocx-cn-single-agent/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/checking-patdocx-cn-single-agent/release-manifest.json",
+      "before_sha256": "2bde542c0a5e4dbd96c829f04bdcac53c7002d85839538d1449ba885557a59eb",
+      "after_sha256": "43d9f0b8d0e7f201e0cf34462c8c89355d3ea6f6975f385128b233c00a60f699"
+    },
+    {
+      "status": "M",
+      "path": "skills/checking-patdocx-cn-single-agent/release-manifest.json.sig",
+      "before_sha256": "2133b9840ed7df3b0f729484b5f25e396caa1ddd82be6745bd60aa7068f5ef1b",
+      "after_sha256": "c12df797c8df96db35db8e47046729d4651825cffffa011df7e251c98e44f95f"
+    },
+    {
+      "status": "M",
+      "path": "skills/checking-patdocx-cn-single-agent/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/checking-patdocx-cn-single-agent/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/checking-patdocx-cn-single-agent/scripts/review_adder.py",
+      "before_sha256": "864c030e04188dea6a7bf769e6a1caa58a657f6053027d930c9a774bd6f2fc1f",
+      "after_sha256": "8fd0513b00d8bbac4d63673bdccbb24e66c9b55c439e50caa0a286d488f0912c"
+    },
+    {
+      "status": "M",
+      "path": "skills/checking-patdocx-cn-single-agent/scripts/verify.py",
+      "before_sha256": "5aea00deb6213906266301788f542a52e6781df9a0a052eca69338b45a22b93d",
+      "after_sha256": "316d1df61067dd5cd719bde55cc85a54a6848073a6e24e67ebc2cd2896095277"
+    },
+    {
+      "status": "M",
+      "path": "skills/client-runtime-gates.json",
+      "before_sha256": "48d1e2a7cde4474c01cb17001f08622befb2ddfa9fe18d6028438f8f2b940801",
+      "after_sha256": "5d78bdfac28f4ea1f62f825a02490c3d67b07e4237aea3e6a8a22570afa254e2"
+    },
+    {
+      "status": "M",
+      "path": "skills/client-runtime-operations.json",
+      "before_sha256": "752a3b803ecd38ccc3afceec9346be273730d77139cc31e4a5ea2f1794709f04",
+      "after_sha256": "ba9badf63583906ca9c80e1411eedd13dcd99c8f7954fdf2ecf68ab5aaf3415f"
+    },
+    {
+      "status": "M",
+      "path": "skills/consistency-check/SKILL.md",
+      "before_sha256": "cee424142e8af7adeae47477720ab3e46c160470621b8c43209c3e7d8a611f37",
+      "after_sha256": "870b6c5e0322f382f1fdb451305181d1a5acd878dce20e0760feb9b7f9d71ff9"
+    },
+    {
+      "status": "M",
+      "path": "skills/consistency-check/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/consistency-check/release-manifest.json",
+      "before_sha256": "ab0669adc58fae7b24d6a50b234fd69de8f4dbaa07396c256f56ecf430df8b0e",
+      "after_sha256": "4a8cd598959334ca0b8c46bfb8fef33ed1e6e96b0383369f1d70af1a44db60b0"
+    },
+    {
+      "status": "M",
+      "path": "skills/consistency-check/release-manifest.json.sig",
+      "before_sha256": "901cb2a7703d2de230d5df86bf7315c4f16700191d8bbc1758d276a5ec80fe5d",
+      "after_sha256": "c0e35d14105c2dd7391fa787529ac862b44d601bc0bc71b3e9ec2af24c513ed8"
+    },
+    {
+      "status": "M",
+      "path": "skills/consistency-check/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/consistency-check/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/curated-skill-catalog.json",
+      "before_sha256": "51c7c7d70769b2852168c7cda5e046d40eed7ac75781e2d37e122327af0b614f",
+      "after_sha256": "5f229fc5fbe63a59105ae12ff13d8ebf5bd380af939eb06e5cb2e3a372afb845"
+    },
+    {
+      "status": "M",
+      "path": "skills/deep-clarification/SKILL.md",
+      "before_sha256": "36a0023069908922eac9dba01e95a4d28e4ee7f390b0069dcd95b6321156af13",
+      "after_sha256": "a16fc930aec2a48548fd29e0c4afa7ef868351fe7ca7b5f24fc727499461e355"
+    },
+    {
+      "status": "M",
+      "path": "skills/deep-clarification/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/deep-clarification/release-manifest.json",
+      "before_sha256": "7d260c8e9a10ac726c7358efad45f71f232eb964e1f5c6cd49388e94755e4e8f",
+      "after_sha256": "d3c75dbddc10843e0b7ee361b3e64e9b15ad3e1d90aa59d6a1bd6cedbf53408e"
+    },
+    {
+      "status": "M",
+      "path": "skills/deep-clarification/release-manifest.json.sig",
+      "before_sha256": "96d1fbb4c0f6a1ba0c96c839e5ce964818eefe683d8f90bbfb4a82f3dbc86131",
+      "after_sha256": "84f562cc18e7b0be1d9d85cf5c3523a9b1a1194a86f21e9e8f09d48073daa8b9"
+    },
+    {
+      "status": "M",
+      "path": "skills/deep-clarification/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/deep-clarification/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/delivery-contracts.json",
+      "before_sha256": "a0bdd06036217cadef55af794cc80eb5765bcb6034906b287e7290088af4dc0e",
+      "after_sha256": "3f81979e314ca41fc619d887324def9c7aa422b1d4264ee7a4bee46481c8bd19"
+    },
+    {
+      "status": "M",
+      "path": "skills/digitalization-projects/SKILL.md",
+      "before_sha256": "c063e2cf5e6b4112bdce9038413302b302783277b7887f7ceff9a18fbac3565c",
+      "after_sha256": "c1a49c8adab20239605d8852a09ed9d1d068bf98997949c19af503061c2fec66"
+    },
+    {
+      "status": "M",
+      "path": "skills/digitalization-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/digitalization-projects/release-manifest.json",
+      "before_sha256": "7af0bf5cdb1df4923ef1abee7377ba30b1d59f36186850d5be6876404e620b7e",
+      "after_sha256": "2f9c203023072676f8e1f6fff38bacb52b05b0d978efac404cdab56162af79dd"
+    },
+    {
+      "status": "M",
+      "path": "skills/digitalization-projects/release-manifest.json.sig",
+      "before_sha256": "57f69c9d0ebb380678a2cee4f0a21da364e4cd990b710933f40f0242510475bf",
+      "after_sha256": "96415faf79d18853d09dc9787a6ae66533aa79e59189acba2dc103bb7d18725a"
+    },
+    {
+      "status": "M",
+      "path": "skills/digitalization-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/digitalization-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-panorama-analysis/SKILL.md",
+      "before_sha256": "c7ab91353a9dae506f1db5a166ab7a175590d43748a5430846e3dee5aee79dc7",
+      "after_sha256": "9b5268d13b39b886b1952c75e669abfcb70d639b012db77813be53e0d35a1096"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-panorama-analysis/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-panorama-analysis/release-manifest.json",
+      "before_sha256": "24a8742e84f7ac85f435ac1bb0f90a0bda157f7bf83968bbc876cbf221061ba0",
+      "after_sha256": "ec02fa691a25fc8725bc5995e5d75f043c3a54127c6dfdc1496a4933b25f6d5d"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-panorama-analysis/release-manifest.json.sig",
+      "before_sha256": "88faacf80e9440e526761f8d31f5b57855245818de29cce0871fef7ef5c90a5f",
+      "after_sha256": "c44fc0d055d5713752f7ffe868396aef1abbbd6755990f8b7541d0b644dee737"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-panorama-analysis/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-panorama-analysis/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-profile/SKILL.md",
+      "before_sha256": "0cf787deca958f2d721c37a1e8034ea6643d45f4905a7455755f600cea088f50",
+      "after_sha256": "638e7c32c6daf735af65bd2869fcce328c19fa012f5302f602186f3272240571"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-profile/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-profile/release-manifest.json",
+      "before_sha256": "a1dfbb8ba593499d985b260b0e89aa3da2f0328f6784a4d665f1094e3b6e9aff",
+      "after_sha256": "be8c4383dd801c0b7610700d7744ea3bc780025697441c2feaed6abc91937efb"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-profile/release-manifest.json.sig",
+      "before_sha256": "7926b2fef29b309bec50fedd2ade5789f7b8d189a8b31244cf4eedcb2b4afa61",
+      "after_sha256": "4bcb0301978172a6f88e5790553cfcc476041f6e9ff082c5b7aabbeed48c190f"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-profile/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/enterprise-profile/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/evidence-ledger/SKILL.md",
+      "before_sha256": "926656543b2d044dd9b4e6571acfa65c9fe4ccfdc11452f19b47f6ef4f2130d7",
+      "after_sha256": "e4f098415d9a71e8cf4e8c425d0645a14bf6b9d9595300b26eedfb6ad7299fcf"
+    },
+    {
+      "status": "M",
+      "path": "skills/evidence-ledger/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/evidence-ledger/release-manifest.json",
+      "before_sha256": "4bde679612b28af558e12b95850da03d9c958c1b184eb7c7e00c280a94c0e52c",
+      "after_sha256": "78df89f9716059df926bcdeae9defcb02714df64a4e28ebf4e45ba14a82ce1bf"
+    },
+    {
+      "status": "M",
+      "path": "skills/evidence-ledger/release-manifest.json.sig",
+      "before_sha256": "c4dcfc7da7c5538e2a588e92fda75cabc6fbb6d4415d376f065600b1a3d32687",
+      "after_sha256": "69b5e60843c6bba5ef5735156ecaa298d3158b5fef05f096b31d52c6c6d8a9c8"
+    },
+    {
+      "status": "M",
+      "path": "skills/evidence-ledger/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/evidence-ledger/scripts/grounded_evidence.py",
+      "before_sha256": "db750917029f0e7d38b7616e77818a875401c134fd5c2619cfd22fb97392853b",
+      "after_sha256": "c5fdbdab52940b36b980cd26c3b46fb92e79c1a8043a1dec421ffbcd18fe025f"
+    },
+    {
+      "status": "M",
+      "path": "skills/evidence-ledger/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/evolution-governance/SKILL.md",
+      "before_sha256": "18bb9dec0e99fc9dee0a74334bcbf228ea6568bf0ba4cc20d4df3822103b62e1",
+      "after_sha256": "f43575b8d80495ef8e9ccf6edf61d336c27bb2aacf441dd1e2082d981ea4c888"
+    },
+    {
+      "status": "M",
+      "path": "skills/evolution-governance/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/evolution-governance/release-manifest.json",
+      "before_sha256": "f62a66158f160b8f85569611bf77cf6da0829d0b6c1222c9ad0bafea10b7014b",
+      "after_sha256": "137847905aa7b1122def98709af00b1c2c154d7c13de35728d8ba40b5c836b7b"
+    },
+    {
+      "status": "M",
+      "path": "skills/evolution-governance/release-manifest.json.sig",
+      "before_sha256": "39e705dfdafbdd0a7d4e866b0301153be7ae6374bc415b393e831a431bbbfd63",
+      "after_sha256": "601892f6dda8f4f32db56c5a4169fed2c4a02e8581883112a3b69c683456bd79"
+    },
+    {
+      "status": "M",
+      "path": "skills/evolution-governance/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/evolution-governance/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/experience-recorder/SKILL.md",
+      "before_sha256": "040e8166c573285be72d824d44ea590f5bd25b2cdf87b00bfc7fb5e23827b2ca",
+      "after_sha256": "d351fcade9e803ebe20f87cc3b4e449f67b434609a7f8f88a8cda0671408686c"
+    },
+    {
+      "status": "M",
+      "path": "skills/experience-recorder/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/experience-recorder/release-manifest.json",
+      "before_sha256": "72d7df7ced35926b96e55a12b455562069d3911a5f3308e6b1a76f04d0f089f4",
+      "after_sha256": "1a02de7fa1b6017d42b4381a8be4aa3b4560bfde72abdd360cdbc91c55877dd2"
+    },
+    {
+      "status": "M",
+      "path": "skills/experience-recorder/release-manifest.json.sig",
+      "before_sha256": "b7891f9ac304b8ee7bad158dafea7b31c8a3e477080385bd05a921b7c19cac63",
+      "after_sha256": "a9ea7f15d02653f636f6d63e999a6d0b5a97bfe4e98884dc80a290c760530aaf"
+    },
+    {
+      "status": "M",
+      "path": "skills/experience-recorder/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/experience-recorder/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/financial-verification/SKILL.md",
+      "before_sha256": "6252cea22d63b6eeb2f96d2b1eb524a8ed377e40002c163b453a16da7154807f",
+      "after_sha256": "4d695b4e59bc1437162e7bc49411e4cdcd8033e9def1f600464d9c7894ca9b8b"
+    },
+    {
+      "status": "M",
+      "path": "skills/financial-verification/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/financial-verification/release-manifest.json",
+      "before_sha256": "833e63f37ef4207a81412e76800518c37f457e390d83e0267a1e8e15e8422178",
+      "after_sha256": "f23d2d39305022869e5a0bb14af59d7b7b48e21c9145e15650c85e3d850a6fd2"
+    },
+    {
+      "status": "M",
+      "path": "skills/financial-verification/release-manifest.json.sig",
+      "before_sha256": "8c7444a06e8f39aa49cd353f456ceba7296cb7e8e5f6074ca61d9f86e116e409",
+      "after_sha256": "d0fd3268af530e537cf30c766041aa8fa6b933a85329b16b708302e4491fe28a"
+    },
+    {
+      "status": "M",
+      "path": "skills/financial-verification/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/financial-verification/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/first-run-configuration/SKILL.md",
+      "before_sha256": "358e8c7b690c02427ccc362833b7cd67f22075e72ca3c757bafed5d59f63d64f",
+      "after_sha256": "e3df282b7309da8f8688e465a41b164040bb6e0e708a3cc83e3d124bc906bccd"
+    },
+    {
+      "status": "M",
+      "path": "skills/first-run-configuration/references/first-startup-protocol.md",
+      "before_sha256": "36058865706da9063c864461ce5194e377686353b97e644cc9e93a1e0f73b3e5",
+      "after_sha256": "fca955c47dc961a70fb8b9eb95b958ab5691e8aa5365cc069815575b7c6399d7"
+    },
+    {
+      "status": "M",
+      "path": "skills/first-run-configuration/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/first-run-configuration/release-manifest.json",
+      "before_sha256": "6ce2f4725621ce56f4569dbf8fe90dab85152d51f9ed4e9fe386819a9a20b8b5",
+      "after_sha256": "c313e14e1f0d048135d4eb48afff1849da0524f2f920e6d927c0546d38cb0360"
+    },
+    {
+      "status": "M",
+      "path": "skills/first-run-configuration/release-manifest.json.sig",
+      "before_sha256": "a873ccdd19fce0fbb51d1177f061ccaa3caeea746f2aa4242ae1b38b853b41e7",
+      "after_sha256": "f4da799bb669cf6bb9ca36f7d34a61c78258058686cb3d2289c0c162ef38d9c4"
+    },
+    {
+      "status": "M",
+      "path": "skills/first-run-configuration/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/first-run-configuration/scripts/configure.py",
+      "before_sha256": "ace5d1f14b850294a58eb51f07b683b5d184d35f6a23082e0fa60a09981946cd",
+      "after_sha256": "25fd6834c857283d33d668498ebe0617c8b2f0afb65c169a4c2f8829bc80c08c"
+    },
+    {
+      "status": "M",
+      "path": "skills/first-run-configuration/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/gongchuang-humanizer-zh/SKILL.md",
+      "before_sha256": "1a501c5a82eb37c6cf3453578d875d27a6fa5d6354245904f32aeab7093e4e46",
+      "after_sha256": "5ee6ead7b0c25551bd3fa99efed3625ee15a96f0e869b429a84a870da4bf62ef"
+    },
+    {
+      "status": "M",
+      "path": "skills/gongchuang-humanizer-zh/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/gongchuang-humanizer-zh/release-manifest.json",
+      "before_sha256": "af31066496a84dc363012a5fcd02a4ce572e4b387e1e96c02a252fe313da2e1c",
+      "after_sha256": "2377dfa1c90eec9364f778fe0f8156884453fb66fb5cb9e7c66bef91c58a3807"
+    },
+    {
+      "status": "M",
+      "path": "skills/gongchuang-humanizer-zh/release-manifest.json.sig",
+      "before_sha256": "41a222b86ee73ccfd61c6737285c32d2a482c41d007d94fc1c560fe8ffaf8216",
+      "after_sha256": "c5204d41155540d81e52cf114a40c9dcf30cd3ba03a007a9cf5606c0e6530ba1"
+    },
+    {
+      "status": "M",
+      "path": "skills/gongchuang-humanizer-zh/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/gongchuang-humanizer-zh/scripts/audit_rewrite.py",
+      "before_sha256": "35d5d35321d23f6ee26447414ccfdcb45e79fe10a68ce0b981798ec8ebbaa9fa",
+      "after_sha256": "2ad53460b136f2640112fa9a6836a2155460408eb6b6da7282864809e622e220"
+    },
+    {
+      "status": "M",
+      "path": "skills/gongchuang-humanizer-zh/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/graphify/SKILL.md",
+      "before_sha256": "12dc14a365bff35745b7f9a2bbd567594f74691cc22002efb8df1ed9398898c7",
+      "after_sha256": "31fb47019fd4e66527f204e9a068e25b1ad7678e5f466edca4dee8e42da9986b"
+    },
+    {
+      "status": "M",
+      "path": "skills/graphify/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/graphify/release-manifest.json",
+      "before_sha256": "43d4c1199fd1ec966e05510044b5f1690324b9452fe3ac9b30e4d1c189b00c46",
+      "after_sha256": "338af3f31169af496c4f4b8eb8940c715af02e3fe470ccb8d9a0edef35fa693d"
+    },
+    {
+      "status": "M",
+      "path": "skills/graphify/release-manifest.json.sig",
+      "before_sha256": "4c5a4680b93cf8b527a3215004c4bcb96dddd8200062648e7291fbf9e4cfda9b",
+      "after_sha256": "e8963e968aaa660dfe1d71028073718fec9c468a7b74636f1a2b3f08ffbff2e6"
+    },
+    {
+      "status": "M",
+      "path": "skills/graphify/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/graphify/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/green-development-projects/SKILL.md",
+      "before_sha256": "10d80d04efdd3208ab2e65b0ebb620554088a95f6d76b56c6307476bd4833f11",
+      "after_sha256": "c616e594533f1d0451bfee79a578beba59789bb099824015a5fa6a84b8587f45"
+    },
+    {
+      "status": "M",
+      "path": "skills/green-development-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/green-development-projects/release-manifest.json",
+      "before_sha256": "a166fd3a6db618ef0092d5863f06d7973af18bfde2a5909eb489dba48a808ddf",
+      "after_sha256": "6dd58e864e242379fcb3314cdb453c2329054e8fc0b3c5ac1cdd1a218c6d68af"
+    },
+    {
+      "status": "M",
+      "path": "skills/green-development-projects/release-manifest.json.sig",
+      "before_sha256": "63f1a4802fa2440b306d0f699ceb3019be4f6aa90dedbd0e8b1e2f0bb69ec3ce",
+      "after_sha256": "6b2963417b4c1f525a537b357b039361a3b792f9f7926cede1d9c0b127a59bb1"
+    },
+    {
+      "status": "M",
+      "path": "skills/green-development-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/green-development-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/SKILL.md",
+      "before_sha256": "018607453aaec78d1c307b36b6ae0aa45f5b5a17fd618a018794fa3268286183",
+      "after_sha256": "e5a4d70653a0b4af8030d3f12d22e1bff5ca3793e7ff8f3c624e9bb4d510c2fc"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/assets/高新技术企业认定申请书空白模板.docx",
+      "before_sha256": "449f74c7327f7a486031343cc8f7d6b4cf182a5ad68debddca027c5d15d1f20a",
+      "after_sha256": "467ecc87057934cea9e4e8269fcdf3df27d0153a7c7986aa8f4436c8f2c08627"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/references/rd-core-innovation-format.md",
+      "before_sha256": "1c08e4428cc9a8718b0c7bb735e424324d386ca6845710abaa512d7bb202822f",
+      "after_sha256": "ccf186f8c1487b7eeaf554de9fa47044d977b536d103015aec18d958d9b2e87a"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/release-manifest.json",
+      "before_sha256": "0279f199587784259f94211c6df4f6777b59d0af64aa2d6989af7a88bbb4b661",
+      "after_sha256": "6c2b94bb0d08ceb58f1baaf077f1924b8040024585100ec8a5eefe73a2c5f151"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/release-manifest.json.sig",
+      "before_sha256": "683c37e3240208a66ca8af6bf45ccdd6a2bf3c4db8b2a033cae525c4e0875e4d",
+      "after_sha256": "fb75841a7f18f688c621698f827aded8aaf8503d9cd76755c9e216a4b686b273"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/scripts/audit_application_docx.py",
+      "before_sha256": "212a1d97525a1bcee88c287b58eb03d1b560ba8da9d3298812f1765bea54a5cc",
+      "after_sha256": "e3ed2e5b2984cf32f4c16da56caf06eed2db0720c742786017d8879b75b63ad6"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/scripts/fill_rd_core_innovation.py",
+      "before_sha256": "3452bc2a18f66164b927abe88351336b8205baa3a5f8604d28a05e24f5f95dba",
+      "after_sha256": "9149baa9610a7e0f8fa224b540ff4d7aa2babb34fa41d5c96d5cc2a7f9e9b02e"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-application-drafting/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-preassessment/SKILL.md",
+      "before_sha256": "c704dce303741a6b4a4927b507c464831a6f4f4654059711e51b3a89ec85bbf8",
+      "after_sha256": "58f476a77d62932b8f7631caa172704ad3ac42620052cee60f4bb50b1fe10053"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-preassessment/assets/高企预评估双年度采集表.xlsx",
+      "before_sha256": "a48395325873bd6358cfef32508097cd0cfb019c6559728891b226956c811e7e",
+      "after_sha256": "5a8bcdc687cdfce9469cefe8c239151b9ca58e91cda35a0f99e99943bdd4d16d"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-preassessment/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-preassessment/release-manifest.json",
+      "before_sha256": "fbb95b2b654f4800e2a39da5deee918a95976a6820077ca6f00b8500679de19c",
+      "after_sha256": "238467d9f0e005f69eb59e91593eaec4dcc6b720dd96c20614cd7ec2e140a6c5"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-preassessment/release-manifest.json.sig",
+      "before_sha256": "3745ffa82cb4878601583d1640aefaa13817fa636b7ab13c5bf887ac56a140ad",
+      "after_sha256": "0c6bbad8b343d67851b17e0657b27f6ebbd8249dc55c0f8f98020eb4720bc82b"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-preassessment/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/high-tech-enterprise-preassessment/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/industrialization-projects/SKILL.md",
+      "before_sha256": "4de41775f9dc3a4f4ce0793a2ded2ec0dfe6f6c4336eb893845e18945e2f42f9",
+      "after_sha256": "1b6f66ed768542604c08dcb8ca66217b3f7df86caf22ee12deb3292befe0eb2a"
+    },
+    {
+      "status": "M",
+      "path": "skills/industrialization-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/industrialization-projects/release-manifest.json",
+      "before_sha256": "02c7a76484189716829889f8b22d59de81a0ff417dc4b157d48a593962b10f85",
+      "after_sha256": "b73041ab5612c24a2afa428eb1634e743fddc547b8bde9aa0b787e4b8226be81"
+    },
+    {
+      "status": "M",
+      "path": "skills/industrialization-projects/release-manifest.json.sig",
+      "before_sha256": "8a25b61aaa6e3343f37360c000b07087ba57e4be0ece91150991526bfc263076",
+      "after_sha256": "d1921b605c2d132b0b87ce54fd16efe81a49c034714b2d798467a55b59436eb7"
+    },
+    {
+      "status": "M",
+      "path": "skills/industrialization-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/industrialization-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-chain-foundation-matcher/SKILL.md",
+      "before_sha256": "d2a45483b45d01ffe63d4264690a599d55c155f6bd5e898d35a518ecee264f3f",
+      "after_sha256": "7afce3b18018fb1479fcf9c5b8c858b75827ff96013ae24b727ff7b18c7f67e9"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-chain-foundation-matcher/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-chain-foundation-matcher/release-manifest.json",
+      "before_sha256": "7514d3456454f6c08388466813909fdd986464fc73b325ba7507cc3f002030f6",
+      "after_sha256": "a5bcb12f1981f5abad81ad4d44bb93800bb39a78ae40dedc1fd708d9d914fa18"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-chain-foundation-matcher/release-manifest.json.sig",
+      "before_sha256": "59c0b05db75bff145179ecdbf5143adfca20755fe7b192f47fd5f9a12c90f002",
+      "after_sha256": "304db805efab76db6d5612b6f4bc8f94ea907d6a5c59c5c4b044854b7a3985ec"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-chain-foundation-matcher/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-chain-foundation-matcher/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-chain-foundation-matcher/scripts/search_catalogs.py",
+      "before_sha256": "e3fe2cb30467bb2dd8db54906c2ce125bef0512ca9341879c52ca742ae48453b",
+      "after_sha256": "0c2587f52959c93735fb9ae1825d30f26f66e59bfef1933fc14904645708b6d7"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-positioning/SKILL.md",
+      "before_sha256": "09cce83766cbb3ab2904efd77ba2ae6448760dd9d80cacf9bf2a294700052687",
+      "after_sha256": "ed5b0773f96149eebe431a7bc00693820c6654e9075d0ebd9c1bc668822ac259"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-positioning/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-positioning/release-manifest.json",
+      "before_sha256": "9545c2486d9f7a209f8c643d8acc725e6cd20644f4c1fb60a734debbee9c0c3f",
+      "after_sha256": "330668deca1307aa005acc8cec4f5c4b1957c65e93498292ebbc96e7f95cae0d"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-positioning/release-manifest.json.sig",
+      "before_sha256": "f3c5c82c84e3c56fbcd4426aa4f65758c9b8d8b10dda1bd3ea9945e8d88a6892",
+      "after_sha256": "0d33681e78be81a29c9a9488c594b5cc1c5478d29831f7c329be71e4c7a07b28"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-positioning/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/industry-positioning/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/intellectual-property-projects/SKILL.md",
+      "before_sha256": "826ed67486c82a536fd7ff9dd9d372e61f4e131ab30af96663277ab3a38da254",
+      "after_sha256": "b202a09f0ada032b3d209bb9ff411896243fa3a9423d230a66d58e054a2c1642"
+    },
+    {
+      "status": "M",
+      "path": "skills/intellectual-property-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/intellectual-property-projects/release-manifest.json",
+      "before_sha256": "df2edecf694a067ee40d146b04c3385a5b4745733e3e66ed3e3affa80ddad356",
+      "after_sha256": "09b4cd280ef08ca16624b244fe9950e440ef42484f51562aa65a6751e1f0610a"
+    },
+    {
+      "status": "M",
+      "path": "skills/intellectual-property-projects/release-manifest.json.sig",
+      "before_sha256": "54d57369c0b4fc0167708073dcaa5d13f0d257730b39020ac3de7f9a136c3223",
+      "after_sha256": "ab403769de6082dbb7771c4af6c5a36833bdd8df7032ace4881187b5dc4f9117"
+    },
+    {
+      "status": "M",
+      "path": "skills/intellectual-property-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/intellectual-property-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/investment-subsidy-projects/SKILL.md",
+      "before_sha256": "7711c4aa3ed4836b47ca424d489cd85da7001d93fd5b8a37f8a0765ce1fc2fb6",
+      "after_sha256": "a4527094d775811246da79dde78f59985bf8c43488e8945af0cf316d5285818a"
+    },
+    {
+      "status": "M",
+      "path": "skills/investment-subsidy-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/investment-subsidy-projects/release-manifest.json",
+      "before_sha256": "2441bbe31d8aedf9212b3152bd67d09f6864cda7b4f04fb32516303623e46bf9",
+      "after_sha256": "aaa2945642c84624789cc599f510396e040643e39f97ae2ee5e7f637dd2ed5b5"
+    },
+    {
+      "status": "M",
+      "path": "skills/investment-subsidy-projects/release-manifest.json.sig",
+      "before_sha256": "3b33f2cf10d140fe2cdb31a7ce6aa710feff2a5429745244f5fc07a56615d322",
+      "after_sha256": "0fee8241d68eb2440173b55f25c7ec417cef4236e503fc6e0cf2f6ebdb4d4ec0"
+    },
+    {
+      "status": "M",
+      "path": "skills/investment-subsidy-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/investment-subsidy-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/ip-assessment/SKILL.md",
+      "before_sha256": "3a31e850a28ba171aa5d0d0cf7e98b158605218e8ce2127158ff8f60a20ec076",
+      "after_sha256": "0717fed58722ea62cab068fbebb7a2b7dbd896803812c12b8938e2a026c94a56"
+    },
+    {
+      "status": "M",
+      "path": "skills/ip-assessment/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/ip-assessment/release-manifest.json",
+      "before_sha256": "2ec4aa2757fcf5dbd34fc661bec855134db807339bd2a2d6e39030fd1e72cb80",
+      "after_sha256": "a4ed52a3fba7980192f7b69a8905bbbf69a2dc10f0e6a48cf266945269ed9a37"
+    },
+    {
+      "status": "M",
+      "path": "skills/ip-assessment/release-manifest.json.sig",
+      "before_sha256": "ba0e65b904ab4bf29a98bcc788ae7b27a77d54da30908b573cdfd9aeecb78b49",
+      "after_sha256": "a175c51a972a6d6dd4252d6c32c7d11c0c466243862ecbe4063de9e8f32c75eb"
+    },
+    {
+      "status": "M",
+      "path": "skills/ip-assessment/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/ip-assessment/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/legal-regulations/SKILL.md",
+      "before_sha256": "e93f6c128e63c57133945f3ffb5ccc7f71ef8573703ad0783a76e82faf728e9d",
+      "after_sha256": "b0ea6c1a3452f96323acc85ddfaa2d258ed8dcfdc0fbc9be5546994ea3a47367"
+    },
+    {
+      "status": "M",
+      "path": "skills/legal-regulations/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/legal-regulations/release-manifest.json",
+      "before_sha256": "db0c5d9447bc3b9616460121b8cd9669078c2708821714295f93cbe266bbe856",
+      "after_sha256": "932e5955102cda935e69f32edf22c22e95efd7bf2e78fcf1ded7124b206e7680"
+    },
+    {
+      "status": "M",
+      "path": "skills/legal-regulations/release-manifest.json.sig",
+      "before_sha256": "931281f8829678ea0395177e56d7b848f05348adfff6d7cb04dd113760d36dba",
+      "after_sha256": "ceeb0ba854cfe1b44b66b0007a923c56c62afb1ecc8dfab68da2abe7a0e60e16"
+    },
+    {
+      "status": "M",
+      "path": "skills/legal-regulations/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/legal-regulations/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/local-knowledge-retrieval/SKILL.md",
+      "before_sha256": "bee19f8cdb3fe4758a7596aec8c12551bfddd310910f37e1cbc07737af44d156",
+      "after_sha256": "c850e978edf2cf971f250c72c8b41efc9ac0db84e4d4d6fe4890d279d53cbd5f"
+    },
+    {
+      "status": "M",
+      "path": "skills/local-knowledge-retrieval/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/local-knowledge-retrieval/release-manifest.json",
+      "before_sha256": "8737b5cc2815f76c3a0f484c01a9b70c02367a48fa62b642860c1537b534322c",
+      "after_sha256": "bbcadda584e593c0c41e8a5bd2a259260ebf8bd2776c3dd47c0aa34421228600"
+    },
+    {
+      "status": "M",
+      "path": "skills/local-knowledge-retrieval/release-manifest.json.sig",
+      "before_sha256": "ccc368886f1c65a35736d12854dcc675877f3174ec3779cf259669191c9d849d",
+      "after_sha256": "a3468ba7f733343c41e8f3630e2f2dd9f683019eb9c1ec1408a49833ce521b27"
+    },
+    {
+      "status": "M",
+      "path": "skills/local-knowledge-retrieval/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/local-knowledge-retrieval/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/manufacturing-tax-risk-analysis/SKILL.md",
+      "before_sha256": "17c7cd617ba1740ce61a8bb8f9e0f581d8851abe090de0c706abfa3a3ff1e3b3",
+      "after_sha256": "334f0e2178d3128a8c32aef44047955172787eac337b97e967d631213455c1da"
+    },
+    {
+      "status": "M",
+      "path": "skills/manufacturing-tax-risk-analysis/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/manufacturing-tax-risk-analysis/release-manifest.json",
+      "before_sha256": "09644931c18cd3bf641974ea6491a8ae46fce9b3fa738f3248ae355dade8f9c5",
+      "after_sha256": "73c348b63f4377fb467bc818143f2f0adc93b2e01f6bbfa71d5640b82323ac1f"
+    },
+    {
+      "status": "M",
+      "path": "skills/manufacturing-tax-risk-analysis/release-manifest.json.sig",
+      "before_sha256": "fd8cc8deb1060a8d302f4da6b7b24164a01506e26c9a32445b55df9b62d366d5",
+      "after_sha256": "f0c3a64b999647e2f4ae2bf97613cf818b81e534e5380d812e664c08039ccec1"
+    },
+    {
+      "status": "M",
+      "path": "skills/manufacturing-tax-risk-analysis/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/manufacturing-tax-risk-analysis/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/patent-router/SKILL.md",
+      "before_sha256": "2e3aeb8ba34a7d2f99112aae905e6c29ca9c33eec3c970893f5d4a40ebed693e",
+      "after_sha256": "5969d98d7b707c6c791d30895744e194b52f29b5bd19e0cdb4cfd1b43afab1a4"
+    },
+    {
+      "status": "M",
+      "path": "skills/patent-router/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/patent-router/release-manifest.json",
+      "before_sha256": "0071e9cdbe20deab5b89126ad0dd8b8169a6cf5cfceb36ff63ca655cbbc8b122",
+      "after_sha256": "38ac58559a0ca99f0a48c80d5f58ed62504c519b6b552002ed003eca92ad9bf7"
+    },
+    {
+      "status": "M",
+      "path": "skills/patent-router/release-manifest.json.sig",
+      "before_sha256": "74eaf05988d0625af8d8510d4a572d09c0456fec6da3e44e4dc4775efe8f6bfe",
+      "after_sha256": "be51fcbe92285e6c713c8d829537f43d2b2b247f592ef2c7ebdc7866a06ae443"
+    },
+    {
+      "status": "M",
+      "path": "skills/patent-router/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/patent-router/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/peer-benchmarking/SKILL.md",
+      "before_sha256": "f882a9a44155741e144650de9dd2489ab9ce5162f2c47f3473e3f75c731d283f",
+      "after_sha256": "518049754a0c8a877c877a7605995ef8478aad4f1ab33acb9289ed6d43562e77"
+    },
+    {
+      "status": "M",
+      "path": "skills/peer-benchmarking/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/peer-benchmarking/release-manifest.json",
+      "before_sha256": "59b488327df37043cc5e811c588ab66621e5f95ade90133bdea0ab0721fbcc1b",
+      "after_sha256": "f62e1afdd8d5aeaad0bae02bd6dc1a99ff46d62441cb9a81ea6dc76c47464c07"
+    },
+    {
+      "status": "M",
+      "path": "skills/peer-benchmarking/release-manifest.json.sig",
+      "before_sha256": "81337d368d71bc0bdc5ff16e09b93b513bd5aa81f7baf730553c2b55c5dad130",
+      "after_sha256": "1ee4f07806d2ef320db7a9e36f6fbea818de50ac8587a7c8915495de7a2eb5f6"
+    },
+    {
+      "status": "M",
+      "path": "skills/peer-benchmarking/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/peer-benchmarking/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/policy-retrieval/SKILL.md",
+      "before_sha256": "a5b52c3bb19f6777b07273e91fccd1ff9ac60efe566dd6c24565a273de4fbc16",
+      "after_sha256": "b8eaca1aee759901835a9e10b73cb7ebe6744482384f28a7af084fc831e166dd"
+    },
+    {
+      "status": "M",
+      "path": "skills/policy-retrieval/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/policy-retrieval/release-manifest.json",
+      "before_sha256": "5ad9261e66e3d22a0d179dbbebe6d66dedfbcaae2ae6ca01d6176694b20b6f55",
+      "after_sha256": "93b7e4c70c0e66d8dff0f7aa9314909e6e6ec37be3e2c649579434ee00db04a1"
+    },
+    {
+      "status": "M",
+      "path": "skills/policy-retrieval/release-manifest.json.sig",
+      "before_sha256": "beb64481451ef07b1337ab2eb76959cdf0806ed93ee5f7e52ea56c6134195b8d",
+      "after_sha256": "e5a7d64b3f6fad4a463b1513b64d97a7054ffe69912e82e446893d1b70f09fcf"
+    },
+    {
+      "status": "M",
+      "path": "skills/policy-retrieval/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/policy-retrieval/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/SKILL.md",
+      "before_sha256": "371c173f81b004ba13ad4af1ccc2e431d75f42e97a6b6b66c0801e670a8f9c41",
+      "after_sha256": "c9a26f594fe08b49a4de9abd90bf920b689e86eaf5206406a90f74990bdb2a44"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/release-manifest.json",
+      "before_sha256": "972f0410a7c6b4bba982baab97809ceb5994480d16b0a9ebd828a27c8a187f2d",
+      "after_sha256": "644cac27dfd78fd6a702799c5f0a0fd04fee5d4d4cb587dd36d12b8bca86afb8"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/release-manifest.json.sig",
+      "before_sha256": "f24aef046f952a063aa838c33b9518af0c52ca5e60d30f3d6a141e66122b21b8",
+      "after_sha256": "a3ed15938b9d055c1c56fbfeb92239a58d77902cbb4a9782c7572c77c84b86f1"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/scripts/document_format_detection.py",
+      "before_sha256": "1c34abe486d5f4dd6f18ee009ea37218295111b68dc5df5d1104a6f19ca64037",
+      "after_sha256": "4c56893a113198c9429e236fa62a91cfd6c50fa481dbc57430f8203b33c981d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/scripts/extract_workspace_document.py",
+      "before_sha256": "26be2ad618ef6474c27df3a253b74bc72236267624ba339067057cc1cdf7e51d",
+      "after_sha256": "ac560107f685d9291fce60124c6e421449466fb674a5c7c68faa307deebe1daa"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-application-assistant/tests/test_extract_workspace_document.py",
+      "before_sha256": "6c804a329c02ad575083347e843d78d893d39f199027cd3b0d951037ee713c94",
+      "after_sha256": "89001ea7d0d89139808ca17db32e30f28dd6521623e871132a296da1f5eeb164"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-deliverable-archive/SKILL.md",
+      "before_sha256": "4493311f4fb8b7073e89c2618e6ad41e5a3f7084545ff6ee1a1c3d8e2ae69160",
+      "after_sha256": "9401cc440ec2ec484cbc80045a94fef32562c0eabcf9fec94c177e3384d833f3"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-deliverable-archive/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-deliverable-archive/release-manifest.json",
+      "before_sha256": "3eff33eb7ae2e1b6b95ab12042ead65ad530e69ca793f29dae912faaff553236",
+      "after_sha256": "206b3f812159df72f0da4ba3e477e452aaaa2f6a82c23ff0ad724602ffab9d6e"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-deliverable-archive/release-manifest.json.sig",
+      "before_sha256": "8a2b4b36946121046a866e267f2d606b6c64dfc1e2dee7e1fd9f31a4aff8682b",
+      "after_sha256": "626a44fae800da76d031ddc6801878999834b22d0dcc9257676cdf396db4ab8d"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-deliverable-archive/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-deliverable-archive/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/SKILL.md",
+      "before_sha256": "6dbf0ff166382371ece0816ff2c57fda93ab39e69da19f9e3608cb7314e45aba",
+      "after_sha256": "5d205902d20c8bbc6ae5e822fba6d33aff5d7ea10709e6eb974cc5aea5929bb0"
+    },
+    {
+      "status": "A",
+      "path": "skills/project-feasibility/assets/fonts/NotoSansSC-Variable.ttf",
+      "before_sha256": null,
+      "after_sha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da"
+    },
+    {
+      "status": "A",
+      "path": "skills/project-feasibility/assets/fonts/OFL-NotoSansSC.txt",
+      "before_sha256": null,
+      "after_sha256": "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/digitalization/feasibility.docx",
+      "before_sha256": "083f16c248c41e07312bc7112df443f52b732712f5102ce4ece571d7f8f1c816",
+      "after_sha256": "bf9dc6141dfb0d8dbc9f31cc888533c08e7b8301e813222fcd7a8d9322ce6fd4"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/digitalization/preassessment.docx",
+      "before_sha256": "c478c4ab9357775899b63779c99daaa39db6451d60d117b1e094b1dbec5bc907",
+      "after_sha256": "ef1468029b9add75adc27b6c4dbe8354c38ca3e4e27d15108759194cf13cc8ee"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/enterprise-rd-center/feasibility.docx",
+      "before_sha256": "929a1b2d1c3187c91a06f56e7895fb56d365813a4b2fc2f6e96f6443ee071f9f",
+      "after_sha256": "170f3d7191f9dd7948bc84945fffb94abec70ba5cb87096fd0e8f0d7149bb12a"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/enterprise-rd-center/preassessment.docx",
+      "before_sha256": "c4b476e7fcd12adf3910636ff1e66d73ce8fce4b89a51e190b6022564fb55fab",
+      "after_sha256": "fc90112da9aaf6f2ef526df05559d0e3c460e4a1c1e958b6aab4452c3690df64"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/first-equipment/feasibility.docx",
+      "before_sha256": "4efd18a14b34da26612572945d5df841961e488f0088abd8bd23fe1e38652311",
+      "after_sha256": "c043048ad2c57a708a38dac231dce42eafc9158667f73f3d03719a6cf3176a70"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/first-equipment/preassessment.docx",
+      "before_sha256": "f38f3fe239972839ed50352bb6093c71431e591e7e20b94adba2ebf4713a743e",
+      "after_sha256": "bd8ac28036f06afc0bafba91fdc0b2825d1d4188061c2687af328c2e731bc1e4"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/first-material/feasibility.docx",
+      "before_sha256": "ccc3015fe1d56df513181e88b7634ae88e5512df9c8b43cb0986c0adc239e4f5",
+      "after_sha256": "3ff2c6a09c28f7141c77f85928514b0c9c47080e3b2ba4f3ea95006f747ddf45"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/first-material/preassessment.docx",
+      "before_sha256": "114221b9e3051ccb71d757c12c98d287878d975c407bbc4422957ee6f6344a1d",
+      "after_sha256": "8b771145c8fb9b908942a02a9669dd934b371e1e97cf8e4f9a80b28863f08222"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/first-software/feasibility.docx",
+      "before_sha256": "c422ead0aa67736e534a81fde3c8ba9b53c0e4de4513c0440f4ece2c3beac193",
+      "after_sha256": "627ec82d6970c26c8431ad914ed5f63f1a29473e0400a940ebf80ef093a25927"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/first-software/preassessment.docx",
+      "before_sha256": "2dfbf6bea094a83abb6cf7acb4105d38231c99c915cd10be2cf8be0def465c53",
+      "after_sha256": "2ec68bfb20eac19dcd99934d942853d57e135a87761c7adadfa1d6c6b39c7c14"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/green-factory/feasibility.docx",
+      "before_sha256": "cbb6151a169aa8726a077eaa26502bc6057284634d79d514543cf44a2f5e57da",
+      "after_sha256": "ae1415ba5eb4bc5aab9ef167c7d3e5c56db69c33b15ae1911babec465de900c3"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/green-factory/preassessment.docx",
+      "before_sha256": "c4e347955b8c9b1743a05b6e68becf5ab4f0a83424c521fa1e140ff71d0203ce",
+      "after_sha256": "2a956dca5ea6b14f45fdafb0baecd3c7a2d440e800fa72ae2ca3f882475c1011"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/high-tech-enterprise/feasibility.docx",
+      "before_sha256": "a3d889a496a50ad59aabc60f55bd219988540032f1f608f8e93799b4b017172b",
+      "after_sha256": "a2407a71f01e313735e5273b02ffb146eeb68fc36bfcd4c3b9bdecd524818651"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/high-tech-enterprise/preassessment.docx",
+      "before_sha256": "8290023cc07243155459039046e2ca51ca02f467a8781fd2aca6d02c00c59a72",
+      "after_sha256": "37cf7a6002fba73118f1e99ddff2c395db3f95427f8bcc8c42c5154e6b9a2363"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/little-giant/feasibility.docx",
+      "before_sha256": "691a0444d27d82ff6a8c16612fc2cb2654970bb7b42d618aa642ef6d9888a94c",
+      "after_sha256": "aab910b75281341386d48266e32301d5954f6030994e3a5ded5fee38be31a870"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/little-giant/preassessment.docx",
+      "before_sha256": "4c3b06fac241ddabd2a02695ee19f0b653465fe4ea519e8f4113756d6cd50ea9",
+      "after_sha256": "4f07d6d7e5744b59ee0942bcd31a2dd68c2c80debcb0fa937646a6cd3ed0690d"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/manufacturing-excellence/feasibility.docx",
+      "before_sha256": "94d08f4901df826b8a5b431e403a0b602da383369cc1beaa5e71f421fd4572c3",
+      "after_sha256": "03cb2bf224c8284ce3962e2d449de923e33c624791d6fac3badaad9e8db50338"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/manufacturing-excellence/preassessment.docx",
+      "before_sha256": "0c0ea670deb16793d734fd07d5b001cde7e00949244042a015b357761db9de89",
+      "after_sha256": "e972308418df9183a977cb71d9d116ae717eaa104db494d7fff66cffd2b8d68f"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/science-plan/feasibility.docx",
+      "before_sha256": "733045aac07330b063b918b2b19fdb938f421579539bcc2d859758e2c346077c",
+      "after_sha256": "b5f5943d17323f6de36db2e8649a74c96531ecd8bb633b7f8d447f8860824e5c"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/science-plan/preassessment.docx",
+      "before_sha256": "51aa182770790e230c3acc6e9d92b8a95ee557cf9ec478118c05f54ad60b8132",
+      "after_sha256": "65d24fa727751a8ec6850e97dcdee835e11719bd6b0c2406e4ea8e640ffc45b8"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/single-champion/feasibility.docx",
+      "before_sha256": "78f6d439a65d77a4a0b0307516eba4986eebe220fb87885d944915f74e0fe5cc",
+      "after_sha256": "fc00231ab7df5e0c6dbbc36bdfd6018f5c25d185fb80eba562932fed316209e7"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/single-champion/preassessment.docx",
+      "before_sha256": "d9e940794fe43c8ba0579574a17273774a5225316fc386c877890c24f41c117f",
+      "after_sha256": "4c3f660bea673ae322268b2c1ac107f6f83193c8c630d17a4a37fd3da3e8d732"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/specialized-sme/feasibility.docx",
+      "before_sha256": "d3838a8226a4c49ef7b9f52d5469bfb388a848d4550ce928bc87596d5123028d",
+      "after_sha256": "4740a5783fc98b9dc62c4dafe3163a43962274151f5d0d065effba0155a0f522"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/assets/report-templates/specialized-sme/preassessment.docx",
+      "before_sha256": "772b2a22bda79a114b900c29cb8854d47c5d7430877c1a143bbc457b4b38946c",
+      "after_sha256": "05c9afe014c730aefc5334fb4f95eb12663e4a9bd788f5c08e45d810ca72161e"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/references/report-template-registry.json",
+      "before_sha256": "4a572d45d0cfbc235c1d79393faac418d7c51a59b431c8c546f792e9f491c855",
+      "after_sha256": "59f290c27c4593317165f94548cfe0819c534a452d2afccfd4a8528d353b11f7"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/release-manifest.json",
+      "before_sha256": "927ec40480abaab771c79055b45e95c156df5a8cc71860fbb4de8d9a7e054231",
+      "after_sha256": "caf3a13ad9e3b95ef455f5cbe389cd6597efd362e1bffec7b018957ac410978b"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/release-manifest.json.sig",
+      "before_sha256": "b52e3999fb4fea34df07f408922670591c0c072a4fed1a93835089e12c93b72c",
+      "after_sha256": "4c999cd8b1c9d71ba6ed41dc8302c57e35bfadfb8bb2af9d8526742c6d316dde"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/scripts/fill_report_template.py",
+      "before_sha256": "e0b08f3efff0b7ec49d2ade333eb75dee6e54984a0425d5234da4bf2460b1cba",
+      "after_sha256": "79edc5435b6de0bfb92157f8f1b617684d48ea3fccd00ed2f5a8c118cc812aa8"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-feasibility/scripts/validate_report_profile_delivery.py",
+      "before_sha256": "1c462dc3307fef0a9e5d6959486ff0716f2f4833a4148aa3f27c0f50c5e55045",
+      "after_sha256": "f336d434c9fd83f10fd3ab86ce6bd350a5b2af0fb31205fc796b90794f29cc75"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-matching/SKILL.md",
+      "before_sha256": "e9a697267df0f62904ce67812d3afb30e6de980bf90540869e26087c77504101",
+      "after_sha256": "97005d57308de04d22202bd965ee2c00f3755371593ebce03ba8d3d0486a17cc"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-matching/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-matching/release-manifest.json",
+      "before_sha256": "024b83233937d021807ae4e23ac33b1822022bf397f3a19ac5df0bd2f8160b44",
+      "after_sha256": "27a51176fb18039133ed85fabd8689c10d6de513c28e0e7164ac5f06578aa98d"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-matching/release-manifest.json.sig",
+      "before_sha256": "b1af910e69415f911774160221c2ca5ea2ec17b376bb415c17f2997264e9de6c",
+      "after_sha256": "ae9cc156903e2daab98282e12cfaf4713521d7db9955d2e13494f670cd8ba8cb"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-matching/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-matching/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-memory/SKILL.md",
+      "before_sha256": "f7143f10cace767413374e435a3c1e98a6f63e5185b35cbc49b49d0d0d63ccd4",
+      "after_sha256": "7c69873289f1712ad508990df03c2a5e0143f6f0542848f904ff64c73916f248"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-memory/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-memory/release-manifest.json",
+      "before_sha256": "74870a59c2ad5c253c35026b8814d9ce9df1038f95794393de181f2d0c4e3e0f",
+      "after_sha256": "b60548c76da8b1d6038e3b5fc40707b448a9de4f3f7cc6d8ac231a3291415e2d"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-memory/release-manifest.json.sig",
+      "before_sha256": "08a6a5f523181f523f402c3a0d250c8a3d0cc2b9c8f6f5eff7869072f0b3d623",
+      "after_sha256": "ad2fbb471a9236e2c16919bb261971c00665a81f1f766cc101e9d967dc44172d"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-memory/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-memory/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-rule-manager/SKILL.md",
+      "before_sha256": "ed4d75fe417719fae01f59103f419455069b876217e007fe197958ef9f813c6c",
+      "after_sha256": "a2945c080f449ddeb4a88ff51232c9b07b18cc14ad78c53a3d7d259b8c2e2d52"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-rule-manager/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-rule-manager/release-manifest.json",
+      "before_sha256": "12efabddfccdb332be80a2b5031e42e820a24f17b8098251ebee04efb2b2e439",
+      "after_sha256": "8c1c73b2869641190695e38ae6dc6e0777ff37cb5a30c3d34db87282be77bae1"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-rule-manager/release-manifest.json.sig",
+      "before_sha256": "b66f2f8f198a37cb571bccef9bfd071cc3618d72b6f9cc4b9625fb3b543eec20",
+      "after_sha256": "d7631b62a6a4cabea6922a57b12f159c7e4d5fe472917cd732b88c56091a0d7e"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-rule-manager/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "A",
+      "path": "skills/project-rule-manager/scripts/local_rules.py",
+      "before_sha256": null,
+      "after_sha256": "fbac9514c1a0288d512f9f91843ccc60f0b06866667acb46670e480995924d74"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-rule-manager/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-task-router/SKILL.md",
+      "before_sha256": "8ae5c277a843f8d103770a60befaa4dfc3a4443a70730a1f6089579a6eb803b6",
+      "after_sha256": "222d52e4de6e1f1b605cebf6436447d45e9e8cdab48454392a70e9e6f95c45fa"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-task-router/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-task-router/release-manifest.json",
+      "before_sha256": "7af10cddd2cf738a23bbe7c7f734c2259ca74b33d84d8dd5b28100848d1b843e",
+      "after_sha256": "044fff08e6e15c5230292b5e04498ae7ed9a1d8d673c4b999c371281d68fec44"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-task-router/release-manifest.json.sig",
+      "before_sha256": "12a7a7f4182dba8cf242fbcc48091b2f3ccadcc5a981907b42c86fc14d13d1fc",
+      "after_sha256": "8c89b139ef524565b9aa276d842701fd25642ebce1cb52346aa2b0dff7a14af1"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-task-router/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/project-task-router/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/quality-brand-projects/SKILL.md",
+      "before_sha256": "4a0c3c48ad2b9f02f4f312f9bc10331b8bec1fa9fff3810a2857f3ef170f6a2b",
+      "after_sha256": "ae9f3c33b6071f20964c65da4c0e4f253d6042269cc4307838c3079a4029bab7"
+    },
+    {
+      "status": "M",
+      "path": "skills/quality-brand-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/quality-brand-projects/release-manifest.json",
+      "before_sha256": "f698e11f361723d1bd8d7ab1b582f100973c9eac795678bc306529b2583a84f4",
+      "after_sha256": "bf737dce58e2e950ce77a263811ca3726b3ae53aad8c93c443cce0334a7d9613"
+    },
+    {
+      "status": "M",
+      "path": "skills/quality-brand-projects/release-manifest.json.sig",
+      "before_sha256": "19fa10f2dea2fd879600eeca1c0576712a2c2549e794099ff4dcab5ea4ff09b9",
+      "after_sha256": "51ebe15dd03c893ece636a75e447c08ee15adb53edddf15db1610d0a05f8c727"
+    },
+    {
+      "status": "M",
+      "path": "skills/quality-brand-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/quality-brand-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/regional-special-projects/SKILL.md",
+      "before_sha256": "9acffb7f9f8a1e3610c3bfb942afdb048ccc00d821b82ac5096a543350e0336a",
+      "after_sha256": "1299e33c228075a29a95d69eef34abbc3ab2f317ff9c5fde63dbb880dbffc66f"
+    },
+    {
+      "status": "M",
+      "path": "skills/regional-special-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/regional-special-projects/release-manifest.json",
+      "before_sha256": "06a6e5ab4af134f472882f39525bd56b3aeb1fbeec23e4c0403742f8e4715058",
+      "after_sha256": "99fb02027c09cbb7dcf5946420adbd2433203e5d315b336265f2b73f39b2e95b"
+    },
+    {
+      "status": "M",
+      "path": "skills/regional-special-projects/release-manifest.json.sig",
+      "before_sha256": "bf38c3fce9382f05b76722f130f1fab1c0238e449536b6a04588fd497aa646e8",
+      "after_sha256": "b167ddf32685c6c893050a8e98fcf506a6f6d016ad739722c3474b96f34aebb8"
+    },
+    {
+      "status": "M",
+      "path": "skills/regional-special-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/regional-special-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/report-skill-registry.json",
+      "before_sha256": "6744d7235337eae80385ac1c9358a8f4a48c31bf72c0caaa6f21ef9a2d6a4906",
+      "after_sha256": "d0f3f8d905de949f0079c99fbbd5b06a6f53ae0dc531823fcecc571920037a67"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-authoring/SKILL.md",
+      "before_sha256": "904028017b03d77d43da4d5e6d9db947d1d23d41f558bf79c0e413fcdbae7250",
+      "after_sha256": "2c62c18bd4ff431eaa9e1e36b660348dd628b70f416bcf1e06e818d748c3dbaf"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-authoring/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-authoring/release-manifest.json",
+      "before_sha256": "a5115bfb59f6d65aaf192c84ae853b731597b61276d0484ae10df9496ff8cff0",
+      "after_sha256": "df5a1077d766ae48fc44b09867710f765d76815b62021fe069546f05d6ec99f4"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-authoring/release-manifest.json.sig",
+      "before_sha256": "504907a4dda2ad96fb1b3718809a6cbdd6bfa000099b553abd761db6bb0707a6",
+      "after_sha256": "b470595c2476b6af44a8a6b779e5a3c8c11f644fc48e8643d30e0b1c73a14c0d"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-authoring/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-authoring/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-curator/SKILL.md",
+      "before_sha256": "0afd0632aca0f26e2534f6afeb0fcb4a29e9ee6af56984a07640746ffaa41078",
+      "after_sha256": "e3e7c8e7e324970944918156a7051e2997ff04e4a57d0665c3c10708fc7ecb39"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-curator/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-curator/release-manifest.json",
+      "before_sha256": "3377da8c0239c4531880b9757884df75451dc060f918699892c44c90cbac11b2",
+      "after_sha256": "5d69f8245659d062bb8fc7252a60c79208de21c1bd13146caddb4735a3b1c336"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-curator/release-manifest.json.sig",
+      "before_sha256": "f4baf3737bb45d88924e21b5c9dc13b9b8f44dd5526a26c9bb606d057473c817",
+      "after_sha256": "31775f406ffaa3188ec573136e0dba2d25e850d4195f18f6e75feae7b5bcecf0"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-curator/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-curator/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-evolution/SKILL.md",
+      "before_sha256": "f31d56e0b544e8572ae4e22fed05f307271b0bc320d685a0b2798e71f42bf6ad",
+      "after_sha256": "c873d2d03b138c0fd59c52647b3204dbbeaa8b354be06aa4872b38b9ac505018"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-evolution/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-evolution/release-manifest.json",
+      "before_sha256": "06bb4d3cc3fba5a45380d3a00f2371ba90f40655607ef915dc5e2e33997204be",
+      "after_sha256": "5ee41195634ad5218ddd26d1e34655f3d14fcbaf27ecbaf2aa9bde20dcbbcc9f"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-evolution/release-manifest.json.sig",
+      "before_sha256": "d867e52b31dfa76f7ba42aba4eeb1b0a173d11db721432c6c5378d3a401a8cd9",
+      "after_sha256": "6efa9fa12a7afb8037353403511eb7402471c79a2bf2f2daa0d3253f0d3e79de"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-evolution/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/skill-evolution/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/SKILL.md",
+      "before_sha256": "af301036366710cdbd2e650b3fd64b5edeee4cc48958ed2974b09261e9680850",
+      "after_sha256": "cb558037cad75fb50dafc291d700d04c4d3e9e8071123bcb706b54b4577f254c"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/references/application-version-gate.md",
+      "before_sha256": "43d651b1c2c61f28746b74266d2f7280507e471a35436be2b9d48f4656408d9a",
+      "after_sha256": "5afbad9f5d4db51a179ddcaa8eb785fe9c05bf568be43313fc12b69b7598c56f"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/references/core-formula-process-performance-matrix.md",
+      "before_sha256": "9be9c917fba75a880de7ebc56880a20fa5bdf26d3c8313e81406106f7bac69b9",
+      "after_sha256": "162a3b3f71ee9d1041abc935aa830c99bc46767ad7c456700e3e287088ac6bbf"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/references/enterprise-introduction-method.md",
+      "before_sha256": "8f49aa5ad5066e183824d70ef5ebfb725678f1995a25d604d11760331073e512",
+      "after_sha256": "a1580c2e78f5351fa12e21731b136f61fda976540b80dfce8c5bd2c1c1df9ad1"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/references/four-judgment-decision-table.md",
+      "before_sha256": "74d219f75f96fea4fd4a6ddc6b580828060b2cc585bb50ca218989ce7033fb46",
+      "after_sha256": "a8215be06fbbdd40ea021462e9a5810a20ff2cc6f31e6ee65c40888930803d7c"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/references/main-product-naming-and-boundary-gate.md",
+      "before_sha256": "9543d1410ae33c4aa1dd7e99c59c43f960d01447aaab5795904274242bd47005",
+      "after_sha256": "624b0ad32290c6a9d54c70b6d9fd80d49ec2ad4475341e2899f4b2c8c3e2fb2b"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/release-manifest.json",
+      "before_sha256": "a3e8c9e979bb3580ca14f66e4045cb1fe9e2fc4784d1a9086fadc3b5247dccbf",
+      "after_sha256": "6152557ab7939c01f43608c6bc912aca829b574d61354c7565a2a3ebd3a3d04f"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/release-manifest.json.sig",
+      "before_sha256": "7b24d0f924678097378f85432c2e7703ffa36a2e17adbb977e3507d88288dd11",
+      "after_sha256": "ec4dde5141d7d906f5f3723a3f0880682dba8ce1da3a5042b8703952bd8a5322"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-development-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-score-preassessment/SKILL.md",
+      "before_sha256": "0938cbdceb8f48db6d4558ebbe8de5fd8000003f8397275d35d09a74c21e7bcf",
+      "after_sha256": "c3f041399ff5577c9b725604c481b317c15da05c74a97ff5318a93468f3fbcf5"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-score-preassessment/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-score-preassessment/release-manifest.json",
+      "before_sha256": "07aa673fe3a871353e16ad7096134c4c04bd9c9a8ec2d471cb0ea75c0614bb84",
+      "after_sha256": "ae84f2007bcc1646de8ee2e5782189b232923837514547ef2d130b87c3e93936"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-score-preassessment/release-manifest.json.sig",
+      "before_sha256": "40dcd547c015f644005e309efa6a6b5713db625fbd2b8503d5c19fbc5faddf7e",
+      "after_sha256": "d853538adfe8a79a71f1d8589b81f2911263748f219de613ac0b78c0695a0347"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-score-preassessment/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/sme-score-preassessment/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/standard-drafting/SKILL.md",
+      "before_sha256": "4ad2c8d3b418a35fc2fca4a40ea1cf556d8a2069932c612d19223dfd676433cb",
+      "after_sha256": "a9d9fa55595ecd0cdcdb91a1cec0bc34e60687e69731c476f461c4cf2207e273"
+    },
+    {
+      "status": "M",
+      "path": "skills/standard-drafting/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/standard-drafting/release-manifest.json",
+      "before_sha256": "a6b88d33d9655910072317f3b4a1e8b55e4193e73812d457834891c105b1eef0",
+      "after_sha256": "e8b0a5a1e8184bd806adcb9bda1678acbcac20497edd13123a761021cae04cc8"
+    },
+    {
+      "status": "M",
+      "path": "skills/standard-drafting/release-manifest.json.sig",
+      "before_sha256": "25fdbe4f7497ae53592a3bd7500e62b79899aa76717037ad33c7408e6db52eee",
+      "after_sha256": "3b1b65af9b3742f687343e2a87a4b9b0dea73f5421c0c5787d1ab1ce2140c59f"
+    },
+    {
+      "status": "M",
+      "path": "skills/standard-drafting/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/standard-drafting/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/suite-manifest.json",
+      "before_sha256": "05c18db97b403977be5604b80f86dac181053cad3ba6934b0870ae2fab554ac2",
+      "after_sha256": "81e39113eef0df59daa157437e2998045ee982edd08ad6eb6e9f92a7324fe555"
+    },
+    {
+      "status": "M",
+      "path": "skills/talent-projects/SKILL.md",
+      "before_sha256": "ef16f4bf584c93e5c62e7f1949c0d267d65ea8b2e7d7ed04bdb7c2a6b061001e",
+      "after_sha256": "e629a17da342b5cb18980fd12c7dea950a1478576d6b058faa90d878ab2463cb"
+    },
+    {
+      "status": "M",
+      "path": "skills/talent-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/talent-projects/release-manifest.json",
+      "before_sha256": "37c664c3d660e5ab69c6aa8c6f5fe74fb8964d367d174aee853d80b6ddefb840",
+      "after_sha256": "6b8674b294d51a21897745bcff66a2538217df9801c25f6e799f7e4774ea7fc0"
+    },
+    {
+      "status": "M",
+      "path": "skills/talent-projects/release-manifest.json.sig",
+      "before_sha256": "b8a886954f8245213b0e89989d0fcf17d2a87269719b7cdec4d82f808e1dc729",
+      "after_sha256": "30de57ffbe9cf8cb98b8e44451d5495663c270d5c50b879175943c3906d93ead"
+    },
+    {
+      "status": "M",
+      "path": "skills/talent-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/talent-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/technology-innovation-projects/SKILL.md",
+      "before_sha256": "fa912f935970e89f66427e8ed822219e6d5f1b4088f868969d25f744b4e2f8d1",
+      "after_sha256": "986bb96d8b1b5de895040c8ffcaa1a6af3d176209fcfa881e2912aba43624f27"
+    },
+    {
+      "status": "M",
+      "path": "skills/technology-innovation-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/technology-innovation-projects/release-manifest.json",
+      "before_sha256": "f341ea2016657bd1a768705fdb87a371a188b0251685acb8d3586404810aa891",
+      "after_sha256": "b7eceb2955b368bfb15dd26bddf1ce8b6b11ad852d81050795163c7416ee4b2c"
+    },
+    {
+      "status": "M",
+      "path": "skills/technology-innovation-projects/release-manifest.json.sig",
+      "before_sha256": "36af83dfab88f7b6ba48af870739c18a765c27ab56221bf2d7f20e39ab51ba40",
+      "after_sha256": "84c9d510d78db91e00596a6b96cf59d446b1c3ab665ed2ba50fbb05faa84f002"
+    },
+    {
+      "status": "M",
+      "path": "skills/technology-innovation-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/technology-innovation-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/third-party-data-indexing/SKILL.md",
+      "before_sha256": "ec2d4826e551cc61d5daa67304815d1b019ba24ea15f1583aef28ed7f2ce6f69",
+      "after_sha256": "045f5d089e1859ee30b2efd9cd29f276043e0215e92a36ee1bd01a63b3c2e944"
+    },
+    {
+      "status": "M",
+      "path": "skills/third-party-data-indexing/references/index-schema.md",
+      "before_sha256": "3cdb7532f7792dd0c3278e2c8fa06a2c9c2605a0b49ed4356943fb503823bafe",
+      "after_sha256": "94ffa95f342e3e40f7e638e66cd44b6128939c03977f82ba9743d67ebc6676f3"
+    },
+    {
+      "status": "M",
+      "path": "skills/third-party-data-indexing/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/third-party-data-indexing/release-manifest.json",
+      "before_sha256": "a655f8dfc67fac05ef75918c60d218e502e2ce07432013a83d094b046dcf9ac3",
+      "after_sha256": "4a45341a3f6a489c54c150d9b2965c4ab2e2dba10a0deeb3e35992f02e8d3297"
+    },
+    {
+      "status": "M",
+      "path": "skills/third-party-data-indexing/release-manifest.json.sig",
+      "before_sha256": "b3be2b0674c4a5eaf662ceadda731b34b62ecc186cc7a918e195bd324e99f28c",
+      "after_sha256": "ff6a4f1e088e4a5b89de87428e90df6cf6990b2901cb9276003274fab060c289"
+    },
+    {
+      "status": "M",
+      "path": "skills/third-party-data-indexing/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/third-party-data-indexing/scripts/index_engine.py",
+      "before_sha256": "cd9ef0ad28b1fe2e98ae2e806680817f5bc44dbc780b0edf168b55af8f6f5ad4",
+      "after_sha256": "b186c0367611d30cea1c20cec3b327e136165fbd51182bd643353a76fc53289d"
+    },
+    {
+      "status": "M",
+      "path": "skills/third-party-data-indexing/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/trade-and-open-economy-projects/SKILL.md",
+      "before_sha256": "7bd17e194f0ac7676b935e7601935b0459859655b9006512aa310adb9067e5d5",
+      "after_sha256": "fd5d0ddd72018326db4d1dd5e05c36f8f701bf1773ad80eae386f7251aafdbf1"
+    },
+    {
+      "status": "M",
+      "path": "skills/trade-and-open-economy-projects/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/trade-and-open-economy-projects/references/trade-data-reconciliation.md",
+      "before_sha256": "2938fb1063d844f36285d9b30b3f46f2376646b346c38505391d4dd9b3044e9d",
+      "after_sha256": "2b607774b0bcc8a146298eb690bcfbde2742a84a5638b0a9104f1869d24a93d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/trade-and-open-economy-projects/release-manifest.json",
+      "before_sha256": "27f172d42656b47f28e82fef6e82e92f7a14707912ca00a4b544cfb136f2f719",
+      "after_sha256": "683ff5dfe7ec2a324df36aeb76a03dd0450fa9220983619917b9f679e5e2bb8a"
+    },
+    {
+      "status": "M",
+      "path": "skills/trade-and-open-economy-projects/release-manifest.json.sig",
+      "before_sha256": "89f72f1aa45908aedba872ab7d580734de3d6e861d596a37fe498f3587019ba0",
+      "after_sha256": "f421bcb96b75d46580adcc584a0d9e8840acbf61358d5f9596ebb8be179b0b20"
+    },
+    {
+      "status": "M",
+      "path": "skills/trade-and-open-economy-projects/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/trade-and-open-economy-projects/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "skills/web-task-operator/SKILL.md",
+      "before_sha256": "3cd6f2b79f01071c7ea34f5c0ad8e53e93e660de66673958dcc3ad18b4e64691",
+      "after_sha256": "bd721a6ba4d70ae7d9dfbfb72d2924d4d9ee731a4b6596118d7d7a1b497cdf67"
+    },
+    {
+      "status": "M",
+      "path": "skills/web-task-operator/references/portable-runtime-protocol.md",
+      "before_sha256": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+      "after_sha256": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5"
+    },
+    {
+      "status": "M",
+      "path": "skills/web-task-operator/release-manifest.json",
+      "before_sha256": "15b925ca1d6ab23001910da7293d609fe9fd0c3051921d363f46400e473e3234",
+      "after_sha256": "5d11fa3fb256978afca2cd1c4909af4cb4002027687097bed286f1e15ca43c4d"
+    },
+    {
+      "status": "M",
+      "path": "skills/web-task-operator/release-manifest.json.sig",
+      "before_sha256": "a8ca3d0c922093d0388c5a9c08e05e6d46306c5ba35fd40de0c7a6f9ce809121",
+      "after_sha256": "39d5b1e5622b4cc54e22a72909ac8aa11ef4a14c9405c03ec0781201156dd15b"
+    },
+    {
+      "status": "M",
+      "path": "skills/web-task-operator/release-signature.json",
+      "before_sha256": "bca73184dffc639c3a05bf0b5fa74f80e64c9db8c2b8dd0ca31e08d3d86c92d5",
+      "after_sha256": "0acf0e015280a198c3b414c809f8ef7b06f9847e9f56c6040fc62242a5600e11"
+    },
+    {
+      "status": "M",
+      "path": "skills/web-task-operator/scripts/portable_skill_runtime.py",
+      "before_sha256": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+      "after_sha256": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_data_indexing.py",
+      "before_sha256": "3f7a9e281a7245f9f2d05daa127f58297007844bc3f0379fed1842b0ac997bb0",
+      "after_sha256": "eb99f6f19710cb210d2454e857cb1d0aba42b63513195b9442c6dc19318708af"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_generic_only_skill_suite_release.py",
+      "before_sha256": "aaf662a8568e3d632ab79b4c19bcfc91dd4c3711fe07fbdc7b51436d590aabc9",
+      "after_sha256": "35c64395444cd0236a6f42f79b7c358afd1578da63427eb84a25ad6d0ff08dd8"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_gongchuang_humanizer.py",
+      "before_sha256": "9e85240a80d051ea440ac4b24cc685d43411e7d83717ec7a0c046341c6a974b9",
+      "after_sha256": "1689b24cf4e1d98e92561e2334d9c31261fe8a1e3de8b27077bee217309b489d"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_grounded_delivery_profiles.py",
+      "before_sha256": "bedd382e8223d2b1cd0872853e1319922cb7d6498aa7f7990e87fd4fc97b8b70",
+      "after_sha256": "80a6e9f6a89d82dbbd87f92cd1cebd5ec458f3a9c09b5b09b5e998936d0d4020"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_grounded_delivery_receipts.py",
+      "before_sha256": "8bb3fa8f9920cd1236ec88fdc9dd0b106214b7d1e23691a8d2d1900747efc0fb",
+      "after_sha256": "2ea9bdc3a58d98f23e90f6e4eb62f18efa80d8c33570f9651978c2cae5888842"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_grounded_product_configuration.py",
+      "before_sha256": "bde4dba3e4496b7051e94a6def2da6701222f0c4023f72ee2a3467dc99ef3776",
+      "after_sha256": "6113dd9fd586f3286248c42a337502a57ce0da00195e266ecd384ce0b7822d92"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_hightech_application_drafting.py",
+      "before_sha256": "15a864c7b7a4f4f81027a9c013ef49d0a00707ae5ce9c9c99541fe18b337afb1",
+      "after_sha256": "7e87acff71821094108a7a204f24728c8c2cf42769efb905b8dda7186cee9b17"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_industry_catalogs.py",
+      "before_sha256": "70d27f3434bf703c453d70cad0f85943b05c669128537addec56e72e905cb00c",
+      "after_sha256": "a1a405725bddcc69a585dbf6a9ac55ebade25abf2da2daf9d52c75ff0c79489f"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_install.py",
+      "before_sha256": "1e9abeb24000c4fe1c1b8a79b9a75163036147b4a197e0b13fd0fd2708113de0",
+      "after_sha256": "43439e100b920a4bf688eee0d7d8bb1ab4b1ccabe7bb883e6c0526a9e1f93f70"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_jiaotang_patent_router.py",
+      "before_sha256": "7ad0c7081591bee85b627e28f7cefa6ef0514e92ad062acd8f6e5194d30ee25a",
+      "after_sha256": "674e0afece19047c814414022de1c35999e0e9ed0acf0e866fc077c82611268f"
+    },
+    {
+      "status": "A",
+      "path": "tests/test_local_rules.py",
+      "before_sha256": null,
+      "after_sha256": "ed4190a8806fc394b63c4a32aa0ae789e80cff92e859a66b59cb3d02dcaf93a0"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_onboarding.py",
+      "before_sha256": "2ddea996401f2b9d1f65eb1317512c60b76cdb6abe5bafeed5f4d16b34ce9cf3",
+      "after_sha256": "f93b5fed778b767df1cee82c298fbc491f9c6270ed0712eb7b96eff5dd00ade3"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_patent_router.py",
+      "before_sha256": "7ad0c7081591bee85b627e28f7cefa6ef0514e92ad062acd8f6e5194d30ee25a",
+      "after_sha256": "1f5ab26ca2fef4e2e484c2d5fb3e91ce1c2bf9f64add3a42797b31b4bdced5b4"
+    },
+    {
+      "status": "A",
+      "path": "tests/test_portable_skill_runtime.py",
+      "before_sha256": null,
+      "after_sha256": "b35b28e5f8fb2ca10991515d3b8c776b8f1989ff5c6638b396ddb25529389fe6"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_project_dual_report_contract_v165.py",
+      "before_sha256": "94e0d686566d4ed92739b1f94f2f1be878d1b2ab61bf0d5e8814ce94fb6332c4",
+      "after_sha256": "1d9bd145d382cbe52eface6432b65132ac8e9c01af981515b33772c0c042b766"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_project_report_profile_delivery.py",
+      "before_sha256": "6836f5f4307497db36a835847d57e5cc48013d88b8c6db717c8f925f2d562c58",
+      "after_sha256": "199aa78e74959580648ae61f099561c1a156a326efb0d1ecabb2b7eab45f1a5f"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_project_report_templates.py",
+      "before_sha256": "60bdd2ec08d37ee5e7e20c9878de433b7f8f8990a59d4513ec57f81f25711685",
+      "after_sha256": "bfa15d0f38f4621dd8ccf1b19875f48fe6a276f770f80e04ade856d50b2bf9f4"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_skill_templates.py",
+      "before_sha256": "c5655d7891fb1fba414ff5f9f6387c5ed6bd0e8a561d435b9f009d2391d7e49f",
+      "after_sha256": "fe18e1704e8c727bafab11171beb63cf1451bbb2697bfb67bb968ed65263fe9b"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_sme_score_preflight.py",
+      "before_sha256": "d61aa4bcc0317d58ceffe6c5d7ea2dafaccc7a533c5b41a984a054f3b958efc8",
+      "after_sha256": "8b60068822c29a264c39cd157fecdafc6f35d940eea6030cd136649c05671753"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_suite_external_services.py",
+      "before_sha256": "7d941f90ad825e35a15e7cf561629cbb6feb363603f748ea9b9f8d3c1782e73e",
+      "after_sha256": "08222ae4f3c515dbd98d1664007815f4b91bb143a57210afd2cf89f0e7441c1a"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_v166_professional_client_contract.py",
+      "before_sha256": "e3c368de0eeba877980ded904ab87285912c679551f10edf3b780280a6f21039",
+      "after_sha256": "871579f9f4443dcd6b69314cd58fe51688284adabe15b15c3cd868244bb1c82c"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_workbuddy_report_candidate_pipeline.py",
+      "before_sha256": "f4f884332c3875adca508ec9865bd8dfe13fb931d0e98d6f780ebbc2d90f621d",
+      "after_sha256": "d8a0b4add25b429c9584e959ddab54807f1eda323e6ce636e79e303d99f38f49"
+    },
+    {
+      "status": "M",
+      "path": "tests/test_workbuddy_runtime_hardening.py",
+      "before_sha256": "3531445b5682498ac7fac33c50124c54eaf08926637c3fc79b0d8463c9a1dc77",
+      "after_sha256": "880f840931d90d2b7742baa3860ef75795e86e9e1597c332ae90bb642100ea2f"
+    },
+    {
+      "status": "M",
+      "path": "tests/validate_skill_behavior_coverage.py",
+      "before_sha256": "ddda92e6846c4269c583a26ba9b2e21374d630f3efdb63d452fca28ccd2b7595",
+      "after_sha256": "9dfc6f200ec57f85d9f3bd65a8a5edd977c43d8804b3d4dee732c3b97eb88556"
+    }
+  ]
+}

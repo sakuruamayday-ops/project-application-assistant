@@ -9,11 +9,9 @@ description: 分析农业农村、乡村振兴、农业科技、农产品加工�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "agriculture-and-rural-projects" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责与边界
@@ -31,6 +29,8 @@ description: 分析农业农村、乡村振兴、农业科技、农产品加工�
 ## 数据不足处理
 
 没有土地、产量、农户或收益证据时，不得用企业宣传材料补足。能够确认加工和销售、不能确认农业生产或联农带农时，分别标记已核验范围与缺失范围。
+
+业务状态与证据状态分别记录。用户已说明存在的基地或设备，缺合同、未联网不等于尚未建设，不能自行改称“规划扩面”或从实物总量中删去。口头分红约定只证明存在约定，不证明已经分红，也不证明用户计划未来分红。仅在输入明确说计划、拟建、未来实施时标记规划；其他情况保留用户提供事实并注明具体证据缺口，不把用户提供等同外部独立核验。
 
 ## 输出
 

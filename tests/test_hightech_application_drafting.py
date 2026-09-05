@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import copy
 import json
 import struct
 import subprocess
@@ -239,6 +240,101 @@ def test_fill_rd_core_innovation_uses_exact_field_and_seven_line_format(tmp_path
     stage_result, stage_issues = AUDIT_MODULE.audit_rd_stage_results(Document(output))
     assert stage_issues == []
     assert stage_result["RD01"]["line_count"] == 4
+
+
+def test_fill_basic_fields_handles_three_merged_rd_tables_without_touching_later_tables(tmp_path: Path) -> None:
+    source, output, spec_path = (tmp_path / name for name in ("source.docx", "filled.docx", "spec.json"))
+    document = Document(TEMPLATE)
+    MODULE.resize_kind(document, "rd", 3, "RD")
+    document.save(source)
+    data = realistic_spec()
+    seed = data["items"][0]
+    data["items"] = []
+    for number in range(1, 4):
+        item = copy.deepcopy(seed)
+        item["rd_id"] = f"RD{number:02}"
+        item["basic_fields"] = {
+            "研发活动名称": f"合成项目{number}", "起止时间": "2025.05.01-2025.8.31",
+            "技术领域": FOUR_LEVEL_FIELD, "技术来源": "企业自述研发",
+            "知识产权编号": f"TEST-P{number:02}", "研发经费总预算": str(number * 10),
+            "目的及组织实施方式": "研究现有资料记载的技术。组织方式待企业核定。",
+        }
+        data["items"].append(item)
+    spec_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    process = subprocess.run([sys.executable, str(FILL_SCRIPT), str(source), str(spec_path), str(output)], capture_output=True, text=True)
+    assert process.returncode == 0, process.stderr
+    report = json.loads(process.stdout)
+    assert report["status"] == "pass"
+    assert report["rd_count"] == 3
+    with zipfile.ZipFile(source) as before, zipfile.ZipFile(output) as after:
+        for name in before.namelist():
+            if name != "word/document.xml":
+                assert after.read(name) == before.read(name)
+        original = FILL_MODULE.etree.fromstring(before.read("word/document.xml"))
+        filled = FILL_MODULE.etree.fromstring(after.read("word/document.xml"))
+    targets = FILL_MODULE.collect_rd_targets(filled)
+    assert list(targets) == ["RD01", "RD02", "RD03"]
+    for number, (rd_id, target) in enumerate(targets.items(), 1):
+        cells = target["basic_cells"]
+        assert FILL_MODULE.element_text(cells["研发活动名称"]) == f"合成项目{number}"
+        assert FILL_MODULE.element_text(cells["起止时间"]) == "2025.05.01-2025.08.31"
+        assert FILL_MODULE.element_text(cells["研发经费总预算"]) == str(number * 10)
+        assert report["rd"][rd_id]["basic_fields"]["知识产权编号"] == f"TEST-P{number:02}"
+    # 后续PS、创新能力及汇总表保持逐节点一致；RD表格属性和合并关系也不改变。
+    old_tables = original.xpath(".//w:body/w:tbl", namespaces=FILL_MODULE.NS)
+    new_tables = filled.xpath(".//w:body/w:tbl", namespaces=FILL_MODULE.NS)
+    assert len(old_tables) == len(new_tables)
+    for old, new in zip(old_tables, new_tables):
+        rows = FILL_MODULE.table_rows(old)
+        if not FILL_MODULE.find_label_row(rows, "研发活动名称"):
+            assert FILL_MODULE.etree.tostring(old) == FILL_MODULE.etree.tostring(new)
+        else:
+            properties = ".//w:tblPr | .//w:tblGrid | .//w:trPr | .//w:tcPr"
+            assert [FILL_MODULE.etree.tostring(n) for n in old.xpath(properties, namespaces=FILL_MODULE.NS)] == [FILL_MODULE.etree.tostring(n) for n in new.xpath(properties, namespaces=FILL_MODULE.NS)]
+
+
+def test_fill_explicit_unknowns_produces_draft_and_formal_audit_keeps_gaps(tmp_path: Path) -> None:
+    spec_path, output = tmp_path / "spec.json", tmp_path / "draft.docx"
+    source = tmp_path / "source.docx"
+    document = Document(TEMPLATE)
+    MODULE.resize_kind(document, "rd", 1, "RD")
+    document.save(source)
+    data = realistic_spec()
+    item = data["items"][0]
+    item["basic_fields"] = {"技术领域": "待企业确认四级领域"}
+    for technology in item["core_technologies"]:
+        technology["indicators"] = None
+    spec_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    process = subprocess.run([sys.executable, str(FILL_SCRIPT), str(source), str(spec_path), str(output)], capture_output=True, text=True)
+    assert process.returncode == 0, process.stderr
+    report = json.loads(process.stdout)
+    assert report["status"] == "draft"
+    assert report["rd"]["RD01"]["pending_indicators"] == 2
+    assert report["rd"]["RD01"]["pending_field"] is True
+    results, issues = AUDIT_MODULE.audit_rd_core_innovation(Document(output))
+    assert len(issues) == 3
+    assert any("四级技术领域待确认" in issue["issue"] for issue in issues)
+    assert results["RD01"]["line_count"] == 7
+
+
+@pytest.mark.parametrize("fields", [
+    {"起止时间": "2025.09.31-2025.10.01"},
+    {"起止时间": "2025.09.01-2025.08.31"},
+    {"未定义栏目": "不得写入"},
+])
+def test_fill_rejects_invalid_basic_fields_before_creating_output(tmp_path: Path, fields: dict) -> None:
+    spec_path, output = tmp_path / "spec.json", tmp_path / "filled.docx"
+    source = tmp_path / "source.docx"
+    document = Document(TEMPLATE)
+    MODULE.resize_kind(document, "rd", 1, "RD")
+    document.save(source)
+    data = realistic_spec()
+    data["items"][0]["basic_fields"] = fields
+    spec_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    process = subprocess.run([sys.executable, str(FILL_SCRIPT), str(source), str(spec_path), str(output)], capture_output=True, text=True)
+    assert process.returncode != 0
+    assert "文档中未找到目标RD表" not in process.stderr
+    assert not output.exists()
 
 
 def test_fill_blocks_unverified_advanced_terms_before_output(tmp_path: Path) -> None:

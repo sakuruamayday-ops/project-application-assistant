@@ -9,11 +9,9 @@ description: 分析知识产权示范、管理体系、专利产业化、高价�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "intellectual-property-projects" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责与边界
@@ -27,6 +25,8 @@ description: 分析知识产权示范、管理体系、专利产业化、高价�
 3. 核验制度、人员、预算、检索预警、许可转让、质押融资、维权和转化收益。
 4. 有效授权、审中、失效和转让取得分别统计，不把申请量冒充授权量。
 5. 只采用当期政策认可的权利类型、取得时间和主体范围。
+
+逐项沿用 `ip-assessment` 的权利人、取得方式、RD 与产品关联；摘要不得把“部分明确”改成“全部已关联”。转让取得只说明权利取得方式，不证明该技术与企业自研无关。企业营业收入不等于某项专利或产品收入，未取得对应口径时不得把企业年度总收入放入专利产业化收益栏。仅整理准备方向且未核验当期政策时，给出条件与材料缺口，不形成项目认可或资格结论。
 
 ## 数据不足处理
 

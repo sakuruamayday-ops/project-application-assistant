@@ -54,6 +54,32 @@ def test_rewrite_audit_reports_added_fact_like_number() -> None:
     assert payload["numbers"]["added_in_rewrite"] == ["20%"]
 
 
+def test_rewrite_audit_detects_model_changes_next_to_chinese() -> None:
+    process = subprocess.run(
+        [sys.executable, str(SKILL / "scripts" / "audit_rewrite.py"),
+         "--source-text", "整机X1通过MES调度，沿用GC-QA品牌。",
+         "--rewrite-text", "整机X2通过ERP调度，沿用GC-QA品牌。"],
+        capture_output=True, text=True, check=False,
+    )
+    payload = json.loads(process.stdout)
+    assert process.returncode == 0
+    assert payload["acronyms"]["missing_from_rewrite"] == ["MES", "X1"]
+    assert payload["acronyms"]["added_in_rewrite"] == ["ERP", "X2"]
+
+
+def test_rewrite_audit_ignores_chinese_spacing_but_keeps_ascii_word_boundaries() -> None:
+    process = subprocess.run(
+        [sys.executable, str(SKILL / "scripts" / "audit_rewrite.py"),
+         "--source-text", "整机X1使用MES，GC-QA品牌。",
+         "--rewrite-text", "整机 X1 使用 MES，GC-QA 品牌。变量 someX9value 不是型号。"],
+        capture_output=True, text=True, check=False,
+    )
+    payload = json.loads(process.stdout)
+    assert process.returncode == 0
+    assert payload["acronyms"]["missing_from_rewrite"] == []
+    assert payload["acronyms"]["added_in_rewrite"] == []
+
+
 def test_feedback_defaults_to_user_data_directory(tmp_path: Path) -> None:
     data_root = tmp_path / "profiles"
     env = os.environ.copy()

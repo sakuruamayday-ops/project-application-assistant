@@ -22,6 +22,7 @@ MAX_JSON_OUTPUT_BYTES = 900 * 1024
 MAX_ARCHIVE_MEMBER_BYTES = 64 * 1024 * 1024
 MAX_ARCHIVE_TOTAL_BYTES = 256 * 1024 * 1024
 MAX_PDF_PAGES = 1_000
+MAX_PRESENTATION_SLIDES = 1_000
 MAX_ARCHIVE_COMPRESSION_RATIO = 2_000
 MAX_ODS_COLUMNS = 16_384
 MAX_ODS_ROWS = 1_048_576
@@ -448,34 +449,117 @@ def extract_xls(path: Path) -> dict[str, object]:
     return {"kind": "xls", "status": "extracted", "sheets": sheet_count, "text": text, "truncated": truncated}
 
 
+def extract_pptx(path: Path) -> dict[str, object]:
+    from pptx import Presentation
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    # 先执行与 Word/Excel 相同的容器上限，避免只按后缀直接解压或解析实体。
+    with safe_archive(path) as archive:
+        for name in archive.namelist():
+            if name.endswith((".xml", ".rels")):
+                safe_xml_root(archive.read(name))
+    presentation = Presentation(path)
+    if len(presentation.slides) > MAX_PRESENTATION_SLIDES:
+        raise UnsafeDocumentError(f"演示文稿超过 {MAX_PRESENTATION_SLIDES} 页")
+    parts: list[str] = []
+    ocr_slides: list[int] = []
+    slide_area = presentation.slide_width * presentation.slide_height
+
+    def shape_text(shapes, scale_x: float = 1, scale_y: float = 1) -> tuple[list[str], bool, bool]:
+        text: list[str] = []
+        images = False
+        large_images = False
+        for shape in shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                transform = shape._element.xfrm
+                child_extent = transform.chExt if transform is not None else None
+                group_scale_x = shape.width / child_extent.cx if child_extent is not None and child_extent.cx else 1
+                group_scale_y = shape.height / child_extent.cy if child_extent is not None and child_extent.cy else 1
+                grouped, group_images, group_large_images = shape_text(
+                    shape.shapes, scale_x * group_scale_x, scale_y * group_scale_y,
+                )
+                text.extend(grouped)
+                images = images or group_images
+                large_images = large_images or group_large_images
+            elif shape.has_text_frame:
+                text.append(shape.text_frame.text)
+            elif shape.has_table:
+                text.extend("\t".join(cell.text for cell in row.cells) for row in shape.table.rows)
+            elif shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                images = True
+                large_images = large_images or shape.width * scale_x * shape.height * scale_y >= slide_area / 2
+        return text, images, large_images
+
+    for index, slide in enumerate(presentation.slides, 1):
+        text, images, large_images = shape_text(slide.shapes)
+        # 标题能读取不代表正文已读完；大幅扫描图仍需识别，小图标不触发整页 OCR。
+        if large_images or (images and not any(item.strip() for item in text)):
+            ocr_slides.append(index)
+        parts.append(f"\n## 第 {index} 页\n" + "\n".join(text) + "\n")
+        if slide.has_notes_slide:
+            notes = slide.notes_slide.notes_text_frame
+            if notes is not None and notes.text.strip():
+                parts.append("\n演讲者备注\n" + notes.text + "\n")
+    text, truncated = bounded_join(parts)
+    return {
+        "kind": "pptx", "slides": len(presentation.slides),
+        "status": "needs_ocr" if ocr_slides else "extracted",
+        "text": text, "truncated": truncated, "ocr_pages": ocr_slides,
+        "action": "ocr_selected_pages" if ocr_slides else "none",
+        "message": "已保留可读文字；指定幻灯片仍含需识别的图片，不能把标题当成完整正文。" if ocr_slides else "",
+    }
+
+
 def extract_pdf(path: Path) -> dict[str, object]:
     try:
         import pymupdf
     except ImportError as error:
         raise RuntimeError("内置 PDF 解析组件不可用") from error
     document = pymupdf.open(path)
+    if document.needs_pass:
+        document.close()
+        return {
+            "kind": "pdf", "status": "encrypted_document", "text": "", "truncated": False,
+            "action": "provide_password_free_copy",
+            "message": "PDF 已加密，请提供解除密码后的副本；原文件不会被修改。",
+        }
     pages = document.page_count
     if pages > MAX_PDF_PAGES:
         document.close()
-        raise ValueError(f"PDF 页数超过 {MAX_PDF_PAGES} 页")
+        raise UnsafeDocumentError(f"PDF 页数超过 {MAX_PDF_PAGES} 页")
     parts: list[str] = []
     has_text = False
+    ocr_pages: list[int] = []
     try:
         for index in range(pages):
-            page_text = document.load_page(index).get_text("text", sort=True)
-            if re.search(r"[A-Za-z0-9\u3400-\u9fff]", page_text):
+            page = document.load_page(index)
+            page_text = page.get_text("text", sort=True)
+            readable = bool(re.search(r"[A-Za-z0-9\u3400-\u9fff]", page_text))
+            if readable:
                 has_text = True
+            images = page.get_image_info()
+            # 扫描正文上方可能有可提取的页眉，不能因为页眉有字就漏掉整页扫描内容。
+            large_raster = any((pymupdf.Rect(image["bbox"]) & page.rect).get_area() >= page.rect.get_area() / 2 for image in images)
+            # 转曲文字和矢量图没有图片对象，不能在混合 PDF 中被静默跳过。
+            unread_visual = not readable and (bool(images) or bool(page.get_drawings()))
+            if large_raster or unread_visual:
+                ocr_pages.append(index + 1)
             parts.append(f"\n## 第 {index + 1} 页\n{page_text}\n")
     finally:
         document.close()
     text, truncated = bounded_join(parts)
+    needs_ocr = bool(ocr_pages) or not has_text
+    if not has_text and not ocr_pages:
+        ocr_pages = list(range(1, pages + 1))
     return {
         "kind": "pdf",
-        "status": "extracted" if has_text else "needs_ocr",
+        "status": "needs_ocr" if needs_ocr else "extracted",
         "pages": pages,
         "text": text if has_text else "",
         "truncated": truncated,
-        "message": "未检测到可提取文本，需要使用已配置的 PaddleOCR 识别扫描页。" if not has_text else "",
+        "ocr_pages": ocr_pages,
+        "action": "ocr_selected_pages" if needs_ocr else "none",
+        "message": "已保留可提取文字；需要使用已配置的 OCR 补充指定页面，不能把部分正文当成全文。" if needs_ocr else "",
     }
 
 
@@ -736,6 +820,12 @@ def non_extractable_outcome(path: Path, detection: DocumentDetection) -> dict[st
             "检测到旧式二进制 Word 文档。请另存为 DOCX、ODT 或 RTF 后再读取；原文件不会被修改。",
             "convert_to_supported_format",
         )
+    if kind == "ppt":
+        return outcome(
+            path, detection, "conversion_required",
+            "检测到旧式二进制演示文稿。请用原应用另存为 PPTX 或 PDF 后继续；原文件不会被修改。",
+            "convert_to_supported_format",
+        )
     if kind in {"encrypted-office", "encrypted-archive"}:
         return outcome(
             path,
@@ -765,7 +855,7 @@ def non_extractable_outcome(path: Path, detection: DocumentDetection) -> dict[st
             path,
             detection,
             "conversion_required",
-            "检测到当前内置解析器无法确认的 WPS／ET 专有文档，请另存为 DOCX、XLSX、ODT、ODS、RTF 或文本后再读取。",
+            "检测到当前内置解析器无法确认的 WPS／ET／DPS 专有文档，请另存为 DOCX、XLSX、PPTX、PDF、ODT、ODS、RTF 或文本后再读取。",
             "convert_to_supported_format",
         )
     if kind == "unreadable":
@@ -791,6 +881,7 @@ def main() -> int:
         handlers = {
             "docx": extract_docx,
             "xlsx": extract_xlsx,
+            "pptx": extract_pptx,
             "ods": extract_ods,
             "odt": extract_odt,
             "xls": extract_xls,

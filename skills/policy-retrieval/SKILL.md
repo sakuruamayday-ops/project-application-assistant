@@ -9,11 +9,9 @@ description: 检索并核验政府项目从管理办法、当期通知、指南�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "policy-retrieval" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 ## 职责
@@ -40,6 +38,7 @@ description: 检索并核验政府项目从管理办法、当期通知、指南�
 
 - 官方原文优先于转载、解读和商业平台摘要。
 - 搜索结果页、新闻稿或项目汇总表不能替代正式通知和附件。
+- 官方站点抓取失败而只取得搜索片段时，文件表标记“官方链接已定位，原文未取得”；开头的完整度结论、正文和末尾限制保持一致，不写“已完成原文核验”再在文末撤回。只有成功读取的官方正文或有可追溯原文来源的知识库全文，才支持相应原文核验结论；没有找到替代或废止文件不自动证明长期有效。
 - 未找到完整政策链时，只能说明“当前检索层未命中”及已检索范围。
 - 截止日期、金额、比例和政策状态在答复时重新核验，不沿用历史记忆。
 - 历史文件只能用于口径沿革或预研参考。没有取得目标年度现行文件时，不得形成“可申报、不可申报、符合、不符合”的资格结论。

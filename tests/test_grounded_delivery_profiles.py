@@ -83,9 +83,9 @@ def test_analysis_report_and_native_artifacts_keep_distinct_layout_contracts():
     assert slides["source_placement"] == "final-slide"
 
 
-def test_codex_and_workbuddy_adapters_return_identical_contract_bytes():
+def test_codex_and_first_party_client_adapters_return_identical_contract_bytes():
     outputs = []
-    for host in ("codex", "workbuddy"):
+    for host in ("codex", "first_party_client"):
         adapter = ROOT / "skills" / "_runtime" / "grounded-citations" / f"{host}_adapter.py"
         result = subprocess.run(
             [

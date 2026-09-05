@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "manufacturing-tax-risk-analysis",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "assets/gold-advisor.css",
@@ -29,13 +29,13 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "17c7cd617ba1740ce61a8bb8f9e0f581d8851abe090de0c706abfa3a3ff1e3b3",
+    "SKILL.md": "334f0e2178d3128a8c32aef44047955172787eac337b97e967d631213455c1da",
     "assets/deep-gold-advisor-template.html": "f2c33d887f169add8bff8f23ec3f02fa5de344e30da07dfed0d4d934950b5be3",
     "assets/gold-advisor.css": "b7fe9ff1b85474053f28fd2b4d4858666b6a7f64e332e906b42b1a2961d31be3",
     "package.json": "48954c26137d279550159b04a43ce5461143690d097f18fb6578cb4cbe53ac14",
     "references/data-schema.md": "5a240a31ab0516316f64893e66955c9223f21c197fee098143cfc222b9e1d718",
     "references/policy-baseline.md": "d720040d94048479f7e4d9b9b75b1598ca5231cfe8f03e0beb1575809602104f",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/report-data.example.json": "6cfdda259fb1e55f4c16988f73a36b21cb745b065a70e5ca249eeb4d513f589d",
     "references/report-input-schema.md": "7d33796c560b3ae63f2f8531645cbbe0341849879a49163cec4962ecad209a4e",
     "references/report-spec.md": "dfce58f8ef1ef29732fbbbbb177c495826d672847766588d46d3ca1ecf0e0477",
@@ -44,7 +44,7 @@
     "scripts/brand_gold_pdf.py": "8aafe383b7def791a6e690c055aac8e5a9e0bc5519cff19f55de78a6f5d5fff8",
     "scripts/calculate_metrics.py": "b82c2bcbe2fd3aa7cdfa55b12ea48204c494137876f7408408f8891ce965e608",
     "scripts/generate_report_html.py": "d79a0d9eaa3ea730a705ed60dc9d4f4e9179d18eb2b3e3278d895389d6729fbc",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/render_pdf_stdout.js": "ba3654747b55527baa0c9838d67d492894bc4821cbc9081df0b633af997dbfe9",
     "scripts/verify_e2e.py": "c418afa829aa9f6d4f7d79ab89624304a7c2a4e84f8964fad97576c08af85d7a",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

@@ -33,6 +33,12 @@ ADVANCED_TERMS = (
     "预测性维护",
 )
 VALIDATION_SENTENCE = "以上拟定指标以企业检测报告、产品规格书或现场运行记录校准。"
+PENDING_FIELD = "待企业确认四级领域"
+PENDING_INDICATOR = "技术指标待企业核定，当前资料未提供数值，不形成量化结论。"
+BASIC_LABELS = (
+    "研发活动名称", "起止时间", "技术领域", "技术来源", "知识产权编号",
+    "研发经费总预算", "目的及组织实施方式",
+)
 UNIT_OR_BOUNDARY = re.compile(
     r"(%|秒|分钟|小时|天|毫米|厘米|微米|千米|米|赫兹|分贝|摄氏度|℃|兆帕|MPa|"
     r"伏|安|瓦|帧|次|个|类|项|套|点|条|不低于|不高于|不大于|不小于|不超过|不少于)"
@@ -63,7 +69,7 @@ def find_label_row(rows: list[list[etree._Element]], prefix: str) -> tuple[list[
     return None
 
 
-def collect_rd_targets(root: etree._Element) -> dict[str, dict[str, object]]:
+def collect_rd_targets(root: etree._Element, *, require_field: bool = True) -> dict[str, dict[str, object]]:
     body = root.find(".//w:body", namespaces=NS)
     if body is None:
         raise ValueError("DOCX正文缺少w:body")
@@ -94,7 +100,7 @@ def collect_rd_targets(root: etree._Element) -> dict[str, dict[str, object]]:
         ):
             raise ValueError(f"{current_rd}表的领域、核心技术或阶段性成果数据单元格缺失")
         field = element_text(field_cells[field_index + 1]).strip()
-        if not field or "—" not in field:
+        if require_field and field != PENDING_FIELD and (not field or "—" not in field):
             raise ValueError(f"{current_rd}表头未填写完整四级领域：{field!r}")
         if current_rd in targets:
             raise ValueError(f"文档存在重复编号：{current_rd}")
@@ -102,6 +108,11 @@ def collect_rd_targets(root: etree._Element) -> dict[str, dict[str, object]]:
             "field": field,
             "core_cell": core_cells[core_index + 1],
             "result_cell": result_cells[result_index + 1],
+            "basic_cells": {
+                label: pair[0][pair[1] + 1]
+                for label in BASIC_LABELS
+                if (pair := find_label_row(rows, label)) and pair[1] + 1 < len(pair[0])
+            },
         }
     return targets
 
@@ -144,9 +155,12 @@ def format_technology(index: int, value: dict, rd_id: str) -> str:
         raise ValueError(f"{rd_id}.core_technologies[{index - 1}]必须为对象")
     name = require_string(value, "name", f"{rd_id}.core_technologies[{index - 1}]").rstrip("：:")
     description = require_string(value, "description", f"{rd_id}.core_technologies[{index - 1}]")
-    indicators = require_string(value, "indicators", f"{rd_id}.core_technologies[{index - 1}]")
     if not name.endswith("技术"):
         raise ValueError(f"{rd_id}第{index}条核心技术名称必须以“技术”结尾")
+    # 显式缺值写成待核定草稿，不能为满足数值检查而编造指标；正式核稿仍会报告缺口。
+    if "indicators" in value and value["indicators"] is None:
+        return f"{index}、{name}：{ensure_sentence(description)}{PENDING_INDICATOR}"
+    indicators = require_string(value, "indicators", f"{rd_id}.core_technologies[{index - 1}]")
     if not re.search(r"\d", indicators) or not UNIT_OR_BOUNDARY.search(indicators):
         raise ValueError(f"{rd_id}第{index}条核心技术指标必须包含数值以及单位或阈值边界")
     indicators = re.sub(r"^拟定技术指标(?:为|：|:)?", "", indicators).strip()
@@ -244,11 +258,14 @@ def replace_cell_content(cell: etree._Element, value: str) -> None:
 
 
 def verify_written_targets(root: etree._Element, expected: dict[str, dict[str, object]]) -> None:
-    actual = collect_rd_targets(root)
+    actual = collect_rd_targets(root, require_field=False)
     for rd_id, record in expected.items():
         target = actual.get(rd_id)
         if target is None:
             raise ValueError(f"写入后未找到目标RD表：{rd_id}")
+        for label, value in record.get("basic_fields", {}).items():
+            if xml_cell_text(target["basic_cells"][label]).strip() != value:
+                raise ValueError(f"{rd_id}的{label}写入后置校验失败")
         core_text = xml_cell_text(target["core_cell"]).strip()
         if core_text != str(record["core_value"]):
             raise ValueError(f"{rd_id}核心技术及创新点写入后置校验失败")
@@ -272,6 +289,30 @@ def xml_cell_text(cell: etree._Element) -> str:
                 parts.append("\t")
         paragraphs.append("".join(parts))
     return "\n".join(paragraphs)
+
+
+def prepare_basic_fields(item: dict, target: dict[str, object], rd_id: str) -> dict[str, str]:
+    fields = item.get("basic_fields", {})
+    if not isinstance(fields, dict):
+        raise ValueError(f"{rd_id}.basic_fields必须为对象")
+    result: dict[str, str] = {}
+    for label in fields:
+        if label not in BASIC_LABELS or label not in target["basic_cells"]:
+            raise ValueError(f"{rd_id}不支持或未找到基本字段：{label}")
+        value = require_string(fields, label, f"{rd_id}.basic_fields")
+        if label == "起止时间":
+            match = re.fullmatch(r"(\d{4})\.(\d{1,2})\.(\d{1,2})\s*-\s*(\d{4})\.(\d{1,2})\.(\d{1,2})", value)
+            if not match:
+                raise ValueError(f"{rd_id}起止时间须为YYYY.MM.DD-YYYY.MM.DD")
+            parts = [int(part) for part in match.groups()]
+            start, end = datetime(*parts[:3]), datetime(*parts[3:])
+            if start > end:
+                raise ValueError(f"{rd_id}起止时间倒置")
+            value = f"{start:%Y.%m.%d}-{end:%Y.%m.%d}"
+        if label == "目的及组织实施方式" and len(value) > 400:
+            raise ValueError(f"{rd_id}目的及组织实施方式超过400字上限")
+        result[label] = value
+    return result
 
 
 def parse_args() -> argparse.Namespace:
@@ -321,7 +362,7 @@ def main() -> None:
 
         with zipfile.ZipFile(input_path, "r") as source_zip:
             root = etree.fromstring(source_zip.read("word/document.xml"))
-            targets = collect_rd_targets(root)
+            targets = collect_rd_targets(root, require_field=False)
             seen: set[str] = set()
             formatted: dict[str, dict[str, object]] = {}
             all_text = []
@@ -334,7 +375,11 @@ def main() -> None:
                 if rd_id not in targets:
                     raise ValueError(f"文档中未找到目标RD表：{rd_id}")
                 seen.add(rd_id)
-                field = str(targets[rd_id]["field"])
+                target = targets[rd_id]
+                basic_fields = prepare_basic_fields(raw_item, target, rd_id)
+                field = basic_fields.get("技术领域", str(target["field"]))
+                if field != PENDING_FIELD and (not field or "—" not in field):
+                    raise ValueError(f"{rd_id}表头未填写完整四级领域：{field!r}")
                 core_value, body_length = format_item(raw_item, field, args.max_body_chars)
                 result_value, result_length = format_stage_results(raw_item, args.max_body_chars)
                 formatted[rd_id] = {
@@ -343,6 +388,7 @@ def main() -> None:
                     "core_value": core_value,
                     "result_value": result_value,
                     "result_length": result_length,
+                    "basic_fields": basic_fields,
                 }
                 all_text.append(core_value)
 
@@ -361,6 +407,9 @@ def main() -> None:
                 )
 
             for rd_id, record in formatted.items():
+                # 同一物理表内按标签定位，避免合并单元格展开和RD编号延续到后续非RD表。
+                for label, value in record["basic_fields"].items():
+                    replace_cell_content(targets[rd_id]["basic_cells"][label], value)
                 replace_cell_content(targets[rd_id]["core_cell"], str(record["core_value"]))
                 if record["result_value"] is not None:
                     replace_cell_content(targets[rd_id]["result_cell"], str(record["result_value"]))
@@ -396,7 +445,10 @@ def main() -> None:
         report_path = args.report.resolve() if args.report else output_path.with_suffix(output_path.suffix + ".audit.json")
         report = {
             "schema_version": 1,
-            "status": "pass",
+            "status": "draft" if any(
+                record["field"] == PENDING_FIELD or PENDING_INDICATOR in record["core_value"]
+                for record in formatted.values()
+            ) else "pass",
             "input": str(input_path),
             "spec": str(spec_path),
             "output": str(output_path),
@@ -420,6 +472,9 @@ def main() -> None:
                     "innovation_count": 2,
                     "stage_result_count": 4 if record["result_value"] is not None else 0,
                     "stage_result_length": record["result_length"],
+                    "basic_fields": record["basic_fields"],
+                    "pending_field": record["field"] == PENDING_FIELD,
+                    "pending_indicators": str(record["core_value"]).count(PENDING_INDICATOR),
                 }
                 for rd_id, record in formatted.items()
             },

@@ -9,16 +9,16 @@ description: 实验性第三方数据索引技能。将企策顾问等用户有�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "third-party-data-indexing" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 > 当前状态：实验性。默认不启用，不作为项目匹配或正式政策判断的必需依赖。
 
 启用前读取 `first-run-configuration` 生成的能力报告；浏览器能力未确认时回到统一向导，不单独保存或重复询问企策顾问登录信息。
+
+用户已提供离线数据时，直接使用现有索引引擎处理，不为入库先启动浏览器、联网或专业政策校验。只在实际采集或作正式政策判断时执行对应步骤。
 
 ## 执行边界
 
@@ -55,8 +55,9 @@ description: 实验性第三方数据索引技能。将企策顾问等用户有�
 
 ```bash
 python3 scripts/index_engine.py init
-python3 scripts/index_engine.py ingest --input <browser-export.jsonl> --source aiqice --collection-date 2026-07-13
+python3 scripts/index_engine.py ingest --input <browser-export.jsonl> --source aiqice
 python3 scripts/index_engine.py query --region 浙江省 --keyword 申报 --limit 20
+python3 scripts/index_engine.py query --year 2026 --include-inactive
 python3 scripts/index_engine.py status
 python3 scripts/index_engine.py export --format markdown
 python3 scripts/daily_update.py --open-browser
@@ -65,3 +66,7 @@ python3 scripts/daily_update.py --open-browser
 ## 数据规范
 
 字段、去重、版本和授权规则见 `references/index-schema.md`。企策顾问浏览器导出字段与本Skill字段一致，不包含认证信息。
+
+离线记录的 `id/year/version/status/source` 可直接导入，分别保留为源记录 ID、年度、源版本、申报状态和逐条来源。不要把 ID 伪造成网址，也不要把年度补成不存在的发布日期。`--source` 是整批采集来源的命名空间，重复导入同一来源时保持不变。按年度使用 `query --year`，不是标题关键词；检查失效记录时加 `--include-inactive`。若输入按 initial/update 分批，分别原样导出数组再依次导入，不改业务字段。
+
+采集日期默认由引擎读取当前系统日期。只有来源明确记载实际采集日或用户要求历史回填时才传 `--collection-date`；不能为 initial/update 自行编造两个历史日期。只读取指定输入和技能自身脚本说明，不借阅同目录中的旧任务结果作为输入或格式依据。

@@ -1,6 +1,6 @@
 ---
 name: experience-recorder
-description: 在客户项目分析、正式申报材料、复杂分析、重要规则变更、基础设施迁移或用户纠正完成后自动使用。从任务中提取可复用经验、失败原因和质量规则，执行四问复盘并形成候选经验记录。
+description: 在客户项目分析、正式申报材料、复杂分析、重要规则变更、基础设施迁移或用户纠正完成后使用。从任务中提取可复用经验、失败原因和质量规则，执行一次四问复盘并形成候选经验摘要；实际持久化须有对应授权。
 ---
 
 # 经验记录
@@ -9,11 +9,9 @@ description: 在客户项目分析、正式申报材料、复杂分析、重要�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "experience-recorder" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 只记录可泛化方法、验证依据和适用边界，不直接修改技能。禁止写入凭据、客户身份、敏感原文和未经验证的政策结论。
@@ -22,7 +20,7 @@ description: 在客户项目分析、正式申报材料、复杂分析、重要�
 
 ## 强制四问
 
-对适用任务，在最终对话中结合当前成果实际回答：
+对适用任务，在最终对话中结合当前成果实际回答。同一成果即使串联多个技能也只回答一组：
 
 1. 眼下最没有把握的事情是什么？
 2. 最大的遗漏是什么，还有什么没有意识到？
@@ -35,7 +33,7 @@ description: 在客户项目分析、正式申报材料、复杂分析、重要�
 
 ## 纠正信号
 
-用户纠正、回归失败或经复核确认的质量问题，使用 `scripts/record_correction.py` 写入本地JSONL。每条记录必须包含技能、稳定规则键、任务标识、脱敏摘要和核验状态；相同任务、技能、规则和摘要自动去重。规则键用于聚合同一问题，不得写客户名称、原文、凭据或专利及财务敏感数据。
+用户纠正、回归失败或经复核确认的质量问题，先形成本轮候选摘要。只有用户明确要求记录、记住或沉淀，或当前任务已经取得对应审计日志授权时，才使用 `scripts/record_correction.py` 写入本地JSONL；技能自动触发本身不构成授权。每条记录必须包含技能、稳定规则键、任务标识、脱敏摘要和核验状态；相同任务、技能、规则和摘要自动去重。规则键用于聚合同一问题，不得写客户名称、原文、凭据或专利及财务敏感数据。
 
 ```bash
 python3 scripts/record_correction.py \

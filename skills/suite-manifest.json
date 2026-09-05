@@ -9,55 +9,48 @@
   },
   "install_mode": "bundle-only",
   "release": {
-    "tag": "V1.6.16",
-    "version": "1.6.16",
-    "summary": "V1.6.16 完善绿色工厂自评价报告的版本识别、硬门槛、评分证据矩阵和指标一致性校验。",
+    "tag": "V1.6.17",
+    "version": "1.6.17",
+    "summary": "V1.6.17 完善任务指令、通用运行时、文档读取、专业交付有界收束和独立客户端同源技能投影。",
     "changes": [
-      "绿色工厂任务先建立项目层级、年度、导则、通知和模板版本卡；国家、省、市、区及零碳类项目不得混用规则。",
-      "基本要求和必选项未通过、待核或证据冲突时阻断推荐；评分同时区分确认分和条件分。",
-      "逐项评分绑定正文位置、原始分、权重、确认分、证据与附件编号，并校验单位、分母、统计期和跨表口径。",
-      "新增绿色工厂台账确定性校验器和脱敏回归，拦截无证据得分、非法档位、计算错误、单位漂移和违规推荐。",
-      "V1.6.16 继承 V1.6.15 的有限专业修正、企业数据源降级和全量模板发布门禁。"
+      "文档读取按真实内容类型处理常见 Word、Excel、演示文稿、WPS 兼容格式、PDF、ODF、RTF 和文本格式，并逐页报告 OCR 缺口。",
+      "专业交付校验最多自动修正一次；仍不满足时形成待完善、等待用户或失败终态，保留已有内容和可执行缺口，不再强制无限续跑。",
+      "修正高企研发文案回填、产业目录命中统计、双报告模板分页与字体嵌入，并补齐相应确定性测试。",
+      "首次配置改为读取当前运行时实际能力，不再要求安装特定第三方宿主，也不重复安装已有文档与联网能力。",
+      "任务沿用用户当前选择的模型与推理档位；既有授权范围内直接执行，高影响缺口只暂停依赖部分。",
+      "通用运行时按宿主提供的技能实际路径执行；签名与发布者指纹异常继续硬失败，辅助偏好异常只降级受影响能力。",
+      "自动记录、归档与持久化授权分离，未获授权时不写入长期记忆或用户资料目录。",
+      "通用签名包与独立客户端内嵌投影使用同一有效技能清单，技能数量由验签清单派生。",
+      "V1.6.17 继承 V1.6.16 的绿色工厂版本识别、硬门槛、评分证据矩阵和指标一致性校验。"
     ],
     "installation": {
-      "generic": "支持 SKILL.md 的 Agent 使用通用 Skills 包，导入 skills 目录后启动首次配置向导。",
-      "workbuddy": "V1.6.16 正式发布时同步提供 macOS 与 Windows 平台专用包；平台包只包含 Skills、最小行为 Hook 和远程知识服务配置，不携带用户凭据或本地 MCP。",
-      "non_workbuddy_manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
+      "generic": "支持 SKILL.md 的 Agent 使用签名通用 Skills 包；首次使用时按本轮实际能力执行最小配置。",
+      "first_party_client": "共创独立客户端内嵌同一验签技能投影，并由客户端连接管理处理外部服务。",
+      "manual_mcp": "其他兼容 Agent 从手工配置页复制已填入个人 Token 的完整远程 MCP 配置。",
       "verification": "确认套件清单声明的全部 Skills 可识别、本地与正式技能清单无未登记漂移、共创客户端生成专业候选与正式交付当前轮回执、Grounded 正式交付产生非空 validator_receipts，并完成真实文件结构验收。"
     },
     "compatibility": [
       {
         "target": "通用 Skills",
         "status": "正式发布",
-        "note": "继承 V1.6.9 全部正式能力；新增三档回答深度并继续执行结构、依赖、签名和安装门禁。"
-      },
-      {
-        "target": "macOS 平台专用包",
-        "status": "结构兼容，正式包待实机回执",
-        "note": "使用 Bash 适配器与共享 Python 状态核心，按完整技能识别、最小行为 Hook、远程知识服务和真实交付回执执行发布门禁。"
-      },
-      {
-        "target": "Windows 平台专用包",
-        "status": "结构兼容，正式包待实机回执",
-        "note": "仅包含固定 Go 工具链复构建的原生 EXE Hook，不携带 PowerShell、CMD、Python Hook 核心或用户凭据。"
+        "note": "继承 V1.6.16 正式能力；V1.6.17 通用签名包完成源码、模板、签名和隔离安装门禁。"
       },
       {
         "target": "共创独立客户端",
         "status": "发布门禁已定义，双端正式发布单独验收",
-        "note": "V0.4.0 当前采用 DeepSeek Harness dsh-v0.1.2-alpha.2 上游提交 0a53fb55bea101816fa226bb964ae2bed71c343b；后续客户端冻结前继续审计新版本。必须由签名宿主插件失败关闭执行完整 Hook 生命周期，并取得 macOS 双架构候选、服务器发布和真实安装回执。"
+        "note": "客户端按当前 DeepSeek Harness 基座演进；必须由签名宿主验证内嵌技能与运行时，并取得目标平台候选、服务器发布和真实安装回执。"
       }
     ],
     "distribution_protocol": {
       "generic_skill_package": "signed-universal-zip",
       "first_party_client": "bundled-signed-skill-suite",
-      "workbuddy_specific_package": true,
+      "platform_specific_package": false,
       "external_service_setup": "skills-center-install-and-connect",
       "success_gate": [
         "套件清单声明的全部 Skills 可识别并与签名索引一致",
-        "共创客户端只从已验签 V1.6.16 技能目录加载正式 Skills",
+        "共创客户端只从已验签 V1.6.17 技能目录加载本次候选 Skills",
         "专业任务必须激活命中技能、依赖技能和质量门禁技能",
         "外部 MCP 只有完成 OAuth 或令牌交换、tools/list 和健康调用后才显示已连接",
-        "macOS 与 Windows 平台包分别通过运行时隔离、完整技能覆盖和服务端发布合同门禁",
         "其他兼容 Agent 只下载同一通用 Skills 包并按标准 Streamable HTTP 配置 MCP"
       ]
     },
@@ -135,9 +128,7 @@
     "report-skill-registry.json",
     "skill-call-graph.json"
   ],
-  "generic_shared_paths": [
-    "_runtime/jiaotang-kb"
-  ],
+  "generic_shared_paths": [],
   "skill_call_graph": "skill-call-graph.json",
   "policy_freshness_manifest": "policy-freshness-manifest.json",
   "release_gates": [
@@ -288,54 +279,6 @@
         "{gate_output}"
       ],
       "timeout_seconds": 180
-    },
-    {
-      "name": "macos-platform-server-release-contract",
-      "command": [
-        "{python}",
-        "tests/validate_workbuddy_release_candidate.py",
-        "--suite-zip",
-        "{workbuddy_macos_archive}",
-        "--check",
-        "server-release-contract"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "name": "macos-platform-all-skill-coverage",
-      "command": [
-        "{python}",
-        "tests/validate_workbuddy_release_candidate.py",
-        "--suite-zip",
-        "{workbuddy_macos_archive}",
-        "--check",
-        "all-skill-coverage"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "name": "windows-platform-server-release-contract",
-      "command": [
-        "{python}",
-        "tests/validate_workbuddy_release_candidate.py",
-        "--suite-zip",
-        "{workbuddy_windows_archive}",
-        "--check",
-        "server-release-contract"
-      ],
-      "timeout_seconds": 120
-    },
-    {
-      "name": "windows-platform-all-skill-coverage",
-      "command": [
-        "{python}",
-        "tests/validate_workbuddy_release_candidate.py",
-        "--suite-zip",
-        "{workbuddy_windows_archive}",
-        "--check",
-        "all-skill-coverage"
-      ],
-      "timeout_seconds": 120
     }
   ],
   "dependencies": {
@@ -489,25 +432,6 @@
   "external_services": [
     "jiaotang-kb"
   ],
-  "workbuddy_plugin": {
-    "package_mode": "skills_minimal_behavior_hook",
-    "hook_mode": "behavior_only_fail_open",
-    "mcp_configuration_mode": "user_remote_streamable_http",
-    "release_matrix": {
-      "released": true,
-      "hosts": [
-        "macos",
-        "windows"
-      ],
-      "required_flow": [
-        "marketplace-add",
-        "plugin-install",
-        "plugin-enable",
-        "skill-trigger",
-        "user-remote-mcp-validation"
-      ]
-    }
-  },
   "ignored_reference_tokens": [
     "project-handoff",
     "application-evidence",

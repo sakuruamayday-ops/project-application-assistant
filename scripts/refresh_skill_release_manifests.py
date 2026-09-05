@@ -16,7 +16,6 @@ from pathlib import Path
 
 
 DEFAULT_MANAGER_ROOT = Path.home() / ".codex" / "skills" / "skill-release-manager"
-DEFAULT_POLICY_DIR = Path.home() / ".codex" / "skill-release-policies" / "workbuddy-current"
 DEFAULT_SIGNING_KEY = Path.home() / ".codex" / "skill-signing" / "jiaotang-skill-release-ed25519"
 DEFAULT_PUBLIC_KEY = DEFAULT_SIGNING_KEY.with_suffix(".pub")
 
@@ -36,7 +35,7 @@ def parse_args() -> argparse.Namespace:
         description="刷新通用 Skills 套件中每项技能的清单与 Ed25519 签名"
     )
     parser.add_argument("--skills-root", type=Path, required=True)
-    parser.add_argument("--policy-dir", type=Path, default=DEFAULT_POLICY_DIR)
+    parser.add_argument("--policy-dir", type=Path, required=True)
     parser.add_argument("--release-tag", required=True)
     parser.add_argument("--signing-key", type=Path, default=DEFAULT_SIGNING_KEY)
     parser.add_argument("--public-key", type=Path, default=DEFAULT_PUBLIC_KEY)

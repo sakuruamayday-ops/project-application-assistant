@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "evidence-ledger",
-  "release_tag": "V1.6.16",
+  "release_tag": "V1.6.17",
   "required_paths": [
     "SKILL.md",
     "references/evidence-ledger-schema.md",
@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "926656543b2d044dd9b4e6571acfa65c9fe4ccfdc11452f19b47f6ef4f2130d7",
+    "SKILL.md": "e4f098415d9a71e8cf4e8c425d0645a14bf6b9d9595300b26eedfb6ad7299fcf",
     "examples/market-share-enterprise-statement.json": "89f8fb5e4ace6da6cb161e42aae59f1fcdbfb476242eca5100e24459288588c5",
     "examples/normal-grounded-report.json": "be8690917cb784ce383873cd5f983bf75649902058549296e1e5d860ab26f1af",
     "examples/reference-only-market-share.json": "ccb30881e283f432b621502b597d44a5bf16ea09c3eb9358c0560191bd58755c",
@@ -31,9 +31,9 @@
     "references/evidence-ledger-schema.md": "59aeb732ceae21f02e4dc2a9dc8bb6ff19e3a052532b8ce5dc7bdcd5c8dab2fa",
     "references/grounded-output-policy.md": "61a5083499d391801cc4a770058d377d1948437340733993ce371281b8f5de40",
     "references/market-share-grounding-contract.md": "1509201ae1181670e4d90b52e3ed861d3d2c0b4c4ab7df98d901d13535b20b7f",
-    "references/portable-runtime-protocol.md": "389eeca0ff7313bcf43a5f1ff5e7cc30b8a709aa1b0cc2a667bae1d3bb344f7c",
-    "scripts/grounded_evidence.py": "db750917029f0e7d38b7616e77818a875401c134fd5c2619cfd22fb97392853b",
-    "scripts/portable_skill_runtime.py": "b8ad50b682166d05959f75e4f59bee8d106b3e4c372b8c7cbe121181fb4f611c",
+    "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
+    "scripts/grounded_evidence.py": "c5fdbdab52940b36b980cd26c3b46fb92e79c1a8043a1dec421ffbcd18fe025f",
+    "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_evidence_ledger.py": "0e6176da14db09528ec3654fd7e7078398840a4a7c835146e325b78d60ca5f46",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"
   },

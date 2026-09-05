@@ -8,7 +8,7 @@ import hashlib
 import json
 import zipfile
 from pathlib import Path
-from xml.etree import ElementTree as ET
+from lxml import etree as ET
 
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 NS = {"w": W}
@@ -45,13 +45,24 @@ def verify(source: Path, target: Path) -> dict[str, object]:
     ]
     text_equal = visible_text(source) == visible_text(target)
     comments_present = "word/comments.xml" in target_files
-    valid = not missing and not changed_assets and text_equal and comments_present
+    # ZIP 能解压、正文相同并不代表 Office 能打开；Ignorable 的前缀也必须有声明。
+    namespace_errors = []
+    with zipfile.ZipFile(target) as archive:
+        for name in ("word/document.xml", "word/comments.xml"):
+            if name not in target_files:
+                continue
+            root = ET.fromstring(archive.read(name))
+            for node in root.iter():
+                prefixes = node.get("{http://schemas.openxmlformats.org/markup-compatibility/2006}Ignorable", "").split()
+                namespace_errors.extend(f"{name}: {prefix}" for prefix in prefixes if prefix not in node.nsmap)
+    valid = not missing and not changed_assets and text_equal and comments_present and not namespace_errors
     return {
         "valid": valid,
         "text_equal": text_equal,
         "comments_present": comments_present,
         "missing_parts": missing,
         "changed_assets": changed_assets,
+        "unbound_namespace_prefixes": namespace_errors,
     }
 
 

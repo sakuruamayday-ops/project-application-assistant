@@ -9,14 +9,14 @@ description: 在用户本地工作区管理不同省市区县的政府项目规�
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
-!`python3 "${CODEBUDDY_SKILL_DIR}/scripts/portable_skill_runtime.py" prepare`
+每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在 `CODEBUDDY_SKILL_DIR`、`SKILL_DIR` 或其他特定宿主变量，也不得猜测路径。
 
-!`if [ -f "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" ]; then python3 "${CODEBUDDY_PLUGIN_ROOT}/scripts/workbuddy_preference_bridge.py" activate --plugin-root "${CODEBUDDY_PLUGIN_ROOT}" --session "${CODEBUDDY_SESSION_ID}" --skill "project-rule-manager" --skill-dir "${CODEBUDDY_SKILL_DIR}"; fi`
-
-每次触发先执行`prepare`并应用`active_preferences`；`fail`时停止，`limited`时按已具备能力降级。长期习惯只按协议写入，临时要求不持久化；偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
 
 将每位用户维护的规则保存到当前工作区 `project-rules/`，区分 `draft`、`candidate`、`verified`、`stale`、`superseded` 和 `withdrawn`。团队云端知识服务对普通成员保持只读；本地规则不会自动上传、共享或覆盖云端资料。
+
+录入、版本比较和本地候选检索直接使用用户指定的资料与目录；“检索候选”默认指该本地规则目录，不调用云端项目匹配或名单查询，不扫描其他项目来猜格式。用户明确要求联网核验时才进入官方来源核验；禁止联网的本地任务不做连接探测，不因缺少外部来源反复尝试接口。用户指定隔离目录时沿用本技能的子目录结构，不写默认正式规则库。
 
 ## 本地目录
 
@@ -37,6 +37,8 @@ project-rules/
 
 ## 规则
 
+新建结构化规则时使用 `scripts/local_rules.py create --input <提取的JSON> --output <新项目目录>`，输入含 `rules` 数组，每条有唯一 `id`、六值 `status`、来源及已知年度；其他字段按资料保留，未知日期为空。脚本在落盘前检查所有状态，只写一份 JSON 兼容 YAML 的 `rule.yaml`，审计时间取实际时钟，不再手写一份 `rules.json`。既有目录不会覆盖。用 `query --input <该脚本写出的rule.yaml> --status candidate --status verified --year <年度>` 实际检索，征求意见稿用 `--status draft` 另列；状态筛选不证明法律现行有效。原文复制到生成的 `sources/`，旧值与更正关系放 `versions/`；既有 YAML 不直接交给此新建脚本重写。
+
 1. 管理办法、实施细则、当期通知、公示名单和废止依据分别记录并建立关联。
 2. 每条门槛保留来源文件、官方URL、页码或原文位置；用户可以更换来源，但旧来源必须进入版本快照。
 3. 数字、日期、主管部门、适用地区和口径变化生成差异，不静默覆盖。
@@ -45,6 +47,10 @@ project-rules/
 6. 新文件替代旧文件时记录替代依据、旧文件状态和新旧规则差异。
 7. 正式项目判断优先读取用户当前地区的本地 `verified` 规则，再查询团队云端知识和政府官方来源；发生冲突时保留差异并以最新官方原文为准。
 8. 普通成员不得调用管理员上传接口，也不得通过本Skill修改团队云端知识库。
+
+状态只能使用上述六个值。`superseded` 标在已被替代的旧记录上；“新更正取代旧值”写入新旧关系字段，不另造 `supersedes` 状态。更正、附件与通知的年度或有效期只有原文明确说明，或已记录其适用关系时才继承；来源未给出的日期保留为空，不补成整年起止日。
+
+审计记录的操作时间必须由实际写入进程读取当前系统时间，不由模型编造或预填固定时刻。政策文件日期与操作时间分别存储；每条审计只描述本次确实执行的写入或查询。
 
 ## 地区配置
 
