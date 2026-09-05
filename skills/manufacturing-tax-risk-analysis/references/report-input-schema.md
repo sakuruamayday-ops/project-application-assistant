@@ -2,7 +2,7 @@
 
 ## 使用方法
 
-复制同目录的 `metrics-input.example.json` 和 `report-data.example.json`，用当前企业事实替换示例内容。先用确定性计算器生成共享事实与报告指标，再校验并生成报告：
+直接按本文字段表构建指标输入与 `report-data.json`，不要在首次运行前读取或复制同目录的示例文件。先用确定性计算器生成共享事实与报告指标，再校验并生成报告；只有生成器真实返回字段结构错误且错误信息不足时，才定向查看相关示例片段：
 
 ```bash
 python3 scripts/calculate_metrics.py metrics-input.json enterprise-financial-facts.v1.json \

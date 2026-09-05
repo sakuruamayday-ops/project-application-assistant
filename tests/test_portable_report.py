@@ -15,6 +15,12 @@ class PortableReportTests(unittest.TestCase):
         cls.tax = cls.skills / "manufacturing-tax-risk-analysis"
         cls.runtime = cls.skills / "_runtime" / "gongchuang-branding"
 
+    def test_runtime_guidance_does_not_make_the_full_example_a_prerequisite(self):
+        skill = (self.tax / "SKILL.md").read_text(encoding="utf-8")
+        schema = (self.tax / "references/report-input-schema.md").read_text(encoding="utf-8")
+        self.assertIn("首次生成不得读取或复制该示例", skill)
+        self.assertIn("不要在首次运行前读取或复制同目录的示例文件", schema)
+
     def generate_metrics(self, directory: Path) -> Path:
         facts = directory / "facts.json"
         metrics = directory / "metrics.json"

@@ -112,8 +112,7 @@ python3 scripts/calculate_metrics.py input.json artifacts/enterprise-financial-f
 
 关键数字必须给来源页码和计算公式。报告封面固定列示“完成人：共创知识产权”。
 
-按 [自动报告输入规范](references/report-input-schema.md) 准备 `report-data.json`，可参考
-[完整示例](references/report-data.example.json)，然后运行：
+按 [自动报告输入规范](references/report-input-schema.md) 直接准备 `report-data.json`，然后运行：
 
 ```bash
 python3 scripts/generate_report_html.py report-data.json report.html \
@@ -122,6 +121,8 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 
 生成器必须读取确定性指标文件，输出17个固定页面区块，并完成必填字段、字段长度、报告主体一致性和未解析占位符检查。财务总览、风险地图、90天整改路线、计算过程与来源四张表由生成器固定输出；跨年增速、研发费用率、资产负债表恒等式差额和无法计算原因直接来自指标文件，不能由模型省略或改写。
 不得用模型临时拼接的普通HTML替代该生成器。
+
+`references/report-data.example.json` 仅供测试与人工理解，不是运行前置资料。首次生成不得读取或复制该示例；字段规范已经足够时直接生成。只有生成器真实返回某个字段结构错误，且错误信息仍不足以修正时，才定向读取与该字段直接相关的示例片段，避免把整份示例反复带入上下文。
 
 ### 7. 生成金色顾问版 PDF
 
