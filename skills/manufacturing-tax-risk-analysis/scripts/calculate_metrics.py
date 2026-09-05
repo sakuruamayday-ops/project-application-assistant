@@ -306,9 +306,11 @@ def build_validation_values(financial_facts, metrics_summary):
             add(value)
             add(f"{value:.2f}")
             if name in PERCENTAGE_METRICS:
-                # 报告正文常把百分比概括为整数。整数形式也必须来自同一签名计算，
-                # 否则校验器会把 44.44% 写成 44% 时误判成未经复算的数字。
+                # 报告正文常把百分比概括为一位小数或整数。这些展示形式也必须
+                # 来自同一签名计算，避免 6.67% 写成 6.7%、44.44% 写成 44%
+                # 时被误判成未经复算的数字。
                 add(f"{value * 100:.2f}%")
+                add(f"{value * 100:.1f}%")
                 add(f"{value * 100:.0f}%")
             if name in {"free_cash_flow", "working_capital"}:
                 add_amount(value)
@@ -321,6 +323,7 @@ def build_validation_values(financial_facts, metrics_summary):
                     add(f"{value:.2f}")
                     if name in {"revenue_growth", "receivables_growth", "research_to_revenue"}:
                         add(f"{value * 100:.2f}%")
+                        add(f"{value * 100:.1f}%")
                         add(f"{value * 100:.0f}%")
                     elif name == "balance_equation_gap":
                         add_amount(value)
