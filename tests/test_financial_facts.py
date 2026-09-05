@@ -122,10 +122,16 @@ def test_calculator_emits_case_28_material_cross_period_findings(tmp_path):
     receipt = json.loads(run.stdout)
     assert receipt["schema_version"] == "manufacturing-tax-risk-calculation-operation/v1"
     assert "25.00%" in receipt["validation_values"]
+    assert "25%" in receipt["validation_values"]
+    assert "11.11%" in receipt["validation_values"]
+    assert "44%" in receipt["validation_values"]
     assert "1,800.00万元" in receipt["validation_values"]
     assert "18,000,000.00元" in receipt["validation_values"]
     metrics = json.loads(metrics_output.read_text(encoding="utf-8"))
     assert metrics["schema"] == "manufacturing-tax-risk-metrics/v1"
+    facts = json.loads(facts_output.read_text(encoding="utf-8"))
+    assert facts["periods"]["2023"]["metrics"]["receivables_to_revenue"] == 2 / 18
+    assert facts["periods"]["2025"]["metrics"]["receivables_to_revenue"] == 0.18
     report = {row["indicator"]: row["result"] for row in metrics["report_rows"]}
     assert report["2024年营业收入同比增长率"] == "33.33%"
     assert report["2025年营业收入同比增长率"] == "25.00%"

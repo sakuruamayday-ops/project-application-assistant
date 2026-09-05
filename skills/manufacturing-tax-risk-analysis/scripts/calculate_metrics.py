@@ -20,7 +20,7 @@ REQUIRED = {
 
 PERCENTAGE_METRICS = {
     "gross_margin", "net_margin", "debt_ratio", "roe", "roa",
-    "other_ar_to_assets", "other_ar_to_revenue", "advance_to_revenue",
+    "receivables_to_revenue", "other_ar_to_assets", "other_ar_to_revenue", "advance_to_revenue",
     "research_to_revenue", "cash_tax_payment_rate", "sales_cash_to_revenue",
     "ocf_to_profit",
 }
@@ -75,6 +75,7 @@ def calc(data):
         "roe": div(data["net_profit"], average_equity),
         "roa": div(data["net_profit"], average_assets),
         "ar_days": turnover_days(average_receivables, data["revenue"]),
+        "receivables_to_revenue": div(data["receivables"], data["revenue"]),
         "inventory_days": turnover_days(average_inventory, data["cost"]),
         "other_ar_to_assets": div(data["other_receivables"], data["assets"]),
         "other_ar_to_revenue": div(data["other_receivables"], data["revenue"]),
@@ -305,7 +306,10 @@ def build_validation_values(financial_facts, metrics_summary):
             add(value)
             add(f"{value:.2f}")
             if name in PERCENTAGE_METRICS:
+                # 报告正文常把百分比概括为整数。整数形式也必须来自同一签名计算，
+                # 否则校验器会把 44.44% 写成 44% 时误判成未经复算的数字。
                 add(f"{value * 100:.2f}%")
+                add(f"{value * 100:.0f}%")
             if name in {"free_cash_flow", "working_capital"}:
                 add_amount(value)
 
@@ -317,6 +321,7 @@ def build_validation_values(financial_facts, metrics_summary):
                     add(f"{value:.2f}")
                     if name in {"revenue_growth", "receivables_growth", "research_to_revenue"}:
                         add(f"{value * 100:.2f}%")
+                        add(f"{value * 100:.0f}%")
                     elif name == "balance_equation_gap":
                         add_amount(value)
         for row in metrics_summary["report_rows"]:
