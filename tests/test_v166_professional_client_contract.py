@@ -103,6 +103,18 @@ def test_client_runtime_registry_exposes_only_existing_first_party_scripts() -> 
     operations = registry["operations"]
     assert len(operations) >= 8
     assert len({operation["id"] for operation in operations}) == len(operations)
+    calculation = next(
+        operation
+        for operation in operations
+        if operation["id"] == "manufacturing-tax-risk-analysis.calculate-metrics"
+    )
+    assert calculation["stdout_json_schema_version"] == (
+        "manufacturing-tax-risk-calculation-operation/v1"
+    )
+    assert set(calculation["parameters"]) == {
+        "input", "financialFactsOutput", "metricsOutput"
+    }
+    assert calculation["sandbox_mode"] == "workspace-write"
     for operation in operations:
         skill = operation["skill"]
         script = operation["script"]

@@ -18,6 +18,13 @@ REQUIRED = {
     "research_expense", "interest_expense", "income_tax_expense",
 }
 
+PERCENTAGE_METRICS = {
+    "gross_margin", "net_margin", "debt_ratio", "roe", "roa",
+    "other_ar_to_assets", "other_ar_to_revenue", "advance_to_revenue",
+    "research_to_revenue", "cash_tax_payment_rate", "sales_cash_to_revenue",
+    "ocf_to_profit",
+}
+
 
 def div(numerator, denominator):
     if numerator is None or denominator in (None, 0):
@@ -262,6 +269,61 @@ def build_metrics_summary(financial_facts):
     }
 
 
+def build_validation_values(financial_facts, metrics_summary):
+    """Return deterministic display variants for Host-side evidence binding."""
+    values = []
+    seen = set()
+
+    def add(value):
+        text = str(value)
+        if text not in seen:
+            seen.add(text)
+            values.append(text)
+
+    def add_amount(value):
+        if value is None or isinstance(value, bool):
+            return
+        numeric = float(value)
+        unit = str(financial_facts["basis"].get("unit") or "").lower()
+        add(value)
+        add(f"{numeric:,.2f}")
+        if unit in {"yuan", "元", "cny"}:
+            add(f"{numeric:,.2f}元")
+            add(f"{numeric / 10000:,.2f}万元")
+        elif unit in {"wanyuan", "万元"}:
+            add(f"{numeric:,.2f}万元")
+            add(f"{numeric * 10000:,.2f}元")
+
+    for year, period in financial_facts["periods"].items():
+        add(year)
+        for value in period["facts"].values():
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                add_amount(value)
+        for name, value in period["metrics"].items():
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                continue
+            add(value)
+            add(f"{value:.2f}")
+            if name in PERCENTAGE_METRICS:
+                add(f"{value * 100:.2f}%")
+            if name in {"free_cash_flow", "working_capital"}:
+                add_amount(value)
+
+    if metrics_summary is not None:
+        for name, indicator in metrics_summary["indicators"].items():
+            for value in indicator["values"].values():
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    add(value)
+                    add(f"{value:.2f}")
+                    if name in {"revenue_growth", "receivables_growth", "research_to_revenue"}:
+                        add(f"{value * 100:.2f}%")
+                    elif name == "balance_equation_gap":
+                        add_amount(value)
+        for row in metrics_summary["report_rows"]:
+            add(row["result"])
+    return values
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input", type=Path)
@@ -310,15 +372,13 @@ def main():
             json.dumps(metrics_output, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-    print(
-        json.dumps(
-            {
-                "financial_facts": str(args.output),
-                "metrics": str(args.metrics_output) if args.metrics_output else None,
-            },
-            ensure_ascii=False,
-        )
-    )
+    print(json.dumps({
+        "schema_version": "manufacturing-tax-risk-calculation-operation/v1",
+        "financial_facts": str(args.output),
+        "metrics": str(args.metrics_output) if args.metrics_output else None,
+        # 这些值来自同一确定性计算过程，供客户端宿主直接绑定；模型不再逐页抄录数字。
+        "validation_values": build_validation_values(result, metrics_output),
+    }, ensure_ascii=False))
 
 
 if __name__ == "__main__":

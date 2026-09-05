@@ -106,7 +106,7 @@ def test_calculator_emits_case_28_material_cross_period_findings(tmp_path):
         ),
         encoding="utf-8",
     )
-    subprocess.run(
+    run = subprocess.run(
         [
             sys.executable,
             str(CALCULATOR),
@@ -116,7 +116,14 @@ def test_calculator_emits_case_28_material_cross_period_findings(tmp_path):
             str(metrics_output),
         ],
         check=True,
+        capture_output=True,
+        text=True,
     )
+    receipt = json.loads(run.stdout)
+    assert receipt["schema_version"] == "manufacturing-tax-risk-calculation-operation/v1"
+    assert "25.00%" in receipt["validation_values"]
+    assert "1,800.00万元" in receipt["validation_values"]
+    assert "18,000,000.00元" in receipt["validation_values"]
     metrics = json.loads(metrics_output.read_text(encoding="utf-8"))
     assert metrics["schema"] == "manufacturing-tax-risk-metrics/v1"
     report = {row["indicator"]: row["result"] for row in metrics["report_rows"]}

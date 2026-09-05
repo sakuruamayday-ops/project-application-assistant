@@ -3,6 +3,44 @@
   "skill_bundle_version": "1.6.18",
   "operations": [
     {
+      "id": "manufacturing-tax-risk-analysis.calculate-metrics",
+      "skill": "manufacturing-tax-risk-analysis",
+      "description": "从规范化财务 JSON 生成共享财务事实、确定性指标和可由宿主直接绑定的数字回执。",
+      "script": "manufacturing-tax-risk-analysis/scripts/calculate_metrics.py",
+      "files": [],
+      "sandbox_mode": "workspace-write",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 1048576,
+      "result_exit_codes": [0],
+      "passing_exit_codes": [0],
+      "stdout_json_schema_version": "manufacturing-tax-risk-calculation-operation/v1",
+      "parameters": {
+        "input": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".json"],
+          "max_bytes": 16777216
+        },
+        "financialFactsOutput": {
+          "type": "workspace-output-file",
+          "required": true,
+          "extensions": [".json"]
+        },
+        "metricsOutput": {
+          "type": "workspace-output-file",
+          "required": true,
+          "extensions": [".json"]
+        }
+      },
+      "argv": [
+        { "parameter": "input" },
+        { "parameter": "financialFactsOutput" },
+        { "literal": "--metrics-output" },
+        { "parameter": "metricsOutput" }
+      ]
+    },
+    {
       "id": "consistency-check.scan-formal-material",
       "skill": "consistency-check",
       "description": "扫描已提取正式正文中的括号和待核验占位符。",
