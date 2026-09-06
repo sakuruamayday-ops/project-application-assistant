@@ -90,6 +90,46 @@
       ]
     },
     {
+      "id": "evidence-ledger.apply-office-branding",
+      "skill": "evidence-ledger",
+      "description": "在正文与版式完成后，用已验签共享运行时为最终 DOCX 或 XLSX 写入统一品牌页眉和居中水印；必须在首次 artifact 校验前执行。",
+      "script": "evidence-ledger/scripts/apply_office_branding.py",
+      "files": [
+        "_runtime/gongchuang-branding/scripts/office_watermark.py",
+        "_runtime/gongchuang-branding/scripts/brand_config.py",
+        "_runtime/gongchuang-branding/scripts/delivery_gate.py",
+        "_runtime/gongchuang-branding/references/brand_config.json",
+        "_runtime/gongchuang-branding/assets/brand-gold-07.png",
+        "_runtime/gongchuang-branding/assets/brand-gold-10.png",
+        "_runtime/gongchuang-branding/assets/brand-gold-12.png",
+        "_runtime/gongchuang-branding/assets/brand-gold-16.png",
+        "_runtime/gongchuang-branding/assets/brand-red-07.png",
+        "_runtime/gongchuang-branding/assets/brand-red-10.png",
+        "_runtime/gongchuang-branding/assets/brand-red-12.png",
+        "_runtime/gongchuang-branding/assets/brand-red-16.png",
+        "_runtime/gongchuang-branding/assets/brand-white-10.png",
+        "_runtime/gongchuang-branding/assets/brand-white-16.png"
+      ],
+      "sandbox_mode": "workspace-write",
+      "network": "none",
+      "timeout_ms": 60000,
+      "max_output_bytes": 262144,
+      "result_exit_codes": [0],
+      "passing_exit_codes": [0],
+      "stdout_json_schema_version": "gongchuang-office-branding-operation/v1",
+      "parameters": {
+        "artifact": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [".docx", ".xlsx", ".xlsm"],
+          "max_bytes": 134217728
+        }
+      },
+      "argv": [
+        { "parameter": "artifact" }
+      ]
+    },
+    {
       "id": "high-tech-enterprise-application-drafting.audit-application",
       "skill": "high-tech-enterprise-application-drafting",
       "description": "审计高企申请书字体、研发活动和企业创新能力四栏证据边界。",

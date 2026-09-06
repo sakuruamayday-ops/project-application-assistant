@@ -115,6 +115,19 @@ def test_client_runtime_registry_exposes_only_existing_first_party_scripts() -> 
         "input", "financialFactsOutput", "metricsOutput"
     }
     assert calculation["sandbox_mode"] == "workspace-write"
+    branding = next(
+        operation
+        for operation in operations
+        if operation["id"] == "evidence-ledger.apply-office-branding"
+    )
+    assert branding["skill"] == "evidence-ledger"
+    assert branding["sandbox_mode"] == "workspace-write"
+    assert branding["stdout_json_schema_version"] == (
+        "gongchuang-office-branding-operation/v1"
+    )
+    assert branding["parameters"]["artifact"]["extensions"] == [
+        ".docx", ".xlsx", ".xlsm"
+    ]
     for operation in operations:
         skill = operation["skill"]
         script = operation["script"]

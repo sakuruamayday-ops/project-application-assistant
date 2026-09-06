@@ -65,6 +65,12 @@ python3 scripts/grounded_evidence.py validate-delivery <台账.json> <交付文�
 python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标准正文.docx> --profile standard-native --source-memo <标准数据来源说明.docx> --state-root <当前轮次行为状态目录>
 ```
 
+共创客户端生成正式 DOCX、XLSX 或 XLSM 时，正文与版式完成后、首次
+artifact 校验前，调用已验签操作 `evidence-ledger.apply-office-branding`，
+参数为 `{"artifact":"工作区内最终文件路径"}`。该操作在原文件上写入签名
+技能包的统一页眉与居中水印；执行后不得再修改文件。PPTX 继续使用对应生成
+技能声明的签名品牌流程，不把本 Office 操作错误套用于演示文稿。
+
 旧版数组或 JSONL 台账继续支持基础校验；新交付和市场占有率使用 `grounded-evidence/v1` 严格模式。校验失败不得进入正式写作。
 
 生成 Word、PDF、Excel 或 PowerPoint 后，按 `config/grounded-citations.json` 的 `artifact_validation` 分格式验收。PDF 必须逐页渲染并检查空白页和缺字；Excel 使用表格原生引擎逐表渲染；PowerPoint 逐页渲染；Word 在当前宿主存在可用渲染器时逐页渲染。缺少 Word 或中文字体时记录状态 pending-device-acceptance，禁止把文本提取成功写成视觉通过，也禁止用 PDF、Excel 或 PPT 的成功代替 Word 验收。
