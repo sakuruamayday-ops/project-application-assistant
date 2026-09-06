@@ -1478,6 +1478,7 @@ def test_v020_unsigned_windows_update_feed_is_hash_bound_and_disclosed(
         f"path: '{installer_name}'\n"
         f"sha512: {sha512}\n"
         "releaseDate: '2026-08-22T12:00:00.000Z'\n"
+        "releaseNotes: '# 更新说明\\n\\n- 修复附件卡\\n- 恢复模型刷新'\n"
     )
     (release_root / "latest.yml").write_text(manifest, encoding="utf-8")
 

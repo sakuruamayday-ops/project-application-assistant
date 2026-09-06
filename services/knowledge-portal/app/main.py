@@ -28,6 +28,7 @@ import urllib.error
 import urllib.request
 import zipfile
 import xml.etree.ElementTree as ET
+import yaml
 from base64 import b64decode, b64encode, urlsafe_b64decode, urlsafe_b64encode
 from copy import deepcopy
 from contextlib import asynccontextmanager, closing, contextmanager
@@ -20808,16 +20809,26 @@ def windows_desktop_update_response(asset_name: str):
         expected_sha512 = cached_sha512_file_base64(installer_path)
     except (OSError, UnicodeError, ValueError):
         raise HTTPException(status_code=503, detail="Windows 自动更新清单无效") from None
-    expected_pattern = re.compile(
-        rf"version: {re.escape(release_version)}\n"
-        rf"files:\n  - url: '{re.escape(installer_name)}'\n"
-        rf"    sha512: {re.escape(expected_sha512)}\n"
-        rf"    size: {installer_path.stat().st_size}\n"
-        rf"path: '{re.escape(installer_name)}'\n"
-        rf"sha512: {re.escape(expected_sha512)}\n"
-        r"releaseDate: '[^'\r\n]+'\n"
-    )
-    if expected_pattern.fullmatch(manifest_text) is None:
+    try:
+        manifest = yaml.safe_load(manifest_text)
+    except yaml.YAMLError:
+        raise HTTPException(status_code=503, detail="Windows 自动更新清单无效") from None
+    files = manifest.get("files") if isinstance(manifest, dict) else None
+    file_entry = files[0] if isinstance(files, list) and len(files) == 1 else None
+    release_notes = manifest.get("releaseNotes") if isinstance(manifest, dict) else None
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("version") != release_version
+        or manifest.get("path") != installer_name
+        or manifest.get("sha512") != expected_sha512
+        or not isinstance(manifest.get("releaseDate"), str)
+        or not manifest["releaseDate"].strip()
+        or (release_notes is not None and not isinstance(release_notes, str))
+        or not isinstance(file_entry, dict)
+        or file_entry.get("url") != installer_name
+        or file_entry.get("sha512") != expected_sha512
+        or file_entry.get("size") != installer_path.stat().st_size
+    ):
         raise HTTPException(status_code=503, detail="Windows 自动更新清单与正式安装包不一致")
     return FileResponse(
         path=canonical_manifest,
