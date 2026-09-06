@@ -24,6 +24,8 @@ class PortableReportTests(unittest.TestCase):
         self.assertIn("KPI 卡片不超过4项", schema)
         self.assertIn("不得自行计算三年复合增长率", schema)
         self.assertIn("不得把各年净利润相加后写成累计净利润", schema)
+        self.assertIn("不要先用不确定的相对路径试错", skill)
+        self.assertIn("不得只写“完成”“已完成”“通过”“达标”“待完成”", schema)
 
     def generate_metrics(self, directory: Path) -> Path:
         facts = directory / "facts.json"
@@ -190,6 +192,37 @@ class PortableReportTests(unittest.TestCase):
                     )
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn(expected, result.stderr)
+
+    def test_generator_rejects_generic_roadmap_completion_statuses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            metrics = self.generate_metrics(directory_path)
+            example = json.loads(
+                (self.tax / "references/report-data.example.json").read_text(encoding="utf-8")
+            )
+            for index, status in enumerate(("完成", "已完成", "通过", "达标", "待完成")):
+                with self.subTest(status=status):
+                    candidate = json.loads(json.dumps(example, ensure_ascii=False))
+                    candidate["roadmap"][0]["completion"] = status
+                    input_path = directory_path / f"generic-completion-{index}.json"
+                    input_path.write_text(json.dumps(candidate, ensure_ascii=False), encoding="utf-8")
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            str(self.tax / "scripts/generate_report_html.py"),
+                            str(input_path),
+                            "--validate-only",
+                            "--metrics-json",
+                            str(metrics),
+                        ],
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(
+                        "roadmap completion must describe a verifiable outcome",
+                        result.stderr,
+                    )
 
     def test_optional_kpi_note_and_empty_supplemental_calculations_are_valid(self):
         with tempfile.TemporaryDirectory() as directory:

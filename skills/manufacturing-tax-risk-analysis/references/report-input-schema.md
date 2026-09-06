@@ -33,7 +33,7 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 | financial_overview | object | years、kpis、rows、conclusion；kpis 最多4项，KPI 必填 label、value，可选 note；每行含 name、values、source_pages、formula |
 | sections | object | 固定9个专题 |
 | risks | array | 风险地图 |
-| roadmap | array | 30、60、90天阶段；每项含 period、actions、owner、completion |
+| roadmap | array | 30、60、90天阶段；每项含 period、actions、owner、completion；completion 必须写可核验的完成条件，不是当前执行状态 |
 | p0_documents | array | 高优先补充资料 |
 | calculations | array | 可为空；仅填写确定性指标文件尚未覆盖的补充计算，每项含 indicator、formula、result、source |
 | policies | array | 本轮已核验的现行官方政策；每项含非空 name、issuer、date、官方直达 url。无法取得官方原文时必须为空数组，生成器自动输出明确标注的草稿 |
@@ -60,6 +60,8 @@ python3 scripts/generate_report_html.py report-data.json report.html \
 每个专题必须包含 `conclusion`、`facts` 和 `actions`。可选 `title` 与 `table`。`facts` 每项使用 `title`、`text`、`source`；表格使用 `headers` 和 `rows`。
 
 `actions` 是字符串数组，例如 `["补齐期后回款凭证", "逐笔复核关联往来"]`。整改责任岗位写入 `roadmap[*].owner`，不要把动作改成对象数组。
+
+`roadmap[*].completion` 必须描述验收结果，例如“P0资料齐备并形成签收清单”或“差异清单逐项闭合并由负责人复核”。不得只写“完成”“已完成”“通过”“达标”“待完成”等状态词；报告生成时整改尚未执行，不能把建议动作误标成已完成。
 
 为保证固定17页不溢出：执行判断不超过5项；KPI 卡片不超过4项；总览指标行不超过8行；每个专题事实不超过4项、动作不超过6项、专题表格不超过8行；风险地图不超过8项；计算不超过10项；政策不超过5项；月度指标不超过5项。十四项风险闸门都要检查，但报告只汇总最重要的8项风险链。
 

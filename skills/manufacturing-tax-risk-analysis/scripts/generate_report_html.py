@@ -22,6 +22,16 @@ SECTION_KEYS = [
     ("accrual_revenue", "12", "暂估预提与收入"),
 ]
 METRICS_SCHEMA = "manufacturing-tax-risk-metrics/v1"
+GENERIC_COMPLETION_VALUES = {
+    "完成",
+    "已完成",
+    "完成整改",
+    "通过",
+    "已通过",
+    "达标",
+    "已达标",
+    "待完成",
+}
 
 
 def esc(value: Any) -> str:
@@ -208,6 +218,13 @@ def validate(data: dict[str, Any], metrics: dict[str, Any]) -> None:
             raise ValueError(f"root.roadmap[{i}] must be an object")
         for key in ("period", "owner", "completion"):
             require_text_field(stage, key, f"root.roadmap[{i}]")
+        # completion 是可核验的验收条件，不是执行状态。禁止把“完成”等
+        # 空泛状态写进报告，避免尚未执行的整改被误读为已经完成。
+        completion = stage["completion"].strip()
+        if completion in GENERIC_COMPLETION_VALUES:
+            raise ValueError(
+                f"roadmap completion must describe a verifiable outcome: root.roadmap[{i}].completion"
+            )
         if "goal" in stage:
             require_text(stage["goal"], f"root.roadmap[{i}].goal")
         validate_text_list(require_list(stage, "actions", f"root.roadmap[{i}]"), f"root.roadmap[{i}].actions")
