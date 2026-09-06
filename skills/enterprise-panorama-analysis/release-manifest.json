@@ -66,11 +66,11 @@
     "references/version-b-advisory.md": "ea98600154b4f9a23b87c82d3e9282c5ddc270e7451685979a05034dc4e26f92",
     "references/visual-style.md": "c3073df7901da7b34e1ffc4f1379640de7222038a3f7bb3f0142a42694c8a05b",
     "scripts/brand_config.py": "4e1fa2150982fceaa87914a6b6249231a27210e1fcf8cea7cc311f591e25dc01",
-    "scripts/pdf_two_pass.py": "1aeec6aee8f42939c11cd0d388f012c8897c5ce9b0244c7e4c9ae94a8118bdb7",
+    "scripts/pdf_two_pass.py": "8c9669d92c1dd7ac52c2fa5b99e3ac6a243e0aed45a9d27d424e01c5ab68da79",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/render_html_report.py": "9840ec65f521add8d2b1760952bad1e660dcd34d045d0c7e5f77a8d3342f55ea",
     "scripts/render_pdf_bytes.js": "c3c9e9d27e9a3489c5c42e1c0e4d0cbf832585ec7f70f9a66a955040241c5885",
-    "scripts/render_sales_pdf.py": "2607d7ac866cf4d66535b31da319b3ddba2b8f40438c55af8009279416083a8e",
+    "scripts/render_sales_pdf.py": "038f6a62c1e56a40243a28dcbbf81474022ea64f029233fb7deda087717f72fd",
     "scripts/score_public_evidence.py": "a2e366691ad308c5085915850f8170930efec5b1e6cf3c2aedc9c656da9bb15a",
     "scripts/validate_report_pdf.py": "302e4b9c2bb85b90a66b74a7d6acdd86a365a3b6618f4553cfa60c2a3d8c6f4c",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

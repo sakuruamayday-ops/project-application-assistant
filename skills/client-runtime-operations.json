@@ -90,6 +90,37 @@
       ]
     },
     {
+      "id": "evidence-ledger.create-docx",
+      "skill": "evidence-ledger",
+      "description": "当主技能没有专用模板或生成器时，将已通过 chat 专业预校验的完整正文一次写成新的原生 DOCX。",
+      "script": "evidence-ledger/scripts/create_docx_from_text.py",
+      "files": [],
+      "sandbox_mode": "workspace-write",
+      "network": "none",
+      "timeout_ms": 60000,
+      "max_output_bytes": 262144,
+      "result_exit_codes": [0],
+      "passing_exit_codes": [0],
+      "stdout_json_schema_version": "gongchuang-docx-generation-operation/v1",
+      "parameters": {
+        "content": {
+          "type": "text",
+          "required": true,
+          "min_length": 1,
+          "max_length": 8192
+        },
+        "output": {
+          "type": "workspace-output-file",
+          "required": true,
+          "extensions": [".docx"]
+        }
+      },
+      "argv": [
+        { "parameter": "content" },
+        { "parameter": "output" }
+      ]
+    },
+    {
       "id": "evidence-ledger.apply-office-branding",
       "skill": "evidence-ledger",
       "description": "在正文与版式完成后，用已验签共享运行时为最终 DOCX 或 XLSX 写入统一品牌页眉和居中水印；必须在首次 artifact 校验前执行。",

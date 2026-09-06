@@ -23,6 +23,9 @@ def run(path: Path) -> dict[str, object]:
         capture_output=True,
         text=True,
     )
+    # 签名运行时要求 stdout 只有一个 JSON 对象。依赖库警告若混入 stdout，
+    # 即使文件已修改也必须在发布前失败，避免客户端误以为品牌操作未执行。
+    assert completed.stdout.count("\n") == 1
     return json.loads(completed.stdout)
 
 

@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-import fitz
+import pymupdf as fitz
 
 from brand_config import choose_style, load_config, public_identity, relative_luminance
 

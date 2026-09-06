@@ -42,7 +42,7 @@
     "references/report-spec.md": "dfce58f8ef1ef29732fbbbbb177c495826d672847766588d46d3ca1ecf0e0477",
     "references/risk-gates.md": "c0b3f606cfc5eb38d98320dfbb7c73df4f0bbad6de6561bcb4b428c1669d5123",
     "references/tax-calculation-and-freshness-protocol.md": "6c77b6a8119aa0e0bd33c1985ac247450ce46fe2807f31ddaa5b152bcdde1c87",
-    "scripts/brand_gold_pdf.py": "8aafe383b7def791a6e690c055aac8e5a9e0bc5519cff19f55de78a6f5d5fff8",
+    "scripts/brand_gold_pdf.py": "5084b6787289ecaeb71d1483a90a52cd82ee61df34c27c021cd4a810d4b9b299",
     "scripts/calculate_metrics.py": "45bd80abacebb50c5f0b71486a63545eae1351c2dac06e9afd17e2e7ac6103f5",
     "scripts/generate_report_html.py": "900d368030cfa2ef262fff4b5bb1c9016f0f1ef9909c3ee9b9795fc9d0327f83",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

@@ -128,6 +128,18 @@ def test_client_runtime_registry_exposes_only_existing_first_party_scripts() -> 
     assert branding["parameters"]["artifact"]["extensions"] == [
         ".docx", ".xlsx", ".xlsm"
     ]
+    generation = next(
+        operation
+        for operation in operations
+        if operation["id"] == "evidence-ledger.create-docx"
+    )
+    assert generation["skill"] == "evidence-ledger"
+    assert generation["sandbox_mode"] == "workspace-write"
+    assert generation["stdout_json_schema_version"] == (
+        "gongchuang-docx-generation-operation/v1"
+    )
+    assert generation["parameters"]["content"]["max_length"] == 8192
+    assert generation["parameters"]["output"]["extensions"] == [".docx"]
     for operation in operations:
         skill = operation["skill"]
         script = operation["script"]

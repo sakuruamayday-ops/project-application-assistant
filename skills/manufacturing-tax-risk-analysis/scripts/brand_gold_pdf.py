@@ -8,7 +8,7 @@ import json
 import sys
 from pathlib import Path
 
-import fitz
+import pymupdf as fitz
 
 SKILLS_ROOT = Path(__file__).resolve().parents[2]
 BRANDING_SCRIPTS = SKILLS_ROOT / "_runtime" / "gongchuang-branding" / "scripts"

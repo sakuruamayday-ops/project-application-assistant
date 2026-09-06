@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
 
-import fitz
+import pymupdf as fitz
 
 from brand_config import public_identity
 

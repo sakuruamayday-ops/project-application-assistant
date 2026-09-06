@@ -4,7 +4,7 @@
 import argparse
 from pathlib import Path
 
-import fitz
+import pymupdf as fitz
 
 from render_html_report import render_pdf_bytes
 
