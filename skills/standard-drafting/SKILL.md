@@ -73,7 +73,7 @@ description: 按现行GB/T 1.1及适用的专项起草规则完成国家标准�
 
 ### 4. 起草正文
 
-优先使用[标准草案模板](assets/standard-draft-template.md)，按确认后的文件类型删改章节。
+优先使用[标准草案模板](assets/standard-draft-template.md)，按确认后的文件类型删改章节。作为自动审查输入的 Markdown 草案，章、条标题必须从首次写入起使用 `#` 至 `######` 标题语法，不得只用加粗文字模拟标题；这样同一份正文可以直接进入审查和后续成品生成，无需因标题无法识别而整篇重写。
 
 正文至少检查：
 
@@ -108,7 +108,7 @@ description: 按现行GB/T 1.1及适用的专项起草规则完成国家标准�
 python3 skills/standard-drafting/scripts/audit_standard_draft.py 标准草案.md
 ```
 
-客户端内调用已签名操作 `standard-drafting.audit-draft`，参数严格使用 `{"draft":"<工作区内标准草案.md>"}`。只把同一份待交付标准的 Markdown 正文作为输入，不创建探针草案、不猜测参数，也不预读审查脚本；其他宿主使用上面的命令。
+客户端内调用已签名操作 `standard-drafting.audit-draft`，参数严格使用 `{"draft":"<工作区内标准草案.md>"}`。只把同一份待交付标准的 Markdown 正文作为输入，不创建探针草案、不猜测参数，也不预读审查脚本；调用前确认章、条标题已经使用 Markdown `#` 标题语法，不能以加粗文字替代；其他宿主使用上面的命令。
 
 自动检查只用于发现结构、措辞和映射风险，不替代标准化技术组织、归口单位或专家审查。
 

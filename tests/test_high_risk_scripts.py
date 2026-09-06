@@ -127,6 +127,8 @@ def test_standard_skill_names_the_signed_audit_operation() -> None:
 
     assert 'standard-drafting.audit-draft' in skill_text
     assert '{"draft":"<工作区内标准草案.md>"}' in skill_text
+    assert "标题必须从首次写入起使用 `#` 至 `######` 标题语法" in skill_text
+    assert "不得只用加粗文字模拟标题" in skill_text
     assert operation["parameters"] == {
         "draft": {
             "type": "workspace-input-file",
