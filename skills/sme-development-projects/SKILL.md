@@ -63,4 +63,34 @@ description: 分析创新型中小企业、专精特新中小企业、专精特�
 
 不得把审中专利视为有效授权成果。财务、市场份额、客户、领先地位和进口替代等信息没有可靠来源时，不推算、不补造，只列证据缺口。不得把“全球前三或国内第一”写成专精特新和小巨人的通用门槛；2026年小巨人新申请按当期申请书的占有率或排名条件执行，且不要求另行提交第三方市场占有率证明。
 
-结构化诊断完成后运行 `python3 scripts/validate_sme_assessment.py <结果.json>`，检查版本确认、政策状态、四项判断和证据状态。验证失败时不得交付正式结论。
+结构化诊断只构造一次 JSON，再校验一次；不得创建探针文件、猜测枚举、运行 `--help`、列目录或预读校验脚本来试探输入格式。JSON 必须完整包含以下字段：
+
+```json
+{
+  "application_context": {
+    "project_level": "specialized-sme",
+    "region": "浙江省",
+    "year": 2026,
+    "application_type": "new",
+    "form_version": "2026",
+    "version_status": "confirmed",
+    "policy_status": "current"
+  },
+  "overall_conclusion": "conditional",
+  "four_judgments": {
+    "leading_product": {"decision": "retain", "evidence_state": "claimed", "object": "对象", "reason": "理由", "actions": ["行动"]},
+    "bottleneck": {"decision": "retain-after-evidence", "evidence_state": "missing", "object": "对象", "reason": "理由", "actions": ["行动"]},
+    "gap_filling": {"decision": "replace", "evidence_state": "conflicting", "object": "对象", "reason": "理由", "actions": ["行动"]},
+    "import_substitution": {"decision": "retain", "evidence_state": "computed", "object": "对象", "reason": "理由", "actions": ["行动"]}
+  },
+  "hard_gates": [],
+  "evaluation": {"quality_score": {"status": "pending-platform-evaluation", "value": null}},
+  "evidence_gaps": [],
+  "risks": [],
+  "actions": []
+}
+```
+
+`overall_conclusion` 只允许 `eligible`、`conditional`、`ineligible`、`undetermined`；`decision` 只允许 `retain`、`replace`、`retain-after-evidence`；`evidence_state` 只允许 `verified`、`computed`、`claimed`、`missing`、`conflicting`。平台质量分已经取得可验证来源时使用 `{"status":"verified-platform-score","value":0至100的数值,"source":"来源"}`；否则固定使用示例中的待评价对象，且总体结论不得为 `eligible`。
+
+客户端内将 JSON 写入用户指定工作区后，调用已签名操作 `sme-development-projects.validate-assessment`，参数为 `{"assessment":"<工作区内结果.json>"}`。其他宿主运行 `python3 scripts/validate_sme_assessment.py <结果.json>`。校验失败时只按返回的完整错误清单修正一次；仍失败则保留已完成内容并明确标注未通过，不得继续循环，也不得交付正式结论。

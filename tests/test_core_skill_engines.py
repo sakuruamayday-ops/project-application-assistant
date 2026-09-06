@@ -288,6 +288,54 @@ def test_sme_validator_requires_all_four_judgments(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def test_sme_skill_documents_the_signed_validator_contract():
+    skill_text = (
+        SKILLS / "sme-development-projects" / "SKILL.md"
+    ).read_text(encoding="utf-8")
+    operation_registry = json.loads(
+        (SKILLS / "client-runtime-operations.json").read_text(encoding="utf-8")
+    )
+    operation = next(
+        item
+        for item in operation_registry["operations"]
+        if item["id"] == "sme-development-projects.validate-assessment"
+    )
+
+    assert '"assessment":"<工作区内结果.json>"' in skill_text
+    assert "一次构造、一次调用" in operation["description"]
+    assert "不得创建探针文件" in skill_text
+    for token in (
+        "application_context",
+        "overall_conclusion",
+        "four_judgments",
+        "leading_product",
+        "bottleneck",
+        "gap_filling",
+        "import_substitution",
+        "hard_gates",
+        "evaluation",
+        "quality_score",
+        "evidence_gaps",
+        "risks",
+        "actions",
+        "eligible",
+        "conditional",
+        "ineligible",
+        "undetermined",
+        "retain",
+        "replace",
+        "retain-after-evidence",
+        "verified",
+        "computed",
+        "claimed",
+        "missing",
+        "conflicting",
+        "verified-platform-score",
+        "pending-platform-evaluation",
+    ):
+        assert token in skill_text
+
+
 def test_sme_validator_rejects_legacy_estimated_score(tmp_path):
     item = {
         "decision": "retain",

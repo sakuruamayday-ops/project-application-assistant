@@ -437,6 +437,7 @@
     "client-dossier",
     "filing-ready",
     "needs-user-input",
+    "retain-after-evidence",
     "verified-platform-score",
     "pending-platform-evaluation"
   ]

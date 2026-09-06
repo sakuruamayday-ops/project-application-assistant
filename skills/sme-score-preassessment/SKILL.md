@@ -45,6 +45,10 @@ python3 <本技能实际目录>/scripts/preflight.py \
   --application-type "新申报"
 ```
 
+客户端内优先调用已签名操作 `sme-score-preassessment.run-preflight`，参数严格使用 `{"taskType":"quality-preassessment","projectLevel":"省级专精特新中小企业","applicationType":"新申报"}`；小巨人或复核任务只替换为清单允许的对应值。不得先读取脚本源码、猜测参数或创建探针文件。其他宿主使用上面的命令。
+
+`schema_version`、`policy_version`、`rule_branch` 和 `rule_id` 是机器执行元数据，不写入客户报告。报告中的政策口径使用现行政策名称、文号、适用年度、项目层级和申请类型自然表述；确需引用已签名 preflight 的确定性输出时，用一条 `status=calculated` 证据按准确操作 ID 绑定，不手抄返回数字。
+
 - 项目层级和申请类型必须来自本轮材料。缺失会改变规则时，只提出一次最小确认并暂停结论。
 - 新申报按 2026 新办法执行。省级质量分门槛为 50 分，小巨人质量分门槛为 60 分。
 - 2026 年小巨人复核属于 2026 当期通知明确的过渡分支，只能在当期复核任务中使用；不得把该分支扩展到新申报或未来年度。

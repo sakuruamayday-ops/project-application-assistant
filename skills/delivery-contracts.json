@@ -555,17 +555,13 @@
       "critical_requirements": ["required-sections", "required-tables", "artifact-format", "source-trace", "evidence-ledger", "policy-selection-trace"],
       "advisory_requirements": ["four-question-review"],
       "required_sections": [
-        "项目与政策版本",
-        "总体结论",
-        "平台质量分状态",
-        "数据冲突与证据缺口",
-        "优先行动"
+        "总结结论",
+        "项目申报路径图",
+        "补短板主导产品与专利",
+        "财务情况分析"
       ],
       "required_tables": [
-        {"id": "硬门槛表", "required_columns": ["规则", "企业值", "证据状态", "结论", "来源"], "min_rows": 1},
-        {"id": "2026质量评价输入清单", "required_columns": ["输入项", "企业值", "证据状态", "缺口动作"], "min_rows": 1},
-        {"id": "平台质量分状态", "required_columns": ["状态", "分值", "来源", "门槛比较"], "min_rows": 1},
-        {"id": "四项独立判断", "required_columns": ["判断项", "对象", "结论", "依据", "动作"], "min_rows": 4}
+        {"id": "项目申报路径图", "required_columns": ["申报项目", "建议年度", "核心申报条件", "企业现有值", "差距状态", "下一步"], "min_rows": 1}
       ],
       "required_artifacts": [],
       "branding_contracts": []
@@ -587,7 +583,7 @@
         "四项独立判断",
         "证据缺口",
         "风险",
-        "行动清单"
+        "整改行动表"
       ],
       "required_tables": [
         {
@@ -851,16 +847,10 @@
       "query_marker_groups": [],
       "analysis_marker_groups": [],
       "required_marker_groups": [
-        ["项目层级", "省级专精特新", "专精特新小巨人"],
-        ["申请类型", "新申报", "复核"],
-        ["2026政策", "政策版本"],
-        ["硬门槛表"],
-        ["2026质量评价输入清单"],
-        ["平台质量分状态", "待平台评价"],
-        ["四项独立判断"],
-        ["证据来源", "证据状态"],
-        ["数据冲突", "证据缺口"],
-        ["优先行动"]
+        ["总结结论"],
+        ["项目申报路径图"],
+        ["补短板主导产品与专利"],
+        ["财务情况分析"]
       ]
     },
     "sme-development-projects": {

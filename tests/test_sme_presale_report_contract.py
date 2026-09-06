@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -25,6 +26,43 @@ def test_sme_preassessment_uses_four_part_presale_report() -> None:
     )
     for phrase in required:
         assert phrase in skill or phrase in contract
+
+
+def test_signed_delivery_profile_matches_the_four_part_report_contract() -> None:
+    contracts = json.loads(
+        (ROOT / "skills" / "delivery-contracts.json").read_text(encoding="utf-8")
+    )
+    profile = contracts["delivery_profiles"]["sme-score-preassessment-workbook"]
+    assert profile["required_sections"] == [
+        "总结结论",
+        "项目申报路径图",
+        "补短板主导产品与专利",
+        "财务情况分析",
+    ]
+    assert profile["required_tables"] == [
+        {
+            "id": "项目申报路径图",
+            "required_columns": [
+                "申报项目",
+                "建议年度",
+                "核心申报条件",
+                "企业现有值",
+                "差距状态",
+                "下一步",
+            ],
+            "min_rows": 1,
+        }
+    ]
+
+    markers = contracts["skills"]["sme-score-preassessment"][
+        "required_marker_groups"
+    ]
+    assert markers == [
+        ["总结结论"],
+        ["项目申报路径图"],
+        ["补短板主导产品与专利"],
+        ["财务情况分析"],
+    ]
 
 
 def test_visible_project_path_is_compact_but_complete() -> None:
@@ -84,3 +122,10 @@ def test_completed_application_routes_to_late_stage_checkup() -> None:
     assert "已经形成完整申请书" in skill
     assert "改用 `sme-development-projects`" in skill
     assert "不适用本简版结构" in skill
+
+
+def test_internal_preflight_metadata_is_not_customer_report_copy() -> None:
+    skill = read(SKILL_DIR / "SKILL.md")
+    assert "`policy_version`" in skill
+    assert "机器执行元数据，不写入客户报告" in skill
+    assert "status=calculated" in skill

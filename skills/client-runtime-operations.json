@@ -244,7 +244,7 @@
     {
       "id": "sme-development-projects.validate-assessment",
       "skill": "sme-development-projects",
-      "description": "校验优质中小企业诊断版本、政策状态、四项判断和平台质量分。",
+      "description": "校验优质中小企业诊断版本、政策状态、四项判断和平台质量分。assessment 必须直接使用技能文档给出的完整 JSON 结构和枚举；一次构造、一次调用，不得创建探针文件或猜测枚举。",
       "script": "sme-development-projects/scripts/validate_sme_assessment.py",
       "files": [],
       "sandbox_mode": "read-only",
@@ -263,6 +263,44 @@
       },
       "argv": [
         { "parameter": "assessment" }
+      ]
+    },
+    {
+      "id": "sme-score-preassessment.run-preflight",
+      "skill": "sme-score-preassessment",
+      "description": "按 2026 政策基线执行专精特新前期预评估遗漏扫描。参数必须来自本轮材料；返回 needs-user-input 时只向用户提出一次 blocking_question。",
+      "script": "sme-score-preassessment/scripts/preflight.py",
+      "files": ["sme-score-preassessment/references/current-policy-baseline-2026.json"],
+      "sandbox_mode": "read-only",
+      "network": "none",
+      "timeout_ms": 30000,
+      "max_output_bytes": 262144,
+      "result_exit_codes": [0, 2],
+      "passing_exit_codes": [0],
+      "parameters": {
+        "taskType": {
+          "type": "enum",
+          "required": true,
+          "values": ["quality-preassessment", "gate-only", "explanation"]
+        },
+        "projectLevel": {
+          "type": "enum",
+          "required": true,
+          "values": ["省级专精特新中小企业", "专精特新“小巨人”"]
+        },
+        "applicationType": {
+          "type": "enum",
+          "required": true,
+          "values": ["新申报", "复核"]
+        }
+      },
+      "argv": [
+        { "literal": "--task-type" },
+        { "parameter": "taskType" },
+        { "literal": "--project-level" },
+        { "parameter": "projectLevel" },
+        { "literal": "--application-type" },
+        { "parameter": "applicationType" }
       ]
     },
     {

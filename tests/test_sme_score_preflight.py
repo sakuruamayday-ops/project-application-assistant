@@ -126,9 +126,31 @@ def test_skill_baseline_matches_confirmed_project_rule_sources():
 
 def test_skill_contract_requires_preflight_and_current_baseline():
     skill_text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    operation_registry = json.loads(
+        (ROOT / "skills/client-runtime-operations.json").read_text(encoding="utf-8")
+    )
+    operation = next(
+        item
+        for item in operation_registry["operations"]
+        if item["id"] == "sme-score-preassessment.run-preflight"
+    )
 
     assert "scripts/preflight.py" in skill_text
     assert "python3 <本技能实际目录>/scripts/preflight.py" in skill_text
+    assert "sme-score-preassessment.run-preflight" in skill_text
+    assert operation["parameters"]["taskType"]["values"] == [
+        "quality-preassessment",
+        "gate-only",
+        "explanation",
+    ]
+    assert operation["parameters"]["projectLevel"]["values"] == [
+        "省级专精特新中小企业",
+        "专精特新“小巨人”",
+    ]
+    assert operation["parameters"]["applicationType"]["values"] == [
+        "新申报",
+        "复核",
+    ]
     assert "--task-type quality-preassessment" in skill_text
     assert "current-policy-baseline-2026.md" in skill_text
     assert "省级质量分门槛为 50 分" in skill_text

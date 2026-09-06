@@ -108,6 +108,8 @@ description: 按现行GB/T 1.1及适用的专项起草规则完成国家标准�
 python3 skills/standard-drafting/scripts/audit_standard_draft.py 标准草案.md
 ```
 
+客户端内调用已签名操作 `standard-drafting.audit-draft`，参数严格使用 `{"draft":"<工作区内标准草案.md>"}`。只把同一份待交付标准的 Markdown 正文作为输入，不创建探针草案、不猜测参数，也不预读审查脚本；其他宿主使用上面的命令。
+
 自动检查只用于发现结构、措辞和映射风险，不替代标准化技术组织、归口单位或专家审查。
 
 ### 7. 交付

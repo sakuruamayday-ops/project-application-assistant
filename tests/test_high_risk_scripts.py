@@ -110,3 +110,28 @@ GB/T 1.1
 """
     codes = {item["code"] for item in auditor.audit(invalid)["findings"]}
     assert {"missing-section", "must-wording", "missing-verification"} <= codes
+
+
+def test_standard_skill_names_the_signed_audit_operation() -> None:
+    skill_text = (
+        ROOT / "skills/standard-drafting/SKILL.md"
+    ).read_text(encoding="utf-8")
+    operation_registry = json.loads(
+        (ROOT / "skills/client-runtime-operations.json").read_text(encoding="utf-8")
+    )
+    operation = next(
+        item
+        for item in operation_registry["operations"]
+        if item["id"] == "standard-drafting.audit-draft"
+    )
+
+    assert 'standard-drafting.audit-draft' in skill_text
+    assert '{"draft":"<工作区内标准草案.md>"}' in skill_text
+    assert operation["parameters"] == {
+        "draft": {
+            "type": "workspace-input-file",
+            "required": True,
+            "extensions": [".md"],
+            "max_bytes": 16777216,
+        }
+    }

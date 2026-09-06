@@ -62,6 +62,19 @@ def test_hightech_drafting_has_a_machine_readable_consistency_gate() -> None:
     ) in relations
 
 
+def test_sme_chat_and_artifact_contracts_share_the_same_action_heading() -> None:
+    contract = load("delivery-contracts.json")
+    skill = contract["skills"]["sme-development-projects"]
+    profile = contract["delivery_profiles"]["sme-application-checkup-report"]
+
+    # chat 预检和文件画像曾分别要求“整改行动表”与“行动清单”，
+    # 导致正文预检通过后才在 DOCX 阶段失败。源合同必须共用标题。
+    action_heading = profile["required_sections"][-1]
+    assert action_heading == "整改行动表"
+    assert [action_heading] in skill["required_marker_groups"]
+    assert action_heading in {table["id"] for table in profile["required_tables"]}
+
+
 def test_natural_language_routes_and_finite_enterprise_source_fallback() -> None:
     contract = load("delivery-contracts.json")
     rules = contract["skills"]

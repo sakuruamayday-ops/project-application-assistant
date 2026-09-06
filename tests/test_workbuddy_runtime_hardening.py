@@ -1178,7 +1178,7 @@ class WorkBuddyRuntimeHardeningTests(unittest.TestCase):
             ),
             "sme-score-preassessment": (
                 "请生成专精特新前期预评估报告。",
-                ("2026质量评价输入清单", "平台质量分状态", "四项独立判断"),
+                ("项目申报路径图", "补短板主导产品与专利", "财务情况分析"),
             ),
             "sme-development-projects": (
                 "请生成专精特新后期体检报告。",
