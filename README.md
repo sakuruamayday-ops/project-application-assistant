@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/releases/V1.6.17.md"><img src="https://img.shields.io/badge/Release-V1.6.17-C9A760?style=for-the-badge" alt="Release V1.6.17"></a>
+  <a href="docs/releases/V1.6.18.md"><img src="https://img.shields.io/badge/Release-V1.6.18-C9A760?style=for-the-badge" alt="Release V1.6.18"></a>
   <a href="skills/suite-manifest.json"><img src="https://img.shields.io/badge/Skills-Suite%20Manifest-17181A?style=for-the-badge" alt="Skills Suite Manifest"></a>
   <a href="https://zshjiaotang.cn/"><img src="https://img.shields.io/badge/Portal-Co--Creation%20Institute-8A6A2F?style=for-the-badge" alt="共创研究院门户"></a>
 </p>
@@ -51,7 +51,7 @@
 | 支持完整 Skills 目录的 Agent | 通用 Skills | 按宿主的 Skill 导入流程加载完整目录 |
 | 其他支持 Streamable HTTP MCP 的 Agent | 通用 Skills 加远程 MCP | Skills 中心下载通用包，并从「安装与连接」复制标准配置 |
 
-V1.6.17 正式发布任务指令、宿主中立运行时、文档读取、专业交付有界收束和独立客户端同源技能投影；客户端与技能包继续分别版本化、分别验收。
+V1.6.18 在 V1.6.17 基础上对齐财税报告生成、确定性计算与专业交付契约，增加通用原生 DOCX 生成通道，并继续保留文档读取、专业交付有界收束和独立客户端同源技能投影；客户端与技能包仍分别版本化、分别验收。
 
 ### 当前版本功能简介
 
@@ -140,6 +140,7 @@ V1.6.17 正式发布任务指令、宿主中立运行时、文档读取、专业
 | 文档 | 用途 |
 |---|---|
 | [API 与 MCP 配置](docs/user-guide/api-mcp-configuration.md) | 团队知识服务、个人Token和远程MCP边界 |
+| [V1.6.18 功能简介](docs/releases/V1.6.18.md) | 财税报告契约、确定性计算、通用原生 DOCX 生成与全量模板验收 |
 | [V1.6.17 功能简介](docs/releases/V1.6.17.md) | 任务指令、宿主中立运行时、文档读取与专业交付有界收束 |
 | [V1.6.16 功能简介](docs/releases/V1.6.16.md) | 绿色工厂版本门禁、评分证据矩阵与确定性校验 |
 | [V1.6.15 功能简介](docs/releases/V1.6.15.md) | 有限专业校验、企业数据源有限降级与每次含模板发布的全量模板检查 |
@@ -165,8 +166,8 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q tests
 
 | 层级 | 当前值 | 说明 |
 |---|---|---|
-| 产品标签 | `V1.6.17` | 当前正式技能版本；GitHub、受控门户和本机活动技能按同一签名事务同步 |
-| 组件版本 | `1.6.17` | 套件与 Python 组件版本；独立客户端另行版本化与验收 |
+| 产品标签 | `V1.6.18` | 当前正式技能版本；GitHub、受控门户和本机活动技能按同一签名事务同步 |
+| 组件版本 | `1.6.18` | 套件与 Python 组件版本；独立客户端另行版本化与验收 |
 | 数据规则版本 | 独立命名 | 例如 `policy-cluster-v1.0.0`，不代表产品版本 |
 
 ## 使用边界
