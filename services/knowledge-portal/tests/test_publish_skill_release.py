@@ -620,6 +620,7 @@ def test_selective_stage_and_promote_workbuddy_only(tmp_path: Path) -> None:
         database,
         release_dir,
         "1.3.1.1",
+        "WorkBuddy hotfix formal",
     )
     assert promoted["release_state"] == "published"
     assert (
@@ -630,6 +631,12 @@ def test_selective_stage_and_promote_workbuddy_only(tmp_path: Path) -> None:
         assert connection.execute(
             "SELECT target FROM skill_release_artifacts"
         ).fetchall() == [("workbuddy",)]
+        assert connection.execute(
+            "SELECT release_notes FROM skill_releases WHERE version='1.3.1.1'"
+        ).fetchone() == ("WorkBuddy hotfix formal",)
+        assert connection.execute(
+            "SELECT release_notes FROM skill_release_stages WHERE version='1.3.1.1'"
+        ).fetchone() == ("WorkBuddy hotfix formal",)
 
 
 def test_selective_stage_rejects_unpaired_platform_package(tmp_path: Path) -> None:

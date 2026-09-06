@@ -2037,6 +2037,7 @@ def promote_selective(
     database_path: Path,
     release_directory: Path,
     version: str,
+    release_notes: str | None = None,
 ) -> dict[str, object]:
     with sqlite3.connect(database_path) as connection:
         connection.row_factory = sqlite3.Row
@@ -2070,15 +2071,31 @@ def promote_selective(
         target = str(row["target"])
         path = Path(str(row["file_path"]))
         packages[target] = path
+    normalized_release_notes = (
+        release_notes.strip() if release_notes is not None else ""
+    )
+    if release_notes is not None and not normalized_release_notes:
+        raise RuntimeError("正式公开发布说明不得为空")
     result = publish_selective(
         database_path,
         release_directory,
         packages,
         version,
-        str(staged["release_notes"]),
+        normalized_release_notes or str(staged["release_notes"]),
         allow_platform_hotfix=set(packages) == {"windows"},
         share_immutable=True,
     )
+    if normalized_release_notes:
+        with sqlite3.connect(database_path) as connection:
+            connection.execute(
+                "UPDATE skill_release_stages SET release_notes=? WHERE version=?",
+                (normalized_release_notes, version),
+            )
+            connection.execute(
+                "UPDATE skill_releases SET release_notes=? WHERE version=?",
+                (normalized_release_notes, version),
+            )
+            connection.commit()
     if str(staged["status"]) == "published":
         return {
             **result,
@@ -2695,10 +2712,13 @@ def main() -> None:
             verification["manifest"],
             staged_artifacts,
         )
+        if arguments.release_notes_file is None:
+            parser.error("promote必须提供正式公开发布说明")
         result = promote_selective(
             arguments.database,
             arguments.release_dir,
             arguments.version,
+            arguments.release_notes_file.read_text(encoding="utf-8"),
         )
         with sqlite3.connect(arguments.database) as connection:
             connection.row_factory = sqlite3.Row

@@ -229,6 +229,25 @@ def test_release_action_blocks_one_step_and_requires_exact_confirmation() -> Non
     ) == "promote"
 
 
+def test_public_release_notes_reject_candidate_only_state(tmp_path: Path) -> None:
+    public_notes = tmp_path / "public.md"
+    public_notes.write_text(
+        "# V1.6.18 候选说明\n\n完成发布事务前，正式版本仍为 V1.6.17。\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="仍含候选状态文案"):
+        MODULE.validate_public_release_notes(public_notes, "V1.6.18")
+
+    public_notes.write_text(
+        "# V1.6.18 发布说明\n\n本版本修复公开发布说明的一致性。\n",
+        encoding="utf-8",
+    )
+    assert MODULE.validate_public_release_notes(public_notes, "V1.6.18") == (
+        public_notes.resolve()
+    )
+
+
 def test_promote_cannot_create_a_missing_prerelease(tmp_path, monkeypatch) -> None:
     asset = tmp_path / "asset.zip"
     notes = tmp_path / "notes.md"

@@ -43,6 +43,13 @@ DEFAULT_LOCAL_RELEASE_SYNC_SCRIPT = Path(
 DEFAULT_CLIENT_SKILL_UPDATE_URL = (
     "https://zshjiaotang.cn/skill-updates/latest.json"
 )
+STALE_PUBLIC_RELEASE_NOTE_MARKERS = (
+    "候选说明",
+    "当前仅用于",
+    "完成发布事务前",
+    "正式版本仍为",
+    "才可将本文件状态改为正式发布",
+)
 
 
 def recoverable_workspace_path(prefix: str) -> Path:
@@ -711,6 +718,25 @@ def validate_inputs(
     }
 
 
+def validate_public_release_notes(notes: Path, tag: str) -> Path:
+    """Reject public notes that describe a release as an unfinished candidate."""
+    resolved = notes.resolve()
+    if not resolved.is_file():
+        raise RuntimeError("公开发布说明不存在")
+    content = resolved.read_text(encoding="utf-8").strip()
+    if not content or tag not in content:
+        raise RuntimeError("公开发布说明为空或版本不一致")
+    stale_markers = [
+        marker for marker in STALE_PUBLIC_RELEASE_NOTE_MARKERS if marker in content
+    ]
+    if stale_markers:
+        raise RuntimeError(
+            "公开发布说明仍含候选状态文案："
+            + "、".join(stale_markers)
+        )
+    return resolved
+
+
 def validate_clean_default_branch(repository: str) -> str:
     git_root = ["git", "-C", str(ROOT)]
     configured_root = run(
@@ -1079,6 +1105,7 @@ def stage_portal(
 
 def promote_portal(
     version: str,
+    notes: Path,
     *,
     transaction_files: list[Path],
     credential_file: Path,
@@ -1096,6 +1123,7 @@ def promote_portal(
             deploy_key,
             "-o",
             "IdentitiesOnly=yes",
+            str(notes),
             *(str(path) for path in transaction_files),
             f"{deploy_host}:{remote_stage}/",
         ]
@@ -1108,6 +1136,7 @@ def promote_portal(
         f"--database \"$JIAOTANG_DATA_DIR/knowledge.db\" "
         f"--release-dir \"$JIAOTANG_SKILL_RELEASE_DIR\" "
         f"--version {shlex.quote(version)} "
+        f"--release-notes-file {shlex.quote(f'{remote_stage}/{notes.name}')} "
         f"--transaction-manifest "
         f"{shlex.quote(f'{remote_stage}/{transaction_files[0].name}')} "
         f"--transaction-signature "
@@ -1182,6 +1211,7 @@ def verify_public_client_skill_update(
     manifest_url: str,
     version: str,
     expected_archive_sha256: str,
+    expected_release_notes: str,
 ) -> dict[str, object]:
     """Read the public feed and validate the exact downloaded desktop archive."""
     manifest = json.loads(
@@ -1205,8 +1235,11 @@ def verify_public_client_skill_update(
         or manifest.get("skillBundleVersion") != version
         or manifest.get("sourceReleaseTag") != f"V{version}"
         or not isinstance(manifest.get("archiveUrl"), str)
+        or manifest.get("releaseNotes") != expected_release_notes
     ):
-        raise RuntimeError("公网客户端技能更新清单未回读到本次版本")
+        raise RuntimeError(
+            "公网客户端技能更新清单的版本或公开说明不一致"
+        )
     archive_url = urljoin(manifest_url, str(manifest["archiveUrl"]))
     manifest_origin = urlparse(manifest_url)
     archive_origin = urlparse(archive_url)
@@ -1335,6 +1368,14 @@ def main() -> None:
     )
     parser.add_argument("--gate-report", type=Path)
     parser.add_argument("--release-notes", type=Path)
+    parser.add_argument(
+        "--public-release-notes",
+        type=Path,
+        help=(
+            "面向 GitHub、门户和客户端更新源的状态中立说明；"
+            "不得包含仅在候选阶段成立的措辞"
+        ),
+    )
     parser.add_argument(
         "--repository",
         default="sakuruamayday-ops/project-application-assistant",
@@ -1502,8 +1543,15 @@ def main() -> None:
         parser.error("macOS与Windows WorkBuddy包必须同一事务成对发布")
     if platform_targets and "workbuddy" in packages:
         parser.error("分平台WorkBuddy包不得与旧统一包混合发布")
-    if arguments.gate_report is None or arguments.release_notes is None:
-        parser.error("发布预检、暂存和提升必须提供门禁报告与发布说明")
+    if (
+        arguments.gate_report is None
+        or arguments.release_notes is None
+        or arguments.public_release_notes is None
+    ):
+        parser.error(
+            "发布预检、暂存和提升必须提供门禁报告、"
+            "内部发布说明与公开发布说明"
+        )
     gate_report = arguments.gate_report.resolve()
     release_notes = arguments.release_notes.resolve()
     commit = validate_clean_default_branch(arguments.repository)
@@ -1515,6 +1563,10 @@ def main() -> None:
         release_notes,
         commit,
         arguments.platform_hotfix,
+    )
+    public_release_notes = validate_public_release_notes(
+        arguments.public_release_notes,
+        str(validation["tag"]),
     )
     client_update_package = (
         arguments.client_update_package.resolve()
@@ -1684,7 +1736,7 @@ def main() -> None:
                     arguments.repository,
                     str(validation["tag"]),
                     commit,
-                    release_notes,
+                    public_release_notes,
                     all_assets,
                     product_name=str(validation["product_name"]),
                 )
@@ -1701,7 +1753,7 @@ def main() -> None:
                 portal_result = stage_portal(
                     str(validation["short_version"]),
                     packages,
-                    release_notes,
+                    public_release_notes,
                     commit,
                     release_url,
                     transaction_files=transaction_files,
@@ -1734,7 +1786,7 @@ def main() -> None:
                 arguments.repository,
                 str(validation["tag"]),
                 commit,
-                release_notes,
+                public_release_notes,
                 all_assets,
                 product_name=str(validation["product_name"]),
                 create_if_missing=False,
@@ -1805,6 +1857,7 @@ def main() -> None:
                 )
             portal_result = promote_portal(
                 str(validation["short_version"]),
+                public_release_notes,
                 transaction_files=transaction_files,
                 credential_file=credential_path,
                 lease_ttl_seconds=arguments.lease_ttl_seconds,
@@ -1819,6 +1872,8 @@ def main() -> None:
                     arguments.repository,
                     "--prerelease=false",
                     "--latest",
+                    "--notes-file",
+                    str(public_release_notes),
                 ]
             )
             github_published = True
@@ -1843,7 +1898,7 @@ def main() -> None:
                 published_update = publish_client_skill_update(
                     str(validation["short_version"]),
                     client_update_package,
-                    release_notes,
+                    public_release_notes,
                     transaction_files=transaction_files,
                 )
                 public_readback = verify_public_client_skill_update(
@@ -1852,6 +1907,9 @@ def main() -> None:
                     expected_archive_sha256=str(
                         client_update_validation["archive_sha256"]
                     ),
+                    expected_release_notes=public_release_notes.read_text(
+                        encoding="utf-8"
+                    ).strip(),
                 )
                 client_update_result = {
                     "publication": published_update,
