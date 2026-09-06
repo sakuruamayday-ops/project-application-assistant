@@ -35,13 +35,13 @@
     "references/market-share-grounding-contract.md": "1509201ae1181670e4d90b52e3ed861d3d2c0b4c4ab7df98d901d13535b20b7f",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/apply_office_branding.py": "aafd61dd9fc476af60510b5fa5bcdafe6b50cfac15d96aaf59935f954695a364",
-    "scripts/create_docx_from_text.py": "7b8ba09bcc807c770ac576037d59739960b67b7457226111e76face815fd3a52",
+    "scripts/create_docx_from_text.py": "ee7ff2e3fd9f8761cf11572508854a547d68bca9f11a43b538a3cea61fe95bc4",
     "scripts/grounded_evidence.py": "c5fdbdab52940b36b980cd26c3b46fb92e79c1a8043a1dec421ffbcd18fe025f",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_evidence_ledger.py": "0e6176da14db09528ec3654fd7e7078398840a4a7c835146e325b78d60ca5f46",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
     "tests/test_apply_office_branding.py": "7173caa598a50a266f2f9c896611fe21b1ff4bed4db4b2fdcdc93022996c4863",
-    "tests/test_create_docx_from_text.py": "f8c4b2d11053529741b28aaf8ff74efa993ea2cca85f2cf225f117b8fad69285"
+    "tests/test_create_docx_from_text.py": "19c0162e5cdcc16de70aefeff1d7ba4a1fc3a6c2b880f8142bd67b14d9ec5c3e"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

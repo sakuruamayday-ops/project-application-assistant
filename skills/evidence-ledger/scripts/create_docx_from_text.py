@@ -32,14 +32,29 @@ def set_run_font(run, *, size: float, bold: bool = False) -> None:
 
 def configure_document(document: Document) -> None:
     section = document.sections[0]
-    section.top_margin = Cm(2.54)
-    section.bottom_margin = Cm(2.54)
-    section.left_margin = Cm(3.0)
-    section.right_margin = Cm(3.0)
+    # 兜底生成器面对的通常是三页以内的清单或短报告。这里固定为紧凑但仍
+    # 可读的 A4 版式，避免正文内容合格却因默认 Word 留白和段距多出一页。
+    section.top_margin = Cm(2.0)
+    section.bottom_margin = Cm(2.0)
+    section.left_margin = Cm(2.2)
+    section.right_margin = Cm(2.2)
     normal = document.styles["Normal"]
     normal.font.name = "Arial"
     normal._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
-    normal.font.size = Pt(11)
+    normal.font.size = Pt(10.5)
+    normal.paragraph_format.space_before = Pt(0)
+    normal.paragraph_format.space_after = Pt(3)
+    normal.paragraph_format.line_spacing = 1.25
+
+    for style_name, size in (("Title", 16), ("Heading 1", 15), ("Heading 2", 12.5), ("Heading 3", 11.5)):
+        style = document.styles[style_name]
+        style.font.name = "Arial"
+        style._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
+        style.font.size = Pt(size)
+        style.paragraph_format.space_before = Pt(6)
+        style.paragraph_format.space_after = Pt(3)
+        style.paragraph_format.line_spacing = 1.0
+        style.paragraph_format.keep_with_next = True
 
 
 def table_cells(line: str) -> list[str]:
@@ -61,9 +76,12 @@ def add_table(document: Document, lines: list[str]) -> None:
     for row_index, row in enumerate(rows):
         for column_index in range(width):
             paragraph = table.cell(row_index, column_index).paragraphs[0]
+            paragraph.paragraph_format.space_before = Pt(0)
+            paragraph.paragraph_format.space_after = Pt(0)
+            paragraph.paragraph_format.line_spacing = 1.0
             value = row[column_index] if column_index < len(row) else ""
             run = paragraph.add_run(value)
-            set_run_font(run, size=10.5, bold=row_index == 0)
+            set_run_font(run, size=9.5, bold=row_index == 0)
 
 
 def add_paragraph(document: Document, line: str, *, first_content: bool) -> None:
@@ -71,22 +89,28 @@ def add_paragraph(document: Document, line: str, *, first_content: bool) -> None
     if heading:
         level = min(len(heading.group(1)), 3)
         paragraph = document.add_heading(level=level)
+        if level == 1:
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = paragraph.add_run(heading.group(2).strip())
-        set_run_font(run, size={1: 16, 2: 14, 3: 12}[level], bold=True)
+        set_run_font(run, size={1: 15, 2: 12.5, 3: 11.5}[level], bold=True)
         return
 
     numbered = NUMBERED_HEADING.match(line)
     if first_content or numbered:
         paragraph = document.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER if first_content else WD_ALIGN_PARAGRAPH.LEFT
+        paragraph.paragraph_format.space_before = Pt(6)
+        paragraph.paragraph_format.space_after = Pt(3)
+        paragraph.paragraph_format.line_spacing = 1.0
+        paragraph.paragraph_format.keep_with_next = True
         run = paragraph.add_run(line.strip())
-        set_run_font(run, size=18 if first_content else 14, bold=True)
+        set_run_font(run, size=16 if first_content else 12.5, bold=True)
         return
 
     listed = LIST_ITEM.match(line)
     paragraph = document.add_paragraph()
-    paragraph.paragraph_format.line_spacing = 1.5
-    paragraph.paragraph_format.space_after = Pt(6)
+    paragraph.paragraph_format.line_spacing = 1.25
+    paragraph.paragraph_format.space_after = Pt(3)
     if listed:
         paragraph.paragraph_format.left_indent = Cm(0.74)
         text = listed.group(1).strip()
@@ -96,7 +120,7 @@ def add_paragraph(document: Document, line: str, *, first_content: bool) -> None
         text = line.strip()
         prefix = ""
     run = paragraph.add_run(prefix + text)
-    set_run_font(run, size=11)
+    set_run_font(run, size=10.5)
 
 
 def build_document(content: str, output: Path) -> dict[str, object]:
