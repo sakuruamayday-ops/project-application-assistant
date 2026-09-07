@@ -1,6 +1,6 @@
 # 门户防误重启补丁
 
-状态：用户已授权继续发布，49 项定向测试通过；正式部署待完成。
+状态：正式部署与线上验收完成，源提交 `10fc5afc6ab9da78f3941a5a6f82048e264c414c`。
 
 ## 范围
 
@@ -8,7 +8,7 @@ REQ-25：聚合健康检查包含磁盘、证书、索引巡检等运维状态�
 
 恢复器在原有重启判断前读取本机 readyz，并确认服务处于运行状态、数据库及知识索引就绪。就绪成功只将恢复状态记为 success，清零连续失败计数，不删除运维告警；就绪失败继续原有两次连续失败、窗口内最多三次重启与冷却流程。未修改磁盘失败阈值、证书检查、报警服务、签名、权限或部署回滚。
 
-这不是放宽服务正确性检查：readyz 必須明确返回 status=ok、portal_database=true、knowledge_index=true；缺失字段、非 JSON、HTTP 失败或服务停止均不能跳过原恢复流程。没有新建监控定时器。
+这不是放宽服务正确性检查：readyz 必须明确返回 status=ok、portal_database=true、knowledge_index=true；缺失字段、非 JSON、HTTP 失败或服务停止均不能跳过原恢复流程。没有新建监控定时器。
 
 ## 验证
 
@@ -20,4 +20,10 @@ REQ-25：聚合健康检查包含磁盘、证书、索引巡检等运维状态�
 
 ## 发布
 
-CI、源提交、部署编号、回滚槽和线上回执：待回填。客户端仍为 V0.4.5，技能仍为 V1.6.19；本次不要求用户重新安装。
+CI [34099961102](https://github.com/sakuruamayday-ops/project-application-assistant/actions/runs/34099961102) 全部通过，主仓 388 项通过、8 项跳过，门户 686 项通过、8 项跳过。受控 Linux Python 3.12 依赖发布记录与本次源提交一致。
+
+正式 code 部署为 `20260907T082405Z-10fc5afc6ab9-5a3f17aa`，2026-09-07 08:25:32 UTC 完成；保留服务器回滚槽 `20260906T161942Z-d34126222c54-348e4a78`。[部署事务回执](/Users/zsh/JiaotangData/deployment-candidates/health-recovery-20260907/evidence/deployment-state.json)。私有页面覆盖层与依赖身份保持不变，知识索引未切换。
+
+线上验收于 08:26:26 UTC 通过：已安装恢复脚本与新槽位源码字节一致；独立输出模拟容量异常，告警内容保留；两次调用均记录 alert_only，主进程始终为 2192155；连续失败计数为零。公开 readyz、Mac 签名清单、Windows 更新清单、技能更新清单返回 200，三端安装修复路由 Range 返回 206、正文精确 1 字节。[真实验收回执](/Users/zsh/JiaotangData/deployment-candidates/health-recovery-20260907/evidence/live-acceptance.json)。首轮验收脚本对 HTTP 响应头做大小写敏感查找导致误报；保留失败日志并按 HTTP 大小写不敏感语义修正后复验通过，未改动生产下载实现。
+
+客户端仍为 V0.4.5/current=22，回滚版 V0.4.4/previous=21；技能仍为 V1.6.19。本次不要求用户重新安装。部署保留策略只将一个不再引用的旧代码槽移入服务器回收站；其他历史代码槽清理计划仍需另行授权，未扩大前次 53 个旧安装包的永久清理范围。
