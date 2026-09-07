@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a complete 17-page deep-gold tax-risk HTML report from JSON."""
+"""Generate a deep-gold tax-risk report with 17 base pages and source continuations."""
 
 from __future__ import annotations
 
@@ -101,7 +101,7 @@ def validate_metrics(metrics: dict[str, Any], company: str) -> list[dict[str, An
     if str(metrics_company or "").strip() != company.strip():
         raise ValueError("metrics JSON company does not match report company")
     rows = require_list(metrics, "report_rows", "metrics")
-    limit(rows, 8, "metrics.report_rows")
+    # 指标数由实际年度和缺失项决定；不能用页面容量拒绝计算器的合法输出。
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
             raise ValueError(f"metrics.report_rows[{index}] must be an object")
@@ -414,16 +414,22 @@ def render_roadmap(data: dict[str, Any]) -> str:
 
 
 def render_sources(data: dict[str, Any], metrics: dict[str, Any]) -> str:
-    # Deterministic rows take priority; authored rows fill the remaining page capacity.
-    calculations = [*metrics["report_rows"], *data["calculations"]][:10]
-    calc_rows = [[x.get("indicator"), x.get("formula"), x.get("result"), x.get("source")] for x in calculations]
-    body = '<h3>计算过程与来源</h3>' + table(["指标", "公式", "结果", "来源"], calc_rows, "calculation-table")
+    # 分页只改变呈现，不能截掉已经核验的指标或补充计算。
+    calculations = [*metrics["report_rows"], *data["calculations"]]
+    chunks = [calculations[index:index + 10] for index in range(0, len(calculations), 10)] or [[]]
+    pages = []
+    for index, chunk in enumerate(chunks):
+        calc_rows = [[x.get("indicator"), x.get("formula"), x.get("result"), x.get("source")] for x in chunk]
+        body = '<h3>计算过程与来源</h3>' + table(["指标", "公式", "结果", "来源"], calc_rows, "calculation-table")
+        if index < len(chunks) - 1:
+            pages.append(page("15" if index == 0 else f"15.{index + 1}", "计算过程与来源", "每个金额可回到原页，每个比例可复算", body))
     if data["policies"]:
         policy_rows = [[x.get("name"), x.get("issuer"), x.get("date"), x.get("url")] for x in data["policies"]]
         body += '<h3>政策依据</h3>' + table(["文件", "发布机关", "日期", "链接"], policy_rows, "policy-table")
     else:
         body += '<h3>政策依据</h3><div class="callout risk">本轮未取得可逐字核验的官方政策原文，本报告为草稿，不得作为正式税务结论使用。</div>'
-    return page("15", "计算过程与来源", "每个金额可回到原页，每个比例可复算", body)
+    pages.append(page("15" if len(chunks) == 1 else f"15.{len(chunks)}", "计算过程与来源", "每个金额可回到原页，每个比例可复算", body))
+    return "".join(pages)
 
 
 def render_final(data: dict[str, Any]) -> str:
@@ -495,7 +501,7 @@ def main() -> None:
         json.dumps(
             {
                 "status": "ok",
-                "pages": 17,
+                "pages": result.count('<section class="page'),
                 "output": str(args.output),
                 "metrics": str(args.metrics_json),
             },

@@ -102,6 +102,21 @@ class PortableReportTests(unittest.TestCase):
             ):
                 self.assertIn(expected, html)
 
+    def test_source_rows_are_not_rejected_or_silently_dropped(self):
+        spec = importlib.util.spec_from_file_location("tax_report", self.tax / "scripts/generate_report_html.py")
+        generator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(generator)
+        data = json.loads((self.tax / "references/report-data.example.json").read_text(encoding="utf-8"))
+        rows = [{"indicator": f"指标{index:02d}", "formula": "A/B", "result": "待核验", "source": f"来源{index:02d}"} for index in range(19)]
+        metrics = {"schema": "manufacturing-tax-risk-metrics/v1", "company": data["company"], "report_rows": rows[:9]}
+        data["calculations"] = rows[9:]
+        self.assertEqual(generator.validate_metrics(metrics, data["company"]), rows[:9])
+        html = generator.render(data, metrics, "")
+        self.assertEqual(html.count('<section class="page'), 18)
+        for row in rows:
+            self.assertEqual(html.count(f'<td>{row["indicator"]}</td>'), 1)
+            self.assertIn(f'<td>{row["source"]}</td>', html)
+
     def test_generator_rejects_structured_values_in_all_human_text_lists(self):
         mutations = (
             (
