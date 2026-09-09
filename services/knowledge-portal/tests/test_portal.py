@@ -2763,18 +2763,21 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
         "今年杭州市研发中心还没开始申报，企业能不能报？"
     )
     assert "市级研发中心（四市属地版）" in hangzhou_guardrail
-    assert "作为准备和差距评估主基线" in hangzhou_guardrail
-    assert "draft（尚未正式生效）" in hangzhou_guardrail
+    assert "2026年度市重点企业研究院、市企业研究院申报建设工作的通知" in hangzhou_guardrail
+    assert "公众号转载PDF" in hangzhou_guardrail
+    assert "年度通知不得自动延用到以后年度" in hangzhou_guardrail
+    assert "draft（尚未正式生效）" not in hangzhou_guardrail
     assert "正式项目名称为杭州市企业高新技术研究开发中心" not in (
         hangzhou_guardrail
     )
     hangzhou_fallback = module.current_policy_fallback(
         "今年杭州市研发中心还没开始申报，企业能不能报？"
     )
-    assert "2026年《杭州市重点企业研究院、企业研究院建设管理办法" in (
+    assert "2026年度市重点企业研究院、市企业研究院申报建设工作的通知" in (
         hangzhou_fallback
     )
-    assert "不能宣称正式符合" in hangzhou_fallback
+    assert "仍须逐项核验" in hangzhou_fallback
+    assert module.current_policy_fallback("杭州企业研究院能报吗") == hangzhou_fallback
     municipal_detail = module.project_algorithm_detail_payload(
         "municipal-enterprise-technology-center"
     )
@@ -2797,7 +2800,7 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
         "hangzhou-enterprise-institute"
     )
     assert institute_detail is not None
-    assert institute_detail["has_prospective_layer"] is True
+    assert institute_detail["has_prospective_layer"] is False
     assert institute_detail["transition_notices"]
     district_green_detail = module.project_algorithm_detail_payload(
         "green-factory-1"
@@ -2905,9 +2908,9 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "金华市企业技术中心管理办法（2024年版）" in municipal_response.text
     assert institute_response.status_code == 200
     assert "市级研发中心（四市属地版）" in institute_response.text
-    assert "政策过渡提示" in institute_response.text
-    assert "当年尚未开放申报的准备评估与下一年度预测" in institute_response.text
-    assert "征求意见稿的法律状态仍为草案" in institute_response.text
+    assert "政策版本说明" in institute_response.text
+    assert "2026年度申报采用用户指定通知及完整评分附表" in institute_response.text
+    assert "当年尚未开放申报的准备评估与下一年度预测" not in institute_response.text
 
 
 def test_project_usage_metadata_covers_rest_and_mcp_searches(tmp_path):

@@ -6645,6 +6645,33 @@ def assistant_model_error_reason(error: Exception) -> tuple[str, str]:
     return type(error).__name__, "模型请求未正常完成"
 
 
+def hangzhou_rd_policy_notice(question: str) -> str:
+    if "杭州" not in question or not any(term in question for term in ("研发中心", "研究院")):
+        return ""
+    selected = resolve_policy_transition(
+        load_four_city_rd_platform_policy_registry(),
+        family_id="municipal-enterprise-rd-platform", city="杭州市",
+        evaluation_mode="current-year-preparation",
+    )
+    title = str(selected.get("primary_policy") or "待核验")
+    if selected.get("status") != "resolved":
+        return "杭州研发机构政策注册表尚未解析，须核验目标年度通知后判断，不得猜测政策已转正。"
+    if selected.get("primary_policy_status") == "draft":
+        return (
+            f"杭州研发机构统一路由到“市级研发中心（四市属地版）”的杭州版本；{title}"
+            "作为准备和差距评估主基线，法律状态为draft（尚未正式生效），不能宣称正式符合。"
+            "历史事项按目标年度当时有效规则回放。"
+        )
+    years = "、".join(str(year) for year in selected.get("applicable_years", []))
+    return (
+        f"杭州研发机构统一路由到“市级研发中心（四市属地版）”的杭州版本；采用{title}。"
+        f"适用年度：{years or '须核验目标年度'}。来源：{selected.get('source_role') or '待核验'}；"
+        f"{selected.get('source_url') or ''}。"
+        "原征求意见稿仅作历史追溯；年度通知不得自动延用到以后年度。"
+        "企业是否符合仍须逐项核验普通、重点或农业重点轨道；不得自动改写历史认定身份、年度和名称。"
+    )
+
+
 def current_policy_guardrail(question: str) -> str:
     notices: list[str] = []
     if any(term in question for term in ("专精特新", "小巨人", "梯度培育")):
@@ -6653,13 +6680,9 @@ def current_policy_guardrail(question: str) -> str:
             "工信部企业〔2022〕63号及其评分表只保留为历史档案，不得用于当前或未来的新申报、复核、评分和材料写作，"
             "也不得补充现行标准没有规定的条件。回答必须先说明版本，再列条件。"
         )
-    if "杭州市" in question and "研发中心" in question:
-        notices.append(
-            "杭州研发机构门禁：统一路由到“市级研发中心（四市属地版）”的杭州属地版本。"
-            "当年申报尚未开放或评估未来年度时，已核验且明确拟替代旧项目的2026年征求意见稿"
-            "作为准备和差距评估主基线；法律状态必须始终标为draft（尚未正式生效），"
-            "不得写成现行正式政策。历史回放只使用目标年度当时有效规则。"
-        )
+    hangzhou_notice = hangzhou_rd_policy_notice(question)
+    if hangzhou_notice:
+        notices.append(hangzhou_notice)
     if any(term in question for term in ("浙江省研发中心", "省级研发中心", "省高企研发中心")):
         notices.append(
             "浙江省研发机构门禁：原省高新技术企业研究开发中心已纳入省企业研究院序列，不再重复申报认定。"
@@ -6708,14 +6731,9 @@ def current_policy_fallback(question: str) -> str:
             "主营业务收入占比不低于80%，资产负债率不超过80%；近两年研发费用每年不低于100万元且研发强度不低于3%；"
             "至少1项与主导产品相关、实际应用并产生经济效益的I类知识产权；当年度质量评价得分达到50分以上。"
         )
-    if "杭州市" in question and "研发中心" in question:
-        sections.append(
-            "“杭州市研发中心”统一进入“市级研发中心（四市属地版）”的杭州属地路由。"
-            "在本年度申报尚未开放或进行未来年度预测时，使用已核验的2026年"
-            "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》作为准备主基线。"
-            "该文件法律状态仍为draft（尚未正式生效），只能输出预评估和差距清单，不能宣称正式符合；"
-            "历史事项继续按目标年度当时有效文件回放。"
-        )
+    hangzhou_notice = hangzhou_rd_policy_notice(question)
+    if hangzhou_notice:
+        sections.append(hangzhou_notice)
     if any(term in question for term in ("浙江省研发中心", "省级研发中心", "省高企研发中心")):
         sections.append(
             "浙江省原“省高新技术企业研究开发中心”已纳入企业研究院序列；新申报匹配“浙江省企业研究院”，"

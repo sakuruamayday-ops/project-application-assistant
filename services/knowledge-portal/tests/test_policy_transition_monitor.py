@@ -15,9 +15,16 @@ PORTAL_DIR = Path(__file__).resolve().parents[1]
 
 
 def load(name):
-    return json.loads(
+    payload = json.loads(
         (PORTAL_DIR / "references" / name).read_text(encoding="utf-8")
     )
+    if name == "four-city-rd-platform-policy-registry.json":
+        variant = payload["project_families"][1]["city_variants"][0]
+        if not variant.get("prospective_policy"):
+            draft = variant["historical_drafts"][-1]
+            variant["prospective_policy"] = draft["title"]
+            variant["prospective_policy_status"] = draft["status"]
+    return payload
 
 
 def test_city_family_hash_only_invalidates_changed_cell():

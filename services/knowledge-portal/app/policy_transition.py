@@ -233,6 +233,10 @@ def resolve_policy_transition(
         "primary_policy": primary_policy,
         "primary_policy_status": primary_status,
         "formal_policy": variant.get("formal_policy"),
+        "source_url": variant.get("source_url") or variant.get("official_url"),
+        "source_role": variant.get("source_role"),
+        "verification_status": variant.get("verification_status"),
+        "applicable_years": variant.get("applicable_years", []),
         "prospective_policy": variant.get("prospective_policy"),
         "prospective_policy_status": variant.get("prospective_policy_status"),
         "prospective_verification_status": variant.get(

@@ -56,13 +56,13 @@ def complete_scoring_facts():
     }
 
 
-def test_four_city_threshold_registry_is_valid_and_has_six_tracks():
+def test_four_city_threshold_registry_is_valid_and_has_seven_tracks():
     registry = load_registry()
 
     assert validate_threshold_registry(registry) == []
     assert sum(
         len(item["tracks"]) for item in registry["city_variants"]
-    ) == 6
+    ) == 7
     assert len(threshold_track_catalog(registry, "宁波市")) == 2
     assert len(threshold_track_catalog(registry, "绍兴市")) == 1
     assert len(threshold_track_catalog(registry, "金华市")) == 1
@@ -148,16 +148,14 @@ def test_jinhua_filing_measure_has_no_fabricated_score_and_requires_materials():
     assert result["submission"]["status"] == "pending"
 
 
-def test_hangzhou_tracks_delegate_to_existing_policy_time_rule_layers():
+def test_hangzhou_formal_track_requires_actual_enterprise_facts():
     result = evaluate_threshold_track(
         load_registry(),
         city="杭州市",
-        track_id="hangzhou-prospective-enterprise-institute",
+        track_id="hangzhou-enterprise-institute-2026",
         facts={},
     )
 
-    assert result["status"] == "delegated"
-    assert result["formal_conclusion_allowed"] is False
-    assert result["rule_layer_id"] == (
-        "hangzhou-enterprise-institute-2026-consultation"
-    )
+    assert result["status"] == "evaluated"
+    assert result["formal_conclusion_allowed"] is True
+    assert result["conclusion"] == "conditional"

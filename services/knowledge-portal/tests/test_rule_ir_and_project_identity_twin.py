@@ -110,6 +110,28 @@ def test_rule_ir_changes_only_when_source_content_changes():
     )
 
 
+def test_scoped_compile_preserves_out_of_scope_units_and_full_run_detects_drift():
+    import pytest
+
+    packs = [sample_pack("selected"), sample_pack("retained")]
+    first = compile_rule_ir(packs, {"projects": []}, {"fields": []})
+    for pack in packs:
+        pack["version"] = "2.0"
+    scoped = compile_rule_ir(packs, {"projects": []}, {"fields": []},
+                             previous_payload=first, compile_project_ids=["selected"])
+    assert scoped["projects"]["retained"] == first["projects"]["retained"]
+    assert scoped["algorithm_cards"]["retained"] == first["algorithm_cards"]["retained"]
+    assert scoped["indexes"]["project_to_policy_version"]["retained"] == first["projects"]["retained"]["policy_version_id"]
+    assert scoped["incremental_compilation"]["compiled_project_ids"] == ["selected"]
+    full = compile_rule_ir(packs, {"projects": []}, {"fields": []}, previous_payload=scoped)
+    assert full["incremental_compilation"]["compiled_project_ids"] == ["retained"]
+    assert full["source_digest"] != scoped["source_digest"]
+    with pytest.raises(ValueError, match="范围外项目缺少"):
+        compile_rule_ir(packs, {}, {}, compile_project_ids=["selected"])
+    with pytest.raises(ValueError, match="未知编译项目"):
+        compile_rule_ir(packs, {}, {}, previous_payload=first, compile_project_ids=["unknown"])
+
+
 def test_incremental_compile_reuses_unchanged_project_only():
     lifecycle = {"projects": []}
     first = compile_rule_ir(
@@ -401,6 +423,13 @@ def test_repository_policy_baselines_are_compiled_into_formal_rule_sources():
     assert len(formal_ids) == 30
     assert all(
         str(document.get("official_url") or "").startswith("https://")
+        or (
+            document.get("document_id") == "hangzhou-enterprise-institute-annual-2026"
+            and document.get("verification_status") == "user-supplied-reviewed"
+            and document.get("source_url") == "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg"
+            and document.get("source_role")
+            and document.get("source_archive_path")
+        )
         for item in baseline_registry["baselines"]
         for document in item["policy_documents"]
     )

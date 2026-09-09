@@ -310,6 +310,7 @@ def compile_rule_ir(
     baseline_registry: Mapping[str, object] | None = None,
     *,
     previous_payload: Mapping[str, object] | None = None,
+    compile_project_ids: Sequence[str] | None = None,
 ) -> dict[str, object]:
     lifecycle_rules = lifecycle_rule_index(lifecycle_payload)
     sorted_packs = sorted(
@@ -345,6 +346,21 @@ def compile_rule_ir(
         previous_projects = {}
     if not isinstance(previous_cards, Mapping):
         previous_cards = {}
+    selected_ids = set(compile_project_ids) if compile_project_ids is not None else None
+    if selected_ids is not None:
+        unknown = selected_ids - {str(pack.get("project_id")) for pack in sorted_packs}
+        if unknown:
+            raise ValueError(f"未知编译项目：{sorted(unknown)}")
+        # A scoped run must not claim the digest of a full rebuild. Include the
+        # retained compilation units so a later full run can still catch drift.
+        source_digest = content_digest({
+            "source_basis": source_basis,
+            "compile_project_ids": sorted(selected_ids),
+            "retained_projects": {
+                key: value for key, value in previous_projects.items()
+                if key not in selected_ids
+            },
+        })
     for pack in sorted_packs:
         project_id = str(pack.get("project_id") or "").strip()
         project_name = str(pack.get("project_name") or "").strip()
@@ -376,6 +392,11 @@ def compile_rule_ir(
             and isinstance(previous_card, Mapping)
             and previous_project.get("compile_input_hash") == compile_input_hash
         )
+        if selected_ids is not None and project_id not in selected_ids:
+            if not isinstance(previous_project, Mapping) or not isinstance(previous_card, Mapping):
+                raise ValueError(f"范围外项目缺少可复用编译结果：{project_id}")
+            can_reuse = True
+            version_id = str(previous_project["policy_version_id"])
         if can_reuse:
             compiled_project = dict(previous_project)
             algorithm_card = dict(previous_card)
@@ -454,6 +475,7 @@ def compile_rule_ir(
         "policy_dependency_graph": dependency_graph,
         "incremental_compilation": {
             "strategy": "project-dependency-content-hash",
+            **({"compile_scope": sorted(selected_ids)} if selected_ids is not None else {}),
             "compiled_project_ids": compiled_project_ids,
             "reused_project_ids": reused_project_ids,
             "removed_project_ids": removed_project_ids,

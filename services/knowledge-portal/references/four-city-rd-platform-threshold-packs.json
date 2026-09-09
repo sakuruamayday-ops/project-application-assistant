@@ -14,28 +14,2082 @@
     {
       "city": "杭州市",
       "canonical_name": "杭州市企业研究院",
-      "content_scope": "existing-project-rule-layers",
+      "content_scope": "annual-notice-and-complete-score-attachments",
+      "source_documents": [
+        {
+          "title": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_url": "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg",
+          "official_url": null,
+          "source_archive_path": "/Users/zsh/Desktop/杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知.pdf",
+          "source_role": "用户明确指定采用的公众号转载PDF，已逐页核对正文及附表，非政府网站原文核验",
+          "verification_status": "user-supplied-reviewed"
+        }
+      ],
       "tracks": [
         {
-          "track_id": "hangzhou-current-rd-center",
-          "track_name": "杭州市企业高新技术研究开发中心",
-          "execution_mode": "project-rule-layer",
-          "project_id": "hangzhou-enterprise-institute",
-          "rule_layer_id": "stable-management",
+          "track_id": "hangzhou-enterprise-institute-2026",
+          "track_name": "杭州市企业研究院",
+          "execution_mode": "leaf-threshold-no-score",
           "policy_status": "current",
-          "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/现行正式/2022-04-20_杭州市企业高新技术研究开发中心管理办法_杭科高2022-39号.pdf",
-          "source_archive_sha256": "d8f450768ca15004cc023ef29fbf08785ae5fcfabeaff5a42d09966fb88ac7ec"
+          "formal_conclusion_allowed": true,
+          "applicable_years": [
+            2026
+          ],
+          "score_reason": "通知对市企业研究院未设创新能力评分表",
+          "hard_rules": [
+            {
+              "rule_id": "hz26-city",
+              "field": "hz26_registered_in_hangzhou",
+              "operator": "truthy",
+              "expected": true,
+              "label": "杭州市注册"
+            },
+            {
+              "rule_id": "hz26-legal",
+              "field": "hz26_independent_legal_entity",
+              "operator": "truthy",
+              "expected": true,
+              "label": "独立法人资格"
+            },
+            {
+              "rule_id": "hz26-management",
+              "field": "hz26_management_systems",
+              "operator": "truthy",
+              "expected": true,
+              "label": "规章制度健全"
+            },
+            {
+              "rule_id": "hz26-accounting",
+              "field": "hz26_separate_rd_accounting",
+              "operator": "truthy",
+              "expected": true,
+              "label": "研发活动单独建账核算"
+            },
+            {
+              "rule_id": "hz26-credit",
+              "field": "hz26_not_seriously_dishonest",
+              "operator": "truthy",
+              "expected": true,
+              "label": "未列入严重失信名单"
+            },
+            {
+              "rule_id": "hz26-basic-qual",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-qual-technology_sme",
+                  "field": "hz26_valid_technology_sme",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内科技型中小企业"
+                },
+                {
+                  "rule_id": "hz26-qual-good_seed",
+                  "field": "hz26_valid_good_seed",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内好苗子企业"
+                },
+                {
+                  "rule_id": "hz26-qual-high_tech",
+                  "field": "hz26_valid_high_tech",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内高新技术企业"
+                },
+                {
+                  "rule_id": "hz26-qual-new_eagle",
+                  "field": "hz26_valid_new_eagle",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内新雏鹰企业"
+                },
+                {
+                  "rule_id": "hz26-qual-technology_leader",
+                  "field": "hz26_valid_technology_leader",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内科技领军企业"
+                },
+                {
+                  "rule_id": "hz26-scale",
+                  "field": "hz26_above_scale_industrial",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "规模以上工业企业"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-staff",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-software-staff",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "hz26-software",
+                      "field": "hz26_is_software",
+                      "operator": "truthy",
+                      "expected": true,
+                      "label": "软件企业"
+                    },
+                    {
+                      "rule_id": "hz26-software-count",
+                      "field": "hz26_rd_staff_previous_year",
+                      "operator": "gte",
+                      "expected": 15,
+                      "label": "上一年度研发人员",
+                      "unit": "人"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "hz26-general-staff",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "hz26-not-software",
+                      "field": "hz26_is_software",
+                      "operator": "falsy",
+                      "expected": false,
+                      "label": "软件企业"
+                    },
+                    {
+                      "rule_id": "hz26-general-count",
+                      "field": "hz26_rd_staff_previous_year",
+                      "operator": "gte",
+                      "expected": 10,
+                      "label": "上一年度研发人员",
+                      "unit": "人"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-equipment",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-equipment-special",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "hz26-special-sector",
+                      "logic": "any",
+                      "children": [
+                        {
+                          "rule_id": "hz26-agri",
+                          "field": "hz26_is_agriculture",
+                          "operator": "truthy",
+                          "expected": true,
+                          "label": "农业企业"
+                        },
+                        {
+                          "rule_id": "hz26-software-equip",
+                          "field": "hz26_is_software",
+                          "operator": "truthy",
+                          "expected": true,
+                          "label": "软件企业"
+                        }
+                      ]
+                    },
+                    {
+                      "rule_id": "hz26-equipment-50",
+                      "field": "hz26_equipment_eligible_value",
+                      "operator": "gte",
+                      "expected": 50,
+                      "label": "适用口径科研设备原值",
+                      "unit": "万元"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "hz26-equipment-general",
+                  "logic": "all",
+                  "children": [
+                    {
+                      "rule_id": "hz26-nonagri",
+                      "field": "hz26_is_agriculture",
+                      "operator": "falsy",
+                      "expected": false,
+                      "label": "农业企业"
+                    },
+                    {
+                      "rule_id": "hz26-nonsoft",
+                      "field": "hz26_is_software",
+                      "operator": "falsy",
+                      "expected": false,
+                      "label": "软件企业"
+                    },
+                    {
+                      "rule_id": "hz26-equipment-100",
+                      "field": "hz26_equipment_eligible_value",
+                      "operator": "gte",
+                      "expected": 100,
+                      "label": "适用口径科研设备原值",
+                      "unit": "万元"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-site",
+              "field": "hz26_rd_site_area",
+              "operator": "gte",
+              "expected": 100,
+              "label": "相对集中的研发场地面积",
+              "unit": "平方米"
+            },
+            {
+              "rule_id": "hz26-expense",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-expense-amount",
+                  "field": "hz26_rd_expense",
+                  "operator": "gte",
+                  "expected": 100,
+                  "label": "上一年度研究开发费用",
+                  "unit": "万元"
+                },
+                {
+                  "rule_id": "hz26-expense-ratio",
+                  "field": "hz26_rd_expense_ratio",
+                  "operator": "gte",
+                  "expected": 3,
+                  "label": "上一年度研发费用占同期营收比重",
+                  "unit": "%"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-ip",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-ip-i",
+                  "field": "hz26_ip_i_last3years",
+                  "operator": "gte",
+                  "expected": 1,
+                  "label": "近三年获I类知识产权",
+                  "unit": "件"
+                },
+                {
+                  "rule_id": "hz26-ip-ii",
+                  "field": "hz26_ip_ii_last3years",
+                  "operator": "gte",
+                  "expected": 3,
+                  "label": "近三年获II类知识产权",
+                  "unit": "件"
+                }
+              ]
+            }
+          ],
+          "submission_rules": [
+            {
+              "rule_id": "hz26-application",
+              "field": "hz26_system_application_complete",
+              "operator": "truthy",
+              "expected": true,
+              "label": "按系统申报指引完成申报"
+            },
+            {
+              "rule_id": "hz26-compliance-check",
+              "field": "hz26_authority_compliance_check_complete",
+              "operator": "truthy",
+              "expected": true,
+              "label": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果"
+            }
+          ],
+          "source_url": "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg",
+          "source_archive_path": "/Users/zsh/Desktop/杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知.pdf",
+          "source_role": "用户明确指定采用的公众号转载PDF，已逐页核对正文及附表，非政府网站原文核验",
+          "fact_semantics": {
+            "data_cutoff": "2025-12-31",
+            "previous_year": 2025,
+            "ip_period": "近三年；按通知数据截止口径取2023至2025年度",
+            "staff_definition": "直接从事研发和相关技术创新、专门管理或直接技术服务，累计实际工作时间183天以上，包括在职、兼职、临时聘用人员",
+            "equipment_calculation": "科研设备与研究方向关联；购置按原值、租赁含云计算按上一年度支付凭证的150%、自研设备按实际投入佐证；与生产共用设备按原值30%计入，计入额合计不得超过申报科研设备原值总额30%",
+            "ip_definition": "I类主要包括发明专利、植物新品种、国家级农作物品种、国家新药、国家一级中药保护品种、集成电路布图设计专有权",
+            "enterprise_deadline": null,
+            "enterprise_deadline_note": "由各区县市科技局确定；不以区县报送时限充当企业截止日",
+            "authority_deadlines": {
+              "key_institute": "2026-10-09",
+              "institute": "2026-10-20"
+            },
+            "application_forms": "本文未附独立申请书模板，按科技大脑申报指引完成；不得杜撰申请附件"
+          },
+          "fact_fields": [
+            {
+              "field": "hz26_registered_in_hangzhou",
+              "label": "杭州市注册",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_independent_legal_entity",
+              "label": "独立法人资格",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_management_systems",
+              "label": "规章制度健全",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_separate_rd_accounting",
+              "label": "研发活动单独建账核算",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_not_seriously_dishonest",
+              "label": "未列入严重失信名单",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_technology_sme",
+              "label": "有效期内科技型中小企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_good_seed",
+              "label": "有效期内好苗子企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_high_tech",
+              "label": "有效期内高新技术企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_new_eagle",
+              "label": "有效期内新雏鹰企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_technology_leader",
+              "label": "有效期内科技领军企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_system_application_complete",
+              "label": "按系统申报指引完成申报",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_authority_compliance_check_complete",
+              "label": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_above_scale_industrial",
+              "label": "规模以上工业企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_is_software",
+              "label": "软件企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_rd_staff_previous_year",
+              "label": "上一年度研发人员数量",
+              "value_type": "number",
+              "unit": "人"
+            },
+            {
+              "field": "hz26_is_agriculture",
+              "label": "农业企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_equipment_eligible_value",
+              "label": "科研设备原值总额",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_rd_site_area",
+              "label": "相对集中的研发场地面积",
+              "value_type": "number",
+              "unit": "平方米"
+            },
+            {
+              "field": "hz26_rd_expense",
+              "label": "上一年度研发费用",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_rd_expense_ratio",
+              "label": "上一年度研发费用占营业收入比例",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_ip_i_last3years",
+              "label": "近三年获I类知识产权",
+              "value_type": "number",
+              "unit": "件"
+            },
+            {
+              "field": "hz26_ip_ii_last3years",
+              "label": "近三年获II类知识产权",
+              "value_type": "number",
+              "unit": "件"
+            },
+            {
+              "field": "hz26_revenue",
+              "label": "上一年度营业收入",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_existing_municipal_institute",
+              "label": "原则上已建市企业研究院含原市研发中心",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_ip_advanced_reviewed_score",
+              "label": "知识产权先进程度",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_rd_staff_ratio",
+              "label": "研发人员占同期职工总数比例",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_qualified_rd_staff_ratio",
+              "label": "本科以上学历及中级以上职称研发人员占比",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_talent_reviewed_score",
+              "label": "累计高层次人才",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_international_cooperation_reviewed_score",
+              "label": "近五年国际产学研合作项目、技术水平、成果转化",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_domestic_cooperation_reviewed_score",
+              "label": "近五年国内产学研合作项目、技术水平、成果转化",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_local_support_reviewed_score",
+              "label": "当地政府建设政策、要素、经费支持",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_management_reviewed_score",
+              "label": "组织职责、人才激励、协同创新、项目经费设备、知识产权与成果管理",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_plan_reviewed_score",
+              "label": "建设实施方案科学性合理性可行性",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_projects_reviewed_score",
+              "label": "近五年承担市级及以上科技计划项目且有基础研究投入",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_awards_reviewed_score",
+              "label": "近五年省级以上科技奖项",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_standards_reviewed_score",
+              "label": "近五年制订标准",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_farmers_reviewed_score",
+              "label": "联农带农成效",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_self_developed_ip_i_last3years",
+              "label": "近三年自主研发获得I类知识产权授权数量",
+              "value_type": "number",
+              "unit": "件"
+            }
+          ]
         },
         {
-          "track_id": "hangzhou-prospective-enterprise-institute",
-          "track_name": "杭州市企业研究院",
-          "execution_mode": "project-rule-layer",
-          "project_id": "hangzhou-enterprise-institute",
-          "rule_layer_id": "hangzhou-enterprise-institute-2026-consultation",
-          "policy_status": "draft",
-          "formal_conclusion_allowed": false,
-          "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/前瞻征求意见/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法_征求意见稿.docx",
-          "source_archive_sha256": "9897f4ebd4e4f48f1234a78bb0d434f5f27dec45b537f6925fd2d48869927372"
+          "track_id": "hangzhou-key-enterprise-institute-2026",
+          "track_name": "杭州市重点企业研究院",
+          "execution_mode": "leaf-threshold-and-score",
+          "policy_status": "current",
+          "formal_conclusion_allowed": true,
+          "applicable_years": [
+            2026
+          ],
+          "score_threshold": 60,
+          "base_score_cap": 100,
+          "bonus_score_cap": 10,
+          "hard_rules": [
+            {
+              "rule_id": "hz26-city",
+              "field": "hz26_registered_in_hangzhou",
+              "operator": "truthy",
+              "expected": true,
+              "label": "杭州市注册"
+            },
+            {
+              "rule_id": "hz26-legal",
+              "field": "hz26_independent_legal_entity",
+              "operator": "truthy",
+              "expected": true,
+              "label": "独立法人资格"
+            },
+            {
+              "rule_id": "hz26-management",
+              "field": "hz26_management_systems",
+              "operator": "truthy",
+              "expected": true,
+              "label": "规章制度健全"
+            },
+            {
+              "rule_id": "hz26-accounting",
+              "field": "hz26_separate_rd_accounting",
+              "operator": "truthy",
+              "expected": true,
+              "label": "研发活动单独建账核算"
+            },
+            {
+              "rule_id": "hz26-credit",
+              "field": "hz26_not_seriously_dishonest",
+              "operator": "truthy",
+              "expected": true,
+              "label": "未列入严重失信名单"
+            },
+            {
+              "rule_id": "hz26-key-sector",
+              "field": "hz26_is_agriculture",
+              "operator": "falsy",
+              "expected": false,
+              "label": "农业企业"
+            },
+            {
+              "rule_id": "hz26-key-qual",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-qual-technology_sme",
+                  "field": "hz26_valid_technology_sme",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内科技型中小企业"
+                },
+                {
+                  "rule_id": "hz26-qual-good_seed",
+                  "field": "hz26_valid_good_seed",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内好苗子企业"
+                },
+                {
+                  "rule_id": "hz26-qual-high_tech",
+                  "field": "hz26_valid_high_tech",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内高新技术企业"
+                },
+                {
+                  "rule_id": "hz26-qual-new_eagle",
+                  "field": "hz26_valid_new_eagle",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内新雏鹰企业"
+                },
+                {
+                  "rule_id": "hz26-qual-technology_leader",
+                  "field": "hz26_valid_technology_leader",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内科技领军企业"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-key-revenue",
+              "field": "hz26_revenue",
+              "operator": "gte",
+              "expected": 20000,
+              "label": "上一年度营业收入",
+              "unit": "万元"
+            },
+            {
+              "rule_id": "hz26-key-expense",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-key-ratio",
+                  "field": "hz26_rd_expense_ratio",
+                  "operator": "gte",
+                  "expected": 4,
+                  "label": "上一年度研发费用占营收比例",
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "hz26-key-expense-amount",
+                  "field": "hz26_rd_expense",
+                  "operator": "gte",
+                  "expected": 5000,
+                  "label": "上一年度研发费用",
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-key-score",
+              "field": "$computed_score",
+              "operator": "gte",
+              "expected": 60,
+              "label": "创新能力评价得分",
+              "unit": "分"
+            }
+          ],
+          "preference_rules": [
+            {
+              "rule_id": "hz26-key-existing",
+              "field": "hz26_existing_municipal_institute",
+              "operator": "truthy",
+              "expected": true,
+              "label": "原则上已建市企业研究院含原市研发中心"
+            }
+          ],
+          "submission_rules": [
+            {
+              "rule_id": "hz26-application",
+              "field": "hz26_system_application_complete",
+              "operator": "truthy",
+              "expected": true,
+              "label": "按系统申报指引完成申报"
+            },
+            {
+              "rule_id": "hz26-compliance-check",
+              "field": "hz26_authority_compliance_check_complete",
+              "operator": "truthy",
+              "expected": true,
+              "label": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果"
+            }
+          ],
+          "score_groups": [
+            {
+              "group_id": "hz26-key-base",
+              "label": "基本条件",
+              "cap": 20,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-revenue",
+                  "field": "hz26_revenue",
+                  "label": "上一年度营业收入",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 20000,
+                      "score": 6
+                    },
+                    {
+                      "min": 50000,
+                      "score": 8
+                    },
+                    {
+                      "min": 100000,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10,
+                  "unit": "万元",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-ratio",
+                  "field": "hz26_rd_expense_ratio",
+                  "label": "上一年度研发费用占营业收入比例",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 3,
+                      "score": 2
+                    },
+                    {
+                      "min": 4,
+                      "score": 3
+                    },
+                    {
+                      "min": 5,
+                      "score": 4
+                    },
+                    {
+                      "min": 6,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "%",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-expense",
+                  "field": "hz26_rd_expense",
+                  "label": "上一年度研发费用",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 800,
+                      "score": 1
+                    },
+                    {
+                      "min": 2000,
+                      "score": 2
+                    },
+                    {
+                      "min": 5000,
+                      "score": 3
+                    },
+                    {
+                      "min": 8000,
+                      "score": 4
+                    },
+                    {
+                      "min": 10000,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "万元",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-key-ip",
+              "label": "知识产权",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-ip-count",
+                  "field": "hz26_self_developed_ip_i_last3years",
+                  "label": "近三年通过自主研发获得I类知识产权授权数量",
+                  "method": "count-step",
+                  "base_min": 3,
+                  "base_score": 6,
+                  "increment_every": 1,
+                  "increment_score": 1,
+                  "max_score": 10,
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-ip_advanced",
+                  "field": "hz26_ip_advanced_reviewed_score",
+                  "label": "知识产权先进程度",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-key-rd",
+              "label": "研发条件",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-equipment",
+                  "field": "hz26_equipment_eligible_value",
+                  "label": "科研设备原值总额",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 1000,
+                      "score": 6
+                    },
+                    {
+                      "min": 2000,
+                      "score": 8
+                    },
+                    {
+                      "min": 3000,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10,
+                  "unit": "万元",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-site",
+                  "field": "hz26_rd_site_area",
+                  "label": "相对集中的研发场地面积",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 1000,
+                      "score": 3
+                    },
+                    {
+                      "min": 2000,
+                      "score": 4
+                    },
+                    {
+                      "min": 3000,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "平方米",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-key-staff",
+              "label": "人才队伍",
+              "cap": 20,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-staff-count",
+                  "field": "hz26_rd_staff_previous_year",
+                  "label": "上一年度研发人员数量",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 50,
+                      "score": 3
+                    },
+                    {
+                      "min": 100,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "人",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-staff-ratio",
+                  "field": "hz26_rd_staff_ratio",
+                  "label": "研发人员占同期职工总数比例",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 10,
+                      "score": 3
+                    },
+                    {
+                      "min": 20,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "%",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-staff-education",
+                  "field": "hz26_qualified_rd_staff_ratio",
+                  "label": "本科以上学历及中级以上职称研发人员占比",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 60,
+                      "score": 3
+                    },
+                    {
+                      "min": 80,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "%",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-talent",
+                  "field": "hz26_talent_reviewed_score",
+                  "label": "累计高层次人才",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "拥有省级人才得3至5分；拥有市级人才得1至3分；不自行确定区间内分值",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-key-collaboration",
+              "label": "创新合作",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-international_cooperation",
+                  "field": "hz26_international_cooperation_reviewed_score",
+                  "label": "近五年国际产学研合作项目、技术水平、成果转化",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 4,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-domestic_cooperation",
+                  "field": "hz26_domestic_cooperation_reviewed_score",
+                  "label": "近五年国内产学研合作项目、技术水平、成果转化",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 6,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-key-local",
+              "label": "地方支持",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-local_support",
+                  "field": "hz26_local_support_reviewed_score",
+                  "label": "当地政府建设政策、要素、经费支持",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-key-management",
+              "label": "管理制度",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-management",
+                  "field": "hz26_management_reviewed_score",
+                  "label": "组织职责、人才激励、协同创新、项目经费设备、知识产权与成果管理",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 10,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-key-plan",
+              "label": "建设方案",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-plan",
+                  "field": "hz26_plan_reviewed_score",
+                  "label": "建设实施方案科学性合理性可行性",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-key-bonus",
+              "label": "加分项",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-key-projects",
+                  "field": "hz26_projects_reviewed_score",
+                  "label": "近五年承担市级及以上科技计划项目且有基础研究投入",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-awards",
+                  "field": "hz26_awards_reviewed_score",
+                  "label": "近五年省级以上科技奖项",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "国家级排名前五，3至5分；省级排名前三，1至3分；专家确认",
+                  "source_location": "PDF第4至5页附表1"
+                },
+                {
+                  "leaf_id": "hz26-key-standards",
+                  "field": "hz26_standards_reviewed_score",
+                  "label": "近五年制订标准",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "主导国际国家行业标准3至5分；参与国际国家行业标准或主导省级地方标准1至3分",
+                  "source_location": "PDF第4至5页附表1"
+                }
+              ],
+              "bonus": true
+            }
+          ],
+          "source_url": "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg",
+          "source_archive_path": "/Users/zsh/Desktop/杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知.pdf",
+          "source_role": "用户明确指定采用的公众号转载PDF，已逐页核对正文及附表，非政府网站原文核验",
+          "fact_semantics": {
+            "data_cutoff": "2025-12-31",
+            "previous_year": 2025,
+            "ip_period": "近三年；按通知数据截止口径取2023至2025年度",
+            "staff_definition": "直接从事研发和相关技术创新、专门管理或直接技术服务，累计实际工作时间183天以上，包括在职、兼职、临时聘用人员",
+            "equipment_calculation": "科研设备与研究方向关联；购置按原值、租赁含云计算按上一年度支付凭证的150%、自研设备按实际投入佐证；与生产共用设备按原值30%计入，计入额合计不得超过申报科研设备原值总额30%",
+            "ip_definition": "I类主要包括发明专利、植物新品种、国家级农作物品种、国家新药、国家一级中药保护品种、集成电路布图设计专有权",
+            "enterprise_deadline": null,
+            "enterprise_deadline_note": "由各区县市科技局确定；不以区县报送时限充当企业截止日",
+            "authority_deadlines": {
+              "key_institute": "2026-10-09",
+              "institute": "2026-10-20"
+            },
+            "application_forms": "本文未附独立申请书模板，按科技大脑申报指引完成；不得杜撰申请附件"
+          },
+          "fact_fields": [
+            {
+              "field": "hz26_registered_in_hangzhou",
+              "label": "杭州市注册",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_independent_legal_entity",
+              "label": "独立法人资格",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_management_systems",
+              "label": "规章制度健全",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_separate_rd_accounting",
+              "label": "研发活动单独建账核算",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_not_seriously_dishonest",
+              "label": "未列入严重失信名单",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_technology_sme",
+              "label": "有效期内科技型中小企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_good_seed",
+              "label": "有效期内好苗子企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_high_tech",
+              "label": "有效期内高新技术企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_new_eagle",
+              "label": "有效期内新雏鹰企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_technology_leader",
+              "label": "有效期内科技领军企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_system_application_complete",
+              "label": "按系统申报指引完成申报",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_authority_compliance_check_complete",
+              "label": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_above_scale_industrial",
+              "label": "规模以上工业企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_is_software",
+              "label": "软件企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_rd_staff_previous_year",
+              "label": "上一年度研发人员数量",
+              "value_type": "number",
+              "unit": "人"
+            },
+            {
+              "field": "hz26_is_agriculture",
+              "label": "农业企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_equipment_eligible_value",
+              "label": "科研设备原值总额",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_rd_site_area",
+              "label": "相对集中的研发场地面积",
+              "value_type": "number",
+              "unit": "平方米"
+            },
+            {
+              "field": "hz26_rd_expense",
+              "label": "上一年度研发费用",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_rd_expense_ratio",
+              "label": "上一年度研发费用占营业收入比例",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_ip_i_last3years",
+              "label": "近三年获I类知识产权",
+              "value_type": "number",
+              "unit": "件"
+            },
+            {
+              "field": "hz26_ip_ii_last3years",
+              "label": "近三年获II类知识产权",
+              "value_type": "number",
+              "unit": "件"
+            },
+            {
+              "field": "hz26_revenue",
+              "label": "上一年度营业收入",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_existing_municipal_institute",
+              "label": "原则上已建市企业研究院含原市研发中心",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_ip_advanced_reviewed_score",
+              "label": "知识产权先进程度",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_rd_staff_ratio",
+              "label": "研发人员占同期职工总数比例",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_qualified_rd_staff_ratio",
+              "label": "本科以上学历及中级以上职称研发人员占比",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_talent_reviewed_score",
+              "label": "累计高层次人才",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_international_cooperation_reviewed_score",
+              "label": "近五年国际产学研合作项目、技术水平、成果转化",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_domestic_cooperation_reviewed_score",
+              "label": "近五年国内产学研合作项目、技术水平、成果转化",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_local_support_reviewed_score",
+              "label": "当地政府建设政策、要素、经费支持",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_management_reviewed_score",
+              "label": "组织职责、人才激励、协同创新、项目经费设备、知识产权与成果管理",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_plan_reviewed_score",
+              "label": "建设实施方案科学性合理性可行性",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_projects_reviewed_score",
+              "label": "近五年承担市级及以上科技计划项目且有基础研究投入",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_awards_reviewed_score",
+              "label": "近五年省级以上科技奖项",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_standards_reviewed_score",
+              "label": "近五年制订标准",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_farmers_reviewed_score",
+              "label": "联农带农成效",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_self_developed_ip_i_last3years",
+              "label": "近三年自主研发获得I类知识产权授权数量",
+              "value_type": "number",
+              "unit": "件"
+            }
+          ]
+        },
+        {
+          "track_id": "hangzhou-key-enterprise-institute-agriculture-2026",
+          "track_name": "农业领域杭州市重点企业研究院",
+          "execution_mode": "leaf-threshold-and-score",
+          "policy_status": "current",
+          "formal_conclusion_allowed": true,
+          "applicable_years": [
+            2026
+          ],
+          "score_threshold": 60,
+          "base_score_cap": 100,
+          "bonus_score_cap": 10,
+          "hard_rules": [
+            {
+              "rule_id": "hz26-city",
+              "field": "hz26_registered_in_hangzhou",
+              "operator": "truthy",
+              "expected": true,
+              "label": "杭州市注册"
+            },
+            {
+              "rule_id": "hz26-legal",
+              "field": "hz26_independent_legal_entity",
+              "operator": "truthy",
+              "expected": true,
+              "label": "独立法人资格"
+            },
+            {
+              "rule_id": "hz26-management",
+              "field": "hz26_management_systems",
+              "operator": "truthy",
+              "expected": true,
+              "label": "规章制度健全"
+            },
+            {
+              "rule_id": "hz26-accounting",
+              "field": "hz26_separate_rd_accounting",
+              "operator": "truthy",
+              "expected": true,
+              "label": "研发活动单独建账核算"
+            },
+            {
+              "rule_id": "hz26-credit",
+              "field": "hz26_not_seriously_dishonest",
+              "operator": "truthy",
+              "expected": true,
+              "label": "未列入严重失信名单"
+            },
+            {
+              "rule_id": "hz26-ag-sector",
+              "field": "hz26_is_agriculture",
+              "operator": "truthy",
+              "expected": true,
+              "label": "农业企业"
+            },
+            {
+              "rule_id": "hz26-ag-qual",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-qual-technology_sme",
+                  "field": "hz26_valid_technology_sme",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内科技型中小企业"
+                },
+                {
+                  "rule_id": "hz26-qual-good_seed",
+                  "field": "hz26_valid_good_seed",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内好苗子企业"
+                },
+                {
+                  "rule_id": "hz26-qual-high_tech",
+                  "field": "hz26_valid_high_tech",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内高新技术企业"
+                },
+                {
+                  "rule_id": "hz26-qual-new_eagle",
+                  "field": "hz26_valid_new_eagle",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内新雏鹰企业"
+                },
+                {
+                  "rule_id": "hz26-qual-technology_leader",
+                  "field": "hz26_valid_technology_leader",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "有效期内科技领军企业"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-ag-revenue",
+              "field": "hz26_revenue",
+              "operator": "gte",
+              "expected": 5000,
+              "label": "上一年度营业收入",
+              "unit": "万元"
+            },
+            {
+              "rule_id": "hz26-ag-expense",
+              "logic": "any",
+              "children": [
+                {
+                  "rule_id": "hz26-ag-ratio",
+                  "field": "hz26_rd_expense_ratio",
+                  "operator": "gte",
+                  "expected": 4,
+                  "label": "上一年度研发费用占营收比例",
+                  "unit": "%"
+                },
+                {
+                  "rule_id": "hz26-ag-expense-amount",
+                  "field": "hz26_rd_expense",
+                  "operator": "gte",
+                  "expected": 800,
+                  "label": "上一年度研发费用",
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-ag-score",
+              "field": "$computed_score",
+              "operator": "gte",
+              "expected": 60,
+              "label": "创新能力评价得分",
+              "unit": "分"
+            }
+          ],
+          "preference_rules": [
+            {
+              "rule_id": "hz26-ag-existing",
+              "field": "hz26_existing_municipal_institute",
+              "operator": "truthy",
+              "expected": true,
+              "label": "原则上已建市企业研究院含原市研发中心"
+            }
+          ],
+          "submission_rules": [
+            {
+              "rule_id": "hz26-application",
+              "field": "hz26_system_application_complete",
+              "operator": "truthy",
+              "expected": true,
+              "label": "按系统申报指引完成申报"
+            },
+            {
+              "rule_id": "hz26-compliance-check",
+              "field": "hz26_authority_compliance_check_complete",
+              "operator": "truthy",
+              "expected": true,
+              "label": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果"
+            }
+          ],
+          "score_groups": [
+            {
+              "group_id": "hz26-ag-base",
+              "label": "基本条件",
+              "cap": 20,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-revenue",
+                  "field": "hz26_revenue",
+                  "label": "上一年度营业收入",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 5000,
+                      "score": 6
+                    },
+                    {
+                      "min": 10000,
+                      "score": 8
+                    },
+                    {
+                      "min": 20000,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10,
+                  "unit": "万元",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-ratio",
+                  "field": "hz26_rd_expense_ratio",
+                  "label": "上一年度研发费用占营业收入比例",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 3,
+                      "score": 2
+                    },
+                    {
+                      "min": 4,
+                      "score": 3
+                    },
+                    {
+                      "min": 5,
+                      "score": 4
+                    },
+                    {
+                      "min": 6,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "%",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-expense",
+                  "field": "hz26_rd_expense",
+                  "label": "上一年度研发费用",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 200,
+                      "score": 1
+                    },
+                    {
+                      "min": 800,
+                      "score": 2
+                    },
+                    {
+                      "min": 1500,
+                      "score": 3
+                    },
+                    {
+                      "min": 2000,
+                      "score": 4
+                    },
+                    {
+                      "min": 3000,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "万元",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-ag-ip",
+              "label": "知识产权",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-ip-count",
+                  "field": "hz26_self_developed_ip_i_last3years",
+                  "label": "近三年通过自主研发获得I类知识产权授权数量",
+                  "method": "count-step",
+                  "base_min": 2,
+                  "base_score": 6,
+                  "increment_every": 1,
+                  "increment_score": 1,
+                  "max_score": 10,
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-ip_advanced",
+                  "field": "hz26_ip_advanced_reviewed_score",
+                  "label": "知识产权先进程度",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-ag-rd",
+              "label": "研发条件",
+              "cap": 15,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-equipment",
+                  "field": "hz26_equipment_eligible_value",
+                  "label": "科研设备原值总额",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 500,
+                      "score": 6
+                    },
+                    {
+                      "min": 1000,
+                      "score": 8
+                    },
+                    {
+                      "min": 2000,
+                      "score": 10
+                    }
+                  ],
+                  "max_score": 10,
+                  "unit": "万元",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-site",
+                  "field": "hz26_rd_site_area",
+                  "label": "相对集中的研发场地面积",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 500,
+                      "score": 3
+                    },
+                    {
+                      "min": 1000,
+                      "score": 4
+                    },
+                    {
+                      "min": 2000,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "平方米",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-ag-staff",
+              "label": "人才队伍",
+              "cap": 20,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-staff-count",
+                  "field": "hz26_rd_staff_previous_year",
+                  "label": "上一年度研发人员数量",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 30,
+                      "score": 3
+                    },
+                    {
+                      "min": 50,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "人",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-staff-ratio",
+                  "field": "hz26_rd_staff_ratio",
+                  "label": "研发人员占同期职工总数比例",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 10,
+                      "score": 3
+                    },
+                    {
+                      "min": 20,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "%",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-staff-education",
+                  "field": "hz26_qualified_rd_staff_ratio",
+                  "label": "本科以上学历及中级以上职称研发人员占比",
+                  "method": "band",
+                  "bands": [
+                    {
+                      "min": 50,
+                      "score": 3
+                    },
+                    {
+                      "min": 70,
+                      "score": 5
+                    }
+                  ],
+                  "max_score": 5,
+                  "unit": "%",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-talent",
+                  "field": "hz26_talent_reviewed_score",
+                  "label": "累计高层次人才",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "拥有省级人才得3至5分；拥有市级人才得1至3分；不自行确定区间内分值",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-ag-collaboration",
+              "label": "创新合作",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-international_cooperation",
+                  "field": "hz26_international_cooperation_reviewed_score",
+                  "label": "近五年国际产学研合作项目、技术水平、成果转化",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 4,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-domestic_cooperation",
+                  "field": "hz26_domestic_cooperation_reviewed_score",
+                  "label": "近五年国内产学研合作项目、技术水平、成果转化",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 6,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-ag-local",
+              "label": "地方支持",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-local_support",
+                  "field": "hz26_local_support_reviewed_score",
+                  "label": "当地政府建设政策、要素、经费支持",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-ag-management",
+              "label": "管理制度",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-management",
+                  "field": "hz26_management_reviewed_score",
+                  "label": "组织职责、人才激励、协同创新、项目经费设备、知识产权与成果管理",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 10,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-ag-plan",
+              "label": "建设方案",
+              "cap": 5,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-plan",
+                  "field": "hz26_plan_reviewed_score",
+                  "label": "建设实施方案科学性合理性可行性",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ]
+            },
+            {
+              "group_id": "hz26-ag-bonus",
+              "label": "加分项",
+              "cap": 10,
+              "leaves": [
+                {
+                  "leaf_id": "hz26-ag-projects",
+                  "field": "hz26_projects_reviewed_score",
+                  "label": "近五年承担市级及以上科技计划项目且有基础研究投入",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "由专家依据材料确认分值，缺失不得推定为零",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-awards",
+                  "field": "hz26_awards_reviewed_score",
+                  "label": "近五年省级以上科技奖项",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "国家级排名前五，3至5分；省级排名前三，1至3分；专家确认",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-standards",
+                  "field": "hz26_standards_reviewed_score",
+                  "label": "近五年制订标准",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "主导国际国家行业标准3至5分；参与国际国家行业标准或主导省级地方标准1至3分",
+                  "source_location": "PDF第6至7页附表2"
+                },
+                {
+                  "leaf_id": "hz26-ag-farmers",
+                  "field": "hz26_farmers_reviewed_score",
+                  "label": "联农带农成效",
+                  "method": "reviewed",
+                  "min_score": 0,
+                  "max_score": 5,
+                  "review_guidance": "原文仅列联系农户5000户得5分、1500户得2分；未明确区间与插值，不猜测其他数量得分",
+                  "source_location": "PDF第6至7页附表2"
+                }
+              ],
+              "bonus": true
+            }
+          ],
+          "source_url": "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg",
+          "source_archive_path": "/Users/zsh/Desktop/杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知.pdf",
+          "source_role": "用户明确指定采用的公众号转载PDF，已逐页核对正文及附表，非政府网站原文核验",
+          "fact_semantics": {
+            "data_cutoff": "2025-12-31",
+            "previous_year": 2025,
+            "ip_period": "近三年；按通知数据截止口径取2023至2025年度",
+            "staff_definition": "直接从事研发和相关技术创新、专门管理或直接技术服务，累计实际工作时间183天以上，包括在职、兼职、临时聘用人员",
+            "equipment_calculation": "科研设备与研究方向关联；购置按原值、租赁含云计算按上一年度支付凭证的150%、自研设备按实际投入佐证；与生产共用设备按原值30%计入，计入额合计不得超过申报科研设备原值总额30%",
+            "ip_definition": "I类主要包括发明专利、植物新品种、国家级农作物品种、国家新药、国家一级中药保护品种、集成电路布图设计专有权",
+            "enterprise_deadline": null,
+            "enterprise_deadline_note": "由各区县市科技局确定；不以区县报送时限充当企业截止日",
+            "authority_deadlines": {
+              "key_institute": "2026-10-09",
+              "institute": "2026-10-20"
+            },
+            "application_forms": "本文未附独立申请书模板，按科技大脑申报指引完成；不得杜撰申请附件"
+          },
+          "fact_fields": [
+            {
+              "field": "hz26_registered_in_hangzhou",
+              "label": "杭州市注册",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_independent_legal_entity",
+              "label": "独立法人资格",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_management_systems",
+              "label": "规章制度健全",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_separate_rd_accounting",
+              "label": "研发活动单独建账核算",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_not_seriously_dishonest",
+              "label": "未列入严重失信名单",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_technology_sme",
+              "label": "有效期内科技型中小企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_good_seed",
+              "label": "有效期内好苗子企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_high_tech",
+              "label": "有效期内高新技术企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_new_eagle",
+              "label": "有效期内新雏鹰企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_valid_technology_leader",
+              "label": "有效期内科技领军企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_system_application_complete",
+              "label": "按系统申报指引完成申报",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_authority_compliance_check_complete",
+              "label": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_above_scale_industrial",
+              "label": "规模以上工业企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_is_software",
+              "label": "软件企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_rd_staff_previous_year",
+              "label": "上一年度研发人员数量",
+              "value_type": "number",
+              "unit": "人"
+            },
+            {
+              "field": "hz26_is_agriculture",
+              "label": "农业企业",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_equipment_eligible_value",
+              "label": "科研设备原值总额",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_rd_site_area",
+              "label": "相对集中的研发场地面积",
+              "value_type": "number",
+              "unit": "平方米"
+            },
+            {
+              "field": "hz26_rd_expense",
+              "label": "上一年度研发费用",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_rd_expense_ratio",
+              "label": "上一年度研发费用占营业收入比例",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_ip_i_last3years",
+              "label": "近三年获I类知识产权",
+              "value_type": "number",
+              "unit": "件"
+            },
+            {
+              "field": "hz26_ip_ii_last3years",
+              "label": "近三年获II类知识产权",
+              "value_type": "number",
+              "unit": "件"
+            },
+            {
+              "field": "hz26_revenue",
+              "label": "上一年度营业收入",
+              "value_type": "number",
+              "unit": "万元"
+            },
+            {
+              "field": "hz26_existing_municipal_institute",
+              "label": "原则上已建市企业研究院含原市研发中心",
+              "value_type": "boolean"
+            },
+            {
+              "field": "hz26_ip_advanced_reviewed_score",
+              "label": "知识产权先进程度",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_rd_staff_ratio",
+              "label": "研发人员占同期职工总数比例",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_qualified_rd_staff_ratio",
+              "label": "本科以上学历及中级以上职称研发人员占比",
+              "value_type": "number",
+              "unit": "%"
+            },
+            {
+              "field": "hz26_talent_reviewed_score",
+              "label": "累计高层次人才",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_international_cooperation_reviewed_score",
+              "label": "近五年国际产学研合作项目、技术水平、成果转化",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_domestic_cooperation_reviewed_score",
+              "label": "近五年国内产学研合作项目、技术水平、成果转化",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_local_support_reviewed_score",
+              "label": "当地政府建设政策、要素、经费支持",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_management_reviewed_score",
+              "label": "组织职责、人才激励、协同创新、项目经费设备、知识产权与成果管理",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_plan_reviewed_score",
+              "label": "建设实施方案科学性合理性可行性",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_projects_reviewed_score",
+              "label": "近五年承担市级及以上科技计划项目且有基础研究投入",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_awards_reviewed_score",
+              "label": "近五年省级以上科技奖项",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_standards_reviewed_score",
+              "label": "近五年制订标准",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_farmers_reviewed_score",
+              "label": "联农带农成效",
+              "value_type": "number",
+              "unit": "分",
+              "fact_semantics": "assessment-conclusion"
+            },
+            {
+              "field": "hz26_self_developed_ip_i_last3years",
+              "label": "近三年自主研发获得I类知识产权授权数量",
+              "value_type": "number",
+              "unit": "件"
+            }
+          ]
         }
       ]
     },

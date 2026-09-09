@@ -156,11 +156,15 @@ def test_generate_preserves_rd_family_name_and_jurisdiction_source_contract(
     rd_pack = json.loads(rd_output.read_text(encoding="utf-8"))
     assert rd_pack["project_name"] == "市级研发中心（四市属地版）"
     assert "杭州市企业研究院" in rd_pack["aliases"]
-    prospective = next(
+    assert not any(layer["layer_type"] == "prospective" for layer in rd_pack["rule_layers"])
+    annual = next(
         layer
         for layer in rd_pack["rule_layers"]
-        if layer["layer_type"] == "prospective"
+        if layer["layer_type"] == "annual"
     )
+    assert annual["applicability"]["years"] == ["2026"]
+    archived = json.loads((sources / "hangzhou-enterprise-institute.json").read_text())
+    prospective = archived["historical_prospective_overlays"][0]
     assert prospective["replacement_signal"] == "explicit-replacement"
     assert prospective["replaces_policy_title"].startswith(
         "《杭州市企业高新技术研究开发中心管理办法》"

@@ -1,7 +1,7 @@
 {
   "project_id": "hangzhou-enterprise-institute",
   "project_name": "市级研发中心（四市属地版）",
-  "version": "2022-formal-plus-2026-consultation-transition-20260730",
+  "version": "2022-historical-plus-2026-annual-user-confirmed-20260909",
   "aliases": [
     "杭州市企业研究院",
     "杭州市重点企业研究院",
@@ -184,6 +184,229 @@
       ],
       "value_type": "number",
       "unit": "项"
+    },
+    {
+      "field": "hz26_registered_in_hangzhou",
+      "label": "杭州市注册",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_independent_legal_entity",
+      "label": "独立法人资格",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_management_systems",
+      "label": "规章制度健全",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_separate_rd_accounting",
+      "label": "研发活动单独建账核算",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_not_seriously_dishonest",
+      "label": "未列入严重失信名单",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_valid_technology_sme",
+      "label": "有效期内科技型中小企业",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_valid_good_seed",
+      "label": "有效期内好苗子企业",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_valid_high_tech",
+      "label": "有效期内高新技术企业",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_valid_new_eagle",
+      "label": "有效期内新雏鹰企业",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_valid_technology_leader",
+      "label": "有效期内科技领军企业",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_system_application_complete",
+      "label": "按系统申报指引完成申报",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_authority_compliance_check_complete",
+      "label": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_above_scale_industrial",
+      "label": "规模以上工业企业",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_is_software",
+      "label": "软件企业",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_rd_staff_previous_year",
+      "label": "上一年度研发人员数量",
+      "value_type": "number",
+      "unit": "人"
+    },
+    {
+      "field": "hz26_is_agriculture",
+      "label": "农业企业",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_equipment_eligible_value",
+      "label": "科研设备原值总额",
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "hz26_rd_site_area",
+      "label": "相对集中的研发场地面积",
+      "value_type": "number",
+      "unit": "平方米"
+    },
+    {
+      "field": "hz26_rd_expense",
+      "label": "上一年度研发费用",
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "hz26_rd_expense_ratio",
+      "label": "上一年度研发费用占营业收入比例",
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "hz26_ip_i_last3years",
+      "label": "近三年获I类知识产权",
+      "value_type": "number",
+      "unit": "件"
+    },
+    {
+      "field": "hz26_ip_ii_last3years",
+      "label": "近三年获II类知识产权",
+      "value_type": "number",
+      "unit": "件"
+    },
+    {
+      "field": "hz26_revenue",
+      "label": "上一年度营业收入",
+      "value_type": "number",
+      "unit": "万元"
+    },
+    {
+      "field": "hz26_existing_municipal_institute",
+      "label": "原则上已建市企业研究院含原市研发中心",
+      "value_type": "boolean"
+    },
+    {
+      "field": "hz26_ip_advanced_reviewed_score",
+      "label": "知识产权先进程度",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_rd_staff_ratio",
+      "label": "研发人员占同期职工总数比例",
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "hz26_qualified_rd_staff_ratio",
+      "label": "本科以上学历及中级以上职称研发人员占比",
+      "value_type": "number",
+      "unit": "%"
+    },
+    {
+      "field": "hz26_talent_reviewed_score",
+      "label": "累计高层次人才",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_international_cooperation_reviewed_score",
+      "label": "近五年国际产学研合作项目、技术水平、成果转化",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_domestic_cooperation_reviewed_score",
+      "label": "近五年国内产学研合作项目、技术水平、成果转化",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_local_support_reviewed_score",
+      "label": "当地政府建设政策、要素、经费支持",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_management_reviewed_score",
+      "label": "组织职责、人才激励、协同创新、项目经费设备、知识产权与成果管理",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_plan_reviewed_score",
+      "label": "建设实施方案科学性合理性可行性",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_projects_reviewed_score",
+      "label": "近五年承担市级及以上科技计划项目且有基础研究投入",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_awards_reviewed_score",
+      "label": "近五年省级以上科技奖项",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_standards_reviewed_score",
+      "label": "近五年制订标准",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_farmers_reviewed_score",
+      "label": "联农带农成效",
+      "value_type": "number",
+      "unit": "分",
+      "fact_semantics": "assessment-conclusion"
+    },
+    {
+      "field": "hz26_self_developed_ip_i_last3years",
+      "label": "近三年自主研发获得I类知识产权授权数量",
+      "value_type": "number",
+      "unit": "件"
     }
   ],
   "rules": [
@@ -389,9 +612,363 @@
       "source_quote": "应提交申请书、建设实施方案及规定佐证材料。"
     }
   ],
-  "annual_overlays": [],
+  "annual_overlays": [
+    {
+      "overlay_id": "hangzhou-enterprise-institute-2026-annual",
+      "year": 2026,
+      "regions": [
+        "杭州市"
+      ],
+      "application_types": [
+        "recognition"
+      ],
+      "label": "2026年度市企业研究院申报通知",
+      "policy_status": "current",
+      "approved_by": "主人于本任务明确指定该微信发布及所提供PDF作为转正依据",
+      "approved_at": "2026-09-09",
+      "source_url": "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg",
+      "source_archive_path": "/Users/zsh/Desktop/杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知.pdf",
+      "source_role": "用户明确指定采用的公众号转载PDF，已逐页核对正文及附表，非政府网站原文核验",
+      "published_at": "2026-09-08",
+      "enterprise_deadline": null,
+      "enterprise_deadline_note": "属地确定；市级要求区县10月20日前报送，非企业截止日",
+      "authority_recommendation_deadline": "2026-10-20",
+      "replaces_rule_ids": [
+        "hz-rd-entity",
+        "hz-rd-staff",
+        "hz-rd-site",
+        "hz-rd-equipment",
+        "hz-rd-investment",
+        "hz-rd-projects",
+        "hz-rd-ip",
+        "hz-rd-accounting",
+        "hz-rd-compliance",
+        "hz-rd-materials"
+      ],
+      "transition_notice": "2026年度申报采用用户指定通知及完整评分附表；原征求意见稿转历史追溯。本次为年度申报规则转正，不据此宣称管理办法已正式颁布或原认定身份自动变更。",
+      "rules": [
+        {
+          "rule_id": "hz26-city",
+          "field": "hz26_registered_in_hangzhou",
+          "operator": "truthy",
+          "expected": true,
+          "label": "杭州市注册",
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "杭州市注册"
+        },
+        {
+          "rule_id": "hz26-legal",
+          "field": "hz26_independent_legal_entity",
+          "operator": "truthy",
+          "expected": true,
+          "label": "独立法人资格",
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "独立法人资格"
+        },
+        {
+          "rule_id": "hz26-management",
+          "field": "hz26_management_systems",
+          "operator": "truthy",
+          "expected": true,
+          "label": "规章制度健全",
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "规章制度健全"
+        },
+        {
+          "rule_id": "hz26-accounting",
+          "field": "hz26_separate_rd_accounting",
+          "operator": "truthy",
+          "expected": true,
+          "label": "研发活动单独建账核算",
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "研发活动单独建账核算"
+        },
+        {
+          "rule_id": "hz26-credit",
+          "field": "hz26_not_seriously_dishonest",
+          "operator": "truthy",
+          "expected": true,
+          "label": "未列入严重失信名单",
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "未列入严重失信名单"
+        },
+        {
+          "rule_id": "hz26-basic-qual",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hz26-qual-technology_sme",
+              "field": "hz26_valid_technology_sme",
+              "operator": "truthy",
+              "expected": true,
+              "label": "有效期内科技型中小企业"
+            },
+            {
+              "rule_id": "hz26-qual-good_seed",
+              "field": "hz26_valid_good_seed",
+              "operator": "truthy",
+              "expected": true,
+              "label": "有效期内好苗子企业"
+            },
+            {
+              "rule_id": "hz26-qual-high_tech",
+              "field": "hz26_valid_high_tech",
+              "operator": "truthy",
+              "expected": true,
+              "label": "有效期内高新技术企业"
+            },
+            {
+              "rule_id": "hz26-qual-new_eagle",
+              "field": "hz26_valid_new_eagle",
+              "operator": "truthy",
+              "expected": true,
+              "label": "有效期内新雏鹰企业"
+            },
+            {
+              "rule_id": "hz26-qual-technology_leader",
+              "field": "hz26_valid_technology_leader",
+              "operator": "truthy",
+              "expected": true,
+              "label": "有效期内科技领军企业"
+            },
+            {
+              "rule_id": "hz26-scale",
+              "field": "hz26_above_scale_industrial",
+              "operator": "truthy",
+              "expected": true,
+              "label": "规模以上工业企业"
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "通知第二部分市企业研究院基本条件"
+        },
+        {
+          "rule_id": "hz26-staff",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hz26-software-staff",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "hz26-software",
+                  "field": "hz26_is_software",
+                  "operator": "truthy",
+                  "expected": true,
+                  "label": "软件企业"
+                },
+                {
+                  "rule_id": "hz26-software-count",
+                  "field": "hz26_rd_staff_previous_year",
+                  "operator": "gte",
+                  "expected": 15,
+                  "label": "上一年度研发人员",
+                  "unit": "人"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-general-staff",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "hz26-not-software",
+                  "field": "hz26_is_software",
+                  "operator": "falsy",
+                  "expected": false,
+                  "label": "软件企业"
+                },
+                {
+                  "rule_id": "hz26-general-count",
+                  "field": "hz26_rd_staff_previous_year",
+                  "operator": "gte",
+                  "expected": 10,
+                  "label": "上一年度研发人员",
+                  "unit": "人"
+                }
+              ]
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "通知第二部分市企业研究院基本条件"
+        },
+        {
+          "rule_id": "hz26-equipment",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hz26-equipment-special",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "hz26-special-sector",
+                  "logic": "any",
+                  "children": [
+                    {
+                      "rule_id": "hz26-agri",
+                      "field": "hz26_is_agriculture",
+                      "operator": "truthy",
+                      "expected": true,
+                      "label": "农业企业"
+                    },
+                    {
+                      "rule_id": "hz26-software-equip",
+                      "field": "hz26_is_software",
+                      "operator": "truthy",
+                      "expected": true,
+                      "label": "软件企业"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "hz26-equipment-50",
+                  "field": "hz26_equipment_eligible_value",
+                  "operator": "gte",
+                  "expected": 50,
+                  "label": "适用口径科研设备原值",
+                  "unit": "万元"
+                }
+              ]
+            },
+            {
+              "rule_id": "hz26-equipment-general",
+              "logic": "all",
+              "children": [
+                {
+                  "rule_id": "hz26-nonagri",
+                  "field": "hz26_is_agriculture",
+                  "operator": "falsy",
+                  "expected": false,
+                  "label": "农业企业"
+                },
+                {
+                  "rule_id": "hz26-nonsoft",
+                  "field": "hz26_is_software",
+                  "operator": "falsy",
+                  "expected": false,
+                  "label": "软件企业"
+                },
+                {
+                  "rule_id": "hz26-equipment-100",
+                  "field": "hz26_equipment_eligible_value",
+                  "operator": "gte",
+                  "expected": 100,
+                  "label": "适用口径科研设备原值",
+                  "unit": "万元"
+                }
+              ]
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "通知第二部分市企业研究院基本条件"
+        },
+        {
+          "rule_id": "hz26-site",
+          "field": "hz26_rd_site_area",
+          "operator": "gte",
+          "expected": 100,
+          "label": "相对集中的研发场地面积",
+          "unit": "平方米",
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "相对集中的研发场地面积"
+        },
+        {
+          "rule_id": "hz26-expense",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hz26-expense-amount",
+              "field": "hz26_rd_expense",
+              "operator": "gte",
+              "expected": 100,
+              "label": "上一年度研究开发费用",
+              "unit": "万元"
+            },
+            {
+              "rule_id": "hz26-expense-ratio",
+              "field": "hz26_rd_expense_ratio",
+              "operator": "gte",
+              "expected": 3,
+              "label": "上一年度研发费用占同期营收比重",
+              "unit": "%"
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "通知第二部分市企业研究院基本条件"
+        },
+        {
+          "rule_id": "hz26-ip",
+          "logic": "any",
+          "children": [
+            {
+              "rule_id": "hz26-ip-i",
+              "field": "hz26_ip_i_last3years",
+              "operator": "gte",
+              "expected": 1,
+              "label": "近三年获I类知识产权",
+              "unit": "件"
+            },
+            {
+              "rule_id": "hz26-ip-ii",
+              "field": "hz26_ip_ii_last3years",
+              "operator": "gte",
+              "expected": 3,
+              "label": "近三年获II类知识产权",
+              "unit": "件"
+            }
+          ],
+          "type": "hard-threshold",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "通知第二部分市企业研究院基本条件"
+        },
+        {
+          "rule_id": "hz26-application",
+          "field": "hz26_system_application_complete",
+          "operator": "truthy",
+          "expected": true,
+          "label": "按系统申报指引完成申报",
+          "type": "submission",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "按系统申报指引完成申报"
+        },
+        {
+          "rule_id": "hz26-compliance-check",
+          "field": "hz26_authority_compliance_check_complete",
+          "operator": "truthy",
+          "expected": true,
+          "label": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果",
+          "type": "submission",
+          "source": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "source_quote": "县级部门核查安全质量环境知识产权税务科研失信并上传盖章结果"
+        }
+      ]
+    }
+  ],
   "jurisdiction_overlays": [],
-  "prospective_overlays": [
+  "prospective_overlays": [],
+  "composite_rule_migration": {
+    "version": "native-all-any-v1",
+    "replaced_rule_ids": [
+      "hz-rd-entity",
+      "hz-rd-equipment",
+      "hz-rd-investment",
+      "hz-rd-ip",
+      "hz-rd-projects",
+      "hz-rd-staff"
+    ],
+    "legacy_rollup_inputs_removed": true
+  },
+  "historical_prospective_overlays": [
     {
       "overlay_id": "hangzhou-enterprise-institute-2026-consultation",
       "label": "2026年杭州市企业研究院征求意见稿前瞻基线",
@@ -603,16 +1180,15 @@
       ]
     }
   ],
-  "composite_rule_migration": {
-    "version": "native-all-any-v1",
-    "replaced_rule_ids": [
-      "hz-rd-entity",
-      "hz-rd-equipment",
-      "hz-rd-investment",
-      "hz-rd-ip",
-      "hz-rd-projects",
-      "hz-rd-staff"
+  "policy_transition": {
+    "current_year": 2026,
+    "source_role": "用户明确指定采用的公众号转载PDF，已逐页核对正文及附表，非政府网站原文核验",
+    "threshold_registry": "four-city-rd-platform-threshold-packs.json",
+    "threshold_track_ids": [
+      "hangzhou-enterprise-institute-2026",
+      "hangzhou-key-enterprise-institute-2026",
+      "hangzhou-key-enterprise-institute-agriculture-2026"
     ],
-    "legacy_rollup_inputs_removed": true
+    "historical_identity_preserved": true
   }
 }

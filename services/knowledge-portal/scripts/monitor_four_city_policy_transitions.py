@@ -80,6 +80,10 @@ def main() -> int:
         ),
     )
     parser.add_argument("--candidate-json", type=Path)
+    parser.add_argument(
+        "--accept-user-supplied-source",
+        help="明确授权的本次材料原始URL；仅精确匹配该候选，不放宽官方域名清单",
+    )
     parser.add_argument("--database", type=Path)
     parser.add_argument(
         "--apply-verified-promotion",
@@ -98,6 +102,7 @@ def main() -> int:
             policy_registry,
             threshold_registry,
             candidate,
+            accepted_source_url=arguments.accept_user_supplied_source,
         )
         if (
             promotion.get("status") == "promoted"

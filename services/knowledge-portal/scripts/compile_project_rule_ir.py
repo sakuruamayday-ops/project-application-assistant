@@ -69,6 +69,7 @@ def main() -> int:
         default=PORTAL_DIR / "references" / "last-policy-change-impact.json",
     )
     parser.add_argument("--database", type=Path)
+    parser.add_argument("--project-id", action="append", help="仅编译指定项目，其余复用上次结果；可重复")
     arguments = parser.parse_args()
     packs = load_algorithm_packs(arguments.packs_dir)
     lifecycle_payload = read_json(arguments.lifecycle_rules)
@@ -91,6 +92,7 @@ def main() -> int:
         fact_contract,
         baseline_registry,
         previous_payload=previous_payload,
+        compile_project_ids=arguments.project_id,
     )
     impact_report = simulate_policy_change_impact(
         previous_payload,

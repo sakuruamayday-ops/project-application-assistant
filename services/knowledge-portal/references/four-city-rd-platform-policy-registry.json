@@ -83,37 +83,54 @@
           "canonical_name": "杭州市企业研究院",
           "algorithm_project_id": "hangzhou-enterprise-institute",
           "threshold_track_ids": [
-            "hangzhou-current-rd-center",
-            "hangzhou-prospective-enterprise-institute"
+            "hangzhou-enterprise-institute-2026",
+            "hangzhou-key-enterprise-institute-2026",
+            "hangzhou-key-enterprise-institute-agriculture-2026"
           ],
-          "route_status": "consultation-transition",
-          "formal_policy": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
-          "formal_policy_status": "current-until-repealed",
-          "formal_url": "https://zfgb.hangzhou.gov.cn/upload/default/bigfile/2025/06/03/20250603_93006944e4d814ab68b98f848dadadcd.pdf",
-          "prospective_policy": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
-          "prospective_policy_status": "draft",
-          "prospective_verification_status": "audited-official-archive",
-          "prospective_archive_sha256": "9897f4ebd4e4f48f1234a78bb0d434f5f27dec45b537f6925fd2d48869927372",
-          "replacement_signal": "explicit-replacement",
-          "replaces_formal_policy": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
-          "consultation_period": "2026-05-29/2026-06-27",
-          "prospective_url": "https://www.xclcy.com/8955.html",
-          "transition": "拟停止认定市企业高新技术研究开发中心，相关资质拟迁移为市企业研究院。",
-          "evaluation_rule": "当年申报尚未开放的预评估和未来准备使用征求意见稿；法律状态保持draft，正式资格结论仍标明待正式文件发布。",
+          "route_status": "active-municipal",
+          "formal_policy": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "formal_policy_status": "current",
+          "formal_url": null,
+          "transition": "2026年度申报采用用户指定通知及完整评分附表；原征求意见稿转历史追溯。本次为年度申报规则转正，不据此宣称管理办法已正式颁布或原认定身份自动变更。",
           "monitor": {
-            "status": "awaiting-formal-publication",
+            "status": "formal-promoted",
             "keywords": [
               "杭州市重点企业研究院",
               "杭州市企业研究院",
-              "建设管理办法"
+              "建设管理办法",
+              "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知"
             ],
             "official_domains": [
               "kj.hangzhou.gov.cn",
               "zfgb.hangzhou.gov.cn",
               "hangzhou.gov.cn"
             ],
-            "requires_leaf_threshold_pack": true
-          }
+            "requires_leaf_threshold_pack": true,
+            "last_promoted_source_url": "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg",
+            "last_promoted_title": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知"
+          },
+          "historical_drafts": [
+            {
+              "title": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+              "status": "draft",
+              "prospective_verification_status": "audited-official-archive",
+              "prospective_archive_sha256": "9897f4ebd4e4f48f1234a78bb0d434f5f27dec45b537f6925fd2d48869927372",
+              "replacement_signal": "explicit-replacement",
+              "replaces_formal_policy": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
+              "consultation_period": "2026-05-29/2026-06-27",
+              "source_url": "https://www.xclcy.com/8955.html",
+              "retired_role": "historical-draft-after-formal-promotion"
+            }
+          ],
+          "policy_status": "current",
+          "official_url": null,
+          "source_url": "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg",
+          "verification_status": "user-supplied-reviewed",
+          "source_archive_path": "/Users/zsh/Desktop/杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知.pdf",
+          "applicable_years": [
+            2026
+          ],
+          "source_role": "用户明确指定采用的公众号转载PDF，已逐页核对正文及附表，非政府网站原文核验"
         },
         {
           "city": "宁波市",

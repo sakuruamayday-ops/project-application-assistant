@@ -244,6 +244,8 @@ def promote_verified_formal_candidate(
     policy_registry: Mapping[str, object],
     threshold_registry: Mapping[str, object],
     candidate: Mapping[str, object],
+    *,
+    accepted_source_url: str | None = None,
 ) -> dict[str, object]:
     """Promote a verified official candidate and preserve the former draft."""
     updated_policy = deepcopy(dict(policy_registry))
@@ -276,7 +278,14 @@ def promote_verified_formal_candidate(
         candidate.get("verification_status") or ""
     )
     policy_status = str(candidate.get("policy_status") or "")
-    if verification_status not in {"verified", "official-verified"}:
+    user_supplied = (
+        verification_status == "user-supplied-reviewed"
+        and bool(accepted_source_url)
+        and source_url == accepted_source_url
+        and bool(candidate.get("source_archive_path"))
+        and bool(candidate.get("source_role"))
+    )
+    if verification_status not in {"verified", "official-verified"} and not user_supplied:
         return {
             "status": "rejected",
             "reason": "候选文件尚未完成官方来源核验",
@@ -292,7 +301,7 @@ def promote_verified_formal_candidate(
         (str, bytes),
     ):
         official_domains = []
-    if not _official_domain_allowed(source_url, official_domains):
+    if not _official_domain_allowed(source_url, official_domains) and not user_supplied:
         return {
             "status": "rejected",
             "reason": "候选文件不在该项目登记的政府官方域名内",
@@ -329,6 +338,14 @@ def promote_verified_formal_candidate(
             "reason": "候选正式文件尚未携带可执行阈值轨道",
         }
     for track in tracks:
+        if user_supplied and (
+            track.get("execution_mode") == "project-rule-layer"
+            or not track.get("hard_rules")
+        ):
+            return {
+                "status": "rejected",
+                "reason": "用户指定来源仍须完整拆解可执行叶节点阈值",
+            }
         track["policy_status"] = "current"
         track["formal_conclusion_allowed"] = True
     try:
@@ -346,6 +363,18 @@ def promote_verified_formal_candidate(
             "reason": "候选阈值轨道未通过结构校验",
             "errors": threshold_errors,
         }
+
+    for threshold_city in updated_thresholds.get("city_variants", []):
+        if threshold_city.get("city") == city:
+            threshold_city["content_scope"] = "annual-notice-and-complete-score-attachments"
+            threshold_city["source_documents"] = [{
+                "title": title,
+                "source_url": source_url,
+                "official_url": None if user_supplied else source_url,
+                "source_archive_path": candidate.get("source_archive_path"),
+                "source_role": candidate.get("source_role"),
+                "verification_status": verification_status,
+            }]
 
     before_snapshot = build_policy_transition_snapshot(
         policy_registry,
@@ -368,6 +397,12 @@ def promote_verified_formal_candidate(
     variant["formal_policy_status"] = "current"
     variant["policy_status"] = "current"
     variant["official_url"] = source_url
+    if user_supplied:
+        variant["official_url"] = None
+    variant["source_url"] = source_url
+    variant["verification_status"] = verification_status
+    variant["source_archive_path"] = candidate.get("source_archive_path")
+    variant["applicable_years"] = candidate.get("applicable_years", [])
     variant["source_role"] = str(
         candidate.get("source_role")
         or "经官方来源核验的正式发布文件"
@@ -382,6 +417,8 @@ def promote_verified_formal_candidate(
         f"{prospective}已由正式文件替换；"
         "旧稿仅保留历史追溯，不再参与未来准备判断。"
     )
+    if candidate.get("transition_notice"):
+        variant["transition"] = str(candidate["transition_notice"])
     for key in (
         "prospective_policy",
         "prospective_policy_status",
