@@ -2778,6 +2778,7 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     )
     assert "仍须逐项核验" in hangzhou_fallback
     assert module.current_policy_fallback("杭州企业研究院能报吗") == hangzhou_fallback
+    assert module.hangzhou_rd_policy_notice("杭州企业能申报省企业研究院吗") == ""
     municipal_detail = module.project_algorithm_detail_payload(
         "municipal-enterprise-technology-center"
     )

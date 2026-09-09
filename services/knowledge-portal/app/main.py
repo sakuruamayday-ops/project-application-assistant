@@ -6646,7 +6646,11 @@ def assistant_model_error_reason(error: Exception) -> tuple[str, str]:
 
 
 def hangzhou_rd_policy_notice(question: str) -> str:
-    if "杭州" not in question or not any(term in question for term in ("研发中心", "研究院")):
+    aliases = (
+        "杭州市研发中心", "杭州研发中心", "杭州市企业研究院", "杭州企业研究院",
+        "杭州市重点企业研究院", "杭州重点企业研究院", "杭州市企业高新技术研究开发中心",
+    )
+    if not any(alias in question for alias in aliases):
         return ""
     selected = resolve_policy_transition(
         load_four_city_rd_platform_policy_registry(),
