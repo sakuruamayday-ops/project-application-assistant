@@ -1261,13 +1261,14 @@ def user_access_token(user_id: int, token_seed: str) -> str:
 
 
 def ensure_personal_access_token(user_id: int, label: str = "") -> str:
-    """Reuse the user's active credential, or create a personal one."""
+    """Reuse a portable personal credential, never a desktop-bound token."""
     normalized_label = (label or "个人 Token").strip()[:100] or "个人 Token"
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
         active_token = connection.execute(
             "SELECT id,token_seed,credential_kind FROM device_tokens "
             "WHERE user_id=? AND activation_state='active' "
+            "AND credential_kind='personal' AND binding_id IS NULL "
             "AND revoked_at IS NULL ORDER BY COALESCE(last_used_at,created_at) DESC,id DESC LIMIT 1",
             (user_id,),
         ).fetchone()
@@ -1291,7 +1292,7 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
                     isoformat(utc_now()),
                 ),
             )
-        elif str(active_token["credential_kind"] or "") == "personal":
+        else:
             seed = str(active_token["token_seed"] or secrets.token_urlsafe(24))
             raw_token = user_access_token(user_id, seed)
             connection.execute(
@@ -1308,9 +1309,6 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
                     int(active_token["id"]),
                 ),
             )
-        else:
-            seed = str(active_token["token_seed"])
-            raw_token = user_access_token(user_id, seed)
         connection.commit()
     return raw_token
 
@@ -1333,6 +1331,9 @@ def issue_client_login_token(
         UPDATE device_tokens
         SET revoked_at=?,revoked_reason='superseded_by_client_login',revoked_by='client_login'
         WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+          AND (credential_kind='client' OR binding_id IN (
+              SELECT id FROM device_bindings WHERE auth_method='client_password'
+          ))
         """,
         (now, user_id),
     )
@@ -1340,7 +1341,7 @@ def issue_client_login_token(
         """
         UPDATE device_bindings
         SET revoked_at=?,revoked_reason='superseded_by_client_login'
-        WHERE user_id=? AND revoked_at IS NULL
+        WHERE user_id=? AND revoked_at IS NULL AND auth_method='client_password'
         """,
         (now, user_id),
     )
@@ -1392,13 +1393,14 @@ def reconcile_single_active_credentials(
     connection: sqlite3.Connection,
     reconciled_at: str,
 ) -> int:
-    """Revoke historical duplicate active credentials before enforcing uniqueness."""
+    """Reconcile desktop credentials only; portable MCP tokens may coexist."""
     revoked_count = 0
     duplicate_users = connection.execute(
         """
         SELECT user_id
         FROM device_tokens
         WHERE revoked_at IS NULL AND activation_state='active'
+          AND credential_kind='client'
         GROUP BY user_id
         HAVING COUNT(*) > 1
         ORDER BY user_id
@@ -1411,6 +1413,7 @@ def reconcile_single_active_credentials(
             SELECT id
             FROM device_tokens
             WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+              AND credential_kind='client'
             ORDER BY
                 CASE WHEN COALESCE(last_used_at,'')<>'' THEN 1 ELSE 0 END DESC,
                 last_used_at DESC,
@@ -1431,6 +1434,7 @@ def reconcile_single_active_credentials(
                 revoked_by='system'
             WHERE user_id=? AND id<>? AND revoked_at IS NULL
               AND activation_state='active'
+              AND credential_kind='client'
             """,
             (reconciled_at, user_id, int(survivor["id"])),
         )
@@ -8154,7 +8158,6 @@ def init_database() -> None:
             "WHERE activation_state='active'"
         )
         connection.execute("DROP INDEX IF EXISTS device_tokens_one_active_per_user")
-        reconcile_single_active_credentials(connection, now)
         for active_row in connection.execute(
             "SELECT id,user_id,token_seed FROM device_tokens WHERE revoked_at IS NULL"
         ).fetchall():
@@ -8177,11 +8180,6 @@ def init_database() -> None:
         connection.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_enrollment_idx "
             "ON device_tokens(enrollment_id) WHERE enrollment_id IS NOT NULL"
-        )
-        connection.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_per_user "
-            "ON device_tokens(user_id) "
-            "WHERE revoked_at IS NULL AND activation_state='active'"
         )
         connection.execute(
             """
@@ -8217,6 +8215,14 @@ def init_database() -> None:
                 ELSE credential_kind
             END
             """
+        )
+        # 先修复历史客户端身份，再按客户端维度去重；不得在重启时吊销通用 MCP。
+        reconcile_single_active_credentials(connection, now)
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_client_per_user "
+            "ON device_tokens(user_id) "
+            "WHERE revoked_at IS NULL AND activation_state='active' "
+            "AND credential_kind='client'"
         )
         enrollment_columns = {
             row["name"]
@@ -9862,15 +9868,7 @@ def mark_mcp_connected(
                     activation_state == "pending"
                     and activate_installation_credential
                 ):
-                    connection.execute(
-                        """
-                        UPDATE device_tokens
-                        SET revoked_at=?,revoked_reason='superseded_by_new_credential',
-                            revoked_by='system'
-                        WHERE user_id=? AND id<>? AND revoked_at IS NULL
-                        """,
-                        (now, user_id, device_token_id),
-                    )
+                    # 技能安装只激活自己的凭据，不接管客户端或其他宿主的授权。
                     activated = connection.execute(
                         """
                         UPDATE device_tokens
@@ -18972,6 +18970,7 @@ def create_device_token(
         active_token = connection.execute(
             "SELECT id,token_seed,credential_kind FROM device_tokens "
             "WHERE user_id=? AND activation_state='active' "
+            "AND credential_kind='personal' AND binding_id IS NULL "
             "AND revoked_at IS NULL ORDER BY COALESCE(last_used_at,created_at) DESC,id DESC LIMIT 1",
             (user["id"],),
         ).fetchone()
