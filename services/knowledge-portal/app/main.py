@@ -8217,6 +8217,13 @@ def init_database() -> None:
             """
         )
         # 先修复历史客户端身份，再按客户端维度去重；不得在重启时吊销通用 MCP。
+        # 历史第三方绑定不能占用客户端的单设备名额；两类各自保留唯一性。
+        connection.execute("DROP INDEX IF EXISTS device_bindings_one_active_per_user")
+        connection.execute(
+            "CREATE UNIQUE INDEX device_bindings_one_active_per_user "
+            "ON device_bindings(user_id, (auth_method='client_password')) "
+            "WHERE revoked_at IS NULL"
+        )
         reconcile_single_active_credentials(connection, now)
         connection.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_client_per_user "

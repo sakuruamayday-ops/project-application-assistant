@@ -752,7 +752,8 @@ def publish_test_macos_self_update_feed(
 
 
 @pytest.mark.parametrize("personal_first", [True, False])
-def test_personal_mcp_and_single_device_client_are_independent(tmp_path, personal_first):
+@pytest.mark.parametrize("legacy_binding", [True, False])
+def test_personal_mcp_and_single_device_client_are_independent(tmp_path, personal_first, legacy_binding):
     module = load_app(tmp_path)
     password = "test-password-independent"
     with TestClient(module.app) as client:
@@ -761,6 +762,13 @@ def test_personal_mcp_and_single_device_client_are_independent(tmp_path, persona
         })
         with closing(module.database()) as connection:
             user_id = connection.execute("SELECT id FROM users WHERE username='owner'").fetchone()[0]
+            if legacy_binding:
+                now = module.isoformat(module.utc_now())
+                connection.execute(
+                    "INSERT INTO device_bindings(user_id,device_id_hash,device_id_prefix,device_name,auth_method,first_bound_at,last_seen_at) VALUES (?,?,?,?,?,?,?)",
+                    (user_id, "synthetic-legacy", "synthetic", "Legacy host", "device_signature", now, now),
+                )
+                connection.commit()
 
         def login_device(letter):
             device = "gcd_" + letter * 48
@@ -802,6 +810,11 @@ def test_personal_mcp_and_single_device_client_are_independent(tmp_path, persona
             assert response.json()["result"]["structuredContent"]["connected"] is True
         assert client.get("/v1/me", headers=second).status_code == 200
         with closing(module.database()) as connection:
+            if legacy_binding:
+                assert connection.execute(
+                    "SELECT COUNT(*) FROM device_bindings WHERE user_id=? AND auth_method='device_signature' AND revoked_at IS NULL",
+                    (user_id,),
+                ).fetchone()[0] == 1
             connection.execute("UPDATE device_tokens SET revoked_at=? WHERE token_hash=?",
                                (module.isoformat(module.utc_now()), module.token_hash(personal)))
             connection.commit()
