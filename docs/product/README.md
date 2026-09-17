@@ -1,6 +1,6 @@
 # 企业全生命周期助手产品文档
 
-2026-09-17：[客户端与通用 MCP 授权隔离](client-mcp-credential-isolation.md)已通过正式部署基线的本地回归，等待 CI 与生产部署回执。
+2026-09-17：[客户端与通用 MCP 授权隔离](client-mcp-credential-isolation.md)已正式部署；CI 和公网专项验收通过，客户端保持单设备、通用 MCP 多端共用，原有 10 个有效凭据均保留。[发布证据](evidence/2026-09-17-auth-isolation-release.md)。
 
 更新日期：2026年9月2日
 

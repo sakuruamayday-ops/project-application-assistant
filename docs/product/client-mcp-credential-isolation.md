@@ -2,16 +2,18 @@
 
 更新日期：2026-09-17
 
+状态：已正式部署。AUTH-0917-01 至 AUTH-0917-04 的部署回执、CI 和公网验收见[发布证据](evidence/2026-09-17-auth-isolation-release.md)。下方本地验证记录保留为部署前阶段记录。
+
 ## 范围与规则
 
 同一账号的桌面客户端保持单设备登录，通用技能和 MCP 允许跨设备、跨宿主使用。两类凭据互不吊销。身份验证、账号状态、权限、主动撤销及客户端设备校验继续生效。
 
 | 需求 | 实现与验证 | 发布证据 |
 | --- | --- | --- |
-| AUTH-0917-01 门户只提供通用凭据 | ensure_personal_access_token 和个人凭据启用入口只复用 personal 且无 binding 的 Token；test_personal_mcp_and_single_device_client_are_independent 检查真实门户响应 | 待回填 |
-| AUTH-0917-02 客户端单设备且不影响 MCP | issue_client_login_token 只撤销客户端凭据和客户端绑定；上述参数化测试覆盖两种授权顺序、旧客户端 409、缺设备 401、双宿主 MCP 调用成功 | 待回填 |
-| AUTH-0917-03 重启和技能安装不踢掉其他授权 | 数据库按已规范化的 client 类型去重并约束唯一；安装激活不再撤销其他有效凭据；数据库迁移及安装回执测试通过 | 待回填 |
-| AUTH-0917-04 通用凭据可主动撤销 | 上述参数化测试撤销并重新取得个人 Token，旧 Token 401，客户端仍有效 | 待回填 |
+| AUTH-0917-01 门户只提供通用凭据 | ensure_personal_access_token 和个人凭据启用入口只复用 personal 且无 binding 的 Token；test_personal_mcp_and_single_device_client_are_independent 检查真实门户响应 | [已部署及公网验收](evidence/2026-09-17-auth-isolation-release.md) |
+| AUTH-0917-02 客户端单设备且不影响 MCP | issue_client_login_token 只撤销客户端凭据和客户端绑定；上述参数化测试覆盖两种授权顺序、旧客户端 409、缺设备 401、双宿主 MCP 调用成功 | [已部署及公网验收](evidence/2026-09-17-auth-isolation-release.md) |
+| AUTH-0917-03 重启和技能安装不踢掉其他授权 | 数据库按已规范化的 client 类型去重并约束唯一；安装激活不再撤销其他有效凭据；数据库迁移及安装回执测试通过 | [已部署及公网验收](evidence/2026-09-17-auth-isolation-release.md) |
+| AUTH-0917-04 通用凭据可主动撤销 | 上述参数化测试撤销并重新取得个人 Token，旧 Token 401，客户端仍有效 | [已部署及公网验收](evidence/2026-09-17-auth-isolation-release.md) |
 
 ## 实现边界
 
@@ -33,4 +35,4 @@ PYTHONPATH=services/knowledge-portal:. .venv/bin/python -m pytest services/knowl
 
 ## 发布状态
 
-本地实现及验证完成，未部署生产，未发布客户端或技能包。现有工作树存在其他未发布修改，部署必须单独提取本次变更，不能整份覆盖线上 main.py。服务端上线后还需回填运行版本和部署后验证证据。本次没有要求升级客户端安装包。
+已将本次补丁单独提取到正式部署工作树，基于线上原提交部署，未混入其他工作树改动。正式部署 `20260917T090433Z-14fba533f22d-d91baab8`，源提交 `14fba533f22dddea77f86f18f7681beb3b0e656e`；未发布客户端或技能包。各需求的发布证据均见上述发布记录，不再处于待发布状态。
