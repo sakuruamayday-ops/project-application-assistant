@@ -21,7 +21,7 @@
 
 ## 测试证据
 
-执行目录：jiaotang-production-main。
+执行目录：正式部署工作树根目录。
 
 ```sh
 PYTHONPATH=services/knowledge-portal:. .venv/bin/python -m pytest services/knowledge-portal/tests/test_portal.py -q --disable-warnings --maxfail=3
