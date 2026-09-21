@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.6.19",
+  "skill_bundle_version": "1.6.20",
   "operations": [
     {
       "id": "manufacturing-tax-risk-analysis.calculate-metrics",
@@ -12,32 +12,50 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 1048576,
-      "result_exit_codes": [0],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "stdout_json_schema_version": "manufacturing-tax-risk-calculation-operation/v1",
       "parameters": {
         "input": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".json"],
+          "extensions": [
+            ".json"
+          ],
           "max_bytes": 16777216
         },
         "financialFactsOutput": {
           "type": "workspace-output-file",
           "required": true,
-          "extensions": [".json"]
+          "extensions": [
+            ".json"
+          ]
         },
         "metricsOutput": {
           "type": "workspace-output-file",
           "required": true,
-          "extensions": [".json"]
+          "extensions": [
+            ".json"
+          ]
         }
       },
       "argv": [
-        { "parameter": "input" },
-        { "parameter": "financialFactsOutput" },
-        { "literal": "--metrics-output" },
-        { "parameter": "metricsOutput" }
+        {
+          "parameter": "input"
+        },
+        {
+          "parameter": "financialFactsOutput"
+        },
+        {
+          "literal": "--metrics-output"
+        },
+        {
+          "parameter": "metricsOutput"
+        }
       ]
     },
     {
@@ -50,18 +68,27 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 262144,
-      "result_exit_codes": [0],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "textFile": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".txt", ".md"],
+          "extensions": [
+            ".txt",
+            ".md"
+          ],
           "max_bytes": 16777216
         }
       },
       "argv": [
-        { "parameter": "textFile" }
+        {
+          "parameter": "textFile"
+        }
       ]
     },
     {
@@ -69,24 +96,38 @@
       "skill": "evidence-ledger",
       "description": "按严格落地证据口径校验证据台账。",
       "script": "evidence-ledger/scripts/validate_evidence_ledger.py",
-      "files": ["report-skill-registry.json"],
+      "files": [
+        "report-skill-registry.json"
+      ],
       "sandbox_mode": "read-only",
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 524288,
-      "result_exit_codes": [0, 2],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        2
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "ledger": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".json", ".jsonl"],
+          "extensions": [
+            ".json",
+            ".jsonl"
+          ],
           "max_bytes": 67108864
         }
       },
       "argv": [
-        { "parameter": "ledger" },
-        { "literal": "--strict-grounded" }
+        {
+          "parameter": "ledger"
+        },
+        {
+          "literal": "--strict-grounded"
+        }
       ]
     },
     {
@@ -99,8 +140,12 @@
       "network": "none",
       "timeout_ms": 60000,
       "max_output_bytes": 262144,
-      "result_exit_codes": [0],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "stdout_json_schema_version": "gongchuang-docx-generation-operation/v1",
       "parameters": {
         "content": {
@@ -112,12 +157,18 @@
         "output": {
           "type": "workspace-output-file",
           "required": true,
-          "extensions": [".docx"]
+          "extensions": [
+            ".docx"
+          ]
         }
       },
       "argv": [
-        { "parameter": "content" },
-        { "parameter": "output" }
+        {
+          "parameter": "content"
+        },
+        {
+          "parameter": "output"
+        }
       ]
     },
     {
@@ -145,19 +196,29 @@
       "network": "none",
       "timeout_ms": 60000,
       "max_output_bytes": 262144,
-      "result_exit_codes": [0],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "stdout_json_schema_version": "gongchuang-office-branding-operation/v1",
       "parameters": {
         "artifact": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".docx", ".xlsx", ".xlsm"],
+          "extensions": [
+            ".docx",
+            ".xlsx",
+            ".xlsm"
+          ],
           "max_bytes": 134217728
         }
       },
       "argv": [
-        { "parameter": "artifact" }
+        {
+          "parameter": "artifact"
+        }
       ]
     },
     {
@@ -170,26 +231,41 @@
       "network": "none",
       "timeout_ms": 60000,
       "max_output_bytes": 1048576,
-      "result_exit_codes": [0, 1],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        1
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "applicationDocx": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".docx"],
+          "extensions": [
+            ".docx"
+          ],
           "max_bytes": 134217728
         },
         "innovationEvidence": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".json"],
+          "extensions": [
+            ".json"
+          ],
           "max_bytes": 16777216
         }
       },
       "argv": [
-        { "parameter": "applicationDocx" },
-        { "literal": "--innovation-evidence" },
-        { "parameter": "innovationEvidence" }
+        {
+          "parameter": "applicationDocx"
+        },
+        {
+          "literal": "--innovation-evidence"
+        },
+        {
+          "parameter": "innovationEvidence"
+        }
       ]
     },
     {
@@ -202,18 +278,27 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 524288,
-      "result_exit_codes": [0, 2],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        2
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "assessment": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".json"],
+          "extensions": [
+            ".json"
+          ],
           "max_bytes": 33554432
         }
       },
       "argv": [
-        { "parameter": "assessment" }
+        {
+          "parameter": "assessment"
+        }
       ]
     },
     {
@@ -226,19 +311,54 @@
       "network": "none",
       "timeout_ms": 60000,
       "max_output_bytes": 1048576,
-      "result_exit_codes": [0, 2],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        2
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "stdout_json_schema_version": "gongchuang-document-extraction/v1",
       "parameters": {
         "document": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".doc", ".docx", ".docm", ".dotx", ".dotm", ".wps", ".rtf", ".xls", ".xlsx", ".xlsm", ".xltx", ".xltm", ".ods", ".odt", ".csv", ".tsv", ".et", ".pdf", ".txt", ".ppt", ".pptx", ".pptm", ".potx", ".potm", ".ppsx", ".ppsm", ".dps"],
+          "extensions": [
+            ".doc",
+            ".docx",
+            ".docm",
+            ".dotx",
+            ".dotm",
+            ".wps",
+            ".rtf",
+            ".xls",
+            ".xlsx",
+            ".xlsm",
+            ".xltx",
+            ".xltm",
+            ".ods",
+            ".odt",
+            ".csv",
+            ".tsv",
+            ".et",
+            ".pdf",
+            ".txt",
+            ".ppt",
+            ".pptx",
+            ".pptm",
+            ".potx",
+            ".potm",
+            ".ppsx",
+            ".ppsm",
+            ".dps"
+          ],
           "max_bytes": 134217728
         }
       },
       "argv": [
-        { "parameter": "document" }
+        {
+          "parameter": "document"
+        }
       ]
     },
     {
@@ -251,18 +371,27 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 524288,
-      "result_exit_codes": [0, 2],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        2
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "assessment": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".json"],
+          "extensions": [
+            ".json"
+          ],
           "max_bytes": 33554432
         }
       },
       "argv": [
-        { "parameter": "assessment" }
+        {
+          "parameter": "assessment"
+        }
       ]
     },
     {
@@ -270,37 +399,66 @@
       "skill": "sme-score-preassessment",
       "description": "按 2026 政策基线执行专精特新前期预评估遗漏扫描。参数必须来自本轮材料；返回 needs-user-input 时只向用户提出一次 blocking_question。",
       "script": "sme-score-preassessment/scripts/preflight.py",
-      "files": ["sme-score-preassessment/references/current-policy-baseline-2026.json"],
+      "files": [
+        "sme-score-preassessment/references/current-policy-baseline-2026.json"
+      ],
       "sandbox_mode": "read-only",
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 262144,
-      "result_exit_codes": [0, 2],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        2
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "taskType": {
           "type": "enum",
           "required": true,
-          "values": ["quality-preassessment", "gate-only", "explanation"]
+          "values": [
+            "quality-preassessment",
+            "gate-only",
+            "explanation"
+          ]
         },
         "projectLevel": {
           "type": "enum",
           "required": true,
-          "values": ["省级专精特新中小企业", "专精特新“小巨人”"]
+          "values": [
+            "省级专精特新中小企业",
+            "专精特新“小巨人”"
+          ]
         },
         "applicationType": {
           "type": "enum",
           "required": true,
-          "values": ["新申报", "复核"]
+          "values": [
+            "新申报",
+            "复核"
+          ]
         }
       },
       "argv": [
-        { "literal": "--task-type" },
-        { "parameter": "taskType" },
-        { "literal": "--project-level" },
-        { "parameter": "projectLevel" },
-        { "literal": "--application-type" },
-        { "parameter": "applicationType" }
+        {
+          "literal": "--task-type"
+        },
+        {
+          "parameter": "taskType"
+        },
+        {
+          "literal": "--project-level"
+        },
+        {
+          "parameter": "projectLevel"
+        },
+        {
+          "literal": "--application-type"
+        },
+        {
+          "parameter": "applicationType"
+        }
       ]
     },
     {
@@ -313,19 +471,30 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 524288,
-      "result_exit_codes": [0, 1],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        1
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "draft": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".md"],
+          "extensions": [
+            ".md"
+          ],
           "max_bytes": 16777216
         }
       },
       "argv": [
-        { "parameter": "draft" },
-        { "literal": "--json" }
+        {
+          "parameter": "draft"
+        },
+        {
+          "literal": "--json"
+        }
       ]
     },
     {
@@ -338,18 +507,27 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 262144,
-      "result_exit_codes": [0, 2],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        2
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "timeline": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".json"],
+          "extensions": [
+            ".json"
+          ],
           "max_bytes": 16777216
         }
       },
       "argv": [
-        { "parameter": "timeline" }
+        {
+          "parameter": "timeline"
+        }
       ]
     },
     {
@@ -362,18 +540,27 @@
       "network": "none",
       "timeout_ms": 30000,
       "max_output_bytes": 524288,
-      "result_exit_codes": [0, 2],
-      "passing_exit_codes": [0],
+      "result_exit_codes": [
+        0,
+        2
+      ],
+      "passing_exit_codes": [
+        0
+      ],
       "parameters": {
         "records": {
           "type": "workspace-input-file",
           "required": true,
-          "extensions": [".json"],
+          "extensions": [
+            ".json"
+          ],
           "max_bytes": 33554432
         }
       },
       "argv": [
-        { "parameter": "records" }
+        {
+          "parameter": "records"
+        }
       ]
     }
   ]

@@ -1,6 +1,6 @@
 ============================= test session starts ==============================
 platform darwin -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0
-rootdir: /Users/zsh/JiaotangData/build-worktrees/skills-upgrade-20260921
+rootdir: repository://project-application-assistant
 configfile: pyproject.toml
 collected 39 items / 38 deselected / 1 selected
 
