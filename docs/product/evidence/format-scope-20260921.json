@@ -1,0 +1,57 @@
+{
+  "runtime": "packaged review6 Python",
+  "cases": [
+    {
+      "case": "test_legacy_presentation_has_an_explicit_conversion_action",
+      "passed": true,
+      "files": [
+        {
+          "file": "legacy.ppt",
+          "status": "conversion_required",
+          "detected_kind": "ppt",
+          "message": "检测到旧式二进制演示文稿。请用原应用另存为 PPTX 或 PDF 后继续；原文件不会被修改。",
+          "original_unchanged": true
+        }
+      ]
+    },
+    {
+      "case": "test_unknown_proprietary_wps_returns_conversion_instead_of_generic_error",
+      "passed": true,
+      "files": [
+        {
+          "file": "专有格式.wps",
+          "status": "conversion_required",
+          "detected_kind": "proprietary-office",
+          "message": "检测到当前内置解析器无法确认的 WPS／ET／DPS 专有文档，请另存为 DOCX、XLSX、PPTX、PDF、ODT、ODS、RTF 或文本后再读取。",
+          "original_unchanged": true
+        }
+      ]
+    },
+    {
+      "case": "test_routes_by_content_when_docx_has_wps_suffix",
+      "passed": true,
+      "files": [
+        {
+          "file": "错后缀.wps",
+          "status": "extracted",
+          "detected_kind": "docx",
+          "message": "",
+          "original_unchanged": true
+        }
+      ]
+    },
+    {
+      "case": "test_dps_compatibility_input_uses_the_real_pptx_container",
+      "passed": true,
+      "files": [
+        {
+          "file": "兼容演示.dps",
+          "status": "extracted",
+          "detected_kind": "pptx",
+          "message": "",
+          "original_unchanged": true
+        }
+      ]
+    }
+  ]
+}

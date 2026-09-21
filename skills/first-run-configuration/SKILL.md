@@ -11,7 +11,7 @@ description: 统一完成企业全生命周期助手首次配置、能力检测�
 
 每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设特定宿主变量或猜测路径。
 
-宿主若只暴露 `run_code`，`skill`、`read`、`web_search`、校验器等工具均须在其中以 `await tools.<name>(...)` 调用，不得根级调用隐藏工具。先按 `SKILL.md` 或参考文档执行命令。脚本名或命令表示执行入口，不是预读源码许可；首次执行前不得读取 `scripts/**`、`examples/**`、`tests/**`、`*.example.*`、`package.json`，也不得列出技能目录。只有文档命令已经真实失败，且错误仍不足以确定调用契约时，才可定向读取与该失败直接相关的一个源码文件。
+先按本技能文档执行，工具调用以当前宿主实际暴露的接口为准。一般任务按需读取；用户要求源码审阅、接口核对或修复时，可直接定向读取相关源码、帮助和样例，不必先制造失败。
 
 `fail` 表示签名、发布者身份或完整性失败，必须停用受影响副本；`limited` 表示已验签副本的依赖或偏好读写受限，仅在任务所需能力仍满足时继续并说明边界。只应用返回的 `active_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
@@ -94,13 +94,13 @@ python3 scripts/manage_preferences.py undo
 python3 scripts/manage_preferences.py reset
 ```
 
-升级并生成继承报告：
+升级并生成继承及偏好候选报告，默认不应用新偏好：
 
 ```bash
 python3 scripts/upgrade_inheritance.py --source <新版解压目录> --target <Agent的Skills目录> --version <版本号>
 ```
 
-旧版Skill已经被手工修改时，一键转为个人偏好并同步：
+已明确授权迁移既有长期偏好时，升级命令可增加 `--migrate-preferences`。用户另行明确要求迁移并同步时，才运行：
 
 ```bash
 python3 scripts/migrate_skill_preferences.py --sync

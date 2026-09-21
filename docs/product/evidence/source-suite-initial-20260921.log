@@ -1,0 +1,316 @@
+...........................................F.F.......................... [ 18%]
+........................................................................ [ 36%]
+..........................s.FFF....................................... [ 54%]
+........................................................ [ 68%]
+.................................F..................................F... [ 86%]
+.....................................................s                   [100%]
+=================================== FAILURES ===================================
+____________ test_sme_skill_documents_the_signed_validator_contract ____________
+
+    def test_sme_skill_documents_the_signed_validator_contract():
+        skill_text = (
+            SKILLS / "sme-development-projects" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        operation_registry = json.loads(
+            (SKILLS / "client-runtime-operations.json").read_text(encoding="utf-8")
+        )
+        operation = next(
+            item
+            for item in operation_registry["operations"]
+            if item["id"] == "sme-development-projects.validate-assessment"
+        )
+    
+        assert '"assessment":"<工作区内结果.json>"' in skill_text
+        assert "一次构造、一次调用" in operation["description"]
+>       assert "不得创建探针文件" in skill_text
+E       AssertionError: assert '不得创建探针文件' in '---\nname: sme-development-projects\ndescription: 处理优质中小企业培育、申请书审核与申报写作；前期测分转 sme-score-preassessment。\n---\n\n# 中小企业...ripts/validate_sme_assessment.py <结果.json>`。校验失败后的修复与停止条件统一执行 [共享任务边界](../_runtime/task-execution.md)；未通过校验不得交付正式结论。\n'
+
+tests/test_core_skill_engines.py:306: AssertionError
+________________ test_policy_freshness_current_manifest_passes _________________
+
+    @requires_policy_freshness_host
+    def test_policy_freshness_current_manifest_passes():
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(POLICY_FRESHNESS_SCRIPT),
+                "--skills-root",
+                str(SKILLS),
+                "--as-of",
+                "2026-09-02",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: {
+E           "status": "fail",
+E           "as_of": "2026-09-02",
+E           "record_count": 8,
+E           "errors": [
+E             "sme-current-policy-2026:来源哈希变化，必须重新核验并更新元数据"
+E           ],
+E           "warnings": []
+E         }
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/Library/Frameworks/Python.framework/Versions/3.13/bin/python3', '/Users/zsh/.codex/skills/ski..._count": 8,\n  "errors": [\n    "sme-current-policy-2026:来源哈希变化，必须重新核验并更新元数据"\n  ],\n  "warnings": []\n}\n', stderr='').returncode
+
+tests/test_core_skill_engines.py:401: AssertionError
+_______ InstallTests.test_signed_install_is_read_only_and_fully_verified _______
+
+self = <test_install.InstallTests testMethod=test_signed_install_is_read_only_and_fully_verified>
+
+    @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
+    def test_signed_install_is_read_only_and_fully_verified(self):
+        repository = Path(__file__).resolve().parents[1]
+        signed_source = (
+            repository / "skills/high-tech-enterprise-application-drafting"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            shutil.copytree(
+                signed_source,
+                source / signed_source.name,
+            )
+            destination = root / "destination"
+            config_dir = root / "config"
+            report_out = {}
+            try:
+>               installed = install_skills(
+                    source,
+                    destination,
+                    "copy",
+                    True,
+                    config_dir,
+                    "1.1",
+                    require_signatures=True,
+                    report_out=report_out,
+                )
+
+tests/test_install.py:436: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/project_assistant/installer.py:319: in install_skills
+    verify_skill_directory(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+skill_dir = PosixPath('/private/var/folders/f7/8nhd5bc16hdbj33bcd2_3d4w0000gn/T/gc-suite-source-review-7ntro3um/temp/tmpmqufcjhe/source/high-tech-enterprise-application-drafting')
+evidence_dir = PosixPath('/private/var/folders/f7/8nhd5bc16hdbj33bcd2_3d4w0000gn/T/gc-suite-source-review-7ntro3um/temp/tmpmqufcjhe/config/install-evidence/20260921T104802910055Z/source-signatures')
+label = 'source-high-tech-enterprise-application-drafting'
+require_signature = True, expected_public_fingerprint = None
+
+    def verify_skill_directory(
+        skill_dir: Path,
+        *,
+        evidence_dir: Path,
+        label: str,
+        require_signature: bool = True,
+        expected_public_fingerprint: str | None = None,
+    ) -> dict[str, Any]:
+        manifest_path = skill_dir / "release-manifest.json"
+        if not manifest_path.is_file():
+            if require_signature:
+                raise RuntimeError(f"{label}缺少release-manifest.json")
+            return {
+                "status": "unsigned",
+                "skill": skill_dir.name,
+                "checked_files": 0,
+            }
+        manifest = load_json(manifest_path)
+        skill_name = str(manifest.get("skill_name") or "")
+        if skill_name != skill_dir.name:
+            raise RuntimeError(
+                f"{label}技能目录名与发布清单不一致：{skill_dir.name} / {skill_name}"
+            )
+        declared = manifest.get("files")
+        if not isinstance(declared, dict) or not declared:
+            raise RuntimeError(f"{label}发布清单没有文件哈希")
+        errors: list[str] = []
+        for relative, expected in declared.items():
+            path = skill_dir / str(relative)
+            if not path.is_file():
+                errors.append(f"缺少文件：{relative}")
+            elif sha256_file(path) != expected:
+                errors.append(f"文件哈希不一致：{relative}")
+        for relative in manifest.get("required_paths", []):
+            if not (skill_dir / str(relative)).exists():
+                errors.append(f"缺少必需路径：{relative}")
+        if errors:
+>           raise RuntimeError(f"{label}完整性校验失败：" + "；".join(errors))
+E           RuntimeError: source-high-tech-enterprise-application-drafting完整性校验失败：文件哈希不一致：SKILL.md
+
+src/project_assistant/skill_integrity.py:223: RuntimeError
+____ InstallTests.test_signed_upgrade_rolls_back_when_post_swap_step_fails _____
+RuntimeError: source-high-tech-enterprise-application-drafting完整性校验失败：文件哈希不一致：SKILL.md
+
+During handling of the above exception, another exception occurred:
+
+self = <test_install.InstallTests testMethod=test_signed_upgrade_rolls_back_when_post_swap_step_fails>
+
+    @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
+    def test_signed_upgrade_rolls_back_when_post_swap_step_fails(self):
+        repository = Path(__file__).resolve().parents[1]
+        signed_source = (
+            repository / "skills/high-tech-enterprise-application-drafting"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            shutil.copytree(
+                signed_source,
+                source / signed_source.name,
+            )
+            destination = root / "destination"
+            existing = destination / signed_source.name
+            existing.mkdir(parents=True)
+            (existing / "SKILL.md").write_text(
+                "previous-install",
+                encoding="utf-8",
+            )
+            config_dir = root / "config"
+            with mock.patch(
+                "project_assistant.installer.freeze_signed_skill",
+                side_effect=RuntimeError("injected-freeze-failure"),
+            ):
+>               with self.assertRaisesRegex(
+                    RuntimeError, "injected-freeze-failure"
+                ):
+E               AssertionError: "injected-freeze-failure" does not match "source-high-tech-enterprise-application-drafting完整性校验失败：文件哈希不一致：SKILL.md"
+
+tests/test_install.py:330: AssertionError
+____ InstallTests.test_signed_upgrade_temporarily_thaws_read_only_directory ____
+
+self = <test_install.InstallTests testMethod=test_signed_upgrade_temporarily_thaws_read_only_directory>
+
+    @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
+    def test_signed_upgrade_temporarily_thaws_read_only_directory(self):
+        repository = Path(__file__).resolve().parents[1]
+        signed_source = (
+            repository / "skills/high-tech-enterprise-application-drafting"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            shutil.copytree(signed_source, source / signed_source.name)
+            destination = root / "destination"
+            config_dir = root / "config"
+            try:
+>               install_skills(
+                    source,
+                    destination,
+                    "copy",
+                    True,
+                    config_dir,
+                    "1.1",
+                    require_signatures=True,
+                )
+
+tests/test_install.py:494: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/project_assistant/installer.py:319: in install_skills
+    verify_skill_directory(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+skill_dir = PosixPath('/private/var/folders/f7/8nhd5bc16hdbj33bcd2_3d4w0000gn/T/gc-suite-source-review-7ntro3um/temp/tmpvddnc0h1/source/high-tech-enterprise-application-drafting')
+evidence_dir = PosixPath('/private/var/folders/f7/8nhd5bc16hdbj33bcd2_3d4w0000gn/T/gc-suite-source-review-7ntro3um/temp/tmpvddnc0h1/config/install-evidence/20260921T104802940507Z/source-signatures')
+label = 'source-high-tech-enterprise-application-drafting'
+require_signature = True, expected_public_fingerprint = None
+
+    def verify_skill_directory(
+        skill_dir: Path,
+        *,
+        evidence_dir: Path,
+        label: str,
+        require_signature: bool = True,
+        expected_public_fingerprint: str | None = None,
+    ) -> dict[str, Any]:
+        manifest_path = skill_dir / "release-manifest.json"
+        if not manifest_path.is_file():
+            if require_signature:
+                raise RuntimeError(f"{label}缺少release-manifest.json")
+            return {
+                "status": "unsigned",
+                "skill": skill_dir.name,
+                "checked_files": 0,
+            }
+        manifest = load_json(manifest_path)
+        skill_name = str(manifest.get("skill_name") or "")
+        if skill_name != skill_dir.name:
+            raise RuntimeError(
+                f"{label}技能目录名与发布清单不一致：{skill_dir.name} / {skill_name}"
+            )
+        declared = manifest.get("files")
+        if not isinstance(declared, dict) or not declared:
+            raise RuntimeError(f"{label}发布清单没有文件哈希")
+        errors: list[str] = []
+        for relative, expected in declared.items():
+            path = skill_dir / str(relative)
+            if not path.is_file():
+                errors.append(f"缺少文件：{relative}")
+            elif sha256_file(path) != expected:
+                errors.append(f"文件哈希不一致：{relative}")
+        for relative in manifest.get("required_paths", []):
+            if not (skill_dir / str(relative)).exists():
+                errors.append(f"缺少必需路径：{relative}")
+        if errors:
+>           raise RuntimeError(f"{label}完整性校验失败：" + "；".join(errors))
+E           RuntimeError: source-high-tech-enterprise-application-drafting完整性校验失败：文件哈希不一致：SKILL.md
+
+src/project_assistant/skill_integrity.py:223: RuntimeError
+___________ test_public_namespace_gate_covers_current_public_sources ___________
+
+    def test_public_namespace_gate_covers_current_public_sources():
+        report = verify_public_namespace(source_root=ROOT)
+>       assert report["status"] == "pass"
+E       AssertionError: assert 'fail' == 'pass'
+E         
+E         - pass
+E         + fail
+
+tests/test_public_branding_contract.py:101: AssertionError
+____ test_distributed_portable_runtime_blocks_are_compact_and_host_neutral _____
+
+    def test_distributed_portable_runtime_blocks_are_compact_and_host_neutral():
+        repository = Path(__file__).resolve().parents[1]
+        blocks = []
+        for path in sorted((repository / "skills").glob("*/SKILL.md")):
+            text = path.read_text(encoding="utf-8")
+            match = re.search(
+                r"<!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->([\s\S]*?)<!-- END MANAGED PORTABLE SKILL RUNTIME -->",
+                text,
+            )
+            assert match is not None, path
+            block = match.group(1)
+            assert len(block) < 700, path
+            assert "portable_skill_runtime.py" in block
+            assert "workbuddy_preference_bridge.py" not in block
+            assert "真实性、安全、验签和质量门禁" in block
+>           assert "await tools.<name>(...)" in block
+E           AssertionError: assert 'await tools.<name>(...)' in '\n## 便携运行门禁\n\n每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设特定宿主变量或...e_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。\n'
+
+tests/test_suite_external_services.py:87: AssertionError
+=============================== warnings summary ===============================
+tests/test_project_report_profile_delivery.py::test_report_profile_requires_sections_tables_and_branding_without_forcing_pdf
+tests/test_project_report_profile_delivery.py::test_report_profile_requires_sections_tables_and_branding_without_forcing_pdf
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/test_project_report_profile_delivery.py::test_report_profile_requires_sections_tables_and_branding_without_forcing_pdf
+tests/test_project_report_profile_delivery.py::test_report_profile_requires_sections_tables_and_branding_without_forcing_pdf
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_project_report_profile_delivery.py::test_report_profile_requires_sections_tables_and_branding_without_forcing_pdf
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_core_skill_engines.py::test_sme_skill_documents_the_signed_validator_contract
+FAILED tests/test_core_skill_engines.py::test_policy_freshness_current_manifest_passes
+FAILED tests/test_install.py::InstallTests::test_signed_install_is_read_only_and_fully_verified
+FAILED tests/test_install.py::InstallTests::test_signed_upgrade_rolls_back_when_post_swap_step_fails
+FAILED tests/test_install.py::InstallTests::test_signed_upgrade_temporarily_thaws_read_only_directory
+FAILED tests/test_public_branding_contract.py::test_public_namespace_gate_covers_current_public_sources
+FAILED tests/test_suite_external_services.py::test_distributed_portable_runtime_blocks_are_compact_and_host_neutral
+7 failed, 387 passed, 3 skipped, 5 warnings, 18 subtests passed in 20.26s
+<sys>:0: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

@@ -1,0 +1,316 @@
+{
+  "scope": "isolated instruction preparation only; no signing, installation or release",
+  "skill_count": 51,
+  "old_publisher_replacements": 51,
+  "candidate_preserved": 51,
+  "idempotent": 51,
+  "candidate_publisher": "/private/tmp/gongchuang-publisher-review-20260921",
+  "results": [
+    {
+      "skill": "agriculture-and-rural-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "application-version-diff",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "application-writing",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "checking-patdocx-cn-single-agent",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "consistency-check",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "deep-clarification",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "digitalization-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "enterprise-panorama-analysis",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "enterprise-profile",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "evidence-ledger",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "evolution-governance",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "experience-recorder",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "financial-verification",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "first-run-configuration",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "gongchuang-humanizer-zh",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "graphify",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "green-development-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "high-tech-enterprise-application-drafting",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "high-tech-enterprise-preassessment",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "industrialization-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "industry-chain-foundation-matcher",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "industry-positioning",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "intellectual-property-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "investment-subsidy-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "ip-assessment",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "legal-regulations",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "local-knowledge-retrieval",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "manufacturing-tax-risk-analysis",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "patent-router",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "peer-benchmarking",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "policy-retrieval",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "project-application-assistant",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "project-deliverable-archive",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "project-feasibility",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "project-matching",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "project-memory",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "project-rule-manager",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "project-task-router",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "quality-brand-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "regional-special-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "skill-authoring",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "skill-curator",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "skill-evolution",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "sme-development-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "sme-score-preassessment",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "standard-drafting",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "talent-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "technology-innovation-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "third-party-data-indexing",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "trade-and-open-economy-projects",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    },
+    {
+      "skill": "web-task-operator",
+      "old_publisher_replaces_candidate_notice": true,
+      "candidate_notice_preserved": true,
+      "second_pass_identical": true
+    }
+  ]
+}

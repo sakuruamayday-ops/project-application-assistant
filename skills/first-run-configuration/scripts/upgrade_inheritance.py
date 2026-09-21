@@ -74,13 +74,13 @@ def markdown_report(report: dict[str, object]) -> str:
         ]
     )
     if report.get("preference_migration_report"):
-        lines.extend(["", f"- 个人习惯迁移报告：`{report['preference_migration_report']}`"])
+        lines.extend(["", f"- 个人习惯迁移模式：{report.get('preference_migration_mode', 'unknown')}；报告：`{report['preference_migration_report']}`"])
     if report.get("preference_migration_error"):
         lines.extend(["", f"- 个人习惯迁移待处理：{report['preference_migration_error']}"])
     return "\n".join(lines) + "\n"
 
 
-def upgrade(source: Path, destination: Path, config_dir: Path, version: str) -> Path:
+def upgrade(source: Path, destination: Path, config_dir: Path, version: str, *, migrate_preferences: bool = False) -> Path:
     skills_source = source / "skills" if (source / "skills").is_dir() else source
     if not skills_source.is_dir():
         raise FileNotFoundError(f"找不到Skills目录：{skills_source}")
@@ -160,8 +160,10 @@ def upgrade(source: Path, destination: Path, config_dir: Path, version: str) -> 
                     json_path,
                     config_dir / "preferences.json",
                     config_dir / "preference-migration-reports",
+                    apply=migrate_preferences,
                 )
                 report["preference_migration_report"] = str(migration_report)
+                report["preference_migration_mode"] = "applied" if migrate_preferences else "preview"
             except (FileNotFoundError, OSError, ValueError, json.JSONDecodeError) as error:
                 report["preference_migration_error"] = str(error)
             write_json(json_path, report)
@@ -175,6 +177,7 @@ def main() -> int:
     parser.add_argument("--target", type=Path, required=True, help="Agent的Skills目录")
     parser.add_argument("--config-dir", type=Path, default=DEFAULT_CONFIG_DIR)
     parser.add_argument("--version", required=True)
+    parser.add_argument("--migrate-preferences", action="store_true", help="仅在用户明确授权迁移既有长期偏好时应用；默认只生成候选报告")
     args = parser.parse_args()
     try:
         report = upgrade(
@@ -182,6 +185,7 @@ def main() -> int:
             args.target.expanduser().resolve(),
             args.config_dir.expanduser().resolve(),
             args.version,
+            migrate_preferences=args.migrate_preferences,
         )
     except (FileNotFoundError, OSError, ValueError, json.JSONDecodeError) as error:
         print(f"升级失败：{error}")

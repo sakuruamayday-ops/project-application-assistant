@@ -112,6 +112,88 @@ def test_extracts_docx_paragraphs(tmp_path: Path) -> None:
     assert "已产业化" in str(result["text"])
 
 
+def test_docx_locations_distinguish_repeated_paragraphs_tables_and_headers(tmp_path: Path) -> None:
+    source = tmp_path / "来源定位.docx"
+    with zipfile.ZipFile(source, "w") as archive:
+        write_content_types(archive, "word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")
+        archive.writestr("word/document.xml", '<w:document xmlns:w="urn:w"><w:body><w:p/>'
+                         '<w:p><w:r><w:t>技术🧪</w:t></w:r></w:p>'
+                         '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>0 false</w:t></w:r></w:p></w:tc></w:tr></w:tbl>'
+                         '<w:p><w:r><w:t>技术🧪</w:t></w:r></w:p></w:body></w:document>')
+        archive.writestr("word/header1.xml", '<w:hdr xmlns:w="urn:w"><w:p><w:r><w:t>技术🧪</w:t></w:r></w:p></w:hdr>')
+    original = source.read_bytes()
+    code, result = run(source)
+    assert code == 0
+    assert source.read_bytes() == original
+    locations = result["source_locations"]
+    assert [(item["part"], item["paragraph"]) for item in locations] == [
+        ("word/document.xml", 2), ("word/document.xml", 3),
+        ("word/document.xml", 4), ("word/header1.xml", 1),
+    ]
+    assert [result["text"][item["start"]:item["end"]] for item in locations] == [
+        "技术🧪", "0 false", "技术🧪", "技术🧪",
+    ]
+    assert all(left["end"] <= right["start"] for left, right in zip(locations, locations[1:]))
+
+
+def test_docx_text_box_location_does_not_claim_a_later_identical_paragraph(tmp_path: Path) -> None:
+    source = tmp_path / "文本框定位.docx"
+    with zipfile.ZipFile(source, "w") as archive:
+        write_content_types(archive, "word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")
+        archive.writestr("word/document.xml", '<w:document xmlns:w="urn:w"><w:body>'
+                         '<w:p><w:r><w:t>重复</w:t><w:txbxContent><w:p><w:r><w:t>重复</w:t></w:r></w:p></w:txbxContent></w:r></w:p>'
+                         '<w:p><w:r><w:t>重复</w:t></w:r></w:p></w:body></w:document>')
+    code, result = run(source)
+    assert code == 0
+    locations = result["source_locations"]
+    assert [item["paragraph"] for item in locations] == [2, 3]
+    assert [result["text"][item["start"]:item["end"]] for item in locations] == ["重复", "重复"]
+    assert locations[0]["start"] == len("重复\n")
+    assert locations[0]["end"] <= locations[1]["start"]
+
+
+def test_docx_locations_follow_whitespace_normalization(tmp_path: Path) -> None:
+    source = tmp_path / "空白定位.docx"
+    with zipfile.ZipFile(source, "w") as archive:
+        write_content_types(archive, "word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")
+        archive.writestr("word/document.xml", '<w:document xmlns:w="urn:w"><w:body><w:p/><w:p/>'
+                         '<w:p><w:r><w:t>  技术   🧪  </w:t><w:br/><w:br/><w:br/><w:t>正文  </w:t></w:r></w:p>'
+                         '<w:p/><w:p/><w:p><w:r><w:t> 0 false </w:t></w:r></w:p></w:body></w:document>')
+    code, result = run(source)
+    assert code == 0
+    assert result["text"] == "技术 🧪 \n\n正文 \n\n 0 false"
+    assert [(item["paragraph"], result["text"][item["start"]:item["end"]])
+            for item in result["source_locations"]] == [(3, "技术 🧪 \n\n正文"), (6, "0 false")]
+
+
+def test_docx_locations_are_trimmed_with_the_output_byte_limit(tmp_path: Path) -> None:
+    source = tmp_path / "多段来源.docx"
+    with zipfile.ZipFile(source, "w") as archive:
+        write_content_types(archive, "word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")
+        archive.writestr("word/document.xml", '<w:document xmlns:w="urn:w"><w:body>'
+                         + '<w:p><w:r><w:t>来源正文</w:t></w:r></w:p>' * 20_000
+                         + '</w:body></w:document>')
+    completed = subprocess.run([sys.executable, str(SCRIPT), str(source)], check=False, capture_output=True)
+    result = json.loads(completed.stdout)
+    assert completed.returncode == 0
+    assert len(completed.stdout) <= 900 * 1024 + 1
+    assert result["truncated"] is True
+    assert 0 < len(result["source_locations"]) < 20_000
+    assert all(result["text"][item["start"]:item["end"]] == "来源正文" for item in result["source_locations"])
+
+
+def test_docx_incomplete_long_paragraph_has_no_complete_location(tmp_path: Path) -> None:
+    source = tmp_path / "超长单段.docx"
+    with zipfile.ZipFile(source, "w") as archive:
+        write_content_types(archive, "word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")
+        archive.writestr("word/document.xml", '<w:document xmlns:w="urn:w"><w:body><w:p><w:r><w:t>'
+                         + 'x' * 500_001 + '</w:t></w:r></w:p><w:p><w:r><w:t>x</w:t></w:r></w:p></w:body></w:document>')
+    code, result = run(source)
+    assert code == 0
+    assert result["truncated"] is True
+    assert result["source_locations"] == []
+
+
 def test_extracts_xlsx_shared_strings(tmp_path: Path) -> None:
     source = tmp_path / "财务数据.xlsx"
     write_minimal_xlsx(source)
@@ -609,8 +691,11 @@ def test_signed_operation_requires_the_document_extraction_schema_only() -> None
 
 def test_reading_guidance_distinguishes_remote_ocr_from_offline_and_human_review() -> None:
     guidance = (SCRIPT.parents[1] / "SKILL.md").read_text(encoding="utf-8")
-    assert "`code`、`description` 等必填参数" in guidance
-    assert "`input_data`，不是 `input` 或 `image`" in guidance
+    assert "references/gongchuang-document-host.md" in guidance
+    host = (SCRIPT.parents[1] / "references/gongchuang-document-host.md").read_text(encoding="utf-8")
+    assert "`description` 是可选" in host
+    assert "tools.mcp__paddle_ocr__workspace_pdf" in host
+    assert "pages:ocr_pages" in host
     assert "未联网检索”不等于“全程未联网" in guidance
     assert "没有真实人员参与就不得称“人工复核”" in guidance
     assert "用户明确禁止网络传输时，不发送到云端 OCR 或远端视觉服务" in guidance

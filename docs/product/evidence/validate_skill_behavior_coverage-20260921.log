@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "declared_skills": 51,
+  "discovered_skills": 51,
+  "adversarial_primary_skills": 21,
+  "distribution": "generic-signed-zip-plus-first-party-client",
+  "platform_specific_package": false,
+  "real_client_acceptance": "separate-client-release-required",
+  "errors": []
+}

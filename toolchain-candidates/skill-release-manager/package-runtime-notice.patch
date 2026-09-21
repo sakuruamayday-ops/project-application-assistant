@@ -1,0 +1,21 @@
+--- a/scripts/package_skill_release.py
++++ b/scripts/package_skill_release.py
+@@ -365,16 +365,8 @@
+ def ensure_runtime_instructions(root: Path, name: str) -> None:
+     path = root / "SKILL.md"
+     text = path.read_text(encoding="utf-8")
+-    block = f"""
+-
+-{RUNTIME_MARKER_START}
+-## 便携运行门禁
+-
+-每次触发时，从宿主提供或当前已读取的 `SKILL.md` 实际路径定位本技能目录，并运行其 `scripts/portable_skill_runtime.py prepare`。不得假设存在特定宿主环境变量，也不得猜测路径。
+-
+-`fail`表示签名、发布者身份或安装完整性失败，必须停止使用受影响副本；`limited`表示已验签副本的运行依赖或辅助偏好读写受限，仅在当前任务所需能力仍满足时继续，并准确说明未应用或未持久化的部分。只应用返回的`active_preferences`；普通纠正和临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
+-{RUNTIME_MARKER_END}
+-"""
++    notice = HERE.parent / "references" / "portable-runtime-notice.md"
++    block = "\n\n" + notice.read_text(encoding="utf-8").strip() + "\n"
+     pattern = re.compile(
+         re.escape(RUNTIME_MARKER_START)
+         + r".*?"

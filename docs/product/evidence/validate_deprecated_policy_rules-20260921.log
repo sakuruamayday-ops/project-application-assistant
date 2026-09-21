@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "checked_files": [
+    "skills/sme-score-preassessment/scripts/run_score.sh",
+    "skills/sme-score-preassessment/scripts/score_core.mjs",
+    "skills/sme-score-preassessment/scripts/score_engine.mjs",
+    "skills/sme-score-preassessment/scripts/nbs_fetch.mjs",
+    "skills/sme-score-preassessment/scripts/zhejiang_fetch.mjs",
+    "skills/sme-score-preassessment/assets/专精特新与小巨人前期评分预评估模板.xlsx",
+    "skills/sme-score-preassessment/assets/专精特新与小巨人客户评分_三年财务底表模板.xlsx",
+    "skills/sme-score-preassessment/SKILL.md",
+    "skills/sme-score-preassessment/references/current-policy-baseline-2026.md",
+    "skills/sme-development-projects/SKILL.md"
+  ],
+  "errors": []
+}

@@ -16,4 +16,4 @@
 | 外贸、跨境、服务贸易、境外业务 | trade-and-open-economy-projects | 国内电商不适用 |
 | 去AI味、降低机器腔、中文自然化润色 | gongchuang-humanizer-zh | 资格判断转project-feasibility；正式正文尚未成稿时先转application-writing |
 
-先选择一个主领域。跨领域任务按“主项目条件→专项证据→最终可行性”的顺序调用，不因关键词重合同时启动全部技能。
+此表用于单项目领域选择。多项目报告与连续追问先按[共享任务边界](../../_runtime/task-execution.md)确定主流程，再用本表分配子项；不得因关键词重合同时启动多套完整流程。

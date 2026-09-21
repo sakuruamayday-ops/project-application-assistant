@@ -303,7 +303,8 @@ def test_sme_skill_documents_the_signed_validator_contract():
 
     assert '"assessment":"<工作区内结果.json>"' in skill_text
     assert "一次构造、一次调用" in operation["description"]
-    assert "不得创建探针文件" in skill_text
+    assert "不创建无关探针或反复猜测枚举" in skill_text
+    assert "未通过校验不得交付正式结论" in skill_text
     for token in (
         "application_context",
         "overall_conclusion",

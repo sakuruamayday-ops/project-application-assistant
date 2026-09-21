@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "cases": 20,
+  "passed": 20,
+  "visible_mcp_tools": [
+    "three_first_analysis"
+  ],
+  "failures": []
+}

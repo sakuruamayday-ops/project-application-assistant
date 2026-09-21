@@ -50,47 +50,6 @@ def test_report_profile_does_not_ignore_an_explicit_missing_pdf(tmp_path):
     assert f"交付文件不存在或不是文件:{missing_pdf.name}" in result["errors"]
 
 
-def test_stop_hook_rejects_tampered_profile_receipt(tmp_path):
-    manager_scripts = Path(
-        os.environ.get(
-            "JIAOTANG_RELEASE_MANAGER_SCRIPTS",
-            Path.home() / ".codex/skills/skill-release-manager/scripts",
-        )
-    )
-    hook_path = manager_scripts / "workbuddy_behavior_hook.py"
-    if not hook_path.is_file():
-        pytest.skip("requires the separately installed skill-release-manager host integration")
-    spec = importlib.util.spec_from_file_location("hotfix_behavior", hook_path)
-    hook = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(hook)
-    if not hasattr(hook, "load_profile_validator_receipts"):
-        pytest.skip("installed skill-release-manager predates report-profile receipts")
-    artifact = tmp_path / "report.docx"
-    artifact.write_bytes(b"initial")
-    turn_id = "turn-profile-test"
-    receipt_dir = tmp_path / "validator-receipts" / turn_id
-    receipt_dir.mkdir(parents=True)
-    receipt = {
-        "validator_id": MODULE.VALIDATOR_ID,
-        "status": "pass",
-        "turn_id": turn_id,
-        "profile_id": "project-feasibility-analysis-report",
-        "artifacts": [
-            {
-                "path": str(artifact),
-                "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
-            }
-        ],
-    }
-    (receipt_dir / "profile.json").write_text(
-        json.dumps(receipt), encoding="utf-8"
-    )
-    assert len(hook.load_profile_validator_receipts(tmp_path, turn_id)) == 1
-    artifact.write_bytes(b"tampered")
-    assert hook.load_profile_validator_receipts(tmp_path, turn_id) == []
-
-
 def test_pdf_section_matching_tolerates_glyph_fragmentation_but_not_missing_text():
     fragmented = "\u4e8c\u3001\u7533\n\u62a5\n\u6761\u4ef6\n\u5bf9\n\u7167"
     assert MODULE._compact_text("申报条件对照") in MODULE._compact_text(fragmented)

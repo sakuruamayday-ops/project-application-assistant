@@ -1,0 +1,334 @@
+{
+  "status": "pass",
+  "office_template_count": 29,
+  "source_template_count": 4,
+  "rendered": false,
+  "templates": [
+    {
+      "path": "skills/high-tech-enterprise-application-drafting/assets/高新技术企业认定申请书空白模板.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 55,
+        "tables": 10,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/high-tech-enterprise-preassessment/assets/高企预评估双年度采集表.xlsx",
+      "format": "xlsx",
+      "roundtrip": {
+        "worksheets": [
+          "使用说明",
+          "基础与硬门槛",
+          "财务与成长性",
+          "知识产权",
+          "成果转化",
+          "组织管理",
+          "双年度评分",
+          "补强计划",
+          "规则与来源"
+        ]
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/digitalization/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/digitalization/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 52,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/enterprise-rd-center/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/enterprise-rd-center/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 51,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/first-equipment/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/first-equipment/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 51,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/first-material/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/first-material/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 51,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/first-software/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/first-software/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 51,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/green-factory/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/green-factory/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 52,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/high-tech-enterprise/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/high-tech-enterprise/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 51,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/little-giant/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/little-giant/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 51,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/manufacturing-excellence/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/manufacturing-excellence/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 51,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/science-plan/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/science-plan/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 52,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/single-champion/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/single-champion/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 51,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/specialized-sme/feasibility.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 60,
+        "tables": 24,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/project-feasibility/assets/report-templates/specialized-sme/preassessment.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 50,
+        "tables": 12,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/sme-development-projects/assets/专精特新小巨人前期培育方向卡模板.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 58,
+        "tables": 25,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/sme-score-preassessment/assets/专精特新小巨人前期培育方向卡模板.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 58,
+        "tables": 25,
+        "sections": 1
+      },
+      "render": null
+    },
+    {
+      "path": "skills/standard-drafting/assets/gbt-1-1-enterprise-standard-template.docx",
+      "format": "docx",
+      "roundtrip": {
+        "paragraphs": 70,
+        "tables": 3,
+        "sections": 3
+      },
+      "render": null
+    },
+    {
+      "path": "skills/industry-positioning/assets/enterprise-technical-product-revenue-matrix.template.json",
+      "format": "json",
+      "source": {
+        "kind": "dict"
+      }
+    },
+    {
+      "path": "skills/manufacturing-tax-risk-analysis/assets/deep-gold-advisor-template.html",
+      "format": "html",
+      "source": {
+        "start_tags": 165
+      }
+    },
+    {
+      "path": "skills/standard-drafting/assets/compilation-note-template.md",
+      "format": "md",
+      "source": {
+        "lines": 45
+      }
+    },
+    {
+      "path": "skills/standard-drafting/assets/standard-draft-template.md",
+      "format": "md",
+      "source": {
+        "lines": 81
+      }
+    }
+  ]
+}

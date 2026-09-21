@@ -14,20 +14,24 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_contract_copies_are_identical() -> None:
-    copies = [
-        read(ROOT / "skills" / skill / "references" / "policy-application-path-contract.md")
-        for skill in CONTRACT_SKILLS
-    ]
-    assert len(set(copies)) == 1
+def test_contract_references_resolve_to_one_source() -> None:
+    import re
+    source = ROOT / "skills" / "_runtime" / "policy-application-path-contract.md"
+    for skill in CONTRACT_SKILLS:
+        pointer = ROOT / "skills" / skill / "references" / source.name
+        target = re.search(r"\]\(([^)]+)\)", read(pointer)).group(1)
+        assert (pointer.parent / target).resolve() == source
+        assert source.is_file()
+    import json
+    manifest = json.loads(read(ROOT / "skills" / "suite-manifest.json"))
+    assert "_runtime/" + source.name in manifest["shared_paths"]
 
 
 def test_contract_requires_full_path_not_current_priority_only() -> None:
     contract = read(
         ROOT
         / "skills"
-        / "project-matching"
-        / "references"
+        / "_runtime"
         / "policy-application-path-contract.md"
     )
     required = (

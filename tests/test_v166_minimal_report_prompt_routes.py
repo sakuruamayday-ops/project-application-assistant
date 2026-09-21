@@ -213,11 +213,13 @@ def test_peer_lookup_contract_is_local_first_and_web_only_on_fallback() -> None:
     )
     local = peer_skill.index("先检索本地知识库")
     local_before_web = peer_skill.index("再进行任何联网检索", local)
-    fallback = peer_skill.index("本地知识库未命中、覆盖不足或服务不可用时", local)
-    tyc = peer_skill.index("先用天眼查", fallback)
-    qcc = peer_skill.index("再用企查查", tyc)
-    web = peer_skill.index("最后才调用官方网页或联网搜索", qcc)
-    assert local < local_before_web < fallback < tyc < qcc < web
+    assert local < local_before_web
+    assert "recognition-source-routing.md" in peer_skill
+    routing = (SKILLS / "_runtime/recognition-source-routing.md").read_text(encoding="utf-8")
+    assert "直接定位政府公示及附件" in routing
+    assert "不是读取政府名单的前置条件" in routing
+    assert "主体歧义" in routing
+    assert "enterprise-source-fallback.md" in routing
 
     graph = json.loads(CALL_GRAPH.read_text(encoding="utf-8"))
     assert {

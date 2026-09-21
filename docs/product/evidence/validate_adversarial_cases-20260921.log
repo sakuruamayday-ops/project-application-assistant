@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "case_count": 108,
+  "category_counts": {
+    "base": 21,
+    "typo": 21,
+    "negation": 21,
+    "multi-domain": 21,
+    "stale-policy": 24
+  },
+  "answer_separation": "pass",
+  "errors": []
+}

@@ -35,7 +35,11 @@
     },
     "anti-hallucinate": {
       "status": "merged_into",
-      "formal_targets": ["evidence-ledger", "consistency-check", "policy-retrieval"],
+      "formal_targets": [
+        "evidence-ledger",
+        "consistency-check",
+        "policy-retrieval"
+      ],
       "source": "external-agent-skill",
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
@@ -147,7 +151,11 @@
     },
     "enterprise-checkup": {
       "status": "merged_into",
-      "formal_targets": ["enterprise-profile", "project-matching", "project-feasibility"],
+      "formal_targets": [
+        "enterprise-profile",
+        "project-matching",
+        "project-feasibility"
+      ],
       "source": "external-agent-skill",
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
@@ -211,7 +219,10 @@
     },
     "gov-project-feasibility": {
       "status": "merged_into",
-      "formal_targets": ["project-feasibility", "project-task-router"],
+      "formal_targets": [
+        "project-feasibility",
+        "project-task-router"
+      ],
       "source": "external-agent-skill",
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
@@ -331,7 +342,10 @@
     },
     "multi-project-matrix": {
       "status": "merged_into",
-      "formal_targets": ["project-matching", "project-feasibility"],
+      "formal_targets": [
+        "project-matching",
+        "project-feasibility"
+      ],
       "source": "external-agent-skill",
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
@@ -411,7 +425,10 @@
     },
     "project-quick-reference": {
       "status": "merged_into",
-      "formal_targets": ["project-task-router", "policy-retrieval"],
+      "formal_targets": [
+        "project-task-router",
+        "policy-retrieval"
+      ],
       "source": "external-agent-skill",
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
@@ -419,7 +436,10 @@
     },
     "qcc-history-evolution": {
       "status": "merged_into",
-      "formal_targets": ["enterprise-profile", "enterprise-panorama-analysis"],
+      "formal_targets": [
+        "enterprise-profile",
+        "enterprise-panorama-analysis"
+      ],
       "source": "external-agent-skill",
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
@@ -427,7 +447,10 @@
     },
     "qcc-ip-infringement-alert": {
       "status": "merged_into",
-      "formal_targets": ["ip-assessment", "patent-router"],
+      "formal_targets": [
+        "ip-assessment",
+        "patent-router"
+      ],
       "source": "external-agent-skill",
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
@@ -475,7 +498,11 @@
     },
     "srxgj-qa": {
       "status": "merged_into",
-      "formal_targets": ["sme-development-projects", "patent-router", "application-writing"],
+      "formal_targets": [
+        "sme-development-projects",
+        "patent-router",
+        "application-writing"
+      ],
       "source": "external-agent-skill",
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
@@ -520,6 +547,46 @@
       "owner": "external-provider",
       "package_policy": "exclude_from_suite",
       "reason": "浙江政府站点定向检索保留为外部扩展；正式政策入口为policy-retrieval。"
+    },
+    "design-game-design-fundamentals": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "游戏设计、开发或测试的外部能力由宿主按需提供，不纳入企业全生命周期正式技能包。"
+    },
+    "design-game-economy-design": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "游戏设计、开发或测试的外部能力由宿主按需提供，不纳入企业全生命周期正式技能包。"
+    },
+    "game-architecture": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "游戏设计、开发或测试的外部能力由宿主按需提供，不纳入企业全生命周期正式技能包。"
+    },
+    "game-qa": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "游戏设计、开发或测试的外部能力由宿主按需提供，不纳入企业全生命周期正式技能包。"
+    },
+    "phaser": {
+      "status": "external_capability",
+      "formal_target": null,
+      "source": "external-agent-skill",
+      "owner": "external-provider",
+      "package_policy": "exclude_from_suite",
+      "reason": "游戏设计、开发或测试的外部能力由宿主按需提供，不纳入企业全生命周期正式技能包。"
     }
   }
 }

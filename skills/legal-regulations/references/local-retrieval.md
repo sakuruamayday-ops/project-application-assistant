@@ -2,16 +2,16 @@
 
 ## 检索顺序
 
-1. 读取 `first-run-configuration` 生成的能力报告。
-2. 调用 `local-knowledge-retrieval` 检索团队云端法规底库。
+1. 先检查本轮工具目录和实际可调用的知识连接；`first-run-configuration` 能力报告只作历史快照，不作为调用前提。
+2. 通过本轮可用的 `jiaotang-kb` 或 `local-knowledge-retrieval` 检索团队云端法规底库，复用现有连接。
 3. 对关键命中读取完整文档和来源路径。
 4. 团队云端不可用时，使用用户明确配置的本地 RAG、当前项目文件或地区规则目录。
 5. 云端和本地均不足时再查官方互联网来源。
 
 ## 云端调用
 
-- 默认从安全环境变量读取 `GONGCHUANG_KB_ENDPOINT` 和 `GONGCHUANG_KB_TOKEN`。
-- 先验证 `GET /v1/me`，再调用 `POST /v1/search`。
+- 优先使用本轮原生知识工具及其实际状态返回，不因报告缺失重复配置。
+- 只有原生知识能力不可用且用户已配置并授权直接 API 时，才从安全环境变量读取 `GONGCHUANG_KB_ENDPOINT` 和 `GONGCHUANG_KB_TOKEN`，验证 `GET /v1/me` 后调用 `POST /v1/search`。不得由旧报告推定凭据或接口仍可用。
 - 不在命令参数、日志、Skill、报告或对话中展示 Token。
 - “未命中”只能表述为当前检索层未命中，不能写成文件或法规不存在。
 

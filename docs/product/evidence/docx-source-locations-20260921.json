@@ -1,0 +1,46 @@
+{
+  "runtime": "review8 bundled Python",
+  "scope": "candidate extractor on packaged Python; not installation of new skills",
+  "cases": [
+    {
+      "case": "test_docx_locations_distinguish_repeated_paragraphs_tables_and_headers",
+      "status": "pass",
+      "caseElapsedMs": 34.08
+    },
+    {
+      "case": "test_docx_text_box_location_does_not_claim_a_later_identical_paragraph",
+      "status": "pass",
+      "caseElapsedMs": 28.82
+    },
+    {
+      "case": "test_docx_locations_are_trimmed_with_the_output_byte_limit",
+      "status": "pass",
+      "caseElapsedMs": 137.13
+    },
+    {
+      "case": "test_docx_incomplete_long_paragraph_has_no_complete_location",
+      "status": "pass",
+      "caseElapsedMs": 44.92
+    },
+    {
+      "case": "test_docx_locations_follow_whitespace_normalization",
+      "status": "pass",
+      "caseElapsedMs": 28.97
+    }
+  ],
+  "smallDocxProcessMs": 28.64,
+  "sourceLocations": [
+    {
+      "part": "word/document.xml",
+      "paragraph": 1,
+      "start": 0,
+      "end": 4
+    },
+    {
+      "part": "word/document.xml",
+      "paragraph": 2,
+      "start": 5,
+      "end": 9
+    }
+  ]
+}

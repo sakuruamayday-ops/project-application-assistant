@@ -305,18 +305,15 @@ class InstallTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
     def test_signed_upgrade_rolls_back_when_post_swap_step_fails(self):
         repository = Path(__file__).resolve().parents[1]
-        signed_source = (
-            repository / "skills/high-tech-enterprise-application-drafting"
-        )
+        fixture = repository / "tests/fixtures/signed-hightech-release.zip"
+        signed_name = "high-tech-enterprise-application-drafting"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "source"
-            shutil.copytree(
-                signed_source,
-                source / signed_source.name,
-            )
+            with zipfile.ZipFile(fixture) as archive:
+                archive.extractall(source)
             destination = root / "destination"
-            existing = destination / signed_source.name
+            existing = destination / signed_name
             existing.mkdir(parents=True)
             (existing / "SKILL.md").write_text(
                 "previous-install",
@@ -419,16 +416,13 @@ class InstallTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
     def test_signed_install_is_read_only_and_fully_verified(self):
         repository = Path(__file__).resolve().parents[1]
-        signed_source = (
-            repository / "skills/high-tech-enterprise-application-drafting"
-        )
+        fixture = repository / "tests/fixtures/signed-hightech-release.zip"
+        signed_name = "high-tech-enterprise-application-drafting"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "source"
-            shutil.copytree(
-                signed_source,
-                source / signed_source.name,
-            )
+            with zipfile.ZipFile(fixture) as archive:
+                archive.extractall(source)
             destination = root / "destination"
             config_dir = root / "config"
             report_out = {}
@@ -443,8 +437,8 @@ class InstallTests(unittest.TestCase):
                     require_signatures=True,
                     report_out=report_out,
                 )
-                self.assertEqual(installed, [signed_source.name])
-                target = destination / signed_source.name
+                self.assertEqual(installed, [signed_name])
+                target = destination / signed_name
                 self.assertEqual(
                     target.stat().st_mode & 0o222,
                     0,
@@ -465,7 +459,7 @@ class InstallTests(unittest.TestCase):
                 )
                 self.assertEqual(report["transaction_status"], "committed")
                 self.assertIn(
-                    signed_source.name,
+                    signed_name,
                     report["read_only_signed_skills"],
                 )
             finally:
@@ -481,13 +475,13 @@ class InstallTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("ssh-keygen"), "需要ssh-keygen")
     def test_signed_upgrade_temporarily_thaws_read_only_directory(self):
         repository = Path(__file__).resolve().parents[1]
-        signed_source = (
-            repository / "skills/high-tech-enterprise-application-drafting"
-        )
+        fixture = repository / "tests/fixtures/signed-hightech-release.zip"
+        signed_name = "high-tech-enterprise-application-drafting"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "source"
-            shutil.copytree(signed_source, source / signed_source.name)
+            with zipfile.ZipFile(fixture) as archive:
+                archive.extractall(source)
             destination = root / "destination"
             config_dir = root / "config"
             try:
@@ -500,7 +494,7 @@ class InstallTests(unittest.TestCase):
                     "1.1",
                     require_signatures=True,
                 )
-                target = destination / signed_source.name
+                target = destination / signed_name
                 self.assertEqual(target.stat().st_mode & 0o222, 0)
 
                 original_rename = Path.rename
@@ -526,7 +520,7 @@ class InstallTests(unittest.TestCase):
                         require_signatures=True,
                     )
 
-                self.assertEqual(installed, [signed_source.name])
+                self.assertEqual(installed, [signed_name])
                 self.assertEqual(target.stat().st_mode & 0o222, 0)
                 report_path = sorted(
                     (config_dir / "upgrade-reports").glob("*.json")

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from bisect import bisect_right
 import csv
 import io
 import json
@@ -68,15 +69,24 @@ def serialize_result(result: dict[str, object]) -> str:
     high = len(text)
     fitted = dict(result)
     fitted["truncated"] = True
+    locations = result.get("source_locations")
+
+    def fit_text(length: int) -> None:
+        fitted["text"] = text[:length].rstrip()
+        if isinstance(locations, list):
+            fitted["source_locations"] = [
+                location for location in locations if location["end"] <= len(fitted["text"])
+            ]
+
     while low < high:
         middle = (low + high + 1) // 2
-        fitted["text"] = text[:middle].rstrip()
+        fit_text(middle)
         candidate = json.dumps(fitted, ensure_ascii=False, separators=(",", ":"))
         if len(candidate.encode("utf-8")) <= MAX_JSON_OUTPUT_BYTES:
             low = middle
         else:
             high = middle - 1
-    fitted["text"] = text[:low].rstrip()
+    fit_text(low)
     return json.dumps(fitted, ensure_ascii=False, separators=(",", ":"))
 
 
@@ -100,7 +110,11 @@ def safe_archive(path: Path) -> zipfile.ZipFile:
 
 
 def xml_text(data: bytes, paragraph_tags: set[str]) -> str:
-    root = safe_xml_root(data)
+    return element_text(safe_xml_root(data), paragraph_tags)
+
+
+def element_text(root: ElementTree.Element, paragraph_tags: set[str]) -> str:
+    """Read text with the same separators for whole parts and individual paragraphs."""
     parts: list[str] = []
     for element in root.iter():
         tag = local_name(element.tag)
@@ -116,15 +130,60 @@ def xml_text(data: bytes, paragraph_tags: set[str]) -> str:
 
 
 def extract_docx(path: Path) -> dict[str, object]:
+    paragraphs: list[tuple[str, int, int, int]] = []
+    parts: list[str] = []
+    offset = 0
     with safe_archive(path) as archive:
         names = set(archive.namelist())
         if "word/document.xml" not in names:
             raise ValueError("DOCX 缺少正文结构")
         ordered = ["word/document.xml"]
         ordered.extend(sorted(name for name in names if re.fullmatch(r"word/(?:header|footer)\d+\.xml", name)))
-        parts = [xml_text(archive.read(name), {"p", "tr"}) for name in ordered]
-    text, truncated = bounded_join([part + "\n" for part in parts])
-    return {"kind": "docx", "status": "extracted", "text": text, "truncated": truncated}
+        for name in ordered:
+            root = safe_xml_root(archive.read(name))
+            number = 0
+            for element in root.iter():
+                tag = local_name(element.tag)
+                if tag == "p":
+                    number += 1
+                    # Only leaf paragraphs have a contiguous independent range.
+                    if not any(item is not element and local_name(item.tag) == "p" for item in element.iter()):
+                        raw = element_text(element, {"p", "tr"})
+                        start = offset + len(raw) - len(raw.lstrip())
+                        end = offset + len(raw.rstrip())
+                        if start < end:
+                            paragraphs.append((name, number, start, end))
+                token = ""
+                if tag == "t" and element.text:
+                    token = element.text
+                elif tag in {"p", "tr"} or tag == "br":
+                    token = "\n"
+                elif tag == "tab":
+                    token = "\t"
+                parts.append(token)
+                offset += len(token)
+            parts.append("\n")
+            offset += 1
+    raw_text = "".join(parts)
+    # These two whitespace reductions do not overlap. Translate the original
+    # XML offsets through them instead of searching for possibly repeated text.
+    ends: list[int] = []
+    removed: list[int] = [0]
+    for match in re.finditer(r" {2,}|\n{3,}", raw_text):
+        kept = 1 if match[0][0] == " " else 2
+        ends.append(match.end())
+        removed.append(removed[-1] + len(match[0]) - kept)
+    compact = re.sub(r"\n{3,}", "\n\n", re.sub(r" {2,}", " ", raw_text))
+    leading = len(compact) - len(compact.lstrip())
+    text, truncated = bounded_join([raw_text])
+    locations: list[dict[str, object]] = []
+    for part, paragraph, start, end in paragraphs:
+        start -= removed[bisect_right(ends, start)] + leading
+        end -= removed[bisect_right(ends, end)] + leading
+        if 0 <= start < end <= len(text):
+            locations.append({"part": part, "paragraph": paragraph, "start": start, "end": end})
+    return {"kind": "docx", "status": "extracted", "text": text, "truncated": truncated,
+            "source_locations": locations}
 
 
 def shared_strings(archive: zipfile.ZipFile) -> list[str]:

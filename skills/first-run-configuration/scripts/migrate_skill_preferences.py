@@ -137,7 +137,7 @@ def latest_upgrade_report(config_dir: Path) -> Path:
     return reports[-1]
 
 
-def migrate_report(report_path: Path, preference_file: Path, output_dir: Path) -> Path:
+def migrate_report(report_path: Path, preference_file: Path, output_dir: Path, *, apply: bool = True) -> Path:
     upgrade_report = read_json(report_path)
     preference_payload = read_json(preference_file) or {
         "schema_version": 1,
@@ -208,16 +208,18 @@ def migrate_report(report_path: Path, preference_file: Path, output_dir: Path) -
         meta["dirty"] = True
         meta["changed_at"] = now_iso()
         meta["migration_source"] = str(report_path)
-    if migrated:
+    if migrated and apply:
         write_json(preference_file, preference_payload)
     migration_report = {
         "created_at": now_iso(),
         "upgrade_report": str(report_path),
         "preference_file": str(preference_file),
-        "migrated": migrated,
+        "migrated": migrated if apply else [],
+        "candidates": [] if apply else migrated,
+        "applied": apply,
         "blocked": blocked,
         "unresolved": unresolved,
-        "status": "completed" if migrated and not blocked and not unresolved else "review-required",
+        "status": ("completed" if migrated and not blocked and not unresolved else "review-required") if apply else "preview",
     }
     output_path = output_dir / f"{report_path.stem}.preference-migration.json"
     write_json(output_path, migration_report)
