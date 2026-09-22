@@ -29,4 +29,4 @@ AUTH-0922-03：网页登录和客户端密码登录不再因同一来源地址�
 - 部署前后 users 全表逐项一致，原有 16 个有效凭据全部保留，服务健康正常。技能和客户端未重新发包。
 - 上一部署 20260917T090433Z-14fba533f22d-d91baab8 保留。更旧槽位由既有保留流程移入服务器回收站，未永久删除；回执 cleanup_pending 指回收站待后续清理，不影响部署成功。
 
-本地执行日志与公网回执：`/Users/zsh/JiaotangData/deployment-inputs/login-throttle-20260922/deploy.log`、`public-login-verification.json`。服务器数据库备份及验收：`/var/lib/jiaotang-kb/admin-audit/login-throttle-20260922/`。原有私有导航与页面覆盖层随代码槽位保留。
+本地执行日志与公网回执：`本机数据目录/deployment-inputs/login-throttle-20260922/deploy.log`、`public-login-verification.json`。服务器数据库备份及验收：`/var/lib/jiaotang-kb/admin-audit/login-throttle-20260922/`。原有私有导航与页面覆盖层随代码槽位保留。
