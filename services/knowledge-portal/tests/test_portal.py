@@ -751,6 +751,80 @@ def publish_test_macos_self_update_feed(
     return payloads
 
 
+@pytest.mark.parametrize("personal_first", [True, False])
+@pytest.mark.parametrize("legacy_binding", [True, False])
+def test_personal_mcp_and_single_device_client_are_independent(tmp_path, personal_first, legacy_binding):
+    module = load_app(tmp_path)
+    password = "test-password-independent"
+    with TestClient(module.app) as client:
+        client.post("/setup", data={
+            "setup_key": "setup-secret", "username": "owner", "password": password,
+        })
+        with closing(module.database()) as connection:
+            user_id = connection.execute("SELECT id FROM users WHERE username='owner'").fetchone()[0]
+            if legacy_binding:
+                now = module.isoformat(module.utc_now())
+                connection.execute(
+                    "INSERT INTO device_bindings(user_id,device_id_hash,device_id_prefix,device_name,auth_method,first_bound_at,last_seen_at) VALUES (?,?,?,?,?,?,?)",
+                    (user_id, "synthetic-legacy", "synthetic", "Legacy host", "device_signature", now, now),
+                )
+                connection.commit()
+
+        def login_device(letter):
+            device = "gcd_" + letter * 48
+            response = client.post("/v1/client-login", json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.4.7", "platform": "macos",
+                "device_id": device, "device_name": "Synthetic device",
+                "username": "owner", "password": password,
+            })
+            assert response.status_code == 200
+            return {"Authorization": "Bearer " + response.json()["access_token"],
+                    module.DEVICE_ID_HEADER: device}
+
+        personal = module.ensure_personal_access_token(user_id) if personal_first else None
+        first = login_device("a")
+        personal = personal or module.ensure_personal_access_token(user_id)
+        assert first["Authorization"] != "Bearer " + personal
+        client.post("/login", data={"username": "owner", "password": password})
+        guide = client.get("/mcp-guide")
+        assert guide.status_code == 200
+        assert re.search(r"jtk_[A-Za-z0-9_-]+", guide.text).group(0) == personal
+        second = login_device("b")
+        assert client.get("/v1/me", headers=first).status_code == 409
+        assert client.get("/v1/me", headers=second).status_code == 200
+        assert client.get("/v1/me", headers={"Authorization": second["Authorization"]}).status_code == 401
+        # 重启迁移不能把两类凭据合并；同一通用 Token 可被多个宿主使用。
+        module.init_database()
+        assert module.ensure_personal_access_token(user_id) == personal
+        for host in ("WorkBuddy", "OtherHost"):
+            assert client.get("/v1/me", headers={
+                "Authorization": "Bearer " + personal, "User-Agent": host,
+            }).status_code == 200
+            response = client.post("/mcp/", headers={
+                "Authorization": "Bearer " + personal, "User-Agent": host,
+                "Accept": "application/json, text/event-stream",
+            }, json={"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                     "params": {"name": "knowledge_service_status", "arguments": {}}})
+            assert response.status_code == 200
+            assert response.json()["result"]["structuredContent"]["connected"] is True
+        assert client.get("/v1/me", headers=second).status_code == 200
+        with closing(module.database()) as connection:
+            if legacy_binding:
+                assert connection.execute(
+                    "SELECT COUNT(*) FROM device_bindings WHERE user_id=? AND auth_method='device_signature' AND revoked_at IS NULL",
+                    (user_id,),
+                ).fetchone()[0] == 1
+            connection.execute("UPDATE device_tokens SET revoked_at=? WHERE token_hash=?",
+                               (module.isoformat(module.utc_now()), module.token_hash(personal)))
+            connection.commit()
+        replacement = module.ensure_personal_access_token(user_id)
+        assert replacement != personal
+        assert client.get("/v1/me", headers={"Authorization": "Bearer " + personal}).status_code == 401
+        assert client.get("/v1/me", headers={"Authorization": "Bearer " + replacement}).status_code == 200
+        assert client.get("/v1/me", headers=second).status_code == 200
+
+
 def test_client_password_login_is_device_bound_and_replaces_the_previous_device(tmp_path):
     module = load_app(tmp_path)
     password = "correct-horse-battery"
@@ -1918,6 +1992,35 @@ def test_client_password_login_rejects_invalid_password_without_disclosing_accou
         assert "owner" not in wrong.text
 
 
+@pytest.mark.parametrize("action", ["login", "client_login"])
+def test_login_after_shared_ip_failures_still_checks_password(tmp_path, action):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post("/setup", data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"})
+        now = module.isoformat(module.utc_now())
+        with closing(module.database()) as connection:
+            connection.executemany(
+                "INSERT INTO auth_attempts(action,username,client_ip,succeeded,attempted_at) VALUES (?,?,?,0,?)",
+                [(action, "other-member", "testclient", now) for _ in range(12)],
+            )
+            connection.commit()
+        def attempt(password):
+            if action == "login":
+                return client.post("/login", data={"username": "owner", "password": password}, follow_redirects=False)
+            return client.post("/v1/client-login", json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.4.7", "platform": "macos",
+                "device_id": "gcd_" + "a" * 48, "device_name": "Test Device",
+                "username": "owner", "password": password,
+            })
+        wrong = attempt("wrong-password")
+        assert wrong.status_code == 401
+        with closing(module.database()) as connection:
+            assert connection.execute("SELECT COUNT(*) FROM auth_attempts WHERE action=? AND username='owner'", (action,)).fetchone()[0] == 1
+        correct = attempt("correct-horse-battery")
+        assert correct.status_code == (303 if action == "login" else 200)
+
+
 def test_active_index_release_id_resolves_current_release_symlink(tmp_path):
     module = load_app(tmp_path)
     release_id = "policy-test-release-0001"
@@ -2763,18 +2866,22 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
         "今年杭州市研发中心还没开始申报，企业能不能报？"
     )
     assert "市级研发中心（四市属地版）" in hangzhou_guardrail
-    assert "作为准备和差距评估主基线" in hangzhou_guardrail
-    assert "draft（尚未正式生效）" in hangzhou_guardrail
+    assert "2026年度市重点企业研究院、市企业研究院申报建设工作的通知" in hangzhou_guardrail
+    assert "公众号转载PDF" in hangzhou_guardrail
+    assert "年度通知不得自动延用到以后年度" in hangzhou_guardrail
+    assert "draft（尚未正式生效）" not in hangzhou_guardrail
     assert "正式项目名称为杭州市企业高新技术研究开发中心" not in (
         hangzhou_guardrail
     )
     hangzhou_fallback = module.current_policy_fallback(
         "今年杭州市研发中心还没开始申报，企业能不能报？"
     )
-    assert "2026年《杭州市重点企业研究院、企业研究院建设管理办法" in (
+    assert "2026年度市重点企业研究院、市企业研究院申报建设工作的通知" in (
         hangzhou_fallback
     )
-    assert "不能宣称正式符合" in hangzhou_fallback
+    assert "仍须逐项核验" in hangzhou_fallback
+    assert module.current_policy_fallback("杭州企业研究院能报吗") == hangzhou_fallback
+    assert module.hangzhou_rd_policy_notice("杭州企业能申报省企业研究院吗") == ""
     municipal_detail = module.project_algorithm_detail_payload(
         "municipal-enterprise-technology-center"
     )
@@ -2797,7 +2904,7 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
         "hangzhou-enterprise-institute"
     )
     assert institute_detail is not None
-    assert institute_detail["has_prospective_layer"] is True
+    assert institute_detail["has_prospective_layer"] is False
     assert institute_detail["transition_notices"]
     district_green_detail = module.project_algorithm_detail_payload(
         "green-factory-1"
@@ -2905,9 +3012,9 @@ def test_project_algorithm_catalog_is_visible_to_regular_members(tmp_path):
     assert "金华市企业技术中心管理办法（2024年版）" in municipal_response.text
     assert institute_response.status_code == 200
     assert "市级研发中心（四市属地版）" in institute_response.text
-    assert "政策过渡提示" in institute_response.text
-    assert "当年尚未开放申报的准备评估与下一年度预测" in institute_response.text
-    assert "征求意见稿的法律状态仍为草案" in institute_response.text
+    assert "政策版本说明" in institute_response.text
+    assert "2026年度申报采用用户指定通知及完整评分附表" in institute_response.text
+    assert "当年尚未开放申报的准备评估与下一年度预测" not in institute_response.text
 
 
 def test_project_usage_metadata_covers_rest_and_mcp_searches(tmp_path):
@@ -7011,7 +7118,7 @@ def test_init_database_reconciles_legacy_active_credentials_and_enforces_one_act
             ),
         )
         user_id = int(connection.execute("SELECT last_insert_rowid()").fetchone()[0])
-        connection.execute("DROP INDEX device_tokens_one_active_per_user")
+        connection.execute("DROP INDEX device_tokens_one_active_client_per_user")
         fixtures = (
             (
                 "recent-never-used",
@@ -7052,7 +7159,7 @@ def test_init_database_reconciles_legacy_active_credentials_and_enforces_one_act
                     seed,
                     created_at,
                     last_used_at,
-                    "personal",
+                    "client",
                     "active",
                     activated_at,
                 ),
@@ -7083,7 +7190,7 @@ def test_init_database_reconciles_legacy_active_credentials_and_enforces_one_act
         ).fetchone()[0] == 2
         index_sql = connection.execute(
             "SELECT sql FROM sqlite_master WHERE type='index' AND name=?",
-            ("device_tokens_one_active_per_user",),
+            ("device_tokens_one_active_client_per_user",),
         ).fetchone()["sql"]
         assert "UNIQUE INDEX" in index_sql
         assert "activation_state='active'" in index_sql
@@ -7094,7 +7201,7 @@ def test_init_database_reconciles_legacy_active_credentials_and_enforces_one_act
                 INSERT INTO device_tokens(
                     user_id,label,token_prefix,token_hash,token_seed,created_at,
                     credential_kind,activation_state,activated_at
-                ) VALUES (?,?,?,?,?,?,'personal','active',?)
+                ) VALUES (?,?,?,?,?,?,'client','active',?)
                 """,
                 (
                     user_id,
@@ -7108,7 +7215,7 @@ def test_init_database_reconciles_legacy_active_credentials_and_enforces_one_act
             )
 
     manual_token = module.ensure_personal_access_token(user_id, "手动配置复用")
-    assert manual_token == module.user_access_token(user_id, str(active[0]["token_seed"]))
+    assert manual_token != module.user_access_token(user_id, str(active[0]["token_seed"]))
     with closing(module.database()) as connection:
         assert connection.execute(
             """
@@ -7116,7 +7223,7 @@ def test_init_database_reconciles_legacy_active_credentials_and_enforces_one_act
             WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
             """,
             (user_id,),
-        ).fetchone()[0] == 1
+        ).fetchone()[0] == 2
 
 
 def test_mcp_anomaly_observation_warns_admin_without_revoking_token(tmp_path):
@@ -7530,7 +7637,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         assert client.get(
             "/v1/me",
             headers={"Authorization": f"Bearer {original_token}"},
-        ).status_code == 401
+        ).status_code == 200
         with closing(module.database()) as connection:
             automatic_receipt = connection.execute(
                 """
@@ -7578,7 +7685,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
         guide = client.get("/mcp-guide")
         assert guide.headers["cache-control"] == "private, no-store"
         guide_token = re.search(r"jtk_[A-Za-z0-9_-]+", guide.text).group(0)
-        assert guide_token == second_token
+        assert guide_token == original_token
         assert "Bearer 你的个人Token" not in guide.text
         assert r"%USERPROFILE%\.workbuddy\mcp.json" in guide.text
         assert "~/.workbuddy/mcp.json" in guide.text
@@ -7593,7 +7700,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
                 "SELECT COUNT(*) FROM device_tokens "
                 "WHERE user_id=? AND revoked_at IS NULL",
                 (int(user["id"]),),
-            ).fetchone()[0] == 1
+            ).fetchone()[0] == 2
             assert connection.execute(
                 """
                 SELECT COUNT(*) FROM device_tokens
@@ -7608,7 +7715,7 @@ def test_v150_one_step_install_issues_per_install_token_and_accepts_bearer_only(
                 WHERE user_id=? AND revoked_reason='superseded_by_new_credential'
                 """,
                 (int(user["id"]),),
-            ).fetchone()[0] == 1
+            ).fetchone()[0] == 0
             assert connection.execute(
                 """
                 SELECT label FROM device_tokens

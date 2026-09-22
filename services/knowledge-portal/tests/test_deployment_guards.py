@@ -199,7 +199,9 @@ def test_health_monitor_restarts_only_after_consecutive_failures_with_circuit_br
     assert "jiaotang-kb-health-recovery@%n.service" in health_service
     assert "ExecStart=/usr/local/sbin/jiaotang-kb-health-recovery %i" in recovery_service
     assert "User=root" in recovery_service
-    assert "health_recovery_state.py\" failure" in recovery_wrapper
+    assert 'health_recovery_state.py" "${event}"' in recovery_wrapper
+    assert 'event=failure' in recovery_wrapper
+    assert 'event=success' in recovery_wrapper
     assert 'JIAOTANG_HEALTH_FAILURE_THRESHOLD:-2' in recovery_wrapper
     assert 'JIAOTANG_HEALTH_MAX_RESTARTS:-3' in recovery_wrapper
     assert 'JIAOTANG_HEALTH_RESTART_WINDOW_SECONDS:-1800' in recovery_wrapper

@@ -2,19 +2,430 @@
   "schema_version": 1,
   "report_type": "policy-change-impact-simulation",
   "before_source_digest": "095415ade247624d49efaea835c9717922fcdea516cc4271450ca79cb244f55a",
-  "after_source_digest": "095415ade247624d49efaea835c9717922fcdea516cc4271450ca79cb244f55a",
-  "changed_policy_node_ids": [],
-  "added_policy_node_ids": [],
+  "after_source_digest": "2fdff3dff755ccbb13410e8f1b38393c2cb5cecbb1bacc5be8a6128ba0c1978f",
+  "changed_policy_node_ids": [
+    "policy:hangzhou-enterprise-institute-consultation-2026"
+  ],
+  "added_policy_node_ids": [
+    "policy:hangzhou-enterprise-institute-annual-2026"
+  ],
   "removed_policy_node_ids": [],
-  "affected_project_ids": [],
-  "affected_projects": [],
+  "affected_project_ids": [
+    "hangzhou-enterprise-institute"
+  ],
+  "affected_projects": [
+    {
+      "project_id": "hangzhou-enterprise-institute",
+      "project_name": "市级研发中心（四市属地版）",
+      "change_type": "modified",
+      "rule_delta": {
+        "added_rule_ids": [
+          "hz26-accounting",
+          "hz26-application",
+          "hz26-basic-qual",
+          "hz26-city",
+          "hz26-compliance-check",
+          "hz26-credit",
+          "hz26-equipment",
+          "hz26-expense",
+          "hz26-ip",
+          "hz26-legal",
+          "hz26-management",
+          "hz26-site",
+          "hz26-staff"
+        ],
+        "removed_rule_ids": [
+          "hz-institute-draft-accounting",
+          "hz-institute-draft-compliance",
+          "hz-institute-draft-entity",
+          "hz-institute-draft-equipment",
+          "hz-institute-draft-investment",
+          "hz-institute-draft-ip",
+          "hz-institute-draft-materials",
+          "hz-institute-draft-site",
+          "hz-institute-draft-staff"
+        ],
+        "changed_rule_ids": [],
+        "changed_fact_fields": [
+          "hz26_above_scale_industrial",
+          "hz26_authority_compliance_check_complete",
+          "hz26_equipment_eligible_value",
+          "hz26_independent_legal_entity",
+          "hz26_ip_i_last3years",
+          "hz26_ip_ii_last3years",
+          "hz26_is_agriculture",
+          "hz26_is_software",
+          "hz26_management_systems",
+          "hz26_not_seriously_dishonest",
+          "hz26_rd_expense",
+          "hz26_rd_expense_ratio",
+          "hz26_rd_site_area",
+          "hz26_rd_staff_previous_year",
+          "hz26_registered_in_hangzhou",
+          "hz26_separate_rd_accounting",
+          "hz26_system_application_complete",
+          "hz26_valid_good_seed",
+          "hz26_valid_high_tech",
+          "hz26_valid_new_eagle",
+          "hz26_valid_technology_leader",
+          "hz26_valid_technology_sme",
+          "hz_rd_applicable_equipment_threshold_assessment_passed",
+          "hz_rd_class_i_ip_count",
+          "hz_rd_compliance_clear",
+          "hz_rd_full_time_research_staff",
+          "hz_rd_good_seed_enterprise",
+          "hz_rd_high_tech_enterprise",
+          "hz_rd_independent_accounting",
+          "hz_rd_is_software_enterprise",
+          "hz_rd_materials_complete",
+          "hz_rd_other_ip_count",
+          "hz_rd_registered_in_hangzhou",
+          "hz_rd_self_funded_expense",
+          "hz_rd_self_funded_expense_ratio",
+          "hz_rd_site_area",
+          "hz_rd_technology_sme"
+        ]
+      },
+      "policy_time_delta": {
+        "added_layer_ids": [
+          "hangzhou-enterprise-institute-2026-annual"
+        ],
+        "removed_layer_ids": [
+          "hangzhou-enterprise-institute-2026-consultation"
+        ],
+        "changed_layer_ids": []
+      },
+      "lifecycle_rule_changed": false,
+      "identity_impact": {
+        "official_list_facts_mutated": false,
+        "derived_lifecycle_requires_replay": true,
+        "policy_trace_requires_relink": true,
+        "identity_events": 0,
+        "identity_twins": 0
+      },
+      "prediction_impact": {
+        "requires_recompute": true,
+        "time_window_changed": true,
+        "invalidation_key": "policy-1d19b18c3ee4aaca7954"
+      },
+      "historical_backtest_impact": {
+        "requires_recompute": true,
+        "historical_facts_mutated": false,
+        "historical_fact_guard_changed": true
+      },
+      "preflight_impact": {
+        "requires_reassessment": true,
+        "policy_version_id": "policy-1d19b18c3ee4aaca7954",
+        "new_high_impact_requirements": [
+          {
+            "key": "hz26_above_scale_industrial",
+            "label": "hz26_above_scale_industrial",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_authority_compliance_check_complete",
+            "label": "hz26_authority_compliance_check_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_equipment_eligible_value",
+            "label": "hz26_equipment_eligible_value",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_independent_legal_entity",
+            "label": "hz26_independent_legal_entity",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_ip_i_last3years",
+            "label": "hz26_ip_i_last3years",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_ip_ii_last3years",
+            "label": "hz26_ip_ii_last3years",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_is_agriculture",
+            "label": "hz26_is_agriculture",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_is_software",
+            "label": "hz26_is_software",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_management_systems",
+            "label": "hz26_management_systems",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_not_seriously_dishonest",
+            "label": "hz26_not_seriously_dishonest",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_rd_expense",
+            "label": "hz26_rd_expense",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_rd_expense_ratio",
+            "label": "hz26_rd_expense_ratio",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_rd_site_area",
+            "label": "hz26_rd_site_area",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_rd_staff_previous_year",
+            "label": "hz26_rd_staff_previous_year",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_registered_in_hangzhou",
+            "label": "hz26_registered_in_hangzhou",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_separate_rd_accounting",
+            "label": "hz26_separate_rd_accounting",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_system_application_complete",
+            "label": "hz26_system_application_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_valid_good_seed",
+            "label": "hz26_valid_good_seed",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_valid_high_tech",
+            "label": "hz26_valid_high_tech",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_valid_new_eagle",
+            "label": "hz26_valid_new_eagle",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_valid_technology_leader",
+            "label": "hz26_valid_technology_leader",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz26_valid_technology_sme",
+            "label": "hz26_valid_technology_sme",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_applicable_equipment_threshold_assessment_passed",
+            "label": "hz_rd_applicable_equipment_threshold_assessment_passed",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_class_i_ip_count",
+            "label": "hz_rd_class_i_ip_count",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_compliance_clear",
+            "label": "hz_rd_compliance_clear",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_full_time_research_staff",
+            "label": "hz_rd_full_time_research_staff",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_good_seed_enterprise",
+            "label": "hz_rd_good_seed_enterprise",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_high_tech_enterprise",
+            "label": "hz_rd_high_tech_enterprise",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_independent_accounting",
+            "label": "hz_rd_independent_accounting",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_is_software_enterprise",
+            "label": "hz_rd_is_software_enterprise",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_materials_complete",
+            "label": "hz_rd_materials_complete",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_other_ip_count",
+            "label": "hz_rd_other_ip_count",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_registered_in_hangzhou",
+            "label": "hz_rd_registered_in_hangzhou",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_self_funded_expense",
+            "label": "hz_rd_self_funded_expense",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_self_funded_expense_ratio",
+            "label": "hz_rd_self_funded_expense_ratio",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_site_area",
+            "label": "hz_rd_site_area",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          },
+          {
+            "key": "hz_rd_technology_sme",
+            "label": "hz_rd_technology_sme",
+            "dimension": "source_data",
+            "impact": "high",
+            "resolution": "discover",
+            "reason": "政策变化新增、删除或修改了该企业事实对应的判断门槛"
+          }
+        ],
+        "ask_user_only_after_discovery": true,
+        "single_question_template": "政策变化影响了以下企业事实，请主人一次确认现有材料是否可覆盖：hz26_above_scale_industrial、hz26_authority_compliance_check_complete、hz26_equipment_eligible_value、hz26_independent_legal_entity、hz26_ip_i_last3years、hz26_ip_ii_last3years、hz26_is_agriculture、hz26_is_software、hz26_management_systems、hz26_not_seriously_dishonest、hz26_rd_expense、hz26_rd_expense_ratio、hz26_rd_site_area、hz26_rd_staff_previous_year、hz26_registered_in_hangzhou、hz26_separate_rd_accounting、hz26_system_application_complete、hz26_valid_good_seed、hz26_valid_high_tech、hz26_valid_new_eagle、hz26_valid_technology_leader、hz26_valid_technology_sme、hz_rd_applicable_equipment_threshold_assessment_passed、hz_rd_class_i_ip_count、hz_rd_compliance_clear、hz_rd_full_time_research_staff、hz_rd_good_seed_enterprise、hz_rd_high_tech_enterprise、hz_rd_independent_accounting、hz_rd_is_software_enterprise、hz_rd_materials_complete、hz_rd_other_ip_count、hz_rd_registered_in_hangzhou、hz_rd_self_funded_expense、hz_rd_self_funded_expense_ratio、hz_rd_site_area、hz_rd_technology_sme。"
+      }
+    }
+  ],
   "summary": {
-    "affected_projects": 0,
+    "affected_projects": 1,
     "identity_events_replayed": 0,
     "identity_twins_replayed": 0,
-    "prediction_project_invalidations": 0,
-    "historical_backtest_project_invalidations": 0,
-    "preflight_project_reassessments": 0
+    "prediction_project_invalidations": 1,
+    "historical_backtest_project_invalidations": 1,
+    "preflight_project_reassessments": 1
   },
   "invariants": [
     "官方名单形成的认定、复核、撤销等历史事实不因政策变化被改写",

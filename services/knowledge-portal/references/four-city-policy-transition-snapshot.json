@@ -61,15 +61,16 @@
       "city": "杭州市",
       "canonical_name": "杭州市企业研究院",
       "algorithm_project_id": "hangzhou-enterprise-institute",
-      "route_status": "consultation-transition",
-      "formal_policy": "《杭州市企业高新技术研究开发中心管理办法》（杭科高〔2022〕39号）",
-      "formal_policy_status": "current-until-repealed",
-      "prospective_policy": "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》",
+      "route_status": "active-municipal",
+      "formal_policy": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+      "formal_policy_status": "current",
+      "prospective_policy": null,
       "threshold_track_ids": [
-        "hangzhou-current-rd-center",
-        "hangzhou-prospective-enterprise-institute"
+        "hangzhou-enterprise-institute-2026",
+        "hangzhou-key-enterprise-institute-2026",
+        "hangzhou-key-enterprise-institute-agriculture-2026"
       ],
-      "content_hash": "ead80dea61092933aea0694ba147a4b1393bdc99d1e89b495539d674af59b50b"
+      "content_hash": "7333ead2ef2a1265814910375bee30602bab3218de8e68b35e761162648a61bd"
     },
     "municipal-enterprise-rd-platform|宁波市": {
       "cell_key": "municipal-enterprise-rd-platform|宁波市",
@@ -119,7 +120,7 @@
     }
   },
   "source_hashes": {
-    "policy_registry": "6cb4b8657c00338755e884b65c4075caed521302c531bf8195afe2a9107b7e06",
-    "threshold_registry": "f328f9ba1ae50c9c39cbab7cb3cd5aae9ae0338dff140c7496c297c7776bb57f"
+    "policy_registry": "a236f1cae11f9bb1a4e2628dc245f5cf7a910163ab3649c01c3cbfaedcd2baec",
+    "threshold_registry": "7c00f6f662ea92629fd2ba678105911a2bc4b7b17f4e4b10ccbbdfe6921b9e90"
   }
 }

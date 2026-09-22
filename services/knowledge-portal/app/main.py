@@ -1261,13 +1261,14 @@ def user_access_token(user_id: int, token_seed: str) -> str:
 
 
 def ensure_personal_access_token(user_id: int, label: str = "") -> str:
-    """Reuse the user's active credential, or create a personal one."""
+    """Reuse a portable personal credential, never a desktop-bound token."""
     normalized_label = (label or "个人 Token").strip()[:100] or "个人 Token"
     with closing(database()) as connection:
         connection.execute("BEGIN IMMEDIATE")
         active_token = connection.execute(
             "SELECT id,token_seed,credential_kind FROM device_tokens "
             "WHERE user_id=? AND activation_state='active' "
+            "AND credential_kind='personal' AND binding_id IS NULL "
             "AND revoked_at IS NULL ORDER BY COALESCE(last_used_at,created_at) DESC,id DESC LIMIT 1",
             (user_id,),
         ).fetchone()
@@ -1291,7 +1292,7 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
                     isoformat(utc_now()),
                 ),
             )
-        elif str(active_token["credential_kind"] or "") == "personal":
+        else:
             seed = str(active_token["token_seed"] or secrets.token_urlsafe(24))
             raw_token = user_access_token(user_id, seed)
             connection.execute(
@@ -1308,9 +1309,6 @@ def ensure_personal_access_token(user_id: int, label: str = "") -> str:
                     int(active_token["id"]),
                 ),
             )
-        else:
-            seed = str(active_token["token_seed"])
-            raw_token = user_access_token(user_id, seed)
         connection.commit()
     return raw_token
 
@@ -1333,6 +1331,9 @@ def issue_client_login_token(
         UPDATE device_tokens
         SET revoked_at=?,revoked_reason='superseded_by_client_login',revoked_by='client_login'
         WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+          AND (credential_kind='client' OR binding_id IN (
+              SELECT id FROM device_bindings WHERE auth_method='client_password'
+          ))
         """,
         (now, user_id),
     )
@@ -1340,7 +1341,7 @@ def issue_client_login_token(
         """
         UPDATE device_bindings
         SET revoked_at=?,revoked_reason='superseded_by_client_login'
-        WHERE user_id=? AND revoked_at IS NULL
+        WHERE user_id=? AND revoked_at IS NULL AND auth_method='client_password'
         """,
         (now, user_id),
     )
@@ -1392,13 +1393,14 @@ def reconcile_single_active_credentials(
     connection: sqlite3.Connection,
     reconciled_at: str,
 ) -> int:
-    """Revoke historical duplicate active credentials before enforcing uniqueness."""
+    """Reconcile desktop credentials only; portable MCP tokens may coexist."""
     revoked_count = 0
     duplicate_users = connection.execute(
         """
         SELECT user_id
         FROM device_tokens
         WHERE revoked_at IS NULL AND activation_state='active'
+          AND credential_kind='client'
         GROUP BY user_id
         HAVING COUNT(*) > 1
         ORDER BY user_id
@@ -1411,6 +1413,7 @@ def reconcile_single_active_credentials(
             SELECT id
             FROM device_tokens
             WHERE user_id=? AND revoked_at IS NULL AND activation_state='active'
+              AND credential_kind='client'
             ORDER BY
                 CASE WHEN COALESCE(last_used_at,'')<>'' THEN 1 ELSE 0 END DESC,
                 last_used_at DESC,
@@ -1431,6 +1434,7 @@ def reconcile_single_active_credentials(
                 revoked_by='system'
             WHERE user_id=? AND id<>? AND revoked_at IS NULL
               AND activation_state='active'
+              AND credential_kind='client'
             """,
             (reconciled_at, user_id, int(survivor["id"])),
         )
@@ -6645,6 +6649,37 @@ def assistant_model_error_reason(error: Exception) -> tuple[str, str]:
     return type(error).__name__, "模型请求未正常完成"
 
 
+def hangzhou_rd_policy_notice(question: str) -> str:
+    aliases = (
+        "杭州市研发中心", "杭州研发中心", "杭州市企业研究院", "杭州企业研究院",
+        "杭州市重点企业研究院", "杭州重点企业研究院", "杭州市企业高新技术研究开发中心",
+    )
+    if not any(alias in question for alias in aliases):
+        return ""
+    selected = resolve_policy_transition(
+        load_four_city_rd_platform_policy_registry(),
+        family_id="municipal-enterprise-rd-platform", city="杭州市",
+        evaluation_mode="current-year-preparation",
+    )
+    title = str(selected.get("primary_policy") or "待核验")
+    if selected.get("status") != "resolved":
+        return "杭州研发机构政策注册表尚未解析，须核验目标年度通知后判断，不得猜测政策已转正。"
+    if selected.get("primary_policy_status") == "draft":
+        return (
+            f"杭州研发机构统一路由到“市级研发中心（四市属地版）”的杭州版本；{title}"
+            "作为准备和差距评估主基线，法律状态为draft（尚未正式生效），不能宣称正式符合。"
+            "历史事项按目标年度当时有效规则回放。"
+        )
+    years = "、".join(str(year) for year in selected.get("applicable_years", []))
+    return (
+        f"杭州研发机构统一路由到“市级研发中心（四市属地版）”的杭州版本；采用{title}。"
+        f"适用年度：{years or '须核验目标年度'}。来源：{selected.get('source_role') or '待核验'}；"
+        f"{selected.get('source_url') or ''}。"
+        "原征求意见稿仅作历史追溯；年度通知不得自动延用到以后年度。"
+        "企业是否符合仍须逐项核验普通、重点或农业重点轨道；不得自动改写历史认定身份、年度和名称。"
+    )
+
+
 def current_policy_guardrail(question: str) -> str:
     notices: list[str] = []
     if any(term in question for term in ("专精特新", "小巨人", "梯度培育")):
@@ -6653,13 +6688,9 @@ def current_policy_guardrail(question: str) -> str:
             "工信部企业〔2022〕63号及其评分表只保留为历史档案，不得用于当前或未来的新申报、复核、评分和材料写作，"
             "也不得补充现行标准没有规定的条件。回答必须先说明版本，再列条件。"
         )
-    if "杭州市" in question and "研发中心" in question:
-        notices.append(
-            "杭州研发机构门禁：统一路由到“市级研发中心（四市属地版）”的杭州属地版本。"
-            "当年申报尚未开放或评估未来年度时，已核验且明确拟替代旧项目的2026年征求意见稿"
-            "作为准备和差距评估主基线；法律状态必须始终标为draft（尚未正式生效），"
-            "不得写成现行正式政策。历史回放只使用目标年度当时有效规则。"
-        )
+    hangzhou_notice = hangzhou_rd_policy_notice(question)
+    if hangzhou_notice:
+        notices.append(hangzhou_notice)
     if any(term in question for term in ("浙江省研发中心", "省级研发中心", "省高企研发中心")):
         notices.append(
             "浙江省研发机构门禁：原省高新技术企业研究开发中心已纳入省企业研究院序列，不再重复申报认定。"
@@ -6708,14 +6739,9 @@ def current_policy_fallback(question: str) -> str:
             "主营业务收入占比不低于80%，资产负债率不超过80%；近两年研发费用每年不低于100万元且研发强度不低于3%；"
             "至少1项与主导产品相关、实际应用并产生经济效益的I类知识产权；当年度质量评价得分达到50分以上。"
         )
-    if "杭州市" in question and "研发中心" in question:
-        sections.append(
-            "“杭州市研发中心”统一进入“市级研发中心（四市属地版）”的杭州属地路由。"
-            "在本年度申报尚未开放或进行未来年度预测时，使用已核验的2026年"
-            "《杭州市重点企业研究院、企业研究院建设管理办法（征求意见稿）》作为准备主基线。"
-            "该文件法律状态仍为draft（尚未正式生效），只能输出预评估和差距清单，不能宣称正式符合；"
-            "历史事项继续按目标年度当时有效文件回放。"
-        )
+    hangzhou_notice = hangzhou_rd_policy_notice(question)
+    if hangzhou_notice:
+        sections.append(hangzhou_notice)
     if any(term in question for term in ("浙江省研发中心", "省级研发中心", "省高企研发中心")):
         sections.append(
             "浙江省原“省高新技术企业研究开发中心”已纳入企业研究院序列；新申报匹配“浙江省企业研究院”，"
@@ -8132,7 +8158,6 @@ def init_database() -> None:
             "WHERE activation_state='active'"
         )
         connection.execute("DROP INDEX IF EXISTS device_tokens_one_active_per_user")
-        reconcile_single_active_credentials(connection, now)
         for active_row in connection.execute(
             "SELECT id,user_id,token_seed FROM device_tokens WHERE revoked_at IS NULL"
         ).fetchall():
@@ -8155,11 +8180,6 @@ def init_database() -> None:
         connection.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_enrollment_idx "
             "ON device_tokens(enrollment_id) WHERE enrollment_id IS NOT NULL"
-        )
-        connection.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_per_user "
-            "ON device_tokens(user_id) "
-            "WHERE revoked_at IS NULL AND activation_state='active'"
         )
         connection.execute(
             """
@@ -8195,6 +8215,21 @@ def init_database() -> None:
                 ELSE credential_kind
             END
             """
+        )
+        # 先修复历史客户端身份，再按客户端维度去重；不得在重启时吊销通用 MCP。
+        # 历史第三方绑定不能占用客户端的单设备名额；两类各自保留唯一性。
+        connection.execute("DROP INDEX IF EXISTS device_bindings_one_active_per_user")
+        connection.execute(
+            "CREATE UNIQUE INDEX device_bindings_one_active_per_user "
+            "ON device_bindings(user_id, (auth_method='client_password')) "
+            "WHERE revoked_at IS NULL"
+        )
+        reconcile_single_active_credentials(connection, now)
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS device_tokens_one_active_client_per_user "
+            "ON device_tokens(user_id) "
+            "WHERE revoked_at IS NULL AND activation_state='active' "
+            "AND credential_kind='client'"
         )
         enrollment_columns = {
             row["name"]
@@ -8648,8 +8683,6 @@ def client_password_login(
     normalized_login = payload.username.strip().lower()
     client_ip = client_ip_from(request)
     with closing(database()) as connection:
-        if auth_attempts_blocked(connection, "client_login", normalized_login, client_ip, 10):
-            raise HTTPException(status_code=429, detail="登录尝试次数过多，请30分钟后重试")
         user = connection.execute(
             """
             SELECT * FROM users
@@ -9840,15 +9873,7 @@ def mark_mcp_connected(
                     activation_state == "pending"
                     and activate_installation_credential
                 ):
-                    connection.execute(
-                        """
-                        UPDATE device_tokens
-                        SET revoked_at=?,revoked_reason='superseded_by_new_credential',
-                            revoked_by='system'
-                        WHERE user_id=? AND id<>? AND revoked_at IS NULL
-                        """,
-                        (now, user_id, device_token_id),
-                    )
+                    # 技能安装只激活自己的凭据，不接管客户端或其他宿主的授权。
                     activated = connection.execute(
                         """
                         UPDATE device_tokens
@@ -13104,19 +13129,6 @@ def login_submit(
     normalized_login = username.strip().lower()
     client_ip = client_ip_from(request)
     with closing(database()) as connection:
-        if auth_attempts_blocked(connection, "login", normalized_login, client_ip, 10):
-            return templates.TemplateResponse(
-                request,
-                "login.html",
-                {
-                    "error": "登录尝试次数过多，请30分钟后重试。",
-                    "initialized": False,
-                    "registered": False,
-                    "password_reset": False,
-                    "next_url": safe_login_redirect(next_url),
-                },
-                status_code=429,
-            )
         user = connection.execute(
             """
             SELECT * FROM users
@@ -18950,6 +18962,7 @@ def create_device_token(
         active_token = connection.execute(
             "SELECT id,token_seed,credential_kind FROM device_tokens "
             "WHERE user_id=? AND activation_state='active' "
+            "AND credential_kind='personal' AND binding_id IS NULL "
             "AND revoked_at IS NULL ORDER BY COALESCE(last_used_at,created_at) DESC,id DESC LIMIT 1",
             (user["id"],),
         ).fetchone()

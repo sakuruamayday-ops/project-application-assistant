@@ -210,7 +210,7 @@
     {
       "project_id": "hangzhou-enterprise-institute",
       "baseline_status": "complete",
-      "decision_mode": "four-city-local-rule-with-draft-monitor",
+      "decision_mode": "four-city-local-rule-with-2026-hangzhou-annual-notice",
       "policy_documents": [
         {
           "document_id": "hangzhou-enterprise-rd-center-2022",
@@ -230,10 +230,10 @@
           "status": "draft",
           "authority": "杭州市科学技术局",
           "official_url": "https://www.xclcy.com/8955.html",
-          "relation": "prospective-replacement",
+          "relation": "historical-draft",
           "source_archive_path": "10_政策与目录/研究院/四市研发平台/杭州市/前瞻征求意见/2026-05-29_杭州市重点企业研究院、企业研究院建设管理办法_征求意见稿.docx",
           "source_archive_sha256": "9897f4ebd4e4f48f1234a78bb0d434f5f27dec45b537f6925fd2d48869927372",
-          "mandatory_disclosure": "尚未正式生效；仅作未来准备和预测基线"
+          "mandatory_disclosure": "仅作历史草案追溯；2026申报采用用户指定通知和评分附表"
         },
         {
           "document_id": "ningbo-rd-platform-application-2026",
@@ -300,14 +300,23 @@
           "relation": "jinhua-current-filing",
           "source_archive_path": "10_政策与目录/研究院/四市研发平台/金华市/2024现行正式/2024-09-10_金华市科学技术研究开发中心管理办法_金市科2024-47号.pdf",
           "source_archive_sha256": "44f900a157820374cd8268d5baf6d70e094b4349ab9afa9f6a2f57733d3175cd"
+        },
+        {
+          "document_id": "hangzhou-enterprise-institute-annual-2026",
+          "title": "杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知",
+          "issued_year": 2026,
+          "status": "current-annual-notice",
+          "authority": "杭州市科学技术局",
+          "source_url": "https://mp.weixin.qq.com/s/iVq7bHnByb-3SIjOFtf5zg",
+          "official_url": null,
+          "source_archive_path": "/Users/zsh/Desktop/杭州市科学技术局关于组织开展2026年度市重点企业研究院、市企业研究院申报建设工作的通知.pdf",
+          "source_role": "用户明确指定采用的公众号转载PDF，已逐页核对正文及附表，非政府网站原文核验",
+          "verification_status": "user-supplied-reviewed",
+          "relation": "hangzhou-2026-annual-notice",
+          "mandatory_disclosure": "2026年度申报采用用户指定通知及完整评分附表；原征求意见稿转历史追溯。本次为年度申报规则转正，不据此宣称管理办法已正式颁布或原认定身份自动变更。"
         }
       ],
       "dependencies": [
-        {
-          "from_document_id": "hangzhou-enterprise-institute-consultation-2026",
-          "to_document_id": "hangzhou-enterprise-rd-center-2022",
-          "relation": "prospective-replaces"
-        },
         {
           "from_document_id": "ningbo-key-institute-score-2026",
           "to_document_id": "ningbo-rd-platform-application-2026",
@@ -322,6 +331,11 @@
           "from_document_id": "shaoxing-rd-center-score-2026",
           "to_document_id": "shaoxing-rd-center-measure-2026",
           "relation": "attachment-of"
+        },
+        {
+          "from_document_id": "hangzhou-enterprise-institute-annual-2026",
+          "to_document_id": "hangzhou-enterprise-institute-consultation-2026",
+          "relation": "replaces-prospective-evaluation-for-2026"
         }
       ]
     },

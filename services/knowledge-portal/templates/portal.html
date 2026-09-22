@@ -114,6 +114,8 @@ GONGCHUANG_KB_TOKEN=<span data-secret-display="personal-access" data-secret-valu
           </dl>
           {% if project_algorithm_detail.has_prospective_layer %}
           <div class="algorithm-routing-notice"><strong>政策过渡提示</strong><p>本项目已接入征求意见前瞻层。当年尚未开放申报的准备评估与下一年度预测，优先按已核验且明确替代旧政策的征求意见稿比对；征求意见稿的法律状态仍为草案，不得据此生成正式资格结论，历史回放仍按对应时点有效文件执行。</p>{% for notice in project_algorithm_detail.transition_notices %}<p>{{ notice }}</p>{% endfor %}</div>
+          {% elif project_algorithm_detail.transition_notices %}
+          <div class="algorithm-routing-notice"><strong>政策版本说明</strong>{% for notice in project_algorithm_detail.transition_notices %}<p>{{ notice }}</p>{% endfor %}</div>
           {% endif %}
           {% if project_algorithm_detail.fact_fields %}
           <div class="algorithm-detail-section"><h4>需要读取的企业事实</h4><div class="algorithm-chip-list">{% for field in project_algorithm_detail.fact_fields %}<span><strong>{{ field.label }}</strong><small>{{ field.field }}{% if field.unit %} · {{ field.unit }}{% endif %}</small></span>{% endfor %}</div></div>

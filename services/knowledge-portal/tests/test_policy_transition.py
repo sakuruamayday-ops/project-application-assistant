@@ -26,6 +26,22 @@ def load_registry():
     return json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
 
 
+def load_historical_draft_registry():
+    registry = load_registry()
+    variant = registry["project_families"][1]["city_variants"][0]
+    draft = variant["historical_drafts"][-1]
+    variant.update({key: draft[key] for key in (
+        "prospective_verification_status", "prospective_archive_sha256",
+        "replacement_signal", "replaces_formal_policy",
+    )})
+    variant["prospective_policy"] = draft["title"]
+    variant["prospective_policy_status"] = "draft"
+    variant["prospective_url"] = draft["source_url"]
+    variant["formal_policy"] = "杭州市企业高新技术研究开发中心管理办法"
+    variant["formal_policy_status"] = "current-until-repealed"
+    return registry
+
+
 def test_four_city_two_family_policy_registry_is_closed():
     registry = load_registry()
 
@@ -65,7 +81,7 @@ def test_rd_platform_routes_only_reference_registered_threshold_tracks():
 
 
 def test_hangzhou_consultation_draft_controls_future_preparation_not_formal_fact():
-    registry = load_registry()
+    registry = load_historical_draft_registry()
 
     future = resolve_policy_transition(
         registry,
@@ -93,7 +109,7 @@ def test_hangzhou_consultation_draft_controls_future_preparation_not_formal_fact
 
 def test_hangzhou_verified_replacement_draft_controls_current_year_pre_application():
     selected = resolve_policy_transition(
-        load_registry(),
+        load_historical_draft_registry(),
         family_id="municipal-enterprise-rd-platform",
         city="杭州市",
         evaluation_mode="current-year-preparation",
@@ -108,7 +124,7 @@ def test_hangzhou_verified_replacement_draft_controls_current_year_pre_applicati
 
 def test_hangzhou_historical_replay_never_uses_consultation_draft():
     selected = resolve_policy_transition(
-        load_registry(),
+        load_historical_draft_registry(),
         family_id="municipal-enterprise-rd-platform",
         city="杭州市",
         evaluation_mode="historical-fact",
@@ -126,7 +142,7 @@ def test_hangzhou_historical_replay_never_uses_consultation_draft():
 
 
 def test_unverified_or_non_replacement_draft_cannot_replace_preparation_baseline():
-    registry = deepcopy(load_registry())
+    registry = load_historical_draft_registry()
     variant = registry["project_families"][1]["city_variants"][0]
     variant.pop("prospective_archive_sha256")
     variant["prospective_verification_status"] = "unverified"
@@ -148,7 +164,7 @@ def test_unverified_or_non_replacement_draft_cannot_replace_preparation_baseline
 
 
 def test_non_hex_archive_marker_does_not_count_as_verified_draft():
-    registry = deepcopy(load_registry())
+    registry = load_historical_draft_registry()
     variant = registry["project_families"][1]["city_variants"][0]
     variant["prospective_url"] = "https://example.com/draft"
     variant["prospective_archive_sha256"] = "z" * 64
