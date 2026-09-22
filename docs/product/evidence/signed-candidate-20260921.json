@@ -1,0 +1,18 @@
+{
+  "candidate_only": true,
+  "release": "V1.6.20",
+  "source_commit": "0675c0a",
+  "source_gates": {
+    "passed": 13,
+    "total": 13
+  },
+  "archive": "gongchuang-research-institute-skills-V1.6.20.zip",
+  "sha256": "3fd2313b70f62196b7d72c8d5c52a1cb93d06fea710c04609f830704adf1d891",
+  "isolated_installation": {
+    "status": "pass",
+    "verified_skills": 51,
+    "installed_verified_skills": 51,
+    "read_only": true
+  },
+  "publication": "not-published"
+}
