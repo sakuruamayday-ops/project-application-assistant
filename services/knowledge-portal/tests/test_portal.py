@@ -1992,6 +1992,35 @@ def test_client_password_login_rejects_invalid_password_without_disclosing_accou
         assert "owner" not in wrong.text
 
 
+@pytest.mark.parametrize("action", ["login", "client_login"])
+def test_login_after_shared_ip_failures_still_checks_password(tmp_path, action):
+    module = load_app(tmp_path)
+    with TestClient(module.app) as client:
+        client.post("/setup", data={"setup_key": "setup-secret", "username": "owner", "password": "correct-horse-battery"})
+        now = module.isoformat(module.utc_now())
+        with closing(module.database()) as connection:
+            connection.executemany(
+                "INSERT INTO auth_attempts(action,username,client_ip,succeeded,attempted_at) VALUES (?,?,?,0,?)",
+                [(action, "other-member", "testclient", now) for _ in range(12)],
+            )
+            connection.commit()
+        def attempt(password):
+            if action == "login":
+                return client.post("/login", data={"username": "owner", "password": password}, follow_redirects=False)
+            return client.post("/v1/client-login", json={
+                "client_id": module.CLIENT_AUTHORIZATION_ID,
+                "client_version": "0.4.7", "platform": "macos",
+                "device_id": "gcd_" + "a" * 48, "device_name": "Test Device",
+                "username": "owner", "password": password,
+            })
+        wrong = attempt("wrong-password")
+        assert wrong.status_code == 401
+        with closing(module.database()) as connection:
+            assert connection.execute("SELECT COUNT(*) FROM auth_attempts WHERE action=? AND username='owner'", (action,)).fetchone()[0] == 1
+        correct = attempt("correct-horse-battery")
+        assert correct.status_code == (303 if action == "login" else 200)
+
+
 def test_active_index_release_id_resolves_current_release_symlink(tmp_path):
     module = load_app(tmp_path)
     release_id = "policy-test-release-0001"

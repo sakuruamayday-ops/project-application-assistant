@@ -8683,8 +8683,6 @@ def client_password_login(
     normalized_login = payload.username.strip().lower()
     client_ip = client_ip_from(request)
     with closing(database()) as connection:
-        if auth_attempts_blocked(connection, "client_login", normalized_login, client_ip, 10):
-            raise HTTPException(status_code=429, detail="登录尝试次数过多，请30分钟后重试")
         user = connection.execute(
             """
             SELECT * FROM users
@@ -13131,19 +13129,6 @@ def login_submit(
     normalized_login = username.strip().lower()
     client_ip = client_ip_from(request)
     with closing(database()) as connection:
-        if auth_attempts_blocked(connection, "login", normalized_login, client_ip, 10):
-            return templates.TemplateResponse(
-                request,
-                "login.html",
-                {
-                    "error": "登录尝试次数过多，请30分钟后重试。",
-                    "initialized": False,
-                    "registered": False,
-                    "password_reset": False,
-                    "next_url": safe_login_redirect(next_url),
-                },
-                status_code=429,
-            )
         user = connection.execute(
             """
             SELECT * FROM users
