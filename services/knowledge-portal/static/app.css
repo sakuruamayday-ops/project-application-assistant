@@ -1285,6 +1285,8 @@ a.algorithm-stat-card:hover,
   .app-layout { display: block !important; }
   .content-wrap { max-width: none !important; padding: 0 !important; }
 }
+
+.client-diagnostic-value { white-space: pre-wrap; overflow-wrap: anywhere; }
 }
 
 @layer theme {
@@ -2972,5 +2974,3 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   }
 }
 }
-
-.client-diagnostic-value { white-space: pre-wrap; overflow-wrap: anywhere; }
