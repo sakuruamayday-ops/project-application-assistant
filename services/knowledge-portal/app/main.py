@@ -57,6 +57,8 @@ from starlette.background import BackgroundTask
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.client_error_reports import ClientErrorReport, ErrorReportBodyLimit
+
 from app.assistant_runtime import (
     assistant_tool_schemas,
     quick_guide_answer,
@@ -801,6 +803,7 @@ async def lifespan(application: FastAPI):
 
 app = FastAPI(title="企业全生命周期助手知识库", docs_url=None, redoc_url=None, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=500, compresslevel=6)
+app.add_middleware(ErrorReportBodyLimit)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 
@@ -7752,6 +7755,14 @@ def init_database() -> None:
             CREATE INDEX IF NOT EXISTS feedback_messages_status_time_idx
             ON feedback_messages(status, created_at DESC);
 
+            CREATE TABLE IF NOT EXISTS client_error_reports (
+                feedback_id INTEGER PRIMARY KEY REFERENCES feedback_messages(id),
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                request_id TEXT NOT NULL,
+                diagnostic_json TEXT NOT NULL,
+                UNIQUE(user_id, request_id)
+            );
+
             CREATE TABLE IF NOT EXISTS skill_releases (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 version TEXT NOT NULL UNIQUE,
@@ -12014,9 +12025,10 @@ def portal_payload(
                     ).casefold()
                 ]
         feedback_sql = """
-            SELECT feedback_messages.*,users.username,users.real_name
+            SELECT feedback_messages.*,users.username,users.real_name,client_error_reports.diagnostic_json
             FROM feedback_messages
             JOIN users ON users.id=feedback_messages.user_id
+            LEFT JOIN client_error_reports ON client_error_reports.feedback_id=feedback_messages.id
         """
         feedback_parameters: tuple[object, ...] = ()
         if active_page != "feedback":
@@ -12031,6 +12043,8 @@ def portal_payload(
             "updated_at",
             "resolved_at",
         )
+        for feedback in feedback_messages:
+            feedback["diagnostic"] = json.loads(feedback["diagnostic_json"]) if feedback.get("diagnostic_json") else None
         feedback_total = len(feedback_messages)
         normalized_feedback_status = feedback_status.strip().casefold()[:20]
         if normalized_feedback_status in {"pending", "reviewing", "resolved", "closed"}:
@@ -12049,6 +12063,8 @@ def portal_payload(
                 in " ".join(
                     (
                         str(feedback.get("subject") or ""),
+                        str(feedback.get("diagnostic_json") or ""),
+                        str(feedback.get("id") or ""),
                         str(feedback.get("content") or ""),
                         str(feedback.get("real_name") or ""),
                         str(feedback.get("username") or ""),
@@ -13429,6 +13445,60 @@ def portal_page_response(
     )
     response.headers["Cache-Control"] = "private, no-store"
     return response
+
+
+@app.post("/v1/client-error-reports")
+def client_error_report_submit(
+    report: ClientErrorReport,
+    user: Annotated[sqlite3.Row | dict[str, object], Depends(require_api_user)],
+):
+    if str(user["client_binding_auth_method"] or "") != "client_password":
+        raise HTTPException(status_code=403, detail="请使用客户端登录后提交")
+    diagnostic = report.diagnostic()
+    now = isoformat(utc_now())
+    with closing(database()) as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        existing = connection.execute(
+            "SELECT feedback_id FROM client_error_reports WHERE user_id=? AND request_id=?",
+            (int(user["id"]), str(report.request_id)),
+        ).fetchone()
+        if existing:
+            return {"report_id": existing["feedback_id"], "request_id": str(report.request_id)}
+        recent = connection.execute(
+            "SELECT COUNT(*) FROM feedback_messages f JOIN client_error_reports r ON r.feedback_id=f.id WHERE f.user_id=? AND f.created_at>?",
+            (int(user["id"]), isoformat(utc_now() - timedelta(hours=1))),
+        ).fetchone()[0]
+        if recent >= 30:
+            raise HTTPException(status_code=429, detail="上报次数过多，请保留草稿稍后重试")
+        cursor = connection.execute(
+            "INSERT INTO feedback_messages(user_id,category,subject,content,page_url,status,created_at,updated_at) VALUES (?,'bug',?,?,'','pending',?,?)",
+            (int(user["id"]), "客户端错误 · " + report.code, diagnostic["steps"] or diagnostic["summary"], now, now),
+        )
+        report_id = cursor.lastrowid
+        connection.execute(
+            "INSERT INTO client_error_reports(feedback_id,user_id,request_id,diagnostic_json) VALUES (?,?,?,?)",
+            (report_id, int(user["id"]), str(report.request_id), json.dumps(diagnostic, ensure_ascii=False)),
+        )
+        connection.commit()
+    return {"report_id": report_id, "request_id": str(report.request_id)}
+
+
+@app.get("/admin/feedback/{feedback_id}/diagnostic")
+def admin_feedback_diagnostic(
+    feedback_id: int,
+    user: Annotated[sqlite3.Row, Depends(require_web_user)],
+):
+    require_admin(user)
+    with closing(database()) as connection:
+        row = connection.execute(
+            "SELECT diagnostic_json FROM client_error_reports WHERE feedback_id=?", (feedback_id,)
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="诊断报告不存在")
+    return Response(row["diagnostic_json"], media_type="application/json", headers={
+        "Content-Disposition": f'attachment; filename="error-report-{feedback_id}.json"',
+        "Cache-Control": "private, no-store",
+    })
 
 
 @app.get("/feedback", response_class=HTMLResponse)

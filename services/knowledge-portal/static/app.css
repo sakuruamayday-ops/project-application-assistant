@@ -2972,3 +2972,5 @@ body.is-page-leaving.is-page-leaving-previous .portal-page { animation-name: ate
   }
 }
 }
+
+.client-diagnostic-value { white-space: pre-wrap; overflow-wrap: anywhere; }
