@@ -475,6 +475,7 @@ def test_client_generation_preserves_audit_numbers_and_emits_only_filled_report(
     text = FILLER.document_text(Document(output))
     assert "审计［2026］001号" in text
     assert "［填写］" not in text
+    assert "年年" not in text
     assert fixture["enterprise"] in text
     assert set(tmp_path.glob("*.docx")) == {source, output}
 

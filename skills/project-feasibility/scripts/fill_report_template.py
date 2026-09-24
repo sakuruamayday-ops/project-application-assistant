@@ -330,7 +330,7 @@ def _fallback_for_placeholder(token: str, context: str, fixture: dict[str, Any])
     if any(word in combined for word in ("责任人", "核验人", "复核人")):
         return str(fixture.get("owner") or "企业项目负责人")
     if any(word in combined for word in ("完成节点", "建议时间", "年度/季度", "截止日")):
-        return str(fixture.get("target_period") or f"{fixture['suggested_year']}年申报前")
+        return str(fixture.get("target_period") or f"{str(fixture['suggested_year']).removesuffix('年')}年申报前")
     if any(word in combined for word in ("具体动作", "补强动作", "后续动作", "下一步")):
         return str(fixture["next_action"])
     if any(word in combined for word in ("差距", "短板")):
@@ -446,7 +446,7 @@ def _fill_summary_table(table, fixture: dict[str, Any], feasibility: bool) -> No
             row.cells[2].text = str(fixture.get("score_basis") or "当期完整评分表或企业数据未闭合")
         elif "关键前置任务" in key:
             row.cells[1].text = str(fixture["next_action"])
-            row.cells[2].text = str(fixture.get("target_period") or f"{fixture['suggested_year']}年申报前")
+            row.cells[2].text = str(fixture.get("target_period") or f"{str(fixture['suggested_year']).removesuffix('年')}年申报前")
 
 
 def _fill_condition_table(table, fixture: dict[str, Any], feasibility: bool) -> None:
