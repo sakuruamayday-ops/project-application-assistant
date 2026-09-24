@@ -1,10 +1,14 @@
 ---
 name: high-tech-enterprise-application-drafting
-description: 按高企申请书模板撰写、回填和核稿，支持按授权扩缩 RD、PS 表。
+description: 按高企申请书模板撰写、回填和核稿，支持按授权扩缩 RD、PS 表；已提交材料的体检按专用报告结构逐项输出。
 ---
 
 # 高新技术企业申请书撰写
 
+
+## 材料体检报告
+
+用户要求材料体检报告时，先完整读取 [材料体检报告模板](references/material-checkup-report-template.md)，按该模板的章节、表头和问题卡形成报告。材料体检不生成总体分数、评级或通过概率；不得用前期培育方向卡、申请书、可行性模板或通用经营简析替代。用户只检查某个字段或章节时仅处理该范围。
 
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
@@ -18,7 +22,7 @@ description: 按高企申请书模板撰写、回填和核稿，支持按授权�
 
 ## 使用边界
 
-本技能负责申请书正文和表格，不替代高企申报前评估。申报资格、评分与申报年度选择使用 `high-tech-enterprise-preassessment`。
+本技能负责申请书正文、表格及已提交材料的体检报告，不替代高企申报前评估。申报资格、评分与申报年度选择使用 `high-tech-enterprise-preassessment`。
 
 用户只问企业创新能力、成果转化、RD、PS 或其他单个栏目的写法时，只处理该栏目，不自动生成整份高企申请书、扩表或完整评分。只有明确要求撰写、回填、扩表、核稿或生成申请书时，才执行完整申请书流程。
 
