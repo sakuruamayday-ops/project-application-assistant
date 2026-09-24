@@ -509,7 +509,7 @@
       ],
       "required_tables": [
         {
-          "id": "核心条件表",
+          "id": "申报条件对照",
           "required_columns": [
             "现行条件",
             "企业值",
@@ -520,7 +520,7 @@
           "min_rows": 1
         },
         {
-          "id": "申报路径表",
+          "id": "实施路径",
           "required_columns": [
             "项目",
             "申报年度",
@@ -582,7 +582,7 @@
       ],
       "required_tables": [
         {
-          "id": "条件评分表",
+          "id": "现行条件或完整评分表",
           "required_columns": [
             "现行条件或评分项",
             "企业值",
@@ -595,7 +595,7 @@
           "min_rows": 1
         },
         {
-          "id": "补强任务表",
+          "id": "逐项补强计划",
           "required_columns": [
             "补强动作",
             "所需材料",

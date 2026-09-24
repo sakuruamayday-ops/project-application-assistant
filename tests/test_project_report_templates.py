@@ -133,3 +133,21 @@ def test_report_chapter_page_breaks_are_attached_to_headings():
             assert not root.findall(f"./{{{WORD_NS}}}body/{{{WORD_NS}}}p//{{{WORD_NS}}}br[@{{{WORD_NS}}}type='page']"), (project["id"], report_type)
             headings = root.findall(f"./{{{WORD_NS}}}body/{{{WORD_NS}}}p/{{{WORD_NS}}}pPr/{{{WORD_NS}}}pageBreakBefore")
             assert len(headings) >= 4, (project["id"], report_type)
+
+
+def test_delivery_table_markers_match_every_approved_word_master():
+    # Host validation searches the ID as visible text, not as an internal key.
+    from docx import Document
+    root = Path(__file__).resolve().parents[1] / "skills"
+    contracts = json.loads((root / "delivery-contracts.json").read_text())
+    registry = json.loads((root / "project-feasibility/references/report-template-registry.json").read_text())
+    for project in registry["projects"]:
+        for kind, template in project["templates"].items():
+            profile = contracts["delivery_profiles"][registry["report_types"][kind]["profile_id"]]
+            document = Document(root / "project-feasibility" / template["path"])
+            text = "".join(document._element.itertext())
+            compact = "".join(text.split())
+            for table in profile["required_tables"]:
+                assert "".join(table["id"].split()) in compact, (project["id"], kind, table["id"])
+                for column in table["required_columns"]:
+                    assert "".join(column.split()) in compact, (project["id"], kind, column)
