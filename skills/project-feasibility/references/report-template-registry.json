@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_tag": "V1.6.20",
+  "release_tag": "V1.6.21",
   "selection_rule": "exact-or-longest-alias",
   "report_types": {
     "preassessment": {

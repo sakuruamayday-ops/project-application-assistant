@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.6.20",
+  "skill_bundle_version": "1.6.21",
   "operations": [
     {
       "id": "manufacturing-tax-risk-analysis.calculate-metrics",
@@ -133,7 +133,7 @@
     {
       "id": "evidence-ledger.create-docx",
       "skill": "evidence-ledger",
-      "description": "当主技能没有专用模板或生成器时，将已通过 chat 专业预校验的完整正文一次写成新的原生 DOCX。",
+      "description": "将已定稿正文一次写成新的原生 DOCX，保留标题、表格及行内格式。普通导出无需专业预校验；专业任务使用已通过 chat 预校验的正文，主技能有专用模板时优先使用其模板。",
       "script": "evidence-ledger/scripts/create_docx_from_text.py",
       "files": [],
       "sandbox_mode": "workspace-write",

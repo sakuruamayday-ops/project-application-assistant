@@ -11,7 +11,10 @@ from pathlib import Path
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.shared import Cm, Pt
+from markdown_it import MarkdownIt
 
 
 SCHEMA_VERSION = "gongchuang-docx-generation-operation/v1"
@@ -21,6 +24,7 @@ NUMBERED_HEADING = re.compile(
     r"^(?:第[一二三四五六七八九十百]+[章节篇部分]|[一二三四五六七八九十]+[、.]|\d+(?:\.\d+)*[、.])\s*(.+)$"
 )
 LIST_ITEM = re.compile(r"^\s*(?:[-*+]\s+|\d+[.)、]\s*)(.+)$")
+INLINE_MARKDOWN = MarkdownIt("commonmark")
 
 
 def set_run_font(run, *, size: float, bold: bool = False) -> None:
@@ -28,6 +32,37 @@ def set_run_font(run, *, size: float, bold: bool = False) -> None:
     run._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
     run.font.size = Pt(size)
     run.bold = bold
+
+
+def add_inline(paragraph, text: str, *, size: float, bold: bool = False) -> None:
+    """Render Markdown emphasis while retaining literal code and link targets."""
+    strong = 0
+    emphasis = 0
+    link = None
+    for token in INLINE_MARKDOWN.parseInline(text)[0].children or []:
+        if token.type == "strong_open":
+            strong += 1
+        elif token.type == "strong_close":
+            strong -= 1
+        elif token.type == "em_open":
+            emphasis += 1
+        elif token.type == "em_close":
+            emphasis -= 1
+        elif token.type == "link_open":
+            target = token.attrGet("href") or ""
+            link = OxmlElement('w:hyperlink')
+            link.set(qn('r:id'), paragraph.part.relate_to(target, RELATIONSHIP_TYPE.HYPERLINK, is_external=True))
+            paragraph._p.append(link)
+        elif token.type == "link_close":
+            link = None
+        elif token.type in {"text", "code_inline", "html_inline", "image"}:
+            run = paragraph.add_run(token.content)
+            set_run_font(run, size=size, bold=bold or strong > 0)
+            run.italic = emphasis > 0
+            if link is not None:
+                link.append(run._r)
+        elif token.type in {"softbreak", "hardbreak"}:
+            paragraph.add_run().add_break()
 
 
 def configure_document(document: Document) -> None:
@@ -74,14 +109,17 @@ def add_table(document: Document, lines: list[str]) -> None:
     table = document.add_table(rows=len(rows), cols=width)
     table.style = "Table Grid"
     for row_index, row in enumerate(rows):
+        properties = table.rows[row_index]._tr.get_or_add_trPr()
+        properties.append(OxmlElement("w:cantSplit"))
+        if row_index == 0:
+            properties.append(OxmlElement("w:tblHeader"))
         for column_index in range(width):
             paragraph = table.cell(row_index, column_index).paragraphs[0]
             paragraph.paragraph_format.space_before = Pt(0)
             paragraph.paragraph_format.space_after = Pt(0)
             paragraph.paragraph_format.line_spacing = 1.0
             value = row[column_index] if column_index < len(row) else ""
-            run = paragraph.add_run(value)
-            set_run_font(run, size=9.5, bold=row_index == 0)
+            add_inline(paragraph, value, size=9.5, bold=row_index == 0)
 
 
 def add_paragraph(document: Document, line: str, *, first_content: bool) -> None:
@@ -91,20 +129,19 @@ def add_paragraph(document: Document, line: str, *, first_content: bool) -> None
         paragraph = document.add_heading(level=level)
         if level == 1:
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = paragraph.add_run(heading.group(2).strip())
-        set_run_font(run, size={1: 15, 2: 12.5, 3: 11.5}[level], bold=True)
+        add_inline(paragraph, heading.group(2).strip(), size={1: 15, 2: 12.5, 3: 11.5}[level], bold=True)
         return
 
     numbered = NUMBERED_HEADING.match(line)
-    if first_content or numbered:
+    ordered_list = re.match(r"^\s*(\d+[.)、])\s+(.+)$", line)
+    if first_content or (numbered and not ordered_list):
         paragraph = document.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER if first_content else WD_ALIGN_PARAGRAPH.LEFT
         paragraph.paragraph_format.space_before = Pt(6)
         paragraph.paragraph_format.space_after = Pt(3)
         paragraph.paragraph_format.line_spacing = 1.0
         paragraph.paragraph_format.keep_with_next = True
-        run = paragraph.add_run(line.strip())
-        set_run_font(run, size=16 if first_content else 12.5, bold=True)
+        add_inline(paragraph, line.strip(), size=16 if first_content else 12.5, bold=True)
         return
 
     listed = LIST_ITEM.match(line)
@@ -114,13 +151,12 @@ def add_paragraph(document: Document, line: str, *, first_content: bool) -> None
     if listed:
         paragraph.paragraph_format.left_indent = Cm(0.74)
         text = listed.group(1).strip()
-        prefix = "• "
+        prefix = f"{ordered_list.group(1)} " if ordered_list else "• "
     else:
         paragraph.paragraph_format.first_line_indent = Cm(0.74)
         text = line.strip()
         prefix = ""
-    run = paragraph.add_run(prefix + text)
-    set_run_font(run, size=10.5)
+    add_inline(paragraph, prefix + text, size=10.5)
 
 
 def build_document(content: str, output: Path) -> dict[str, object]:

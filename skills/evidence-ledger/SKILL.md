@@ -71,6 +71,8 @@ python3 scripts/grounded_evidence.py validate-delivery <标准台账.json> <标�
 内一个尚不存在的 `.docx` 路径作为 `output`。不得改用临时 Node/Python 生成脚本、
 pandoc 或 OOXML 解压回读来绕开该操作，也不得用该通用操作替代主技能的专用模板。
 
+通用 DOCX 操作依赖 `python-docx` 和 `markdown-it-py`，正文与表格中的 Markdown 加粗、斜体转为原生格式，代码字面量保持原样，来源链接保留可点击目标。有空格的数字列表保留编号并使用正文样式，不改成整段标题。表格跨页重复表头，普通行尽量整行换页。
+
 共创客户端生成正式 DOCX、XLSX 或 XLSM 时，正文与版式完成后、首次
 artifact 校验前，调用已验签操作 `evidence-ledger.apply-office-branding`，
 参数为 `{"artifact":"工作区内最终文件路径"}`。该操作在原文件上写入签名
