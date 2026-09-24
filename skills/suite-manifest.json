@@ -438,6 +438,8 @@
     "needs-user-input",
     "retain-after-evidence",
     "verified-platform-score",
-    "pending-platform-evaluation"
+    "pending-platform-evaluation",
+    "python-docx",
+    "markdown-it-py"
   ]
 }
