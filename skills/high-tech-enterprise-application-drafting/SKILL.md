@@ -6,10 +6,6 @@ description: 按高企申请书模板撰写、回填和核稿，支持按授权�
 # 高新技术企业申请书撰写
 
 
-## 材料体检报告
-
-用户要求材料体检报告时，先完整读取 [材料体检报告模板](references/material-checkup-report-template.md)，按该模板的章节、表头和问题卡形成报告。材料体检不生成总体分数、评级或通过概率；不得用前期培育方向卡、申请书、可行性模板或通用经营简析替代。用户只检查某个字段或章节时仅处理该范围。
-
 <!-- BEGIN MANAGED PORTABLE SKILL RUNTIME -->
 ## 便携运行门禁
 
@@ -19,6 +15,10 @@ description: 按高企申请书模板撰写、回填和核稿，支持按授权�
 
 `fail` 表示签名、发布者身份或完整性失败，必须停用受影响副本；`limited` 表示已验签副本的依赖或偏好读写受限，仅在任务所需能力仍满足时继续并说明边界。只应用返回的 `active_preferences`；临时要求不持久化，明确授权的长期习惯才按协议保存。偏好不得覆盖真实性、安全、验签和质量门禁。完整规则见[便携运行协议](references/portable-runtime-protocol.md)。
 <!-- END MANAGED PORTABLE SKILL RUNTIME -->
+
+## 材料体检报告
+
+用户要求材料体检报告时，先完整读取 [材料体检报告模板](references/material-checkup-report-template.md)，按该模板的章节、表头和问题卡形成报告。材料体检不生成总体分数、评级或通过概率；不得用前期培育方向卡、申请书、可行性模板或通用经营简析替代。用户只检查某个字段或章节时仅处理该范围。
 
 ## 使用边界
 
