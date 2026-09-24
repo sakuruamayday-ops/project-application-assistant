@@ -452,3 +452,52 @@ def test_visual_finalizer_requires_exact_24_passed_samples(tmp_path: Path):
             checklist_path=bad,
             output_path=tmp_path / "bad-receipt.json",
         )
+
+@pytest.mark.parametrize("report_type", ["preassessment", "feasibility"])
+def test_client_generation_preserves_audit_numbers_and_emits_only_filled_report(tmp_path, report_type):
+    import subprocess
+    import sys
+
+    source = client_source(tmp_path / "企业审计［2026］001号.docx")
+    fixture = case_fixture(source)
+    fixture["conclusion_basis"] = "依据审计［2026］001号，已有产品和研发材料，检测资料待补。"
+    input_path = tmp_path / "facts.json"
+    input_path.write_text(json.dumps(fixture, ensure_ascii=False), encoding="utf-8")
+    output = tmp_path / "report.docx"
+    result = subprocess.run([
+        sys.executable, str(SKILLS / "project-feasibility/scripts/generate_report.py"),
+        "--input", str(input_path), "--output", str(output), "--report-type", report_type,
+    ], text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    receipt = json.loads(result.stdout)
+    assert receipt["schema_version"] == "gongchuang-project-report-operation/v1"
+    assert receipt["status"] == "pass"
+    text = FILLER.document_text(Document(output))
+    assert "审计［2026］001号" in text
+    assert "［填写］" not in text
+    assert fixture["enterprise"] in text
+    assert set(tmp_path.glob("*.docx")) == {source, output}
+
+
+def test_failed_second_report_preserves_first_without_creating_blank_output(tmp_path):
+    import subprocess
+    import sys
+
+    source = client_source(tmp_path / "client.docx")
+    fixture = case_fixture(source)
+    input_path = tmp_path / "facts.json"
+    input_path.write_text(json.dumps(fixture, ensure_ascii=False), encoding="utf-8")
+    first = tmp_path / "first.docx"
+    script = str(SKILLS / "project-feasibility/scripts/generate_report.py")
+    result = subprocess.run([sys.executable, script, "--input", str(input_path),
+        "--output", str(first), "--report-type", "preassessment"], capture_output=True)
+    assert result.returncode == 0, result.stderr
+    original = first.read_bytes()
+    fixture["materials"][0]["anchors"] = ["这段内容并不存在于企业原文"]
+    input_path.write_text(json.dumps(fixture, ensure_ascii=False), encoding="utf-8")
+    second = tmp_path / "second.docx"
+    result = subprocess.run([sys.executable, script, "--input", str(input_path),
+        "--output", str(second), "--report-type", "feasibility"], capture_output=True)
+    assert result.returncode != 0
+    assert not second.exists()
+    assert first.read_bytes() == original

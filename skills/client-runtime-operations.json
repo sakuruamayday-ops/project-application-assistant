@@ -562,6 +562,98 @@
           "parameter": "records"
         }
       ]
+    },
+    {
+      "id": "project-feasibility.generate-report",
+      "skill": "project-feasibility",
+      "description": "依据结构化事实与可读取原文，选择受控母版并直接回填成一份 Word 报告；不输出空白模板。双报告分别调用，保留每份完成结果。",
+      "script": "project-feasibility/scripts/generate_report.py",
+      "files": [
+        "project-feasibility/scripts/fill_report_template.py",
+        "project-feasibility/scripts/select_report_template.py",
+        "project-feasibility/references/report-template-registry.json",
+        "project-feasibility/assets/fonts/NotoSansSC-Variable.ttf",
+        "project-feasibility/assets/report-templates/high-tech-enterprise/preassessment.docx",
+        "project-feasibility/assets/report-templates/high-tech-enterprise/feasibility.docx",
+        "project-feasibility/assets/report-templates/specialized-sme/preassessment.docx",
+        "project-feasibility/assets/report-templates/specialized-sme/feasibility.docx",
+        "project-feasibility/assets/report-templates/little-giant/preassessment.docx",
+        "project-feasibility/assets/report-templates/little-giant/feasibility.docx",
+        "project-feasibility/assets/report-templates/first-equipment/preassessment.docx",
+        "project-feasibility/assets/report-templates/first-equipment/feasibility.docx",
+        "project-feasibility/assets/report-templates/first-material/preassessment.docx",
+        "project-feasibility/assets/report-templates/first-material/feasibility.docx",
+        "project-feasibility/assets/report-templates/first-software/preassessment.docx",
+        "project-feasibility/assets/report-templates/first-software/feasibility.docx",
+        "project-feasibility/assets/report-templates/enterprise-rd-center/preassessment.docx",
+        "project-feasibility/assets/report-templates/enterprise-rd-center/feasibility.docx",
+        "project-feasibility/assets/report-templates/manufacturing-excellence/preassessment.docx",
+        "project-feasibility/assets/report-templates/manufacturing-excellence/feasibility.docx",
+        "project-feasibility/assets/report-templates/single-champion/preassessment.docx",
+        "project-feasibility/assets/report-templates/single-champion/feasibility.docx",
+        "project-feasibility/assets/report-templates/green-factory/preassessment.docx",
+        "project-feasibility/assets/report-templates/green-factory/feasibility.docx",
+        "project-feasibility/assets/report-templates/digitalization/preassessment.docx",
+        "project-feasibility/assets/report-templates/digitalization/feasibility.docx",
+        "project-feasibility/assets/report-templates/science-plan/preassessment.docx",
+        "project-feasibility/assets/report-templates/science-plan/feasibility.docx"
+      ],
+      "sandbox_mode": "workspace-write",
+      "network": "none",
+      "timeout_ms": 60000,
+      "max_output_bytes": 1048576,
+      "result_exit_codes": [
+        0
+      ],
+      "passing_exit_codes": [
+        0
+      ],
+      "stdout_json_schema_version": "gongchuang-project-report-operation/v1",
+      "parameters": {
+        "input": {
+          "type": "workspace-input-file",
+          "required": true,
+          "extensions": [
+            ".json"
+          ],
+          "max_bytes": 16777216
+        },
+        "output": {
+          "type": "workspace-output-file",
+          "required": true,
+          "extensions": [
+            ".docx"
+          ]
+        },
+        "reportType": {
+          "type": "enum",
+          "required": true,
+          "values": [
+            "preassessment",
+            "feasibility"
+          ]
+        }
+      },
+      "argv": [
+        {
+          "literal": "--input"
+        },
+        {
+          "parameter": "input"
+        },
+        {
+          "literal": "--output"
+        },
+        {
+          "parameter": "output"
+        },
+        {
+          "literal": "--report-type"
+        },
+        {
+          "parameter": "reportType"
+        }
+      ]
     }
   ]
 }

@@ -106,6 +106,14 @@ def add_table(document: Document, lines: list[str]) -> None:
     if not rows:
         return
     width = max(len(row) for row in rows)
+    body_items = [item for item in document.element.body if item.tag != qn("w:sectPr")]
+    if body_items and body_items[-1].tag == qn("w:tbl"):
+        # Word joins adjacent tables, which can carry the previous table's repeated header.
+        separator = document.add_paragraph()
+        separator.paragraph_format.space_before = Pt(0)
+        separator.paragraph_format.space_after = Pt(0)
+        separator.paragraph_format.line_spacing = Pt(1)
+        separator.paragraph_format.keep_with_next = True
     table = document.add_table(rows=len(rows), cols=width)
     table.style = "Table Grid"
     for row_index, row in enumerate(rows):

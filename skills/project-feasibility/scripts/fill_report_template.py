@@ -601,7 +601,7 @@ def _fill_table_by_header(table, fixture: dict[str, Any], feasibility: bool) -> 
         _fill_strengthening_table(table, fixture)
 
 
-def _generic_fill(document: Document, fixture: dict[str, Any]) -> None:
+def _generic_fill(document: Document, fixture: dict[str, Any], placeholders: re.Pattern[str]) -> None:
     source_name = fixture["_validated_sources"][0]["name"]
     for paragraph in _iter_paragraphs(document):
         if paragraph._p.findall(".//" + qn("w:fldChar")) or paragraph._p.findall(".//" + qn("w:instrText")):
@@ -623,18 +623,19 @@ def _generic_fill(document: Document, fixture: dict[str, Any]) -> None:
         value = value.replace("□已核验 □待补", "☐已核验 ☒待补")
         value = value.replace("□已有 □待确认 □待补强", "☐已有 ☒待确认 ☐待补强")
         value = value.replace("□通过 □不通过", "☐通过 ☒不通过")
-        while True:
-            match = PLACEHOLDER.search(value)
-            if not match:
-                break
-            value = value[: match.start()] + _fallback_for_placeholder(match.group(), value, fixture) + value[match.end() :]
+        # Only replace tokens captured from the blank master, in one pass.
+        # Full-width brackets in source text (for example audit document numbers)
+        # are content, not placeholders; replacement values must not be rescanned.
+        value = placeholders.sub(
+            lambda match: _fallback_for_placeholder(match.group(), value, fixture), value
+        )
         value = value.replace("待核验", "待企业确认") if "政策" not in value else value
         if value != original:
             _set_text(paragraph, value)
         if "企业提供待核/待补强" in paragraph.text:
             paragraph.text = paragraph.text.replace("企业提供待核/待补强", "待企业确认")
-        if "文件、页码或台账" in paragraph.text and PLACEHOLDER.search(paragraph.text):
-            paragraph.text = PLACEHOLDER.sub(source_name, paragraph.text)
+        if "文件、页码或台账" in paragraph.text and placeholders.search(paragraph.text):
+            paragraph.text = placeholders.sub(source_name, paragraph.text)
 
 
 def _set_public_document_metadata(document: Document, fixture: dict[str, Any], report_type: str) -> None:
@@ -746,12 +747,14 @@ def complete_report(
         public_root=public_root,
     )
     document = Document(template_path)
+    template_tokens = set(PLACEHOLDER.findall(document_text(document)))
+    placeholders = re.compile("|".join(re.escape(token) for token in sorted(template_tokens)) or r"(?!)")
     feasibility = report_type == "feasibility"
     for table in document.tables:
         _fill_table_by_header(table, validated, feasibility)
         _lock_table_pagination(table)
     _fill_project_specific_paragraphs(document, validated)
-    _generic_fill(document, validated)
+    _generic_fill(document, validated, placeholders)
     _append_source_ledger(document, validated)
     _lock_table_pagination(document.tables[-1])
     _apply_portable_cjk_font(document)
@@ -762,7 +765,7 @@ def complete_report(
     rendered = Document(output_path)
     text = document_text(rendered)
     errors: list[str] = []
-    if PLACEHOLDER.search(text):
+    if placeholders.search(text):
         errors.append("仍存在方括号填写占位符")
     for marker in TRAINING_MARKERS:
         if marker in text:
