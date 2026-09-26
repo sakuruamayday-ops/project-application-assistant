@@ -22,7 +22,7 @@ description: 对单个政府项目执行完整可行性分析。用户只给企�
 
 共创客户端使用已激活本技能的 `project-feasibility.generate-report` 签名操作，由客户端内置 Python 执行，不使用系统 Python 或临时安装依赖。参数为工作区事实 JSON `input`、新 DOCX 路径 `output`、报告类型 `reportType`。事实 JSON 使用下方回填器既有格式，包含企业、项目对象、政策、资料路径与可核验原文锚点；工具返回成功仅证明文件回填检查通过，仍须核对分析结论、报告画像及实际版式。此调用替代下方的模板复制和回填两条 CLI 命令，不先向交付目录复制空白模板。
 
-输入字段：`project_id` 使用模板索引项目 id；`enterprise` 企业名称，`project_object` 申报对象，`suggested_year` 建议年度，`deadline` 截止信息，`conclusion` 为可申报、有条件申报、不可申报或暂无法判断；`conclusion_basis`、`primary_gap`、`next_action` 分别为判断依据、主要差距与下一步。`materials` 为数组，每项含实际工作区文件绝对路径 `path`、至少一个四字以上逐字原文片段 `anchors`，来源知识库时标注 `source_type=knowledge-base`，其他来源按资料实际属性填写。`policies` 为数组，每项含实际政策名称 `title`、条款或原文位置 `locator`；未取得当期政策时如实注明资料缺口，不编造名称、条文或确定资格结论。已有该格式 JSON 时直接复用，不重写同一份事实。
+输入字段：`project_id` 使用模板索引项目 id；`enterprise` 企业名称，`project_object` 申报对象，`suggested_year` 建议年度，`deadline` 截止信息，`conclusion` 为可申报、有条件申报、不可申报或暂无法判断；`conclusion_basis`、`primary_gap`、`next_action` 分别为判断依据、主要差距与下一步。`materials` 为数组，每项含实际工作区文件绝对路径 `path`、至少一个四字以上逐字原文片段 `anchors`，来源知识库时标注 `source_type=knowledge-base`，其他来源按资料实际属性填写。`policies` 为数组，每项含实际政策名称 `title`、条款或原文位置 `locator`；未取得当期政策时如实注明资料缺口，不编造名称、条文或确定资格结论。已有该格式 JSON 时直接复用，不重写同一份事实。资料未提供的成果保留为待确认，不推断企业尚未形成；同行指标没有数据时标注待核验，不用资料文件名或本企业产品替代同行数据和对标对象。
 
 可选 `conditions` 为逐项条件数组，每项含 `match` 条件、`value` 企业值、`state` 证据状态、`gap` 差距及 `action` 动作。缺项明确待确认，不能用示例数据补齐。输入格式与字段已经明确，不读取脚本来猜接口。使用 `gongchuang_skill_operation`，例如 `{"operation":"project-feasibility.generate-report","parameters":{"input":"工作区事实.json","output":"前期评估.docx","reportType":"preassessment"}}`。返回成功后对该文件执行宿主专业校验和实际内容、版式检查；失败保留原始错误，不切换为系统 Python。
 

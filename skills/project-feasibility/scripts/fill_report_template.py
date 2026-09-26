@@ -319,6 +319,10 @@ def _fallback_for_placeholder(token: str, context: str, fixture: dict[str, Any])
     hint = token.strip("［］")
     combined = context + hint
     primary_source = fixture["_validated_sources"][0]["name"]
+    if hint == "填写并注明来源":
+        return "同行数据未取得，来源待补充"
+    if hint in ("政府公示同类企业", "行业代表产品"):
+        return "可比对象待检索核验"
     if any(word in combined for word in ("截止", "官方时间")):
         return str(fixture["deadline"])
     if any(word in combined for word in ("申报年度", "完成年度")):
@@ -489,11 +493,11 @@ def _fill_path_table(table, fixture: dict[str, Any]) -> None:
 def _fill_strengthening_table(table, fixture: dict[str, Any]) -> None:
     defaults = {
         "国内产品技术水平评价咨询报告": (
-            "尚未形成国内技术水平评价报告",
+            "当前资料未提供国内技术水平评价报告，是否已有待确认",
             "国内产品技术水平评价咨询报告",
         ),
         "国际产品技术水平评价咨询报告": (
-            "尚未形成国际技术水平评价报告",
+            "当前资料未提供国际技术水平评价报告，是否已有待确认",
             "国际产品技术水平评价咨询报告",
         ),
         "技术查新或科技咨询": (
@@ -524,7 +528,7 @@ def _fill_strengthening_table(table, fixture: dict[str, Any]) -> None:
         item = configured[index - 1] if configured else {}
         default_status, default_deliverable = defaults.get(
             task,
-            ("尚未形成该项成果", "形成可核验的成果文件"),
+            ("当前资料未提供该项成果，是否已有待确认", "形成可核验的成果文件"),
         )
         cells[0].text = str(index)
         cells[1].text = str(item.get("task") or task)

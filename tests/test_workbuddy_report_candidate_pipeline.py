@@ -161,6 +161,11 @@ def test_real_source_anchor_fill_produces_complete_editable_report(tmp_path: Pat
     assert "［填写" not in text
     assert "培训模板" not in text
     assert "某高端装备有限公司" in text
+    assert "尚未形成" not in text
+    peer_tables = [table for table in document.tables if len(table.rows[0].cells) > 3 and "同行值或区间" in table.rows[0].cells[3].text] if report_type == "feasibility" else []
+    for table in peer_tables:
+        assert all(row.cells[3].text == "同行数据未取得，来源待补充" for row in table.rows[1:])
+        assert all(row.cells[0].text != case_fixture(source)["project_object"] for row in table.rows[1:])
     assert "数据来源" in text
     assert "序号" in text and "文件名称" in text and "链接" in text
     assert "来源共创知识库" in text
@@ -234,7 +239,7 @@ def test_report_maps_policy_roles_and_strengthening_tasks_without_repeated_headl
     )
     visible = "\n".join(cell.text for row in strengthening.rows for cell in row.cells)
     assert fixture["headline_fact"] not in visible
-    assert "尚未形成国内技术水平评价报告" in visible
+    assert "当前资料未提供国内技术水平评价报告，是否已有待确认" in visible
     assert "任务指标对照表、检测方案和项目预算底稿" in visible
     assert "暂无法判断" in FILLER.document_text(document)
 
