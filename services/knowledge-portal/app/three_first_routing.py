@@ -54,6 +54,13 @@ def compact_text(value: str) -> str:
     return re.sub(r"\s+", "", value.strip())
 
 
+def is_feasibility_query(query: str) -> bool:
+    return bool(re.search(
+        r"能不能(?:申)?报|能否(?:申)?报|能(?:申)?报|可不可以(?:申)?报|可以(?:申)?报|是否符合|可行性",
+        compact_text(query),
+    ))
+
+
 def infer_topic_product_name(
     query: str,
     *,
@@ -71,9 +78,12 @@ def infer_topic_product_name(
     if explicit_product_name.strip():
         return explicit_product_name.strip()
     normalized = compact_text(query)
-    if not normalized or any(term in normalized for term in NON_TOPIC_TERMS):
+    if not normalized or is_feasibility_query(normalized) or any(term in normalized for term in NON_TOPIC_TERMS):
         return ""
-    candidate = normalized
+    candidate = re.sub(
+        r"(?:这个|该|这种)(?:产品|行业)|(?:有)?(?:做过|报过|申报过|获批过)|的?[吗么呢](?:[？?]|$)",
+        "", normalized,
+    )
     project_terms = {
         term
         for _, _, terms in PROJECTS
@@ -109,6 +119,7 @@ def plan_three_first_analysis(
     include_review_candidates: bool = False,
 ) -> dict[str, object]:
     normalized_query = compact_text(query)
+    feasibility_requested = is_feasibility_query(normalized_query)
     inferred_product_name = infer_topic_product_name(
         normalized_query,
         explicit_product_name=product_name,
@@ -159,6 +170,8 @@ def plan_three_first_analysis(
 
     return {
         "query": normalized_query,
+        "intent": "project_feasibility" if feasibility_requested else "three_first_analysis",
+        "route_to": "enterprise_lifecycle_decision" if feasibility_requested else "three_first_analysis",
         "project_type": project_type,
         "project_name": project_name,
         "project_types": project_types,
@@ -180,7 +193,7 @@ def plan_three_first_analysis(
         "include_review_candidates": bool(include_review_candidates),
         "routes": {
             "knowledge_search": True,
-            "public_list_search": list_requested,
+            "public_list_search": list_requested and (not feasibility_requested or bool(enterprise_name.strip() or inferred_product_name)),
             "recognition_search": bool(project_names and inferred_product_name),
             "directory_diff": diff_requested,
             "product_match": match_requested and bool(product_name.strip()),

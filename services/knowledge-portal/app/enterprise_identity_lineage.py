@@ -484,22 +484,22 @@ def lookup_identity_lineage(
     for row in edge_rows:
         edges_by_master[str(row["master_identity_key"])].append(row)
 
-    # Name/code collisions are detected across the whole graph, not just the
-    # returned slice, so a result never hides an ambiguous subject.
+    # Look up this name/code across all subjects, including those outside the
+    # returned slice. Unrelated graph nodes cannot contribute to its collision.
     name_subjects: dict[str, set[str]] = defaultdict(set)
-    name_values: dict[str, set[str]] = defaultdict(set)
     code_subjects: dict[str, set[str]] = defaultdict(set)
     for row in connection.execute(
         """
         SELECT master_identity_key,node_type,node_value,normalized_value
         FROM enterprise_identity_lineage_nodes
         WHERE node_type IN ('current_name','former_name','unified_social_credit_code')
-        """
+          AND normalized_value=?
+        """,
+        (normalized_query.lower(),),
     ).fetchall():
         master = str(row["master_identity_key"])
         if row["node_type"] in {"current_name", "former_name"}:
             name_subjects[str(row["normalized_value"])].add(master)
-            name_values[str(row["normalized_value"])].add(str(row["node_value"]))
         else:
             code_subjects[str(row["normalized_value"]).lower()].add(master)
 

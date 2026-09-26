@@ -1033,6 +1033,9 @@ class RecognitionSearchRequest(BaseModel):
     status: str = Field(default="final_recognition", max_length=100)
     limit: int = Field(default=50, ge=1, le=200)
 
+    offset: int = Field(default=0, ge=0)
+    result_group: str = Field(default="all", pattern="^(all|exact|related|pending)$")
+
 
 class EnterpriseIdentityLineageRequest(BaseModel):
     query: str = Field(min_length=1, max_length=200)
@@ -4528,28 +4531,35 @@ def analyze_three_first(
         flattened_results: list[dict[str, object]] = []
         for requested_project in requested_projects:
             for requested_region in requested_region_scopes:
-                group = search_authoritative_list_facts(
-                    "three_first",
-                    enterprise_name=planned_enterprise_name,
-                    product_name=planned_product_name,
-                    project_name=requested_project,
-                    year=list_year,
-                    region=requested_region,
-                    verified_only=not include_review_candidates,
-                    limit=bounded_limit,
+                requested_list_years = (
+                    range(min(effective_from_year, effective_to_year), max(effective_from_year, effective_to_year) + 1)
+                    if effective_from_year is not None and effective_to_year is not None
+                    else [list_year]
                 )
-                group_results = [dict(item) for item in group.get("results", [])]
-                flattened_results.extend(group_results)
-                list_groups.append(
-                    {
-                        "project_name": requested_project,
-                        "region": requested_region,
-                        "results": group_results,
-                        "pagination": group.get("pagination", {}),
-                        "coverage": group.get("coverage", {}),
-                        "warnings": group.get("warnings", []),
-                    }
-                )
+                for requested_year in requested_list_years:
+                    group = search_authoritative_list_facts(
+                        "three_first",
+                        enterprise_name=planned_enterprise_name,
+                        product_name=planned_product_name,
+                        project_name=requested_project,
+                        year=requested_year,
+                        region=requested_region,
+                        verified_only=not include_review_candidates,
+                        limit=bounded_limit,
+                    )
+                    group_results = [dict(item) for item in group.get("results", [])]
+                    flattened_results.extend(group_results)
+                    list_groups.append(
+                        {
+                            "project_name": requested_project,
+                            "region": requested_region,
+                            "year": requested_year,
+                            "results": group_results,
+                            "pagination": group.get("pagination", {}),
+                            "coverage": group.get("coverage", {}),
+                            "warnings": group.get("warnings", []),
+                        }
+                    )
         list_results = {
             "filters": {
                 "enterprise_name": planned_enterprise_name,
@@ -4593,12 +4603,10 @@ def analyze_three_first(
         "pagination": {"limit": bounded_limit, "returned": 0, "is_truncated": False},
     }
     if plan["routes"].get("recognition_search"):
-        recognition_years = list(
-            dict.fromkeys(
-                int(value)
-                for value in (award_year, effective_from_year, effective_to_year)
-                if value is not None
-            )
+        recognition_years = (
+            list(range(min(effective_from_year, effective_to_year), max(effective_from_year, effective_to_year) + 1))
+            if effective_from_year is not None and effective_to_year is not None
+            else list(dict.fromkeys(int(value) for value in (award_year, effective_from_year, effective_to_year) if value is not None))
         )
         with closing(content_database()) as connection:
             recognition_results = execute_recognition_search(
@@ -4630,6 +4638,10 @@ def analyze_three_first(
 
     return {
         "query": normalized_query,
+        "intent": plan["intent"],
+        "route_to": plan["route_to"],
+        "enterprise_name": planned_enterprise_name,
+        "product_name": planned_product_name,
         "project_type": project_type,
         "project_name": project_name,
         "project_types": project_types,
@@ -6413,6 +6425,8 @@ def execute_assistant_tool(name: str, arguments: dict[str, object]) -> tuple[dic
                 years=[int(item) for item in raw_years[:20]],
                 status=str(arguments.get("status") or "final_recognition")[:100],
                 limit=max(1, min(int(arguments.get("limit") or 50), 200)),
+                offset=int(arguments.get("offset") or 0),
+                result_group=str(arguments.get("result_group") or "all"),
             )
         sources = [
             dict(item.get("recognition_fact") or {})
@@ -6843,6 +6857,13 @@ def answer_with_knowledge(
     tool_call_count = 0
     no_progress_rounds = 0
     seen_tool_results: set[str] = set()
+    # Request-local only: never share enterprise evidence between users or answers.
+    evidence_cache: dict[tuple[str, str], tuple[dict, list]] = {}
+    reusable_tools = {
+        "knowledge_search", "knowledge_document", "knowledge_case_pack",
+        "authoritative_list_search", "three_first_analysis", "recognition_search",
+        "enterprise_identity_lineage_lookup", "public_list_search", "policy_search",
+    }
     seen_source_ids = {
         int(item["document_id"])
         for item in results
@@ -6934,7 +6955,15 @@ def answer_with_knowledge(
                         }
                     }
                     emit("tool", f"调用只读工具：{name}", {"tool": name, **visible_arguments})
-                    tool_result, sources = execute_assistant_tool(name, arguments)
+                    cache_key = (name, json.dumps(arguments, sort_keys=True, ensure_ascii=False))
+                    cached = evidence_cache.get(cache_key) if name in reusable_tools else None
+                    if cached is not None:
+                        tool_result, sources = cached
+                        emit("reuse", f"复用本轮资料：{name}", {"tool": name})
+                    else:
+                        tool_result, sources = execute_assistant_tool(name, arguments)
+                        if name in reusable_tools and not tool_result.get("error"):
+                            evidence_cache[cache_key] = (tool_result, sources)
                     collected_sources.append(sources)
                     content = json.dumps(tool_result, ensure_ascii=False)
                     result_fingerprint = hashlib.sha256(
@@ -21765,8 +21794,15 @@ def recognition_search_tool(
     years: list[int] | None = None,
     status: str = "final_recognition",
     limit: int = 50,
+    offset: int = 0,
+    result_group: str = "all",
 ) -> dict[str, object]:
-    """将自然语言解析为完整认定查询计划，区分确切、相关和待核验结果；未命中不等于不存在。"""
+    """按产品或行业反查认定名单，区分确切、相关和待核验结果。
+
+    明确产品可传subject_terms，不受主题词表限制。all返回分组样本；连续读取时选择
+    result_group=exact、related或pending，从offset=0开始并使用返回的next_offset，
+    保持项目、主题、地区和年度条件不变。分页参数单独传递，不拼入query。
+    """
     with closing(content_database()) as connection:
         return execute_recognition_search(
             connection,
@@ -21777,6 +21813,8 @@ def recognition_search_tool(
             years=years or [],
             status=status,
             limit=limit,
+            offset=offset,
+            result_group=result_group,
         )
 
 
