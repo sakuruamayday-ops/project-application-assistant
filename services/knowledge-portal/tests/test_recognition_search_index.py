@@ -128,3 +128,69 @@ def test_build_recognition_search_index_backfills_authority_and_subject_evidence
         item["recognition_fact"]["enterprise_name"]
         for item in industry_result["exact_results"]
     ] == ["乙湿巾有限公司"]
+
+    # Several source fragments for one event must not consume the result limit.
+    fact = dict(connection.execute("SELECT * FROM recognition_records WHERE project_id='national_small_giant'").fetchone())
+    original_id = fact['record_id']
+    fact['record_id'] = 'second-recognition-event'
+    fact['year'] = 2023
+    connection.execute(
+        f"INSERT INTO recognition_records ({','.join(fact)}) VALUES ({','.join('?' for _ in fact)})",
+        list(fact.values()),
+    )
+    evidence = dict(connection.execute("SELECT * FROM enterprise_subject_evidence WHERE canonical_subject='湿巾' LIMIT 1").fetchone())
+    for number in range(4):
+        evidence['evidence_id'] = f'extra-evidence-{number}'
+        connection.execute(
+            f"INSERT INTO enterprise_subject_evidence ({','.join(evidence)}) VALUES ({','.join('?' for _ in evidence)})",
+            list(evidence.values()),
+        )
+    limited = recognition_search(connection, query='湿巾有哪些小巨人', limit=2)
+    assert {item['recognition_fact']['fact_id'] for item in limited['exact_results']} == {original_id, 'second-recognition-event'}
+
+    page1 = recognition_search(connection, query='湿巾有哪些小巨人', result_group='exact', limit=1)
+    page2 = recognition_search(connection, query='湿巾有哪些小巨人', result_group='exact', limit=1, offset=page1['pagination']['next_offset'])
+    assert page1['pagination']['has_more']
+    assert not page2['pagination']['has_more']
+    page_ids = [v['recognition_fact']['fact_id'] for page in [page1, page2] for v in page['exact_results']]
+    assert len(set(page_ids)) == 2
+    assert set(page_ids) == {original_id, 'second-recognition-event'}
+    assert recognition_search(connection, query='湿巾有哪些小巨人', result_group='exact', limit=1, offset=2)['exact_results'] == []
+
+    # Candidate pages must not change when the verified page size changes.
+    for number in range(3):
+        evidence['evidence_id'] = f'pending-{number}'
+        evidence['enterprise_name'] = f'候选企业{number}'
+        evidence['enterprise_id'] = f'pending-company-{number}'
+        connection.execute(
+            f"INSERT INTO enterprise_subject_evidence ({','.join(evidence)}) VALUES ({','.join('?' for _ in evidence)})",
+            list(evidence.values()),
+        )
+    pending1 = recognition_search(connection, query='湿巾有哪些小巨人', result_group='pending', limit=2)
+    pending2 = recognition_search(connection, query='湿巾有哪些小巨人', result_group='pending', limit=2, offset=2)
+    names = [v['enterprise_name'] for page in [pending1, pending2] for v in page['pending_results']]
+    assert names == ['候选企业0', '候选企业1', '候选企业2']
+    assert pending1['pagination']['next_offset'] == 2
+    assert pending2['pagination']['next_offset'] is None
+
+    # The initial all-groups page and a continuation must use the same ordering.
+    combined = recognition_search(connection, query='湿巾有哪些小巨人', years=[2023, 2024], limit=1)
+    for group in ['exact', 'related', 'pending']:
+        first = recognition_search(connection, query='湿巾有哪些小巨人', years=[2023, 2024], result_group=group, limit=1)
+        assert combined[f'{group}_results'] == first[f'{group}_results']
+    assert combined['pagination']['next_offsets']['exact'] == 1
+    assert combined['pagination']['next_offsets']['pending'] == 1
+
+    # A broad related alias must not attach a product absent from the evidence.
+    for number, enterprise_id in enumerate([fact['enterprise_id'], 'unrecognized-unrelated']):
+        evidence.update(evidence_id=f'false-topic-{number}', enterprise_id=enterprise_id,
+                        enterprise_name=f'无关企业{number}', canonical_subject='四足机器人',
+                        raw_subject='主营卫生湿巾', evidence_excerpt='主营卫生湿巾', match_level='related')
+        connection.execute(
+            f"INSERT INTO enterprise_subject_evidence ({','.join(evidence)}) VALUES ({','.join('?' for _ in evidence)})",
+            list(evidence.values()),
+        )
+    for group in ['all', 'exact', 'pending']:
+        unrelated = recognition_search(connection, query='四足机器人有哪些小巨人', result_group=group)
+        assert unrelated['exact_results'] == []
+        assert unrelated['pending_results'] == []

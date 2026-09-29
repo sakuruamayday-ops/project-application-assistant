@@ -11,12 +11,14 @@ from pathlib import Path
 from typing import Iterable
 
 try:
+    from scripts.recognition_text_index import rebuild_recognition_text_index
     from scripts.recognized_subject_derivation import (
         DerivedSubject,
         derive_industry_subject,
         derive_product_subject,
     )
 except ModuleNotFoundError:
+    from recognition_text_index import rebuild_recognition_text_index
     from recognized_subject_derivation import (
         DerivedSubject,
         derive_industry_subject,
@@ -664,6 +666,7 @@ def build_index(
             verification_status=str(row.get("verification_status") or "candidate"),
         )
 
+    rebuild_recognition_text_index(connection)
     connection.commit()
     counts = {
         table: int(connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0])

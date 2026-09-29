@@ -1459,6 +1459,19 @@ def test_client_compatibility_uses_strict_semantic_versions(tmp_path):
         module.client_compatibility_receipt("v0.2")
 
 
+def test_release_v050_minimum_blocks_old_clients_and_accepts_target(tmp_path, monkeypatch):
+    monkeypatch.setenv("JIAOTANG_MINIMUM_SUPPORTED_CLIENT_VERSION", "0.5.0")
+    module = load_app(tmp_path)
+    publish_test_client_release(module, version="0.5.0")
+    for version in ("0.1.4", "0.3.9", "0.4.8", "0.4.9"):
+        assert module.client_compatibility_receipt(version) == {
+            "client_compatibility": "upgrade-required",
+            "minimum_supported_version": "0.5.0",
+        }
+    for version in ("0.5.0", "0.5.1"):
+        assert module.client_compatibility_receipt(version)["client_compatibility"] == "supported"
+
+
 def test_v020_signed_feed_is_separate_from_frozen_v014_feed(tmp_path):
     module = load_app(tmp_path)
     current_version = "0.3.1"
@@ -4328,6 +4341,26 @@ def test_three_first_topic_only_query_returns_official_recognition_facts(tmp_pat
     assert grouped["project_types"] == ["首台套", "首版次"]
     assert grouped["list_groups"][0]["project_name"] == "浙江省制造业首台（套）装备"
     assert len(grouped["recognition_results"]["exact_results"]) == 2
+
+    conversational = module.analyze_three_first(
+        query="智能水表这个产品有做过三首的吗", regions=["浙江省"], limit=50,
+    )
+    assert conversational["product_name"] == "智能水表"
+    assert conversational["route_to"] == "three_first_analysis"
+    assert conversational["recognition_results"]["exact_results"] == exact
+
+
+def test_three_first_feasibility_returns_route_without_unscoped_list_query(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    def reject_unscoped_query(*args, **kwargs):
+        raise AssertionError("Unresolved enterprise must not query all product awards")
+    monkeypatch.setattr(module, "search_authoritative_list_facts", reject_unscoped_query)
+    result = module.analyze_three_first(query="这家企业能报首台套吗")
+    assert result["route_to"] == "enterprise_lifecycle_decision"
+    assert result["intent"] == "project_feasibility"
+    assert result["product_name"] == ""
+    assert result["list_results"] == []
+
 
 
 def test_three_first_directory_diff_falls_back_to_transition_chain(tmp_path):
@@ -12059,3 +12092,92 @@ def test_admin_invalid_signature_upload_keeps_previous_latest(
     assert current_download.content == old_package.read_bytes()
     rejected_files = list((module.SKILL_RELEASE_DIR / "rejected").glob("*.zip"))
     assert len(rejected_files) == 1
+
+
+def test_three_first_year_range_reaches_recognition_service(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    received = []
+    def search(connection, **kwargs):
+        received.append(kwargs['years'])
+        return {'exact_results': [], 'related_results': [], 'pending_results': []}
+    monkeypatch.setattr(module, 'execute_recognition_search', search)
+    list_years = []
+    def lists(*args, **kwargs):
+        list_years.append(kwargs['year'])
+        return {}
+    monkeypatch.setattr(module, 'search_authoritative_list_facts', lists)
+    module.analyze_three_first(query='2023到2025年工业机器人做过首台套吗', product_name='工业机器人')
+    assert received == [[2023, 2024, 2025]]
+    assert list_years == [2023, 2024, 2025]
+
+
+@pytest.mark.parametrize("result_group", ["exact", "pending"])
+def test_recognition_paging_parameters_reach_all_service_entries(tmp_path, monkeypatch, result_group):
+    module = load_app(tmp_path)
+    calls = []
+    def search(connection, **kwargs):
+        calls.append(kwargs)
+        return {'exact_results': [], 'related_results': [], 'pending_results': [], 'pagination': {'next_offset': 4}}
+    monkeypatch.setattr(module, 'execute_recognition_search', search)
+    payload = module.RecognitionSearchRequest(query='工业机器人有哪些小巨人', offset=2, result_group=result_group, limit=2)
+    module.recognition_search_api(payload, None)
+    module.recognition_search_tool(query=payload.query, offset=2, result_group=result_group, limit=2)
+    module.execute_assistant_tool('recognition_search', payload.model_dump())
+    assert len(calls) == 3
+    assert all(x['offset'] == 2 and x['result_group'] == result_group and x['limit'] == 2 for x in calls)
+
+
+def test_assistant_reuses_only_successful_evidence_in_one_answer(tmp_path, monkeypatch):
+    module = load_app(tmp_path)
+    monkeypatch.setattr(module, "AI_API_BASE", "https://model.example.com")
+    monkeypatch.setattr(module, "AI_API_KEY", "test-key")
+    monkeypatch.setattr(module, "AI_MODEL", "test-model")
+    calls = []
+    failed_once = False
+
+    def execute(name, arguments):
+        nonlocal failed_once
+        calls.append((name, dict(arguments)))
+        if arguments.get("query") == "retry" and not failed_once:
+            failed_once = True
+            raise ValueError("temporary failure")
+        return {"results": [], "arguments": arguments}, []
+
+    monkeypatch.setattr(module, "execute_assistant_tool", execute)
+    arguments = [
+        '{"query":"企业甲","offset":0}',
+        '{"offset":0,"query":"企业甲"}',
+        '{"query":"企业甲","offset":2}',
+        '{"query":"企业乙","offset":0}',
+        '{"query":"retry"}',
+        '{"query":"retry"}',
+    ]
+    observed = []
+
+    def run_answer():
+        responses = iter([
+            {"role": "assistant", "content": "", "tool_calls": [
+                {"id": f"call-{i}", "type": "function", "function": {
+                    "name": "recognition_search", "arguments": value,
+                }} for i, value in enumerate(arguments)
+            ]},
+            {"role": "assistant", "content": "完成"},
+        ])
+
+        def model(messages, model_config=None):
+            observed[:] = messages
+            return next(responses)
+
+        monkeypatch.setattr(module, "request_assistant_model", model)
+        return module.answer_with_knowledge("查企业资料", [])
+
+    assert run_answer()[1] == "language-model"
+    assert len(calls) == 5
+    tool_messages = [item for item in observed if item["role"] == "tool"]
+    assert len(tool_messages) == 6
+    assert tool_messages[0]["content"] == tool_messages[1]["content"]
+    assert tool_messages[0]["tool_call_id"] != tool_messages[1]["tool_call_id"]
+    assert "temporary failure" in tool_messages[4]["content"]
+    assert '"error"' not in tool_messages[5]["content"]
+    assert run_answer()[1] == "language-model"
+    assert len(calls) == 9  # New answer re-queries; only duplicates within it reuse.

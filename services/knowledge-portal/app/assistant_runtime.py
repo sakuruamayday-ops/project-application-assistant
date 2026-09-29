@@ -209,7 +209,7 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                 "name": "recognition_search",
                 "description": (
                     "统一处理认定名单反向发现：从自然语言提取全部项目、产品或行业、地区、年度和状态，"
-                    "返回确切、相关、待核验三档结果及覆盖边界；政策答疑和可行性问题只返回确定性路由。"
+                    "返回确切、相关、待核验三档结果及覆盖边界；政策答疑和可行性问题只返回确定性路由。需要连续读取认定记录时，从result_group=exact、related或pending、offset=0开始，随后使用next_offset并保持原查询条件；pending仅表示待核线索。"
                 ),
                 "parameters": {
                     "type": "object",
@@ -225,6 +225,8 @@ def assistant_tool_schemas() -> list[dict[str, object]]:
                         },
                         "status": {"type": "string", "default": "final_recognition"},
                         "limit": {"type": "integer", "minimum": 1, "maximum": 200},
+                        "offset": {"type": "integer", "minimum": 0},
+                        "result_group": {"type": "string", "enum": ["all", "exact", "related", "pending"]},
                     },
                     "required": ["query"],
                 },

@@ -3,3 +3,6 @@
 -r requirements.in
 
 pytest==8.4.1
+
+# Word export regression exercises the skill parser.
+markdown-it-py==4.2.0

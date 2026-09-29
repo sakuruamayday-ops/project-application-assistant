@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Sequence
 
 from app.authoritative_list_facts import query_authoritative_list_facts
+from app.three_first_routing import infer_topic_product_name, is_feasibility_query
 
 
 PROJECT_ALIASES = {
@@ -172,6 +173,8 @@ def load_indexed_subject_taxonomy(
 
 
 def _project_terms_in_query(query: str) -> list[str]:
+    # The shorthand names two projects; the formal 专精特新小巨人 name stays one.
+    query = re.sub(r"专精(?:、|和|及|与|/)?小巨人", "专精特新中小企业和小巨人", query)
     ordered: list[tuple[int, str]] = []
     for alias in sorted(PROJECT_ALIASES, key=len, reverse=True):
         position = query.find(alias)
@@ -197,10 +200,22 @@ def build_recognition_query_plan(
     taxonomy: Sequence[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     normalized_query = re.sub(r"\s+", "", query.strip())
-    project_values = _unique(projects) or _project_terms_in_query(normalized_query)
+    excluded_projects: list[str] = []
+    def exclude_project_clause(match: re.Match[str]) -> str:
+        excluded_projects.extend(_project_terms_in_query(match.group(0)))
+        return ""
+    positive_query = re.sub(
+        r"(?:不要|不包括|不包含|排除|不查)[^，,。；;？！?!]*?(?=但|只要|仅要|而是|[，,。；;？！?!]|$)",
+        exclude_project_clause, normalized_query,
+    )
+    excluded_keys = {(kind, name) for kind, name, _ in resolve_projects(excluded_projects)}
+    project_values = [
+        project for project in (_unique(projects) or _project_terms_in_query(positive_query))
+        if not any((kind, name) in excluded_keys for kind, name, _ in resolve_projects([project]))
+    ]
     explicit_regions = _unique(regions)
     if not explicit_regions:
-        segments = re.split(r"(?:以及|并且|和|与|及|、|，|,|；|;|/)", normalized_query)
+        segments = re.split(r"(?:以及|并且|和|与|及|、|，|,|；|;|/)", positive_query)
         for segment in segments:
             matches = re.findall(r"[\u4e00-\u9fff]{2,8}(?:省|自治区|市|区|县)", segment)
             for raw_region in matches:
@@ -216,7 +231,7 @@ def build_recognition_query_plan(
         explicit_regions = _unique(
             canonical
             for alias, canonical in REGION_ALIASES.items()
-            if alias in normalized_query
+            if alias in positive_query
         )
     explicit_years = [
         int(value)
@@ -224,10 +239,13 @@ def build_recognition_query_plan(
         if str(value).isdigit() and 2000 <= int(value) <= 2100
     ]
     if not explicit_years:
-        explicit_years = [
-            int(value)
-            for value in re.findall(r"(?<!\d)(20\d{2})(?!\d)", normalized_query)
-        ]
+        for match in re.finditer(
+            r"(?<!\d)(20\d{2})(?:年?(?:到|至|—|–|-|~|～)(20\d{2}))?年?(?!\d)",
+            normalized_query,
+        ):
+            start = int(match.group(1))
+            end = int(match.group(2)) if match.group(2) else start
+            explicit_years.extend(range(min(start, end), max(start, end) + 1))
 
     requested_subjects = _unique(subject_terms)
     taxonomy_matches: list[dict[str, object]] = []
@@ -236,7 +254,6 @@ def build_recognition_query_plan(
             [
                 subject.get("canonical_subject", ""),
                 *subject.get("exact_terms", []),
-                *subject.get("related_terms", []),
             ]
         )
         if any(
@@ -244,12 +261,32 @@ def build_recognition_query_plan(
             for term in searchable_terms
         ):
             taxonomy_matches.append(subject)
+    # Broader aliases remain usable when there is no directly named subject.
+    # Do not promote every child of an explicitly named broad industry to exact.
+    if not taxonomy_matches:
+        for subject in taxonomy or load_subject_taxonomy():
+            if any(term in normalized_query or term in requested_subjects
+                   for term in _unique(subject.get("related_terms", []))):
+                taxonomy_matches.append(subject)
     if not requested_subjects:
         requested_subjects = [
             str(subject.get("canonical_subject") or "")
             for subject in taxonomy_matches
             if str(subject.get("canonical_subject") or "")
         ]
+    # Taxonomy expands known topics; it is not a whitelist of searchable products.
+    if not requested_subjects and project_values:
+        remainder = re.sub(r"(?:不要|不包括|不包含|排除|不查)[^，,。；;？！?!]*?(?=但|只要|仅要|而是|[，,。；;？！?!]|$)", "", query)
+        for alias in sorted(PROJECT_ALIASES, key=len, reverse=True):
+            remainder = re.sub(re.escape(alias) + r"(?:企业)?", "", remainder)
+        remainder = re.sub(r"20\d{2}(?:年?(?:到|至|—|–|-|~|～)20\d{2})?年?", "", remainder)
+        remainder = re.sub(r"(?:这个|该|这种)(?:产品|行业)|(?:列出|所有|全部|同行)", "", remainder)
+        remainder = re.sub(r"(?:行业|产品|企业)$", "", remainder)
+        for part in re.split(r"[\s、，,；;]+", remainder):
+            inferred = infer_topic_product_name(part, regions=explicit_regions)
+            if inferred and inferred not in {"哪些", "这家", "有", "的"}:
+                requested_subjects.append(inferred)
+        requested_subjects = _unique(requested_subjects)
     exact_terms = _unique(
         [
             *requested_subjects,
@@ -267,6 +304,7 @@ def build_recognition_query_plan(
             for term in subject.get("related_terms", [])
         ]
     )
+    related_terms = [term for term in related_terms if term not in exact_terms]
     excluded_terms = _unique(
         [
             term
@@ -278,9 +316,7 @@ def build_recognition_query_plan(
     condition_intent = any(
         term in normalized_query for term in ("条件", "要求", "门槛", "怎么申报", "如何申报")
     )
-    feasibility_intent = any(
-        term in normalized_query for term in ("能不能报", "能否申报", "是否符合", "可行性")
-    )
+    feasibility_intent = is_feasibility_query(normalized_query)
     writing_intent = any(
         term in normalized_query
         for term in ("写申报书", "撰写申报书", "生成报告", "形成材料", "正式材料")
@@ -313,6 +349,7 @@ def build_recognition_query_plan(
     return {
         "intent": intent,
         "projects": project_values,
+        "excluded_projects": _unique(excluded_projects),
         "subjects": requested_subjects,
         "exact_terms": exact_terms,
         "related_terms": related_terms,
@@ -365,7 +402,7 @@ def _subject_candidates(
         for term in subject_terms:
             escaped = term.replace("%", "\\%").replace("_", "\\_")
             conditions.append(
-                "(canonical_subject LIKE ? ESCAPE '\\' OR raw_subject LIKE ? ESCAPE '\\' "
+                "((match_level='exact' AND canonical_subject LIKE ? ESCAPE '\\') OR raw_subject LIKE ? ESCAPE '\\' "
                 "OR evidence_excerpt LIKE ? ESCAPE '\\')"
             )
             parameters.extend((f"%{escaped}%", f"%{escaped}%", f"%{escaped}%"))
@@ -462,6 +499,10 @@ def _indexed_recognition_discovery(
     year: int | None,
     verified_only: bool,
     limit: int,
+    offset: int = 0,
+    years: Sequence[int] = (),
+    exclude_subjects: Sequence[str] = (),
+    include_pending: bool = True,
 ) -> dict[str, object]:
     conditions: list[str] = []
     parameters: list[object] = []
@@ -483,11 +524,15 @@ def _indexed_recognition_discovery(
     for term in subject_terms:
         escaped = term.replace("%", "\\%").replace("_", "\\_")
         subject_conditions.append(
-            "(ese.canonical_subject LIKE ? ESCAPE '\\' OR ese.raw_subject LIKE ? ESCAPE '\\' "
+            "((ese.match_level='exact' AND ese.canonical_subject LIKE ? ESCAPE '\\') OR ese.raw_subject LIKE ? ESCAPE '\\' "
             "OR ese.evidence_excerpt LIKE ? ESCAPE '\\')"
         )
         parameters.extend((f"%{escaped}%", f"%{escaped}%", f"%{escaped}%"))
     conditions.append(f"({' OR '.join(subject_conditions)})")
+    text_filter, text_values = _text_candidate_filter(connection, subject_terms, 'subject', 'ese.evidence_id')
+    if text_filter:
+        conditions.append(text_filter)
+        parameters.extend(text_values)
     if regions:
         region_conditions: list[str] = []
         for region in regions:
@@ -498,6 +543,16 @@ def _indexed_recognition_discovery(
             )
             parameters.extend((f"%{escaped}%",) * 4)
         conditions.append(f"({' OR '.join(region_conditions)})")
+    if years:
+        conditions.append(f"rr.year IN ({','.join('?' for _ in years)})")
+        parameters.extend(years)
+    if exclude_subjects:
+        excluded = []
+        for term in exclude_subjects:
+            escaped = term.replace("%", "\\%").replace("_", "\\_")
+            excluded.append("((other.match_level='exact' AND other.canonical_subject LIKE ? ESCAPE '\\' ) OR other.raw_subject LIKE ? ESCAPE '\\' OR other.evidence_excerpt LIKE ? ESCAPE '\\')")
+            parameters.extend((f"%{escaped}%",) * 3)
+        conditions.append("NOT EXISTS (SELECT 1 FROM enterprise_subject_evidence other WHERE other.enterprise_id=rr.enterprise_id AND (" + " OR ".join(excluded) + "))")
     if year is not None:
         conditions.append("rr.year=?")
         parameters.append(year)
@@ -513,9 +568,11 @@ def _indexed_recognition_discovery(
             "OR rr.recognition_status LIKE '%正式%' "
             "OR rr.source_table='three_first_project_awards')"
         )
+    # SQLite bare columns beside a single MIN come from that evidence row.
+    # Limit recognition records, not duplicate joined evidence for one record.
     rows = connection.execute(
         f"""
-        SELECT rr.*,ese.evidence_id,ese.canonical_subject,ese.raw_subject,
+        SELECT rr.*,MIN(ese.evidence_id) AS evidence_id,ese.canonical_subject,ese.raw_subject,
                ese.match_level,ese.evidence_type,ese.evidence_excerpt,
                ese.source_url AS evidence_source_url,
                ese.source_document_id AS evidence_document_id,
@@ -523,10 +580,11 @@ def _indexed_recognition_discovery(
         FROM recognition_records rr
         JOIN enterprise_subject_evidence ese ON ese.enterprise_id=rr.enterprise_id
         WHERE {' AND '.join(conditions)}
-        ORDER BY rr.year DESC,rr.project_name,rr.enterprise_name_at_recognition,ese.evidence_id
-        LIMIT ?
+        GROUP BY rr.record_id
+        ORDER BY rr.year DESC,rr.project_name,rr.enterprise_name_at_recognition,rr.record_id,evidence_id
+        LIMIT ? OFFSET ?
         """,
-        [*parameters, limit + 1],
+        [*parameters, limit + 1, offset],
     ).fetchall()
     verified_matches: list[dict[str, object]] = []
     seen: set[str] = set()
@@ -571,7 +629,7 @@ def _indexed_recognition_discovery(
             }
         )
 
-    subject_candidates = _subject_candidates(connection, subject_terms, min(limit * 10, 500))
+    subject_candidates = _subject_candidates(connection, subject_terms, min(limit * 10, 500)) if include_pending else []
     verified_enterprises = {
         _compact(item["recognition_fact"]["enterprise_name"])
         for item in verified_matches
@@ -652,6 +710,7 @@ def discover_recognized_enterprises(
     pending_candidates: list[dict[str, object]] = []
     seen_facts: set[str] = set()
     processed: list[dict[str, object]] = []
+    upstream_truncated = False
 
     def canonical_recognition_fact(raw_fact: dict[str, object]) -> dict[str, object]:
         fact = dict(raw_fact)
@@ -684,6 +743,11 @@ def discover_recognized_enterprises(
                         region=region,
                         verified_only=verified_only,
                         limit=bounded_limit,
+                    )
+                    upstream_truncated = upstream_truncated or any(
+                        response.get("pagination", {}).get("is_truncated", False)
+                        or response.get("pagination", {}).get("has_more", False)
+                        for response in (product_response, industry_response)
                     )
                     for match_scope, response in (
                         ("product", product_response),
@@ -736,6 +800,10 @@ def discover_recognized_enterprises(
                     region=region,
                     verified_only=verified_only,
                     limit=bounded_limit,
+                )
+                upstream_truncated = upstream_truncated or bool(
+                    response.get("pagination", {}).get("is_truncated", False)
+                    or response.get("pagination", {}).get("has_more", False)
                 )
                 for fact in response.get("results", []):
                     fact_id = str(fact.get("fact_id") or "")
@@ -792,7 +860,7 @@ def discover_recognized_enterprises(
             "requested": len(resolved_projects) * len(region_scopes) * len(normalized_terms),
             "processed": processed,
             "returned_verified": min(len(verified_matches), bounded_limit),
-            "verified_truncated": len(verified_matches) > bounded_limit,
+            "verified_truncated": upstream_truncated or len(verified_matches) > bounded_limit,
             "pending_truncated": len(pending_candidates) > bounded_limit,
             "is_complete": False,
             "reason": (
@@ -876,6 +944,68 @@ def _dedupe_pending(
     return result
 
 
+def _text_candidate_filter(connection: sqlite3.Connection, terms: Sequence[str], kind: str,
+                           identifier: str) -> tuple[str, list[object]]:
+    """Prefilter by stable source ID; the caller still applies original evidence conditions."""
+    # Trigram MATCH cannot represent short terms; retain the original scan for those queries.
+    if not terms or any(len(term) < 3 for term in terms) or not _table_exists(connection, "recognition_text_fts"):
+        return '', []
+    match = ' OR '.join('"' + term.replace('"', '""') + '"' for term in terms)
+    # Search text first, then resolve hits by primary key instead of scanning every source row.
+    return (f"{identifier} IN (SELECT r.source_id FROM recognition_text_fts CROSS JOIN "
+            "recognition_text_rows r ON r.id=recognition_text_fts.rowid "
+            "WHERE recognition_text_fts MATCH ? AND r.kind=?)", [match, kind])
+
+
+def _pending_page(connection: sqlite3.Connection, plan: dict[str, object], limit: int, offset: int) -> dict[str, object]:
+    """Page evidence leads independently of the size of the verified result page."""
+    terms = _unique([*plan["exact_terms"], *plan["related_terms"]])
+    source_params: list[object] = []
+    def source_filter(kind: str, identifier: str) -> str:
+        clause, values = _text_candidate_filter(connection, terms, kind, identifier)
+        source_params.extend(values)
+        return ' WHERE ' + clause if clause else ''
+    sources = []
+    if _table_exists(connection, "enterprise_subject_evidence"):
+        sources.append("SELECT enterprise_name, COALESCE(source_document_id,0) document_id, raw_subject title, evidence_excerpt context, source_url source, CASE WHEN match_level='exact' THEN canonical_subject ELSE '' END topic, CAST(evidence_id AS TEXT) source_id, 'recognition_subject_index' evidence_type FROM enterprise_subject_evidence" + source_filter("subject", "evidence_id"))
+    if _table_exists(connection, "enterprise_mentions") and _table_exists(connection, "documents"):
+        sources.append("SELECT em.enterprise_name, d.id document_id, d.title, em.context, d.source, '' topic, CAST(em.id AS TEXT) source_id, 'enterprise_mention' evidence_type FROM enterprise_mentions em JOIN documents d ON d.id=em.document_id" + source_filter("mention", "em.id"))
+    if _table_exists(connection, "case_packs"):
+        sources.append("SELECT enterprise_name, 0 document_id, title, '' context, source_root source, industry topic, CAST(rowid AS TEXT) source_id, 'case_pack' evidence_type FROM case_packs WHERE enterprise_name<>''")
+    if not sources:
+        return {"records": [], "has_more": False}
+    conditions, params = [], []
+    for term in terms:
+        value = '%' + term.replace('%', '\\%').replace('_', '\\_') + '%'
+        conditions.append("(topic LIKE ? ESCAPE '\\' OR title LIKE ? ESCAPE '\\' OR context LIKE ? ESCAPE '\\')")
+        params.extend([value] * 3)
+    project_conditions, authority_params = [], []
+    for kind, name, _ in resolve_projects(plan["projects"]):
+        project_conditions.append("(rr.project_id=? OR rr.project_name=?)")
+        authority_params.extend([kind, name])
+    authority = ['('+' OR '.join(project_conditions)+')']
+    if plan["years"]:
+        authority.append("rr.year IN ("+','.join('?' for _ in plan["years"])+")")
+        authority_params.extend(plan["years"])
+    if plan["regions"]:
+        authority.append('('+' OR '.join("(rr.region LIKE ? OR rr.province LIKE ? OR rr.city LIKE ? OR rr.county LIKE ?)" for _ in plan["regions"])+')')
+        for region in plan["regions"]: authority_params.extend(['%'+region+'%']*4)
+    if plan["status"] == "final_recognition":
+        authority.append("rr.recognition_status NOT LIKE '%公示%' AND rr.recognition_status NOT LIKE '%拟认定%' AND rr.verification_status NOT LIKE '%pending%' AND rr.verification_status NOT LIKE '%candidate%' AND (rr.source_grade LIKE '%official%' OR rr.verification_status LIKE '%verified%' OR rr.verification_status LIKE '%official%' OR rr.recognition_status LIKE '%正式%' OR rr.source_table='three_first_project_awards')")
+    exclusion = []
+    for term in plan["excluded_terms"]:
+        exclusion.append("(c.title || ' ' || c.context || ' ' || c.topic) NOT LIKE ? ESCAPE '\\'")
+        authority_params.append('%'+term.replace('%', '\\%').replace('_', '\\_')+'%')
+    rows = connection.execute(
+        "WITH raw AS ("+' UNION ALL '.join(sources)+"), matched AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY enterprise_name,document_id,evidence_type ORDER BY source_id) n FROM raw WHERE ("+' OR '.join(conditions)+")) SELECT c.* FROM matched c WHERE c.n=1 AND (c.enterprise_name IS NULL OR c.enterprise_name NOT IN (SELECT rr.enterprise_name_at_recognition FROM recognition_records rr WHERE "+' AND '.join(authority)+" AND rr.enterprise_name_at_recognition IS NOT NULL))"+(' AND '+' AND '.join(exclusion) if exclusion else '')+" ORDER BY c.enterprise_name,c.evidence_type,c.document_id,c.source_id LIMIT ? OFFSET ?",
+        [*source_params,*params,*authority_params,limit+1,offset],
+    ).fetchall()
+    records = [{"project": "、".join(plan["projects"]), "enterprise_name": row["enterprise_name"],
+                "subject_evidence": {key:row[key] for key in ("enterprise_name","document_id","title","context","source","evidence_type")},
+                "status":"subject_evidence_found_authority_not_confirmed"} for row in rows[:limit]]
+    return {"records":records,"has_more":len(rows)>limit}
+
+
 def recognition_search(
     connection: sqlite3.Connection,
     *,
@@ -886,6 +1016,8 @@ def recognition_search(
     years: Sequence[object] = (),
     status: str = "final_recognition",
     limit: int = 50,
+    offset: int = 0,
+    result_group: str = "all",
 ) -> dict[str, object]:
     """Build one deterministic plan and execute recognition reverse discovery.
 
@@ -941,6 +1073,85 @@ def recognition_search(
             },
             "pagination": {"limit": bounded_limit, "returned": 0, "is_truncated": False},
             "warnings": [str(plan["clarification"])],
+        }
+
+    if result_group not in {"all", "exact", "related", "pending"}:
+        raise ValueError("result_group必须为all、exact、related或pending")
+    if offset < 0 or (offset and result_group == "all"):
+        raise ValueError("翻页时请指定exact、related或pending结果组及非负offset")
+    if result_group != "all":
+        if not (_table_exists(connection, "recognition_records") and _table_exists(connection, "enterprise_subject_evidence")):
+            raise ValueError("当前索引不支持分组翻页")
+        if result_group == "pending":
+            page = _pending_page(connection, plan, bounded_limit, offset)
+            return {
+                "query_plan":plan, "route_to":"recognition_reverse_lookup",
+                "exact_results":[], "related_results":[], "pending_results":page["records"],
+                "coverage":{"is_complete":False, "scope":"subject_evidence_leads_not_verified_project_or_region_matches"},
+                "pagination":{"limit":bounded_limit,"offset":offset,"result_group":"pending","returned":len(page["records"]),
+                              "supports_offset":True,"has_more":page["has_more"],"is_truncated":page["has_more"],
+                              "next_offset":offset+bounded_limit if page["has_more"] else None},
+                "warnings":[],
+            }
+        terms = list(plan["exact_terms"] if result_group == "exact" else plan["related_terms"])
+        response = _indexed_recognition_discovery(
+            connection, resolved_projects=resolve_projects(plan["projects"]),
+            subject_terms=terms, regions=plan["regions"], year=None,
+            years=plan["years"], verified_only=str(plan["status"]) == "final_recognition",
+            limit=bounded_limit, offset=offset, include_pending=False,
+            exclude_subjects=list(plan["exact_terms"]) if result_group == "related" else [],
+        ) if terms else {"verified_matches": [], "coverage_ledger": {"verified_truncated": False}}
+        records = _dedupe_matches(response["verified_matches"], excluded_terms=plan["excluded_terms"])
+        has_more = bool(response["coverage_ledger"].get("verified_truncated"))
+        return {
+            "query_plan": plan, "route_to": "recognition_reverse_lookup",
+            "exact_results": records if result_group == "exact" else [],
+            "related_results": records if result_group == "related" else [],
+            "pending_results": [],
+            "coverage": {"is_complete": False, "processed": response["coverage_ledger"]},
+            "pagination": {"limit": bounded_limit, "offset": offset, "result_group": result_group,
+                           "returned": len(records), "has_more": has_more, "is_truncated": has_more,
+                           "supports_offset": True, "next_offset": offset + bounded_limit if has_more else None},
+            "warnings": [],
+        }
+
+    if _table_exists(connection, "recognition_records") and _table_exists(connection, "enterprise_subject_evidence"):
+        # The first page must be drawn from exactly the same ordered query as
+        # subsequent group pages, including multi-year and pending results.
+        pages = {
+            group: recognition_search(
+                connection, query=query, projects=projects, subject_terms=subject_terms,
+                regions=regions, years=years, status=status, limit=bounded_limit,
+                result_group=group,
+            )
+            for group in ("exact", "related", "pending")
+        }
+        counts = {group: len(page[f"{group}_results"]) for group, page in pages.items()}
+        truncated = any(page["pagination"]["has_more"] for page in pages.values())
+        return {
+            "query_plan": plan,
+            "route_to": "recognition_reverse_lookup",
+            **{f"{group}_results": page[f"{group}_results"] for group, page in pages.items()},
+            "coverage": {
+                "requested": len(plan["projects"]) * max(1, len(plan["regions"])) * max(1, len(plan["years"])),
+                "processed": [{"match_level": group, "coverage_ledger": page["coverage"]} for group, page in pages.items()],
+                "is_complete": False,
+                "reason": "已查询指定维度；结果按组分别翻页，当前知识证据不代表全国穷尽。",
+            },
+            "pagination": {
+                "limit": bounded_limit, "returned": sum(counts.values()),
+                "limit_scope": "per_result_group", "returned_by_group": counts,
+                "is_truncated": truncated, "upstream_truncated": truncated,
+                "supports_offset": True, "pending_supports_offset": True,
+                "pageable_groups": list(pages),
+                "next_offsets": {group: page["pagination"]["next_offset"] for group, page in pages.items()},
+                "continuation": "select_result_group_and_offset" if truncated else None,
+            },
+            "warnings": [
+                "exact_results需同时具备明确主题证据与权威认定事实。",
+                "related_results只证明相关行业或产品方向，不得改写为明确生产目标产品。",
+                "pending_results不得作为正式认定结果；未命中不等于不存在。",
+            ],
         }
 
     exact_matches: list[dict[str, object]] = []
@@ -1003,8 +1214,20 @@ def recognition_search(
         pending,
         excluded_terms=list(plan["excluded_terms"]),
     )
-    combined_count = len(exact) + len(related) + len(pending_results)
-    returned = min(combined_count, bounded_limit)
+    returned_by_group = {
+        "exact": min(len(exact), bounded_limit),
+        "related": min(len(related), bounded_limit),
+        "pending": min(len(pending_results), bounded_limit),
+    }
+    upstream_truncated = any(
+        item["coverage_ledger"].get("verified_truncated", False)
+        or item["coverage_ledger"].get("pending_truncated", False)
+        for item in processed
+    )
+    is_truncated = upstream_truncated or any(
+        len(items) > bounded_limit for items in (exact, related, pending_results)
+    )
+    returned = sum(returned_by_group.values())
     return {
         "query_plan": plan,
         "route_to": "recognition_reverse_lookup",
@@ -1025,7 +1248,14 @@ def recognition_search(
         "pagination": {
             "limit": bounded_limit,
             "returned": returned,
-            "is_truncated": combined_count > bounded_limit,
+            "limit_scope": "per_result_group",
+            "returned_by_group": returned_by_group,
+            "is_truncated": is_truncated,
+            "upstream_truncated": upstream_truncated,
+            "supports_offset": _table_exists(connection, "recognition_records") and _table_exists(connection, "enterprise_subject_evidence"),
+            "pageable_groups": ["exact", "related", "pending"],
+            "pending_supports_offset": True,
+            "continuation": "select_result_group_and_offset" if is_truncated else None,
         },
         "warnings": [
             "exact_results需同时具备明确主题证据与权威认定事实。",

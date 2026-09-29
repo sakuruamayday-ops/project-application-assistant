@@ -98,3 +98,31 @@ def test_pending_name_exposes_missing_code_conflict_without_guessing():
         for path in item["conflict_paths"]
     )
     assert result["coverage"]["all_identity_timeline"]["pending_subjects"] == 1
+
+
+def test_name_collision_includes_subject_beyond_result_limit():
+    connection = make_graph()
+    connection.execute(
+        "INSERT INTO enterprise_identity_lineage_nodes VALUES (?,?,?,?,?,?,?)",
+        ('other-name', 'other-subject', 'former_name', '旧名科技有限公司',
+         '旧名科技有限公司', 'pending_business_identity', '共创研究院知识库'),
+    )
+    result = MODULE.lookup_identity_lineage(connection, '旧名科技有限公司', limit=1)
+    assert len(result['results']) == 1
+    conflict = next(p for p in result['results'][0]['conflict_paths']
+                    if p['path_type'] == 'same_name_multiple_subjects')
+    assert {n['value'] for n in conflict['nodes']} == {'9133', 'other-subject'}
+
+
+def test_code_collision_includes_subject_beyond_result_limit():
+    connection = make_graph()
+    connection.execute(
+        "INSERT INTO enterprise_identity_lineage_nodes VALUES (?,?,?,?,?,?,?)",
+        ('other-code', 'other-subject', 'unified_social_credit_code', '91330108MA2B254A2K',
+         '91330108ma2b254a2k', 'pending_business_identity', '共创研究院知识库'),
+    )
+    result = MODULE.lookup_identity_lineage(connection, '91330108MA2B254A2K', limit=1)
+    assert len(result['results']) == 1
+    conflict = next(p for p in result['results'][0]['conflict_paths']
+                    if p['path_type'] == 'code_multiple_subjects')
+    assert {n['value'] for n in conflict['nodes']} == {'9133', 'other-subject'}
