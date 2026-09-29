@@ -10,7 +10,7 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_sme_preassessment_uses_four_part_presale_report() -> None:
+def test_sme_preassessment_uses_action_report_without_old_page_cap() -> None:
     skill = read(SKILL_DIR / "SKILL.md")
     contract = read(
         SKILL_DIR / "references" / "pre-sale-assessment-report-contract.md"
@@ -21,11 +21,13 @@ def test_sme_preassessment_uses_four_part_presale_report() -> None:
         "项目申报路径图",
         "补短板主导产品与专利",
         "财务情况分析",
-        "五至八页",
-        "一至两页",
+        "五章19个内容块",
+        "自然分页",
     )
     for phrase in required:
         assert phrase in skill or phrase in contract
+    assert "客户报告固定压缩" not in skill
+    assert "默认总篇幅五至八页" not in contract
 
 
 def test_signed_delivery_profile_matches_the_four_part_report_contract() -> None:
