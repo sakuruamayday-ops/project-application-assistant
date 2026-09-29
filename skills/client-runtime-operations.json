@@ -1,6 +1,6 @@
 {
   "schema_version": "gongchuang-signed-skill-operations/v1",
-  "skill_bundle_version": "1.7.0",
+  "skill_bundle_version": "1.7.1",
   "operations": [
     {
       "id": "manufacturing-tax-risk-analysis.calculate-metrics",
@@ -570,6 +570,7 @@
       "script": "project-feasibility/scripts/generate_report.py",
       "files": [
         "project-feasibility/scripts/fill_report_template.py",
+        "project-feasibility/scripts/sme_action_report.py",
         "project-feasibility/scripts/select_report_template.py",
         "project-feasibility/references/report-template-registry.json",
         "project-feasibility/assets/fonts/NotoSansSC-Variable.ttf",

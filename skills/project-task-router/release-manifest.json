@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-task-router",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/domain-routing-matrix.md",
@@ -22,8 +22,8 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "d03178ee3d3951e3c685233b17d980a51f577eeb2e2e01567688244e2f1d0b93",
-    "references/domain-routing-matrix.md": "dbf4ae2e7211b65323c7ef55fcbd89653c786dcf7587b02d77dd571aeb7a91b5",
+    "SKILL.md": "a2a36d4f04cbf526f65ad2d728a2a82b6415a1aca78cd89e844c4b398c214809",
+    "references/domain-routing-matrix.md": "02b1a56ad3691e752e751d15d3a32b311e2c84720c2787557a04ad82b9c68567",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06"

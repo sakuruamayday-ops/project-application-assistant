@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "project-rule-manager",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,7 +21,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "e6a6199a321689a6882493bd9bcbdb8870d5670cefdaf6a0554fc0ed35cc0e6f",
+    "SKILL.md": "4e31a09a8d29b36f1cc5ec77bf29bf7b23d6b151a7a4cf102c8ba1352f351114",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/local_rules.py": "fbac9514c1a0288d512f9f91843ccc60f0b06866667acb46670e480995924d74",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

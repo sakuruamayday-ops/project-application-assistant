@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "sme-score-preassessment",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,16 +21,16 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "01ca92772a0fc018eab6b5164243275030b80b4ffa5352187edb0c9d9d4d7e06",
+    "SKILL.md": "1a0bbf92363a59461312d5ce3df8c1ab38e8e67016561ac7a300c47739bbe8c9",
     "assets/专精特新小巨人前期培育方向卡模板.docx": "3e6dadd6f7955799eaf3f1e6a1188ef7b5e85e46c933ee6e1d6f36f544375bff",
     "references/current-policy-baseline-2026.json": "3828a8e370fe5560110eafe27cce8907450d002b8aaa206db4cb39c01023c8cf",
     "references/current-policy-baseline-2026.md": "04229bd2ee6e6fbfa0278f939156432686adf52dca601c77fe45299cb1a7ca7b",
     "references/data-contract.md": "28ee31e05f1343183184ae704bf4ff6280cae415b3a6fbd13e09ae36ad6f0ca2",
     "references/digital-transformation-diagnostic-strengthening.md": "82e9e1045481dfa3ee2322eb44753f69516d49c7a19cca67d94baf64d6bfd74d",
-    "references/direction-card-first-template.md": "027f44b5211ca592f0eb6e1e47958bcf32e1f60b0defb99938b5575ae6eb24d8",
-    "references/policy-application-path-contract.md": "10e4ba0247f4d874f3594457f3cae2667b75ce8451936c539a07f0d4da336ef1",
+    "references/direction-card-first-template.md": "bec9a971e3aea450c740d6f9e862202d92b96470b7b1d4f0845e224a865b04f9",
+    "references/policy-application-path-contract.md": "7fd6c861374293bc43bfe7bb28be099f4283cc2effeceb929b270930bbee580b",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
-    "references/pre-sale-assessment-report-contract.md": "06a03548f106dd7ee8d72b585e1415a2b9b9f895a07118c922ef63220b7ca5ae",
+    "references/pre-sale-assessment-report-contract.md": "2d4927b9b5bb8f167d516bdf8e4384ea1bd14653445880358f15a06f1067c570",
     "references/qcc-verification.md": "5a37b72301adabd46240a9d2b641cbdcfd66b77c28d2514f555b3546fd4c5651",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/preflight.py": "f100d2f84ea635f38b6ad58d983f491f8cd9c74298e868cc3f08da95775146db",

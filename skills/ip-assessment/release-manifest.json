@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "ip-assessment",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/ip-assessment-rules.md",
@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "a1e3040fee735596a6b5064243cbe2852596d7a8118b3f25346b766ea21592ea",
+    "SKILL.md": "a3a8bd2d75a97ccb5b8832509be58ba527d4b0c32d035f1f02f78590c69d8280",
     "references/ip-assessment-rules.md": "4c9e19fcbbf062c2698d263248b8c3bd52209ecb0dd530a520b9843a4f11a732",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

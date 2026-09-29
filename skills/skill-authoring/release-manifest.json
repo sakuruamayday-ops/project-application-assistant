@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "skill-authoring",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "9a6276c15491387463547cdb766629fa573f8309f3d43e27c770c7a55fdea79c",
+    "SKILL.md": "f87687f2c56e0e483e88c760f74067dd57089a9739642eff10e21daf7b4886f4",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/skill-maturity-rubric.md": "0ad22affc40c08ca09b78bc787c1b4a211a2b5d299a49b20ff429f5efc4f2403",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

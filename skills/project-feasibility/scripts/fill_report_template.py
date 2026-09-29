@@ -750,20 +750,47 @@ def complete_report(
         expected_project_id=str(fixture["project_id"]),
         public_root=public_root,
     )
-    document = Document(template_path)
+    layout = fixture.get("report_layout")
+    if layout not in {None, "sme-action"}:
+        raise ValueError(f"未知报告布局:{layout}")
+    if layout == "sme-action":
+        from sme_action_report import build_action_document
+        document = build_action_document(template_path, validated)
+    else:
+        document = Document(template_path)
     template_tokens = set(PLACEHOLDER.findall(document_text(document)))
     placeholders = re.compile("|".join(re.escape(token) for token in sorted(template_tokens)) or r"(?!)")
     feasibility = report_type == "feasibility"
-    for table in document.tables:
-        _fill_table_by_header(table, validated, feasibility)
-        _lock_table_pagination(table)
-    _fill_project_specific_paragraphs(document, validated)
-    _generic_fill(document, validated, placeholders)
+    if layout != "sme-action":
+        for table in document.tables:
+            _fill_table_by_header(table, validated, feasibility)
+            _lock_table_pagination(table)
+        _fill_project_specific_paragraphs(document, validated)
+        _generic_fill(document, validated, placeholders)
     _append_source_ledger(document, validated)
+    if layout == "sme-action":
+        for paragraph in document.paragraphs:
+            if paragraph.text == "附录 C、数据来源":
+                _set_text(paragraph, "数据来源")
+        for cell in document.tables[-1].rows[0].cells:
+            _set_cell_shading(cell, "233D66")
+        for section in document.sections:
+            for container in (section.header, section.footer, section.first_page_header,
+                              section.first_page_footer, section.even_page_header,
+                              section.even_page_footer):
+                for node in container._element.iter(qn("w:t")):
+                    if node.text:
+                        node.text = _replace_training_text(node.text, validated, release_tag)
+        for policy in validated["policies"]:
+            paragraph = document.add_paragraph(str(policy["title"]) + "，" + str(policy["locator"]))
+            if str(policy.get("url", "")).startswith("https://"):
+                _add_hyperlink(paragraph, " 官方原文", policy["url"])
     _lock_table_pagination(document.tables[-1])
     _apply_portable_cjk_font(document)
     _preserve_report_pagination(document)
     _set_public_document_metadata(document, validated, report_type)
+    if layout == "sme-action":
+        document.core_properties.title = f"{validated['enterprise']}_专精特新申报体检与培育建议报告"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
     rendered = Document(output_path)
@@ -791,6 +818,10 @@ def complete_report(
         "release_tag": release_tag,
         "project_id": validated["project_id"],
         "report_type": report_type,
+        "delivery_profile": "sme-action-report" if layout == "sme-action" else (
+            "project-presale-assessment-report" if report_type == "preassessment"
+            else "project-feasibility-analysis-report"
+        ),
         "enterprise": validated["enterprise"],
         "template_path": str(template_path),
         "template_sha256": sha256_file(template_path),

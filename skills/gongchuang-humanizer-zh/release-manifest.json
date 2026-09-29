@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "gongchuang-humanizer-zh",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "agents/openai.yaml",
@@ -34,11 +34,11 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "d9e4ff72d0b93ff58e21c21d8850455e4c928a50f9220ee225065c990292e112",
+    "SKILL.md": "38b200931f25779c0a03aa3fad10874ff8926c0f7fe3082e981054351fed42c2",
     "agents/openai.yaml": "768dcaefb3b32fbaa66942a3a77fe5de412f97e70c4fbd35b7a9149570905abf",
     "references/detector.md": "1daeb0da81739cf15f98f41a0b2f0a5b422b631526b508fc3c0fd5d222659da2",
-    "references/evolution.md": "0c2df784e60ee56f752fa1cd08642bbbf8a35f03495c9481d677916bfdd744da",
-    "references/formal-materials.md": "8355600ac1289e77312af081476cf981a9d824950d2aec5bb5bce1f9e43fd9eb",
+    "references/evolution.md": "a47eda822ebf5c6e3c0270261fc3ab539f74d4799677b0ecbd2c7429d5407218",
+    "references/formal-materials.md": "f02e3e8edbe6e2ca90d6bb65297c71d2a754a396dbc403f42036f5a39a4374fb",
     "references/method-sources.md": "5e2355ff758f444538951e205657aee904cc3c94c75be13bf20a611c78d23502",
     "references/patterns.md": "da9d7a4731806164e175243127300e4a68dd8e5aa195e460cf17095f33e4cf51",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",

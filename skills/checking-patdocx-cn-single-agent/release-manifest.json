@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "checking-patdocx-cn-single-agent",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -25,7 +25,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "ca002bd2d434555083a1d6c921537a1d2faefde8281a9f399145c7b73be1bb78",
+    "SKILL.md": "f3fa4d82835f39d78dcdd938d50f06f900266c54f72aa631610fab73ecc3557d",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/review-method.md": "0b0e84b3f7d25223ecc73f035f7bb374befc47bcff8f2a0987f9556ddbc347db",
     "scripts/patent_extractor.py": "92d98c62711af2d3ad89a5d2b431c8b821ca7b867311d35fbae172b36ba2ae6a",

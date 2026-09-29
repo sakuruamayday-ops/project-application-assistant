@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "policy-retrieval",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/official-source-routing.md",
@@ -23,7 +23,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "df5a7caa69af8d5b7368aff145e913594f2f1c20f41807820fd2137dbcc1e089",
+    "SKILL.md": "f99b873cc733cbdbf71de92e8ccfd4e0102726269d621603063f4f5ad8e5ebf1",
     "references/official-source-routing.md": "31e100f5d6e22fd3343cecb8fed1cac4fa87f60735e4ebed19a869cca1e527ed",
     "references/policy-record-schema.md": "8be2da31575606c014803018f58841e608063881bb0c0dacd9a4deb0b2679836",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",

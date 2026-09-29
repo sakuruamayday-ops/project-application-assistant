@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "deep-clarification",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "LICENSE-MIT.txt",
     "SKILL.md",
@@ -24,7 +24,7 @@
   },
   "files": {
     "LICENSE-MIT.txt": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
-    "SKILL.md": "0d73f36313f782952a717a9d0ff1a1d2ad7323233346e74275596a25308efba1",
+    "SKILL.md": "eb3045bc1c0d304b24baa03ec99c7a4d5ed29560206056c133f7492ef2f1bf15",
     "agents/openai.yaml": "1556b32c1a624d910cdc65c89dfd523057f43ec34c7282e0dece4238ee412156",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "graphify",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/portable-runtime-protocol.md",
@@ -21,7 +21,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "19895d45bbf0db9cb20aca60caa212384a38e2c316efb880d056863122488ded",
+    "SKILL.md": "1ac6b22b1bbc6d7d766f4919a2a3b51835d261b8b7a3f36c6d767164ecdd3683",
     "references/domain-overlay.md": "fe8109101949b2e47f64c8bbbe2146d758078b918a0df6c24c98276ae5dae958",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/privacy-and-scope.md": "446674e6771bc9e2ccf6b9dfeea413c0c224d7e2b9ae82c0233db54105db2df8",

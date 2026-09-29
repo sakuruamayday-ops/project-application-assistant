@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "contract_id": "gongchuang-professional-delivery-contract-v3",
-  "rule_version": "1.7.0",
+  "rule_version": "1.7.1",
   "skill_roles": {
     "agriculture-and-rural-projects": {
       "role": "primary_business",
@@ -1076,6 +1076,17 @@
       ],
       "required_artifacts": [],
       "branding_contracts": []
+    },
+    "sme-action-report": {
+      "skill_id": "project-feasibility",
+      "requires_source_trace": true,
+      "requires_evidence_ledger": true,
+      "requires_policy_selection_trace": true,
+      "required_sections": ["先说结论", "项目申报路径图", "主导产品怎么定", "主导产品怎么配发明专利", "5.1 补强任务表", "财务情况简析", "数据来源"],
+      "required_tables": [
+        {"id": "补强任务表", "required_columns": ["补强动作", "补强价值", "建议节点"], "min_rows": 1},
+        {"id": "现有数据对照", "required_columns": ["关键指标", "企业现有数据", "判断", "谈单时怎么说"], "min_rows": 1}
+      ]
     },
     "sme-application-checkup-report": {
       "skill_id": "sme-development-projects",

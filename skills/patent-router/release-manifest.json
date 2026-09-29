@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "patent-router",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "publisher-ed25519.pub",
@@ -66,7 +66,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "2d02a948edc56dd70dee9f84ee6d12492b7274ce9883aee3c6d5ae1e37ebbf50",
+    "SKILL.md": "85ec451de4c35989ce6adf967d1663f1df5e5a7bfa2036aff6f7f791063d80ec",
     "THIRD_PARTY_NOTICES.md": "f9d8130b58b8e7b245fd9c1087c07864ec186b04b4a064f091374db8bc475324",
     "references/ai-patent-practice.md": "72465c41a0cbc124c472fd788a8d57cda15475fd2e1c916350ab796a949dd4f9",
     "references/claim-prior-art-matrix.md": "e7734245c823a30982b26efb821839e825ab4482d6f96512e76658d65577b2c5",
@@ -90,7 +90,7 @@
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/preexam-center-recommendation.md": "401ac74d34883628b7c134d3e57c5d2002ec4d0ed59f5e6aea6ff8a9e1114570",
     "references/preexam-default-centers.md": "574cd07f896b71ee3573a1bc0f6eabbd8afec57460a888d43ba386c593ab3c28",
-    "references/regression-gates.md": "295ec46ee4941aec2f2b12a6293b76c077d8791449d6659a7930ea888c67e304",
+    "references/regression-gates.md": "124c9cb800f7da4d113cad1d91edcadaf429df62b4f1642b5fae19ba62436388",
     "references/routing-matrix.md": "a00d87f85105d3b205efb2d92c8fd9ac783158fa3102e3e7b657c74b66153db1",
     "references/technical-equivalence-rules.json": "1e9f0f431ff96579b6fa4a82d0df362fb366a58cc5374d2a8e60a8a444b15b3f",
     "references/technical-feature-evidence-map.md": "9e72f529e937abe5b1236138f4de0f30f23834659462c9a7380cf8a6ca7f598c",

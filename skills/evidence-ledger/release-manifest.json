@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "evidence-ledger",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/evidence-ledger-schema.md",
@@ -25,7 +25,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "06d90ec14a0df1efbb183b0733d8aaa37dfd1bad522794b5834f9dcf0cf385e4",
+    "SKILL.md": "8f42aad73c6a885b6ffd9962329e77a5834991ab756b22e1144907119278d735",
     "examples/market-share-enterprise-statement.json": "89f8fb5e4ace6da6cb161e42aae59f1fcdbfb476242eca5100e24459288588c5",
     "examples/normal-grounded-report.json": "be8690917cb784ce383873cd5f983bf75649902058549296e1e5d860ab26f1af",
     "examples/reference-only-market-share.json": "ccb30881e283f432b621502b597d44a5bf16ea09c3eb9358c0560191bd58755c",
@@ -35,13 +35,13 @@
     "references/market-share-grounding-contract.md": "1509201ae1181670e4d90b52e3ed861d3d2c0b4c4ab7df98d901d13535b20b7f",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "scripts/apply_office_branding.py": "aafd61dd9fc476af60510b5fa5bcdafe6b50cfac15d96aaf59935f954695a364",
-    "scripts/create_docx_from_text.py": "ee7ff2e3fd9f8761cf11572508854a547d68bca9f11a43b538a3cea61fe95bc4",
+    "scripts/create_docx_from_text.py": "8c6a23a483b1275e6892498255e7809c3eff05dd35e7aed7d848a74a4345b0eb",
     "scripts/grounded_evidence.py": "c5fdbdab52940b36b980cd26c3b46fb92e79c1a8043a1dec421ffbcd18fe025f",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",
     "scripts/validate_evidence_ledger.py": "0e6176da14db09528ec3654fd7e7078398840a4a7c835146e325b78d60ca5f46",
     "scripts/verify_skill_installation.py": "8e9846beb62554d69e80e96e3faf6968435f151fbb3fc395c08859487ab6bd06",
     "tests/test_apply_office_branding.py": "7173caa598a50a266f2f9c896611fe21b1ff4bed4db4b2fdcdc93022996c4863",
-    "tests/test_create_docx_from_text.py": "19c0162e5cdcc16de70aefeff1d7ba4a1fc3a6c2b880f8142bd67b14d9ec5c3e"
+    "tests/test_create_docx_from_text.py": "3d5715b3ceb64c7309b006891542e95bd46af32aae5f9c4356d14d511d0b861d"
   },
   "integrity_excludes": [
     "publisher-ed25519.pub",

@@ -20,6 +20,12 @@ description: 对单个政府项目执行完整可行性分析。用户只给企�
 
 ## 客户端固定成稿调用
 
+专精或小巨人的企业现状体检与培育报告使用 `sme-development-projects/references/material-checkup-report-template.md` 的五章及19个内容块，事实 JSON 指定 `report_layout: "sme-action"` 并提供对应 report_sections。此布局替代通用占位回填。两类项目不展示条件触发项目、资格与专注、评分、分数门槛或获取说明。省级专精报告删除前置称号，小巨人保留省级专精特新资格状态核对。主导产品根据企业业务和技术资料提出具体建议及边界，不停留在待定占位。已有申请书逐字段体检仍执行其详细检查范围；其他项目与双报告类型不变。
+
+行动型结果返回 `delivery_profile=sme-action-report`，后续报告画像使用此值，不再套旧可行性报告的章节或评分表。该布局不代表已完成申请书逐字段体检；用户委托详细体检时仍输出详细发现，不能以此简版替代。
+
+行动型报告按 [算法流程](references/sme-action-workflow.md) 执行。研发机构推荐由生成器读取 `research_equipment_screen` 计算，不由模型口算或改比例；金额统一为元，缺固定资产写 null，不用资产总额替代。其他项目推荐、定性加分作用和具体同行对照按已确认业务资料填写，不能把程序排版通过声称为政策或企业事实全部核验。
+
 共创客户端使用已激活本技能的 `project-feasibility.generate-report` 签名操作，由客户端内置 Python 执行，不使用系统 Python 或临时安装依赖。参数为工作区事实 JSON `input`、新 DOCX 路径 `output`、报告类型 `reportType`。事实 JSON 使用下方回填器既有格式，包含企业、项目对象、政策、资料路径与可核验原文锚点；工具返回成功仅证明文件回填检查通过，仍须核对分析结论、报告画像及实际版式。此调用替代下方的模板复制和回填两条 CLI 命令，不先向交付目录复制空白模板。
 
 输入字段：`project_id` 使用模板索引项目 id；`enterprise` 企业名称，`project_object` 申报对象，`suggested_year` 建议年度，`deadline` 截止信息，`conclusion` 为可申报、有条件申报、不可申报或暂无法判断；`conclusion_basis`、`primary_gap`、`next_action` 分别为判断依据、主要差距与下一步。`materials` 为数组，每项含实际工作区文件绝对路径 `path`、至少一个四字以上逐字原文片段 `anchors`，来源知识库时标注 `source_type=knowledge-base`，其他来源按资料实际属性填写。`policies` 为数组，每项含实际政策名称 `title`、条款或原文位置 `locator`；未取得当期政策时如实注明资料缺口，不编造名称、条文或确定资格结论。已有该格式 JSON 时直接复用，不重写同一份事实。资料未提供的成果保留为待确认，不推断企业尚未形成；同行指标没有数据时标注待核验，不用资料文件名或本企业产品替代同行数据和对标对象。

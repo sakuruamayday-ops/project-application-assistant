@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "green-development-projects",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/green-factory-self-evaluation.md",
@@ -25,7 +25,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "8f43381f44fc301f664df114c69f46a4067ca9ffc7fed72243d178ec88b83082",
+    "SKILL.md": "617596b68a9c4b04ed68ff55a90b01acd5bcbbb68c41899b05cda83f79a439c4",
     "references/green-factory-self-evaluation.md": "d5c796ff971464c4be455c9e76a0c2ce854ef3cdc1aa8c0015aa9e4b3e233811",
     "references/green-metrics-boundaries.md": "d5997c3d44a8717df9887b3ef095851f7013e5c2fbbf70f54de78a9b9bbaa34f",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",

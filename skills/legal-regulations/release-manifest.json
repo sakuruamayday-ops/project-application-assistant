@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "legal-regulations",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "publisher-ed25519.pub",
@@ -29,10 +29,10 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "5c74fdff0022526aa6b7892b20ff6b3bfd1676a3d0e24800d6f3e814d1e93ada",
+    "SKILL.md": "09a27b1bbd9c64230cb7b5687b327604c3d4f8e1de4ad0d122157f7d6947e5fa",
     "references/company-law-compliance-2026.md": "7a93fec392790216b444a6e2d583b518eef346c54c58c5b7636275917afd0342",
     "references/industry-routing.md": "745bb0f7ef8d3210fc3463192eddbef5c84167d7bd780ccdbe2f00aed95f2a72",
-    "references/local-retrieval.md": "a557123090cf2482163cccbbe29274682ca41cdc02406a12bf49b9818b973104",
+    "references/local-retrieval.md": "879dbaf22ad11602228764697ba1cfbf136252d8ce563fed8e70bc524d6caaea",
     "references/portable-runtime-protocol.md": "6283e9785ca9038431e447721a94fd9b165c17c8868a5577d923fe73ea1529d5",
     "references/source-and-validity.md": "df19b08f22b8f38de7399f338547f124d71303344b5219bbdc45906589de673b",
     "scripts/portable_skill_runtime.py": "2898ddc24cabbcc7bbf92c69c07c490f2bf09020d1e693186a1c754c3edac0bc",

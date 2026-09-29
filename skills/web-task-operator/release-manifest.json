@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "web-task-operator",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/aiqice-browser-profile.md",
@@ -24,7 +24,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "a6354864702bd3b5bf51c7c3614d77962f65c813b1b3ff44ed5bbeb9a9c181ed",
+    "SKILL.md": "746cd8190c9b5a8d9ec608064489e3276752fa711c40b19d4df06bec533f15b9",
     "references/aiqice-browser-profile.md": "10debafcfcd385bdd80a48483fde5341e902b270a159c4f05a35bff8d3130062",
     "references/browser-local-replay.md": "b5383e2150f5e3dd0b4ed5be375386ddaef11ed5de862a4c4b7052c17c51e64f",
     "references/execution-protocol.md": "e19dbfa9bcda3f07ba3df632528f6663e1f282b79cdf20afe65515ce022fd5b9",

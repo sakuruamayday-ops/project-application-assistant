@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "skill_name": "industry-chain-foundation-matcher",
-  "release_tag": "V1.6.19",
+  "release_tag": "V1.7.1",
   "required_paths": [
     "SKILL.md",
     "references/classification-rules.md",
@@ -29,7 +29,7 @@
     "executables": []
   },
   "files": {
-    "SKILL.md": "75febc86b63090a337497bda9e2f7f2df169095c3c6a6629f27006ec2d9b6dc3",
+    "SKILL.md": "1946f75fe7274fddd0e41b5cd629e3a3437ed39d4c90c602392b4787574bb2b6",
     "references/classification-rules.md": "ed55c7772894051036025398d85c87b142cdcd6f5bd66d6a005ae76b7fbe0eb6",
     "references/industry-chain-index.jsonl": "0c9330ba5a04ab77f1c63047760213aff02ded921a591e1325d818c214b7739d",
     "references/industry-foundation-index.jsonl": "fdce232f16e5ec79811c625b3d4fd06976ca5aea4e667f15efbd07b36a57c640",
